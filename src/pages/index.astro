@@ -1,0 +1,226 @@
+---
+// Landing de Trato — placeholder "coming soon" con la estética Flouvia completa.
+// Se reemplaza por la landing real en la Fase 4 del plan.
+export const prerender = true;
+
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Trato — Cotizaciones B2B profesionales | by Flouvia">
+    <main class="hero">
+        <div class="hero-watermark" aria-hidden="true">Trato</div>
+
+        <div class="hero-inner">
+            <div class="hero-status hero-anim">
+                <span class="status-dot"></span>
+                <span>EN CONSTRUCCIÓN — LANZAMIENTO 2026</span>
+            </div>
+
+            <p class="hero-eyebrow hero-anim">COTIZACIONES B2B — UN PRODUCTO DE FLOUVIA</p>
+
+            <h1 class="hero-title hero-anim">
+                Cierra el trato.<br />
+                Sin WhatsApp, sin Excel.
+            </h1>
+
+            <p class="hero-desc hero-anim">
+                Crea cotizaciones con precios negociados, envíalas con un link elegante,
+                entérate cuando tu cliente las ve y conviértelas en venta — con términos
+                de crédito, PDF con tu marca y CFDI.
+            </p>
+
+            <div class="hero-metric hero-anim">
+                <span class="metric-amount editorial">$184,500.00</span>
+                <span class="metric-label">MXN · COTIZACIÓN Q-0001 · APROBADA</span>
+            </div>
+
+            <a href="mailto:hola@flouvia.com" class="hero-cta hero-anim">
+                <span>Quiero acceso anticipado</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+            </a>
+        </div>
+
+        <p class="hero-footer hero-anim">
+            <span class="editorial">Trato</span> · by <a href="https://flouvia.com" target="_blank" rel="noopener">Flouvia</a> — CDMX
+        </p>
+    </main>
+</Layout>
+
+<style is:global>
+    /* Gate anti-FOUC — vive en <html>, por eso va en is:global */
+    .js-anim .hero-anim { opacity: 0; }
+</style>
+
+<style>
+    .hero {
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: clip;
+        background: var(--color-bg-soft);
+        padding: 2rem 5%;
+        text-align: center;
+    }
+
+    .hero-watermark {
+        position: absolute;
+        bottom: -8vw;
+        right: -2vw;
+        font-family: var(--font-serif);
+        font-style: italic;
+        font-size: 30vw;
+        line-height: 0.85;
+        letter-spacing: -0.04em;
+        color: rgba(0, 0, 0, 0.025);
+        pointer-events: none;
+        user-select: none;
+        white-space: nowrap;
+    }
+
+    .hero-inner {
+        position: relative;
+        z-index: 2;
+        max-width: 760px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .hero-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        background: rgba(10, 25, 47, 0.04);
+        border: 1px solid var(--color-border);
+        padding: 7px 14px;
+        border-radius: 100px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        color: var(--color-text-muted);
+        margin-bottom: 2.2rem;
+    }
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        background: var(--color-ok);
+        border-radius: 50%;
+        animation: pulse-dot 2.5s infinite;
+    }
+    @keyframes pulse-dot {
+        0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+        70%  { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .hero-eyebrow {
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: #888;
+        margin: 0 0 1.4rem 0;
+    }
+
+    .hero-title {
+        font-size: clamp(2.1rem, 4.4vw, 3.8rem);
+        font-weight: 800;
+        line-height: 1.08;
+        letter-spacing: -1.5px;
+        color: var(--color-text);
+        margin: 0 0 1.6rem 0;
+    }
+
+    .hero-desc {
+        font-size: 1.1rem;
+        line-height: 1.65;
+        color: var(--color-text-muted);
+        max-width: 560px;
+        margin: 0 0 2.6rem 0;
+    }
+
+    .hero-metric {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 2.8rem;
+    }
+    .metric-amount {
+        font-size: clamp(2.4rem, 4.5vw, 3.6rem);
+        color: var(--color-blue-deep);
+        line-height: 1;
+    }
+    .metric-label {
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        color: var(--color-ok);
+    }
+
+    .hero-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--color-blue-deep);
+        color: #fff;
+        text-decoration: none;
+        font-size: 0.95rem;
+        font-weight: 600;
+        padding: 16px 30px;
+        border-radius: 12px;
+        box-shadow: 0 24px 60px -20px rgba(10, 25, 47, 0.45);
+        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
+    }
+    .hero-cta svg { width: 17px; height: 17px; transition: transform 0.5s var(--ease-spring); }
+    .hero-cta:hover { transform: translateY(-3px); box-shadow: 0 30px 70px -20px rgba(10, 25, 47, 0.55); }
+    .hero-cta:hover svg { transform: translateX(4px); }
+
+    .hero-footer {
+        position: absolute;
+        bottom: 2rem;
+        z-index: 2;
+        font-size: 0.85rem;
+        color: var(--color-text-muted);
+        margin: 0;
+    }
+    .hero-footer .editorial { font-size: 1.05rem; color: var(--color-blue-deep); }
+    .hero-footer a {
+        color: var(--color-text-muted);
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        transition: color 0.4s var(--ease-ios);
+    }
+    .hero-footer a:hover { color: var(--color-blue-deep); }
+
+    @media (max-width: 768px) {
+        .hero-watermark { font-size: 52vw; bottom: -10vw; right: -6vw; }
+        .hero-desc { font-size: 1rem; }
+    }
+</style>
+
+<script>
+    import { gsap } from 'gsap';
+
+    // Estándar único del sitio (heredado de flouvia-web): fade + leve subida,
+    // power2.out, sin blur/scale. Gate .js-anim tapa antes del paint.
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+        gsap.to('.hero-anim', {
+            opacity: 1,
+            y: 0,
+            duration: 0.95,
+            ease: 'power2.out',
+            stagger: 0.09,
+            startAt: { y: 14 },
+        });
+    });
+</script>

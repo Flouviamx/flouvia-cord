@@ -1,0 +1,125 @@
+---
+// Layout base de Trato — hereda el sistema de diseño Flouvia.
+// v1 solo español (target: México). El i18n se añade después con el patrón de flouvia-web.
+
+interface Props {
+    title: string;
+    description?: string;
+    image?: string;
+    noindex?: boolean;
+    ogType?: string;
+}
+
+const {
+    title,
+    description = 'Trato — cotizaciones B2B profesionales. Crea, envía y da seguimiento a tus cotizaciones con precios negociados, términos de crédito y CFDI. Un producto de Flouvia.',
+    image = '/og-trato.png',
+    noindex = false,
+    ogType = 'website',
+} = Astro.props;
+
+const SITE      = Astro.site ?? new URL('https://trato.flouvia.com');
+const canonical = new URL(Astro.url.pathname, SITE).href;
+const ogImage   = new URL(image, SITE).href;
+---
+
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+
+        <!-- Gate de animación (mismo patrón que flouvia-web): marca <html> ANTES del
+             primer paint para que los elementos animados partan ocultos sin flash.
+             Sin JS o con reduced-motion, la clase nunca se añade y todo queda visible. -->
+        <script is:inline>
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.documentElement.classList.add('js-anim');
+            }
+        </script>
+
+        <meta name="description" content={description} />
+        <link rel="canonical" href={canonical} />
+        {noindex && <meta name="robots" content="noindex, nofollow" />}
+
+        <!-- Open Graph -->
+        <meta property="og:type" content={ogType} />
+        <meta property="og:site_name" content="Trato" />
+        <meta property="og:locale" content="es_MX" />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={canonical} />
+        <meta property="og:image" content={ogImage} />
+
+        <!-- Twitter -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={description} />
+        <meta name="twitter:image" content={ogImage} />
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+        <meta name="theme-color" content="#0a192f" />
+        <title>{title}</title>
+    </head>
+    <body>
+        <slot />
+    </body>
+</html>
+
+<style is:global>
+    /* ==========================================================
+       TOKENS — sistema de diseño Flouvia, adaptado a Trato
+       ========================================================== */
+    :root {
+        --color-bg: #ffffff;
+        --color-bg-soft: #fcfcfc;
+        --color-blue-deep: #0a192f;      /* navy principal */
+        --color-text: #050505;
+        --color-text-muted: #555556;
+        --color-border: rgba(0, 0, 0, 0.08);
+
+        /* Estados de cotización (mismos colores que el health score del portal) */
+        --color-ok: #10b981;             /* aprobada / pagada */
+        --color-warn: #f59e0b;           /* pendiente / por vencer */
+        --color-danger: #ef4444;         /* vencida / rechazada */
+
+        --font-sans: 'Inter', system-ui, sans-serif;
+        --font-serif: 'Instrument Serif', serif;
+
+        --ease-ios: cubic-bezier(0.25, 1, 0.5, 1);
+        --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+        --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        position: relative;
+        font-family: var(--font-sans);
+        color: var(--color-text);
+        background-color: var(--color-bg);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    ::selection {
+        background: #0a192f;
+        color: #ffffff;
+    }
+
+    /* Regla de marca: montos y números SIEMPRE en serif italic — nunca sans bold */
+    .editorial {
+        font-family: var(--font-serif);
+        font-style: italic;
+        font-weight: 400;
+    }
+</style>
