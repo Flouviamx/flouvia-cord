@@ -1,0 +1,103 @@
+---
+// FAQ — acordeón nativo (<details>) con estilo Flouvia.
+const faqs = [
+    {
+        q: '¿Necesito tener una tienda en línea para usar Trato?',
+        a: 'No. Trato es independiente — funciona para cualquier negocio B2B: distribuidoras, mayoristas, manufactura o servicios. Subes tu catálogo (o cotizas líneas libres) y empiezas a mandar cotizaciones. Si además vendes en Shopify, tenemos una app que se integra.',
+    },
+    {
+        q: '¿Cómo funciona el plan gratis?',
+        a: 'Gratis para siempre, hasta 5 cotizaciones activas a la vez, con la marca "Powered by Trato" en el link público. Cuando cierras una cotización liberas el cupo. Sin tarjeta para empezar.',
+    },
+    {
+        q: '¿El CFDI funciona con el SAT de verdad?',
+        a: 'Sí. En el plan Negocio timbras CFDI 4.0 real ante el SAT directo desde la cotización aprobada. Solo necesitas tu CSD (Certificado de Sello Digital). La conexión toma menos de 5 minutos. Disponible solo para México.',
+    },
+    {
+        q: '¿Mi cliente tiene que crear una cuenta para aprobar?',
+        a: 'No. Tu cliente abre el link, revisa la cotización con tu marca y aprueba o paga sin registrarse. Cero fricción — por eso cierran más rápido.',
+    },
+    {
+        q: '¿Mis datos están seguros?',
+        a: 'Trato está construido por Flouvia sobre la misma infraestructura que usamos para marcas con operación establecida. Cada negocio vive aislado: tus cotizaciones, precios y clientes solo los ves tú.',
+    },
+    {
+        q: '¿Puedo cancelar cuando quiera?',
+        a: 'Cuando quieras, desde tu panel. Sin contratos ni penalizaciones. Si cancelas un plan de pago, bajas al gratis y conservas tu información.',
+    },
+];
+---
+
+<section class="faq" id="faq">
+    <div class="faq-inner">
+        <div class="faq-head">
+            <p class="faq-eyebrow reveal">PREGUNTAS FRECUENTES</p>
+            <h2 class="faq-title reveal">Lo que más nos preguntan.</h2>
+        </div>
+
+        <div class="faq-list">
+            {faqs.map((f) => (
+                <details class="faq-item reveal">
+                    <summary class="faq-q">
+                        <span>{f.q}</span>
+                        <span class="faq-icon" aria-hidden="true"></span>
+                    </summary>
+                    <p class="faq-a">{f.a}</p>
+                </details>
+            ))}
+        </div>
+    </div>
+</section>
+
+<style>
+    .faq { padding: 6rem 5%; }
+    .faq-inner { max-width: 760px; margin: 0 auto; }
+    .faq-head { text-align: center; margin-bottom: 3rem; }
+    .faq-eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #888; margin: 0 0 1.2rem; }
+    .faq-title { font-size: clamp(1.8rem, 3.2vw, 2.6rem); font-weight: 800; letter-spacing: -1px; color: var(--color-text); margin: 0; }
+
+    .faq-list { display: flex; flex-direction: column; }
+    .faq-item {
+        border-bottom: 1px solid var(--color-border);
+    }
+    .faq-q {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 1.5rem 0.2rem;
+        cursor: pointer;
+        list-style: none;
+        font-size: 1.08rem;
+        font-weight: 600;
+        color: var(--color-text);
+        transition: color 0.3s var(--ease-ios);
+    }
+    .faq-q::-webkit-details-marker { display: none; }
+    .faq-q:hover { color: var(--color-blue-deep); }
+
+    .faq-icon {
+        position: relative;
+        width: 16px; height: 16px;
+        flex-shrink: 0;
+    }
+    .faq-icon::before, .faq-icon::after {
+        content: '';
+        position: absolute;
+        top: 50%; left: 50%;
+        background: var(--color-text-muted);
+        transition: transform 0.4s var(--ease-spring);
+    }
+    .faq-icon::before { width: 14px; height: 2px; transform: translate(-50%, -50%); }
+    .faq-icon::after { width: 2px; height: 14px; transform: translate(-50%, -50%); }
+    .faq-item[open] .faq-icon::after { transform: translate(-50%, -50%) scaleY(0); }
+
+    .faq-a {
+        margin: 0;
+        padding: 0 0.2rem 1.6rem;
+        font-size: 1rem;
+        line-height: 1.7;
+        color: var(--color-text-muted);
+        max-width: 90%;
+    }
+</style>

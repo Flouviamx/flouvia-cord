@@ -1,0 +1,530 @@
+---
+// Hero de la landing — copy + mockup del producto (cotización en vivo).
+// El mockup es HTML/CSS puro: la pieza que vende. Montos en serif italic.
+---
+
+<section class="hero">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <div class="hero-grid-bg" aria-hidden="true"></div>
+
+    <div class="hero-inner">
+        <div class="hero-status reveal">
+            <span class="status-dot"></span>
+            <span>PLATAFORMA DE COTIZACIONES B2B</span>
+        </div>
+
+        <h1 class="hero-title reveal">
+            Cierra más tratos,<br />
+            con menos fricción.
+        </h1>
+
+        <p class="hero-desc reveal">
+            Trato convierte tus cotizaciones B2B en un sistema: precios negociados,
+            un link que tu cliente abre y aprueba, seguimiento en vivo, PDF con tu
+            marca y CFDI. Adiós al WhatsApp y al Excel.
+        </p>
+
+        <div class="hero-actions reveal">
+            <a href="/registro" class="btn-primary">
+                <span>Empezar gratis</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+            <a href="#producto" class="btn-ghost">Ver cómo funciona</a>
+        </div>
+
+        <p class="hero-microcopy reveal">
+            Plan gratis hasta 5 cotizaciones activas · Sin tarjeta para empezar
+        </p>
+    </div>
+
+    <!-- ── MOCKUP DEL PRODUCTO ── -->
+    <div class="mockup-wrap reveal-mockup">
+        <div class="mockup">
+            <div class="mk-topbar">
+                <div class="mk-dots"><span></span><span></span><span></span></div>
+                <div class="mk-url">trato.flouvia.com/app/cotizaciones/q-0148</div>
+            </div>
+
+            <div class="mk-body">
+                <!-- Sidebar -->
+                <aside class="mk-side">
+                    <div class="mk-brand">trato</div>
+                    <nav class="mk-nav">
+                        <span class="mk-navitem">Dashboard</span>
+                        <span class="mk-navitem active">Cotizaciones</span>
+                        <span class="mk-navitem">Clientes</span>
+                        <span class="mk-navitem">Productos</span>
+                        <span class="mk-navitem">Ajustes</span>
+                    </nav>
+                </aside>
+
+                <!-- Cotización -->
+                <main class="mk-main">
+                    <div class="mk-head">
+                        <div>
+                            <div class="mk-folio">COT-0148</div>
+                            <div class="mk-client">Distribuidora El Zarco · Net 30</div>
+                        </div>
+                        <span class="mk-badge mk-badge-ok">● Aprobada</span>
+                    </div>
+
+                    <div class="mk-table">
+                        <div class="mk-row mk-row-head">
+                            <span>Producto</span><span>Cant.</span><span>Negociado</span><span>Importe</span>
+                        </div>
+                        <div class="mk-row">
+                            <span class="mk-prod">Cemento gris 50kg</span>
+                            <span>120</span>
+                            <span class="editorial mk-num">$182.00</span>
+                            <span class="editorial mk-num">$21,840.00</span>
+                        </div>
+                        <div class="mk-row">
+                            <span class="mk-prod">Varilla 3/8" × 12m</span>
+                            <span>340</span>
+                            <span class="editorial mk-num">$168.50</span>
+                            <span class="editorial mk-num">$57,290.00</span>
+                        </div>
+                        <div class="mk-row">
+                            <span class="mk-prod">Block hueco 15×20×40</span>
+                            <span>2,400</span>
+                            <span class="editorial mk-num">$14.20</span>
+                            <span class="editorial mk-num">$34,080.00</span>
+                        </div>
+                        <div class="mk-row mk-row-muted">
+                            <span class="mk-prod">Malla electrosoldada</span>
+                            <span>180</span>
+                            <span class="editorial mk-num">$312.00</span>
+                            <span class="editorial mk-num">$56,160.00</span>
+                        </div>
+                    </div>
+
+                    <div class="mk-total">
+                        <div class="mk-total-line"><span>Subtotal</span><span class="editorial">$169,370.00</span></div>
+                        <div class="mk-total-line"><span>IVA 16%</span><span class="editorial">$27,099.20</span></div>
+                        <div class="mk-total-line mk-total-grand">
+                            <span>Total</span>
+                            <span class="editorial mk-grand">$196,469.20</span>
+                        </div>
+                    </div>
+                </main>
+
+                <!-- Timeline / panel derecho -->
+                <aside class="mk-timeline">
+                    <div class="mk-tl-title">Actividad</div>
+                    <div class="mk-tl-item">
+                        <span class="mk-tl-dot dot-green"></span>
+                        <div>
+                            <div class="mk-tl-text"><b>Tu cliente la vio</b></div>
+                            <div class="mk-tl-time">hace 3 min</div>
+                        </div>
+                    </div>
+                    <div class="mk-tl-item">
+                        <span class="mk-tl-dot dot-blue"></span>
+                        <div>
+                            <div class="mk-tl-text">Cotización enviada</div>
+                            <div class="mk-tl-time">hoy, 11:02</div>
+                        </div>
+                    </div>
+                    <div class="mk-tl-item">
+                        <span class="mk-tl-dot dot-grey"></span>
+                        <div>
+                            <div class="mk-tl-text">Borrador creado</div>
+                            <div class="mk-tl-time">hoy, 10:41</div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+
+        <!-- Toast flotante "tu cliente la vio" -->
+        <div class="mk-toast">
+            <span class="mk-toast-dot"></span>
+            <span><b>El Zarco</b> abrió tu cotización</span>
+        </div>
+    </div>
+
+    <!-- Trust strip -->
+    <div class="hero-trust reveal">
+        <span class="trust-label">CONSTRUIDO SOBRE LA INGENIERÍA DE</span>
+        <div class="trust-logos">
+            <span class="trust-logo">Flouvia</span>
+            <span class="trust-sep">·</span>
+            <span class="trust-logo">Shopify Plus</span>
+            <span class="trust-sep">·</span>
+            <span class="trust-logo">CFDI 4.0 / SAT</span>
+            <span class="trust-sep">·</span>
+            <span class="trust-logo">Stripe</span>
+        </div>
+    </div>
+</section>
+
+<style>
+    .hero {
+        position: relative;
+        padding: 9rem 5% 4rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        overflow: clip;
+        background: var(--color-bg-soft);
+    }
+
+    .hero-glow {
+        position: absolute;
+        top: -10%; left: 50%;
+        transform: translateX(-50%);
+        width: 900px; height: 600px;
+        background: radial-gradient(ellipse at center, rgba(10,25,47,0.06) 0%, transparent 65%);
+        pointer-events: none;
+    }
+    .hero-grid-bg {
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(10,25,47,0.025) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(10,25,47,0.025) 1px, transparent 1px);
+        background-size: 56px 56px;
+        mask-image: radial-gradient(ellipse 80% 50% at 50% 0%, #000 30%, transparent 75%);
+        -webkit-mask-image: radial-gradient(ellipse 80% 50% at 50% 0%, #000 30%, transparent 75%);
+        pointer-events: none;
+    }
+
+    .hero-inner {
+        position: relative;
+        z-index: 2;
+        max-width: 780px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .hero-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        background: rgba(255,255,255,0.7);
+        border: 1px solid var(--color-border);
+        padding: 7px 15px;
+        border-radius: 100px;
+        font-size: 0.64rem;
+        font-weight: 800;
+        letter-spacing: 1.4px;
+        color: var(--color-text-muted);
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 14px -6px rgba(10,25,47,0.1);
+    }
+    .status-dot {
+        width: 6px; height: 6px;
+        background: var(--color-ok);
+        border-radius: 50%;
+        animation: pulse-dot 2.5s infinite;
+    }
+    @keyframes pulse-dot {
+        0%   { box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
+        70%  { box-shadow: 0 0 0 6px rgba(16,185,129,0); }
+        100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+    }
+
+    .hero-title {
+        font-size: clamp(2.4rem, 5.2vw, 4.3rem);
+        font-weight: 800;
+        line-height: 1.04;
+        letter-spacing: -2px;
+        color: var(--color-text);
+        margin: 0 0 1.6rem 0;
+    }
+
+    .hero-desc {
+        font-size: clamp(1.05rem, 1.5vw, 1.2rem);
+        line-height: 1.6;
+        color: var(--color-text-muted);
+        max-width: 600px;
+        margin: 0 0 2.4rem 0;
+    }
+
+    .hero-actions {
+        display: flex;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-bottom: 1.2rem;
+    }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--color-blue-deep);
+        color: #fff;
+        text-decoration: none;
+        font-size: 1rem;
+        font-weight: 600;
+        padding: 15px 28px;
+        border-radius: 13px;
+        box-shadow: 0 18px 44px -16px rgba(10,25,47,0.5);
+        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
+    }
+    .btn-primary svg { width: 16px; height: 16px; transition: transform 0.5s var(--ease-spring); }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 26px 56px -16px rgba(10,25,47,0.6); }
+    .btn-primary:hover svg { transform: translateX(4px); }
+
+    .btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        color: var(--color-blue-deep);
+        text-decoration: none;
+        font-size: 1rem;
+        font-weight: 600;
+        padding: 15px 24px;
+        border-radius: 13px;
+        border: 1px solid var(--color-border);
+        background: rgba(255,255,255,0.6);
+        transition: background 0.4s var(--ease-ios), transform 0.5s var(--ease-spring);
+    }
+    .btn-ghost:hover { background: #fff; transform: translateY(-3px); }
+
+    .hero-microcopy {
+        font-size: 0.85rem;
+        color: var(--color-text-muted);
+        margin: 0 0 4rem 0;
+    }
+
+    /* ── MOCKUP ── */
+    .mockup-wrap {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        max-width: 1080px;
+        margin: 0 auto;
+        perspective: 1800px;
+    }
+    .mockup {
+        border-radius: 18px;
+        overflow: hidden;
+        background: #0a192f;
+        box-shadow:
+            0 2px 4px rgba(10,25,47,0.1),
+            0 40px 90px -30px rgba(10,25,47,0.5),
+            0 80px 140px -50px rgba(10,25,47,0.35);
+        border: 1px solid rgba(255,255,255,0.06);
+        transform: rotateX(4deg);
+        transform-origin: center top;
+    }
+
+    .mk-topbar {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.7rem 1rem;
+        background: #0d1f3a;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .mk-dots { display: flex; gap: 6px; }
+    .mk-dots span { width: 11px; height: 11px; border-radius: 50%; background: rgba(255,255,255,0.16); }
+    .mk-url {
+        flex: 1;
+        text-align: center;
+        font-size: 0.72rem;
+        color: rgba(255,255,255,0.45);
+        background: rgba(255,255,255,0.05);
+        padding: 5px 12px;
+        border-radius: 7px;
+        max-width: 360px;
+        margin: 0 auto;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .mk-body {
+        display: grid;
+        grid-template-columns: 150px 1fr 200px;
+        background: #fbfcfe;
+        min-height: 420px;
+        text-align: left;
+    }
+
+    /* Sidebar mockup */
+    .mk-side {
+        background: #0a192f;
+        padding: 1.2rem 0.9rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.4rem;
+    }
+    .mk-brand { font-size: 1.1rem; font-weight: 800; color: #fff; letter-spacing: -0.5px; padding-left: 0.4rem; }
+    .mk-nav { display: flex; flex-direction: column; gap: 0.2rem; }
+    .mk-navitem {
+        font-size: 0.8rem;
+        color: rgba(255,255,255,0.5);
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-weight: 500;
+    }
+    .mk-navitem.active { background: rgba(255,255,255,0.08); color: #fff; }
+
+    /* Main cotización */
+    .mk-main { padding: 1.5rem 1.6rem; display: flex; flex-direction: column; }
+    .mk-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.4rem;
+    }
+    .mk-folio { font-size: 1.15rem; font-weight: 800; color: #0a192f; letter-spacing: -0.5px; }
+    .mk-client { font-size: 0.78rem; color: #667; margin-top: 3px; }
+    .mk-badge {
+        font-size: 0.66rem;
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 100px;
+        letter-spacing: 0.3px;
+    }
+    .mk-badge-ok { background: rgba(16,185,129,0.12); color: #059669; }
+
+    .mk-table { display: flex; flex-direction: column; }
+    .mk-row {
+        display: grid;
+        grid-template-columns: 1fr 50px 80px 90px;
+        gap: 0.5rem;
+        align-items: center;
+        padding: 0.7rem 0;
+        border-bottom: 1px solid rgba(10,25,47,0.06);
+        font-size: 0.82rem;
+        color: #334;
+    }
+    .mk-row span:not(.mk-prod) { text-align: right; }
+    .mk-row-head {
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        color: #99a;
+        border-bottom: 1px solid rgba(10,25,47,0.1);
+    }
+    .mk-prod { font-weight: 600; color: #0a192f; }
+    .mk-num { color: #0a192f; }
+    .mk-row-muted { opacity: 0.85; }
+
+    .mk-total {
+        margin-top: auto;
+        padding-top: 1.1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-end;
+    }
+    .mk-total-line {
+        display: flex;
+        justify-content: space-between;
+        gap: 2.5rem;
+        min-width: 240px;
+        font-size: 0.82rem;
+        color: #667;
+    }
+    .mk-total-line .editorial { color: #0a192f; font-size: 0.95rem; }
+    .mk-total-grand { border-top: 1px solid rgba(10,25,47,0.1); padding-top: 0.6rem; margin-top: 0.2rem; }
+    .mk-total-grand span:first-child { font-weight: 700; color: #0a192f; font-size: 0.92rem; }
+    .mk-grand { font-size: 1.45rem !important; color: #0a192f !important; }
+
+    /* Timeline */
+    .mk-timeline {
+        background: #f4f7fb;
+        border-left: 1px solid rgba(10,25,47,0.06);
+        padding: 1.4rem 1.1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.1rem;
+    }
+    .mk-tl-title {
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        color: #99a;
+    }
+    .mk-tl-item { display: flex; gap: 10px; align-items: flex-start; }
+    .mk-tl-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+    .dot-green { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
+    .dot-blue { background: #3b82f6; }
+    .dot-grey { background: #cbd5e1; }
+    .mk-tl-text { font-size: 0.78rem; color: #334; line-height: 1.3; }
+    .mk-tl-text b { color: #0a192f; }
+    .mk-tl-time { font-size: 0.68rem; color: #99a; margin-top: 2px; }
+
+    /* Toast flotante */
+    .mk-toast {
+        position: absolute;
+        bottom: 8%;
+        right: -1.5%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #fff;
+        padding: 12px 18px;
+        border-radius: 14px;
+        box-shadow: 0 20px 50px -14px rgba(10,25,47,0.35);
+        border: 1px solid rgba(10,25,47,0.06);
+        font-size: 0.85rem;
+        color: #334;
+        animation: toast-float 4s ease-in-out infinite;
+    }
+    .mk-toast b { color: #0a192f; }
+    .mk-toast-dot {
+        width: 9px; height: 9px;
+        background: #10b981;
+        border-radius: 50%;
+        animation: pulse-dot 2s infinite;
+    }
+    @keyframes toast-float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+    }
+
+    /* Trust */
+    .hero-trust {
+        margin-top: 4rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+    .trust-label {
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        color: #aab;
+    }
+    .trust-logos {
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .trust-logo {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #889;
+        opacity: 0.7;
+    }
+    .trust-sep { color: #ccd; }
+
+    @media (max-width: 900px) {
+        .hero { padding-top: 7rem; }
+        .mockup { transform: none; }
+        .mk-body { grid-template-columns: 1fr; min-height: 0; }
+        .mk-side { flex-direction: row; align-items: center; gap: 0.6rem; overflow-x: auto; }
+        .mk-side .mk-nav { flex-direction: row; }
+        .mk-brand { display: none; }
+        .mk-timeline { border-left: none; border-top: 1px solid rgba(10,25,47,0.06); }
+        .mk-toast { right: 50%; transform: translateX(50%); bottom: -20px; }
+        .mk-toast { animation: none; }
+    }
+    @media (max-width: 560px) {
+        .mk-navitem { font-size: 0.72rem; padding: 6px 9px; }
+        .mk-row { grid-template-columns: 1fr 38px 64px 72px; font-size: 0.72rem; }
+        .mk-url { font-size: 0.6rem; }
+    }
+</style>

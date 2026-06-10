@@ -1,0 +1,174 @@
+---
+// Pricing — 3 planes. Precios MXN/mes. Plan Pro destacado.
+---
+
+<section class="pricing" id="precios">
+    <div class="pr-head">
+        <p class="pr-eyebrow reveal">PRECIOS</p>
+        <h2 class="pr-title reveal">Empieza gratis.<br />Crece cuando cierres.</h2>
+        <p class="pr-sub reveal">Sin contratos. Cancela cuando quieras. Precios en pesos, IVA incluido.</p>
+    </div>
+
+    <div class="pr-grid">
+        <!-- Gratis -->
+        <article class="plan reveal">
+            <div class="plan-head">
+                <h3 class="plan-name">Gratis</h3>
+                <p class="plan-tagline">Para probar el sistema.</p>
+            </div>
+            <div class="plan-price">
+                <span class="editorial plan-amount">$0</span>
+                <span class="plan-cycle">para siempre</span>
+            </div>
+            <a href="/registro" class="plan-cta plan-cta-ghost">Empezar gratis</a>
+            <ul class="plan-feats">
+                <li><span class="pf-check">✓</span> Hasta 5 cotizaciones activas</li>
+                <li><span class="pf-check">✓</span> Catálogo de productos</li>
+                <li><span class="pf-check">✓</span> Link público y PDF</li>
+                <li><span class="pf-check">✓</span> Marca "Powered by Trato"</li>
+            </ul>
+        </article>
+
+        <!-- Pro (destacado) -->
+        <article class="plan plan-featured reveal">
+            <span class="plan-ribbon">MÁS POPULAR</span>
+            <div class="plan-head">
+                <h3 class="plan-name">Profesional</h3>
+                <p class="plan-tagline">Para vender en serio.</p>
+            </div>
+            <div class="plan-price">
+                <span class="editorial plan-amount">$590</span>
+                <span class="plan-cycle">MXN / mes</span>
+            </div>
+            <a href="/registro" class="plan-cta plan-cta-solid">Probar 7 días gratis</a>
+            <ul class="plan-feats">
+                <li><span class="pf-check">✓</span> Cotizaciones ilimitadas</li>
+                <li><span class="pf-check">✓</span> Tu marca (logo y colores)</li>
+                <li><span class="pf-check">✓</span> Seguimiento en vivo</li>
+                <li><span class="pf-check">✓</span> Términos Net 30 / Net 60</li>
+                <li><span class="pf-check">✓</span> Pago en línea de cotizaciones</li>
+            </ul>
+        </article>
+
+        <!-- Negocio -->
+        <article class="plan reveal">
+            <div class="plan-head">
+                <h3 class="plan-name">Negocio</h3>
+                <p class="plan-tagline">Con CFDI y equipo.</p>
+            </div>
+            <div class="plan-price">
+                <span class="editorial plan-amount">$1,190</span>
+                <span class="plan-cycle">MXN / mes</span>
+            </div>
+            <a href="/registro" class="plan-cta plan-cta-ghost">Probar 7 días gratis</a>
+            <ul class="plan-feats">
+                <li><span class="pf-check">✓</span> Todo lo de Profesional</li>
+                <li><span class="pf-check">✓</span> CFDI 4.0 automático ante el SAT</li>
+                <li><span class="pf-check">✓</span> Clientes con límite de crédito</li>
+                <li><span class="pf-check">✓</span> Analítica avanzada</li>
+                <li><span class="pf-check">✓</span> Soporte prioritario</li>
+            </ul>
+        </article>
+    </div>
+
+    <p class="pr-note reveal">
+        ¿Necesitas algo a medida o integración con tu ERP?
+        <a href="mailto:hola@flouvia.com">Habla con Flouvia →</a>
+    </p>
+</section>
+
+<style>
+    .pricing { padding: 7rem 5%; max-width: 1120px; margin: 0 auto; }
+    .pr-head { text-align: center; max-width: 600px; margin: 0 auto 3.5rem; }
+    .pr-eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #888; margin: 0 0 1.2rem; }
+    .pr-title { font-size: clamp(1.9rem, 3.6vw, 3rem); font-weight: 800; line-height: 1.1; letter-spacing: -1.2px; color: var(--color-text); margin: 0 0 1.1rem; }
+    .pr-sub { font-size: 1.05rem; color: var(--color-text-muted); margin: 0; }
+
+    .pr-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.2rem;
+        align-items: start;
+    }
+    .plan {
+        position: relative;
+        background: var(--color-bg-soft);
+        border: 1px solid var(--color-border);
+        border-radius: 24px;
+        padding: 2.2rem 1.9rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.4rem;
+        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
+    }
+    .plan:hover { transform: translateY(-4px); box-shadow: 0 30px 70px -30px rgba(10,25,47,0.16); }
+
+    .plan-featured {
+        background: radial-gradient(ellipse at 50% 0%, #112240 0%, #0a192f 80%);
+        border: none;
+        color: #fff;
+        box-shadow: 0 40px 90px -34px rgba(10,25,47,0.5);
+        transform: scale(1.03);
+    }
+    .plan-featured:hover { transform: scale(1.03) translateY(-4px); }
+    .plan-ribbon {
+        position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
+        background: var(--color-ok); color: #fff;
+        font-size: 0.58rem; font-weight: 800; letter-spacing: 1px;
+        padding: 5px 13px; border-radius: 100px;
+    }
+
+    .plan-head { display: flex; flex-direction: column; gap: 0.4rem; }
+    .plan-name { font-size: 1.25rem; font-weight: 700; margin: 0; letter-spacing: -0.4px; }
+    .plan-tagline { font-size: 0.88rem; margin: 0; color: var(--color-text-muted); }
+    .plan-featured .plan-tagline { color: #8892b0; }
+
+    .plan-price { display: flex; align-items: baseline; gap: 8px; }
+    .plan-amount { font-size: 2.8rem; line-height: 1; color: var(--color-blue-deep); }
+    .plan-featured .plan-amount { color: #fff; }
+    .plan-cycle { font-size: 0.82rem; color: var(--color-text-muted); font-weight: 500; }
+    .plan-featured .plan-cycle { color: #8892b0; }
+
+    .plan-cta {
+        text-align: center;
+        text-decoration: none;
+        font-size: 0.92rem;
+        font-weight: 600;
+        padding: 13px;
+        border-radius: 12px;
+        transition: transform 0.5s var(--ease-spring), background 0.4s, box-shadow 0.4s;
+    }
+    .plan-cta-ghost {
+        color: var(--color-blue-deep);
+        border: 1px solid var(--color-border);
+        background: #fff;
+    }
+    .plan-cta-ghost:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -12px rgba(10,25,47,0.2); }
+    .plan-cta-solid {
+        background: #fff;
+        color: var(--color-blue-deep);
+        box-shadow: 0 12px 28px -10px rgba(0,0,0,0.3);
+    }
+    .plan-cta-solid:hover { transform: translateY(-2px); }
+
+    .plan-feats { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.85rem; }
+    .plan-feats li { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--color-text); }
+    .plan-featured .plan-feats li { color: #cdd5e0; }
+    .pf-check {
+        width: 19px; height: 19px; flex-shrink: 0;
+        background: rgba(16,185,129,0.14); color: #059669;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-size: 0.7rem; font-weight: 700;
+    }
+    .plan-featured .pf-check { background: rgba(16,185,129,0.2); color: #34d399; }
+
+    .pr-note { text-align: center; margin: 3rem 0 0; font-size: 0.98rem; color: var(--color-text-muted); }
+    .pr-note a { color: var(--color-blue-deep); font-weight: 600; text-decoration: none; }
+    .pr-note a:hover { text-decoration: underline; }
+
+    @media (max-width: 860px) {
+        .pr-grid { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
+        .plan-featured { transform: none; }
+        .plan-featured:hover { transform: translateY(-4px); }
+    }
+</style>

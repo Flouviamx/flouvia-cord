@@ -1,0 +1,119 @@
+---
+// Cómo funciona — 3 pasos sobre fondo navy (contraste, estilo sección Casos de flouvia).
+---
+
+<section class="steps" id="como">
+    <div class="steps-watermark editorial" aria-hidden="true">Trato</div>
+
+    <div class="steps-inner">
+        <div class="steps-head">
+            <p class="steps-eyebrow reveal">EN TRES PASOS</p>
+            <h2 class="steps-title reveal">De la solicitud al pedido,<br />sin fricción.</h2>
+        </div>
+
+        <div class="steps-grid">
+            <article class="step reveal">
+                <span class="step-num editorial">/01</span>
+                <h3 class="step-h">Arma la cotización</h3>
+                <p class="step-p">
+                    Elige al cliente, agrega productos de tu catálogo y negocia los
+                    precios. Define términos de crédito y vigencia. Listo en minutos.
+                </p>
+            </article>
+
+            <div class="step-arrow" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </div>
+
+            <article class="step reveal">
+                <span class="step-num editorial">/02</span>
+                <h3 class="step-h">Envía el link</h3>
+                <p class="step-p">
+                    Manda un link con tu marca o un PDF. Tu cliente lo abre desde donde
+                    sea y tú recibes el aviso en cuanto lo ve.
+                </p>
+            </article>
+
+            <div class="step-arrow" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </div>
+
+            <article class="step reveal">
+                <span class="step-num editorial">/03</span>
+                <h3 class="step-h">Cierra y factura</h3>
+                <p class="step-p">
+                    El cliente aprueba y paga en línea o queda a crédito. La cotización
+                    se vuelve pedido y el CFDI se timbra automáticamente.
+                </p>
+            </article>
+        </div>
+    </div>
+</section>
+
+<style>
+    .steps {
+        position: relative;
+        background: radial-gradient(ellipse at 20% 50%, #112240 0%, #0a192f 65%, #050b14 100%);
+        color: #fff;
+        padding: 7rem 5%;
+        overflow: clip;
+    }
+    .steps-watermark {
+        position: absolute;
+        bottom: -8vw; left: -2vw;
+        font-size: 26vw; line-height: 0.85;
+        color: rgba(255,255,255,0.025);
+        pointer-events: none; user-select: none; white-space: nowrap;
+    }
+    .steps-inner { position: relative; z-index: 2; max-width: 1180px; margin: 0 auto; }
+
+    .steps-head { text-align: center; margin-bottom: 4rem; }
+    .steps-eyebrow {
+        font-size: 0.65rem; font-weight: 800; letter-spacing: 3px;
+        text-transform: uppercase; color: rgba(255,255,255,0.45); margin: 0 0 1.2rem;
+    }
+    .steps-title {
+        font-size: clamp(1.9rem, 3.6vw, 3rem);
+        font-weight: 800; line-height: 1.1; letter-spacing: -1.2px;
+        margin: 0; color: #fff;
+    }
+
+    .steps-grid {
+        display: flex;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    .step {
+        flex: 1;
+        background: rgba(255,255,255,0.03);
+        border-radius: 22px;
+        padding: 2.2rem 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.06);
+        transition: transform 0.5s var(--ease-spring), background 0.4s;
+    }
+    .step:hover { transform: translateY(-5px); background: rgba(255,255,255,0.05); }
+    .step-num {
+        font-size: 2.4rem;
+        color: rgba(255,255,255,0.4);
+        line-height: 1;
+    }
+    .step-h { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.4px; margin: 0.4rem 0 0; color: #fff; }
+    .step-p { font-size: 0.95rem; line-height: 1.6; color: #8892b0; margin: 0; }
+
+    .step-arrow {
+        display: flex;
+        align-items: center;
+        color: rgba(255,255,255,0.25);
+        flex-shrink: 0;
+    }
+    .step-arrow svg { width: 26px; height: 26px; }
+
+    @media (max-width: 860px) {
+        .steps-grid { flex-direction: column; }
+        .step-arrow { transform: rotate(90deg); justify-content: center; padding: 0.3rem 0; }
+        .steps-watermark { font-size: 52vw; }
+    }
+</style>

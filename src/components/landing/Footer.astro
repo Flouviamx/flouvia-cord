@@ -1,0 +1,156 @@
+---
+// CTA final + footer — dark navy, coherente con el footer de flouvia.com.
+---
+
+<section class="final-cta">
+    <div class="fc-glow" aria-hidden="true"></div>
+    <div class="fc-inner reveal">
+        <p class="fc-eyebrow">EMPIEZA HOY</p>
+        <h2 class="fc-title">Tu próxima cotización<br />merece verse profesional.</h2>
+        <p class="fc-sub">
+            Crea tu cuenta gratis y manda tu primera cotización con Trato en menos de 10 minutos.
+        </p>
+        <div class="fc-actions">
+            <a href="/registro" class="fc-btn">
+                <span>Empezar gratis</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+            <a href="mailto:hola@flouvia.com" class="fc-link">Hablar con el equipo</a>
+        </div>
+        <p class="fc-micro">Sin tarjeta · Plan gratis para siempre · Hecho en México</p>
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="footer-watermark editorial" aria-hidden="true">trato</div>
+    <div class="footer-inner">
+        <div class="footer-top">
+            <div class="footer-brand">
+                <span class="footer-mark">trato</span>
+                <p class="footer-tagline">Cotizaciones B2B que cierran tratos.</p>
+                <a href="https://flouvia.com" target="_blank" rel="noopener" class="footer-byflouvia">
+                    Un producto de <b>Flouvia</b> →
+                </a>
+            </div>
+
+            <div class="footer-cols">
+                <div class="footer-col">
+                    <span class="footer-col-title">/01 Producto</span>
+                    <a href="#producto">Funciones</a>
+                    <a href="#como">Cómo funciona</a>
+                    <a href="#precios">Precios</a>
+                </div>
+                <div class="footer-col">
+                    <span class="footer-col-title">/02 Cuenta</span>
+                    <a href="/login">Entrar</a>
+                    <a href="/registro">Crear cuenta</a>
+                    <a href="#faq">FAQ</a>
+                </div>
+                <div class="footer-col">
+                    <span class="footer-col-title">/03 Contacto</span>
+                    <a href="mailto:hola@flouvia.com">hola@flouvia.com</a>
+                    <a href="https://flouvia.com" target="_blank" rel="noopener">flouvia.com</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; <span class="editorial">2026</span> <span class="editorial">Trato</span> · by Flouvia. Hecho en CDMX.</p>
+            <div class="footer-legal">
+                <a href="/privacidad">Privacidad</a>
+                <span>·</span>
+                <a href="/terminos">Términos</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<style>
+    .final-cta {
+        position: relative;
+        background: radial-gradient(ellipse at 50% 120%, #112240 0%, #0a192f 60%, #050b14 100%);
+        color: #fff;
+        padding: 7rem 5%;
+        text-align: center;
+        overflow: clip;
+    }
+    .fc-glow {
+        position: absolute; top: -20%; left: 50%; transform: translateX(-50%);
+        width: 700px; height: 500px;
+        background: radial-gradient(ellipse at center, rgba(59,130,246,0.1) 0%, transparent 65%);
+        pointer-events: none;
+    }
+    .fc-inner { position: relative; z-index: 2; max-width: 700px; margin: 0 auto; }
+    .fc-eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 3px; color: rgba(255,255,255,0.45); margin: 0 0 1.4rem; }
+    .fc-title { font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 800; line-height: 1.08; letter-spacing: -1.4px; margin: 0 0 1.4rem; color: #fff; }
+    .fc-sub { font-size: 1.1rem; line-height: 1.6; color: #8892b0; margin: 0 0 2.4rem; }
+
+    .fc-actions { display: flex; gap: 0.9rem; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 1.4rem; }
+    .fc-btn {
+        display: inline-flex; align-items: center; gap: 10px;
+        background: #fff; color: var(--color-blue-deep);
+        text-decoration: none; font-size: 1rem; font-weight: 600;
+        padding: 15px 30px; border-radius: 13px;
+        box-shadow: 0 18px 44px -16px rgba(0,0,0,0.5);
+        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
+    }
+    .fc-btn svg { width: 16px; height: 16px; transition: transform 0.5s var(--ease-spring); }
+    .fc-btn:hover { transform: translateY(-3px); box-shadow: 0 26px 56px -16px rgba(0,0,0,0.6); }
+    .fc-btn:hover svg { transform: translateX(4px); }
+    .fc-link { color: #cdd5e0; text-decoration: none; font-weight: 600; font-size: 1rem; transition: color 0.3s; }
+    .fc-link:hover { color: #fff; }
+    .fc-micro { font-size: 0.82rem; color: #66728c; margin: 0; }
+
+    /* Footer */
+    .footer {
+        position: relative;
+        background: #050b14;
+        color: #fff;
+        padding: 4.5rem 5% 2.5rem;
+        overflow: clip;
+    }
+    .footer-watermark {
+        position: absolute; bottom: -6vw; right: -2vw;
+        font-size: 22vw; line-height: 0.85;
+        color: rgba(255,255,255,0.022);
+        pointer-events: none; user-select: none; white-space: nowrap;
+    }
+    .footer-inner { position: relative; z-index: 2; max-width: 1120px; margin: 0 auto; }
+    .footer-top {
+        display: grid;
+        grid-template-columns: 1.4fr 2fr;
+        gap: 3rem;
+        padding-bottom: 3rem;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .footer-mark { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; color: #fff; }
+    .footer-tagline { font-size: 0.95rem; color: #8892b0; margin: 0.8rem 0 1.2rem; max-width: 240px; }
+    .footer-byflouvia { font-size: 0.88rem; color: #66728c; text-decoration: none; transition: color 0.3s; }
+    .footer-byflouvia b { color: #aab; }
+    .footer-byflouvia:hover { color: #cdd5e0; }
+    .footer-byflouvia:hover b { color: #fff; }
+
+    .footer-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+    .footer-col { display: flex; flex-direction: column; gap: 0.9rem; }
+    .footer-col-title { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.5px; color: rgba(255,255,255,0.4); text-transform: uppercase; margin-bottom: 0.4rem; }
+    .footer-col a { font-size: 0.92rem; color: #8892b0; text-decoration: none; transition: color 0.3s var(--ease-ios); width: max-content; }
+    .footer-col a:hover { color: #fff; }
+
+    .footer-bottom {
+        display: flex; justify-content: space-between; align-items: center;
+        padding-top: 2rem; gap: 1.5rem; flex-wrap: wrap;
+        font-size: 0.82rem; color: #66728c;
+    }
+    .footer-bottom p { margin: 0; }
+    .footer-bottom .editorial { color: rgba(255,255,255,0.7); }
+    .footer-legal { display: flex; gap: 0.8rem; align-items: center; }
+    .footer-legal a { color: #66728c; text-decoration: none; transition: color 0.3s; }
+    .footer-legal a:hover { color: #fff; }
+
+    @media (max-width: 760px) {
+        .footer-top { grid-template-columns: 1fr; gap: 2.5rem; }
+        .footer-cols { grid-template-columns: 1fr 1fr; }
+        .footer-bottom { flex-direction: column; align-items: flex-start; }
+        .footer-watermark { font-size: 44vw; }
+    }
+</style>

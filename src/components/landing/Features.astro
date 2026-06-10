@@ -1,0 +1,223 @@
+---
+// Sección de features — bento grid con la estética producto-vibrante.
+---
+
+<section class="features" id="producto">
+    <div class="ft-head">
+        <p class="ft-eyebrow reveal">TODO EN UN SOLO LUGAR</p>
+        <h2 class="ft-title reveal">El sistema que tu equipo<br />de ventas merecía.</h2>
+        <p class="ft-sub reveal">
+            Deja de armar cotizaciones a mano. Trato es el flujo completo: del catálogo
+            al CFDI, sin salir de la misma pantalla.
+        </p>
+    </div>
+
+    <div class="bento">
+        <!-- Card grande: editor -->
+        <article class="bento-card bento-lg reveal">
+            <div class="bento-text">
+                <span class="bento-tag">EDITOR</span>
+                <h3 class="bento-h">Precios negociados, producto por producto.</h3>
+                <p class="bento-p">
+                    Arrastra productos de tu catálogo, ajusta el precio de cada línea,
+                    aplica descuentos por volumen y define términos: Contado, Net 30 o Net 60.
+                    El total se recalcula con IVA en vivo.
+                </p>
+            </div>
+            <div class="bento-visual editor-visual">
+                <div class="ev-line"><span>Cemento gris 50kg</span><span class="editorial">$182.00</span></div>
+                <div class="ev-line ev-edit"><span>Varilla 3/8"</span><span class="editorial">$168.50</span><span class="ev-tag">−12%</span></div>
+                <div class="ev-line"><span>Block hueco</span><span class="editorial">$14.20</span></div>
+                <div class="ev-total"><span>Total con IVA</span><span class="editorial">$196,469.20</span></div>
+            </div>
+        </article>
+
+        <!-- Card: seguimiento -->
+        <article class="bento-card reveal">
+            <span class="bento-tag">SEGUIMIENTO EN VIVO</span>
+            <h3 class="bento-h">Sabes cuándo la vio.</h3>
+            <p class="bento-p">
+                Notificación al instante en cuanto tu cliente abre la cotización.
+                Se acabó el "¿ya la revisaste?".
+            </p>
+            <div class="bento-visual track-visual">
+                <span class="track-dot"></span>
+                <span>El Zarco la vio · hace 3 min</span>
+            </div>
+        </article>
+
+        <!-- Card: CFDI -->
+        <article class="bento-card reveal">
+            <span class="bento-tag">FACTURACIÓN</span>
+            <h3 class="bento-h">CFDI 4.0 automático.</h3>
+            <p class="bento-p">
+                Timbra ante el SAT directo desde la cotización aprobada.
+                Sin recapturar, sin otro portal.
+            </p>
+            <div class="bento-visual cfdi-visual">
+                <span class="cfdi-check">✓</span>
+                <span>Timbrado · UUID a1b2…f9</span>
+            </div>
+        </article>
+
+        <!-- Card ancha: link público -->
+        <article class="bento-card bento-wide reveal">
+            <div class="bento-text">
+                <span class="bento-tag">LINK PÚBLICO</span>
+                <h3 class="bento-h">Tu cliente aprueba en un clic.</h3>
+                <p class="bento-p">
+                    Cada cotización es un link elegante con tu marca. Tu cliente lo abre
+                    desde el celular, lo aprueba y paga en línea — o queda a crédito según
+                    los términos. Sin PDFs perdidos en el correo.
+                </p>
+            </div>
+            <div class="bento-visual link-visual">
+                <div class="lv-pill">trato.flouvia.com/q/a1b2c3</div>
+                <div class="lv-actions">
+                    <span class="lv-approve">Aprobar cotización</span>
+                    <span class="lv-reject">Rechazar</span>
+                </div>
+            </div>
+        </article>
+    </div>
+</section>
+
+<style>
+    .features {
+        padding: 7rem 5%;
+        max-width: 1180px;
+        margin: 0 auto;
+    }
+    .ft-head { text-align: center; max-width: 680px; margin: 0 auto 4rem; }
+    .ft-eyebrow {
+        font-size: 0.65rem; font-weight: 800; letter-spacing: 3px;
+        text-transform: uppercase; color: #888; margin: 0 0 1.2rem;
+    }
+    .ft-title {
+        font-size: clamp(1.9rem, 3.6vw, 3rem);
+        font-weight: 800; line-height: 1.1; letter-spacing: -1.2px;
+        color: var(--color-text); margin: 0 0 1.2rem;
+    }
+    .ft-sub {
+        font-size: 1.1rem; line-height: 1.6;
+        color: var(--color-text-muted); margin: 0;
+    }
+
+    .bento {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.2rem;
+    }
+    .bento-card {
+        background: var(--color-bg-soft);
+        border: 1px solid var(--color-border);
+        border-radius: 24px;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring), border-color 0.4s;
+    }
+    .bento-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 30px 70px -30px rgba(10,25,47,0.18);
+        border-color: rgba(10,25,47,0.12);
+    }
+    .bento-lg { grid-row: span 2; }
+    .bento-wide { grid-column: span 2; flex-direction: row; align-items: center; gap: 2.5rem; }
+
+    .bento-tag {
+        font-size: 0.6rem; font-weight: 800; letter-spacing: 1.6px;
+        color: var(--color-blue-deep); opacity: 0.65;
+    }
+    .bento-h {
+        font-size: 1.35rem; font-weight: 700; letter-spacing: -0.5px;
+        color: var(--color-text); margin: 0.3rem 0 0;
+    }
+    .bento-p {
+        font-size: 0.95rem; line-height: 1.6;
+        color: var(--color-text-muted); margin: 0;
+    }
+    .bento-text { flex: 1; display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .bento-visual {
+        margin-top: auto;
+        border-radius: 16px;
+        background: #fff;
+        border: 1px solid var(--color-border);
+        padding: 1.1rem;
+    }
+
+    /* Editor visual */
+    .editor-visual { display: flex; flex-direction: column; gap: 0.5rem; }
+    .ev-line {
+        display: flex; justify-content: space-between; align-items: center;
+        font-size: 0.85rem; color: #445;
+        padding: 0.5rem 0.7rem; border-radius: 9px;
+        background: var(--color-bg-soft);
+    }
+    .ev-line .editorial { color: #0a192f; }
+    .ev-edit { background: rgba(16,185,129,0.06); position: relative; }
+    .ev-tag {
+        font-size: 0.66rem; font-weight: 700; color: #059669;
+        background: rgba(16,185,129,0.14); padding: 2px 7px; border-radius: 6px;
+    }
+    .ev-total {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 0.7rem; margin-top: 0.3rem;
+        border-top: 1px solid var(--color-border);
+        font-size: 0.9rem; font-weight: 700; color: #0a192f;
+    }
+    .ev-total .editorial { font-size: 1.2rem; }
+
+    /* Track visual */
+    .track-visual {
+        display: flex; align-items: center; gap: 10px;
+        font-size: 0.85rem; color: #334; font-weight: 500;
+    }
+    .track-dot {
+        width: 9px; height: 9px; background: #10b981; border-radius: 50%;
+        box-shadow: 0 0 0 4px rgba(16,185,129,0.14);
+        animation: pulse-dot 2s infinite;
+    }
+
+    /* CFDI visual */
+    .cfdi-visual {
+        display: flex; align-items: center; gap: 10px;
+        font-size: 0.85rem; color: #334; font-weight: 500;
+    }
+    .cfdi-check {
+        width: 22px; height: 22px; border-radius: 50%;
+        background: rgba(16,185,129,0.14); color: #059669;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.8rem; font-weight: 700;
+    }
+
+    /* Link visual */
+    .link-visual { flex-shrink: 0; width: 280px; display: flex; flex-direction: column; gap: 0.9rem; }
+    .lv-pill {
+        font-size: 0.78rem; color: #556; font-weight: 500;
+        background: var(--color-bg-soft); border: 1px solid var(--color-border);
+        padding: 9px 14px; border-radius: 10px; text-align: center;
+    }
+    .lv-actions { display: flex; gap: 0.6rem; }
+    .lv-approve {
+        flex: 1; text-align: center;
+        background: var(--color-blue-deep); color: #fff;
+        font-size: 0.82rem; font-weight: 600;
+        padding: 11px; border-radius: 10px;
+    }
+    .lv-reject {
+        text-align: center; color: #889;
+        font-size: 0.82rem; font-weight: 600;
+        padding: 11px 16px; border-radius: 10px;
+        border: 1px solid var(--color-border);
+    }
+
+    @media (max-width: 860px) {
+        .bento { grid-template-columns: 1fr; }
+        .bento-lg { grid-row: auto; }
+        .bento-wide { grid-column: auto; flex-direction: column; align-items: stretch; gap: 1.5rem; }
+        .link-visual { width: 100%; }
+    }
+</style>
