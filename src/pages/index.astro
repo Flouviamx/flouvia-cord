@@ -46,8 +46,7 @@ import Footer from '../components/landing/Footer.astro';
             return;
         }
 
-        // ── Entrada del navbar (en carga) ──
-        gsap.to('.nav-wrap', { opacity: 1, duration: 0.8, ease: 'power2.out' });
+        // El navbar (Nav.astro) maneja su propia entrada GSAP internamente.
 
         // ── Hero: revela en carga con stagger (está sobre el fold) ──
         const heroReveals = gsap.utils.toArray<HTMLElement>('.hero .reveal');
