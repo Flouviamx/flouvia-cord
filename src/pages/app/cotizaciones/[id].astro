@@ -1,10 +1,10 @@
 ---
-// Detalle de cotización — items, totales, timeline de eventos y acciones.
+// Detalle de cotización — items, totales, timeline de eventos y acciones. Datos reales (Neon).
 import AppLayout from '../../../layouts/AppLayout.astro';
-import { findQuote, STATUS_META, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal } from '../../../lib/mock';
+import { getCotizacion, STATUS_META, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal } from '../../../lib/queries';
 
 const { id } = Astro.params;
-const q = findQuote(id ?? '');
+const q = await getCotizacion(id ?? '');
 if (!q) return Astro.redirect('/app/cotizaciones');
 
 const meta = STATUS_META[q.status];

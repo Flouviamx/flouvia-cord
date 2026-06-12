@@ -1,15 +1,12 @@
 ---
-// Dashboard — pipeline, monto por cerrar, actividad reciente. Datos mock (Neon después).
+// Dashboard — pipeline, monto por cerrar, actividad reciente. Datos reales (Neon).
 import AppLayout from '../../layouts/AppLayout.astro';
-import { COTIZACIONES, STATUS_META, money, quoteTotal, porCerrar, cerradoMes } from '../../lib/mock';
+import { getDashboard, STATUS_META, money } from '../../lib/queries';
 
-const abiertas = COTIZACIONES.filter(q => ['sent', 'viewed'].includes(q.status));
-const porVencer = COTIZACIONES.filter(q => q.status === 'viewed' || q.status === 'sent').slice(0, 2);
+const { quotes: COTIZACIONES, porCerrar, cerradoMes, tasaCierre, abiertas, feed: eventosFeed } = await getDashboard();
 const recientes = COTIZACIONES.slice(0, 5);
-
-const eventosFeed = COTIZACIONES
-    .flatMap(q => q.eventos.map(e => ({ ...e, folio: q.folio, id: q.id })))
-    .slice(0, 7);
+const aprobadasN = COTIZACIONES.filter(q => q.status === 'approved').length;
+const pagadasN = COTIZACIONES.filter(q => q.status === 'paid').length;
 
 const dotColor = (tipo: string) =>
     tipo === 'approved' || tipo === 'paid' ? '#10b981'
@@ -28,17 +25,17 @@ const dotColor = (tipo: string) =>
     <section class="kpis">
         <div class="card kpi">
             <span class="kpi-label">POR CERRAR</span>
-            <span class="editorial kpi-num" data-countup={porCerrar().toFixed(2)}>{money(porCerrar())}</span>
-            <span class="kpi-sub">{abiertas.length} cotizaciones activas</span>
+            <span class="editorial kpi-num" data-countup={porCerrar.toFixed(2)}>{money(porCerrar)}</span>
+            <span class="kpi-sub">{abiertas} cotizaciones activas</span>
         </div>
         <div class="card kpi">
             <span class="kpi-label">CERRADO ESTE MES</span>
-            <span class="editorial kpi-num kpi-ok" data-countup={cerradoMes().toFixed(2)}>{money(cerradoMes())}</span>
-            <span class="kpi-sub">2 aprobadas · 1 pagada</span>
+            <span class="editorial kpi-num kpi-ok" data-countup={cerradoMes.toFixed(2)}>{money(cerradoMes)}</span>
+            <span class="kpi-sub">{aprobadasN} aprobadas · {pagadasN} pagada{pagadasN === 1 ? '' : 's'}</span>
         </div>
         <div class="card kpi">
             <span class="kpi-label">TASA DE CIERRE</span>
-            <span class="editorial kpi-num">62<span class="kpi-pct">%</span></span>
+            <span class="editorial kpi-num">{tasaCierre}<span class="kpi-pct">%</span></span>
             <span class="kpi-sub">últimos 90 días</span>
         </div>
     </section>
@@ -52,7 +49,7 @@ const dotColor = (tipo: string) =>
         <div class="pipe-row">
             {(['draft', 'sent', 'viewed', 'approved', 'paid'] as const).map((st) => {
                 const qs = COTIZACIONES.filter(q => q.status === st);
-                const total = qs.reduce((s, q) => s + quoteTotal(q), 0);
+                const total = qs.reduce((s, q) => s + (q.total ?? 0), 0);
                 return (
                     <div class="pipe-col">
                         <div class="pipe-head" style={`color:${STATUS_META[st].color}`}>
@@ -82,7 +79,7 @@ const dotColor = (tipo: string) =>
                             <span class="qr-folio">{q.folio}</span>
                             <span class="qr-client">{q.cliente}</span>
                         </div>
-                        <span class="editorial qr-amount">{money(quoteTotal(q), 0)}</span>
+                        <span class="editorial qr-amount">{money(q.total ?? 0, 0)}</span>
                         <span class="status-pill" style={`color:${STATUS_META[q.status].color}; background:${STATUS_META[q.status].bg}`}>
                             {STATUS_META[q.status].label}
                         </span>

@@ -1,7 +1,9 @@
 ---
-// Lista de cotizaciones — tabla con filtros por estado (client-side sobre mock).
+// Lista de cotizaciones — tabla con filtros por estado (client-side). Datos reales (Neon).
 import AppLayout from '../../../layouts/AppLayout.astro';
-import { COTIZACIONES, STATUS_META, money, quoteTotal } from '../../../lib/mock';
+import { getCotizaciones, STATUS_META, money } from '../../../lib/queries';
+
+const COTIZACIONES = await getCotizaciones();
 
 const FILTERS = [
     { key: 'all',      label: 'Todas' },
@@ -39,7 +41,7 @@ const groupOf = (s: string) =>
                 </span>
                 <span class="t-muted">{q.terminos}</span>
                 <span class="t-muted">{q.vigencia}</span>
-                <span class="editorial t-amount t-right">{money(quoteTotal(q), 0)}</span>
+                <span class="editorial t-amount t-right">{money(q.total ?? 0, 0)}</span>
                 <span class="status-pill" style={`color:${STATUS_META[q.status].color}; background:${STATUS_META[q.status].bg}`}>
                     {STATUS_META[q.status].label}
                 </span>

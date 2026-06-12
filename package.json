@@ -9,12 +9,14 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:reset": "node scripts/migrate.mjs -- --reset"
   },
   "dependencies": {
     "@astrojs/vercel": "^10.0.6",
     "@clerk/astro": "^3.0.19",
-    "@supabase/supabase-js": "^2.105.1",
+    "@neondatabase/serverless": "^1.1.0",
     "astro": "6.1.2",
     "gsap": "^3.15.0"
   }

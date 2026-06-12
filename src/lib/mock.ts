@@ -33,6 +33,7 @@ export interface MockQuote {
     items: MockItem[];
     eventos: MockEvent[];
     notas?: string;
+    total?: number;   // total de la columna DB (la lista no carga items; usa esto)
 }
 
 export const ORG = {

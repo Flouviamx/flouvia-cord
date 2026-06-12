@@ -1,7 +1,9 @@
 ---
-// Productos — catálogo con precios de lista. Datos mock.
+// Productos — catálogo con precios de lista. Datos reales (Neon).
 import AppLayout from '../../layouts/AppLayout.astro';
-import { PRODUCTOS, money } from '../../lib/mock';
+import { getProductos, money } from '../../lib/queries';
+
+const PRODUCTOS = await getProductos();
 ---
 
 <AppLayout title="Productos — Trato" page="productos" heading="Productos">

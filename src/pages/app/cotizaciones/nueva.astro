@@ -1,11 +1,12 @@
 ---
-// Editor de cotizaciones — LA pantalla crítica. Interactivo con datos mock:
-// agregas productos del catálogo, negocias precio por línea, el total se
-// recalcula en vivo con IVA. (Guardar = demo; con Neon será un POST real.)
+// Editor de cotizaciones — LA pantalla crítica. Interactivo, datos reales (Neon):
+// agregas productos del catálogo, negocias precio por línea, el total se recalcula
+// en vivo con IVA, y al enviar hace POST a /api/cotizaciones (inserta en Neon).
 import AppLayout from '../../../layouts/AppLayout.astro';
-import { PRODUCTOS, CLIENTES } from '../../../lib/mock';
+import { getProductos, getClientes } from '../../../lib/queries';
 
-const catalogo = PRODUCTOS.filter(p => p.activo);
+const [productos, CLIENTES] = await Promise.all([getProductos(), getClientes()]);
+const catalogo = productos.filter(p => p.activo);
 ---
 
 <AppLayout title="Nueva cotización — Trato" page="cotizaciones" heading="Nueva cotización">
@@ -131,7 +132,7 @@ const catalogo = PRODUCTOS.filter(p => p.activo);
     $select.addEventListener('change', () => {
         const p = catalogo[parseInt($select.value, 10)];
         if (!p) return;
-        lines.push({ nombre: p.nombre, unidad: p.unidad, lista: p.precio, negociado: null, cantidad: 1 });
+        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, lista: p.precio, negociado: null, cantidad: 1 });
         $select.selectedIndex = 0;
         render();
     });
@@ -168,27 +169,65 @@ const catalogo = PRODUCTOS.filter(p => p.activo);
         });
     });
 
-    // Enviar (demo)
+    // ── Guardado real (POST /api/cotizaciones → Neon) ──
     const toast = document.getElementById('toast');
-    document.getElementById('btnSend').addEventListener('click', () => {
-        if (!lines.length) {
-            document.getElementById('toastMsg').textContent = 'Agrega al menos un producto';
-            toast.hidden = false;
-            setTimeout(() => { toast.hidden = true; }, 2200);
-            return;
-        }
-        document.getElementById('toastMsg').textContent = 'Cotización enviada — link generado ✓';
-        toast.hidden = false;
-        setTimeout(() => { window.location.href = '/app/cotizaciones'; }, 1400);
-    });
-    document.querySelector('.btn-draft').addEventListener('click', () => {
-        document.getElementById('toastMsg').textContent = 'Borrador guardado';
-        toast.hidden = false;
-        setTimeout(() => { toast.hidden = true; }, 2000);
-    });
+    const toastMsg = document.getElementById('toastMsg');
+    const TERM_MAP = { 'Contado': 'contado', 'Net 30': 'net30', 'Net 60': 'net60' };
+    const showToast = (msg, hide = 0) => {
+        toastMsg.textContent = msg; toast.hidden = false;
+        if (hide) setTimeout(() => { toast.hidden = true; }, hide);
+    };
 
-    // arranca con una línea de ejemplo
-    lines.push({ nombre: catalogo[0].nombre, unidad: catalogo[0].unidad, lista: catalogo[0].precio, negociado: 182, cantidad: 120 });
+    function buildPayload(send) {
+        const clientSel = document.getElementById('clientSelect');
+        const activeChip = document.querySelector('#termChips .chip.active');
+        const vigSel = document.querySelector('.sum-field .ed-select');
+        const notas = document.querySelector('.ed-textarea');
+        return {
+            send,
+            cliente_id: clientSel ? clientSel.value : null,
+            terminos: TERM_MAP[activeChip ? activeChip.dataset.term : 'Contado'] || 'contado',
+            vigencia_dias: vigSel ? parseInt(vigSel.value, 10) || 30 : 30,
+            notas: notas ? notas.value.trim() : '',
+            items: lines.map(l => ({
+                producto_id: l.id || null,
+                descripcion: l.nombre,
+                cantidad: l.cantidad,
+                precio_unitario: l.lista,
+                precio_negociado: l.negociado,
+            })),
+        };
+    }
+
+    async function save(send, btn) {
+        if (!lines.length) { showToast('Agrega al menos un producto', 2200); return; }
+        const original = btn.innerHTML;
+        btn.disabled = true; btn.style.opacity = '0.7';
+        showToast(send ? 'Enviando…' : 'Guardando…');
+        try {
+            const res = await fetch('/api/cotizaciones', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(buildPayload(send)),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al guardar');
+            showToast(send ? `Enviada — ${data.folio} ✓` : `Borrador ${data.folio} guardado ✓`);
+            setTimeout(() => { window.location.href = `/app/cotizaciones/${data.id}`; }, 900);
+        } catch (err) {
+            btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = original;
+            showToast(err.message || 'Error de red', 2600);
+        }
+    }
+
+    document.getElementById('btnSend').addEventListener('click', (e) => save(true, e.currentTarget));
+    document.querySelector('.btn-draft').addEventListener('click', (e) => save(false, e.currentTarget));
+
+    // arranca con una línea de ejemplo (precarga del primer producto del catálogo)
+    if (catalogo.length) {
+        const p0 = catalogo[0];
+        lines.push({ id: p0.id, nombre: p0.nombre, unidad: p0.unidad, lista: p0.precio, negociado: Math.round(p0.precio * 0.92 * 100) / 100, cantidad: 120 });
+    }
     render();
 </script>
 

@@ -1,9 +1,10 @@
 ---
 // AppLayout — layout de la app de Trato (estilo Linear: compacto, hairlines, sobrio).
 // La app usa CSS animations (NO GSAP) para entradas — regla del proyecto.
-// Mientras no hay auth (Clerk pendiente), las páginas corren con datos mock.
+// Datos reales desde Neon (org demo hasta que llegue Clerk — ver src/lib/db.ts).
 
-import { ORG } from '../lib/mock';
+import { getOrg } from '../lib/queries';
+const ORG = await getOrg();
 
 interface Props {
     title: string;        // título del documento

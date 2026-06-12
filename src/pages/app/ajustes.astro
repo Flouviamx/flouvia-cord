@@ -1,7 +1,9 @@
 ---
-// Ajustes — marca, datos fiscales y plan. Datos mock (deshabilitado hasta tener DB).
+// Ajustes — marca, datos fiscales y plan. Datos reales (Neon).
 import AppLayout from '../../layouts/AppLayout.astro';
-import { ORG } from '../../lib/mock';
+import { getOrg } from '../../lib/queries';
+
+const ORG = await getOrg();
 ---
 
 <AppLayout title="Ajustes — Trato" page="ajustes" heading="Ajustes">

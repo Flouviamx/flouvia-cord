@@ -1,8 +1,9 @@
 ---
-// Clientes — directorio con términos y límite de crédito. Datos mock.
+// Clientes — directorio con términos y límite de crédito. Datos reales (Neon).
 import AppLayout from '../../layouts/AppLayout.astro';
-import { CLIENTES, COTIZACIONES, money } from '../../lib/mock';
+import { getClientes, getCotizaciones, money } from '../../lib/queries';
 
+const [CLIENTES, COTIZACIONES] = await Promise.all([getClientes(), getCotizaciones()]);
 const countQuotes = (empresa: string) => COTIZACIONES.filter(q => q.cliente === empresa).length;
 ---
 

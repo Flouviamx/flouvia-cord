@@ -3,11 +3,15 @@
 // Es lo que ve el cliente final: marca del negocio, items, total y aprobar.
 // Cada cotización enviada es un demo del producto (loop viral con "vía trato").
 import Layout from '../../layouts/Layout.astro';
-import { findQuoteByToken, ORG, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal } from '../../lib/mock';
+import { getCotizacionByToken, markViewed, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal } from '../../lib/queries';
 
 const { token } = Astro.params;
-const q = findQuoteByToken(token ?? '');
-if (!q) return Astro.redirect('/');
+const result = await getCotizacionByToken(token ?? '');
+if (!result) return Astro.redirect('/');
+const { quote: q, org: ORG } = result;
+
+// Registra la apertura del cliente (y pasa a 'viewed' si estaba 'sent').
+await markViewed(token ?? '');
 ---
 
 <Layout title={`Cotización ${q.folio} — ${ORG.nombre}`} noindex={true}>

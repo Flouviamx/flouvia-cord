@@ -6,6 +6,9 @@
 -- (el backend setea el valor antes de cada query, igual que en flouvia-web)
 -- ============================================================
 
+-- Extensión para gen_random_bytes() (tokens públicos). gen_random_uuid() ya es nativo.
+create extension if not exists pgcrypto;
+
 -- ── Organizaciones (un negocio = una org; v1: 1 usuario Clerk por org) ──
 create table orgs (
   id                  uuid        default gen_random_uuid() primary key,
