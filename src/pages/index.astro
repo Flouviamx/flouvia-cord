@@ -26,10 +26,26 @@ import Footer from '../components/landing/Footer.astro';
     <Footer />
 </Layout>
 
-<!-- Gate anti-FOUC global: oculta elementos animados antes del primer paint -->
+<!-- Gate anti-FOUC + estilos de microinteracciones globales -->
 <style is:global>
     .js-anim .reveal,
     .js-anim .reveal-mockup { opacity: 0; }
+
+    /* Ripple de click en CTAs */
+    .click-ripple {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.35);
+        transform: scale(0);
+        pointer-events: none;
+        animation: click-ripple 0.6s ease-out forwards;
+        z-index: 0;
+    }
+    @keyframes click-ripple {
+        to { transform: scale(2.4); opacity: 0; }
+    }
+    /* El contenido del botón queda sobre el ripple */
+    .btn-primary > *, .fc-btn > * { position: relative; z-index: 1; }
 </style>
 
 <script>
@@ -39,79 +55,197 @@ import Footer from '../components/landing/Footer.astro';
 
     document.addEventListener('DOMContentLoaded', () => {
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const finePointer = window.matchMedia('(pointer: fine)').matches;
+
+        // ───────────────────────── COUNT-UP ─────────────────────────
+        const mxn = (n: number, dec: number) =>
+            '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(n);
+
+        const countUp = (el: HTMLElement, target: number, dec: number, dur = 1.3) => {
+            const obj = { v: 0 };
+            return gsap.to(obj, {
+                v: target, duration: dur, ease: 'power2.out',
+                onUpdate: () => { el.textContent = mxn(obj.v, dec); },
+            });
+        };
 
         if (reduced) {
-            // Sin animación: todo visible (el gate .js-anim ni se añadió)
             gsap.set('.reveal, .reveal-mockup', { opacity: 1, y: 0 });
-            return;
+            return; // los números ya muestran su valor final en el HTML
         }
 
         // El navbar (Nav.astro) maneja su propia entrada GSAP internamente.
 
-        // ── Hero: revela en carga con stagger (está sobre el fold) ──
+        // ───────────────────────── HERO (en carga) ─────────────────────────
         const heroReveals = gsap.utils.toArray<HTMLElement>('.hero .reveal');
         gsap.set(heroReveals, { y: 16 });
-        gsap.to(heroReveals, {
-            opacity: 1, y: 0, duration: 0.95, ease: 'power2.out', stagger: 0.08, delay: 0.1,
-        });
+        gsap.to(heroReveals, { opacity: 1, y: 0, duration: 0.95, ease: 'power2.out', stagger: 0.08, delay: 0.1 });
 
-        // El mockup del hero entra un pelín después, más suave
         const heroMockup = document.querySelector<HTMLElement>('.hero .reveal-mockup');
         if (heroMockup) {
             gsap.set(heroMockup, { y: 40, scale: 0.98 });
             gsap.to(heroMockup, { opacity: 1, y: 0, scale: 1, duration: 1.2, ease: 'power3.out', delay: 0.5 });
         }
 
-        // ── Reveals on-scroll para el resto (patrón anti-parpadeo de flouvia) ──
-        const scrollReveals = gsap.utils.toArray<HTMLElement>('.reveal').filter(
-            (el) => !el.closest('.hero')
-        );
+        // ───────────────────────── REVEALS ON-SCROLL ─────────────────────────
+        const scrollReveals = gsap.utils.toArray<HTMLElement>('.reveal').filter((el) => !el.closest('.hero'));
         scrollReveals.forEach((el) => {
             gsap.set(el, { y: 18 });
             ScrollTrigger.create({
-                trigger: el,
-                start: 'top 88%',
-                once: true,
-                // clearProps SOLO de transform — NO de opacity: el gate CSS
-                // (.js-anim .reveal{opacity:0}) volvería a ocultar el elemento si
-                // limpiamos el opacity inline. Dejamos opacity:1 inline para que gane.
-                onEnter: () => gsap.to(el, {
-                    opacity: 1, y: 0, duration: 0.85, ease: 'power2.out',
-                    clearProps: 'transform',
-                }),
+                trigger: el, start: 'top 88%', once: true,
+                // clearProps SOLO de transform — el opacity:1 inline gana sobre el gate.
+                onEnter: () => gsap.to(el, { opacity: 1, y: 0, duration: 0.85, ease: 'power2.out', clearProps: 'transform' }),
             });
         });
 
-        // Mockups fuera del hero (ClientView): entrada un poco más rica
-        const otherMockups = gsap.utils.toArray<HTMLElement>('.reveal-mockup').filter(
-            (el) => !el.closest('.hero')
-        );
+        const otherMockups = gsap.utils.toArray<HTMLElement>('.reveal-mockup').filter((el) => !el.closest('.hero'));
         otherMockups.forEach((el) => {
             gsap.set(el, { y: 40, scale: 0.97 });
             ScrollTrigger.create({
-                trigger: el,
-                start: 'top 85%',
-                once: true,
-                onEnter: () => gsap.to(el, {
-                    opacity: 1, y: 0, scale: 1, duration: 1.1, ease: 'power3.out',
-                }),
+                trigger: el, start: 'top 85%', once: true,
+                onEnter: () => gsap.to(el, { opacity: 1, y: 0, scale: 1, duration: 1.1, ease: 'power3.out' }),
             });
         });
 
-        // Smooth scroll para los anchors del nav
+        // ───────────────────────── COUNT-UP (números serif) ─────────────────────────
+        gsap.utils.toArray<HTMLElement>('[data-countup]').forEach((el) => {
+            const target = parseFloat(el.dataset.countup || '0');
+            const dec = parseInt(el.dataset.decimals || '0', 10);
+            ScrollTrigger.create({
+                trigger: el, start: 'top 92%', once: true,
+                onEnter: () => countUp(el, target, dec, 1.3),
+            });
+        });
+
+        // ───────────────────────── TILT 3D con el cursor (profundidad) ─────────────────────────
+        const setupTilt = (el: HTMLElement, container: HTMLElement, maxDeg: number) => {
+            if (!finePointer) return;
+            gsap.set(el, { transformPerspective: 1100, transformOrigin: 'center' });
+            const rotX = gsap.quickTo(el, 'rotationX', { duration: 0.7, ease: 'power3.out' });
+            const rotY = gsap.quickTo(el, 'rotationY', { duration: 0.7, ease: 'power3.out' });
+            container.addEventListener('mousemove', (e) => {
+                const r = container.getBoundingClientRect();
+                const px = (e.clientX - r.left) / r.width - 0.5;
+                const py = (e.clientY - r.top) / r.height - 0.5;
+                rotY(px * maxDeg * 2);
+                rotX(-py * maxDeg * 2);
+            });
+            container.addEventListener('mouseleave', () => { rotX(0); rotY(0); });
+        };
+        const heroMk = document.querySelector<HTMLElement>('.hero .mockup');
+        const heroMkWrap = document.querySelector<HTMLElement>('.hero .mockup-wrap');
+        if (heroMk && heroMkWrap) setupTilt(heroMk, heroMkWrap, 4);
+        const phone = document.querySelector<HTMLElement>('#cvPhone');
+        const phoneWrap = document.querySelector<HTMLElement>('.cv-visual');
+        if (phone && phoneWrap) setupTilt(phone, phoneWrap, 6);
+
+        // ───────────────────────── DEMO DEL TELÉFONO (auto-reproducible) ─────────────────────────
+        const stage = document.querySelector<HTMLElement>('.cv-visual');
+        if (stage) {
+            const amount = stage.querySelector<HTMLElement>('#cvAmount');
+            const items = gsap.utils.toArray<HTMLElement>('.cv-visual .ps-item');
+            const approve = stage.querySelector<HTMLElement>('#cvApprove');
+            const ring = stage.querySelector<HTMLElement>('.ps-ring');
+            const cursor = stage.querySelector<HTMLElement>('#cvCursor');
+            const success = stage.querySelector<HTMLElement>('#cvSuccess');
+            const check = stage.querySelector<SVGPathElement>('#cvCheck');
+
+            if (amount && approve && cursor && success && check) {
+                const len = check.getTotalLength();
+                gsap.set(check, { strokeDasharray: len, strokeDashoffset: len });
+                gsap.set(items, { opacity: 0, y: 10 });
+                gsap.set(cursor, { opacity: 0, xPercent: -20, yPercent: -10 });
+
+                const center = (el: HTMLElement) => ({
+                    x: el.offsetLeft + el.offsetWidth * 0.62,
+                    y: el.offsetTop + el.offsetHeight / 2,
+                });
+
+                const playLoop = () => {
+                    const t = center(approve);
+                    const loop = gsap.timeline({ repeat: -1, repeatDelay: 3.4 });
+                    loop
+                        .set(success, { opacity: 0 })
+                        .set(check, { strokeDashoffset: len })
+                        .set(ring, { opacity: 0, scale: 0.85, transformOrigin: 'center' })
+                        .set(cursor, { opacity: 0, x: t.x + 46, y: t.y + 88 })
+                        .to(cursor, { opacity: 1, duration: 0.3 })
+                        .to(cursor, { x: t.x, y: t.y, duration: 1.0, ease: 'power3.inOut' })
+                        .to(approve, { scale: 0.95, duration: 0.12 }, '-=0.04')
+                        .to(ring, { opacity: 1, scale: 1.18, duration: 0.5, ease: 'power2.out' }, '<')
+                        .to(approve, { scale: 1, duration: 0.34, ease: 'back.out(2.2)' })
+                        .to(ring, { opacity: 0, duration: 0.35 }, '<')
+                        .to(success, { opacity: 1, duration: 0.4 }, '-=0.1')
+                        .to(check, { strokeDashoffset: 0, duration: 0.6, ease: 'power2.out' }, '<0.12')
+                        .to(cursor, { opacity: 0, duration: 0.3 }, '<')
+                        .to(success, { opacity: 0, duration: 0.5 }, '+=1.7');
+                };
+
+                ScrollTrigger.create({
+                    trigger: stage, start: 'top 72%', once: true,
+                    onEnter: () => {
+                        const intro = gsap.timeline({ onComplete: playLoop });
+                        intro.add(countUp(amount, 196469.20, 2, 1.5), 0);
+                        intro.to(items, { opacity: 1, y: 0, stagger: 0.08, duration: 0.5, ease: 'power2.out' }, 0.25);
+                    },
+                });
+            }
+        }
+
+        // ───────────────────────── PARALLAX (scroll hipnótico) ─────────────────────────
+        const parallax = (sel: string, amount: number, triggerSel: string) => {
+            const el = document.querySelector<HTMLElement>(sel);
+            const trig = document.querySelector<HTMLElement>(triggerSel);
+            if (!el || !trig) return;
+            gsap.to(el, {
+                yPercent: amount, ease: 'none',
+                scrollTrigger: { trigger: trig, start: 'top bottom', end: 'bottom top', scrub: 1 },
+            });
+        };
+        parallax('.steps-watermark', -22, '.steps');
+        parallax('.footer-watermark', -16, '.footer');
+        parallax('.hero-mesh', 18, '.hero');
+
+        // ───────────────────────── BOTONES MAGNÉTICOS + RIPPLE ─────────────────────────
+        const magnetic = (btn: HTMLElement, strength: number) => {
+            if (!finePointer) return;
+            const x = gsap.quickTo(btn, 'x', { duration: 0.5, ease: 'power3.out' });
+            const y = gsap.quickTo(btn, 'y', { duration: 0.5, ease: 'power3.out' });
+            btn.addEventListener('mousemove', (e) => {
+                const r = btn.getBoundingClientRect();
+                x((e.clientX - (r.left + r.width / 2)) * strength);
+                y((e.clientY - (r.top + r.height / 2)) * strength);
+            });
+            btn.addEventListener('mouseleave', () => { x(0); y(0); });
+        };
+        const ripple = (btn: HTMLElement) => {
+            btn.addEventListener('click', (e) => {
+                const r = btn.getBoundingClientRect();
+                const size = Math.max(r.width, r.height);
+                const span = document.createElement('span');
+                span.className = 'click-ripple';
+                span.style.width = span.style.height = size + 'px';
+                span.style.left = (e.clientX - r.left - size / 2) + 'px';
+                span.style.top = (e.clientY - r.top - size / 2) + 'px';
+                btn.appendChild(span);
+                span.addEventListener('animationend', () => span.remove());
+            });
+        };
+        gsap.utils.toArray<HTMLElement>('.btn-primary, .fc-btn').forEach((btn) => {
+            magnetic(btn, 0.3);
+            ripple(btn);
+        });
+
+        // ───────────────────────── SMOOTH SCROLL + REFRESH ─────────────────────────
         document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((a) => {
             a.addEventListener('click', (e) => {
                 const id = a.getAttribute('href');
                 if (!id || id === '#') return;
                 const target = document.querySelector(id);
-                if (target) {
-                    e.preventDefault();
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+                if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
             });
         });
 
-        // Refresh tras cargar fuentes/imágenes
         Promise.all([
             new Promise<void>((r) => window.addEventListener('load', () => r(), { once: true })),
             (document as any).fonts?.ready ?? Promise.resolve(),
