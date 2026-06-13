@@ -67,6 +67,7 @@ export async function getOrg() {
         pdfMensaje: (o.pdf_mensaje as string) ?? '',
         pdfCondiciones: (o.pdf_condiciones as string) ?? '',
         pdfMostrarLista: (o.pdf_mostrar_lista as boolean) ?? true,
+        pdfTemplate: (o.pdf_template as string) || 'clasico',
     };
 }
 
@@ -191,6 +192,103 @@ export async function markViewed(token: string) {
     if (c.status === 'sent') {
         await sql`update cotizaciones set status = 'viewed' where id = ${c.id}`;
     }
+}
+
+// ── ANALÍTICA (/app/analitica) ────────────────────────────────────────────────
+// Agregados reales sobre cotizaciones + items. Aprovecha precio_unitario (lista)
+// vs precio_negociado para el análisis de margen cedido.
+export async function getAnalytics() {
+    const orgId = await getActiveOrgId();
+
+    // 1) Embudo + KPIs globales
+    const [k] = await sql`
+        select
+            count(*) filter (where status in ('sent','viewed','approved','paid','invoiced')) as enviadas,
+            count(*) filter (where status in ('viewed','approved','paid','invoiced')) as vistas,
+            count(*) filter (where status in ('approved','paid','invoiced')) as aprobadas,
+            count(*) filter (where status in ('paid','invoiced')) as pagadas,
+            coalesce(sum(total) filter (where status in ('approved','paid','invoiced')),0) as cerrado_total,
+            coalesce(avg(extract(epoch from (approved_at - created_at))/86400)
+                     filter (where status in ('approved','paid','invoiced') and approved_at is not null),0) as dias_cierre
+        from cotizaciones where org_id = ${orgId}`;
+
+    // 2) Cotizado vs cerrado por mes (últimos 6)
+    const meses = await sql`
+        select to_char(date_trunc('month', created_at),'YYYY-MM') as ym,
+               coalesce(sum(total),0) as cotizado,
+               coalesce(sum(total) filter (where status in ('approved','paid','invoiced')),0) as cerrado
+        from cotizaciones
+        where org_id = ${orgId} and created_at >= date_trunc('month', now()) - interval '5 months'
+        group by 1 order by 1`;
+
+    // 3) Margen: precio de lista vs negociado (cotizaciones no-borrador)
+    const [marg] = await sql`
+        select coalesce(sum(it.precio_unitario * it.cantidad),0) as lista_total,
+               coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad),0) as nego_total
+        from cotizacion_items it
+        join cotizaciones c on c.id = it.cotizacion_id
+        where c.org_id = ${orgId} and c.status <> 'draft'`;
+
+    // 4) Top clientes por monto cerrado
+    const clientes = await sql`
+        select cl.empresa,
+               coalesce(sum(c.total) filter (where c.status in ('approved','paid','invoiced')),0) as cerrado,
+               count(*) as cotizaciones,
+               count(*) filter (where c.status in ('approved','paid','invoiced')) as aprobadas
+        from cotizaciones c join clientes cl on cl.id = c.cliente_id
+        where c.org_id = ${orgId}
+        group by cl.empresa
+        order by cerrado desc, cotizaciones desc
+        limit 6`;
+
+    // 5) Top productos por importe cotizado
+    const productos = await sql`
+        select coalesce(p.nombre, it.descripcion) as nombre,
+               coalesce(sum(it.cantidad),0) as cantidad,
+               coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad),0) as importe,
+               count(distinct c.id) as cotizaciones
+        from cotizacion_items it
+        join cotizaciones c on c.id = it.cotizacion_id
+        left join productos p on p.id = it.producto_id
+        where c.org_id = ${orgId} and c.status <> 'draft'
+        group by coalesce(p.nombre, it.descripcion)
+        order by importe desc
+        limit 6`;
+
+    const enviadas = num(k.enviadas), aprobadas = num(k.aprobadas);
+    const listaTotal = num(marg.lista_total), negoTotal = num(marg.nego_total);
+    const cerradoN = aprobadas;
+
+    return {
+        funnel: {
+            enviadas, vistas: num(k.vistas), aprobadas, pagadas: num(k.pagadas),
+        },
+        kpis: {
+            cerradoTotal: num(k.cerrado_total),
+            tasaCierre: enviadas ? Math.round((aprobadas / enviadas) * 100) : 0,
+            ticketPromedio: cerradoN ? num(k.cerrado_total) / cerradoN : 0,
+            diasCierre: Math.round(num(k.dias_cierre) * 10) / 10,
+        },
+        meses: meses.map(m => ({ ym: m.ym as string, cotizado: num(m.cotizado), cerrado: num(m.cerrado) })),
+        margen: {
+            listaTotal, negoTotal,
+            cedido: Math.max(0, listaTotal - negoTotal),
+            pct: listaTotal > 0 ? ((listaTotal - negoTotal) / listaTotal) * 100 : 0,
+        },
+        clientes: clientes.map(c => ({
+            empresa: c.empresa as string,
+            cerrado: num(c.cerrado),
+            cotizaciones: num(c.cotizaciones),
+            aprobadas: num(c.aprobadas),
+            tasa: num(c.cotizaciones) ? Math.round((num(c.aprobadas) / num(c.cotizaciones)) * 100) : 0,
+        })),
+        productos: productos.map(p => ({
+            nombre: p.nombre as string,
+            cantidad: num(p.cantidad),
+            importe: num(p.importe),
+            cotizaciones: num(p.cotizaciones),
+        })),
+    };
 }
 
 // ── DASHBOARD KPIs ────────────────────────────────────────────────────────────

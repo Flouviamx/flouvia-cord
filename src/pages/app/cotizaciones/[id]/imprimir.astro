@@ -14,6 +14,14 @@ const descuentoPct = (lista: number, nego: number) =>
     lista > 0 ? Math.round((1 - nego / lista) * 100) : 0;
 const condiciones = ORG.pdfCondiciones ? ORG.pdfCondiciones.split('\n').filter(Boolean) : [];
 const hoy = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
+
+// Plantilla del PDF: clasico (acento) | minimal (líneas finas) | detallado (banda de color)
+const tpl = ORG.pdfTemplate || 'clasico';
+const accent = ORG.colorMarca;
+const isBand = tpl === 'detallado';
+const headStyle = isBand
+    ? `background:${accent};`
+    : (tpl === 'minimal' ? 'border-color: rgba(10,25,47,0.14);' : `border-color:${accent};`);
 ---
 
 <!doctype html>
@@ -32,11 +40,13 @@ const hoy = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', ye
         <button class="tb-print" onclick="window.print()">Imprimir / Guardar PDF</button>
     </div>
 
-    <main class="sheet">
+    <main class="sheet" data-template={tpl}>
         <!-- Encabezado con la marca de la org -->
-        <header class="doc-head" style={`border-color: ${ORG.colorMarca}`}>
+        <header class="doc-head" style={headStyle}>
             <div class="dh-org">
-                <span class="dh-mark" style={`background: ${ORG.colorMarca}`}>{ORG.inicial}</span>
+                {ORG.logoUrl
+                    ? <img class="dh-logo" src={ORG.logoUrl} alt={ORG.nombre} />
+                    : <span class="dh-mark" style={`background: ${isBand ? 'rgba(255,255,255,0.22)' : accent}`}>{ORG.inicial}</span>}
                 <div>
                     <h1>{ORG.nombre}</h1>
                     {ORG.razonSocial && <p>{ORG.razonSocial}</p>}
@@ -47,7 +57,7 @@ const hoy = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', ye
             </div>
             <div class="dh-doc">
                 <span class="dh-label">COTIZACIÓN</span>
-                <span class="dh-folio editorial" style={`color: ${ORG.colorMarca}`}>{q.folio}</span>
+                <span class="dh-folio editorial" style={`color: ${isBand ? '#fff' : accent}`}>{q.folio}</span>
                 <span class="dh-date">Emitida: {q.creada}</span>
                 <span class="dh-date">Vigente hasta: {q.vigencia}</span>
             </div>
@@ -72,7 +82,7 @@ const hoy = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', ye
         <!-- Items -->
         <table class="doc-items">
             <thead>
-                <tr style={`border-color: ${ORG.colorMarca}`}>
+                <tr style={`border-color: ${tpl === 'minimal' ? 'rgba(10,25,47,0.18)' : accent}`}>
                     <th>Concepto</th>
                     <th class="num">Cantidad</th>
                     <th class="num">Precio unitario</th>
@@ -177,12 +187,13 @@ const hoy = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', ye
         padding-bottom: 1.6rem; margin-bottom: 1.6rem;
         border-bottom: 3px solid;
     }
-    .dh-org { display: flex; gap: 14px; }
+    .dh-org { display: flex; gap: 14px; align-items: flex-start; }
     .dh-mark {
         width: 46px; height: 46px; border-radius: 10px; flex-shrink: 0;
         color: #fff; display: flex; align-items: center; justify-content: center;
         font-size: 0.95rem; font-weight: 800;
     }
+    .dh-logo { max-height: 54px; max-width: 220px; width: auto; object-fit: contain; display: block; }
     .dh-org h1 { font-size: 1.2rem; font-weight: 800; margin: 0 0 2px; letter-spacing: -0.3px; }
     .dh-org p { font-size: 0.72rem; color: var(--muted); margin: 1px 0; }
     .dh-doc { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
@@ -234,8 +245,29 @@ const hoy = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', ye
     .df-msg { font-size: 0.8rem; color: var(--ink); margin: 0 0 6px; }
     .df-meta { font-size: 0.66rem; color: var(--muted); margin: 0; }
 
+    /* ════════ PLANTILLAS ════════ */
+    /* MINIMAL — líneas finas, sin bloques de color (acento solo en el total) */
+    .sheet[data-template="minimal"] .doc-head { border-bottom-width: 1px; padding-bottom: 1.3rem; }
+    .sheet[data-template="minimal"] .dh-org h1 { font-weight: 700; }
+    .sheet[data-template="minimal"] .doc-items thead tr { border-bottom-width: 1px; }
+
+    /* DETALLADO — encabezado en banda con el color de marca + filas cebra */
+    .sheet[data-template="detallado"] .doc-head {
+        border: none; border-radius: 14px;
+        padding: 1.6rem 1.8rem; margin-bottom: 1.8rem;
+    }
+    .sheet[data-template="detallado"] .doc-head h1 { color: #fff; }
+    .sheet[data-template="detallado"] .dh-org p { color: rgba(255,255,255,0.82); }
+    .sheet[data-template="detallado"] .dh-label { color: rgba(255,255,255,0.7); }
+    .sheet[data-template="detallado"] .dh-date { color: rgba(255,255,255,0.82); }
+    .sheet[data-template="detallado"] .doc-items tbody tr:nth-child(even) td { background: rgba(10,25,47,0.025); }
+    .sheet[data-template="detallado"] .doc-items td:first-child { padding-left: 12px; }
+    .sheet[data-template="detallado"] .doc-items th:first-child { padding-left: 12px; }
+
     @media print {
         html, body { background: #fff; }
+        /* Respeta los colores de marca (banda, acentos) al imprimir/guardar PDF */
+        * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .toolbar { display: none; }
         .sheet {
             max-width: none; margin: 0; padding: 0.4cm 0;

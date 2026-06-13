@@ -1,0 +1,261 @@
+---
+// Analítica — ventas/conversión, descuentos/margen, clientes y productos.
+// Datos reales agregados desde Neon (getAnalytics). Charts en CSS puro (la app
+// no carga librerías de gráficas ni GSAP).
+import AppLayout from '../../layouts/AppLayout.astro';
+import { getAnalytics, money } from '../../lib/queries';
+
+const A = await getAnalytics();
+
+// Eje de 6 meses (rellena meses sin cotizaciones para una gráfica pareja)
+const now = new Date();
+const monthKeys: { ym: string; label: string }[] = [];
+for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    monthKeys.push({
+        ym: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+        label: d.toLocaleDateString('es-MX', { month: 'short' }).replace('.', ''),
+    });
+}
+const mByYm = new Map(A.meses.map((m) => [m.ym, m]));
+const monthly = monthKeys.map((k) => ({
+    label: k.label,
+    cotizado: mByYm.get(k.ym)?.cotizado ?? 0,
+    cerrado: mByYm.get(k.ym)?.cerrado ?? 0,
+}));
+const maxMonth = Math.max(1, ...monthly.map((m) => m.cotizado));
+
+const F = A.funnel;
+const funnelMax = Math.max(1, F.enviadas);
+const funnelRows = [
+    { label: 'Enviadas', n: F.enviadas, color: '#3b82f6' },
+    { label: 'Vistas', n: F.vistas, color: '#7c3aed' },
+    { label: 'Aprobadas', n: F.aprobadas, color: '#10b981' },
+    { label: 'Pagadas', n: F.pagadas, color: '#059669' },
+];
+const pctOf = (n: number) => (F.enviadas ? Math.round((n / F.enviadas) * 100) : 0);
+
+const maxCliente = Math.max(1, ...A.clientes.map((c) => c.cerrado));
+const maxProducto = Math.max(1, ...A.productos.map((p) => p.importe));
+const hayDatos = F.enviadas > 0 || A.productos.length > 0;
+---
+
+<AppLayout title="Analítica — Trato" page="analitica" heading="Analítica">
+    {!hayDatos && (
+        <section class="card empty">
+            <h2>Aún no hay datos que analizar</h2>
+            <p>Cuando envíes y cierres cotizaciones, aquí verás tu conversión, el margen que cedes y tus mejores clientes y productos.</p>
+            <a href="/app/cotizaciones/nueva" class="empty-cta">+ Crear una cotización</a>
+        </section>
+    )}
+
+    {hayDatos && (
+        <>
+        <!-- KPIs -->
+        <section class="kpis">
+            <div class="card kpi">
+                <span class="kpi-label">CERRADO (TOTAL)</span>
+                <span class="editorial kpi-num kpi-ok">{money(A.kpis.cerradoTotal, 0)}</span>
+                <span class="kpi-sub">aprobadas, pagadas y facturadas</span>
+            </div>
+            <div class="card kpi">
+                <span class="kpi-label">TASA DE CIERRE</span>
+                <span class="editorial kpi-num">{A.kpis.tasaCierre}<span class="kpi-pct">%</span></span>
+                <span class="kpi-sub">de las enviadas se aprueban</span>
+            </div>
+            <div class="card kpi">
+                <span class="kpi-label">TICKET PROMEDIO</span>
+                <span class="editorial kpi-num">{money(A.kpis.ticketPromedio, 0)}</span>
+                <span class="kpi-sub">por cotización cerrada</span>
+            </div>
+            <div class="card kpi">
+                <span class="kpi-label">TIEMPO A CIERRE</span>
+                <span class="editorial kpi-num">{A.kpis.diasCierre}<span class="kpi-pct"> días</span></span>
+                <span class="kpi-sub">promedio de enviada a aprobada</span>
+            </div>
+        </section>
+
+        <div class="two-col">
+            <!-- Cotizado vs cerrado por mes -->
+            <section class="card chart-card">
+                <div class="section-head">
+                    <h2>Cotizado vs. cerrado</h2>
+                    <div class="legend">
+                        <span class="lg"><i class="sw sw-cot"></i>Cotizado</span>
+                        <span class="lg"><i class="sw sw-cer"></i>Cerrado</span>
+                    </div>
+                </div>
+                <div class="bars">
+                    {monthly.map((m) => (
+                        <div class="bar-group">
+                            <div class="bar-pair">
+                                <span class="bar bar-cot" style={`height:${Math.round((m.cotizado / maxMonth) * 100)}%`} title={`Cotizado: ${money(m.cotizado, 0)}`}></span>
+                                <span class="bar bar-cer" style={`height:${Math.round((m.cerrado / maxMonth) * 100)}%`} title={`Cerrado: ${money(m.cerrado, 0)}`}></span>
+                            </div>
+                            <span class="bar-label">{m.label}</span>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            <!-- Embudo de conversión -->
+            <section class="card funnel-card">
+                <div class="section-head"><h2>Embudo de conversión</h2></div>
+                <div class="funnel">
+                    {funnelRows.map((r) => (
+                        <div class="fn-row">
+                            <div class="fn-top">
+                                <span class="fn-label">{r.label}</span>
+                                <span class="fn-vals"><b class="editorial">{r.n}</b> · {pctOf(r.n)}%</span>
+                            </div>
+                            <div class="fn-track">
+                                <span class="fn-fill" style={`width:${Math.round((r.n / funnelMax) * 100)}%; background:${r.color}`}></span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
+        </div>
+
+        <!-- Margen cedido -->
+        <section class="card margin-card">
+            <div class="margin-figure">
+                <span class="kpi-label">MARGEN CEDIDO EN DESCUENTOS</span>
+                <span class="editorial margin-num">{money(A.margen.cedido, 0)}</span>
+                <span class="kpi-sub">{A.margen.pct.toFixed(1)}% por debajo del precio de lista en cotizaciones enviadas</span>
+            </div>
+            <div class="margin-bar-wrap">
+                <div class="margin-bar">
+                    <span class="margin-fill" style={`width:${Math.min(100, Math.round((A.margen.negoTotal / Math.max(1, A.margen.listaTotal)) * 100))}%`}></span>
+                </div>
+                <div class="margin-legend">
+                    <span>Negociado <b class="editorial">{money(A.margen.negoTotal, 0)}</b></span>
+                    <span>Lista <b class="editorial">{money(A.margen.listaTotal, 0)}</b></span>
+                </div>
+            </div>
+        </section>
+
+        <div class="two-col">
+            <!-- Top clientes -->
+            <section class="card rank-card">
+                <div class="section-head"><h2>Top clientes</h2><span class="rank-sub">por monto cerrado</span></div>
+                <div class="rank">
+                    {A.clientes.length === 0 && <p class="rank-empty">Sin clientes con cotizaciones todavía.</p>}
+                    {A.clientes.map((c) => (
+                        <div class="rank-row">
+                            <div class="rank-info">
+                                <span class="rank-name">{c.empresa}</span>
+                                <span class="rank-meta">{c.cotizaciones} cotización{c.cotizaciones === 1 ? '' : 'es'} · {c.tasa}% aprob.</span>
+                            </div>
+                            <div class="rank-barwrap">
+                                <span class="rank-bar" style={`width:${Math.round((c.cerrado / maxCliente) * 100)}%`}></span>
+                            </div>
+                            <span class="editorial rank-amount">{money(c.cerrado, 0)}</span>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            <!-- Top productos -->
+            <section class="card rank-card">
+                <div class="section-head"><h2>Top productos</h2><span class="rank-sub">por importe cotizado</span></div>
+                <div class="rank">
+                    {A.productos.length === 0 && <p class="rank-empty">Sin productos cotizados todavía.</p>}
+                    {A.productos.map((p) => (
+                        <div class="rank-row">
+                            <div class="rank-info">
+                                <span class="rank-name">{p.nombre}</span>
+                                <span class="rank-meta">{p.cantidad.toLocaleString('es-MX')} u. · {p.cotizaciones} cotización{p.cotizaciones === 1 ? '' : 'es'}</span>
+                            </div>
+                            <div class="rank-barwrap">
+                                <span class="rank-bar rank-bar-alt" style={`width:${Math.round((p.importe / maxProducto) * 100)}%`}></span>
+                            </div>
+                            <span class="editorial rank-amount">{money(p.importe, 0)}</span>
+                        </div>
+                    ))}
+                </div>
+            </section>
+        </div>
+        </>
+    )}
+</AppLayout>
+
+<style>
+    /* KPIs */
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem; }
+    .kpi { padding: 1.3rem 1.4rem; display: flex; flex-direction: column; gap: 0.35rem; }
+    .kpi-label { font-size: 0.58rem; font-weight: 800; letter-spacing: 1.4px; color: #99a2af; }
+    .kpi-num { font-size: 1.9rem; color: var(--color-blue-deep); line-height: 1; }
+    .kpi-ok { color: #059669; }
+    .kpi-pct { font-size: 1rem; }
+    .kpi-sub { font-size: 0.74rem; color: var(--color-text-muted); }
+
+    .two-col { display: grid; grid-template-columns: 1.3fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1.2rem; }
+    .section-head h2 { font-size: 0.95rem; font-weight: 700; margin: 0; }
+
+    /* Chart de barras */
+    .chart-card, .funnel-card, .rank-card { padding: 1.4rem 1.5rem; }
+    .legend { display: flex; gap: 0.9rem; }
+    .lg { display: inline-flex; align-items: center; gap: 5px; font-size: 0.7rem; color: var(--color-text-muted); font-weight: 600; }
+    .sw { width: 9px; height: 9px; border-radius: 3px; }
+    .sw-cot { background: #c6d0dd; }
+    .sw-cer { background: #10b981; }
+    .bars { display: flex; align-items: flex-end; gap: 0.8rem; height: 180px; padding-top: 0.5rem; }
+    .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; height: 100%; }
+    .bar-pair { flex: 1; display: flex; align-items: flex-end; justify-content: center; gap: 4px; width: 100%; }
+    .bar { width: 42%; max-width: 26px; border-radius: 5px 5px 0 0; min-height: 2px; transition: height 0.6s var(--ease-spring); }
+    .bar-cot { background: #c6d0dd; }
+    .bar-cer { background: linear-gradient(180deg, #10b981, #059669); }
+    .bar-label { font-size: 0.66rem; font-weight: 600; color: var(--color-text-muted); text-transform: capitalize; }
+
+    /* Embudo */
+    .funnel { display: flex; flex-direction: column; gap: 1rem; }
+    .fn-row { display: flex; flex-direction: column; gap: 6px; }
+    .fn-top { display: flex; justify-content: space-between; align-items: baseline; }
+    .fn-label { font-size: 0.82rem; font-weight: 600; color: var(--color-text); }
+    .fn-vals { font-size: 0.74rem; color: var(--color-text-muted); }
+    .fn-vals b { color: var(--color-text); font-size: 0.88rem; margin-right: 2px; }
+    .fn-track { height: 10px; background: var(--color-bg-soft); border-radius: 100px; overflow: hidden; border: 1px solid var(--color-border); }
+    .fn-fill { display: block; height: 100%; border-radius: 100px; min-width: 2px; transition: width 0.7s var(--ease-spring); }
+
+    /* Margen */
+    .margin-card { padding: 1.4rem 1.5rem; display: grid; grid-template-columns: 1fr 1.4fr; gap: 2rem; align-items: center; margin-bottom: 1rem; }
+    .margin-figure { display: flex; flex-direction: column; gap: 0.4rem; }
+    .margin-num { font-size: 2.1rem; color: var(--color-warn); line-height: 1; }
+    .margin-bar-wrap { display: flex; flex-direction: column; gap: 0.6rem; }
+    .margin-bar { position: relative; height: 26px; background: repeating-linear-gradient(90deg, #eef1f5, #eef1f5 6px, #e7ebf0 6px, #e7ebf0 12px); border-radius: 8px; overflow: hidden; border: 1px solid var(--color-border); }
+    .margin-fill { display: block; height: 100%; background: linear-gradient(90deg, #0a192f, #1e3a5f); border-radius: 8px 0 0 8px; transition: width 0.7s var(--ease-spring); }
+    .margin-legend { display: flex; justify-content: space-between; font-size: 0.76rem; color: var(--color-text-muted); }
+    .margin-legend b { color: var(--color-text); margin-left: 4px; }
+
+    /* Rankings */
+    .rank-sub { font-size: 0.72rem; color: var(--color-text-muted); }
+    .rank { display: flex; flex-direction: column; gap: 0.9rem; }
+    .rank-row { display: grid; grid-template-columns: 1.4fr 1fr auto; gap: 0.9rem; align-items: center; }
+    .rank-info { display: flex; flex-direction: column; min-width: 0; }
+    .rank-name { font-size: 0.84rem; font-weight: 600; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rank-meta { font-size: 0.68rem; color: var(--color-text-muted); }
+    .rank-barwrap { height: 8px; background: var(--color-bg-soft); border-radius: 100px; overflow: hidden; border: 1px solid var(--color-border); }
+    .rank-bar { display: block; height: 100%; background: linear-gradient(90deg, #1e3a5f, #0a192f); border-radius: 100px; min-width: 3px; transition: width 0.7s var(--ease-spring); }
+    .rank-bar-alt { background: linear-gradient(90deg, #34d399, #059669); }
+    .rank-amount { font-size: 0.92rem; color: var(--color-blue-deep); white-space: nowrap; }
+    .rank-empty { font-size: 0.82rem; color: var(--color-text-muted); margin: 0; }
+
+    /* Empty state */
+    .empty { padding: 3rem 2rem; text-align: center; }
+    .empty h2 { font-size: 1.1rem; font-weight: 700; margin: 0 0 0.5rem; }
+    .empty p { font-size: 0.88rem; color: var(--color-text-muted); max-width: 460px; margin: 0 auto 1.4rem; line-height: 1.6; }
+    .empty-cta { display: inline-block; background: var(--color-blue-deep); color: #fff; text-decoration: none; font-size: 0.86rem; font-weight: 600; padding: 11px 20px; border-radius: 10px; }
+
+    @media (max-width: 1080px) {
+        .kpis { grid-template-columns: repeat(2, 1fr); }
+        .two-col { grid-template-columns: 1fr; }
+        .margin-card { grid-template-columns: 1fr; gap: 1.4rem; }
+    }
+    @media (max-width: 560px) {
+        .kpis { grid-template-columns: 1fr; }
+        .rank-row { grid-template-columns: 1fr auto; }
+        .rank-barwrap { display: none; }
+    }
+</style>

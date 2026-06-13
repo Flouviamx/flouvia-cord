@@ -1,5 +1,9 @@
 ---
-// Pricing — 3 planes. Precios MXN/mes. Plan Pro destacado.
+// Pricing — 3 planes. Datos desde src/lib/precios.ts (fuente única, compartida
+// con la página /precios). Plan Pro destacado.
+import { PLANES } from '../../lib/precios';
+
+const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
 ---
 
 <section class="pricing" id="precios">
@@ -10,72 +14,38 @@
     </div>
 
     <div class="pr-grid">
-        <!-- Gratis -->
-        <article class="plan reveal">
-            <div class="plan-head">
-                <h3 class="plan-name">Gratis</h3>
-                <p class="plan-tagline">Para probar el sistema.</p>
-            </div>
-            <div class="plan-price">
-                <span class="editorial plan-amount">$0</span>
-                <span class="plan-cycle">para siempre</span>
-            </div>
-            <!-- $0 no necesita count-up -->
-
-            <a href="/registro" class="plan-cta plan-cta-ghost">Empezar gratis</a>
-            <ul class="plan-feats">
-                <li><span class="pf-check">✓</span> Hasta 5 cotizaciones activas</li>
-                <li><span class="pf-check">✓</span> Catálogo de productos</li>
-                <li><span class="pf-check">✓</span> Link público y PDF</li>
-                <li><span class="pf-check">✓</span> Marca "Powered by Trato"</li>
-            </ul>
-        </article>
-
-        <!-- Pro (destacado) -->
-        <article class="plan plan-featured reveal">
-            <span class="plan-ribbon">MÁS POPULAR</span>
-            <div class="plan-head">
-                <h3 class="plan-name">Profesional</h3>
-                <p class="plan-tagline">Para vender en serio.</p>
-            </div>
-            <div class="plan-price">
-                <span class="editorial plan-amount" data-countup="590" data-decimals="0">$590</span>
-                <span class="plan-cycle">MXN / mes</span>
-            </div>
-            <a href="/registro" class="plan-cta plan-cta-solid">Probar 7 días gratis</a>
-            <ul class="plan-feats">
-                <li><span class="pf-check">✓</span> Cotizaciones ilimitadas</li>
-                <li><span class="pf-check">✓</span> Tu marca (logo y colores)</li>
-                <li><span class="pf-check">✓</span> Seguimiento en vivo</li>
-                <li><span class="pf-check">✓</span> Términos Net 30 / Net 60</li>
-                <li><span class="pf-check">✓</span> Pago en línea de cotizaciones</li>
-            </ul>
-        </article>
-
-        <!-- Negocio -->
-        <article class="plan reveal">
-            <div class="plan-head">
-                <h3 class="plan-name">Negocio</h3>
-                <p class="plan-tagline">Con CFDI y equipo.</p>
-            </div>
-            <div class="plan-price">
-                <span class="editorial plan-amount" data-countup="1190" data-decimals="0">$1,190</span>
-                <span class="plan-cycle">MXN / mes</span>
-            </div>
-            <a href="/registro" class="plan-cta plan-cta-ghost">Probar 7 días gratis</a>
-            <ul class="plan-feats">
-                <li><span class="pf-check">✓</span> Todo lo de Profesional</li>
-                <li><span class="pf-check">✓</span> CFDI 4.0 automático ante el SAT</li>
-                <li><span class="pf-check">✓</span> Clientes con límite de crédito</li>
-                <li><span class="pf-check">✓</span> Analítica avanzada</li>
-                <li><span class="pf-check">✓</span> Soporte prioritario</li>
-            </ul>
-        </article>
+        {PLANES.map((p) => (
+            <article class:list={['plan reveal', { 'plan-featured': p.destacado }]}>
+                {p.ribbon && <span class="plan-ribbon">{p.ribbon}</span>}
+                <div class="plan-head">
+                    <h3 class="plan-name">{p.nombre}</h3>
+                    <p class="plan-tagline">{p.tagline}</p>
+                </div>
+                <div class="plan-price">
+                    {p.precioMensual === 0 ? (
+                        <>
+                            <span class="editorial plan-amount">$0</span>
+                            <span class="plan-cycle">para siempre</span>
+                        </>
+                    ) : (
+                        <>
+                            <span class="editorial plan-amount" data-countup={String(p.precioMensual)} data-decimals="0">{money0(p.precioMensual)}</span>
+                            <span class="plan-cycle">MXN / mes</span>
+                        </>
+                    )}
+                </div>
+                <a href={p.ctaHref} class:list={['plan-cta', p.destacado ? 'plan-cta-solid' : 'plan-cta-ghost']}>{p.ctaLabel}</a>
+                <ul class="plan-feats">
+                    {p.feats.map((f) => (
+                        <li><span class="pf-check">✓</span> {f}</li>
+                    ))}
+                </ul>
+            </article>
+        ))}
     </div>
 
     <p class="pr-note reveal">
-        ¿Necesitas algo a medida o integración con tu ERP?
-        <a href="mailto:hola@flouvia.com">Habla con Flouvia →</a>
+        <a href="/precios" class="pr-compare-link">Ver la comparación completa de planes →</a>
     </p>
 </section>
 

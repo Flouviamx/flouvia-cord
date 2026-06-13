@@ -61,7 +61,19 @@ para que el swap a Neon sea cambiar imports por queries.
 ✅ **App funcional (jun 2026)** — CRUD de clientes/productos (modales), ajustes que guardan,
    acciones de cotización (enviar/aprobar/rechazar/pago/facturar), aprobar/rechazar REAL
    en `/q/[token]`, PDF imprimible personalizado por cuenta (`/app/cotizaciones/[id]/imprimir`)
-⬜ Stripe Billing + proteger `/app` con Clerk — siguiente fase
+✅ **Landing v2 (jun 2026)** — `/precios` dedicada (toggle anual + comparador + ROI + FAQ),
+   `/soluciones/[slug]` por industria (espejo de `/producto/[slug]`), home con DEMO
+   INTERACTIVO en el hero (control de 5 pasos), bug del navbar arreglado (el megamenú
+   ya no baja logo/botones). Precios centralizados en `src/lib/precios.ts`.
+✅ **PDF v2 (jun 2026)** — 3 plantillas (clasico/minimal/detallado), logo subible,
+   y PREVIEW EN VIVO en `/app/ajustes`. Nueva columna `orgs.pdf_template`.
+✅ **Importar por CSV** — productos y clientes (`/api/productos/import`, `/api/clientes/import`)
+   con modal de archivo→mapeo→preview en `/app/productos` y `/app/clientes`.
+✅ **Analítica** — `/app/analitica` (ventas/conversión, margen cedido, top clientes/productos)
+   + KPI "por dar seguimiento" en el dashboard. Consultas en `getAnalytics()`.
+✅ **Duplicar cotización** — `/api/cotizaciones/[id]/duplicate` (clona a nuevo borrador).
+⬜ Pendiente (sig. fase): cotizaciones con versiones y recordatorios (Resend),
+   Stripe Billing + proteger `/app` con Clerk.
 
 ---
 
@@ -78,7 +90,9 @@ Precios actuales en la landing (MXN/mes, IVA incluido):
 | Negocio | $1,190 MXN/mes | + CFDI 4.0 automático, clientes con límite de crédito, analítica, soporte prioritario |
 
 > ⚠️ Precios son placeholders comerciales — André los puede ajustar. Si cambian,
-> actualizar `src/components/landing/Pricing.astro`.
+> actualizar **`src/lib/precios.ts`** (FUENTE ÚNICA desde jun 2026): la consumen
+> tanto la sección del home (`Pricing.astro`) como la página `/precios`. Ahí también
+> viven la comparativa (`COMPARATIVA`) y el FAQ de precios (`FAQ_PRECIOS`).
 
 Moneda v1 = MXN con IVA 16% configurable. Landing + app en el MISMO subdominio
 (estilo linear.app: marketing en `/`, app en `/app`).
@@ -115,24 +129,41 @@ el valor antes de cada query (igual que `app.email_cliente` en flouvia-web).
                    src/lib/producto.ts; mockup por feature en [slug].astro;
                    animaciones compartidas en components/landing/PageAnims.astro
                    (masked titles via clase .masked-title, hero .pp-hero)
-/soluciones      → por industria con anclas: #distribuidoras #construccion
-                   #manufactura #servicios. Usa PageAnims también.
+/precios         → página dedicada (jun 2026): toggle mensual/anual (2 meses gratis),
+                   comparador completo, calculadora de valor (ROI) y FAQ.
+                   Datos en src/lib/precios.ts (FUENTE ÚNICA de planes/comparativa/FAQ).
+/soluciones      → HUB por industria (anclas + cada bloque enlaza a su detalle).
+/soluciones/[slug] → página rica por industria (jun 2026, espejo de /producto/[slug]):
+                   distribuidoras, construccion, manufactura, servicios. Contenido en
+                   src/lib/solucion.ts; mockup propio por industria en [slug].astro.
 
 # App — CONECTADA a Neon (src/lib/queries.ts); usa AppLayout.astro
 /login /registro → Clerk SignIn/SignUp (es-MX)
-/app             → dashboard: KPIs, pipeline por estado, recientes, activity feed
+/app             → dashboard: KPIs (incl. "por dar seguimiento"), pipeline, recientes, feed
+/app/analitica   → analítica (jun 2026): KPIs (cerrado/tasa/ticket/días a cierre),
+                   gráfica cotizado vs cerrado por mes, embudo de conversión, margen
+                   cedido (lista vs negociado), top clientes y top productos. Charts en
+                   CSS puro; datos de getAnalytics() en queries.ts.
 /app/cotizaciones        → tabla con filtros por estado (client-side)
 /app/cotizaciones/nueva  → EL EDITOR — POST /api/cotizaciones (real)
 /app/cotizaciones/[id]   → detalle + timeline + ACCIONES REALES (enviar, aprobar,
-                           rechazar, pago, facturar, copiar link, eliminar borrador)
+                           rechazar, pago, facturar, copiar link, eliminar borrador,
+                           DUPLICAR → POST /api/cotizaciones/[id]/duplicate)
                            via PATCH/DELETE /api/cotizaciones/[id]
 /app/cotizaciones/[id]/imprimir → PDF imprimible (window.print) personalizado con
-                           la marca de la org (color, contacto, mensaje, condiciones)
+                           la marca de la org: PLANTILLA (clasico|minimal|detallado vía
+                           data-template en .sheet), LOGO real (ORG.logoUrl) o inicial,
+                           color, contacto, mensaje, condiciones. print-color-adjust:exact.
 /app/clientes /app/productos → CRUD real con modal <dialog> (POST/PATCH/DELETE
-                           /api/clientes y /api/productos)
+                           /api/clientes y /api/productos). Productos también con
+                           IMPORTACIÓN CSV (botón → modal archivo/mapeo/preview →
+                           POST /api/productos/import [dedupe por SKU] y
+                           /api/clientes/import [dedupe por RFC/empresa]).
 /app/ajustes     → guarda real via PATCH /api/org: marca (color picker), contacto,
-                   fiscales, folio/IVA, y sección "Documento PDF" (mensaje de pie,
-                   condiciones, toggle precio de lista)
+                   fiscales, folio/IVA, y sección "Documento PDF" con SELECTOR DE
+                   PLANTILLA, SUBIDOR DE LOGO (data URL) y PREVIEW EN VIVO del PDF
+                   (panel sticky que refleja todos los campos), mensaje de pie,
+                   condiciones, toggle precio de lista. Layout en grid de 2 columnas.
 /q/[token]       → vista PÚBLICA — aprobar/rechazar REALES via POST /api/q/[token]
                    (token = secreto, sin auth); muestra estado si ya se decidió;
                    "Descargar PDF" = window.print con @media print; color de marca
@@ -144,8 +175,10 @@ el valor antes de cada query (igual que `app.email_cliente` en flouvia-web).
 
 **Columnas de personalización en `orgs`** (jun 2026, al final de `db/schema.sql`
 como `alter table … if not exists`): `color_marca`, `email_contacto`, `telefono`,
-`direccion`, `pdf_mensaje`, `pdf_condiciones`, `pdf_mostrar_lista`. ⚠️ Correr
-`npm run db:migrate` tras pull — `/q/[token]` y `/api/org` las leen explícitamente.
+`direccion`, `pdf_mensaje`, `pdf_condiciones`, `pdf_mostrar_lista`, **`pdf_template`**
+(clasico|minimal|detallado, agregada jun 2026). `logo_url` (en la tabla base) ahora
+guarda también data URLs de logos subidos en Ajustes. ⚠️ Correr `npm run db:migrate`
+tras pull — `/q/[token]`, `/api/org` e `imprimir` las leen explícitamente.
 
 **Mock data:** `src/lib/mock.ts` exporta `ORG`, `PRODUCTOS`, `CLIENTES`,
 `COTIZACIONES` (con items + eventos), `STATUS_META` (label/color/bg por estado),

@@ -130,3 +130,7 @@ alter table orgs add column if not exists direccion text;
 alter table orgs add column if not exists pdf_mensaje text;
 alter table orgs add column if not exists pdf_condiciones text;
 alter table orgs add column if not exists pdf_mostrar_lista boolean not null default true;
+
+-- Plantilla del documento PDF (jun 2026): clasico | minimal | detallado.
+-- logo_url ya existe arriba; ahora también guarda data URLs de logos subidos.
+alter table orgs add column if not exists pdf_template text not null default 'clasico';

@@ -48,8 +48,17 @@
         <p class="hero-microcopy reveal">Gratis hasta 5 cotizaciones · Sin tarjeta para empezar</p>
     </div>
 
-    <!-- ── MOCKUP ── -->
-    <div class="mockup-wrap reveal-mockup">
+    <!-- ── MOCKUP (demo interactivo) ── -->
+    <div class="mockup-wrap reveal-mockup" id="heroDemo">
+        <!-- Control de pasos: el visitante recorre el flujo de una cotización -->
+        <div class="demo-steps" id="demoSteps" role="tablist" aria-label="Recorre el flujo de una cotización">
+            <button class="demo-step is-active" data-step="0" role="tab" aria-selected="true"><span class="ds-n">1</span><span class="ds-label">Creas</span><span class="ds-fill" aria-hidden="true"></span></button>
+            <button class="demo-step" data-step="1" role="tab" aria-selected="false"><span class="ds-n">2</span><span class="ds-label">Envías</span><span class="ds-fill" aria-hidden="true"></span></button>
+            <button class="demo-step" data-step="2" role="tab" aria-selected="false"><span class="ds-n">3</span><span class="ds-label">La ven</span><span class="ds-fill" aria-hidden="true"></span></button>
+            <button class="demo-step" data-step="3" role="tab" aria-selected="false"><span class="ds-n">4</span><span class="ds-label">Aprueban</span><span class="ds-fill" aria-hidden="true"></span></button>
+            <button class="demo-step" data-step="4" role="tab" aria-selected="false"><span class="ds-n">5</span><span class="ds-label">Facturas</span><span class="ds-fill" aria-hidden="true"></span></button>
+        </div>
+
         <div class="mockup-glow" aria-hidden="true"></div>
         <div class="mockup">
             <div class="mk-topbar">
@@ -97,8 +106,8 @@
                     <div class="mk-tl-title">Actividad</div>
                     <div class="mk-tl-item" data-story="approved"><span class="mk-tl-dot dot-green"></span><div><div class="mk-tl-text"><b>Cotización aprobada</b></div><div class="mk-tl-time">hace un momento</div></div></div>
                     <div class="mk-tl-item" data-story="viewed"><span class="mk-tl-dot dot-green"></span><div><div class="mk-tl-text"><b>Tu cliente la vio</b></div><div class="mk-tl-time">hace 3 min</div></div></div>
-                    <div class="mk-tl-item"><span class="mk-tl-dot dot-blue"></span><div><div class="mk-tl-text">Cotización enviada</div><div class="mk-tl-time">hoy, 11:02</div></div></div>
-                    <div class="mk-tl-item"><span class="mk-tl-dot dot-grey"></span><div><div class="mk-tl-text">Borrador creado</div><div class="mk-tl-time">hoy, 10:41</div></div></div>
+                    <div class="mk-tl-item" data-story="sent"><span class="mk-tl-dot dot-blue"></span><div><div class="mk-tl-text">Cotización enviada</div><div class="mk-tl-time">hoy, 11:02</div></div></div>
+                    <div class="mk-tl-item" data-story="created"><span class="mk-tl-dot dot-grey"></span><div><div class="mk-tl-text">Borrador creado</div><div class="mk-tl-time">hoy, 10:41</div></div></div>
                 </aside>
             </div>
         </div>
@@ -255,6 +264,47 @@
 
     /* ── MOCKUP ── */
     .mockup-wrap { position: relative; z-index: 2; width: 100%; max-width: 1080px; margin: 0 auto; }
+
+    /* Control de pasos del demo interactivo */
+    .demo-steps {
+        position: relative; z-index: 3;
+        display: flex; gap: 4px; justify-content: center; flex-wrap: wrap;
+        width: max-content; max-width: 100%;
+        margin: 0 auto 1.5rem; padding: 5px;
+        background: rgba(255,255,255,0.72);
+        border: 1px solid var(--color-border);
+        border-radius: 100px;
+        box-shadow: 0 8px 24px -10px rgba(10,25,47,0.14), inset 0 1px 1px rgba(255,255,255,0.8);
+        backdrop-filter: blur(14px) saturate(1.6);
+        -webkit-backdrop-filter: blur(14px) saturate(1.6);
+    }
+    .demo-step {
+        position: relative; overflow: hidden;
+        display: inline-flex; align-items: center; gap: 8px;
+        border: none; background: none; cursor: pointer;
+        font-family: inherit; font-size: 0.82rem; font-weight: 600;
+        color: var(--color-text-muted);
+        padding: 9px 15px; border-radius: 100px; white-space: nowrap;
+        transition: color 0.45s var(--ease-spring), background 0.45s var(--ease-spring);
+    }
+    .demo-step:hover { color: var(--color-text); }
+    .demo-step.is-active { color: #fff; background: var(--color-blue-deep); }
+    .ds-n {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+        font-size: 0.64rem; font-weight: 800;
+        background: rgba(10,25,47,0.08); color: var(--color-blue-deep);
+        transition: background 0.45s, color 0.45s;
+    }
+    .demo-step.is-active .ds-n { background: rgba(255,255,255,0.22); color: #fff; }
+    .ds-fill {
+        position: absolute; left: 0; bottom: 0; height: 2px; width: 100%;
+        background: rgba(255,255,255,0.7); transform: scaleX(0); transform-origin: left center;
+        pointer-events: none;
+    }
+    .mk-badge-draft { background: rgba(10,25,47,0.07); color: #5b6472; }
+    .mk-tl-item { transition: opacity 0.5s var(--ease-ios); }
+    .mk-tl-item.is-pending { opacity: 0.3; }
     .mockup-glow {
         position: absolute; inset: -8% -4% 12%;
         background: radial-gradient(ellipse at center, rgba(10,25,47,0.18) 0%, transparent 70%);
@@ -375,5 +425,14 @@
         .mk-navitem { font-size: 0.72rem; padding: 6px 9px; }
         .mk-row { grid-template-columns: 1fr 38px 64px 72px; font-size: 0.72rem; }
         .mk-url { font-size: 0.6rem; }
+        .demo-steps { gap: 2px; padding: 4px; }
+        .demo-step { padding: 8px 11px; font-size: 0.74rem; gap: 6px; }
+        .demo-step .ds-n { width: 16px; height: 16px; }
+    }
+
+    /* Sin animación: el mockup queda en su estado final estático (HTML) y el
+       control de pasos se oculta (el controlador JS no corre en reduced-motion). */
+    @media (prefers-reduced-motion: reduce) {
+        .demo-steps { display: none; }
     }
 </style>

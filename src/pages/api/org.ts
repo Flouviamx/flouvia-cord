@@ -1,6 +1,6 @@
 // /api/org — ajustes del negocio (marca, fiscales, PDF).
 //   PATCH { nombre?, rfc?, razon_social?, color_marca?, quote_prefix?, iva_pct?,
-//           email_contacto?, telefono?, direccion?,
+//           email_contacto?, telefono?, direccion?, logo_url?, pdf_template?,
 //           pdf_mensaje?, pdf_condiciones?, pdf_mostrar_lista? }  → { ok }
 // Solo actualiza los campos presentes en el body.
 export const prerender = false;
@@ -9,6 +9,11 @@ import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId } from '../../lib/db';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
+const TEMPLATES = new Set(['clasico', 'minimal', 'detallado']);
+// Logo: acepta data URL de imagen (subida, cap ~1.1MB) o URL http(s).
+const logoOk = (s: string) =>
+    s.length <= 1_500_000 &&
+    (/^data:image\/(png|jpe?g|webp|svg\+xml);base64,/.test(s) || /^https?:\/\//.test(s));
 
 export const PATCH: APIRoute = async ({ request }) => {
     let body: any;
@@ -38,12 +43,19 @@ export const PATCH: APIRoute = async ({ request }) => {
     const pdfMensaje = body.pdf_mensaje !== undefined ? (String(body.pdf_mensaje).trim() || null) : actual.pdf_mensaje;
     const pdfCond = body.pdf_condiciones !== undefined ? (String(body.pdf_condiciones).trim() || null) : actual.pdf_condiciones;
     const pdfLista = body.pdf_mostrar_lista !== undefined ? Boolean(body.pdf_mostrar_lista) : actual.pdf_mostrar_lista;
+    const pdfTemplate = body.pdf_template !== undefined
+        ? (TEMPLATES.has(String(body.pdf_template)) ? String(body.pdf_template) : 'clasico')
+        : actual.pdf_template;
+    const logoUrl = body.logo_url !== undefined
+        ? (String(body.logo_url) === '' ? null : (logoOk(String(body.logo_url)) ? String(body.logo_url) : actual.logo_url))
+        : actual.logo_url;
 
     await sql`
         update orgs set
             nombre = ${nombre}, rfc = ${rfc}, razon_social = ${razon},
             color_marca = ${color}, quote_prefix = ${prefix}, iva_pct = ${iva},
             email_contacto = ${email}, telefono = ${telefono}, direccion = ${direccion},
+            logo_url = ${logoUrl}, pdf_template = ${pdfTemplate},
             pdf_mensaje = ${pdfMensaje}, pdf_condiciones = ${pdfCond}, pdf_mostrar_lista = ${pdfLista}
         where id = ${orgId}`;
     return json({ ok: true });

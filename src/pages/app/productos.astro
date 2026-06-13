@@ -7,7 +7,13 @@ const PRODUCTOS = await getProductos();
 ---
 
 <AppLayout title="Productos — Trato" page="productos" heading="Productos">
-    <button slot="topbar-actions" class="btn-new" id="btnNew">+ Nuevo producto</button>
+    <div slot="topbar-actions" class="topbar-btns">
+        <button class="btn-import" id="btnImport">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Importar CSV
+        </button>
+        <button class="btn-new" id="btnNew">+ Nuevo producto</button>
+    </div>
 
     <section class="card table-card">
         <div class="t-head">
@@ -81,6 +87,50 @@ const PRODUCTOS = await getProductos();
             </div>
         </form>
     </dialog>
+
+    <!-- Modal de importación CSV -->
+    <dialog class="modal modal-lg" id="importModal">
+        <div class="m-form">
+            <div class="m-head">
+                <h2 id="impTitle">Importar productos por CSV</h2>
+                <button type="button" class="m-close" id="impClose" aria-label="Cerrar">✕</button>
+            </div>
+
+            <!-- Paso 1: archivo -->
+            <div class="imp-step" id="impStepFile">
+                <label class="imp-drop" id="impDrop">
+                    <input type="file" id="impFile" accept=".csv,text/csv" hidden />
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></svg>
+                    <b>Arrastra tu archivo CSV o haz clic para elegirlo</b>
+                    <span>Columnas sugeridas: SKU, nombre, unidad, precio, activo</span>
+                </label>
+                <button type="button" class="imp-tpl" id="impTpl">↓ Descargar plantilla de ejemplo</button>
+            </div>
+
+            <!-- Paso 2: mapeo de columnas -->
+            <div class="imp-step" id="impStepMap" hidden>
+                <p class="imp-lead">Empareja las columnas de tu archivo con los campos de Trato.</p>
+                <label class="imp-check"><input type="checkbox" id="impHeader" checked /> La primera fila son encabezados</label>
+                <div class="imp-maps" id="impMaps"></div>
+            </div>
+
+            <!-- Paso 3: preview -->
+            <div class="imp-step" id="impStepPrev" hidden>
+                <div class="imp-summary" id="impSummary"></div>
+                <label class="imp-check"><input type="checkbox" id="impUpsert" checked /> Actualizar productos existentes con el mismo SKU</label>
+                <div class="imp-prev-wrap"><table class="imp-prev"><thead id="impPrevHead"></thead><tbody id="impPrevBody"></tbody></table></div>
+            </div>
+
+            <p class="m-error" id="impError"></p>
+
+            <div class="m-actions">
+                <button type="button" class="m-cancel" id="impBack" hidden>← Atrás</button>
+                <span class="m-spacer"></span>
+                <button type="button" class="m-cancel" id="impCancel">Cancelar</button>
+                <button type="button" class="m-save" id="impNext" disabled>Continuar</button>
+            </div>
+        </div>
+    </dialog>
 </AppLayout>
 
 <style>
@@ -93,6 +143,61 @@ const PRODUCTOS = await getProductos();
         transition: transform 0.4s var(--ease-spring);
     }
     .btn-new:hover { transform: translateY(-2px); }
+    .topbar-btns { display: flex; gap: 0.6rem; align-items: center; }
+    .btn-import {
+        font-family: var(--font-sans); display: inline-flex; align-items: center; gap: 7px;
+        background: var(--color-bg-soft); color: var(--color-text);
+        font-size: 0.82rem; font-weight: 600; border: 1px solid var(--color-border); cursor: pointer;
+        padding: 8px 14px; border-radius: 9px; transition: border-color 0.25s, transform 0.4s var(--ease-spring);
+    }
+    .btn-import svg { width: 14px; height: 14px; }
+    .btn-import:hover { transform: translateY(-2px); border-color: rgba(10,25,47,0.25); }
+
+    /* ── Modal importación ── */
+    .modal-lg { width: min(680px, calc(100vw - 2rem)); }
+    .imp-step { display: flex; flex-direction: column; gap: 0.9rem; }
+    .imp-lead { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; }
+    .imp-drop {
+        display: flex; flex-direction: column; align-items: center; gap: 0.5rem; text-align: center;
+        border: 1.5px dashed var(--color-border); border-radius: 14px; padding: 2.4rem 1.5rem; cursor: pointer;
+        background: var(--color-bg-soft); transition: border-color 0.25s, background 0.25s;
+    }
+    .imp-drop.drag, .imp-drop:hover { border-color: var(--color-blue-deep); background: rgba(10,25,47,0.03); }
+    .imp-drop svg { width: 32px; height: 32px; color: var(--color-blue-deep); }
+    .imp-drop b { font-size: 0.9rem; font-weight: 700; color: var(--color-text); }
+    .imp-drop span { font-size: 0.76rem; color: var(--color-text-muted); }
+    .imp-tpl {
+        align-self: center; background: none; border: none; cursor: pointer;
+        font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: var(--color-blue-deep);
+    }
+    .imp-tpl:hover { text-decoration: underline; }
+
+    .imp-check { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--color-text); cursor: pointer; }
+    .imp-maps { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+    .imp-map { display: flex; flex-direction: column; gap: 0.35rem; }
+    .imp-map label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #99a2af; }
+    .imp-map label .req { color: var(--color-danger); }
+    .imp-map select {
+        font-family: var(--font-sans); font-size: 0.84rem; color: var(--color-text);
+        background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 10px;
+    }
+    .imp-map select:focus { outline: none; border-color: var(--color-blue-deep); }
+
+    .imp-summary {
+        display: flex; gap: 1.4rem; flex-wrap: wrap;
+        background: var(--color-bg-soft); border: 1px solid var(--color-border);
+        border-radius: 11px; padding: 0.9rem 1.1rem;
+    }
+    .imp-summary .is-num { font-size: 1.3rem; font-weight: 700; color: var(--color-blue-deep); letter-spacing: -0.5px; }
+    .imp-summary .is-num.warn { color: var(--color-warn); }
+    .imp-summary div { display: flex; flex-direction: column; }
+    .imp-summary small { font-size: 0.68rem; color: var(--color-text-muted); }
+    .imp-prev-wrap { max-height: 230px; overflow: auto; border: 1px solid var(--color-border); border-radius: 11px; }
+    .imp-prev { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
+    .imp-prev th { position: sticky; top: 0; background: var(--color-bg-soft); text-align: left; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #99a2af; padding: 8px 10px; border-bottom: 1px solid var(--color-border); }
+    .imp-prev td { padding: 7px 10px; border-bottom: 1px solid var(--color-border); color: var(--color-text); white-space: nowrap; }
+    .imp-prev td.n { text-align: right; font-variant-numeric: tabular-nums; }
+    .imp-prev tr.bad td { background: rgba(239,68,68,0.05); color: var(--color-text-muted); }
 
     .table-card { overflow: hidden; }
     .t-head, .t-row {
@@ -269,6 +374,199 @@ const PRODUCTOS = await getProductos();
             });
             if (res.ok) location.reload();
             else errorEl.textContent = (await res.json()).error || 'No se pudo eliminar';
+        });
+    });
+</script>
+
+<script>
+    // Importador CSV: archivo → mapeo de columnas → preview → carga masiva.
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('importModal') as HTMLDialogElement | null;
+        if (!modal) return;
+        const $ = (id: string) => document.getElementById(id)!;
+        const fileInput = $('impFile') as HTMLInputElement;
+        const drop = $('impDrop');
+        const stepFile = $('impStepFile'), stepMap = $('impStepMap'), stepPrev = $('impStepPrev');
+        const headerChk = $('impHeader') as HTMLInputElement;
+        const upsertChk = $('impUpsert') as HTMLInputElement;
+        const mapsEl = $('impMaps');
+        const errorEl = $('impError');
+        const btnNext = $('impNext') as HTMLButtonElement;
+        const btnBack = $('impBack') as HTMLButtonElement;
+
+        const FIELDS = [
+            { key: 'nombre', label: 'Nombre', req: true, guess: ['nombre', 'producto', 'descripcion', 'description', 'name', 'concepto', 'articulo'] },
+            { key: 'sku', label: 'SKU / Clave', req: false, guess: ['sku', 'clave', 'codigo', 'code'] },
+            { key: 'unidad', label: 'Unidad', req: false, guess: ['unidad', 'unit', 'medida', 'um'] },
+            { key: 'precio', label: 'Precio de lista', req: false, guess: ['precio', 'price', 'lista', 'costo', 'importe', 'monto'] },
+            { key: 'activo', label: 'Activo', req: false, guess: ['activo', 'active', 'estatus', 'status', 'estado'] },
+        ];
+
+        let grid: string[][] = [];
+        let step: 'file' | 'map' | 'prev' = 'file';
+        let prepared: any[] = [];
+
+        const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+        const parseNum = (v: string) => Number(String(v ?? '').replace(/[^0-9.\-]/g, '')) || 0;
+        const FALSY = new Set(['0', 'no', 'false', 'inactivo', 'inactive', 'off', '']);
+        const parseBool = (v: string) => !FALSY.has(norm(v ?? ''));
+
+        function parseCSV(text: string): string[][] {
+            const first = text.split(/\r?\n/)[0] || '';
+            const counts: Record<string, number> = {
+                ',': (first.match(/,/g) || []).length,
+                ';': (first.match(/;/g) || []).length,
+                '\t': (first.match(/\t/g) || []).length,
+            };
+            const delim = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0] || ',';
+            const rows: string[][] = []; let row: string[] = []; let field = ''; let q = false; let i = 0;
+            while (i < text.length) {
+                const c = text[i];
+                if (q) {
+                    if (c === '"') { if (text[i + 1] === '"') { field += '"'; i += 2; continue; } q = false; i++; continue; }
+                    field += c; i++; continue;
+                }
+                if (c === '"') { q = true; i++; continue; }
+                if (c === delim) { row.push(field); field = ''; i++; continue; }
+                if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; i++; continue; }
+                if (c === '\r') { i++; continue; }
+                field += c; i++;
+            }
+            if (field.length || row.length) { row.push(field); rows.push(row); }
+            return rows.filter(r => r.some(c => c.trim() !== ''));
+        }
+
+        const showStep = (s: 'file' | 'map' | 'prev') => {
+            step = s;
+            stepFile.hidden = s !== 'file';
+            stepMap.hidden = s !== 'map';
+            stepPrev.hidden = s !== 'prev';
+            btnBack.hidden = s === 'file';
+            errorEl.textContent = '';
+            if (s === 'file') { btnNext.disabled = true; btnNext.textContent = 'Continuar'; }
+            if (s === 'map') { btnNext.disabled = false; btnNext.textContent = 'Continuar'; }
+        };
+
+        const ncols = () => grid.reduce((m, r) => Math.max(m, r.length), 0);
+
+        function buildMaps() {
+            const useHeader = headerChk.checked;
+            const headers = useHeader ? (grid[0] || []) : [];
+            const n = ncols();
+            mapsEl.innerHTML = FIELDS.map(f => {
+                let guessed = -1;
+                if (useHeader) {
+                    guessed = headers.findIndex(h => f.guess.some(g => norm(h).includes(g)));
+                }
+                const opts = ['<option value="-1">— ninguna —</option>'];
+                for (let i = 0; i < n; i++) {
+                    const label = useHeader && headers[i] ? headers[i] : `Columna ${i + 1}`;
+                    opts.push(`<option value="${i}" ${i === guessed ? 'selected' : ''}>${label.replace(/</g, '&lt;')}</option>`);
+                }
+                return `<div class="imp-map"><label>${f.label}${f.req ? ' <span class="req">*</span>' : ''}</label><select data-field="${f.key}">${opts.join('')}</select></div>`;
+            }).join('');
+        }
+
+        const readMap = () => {
+            const m: Record<string, number> = {};
+            mapsEl.querySelectorAll<HTMLSelectElement>('select[data-field]').forEach(s => { m[s.dataset.field!] = parseInt(s.value, 10); });
+            return m;
+        };
+
+        function buildPreview() {
+            const m = readMap();
+            if ((m.nombre ?? -1) < 0) { errorEl.textContent = 'Elige qué columna tiene el nombre del producto.'; return false; }
+            const dataRows = headerChk.checked ? grid.slice(1) : grid;
+            prepared = dataRows.map(r => ({
+                nombre: (r[m.nombre] ?? '').trim(),
+                sku: m.sku >= 0 ? (r[m.sku] ?? '').trim() : '',
+                unidad: m.unidad >= 0 ? (r[m.unidad] ?? '').trim() : '',
+                precio: m.precio >= 0 ? parseNum(r[m.precio]) : 0,
+                activo: m.activo >= 0 ? parseBool(r[m.activo]) : true,
+            }));
+            const valid = prepared.filter(p => p.nombre);
+            const skipped = prepared.length - valid.length;
+            const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n);
+
+            $('impSummary').innerHTML =
+                `<div><span class="is-num">${valid.length}</span><small>productos a importar</small></div>` +
+                (skipped > 0 ? `<div><span class="is-num warn">${skipped}</span><small>filas omitidas (sin nombre)</small></div>` : '');
+
+            $('impPrevHead').innerHTML = '<tr><th>SKU</th><th>Nombre</th><th>Unidad</th><th class="n">Precio</th><th>Activo</th></tr>';
+            $('impPrevBody').innerHTML = prepared.slice(0, 8).map(p => {
+                const bad = !p.nombre;
+                return `<tr class="${bad ? 'bad' : ''}"><td>${esc(p.sku)}</td><td>${esc(p.nombre || '—')}</td><td>${esc(p.unidad || 'pieza')}</td><td class="n">${money(p.precio)}</td><td>${p.activo ? 'Sí' : 'No'}</td></tr>`;
+            }).join('');
+
+            btnNext.textContent = `Importar ${valid.length} producto${valid.length === 1 ? '' : 's'}`;
+            btnNext.disabled = valid.length === 0;
+            return true;
+        }
+        const esc = (s: string) => String(s ?? '').replace(/</g, '&lt;');
+
+        async function doImport() {
+            const valid = prepared.filter(p => p.nombre);
+            if (!valid.length) return;
+            btnNext.disabled = true; btnNext.textContent = 'Importando…';
+            try {
+                const res = await fetch('/api/productos/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rows: valid, upsert: upsertChk.checked }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'No se pudo importar');
+                location.reload();
+            } catch (err: any) {
+                errorEl.textContent = err.message;
+                btnNext.disabled = false; btnNext.textContent = `Importar ${valid.length} productos`;
+            }
+        }
+
+        const loadFile = (file: File) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                grid = parseCSV(String(reader.result));
+                if (!grid.length) { errorEl.textContent = 'El archivo está vacío o no se pudo leer.'; return; }
+                buildMaps();
+                showStep('map');
+            };
+            reader.readAsText(file, 'utf-8');
+        };
+
+        // ── Eventos ──
+        document.getElementById('btnImport')?.addEventListener('click', () => { showStep('file'); modal.showModal(); });
+        $('impClose').addEventListener('click', () => modal.close());
+        $('impCancel').addEventListener('click', () => modal.close());
+        fileInput.addEventListener('change', () => { if (fileInput.files?.[0]) loadFile(fileInput.files[0]); });
+        headerChk.addEventListener('change', buildMaps);
+
+        drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('drag'); });
+        drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+        drop.addEventListener('drop', (e) => {
+            e.preventDefault(); drop.classList.remove('drag');
+            const f = (e as DragEvent).dataTransfer?.files?.[0];
+            if (f) loadFile(f);
+        });
+
+        btnNext.addEventListener('click', () => {
+            if (step === 'map') { if (buildPreview()) showStep('prev'); }
+            else if (step === 'prev') doImport();
+        });
+        btnBack.addEventListener('click', () => {
+            if (step === 'prev') { showStep('map'); btnNext.textContent = 'Continuar'; }
+            else if (step === 'map') showStep('file');
+        });
+
+        // Plantilla CSV de ejemplo
+        $('impTpl').addEventListener('click', () => {
+            const csv = 'sku,nombre,unidad,precio,activo\nCEM-50,Cemento gris 50kg,saco,198.00,1\nVAR-38,Varilla 3/8 x 12m,pieza,189.00,1\nBLK-152,Block hueco 15x20x40,pieza,16.50,1\n';
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'plantilla-productos-trato.csv';
+            a.click();
+            URL.revokeObjectURL(a.href);
         });
     });
 </script>

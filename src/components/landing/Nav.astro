@@ -71,19 +71,19 @@
                     <div class="pill-mega" data-panel="soluciones" aria-hidden="true">
                         <div class="mega-inner">
                             <div class="mega-grid">
-                                <a href="/soluciones#distribuidoras" class="mega-item">
+                                <a href="/soluciones/distribuidoras" class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8Z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>
                                     <span class="mega-copy"><b>Distribuidoras y mayoristas</b><i>Listas de precios por cliente</i></span>
                                 </a>
-                                <a href="/soluciones#construccion" class="mega-item">
+                                <a href="/soluciones/construccion" class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M5 20V8l7-5 7 5v12"/><path d="M9 20v-6h6v6"/></svg></span>
                                     <span class="mega-copy"><b>Construcción y materiales</b><i>Volumen, obra y crédito</i></span>
                                 </a>
-                                <a href="/soluciones#manufactura" class="mega-item">
+                                <a href="/soluciones/manufactura" class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M4 20V10l5 3V10l5 3V8l6 4v8"/></svg></span>
                                     <span class="mega-copy"><b>Manufactura</b><i>Cotiza especificación y lote</i></span>
                                 </a>
-                                <a href="/soluciones#servicios" class="mega-item">
+                                <a href="/soluciones/servicios" class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
                                     <span class="mega-copy"><b>Servicios profesionales</b><i>Propuestas que se aprueban solas</i></span>
                                 </a>
@@ -238,6 +238,15 @@
         transition: box-shadow 0.7s var(--ease-spring), border-color 0.7s var(--ease-spring), background 0.7s var(--ease-spring), backdrop-filter 0.7s var(--ease-spring), border-radius 0.6s var(--ease-spring);
     }
     .pill-row { display: flex; align-items: center; }
+
+    /* Contención del megamenú (fix): al abrir, la píldora crece en VERTICAL.
+       Si queda en el flujo del grid engorda la fila y, con align-items:center,
+       recentra el logo central y los botones de la derecha hacia abajo. La JS
+       saca la píldora del flujo (.pill-abs) y reserva su altura colapsada en
+       .nav-left, así la fila nunca cambia de alto y la píldora se despliega
+       como overlay hacia abajo. */
+    .nav-left { position: relative; }
+    .glass-pill.pill-abs { position: absolute; top: 0; left: 0; }
 
     /* Abierta: la cápsula se vuelve panel — el radio se relaja */
     .glass-pill.mega-open { border-radius: 24px; }
@@ -537,6 +546,26 @@
 
         let indicatorRelayout: ((animate?: boolean) => void) | null = null;
         let indicatorFollow: ((ms?: number) => void) | null = null;
+
+        // ── CONTENCIÓN DE LA PÍLDORA (fix navbar) ──
+        // La píldora crece en vertical al abrir un megamenú. La sacamos del flujo
+        // (position:absolute) y reservamos su altura colapsada en .nav-left, para
+        // que el logo central y los botones de la derecha NO se bajen al abrir.
+        const navLeftEl = document.querySelector<HTMLElement>('.nav-left');
+        const pillForLock = document.getElementById('glass-pill');
+        if (navLeftEl && pillForLock) {
+            const lockPillHeight = () => {
+                if (pillForLock.classList.contains('mega-open')) return; // no medir abierto
+                pillForLock.classList.remove('pill-abs'); // medir en flujo, altura real
+                navLeftEl.style.height = '';
+                const h = pillForLock.getBoundingClientRect().height;
+                navLeftEl.style.height = h + 'px';
+                pillForLock.classList.add('pill-abs');
+            };
+            lockPillHeight();
+            if (document.fonts && document.fonts.ready) document.fonts.ready.then(lockPillHeight);
+            window.addEventListener('resize', lockPillHeight, { passive: true });
+        }
 
         // ── ENTRANCE ──
         if (navbar && !reducedMotion) {

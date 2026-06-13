@@ -7,6 +7,7 @@ const ORG = await getOrg();
 ---
 
 <AppLayout title="Ajustes — Trato" page="ajustes" heading="Ajustes">
+    <div class="settings-wrap">
     <div class="settings">
         <!-- Marca -->
         <section class="card s-block">
@@ -102,6 +103,46 @@ const ORG = await getOrg();
             </div>
             <div class="s-body">
                 <div class="s-field">
+                    <label>Plantilla</label>
+                    <div class="tpl-grid" id="tplGrid">
+                        <label class="tpl-card">
+                            <input type="radio" name="pdfTpl" value="minimal" checked={ORG.pdfTemplate === 'minimal'} />
+                            <span class="tpl-mini m-minimal" aria-hidden="true"><i class="b"></i><i></i><i></i><i class="t"></i></span>
+                            <span class="tpl-name">Minimal</span>
+                        </label>
+                        <label class="tpl-card">
+                            <input type="radio" name="pdfTpl" value="clasico" checked={ORG.pdfTemplate !== 'minimal' && ORG.pdfTemplate !== 'detallado'} />
+                            <span class="tpl-mini m-clasico" aria-hidden="true"><i class="b"></i><i></i><i></i><i class="t"></i></span>
+                            <span class="tpl-name">Clásico</span>
+                        </label>
+                        <label class="tpl-card">
+                            <input type="radio" name="pdfTpl" value="detallado" checked={ORG.pdfTemplate === 'detallado'} />
+                            <span class="tpl-mini m-detallado" aria-hidden="true"><i class="b"></i><i></i><i></i><i class="t"></i></span>
+                            <span class="tpl-name">Detallado</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="s-field">
+                    <label>Logo del documento</label>
+                    <div class="logo-row">
+                        <div class="logo-prev" id="logoPrev">
+                            <img id="logoImg" src={ORG.logoUrl || undefined} alt="Logo" style={ORG.logoUrl ? '' : 'display:none'} />
+                            <span id="logoFallback" style={ORG.logoUrl ? 'display:none' : ''}>{ORG.inicial}</span>
+                        </div>
+                        <div class="logo-actions">
+                            <div class="logo-btns">
+                                <label class="logo-btn">
+                                    <input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden />
+                                    Subir logo
+                                </label>
+                                <button type="button" class="logo-remove" id="logoRemove">Quitar</button>
+                            </div>
+                            <span class="s-hint">PNG, JPG, SVG o WEBP. Máx ~1 MB. Si no subes logo, usamos la inicial.</span>
+                        </div>
+                    </div>
+                    <input type="hidden" id="oLogo" value={ORG.logoUrl} />
+                </div>
+                <div class="s-field">
                     <label for="oPdfMensaje">Mensaje de pie de página</label>
                     <input class="s-input" id="oPdfMensaje" value={ORG.pdfMensaje} placeholder="Gracias por su preferencia. Precios sujetos a cambio sin previo aviso." />
                 </div>
@@ -139,6 +180,50 @@ const ORG = await getOrg();
             <button class="s-save" id="btnSave">Guardar cambios</button>
             <span class="s-saved" id="savedMsg">✓ Cambios guardados</span>
         </div>
+    </div>
+
+    <!-- ── PREVIEW EN VIVO DEL PDF ── -->
+    <aside class="pdf-pane">
+        <div class="pdf-pane-head">
+            <span>Vista previa del PDF</span>
+            <span class="pdf-pane-tpl" id="ppTplName">Clásico</span>
+        </div>
+        <div class="pdf-doc" id="pdfDoc" data-template="clasico">
+            <div class="pdf-head" id="pdfHead">
+                <div class="pdf-org">
+                    <img class="pdf-logo" id="ppLogo" alt="" style="display:none" />
+                    <span class="pdf-mark" id="ppMark">MV</span>
+                    <div class="pdf-org-info">
+                        <b id="ppName">Materiales del Valle</b>
+                        <i id="ppRfc">RFC MVA240611AB3</i>
+                        <i id="ppContact"></i>
+                    </div>
+                </div>
+                <div class="pdf-doc-meta">
+                    <span class="pdf-lbl">COTIZACIÓN</span>
+                    <b class="pdf-folio editorial" id="ppFolio">COT-0149</b>
+                    <i>Net 30</i>
+                </div>
+            </div>
+            <table class="pdf-items">
+                <thead><tr id="ppThead"><th>Concepto</th><th class="n">Cant.</th><th class="n">P. unit.</th><th class="n">Importe</th></tr></thead>
+                <tbody id="ppBody"></tbody>
+            </table>
+            <div class="pdf-totals">
+                <div><span>Subtotal</span><span class="editorial" id="ppSub">$113,210.00</span></div>
+                <div><span>IVA <em id="ppIvaLbl">16</em>%</span><span class="editorial" id="ppIva">$18,113.60</span></div>
+                <div class="pdf-grand"><span>Total</span><b class="editorial" id="ppTotal">$131,323.60</b></div>
+            </div>
+            <div class="pdf-notes" id="ppCondWrap" style="display:none">
+                <span class="pdf-lbl">CONDICIONES COMERCIALES</span>
+                <ul id="ppCond"></ul>
+            </div>
+            <div class="pdf-foot" id="ppMsgWrap" style="display:none">
+                <p id="ppMsg"></p>
+            </div>
+        </div>
+        <span class="pdf-pane-hint">Datos de ejemplo. Así verá tu cliente el documento real.</span>
+    </aside>
     </div>
 </AppLayout>
 
@@ -227,23 +312,242 @@ const ORG = await getOrg();
     .s-saved.error { color: var(--color-danger); }
 
     @media (max-width: 640px) { .s-row { grid-template-columns: 1fr; } }
+
+    /* ════════ LAYOUT 2 COLUMNAS (form + preview) ════════ */
+    .settings-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 1.5rem; align-items: start; }
+    .settings { max-width: none; }
+
+    /* Selector de plantilla */
+    .tpl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+    .tpl-card {
+        position: relative; cursor: pointer;
+        display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+        border: 1px solid var(--color-border); border-radius: 11px; padding: 0.7rem 0.6rem;
+        background: var(--color-bg-soft);
+        transition: border-color 0.25s, box-shadow 0.25s, transform 0.3s var(--ease-spring);
+    }
+    .tpl-card:hover { transform: translateY(-2px); }
+    .tpl-card input { position: absolute; opacity: 0; pointer-events: none; }
+    .tpl-card:has(input:checked) { border-color: var(--color-blue-deep); box-shadow: inset 0 0 0 1px var(--color-blue-deep); }
+    .tpl-name { font-size: 0.74rem; font-weight: 600; color: var(--color-text); }
+    .tpl-mini {
+        width: 100%; height: 50px; border-radius: 6px; background: #fff;
+        border: 1px solid var(--color-border); padding: 7px;
+        display: flex; flex-direction: column; gap: 3px; overflow: hidden;
+    }
+    .tpl-mini i { display: block; height: 4px; border-radius: 2px; background: rgba(10,25,47,0.12); width: 100%; }
+    .tpl-mini i.b { height: 8px; width: 55%; margin-bottom: 2px; }
+    .tpl-mini i.t { margin-top: auto; width: 38%; align-self: flex-end; background: rgba(10,25,47,0.28); }
+    .m-clasico i.b { background: var(--color-blue-deep); }
+    .m-minimal i.b { background: rgba(10,25,47,0.45); height: 5px; }
+    .m-detallado i.b { background: var(--color-blue-deep); height: 13px; width: 100%; border-radius: 3px; }
+
+    /* Subidor de logo */
+    .logo-row { display: flex; align-items: center; gap: 1rem; }
+    .logo-prev {
+        width: 60px; height: 60px; border-radius: 12px; flex-shrink: 0; overflow: hidden;
+        background: var(--color-blue-deep); color: #fff;
+        display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem;
+        border: 1px solid var(--color-border);
+    }
+    .logo-prev img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+    .logo-actions { display: flex; flex-direction: column; gap: 0.5rem; }
+    .logo-btns { display: flex; gap: 0.5rem; }
+    .logo-btn, .logo-remove {
+        font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; cursor: pointer;
+        border-radius: 9px; padding: 8px 14px; border: 1px solid var(--color-border);
+        background: var(--color-bg-soft); color: var(--color-text); transition: border-color 0.25s, color 0.25s;
+    }
+    .logo-btn { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); }
+    .logo-remove:hover { border-color: var(--color-danger); color: var(--color-danger); }
+
+    /* ════════ PREVIEW EN VIVO ════════ */
+    .pdf-pane { position: sticky; top: 90px; display: flex; flex-direction: column; gap: 0.7rem; }
+    .pdf-pane-head { display: flex; align-items: center; justify-content: space-between; }
+    .pdf-pane-head > span:first-child { font-size: 0.6rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
+    .pdf-pane-tpl { font-size: 0.7rem; font-weight: 700; color: var(--color-blue-deep); }
+    .pdf-pane-hint { font-size: 0.66rem; color: #99a2af; text-align: center; }
+
+    .pdf-doc {
+        --accent: #0a192f; background: #fff;
+        border: 1px solid var(--color-border); border-radius: 12px;
+        box-shadow: 0 24px 60px -32px rgba(10,25,47,0.3);
+        padding: 1.3rem 1.4rem; font-size: 0.7rem; color: #0f1729; overflow: hidden;
+    }
+    .pdf-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; padding-bottom: 0.9rem; margin-bottom: 0.9rem; border-bottom: 2.5px solid var(--accent); }
+    .pdf-org { display: flex; gap: 9px; align-items: flex-start; min-width: 0; }
+    .pdf-mark { width: 30px; height: 30px; border-radius: 7px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.64rem; flex-shrink: 0; }
+    .pdf-logo { max-height: 34px; max-width: 120px; object-fit: contain; }
+    .pdf-org-info b { display: block; font-size: 0.76rem; font-weight: 800; line-height: 1.2; }
+    .pdf-org-info i { display: block; font-style: normal; font-size: 0.56rem; color: #5b6472; margin-top: 1px; }
+    .pdf-doc-meta { text-align: right; flex-shrink: 0; }
+    .pdf-lbl { display: block; font-size: 0.5rem; font-weight: 800; letter-spacing: 1px; color: #99a2af; }
+    .pdf-folio { font-size: 0.92rem; color: var(--accent); margin: 1px 0; display: block; }
+    .pdf-doc-meta > i { font-style: normal; font-size: 0.58rem; color: #5b6472; }
+    .pdf-items { width: 100%; border-collapse: collapse; margin-bottom: 0.8rem; }
+    .pdf-items th { text-align: left; font-size: 0.5rem; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; color: #99a2af; padding: 0 4px 5px; border-bottom: 1.5px solid var(--accent); }
+    .pdf-items th.n, .pdf-items td.n { text-align: right; white-space: nowrap; }
+    .pdf-items td { padding: 5px 4px; border-bottom: 1px solid rgba(10,25,47,0.08); vertical-align: top; font-size: 0.62rem; }
+    .pdf-strike { display: block; font-size: 0.54rem; color: #aeb4be; }
+    .pdf-strike i { font-style: normal; color: #059669; font-weight: 700; margin-left: 3px; }
+    .pdf-totals { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+    .pdf-totals > div { display: flex; justify-content: space-between; gap: 2rem; min-width: 155px; font-size: 0.62rem; color: #5b6472; }
+    .pdf-totals em { font-style: normal; }
+    .pdf-grand { border-top: 1.5px solid var(--accent); padding-top: 5px; margin-top: 2px; color: #0f1729; font-weight: 700; }
+    .pdf-grand b { font-size: 0.9rem; color: var(--accent); }
+    .pdf-notes ul { margin: 3px 0 0; padding-left: 0.9rem; font-size: 0.6rem; color: #5b6472; line-height: 1.5; }
+    .pdf-foot { margin-top: 0.9rem; padding-top: 0.6rem; border-top: 1px solid rgba(10,25,47,0.08); }
+    .pdf-foot p { margin: 0; font-size: 0.6rem; color: #0f1729; }
+
+    /* preview — variantes de plantilla */
+    .pdf-doc[data-template="minimal"] .pdf-head { border-bottom: 1px solid rgba(10,25,47,0.14); }
+    .pdf-doc[data-template="minimal"] .pdf-folio { color: #0f1729; }
+    .pdf-doc[data-template="minimal"] .pdf-items th { border-bottom-color: rgba(10,25,47,0.14); }
+    .pdf-doc[data-template="detallado"] .pdf-head { background: var(--accent); border: none; border-radius: 10px; padding: 0.9rem 1rem; margin: -0.2rem 0 1rem; }
+    .pdf-doc[data-template="detallado"] .pdf-org-info b,
+    .pdf-doc[data-template="detallado"] .pdf-folio { color: #fff; }
+    .pdf-doc[data-template="detallado"] .pdf-org-info i,
+    .pdf-doc[data-template="detallado"] .pdf-lbl,
+    .pdf-doc[data-template="detallado"] .pdf-doc-meta > i { color: rgba(255,255,255,0.85); }
+    .pdf-doc[data-template="detallado"] .pdf-mark { background: rgba(255,255,255,0.22); }
+    .pdf-doc[data-template="detallado"] .pdf-items tbody tr:nth-child(even) td { background: rgba(10,25,47,0.03); }
+
+    @media (max-width: 1024px) {
+        .settings-wrap { grid-template-columns: 1fr; }
+        .pdf-pane { position: static; max-width: 480px; }
+    }
 </style>
 
 <script>
-    // Guarda los ajustes vía PATCH /api/org.
+    // Ajustes: preview en vivo del PDF + guardado vía PATCH /api/org.
     document.addEventListener('DOMContentLoaded', () => {
-        const v = (id: string) => (document.getElementById(id) as HTMLInputElement).value;
-        const btn = document.getElementById('btnSave') as HTMLButtonElement;
+        const el = (id: string) => document.getElementById(id) as HTMLInputElement;
+        const v = (id: string) => el(id)?.value ?? '';
+        const btn = el('btnSave');
         const msg = document.getElementById('savedMsg')!;
-        const colorPick = document.getElementById('oColorPick') as HTMLInputElement;
-        const colorText = document.getElementById('oColor') as HTMLInputElement;
+        const colorPick = el('oColorPick');
+        const colorText = el('oColor');
+        const oLogo = el('oLogo');
 
-        // sincroniza el picker con el campo de texto
-        colorPick.addEventListener('input', () => { colorText.value = colorPick.value; });
+        // ── Datos de ejemplo del preview ──
+        const SAMPLE = [
+            { d: 'Cemento gris 50kg', q: 120, lista: 198.0, nego: 182.0 },
+            { d: 'Varilla 3/8" × 12m', q: 340, lista: 189.0, nego: 168.5 },
+            { d: 'Block hueco 15×20×40', q: 2400, lista: 16.5, nego: 14.2 },
+        ];
+        const SUBTOTAL = SAMPLE.reduce((s, it) => s + it.nego * it.q, 0);
+        const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+        const pct = (l: number, n: number) => (l > 0 ? Math.round((1 - n / l) * 100) : 0);
+        const initials = (s: string) => s.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '—';
+        const TPL_NAME: Record<string, string> = { minimal: 'Minimal', clasico: 'Clásico', detallado: 'Detallado' };
+
+        const doc = document.getElementById('pdfDoc')!;
+        const ppLogo = document.getElementById('ppLogo') as HTMLImageElement;
+        const ppMark = document.getElementById('ppMark')!;
+        const setTxt = (id: string, t: string) => { const n = document.getElementById(id); if (n) n.textContent = t; };
+        const show = (id: string, on: boolean) => { const n = document.getElementById(id); if (n) (n as HTMLElement).style.display = on ? '' : 'none'; };
+
+        const renderPreview = () => {
+            const tpl = (document.querySelector('input[name="pdfTpl"]:checked') as HTMLInputElement)?.value || 'clasico';
+            doc.dataset.template = tpl;
+            setTxt('ppTplName', TPL_NAME[tpl] ?? 'Clásico');
+
+            const color = /^#[0-9a-fA-F]{6}$/.test(colorText.value) ? colorText.value : '#0a192f';
+            doc.style.setProperty('--accent', color);
+
+            const nombre = v('oNombre') || 'Tu negocio';
+            setTxt('ppName', nombre);
+
+            const rfc = v('oRfc').trim();
+            setTxt('ppRfc', rfc ? 'RFC ' + rfc.toUpperCase() : '');
+            show('ppRfc', !!rfc);
+            const contacto = [v('oEmail').trim(), v('oTelefono').trim()].filter(Boolean).join(' · ');
+            setTxt('ppContact', contacto);
+            show('ppContact', !!contacto);
+
+            setTxt('ppFolio', (v('oPrefix').trim().toUpperCase() || 'COT') + '-0149');
+
+            // Logo o inicial
+            if (oLogo.value) {
+                ppLogo.src = oLogo.value; ppLogo.style.display = 'block'; ppMark.style.display = 'none';
+            } else {
+                ppLogo.removeAttribute('src'); ppLogo.style.display = 'none';
+                ppMark.style.display = ''; ppMark.textContent = initials(nombre);
+            }
+
+            // Totales
+            const iva = Math.min(100, Math.max(0, parseFloat(v('oIva')) || 0));
+            setTxt('ppIvaLbl', String(iva));
+            setTxt('ppSub', money(SUBTOTAL));
+            setTxt('ppIva', money(SUBTOTAL * iva / 100));
+            setTxt('ppTotal', money(SUBTOTAL * (1 + iva / 100)));
+
+            // Filas (con o sin precio de lista tachado)
+            const showList = (el('oPdfLista') as HTMLInputElement).checked;
+            const body = document.getElementById('ppBody')!;
+            body.innerHTML = SAMPLE.map(it => {
+                const strike = showList && it.nego < it.lista
+                    ? `<span class="pdf-strike"><s>${money(it.lista)}</s><i>−${pct(it.lista, it.nego)}%</i></span>`
+                    : '';
+                return `<tr><td>${it.d}</td><td class="n">${it.q.toLocaleString('es-MX')}</td><td class="n">${strike}${money(it.nego)}</td><td class="n">${money(it.nego * it.q)}</td></tr>`;
+            }).join('');
+
+            // Condiciones
+            const cond = v('oPdfCond').split('\n').map(s => s.trim()).filter(Boolean);
+            show('ppCondWrap', cond.length > 0);
+            document.getElementById('ppCond')!.innerHTML = cond.map(c => `<li>${c.replace(/</g, '&lt;')}</li>`).join('');
+
+            // Mensaje de pie
+            const m = v('oPdfMensaje').trim();
+            show('ppMsgWrap', !!m);
+            setTxt('ppMsg', m);
+        };
+
+        // ── Sincroniza color picker ↔ texto + preview ──
+        colorPick.addEventListener('input', () => { colorText.value = colorPick.value; renderPreview(); });
         colorText.addEventListener('input', () => {
             if (/^#[0-9a-fA-F]{6}$/.test(colorText.value)) colorPick.value = colorText.value;
+            renderPreview();
         });
 
+        // ── Subir / quitar logo ──
+        const logoFile = el('logoFile');
+        const logoImg = document.getElementById('logoImg') as HTMLImageElement;
+        const logoFallback = document.getElementById('logoFallback')!;
+        logoFile.addEventListener('change', () => {
+            const f = logoFile.files?.[0];
+            if (!f) return;
+            if (f.size > 1_000_000) {
+                msg.textContent = 'El logo pesa más de 1 MB. Usa una imagen más ligera.';
+                msg.classList.add('show', 'error');
+                setTimeout(() => msg.classList.remove('show', 'error'), 3200);
+                logoFile.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => {
+                const url = String(reader.result);
+                oLogo.value = url;
+                logoImg.src = url; logoImg.style.display = ''; logoFallback.style.display = 'none';
+                renderPreview();
+            };
+            reader.readAsDataURL(f);
+        });
+        document.getElementById('logoRemove')!.addEventListener('click', () => {
+            oLogo.value = '';
+            logoImg.removeAttribute('src'); logoImg.style.display = 'none'; logoFallback.style.display = '';
+            logoFile.value = '';
+            renderPreview();
+        });
+
+        // ── Bindings de actualización en vivo ──
+        ['oNombre', 'oEmail', 'oTelefono', 'oDireccion', 'oRfc', 'oRazon', 'oPrefix', 'oIva', 'oPdfMensaje', 'oPdfCond']
+            .forEach(id => el(id)?.addEventListener('input', renderPreview));
+        el('oPdfLista').addEventListener('change', renderPreview);
+        document.querySelectorAll('input[name="pdfTpl"]').forEach(r => r.addEventListener('change', renderPreview));
+        renderPreview();
+
+        // ── Guardar ──
         btn.addEventListener('click', async () => {
             btn.disabled = true;
             msg.classList.remove('show', 'error');
@@ -261,6 +565,8 @@ const ORG = await getOrg();
                         razon_social: v('oRazon'),
                         quote_prefix: v('oPrefix'),
                         iva_pct: v('oIva'),
+                        logo_url: oLogo.value,
+                        pdf_template: (document.querySelector('input[name="pdfTpl"]:checked') as HTMLInputElement)?.value || 'clasico',
                         pdf_mensaje: v('oPdfMensaje'),
                         pdf_condiciones: v('oPdfCond'),
                         pdf_mostrar_lista: (document.getElementById('oPdfLista') as HTMLInputElement).checked,

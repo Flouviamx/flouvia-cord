@@ -10,7 +10,13 @@ const TERM_VALUE: Record<string, string> = { 'Contado': 'contado', 'Net 30': 'ne
 ---
 
 <AppLayout title="Clientes — Trato" page="clientes" heading="Clientes">
-    <button slot="topbar-actions" class="btn-new" id="btnNew">+ Nuevo cliente</button>
+    <div slot="topbar-actions" class="topbar-btns">
+        <button class="btn-import" id="btnImport">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Importar CSV
+        </button>
+        <button class="btn-new" id="btnNew">+ Nuevo cliente</button>
+    </div>
 
     <section class="card table-card">
         <div class="t-head">
@@ -91,6 +97,47 @@ const TERM_VALUE: Record<string, string> = { 'Contado': 'contado', 'Net 30': 'ne
             </div>
         </form>
     </dialog>
+
+    <!-- Modal de importación CSV -->
+    <dialog class="modal modal-lg" id="importModal">
+        <div class="m-form">
+            <div class="m-head">
+                <h2>Importar clientes por CSV</h2>
+                <button type="button" class="m-close" id="impClose" aria-label="Cerrar">✕</button>
+            </div>
+
+            <div class="imp-step" id="impStepFile">
+                <label class="imp-drop" id="impDrop">
+                    <input type="file" id="impFile" accept=".csv,text/csv" hidden />
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></svg>
+                    <b>Arrastra tu archivo CSV o haz clic para elegirlo</b>
+                    <span>Columnas sugeridas: empresa, contacto, email, teléfono, RFC, términos, límite</span>
+                </label>
+                <button type="button" class="imp-tpl" id="impTpl">↓ Descargar plantilla de ejemplo</button>
+            </div>
+
+            <div class="imp-step" id="impStepMap" hidden>
+                <p class="imp-lead">Empareja las columnas de tu archivo con los campos de Trato.</p>
+                <label class="imp-check"><input type="checkbox" id="impHeader" checked /> La primera fila son encabezados</label>
+                <div class="imp-maps" id="impMaps"></div>
+            </div>
+
+            <div class="imp-step" id="impStepPrev" hidden>
+                <div class="imp-summary" id="impSummary"></div>
+                <label class="imp-check"><input type="checkbox" id="impUpsert" checked /> Actualizar clientes existentes (mismo RFC o nombre)</label>
+                <div class="imp-prev-wrap"><table class="imp-prev"><thead id="impPrevHead"></thead><tbody id="impPrevBody"></tbody></table></div>
+            </div>
+
+            <p class="m-error" id="impError"></p>
+
+            <div class="m-actions">
+                <button type="button" class="m-cancel" id="impBack" hidden>← Atrás</button>
+                <span class="m-spacer"></span>
+                <button type="button" class="m-cancel" id="impCancel">Cancelar</button>
+                <button type="button" class="m-save" id="impNext" disabled>Continuar</button>
+            </div>
+        </div>
+    </dialog>
 </AppLayout>
 
 <style>
@@ -103,6 +150,49 @@ const TERM_VALUE: Record<string, string> = { 'Contado': 'contado', 'Net 30': 'ne
         transition: transform 0.4s var(--ease-spring);
     }
     .btn-new:hover { transform: translateY(-2px); }
+    .topbar-btns { display: flex; gap: 0.6rem; align-items: center; }
+    .btn-import {
+        font-family: var(--font-sans); display: inline-flex; align-items: center; gap: 7px;
+        background: var(--color-bg-soft); color: var(--color-text);
+        font-size: 0.82rem; font-weight: 600; border: 1px solid var(--color-border); cursor: pointer;
+        padding: 8px 14px; border-radius: 9px; transition: border-color 0.25s, transform 0.4s var(--ease-spring);
+    }
+    .btn-import svg { width: 14px; height: 14px; }
+    .btn-import:hover { transform: translateY(-2px); border-color: rgba(10,25,47,0.25); }
+
+    /* ── Modal importación ── */
+    .modal-lg { width: min(700px, calc(100vw - 2rem)); }
+    .imp-step { display: flex; flex-direction: column; gap: 0.9rem; }
+    .imp-lead { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; }
+    .imp-drop {
+        display: flex; flex-direction: column; align-items: center; gap: 0.5rem; text-align: center;
+        border: 1.5px dashed var(--color-border); border-radius: 14px; padding: 2.4rem 1.5rem; cursor: pointer;
+        background: var(--color-bg-soft); transition: border-color 0.25s, background 0.25s;
+    }
+    .imp-drop.drag, .imp-drop:hover { border-color: var(--color-blue-deep); background: rgba(10,25,47,0.03); }
+    .imp-drop svg { width: 32px; height: 32px; color: var(--color-blue-deep); }
+    .imp-drop b { font-size: 0.9rem; font-weight: 700; color: var(--color-text); }
+    .imp-drop span { font-size: 0.76rem; color: var(--color-text-muted); }
+    .imp-tpl { align-self: center; background: none; border: none; cursor: pointer; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: var(--color-blue-deep); }
+    .imp-tpl:hover { text-decoration: underline; }
+    .imp-check { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--color-text); cursor: pointer; }
+    .imp-maps { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+    .imp-map { display: flex; flex-direction: column; gap: 0.35rem; }
+    .imp-map label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #99a2af; }
+    .imp-map label .req { color: var(--color-danger); }
+    .imp-map select { font-family: var(--font-sans); font-size: 0.84rem; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 10px; }
+    .imp-map select:focus { outline: none; border-color: var(--color-blue-deep); }
+    .imp-summary { display: flex; gap: 1.4rem; flex-wrap: wrap; background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 11px; padding: 0.9rem 1.1rem; }
+    .imp-summary .is-num { font-size: 1.3rem; font-weight: 700; color: var(--color-blue-deep); letter-spacing: -0.5px; }
+    .imp-summary .is-num.warn { color: var(--color-warn); }
+    .imp-summary div { display: flex; flex-direction: column; }
+    .imp-summary small { font-size: 0.68rem; color: var(--color-text-muted); }
+    .imp-prev-wrap { max-height: 230px; overflow: auto; border: 1px solid var(--color-border); border-radius: 11px; }
+    .imp-prev { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
+    .imp-prev th { position: sticky; top: 0; background: var(--color-bg-soft); text-align: left; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #99a2af; padding: 8px 10px; border-bottom: 1px solid var(--color-border); }
+    .imp-prev td { padding: 7px 10px; border-bottom: 1px solid var(--color-border); color: var(--color-text); white-space: nowrap; }
+    .imp-prev td.n { text-align: right; font-variant-numeric: tabular-nums; }
+    .imp-prev tr.bad td { background: rgba(239,68,68,0.05); color: var(--color-text-muted); }
 
     .table-card { overflow: hidden; }
     .t-head, .t-row {
@@ -286,6 +376,200 @@ const TERM_VALUE: Record<string, string> = { 'Contado': 'contado', 'Net 30': 'ne
             });
             if (res.ok) location.reload();
             else errorEl.textContent = (await res.json()).error || 'No se pudo eliminar';
+        });
+    });
+</script>
+
+<script>
+    // Importador CSV de clientes: archivo → mapeo → preview → carga masiva.
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('importModal') as HTMLDialogElement | null;
+        if (!modal) return;
+        const $ = (id: string) => document.getElementById(id)!;
+        const fileInput = $('impFile') as HTMLInputElement;
+        const drop = $('impDrop');
+        const stepFile = $('impStepFile'), stepMap = $('impStepMap'), stepPrev = $('impStepPrev');
+        const headerChk = $('impHeader') as HTMLInputElement;
+        const upsertChk = $('impUpsert') as HTMLInputElement;
+        const mapsEl = $('impMaps');
+        const errorEl = $('impError');
+        const btnNext = $('impNext') as HTMLButtonElement;
+        const btnBack = $('impBack') as HTMLButtonElement;
+
+        const FIELDS = [
+            { key: 'empresa', label: 'Empresa', req: true, guess: ['empresa', 'cliente', 'razon', 'nombre', 'company'] },
+            { key: 'contacto', label: 'Contacto', req: false, guess: ['contacto', 'contact', 'atencion'] },
+            { key: 'email', label: 'Correo', req: false, guess: ['email', 'correo', 'mail'] },
+            { key: 'telefono', label: 'Teléfono', req: false, guess: ['telefono', 'tel', 'phone', 'celular', 'movil', 'whats'] },
+            { key: 'rfc', label: 'RFC', req: false, guess: ['rfc'] },
+            { key: 'terminos', label: 'Términos de pago', req: false, guess: ['terminos', 'term', 'pago', 'condicion'] },
+            { key: 'limite', label: 'Límite de crédito', req: false, guess: ['limite', 'credito', 'limit', 'credit'] },
+        ];
+
+        let grid: string[][] = [];
+        let step: 'file' | 'map' | 'prev' = 'file';
+        let prepared: any[] = [];
+
+        const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+        const parseNum = (v: string) => Number(String(v ?? '').replace(/[^0-9.\-]/g, '')) || 0;
+        const TERM_LABEL: Record<string, string> = { contado: 'Contado', net30: 'Net 30', net60: 'Net 60' };
+        const normTerm = (v: string) => {
+            const s = norm(v);
+            if (s.includes('60')) return 'net60';
+            if (s.includes('30')) return 'net30';
+            if (s.includes('net') || s.includes('credito')) return 'net30';
+            return 'contado';
+        };
+        const money = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
+        const esc = (s: string) => String(s ?? '').replace(/</g, '&lt;');
+
+        function parseCSV(text: string): string[][] {
+            const first = text.split(/\r?\n/)[0] || '';
+            const counts: Record<string, number> = {
+                ',': (first.match(/,/g) || []).length,
+                ';': (first.match(/;/g) || []).length,
+                '\t': (first.match(/\t/g) || []).length,
+            };
+            const delim = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0] || ',';
+            const rows: string[][] = []; let row: string[] = []; let field = ''; let q = false; let i = 0;
+            while (i < text.length) {
+                const c = text[i];
+                if (q) {
+                    if (c === '"') { if (text[i + 1] === '"') { field += '"'; i += 2; continue; } q = false; i++; continue; }
+                    field += c; i++; continue;
+                }
+                if (c === '"') { q = true; i++; continue; }
+                if (c === delim) { row.push(field); field = ''; i++; continue; }
+                if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; i++; continue; }
+                if (c === '\r') { i++; continue; }
+                field += c; i++;
+            }
+            if (field.length || row.length) { row.push(field); rows.push(row); }
+            return rows.filter(r => r.some(c => c.trim() !== ''));
+        }
+
+        const showStep = (s: 'file' | 'map' | 'prev') => {
+            step = s;
+            stepFile.hidden = s !== 'file';
+            stepMap.hidden = s !== 'map';
+            stepPrev.hidden = s !== 'prev';
+            btnBack.hidden = s === 'file';
+            errorEl.textContent = '';
+            if (s === 'file') { btnNext.disabled = true; btnNext.textContent = 'Continuar'; }
+            if (s === 'map') { btnNext.disabled = false; btnNext.textContent = 'Continuar'; }
+        };
+        const ncols = () => grid.reduce((m, r) => Math.max(m, r.length), 0);
+
+        function buildMaps() {
+            const useHeader = headerChk.checked;
+            const headers = useHeader ? (grid[0] || []) : [];
+            const n = ncols();
+            mapsEl.innerHTML = FIELDS.map(f => {
+                let guessed = -1;
+                if (useHeader) guessed = headers.findIndex(h => f.guess.some(g => norm(h).includes(g)));
+                const opts = ['<option value="-1">— ninguna —</option>'];
+                for (let i = 0; i < n; i++) {
+                    const label = useHeader && headers[i] ? headers[i] : `Columna ${i + 1}`;
+                    opts.push(`<option value="${i}" ${i === guessed ? 'selected' : ''}>${esc(label)}</option>`);
+                }
+                return `<div class="imp-map"><label>${f.label}${f.req ? ' <span class="req">*</span>' : ''}</label><select data-field="${f.key}">${opts.join('')}</select></div>`;
+            }).join('');
+        }
+        const readMap = () => {
+            const m: Record<string, number> = {};
+            mapsEl.querySelectorAll<HTMLSelectElement>('select[data-field]').forEach(s => { m[s.dataset.field!] = parseInt(s.value, 10); });
+            return m;
+        };
+
+        function buildPreview() {
+            const m = readMap();
+            if ((m.empresa ?? -1) < 0) { errorEl.textContent = 'Elige qué columna tiene el nombre de la empresa.'; return false; }
+            const dataRows = headerChk.checked ? grid.slice(1) : grid;
+            prepared = dataRows.map(r => ({
+                empresa: (r[m.empresa] ?? '').trim(),
+                contacto: m.contacto >= 0 ? (r[m.contacto] ?? '').trim() : '',
+                email: m.email >= 0 ? (r[m.email] ?? '').trim() : '',
+                telefono: m.telefono >= 0 ? (r[m.telefono] ?? '').trim() : '',
+                rfc: m.rfc >= 0 ? (r[m.rfc] ?? '').trim().toUpperCase() : '',
+                terminos: m.terminos >= 0 ? normTerm(r[m.terminos] ?? '') : 'contado',
+                limite: m.limite >= 0 ? (String(r[m.limite] ?? '').trim() === '' ? '' : parseNum(r[m.limite])) : '',
+            }));
+            const valid = prepared.filter(p => p.empresa);
+            const skipped = prepared.length - valid.length;
+
+            $('impSummary').innerHTML =
+                `<div><span class="is-num">${valid.length}</span><small>clientes a importar</small></div>` +
+                (skipped > 0 ? `<div><span class="is-num warn">${skipped}</span><small>filas omitidas (sin empresa)</small></div>` : '');
+
+            $('impPrevHead').innerHTML = '<tr><th>Empresa</th><th>Contacto</th><th>Email</th><th>RFC</th><th>Términos</th><th class="n">Límite</th></tr>';
+            $('impPrevBody').innerHTML = prepared.slice(0, 8).map(p => {
+                const bad = !p.empresa;
+                return `<tr class="${bad ? 'bad' : ''}"><td>${esc(p.empresa || '—')}</td><td>${esc(p.contacto || '—')}</td><td>${esc(p.email || '—')}</td><td>${esc(p.rfc || '—')}</td><td>${TERM_LABEL[p.terminos]}</td><td class="n">${p.limite === '' ? '—' : money(p.limite)}</td></tr>`;
+            }).join('');
+
+            btnNext.textContent = `Importar ${valid.length} cliente${valid.length === 1 ? '' : 's'}`;
+            btnNext.disabled = valid.length === 0;
+            return true;
+        }
+
+        async function doImport() {
+            const valid = prepared.filter(p => p.empresa);
+            if (!valid.length) return;
+            btnNext.disabled = true; btnNext.textContent = 'Importando…';
+            try {
+                const res = await fetch('/api/clientes/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rows: valid, upsert: upsertChk.checked }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'No se pudo importar');
+                location.reload();
+            } catch (err: any) {
+                errorEl.textContent = err.message;
+                btnNext.disabled = false; btnNext.textContent = `Importar ${valid.length} clientes`;
+            }
+        }
+
+        const loadFile = (file: File) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                grid = parseCSV(String(reader.result));
+                if (!grid.length) { errorEl.textContent = 'El archivo está vacío o no se pudo leer.'; return; }
+                buildMaps();
+                showStep('map');
+            };
+            reader.readAsText(file, 'utf-8');
+        };
+
+        document.getElementById('btnImport')?.addEventListener('click', () => { showStep('file'); modal.showModal(); });
+        $('impClose').addEventListener('click', () => modal.close());
+        $('impCancel').addEventListener('click', () => modal.close());
+        fileInput.addEventListener('change', () => { if (fileInput.files?.[0]) loadFile(fileInput.files[0]); });
+        headerChk.addEventListener('change', buildMaps);
+        drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('drag'); });
+        drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+        drop.addEventListener('drop', (e) => {
+            e.preventDefault(); drop.classList.remove('drag');
+            const f = (e as DragEvent).dataTransfer?.files?.[0];
+            if (f) loadFile(f);
+        });
+        btnNext.addEventListener('click', () => {
+            if (step === 'map') { if (buildPreview()) showStep('prev'); }
+            else if (step === 'prev') doImport();
+        });
+        btnBack.addEventListener('click', () => {
+            if (step === 'prev') { showStep('map'); btnNext.textContent = 'Continuar'; }
+            else if (step === 'map') showStep('file');
+        });
+        $('impTpl').addEventListener('click', () => {
+            const csv = 'empresa,contacto,email,telefono,rfc,terminos,limite\nDistribuidora El Zarco,Raul Mendoza,compras@elzarco.mx,55 1234 5678,DEZ981123QX1,net30,500000\nConstructora GAMA,Lucia Ferreira,lucia@gama.com.mx,55 8765 4321,CGA050617HJ8,net60,850000\n';
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'plantilla-clientes-trato.csv';
+            a.click();
+            URL.revokeObjectURL(a.href);
         });
     });
 </script>

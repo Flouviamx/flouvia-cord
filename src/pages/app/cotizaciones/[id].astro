@@ -79,6 +79,7 @@ const dotColor = (tipo: string) =>
                 </a>
                 <button class="act-secondary" id="btnCopy">Copiar link</button>
                 <a href={`/app/cotizaciones/${q.id}/imprimir`} target="_blank" class="act-secondary act-link">Descargar PDF</a>
+                <button class="act-secondary" id="btnDuplicate">Duplicar cotización</button>
 
                 {(q.status === 'sent' || q.status === 'viewed') && (
                     <>
@@ -301,6 +302,21 @@ const dotColor = (tipo: string) =>
             const prev = btn.textContent;
             btn.textContent = '✓ Link copiado';
             setTimeout(() => { btn.textContent = prev; }, 1800);
+        });
+
+        document.getElementById('btnDuplicate')?.addEventListener('click', async (e) => {
+            const btn = e.currentTarget as HTMLButtonElement;
+            btn.disabled = true;
+            errorEl.textContent = '';
+            try {
+                const res = await fetch(`/api/cotizaciones/${qid}/duplicate`, { method: 'POST' });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'No se pudo duplicar');
+                location.href = `/app/cotizaciones/${data.id}`;
+            } catch (err: any) {
+                errorEl.textContent = err.message;
+                btn.disabled = false;
+            }
         });
 
         document.getElementById('btnDelete')?.addEventListener('click', async () => {

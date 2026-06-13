@@ -1,0 +1,499 @@
+---
+// Página de solución — una por industria (mismo lenguaje que /producto/[slug]:
+// hero + mockup que vende, stats, bloques alternados, cross-links y CTA).
+// Animaciones compartidas via PageAnims.astro.
+export const prerender = true;
+
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../../components/landing/Nav.astro';
+import Footer from '../../components/landing/Footer.astro';
+import PageAnims from '../../components/landing/PageAnims.astro';
+import { SOLUCIONES } from '../../lib/solucion';
+
+export function getStaticPaths() {
+    return SOLUCIONES.map((s) => ({ params: { slug: s.slug }, props: { solucion: s } }));
+}
+
+const { solucion } = Astro.props;
+const otras = SOLUCIONES.filter((s) => s.slug !== solucion.slug);
+---
+
+<Layout title={`${solucion.nav} — Trato`} description={solucion.sub}>
+    <Nav />
+    <main>
+        <!-- ── HERO ── -->
+        <section class="pp-hero">
+            <div class="pp-hero-mesh" aria-hidden="true"></div>
+            <div class="pp-hero-inner">
+                <p class="pp-eyebrow reveal">{solucion.eyebrow}</p>
+                <h1 class="pp-title masked-title" set:html={solucion.titulo} />
+                <p class="pp-sub reveal">{solucion.sub}</p>
+                <div class="pp-actions reveal">
+                    <a href="/registro" class="pp-btn-primary">
+                        <span>Empezar gratis</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </a>
+                    <a href="/q/demo" class="pp-btn-ghost">Ver una cotización real</a>
+                </div>
+                <p class="pp-dolor reveal"><span>El dolor:</span> {solucion.dolor}</p>
+
+                <!-- Mockup específico de la industria -->
+                <div class="pp-mockup-wrap reveal-mockup">
+                    <div class="pp-glow" aria-hidden="true"></div>
+                    <div class="pp-mockup">
+
+                        {solucion.slug === 'distribuidoras' && (
+                            <div class="mk-window">
+                                <div class="mk-bar">
+                                    <span class="mk-dots"><i></i><i></i><i></i></span>
+                                    <span class="mk-bar-title">Precio por cliente · Cemento gris 50kg</span>
+                                    <span class="mk-badge mk-badge-ok">● Lista activa</span>
+                                </div>
+                                <div class="mk-rows mk-rows-4">
+                                    <div class="mk-row mk-row-head"><span>Cliente</span><span>Términos</span><span>Tu precio</span><span>vs lista</span></div>
+                                    <div class="mk-row"><span>Distribuidora El Zarco</span><span>Net 30</span><span class="editorial mk-green">$168.50</span><span class="editorial"><i class="mk-chip">−12%</i></span></div>
+                                    <div class="mk-row"><span>Constructora GAMA</span><span>Net 60</span><span class="editorial mk-green">$172.00</span><span class="editorial"><i class="mk-chip">−10%</i></span></div>
+                                    <div class="mk-row"><span>Grupo Ferrex</span><span>Contado</span><span class="editorial">$182.00</span><span class="editorial mk-muted">Lista</span></div>
+                                </div>
+                                <div class="mk-totals">
+                                    <span>Precio de lista <b class="editorial">$191.48</b></span>
+                                    <span class="mk-total-final">Margen <b class="editorial">protegido</b></span>
+                                </div>
+                            </div>
+                        )}
+
+                        {solucion.slug === 'construccion' && (
+                            <div class="mk-window">
+                                <div class="mk-bar">
+                                    <span class="mk-dots"><i></i><i></i><i></i></span>
+                                    <span class="mk-bar-title">COT-0148 · Constructora GAMA · Obra Polanco</span>
+                                    <span class="mk-badge mk-badge-sent">● Net 60</span>
+                                </div>
+                                <div class="mk-rows mk-rows-con">
+                                    <div class="mk-row mk-row-head"><span>Material</span><span>Cant.</span><span>Precio</span><span>Importe</span></div>
+                                    <div class="mk-row"><span>Cemento gris 50kg</span><span>120 sacos</span><span class="editorial">$182.00</span><span class="editorial">$21,840.00</span></div>
+                                    <div class="mk-row"><span>Varilla 3/8" × 12m</span><span>340 tramos</span><span class="editorial">$168.50</span><span class="editorial">$57,290.00</span></div>
+                                    <div class="mk-row"><span>Arena de río</span><span>45 m³</span><span class="editorial">$420.00</span><span class="editorial">$18,900.00</span></div>
+                                    <div class="mk-row"><span>Block hueco 15×20×40</span><span>2,400 pza</span><span class="editorial">$14.20</span><span class="editorial">$34,080.00</span></div>
+                                </div>
+                                <div class="mk-totals">
+                                    <span>Subtotal <b class="editorial">$169,370.00</b></span>
+                                    <span>IVA 16% <b class="editorial">$27,099.20</b></span>
+                                    <span class="mk-total-final">Total <b class="editorial">$196,469.20</b></span>
+                                </div>
+                                <div class="mk-credit-bar">
+                                    <span>Crédito de GAMA</span>
+                                    <div class="mk-credit"><i style="width:72%"></i></div>
+                                    <b class="editorial">$612k / $850k</b>
+                                </div>
+                            </div>
+                        )}
+
+                        {solucion.slug === 'manufactura' && (
+                            <div class="mk-window">
+                                <div class="mk-bar">
+                                    <span class="mk-dots"><i></i><i></i><i></i></span>
+                                    <span class="mk-bar-title">COT-0204 · Ensambles del Norte</span>
+                                    <span class="mk-badge mk-badge-draft">● Borrador</span>
+                                </div>
+                                <div class="mk-spec">
+                                    <div class="mk-spec-line">
+                                        <div><b>Placa de acero A36 · corte láser</b><i>Espesor 6mm · acabado pulido · tolerancia ±0.2mm</i></div>
+                                        <span class="editorial">$1,240.00</span>
+                                    </div>
+                                    <div class="mk-spec-line">
+                                        <div><b>Maquinado CNC · pieza 4F-22</b><i>Lote mínimo 500 pza · entrega 12 días hábiles</i></div>
+                                        <span class="editorial">$86.50</span>
+                                    </div>
+                                </div>
+                                <div class="mk-note">
+                                    <span class="mk-note-label">NOTA DEL LOTE</span>
+                                    <p>MOQ 500 pza · entrega 12 días tras anticipo del 50% · precio sujeto a plano final R3.</p>
+                                </div>
+                                <div class="mk-totals">
+                                    <span class="mk-total-final">Total del lote <b class="editorial">$44,490.00</b></span>
+                                </div>
+                            </div>
+                        )}
+
+                        {solucion.slug === 'servicios' && (
+                            <div class="mk-public">
+                                <div class="mk-public-head">
+                                    <span class="mk-avatar">DV</span>
+                                    <div>
+                                        <b>Despacho Vértice</b>
+                                        <i>te envió una propuesta</i>
+                                    </div>
+                                    <span class="mk-badge mk-badge-sent">● Vista</span>
+                                </div>
+                                <div class="mk-public-total">
+                                    <span>Honorarios del proyecto</span>
+                                    <b class="editorial">$84,000.00</b>
+                                    <i>50% anticipo · vigente al 30 jun 2026</i>
+                                </div>
+                                <div class="mk-public-actions">
+                                    <span class="mk-approve">Aprobar propuesta</span>
+                                    <span class="mk-reject">Tengo una duda</span>
+                                </div>
+                                <span class="mk-via">vía <b>trato</b></span>
+                            </div>
+                        )}
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── STATS ── -->
+        <section class="pp-stats">
+            {solucion.stats.map((s) => (
+                <div class="pp-stat reveal">
+                    <span
+                        class="pp-stat-num editorial"
+                        data-countup={s.countup !== undefined ? String(s.countup) : undefined}
+                        data-decimals={s.decimals !== undefined ? String(s.decimals) : undefined}
+                        data-prefix={s.prefix}
+                        data-suffix={s.suffix}
+                    >{s.prefix ?? ''}{s.valor}{s.suffix ?? ''}</span>
+                    <span class="pp-stat-label">{s.label}</span>
+                </div>
+            ))}
+        </section>
+
+        <!-- ── BLOQUES DE DETALLE ── -->
+        <section class="pp-blocks">
+            {solucion.blocks.map((b, i) => (
+                <article class:list={['pp-block', { 'pp-block-flip': i % 2 === 1 }]}>
+                    <div class="pp-block-text">
+                        <p class="pp-eyebrow reveal">{b.eyebrow}</p>
+                        <h2 class="pp-h2 masked-title" set:html={b.titulo} />
+                        <p class="pp-copy reveal">{b.copy}</p>
+                        <ul class="pp-bullets">
+                            {b.bullets.map((bl) => (
+                                <li class="reveal">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>{bl}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                    <div class="pp-block-visual reveal-mockup">
+                        <div class="pp-card-num editorial">/0{i + 1}</div>
+                    </div>
+                </article>
+            ))}
+        </section>
+
+        <!-- ── CROSS-LINKS ── -->
+        <section class="pp-more">
+            <div class="pp-more-head">
+                <p class="pp-eyebrow reveal">OTRAS INDUSTRIAS</p>
+                <h2 class="pp-h2 masked-title">Trato funciona<br/>en tu sector también.</h2>
+            </div>
+            <div class="pp-more-grid">
+                {otras.map((s) => (
+                    <a href={`/soluciones/${s.slug}`} class="pp-more-card reveal">
+                        <b>{s.nav}</b>
+                        <span>{s.sub.split('.')[0]}.</span>
+                        <i class="pp-more-arrow">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </i>
+                    </a>
+                ))}
+            </div>
+        </section>
+    </main>
+
+    <Footer ctaTitle={solucion.cta.titulo} ctaSub={solucion.cta.sub} />
+    <PageAnims />
+</Layout>
+
+<style>
+    /* ════════ HERO ════════ */
+    .pp-hero {
+        position: relative;
+        padding: 11.5rem 5% 5rem;
+        text-align: center;
+        overflow: clip;
+        background: var(--color-bg);
+    }
+    .pp-hero-mesh {
+        position: absolute; inset: -20% -10% auto;
+        height: 80%;
+        background:
+            radial-gradient(ellipse 50% 60% at 28% 20%, rgba(10,25,47,0.05) 0%, transparent 60%),
+            radial-gradient(ellipse 44% 54% at 76% 12%, rgba(10,25,47,0.04) 0%, transparent 60%);
+        pointer-events: none;
+    }
+    .pp-hero-inner { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; }
+
+    .pp-eyebrow {
+        font-size: 0.65rem; font-weight: 800; letter-spacing: 3px;
+        text-transform: uppercase; color: #888; margin: 0 0 1.4rem;
+    }
+    .pp-title {
+        font-size: clamp(2.4rem, 5.4vw, 4.4rem);
+        font-weight: 800; line-height: 1.04; letter-spacing: -0.035em;
+        color: var(--color-text); margin: 0 0 1.6rem;
+    }
+    .pp-sub {
+        font-size: 1.12rem; line-height: 1.65; color: var(--color-text-muted);
+        max-width: 660px; margin: 0 auto 2.2rem;
+    }
+    .pp-actions { display: flex; gap: 0.9rem; justify-content: center; align-items: center; flex-wrap: wrap; }
+    .pp-btn-primary {
+        display: inline-flex; align-items: center; gap: 10px;
+        background: var(--color-blue-deep); color: #fff;
+        text-decoration: none; font-size: 0.98rem; font-weight: 600;
+        padding: 14px 28px; border-radius: 13px;
+        box-shadow: 0 18px 44px -16px rgba(10,25,47,0.55);
+        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
+    }
+    .pp-btn-primary svg { width: 15px; height: 15px; transition: transform 0.5s var(--ease-spring); }
+    .pp-btn-primary:hover { transform: translateY(-3px); box-shadow: 0 26px 56px -16px rgba(10,25,47,0.6); }
+    .pp-btn-primary:hover svg { transform: translateX(4px); }
+    .pp-btn-ghost {
+        color: var(--color-text); text-decoration: none; font-weight: 600; font-size: 0.98rem;
+        padding: 14px 10px;
+        transition: color 0.3s;
+    }
+    .pp-btn-ghost:hover { color: var(--color-blue-deep); }
+    .pp-dolor {
+        font-size: 0.85rem; color: var(--color-text-muted); margin: 1.4rem auto 0; max-width: 540px;
+        line-height: 1.5;
+    }
+    .pp-dolor span { font-weight: 700; color: var(--color-danger); letter-spacing: 0.2px; }
+
+    /* ── Mockup del hero ── */
+    .pp-mockup-wrap { position: relative; max-width: 760px; margin: 4.5rem auto 0; }
+    .pp-glow {
+        position: absolute; inset: 12% -8% -18%;
+        background: radial-gradient(ellipse at center, rgba(10,25,47,0.16) 0%, transparent 65%);
+        filter: blur(30px);
+        pointer-events: none;
+    }
+    .pp-mockup {
+        position: relative;
+        background: linear-gradient(165deg, #0e2240 0%, #0a192f 55%, #081424 100%);
+        border-radius: 22px;
+        padding: 1.6rem;
+        text-align: left;
+        box-shadow:
+            0 50px 100px -36px rgba(5,11,20,0.75),
+            inset 0 0 0 0.5px rgba(255,255,255,0.08);
+        color: #fff;
+    }
+
+    /* badges + avatar compartidos */
+    .mk-badge {
+        font-size: 0.62rem; font-weight: 700; letter-spacing: 0.4px;
+        padding: 4px 10px; border-radius: 100px; white-space: nowrap;
+    }
+    .mk-badge-draft { color: #aab4c4; background: rgba(255,255,255,0.08); }
+    .mk-badge-sent  { color: #7eb3ff; background: rgba(59,130,246,0.16); }
+    .mk-badge-ok    { color: #4ade80; background: rgba(16,185,129,0.16); }
+    .mk-avatar {
+        width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+        background: rgba(255,255,255,0.1); color: #fff;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 0.78rem; font-weight: 800;
+    }
+
+    /* ventana (distribuidoras + construccion) */
+    .mk-bar { display: flex; align-items: center; gap: 12px; padding-bottom: 1rem; }
+    .mk-dots { display: inline-flex; gap: 5px; }
+    .mk-dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.14); }
+    .mk-bar-title { font-size: 0.76rem; font-weight: 600; color: rgba(255,255,255,0.75); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mk-rows { display: flex; flex-direction: column; gap: 4px; }
+    .mk-row {
+        display: grid; gap: 8px; align-items: center;
+        font-size: 0.78rem; color: rgba(255,255,255,0.82);
+        padding: 8px 10px; border-radius: 9px;
+        background: rgba(255,255,255,0.03);
+    }
+    .mk-rows-4 .mk-row { grid-template-columns: 1.7fr 0.8fr 0.9fr 0.8fr; }
+    .mk-rows-con .mk-row { grid-template-columns: 1.7fr 0.9fr 0.8fr 1fr; }
+    .mk-row span:nth-child(n+2) { text-align: right; }
+    .mk-row-head { background: none; font-size: 0.6rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.35); }
+    .mk-green { color: #4ade80; }
+    .mk-muted { color: rgba(255,255,255,0.4); }
+    .mk-chip {
+        font-style: normal; font-size: 0.6rem; font-weight: 800;
+        color: #052e1f; background: #4ade80;
+        padding: 1px 6px; border-radius: 6px;
+        vertical-align: 1px;
+    }
+    .mk-totals {
+        display: flex; justify-content: flex-end; gap: 1.6rem; flex-wrap: wrap;
+        margin-top: 1rem; padding: 0.9rem 10px 0;
+        border-top: 1px solid rgba(255,255,255,0.09);
+        font-size: 0.74rem; color: rgba(255,255,255,0.55);
+    }
+    .mk-totals b { margin-left: 7px; color: #fff; font-weight: 600; }
+    .mk-total-final { font-weight: 700; color: rgba(255,255,255,0.85); }
+    .mk-total-final b { font-size: 1.05rem; }
+
+    /* barra de crédito (construccion) */
+    .mk-credit-bar {
+        display: flex; align-items: center; gap: 12px;
+        margin-top: 0.9rem; padding: 11px 12px; border-radius: 11px;
+        background: rgba(255,255,255,0.035);
+        font-size: 0.72rem; color: rgba(255,255,255,0.55);
+    }
+    .mk-credit { flex: 1; }
+    .mk-credit i { display: block; height: 6px; border-radius: 100px; background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+    .mk-credit-bar b { color: #fff; font-weight: 600; white-space: nowrap; }
+
+    /* especificación (manufactura) */
+    .mk-spec { display: flex; flex-direction: column; gap: 6px; }
+    .mk-spec-line {
+        display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+        padding: 11px 13px; border-radius: 11px; background: rgba(255,255,255,0.035);
+    }
+    .mk-spec-line b { display: block; font-size: 0.82rem; font-weight: 600; }
+    .mk-spec-line i { display: block; font-style: normal; font-size: 0.7rem; color: rgba(255,255,255,0.45); margin-top: 3px; line-height: 1.4; }
+    .mk-spec-line > span { white-space: nowrap; color: #fff; }
+    .mk-note {
+        margin-top: 0.8rem; padding: 11px 13px; border-radius: 11px;
+        background: rgba(251,191,36,0.08); box-shadow: inset 0 0 0 0.5px rgba(251,191,36,0.18);
+    }
+    .mk-note-label { font-size: 0.58rem; font-weight: 800; letter-spacing: 1.4px; color: #fbbf24; }
+    .mk-note p { margin: 4px 0 0; font-size: 0.74rem; color: rgba(255,255,255,0.7); line-height: 1.5; }
+
+    /* propuesta pública (servicios) */
+    .mk-public { display: flex; flex-direction: column; gap: 1.1rem; max-width: 430px; margin: 0 auto; padding: 0.5rem 0.3rem; }
+    .mk-public-head { display: flex; align-items: center; gap: 12px; }
+    .mk-public-head b { display: block; font-size: 0.92rem; }
+    .mk-public-head i { display: block; font-style: normal; font-size: 0.74rem; color: rgba(255,255,255,0.5); }
+    .mk-public-head .mk-badge { margin-left: auto; }
+    .mk-public-total {
+        text-align: center; padding: 1.4rem 1rem;
+        background: rgba(255,255,255,0.04); border-radius: 16px;
+        box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.07);
+    }
+    .mk-public-total span { display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 6px; }
+    .mk-public-total b { display: block; font-size: 2rem; font-weight: 600; letter-spacing: -0.03em; }
+    .mk-public-total i { display: block; font-style: normal; font-size: 0.74rem; color: rgba(255,255,255,0.45); margin-top: 6px; }
+    .mk-public-actions { display: flex; gap: 0.7rem; }
+    .mk-approve {
+        flex: 1; text-align: center;
+        background: #fff; color: var(--color-blue-deep);
+        font-size: 0.88rem; font-weight: 700;
+        padding: 13px; border-radius: 12px;
+    }
+    .mk-reject {
+        text-align: center; color: rgba(255,255,255,0.6);
+        font-size: 0.88rem; font-weight: 600;
+        padding: 13px 20px; border-radius: 12px;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14);
+    }
+    .mk-via { text-align: center; font-size: 0.68rem; color: rgba(255,255,255,0.35); }
+    .mk-via b { color: rgba(255,255,255,0.6); }
+
+    /* ════════ STATS ════════ */
+    .pp-stats {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem;
+        max-width: 1080px; margin: 0 auto;
+        padding: 5.5rem 5%;
+        border-bottom: 1px solid var(--color-border);
+    }
+    .pp-stat { text-align: center; display: flex; flex-direction: column; gap: 0.6rem; }
+    .pp-stat-num {
+        font-size: clamp(2.4rem, 4.6vw, 3.6rem);
+        color: var(--color-blue-deep); line-height: 1;
+    }
+    .pp-stat-label { font-size: 0.88rem; color: var(--color-text-muted); max-width: 240px; margin: 0 auto; line-height: 1.5; }
+
+    /* ════════ BLOQUES ════════ */
+    .pp-blocks {
+        max-width: 1080px; margin: 0 auto;
+        padding: 6rem 5% 3rem;
+        display: flex; flex-direction: column; gap: 7rem;
+    }
+    .pp-block {
+        display: grid; grid-template-columns: 1.1fr 0.9fr;
+        gap: 4.5rem; align-items: center;
+    }
+    .pp-block-flip .pp-block-text { order: 2; }
+    .pp-block-flip .pp-block-visual { order: 1; }
+
+    .pp-h2 {
+        font-size: clamp(1.7rem, 3vw, 2.4rem);
+        font-weight: 800; line-height: 1.12; letter-spacing: -0.03em;
+        color: var(--color-text); margin: 0 0 1.1rem;
+    }
+    .pp-copy { font-size: 1.02rem; line-height: 1.7; color: var(--color-text-muted); margin: 0 0 1.6rem; }
+    .pp-bullets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.8rem; }
+    .pp-bullets li { display: flex; align-items: flex-start; gap: 11px; font-size: 0.95rem; color: var(--color-text); font-weight: 500; }
+    .pp-bullets svg { width: 16px; height: 16px; color: var(--color-ok); flex-shrink: 0; margin-top: 3px; }
+
+    .pp-block-visual {
+        position: relative;
+        min-height: 260px;
+        border-radius: 24px;
+        background:
+            radial-gradient(ellipse at 30% 20%, rgba(10,25,47,0.045) 0%, transparent 55%),
+            var(--color-bg-soft);
+        border: 1px solid var(--color-border);
+        display: flex; align-items: flex-end; justify-content: flex-start;
+        padding: 1.6rem;
+        overflow: clip;
+        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
+    }
+    .pp-block-visual:hover { transform: translateY(-4px); box-shadow: 0 30px 70px -30px rgba(10,25,47,0.18); }
+    .pp-card-num {
+        font-size: 5rem; line-height: 0.9;
+        color: rgba(10,25,47,0.08);
+        font-weight: 600;
+    }
+
+    /* ════════ CROSS-LINKS ════════ */
+    .pp-more {
+        max-width: 1080px; margin: 0 auto;
+        padding: 6rem 5% 8rem;
+    }
+    .pp-more-head { text-align: center; margin-bottom: 3.2rem; }
+    .pp-more-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.1rem; }
+    .pp-more-card {
+        position: relative;
+        display: flex; flex-direction: column; gap: 0.5rem;
+        background: var(--color-bg-soft);
+        border: 1px solid var(--color-border);
+        border-radius: 20px;
+        padding: 1.7rem 1.8rem;
+        text-decoration: none;
+        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring), border-color 0.4s;
+    }
+    .pp-more-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 30px 70px -30px rgba(10,25,47,0.18);
+        border-color: rgba(10,25,47,0.12);
+    }
+    .pp-more-card b { font-size: 1.02rem; font-weight: 700; letter-spacing: -0.3px; color: var(--color-text); }
+    .pp-more-card span { font-size: 0.86rem; line-height: 1.55; color: var(--color-text-muted); padding-right: 2.4rem; }
+    .pp-more-arrow {
+        position: absolute; right: 1.5rem; top: 1.6rem;
+        width: 30px; height: 30px; border-radius: 50%;
+        background: rgba(10,25,47,0.05); color: var(--color-blue-deep);
+        display: flex; align-items: center; justify-content: center;
+        transition: background 0.35s, color 0.35s, transform 0.5s var(--ease-spring);
+    }
+    .pp-more-arrow svg { width: 13px; height: 13px; }
+    .pp-more-card:hover .pp-more-arrow { background: var(--color-blue-deep); color: #fff; transform: translateX(3px); }
+
+    /* ════════ RESPONSIVE ════════ */
+    @media (max-width: 860px) {
+        .pp-hero { padding-top: 9.5rem; }
+        .pp-stats { grid-template-columns: 1fr; gap: 2.4rem; padding: 4rem 8%; }
+        .pp-blocks { gap: 4.5rem; }
+        .pp-block { grid-template-columns: 1fr; gap: 1.8rem; }
+        .pp-block-flip .pp-block-text { order: 1; }
+        .pp-block-flip .pp-block-visual { order: 2; }
+        .pp-block-visual { min-height: 170px; }
+        .pp-more-grid { grid-template-columns: 1fr; }
+        .mk-rows-4 .mk-row { grid-template-columns: 1.5fr 0.8fr 0.9fr; }
+        .mk-rows-4 .mk-row span:nth-child(4) { display: none; }
+        .mk-rows-con .mk-row { grid-template-columns: 1.5fr 0.9fr 1fr; }
+        .mk-rows-con .mk-row span:nth-child(3) { display: none; }
+    }
+</style>

@@ -98,11 +98,16 @@ const SOLUCIONES = [
                                 </li>
                             ))}
                         </ul>
+                        <a href={`/soluciones/${s.id}`} class="sol-link reveal">
+                            Ver solución completa
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </a>
                     </div>
-                    <div class="sol-visual reveal-mockup">
+                    <a href={`/soluciones/${s.id}`} class="sol-visual reveal-mockup" aria-label={`Ver solución para ${s.eyebrow.toLowerCase()}`}>
                         <span class="sol-kpi editorial">{s.kpi.num}</span>
                         <span class="sol-kpi-label">{s.kpi.label}</span>
-                    </div>
+                        <span class="sol-visual-cta">Ver solución →</span>
+                    </a>
                 </article>
             ))}
         </section>
@@ -181,6 +186,24 @@ const SOLUCIONES = [
     .sol-bullets li { display: flex; align-items: flex-start; gap: 11px; font-size: 0.95rem; color: var(--color-text); font-weight: 500; }
     .sol-bullets svg { width: 16px; height: 16px; color: var(--color-ok); flex-shrink: 0; margin-top: 3px; }
 
+    .sol-link {
+        display: inline-flex; align-items: center; gap: 8px; margin-top: 1.6rem;
+        font-size: 0.92rem; font-weight: 700; color: var(--color-blue-deep);
+        text-decoration: none;
+        transition: gap 0.4s var(--ease-spring), opacity 0.3s;
+    }
+    .sol-link svg { width: 15px; height: 15px; transition: transform 0.4s var(--ease-spring); }
+    .sol-link:hover { gap: 12px; }
+    .sol-link:hover svg { transform: translateX(3px); }
+    .sol-visual-cta {
+        position: absolute; bottom: 1.4rem; left: 0; right: 0; text-align: center;
+        font-size: 0.74rem; font-weight: 700; letter-spacing: 0.4px;
+        color: rgba(255,255,255,0.55);
+        opacity: 0; transform: translateY(6px);
+        transition: opacity 0.4s var(--ease-spring), transform 0.4s var(--ease-spring), color 0.3s;
+    }
+    .sol-visual:hover .sol-visual-cta { opacity: 1; transform: translateY(0); color: rgba(255,255,255,0.85); }
+
     .sol-visual {
         position: relative;
         min-height: 250px;
@@ -190,10 +213,10 @@ const SOLUCIONES = [
             0 40px 90px -36px rgba(5,11,20,0.6),
             inset 0 0 0 0.5px rgba(255,255,255,0.08);
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        gap: 0.8rem; padding: 2rem; text-align: center;
-        transition: transform 0.5s var(--ease-spring);
+        gap: 0.8rem; padding: 2rem 2rem 2.6rem; text-align: center; text-decoration: none;
+        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
     }
-    .sol-visual:hover { transform: translateY(-4px); }
+    .sol-visual:hover { transform: translateY(-4px); box-shadow: 0 40px 90px -36px rgba(5,11,20,0.7), inset 0 0 0 0.5px rgba(255,255,255,0.12); }
     .sol-kpi {
         font-size: clamp(2.6rem, 5vw, 3.6rem);
         color: #fff; line-height: 1;

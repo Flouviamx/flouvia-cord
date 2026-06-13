@@ -119,51 +119,67 @@ import Footer from '../components/landing/Footer.astro';
             });
         }
 
-        // ───────── HERO STORY: Enviada → Vista → Aprobada (loop) ─────────
-        // El HTML por defecto es el estado final (Aprobada) — sin JS o con
-        // reduced-motion el mockup queda estático y completo. Con JS, la
-        // historia arranca desde "Enviada" y recorre el loop del producto.
+        // ───────── HERO DEMO INTERACTIVO: Creas → Envías → La ven → Aprueban → Facturas ─────────
+        // El visitante recorre el flujo con los botones de paso; además auto-avanza
+        // como tour guiado y se pausa al pasar el mouse. El HTML por defecto es el
+        // estado final (completo) → sin JS / reduced-motion el mockup queda estático
+        // (los botones de paso se ocultan por CSS en reduced-motion).
         const mkStatus = document.getElementById('mkStatus');
         const mkToast = document.getElementById('mkToast');
         const mkChip = document.getElementById('mkChip');
-        const tlViewed = document.querySelector<HTMLElement>('.mk-tl-item[data-story="viewed"]');
-        const tlApproved = document.querySelector<HTMLElement>('.mk-tl-item[data-story="approved"]');
+        const demoEl = document.getElementById('heroDemo');
+        const stepEls = Array.from(document.querySelectorAll<HTMLButtonElement>('.demo-step'));
+        const tlItems = Array.from(document.querySelectorAll<HTMLElement>('.mk-tl-item[data-story]'));
 
-        if (mkStatus && mkToast && mkChip && tlViewed && tlApproved) {
-            const setStatus = (cls: string, label: string) => () => {
-                mkStatus.className = `mk-badge ${cls}`;
-                mkStatus.textContent = `● ${label}`;
+        if (mkStatus && mkToast && mkChip && demoEl && stepEls.length) {
+            const DWELL = 2.7;
+            const fills = stepEls.map((s) => s.querySelector<HTMLElement>('.ds-fill')!);
+            const STAGES = [
+                { badge: ['mk-badge-draft', 'Borrador'],  on: ['created'],                                  toast: false, chip: false },
+                { badge: ['mk-badge-sent', 'Enviada'],    on: ['created', 'sent'],                          toast: false, chip: false },
+                { badge: ['mk-badge-viewed', 'Vista'],    on: ['created', 'sent', 'viewed'],                toast: true,  chip: false },
+                { badge: ['mk-badge-ok', 'Aprobada'],     on: ['created', 'sent', 'viewed', 'approved'],    toast: false, chip: false },
+                { badge: ['mk-badge-ok', 'Facturada'],    on: ['created', 'sent', 'viewed', 'approved'],    toast: false, chip: true },
+            ];
+            let active = 0, paused = false, fillTween: gsap.core.Tween | null = null;
+
+            const applyStage = (i: number, animate: boolean) => {
+                const st = STAGES[i];
+                mkStatus.className = `mk-badge ${st.badge[0]}`;
+                mkStatus.textContent = `● ${st.badge[1]}`;
+                if (animate) gsap.fromTo(mkStatus, { scale: 0.84, opacity: 0.4 }, { scale: 1, opacity: 1, duration: 0.45, ease: 'power2.out' });
+                tlItems.forEach((it) => it.classList.toggle('is-pending', !st.on.includes(it.dataset.story || '')));
+                const dur = animate ? 0.5 : 0;
+                gsap.to(mkToast, { opacity: st.toast ? 1 : 0, duration: dur });
+                gsap.to(mkChip, { opacity: st.chip ? 1 : 0, y: st.chip ? 0 : -10, duration: dur });
             };
-            const popBadge = () =>
-                gsap.fromTo(mkStatus, { scale: 0.82, opacity: 0.3 }, { scale: 1, opacity: 1, duration: 0.5, ease: 'power2.out' });
+            const render = (i: number, animate = true) => {
+                active = i;
+                applyStage(i, animate);
+                stepEls.forEach((b, idx) => {
+                    b.classList.toggle('is-active', idx === i);
+                    b.setAttribute('aria-selected', idx === i ? 'true' : 'false');
+                });
+            };
+            const go = (i: number) => {
+                render(i, true);
+                fillTween?.kill();
+                gsap.set(fills, { scaleX: 0 });
+                fillTween = gsap.fromTo(fills[i], { scaleX: 0 }, {
+                    scaleX: 1, duration: DWELL, ease: 'none',
+                    onComplete: () => { if (!paused) go((i + 1) % STAGES.length); },
+                });
+            };
 
-            // Estado inicial inmediato (antes de que el mockup termine de entrar)
-            gsap.set([tlViewed, tlApproved], { opacity: 0, y: 8 });
-            gsap.set(mkToast, { opacity: 0 });
-            gsap.set(mkChip, { opacity: 0, y: -10 });
-            setStatus('mk-badge-sent', 'Enviada')();
+            render(0, false); // estado inicial inmediato (sin pop), evita flash del estado final
 
-            const story = gsap.timeline({ repeat: -1, delay: 2.0 });
-            story
-                // reset (para los loops siguientes)
-                .set([tlViewed, tlApproved], { opacity: 0, y: 8 })
-                .set(mkToast, { opacity: 0 })
-                .set(mkChip, { opacity: 0, y: -10 })
-                .call(setStatus('mk-badge-sent', 'Enviada'))
-                .call(popBadge)
-                // 1) el cliente la abre — toast + badge "Vista" + evento en timeline
-                .to(mkToast, { opacity: 1, duration: 0.55, ease: 'power2.out' }, '+=1.9')
-                .call(setStatus('mk-badge-viewed', 'Vista'), undefined, '<0.15')
-                .call(popBadge, undefined, '<0.15')
-                .to(tlViewed, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, '<0.1')
-                // 2) aprueba — badge verde, evento, CFDI timbrado
-                .call(setStatus('mk-badge-ok', 'Aprobada'), undefined, '+=2.6')
-                .call(popBadge, undefined, '+=0.01')
-                .to(tlApproved, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, '<0.1')
-                .to(mkToast, { opacity: 0, duration: 0.45 }, '<0.2')
-                .to(mkChip, { opacity: 1, y: 0, duration: 0.65, ease: 'power3.out' }, '<0.3')
-                // 3) respiro y cierre suave antes de reiniciar
-                .to([tlViewed, tlApproved, mkChip], { opacity: 0, duration: 0.6, ease: 'power2.in' }, '+=3.4');
+            stepEls.forEach((b, idx) => b.addEventListener('click', () => {
+                if (paused) { render(idx, true); fillTween?.kill(); gsap.set(fills, { scaleX: 0 }); }
+                else go(idx);
+            }));
+            demoEl.addEventListener('mouseenter', () => { paused = true; fillTween?.kill(); });
+            demoEl.addEventListener('mouseleave', () => { paused = false; go(active); });
+            gsap.delayedCall(2.0, () => { if (!paused) go(0); });
         }
 
         // Trust strip del hero (está bajo el fold normalmente)
