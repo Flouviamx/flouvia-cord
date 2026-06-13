@@ -1,9 +1,13 @@
 ---
 // Dashboard — pipeline, monto por cerrar, actividad reciente. Datos reales (Neon).
 import AppLayout from '../../layouts/AppLayout.astro';
-import { getDashboard, STATUS_META, money } from '../../lib/queries';
+import { getDashboard, getProductos, getTareas, STATUS_META, money } from '../../lib/queries';
+import { PACKS } from '../../lib/onboarding';
 
 const { quotes: COTIZACIONES, porCerrar, cerradoMes, tasaCierre, abiertas, feed: eventosFeed } = await getDashboard();
+const productos = await getProductos();
+const showOnboarding = productos.length === 0 || Astro.url.searchParams.has('onboarding');
+const TAREAS = await getTareas();
 const recientes = COTIZACIONES.slice(0, 5);
 const aprobadasN = COTIZACIONES.filter(q => q.status === 'approved').length;
 const pagadasN = COTIZACIONES.filter(q => q.status === 'paid').length;
@@ -21,6 +25,27 @@ const dotColor = (tipo: string) =>
     <a slot="topbar-actions" href="/app/cotizaciones/nueva" class="btn-new">
         + Nueva cotización
     </a>
+
+    {showOnboarding && (
+        <div class="onb" id="onb">
+            <div class="onb-card">
+                <p class="onb-eyebrow">BIENVENIDO A TRATO</p>
+                <h2 class="onb-title">¿Cuál es tu giro?</h2>
+                <p class="onb-sub">Elige tu industria y precargamos un catálogo y clientes de ejemplo. Llegas a tu primera cotización en 2 minutos — puedes editar o borrar todo después.</p>
+                <div class="onb-grid">
+                    {PACKS.map((p) => (
+                        <button class="onb-pack" data-slug={p.slug}>
+                            <span class="onb-emoji">{p.emoji}</span>
+                            <span class="onb-pack-name">{p.nombre}</span>
+                            <span class="onb-pack-desc">{p.descripcion}</span>
+                        </button>
+                    ))}
+                </div>
+                <button class="onb-skip" id="onbSkip">Prefiero empezar desde cero →</button>
+                <p class="onb-err" id="onbErr"></p>
+            </div>
+        </div>
+    )}
 
     <!-- KPIs -->
     <section class="kpis">
@@ -110,6 +135,30 @@ const dotColor = (tipo: string) =>
             </div>
         </section>
     </div>
+
+    <!-- Tareas / recordatorios -->
+    <section class="card tasks-card">
+        <div class="section-head"><h2>Tareas y recordatorios</h2></div>
+        <form class="task-add" id="taskAdd">
+            <input id="taskTitulo" class="task-input" placeholder="Ej. Llamar a GAMA para dar seguimiento…" autocomplete="off" required />
+            <input id="taskDue" class="task-date" type="date" aria-label="Fecha límite" />
+            <button class="task-btn" type="submit">Agregar</button>
+        </form>
+        <div class="task-list" id="taskList">
+            {TAREAS.map((t) => (
+                <div class="task-row" data-id={t.id}>
+                    <button class="task-check" data-done aria-label="Marcar completada"></button>
+                    <div class="task-body">
+                        <span class="task-title">{t.titulo}</span>
+                        {(t.folio || t.due) && <span class="task-meta">{[t.folio, t.due].filter(Boolean).join(' · ')}</span>}
+                    </div>
+                    {t.vencida && <span class="task-overdue">vencida</span>}
+                    <button class="task-del" data-del aria-label="Eliminar">×</button>
+                </div>
+            ))}
+            <p class="task-empty" id="taskEmpty" hidden={TAREAS.length > 0}>Sin pendientes. Agrega un recordatorio arriba.</p>
+        </div>
+    </section>
 </AppLayout>
 
 <style>
@@ -122,6 +171,29 @@ const dotColor = (tipo: string) =>
         white-space: nowrap;
     }
     .btn-new:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -8px rgba(10,25,47,0.55); }
+
+    /* ── Onboarding (cuenta vacía) ── */
+    .onb { position: fixed; inset: 0; z-index: 400; display: flex; align-items: center; justify-content: center; padding: 1.5rem; background: rgba(10,25,47,0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+    .onb-card { width: min(680px, 100%); background: #fff; border-radius: 22px; padding: 2.4rem 2.4rem 2rem; box-shadow: 0 50px 110px -30px rgba(10,25,47,0.55); animation: onb-pop 0.4s var(--ease-spring); text-align: center; }
+    @keyframes onb-pop { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: none; } }
+    .onb-eyebrow { font-size: 0.6rem; font-weight: 800; letter-spacing: 2px; color: #99a2af; margin: 0 0 0.5rem; }
+    .onb-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; margin: 0 0 0.6rem; }
+    .onb-sub { font-size: 0.88rem; color: var(--color-text-muted); line-height: 1.55; max-width: 480px; margin: 0 auto 1.8rem; }
+    .onb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; text-align: left; }
+    .onb-pack {
+        font-family: var(--font-sans); cursor: pointer; display: flex; flex-direction: column; gap: 4px;
+        background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.1rem 1.2rem;
+        transition: transform 0.3s var(--ease-spring), border-color 0.25s, box-shadow 0.3s;
+    }
+    .onb-pack:hover { transform: translateY(-3px); border-color: var(--color-blue-deep); box-shadow: 0 18px 40px -22px rgba(10,25,47,0.4); }
+    .onb-pack:disabled { opacity: 0.55; cursor: wait; }
+    .onb-emoji { font-size: 1.4rem; }
+    .onb-pack-name { font-size: 0.92rem; font-weight: 700; color: var(--color-text); }
+    .onb-pack-desc { font-size: 0.74rem; color: var(--color-text-muted); line-height: 1.4; }
+    .onb-skip { margin-top: 1.6rem; background: none; border: none; cursor: pointer; font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); }
+    .onb-skip:hover { color: var(--color-blue-deep); }
+    .onb-err { font-size: 0.78rem; color: var(--color-danger); margin: 0.6rem 0 0; min-height: 1em; }
+    @media (max-width: 560px) { .onb-grid { grid-template-columns: 1fr; } .onb-card { padding: 1.8rem 1.4rem; } }
 
     .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem; }
     .kpi { padding: 1.4rem 1.5rem; display: flex; flex-direction: column; gap: 0.4rem; }
@@ -189,6 +261,27 @@ const dotColor = (tipo: string) =>
     .feed-text { font-size: 0.8rem; color: var(--color-text); font-weight: 500; }
     .feed-meta { font-size: 0.68rem; color: var(--color-text-muted); }
 
+    /* Tareas / recordatorios */
+    .tasks-card { padding: 1.4rem 1.5rem; margin-top: 1rem; }
+    .task-add { display: flex; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .task-input { flex: 1; min-width: 180px; font-family: var(--font-sans); font-size: 0.85rem; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 12px; }
+    .task-input:focus, .task-date:focus { outline: none; border-color: var(--color-blue-deep); }
+    .task-date { font-family: var(--font-sans); font-size: 0.82rem; color: var(--color-text-muted); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 10px; }
+    .task-btn { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 16px; cursor: pointer; transition: transform 0.3s var(--ease-spring); }
+    .task-btn:hover { transform: translateY(-2px); }
+    .task-list { display: flex; flex-direction: column; }
+    .task-row { display: flex; align-items: center; gap: 11px; padding: 0.65rem 0; border-bottom: 1px solid var(--color-border); }
+    .task-row:last-of-type { border-bottom: none; }
+    .task-check { width: 19px; height: 19px; flex-shrink: 0; border: 1.8px solid var(--color-border); border-radius: 6px; background: #fff; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+    .task-check:hover { border-color: var(--color-ok); background: rgba(16,185,129,0.08); }
+    .task-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+    .task-title { font-size: 0.85rem; font-weight: 500; color: var(--color-text); }
+    .task-meta { font-size: 0.7rem; color: var(--color-text-muted); }
+    .task-overdue { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: var(--color-danger); background: rgba(239,68,68,0.1); padding: 3px 8px; border-radius: 100px; flex-shrink: 0; }
+    .task-del { background: none; border: none; cursor: pointer; color: #c3c9d2; font-size: 1.1rem; line-height: 1; padding: 2px 6px; border-radius: 6px; transition: color 0.2s, background 0.2s; }
+    .task-del:hover { color: var(--color-danger); background: rgba(239,68,68,0.07); }
+    .task-empty { font-size: 0.82rem; color: var(--color-text-muted); margin: 0.6rem 0; }
+
     @media (max-width: 1080px) {
         .kpis { grid-template-columns: repeat(2, 1fr); }
         .pipe-row { grid-template-columns: repeat(3, 1fr); }
@@ -218,6 +311,56 @@ const dotColor = (tipo: string) =>
                 if (p < 1) requestAnimationFrame(tick);
             };
             requestAnimationFrame(tick);
+        });
+    });
+</script>
+
+<script>
+    // Onboarding: precarga un catálogo según la industria elegida.
+    document.querySelectorAll<HTMLButtonElement>('.onb-pack').forEach((b) => {
+        b.addEventListener('click', async () => {
+            const slug = b.dataset.slug;
+            const err = document.getElementById('onbErr');
+            document.querySelectorAll<HTMLButtonElement>('.onb-pack').forEach((x) => (x.disabled = true));
+            if (err) err.textContent = '';
+            try {
+                const res = await fetch('/api/onboarding/seed', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ industria: slug }),
+                });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || 'No se pudo precargar');
+                window.location.href = '/app';
+            } catch (e: any) {
+                if (err) err.textContent = e.message;
+                document.querySelectorAll<HTMLButtonElement>('.onb-pack').forEach((x) => (x.disabled = false));
+            }
+        });
+    });
+    document.getElementById('onbSkip')?.addEventListener('click', () => document.getElementById('onb')?.remove());
+
+    // ── Tareas / recordatorios ──
+    document.getElementById('taskAdd')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const tEl = document.getElementById('taskTitulo') as HTMLInputElement;
+        const dEl = document.getElementById('taskDue') as HTMLInputElement;
+        const titulo = tEl.value.trim();
+        if (!titulo) return;
+        try {
+            const res = await fetch('/api/tareas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo, due_date: dEl.value || null }) });
+            if (!res.ok) throw new Error();
+            location.reload();
+        } catch { /* noop */ }
+    });
+    document.querySelectorAll<HTMLElement>('.task-row').forEach((row) => {
+        const id = row.dataset.id;
+        row.querySelector('[data-done]')?.addEventListener('click', async () => {
+            await fetch('/api/tareas', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, done: true }) }).catch(() => {});
+            row.remove();
+        });
+        row.querySelector('[data-del]')?.addEventListener('click', async () => {
+            await fetch('/api/tareas', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }).catch(() => {});
+            row.remove();
         });
     });
 </script>

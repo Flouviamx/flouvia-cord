@@ -134,3 +134,19 @@ alter table orgs add column if not exists pdf_mostrar_lista boolean not null def
 -- Plantilla del documento PDF (jun 2026): clasico | minimal | detallado.
 -- logo_url ya existe arriba; ahora también guarda data URLs de logos subidos.
 alter table orgs add column if not exists pdf_template text not null default 'clasico';
+
+-- Presencia en vivo del link público (jun 2026): última vez que el cliente tuvo
+-- /q/[token] abierto. El vendedor ve "lo está viendo ahora" si fue hace <30s.
+alter table cotizaciones add column if not exists viewer_last_seen timestamptz;
+
+-- Tareas / recordatorios (CRM ligero, jun 2026).
+create table if not exists tareas (
+  id            uuid        default gen_random_uuid() primary key,
+  org_id        uuid        not null references orgs(id) on delete cascade,
+  cotizacion_id uuid        references cotizaciones(id) on delete set null,
+  titulo        text        not null,
+  due_date      date,
+  done          boolean     not null default false,
+  created_at    timestamptz default now()
+);
+create index if not exists idx_tareas_org on tareas(org_id, done, due_date);

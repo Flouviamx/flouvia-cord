@@ -17,15 +17,36 @@ const groupOf = (s: string) =>
     : s === 'approved' ? 'approved'
     : s === 'paid' || s === 'invoiced' ? 'paid'
     : 'closed';
+
+// Columnas del tablero Kanban (pipeline activo)
+const BOARD_COLS = [
+    { key: 'draft',    label: 'Borrador', statuses: ['draft'] },
+    { key: 'sent',     label: 'Enviada',  statuses: ['sent'] },
+    { key: 'viewed',   label: 'Vista',    statuses: ['viewed'] },
+    { key: 'approved', label: 'Aprobada', statuses: ['approved'] },
+    { key: 'paid',     label: 'Pagada',   statuses: ['paid', 'invoiced'] },
+];
 ---
 
 <AppLayout title="Cotizaciones — Trato" page="cotizaciones" heading="Cotizaciones">
     <a slot="topbar-actions" href="/app/cotizaciones/nueva" class="btn-new">+ Nueva cotización</a>
 
-    <div class="filters" id="filters">
-        {FILTERS.map((f, i) => (
-            <button class:list={['filter-pill', { active: i === 0 }]} data-filter={f.key}>{f.label}</button>
-        ))}
+    <div class="view-row">
+        <div class="filters" id="filters">
+            {FILTERS.map((f, i) => (
+                <button class:list={['filter-pill', { active: i === 0 }]} data-filter={f.key}>{f.label}</button>
+            ))}
+        </div>
+        <div class="view-toggle" id="viewToggle">
+            <button class="vt-btn active" data-view="list" aria-label="Vista de lista">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                Lista
+            </button>
+            <button class="vt-btn" data-view="board" aria-label="Vista de tablero">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="18" rx="1"/><rect x="9.5" y="3" width="6" height="12" rx="1"/><rect x="16" y="3" width="5" height="9" rx="1"/></svg>
+                Tablero
+            </button>
+        </div>
     </div>
 
     <section class="card table-card">
@@ -51,6 +72,38 @@ const groupOf = (s: string) =>
             <p>No hay cotizaciones en este filtro.</p>
         </div>
     </section>
+
+    <!-- ── TABLERO KANBAN ── -->
+    <section class="board" id="boardView" hidden>
+        {BOARD_COLS.map((col) => {
+            const cards = COTIZACIONES.filter((q) => col.statuses.includes(q.status));
+            const total = cards.reduce((s, q) => s + (q.total ?? 0), 0);
+            const color = STATUS_META[col.statuses[0]].color;
+            return (
+                <div class="bd-col">
+                    <div class="bd-col-head">
+                        <span class="bd-dot" style={`background:${color}`}></span>
+                        <span class="bd-col-label">{col.label}</span>
+                        <span class="bd-count">{cards.length}</span>
+                    </div>
+                    <div class="bd-col-total editorial">{total > 0 ? money(total, 0) : '—'}</div>
+                    <div class="bd-cards" data-col={col.key}>
+                        {cards.map((q) => (
+                            <div class="bd-card" draggable="true" data-id={q.id} data-status={q.status}>
+                                <div class="bd-card-top">
+                                    <span class="bd-card-folio">{q.folio}</span>
+                                    <span class="editorial bd-card-amount">{money(q.total ?? 0, 0)}</span>
+                                </div>
+                                <div class="bd-card-client"><span class="bd-avatar">{q.clienteInicial}</span>{q.cliente}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        })}
+    </section>
+
+    <div class="board-toast" id="boardToast" hidden></div>
 </AppLayout>
 
 <style>
@@ -75,6 +128,47 @@ const groupOf = (s: string) =>
     }
     .filter-pill:hover { color: var(--color-blue-deep); }
     .filter-pill.active { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); }
+
+    .view-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .view-row .filters { margin-bottom: 0; }
+    .view-toggle { display: inline-flex; gap: 2px; background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 100px; padding: 3px; flex-shrink: 0; }
+    .vt-btn {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600; cursor: pointer;
+        color: var(--color-text-muted); background: none; border: none; padding: 6px 13px; border-radius: 100px;
+        transition: color 0.25s, background 0.25s;
+    }
+    .vt-btn svg { width: 14px; height: 14px; }
+    .vt-btn.active { background: var(--color-blue-deep); color: #fff; }
+
+    /* ── Tablero Kanban ── */
+    .board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(230px, 1fr); gap: 0.9rem; overflow-x: auto; padding-bottom: 0.5rem; align-items: start; }
+    .bd-col { background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 14px; padding: 0.9rem; min-height: 120px; }
+    .bd-col-head { display: flex; align-items: center; gap: 7px; font-size: 0.78rem; font-weight: 700; color: var(--color-text); }
+    .bd-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .bd-count { margin-left: auto; font-size: 0.68rem; font-weight: 700; color: var(--color-text-muted); background: #fff; border: 1px solid var(--color-border); border-radius: 100px; padding: 1px 8px; }
+    .bd-col-total { font-size: 0.92rem; color: var(--color-blue-deep); margin: 0.3rem 0 0.8rem; }
+    .bd-cards { display: flex; flex-direction: column; gap: 0.6rem; min-height: 40px; border-radius: 10px; transition: background 0.2s, box-shadow 0.2s; }
+    .bd-cards.drop-ok { background: rgba(16,185,129,0.08); box-shadow: inset 0 0 0 1.5px rgba(16,185,129,0.4); }
+    .bd-cards.drop-no { background: rgba(239,68,68,0.05); box-shadow: inset 0 0 0 1.5px rgba(239,68,68,0.3); }
+    .bd-card {
+        background: #fff; border: 1px solid var(--color-border); border-radius: 11px; padding: 0.7rem 0.8rem; cursor: grab;
+        box-shadow: 0 1px 3px rgba(10,25,47,0.04); transition: box-shadow 0.2s, transform 0.2s, opacity 0.2s;
+    }
+    .bd-card:hover { box-shadow: 0 10px 24px -12px rgba(10,25,47,0.3); }
+    .bd-card.dragging { opacity: 0.4; }
+    .bd-card-top { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+    .bd-card-folio { font-size: 0.78rem; font-weight: 700; color: var(--color-text); }
+    .bd-card-amount { font-size: 0.86rem; color: var(--color-blue-deep); }
+    .bd-card-client { display: flex; align-items: center; gap: 7px; font-size: 0.76rem; color: var(--color-text-muted); margin-top: 6px; min-width: 0; }
+    .bd-avatar { width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0; background: var(--color-blue-deep); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.5rem; font-weight: 800; }
+
+    .board-toast {
+        position: fixed; bottom: 1.6rem; left: 50%; transform: translateX(-50%);
+        background: var(--color-blue-deep); color: #fff; font-size: 0.84rem; font-weight: 600;
+        padding: 11px 18px; border-radius: 11px; box-shadow: 0 18px 44px -12px rgba(10,25,47,0.6); z-index: 200;
+    }
+    .board-toast[hidden] { display: none; }
 
     .table-card { overflow: hidden; }
     .t-head, .t-row {
@@ -139,6 +233,61 @@ const groupOf = (s: string) =>
                 if (show) visible++;
             });
             if (empty) empty.hidden = visible > 0;
+        });
+    });
+
+    // ── Toggle Lista / Tablero ──
+    const vtBtns = document.querySelectorAll<HTMLButtonElement>('.vt-btn');
+    const filtersBar = document.getElementById('filters');
+    const listView = document.querySelector<HTMLElement>('.table-card');
+    const boardView = document.getElementById('boardView');
+    vtBtns.forEach((btn) => btn.addEventListener('click', () => {
+        vtBtns.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        const board = btn.dataset.view === 'board';
+        if (boardView) boardView.hidden = !board;
+        if (listView) listView.hidden = board;
+        if (filtersBar) filtersBar.style.visibility = board ? 'hidden' : '';
+    }));
+
+    // ── Drag & drop del tablero (avanza el pipeline) ──
+    const MOVES: Record<string, { from: string[]; action: string }> = {
+        sent: { from: ['draft'], action: 'send' },
+        approved: { from: ['sent', 'viewed'], action: 'approve' },
+        paid: { from: ['approved', 'invoiced'], action: 'paid' },
+    };
+    let dragStatus = ''; let dragEl: HTMLElement | null = null; let dragId = '';
+    const toastEl = document.getElementById('boardToast');
+    let toastT: ReturnType<typeof setTimeout>;
+    const boardToast = (msg: string) => {
+        if (!toastEl) return;
+        toastEl.textContent = msg; toastEl.hidden = false;
+        clearTimeout(toastT); toastT = setTimeout(() => { toastEl.hidden = true; }, 2600);
+    };
+
+    document.querySelectorAll<HTMLElement>('.bd-card').forEach((card) => {
+        card.addEventListener('dragstart', () => { dragEl = card; dragId = card.dataset.id || ''; dragStatus = card.dataset.status || ''; card.classList.add('dragging'); });
+        card.addEventListener('dragend', () => { card.classList.remove('dragging'); document.querySelectorAll('.bd-cards').forEach((z) => z.classList.remove('drop-ok', 'drop-no')); });
+    });
+    document.querySelectorAll<HTMLElement>('.bd-cards').forEach((zone) => {
+        zone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const mv = MOVES[zone.dataset.col || ''];
+            const ok = !!mv && mv.from.includes(dragStatus);
+            zone.classList.toggle('drop-ok', ok); zone.classList.toggle('drop-no', !ok);
+        });
+        zone.addEventListener('dragleave', () => zone.classList.remove('drop-ok', 'drop-no'));
+        zone.addEventListener('drop', async (e) => {
+            e.preventDefault(); zone.classList.remove('drop-ok', 'drop-no');
+            const mv = MOVES[zone.dataset.col || ''];
+            if (!mv || !mv.from.includes(dragStatus)) { boardToast('Ese movimiento no es válido en el pipeline.'); return; }
+            if (dragEl) zone.appendChild(dragEl);
+            try {
+                const res = await fetch(`/api/cotizaciones/${dragId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: mv.action }) });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || 'No se pudo mover');
+                location.reload();
+            } catch (err: any) { boardToast(err.message); setTimeout(() => location.reload(), 800); }
         });
     });
 </script>

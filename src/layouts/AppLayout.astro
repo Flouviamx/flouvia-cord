@@ -68,9 +68,22 @@ const NAV = [
                 <header class="topbar">
                     <div class="tb-left">
                         <h1 class="tb-heading">{heading ?? title}</h1>
-                        <span class="tb-demo">DEMO · DATOS DE EJEMPLO</span>
+                        <span class="tb-demo">DEMO</span>
                     </div>
+
+                    <button class="tb-search" id="cmdkOpen" type="button" aria-label="Buscar — Command K">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <span class="tb-search-label">Buscar cotizaciones, clientes…</span>
+                        <kbd class="tb-kbd">⌘K</kbd>
+                    </button>
+
                     <div class="tb-right">
+                        <a class="tb-icon" href="/app" title="Actividad" aria-label="Actividad">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        </a>
+                        <a class="tb-icon" href="/app/ajustes" title="Ajustes" aria-label="Ajustes">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        </a>
                         <slot name="topbar-actions" />
                     </div>
                 </header>
@@ -90,6 +103,24 @@ const NAV = [
                 </a>
             ))}
         </nav>
+
+        <!-- ── MENÚ DE COMANDOS (Cmd+K) ── -->
+        <div class="cmdk" id="cmdk" hidden>
+            <div class="cmdk-backdrop" id="cmdkBackdrop"></div>
+            <div class="cmdk-panel" role="dialog" aria-modal="true" aria-label="Menú de comandos">
+                <div class="cmdk-input-row">
+                    <svg class="cmdk-search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input id="cmdkInput" type="text" placeholder="Buscar cotizaciones, clientes, productos… o un comando" autocomplete="off" spellcheck="false" />
+                    <kbd class="cmdk-esc">ESC</kbd>
+                </div>
+                <div class="cmdk-results" id="cmdkResults"></div>
+                <div class="cmdk-foot">
+                    <span><kbd>↑</kbd><kbd>↓</kbd> navegar</span>
+                    <span><kbd>↵</kbd> abrir</span>
+                    <span><kbd>esc</kbd> cerrar</span>
+                </div>
+            </div>
+        </div>
     </body>
 </html>
 
@@ -233,9 +264,76 @@ const NAV = [
         color: #b45309; background: rgba(245,158,11,0.1);
         padding: 4px 9px; border-radius: 100px; white-space: nowrap;
     }
-    .tb-right { display: flex; align-items: center; gap: 0.6rem; }
+    .tb-right { display: flex; align-items: center; gap: 0.5rem; }
+
+    /* Buscador de la topbar (abre el menú de comandos) */
+    .tb-search {
+        flex: 1; max-width: 400px; margin: 0 auto;
+        display: flex; align-items: center; gap: 9px;
+        font-family: var(--font-sans); font-size: 0.84rem; color: var(--color-text-muted);
+        background: var(--color-bg-soft); border: 1px solid var(--color-border);
+        border-radius: 10px; padding: 8px 10px 8px 13px; cursor: text; text-align: left;
+        transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+    }
+    .tb-search:hover { border-color: rgba(10,25,47,0.2); background: #fff; }
+    .tb-search svg { width: 15px; height: 15px; color: #99a2af; flex-shrink: 0; }
+    .tb-search-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tb-kbd {
+        font-family: var(--font-sans); font-size: 0.66rem; font-weight: 700; color: var(--color-text-muted);
+        background: #fff; border: 1px solid var(--color-border); border-radius: 6px;
+        padding: 2px 6px; box-shadow: 0 1px 0 rgba(10,25,47,0.06);
+    }
+    .tb-icon {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 36px; height: 36px; border-radius: 9px; color: var(--color-text-muted);
+        background: transparent; transition: background 0.2s, color 0.2s;
+    }
+    .tb-icon svg { width: 17px; height: 17px; }
+    .tb-icon:hover { background: var(--color-bg-soft); color: var(--color-blue-deep); }
 
     .app-content { padding: 1.8rem 2rem 4rem; max-width: 1240px; width: 100%; }
+
+    /* ════════ MENÚ DE COMANDOS (Cmd+K) ════════ */
+    .cmdk { position: fixed; inset: 0; z-index: 500; display: flex; align-items: flex-start; justify-content: center; padding: 12vh 1rem 1rem; }
+    .cmdk[hidden] { display: none; }
+    .cmdk-backdrop { position: absolute; inset: 0; background: rgba(10,25,47,0.35); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: cmdk-fade 0.2s ease; }
+    @keyframes cmdk-fade { from { opacity: 0; } to { opacity: 1; } }
+    .cmdk-panel {
+        position: relative; width: min(620px, 100%);
+        background: #fff; border: 1px solid var(--color-border); border-radius: 16px;
+        box-shadow: 0 40px 100px -24px rgba(10,25,47,0.5);
+        overflow: hidden; animation: cmdk-pop 0.22s var(--ease-spring);
+    }
+    @keyframes cmdk-pop { from { opacity: 0; transform: translateY(-10px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .cmdk-input-row { display: flex; align-items: center; gap: 11px; padding: 14px 16px; border-bottom: 1px solid var(--color-border); }
+    .cmdk-search-ico { width: 18px; height: 18px; color: #99a2af; flex-shrink: 0; }
+    #cmdkInput { flex: 1; border: none; outline: none; background: none; font-family: var(--font-sans); font-size: 1rem; color: var(--color-text); }
+    .cmdk-esc { font-size: 0.6rem; font-weight: 700; color: #99a2af; background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 5px; padding: 2px 6px; }
+    .cmdk-results { max-height: 52vh; overflow-y: auto; padding: 6px; }
+    .cmdk-group-label { font-size: 0.58rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; padding: 10px 12px 5px; }
+    .cmdk-item {
+        display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
+        padding: 9px 12px; border-radius: 9px; cursor: pointer; border: none; background: none;
+        font-family: var(--font-sans); color: var(--color-text); text-decoration: none;
+    }
+    .cmdk-item.sel { background: var(--color-blue-deep); }
+    .cmdk-item.sel .cmdk-item-title, .cmdk-item.sel .cmdk-ico { color: #fff; }
+    .cmdk-item.sel .cmdk-item-sub, .cmdk-item.sel .cmdk-pill { color: rgba(255,255,255,0.7); }
+    .cmdk-ico {
+        width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: var(--color-bg-soft); color: var(--color-blue-deep); font-size: 0.7rem; font-weight: 800;
+    }
+    .cmdk-ico svg { width: 15px; height: 15px; }
+    .cmdk-item.sel .cmdk-ico { background: rgba(255,255,255,0.18); }
+    .cmdk-item-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+    .cmdk-item-title { font-size: 0.88rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cmdk-item-sub { font-size: 0.72rem; color: var(--color-text-muted); }
+    .cmdk-pill { font-size: 0.62rem; font-weight: 700; color: var(--color-text-muted); flex-shrink: 0; }
+    .cmdk-empty { padding: 2rem 1rem; text-align: center; font-size: 0.85rem; color: var(--color-text-muted); }
+    .cmdk-foot { display: flex; gap: 1.2rem; padding: 9px 16px; border-top: 1px solid var(--color-border); background: var(--color-bg-soft); }
+    .cmdk-foot span { font-size: 0.68rem; color: #99a2af; display: inline-flex; align-items: center; gap: 5px; }
+    .cmdk-foot kbd { font-size: 0.62rem; font-weight: 700; background: #fff; border: 1px solid var(--color-border); border-radius: 4px; padding: 1px 5px; color: var(--color-text-muted); }
 
     /* ── MOBILE ── */
     .mobile-tabs { display: none; }
@@ -244,6 +342,9 @@ const NAV = [
         .app-content { padding: 1.2rem 1rem 6rem; }
         .topbar { padding: 0.9rem 1rem; }
         .tb-demo { display: none; }
+        .tb-search { max-width: none; flex: 0 0 auto; padding: 8px; }
+        .tb-search-label, .tb-kbd { display: none; }
+        .tb-icon { display: none; }
         .mobile-tabs {
             display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
             background: rgba(10,25,47,0.97);
@@ -260,3 +361,88 @@ const NAV = [
         .mt-item.active { color: #fff; }
     }
 </style>
+
+<script>
+    // ── Menú de comandos (Cmd+K) ── buscador global + navegación rápida.
+    function initCmdk() {
+        const cmdk = document.getElementById('cmdk');
+        const input = document.getElementById('cmdkInput') as HTMLInputElement | null;
+        const results = document.getElementById('cmdkResults');
+        if (!cmdk || !input || !results) return;
+
+        const NAV: any[] = [
+            ['Dashboard', '/app'], ['Cotizaciones', '/app/cotizaciones'], ['Cobranza', '/app/cobranza'],
+            ['Clientes', '/app/clientes'], ['Productos', '/app/productos'], ['Analítica', '/app/analitica'], ['Ajustes', '/app/ajustes'],
+        ].map(([title, href]) => ({ group: 'Ir a', title, href, glyph: title[0] }));
+        const ACTIONS: any[] = [
+            { group: 'Acciones', title: 'Nueva cotización', href: '/app/cotizaciones/nueva', glyph: '+' },
+            { group: 'Acciones', title: 'Nuevo cliente', href: '/app/clientes', glyph: '+' },
+            { group: 'Acciones', title: 'Nuevo producto', href: '/app/productos', glyph: '+' },
+            { group: 'Acciones', title: 'Ver sitio público', href: '/', glyph: '↗' },
+        ];
+        const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        const esc = (s: string) => String(s).replace(/</g, '&lt;');
+
+        let items: any[] = []; let sel = 0; let seq = 0;
+
+        const staticMatches = (q: string) => {
+            const all = [...NAV, ...ACTIONS];
+            if (!q.trim()) return all;
+            const nq = norm(q);
+            return all.filter((c) => norm(c.title).includes(nq));
+        };
+        const buildItems = (q: string, ent: any) => {
+            const list: any[] = [];
+            if (ent) {
+                (ent.cotizaciones || []).forEach((c: any) => list.push({ group: 'Cotizaciones', title: `${c.folio} · ${c.cliente}`, href: `/app/cotizaciones/${c.id}`, glyph: '#' }));
+                (ent.clientes || []).forEach((c: any) => list.push({ group: 'Clientes', title: c.empresa, href: '/app/clientes', glyph: 'C' }));
+                (ent.productos || []).forEach((p: any) => list.push({ group: 'Productos', title: p.sku ? `${p.nombre} · ${p.sku}` : p.nombre, href: '/app/productos', glyph: 'P' }));
+            }
+            staticMatches(q).forEach((c) => list.push(c));
+            return list;
+        };
+        const paint = () => {
+            if (!items.length) { results.innerHTML = '<div class="cmdk-empty">Sin resultados</div>'; return; }
+            let html = ''; let last = '';
+            items.forEach((it, i) => {
+                if (it.group !== last) { html += `<div class="cmdk-group-label">${it.group}</div>`; last = it.group; }
+                html += `<button class="cmdk-item ${i === sel ? 'sel' : ''}" data-i="${i}"><span class="cmdk-ico">${esc(it.glyph)}</span><span class="cmdk-item-body"><span class="cmdk-item-title">${esc(it.title)}</span></span></button>`;
+            });
+            results.innerHTML = html;
+            results.querySelector('.cmdk-item.sel')?.scrollIntoView({ block: 'nearest' });
+        };
+        const render = async (q: string) => {
+            items = buildItems(q, null); sel = 0; paint();
+            if (q.trim().length >= 2) {
+                const my = ++seq;
+                try {
+                    const res = await fetch('/api/search?q=' + encodeURIComponent(q.trim()));
+                    const data = await res.json();
+                    if (my !== seq) return;
+                    items = buildItems(q, data); sel = 0; paint();
+                } catch { /* ignora */ }
+            }
+        };
+        const activate = (i: number) => { const it = items[i]; if (it?.href) { close(); window.location.href = it.href; } };
+        const open = () => { (cmdk as HTMLElement).hidden = false; document.body.style.overflow = 'hidden'; input.value = ''; render(''); setTimeout(() => input.focus(), 20); };
+        const close = () => { (cmdk as HTMLElement).hidden = true; document.body.style.overflow = ''; };
+
+        input.addEventListener('input', () => render(input.value));
+        results.addEventListener('click', (e) => { const b = (e.target as HTMLElement).closest('.cmdk-item') as HTMLElement; if (b) activate(parseInt(b.dataset.i!, 10)); });
+        results.addEventListener('mousemove', (e) => { const b = (e.target as HTMLElement).closest('.cmdk-item') as HTMLElement; if (b) { const i = parseInt(b.dataset.i!, 10); if (i !== sel) { sel = i; paint(); } } });
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(sel + 1, items.length - 1); paint(); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(sel - 1, 0); paint(); }
+            else if (e.key === 'Enter') { e.preventDefault(); activate(sel); }
+        });
+
+        document.getElementById('cmdkOpen')?.addEventListener('click', open);
+        document.getElementById('cmdkBackdrop')?.addEventListener('click', close);
+        document.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); (cmdk as HTMLElement).hidden ? open() : close(); }
+            else if (e.key === 'Escape' && !(cmdk as HTMLElement).hidden) { close(); }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCmdk);
+    else initCmdk();
+</script>

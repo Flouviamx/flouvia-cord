@@ -242,6 +242,20 @@ const color = ORG.colorMarca;
 
     document.getElementById('qSendMsg')?.addEventListener('click', (e) => sendNeg('comment', e.currentTarget as HTMLButtonElement));
     document.getElementById('qSendCounter')?.addEventListener('click', (e) => sendNeg('counter', e.currentTarget as HTMLButtonElement));
+
+    // ── Heartbeat de presencia: avisa al vendedor que el cliente está viendo AHORA ──
+    if (token) {
+        const ping = () => {
+            if (document.visibilityState !== 'visible') return;
+            fetch(`/api/q/${token}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'ping' }), keepalive: true,
+            }).catch(() => {});
+        };
+        ping();
+        setInterval(ping, 10000);
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') ping(); });
+    }
 </script>
 
 <style>

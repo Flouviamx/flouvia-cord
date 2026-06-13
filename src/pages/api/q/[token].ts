@@ -21,6 +21,12 @@ export const POST: APIRoute = async ({ params, request }) => {
     const c = rows[0];
     const alive = ['sent', 'viewed'].includes(c.status as string);
 
+    // ── Heartbeat de presencia (el cliente tiene el link abierto AHORA) ──
+    if (action === 'ping') {
+        await sql`update cotizaciones set viewer_last_seen = now() where id = ${c.id}`;
+        return json({ ok: true });
+    }
+
     // ── Aprobar ──
     if (action === 'approve') {
         if (!alive) return json({ error: 'Esta cotización ya no se puede modificar', status: c.status }, 409);

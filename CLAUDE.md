@@ -84,8 +84,21 @@ para que el swap a Neon sea cambiar imports por queries.
 ✅ **IA: armar cotización desde texto** — `/api/cotizaciones/ai-draft` (SDK @anthropic-ai/sdk,
    tool_choice forzado; modelo claude-opus-4-8 vía AI_MODEL) + panel "Armar con IA" en el
    editor `/nueva`. Empareja el pedido del cliente con el catálogo. Requiere ANTHROPIC_API_KEY.
-⬜ Pendiente (sig. fase): aprobación parcial por línea, cotizaciones con versiones y
-   recordatorios automáticos (Resend), Stripe Billing + proteger `/app` con Clerk.
+✅ **Topbar v2 + Menú de comandos (Cmd+K)** — AppLayout con buscador + iconos; overlay
+   global de comandos (navegación + acciones + búsqueda en vivo vía `/api/search`).
+✅ **Presencia en vivo** — el cliente con `/q/[token]` abierto manda heartbeat
+   (`POST /api/q/[token]` action `ping` → `cotizaciones.viewer_last_seen`); el vendedor
+   ve "lo está viendo ahora" en el detalle (poll `/api/cotizaciones/[id]/presence`).
+✅ **Onboarding que arranca lleno** — al entrar con catálogo vacío (o `/app?onboarding=1`),
+   eliges industria y precarga catálogo + clientes (`/api/onboarding/seed`, packs en
+   `src/lib/onboarding.ts`).
+✅ **Pipeline Kanban + Tareas** — toggle Lista/Tablero en `/app/cotizaciones` (drag&drop
+   avanza el pipeline vía PATCH actions); tarjeta de "Tareas y recordatorios" en el
+   dashboard (`/api/tareas`, tabla `tareas`, getTareas()).
+⬜ Pendiente (sig. fase enterprise): listas de precio por nivel de cliente, flujos de
+   aprobación (descuento/monto > umbral → "Solicitar aprobación"), tesorería predictiva
+   + interés moratorio (evolución de Cobranza), audit log inmutable, aprobación parcial
+   por línea, versiones de cotización + recordatorios (Resend), Stripe Billing + Clerk.
 
 ---
 
@@ -195,8 +208,10 @@ el valor antes de cada query (igual que `app.email_cliente` en flouvia-web).
 como `alter table … if not exists`): `color_marca`, `email_contacto`, `telefono`,
 `direccion`, `pdf_mensaje`, `pdf_condiciones`, `pdf_mostrar_lista`, **`pdf_template`**
 (clasico|minimal|detallado, agregada jun 2026). `logo_url` (en la tabla base) ahora
-guarda también data URLs de logos subidos en Ajustes. ⚠️ Correr `npm run db:migrate`
-tras pull — `/q/[token]`, `/api/org` e `imprimir` las leen explícitamente.
+guarda también data URLs de logos subidos en Ajustes. **Jun 2026 además:**
+`cotizaciones.viewer_last_seen` (presencia en vivo) y la tabla **`tareas`** (CRM ligero).
+⚠️ Correr `npm run db:migrate` tras pull — `/q/[token]`, `/api/org`, `imprimir`,
+`presence` y `/api/tareas` las leen explícitamente.
 
 **Mock data:** `src/lib/mock.ts` exporta `ORG`, `PRODUCTOS`, `CLIENTES`,
 `COTIZACIONES` (con items + eventos), `STATUS_META` (label/color/bg por estado),

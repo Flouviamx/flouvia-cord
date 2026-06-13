@@ -21,6 +21,11 @@ const dotColor = (tipo: string) =>
 
     <a href="/app/cotizaciones" class="back-link">← Cotizaciones</a>
 
+    <div class="live-viewing" id="liveViewing" hidden>
+        <span class="lv-dot"></span>
+        <span>El cliente está viendo esta cotización <b>ahora mismo</b> — buen momento para llamarle.</span>
+    </div>
+
     <div class="detail-grid">
         <div class="d-main">
             <!-- Encabezado -->
@@ -140,6 +145,18 @@ const dotColor = (tipo: string) =>
         transition: color 0.25s;
     }
     .back-link:hover { color: var(--color-blue-deep); }
+
+    .live-viewing {
+        display: flex; align-items: center; gap: 10px;
+        background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3);
+        color: #047857; border-radius: 12px; padding: 10px 14px; margin-bottom: 0.9rem;
+        font-size: 0.85rem; font-weight: 600;
+        animation: lv-in 0.4s var(--ease-spring);
+    }
+    @keyframes lv-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+    .live-viewing b { font-weight: 800; }
+    .lv-dot { width: 9px; height: 9px; border-radius: 50%; background: #10b981; flex-shrink: 0; animation: lv-pulse 1.6s infinite; }
+    @keyframes lv-pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.45); } 70% { box-shadow: 0 0 0 8px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
 
     .detail-grid { display: grid; grid-template-columns: 1fr 300px; gap: 1rem; align-items: start; }
     .d-main { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
@@ -300,6 +317,20 @@ const dotColor = (tipo: string) =>
         const qid = panel.dataset.qid!;
         const token = panel.dataset.token!;
         const errorEl = document.getElementById('actError')!;
+
+        // ── Presencia en vivo: "el cliente está viendo ahora" ──
+        const lv = document.getElementById('liveViewing');
+        if (lv) {
+            const checkPresence = async () => {
+                try {
+                    const r = await fetch(`/api/cotizaciones/${qid}/presence`);
+                    const d = await r.json();
+                    lv.hidden = !d.online;
+                } catch { /* ignora */ }
+            };
+            checkPresence();
+            setInterval(checkPresence, 8000);
+        }
 
         const CONFIRM: Record<string, string> = {
             reject: '¿Marcar esta cotización como rechazada?',

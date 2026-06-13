@@ -400,6 +400,25 @@ export async function getCobranza() {
     };
 }
 
+// ── TAREAS / RECORDATORIOS (CRM ligero) ───────────────────────────────────────
+export async function getTareas() {
+    const orgId = await getActiveOrgId();
+    const rows = await sql`
+        select t.id, t.titulo, t.due_date, t.cotizacion_id, c.folio
+        from tareas t left join cotizaciones c on c.id = t.cotizacion_id
+        where t.org_id = ${orgId} and t.done = false
+        order by t.due_date asc nulls last, t.created_at asc
+        limit 12`;
+    const hoy = new Date(new Date().toDateString());
+    return rows.map((t) => ({
+        id: t.id as string,
+        titulo: t.titulo as string,
+        folio: (t.folio as string) ?? '',
+        due: t.due_date ? fmtDate(t.due_date as string) : '',
+        vencida: t.due_date ? new Date(t.due_date as string) < hoy : false,
+    }));
+}
+
 // ── DASHBOARD KPIs ────────────────────────────────────────────────────────────
 export async function getDashboard() {
     const quotes = await getCotizaciones();
