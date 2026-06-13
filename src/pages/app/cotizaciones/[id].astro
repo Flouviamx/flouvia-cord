@@ -69,7 +69,7 @@ const dotColor = (tipo: string) =>
 
         <!-- Sidebar: acciones + timeline -->
         <aside class="d-side">
-            <section class="card d-actions" data-qid={q.id} data-token={q.token}>
+            <section class="card d-actions" data-qid={q.id} data-token={q.token} data-folio={q.folio} data-cliente={q.cliente} data-total={money(quoteTotal(q))}>
                 {q.status === 'draft' && (
                     <button class="act-primary act-do" data-action="send">Enviar al cliente</button>
                 )}
@@ -77,6 +77,10 @@ const dotColor = (tipo: string) =>
                     <span>Ver link público</span>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 </a>
+                <button class="act-whats" id="btnWhats">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
+                    <span>Enviar por WhatsApp</span>
+                </button>
                 <button class="act-secondary" id="btnCopy">Copiar link</button>
                 <a href={`/app/cotizaciones/${q.id}/imprimir`} target="_blank" class="act-secondary act-link">Descargar PDF</a>
                 <button class="act-secondary" id="btnDuplicate">Duplicar cotización</button>
@@ -118,6 +122,10 @@ const dotColor = (tipo: string) =>
                             </div>
                         </div>
                     ))}
+                </div>
+                <div class="tl-reply">
+                    <textarea id="replyMsg" rows="2" placeholder="Responder al cliente (aparece en su link)…"></textarea>
+                    <button class="tl-reply-btn" id="btnReply">Enviar respuesta</button>
                 </div>
             </section>
         </aside>
@@ -200,6 +208,15 @@ const dotColor = (tipo: string) =>
         transition: background 0.25s, border-color 0.25s;
     }
     .act-secondary:hover { background: #fff; border-color: rgba(10,25,47,0.2); }
+    .act-whats {
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; cursor: pointer;
+        color: #0b7a4b; background: rgba(37,211,102,0.1);
+        border: 1px solid rgba(37,211,102,0.3); border-radius: 10px; padding: 10px;
+        transition: background 0.25s, transform 0.4s var(--ease-spring);
+    }
+    .act-whats svg { width: 15px; height: 15px; }
+    .act-whats:hover { background: rgba(37,211,102,0.16); transform: translateY(-1px); }
     .act-cfdi {
         font-family: var(--font-sans); font-size: 0.82rem; font-weight: 700;
         color: #059669; background: rgba(16,185,129,0.08);
@@ -249,6 +266,21 @@ const dotColor = (tipo: string) =>
     .tl-text { font-size: 0.8rem; font-weight: 500; color: var(--color-text); }
     .tl-time { font-size: 0.68rem; color: var(--color-text-muted); }
 
+    .tl-reply { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border); display: flex; flex-direction: column; gap: 0.5rem; }
+    .tl-reply textarea {
+        font-family: var(--font-sans); font-size: 0.82rem; color: var(--color-text);
+        background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px;
+        padding: 9px 11px; resize: vertical;
+    }
+    .tl-reply textarea:focus { outline: none; border-color: var(--color-blue-deep); }
+    .tl-reply-btn {
+        font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; cursor: pointer;
+        color: var(--color-text); background: var(--color-bg-soft);
+        border: 1px solid var(--color-border); border-radius: 9px; padding: 8px; transition: border-color 0.25s;
+    }
+    .tl-reply-btn:hover { border-color: rgba(10,25,47,0.25); }
+    .tl-reply-btn:disabled { opacity: 0.55; cursor: wait; }
+
     @media (max-width: 980px) {
         .detail-grid { grid-template-columns: 1fr; }
         .d-side { position: static; }
@@ -296,12 +328,42 @@ const dotColor = (tipo: string) =>
             });
         });
 
+        document.getElementById('btnWhats')?.addEventListener('click', () => {
+            const folio = panel.dataset.folio || '';
+            const cliente = panel.dataset.cliente || '';
+            const total = panel.dataset.total || '';
+            const link = `${location.origin}/q/${token}`;
+            const msg = `¡Hola${cliente ? ' ' + cliente : ''}! Te comparto la cotización ${folio}${total ? ' por ' + total : ''}. Puedes revisarla y aprobarla aquí: ${link}`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+        });
+
         document.getElementById('btnCopy')?.addEventListener('click', async (e) => {
             const btn = e.currentTarget as HTMLButtonElement;
             await navigator.clipboard.writeText(`${location.origin}/q/${token}`);
             const prev = btn.textContent;
             btn.textContent = '✓ Link copiado';
             setTimeout(() => { btn.textContent = prev; }, 1800);
+        });
+
+        document.getElementById('btnReply')?.addEventListener('click', async (e) => {
+            const btn = e.currentTarget as HTMLButtonElement;
+            const ta = document.getElementById('replyMsg') as HTMLTextAreaElement;
+            const mensaje = (ta?.value || '').trim();
+            if (!mensaje) { errorEl.textContent = 'Escribe una respuesta.'; return; }
+            btn.disabled = true; errorEl.textContent = '';
+            try {
+                const res = await fetch(`/api/cotizaciones/${qid}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'reply', mensaje }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'No se pudo enviar');
+                location.reload();
+            } catch (err: any) {
+                errorEl.textContent = err.message;
+                btn.disabled = false;
+            }
         });
 
         document.getElementById('btnDuplicate')?.addEventListener('click', async (e) => {

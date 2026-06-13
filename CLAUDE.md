@@ -72,8 +72,20 @@ para que el swap a Neon sea cambiar imports por queries.
 ✅ **Analítica** — `/app/analitica` (ventas/conversión, margen cedido, top clientes/productos)
    + KPI "por dar seguimiento" en el dashboard. Consultas en `getAnalytics()`.
 ✅ **Duplicar cotización** — `/api/cotizaciones/[id]/duplicate` (clona a nuevo borrador).
-⬜ Pendiente (sig. fase): cotizaciones con versiones y recordatorios (Resend),
-   Stripe Billing + proteger `/app` con Clerk.
+✅ **Enviar por WhatsApp** — botón en el detalle (wa.me con mensaje + link pre-armado).
+✅ **Cobranza** — `/app/cobranza`: cartera, vencido, aging, exposición por cliente,
+   marcar cobrada + recordatorio por WhatsApp. getCobranza() en queries.ts.
+✅ **Forecast en Analítica** — pronóstico de cartera abierta (pipeline ponderado:
+   enviadas 30% + vistas 50%) + comparativo cerrado vs mes anterior.
+✅ **Link público 2.0** — en `/q/[token]`: contraoferta + chat (comentarios) del cliente;
+   el vendedor responde desde el detalle (caja de respuesta → evento `reply`). Sin
+   migración (usa `eventos` tipos comment/counter/reply). getCotizacionByToken devuelve
+   `conversacion`. Pendiente: aprobación parcial por línea (necesita columnas en items).
+✅ **IA: armar cotización desde texto** — `/api/cotizaciones/ai-draft` (SDK @anthropic-ai/sdk,
+   tool_choice forzado; modelo claude-opus-4-8 vía AI_MODEL) + panel "Armar con IA" en el
+   editor `/nueva`. Empareja el pedido del cliente con el catálogo. Requiere ANTHROPIC_API_KEY.
+⬜ Pendiente (sig. fase): aprobación parcial por línea, cotizaciones con versiones y
+   recordatorios automáticos (Resend), Stripe Billing + proteger `/app` con Clerk.
 
 ---
 
@@ -144,12 +156,18 @@ el valor antes de cada query (igual que `app.email_cliente` en flouvia-web).
                    gráfica cotizado vs cerrado por mes, embudo de conversión, margen
                    cedido (lista vs negociado), top clientes y top productos. Charts en
                    CSS puro; datos de getAnalytics() en queries.ts.
+/app/cobranza    → cuentas por cobrar (jun 2026): cartera total, vencido, aging por
+                   antigüedad, exposición por cliente (saldo vs límite) y tabla con
+                   "marcar cobrada" + recordatorio por WhatsApp. getCobranza() en
+                   queries.ts (por cobrar = status approved|invoiced; vence según términos).
 /app/cotizaciones        → tabla con filtros por estado (client-side)
 /app/cotizaciones/nueva  → EL EDITOR — POST /api/cotizaciones (real)
 /app/cotizaciones/[id]   → detalle + timeline + ACCIONES REALES (enviar, aprobar,
                            rechazar, pago, facturar, copiar link, eliminar borrador,
-                           DUPLICAR → POST /api/cotizaciones/[id]/duplicate)
-                           via PATCH/DELETE /api/cotizaciones/[id]
+                           DUPLICAR → POST /api/cotizaciones/[id]/duplicate,
+                           ENVIAR POR WHATSAPP → wa.me con mensaje + link pre-armado)
+                           via PATCH/DELETE /api/cotizaciones/[id]. (paid acepta desde
+                           'approved' o 'invoiced')
 /app/cotizaciones/[id]/imprimir → PDF imprimible (window.print) personalizado con
                            la marca de la org: PLANTILLA (clasico|minimal|detallado vía
                            data-template en .sheet), LOGO real (ORG.logoUrl) o inicial,
@@ -379,6 +397,8 @@ PUBLIC_CLERK_PUBLISHABLE_KEY=  CLERK_SECRET_KEY=                # signup ABIERTO
 STRIPE_SECRET_KEY=  STRIPE_WEBHOOK_SECRET=  PUBLIC_STRIPE_PUBLISHABLE_KEY=
 RESEND_API_KEY=
 PAC_API_KEY=                                                    # timbrado CFDI
+ANTHROPIC_API_KEY=                                              # IA "armar cotización desde texto"
+AI_MODEL=                                                       # opcional (default claude-opus-4-8)
 ```
 
 Neon se recomienda provisionar vía **Vercel Marketplace → Neon** desde el proyecto

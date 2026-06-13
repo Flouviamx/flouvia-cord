@@ -8,7 +8,7 @@ import { getCotizacionByToken, markViewed, money, lineTotal, quoteSubtotal, quot
 const { token } = Astro.params;
 const result = await getCotizacionByToken(token ?? '');
 if (!result) return Astro.redirect('/');
-const { quote: q, org: ORG } = result;
+const { quote: q, org: ORG, conversacion } = result;
 
 // Registra la apertura del cliente (y pasa a 'viewed' si estaba 'sent').
 await markViewed(token ?? '');
@@ -107,6 +107,35 @@ const color = ORG.colorMarca;
                 <span class="q-done-title">Cotización rechazada</span>
                 <span class="q-done-sub">Le avisamos a {ORG.nombre}. Si cambias de opinión, contáctalos directamente.</span>
             </div>
+
+            <!-- Conversación + negociación -->
+            <div class="q-chat">
+                <div class="q-thread" id="qThread" hidden={conversacion.length === 0}>
+                    <span class="q-chat-label">CONVERSACIÓN</span>
+                    {conversacion.map((m) => (
+                        <div class:list={['q-msg', m.mine ? 'mine' : 'theirs', { counter: m.tipo === 'counter' }]}>
+                            <span class="q-msg-text">{m.detalle}</span>
+                            <span class="q-msg-time">{m.cuando}</span>
+                        </div>
+                    ))}
+                </div>
+
+                {!yaAprobada && !yaRechazada && (
+                    <details class="q-negotiate" data-token={q.token}>
+                        <summary>¿Tienes una duda o quieres negociar el precio?</summary>
+                        <div class="q-neg-body">
+                            <textarea id="qMsg" rows="2" placeholder="Escribe tu duda o tu propuesta para el vendedor…"></textarea>
+                            <input class="q-prop" type="number" id="qProp" min="0" step="100" placeholder="Tu precio objetivo en MXN (opcional)" />
+                            <div class="q-neg-btns">
+                                <button class="q-secondary" id="qSendMsg">Enviar mensaje</button>
+                                <button class="q-secondary q-counter-btn" id="qSendCounter" style={`border-color:${color}; color:${color}`}>Hacer contraoferta</button>
+                            </div>
+                            <p class="q-neg-ok" id="qNegOk" hidden>✓ Enviado. {ORG.nombre} lo verá al instante.</p>
+                            <p class="q-error" id="qNegErr"></p>
+                        </div>
+                    </details>
+                )}
+            </div>
         </div>
 
         <!-- Loop viral -->
@@ -164,6 +193,55 @@ const color = ORG.colorMarca;
 
     document.getElementById('qPdf')?.addEventListener('click', () => window.print());
     document.getElementById('qPdfDone')?.addEventListener('click', () => window.print());
+
+    // ── Conversación / negociación (Link 2.0) ──
+    const thread = document.getElementById('qThread');
+    const msgEl = document.getElementById('qMsg') as HTMLTextAreaElement | null;
+    const propEl = document.getElementById('qProp') as HTMLInputElement | null;
+    const negOk = document.getElementById('qNegOk');
+    const negErr = document.getElementById('qNegErr');
+
+    const appendMsg = (text: string, kind: 'comment' | 'counter') => {
+        if (!thread) return;
+        thread.hidden = false;
+        const div = document.createElement('div');
+        div.className = 'q-msg mine' + (kind === 'counter' ? ' counter' : '');
+        const t = document.createElement('span'); t.className = 'q-msg-text'; t.textContent = text;
+        const time = document.createElement('span'); time.className = 'q-msg-time'; time.textContent = 'ahora';
+        div.append(t, time);
+        thread.appendChild(div);
+    };
+
+    const sendNeg = async (action: 'comment' | 'counter', btn: HTMLButtonElement) => {
+        const mensaje = (msgEl?.value || '').trim();
+        const propuesta = action === 'counter' ? Number(propEl?.value || 0) : 0;
+        if (negErr) negErr.textContent = '';
+        if (action === 'comment' && !mensaje) { if (negErr) negErr.textContent = 'Escribe un mensaje.'; return; }
+        if (action === 'counter' && !mensaje && !propuesta) { if (negErr) negErr.textContent = 'Indica tu propuesta o escribe un mensaje.'; return; }
+        btn.disabled = true;
+        try {
+            const res = await fetch(`/api/q/${token}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, mensaje, propuesta }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'No se pudo enviar');
+            const label = action === 'counter'
+                ? `Contraoferta${propuesta ? ` ($${propuesta.toLocaleString('es-MX')})` : ''}${mensaje ? ': ' + mensaje : ''}`
+                : mensaje;
+            appendMsg(label, action);
+            if (msgEl) msgEl.value = '';
+            if (propEl) propEl.value = '';
+            if (negOk) negOk.hidden = false;
+        } catch (err: any) {
+            if (negErr) negErr.textContent = err.message;
+        } finally {
+            btn.disabled = false;
+        }
+    };
+
+    document.getElementById('qSendMsg')?.addEventListener('click', (e) => sendNeg('comment', e.currentTarget as HTMLButtonElement));
+    document.getElementById('qSendCounter')?.addEventListener('click', (e) => sendNeg('counter', e.currentTarget as HTMLButtonElement));
 </script>
 
 <style>
@@ -299,6 +377,30 @@ const color = ORG.colorMarca;
 
     .q-error { font-size: 0.78rem; color: var(--color-danger); margin: 0; text-align: center; min-height: 0; }
     .q-done-pdf { margin-top: 0.7rem; flex: none; padding-inline: 22px; }
+
+    /* ── Conversación + negociación (Link 2.0) ── */
+    .q-chat { display: flex; flex-direction: column; gap: 1rem; }
+    .q-chat-label { font-size: 0.56rem; font-weight: 800; letter-spacing: 1.8px; color: #aab; }
+    .q-thread { display: flex; flex-direction: column; gap: 0.6rem; }
+    .q-msg { display: flex; flex-direction: column; gap: 3px; max-width: 86%; padding: 0.7rem 0.95rem; border-radius: 14px; font-size: 0.84rem; }
+    .q-msg.theirs { align-self: flex-start; background: var(--color-bg-soft); border: 1px solid var(--color-border); border-bottom-left-radius: 4px; }
+    .q-msg.mine { align-self: flex-end; background: var(--color-blue-deep); color: #fff; border-bottom-right-radius: 4px; }
+    .q-msg.counter { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.32); color: var(--color-text); }
+    .q-msg-text { line-height: 1.45; }
+    .q-msg-time { font-size: 0.62rem; opacity: 0.6; }
+
+    .q-negotiate { border: 1px solid var(--color-border); border-radius: 14px; padding: 0 1.1rem; background: var(--color-bg-soft); }
+    .q-negotiate summary { list-style: none; cursor: pointer; padding: 0.95rem 0; font-size: 0.86rem; font-weight: 600; color: var(--color-text); }
+    .q-negotiate summary::-webkit-details-marker { display: none; }
+    .q-neg-body { display: flex; flex-direction: column; gap: 0.6rem; padding-bottom: 1.1rem; }
+    .q-neg-body textarea, .q-prop {
+        font-family: var(--font-sans); font-size: 0.86rem; color: var(--color-text);
+        background: #fff; border: 1px solid var(--color-border); border-radius: 10px; padding: 10px 12px; resize: vertical; width: 100%;
+    }
+    .q-neg-body textarea:focus, .q-prop:focus { outline: none; border-color: var(--color-blue-deep); }
+    .q-neg-btns { display: flex; gap: 0.6rem; }
+    .q-counter-btn { font-weight: 700; background: #fff; }
+    .q-neg-ok { font-size: 0.8rem; color: #059669; font-weight: 600; margin: 0; }
 
     @media (max-width: 600px) {
         .q-card { padding: 1.8rem 1.4rem; }

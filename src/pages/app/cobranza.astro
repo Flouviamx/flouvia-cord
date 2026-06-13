@@ -1,0 +1,260 @@
+---
+// Cobranza — cuentas por cobrar: cartera total, vencido, aging, exposición por
+// cliente y tabla accionable (marcar cobrada + recordatorio por WhatsApp).
+// Datos reales de getCobranza(). Por cobrar = aprobadas/facturadas sin pagar.
+import AppLayout from '../../layouts/AppLayout.astro';
+import { getCobranza, money } from '../../lib/queries';
+
+const C = await getCobranza();
+const maxAging = Math.max(1, ...C.aging.map((a) => a.monto));
+const hay = C.items.length > 0;
+---
+
+<AppLayout title="Cobranza — Trato" page="cobranza" heading="Cobranza">
+    {!hay && (
+        <section class="card empty">
+            <h2>Estás al corriente 🎉</h2>
+            <p>No tienes cuentas por cobrar. Cuando una cotización se apruebe a crédito (Net 30/60) y aún no se pague, aparecerá aquí con su vencimiento.</p>
+            <a href="/app/cotizaciones" class="empty-cta">Ver cotizaciones</a>
+        </section>
+    )}
+
+    {hay && (
+        <>
+        <!-- KPIs de cartera -->
+        <section class="kpis">
+            <div class="card kpi">
+                <span class="kpi-label">TOTAL POR COBRAR</span>
+                <span class="editorial kpi-num">{money(C.resumen.totalPorCobrar, 0)}</span>
+                <span class="kpi-sub">{C.resumen.nPorCobrar} cuenta{C.resumen.nPorCobrar === 1 ? '' : 's'}</span>
+            </div>
+            <div class="card kpi">
+                <span class="kpi-label">VENCIDO</span>
+                <span class:list={['editorial', 'kpi-num', { 'kpi-danger': C.resumen.totalVencido > 0 }]}>{money(C.resumen.totalVencido, 0)}</span>
+                <span class="kpi-sub">{C.resumen.nVencidas} vencida{C.resumen.nVencidas === 1 ? '' : 's'}</span>
+            </div>
+            <div class="card kpi">
+                <span class="kpi-label">POR VENCER</span>
+                <span class="editorial kpi-num">{money(C.resumen.totalVigente, 0)}</span>
+                <span class="kpi-sub">aún dentro de plazo</span>
+            </div>
+            <div class="card kpi">
+                <span class="kpi-label">CLIENTES CON SALDO</span>
+                <span class="editorial kpi-num">{C.resumen.nClientes}</span>
+                <span class:list={['kpi-sub', { 'kpi-sub-danger': C.resumen.nExcedidos > 0 }]}>
+                    {C.resumen.nExcedidos > 0 ? `${C.resumen.nExcedidos} excede su límite` : 'dentro de su límite'}
+                </span>
+            </div>
+        </section>
+
+        <div class="two-col">
+            <!-- Aging -->
+            <section class="card aging-card">
+                <div class="section-head"><h2>Antigüedad del saldo</h2></div>
+                <div class="aging">
+                    {C.aging.map((a) => (
+                        <div class="ag-row">
+                            <div class="ag-top">
+                                <span class="ag-label"><i class="ag-dot" style={`background:${a.color}`}></i>{a.label}</span>
+                                <span class="ag-vals"><b class="editorial">{money(a.monto, 0)}</b> · {a.n}</span>
+                            </div>
+                            <div class="ag-track"><span class="ag-fill" style={`width:${Math.round((a.monto / maxAging) * 100)}%; background:${a.color}`}></span></div>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            <!-- Exposición por cliente -->
+            <section class="card expo-card">
+                <div class="section-head"><h2>Exposición por cliente</h2><span class="rank-sub">saldo vs. límite</span></div>
+                <div class="expo">
+                    {C.clientes.slice(0, 6).map((c) => (
+                        <div class="expo-row">
+                            <div class="expo-info">
+                                <span class="expo-name">{c.empresa}</span>
+                                <span class="expo-meta">{c.limite > 0 ? `${money(c.saldo, 0)} de ${money(c.limite, 0)}` : `${money(c.saldo, 0)} · sin límite`}</span>
+                            </div>
+                            {c.limite > 0 && (
+                                <div class="expo-bar"><span class:list={['expo-fill', { over: c.excede }]} style={`width:${Math.min(100, c.uso)}%`}></span></div>
+                            )}
+                            {c.excede && <span class="expo-flag">Excede</span>}
+                        </div>
+                    ))}
+                </div>
+            </section>
+        </div>
+
+        <!-- Tabla de cuentas por cobrar -->
+        <section class="card table-card">
+            <div class="t-head">
+                <span>Cliente</span><span>Folio</span><span>Términos</span><span>Vence</span><span>Estado</span><span class="t-right">Saldo</span><span class="t-right">Acción</span>
+            </div>
+            {C.items.map((it) => (
+                <div class="t-row" data-id={it.id} data-token={it.token} data-folio={it.folio} data-empresa={it.empresa} data-total={money(it.total)} data-tel={it.telefono} data-vence={it.vence}>
+                    <span class="t-client"><span class="t-avatar">{it.inicial}</span>{it.empresa}</span>
+                    <a class="t-folio" href={`/app/cotizaciones/${it.id}`}>{it.folio}</a>
+                    <span class="t-muted">{it.terminos}</span>
+                    <span class="t-muted">{it.vence}</span>
+                    <span class="t-estado">
+                        {it.overdue
+                            ? <span class="est est-over">Vencida {it.diasVencido} d</span>
+                            : <span class="est est-due">{it.diasParaVencer === 0 ? 'Vence hoy' : `Vence en ${it.diasParaVencer} d`}</span>}
+                    </span>
+                    <span class="editorial t-amount t-right">{money(it.total, 0)}</span>
+                    <span class="t-actions t-right">
+                        <button class="cob-whats" title="Recordar por WhatsApp" aria-label="Recordar por WhatsApp">
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
+                        </button>
+                        <button class="cob-paid">Cobrada</button>
+                    </span>
+                </div>
+            ))}
+        </section>
+        <p class="cob-err" id="cobErr"></p>
+        </>
+    )}
+</AppLayout>
+
+<style>
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem; }
+    .kpi { padding: 1.3rem 1.4rem; display: flex; flex-direction: column; gap: 0.35rem; }
+    .kpi-label { font-size: 0.58rem; font-weight: 800; letter-spacing: 1.4px; color: #99a2af; }
+    .kpi-num { font-size: 1.9rem; color: var(--color-blue-deep); line-height: 1; }
+    .kpi-danger { color: var(--color-danger); }
+    .kpi-sub { font-size: 0.74rem; color: var(--color-text-muted); }
+    .kpi-sub-danger { color: var(--color-danger); font-weight: 600; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1.2rem; }
+    .section-head h2 { font-size: 0.95rem; font-weight: 700; margin: 0; }
+    .rank-sub { font-size: 0.72rem; color: var(--color-text-muted); }
+
+    .aging-card, .expo-card { padding: 1.4rem 1.5rem; }
+    .aging { display: flex; flex-direction: column; gap: 1rem; }
+    .ag-row { display: flex; flex-direction: column; gap: 6px; }
+    .ag-top { display: flex; justify-content: space-between; align-items: baseline; }
+    .ag-label { display: inline-flex; align-items: center; gap: 7px; font-size: 0.82rem; font-weight: 600; }
+    .ag-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .ag-vals { font-size: 0.74rem; color: var(--color-text-muted); }
+    .ag-vals b { color: var(--color-text); font-size: 0.88rem; margin-right: 2px; }
+    .ag-track { height: 9px; background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 100px; overflow: hidden; }
+    .ag-fill { display: block; height: 100%; border-radius: 100px; min-width: 2px; transition: width 0.7s var(--ease-spring); }
+
+    .expo { display: flex; flex-direction: column; gap: 0.9rem; }
+    .expo-row { display: grid; grid-template-columns: 1.5fr 1fr auto; gap: 0.8rem; align-items: center; }
+    .expo-info { display: flex; flex-direction: column; min-width: 0; }
+    .expo-name { font-size: 0.84rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .expo-meta { font-size: 0.68rem; color: var(--color-text-muted); }
+    .expo-bar { height: 8px; background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 100px; overflow: hidden; }
+    .expo-fill { display: block; height: 100%; background: linear-gradient(90deg, #34d399, #059669); border-radius: 100px; transition: width 0.7s var(--ease-spring); }
+    .expo-fill.over { background: linear-gradient(90deg, #f87171, #ef4444); }
+    .expo-flag { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.4px; color: var(--color-danger); background: rgba(239,68,68,0.1); padding: 3px 8px; border-radius: 100px; }
+
+    /* Tabla */
+    .table-card { overflow: hidden; }
+    .t-head, .t-row {
+        display: grid; grid-template-columns: 1.6fr 0.8fr 0.7fr 0.9fr 1fr 0.9fr 1fr;
+        gap: 1rem; align-items: center; padding: 0.8rem 1.3rem;
+    }
+    .t-head {
+        font-size: 0.62rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+        color: #99a2af; border-bottom: 1px solid var(--color-border); background: var(--color-bg-soft);
+    }
+    .t-row { border-bottom: 1px solid var(--color-border); }
+    .t-row:last-of-type { border-bottom: none; }
+    .t-client { display: flex; align-items: center; gap: 10px; font-size: 0.86rem; font-weight: 600; color: var(--color-text); min-width: 0; }
+    .t-client { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .t-avatar { width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; background: var(--color-blue-deep); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.62rem; font-weight: 800; }
+    .t-folio { font-size: 0.8rem; font-weight: 700; color: var(--color-blue-deep); text-decoration: none; }
+    .t-folio:hover { text-decoration: underline; }
+    .t-muted { font-size: 0.8rem; color: var(--color-text-muted); }
+    .t-amount { font-size: 0.95rem; color: var(--color-blue-deep); }
+    .t-right { text-align: right; }
+    .est { font-size: 0.7rem; font-weight: 700; padding: 4px 9px; border-radius: 100px; white-space: nowrap; }
+    .est-over { color: var(--color-danger); background: rgba(239,68,68,0.1); }
+    .est-due { color: #2563eb; background: rgba(59,130,246,0.1); }
+    .t-actions { display: flex; gap: 6px; justify-content: flex-end; align-items: center; }
+    .cob-whats {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 30px; height: 30px; border-radius: 8px; cursor: pointer;
+        color: #0b7a4b; background: rgba(37,211,102,0.1); border: 1px solid rgba(37,211,102,0.28);
+        transition: background 0.2s;
+    }
+    .cob-whats svg { width: 15px; height: 15px; }
+    .cob-whats:hover { background: rgba(37,211,102,0.18); }
+    .cob-paid {
+        font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; cursor: pointer;
+        color: #fff; background: var(--color-ok); border: none; border-radius: 8px; padding: 7px 12px;
+        transition: transform 0.3s var(--ease-spring), opacity 0.2s;
+    }
+    .cob-paid:hover { transform: translateY(-1px); }
+    .cob-paid:disabled { opacity: 0.55; cursor: wait; }
+    .cob-err { font-size: 0.78rem; color: var(--color-danger); margin: 0.6rem 0 0; min-height: 1em; }
+
+    /* Empty */
+    .empty { padding: 3rem 2rem; text-align: center; }
+    .empty h2 { font-size: 1.1rem; font-weight: 700; margin: 0 0 0.5rem; }
+    .empty p { font-size: 0.88rem; color: var(--color-text-muted); max-width: 460px; margin: 0 auto 1.4rem; line-height: 1.6; }
+    .empty-cta { display: inline-block; background: var(--color-blue-deep); color: #fff; text-decoration: none; font-size: 0.86rem; font-weight: 600; padding: 11px 20px; border-radius: 10px; }
+
+    @media (max-width: 1080px) {
+        .kpis { grid-template-columns: repeat(2, 1fr); }
+        .two-col { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 880px) {
+        .t-head { display: none; }
+        .t-row { grid-template-columns: 1fr auto auto; gap: 0.5rem 0.8rem; }
+        .t-muted, .t-folio { display: none; }
+    }
+    @media (max-width: 560px) {
+        .kpis { grid-template-columns: 1fr; }
+        .t-estado { display: none; }
+    }
+</style>
+
+<script>
+    // Cobranza: marcar cobrada (PATCH paid) + recordatorio por WhatsApp.
+    document.addEventListener('DOMContentLoaded', () => {
+        const err = document.getElementById('cobErr');
+        const cleanPhone = (t: string) => {
+            const d = (t || '').replace(/\D/g, '');
+            if (!d) return '';
+            if (d.length === 10) return '52' + d;       // celular MX
+            return d;
+        };
+
+        document.querySelectorAll<HTMLElement>('.t-row').forEach((row) => {
+            const d = row.dataset;
+
+            row.querySelector('.cob-whats')?.addEventListener('click', () => {
+                const link = `${location.origin}/q/${d.token}`;
+                const msg = `Hola${d.empresa ? ' ' + d.empresa : ''}, le recordamos amablemente el saldo de la cotización ${d.folio} por ${d.total} (vence ${d.vence}). Puede revisarla aquí: ${link}. ¡Gracias!`;
+                const phone = cleanPhone(d.tel || '');
+                const url = phone
+                    ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+                    : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+                window.open(url, '_blank');
+            });
+
+            row.querySelector('.cob-paid')?.addEventListener('click', async (e) => {
+                const btn = e.currentTarget as HTMLButtonElement;
+                if (!confirm(`¿Registrar el pago de ${d.folio} (${d.total})?`)) return;
+                btn.disabled = true;
+                if (err) err.textContent = '';
+                try {
+                    const res = await fetch(`/api/cotizaciones/${d.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'paid' }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'No se pudo registrar el pago');
+                    location.reload();
+                } catch (e2: any) {
+                    if (err) err.textContent = e2.message;
+                    btn.disabled = false;
+                }
+            });
+        });
+    });
+</script>

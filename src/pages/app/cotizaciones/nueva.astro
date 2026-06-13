@@ -15,6 +15,22 @@ const catalogo = productos.filter(p => p.activo);
     <div class="editor-grid">
         <!-- ── Columna principal ── -->
         <div class="ed-main">
+            <!-- Armar con IA -->
+            <section class="card ed-block ai-block">
+                <div class="ai-head">
+                    <span class="ai-spark">✦</span>
+                    <div>
+                        <h2 class="ed-title">Armar con IA</h2>
+                        <p class="ai-sub">Pega el pedido del cliente (WhatsApp, correo…) y la IA arma las líneas con tu catálogo.</p>
+                    </div>
+                </div>
+                <textarea id="aiText" class="ed-textarea" rows="3" placeholder="Ej. Hola, necesito 200 sacos de cemento gris, 50 varillas de 3/8 y 2 m³ de arena. ¿Me pasas precio?"></textarea>
+                <div class="ai-actions">
+                    <button class="ai-btn" id="aiBtn"><span class="ai-btn-label">Armar cotización con IA</span></button>
+                    <span class="ai-status" id="aiStatus"></span>
+                </div>
+            </section>
+
             <!-- Cliente -->
             <section class="card ed-block">
                 <h2 class="ed-title">Cliente</h2>
@@ -223,6 +239,37 @@ const catalogo = productos.filter(p => p.activo);
     document.getElementById('btnSend').addEventListener('click', (e) => save(true, e.currentTarget));
     document.querySelector('.btn-draft').addEventListener('click', (e) => save(false, e.currentTarget));
 
+    // ── Armar con IA (POST /api/cotizaciones/ai-draft) ──
+    const $aiBtn = document.getElementById('aiBtn');
+    const $aiText = document.getElementById('aiText');
+    const $aiStatus = document.getElementById('aiStatus');
+    if ($aiBtn) {
+        $aiBtn.addEventListener('click', async () => {
+            const text = ($aiText.value || '').trim();
+            if (!text) { $aiStatus.textContent = 'Escribe o pega el pedido primero.'; return; }
+            const label = $aiBtn.querySelector('.ai-btn-label');
+            const prev = label.textContent;
+            $aiBtn.disabled = true; label.textContent = 'Armando…'; $aiStatus.textContent = '';
+            try {
+                const res = await fetch('/api/cotizaciones/ai-draft', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'No se pudo armar');
+                lines.length = 0;
+                data.items.forEach((it) => lines.push(it));
+                render();
+                const n = data.items.length;
+                $aiStatus.textContent = `✓ ${n} línea${n === 1 ? '' : 's'} armada${n === 1 ? '' : 's'}. Revisa cantidades y precios.`;
+            } catch (err) {
+                $aiStatus.textContent = err.message || 'Error de red';
+            } finally {
+                $aiBtn.disabled = false; label.textContent = prev;
+            }
+        });
+    }
+
     // arranca con una línea de ejemplo (precarga del primer producto del catálogo)
     if (catalogo.length) {
         const p0 = catalogo[0];
@@ -270,6 +317,23 @@ const catalogo = productos.filter(p => p.activo);
 
 <style>
     .draft-tag { font-size: 0.72rem; font-weight: 700; color: var(--color-text-muted); background: #fff; border: 1px solid var(--color-border); padding: 6px 12px; border-radius: 100px; }
+
+    /* Armar con IA */
+    .ai-block { background: radial-gradient(ellipse at 0% 0%, rgba(10,25,47,0.045), transparent 62%), #fff; }
+    .ai-head { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 0.9rem; }
+    .ai-spark { font-size: 0.9rem; color: var(--color-blue-deep); background: rgba(10,25,47,0.06); width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ai-head .ed-title { margin: 0 0 2px; }
+    .ai-sub { font-size: 0.78rem; color: var(--color-text-muted); margin: 0; line-height: 1.45; }
+    .ai-actions { display: flex; align-items: center; gap: 1rem; margin-top: 0.7rem; flex-wrap: wrap; }
+    .ai-btn {
+        font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; cursor: pointer;
+        background: var(--color-blue-deep); color: #fff; border: none; border-radius: 10px; padding: 10px 18px;
+        box-shadow: 0 8px 22px -10px rgba(10,25,47,0.5);
+        transition: transform 0.4s var(--ease-spring), opacity 0.2s;
+    }
+    .ai-btn:hover { transform: translateY(-2px); }
+    .ai-btn:disabled { opacity: 0.6; cursor: wait; }
+    .ai-status { font-size: 0.78rem; color: var(--color-text-muted); font-weight: 500; }
 
     .editor-grid { display: grid; grid-template-columns: 1fr 320px; gap: 1rem; align-items: start; }
     .ed-main { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }

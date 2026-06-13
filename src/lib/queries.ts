@@ -169,8 +169,21 @@ export async function getCotizacionByToken(token: string) {
     if (!rows.length) return null;
     const items = await sql`select * from cotizacion_items where cotizacion_id = ${rows[0].id} order by orden`;
     const quote = rowToQuote(rows[0], items, []);
+    // Conversación: comentarios del cliente, contraofertas y respuestas del vendedor
+    const conv = await sql`
+        select tipo, detalle, created_at from eventos
+        where cotizacion_id = ${rows[0].id} and tipo in ('comment', 'counter', 'reply')
+        order by created_at asc`;
     return {
         quote,
+        conversacion: conv.map((e) => ({
+            tipo: e.tipo as string,
+            detalle: (e.detalle as string) ?? '',
+            cuando: fmtRelative(e.created_at as string),
+            // En /q el que mira es el CLIENTE: sus mensajes (comment/counter) van a
+            // la derecha; las respuestas del vendedor (reply) a la izquierda.
+            mine: e.tipo === 'comment' || e.tipo === 'counter',
+        })),
         org: {
             nombre: rows[0].org_nombre as string,
             inicial: initials(rows[0].org_nombre),
@@ -255,9 +268,16 @@ export async function getAnalytics() {
         order by importe desc
         limit 6`;
 
+    // 6) Pipeline abierto para pronóstico (ponderado por probabilidad de cierre)
+    const [pl] = await sql`
+        select coalesce(sum(total) filter (where status = 'sent'),0)   as sent_total,
+               coalesce(sum(total) filter (where status = 'viewed'),0) as viewed_total
+        from cotizaciones where org_id = ${orgId}`;
+
     const enviadas = num(k.enviadas), aprobadas = num(k.aprobadas);
     const listaTotal = num(marg.lista_total), negoTotal = num(marg.nego_total);
     const cerradoN = aprobadas;
+    const sentTotal = num(pl.sent_total), viewedTotal = num(pl.viewed_total);
 
     return {
         funnel: {
@@ -275,6 +295,11 @@ export async function getAnalytics() {
             cedido: Math.max(0, listaTotal - negoTotal),
             pct: listaTotal > 0 ? ((listaTotal - negoTotal) / listaTotal) * 100 : 0,
         },
+        // Pronóstico: enviadas ~30% y vistas ~50% de probabilidad de cierre
+        forecast: {
+            sentTotal, viewedTotal,
+            ponderado: sentTotal * 0.3 + viewedTotal * 0.5,
+        },
         clientes: clientes.map(c => ({
             empresa: c.empresa as string,
             cerrado: num(c.cerrado),
@@ -288,6 +313,90 @@ export async function getAnalytics() {
             importe: num(p.importe),
             cotizaciones: num(p.cotizaciones),
         })),
+    };
+}
+
+// ── COBRANZA / CUENTAS POR COBRAR (/app/cobranza) ──────────────────────────────
+// Por cobrar = cotizaciones aprobadas o facturadas que aún no se pagan. El
+// vencimiento sale de los términos (Contado=0, Net 30=30, Net 60=60) sobre la
+// fecha de aprobación (o creación). Calcula aging y exposición por cliente.
+export async function getCobranza() {
+    const orgId = await getActiveOrgId();
+    const rows = await sql`
+        select c.id, c.folio, c.total, c.terminos, c.status, c.public_token,
+               coalesce(c.approved_at, c.created_at) as base_date,
+               cl.empresa, cl.limite_credito, cl.telefono
+        from cotizaciones c
+        left join clientes cl on cl.id = c.cliente_id
+        where c.org_id = ${orgId} and c.status in ('approved','invoiced')
+        order by coalesce(c.approved_at, c.created_at) asc`;
+
+    const DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const MS = 86400000;
+
+    const items = rows.map((r) => {
+        const base = new Date(r.base_date as string);
+        const due = new Date(base); due.setDate(due.getDate() + (DAYS[r.terminos as string] ?? 0));
+        const diff = Math.floor((today.getTime() - due.getTime()) / MS); // >0 = vencido
+        const overdue = diff > 0;
+        const bucket = !overdue ? 'vigente' : diff <= 30 ? 'd30' : diff <= 60 ? 'd60' : 'd60p';
+        return {
+            id: r.id as string,
+            folio: r.folio as string,
+            empresa: (r.empresa as string) ?? 'Sin cliente',
+            inicial: initials((r.empresa as string) ?? '—'),
+            total: num(r.total),
+            terminos: termLabel(r.terminos as string),
+            status: r.status as string,
+            token: r.public_token as string,
+            telefono: (r.telefono as string) ?? '',
+            vence: fmtDate(due),
+            overdue,
+            diasVencido: overdue ? diff : 0,
+            diasParaVencer: overdue ? 0 : -diff,
+            bucket,
+        };
+    });
+
+    const sumBy = (pred: (i: typeof items[number]) => boolean) =>
+        items.filter(pred).reduce((s, i) => s + i.total, 0);
+
+    const totalPorCobrar = sumBy(() => true);
+    const totalVencido = sumBy((i) => i.overdue);
+    const totalVigente = totalPorCobrar - totalVencido;
+
+    const aging = [
+        { key: 'vigente', label: 'Por vencer', monto: sumBy((i) => !i.overdue), n: items.filter(i => !i.overdue).length, color: '#3b82f6' },
+        { key: 'd30', label: '1–30 días', monto: sumBy((i) => i.bucket === 'd30'), n: items.filter(i => i.bucket === 'd30').length, color: '#f59e0b' },
+        { key: 'd60', label: '31–60 días', monto: sumBy((i) => i.bucket === 'd60'), n: items.filter(i => i.bucket === 'd60').length, color: '#f97316' },
+        { key: 'd60p', label: '+60 días', monto: sumBy((i) => i.bucket === 'd60p'), n: items.filter(i => i.bucket === 'd60p').length, color: '#ef4444' },
+    ];
+
+    // Exposición por cliente (saldo por cobrar vs límite de crédito)
+    const byCliente = new Map<string, { empresa: string; saldo: number; limite: number; n: number }>();
+    for (const r of rows) {
+        const empresa = (r.empresa as string) ?? 'Sin cliente';
+        const cur = byCliente.get(empresa) ?? { empresa, saldo: 0, limite: num(r.limite_credito), n: 0 };
+        cur.saldo += num(r.total);
+        cur.n += 1;
+        byCliente.set(empresa, cur);
+    }
+    const clientes = [...byCliente.values()]
+        .map((c) => ({ ...c, excede: c.limite > 0 && c.saldo > c.limite, uso: c.limite > 0 ? Math.round((c.saldo / c.limite) * 100) : 0 }))
+        .sort((a, b) => b.saldo - a.saldo);
+
+    return {
+        items: items.sort((a, b) => b.diasVencido - a.diasVencido || a.diasParaVencer - b.diasParaVencer),
+        resumen: {
+            totalPorCobrar, totalVencido, totalVigente,
+            nPorCobrar: items.length,
+            nVencidas: items.filter(i => i.overdue).length,
+            nClientes: clientes.length,
+            nExcedidos: clientes.filter(c => c.excede).length,
+        },
+        aging,
+        clientes,
     };
 }
 
