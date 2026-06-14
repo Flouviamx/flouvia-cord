@@ -5,7 +5,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
 
 function clean(body: any) {
     return {
@@ -28,6 +28,7 @@ export const POST: APIRoute = async ({ request }) => {
         insert into productos (org_id, sku, nombre, unidad, precio_lista, activo)
         values (${orgId}, ${p.sku}, ${p.nombre}, ${p.unidad}, ${p.precio}, ${p.activo})
         returning id`;
+    await logAudit(orgId, { accion: 'producto.creado', entidad: 'producto', entidad_id: row.id as string, detalle: p.nombre, ip: reqIp(request) });
     return json({ id: row.id });
 };
 
@@ -55,8 +56,9 @@ export const DELETE: APIRoute = async ({ request }) => {
     if (!body.id) return json({ error: 'Falta id' }, 400);
 
     const orgId = await getActiveOrgId();
-    const rows = await sql`delete from productos where id = ${body.id} and org_id = ${orgId} returning id`;
+    const rows = await sql`delete from productos where id = ${body.id} and org_id = ${orgId} returning id, nombre`;
     if (!rows.length) return json({ error: 'Producto no encontrado' }, 404);
+    await logAudit(orgId, { accion: 'producto.eliminado', entidad: 'producto', entidad_id: body.id, detalle: rows[0].nombre as string, ip: reqIp(request) });
     return json({ ok: true });
 };
 

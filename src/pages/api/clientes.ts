@@ -5,9 +5,10 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
 
 const TERMINOS = ['contado', 'net30', 'net60'];
+const NIVELES = ['estandar', 'plata', 'oro', 'distribuidor'];
 
 function clean(body: any) {
     return {
@@ -19,6 +20,8 @@ function clean(body: any) {
         terminos: TERMINOS.includes(body.terminos) ? body.terminos : 'contado',
         limite: body.limite === '' || body.limite === null || body.limite === undefined
             ? null : Math.max(0, Number(body.limite) || 0),
+        nivel: NIVELES.includes(body.nivel) ? body.nivel : 'estandar',
+        descuento: Math.min(100, Math.max(0, Number(body.descuento_pct) || 0)),
     };
 }
 
@@ -30,9 +33,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     const orgId = await getActiveOrgId();
     const [row] = await sql`
-        insert into clientes (org_id, empresa, contacto, email, telefono, rfc, terminos_default, limite_credito)
-        values (${orgId}, ${c.empresa}, ${c.contacto}, ${c.email}, ${c.telefono}, ${c.rfc}, ${c.terminos}, ${c.limite})
+        insert into clientes (org_id, empresa, contacto, email, telefono, rfc, terminos_default, limite_credito, nivel, descuento_pct)
+        values (${orgId}, ${c.empresa}, ${c.contacto}, ${c.email}, ${c.telefono}, ${c.rfc}, ${c.terminos}, ${c.limite}, ${c.nivel}, ${c.descuento})
         returning id`;
+    await logAudit(orgId, { accion: 'cliente.creado', entidad: 'cliente', entidad_id: row.id as string, detalle: c.empresa, ip: reqIp(request) });
     return json({ id: row.id });
 };
 
@@ -48,7 +52,8 @@ export const PATCH: APIRoute = async ({ request }) => {
         update clientes set
             empresa = ${c.empresa}, contacto = ${c.contacto}, email = ${c.email},
             telefono = ${c.telefono}, rfc = ${c.rfc},
-            terminos_default = ${c.terminos}, limite_credito = ${c.limite}
+            terminos_default = ${c.terminos}, limite_credito = ${c.limite},
+            nivel = ${c.nivel}, descuento_pct = ${c.descuento}
         where id = ${body.id} and org_id = ${orgId}
         returning id`;
     if (!rows.length) return json({ error: 'Cliente no encontrado' }, 404);
@@ -61,8 +66,9 @@ export const DELETE: APIRoute = async ({ request }) => {
     if (!body.id) return json({ error: 'Falta id' }, 400);
 
     const orgId = await getActiveOrgId();
-    const rows = await sql`delete from clientes where id = ${body.id} and org_id = ${orgId} returning id`;
+    const rows = await sql`delete from clientes where id = ${body.id} and org_id = ${orgId} returning id, empresa`;
     if (!rows.length) return json({ error: 'Cliente no encontrado' }, 404);
+    await logAudit(orgId, { accion: 'cliente.eliminado', entidad: 'cliente', entidad_id: body.id, detalle: rows[0].empresa as string, ip: reqIp(request) });
     return json({ ok: true });
 };
 

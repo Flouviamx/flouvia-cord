@@ -26,6 +26,24 @@ const dotColor = (tipo: string) =>
         <span>El cliente está viendo esta cotización <b>ahora mismo</b> — buen momento para llamarle.</span>
     </div>
 
+    {q.aprobEstado === 'pendiente' && (
+        <div class="approval-banner">
+            <div class="ap-info">
+                <span class="ap-title">⏳ Pendiente de aprobación</span>
+                <span class="ap-motivo">{q.aprobMotivo}</span>
+            </div>
+            <div class="ap-actions">
+                <button class="ap-approve" id="apApprove">Aprobar y enviar</button>
+                <button class="ap-reject" id="apReject">Rechazar</button>
+            </div>
+        </div>
+    )}
+    {q.aprobEstado === 'rechazada' && (
+        <div class="approval-banner ap-rejected">
+            <span class="ap-title">Solicitud de aprobación rechazada por gerencia</span>
+        </div>
+    )}
+
     <div class="detail-grid">
         <div class="d-main">
             <!-- Encabezado -->
@@ -157,6 +175,17 @@ const dotColor = (tipo: string) =>
     .live-viewing b { font-weight: 800; }
     .lv-dot { width: 9px; height: 9px; border-radius: 50%; background: #10b981; flex-shrink: 0; animation: lv-pulse 1.6s infinite; }
     @keyframes lv-pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.45); } 70% { box-shadow: 0 0 0 8px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+
+    .approval-banner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.35); border-radius: 12px; padding: 12px 16px; margin-bottom: 0.9rem; }
+    .approval-banner.ap-rejected { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.3); }
+    .ap-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .ap-title { font-size: 0.9rem; font-weight: 700; color: #92600a; }
+    .ap-rejected .ap-title { color: var(--color-danger); }
+    .ap-motivo { font-size: 0.78rem; color: var(--color-text-muted); }
+    .ap-actions { display: flex; gap: 0.5rem; }
+    .ap-approve { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 700; cursor: pointer; color: #fff; background: var(--color-ok); border: none; border-radius: 9px; padding: 9px 16px; }
+    .ap-reject { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; cursor: pointer; color: var(--color-danger); background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-radius: 9px; padding: 9px 14px; }
+    .ap-approve:disabled, .ap-reject:disabled { opacity: 0.6; cursor: wait; }
 
     .detail-grid { display: grid; grid-template-columns: 1fr 300px; gap: 1rem; align-items: start; }
     .d-main { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
@@ -331,6 +360,19 @@ const dotColor = (tipo: string) =>
             checkPresence();
             setInterval(checkPresence, 8000);
         }
+
+        // ── Flujo de aprobación (gerencia) ──
+        const apAction = async (action: string, btn: HTMLButtonElement) => {
+            btn.disabled = true; errorEl.textContent = '';
+            try {
+                const res = await fetch(`/api/cotizaciones/${qid}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || 'No se pudo procesar');
+                location.reload();
+            } catch (e: any) { errorEl.textContent = e.message; btn.disabled = false; }
+        };
+        document.getElementById('apApprove')?.addEventListener('click', (e) => apAction('approve_request', e.currentTarget as HTMLButtonElement));
+        document.getElementById('apReject')?.addEventListener('click', (e) => { if (confirm('¿Rechazar esta solicitud de aprobación?')) apAction('reject_request', e.currentTarget as HTMLButtonElement); });
 
         const CONFIRM: Record<string, string> = {
             reject: '¿Marcar esta cotización como rechazada?',

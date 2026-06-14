@@ -37,7 +37,7 @@ const catalogo = productos.filter(p => p.activo);
                 <div class="client-row">
                     <select class="ed-select" id="clientSelect">
                         {CLIENTES.map((c, i) => (
-                            <option value={c.id} selected={i === 0}>{c.empresa} — {c.contacto}</option>
+                            <option value={c.id} selected={i === 0} data-desc={String(c.descuentoPct)} data-nivel={c.nivel}>{c.empresa} — {c.contacto}</option>
                         ))}
                     </select>
                     <div class="term-chips" id="termChips">
@@ -46,6 +46,7 @@ const catalogo = productos.filter(p => p.activo);
                         ))}
                     </div>
                 </div>
+                <p class="desc-note" id="descNote" hidden></p>
             </section>
 
             <!-- Productos -->
@@ -118,6 +119,16 @@ const catalogo = productos.filter(p => p.activo);
     const $select = document.getElementById('productSelect');
     const fmt = (n) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 
+    // ── Descuento por nivel de cliente (price tiers) ──
+    const $client = document.getElementById('clientSelect');
+    const $descNote = document.getElementById('descNote');
+    const currentDesc = () => { const o = $client && $client.options[$client.selectedIndex]; return o ? (parseFloat(o.dataset.desc) || 0) : 0; };
+    const applyDesc = (lista) => { const d = currentDesc(); return d > 0 ? Math.round(lista * (1 - d / 100) * 100) / 100 : null; };
+    const reflectDesc = () => {
+        const d = currentDesc();
+        if ($descNote) { $descNote.textContent = d > 0 ? `Nivel del cliente: −${d}% aplicado automáticamente a las líneas.` : ''; $descNote.hidden = d <= 0; }
+    };
+
     function recalc() {
         const subtotal = lines.reduce((s, l) => s + (l.negociado ?? l.lista) * l.cantidad, 0);
         document.getElementById('sumSubtotal').textContent = fmt(subtotal);
@@ -148,8 +159,16 @@ const catalogo = productos.filter(p => p.activo);
     $select.addEventListener('change', () => {
         const p = catalogo[parseInt($select.value, 10)];
         if (!p) return;
-        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, lista: p.precio, negociado: null, cantidad: 1 });
+        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, lista: p.precio, negociado: applyDesc(p.precio), cantidad: 1 });
         $select.selectedIndex = 0;
+        render();
+    });
+
+    // Al cambiar de cliente, reaplica el descuento de su nivel a todas las líneas.
+    $client?.addEventListener('change', () => {
+        const d = currentDesc();
+        lines.forEach((l) => { l.negociado = d > 0 ? Math.round(l.lista * (1 - d / 100) * 100) / 100 : null; });
+        reflectDesc();
         render();
     });
 
@@ -228,8 +247,9 @@ const catalogo = productos.filter(p => p.activo);
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error al guardar');
-            showToast(send ? `Enviada — ${data.folio} ✓` : `Borrador ${data.folio} guardado ✓`);
-            setTimeout(() => { window.location.href = `/app/cotizaciones/${data.id}`; }, 900);
+            if (data.needsApproval) showToast(`Aprobación solicitada — ${data.folio}. Espera el visto bueno de gerencia.`);
+            else showToast(send ? `Enviada — ${data.folio} ✓` : `Borrador ${data.folio} guardado ✓`);
+            setTimeout(() => { window.location.href = `/app/cotizaciones/${data.id}`; }, 1100);
         } catch (err) {
             btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = original;
             showToast(err.message || 'Error de red', 2600);
@@ -276,6 +296,7 @@ const catalogo = productos.filter(p => p.activo);
         lines.push({ id: p0.id, nombre: p0.nombre, unidad: p0.unidad, lista: p0.precio, negociado: Math.round(p0.precio * 0.92 * 100) / 100, cantidad: 120 });
     }
     render();
+    reflectDesc();
 </script>
 
 <style is:global>
@@ -362,6 +383,8 @@ const catalogo = productos.filter(p => p.activo);
         transition: all 0.25s var(--ease-ios);
     }
     .chip.active { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); }
+    .desc-note { font-size: 0.76rem; font-weight: 600; color: #059669; margin: 0.7rem 0 0; }
+    .desc-note[hidden] { display: none; }
 
     .lines-head {
         display: grid; grid-template-columns: 1.7fr 70px 90px 110px 1fr 30px;

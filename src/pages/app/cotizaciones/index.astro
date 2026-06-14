@@ -8,6 +8,7 @@ const COTIZACIONES = await getCotizaciones();
 const FILTERS = [
     { key: 'all',      label: 'Todas' },
     { key: 'open',     label: 'Abiertas' },
+    { key: 'approval', label: 'Por aprobar' },
     { key: 'approved', label: 'Aprobadas' },
     { key: 'paid',     label: 'Pagadas' },
     { key: 'closed',   label: 'Cerradas' },
@@ -54,7 +55,7 @@ const BOARD_COLS = [
             <span>Cotización</span><span>Cliente</span><span>Términos</span><span>Vigencia</span><span class="t-right">Total</span><span>Estado</span>
         </div>
         {COTIZACIONES.map((q) => (
-            <a href={`/app/cotizaciones/${q.id}`} class="t-row" data-group={groupOf(q.status)}>
+            <a href={`/app/cotizaciones/${q.id}`} class="t-row" data-group={groupOf(q.status)} data-aprob={q.aprobEstado ?? ''}>
                 <span class="t-folio">{q.folio}</span>
                 <span class="t-client">
                     <span class="t-avatar">{q.clienteInicial}</span>
@@ -78,7 +79,7 @@ const BOARD_COLS = [
         {BOARD_COLS.map((col) => {
             const cards = COTIZACIONES.filter((q) => col.statuses.includes(q.status));
             const total = cards.reduce((s, q) => s + (q.total ?? 0), 0);
-            const color = STATUS_META[col.statuses[0]].color;
+            const color = (STATUS_META as any)[col.statuses[0]].color;
             return (
                 <div class="bd-col">
                     <div class="bd-col-head">
@@ -228,7 +229,7 @@ const BOARD_COLS = [
             const f = pill.dataset.filter;
             let visible = 0;
             rows.forEach((r) => {
-                const show = f === 'all' || r.dataset.group === f;
+                const show = f === 'all' ? true : f === 'approval' ? r.dataset.aprob === 'pendiente' : r.dataset.group === f;
                 r.classList.toggle('hidden', !show);
                 if (show) visible++;
             });

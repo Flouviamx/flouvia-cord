@@ -68,6 +68,9 @@ export async function getOrg() {
         pdfCondiciones: (o.pdf_condiciones as string) ?? '',
         pdfMostrarLista: (o.pdf_mostrar_lista as boolean) ?? true,
         pdfTemplate: (o.pdf_template as string) || 'clasico',
+        aprobDescuentoMax: num(o.aprob_descuento_max),
+        aprobMontoMax: num(o.aprob_monto_max),
+        interesMoratorioPct: num(o.interes_moratorio_pct),
     };
 }
 
@@ -98,6 +101,8 @@ export async function getClientes() {
         terminos: termLabel(c.terminos_default as string),
         limite: num(c.limite_credito),
         inicial: initials(c.empresa),
+        nivel: (c.nivel as string) || 'estandar',
+        descuentoPct: num(c.descuento_pct),
     }));
 }
 
@@ -114,6 +119,8 @@ function rowToQuote(c: any, items: any[], eventos: any[]): MockQuote {
         creada: fmtDate(c.created_at),
         token: c.public_token,
         notas: c.notas ?? undefined,
+        aprobEstado: (c.aprob_estado as string) ?? null,
+        aprobMotivo: (c.aprob_motivo as string) ?? null,
         total: num(c.total),
         items: items.map((it): MockItem => ({
             descripcion: it.descripcion,
@@ -322,6 +329,20 @@ export async function getAnalytics() {
 // fecha de aprobación (o creación). Calcula aging y exposición por cliente.
 export async function getCobranza() {
     const orgId = await getActiveOrgId();
+
+    // Tasa de interés moratorio + retraso de pago promedio (histórico real).
+    // select * → resiliente si la columna aún no se migra (undefined → 0).
+    const [org] = await sql`select * from orgs where id = ${orgId}`;
+    const rate = num(org?.interes_moratorio_pct);
+    const [dl] = await sql`
+        select coalesce(avg(extract(epoch from (e.paid_at - (coalesce(c.approved_at, c.created_at)
+            + make_interval(days => case c.terminos when 'net30' then 30 when 'net60' then 60 else 0 end)))) / 86400), 0) as avg_delay
+        from cotizaciones c
+        join (select cotizacion_id, max(created_at) as paid_at from eventos where org_id = ${orgId} and tipo = 'paid' group by cotizacion_id) e
+          on e.cotizacion_id = c.id
+        where c.org_id = ${orgId} and c.status = 'paid'`;
+    const avgDelay = Math.round(num(dl?.avg_delay));
+
     const rows = await sql`
         select c.id, c.folio, c.total, c.terminos, c.status, c.public_token,
                coalesce(c.approved_at, c.created_at) as base_date,
@@ -336,17 +357,23 @@ export async function getCobranza() {
     const MS = 86400000;
 
     const items = rows.map((r) => {
+        const tot = num(r.total);
         const base = new Date(r.base_date as string);
         const due = new Date(base); due.setDate(due.getDate() + (DAYS[r.terminos as string] ?? 0));
         const diff = Math.floor((today.getTime() - due.getTime()) / MS); // >0 = vencido
         const overdue = diff > 0;
         const bucket = !overdue ? 'vigente' : diff <= 30 ? 'd30' : diff <= 60 ? 'd60' : 'd60p';
+        // Interés moratorio compuesto mensual sobre los días de atraso.
+        const interes = overdue && rate > 0 ? tot * (Math.pow(1 + rate / 100, diff / 30) - 1) : 0;
+        // Pago esperado = vencimiento + retraso histórico promedio del negocio.
+        const expected = new Date(due); expected.setDate(expected.getDate() + avgDelay);
+        const expDias = Math.round((expected.getTime() - today.getTime()) / MS);
         return {
             id: r.id as string,
             folio: r.folio as string,
             empresa: (r.empresa as string) ?? 'Sin cliente',
             inicial: initials((r.empresa as string) ?? '—'),
-            total: num(r.total),
+            total: tot,
             terminos: termLabel(r.terminos as string),
             status: r.status as string,
             token: r.public_token as string,
@@ -356,6 +383,9 @@ export async function getCobranza() {
             diasVencido: overdue ? diff : 0,
             diasParaVencer: overdue ? 0 : -diff,
             bucket,
+            interes: Math.round(interes),
+            expectedFecha: fmtDate(expected),
+            expectedDias: expDias,
         };
     });
 
@@ -394,6 +424,11 @@ export async function getCobranza() {
             nVencidas: items.filter(i => i.overdue).length,
             nClientes: clientes.length,
             nExcedidos: clientes.filter(c => c.excede).length,
+            interesTotal: items.reduce((s, i) => s + i.interes, 0),
+            interesPct: rate,
+            avgDelay,
+            esperado7: items.filter(i => i.expectedDias <= 7).reduce((s, i) => s + i.total, 0),
+            esperado30: items.filter(i => i.expectedDias <= 30).reduce((s, i) => s + i.total, 0),
         },
         aging,
         clientes,
@@ -417,6 +452,27 @@ export async function getTareas() {
         due: t.due_date ? fmtDate(t.due_date as string) : '',
         vencida: t.due_date ? new Date(t.due_date as string) < hoy : false,
     }));
+}
+
+// ── AUDIT LOG (lectura) ────────────────────────────────────────────────────────
+export async function getAuditLog() {
+    const orgId = await getActiveOrgId();
+    try {
+        const rows = await sql`
+            select actor, accion, entidad, detalle, ip, created_at
+            from audit_log where org_id = ${orgId}
+            order by created_at desc limit 50`;
+        return rows.map((r) => ({
+            actor: (r.actor as string) || '—',
+            accion: r.accion as string,
+            entidad: (r.entidad as string) || '',
+            detalle: (r.detalle as string) || '',
+            ip: (r.ip as string) || '',
+            cuando: fmtRelative(r.created_at as string),
+        }));
+    } catch {
+        return []; // tabla aún no migrada
+    }
 }
 
 // ── DASHBOARD KPIs ────────────────────────────────────────────────────────────

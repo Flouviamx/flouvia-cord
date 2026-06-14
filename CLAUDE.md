@@ -95,10 +95,23 @@ para que el swap a Neon sea cambiar imports por queries.
 ✅ **Pipeline Kanban + Tareas** — toggle Lista/Tablero en `/app/cotizaciones` (drag&drop
    avanza el pipeline vía PATCH actions); tarjeta de "Tareas y recordatorios" en el
    dashboard (`/api/tareas`, tabla `tareas`, getTareas()).
-⬜ Pendiente (sig. fase enterprise): listas de precio por nivel de cliente, flujos de
-   aprobación (descuento/monto > umbral → "Solicitar aprobación"), tesorería predictiva
-   + interés moratorio (evolución de Cobranza), audit log inmutable, aprobación parcial
-   por línea, versiones de cotización + recordatorios (Resend), Stripe Billing + Clerk.
+✅ **Listas de precio por nivel** — clientes con `nivel` (estandar/plata/oro/distribuidor)
+   y `descuento_pct`; el editor aplica el descuento del nivel a las líneas al elegir cliente.
+✅ **Flujos de aprobación** — umbrales en Ajustes (`orgs.aprob_descuento_max`, `aprob_monto_max`);
+   si al enviar se rebasan, la cotización queda `aprob_estado='pendiente'` (no se envía) y
+   gerencia aprueba/rechaza desde el detalle (`approve_request`/`reject_request`) o el filtro
+   "Por aprobar" de la lista.
+✅ **Tesorería predictiva + interés moratorio** — en Cobranza: interés compuesto sobre saldo
+   vencido (`orgs.interes_moratorio_pct`) y flujo de caja esperado (retraso de pago promedio
+   real del historial). En getCobranza().
+✅ **Audit log inmutable** — tabla `audit_log` + helper `logAudit()`/`reqIp()` en db.ts;
+   instrumentados org/cotizaciones/clientes/productos; vista de solo-lectura en Ajustes.
+✅ **Recordatorios de cobro (Resend)** — `/api/cron/recordatorios` (cron en `vercel.json`,
+   protegido por `CRON_SECRET`) manda correos 3 días antes del vencimiento vía Resend (REST).
+✅ **Pago en línea (Stripe)** — botón en `/q/[token]` → `/api/q/[token]/checkout` (Stripe
+   Checkout vía REST) + `/api/stripe/webhook` marca `paid`. Gated por `STRIPE_SECRET_KEY`.
+⬜ Pendiente: aprobación parcial por línea, versiones de cotización, multi-usuario con Clerk
+   (proteger `/app`), Stripe Billing de suscripciones (planes).
 
 ---
 
@@ -209,9 +222,10 @@ como `alter table … if not exists`): `color_marca`, `email_contacto`, `telefon
 `direccion`, `pdf_mensaje`, `pdf_condiciones`, `pdf_mostrar_lista`, **`pdf_template`**
 (clasico|minimal|detallado, agregada jun 2026). `logo_url` (en la tabla base) ahora
 guarda también data URLs de logos subidos en Ajustes. **Jun 2026 además:**
-`cotizaciones.viewer_last_seen` (presencia en vivo) y la tabla **`tareas`** (CRM ligero).
-⚠️ Correr `npm run db:migrate` tras pull — `/q/[token]`, `/api/org`, `imprimir`,
-`presence` y `/api/tareas` las leen explícitamente.
+`cotizaciones.viewer_last_seen` (presencia), tabla **`tareas`** (CRM), y la **fase
+enterprise**: `clientes.nivel`/`descuento_pct` (price tiers), `orgs.aprob_descuento_max`/
+`aprob_monto_max`/`interes_moratorio_pct` + `cotizaciones.aprob_estado`/`aprob_motivo`
+(aprobaciones), y la tabla **`audit_log`**. ⚠️ Correr `npm run db:migrate` tras pull.
 
 **Mock data:** `src/lib/mock.ts` exporta `ORG`, `PRODUCTOS`, `CLIENTES`,
 `COTIZACIONES` (con items + eventos), `STATUS_META` (label/color/bg por estado),
@@ -410,7 +424,8 @@ de los de flouvia.com:
 DATABASE_URL=                                                   # Neon (PostgreSQL)
 PUBLIC_CLERK_PUBLISHABLE_KEY=  CLERK_SECRET_KEY=                # signup ABIERTO
 STRIPE_SECRET_KEY=  STRIPE_WEBHOOK_SECRET=  PUBLIC_STRIPE_PUBLISHABLE_KEY=
-RESEND_API_KEY=
+RESEND_API_KEY=  RESEND_FROM=                                   # recordatorios de cobro
+CRON_SECRET=                                                    # protege /api/cron/recordatorios
 PAC_API_KEY=                                                    # timbrado CFDI
 ANTHROPIC_API_KEY=                                              # IA "armar cotización desde texto"
 AI_MODEL=                                                       # opcional (default claude-opus-4-8)

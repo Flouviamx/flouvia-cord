@@ -47,6 +47,27 @@ const hay = C.items.length > 0;
             </div>
         </section>
 
+        <!-- Flujo de caja predictivo -->
+        <section class="card cash-card">
+            <div class="cash-main">
+                <span class="kpi-label">FLUJO ESPERADO · PRÓXIMOS 30 DÍAS</span>
+                <span class="editorial cash-num">{money(C.resumen.esperado30, 0)}</span>
+                <span class="kpi-sub">
+                    {C.resumen.avgDelay > 0
+                        ? `tus clientes pagan en promedio ${C.resumen.avgDelay} días después del vencimiento`
+                        : C.resumen.avgDelay < 0
+                        ? `tus clientes pagan en promedio ${Math.abs(C.resumen.avgDelay)} días antes del vencimiento`
+                        : 'proyección sobre la fecha de vencimiento (sin historial de pagos aún)'}
+                </span>
+            </div>
+            <div class="cash-side">
+                <div><span>Próximos 7 días</span><b class="editorial">{money(C.resumen.esperado7, 0)}</b></div>
+                {C.resumen.interesPct > 0 && (
+                    <div><span>Interés moratorio ({C.resumen.interesPct}%/mes)</span><b class="editorial cash-interes">{money(C.resumen.interesTotal, 0)}</b></div>
+                )}
+            </div>
+        </section>
+
         <div class="two-col">
             <!-- Aging -->
             <section class="card aging-card">
@@ -100,7 +121,10 @@ const hay = C.items.length > 0;
                             ? <span class="est est-over">Vencida {it.diasVencido} d</span>
                             : <span class="est est-due">{it.diasParaVencer === 0 ? 'Vence hoy' : `Vence en ${it.diasParaVencer} d`}</span>}
                     </span>
-                    <span class="editorial t-amount t-right">{money(it.total, 0)}</span>
+                    <span class="t-saldo t-right">
+                        <span class="editorial t-amount">{money(it.total, 0)}</span>
+                        {it.interes > 0 && <small class="t-interes">+{money(it.interes, 0)} mora</small>}
+                    </span>
                     <span class="t-actions t-right">
                         <button class="cob-whats" title="Recordar por WhatsApp" aria-label="Recordar por WhatsApp">
                             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
@@ -123,6 +147,19 @@ const hay = C.items.length > 0;
     .kpi-danger { color: var(--color-danger); }
     .kpi-sub { font-size: 0.74rem; color: var(--color-text-muted); }
     .kpi-sub-danger { color: var(--color-danger); font-weight: 600; }
+
+    /* Flujo de caja predictivo */
+    .cash-card { padding: 1.4rem 1.5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 2rem; flex-wrap: wrap; }
+    .cash-main { display: flex; flex-direction: column; gap: 0.35rem; }
+    .cash-num { font-size: 2.1rem; color: #059669; line-height: 1; }
+    .cash-side { display: flex; gap: 2rem; flex-wrap: wrap; }
+    .cash-side > div { display: flex; flex-direction: column; gap: 3px; }
+    .cash-side span { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #99a2af; }
+    .cash-side b { font-size: 1.2rem; color: var(--color-blue-deep); }
+    .cash-interes { color: var(--color-danger) !important; }
+
+    .t-saldo { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+    .t-interes { font-size: 0.66rem; color: var(--color-danger); font-weight: 600; }
 
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
     .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1.2rem; }

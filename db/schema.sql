@@ -150,3 +150,31 @@ create table if not exists tareas (
   created_at    timestamptz default now()
 );
 create index if not exists idx_tareas_org on tareas(org_id, done, due_date);
+
+-- ── Fase enterprise (jun 2026) ──────────────────────────────────────────────
+-- 1) Listas de precio por nivel de cliente (descuento automático).
+alter table clientes add column if not exists nivel text not null default 'estandar'; -- estandar | plata | oro | distribuidor
+alter table clientes add column if not exists descuento_pct numeric not null default 0; -- % de descuento automático del nivel
+
+-- 2) Flujos de aprobación: umbrales por org + estado de aprobación por cotización.
+alter table orgs add column if not exists aprob_descuento_max numeric not null default 0; -- % de descuento que dispara aprobación (0 = sin tope)
+alter table orgs add column if not exists aprob_monto_max numeric not null default 0;     -- total que dispara aprobación (0 = sin tope)
+alter table cotizaciones add column if not exists aprob_estado text;  -- null | pendiente | aprobada | rechazada
+alter table cotizaciones add column if not exists aprob_motivo text;  -- por qué requirió aprobación
+
+-- 3) Tesorería: tasa de interés moratorio mensual de la org.
+alter table orgs add column if not exists interes_moratorio_pct numeric not null default 0; -- % mensual compuesto sobre saldo vencido
+
+-- 4) Audit log inmutable.
+create table if not exists audit_log (
+  id          uuid        default gen_random_uuid() primary key,
+  org_id      uuid        not null references orgs(id) on delete cascade,
+  actor       text,                       -- usuario (demo: 'demo-user'); Clerk en fase 2
+  accion      text        not null,       -- p. ej. 'cotizacion.aprobada'
+  entidad     text,                       -- 'cotizacion' | 'org' | 'cliente' | 'producto'
+  entidad_id  text,
+  detalle     text,                       -- descripción legible / antes→después
+  ip          text,
+  created_at  timestamptz default now()
+);
+create index if not exists idx_audit_org on audit_log(org_id, created_at desc);

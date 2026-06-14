@@ -32,3 +32,19 @@ export async function getActiveOrgId(): Promise<string> {
     if (!rows.length) throw new Error('[db] org demo no encontrada — ¿corriste la migración (npm run db:migrate)?');
     return rows[0].id as string;
 }
+
+// ── Audit log inmutable ──────────────────────────────────────────────────────
+// Registra un evento en audit_log. Envuelto en try/catch: la auditoría nunca debe
+// romper la operación principal (ni antes de correr la migración).
+interface AuditEvent { accion: string; entidad?: string; entidad_id?: string; detalle?: string; ip?: string | null; }
+export async function logAudit(orgId: string, e: AuditEvent): Promise<void> {
+    try {
+        await sql`insert into audit_log (org_id, actor, accion, entidad, entidad_id, detalle, ip)
+                  values (${orgId}, ${DEMO_CLERK_USER_ID}, ${e.accion}, ${e.entidad ?? null}, ${e.entidad_id ?? null}, ${e.detalle ?? null}, ${e.ip ?? null})`;
+    } catch { /* no-op: no romper la operación por fallo de auditoría */ }
+}
+
+// Extrae la IP del request (Vercel/Proxy → x-forwarded-for).
+export function reqIp(request: Request): string {
+    return (request.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'desconocida';
+}

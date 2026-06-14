@@ -1,9 +1,10 @@
 ---
 // Ajustes — marca, contacto, fiscales, cotizaciones y PDF. Guarda en Neon (/api/org).
 import AppLayout from '../../layouts/AppLayout.astro';
-import { getOrg } from '../../lib/queries';
+import { getOrg, getAuditLog } from '../../lib/queries';
 
 const ORG = await getOrg();
+const AUDIT = await getAuditLog();
 ---
 
 <AppLayout title="Ajustes — Trato" page="ajustes" heading="Ajustes">
@@ -95,6 +96,33 @@ const ORG = await getOrg();
             </div>
         </section>
 
+        <!-- Reglas comerciales -->
+        <section class="card s-block">
+            <div class="s-head">
+                <h2>Aprobaciones y tesorería</h2>
+                <p>Protege tus márgenes: topes que disparan aprobación de gerencia y la tasa de interés por mora.</p>
+            </div>
+            <div class="s-body">
+                <div class="s-row">
+                    <div class="s-field">
+                        <label for="oAprobDesc">Descuento máx. sin aprobación (%)</label>
+                        <input class="s-input" id="oAprobDesc" type="number" min="0" max="100" step="1" value={ORG.aprobDescuentoMax} />
+                        <span class="s-hint">0 = sin tope. Por encima, "Enviar" pide aprobación.</span>
+                    </div>
+                    <div class="s-field">
+                        <label for="oAprobMonto">Monto máx. sin aprobación (MXN)</label>
+                        <input class="s-input" id="oAprobMonto" type="number" min="0" step="1000" value={ORG.aprobMontoMax} />
+                        <span class="s-hint">0 = sin tope.</span>
+                    </div>
+                </div>
+                <div class="s-field">
+                    <label for="oInteres">Interés moratorio mensual (%)</label>
+                    <input class="s-input" id="oInteres" type="number" min="0" max="100" step="0.5" value={ORG.interesMoratorioPct} />
+                    <span class="s-hint">Compuesto sobre el saldo vencido. Se calcula en Cobranza.</span>
+                </div>
+            </div>
+        </section>
+
         <!-- PDF -->
         <section class="card s-block">
             <div class="s-head">
@@ -173,6 +201,24 @@ const ORG = await getOrg();
                     </div>
                     <button class="plan-btn">Gestionar suscripción</button>
                 </div>
+            </div>
+        </section>
+
+        <!-- Auditoría -->
+        <section class="card s-block">
+            <div class="s-head">
+                <h2>Auditoría</h2>
+                <p>Registro inmutable de cada cambio: qué, cuándo e IP. Solo lectura — para tus auditores.</p>
+            </div>
+            <div class="audit-list">
+                {AUDIT.length === 0 && <p class="audit-empty">Aún no hay eventos registrados.</p>}
+                {AUDIT.map((a) => (
+                    <div class="audit-row">
+                        <span class="audit-accion">{a.accion}</span>
+                        <span class="audit-detalle">{a.detalle}</span>
+                        <span class="audit-meta">{a.cuando}{a.ip && a.ip !== 'desconocida' ? ` · ${a.ip}` : ''}</span>
+                    </div>
+                ))}
             </div>
         </section>
 
@@ -310,6 +356,15 @@ const ORG = await getOrg();
     }
     .s-saved.show { opacity: 1; }
     .s-saved.error { color: var(--color-danger); }
+
+    /* Auditoría */
+    .audit-list { display: flex; flex-direction: column; max-height: 340px; overflow-y: auto; }
+    .audit-row { display: grid; grid-template-columns: auto 1fr auto; gap: 0.8rem; align-items: baseline; padding: 0.55rem 0; border-bottom: 1px solid var(--color-border); }
+    .audit-row:last-child { border-bottom: none; }
+    .audit-accion { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.68rem; font-weight: 700; color: var(--color-blue-deep); white-space: nowrap; }
+    .audit-detalle { font-size: 0.8rem; color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .audit-meta { font-size: 0.66rem; color: var(--color-text-muted); white-space: nowrap; }
+    .audit-empty { font-size: 0.82rem; color: var(--color-text-muted); margin: 0.4rem 0; }
 
     @media (max-width: 640px) { .s-row { grid-template-columns: 1fr; } }
 
@@ -570,6 +625,9 @@ const ORG = await getOrg();
                         pdf_mensaje: v('oPdfMensaje'),
                         pdf_condiciones: v('oPdfCond'),
                         pdf_mostrar_lista: (document.getElementById('oPdfLista') as HTMLInputElement).checked,
+                        aprob_descuento_max: v('oAprobDesc'),
+                        aprob_monto_max: v('oAprobMonto'),
+                        interes_moratorio_pct: v('oInteres'),
                     }),
                 });
                 const data = await res.json();

@@ -6,7 +6,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const TEMPLATES = new Set(['clasico', 'minimal', 'detallado']);
@@ -46,6 +46,9 @@ export const PATCH: APIRoute = async ({ request }) => {
     const pdfTemplate = body.pdf_template !== undefined
         ? (TEMPLATES.has(String(body.pdf_template)) ? String(body.pdf_template) : 'clasico')
         : actual.pdf_template;
+    const aprobDesc = body.aprob_descuento_max !== undefined ? Math.min(100, Math.max(0, Number(body.aprob_descuento_max) || 0)) : actual.aprob_descuento_max;
+    const aprobMonto = body.aprob_monto_max !== undefined ? Math.max(0, Number(body.aprob_monto_max) || 0) : actual.aprob_monto_max;
+    const interes = body.interes_moratorio_pct !== undefined ? Math.min(100, Math.max(0, Number(body.interes_moratorio_pct) || 0)) : actual.interes_moratorio_pct;
     const logoUrl = body.logo_url !== undefined
         ? (String(body.logo_url) === '' ? null : (logoOk(String(body.logo_url)) ? String(body.logo_url) : actual.logo_url))
         : actual.logo_url;
@@ -56,8 +59,10 @@ export const PATCH: APIRoute = async ({ request }) => {
             color_marca = ${color}, quote_prefix = ${prefix}, iva_pct = ${iva},
             email_contacto = ${email}, telefono = ${telefono}, direccion = ${direccion},
             logo_url = ${logoUrl}, pdf_template = ${pdfTemplate},
-            pdf_mensaje = ${pdfMensaje}, pdf_condiciones = ${pdfCond}, pdf_mostrar_lista = ${pdfLista}
+            pdf_mensaje = ${pdfMensaje}, pdf_condiciones = ${pdfCond}, pdf_mostrar_lista = ${pdfLista},
+            aprob_descuento_max = ${aprobDesc}, aprob_monto_max = ${aprobMonto}, interes_moratorio_pct = ${interes}
         where id = ${orgId}`;
+    await logAudit(orgId, { accion: 'org.actualizada', entidad: 'org', entidad_id: orgId, detalle: 'Se actualizaron los ajustes del negocio', ip: reqIp(request) });
     return json({ ok: true });
 };
 

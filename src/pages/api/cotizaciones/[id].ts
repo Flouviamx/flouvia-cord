@@ -5,7 +5,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
 
 // Transiciones permitidas: action → { desde[], status final, evento }
 const ACTIONS: Record<string, { from: string[]; to: string; evento: string; detalle: string }> = {
@@ -34,6 +34,25 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         return json({ ok: true });
     }
 
+    // Flujo de aprobación: gerencia aprueba o rechaza una solicitud pendiente.
+    if (body.action === 'approve_request' || body.action === 'reject_request') {
+        const orgId = await getActiveOrgId();
+        const rows = await sql`select id, folio, aprob_estado from cotizaciones where id = ${id} and org_id = ${orgId}`;
+        if (!rows.length) return json({ error: 'Cotización no encontrada' }, 404);
+        if (rows[0].aprob_estado !== 'pendiente') return json({ error: 'No hay una solicitud de aprobación pendiente' }, 409);
+        const now = new Date().toISOString();
+        if (body.action === 'approve_request') {
+            await sql`update cotizaciones set aprob_estado = 'aprobada', status = 'sent', sent_at = coalesce(sent_at, ${now}) where id = ${id}`;
+            await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'sent', 'Aprobada por gerencia y enviada al cliente')`;
+            await logAudit(orgId, { accion: 'cotizacion.aprobacion_aprobada', entidad: 'cotizacion', entidad_id: id, detalle: rows[0].folio as string, ip: reqIp(request) });
+            return json({ ok: true, status: 'sent' });
+        }
+        await sql`update cotizaciones set aprob_estado = 'rechazada' where id = ${id}`;
+        await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'rejected', 'Solicitud de aprobación rechazada por gerencia')`;
+        await logAudit(orgId, { accion: 'cotizacion.aprobacion_rechazada', entidad: 'cotizacion', entidad_id: id, detalle: rows[0].folio as string, ip: reqIp(request) });
+        return json({ ok: true, status: 'draft' });
+    }
+
     const action = ACTIONS[body.action];
     if (!action) return json({ error: 'Acción no válida' }, 400);
 
@@ -57,6 +76,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
     await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
               values (${orgId}, ${id}, ${action.evento}, ${action.detalle})`;
+    await logAudit(orgId, { accion: `cotizacion.${body.action}`, entidad: 'cotizacion', entidad_id: id, detalle: `${actual} → ${action.to}`, ip: reqIp(request) });
 
     return json({ ok: true, status: action.to });
 };
