@@ -144,11 +144,12 @@ const BOARD_COLS = [
 
     /* ── Tablero Kanban ── */
     .board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(230px, 1fr); gap: 0.9rem; overflow-x: auto; padding-bottom: 0.5rem; align-items: start; }
-    .bd-col { background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 14px; padding: 0.9rem; min-height: 120px; }
-    .bd-col-head { display: flex; align-items: center; gap: 7px; font-size: 0.78rem; font-weight: 700; color: var(--color-text); }
+    .bd-col { background: transparent; border: none; padding: 0 0.4rem; min-height: 120px; border-left: 1px solid var(--color-border); }
+    .bd-col:first-child { border-left: none; padding-left: 0; }
+    .bd-col-head { display: flex; align-items: center; gap: 7px; font-size: 0.74rem; font-weight: 700; color: var(--color-text); text-transform: uppercase; letter-spacing: 0.4px; }
     .bd-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .bd-count { margin-left: auto; font-size: 0.68rem; font-weight: 700; color: var(--color-text-muted); background: #fff; border: 1px solid var(--color-border); border-radius: 100px; padding: 1px 8px; }
-    .bd-col-total { font-size: 0.92rem; color: var(--color-blue-deep); margin: 0.3rem 0 0.8rem; }
+    .bd-count { margin-left: auto; font-size: 0.68rem; font-weight: 700; color: var(--color-text-muted); }
+    .bd-col-total { font-size: 1rem; color: var(--color-blue-deep); margin: 0.3rem 0 0.9rem; }
     .bd-cards { display: flex; flex-direction: column; gap: 0.6rem; min-height: 40px; border-radius: 10px; transition: background 0.2s, box-shadow 0.2s; }
     .bd-cards.drop-ok { background: rgba(16,185,129,0.08); box-shadow: inset 0 0 0 1.5px rgba(16,185,129,0.4); }
     .bd-cards.drop-no { background: rgba(239,68,68,0.05); box-shadow: inset 0 0 0 1.5px rgba(239,68,68,0.3); }

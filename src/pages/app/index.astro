@@ -214,11 +214,11 @@ const dotColor = (tipo: string) =>
 
     .pipe-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.8rem; }
     .pipe-col {
-        padding: 0.9rem 1rem; border-radius: 10px;
-        background: var(--color-bg-soft);
-        border: 1px solid var(--color-border);
+        padding: 0.2rem 0 0.2rem 1rem;
+        border-left: 1px solid var(--color-border);
         display: flex; flex-direction: column; gap: 0.5rem;
     }
+    .pipe-col:first-child { border-left: none; padding-left: 0; }
     .pipe-head { display: flex; align-items: center; gap: 7px; font-size: 0.72rem; font-weight: 700; }
     .pipe-dot { width: 7px; height: 7px; border-radius: 50%; }
     .pipe-count { margin-left: auto; font-size: 0.68rem; color: var(--color-text-muted); font-weight: 600; }

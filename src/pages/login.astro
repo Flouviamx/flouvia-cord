@@ -4,6 +4,11 @@ export const prerender = false;
 import Layout from '../layouts/Layout.astro';
 import { SignIn } from '@clerk/astro/components';
 
+// Si ya hay sesión, vamos directo a /app — evita el "flash" de la pantalla de
+// login al volver del OAuth de Google.
+const auth = Astro.locals.auth?.();
+if (auth?.userId) return Astro.redirect('/app');
+
 const clerkAppearance = {
     variables: {
         colorPrimary: '#0a192f',
@@ -33,8 +38,13 @@ const clerkAppearance = {
             </div>
 
             <div class="auth-form">
-                <SignIn appearance={clerkAppearance} forceRedirectUrl="/app" signUpUrl="/registro" />
-                <p class="af-note">¿No tienes cuenta? <a href="/registro">Créala gratis</a></p>
+                <!-- Loader bajo el widget: si Clerk tarda en montar, se ve el spinner;
+                     cuando monta, su tarjeta lo cubre. Sin ocultar el SignIn (no rompe si no hay JS). -->
+                <div class="auth-loader" aria-hidden="true"><span class="auth-spin"></span><span>Cargando acceso seguro…</span></div>
+                <div class="auth-mount">
+                    <SignIn appearance={clerkAppearance} forceRedirectUrl="/app" signUpUrl="/registro" />
+                    <p class="af-note">¿No tienes cuenta? <a href="/registro">Créala gratis</a></p>
+                </div>
             </div>
         </div>
     </main>
@@ -90,7 +100,11 @@ const clerkAppearance = {
         100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
     }
 
-    .auth-form { display: flex; flex-direction: column; gap: 1.6rem; max-width: 380px; width: 100%; }
+    .auth-form { position: relative; display: flex; flex-direction: column; gap: 1.6rem; max-width: 380px; width: 100%; }
+    .auth-loader { position: absolute; inset: 0; z-index: 0; display: flex; align-items: center; gap: 11px; justify-content: center; font-size: 0.86rem; color: var(--color-text-muted); font-weight: 500; }
+    .auth-mount { position: relative; z-index: 1; min-height: 300px; display: flex; flex-direction: column; gap: 1.6rem; }
+    .auth-spin { width: 18px; height: 18px; border: 2px solid var(--color-border); border-top-color: var(--color-blue-deep); border-radius: 50%; animation: auth-rot 0.7s linear infinite; }
+    @keyframes auth-rot { to { transform: rotate(360deg); } }
     .af-field { display: flex; flex-direction: column; gap: 0.5rem; }
     .af-field label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.8px; color: #99a2af; }
     .af-field input {
