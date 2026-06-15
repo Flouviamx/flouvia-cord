@@ -1,4 +1,4 @@
-// Tipos públicos de @trato/elements. Superficie mínima a propósito.
+// Tipos públicos de @flouviahq/elements. Superficie mínima a propósito.
 
 /** Payload que viaja con cada evento del cotizador. */
 export interface TratoEventDetail {

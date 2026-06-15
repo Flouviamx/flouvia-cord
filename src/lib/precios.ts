@@ -48,7 +48,7 @@ export const PLANES: Plan[] = [
         nombre: 'Starter',
         tagline: 'Para el que vende solo.',
         precioMensual: 240,
-        ctaLabel: 'Probar 7 días gratis',
+        ctaLabel: 'Empezar ahora',
         ctaHref: '/registro',
         stripeProductId: 'prod_Ui3vQBd5goOHQ1',
         feats: [
@@ -66,7 +66,7 @@ export const PLANES: Plan[] = [
         precioMensual: 590,
         destacado: true,
         ribbon: 'MÁS POPULAR',
-        ctaLabel: 'Probar 7 días gratis',
+        ctaLabel: 'Empezar ahora',
         ctaHref: '/registro',
         stripeProductId: 'prod_Ui45gzUJYA3O2w',
         feats: [
@@ -82,7 +82,7 @@ export const PLANES: Plan[] = [
         nombre: 'Scale',
         tagline: 'Para operaciones con control.',
         precioMensual: 1390,
-        ctaLabel: 'Probar 7 días gratis',
+        ctaLabel: 'Empezar ahora',
         ctaHref: '/registro',
         stripeProductId: 'prod_Ui4AQicrCoCMUt',
         feats: [
@@ -98,7 +98,7 @@ export const PLANES: Plan[] = [
         nombre: 'Developer',
         tagline: 'Para integrar a tu stack.',
         precioMensual: 2990,
-        ctaLabel: 'Probar 7 días gratis',
+        ctaLabel: 'Empezar ahora',
         ctaHref: '/registro',
         stripeProductId: 'prod_Ui4Iff1aimaK0y',
         feats: [
@@ -215,8 +215,8 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
         a: 'Desde el plan Starter conectas tu Certificado de Sello Digital (CSD) una vez y, al cerrar una cotización, Trato timbra el CFDI 4.0 ante el SAT con los mismos datos. Sin recapturar en otro portal.',
     },
     {
-        q: '¿Necesito tarjeta para la prueba de 7 días?',
-        a: 'La prueba de los planes de pago dura 7 días. Si decides quedarte, agregas tu método de pago; si no, no se cobra nada y sigues en Gratis.',
+        q: '¿Puedo probar Trato sin pagar?',
+        a: 'Sí. El plan Gratis es para siempre: 5 cotizaciones activas, sin tarjeta. Cuando estés listo subes a un plan de pago y se cobra desde el alta. Puedes cambiar o cancelar cuando quieras.',
     },
     {
         q: '¿El plan Developer es para integrar Trato a mi sistema?',

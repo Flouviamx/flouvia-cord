@@ -1,7 +1,7 @@
-// Wrapper de React para @trato/elements. React es peer dependency OPCIONAL:
-// solo se carga si importas '@trato/elements/react'.
+// Wrapper de React para @flouviahq/elements. React es peer dependency OPCIONAL:
+// solo se carga si importas '@flouviahq/elements/react'.
 //
-//   import { TratoCotizador } from '@trato/elements/react';
+//   import { TratoCotizador } from '@flouviahq/elements/react';
 //   <TratoCotizador token="abc123" onApproved={(d) => …} />
 import { useRef, useEffect } from 'react';
 import { mountCotizador } from './core';

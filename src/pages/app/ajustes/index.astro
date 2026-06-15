@@ -1,0 +1,93 @@
+---
+// Ajustes — ÍNDICE. Lista de categorías (estilo Stripe). Cada una abre su primera
+// pestaña; dentro, las sub-páginas son pestañas horizontales (no rail lateral).
+import AppLayout from '../../../layouts/AppLayout.astro';
+import { getOrg, getSetupProgress } from '../../../lib/queries';
+import { SETTINGS_CATEGORIES } from '../../../lib/settings';
+
+const ORG = await getOrg();
+const SETUP = await getSetupProgress();
+// Anillo SVG: circunferencia = 2πr (r=26) ≈ 163.36
+const R = 26, C = 2 * Math.PI * R;
+const dash = C * (SETUP.pct / 100);
+---
+
+<AppLayout title="Configuración — Trato" page="ajustes" heading="Ajustes">
+    <div class="idx">
+        <header class="idx-head">
+            <h2>Configuración</h2>
+            <p>Todo lo que se personaliza en Trato para {ORG.nombre}.</p>
+        </header>
+
+        {!SETUP.complete && (
+            <a href="/app?guia=1" class="idx-health">
+                <span class="idx-ring" style={`--c:${C}; --dash:${dash}`}>
+                    <svg viewBox="0 0 60 60">
+                        <circle class="idx-ring-bg" cx="30" cy="30" r="26" />
+                        <circle class="idx-ring-fg" cx="30" cy="30" r="26" />
+                    </svg>
+                    <span class="idx-ring-pct editorial">{SETUP.pct}%</span>
+                </span>
+                <span class="idx-health-body">
+                    <span class="idx-health-title">Tu cuenta está {SETUP.pct}% configurada</span>
+                    <span class="idx-health-desc">Te faltan {SETUP.total - SETUP.doneN} de {SETUP.total} pasos para sacarle todo el provecho a Trato.</span>
+                </span>
+                <span class="idx-health-cta">Continuar →</span>
+            </a>
+        )}
+
+        <div class="idx-rows">
+            {SETTINGS_CATEGORIES.map((c) => (
+                <a href={c.tabs[0].href} class="idx-row">
+                    <svg class="idx-row-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={c.icon} />
+                    <span class="idx-row-body">
+                        <span class="idx-row-title">{c.label}</span>
+                        <span class="idx-row-desc">{c.desc}</span>
+                    </span>
+                    <svg class="idx-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </a>
+            ))}
+        </div>
+    </div>
+</AppLayout>
+
+<style>
+    .idx { max-width: 720px; }
+    .idx-head { margin-bottom: 1.8rem; }
+    .idx-head h2 { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.6px; margin: 0; }
+    .idx-head p { font-size: 0.88rem; color: var(--color-text-muted); margin: 0.4rem 0 0; }
+
+    /* Health-score de configuración */
+    .idx-health { display: flex; align-items: center; gap: 1.1rem; text-decoration: none; color: inherit;
+        background: linear-gradient(135deg, #0d2038, #0a192f); border-radius: 16px; padding: 1.2rem 1.4rem; margin-bottom: 2rem;
+        box-shadow: 0 24px 50px -32px rgba(10,25,47,0.6); transition: transform 0.4s var(--ease-spring); }
+    .idx-health:hover { transform: translateY(-2px); }
+    .idx-ring { position: relative; width: 60px; height: 60px; flex-shrink: 0; }
+    .idx-ring svg { width: 60px; height: 60px; transform: rotate(-90deg); }
+    .idx-ring-bg { fill: none; stroke: rgba(255,255,255,0.14); stroke-width: 5; }
+    .idx-ring-fg { fill: none; stroke: var(--color-ok); stroke-width: 5; stroke-linecap: round;
+        stroke-dasharray: var(--dash) var(--c); transition: stroke-dasharray 0.8s var(--ease-spring); }
+    .idx-ring-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.82rem; font-weight: 700; color: #fff; }
+    .idx-health-body { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+    .idx-health-title { font-size: 0.98rem; font-weight: 600; color: #fff; }
+    .idx-health-desc { font-size: 0.8rem; color: rgba(255,255,255,0.6); line-height: 1.45; }
+    .idx-health-cta { font-size: 0.82rem; font-weight: 600; color: #fff; white-space: nowrap; opacity: 0.9; }
+
+    .idx-rows { display: flex; flex-direction: column; }
+    .idx-row {
+        display: flex; align-items: center; gap: 1rem;
+        padding: 1.15rem 0.4rem; text-decoration: none; color: inherit;
+        border-bottom: 1px solid var(--color-border);
+        transition: padding-left 0.25s var(--ease-spring);
+    }
+    .idx-row:first-child { border-top: 1px solid var(--color-border); }
+    .idx-row:hover { padding-left: 0.9rem; }
+    .idx-row-ico { width: 20px; height: 20px; color: var(--color-blue-deep); flex-shrink: 0; }
+    .idx-row-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+    .idx-row-title { font-size: 0.98rem; font-weight: 600; color: var(--color-text); }
+    .idx-row-desc { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.45; }
+    .idx-row-arrow { width: 16px; height: 16px; color: #c4cad3; flex-shrink: 0; opacity: 0; transform: translateX(-4px); transition: opacity 0.25s, transform 0.25s var(--ease-spring); }
+    .idx-row:hover .idx-row-arrow { opacity: 1; transform: translateX(0); color: var(--color-blue-deep); }
+
+    @media (max-width: 560px) { .idx-row-desc { display: none; } }
+</style>

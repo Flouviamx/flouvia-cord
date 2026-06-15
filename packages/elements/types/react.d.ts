@@ -1,4 +1,4 @@
-// Tipos del wrapper de React (@trato/elements/react).
+// Tipos del wrapper de React (@flouviahq/elements/react).
 import type { TratoEventDetail } from './index';
 
 export interface TratoCotizadorProps {

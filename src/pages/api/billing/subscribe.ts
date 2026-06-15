@@ -1,6 +1,7 @@
 // POST /api/billing/subscribe — inicia el alta/cambio de plan: crea una sesión
 // de Stripe Checkout en modo suscripción con el precio base del plan + los
-// precios MEDIDOS (overage) de ese plan, y 7 días de prueba sin tarjeta.
+// precios MEDIDOS (overage) de ese plan. Sin prueba gratis: se cobra desde el
+// alta (Stripe pide el método de pago en el checkout).
 // Ruta INTERNA (el middleware exige sesión Clerk). El webhook sincroniza Neon
 // cuando el pago/cambio se concreta.
 export const prerender = false;
@@ -36,11 +37,8 @@ export const POST: APIRoute = async ({ request }) => {
             success_url: `${origin}/app/ajustes/plan?suscrito=1`,
             cancel_url: `${origin}/app/ajustes/plan`,
             allow_promotion_codes: 'true',
-            payment_method_collection: 'if_required', // prueba sin tarjeta
             'line_items[0][price]': PLAN_PRICES[plan][cycle],
             'line_items[0][quantity]': '1',
-            'subscription_data[trial_period_days]': '7',
-            'subscription_data[trial_settings][end_behavior][missing_payment_method]': 'cancel',
             'subscription_data[metadata][org_id]': orgId,
             'subscription_data[metadata][plan]': plan,
             'subscription_data[metadata][cycle]': cycle,

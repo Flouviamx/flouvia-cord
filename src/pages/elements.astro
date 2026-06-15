@@ -20,8 +20,8 @@ const CODES = [
     },
     {
         id: 'react', label: 'React', file: 'Cotizacion.jsx',
-        code: `// npm install @trato/elements
-import { TratoCotizador } from '@trato/elements/react';
+        code: `// npm install @flouviahq/elements
+import { TratoCotizador } from '@flouviahq/elements/react';
 
 export function Cotizacion({ token }) {
   return (
@@ -36,8 +36,8 @@ export function Cotizacion({ token }) {
     {
         id: 'next', label: 'Next.js', file: 'cotizacion.tsx',
         code: `'use client';
-// npm install @trato/elements
-import { TratoCotizador } from '@trato/elements/react';
+// npm install @flouviahq/elements
+import { TratoCotizador } from '@flouviahq/elements/react';
 
 export default function Cotizacion() {
   return (
@@ -51,20 +51,20 @@ export default function Cotizacion() {
     {
         id: 'astro', label: 'Astro', file: 'Cotizacion.astro',
         code: `---
-// npm install @trato/elements
+// npm install @flouviahq/elements
 const { token } = Astro.props;
 ---
 <trato-cotizador token={token}></trato-cotizador>
 
 <script>
-  import '@trato/elements'; // registra <trato-cotizador>
+  import '@flouviahq/elements'; // registra <trato-cotizador>
 </script>`,
     },
     {
         id: 'vue', label: 'Vue', file: 'Cotizacion.vue',
         code: `<script setup>
-// npm install @trato/elements
-import '@trato/elements'; // registra <trato-cotizador>
+// npm install @flouviahq/elements
+import '@flouviahq/elements'; // registra <trato-cotizador>
 defineProps({ token: String });
 </script>
 
@@ -114,15 +114,15 @@ const EVENTS = `document.querySelector('[data-trato-cotizador]')
                     </div>
 
                     <div class="el-cmd reveal" data-install-cmd>
-                        <code><span class="el-cmd-prompt">$</span>npm install @trato/elements</code>
+                        <code><span class="el-cmd-prompt">$</span>npm install @flouviahq/elements</code>
                         <button class="el-cmd-copy" type="button" aria-label="Copiar comando">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                         </button>
                     </div>
                     <p class="el-plan reveal">
-                        <a href="https://www.npmjs.com/package/@trato/elements" target="_blank" rel="noopener" class="el-npm">
+                        <a href="https://www.npmjs.com/package/@flouviahq/elements" target="_blank" rel="noopener" class="el-npm">
                             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M0 7.334v8h6.666v1.332H12v-1.332h12v-8H0zm6.666 6.664H5.334v-4H3.999v4H1.335V8.667h5.331v5.331zm4 0v1.336H8.001V8.667h5.334v5.332h-2.669v-.001zm12.001 0h-1.33v-4h-1.336v4h-1.335v-4h-1.33v4h-2.671V8.667h8.002v5.331zM10.665 10H12v2.667h-1.335V10z"/></svg>
-                            Disponible en npm · @trato/elements
+                            Disponible en npm · @flouviahq/elements
                         </a>
                     </p>
                 </div>
@@ -592,7 +592,7 @@ const EVENTS = `document.querySelector('[data-trato-cotizador]')
         const btn = box.querySelector<HTMLButtonElement>('.el-cmd-copy');
         btn?.addEventListener('click', async () => {
             try {
-                await navigator.clipboard.writeText('npm install @trato/elements');
+                await navigator.clipboard.writeText('npm install @flouviahq/elements');
                 btn.classList.add('done');
                 setTimeout(() => btn.classList.remove('done'), 2000);
             } catch {}

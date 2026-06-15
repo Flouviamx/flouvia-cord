@@ -1,4 +1,4 @@
-# @trato/elements
+# @flouviahq/elements
 
 Embebe el cotizador B2B de **[Trato](https://trato.flouvia.com)** en cualquier
 sitio — con tu marca, aprobación, contraoferta y pago en línea, sin que tus
@@ -10,7 +10,7 @@ mismo `<iframe>` seguro a `trato.flouvia.com/embed/{token}` (auto-altura vía
 `postMessage`, allowlist de dominios por cuenta).
 
 ```bash
-npm install @trato/elements
+npm install @flouviahq/elements
 ```
 
 ---
@@ -20,7 +20,7 @@ npm install @trato/elements
 Importar el paquete registra `<trato-cotizador>` automáticamente.
 
 ```js
-import '@trato/elements';
+import '@flouviahq/elements';
 ```
 
 ```html
@@ -39,7 +39,7 @@ el.addEventListener('pay', (e) => location.assign('/gracias'));
 
 ```vue
 <script setup>
-import '@trato/elements';
+import '@flouviahq/elements';
 </script>
 
 <template>
@@ -55,7 +55,7 @@ import '@trato/elements';
 ## React / Next.js
 
 ```tsx
-import { TratoCotizador } from '@trato/elements/react';
+import { TratoCotizador } from '@flouviahq/elements/react';
 
 export default function Cotizacion() {
   return (
@@ -75,7 +75,7 @@ En Next.js (App Router) márcalo como Client Component (`'use client'`).
 ## Vanilla / control manual
 
 ```js
-import { mountCotizador } from '@trato/elements';
+import { mountCotizador } from '@flouviahq/elements';
 
 const controller = mountCotizador(document.getElementById('box'), {
   token: 'abc123',

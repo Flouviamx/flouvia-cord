@@ -1,4 +1,4 @@
-// Tipos públicos de @trato/elements (escritos a mano).
+// Tipos públicos de @flouviahq/elements (escritos a mano).
 
 export interface TratoEventDetail {
     token?: string;

@@ -1,4 +1,4 @@
-// Núcleo agnóstico de framework de @trato/elements: monta el cotizador (iframe a
+// Núcleo agnóstico de framework de @flouviahq/elements: monta el cotizador (iframe a
 // /embed/{token}) con skeleton, auto-altura (postMessage) y relay de eventos.
 // Es la MISMA mecánica que public/embed.js, pero como módulo: cada instancia tiene
 // su propio listener (scoped por contentWindow) y se limpia con destroy().

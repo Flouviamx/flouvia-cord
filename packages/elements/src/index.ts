@@ -1,4 +1,4 @@
-// Entry principal de @trato/elements (vanilla / Web Component).
+// Entry principal de @flouviahq/elements (vanilla / Web Component).
 // Importarlo registra automáticamente <trato-cotizador>.
 export { mountCotizador } from './core';
 export { TratoCotizadorElement, defineTratoElements } from './element';
