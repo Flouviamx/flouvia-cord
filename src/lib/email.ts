@@ -5,7 +5,7 @@
 import { sql } from './db';
 
 const RESEND_KEY = import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
-const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Trato <cotizaciones@trato.flouvia.com>';
+const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Trato <cotizaciones@flouvia.com>';
 
 const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(Number(n ?? 0));
 const esc = (s: string) => String(s ?? '').replace(/</g, '&lt;');
