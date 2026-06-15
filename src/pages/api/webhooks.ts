@@ -1,5 +1,8 @@
 // /api/webhooks — gestión de endpoints salientes de la org (Developers).
+//   GET    ?deliveries=<webhookId>      → { deliveries: [...] }  (log de entregas)
 //   POST   { url, eventos? }            → { id, secret }   (secret en claro UNA vez)
+//   POST   { action:'test', id }        → { ok, status, error }  (envía evento de prueba)
+//   POST   { action:'redeliver', deliveryId } → { ok, status, error }  (replay)
 //   PATCH  { id, activo?, eventos?, url? } → { ok }
 //   DELETE { id }                        → { ok }
 // El secret firma cada entrega (HMAC-sha256). Requiere permiso 'ajustes' + plan API.
@@ -8,9 +11,17 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { randomBytes } from 'node:crypto';
 import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
-import { requirePerm } from '../../lib/queries';
+import { requirePerm, getWebhookDeliveries } from '../../lib/queries';
 import { planTieneApi } from '../../lib/permissions';
-import { WEBHOOK_EVENT_IDS } from '../../lib/webhooks';
+import { WEBHOOK_EVENT_IDS, sendTestEvent, redeliver } from '../../lib/webhooks';
+
+export const GET: APIRoute = async ({ request, url }) => {
+    const denied = await requirePerm('ajustes'); if (denied) return denied;
+    const webhookId = url.searchParams.get('deliveries');
+    if (!webhookId) return json({ error: 'Falta el parámetro deliveries' }, 400);
+    const deliveries = await getWebhookDeliveries(webhookId);
+    return json({ deliveries });
+};
 
 function cleanEventos(v: unknown): string[] {
     if (!Array.isArray(v)) return [];
@@ -26,6 +37,26 @@ export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('ajustes'); if (denied) return denied;
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
+
+    const orgIdForAction = await getActiveOrgId();
+
+    // Acción: enviar evento de PRUEBA a un endpoint existente.
+    if (body.action === 'test') {
+        const id = String(body.id ?? '');
+        if (!id) return json({ error: 'Falta id' }, 400);
+        const r = await sendTestEvent(orgIdForAction, id);
+        await logAudit(orgIdForAction, { accion: 'webhook.prueba', entidad: 'webhook', entidad_id: id, detalle: `Envío de prueba (${r.ok ? 'ok' : r.error})`, ip: reqIp(request) });
+        return json(r);
+    }
+
+    // Acción: re-entregar (replay) una entrega pasada.
+    if (body.action === 'redeliver') {
+        const deliveryId = String(body.deliveryId ?? '');
+        if (!deliveryId) return json({ error: 'Falta deliveryId' }, 400);
+        const r = await redeliver(orgIdForAction, deliveryId);
+        await logAudit(orgIdForAction, { accion: 'webhook.replay', entidad: 'webhook_delivery', entidad_id: deliveryId, detalle: `Reintento (${r.ok ? 'ok' : r.error})`, ip: reqIp(request) });
+        return json(r);
+    }
 
     const url = String(body.url ?? '').trim();
     if (!validUrl(url)) return json({ error: 'La URL no es válida (debe empezar con https://)' }, 400);

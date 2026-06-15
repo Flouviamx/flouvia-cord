@@ -309,6 +309,82 @@ create table if not exists webhooks (
 );
 create index if not exists idx_webhooks_org on webhooks(org_id);
 
+-- ── Log de entregas de webhooks (Developers PRO, jun 2026) ──────────────────
+-- Cada INTENTO de entrega de un webhook queda registrado para diagnóstico y
+-- "reintentar" (replay). Guardamos el payload exacto que se envió para poder
+-- re-disparar la misma entrega tal cual. `request_body`/`response_body` se
+-- truncan en el motor. En la UI mostramos las últimas ~100 por endpoint.
+create table if not exists webhook_deliveries (
+  id            uuid        default gen_random_uuid() primary key,
+  org_id        uuid        not null references orgs(id) on delete cascade,
+  webhook_id    uuid        not null references webhooks(id) on delete cascade,
+  evento        text        not null,
+  status        int,                                   -- HTTP status (null = sin respuesta)
+  ok            boolean     not null default false,    -- 2xx
+  error         text,                                  -- 'timeout', 'HTTP 500', 'error de red'…
+  intento       int         not null default 1,        -- 1 = primer envío, 2 = reintento auto
+  es_prueba     boolean     not null default false,    -- disparada con "Enviar prueba"
+  duracion_ms   int,
+  request_body  text,                                  -- JSON enviado (para replay)
+  response_body text,                                  -- respuesta del receptor (truncada)
+  created_at    timestamptz default now()
+);
+create index if not exists idx_wh_deliveries on webhook_deliveries(webhook_id, created_at desc);
+create index if not exists idx_wh_deliveries_org on webhook_deliveries(org_id, created_at desc);
+
+-- ── Log de requests del API pública (Developers PRO, jun 2026) ──────────────
+-- Bitácora de cada llamada autenticada a /api/v1/* y /api/mcp para que el dev
+-- vea su tráfico (método, ruta, status, latencia) estilo "Logs" de Stripe. Se
+-- escribe best-effort desde withApiAuth; nunca frena la respuesta.
+create table if not exists api_requests (
+  id          uuid        default gen_random_uuid() primary key,
+  org_id      uuid        not null references orgs(id) on delete cascade,
+  key_id      uuid        references api_keys(id) on delete set null,
+  metodo      text        not null,                    -- GET | POST | …
+  ruta        text        not null,                    -- /v1/cotizaciones
+  status      int         not null,
+  duracion_ms int,
+  mode        text,                                    -- live | test (de la llave)
+  ip          text,
+  created_at  timestamptz default now()
+);
+create index if not exists idx_api_requests on api_requests(org_id, created_at desc);
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- FASE 3 — nuevas secciones de configuración (jun 2026)
+-- ════════════════════════════════════════════════════════════════════════════
+
+-- ── Portal del cliente — personaliza la página pública /q ────────────────────
+-- (color_marca y portal_bienvenida ya existen.) Banner = línea superior; los
+-- toggles controlan el chat/contraoferta y el branding "Powered by Trato".
+alter table orgs add column if not exists portal_banner text;                              -- aviso superior en /q (null = sin banner)
+alter table orgs add column if not exists portal_mostrar_chat boolean not null default true; -- permitir comentarios/contraoferta del cliente
+alter table orgs add column if not exists portal_powered boolean not null default true;     -- mostrar "enviado vía Trato" + watermark (gated por plan)
+
+-- ── Correo (Resend) — remitente y plantilla del correo al cliente ────────────
+-- El "from" usa el dominio verificado en Resend; aquí personalizamos el NOMBRE
+-- visible, el reply-to, el párrafo de intro y la firma del correo transaccional.
+alter table orgs add column if not exists email_from_name text;     -- nombre visible del remitente (default = nombre del negocio)
+alter table orgs add column if not exists email_reply_to text;      -- responder-a (default = email_contacto)
+alter table orgs add column if not exists email_intro text;         -- párrafo de intro del correo de cotización
+alter table orgs add column if not exists email_firma text;         -- firma/pie del correo
+
+-- ── Impuestos — catálogo de tasas reutilizables (perfiles) ───────────────────
+-- IVA / IEPS / retenciones / exento. El perfil marcado `es_default` de tipo
+-- 'iva' sincroniza orgs.iva_pct (así el editor lo usa sin refactor). Las
+-- retenciones default sincronizan retencion_iva_pct/retencion_isr_pct.
+create table if not exists impuestos (
+  id          uuid        default gen_random_uuid() primary key,
+  org_id      uuid        not null references orgs(id) on delete cascade,
+  nombre      text        not null,                       -- 'IVA 16%', 'Frontera 8%', 'Ret. IVA 10.667%'…
+  tipo        text        not null default 'iva',         -- iva | ieps | ret_iva | ret_isr | exento
+  tasa        numeric     not null default 0,             -- porcentaje (0–100)
+  es_default  boolean     not null default false,         -- aplica a cotizaciones nuevas
+  activo      boolean     not null default true,
+  created_at  timestamptz default now()
+);
+create index if not exists idx_impuestos_org on impuestos(org_id, tipo);
+
 -- ── Stripe Billing — suscripciones + medidores de uso (jun 2026) ─────────────
 -- Estado de la suscripción que el webhook (/api/stripe/webhook) sincroniza en
 -- tiempo real cuando el cliente cambia de plan, paga o se le rechaza el cobro.
@@ -337,3 +413,22 @@ create table if not exists stripe_events (
   type        text,
   received_at timestamptz not null default now()
 );
+
+-- ── Interés moratorio mensual (jun 2026) ──────────────────────────────────────
+-- El cron /api/cron/intereses corre el día 1 de cada mes. Por cada cotización
+-- vencida cuya org tenga interes_moratorio_pct > 0, registra el cargo mensual.
+-- Constraint único (cotizacion_id, periodo) garantiza idempotencia: correr el
+-- cron dos veces en el mismo mes no duplica el cargo.
+create table if not exists intereses_moratorios (
+  id              uuid        primary key default gen_random_uuid(),
+  org_id          uuid        not null references orgs(id) on delete cascade,
+  cotizacion_id   uuid        not null references cotizaciones(id) on delete cascade,
+  periodo         text        not null,        -- 'YYYY-MM' del mes en que se aplica
+  tasa_pct        numeric     not null,        -- snapshot de orgs.interes_moratorio_pct
+  saldo_base      numeric     not null,        -- cotizaciones.total en el momento del cargo
+  monto           numeric     not null,        -- saldo_base * tasa_pct / 100
+  dias_vencido    int         not null,        -- días de atraso al momento del cron
+  created_at      timestamptz not null default now(),
+  unique (cotizacion_id, periodo)
+);
+create index if not exists idx_intereses_org on intereses_moratorios(org_id, periodo);

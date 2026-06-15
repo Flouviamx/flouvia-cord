@@ -27,7 +27,7 @@ const puedePagar = pagoActivo && ['approved', 'invoiced'].includes(q.status);
 
 <Layout title={`Cotización ${q.folio} — ${ORG.nombre}`} noindex={true}>
     <main class="q-page">
-        <div class="q-watermark editorial" aria-hidden="true">Trato</div>
+        {ORG.portalPowered !== false && <div class="q-watermark editorial" aria-hidden="true">Trato</div>}
 
         <QuoteCard
             quote={q}
@@ -38,10 +38,12 @@ const puedePagar = pagoActivo && ['approved', 'invoiced'].includes(q.status);
             puedePagar={puedePagar}
         />
 
-        <!-- Loop viral -->
-        <a href="/" class="q-via">
-            Cotización enviada vía <img src="/imgs/logo-trato-navy.png" alt="Trato" /> — crea las tuyas gratis →
-        </a>
+        {ORG.portalPowered !== false && (
+            <!-- Loop viral (oculto si el plan permite quitar la marca) -->
+            <a href="/" class="q-via">
+                Cotización enviada vía <img src="/imgs/logo-trato-navy.png" alt="Trato" /> — crea las tuyas gratis →
+            </a>
+        )}
     </main>
 </Layout>
 

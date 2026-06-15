@@ -119,10 +119,18 @@ usuario (el de IA ya está cableado en `ai-draft`).
 ✅ **Tesorería predictiva + interés moratorio** — en Cobranza: interés compuesto sobre saldo
    vencido (`orgs.interes_moratorio_pct`) y flujo de caja esperado (retraso de pago promedio
    real del historial). En getCobranza().
+✅ **Cron de interés moratorio (jun 2026)** — `/api/cron/intereses` (cron en `vercel.json`,
+   día 1 de cada mes a las 6am UTC, protegido por `CRON_SECRET`). Para cada org con
+   `interes_moratorio_pct > 0`, aplica `saldo × tasa%` a todas las cotizaciones vencidas
+   y registra el cargo en tabla **`intereses_moratorios`** (org_id, cotizacion_id, periodo
+   'YYYY-MM', tasa_pct, saldo_base, monto, dias_vencido). Idempotente por
+   `UNIQUE(cotizacion_id, periodo)`. NO modifica `cotizaciones.total` (preserva original).
+   Manda correo-resumen al owner de la org si hay `RESEND_API_KEY`. Cada cargo queda en
+   `audit_log` (acción `interes_moratorio.aplicado`). ⚠️ Correr `npm run db:migrate` (1 tabla nueva).
 ✅ **Audit log inmutable** — tabla `audit_log` + helper `logAudit()`/`reqIp()` en db.ts;
    instrumentados org/cotizaciones/clientes/productos; vista de solo-lectura en Ajustes.
 ✅ **Recordatorios de cobro (Resend)** — `/api/cron/recordatorios` (cron en `vercel.json`,
-   protegido por `CRON_SECRET`) manda correos 3 días antes del vencimiento vía Resend (REST).
+   diario a las 9am UTC) manda correos 3 días antes del vencimiento vía Resend (REST).
 ✅ **Correo al enviar cotización (Resend)** — helper `src/lib/email.ts` (`notifyQuoteSent`/
    `sendEmail`); al crear-con-envío (`POST /api/cotizaciones`) o acción send/resend
    (`PATCH /api/cotizaciones/[id]`) se manda el link público al correo del cliente y se
@@ -204,6 +212,44 @@ usuario (el de IA ya está cableado en `ai-draft`).
    `quote.rejected`, `quote.paid`, `quote.invoiced` (5 archivos). CRUD en `/api/webhooks`
    (requiere permiso `ajustes` + plan API). Secret mostrado UNA vez al crear, luego enmascarado.
    UI funcional en Ajustes › Developers (lista, toggle activo/inactivo, eliminar, modal crear).
+✅ **Developers PRO (jun 2026)** — observabilidad estilo Stripe/GitHub en Ajustes › Developers
+   (`/app/ajustes/api`). **Log de entregas de webhooks + replay:** tabla nueva
+   `webhook_deliveries` (cada intento con evento/status/error/intento/duración/`request_body`
+   para re-enviar exacto + `response_body`); `deliver()` en `webhooks.ts` registra CADA intento
+   y guarda el resumen; `sendTestEvent()` (evento `ping` de prueba) y `redeliver()` (replay).
+   En `/api/webhooks`: `GET ?deliveries=<id>`, POST `{action:'test'}` y `{action:'redeliver'}`.
+   UI: cada endpoint se DESPLIEGA → log con dot ok/err + status + latencia + botón "Reintentar"
+   por entrega, y botón "Probar" por endpoint. **Log de requests del API:** tabla nueva
+   `api_requests`; `withApiAuth` (apikey.ts) loguea cada llamada (método/ruta/status/ms/ip,
+   best-effort) → sección "Actividad del API" con stats 24h (total/errores/latencia) + lista,
+   refrescable vía `GET /api/dev/activity`. **MCP pro:** connect card con config Claude
+   Desktop/Cursor/URL (copy) + catálogo de las 7 tools (desde `MCP_TOOLS`, con scope) +
+   **probador en vivo** (`POST /api/mcp/playground`, sesión, solo tools de lectura, corre el
+   handler real y muestra el JSON). **API keys:** modal de creación con selector de scope
+   (lectura/escritura) en vez de `prompt()`. `getWebhookDeliveries`/`getApiActivity` en queries.ts.
+   ⚠️ Correr `npm run db:migrate` (2 tablas nuevas).
+✅ **FASE 3 — nuevas secciones de configuración (jun 2026)** — 4 secciones nuevas en Ajustes,
+   todas con backend REAL. ⚠️ Correr `npm run db:migrate`.
+   • **Portal del cliente** (`/app/ajustes/portal`, pestaña bajo *Branding*) — personaliza la
+     página pública `/q`: `portal_banner`, `portal_bienvenida` (ya existía), toggles
+     `portal_mostrar_chat` (oculta chat/contraoferta) y `portal_powered` (quita "enviado vía
+     Trato" + watermark; gated por plan). PREVIEW en vivo. **Cableado REAL:** `QuoteCard.astro`
+     pinta banner/bienvenida y oculta `.q-chat`; `/q/[token].astro` oculta watermark + loop
+     viral; `getCotizacionByToken` devuelve los campos portal_*.
+   • **Correo** (`/app/ajustes/correo`, pestaña bajo *Notificaciones*) — remitente y plantilla
+     del correo transaccional: `email_from_name` (nombre visible), `email_reply_to`,
+     `email_intro`, `email_firma` con variables `{cliente}{folio}{total}{negocio}`. PREVIEW de
+     email. **Cableado REAL:** `email.ts` `sendEmail` acepta `fromName`/`replyTo` (dominio fijo
+     al verificado en Resend, nombre libre); `notifyQuoteSent` usa intro/firma/remitente custom.
+   • **Impuestos** (`/app/ajustes/impuestos`, pestaña bajo *Cotizaciones*) — tabla nueva
+     `impuestos` (nombre, tipo iva|ieps|ret_iva|ret_isr|exento, tasa, es_default). CRUD en
+     `/api/impuestos`. **Cableado REAL:** el perfil `es_default` de tipo iva/ret_iva/ret_isr
+     SINCRONIZA `orgs.iva_pct`/`retencion_*` (vía `syncOrg`), así el editor lo usa sin refactor.
+   • **Integraciones reales — Slack** (`/app/ajustes/integraciones`) — `slack_webhook_url` ya
+     existía (solo guardaba); ahora **postea de verdad**: `src/lib/slack.ts` (`postToSlack`,
+     best-effort, nunca lanza) enganchado en `dispatchQuoteEvent` (1 punto → los 6 eventos).
+     UI: bloque Slack con input de Incoming Webhook + guardar (`/api/org/prefs`) + "Enviar
+     prueba" (`/api/integraciones/slack-test`). Nuevas cols `orgs`: portal_*/email_* (7).
 ✅ **Páginas de desarrolladores (jun 2026)** — `/desarrolladores/[slug]` (prerender, mismo
    sistema visual que `/producto/*`): `/desarrolladores/api` (terminal con curl + JSON response)
    y `/desarrolladores/mcp` (chat UI con tool call `cartera_vencida`). Contenido en
@@ -258,8 +304,9 @@ y helpers `stripe()`, `getOrCreateCustomer()`, `reportUsage(orgId, dim, n)`.
 
 Flujo:
 - **Alta/cambio de plan:** `POST /api/billing/subscribe {plan, cycle}` (INTERNA,
-  exige sesión) → Checkout `mode=subscription` con precio base + items medidos +
-  7 días de prueba sin tarjeta (`payment_method_collection=if_required`).
+  exige sesión) → Checkout `mode=subscription` con precio base + items medidos.
+  **Sin periodo de prueba** (eliminado jun 2026): Stripe exige tarjeta en el
+  checkout y cobra desde el alta. El CTA de los planes dice "Empezar ahora".
 - **Gestionar:** `POST /api/billing/portal` → Customer Portal de Stripe.
 - **Webhook** `POST /api/stripe/webhook` (PÚBLICO, firma HMAC, idempotente vía
   tabla `stripe_events`): `customer.subscription.created/updated` sincroniza
@@ -268,10 +315,10 @@ Flujo:
   `checkout.session.completed` liga la suscripción (subscription) o marca la
   cotización `paid` (payment, flujo del link público — sin cambios).
 - **Excedente (overage):** `reportUsage()` incrementa `uso_periodo` en Neon (UI en
-  vivo) **y** manda un meter event a Stripe (cobro al cierre). Ya cableado en
-  `api/cotizaciones/ai-draft` (dim `ia`). **Pendiente cablear** dims `timbrado`
-  (al timbrar CFDI), `api` (en el middleware de `/api/v1`) y `usuario` (al
-  aceptar invitación en `/api/equipo/join`).
+  vivo) **y** manda un meter event a Stripe (cobro al cierre). Los 4 dims ya
+  están cableados (jun 2026): `ia` (`ai-draft`), `timbrado` (`cotizaciones/[id]`
+  al facturar), `api` (`apikey.ts` en cada llamada live) y `usuario`
+  (`equipo/join` al aceptar invitación).
 - **UI:** `/app/ajustes/plan` usa `getBillingUsage()` (medidores IA/CFDI/API del
   periodo) + botones reales de subir de plan / portal.
 - Tablas nuevas: `uso_periodo` (org+periodo, contadores) y `stripe_events`
@@ -321,6 +368,7 @@ identidad sigue siendo Clerk (userId), solo la membresía/permiso es nuestra.
 - `audit_log` — registro inmutable de acciones (logAudit/reqIp)
 - `api_keys` — llaves API públicas (hash SHA-256, mode test|live, scope read|write)
 - `webhooks` — endpoints salientes (HMAC-sha256, best-effort, 1 retry)
+- `intereses_moratorios` — cargos mensuales de interés moratorio por cotización (cron día 1; idempotente por cotizacion_id+periodo)
 
 Patrón RLS: `org_id = current_setting('app.org_id', TRUE)::uuid` — el backend setea
 el valor antes de cada query (igual que `app.email_cliente` en flouvia-web).

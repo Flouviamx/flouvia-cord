@@ -1,0 +1,160 @@
+---
+// Ajustes › Cotizaciones › Impuestos. Catálogo de perfiles de impuesto (IVA,
+// IEPS, retenciones, exento). El perfil DEFAULT de cada tipo sincroniza la
+// columna de orgs que el editor lee (iva_pct, retencion_*). CRUD en /api/impuestos.
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getImpuestos, getOrg, TIPO_IMPUESTO } from '../../../lib/queries';
+const ORG = await getOrg();
+const IMPUESTOS = await getImpuestos();
+const TIPOS = Object.entries(TIPO_IMPUESTO);
+---
+
+<SettingsShell title="Impuestos — Ajustes" tab="impuestos"
+    intro="Define las tasas que aplicas en tus cotizaciones. El perfil marcado como predeterminado de cada tipo es el que el editor usa automáticamente en cada cotización nueva.">
+
+    <div class="s-block">
+        <div class="imp-head">
+            <h3>Perfiles de impuesto</h3>
+            <button class="dev-new" id="impNew">+ Nuevo impuesto</button>
+        </div>
+
+        <div class="imp-list" id="impList">
+            {IMPUESTOS.length === 0 && (
+                <p class="imp-empty" id="impEmpty">Aún no defines impuestos. El IVA actual de tu cuenta es {ORG.ivaPct}%. Crea un perfil para gestionarlos aquí.</p>
+            )}
+            {IMPUESTOS.map((i) => (
+                <div class="imp-row" data-id={i.id}>
+                    <span class={`imp-tipo ${i.tipo}`}>{i.tipoLabel}</span>
+                    <span class="imp-body">
+                        <span class="imp-name">{i.nombre}</span>
+                        <span class="imp-tasa editorial">{i.tasa}%</span>
+                    </span>
+                    {i.esDefault
+                        ? <span class="imp-default">Predeterminado</span>
+                        : <button class="imp-setdef" data-setdef={i.id}>Hacer predeterminado</button>}
+                    <button class="key-revoke" data-del={i.id}>Eliminar</button>
+                </div>
+            ))}
+        </div>
+        <p class="dev-note">El predeterminado de tipo <b>IVA</b> alimenta el cálculo del editor de cotizaciones (hoy: {ORG.ivaPct}%). Los de retención alimentan las retenciones globales. IEPS y exento se guardan para uso futuro por línea.</p>
+    </div>
+</SettingsShell>
+
+<dialog id="impDlg" class="kdlg">
+    <div class="kdlg-inner">
+        <h4>Nuevo impuesto</h4>
+        <div class="s-field" style="margin-bottom:1rem">
+            <label for="iNombre">Nombre</label>
+            <input class="s-input" id="iNombre" placeholder="IVA 16%, Frontera 8%, Ret. IVA 10.667%…" />
+        </div>
+        <div class="s-row" style="margin-bottom:1rem">
+            <div class="s-field">
+                <label for="iTipo">Tipo</label>
+                <select class="s-input" id="iTipo">
+                    {TIPOS.map(([id, label]) => <option value={id}>{label}</option>)}
+                </select>
+            </div>
+            <div class="s-field">
+                <label for="iTasa">Tasa (%)</label>
+                <input class="s-input" id="iTasa" type="number" min="0" max="100" step="0.001" value="16" />
+            </div>
+        </div>
+        <label class="s-toggle" style="margin-bottom:0.3rem">
+            <input type="checkbox" id="iDefault" checked />
+            <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+            <span class="s-toggle-text">Predeterminado para este tipo</span>
+        </label>
+        <div class="wh-dlg-actions">
+            <button type="button" class="api-btn-ghost" id="impCancel">Cancelar</button>
+            <button type="button" class="api-btn-solid" id="impCreate">Crear</button>
+        </div>
+    </div>
+</dialog>
+
+<style>
+    .imp-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--color-border); }
+    .imp-head h3 { margin: 0; padding: 0; border: none; }
+    .dev-new { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 8px 14px; cursor: pointer; transition: transform 0.3s var(--ease-spring); }
+    .dev-new:hover { transform: translateY(-1px); }
+    .imp-empty { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; padding: 0.6rem 0; }
+    .imp-list { display: flex; flex-direction: column; }
+    .imp-row { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 1rem; padding: 1rem 0.3rem; border-bottom: 1px solid var(--color-border); }
+    .imp-tipo { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; padding: 4px 9px; border-radius: 100px; white-space: nowrap; color: var(--color-blue-deep); background: rgba(10,25,47,0.08); }
+    .imp-tipo.ret_iva, .imp-tipo.ret_isr { color: #b45309; background: rgba(245,158,11,0.12); }
+    .imp-tipo.exento { color: var(--color-text-muted); background: rgba(0,0,0,0.05); }
+    .imp-body { display: flex; align-items: baseline; gap: 0.8rem; min-width: 0; }
+    .imp-name { font-size: 0.9rem; font-weight: 600; color: var(--color-text); }
+    .imp-tasa { font-size: 0.92rem; color: var(--color-blue-deep); }
+    .imp-default { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--color-ok); background: rgba(16,185,129,0.12); padding: 4px 10px; border-radius: 100px; white-space: nowrap; }
+    .imp-setdef { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 11px; cursor: pointer; white-space: nowrap; transition: border-color 0.25s, color 0.25s; }
+    .imp-setdef:hover { border-color: var(--color-blue-deep); color: var(--color-blue-deep); }
+    .key-revoke { font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 12px; cursor: pointer; transition: border-color 0.25s, color 0.25s; }
+    .key-revoke:hover { border-color: var(--color-danger); color: var(--color-danger); }
+    .dev-note { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.5; margin: 1.1rem 0 0; }
+    .dev-note b { color: var(--color-text); }
+
+    .kdlg { border: none; border-radius: 16px; padding: 0; max-width: 460px; width: 92vw; box-shadow: 0 40px 90px -30px rgba(10,25,47,0.5); }
+    .kdlg::backdrop { background: rgba(10,25,47,0.45); backdrop-filter: blur(3px); }
+    .kdlg-inner { padding: 1.6rem; }
+    .kdlg-inner h4 { font-size: 1.15rem; font-weight: 700; margin: 0 0 1rem; }
+    .wh-dlg-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.4rem; }
+    .api-btn-ghost { font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; }
+    .api-btn-solid { font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; }
+    .api-btn-solid:disabled { opacity: 0.6; cursor: wait; }
+    @media (max-width: 600px) { .imp-row { grid-template-columns: auto 1fr auto; } .key-revoke { grid-column: 2; justify-self: end; } }
+</style>
+
+<script>
+    function initImpuestos() {
+        const dlg = document.getElementById('impDlg') as HTMLDialogElement | null;
+        const newBtn = document.getElementById('impNew');
+        if (!dlg || !newBtn) return;
+
+        newBtn.addEventListener('click', () => {
+            (document.getElementById('iNombre') as HTMLInputElement).value = '';
+            (document.getElementById('iTipo') as HTMLSelectElement).value = 'iva';
+            (document.getElementById('iTasa') as HTMLInputElement).value = '16';
+            (document.getElementById('iDefault') as HTMLInputElement).checked = true;
+            dlg.showModal();
+            (document.getElementById('iNombre') as HTMLInputElement).focus();
+        });
+        document.getElementById('impCancel')?.addEventListener('click', () => dlg.close());
+
+        document.getElementById('impCreate')?.addEventListener('click', async () => {
+            const nombre = (document.getElementById('iNombre') as HTMLInputElement).value.trim();
+            if (!nombre) { (document.getElementById('iNombre') as HTMLInputElement).focus(); return; }
+            const tipo = (document.getElementById('iTipo') as HTMLSelectElement).value;
+            const tasa = Number((document.getElementById('iTasa') as HTMLInputElement).value) || 0;
+            const es_default = (document.getElementById('iDefault') as HTMLInputElement).checked;
+            const btn = document.getElementById('impCreate') as HTMLButtonElement;
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/impuestos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, tipo, tasa, es_default }) });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || 'No se pudo crear');
+                location.reload();
+            } catch (err: any) { alert(err.message || 'No se pudo crear'); btn.disabled = false; }
+        });
+
+        document.querySelectorAll('[data-setdef]').forEach((b) => b.addEventListener('click', async () => {
+            const id = (b as HTMLElement).dataset.setdef!;
+            try {
+                const res = await fetch('/api/impuestos', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, es_default: true }) });
+                if (!res.ok) throw new Error();
+                location.reload();
+            } catch { alert('No se pudo actualizar'); }
+        }));
+
+        document.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => {
+            const id = (b as HTMLElement).dataset.del!;
+            if (!confirm('¿Eliminar este impuesto?')) return;
+            try {
+                const res = await fetch('/api/impuestos', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+                if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'No se pudo eliminar'); }
+                (b.closest('.imp-row') as HTMLElement)?.remove();
+            } catch (err: any) { alert(err.message || 'No se pudo eliminar'); }
+        }));
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initImpuestos);
+    else initImpuestos();
+</script>

@@ -1,0 +1,162 @@
+---
+// Ajustes › Branding › Portal del cliente. Personaliza la página pública /q que
+// ve tu cliente: banner, mensaje de bienvenida, chat/contraoferta y el branding
+// "Powered by Trato". Guarda con el guardado genérico (PATCH /api/org). Preview
+// en vivo de la tarjeta /q a la derecha.
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getOrg } from '../../../lib/queries';
+import { planTieneApi } from '../../../lib/permissions';
+const ORG = await getOrg();
+// Quitar el "Powered by Trato" es feature de plan de pago (igual que el embed).
+const puedeQuitarMarca = planTieneApi(ORG.plan_raw);
+---
+
+<SettingsShell title="Portal del cliente — Ajustes" tab="portal" save
+    intro="Así se ve la página pública donde tu cliente revisa, comenta y aprueba una cotización (la del link /q y la del cotizador embebible). Personalízala con tu marca.">
+
+    <div class="portal-grid">
+        <div class="portal-form">
+            <div class="s-block">
+                <h3>Mensajes</h3>
+                <div class="s-body">
+                    <div class="s-field">
+                        <label for="pBanner">Banner superior</label>
+                        <input class="s-input" id="pBanner" data-field="portal_banner" value={ORG.portalBanner} maxlength="200" placeholder="Ej. Precios válidos hasta fin de mes · Envío sin costo en pedidos > $10,000" />
+                        <span class="s-hint">Aviso breve arriba de la cotización. Vacío = sin banner.</span>
+                    </div>
+                    <div class="s-field">
+                        <label for="pWelcome">Mensaje de bienvenida</label>
+                        <textarea class="s-input s-textarea" id="pWelcome" data-field="portal_bienvenida" rows="3" maxlength="280" placeholder="Gracias por considerar a tu negocio. Cualquier duda, escríbenos por aquí mismo.">{ORG.portalBienvenida}</textarea>
+                        <span class="s-hint">Aparece bajo el encabezado, antes de las partidas.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="s-block">
+                <h3>Color de marca</h3>
+                <div class="s-field">
+                    <label for="oColor">Acento del portal</label>
+                    <div class="color-row">
+                        <input type="color" id="oColorPick" value={ORG.colorMarca} aria-label="Elegir color" />
+                        <input class="s-input" id="oColor" data-field="color_marca" value={ORG.colorMarca} maxlength="7" />
+                    </div>
+                    <span class="s-hint">Botones, montos y detalles del portal usan este color.</span>
+                </div>
+            </div>
+
+            <div class="s-block">
+                <h3>Interacción</h3>
+                <div class="s-body">
+                    <label class="s-toggle">
+                        <input type="checkbox" id="pChat" data-field="portal_mostrar_chat" checked={ORG.portalMostrarChat} />
+                        <span class="s-toggle-track" aria-hidden="true"><span class="s-toggle-thumb"></span></span>
+                        <span class="s-toggle-text">Permitir comentarios y contraofertas del cliente</span>
+                    </label>
+                    <span class="s-hint" style="margin-left:49px;margin-top:-6px">Si lo apagas, el cliente solo puede aprobar o rechazar (sin chat ni negociación).</span>
+
+                    <label class:list={['s-toggle', { disabled: !puedeQuitarMarca }]} style="margin-top:0.4rem">
+                        <input type="checkbox" id="pPowered" data-field="portal_powered" checked={ORG.portalPowered} disabled={!puedeQuitarMarca} />
+                        <span class="s-toggle-track" aria-hidden="true"><span class="s-toggle-thumb"></span></span>
+                        <span class="s-toggle-text">Mostrar "enviado vía Trato"{!puedeQuitarMarca && <span class="lock-tag">plan Negocio para quitarlo</span>}</span>
+                    </label>
+                    <span class="s-hint" style="margin-left:49px;margin-top:-6px">El branding sutil de Trato al pie del portal. Quitarlo requiere un plan de pago.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── PREVIEW EN VIVO DEL PORTAL ── -->
+        <aside class="portal-pane">
+            <div class="portal-pane-head"><span>Vista del cliente</span></div>
+            <div class="pp-frame">
+                <div class="pp-banner" id="ppBanner" style={ORG.portalBanner ? '' : 'display:none'}>{ORG.portalBanner}</div>
+                <div class="pp-card" id="ppCard">
+                    <div class="pp-top">
+                        <span class="pp-mark" id="ppMark">{ORG.inicial}</span>
+                        <div>
+                            <b id="ppOrg">{ORG.nombre}</b>
+                            <i>Cotización COT-0149</i>
+                        </div>
+                    </div>
+                    <p class="pp-welcome" id="ppWelcome" style={ORG.portalBienvenida ? '' : 'display:none'}>{ORG.portalBienvenida}</p>
+                    <div class="pp-rows">
+                        <div class="pp-r"><span>Cemento gris 50kg × 120</span><span class="editorial">$21,840</span></div>
+                        <div class="pp-r"><span>Varilla 3/8" × 340</span><span class="editorial">$57,290</span></div>
+                    </div>
+                    <div class="pp-total"><span>Total</span><b class="editorial" id="ppTotal">$131,323.60</b></div>
+                    <button class="pp-approve" id="ppApprove">Aprobar cotización</button>
+                    <div class="pp-chat" id="ppChat">
+                        <input disabled placeholder="Escribe un comentario o contraoferta…" />
+                    </div>
+                </div>
+                <div class="pp-powered" id="ppPowered" style={ORG.portalPowered ? '' : 'display:none'}>enviado vía <b>Trato</b></div>
+            </div>
+            <span class="portal-pane-hint">Datos de ejemplo. Tu cliente ve esto en el link /q y en el cotizador embebible.</span>
+        </aside>
+    </div>
+</SettingsShell>
+
+<style>
+    .portal-grid { display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 2rem; align-items: start; }
+    .portal-form { min-width: 0; }
+    .lock-tag { font-size: 0.56rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: #b45309; background: rgba(245,158,11,0.12); padding: 2px 7px; border-radius: 100px; margin-left: 8px; }
+    .s-toggle.disabled { opacity: 0.7; }
+
+    /* Preview */
+    .portal-pane { position: sticky; top: 90px; display: flex; flex-direction: column; gap: 0.7rem; }
+    .portal-pane-head span { font-size: 0.6rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
+    .portal-pane-hint { font-size: 0.66rem; color: #99a2af; text-align: center; }
+    .pp-frame { background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 16px; padding: 0.9rem; }
+    .pp-banner { --accent: #0a192f; background: var(--accent); color: #fff; font-size: 0.66rem; font-weight: 600; text-align: center; padding: 7px 10px; border-radius: 9px; margin-bottom: 0.7rem; line-height: 1.4; }
+    .pp-card { --accent: #0a192f; background: #fff; border: 1px solid var(--color-border); border-radius: 13px; padding: 1rem; box-shadow: 0 14px 40px -28px rgba(10,25,47,0.4); }
+    .pp-top { display: flex; align-items: center; gap: 9px; margin-bottom: 0.7rem; }
+    .pp-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.66rem; flex-shrink: 0; }
+    .pp-top b { display: block; font-size: 0.78rem; font-weight: 700; line-height: 1.1; }
+    .pp-top i { font-style: normal; font-size: 0.6rem; color: #99a2af; }
+    .pp-welcome { font-size: 0.66rem; color: #5b6472; line-height: 1.5; margin: 0 0 0.7rem; padding: 0.55rem 0.65rem; background: var(--color-bg-soft); border-radius: 8px; }
+    .pp-rows { display: flex; flex-direction: column; gap: 5px; margin-bottom: 0.6rem; }
+    .pp-r { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.66rem; color: #0f1729; }
+    .pp-total { display: flex; justify-content: space-between; align-items: baseline; padding-top: 0.55rem; border-top: 1.5px solid var(--accent); margin-bottom: 0.8rem; }
+    .pp-total span { font-size: 0.66rem; color: #5b6472; }
+    .pp-total b { font-size: 0.92rem; color: var(--accent); }
+    .pp-approve { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 9px; padding: 9px; font-family: var(--font-sans); font-size: 0.72rem; font-weight: 600; cursor: default; }
+    .pp-chat { margin-top: 0.6rem; }
+    .pp-chat input { width: 100%; font-size: 0.64rem; padding: 7px 9px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg-soft); color: #99a2af; }
+    .pp-powered { text-align: center; font-size: 0.6rem; color: #99a2af; margin-top: 0.7rem; }
+    .pp-powered b { color: #5b6472; }
+
+    @media (max-width: 1024px) { .portal-grid { grid-template-columns: 1fr; } .portal-pane { position: static; max-width: 360px; } }
+</style>
+
+<script>
+    function initPortal() {
+        const form = document.querySelector('[data-settings-form]');
+        if (!form) return;
+        const val = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value ?? '';
+        const setTxt = (id: string, t: string) => { const n = document.getElementById(id); if (n) n.textContent = t; };
+        const show = (id: string, on: boolean) => { const n = document.getElementById(id); if (n) (n as HTMLElement).style.display = on ? '' : 'none'; };
+
+        const render = () => {
+            const color = /^#[0-9a-fA-F]{6}$/.test(val('oColor')) ? val('oColor') : '#0a192f';
+            (document.getElementById('ppCard') as HTMLElement)?.style.setProperty('--accent', color);
+            (document.getElementById('ppBanner') as HTMLElement)?.style.setProperty('--accent', color);
+
+            const banner = val('pBanner').trim();
+            show('ppBanner', !!banner); setTxt('ppBanner', banner);
+            const welcome = val('pWelcome').trim();
+            show('ppWelcome', !!welcome); setTxt('ppWelcome', welcome);
+            setTxt('ppApprove', 'Aprobar cotización');
+
+            const chat = (document.getElementById('pChat') as HTMLInputElement)?.checked;
+            show('ppChat', !!chat);
+            const powered = (document.getElementById('pPowered') as HTMLInputElement)?.checked;
+            show('ppPowered', !!powered);
+        };
+
+        ['pBanner', 'pWelcome', 'oColor'].forEach((id) => document.getElementById(id)?.addEventListener('input', render));
+        ['pChat', 'pPowered'].forEach((id) => document.getElementById(id)?.addEventListener('change', render));
+        document.getElementById('oColorPick')?.addEventListener('input', render);
+        render();
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPortal);
+    else initPortal();
+</script>

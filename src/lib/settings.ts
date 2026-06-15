@@ -23,7 +23,8 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         desc: 'Logo, colores de marca y portal de tus clientes.',
         icon: '<circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.012 17.5 2 12 2z"/>',
         tabs: [
-            { id: 'branding', label: 'Branding', href: '/app/ajustes/branding' },
+            { id: 'branding', label: 'Branding',          href: '/app/ajustes/branding' },
+            { id: 'portal',   label: 'Portal del cliente', href: '/app/ajustes/portal' },
         ],
     },
     {
@@ -31,10 +32,11 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         desc: 'Folio, impuestos, documento PDF y reglas de aprobación.',
         icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/>',
         tabs: [
-            { id: 'cotizaciones', label: 'Folio e impuestos', href: '/app/ajustes/cotizaciones' },
-            { id: 'pdf',          label: 'Documento PDF',      href: '/app/ajustes/pdf' },
-            { id: 'aprobaciones', label: 'Aprobaciones',       href: '/app/ajustes/aprobaciones' },
-            { id: 'plantillas',   label: 'Plantillas',         href: '/app/ajustes/plantillas' },
+            { id: 'cotizaciones', label: 'Folio e IVA',         href: '/app/ajustes/cotizaciones' },
+            { id: 'impuestos',    label: 'Impuestos',           href: '/app/ajustes/impuestos' },
+            { id: 'pdf',          label: 'Documento PDF',       href: '/app/ajustes/pdf' },
+            { id: 'aprobaciones', label: 'Aprobaciones',        href: '/app/ajustes/aprobaciones' },
+            { id: 'plantillas',   label: 'Plantillas',          href: '/app/ajustes/plantillas' },
         ],
     },
     {
@@ -59,6 +61,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         icon: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
         tabs: [
             { id: 'notificaciones', label: 'Notificaciones', href: '/app/ajustes/notificaciones' },
+            { id: 'correo',         label: 'Correo',         href: '/app/ajustes/correo' },
         ],
     },
     {

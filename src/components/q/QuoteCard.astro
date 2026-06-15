@@ -21,9 +21,15 @@ interface Props {
 
 const { quote: q, org: ORG, conversacion, yaAprobada, yaRechazada, puedePagar } = Astro.props;
 const color = ORG.colorMarca;
+// FASE 3 — Portal del cliente: banner, bienvenida y gate del chat/contraoferta.
+const mostrarChat = ORG.portalMostrarChat !== false;
+const banner = (ORG.portalBanner ?? '').trim();
+const bienvenida = (ORG.portalBienvenida ?? '').trim();
 ---
 
 <div class="q-card" data-token={q.token} data-folio={q.folio}>
+    {banner && <div class="q-banner" style={`background:${color}`}>{banner}</div>}
+
     <!-- Marca del negocio emisor -->
     <header class="q-brand">
         <div class="q-logo" style={`background: ${color}`}>{ORG.inicial}</div>
@@ -54,6 +60,8 @@ const color = ORG.colorMarca;
             <span class="q-meta-val">{q.vigencia}</span>
         </div>
     </div>
+
+    {bienvenida && <p class="q-welcome">{bienvenida}</p>}
 
     <!-- Total protagonista -->
     <div class="q-total-hero">
@@ -109,8 +117,8 @@ const color = ORG.colorMarca;
         <span class="q-done-sub">Le avisamos a {ORG.nombre}. Si cambias de opinión, contáctalos directamente.</span>
     </div>
 
-    <!-- Conversación + negociación -->
-    <div class="q-chat">
+    <!-- Conversación + negociación (se oculta si el portal lo desactiva) -->
+    <div class="q-chat" hidden={!mostrarChat}>
         <div class="q-thread" id="qThread" hidden={conversacion.length === 0}>
             <span class="q-chat-label">CONVERSACIÓN</span>
             {conversacion.map((m) => (
@@ -290,6 +298,10 @@ const color = ORG.colorMarca;
     }
     @keyframes q-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
     @media (prefers-reduced-motion: reduce) { .q-card { animation: none; } }
+
+    /* FASE 3 — Portal del cliente */
+    .q-banner { margin: -0.6rem -0.6rem 0; padding: 0.7rem 1rem; border-radius: 14px; color: #fff; font-size: 0.82rem; font-weight: 600; text-align: center; line-height: 1.4; }
+    .q-welcome { margin: 0; padding: 0.9rem 1.1rem; background: var(--color-bg-soft, #fcfcfc); border-radius: 12px; font-size: 0.88rem; color: #5b6472; line-height: 1.55; }
 
     .q-brand { display: flex; align-items: center; gap: 14px; }
     .q-logo {

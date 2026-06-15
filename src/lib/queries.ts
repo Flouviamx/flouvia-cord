@@ -102,6 +102,15 @@ export async function getOrg() {
         sessionTimeoutMin: num(o.session_timeout_min),
         inviteDomains: (o.invite_domains as string) ?? '',
         embedDomains: (o.embed_domains as string) ?? '',
+        // FASE 3 — Portal del cliente
+        portalBanner: (o.portal_banner as string) ?? '',
+        portalMostrarChat: (o.portal_mostrar_chat as boolean) ?? true,
+        portalPowered: (o.portal_powered as boolean) ?? true,
+        // FASE 3 — Correo
+        emailFromName: (o.email_from_name as string) ?? '',
+        emailReplyTo: (o.email_reply_to as string) ?? '',
+        emailIntro: (o.email_intro as string) ?? '',
+        emailFirma: (o.email_firma as string) ?? '',
     };
 }
 
@@ -144,6 +153,88 @@ export async function getWebhooks() {
         lastStatus: w.last_status as number | null,
         lastError: (w.last_error as string) ?? null,
         ultimaEntrega: w.last_delivery_at ? fmtRelative(w.last_delivery_at) : null,
+    }));
+}
+
+// Log de entregas de un webhook (Developers PRO). Las últimas ~50, scopeadas por
+// org. Se usa en el panel expandible y para "reintentar" (replay).
+export async function getWebhookDeliveries(webhookId: string) {
+    const orgId = await getActiveOrgId();
+    let rows: any[] = [];
+    try {
+        rows = await sql`
+            select id, evento, status, ok, error, intento, es_prueba, duracion_ms, response_body, created_at
+            from webhook_deliveries
+            where webhook_id = ${webhookId} and org_id = ${orgId}
+            order by created_at desc limit 50`;
+    } catch { return []; }
+    return rows.map((d) => ({
+        id: d.id as string,
+        evento: d.evento as string,
+        status: (d.status as number) ?? null,
+        ok: !!d.ok,
+        error: (d.error as string) ?? null,
+        intento: (d.intento as number) ?? 1,
+        prueba: !!d.es_prueba,
+        ms: (d.duracion_ms as number) ?? null,
+        response: ((d.response_body as string) ?? '').slice(0, 600),
+        cuando: fmtRelative(d.created_at),
+    }));
+}
+
+// Actividad del API pública (Developers PRO): últimas requests + stats 24h.
+export async function getApiActivity() {
+    const orgId = await getActiveOrgId();
+    let recent: any[] = [];
+    let stats: any = { total: 0, errores: 0, p_lat: 0 };
+    try {
+        recent = await sql`
+            select r.metodo, r.ruta, r.status, r.duracion_ms, r.mode, r.created_at, k.nombre as key_nombre
+            from api_requests r left join api_keys k on k.id = r.key_id
+            where r.org_id = ${orgId}
+            order by r.created_at desc limit 40`;
+        const [agg] = await sql`
+            select count(*)::int as total,
+                   count(*) filter (where status >= 400)::int as errores,
+                   coalesce(round(avg(duracion_ms))::int, 0) as p_lat
+            from api_requests
+            where org_id = ${orgId} and created_at > now() - interval '24 hours'`;
+        stats = agg || stats;
+    } catch { return { recent: [], total24: 0, errores24: 0, latProm: 0 }; }
+    return {
+        recent: recent.map((r) => ({
+            metodo: r.metodo as string,
+            ruta: r.ruta as string,
+            status: r.status as number,
+            ms: (r.duracion_ms as number) ?? null,
+            mode: (r.mode as string) ?? 'live',
+            key: (r.key_nombre as string) ?? null,
+            cuando: fmtRelative(r.created_at),
+        })),
+        total24: (stats.total as number) ?? 0,
+        errores24: (stats.errores as number) ?? 0,
+        latProm: (stats.p_lat as number) ?? 0,
+    };
+}
+
+// ── IMPUESTOS (perfiles de tasa reutilizables — FASE 3) ──────────────────────
+export const TIPO_IMPUESTO: Record<string, string> = {
+    iva: 'IVA', ieps: 'IEPS', ret_iva: 'Retención IVA', ret_isr: 'Retención ISR', exento: 'Exento',
+};
+export async function getImpuestos() {
+    const orgId = await getActiveOrgId();
+    let rows: any[] = [];
+    try {
+        rows = await sql`select * from impuestos where org_id = ${orgId} order by es_default desc, tipo, tasa desc`;
+    } catch { return []; }
+    return rows.map((i) => ({
+        id: i.id as string,
+        nombre: i.nombre as string,
+        tipo: (i.tipo as string) || 'iva',
+        tipoLabel: TIPO_IMPUESTO[(i.tipo as string)] || 'IVA',
+        tasa: num(i.tasa),
+        esDefault: !!i.es_default,
+        activo: !!i.activo,
     }));
 }
 
@@ -315,7 +406,9 @@ export async function getCotizacionByToken(token: string) {
         select c.*, cl.empresa, coalesce(c.terminos, cl.terminos_default) as terminos,
                o.nombre as org_nombre, o.rfc as org_rfc, o.color_marca as org_color,
                o.pdf_mensaje as org_pdf_mensaje, o.iva_pct as org_iva_pct,
-               o.embed_domains as org_embed_domains
+               o.embed_domains as org_embed_domains,
+               o.portal_banner as org_portal_banner, o.portal_bienvenida as org_portal_bienvenida,
+               o.portal_mostrar_chat as org_portal_chat, o.portal_powered as org_portal_powered
         from cotizaciones c
         left join clientes cl on cl.id = c.cliente_id
         join orgs o on o.id = c.org_id
@@ -347,6 +440,10 @@ export async function getCotizacionByToken(token: string) {
             ivaPct: num(rows[0].org_iva_pct) || 16,
             // Dominios autorizados a embeber esta cotización (TRATO Elements).
             embedDomains: (rows[0].org_embed_domains as string) ?? '',
+            // FASE 3 — Portal del cliente
+            portalBanner: (rows[0].org_portal_banner as string) ?? '',
+            portalMostrarChat: (rows[0].org_portal_chat as boolean) ?? true,
+            portalPowered: (rows[0].org_portal_powered as boolean) ?? true,
         },
     };
 }

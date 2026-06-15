@@ -21,6 +21,28 @@ const INTEGRACIONES = [
 <SettingsShell title="Integraciones — Ajustes" tab="integraciones"
     intro="Activa una integración para conectar Trato con tus plataformas. Hoy guardamos tu intención y te avisamos en cuanto el conector esté listo — Trato funciona perfecto sin conectar nada.">
 
+    <!-- ── Slack — conector REAL (Incoming Webhook) ── -->
+    <div class="s-block">
+        <div class="slk-head">
+            <span class="slk-logo">#</span>
+            <div>
+                <h3 style="margin:0;padding:0;border:0">Slack</h3>
+                <p class="slk-sub">Recibe un mensaje en tu canal cada vez que una cotización se envía, se ve, se aprueba o se paga.</p>
+            </div>
+            <span class="slk-status" id="slkStatus" data-on={ORG.slackWebhook ? '1' : '0'}>{ORG.slackWebhook ? 'Conectado' : 'Sin conectar'}</span>
+        </div>
+        <div class="s-field" style="margin-top:1rem">
+            <label for="slkUrl">URL del Incoming Webhook</label>
+            <input class="s-input" id="slkUrl" value={ORG.slackWebhook} placeholder="https://hooks.slack.com/services/T000/B000/xxxx" />
+            <span class="s-hint">En Slack: <b>Apps → Incoming Webhooks → Add to Slack</b>, elige el canal y copia la URL. Los avisos por evento se afinan en <a href="/app/ajustes/notificaciones">Notificaciones</a>.</span>
+        </div>
+        <div class="slk-actions">
+            <button class="api-btn-solid" id="slkSave">Guardar</button>
+            <button class="api-btn-ghost" id="slkTest">Enviar prueba</button>
+            <span class="slk-msg" id="slkMsg"></span>
+        </div>
+    </div>
+
     <div class="s-block">
         <h3>Conectores</h3>
         <div class="int-rows" data-integr>
@@ -72,6 +94,21 @@ const INTEGRACIONES = [
         .int-row { grid-template-columns: auto 1fr auto; }
         .int-pend { grid-column: 2; justify-self: start; }
     }
+
+    /* Slack */
+    .slk-head { display: flex; align-items: center; gap: 12px; }
+    .slk-logo { width: 38px; height: 38px; border-radius: 10px; background: #4A154B; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; flex-shrink: 0; }
+    .slk-sub { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.45; margin: 2px 0 0; }
+    .slk-status { margin-left: auto; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; padding: 4px 10px; border-radius: 100px; white-space: nowrap; color: var(--color-text-muted); background: rgba(0,0,0,0.05); }
+    .slk-status[data-on="1"] { color: var(--color-ok); background: rgba(16,185,129,0.12); }
+    .slk-actions { display: flex; align-items: center; gap: 0.6rem; margin-top: 1rem; }
+    .slk-msg { font-size: 0.78rem; font-weight: 600; }
+    .slk-msg.ok { color: var(--color-ok); }
+    .slk-msg.err { color: var(--color-danger); }
+    .api-btn-solid { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; }
+    .api-btn-solid:disabled { opacity: 0.6; cursor: wait; }
+    .api-btn-ghost { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; }
+    .slk-head h3 { font-size: 0.95rem; font-weight: 700; }
 </style>
 
 <script>
@@ -104,4 +141,40 @@ const INTEGRACIONES = [
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initIntegr);
     else initIntegr();
+
+    // ── Slack: guardar URL + enviar prueba ──
+    function initSlack() {
+        const urlIn = document.getElementById('slkUrl') as HTMLInputElement | null;
+        const saveBtn = document.getElementById('slkSave') as HTMLButtonElement | null;
+        const testBtn = document.getElementById('slkTest') as HTMLButtonElement | null;
+        const msg = document.getElementById('slkMsg');
+        const status = document.getElementById('slkStatus');
+        if (!urlIn || !saveBtn || !testBtn || !msg) return;
+
+        const flash = (text: string, ok: boolean) => { msg.textContent = text; msg.className = 'slk-msg ' + (ok ? 'ok' : 'err'); setTimeout(() => { msg.textContent = ''; msg.className = 'slk-msg'; }, 3200); };
+
+        saveBtn.addEventListener('click', async () => {
+            const url = urlIn.value.trim();
+            if (url && !/^https:\/\/hooks\.slack\.com\//.test(url)) { flash('La URL debe ser de hooks.slack.com', false); return; }
+            saveBtn.disabled = true;
+            try {
+                const res = await fetch('/api/org/prefs', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slack_webhook_url: url }) });
+                if (!res.ok) throw new Error();
+                if (status) { status.textContent = url ? 'Conectado' : 'Sin conectar'; status.setAttribute('data-on', url ? '1' : '0'); }
+                flash('✓ Guardado', true);
+            } catch { flash('No se pudo guardar', false); } finally { saveBtn.disabled = false; }
+        });
+
+        testBtn.addEventListener('click', async () => {
+            testBtn.disabled = true;
+            try {
+                const res = await fetch('/api/integraciones/slack-test', { method: 'POST' });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || 'Falló');
+                flash('✓ Mensaje enviado a Slack', true);
+            } catch (err: any) { flash(err.message || 'No se pudo enviar', false); } finally { testBtn.disabled = false; }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSlack);
+    else initSlack();
 </script>

@@ -8,6 +8,13 @@ import { PERMISOS, PRESETS, ROL_LABEL, memberCan, planTieneEquipo } from '../../
 const [ORG, MEMBERS, ME] = await Promise.all([getOrg(), getMembers(), getMyMembership()]);
 const canManage = memberCan(ME, 'equipo');
 const teamEnabled = planTieneEquipo(ORG.plan_raw);
+
+// Plan gate: no-owners sin plan de equipo → directo a precios.
+// El owner sí puede quedarse a ver el upsell (para que upgradee).
+if (!teamEnabled && !ME?.esOwner) {
+    return Astro.redirect('/precios?feature=equipo');
+}
+
 const PRESETS_JSON = Object.fromEntries(Object.entries(PRESETS).map(([k, v]) => [k, v.permisos]));
 ---
 

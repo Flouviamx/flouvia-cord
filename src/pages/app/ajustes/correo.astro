@@ -1,0 +1,137 @@
+---
+// Ajustes › Notificaciones › Correo. Personaliza el correo transaccional que el
+// cliente recibe al enviarle una cotización (remitente, intro, firma, reply-to).
+// Guarda con el guardado genérico (PATCH /api/org). Preview en vivo del correo.
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getOrg } from '../../../lib/queries';
+const ORG = await getOrg();
+const RESEND_ON = !!(import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY);
+---
+
+<SettingsShell title="Correo — Ajustes" tab="correo" save
+    intro="Cuando envías una cotización por correo (vía Resend), el cliente recibe este email con el link a su portal. Personaliza el remitente y el texto. Variables: {cliente} {folio} {total} {negocio}.">
+
+    {!RESEND_ON && (
+        <div class="mail-warn">
+            <span class="mail-warn-dot"></span>
+            <p><b>Resend no está configurado todavía.</b> Puedes personalizar el correo aquí, pero no se enviará hasta verificar tu dominio en Resend y setear <code>RESEND_API_KEY</code>. El link a la cotización se genera igual.</p>
+        </div>
+    )}
+
+    <div class="mail-grid">
+        <div class="mail-form">
+            <div class="s-block">
+                <h3>Remitente</h3>
+                <div class="s-body">
+                    <div class="s-row">
+                        <div class="s-field">
+                            <label for="mName">Nombre visible</label>
+                            <input class="s-input" id="mName" data-field="email_from_name" value={ORG.emailFromName} maxlength="80" placeholder={ORG.nombre} />
+                            <span class="s-hint">Lo que ve el cliente como remitente. Default: el nombre del negocio.</span>
+                        </div>
+                        <div class="s-field">
+                            <label for="mReply">Responder a</label>
+                            <input class="s-input" id="mReply" type="email" data-field="email_reply_to" value={ORG.emailReplyTo} placeholder={ORG.email || 'ventas@tunegocio.mx'} />
+                            <span class="s-hint">A dónde llegan las respuestas del cliente.</span>
+                        </div>
+                    </div>
+                    <p class="s-hint">El dominio del correo se fija al dominio verificado en Resend (no editable aquí); el nombre visible sí es libre.</p>
+                </div>
+            </div>
+
+            <div class="s-block">
+                <h3>Contenido</h3>
+                <div class="s-body">
+                    <div class="s-field">
+                        <label for="mIntro">Párrafo de introducción</label>
+                        <textarea class="s-input s-textarea" id="mIntro" data-field="email_intro" rows="3" maxlength="500" placeholder="{negocio} le comparte la cotización {folio} por {total}. Puede revisarla y aprobarla en línea:">{ORG.emailIntro}</textarea>
+                        <span class="s-hint">Vacío = texto por defecto. Usa {'{cliente} {folio} {total} {negocio}'}.</span>
+                    </div>
+                    <div class="s-field">
+                        <label for="mFirma">Firma</label>
+                        <textarea class="s-input s-textarea" id="mFirma" data-field="email_firma" rows="2" maxlength="300" placeholder="Equipo de Ventas · {negocio} · 55 1234 5678">{ORG.emailFirma}</textarea>
+                        <span class="s-hint">Aparece al final, antes del pie.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── PREVIEW DEL CORREO ── -->
+        <aside class="mail-pane">
+            <div class="mail-pane-head"><span>Vista previa</span></div>
+            <div class="mail-client">
+                <div class="mail-from">
+                    <span class="mail-avatar" id="mvAvatar" style={`background:${ORG.colorMarca}`}>{ORG.inicial}</span>
+                    <div class="mail-from-info">
+                        <b id="mvFrom">{ORG.emailFromName || ORG.nombre}</b>
+                        <i id="mvSubject">Cotización COT-0149 — {ORG.nombre}</i>
+                    </div>
+                </div>
+                <div class="mail-body">
+                    <p>Estimado equipo de <b>Constructora Demo</b>,</p>
+                    <p id="mvIntro"></p>
+                    <p style="margin:18px 0"><span class="mv-btn" id="mvBtn" style={`background:${ORG.colorMarca}`}>Ver cotización COT-0149</span></p>
+                    <p class="mv-link">O copie este enlace: <br><span style={`color:${ORG.colorMarca}`}>https://trato.flouvia.com/q/demo</span></p>
+                    <p class="mv-firma" id="mvFirma" style="display:none"></p>
+                    <p class="mv-foot" id="mvFoot">{ORG.portalPowered === false ? ORG.nombre : `${ORG.nombre} · enviado con Trato`}</p>
+                </div>
+            </div>
+            <span class="mail-pane-hint">Datos de ejemplo. Total {'{total}'} = $131,323.60.</span>
+        </aside>
+    </div>
+</SettingsShell>
+
+<style>
+    .mail-warn { display: flex; gap: 10px; align-items: flex-start; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.3); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 1.6rem; }
+    .mail-warn-dot { width: 9px; height: 9px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; margin-top: 5px; }
+    .mail-warn p { font-size: 0.8rem; color: var(--color-text); line-height: 1.5; margin: 0; }
+    .mail-warn code { font-family: ui-monospace, monospace; font-size: 0.74rem; background: rgba(10,25,47,0.06); padding: 1px 5px; border-radius: 4px; }
+
+    .mail-grid { display: grid; grid-template-columns: minmax(0,1fr) 330px; gap: 2rem; align-items: start; }
+    .mail-form { min-width: 0; }
+    .mail-pane { position: sticky; top: 90px; display: flex; flex-direction: column; gap: 0.7rem; }
+    .mail-pane-head span { font-size: 0.6rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
+    .mail-pane-hint { font-size: 0.66rem; color: #99a2af; text-align: center; }
+    .mail-client { background: #fff; border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; box-shadow: 0 18px 50px -32px rgba(10,25,47,0.35); }
+    .mail-from { display: flex; align-items: center; gap: 10px; padding: 0.8rem 0.9rem; border-bottom: 1px solid var(--color-border); }
+    .mail-avatar { width: 32px; height: 32px; border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.68rem; flex-shrink: 0; }
+    .mail-from-info b { display: block; font-size: 0.74rem; font-weight: 700; line-height: 1.2; }
+    .mail-from-info i { font-style: normal; font-size: 0.62rem; color: #99a2af; }
+    .mail-body { padding: 1rem; font-size: 0.7rem; color: #0f1729; line-height: 1.5; }
+    .mail-body p { margin: 0 0 0.6rem; }
+    .mv-btn { display: inline-block; color: #fff; font-weight: 600; font-size: 0.68rem; padding: 8px 16px; border-radius: 8px; }
+    .mv-link { font-size: 0.62rem; color: #5b6472; }
+    .mv-firma { font-size: 0.64rem; color: #5b6472; border-top: 1px solid #eee; padding-top: 0.5rem; }
+    .mv-foot { font-size: 0.62rem; color: #9aa1ad; }
+
+    @media (max-width: 1024px) { .mail-grid { grid-template-columns: 1fr; } .mail-pane { position: static; max-width: 360px; } }
+</style>
+
+<script>
+    function initCorreo() {
+        const form = document.querySelector('[data-settings-form]');
+        if (!form) return;
+        const val = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value ?? '';
+        const NEG = (document.getElementById('mvFrom')?.textContent || 'Tu negocio');
+        const SAMPLE = { cliente: 'Constructora Demo', folio: 'COT-0149', total: '$131,323.60' };
+        const esc = (s: string) => s.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c));
+        const fill = (t: string, negocio: string) => esc(t)
+            .replace(/\{cliente\}/g, SAMPLE.cliente).replace(/\{folio\}/g, SAMPLE.folio)
+            .replace(/\{total\}/g, SAMPLE.total).replace(/\{negocio\}/g, esc(negocio));
+
+        const render = () => {
+            const negocio = val('mName').trim() || NEG;
+            const fromEl = document.getElementById('mvFrom'); if (fromEl) fromEl.textContent = negocio;
+            const introRaw = val('mIntro').trim();
+            const intro = introRaw ? fill(introRaw, negocio) : `${esc(negocio)} le comparte la cotización <b>${SAMPLE.folio}</b> por <b>${SAMPLE.total}</b>. Puede revisarla, dejar comentarios y aprobarla en línea:`;
+            const introEl = document.getElementById('mvIntro'); if (introEl) introEl.innerHTML = intro;
+            const firmaRaw = val('mFirma').trim();
+            const firmaEl = document.getElementById('mvFirma') as HTMLElement;
+            if (firmaEl) { if (firmaRaw) { firmaEl.innerHTML = fill(firmaRaw, negocio); firmaEl.style.display = ''; } else firmaEl.style.display = 'none'; }
+        };
+        ['mName', 'mIntro', 'mFirma'].forEach((id) => document.getElementById(id)?.addEventListener('input', render));
+        render();
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCorreo);
+    else initCorreo();
+</script>

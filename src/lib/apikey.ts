@@ -112,6 +112,23 @@ export function withApiAuth(
         // Fire-and-forget: reportUsage nunca lanza y no debe frenar la respuesta.
         if (auth.mode === 'live') void reportUsage(auth.orgId, 'api', 1);
         // userId null → el carril Clerk queda inactivo; orgId manda la tenancy.
-        return reqContext.run({ userId: null, orgId: auth.orgId }, () => handler(ctx, auth));
+        const t0 = Date.now();
+        const res = await reqContext.run({ userId: null, orgId: auth.orgId }, () => handler(ctx, auth));
+        // Bitácora del request (best-effort: nunca frena ni rompe la respuesta).
+        void logApiRequest(auth, ctx.request, res.status, Date.now() - t0);
+        return res;
     };
+}
+
+// Registra la llamada en api_requests para el "Log de actividad" de Developers.
+// Silencioso ante cualquier error (tabla no migrada, fallo de red a Neon, …).
+async function logApiRequest(auth: ApiAuth, request: Request, status: number, ms: number): Promise<void> {
+    try {
+        const url = new URL(request.url);
+        const ruta = url.pathname.replace(/^\/api/, '') || '/';
+        const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || null;
+        await sql`
+            insert into api_requests (org_id, key_id, metodo, ruta, status, duracion_ms, mode, ip)
+            values (${auth.orgId}, ${auth.keyId}, ${request.method}, ${ruta}, ${status}, ${ms}, ${auth.mode}, ${ip})`;
+    } catch { /* no-op */ }
 }

@@ -101,6 +101,17 @@ export const PATCH: APIRoute = async ({ request }) => {
         ? String(body.embed_domains).toLowerCase().split(/[\s,]+/).map((d) => d.trim()).filter((d) => EMBED_HOST.test(d)).slice(0, 30).join(',')
         : actual.embed_domains;
 
+    // ── FASE 3: Portal del cliente (/q) ──
+    const portalBanner = body.portal_banner !== undefined ? str(body.portal_banner, 200) : actual.portal_banner;
+    const portalChat = body.portal_mostrar_chat !== undefined ? Boolean(body.portal_mostrar_chat) : actual.portal_mostrar_chat;
+    const portalPowered = body.portal_powered !== undefined ? Boolean(body.portal_powered) : actual.portal_powered;
+
+    // ── FASE 3: Correo (Resend) ──
+    const emailFromName = body.email_from_name !== undefined ? str(body.email_from_name, 80) : actual.email_from_name;
+    const emailReplyTo = body.email_reply_to !== undefined ? (String(body.email_reply_to).trim() || null) : actual.email_reply_to;
+    const emailIntro = body.email_intro !== undefined ? str(body.email_intro, 500) : actual.email_intro;
+    const emailFirma = body.email_firma !== undefined ? str(body.email_firma, 300) : actual.email_firma;
+
     await sql`
         update orgs set
             nombre = ${nombre}, rfc = ${rfc}, razon_social = ${razon},
@@ -116,7 +127,9 @@ export const PATCH: APIRoute = async ({ request }) => {
             moneda = ${moneda}, zona_horaria = ${zona}, idioma = ${idioma},
             color_secundario = ${colorSec}, portal_bienvenida = ${portalBien},
             require_2fa = ${require2fa}, session_timeout_min = ${sessionTimeout}, invite_domains = ${inviteDomains},
-            embed_domains = ${embedDomains}
+            embed_domains = ${embedDomains},
+            portal_banner = ${portalBanner}, portal_mostrar_chat = ${portalChat}, portal_powered = ${portalPowered},
+            email_from_name = ${emailFromName}, email_reply_to = ${emailReplyTo}, email_intro = ${emailIntro}, email_firma = ${emailFirma}
         where id = ${orgId}`;
     await logAudit(orgId, { accion: 'org.actualizada', entidad: 'org', entidad_id: orgId, detalle: 'Se actualizaron los ajustes del negocio', ip: reqIp(request) });
     return json({ ok: true });

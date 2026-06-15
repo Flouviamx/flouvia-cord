@@ -1,15 +1,25 @@
 ---
 // Ajustes › Developers › API y webhooks.
 // API keys: REALES (tabla api_keys, hash sha-256). La clave en claro se muestra
-// UNA vez al crearla. Webhooks: REALES (tabla webhooks, entrega firmada HMAC).
+// UNA vez al crearla. Webhooks: REALES (tabla webhooks, entrega firmada HMAC) con
+// LOG DE ENTREGAS + replay + envío de prueba. Actividad del API en vivo. Probador
+// de tools MCP. (Developers PRO, jun 2026.)
 import SettingsShell from '../../../components/app/SettingsShell.astro';
-import { getApiKeys, getOrg, getWebhooks } from '../../../lib/queries';
+import { getApiKeys, getOrg, getWebhooks, getApiActivity } from '../../../lib/queries';
 import { planTieneApi } from '../../../lib/permissions';
 import { WEBHOOK_EVENTS } from '../../../lib/webhooks';
+import { MCP_TOOLS } from '../../../lib/mcp';
 const ORG = await getOrg();
+const tienePlan = planTieneApi(ORG.plan_raw);
+
+if (!tienePlan) {
+    return Astro.redirect('/precios?feature=api');
+}
+
 const KEYS = await getApiKeys();
 const WEBHOOKS = await getWebhooks();
-const tienePlan = planTieneApi(ORG.plan_raw);
+const ACTIVITY = await getApiActivity();
+const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
 ---
 
 <SettingsShell title="API y webhooks — Ajustes" tab="api"
@@ -80,61 +90,151 @@ const tienePlan = planTieneApi(ORG.plan_raw);
         </div>
     </div>
 
+    <!-- ── ACTIVIDAD DEL API (Developers PRO) ── -->
     <div class="s-block">
-        <h3>MCP — conecta una IA a tus datos</h3>
-        <p class="dev-note" style="margin-top:0">El servidor <b>MCP</b> deja que asistentes de IA (como Claude) consulten y creen información de tu negocio en lenguaje natural: <i>"¿qué facturas están vencidas?"</i>, <i>"arma una cotización para ACME de 50 sacos de cemento"</i>. Se autentica con la misma API key.</p>
-        <div class="ep-code">
-            <span class="ep-code-label">Configuración del cliente MCP</span>
-            <pre><code>URL:     https://trato.flouvia.com/api/mcp
-Header:  Authorization: Bearer sk_live_xxxxxxxxxxxx</code></pre>
+        <div class="dev-head">
+            <h3>Actividad del API</h3>
+            <button class="dev-refresh" id="actRefresh" title="Actualizar">Actualizar</button>
         </div>
-        <span class="wh-events-label" style="margin-top:1.1rem">Herramientas disponibles</span>
-        <div class="wh-chips">
-            <span class="wh-chip"><code>listar_cotizaciones</code></span>
-            <span class="wh-chip"><code>detalle_cotizacion</code></span>
-            <span class="wh-chip"><code>cartera_vencida</code></span>
-            <span class="wh-chip"><code>resumen_negocio</code></span>
-            <span class="wh-chip"><code>buscar_cliente</code></span>
-            <span class="wh-chip"><code>listar_productos</code></span>
-            <span class="wh-chip"><code>crear_cotizacion_borrador</code></span>
+        <div class="act-stats">
+            <div class="act-stat"><span class="act-stat-n editorial" id="actTotal">{ACTIVITY.total24}</span><span class="act-stat-l">requests · 24 h</span></div>
+            <div class="act-stat"><span class={`act-stat-n editorial ${ACTIVITY.errores24 > 0 ? 'bad' : ''}`} id="actErr">{ACTIVITY.errores24}</span><span class="act-stat-l">errores · 24 h</span></div>
+            <div class="act-stat"><span class="act-stat-n editorial" id="actLat">{ACTIVITY.latProm}<em>ms</em></span><span class="act-stat-l">latencia promedio</span></div>
+        </div>
+        <div class="act-list" id="actList">
+            {ACTIVITY.recent.length === 0 && <p class="dev-empty" id="actEmpty">Sin actividad todavía. Cuando llames la API con una llave, las requests aparecerán aquí.</p>}
+            {ACTIVITY.recent.map((r) => (
+                <div class="act-row">
+                    <span class={`act-m ${r.metodo.toLowerCase()}`}>{r.metodo}</span>
+                    <code class="act-path">{r.ruta}</code>
+                    <span class={`act-status ${r.status >= 400 ? 'bad' : 'ok'}`}>{r.status}</span>
+                    <span class="act-lat">{r.ms != null ? `${r.ms}ms` : '—'}</span>
+                    <span class="act-when">{r.cuando}{r.mode === 'test' ? ' · test' : ''}</span>
+                </div>
+            ))}
         </div>
     </div>
 
+    <!-- ── MCP ── -->
+    <div class="s-block">
+        <h3>MCP — conecta una IA a tus datos</h3>
+        <p class="dev-note" style="margin-top:0">El servidor <b>MCP</b> deja que asistentes de IA (como Claude) consulten y creen información de tu negocio en lenguaje natural: <i>"¿qué facturas están vencidas?"</i>, <i>"arma una cotización para ACME de 50 sacos de cemento"</i>. Se autentica con la misma API key.</p>
+
+        <div class="mcp-connect">
+            <div class="mcp-tabs" role="tablist">
+                <button class="mcp-tab active" data-client="claude">Claude Desktop</button>
+                <button class="mcp-tab" data-client="cursor">Cursor</button>
+                <button class="mcp-tab" data-client="url">URL directa</button>
+            </div>
+            <div class="ep-code mcp-code">
+                <button class="mcp-copy" id="mcpCopy" type="button">Copiar</button>
+                <pre><code id="mcpConfig"></code></pre>
+            </div>
+            <p class="dev-note" style="margin-top:0.7rem">Pega esto en la configuración de tu cliente MCP y reemplaza la llave por una real (de arriba). Reinicia el cliente para que tome la conexión.</p>
+        </div>
+
+        <span class="wh-events-label" style="margin-top:1.4rem">Herramientas disponibles ({MCP_TOOLS.length})</span>
+        <div class="mcp-tools">
+            {MCP_TOOLS.map((t) => (
+                <div class="mcp-tool">
+                    <div class="mcp-tool-head">
+                        <code>{t.name}</code>
+                        <span class={`mcp-scope ${t.scope}`}>{t.scope === 'write' ? 'escritura' : 'lectura'}</span>
+                    </div>
+                    <p>{t.description}</p>
+                </div>
+            ))}
+        </div>
+
+        <div class="mcp-try">
+            <span class="wh-events-label">Probar una herramienta</span>
+            <p class="dev-note" style="margin:0 0 0.8rem">Corre una tool de lectura con tus datos reales (usa tu sesión, sin llave). Así ves exactamente qué recibe la IA.</p>
+            <div class="mcp-try-row">
+                <select class="s-input mcp-select" id="mcpTool">
+                    {READ_TOOLS.map((t) => <option value={t.name}>{t.name}</option>)}
+                </select>
+                <input class="s-input mcp-args" id="mcpArgs" placeholder='args JSON (opcional), ej. {"limit": 5}' />
+                <button class="api-btn-solid" id="mcpRun" type="button">Ejecutar</button>
+            </div>
+            <pre class="mcp-out" id="mcpOut" hidden></pre>
+        </div>
+    </div>
+
+    <!-- ── WEBHOOKS ── -->
     <div class="s-block">
         <div class="dev-head">
             <h3>Webhooks</h3>
             <button class="dev-new" id="whNew" disabled={!tienePlan}>+ Agregar endpoint</button>
         </div>
-        <p class="dev-note" style="margin-top:0">Recibe un POST firmado (HMAC-sha256, header <code>X-Trato-Signature</code>) cuando algo pasa con una cotización. Verifica la firma con el secret del endpoint.</p>
+        <p class="dev-note" style="margin-top:0">Recibe un POST firmado (HMAC-sha256, header <code>X-Trato-Signature</code>) cuando algo pasa con una cotización. Verifica la firma con el secret del endpoint. Despliega un endpoint para ver su <b>log de entregas</b> y reintentar.</p>
 
         <div class="wh-list" id="whList">
             {WEBHOOKS.length === 0 && (
                 <p class="dev-empty" id="whEmpty">Aún no tienes endpoints. Agrega uno para recibir eventos en tu sistema.</p>
             )}
             {WEBHOOKS.map((w) => (
-                <div class:list={['wh-row', { off: !w.activo }]} data-id={w.id}>
-                    <span class="wh-info">
-                        <span class="wh-url">{w.url}</span>
-                        <span class="wh-sub">
-                            <code>{w.secretMasked}</code>
-                            {w.eventos.length === 0 ? <i>· todos los eventos</i> : <i>· {w.eventos.length} evento{w.eventos.length > 1 ? 's' : ''}</i>}
-                            {w.ultimaEntrega && (
-                                <i class:list={['wh-stat', { ok: w.lastStatus && w.lastStatus < 400, err: !w.lastStatus || w.lastStatus >= 400 }]}>
-                                    · última {w.ultimaEntrega} {w.lastStatus ? `(${w.lastStatus})` : '(falló)'}
-                                </i>
-                            )}
+                <div class:list={['wh-item', { off: !w.activo }]} data-id={w.id}>
+                    <div class="wh-row">
+                        <button class="wh-expand" data-expand={w.id} title="Ver entregas" aria-expanded="false">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                        <span class="wh-info">
+                            <span class="wh-url">{w.url}</span>
+                            <span class="wh-sub">
+                                <code>{w.secretMasked}</code>
+                                {w.eventos.length === 0 ? <i>· todos los eventos</i> : <i>· {w.eventos.length} evento{w.eventos.length > 1 ? 's' : ''}</i>}
+                                {w.ultimaEntrega && (
+                                    <i class:list={['wh-stat', { ok: w.lastStatus && w.lastStatus < 400, err: !w.lastStatus || w.lastStatus >= 400 }]}>
+                                        · última {w.ultimaEntrega} {w.lastStatus ? `(${w.lastStatus})` : '(falló)'}
+                                    </i>
+                                )}
+                            </span>
                         </span>
-                    </span>
-                    <label class="s-toggle wh-toggle" title="Activar/pausar">
-                        <input type="checkbox" data-toggle={w.id} checked={w.activo} />
-                        <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
-                    </label>
-                    <button class="key-revoke" data-del={w.id}>Eliminar</button>
+                        <button class="wh-test" data-test={w.id} title="Enviar evento de prueba">Probar</button>
+                        <label class="s-toggle wh-toggle" title="Activar/pausar">
+                            <input type="checkbox" data-toggle={w.id} checked={w.activo} />
+                            <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                        </label>
+                        <button class="key-revoke" data-del={w.id}>Eliminar</button>
+                    </div>
+                    <div class="wh-deliveries" data-deliveries={w.id} hidden>
+                        <div class="wh-del-body" data-delbody={w.id}>
+                            <span class="wh-del-loading">Cargando entregas…</span>
+                        </div>
+                    </div>
                 </div>
             ))}
         </div>
     </div>
 </SettingsShell>
+
+<!-- Modal: crear API key (nombre + scope) -->
+<dialog id="kCreate" class="kdlg">
+    <div class="kdlg-inner">
+        <h4 id="kCreateTitle">Nueva API key</h4>
+        <div class="s-field" style="margin-bottom:1.1rem">
+            <label for="kName">Nombre</label>
+            <input class="s-input" id="kName" placeholder="Producción, Zapier, Mi ERP…" />
+        </div>
+        <div class="s-field">
+            <label>Permisos</label>
+            <div class="scope-opts">
+                <label class="scope-opt">
+                    <input type="radio" name="kScope" value="read" checked />
+                    <span class="scope-body"><b>Solo lectura</b><i>Consultar cotizaciones, clientes, productos y cobranza.</i></span>
+                </label>
+                <label class="scope-opt">
+                    <input type="radio" name="kScope" value="write" />
+                    <span class="scope-body"><b>Lectura y escritura</b><i>Además puede crear cotizaciones, clientes y productos.</i></span>
+                </label>
+            </div>
+        </div>
+        <div class="wh-dlg-actions">
+            <button type="button" class="api-btn-ghost" id="kCreateCancel">Cancelar</button>
+            <button type="button" class="api-btn-solid" id="kCreateGo">Generar llave</button>
+        </div>
+    </div>
+</dialog>
 
 <!-- Modal: agregar webhook -->
 <dialog id="whDialog" class="kdlg">
@@ -190,6 +290,8 @@ Header:  Authorization: Bearer sk_live_xxxxxxxxxxxx</code></pre>
     .dev-new { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 8px 14px; cursor: pointer; transition: transform 0.3s var(--ease-spring); }
     .dev-new:hover:not(:disabled) { transform: translateY(-1px); }
     .dev-new:disabled { opacity: 0.4; cursor: not-allowed; }
+    .dev-refresh { font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 12px; cursor: pointer; transition: border-color 0.25s, color 0.25s; }
+    .dev-refresh:hover { border-color: var(--color-blue-deep); color: var(--color-blue-deep); }
     .dev-head-actions { display: flex; align-items: center; gap: 0.7rem; }
     .dev-seg { display: inline-flex; background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 2px; }
     .dev-seg-btn { font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; color: var(--color-text-muted); background: none; border: none; border-radius: 7px; padding: 5px 12px; cursor: pointer; transition: background 0.2s, color 0.2s; }
@@ -231,25 +333,66 @@ Header:  Authorization: Bearer sk_live_xxxxxxxxxxxx</code></pre>
     .ep-path { background: none !important; padding: 0 !important; color: var(--color-text); font-weight: 600; }
     .ep-d { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.4; }
     .ep-d code { font-size: 0.7rem; }
-    .ep-code { background: #0a192f; border-radius: 12px; padding: 1rem 1.1rem; }
+    .ep-code { position: relative; background: #0a192f; border-radius: 12px; padding: 1rem 1.1rem; }
     .ep-code-label { display: block; font-size: 0.58rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #7fd1c1; margin-bottom: 0.6rem; }
     .ep-code pre { margin: 0; overflow-x: auto; }
     .ep-code code { background: none !important; padding: 0 !important; color: #d7e3f4; font-size: 0.76rem; line-height: 1.6; white-space: pre; }
 
     @media (max-width: 600px) { .ep-row { grid-template-columns: 48px 1fr; } .ep-d { grid-column: 2; } }
 
-    .wh-events { margin: 0.4rem 0; }
+    /* ── Actividad del API ── */
+    .act-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin-bottom: 1.4rem; }
+    .act-stat { background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 12px; padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 3px; }
+    .act-stat-n { font-size: 1.5rem; color: var(--color-blue-deep); line-height: 1; }
+    .act-stat-n.bad { color: var(--color-danger); }
+    .act-stat-n em { font-style: normal; font-size: 0.8rem; color: var(--color-text-muted); margin-left: 2px; }
+    .act-stat-l { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; color: #99a2af; }
+    .act-list { display: flex; flex-direction: column; }
+    .act-row { display: grid; grid-template-columns: 48px 1fr auto auto auto; align-items: center; gap: 0.7rem; padding: 0.6rem 0.2rem; border-bottom: 1px solid var(--color-border); font-size: 0.78rem; }
+    .act-m { font-size: 0.56rem; font-weight: 800; text-align: center; padding: 3px 0; border-radius: 6px; }
+    .act-m.get { color: #1d4ed8; background: rgba(37,99,235,0.1); }
+    .act-m.post { color: #b45309; background: rgba(245,158,11,0.14); }
+    .act-path { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.74rem; color: var(--color-text); background: none; padding: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .act-status { font-family: ui-monospace, monospace; font-size: 0.72rem; font-weight: 700; }
+    .act-status.ok { color: var(--color-ok); }
+    .act-status.bad { color: var(--color-danger); }
+    .act-lat { font-size: 0.7rem; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+    .act-when { font-size: 0.68rem; color: #99a2af; white-space: nowrap; }
+    @media (max-width: 600px) { .act-row { grid-template-columns: 44px 1fr auto; } .act-lat, .act-when { display: none; } .act-stats { grid-template-columns: 1fr; } }
+
+    /* ── MCP ── */
+    .mcp-connect { margin-top: 1.2rem; }
+    .mcp-tabs { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; }
+    .mcp-tab { font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; color: var(--color-text-muted); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 12px; cursor: pointer; transition: all 0.2s; }
+    .mcp-tab.active { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); }
+    .mcp-code { position: relative; }
+    .mcp-copy { position: absolute; top: 10px; right: 10px; font-family: var(--font-sans); font-size: 0.7rem; font-weight: 600; color: var(--color-blue-deep); background: #fff; border: none; border-radius: 6px; padding: 4px 10px; cursor: pointer; z-index: 1; }
+    .mcp-tools { display: flex; flex-direction: column; gap: 0; margin-top: 0.7rem; }
+    .mcp-tool { padding: 0.8rem 0.2rem; border-bottom: 1px solid var(--color-border); }
+    .mcp-tool-head { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+    .mcp-tool-head code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.78rem; font-weight: 600; color: var(--color-text); background: rgba(10,25,47,0.06); padding: 2px 7px; border-radius: 5px; }
+    .mcp-scope { font-size: 0.54rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 2px 6px; border-radius: 100px; }
+    .mcp-scope.read { color: var(--color-blue-deep); background: rgba(10,25,47,0.08); }
+    .mcp-scope.write { color: #b45309; background: rgba(245,158,11,0.12); }
+    .mcp-tool p { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.5; margin: 0; }
+    .mcp-try { margin-top: 1.6rem; padding-top: 1.4rem; border-top: 1px solid var(--color-border); }
+    .mcp-try-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .mcp-select { flex: 0 0 auto; min-width: 190px; cursor: pointer; }
+    .mcp-args { flex: 1; min-width: 180px; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.78rem; }
+    .mcp-out { margin: 1rem 0 0; background: #0a192f; color: #d7e3f4; border-radius: 12px; padding: 1rem 1.1rem; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.74rem; line-height: 1.55; white-space: pre-wrap; word-break: break-word; max-height: 360px; overflow: auto; }
+    .mcp-out.err { color: #fca5a5; }
+
     .wh-events-label { display: block; font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; margin-bottom: 0.5rem; }
-    .wh-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-    .wh-chip { padding: 4px 4px; }
     .dev-soon { display: flex; align-items: flex-start; gap: 9px; font-size: 0.8rem; color: var(--color-text-muted); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 12px 14px; line-height: 1.5; margin-top: 0.4rem; }
-    .dev-soon a { color: var(--color-blue-deep); font-weight: 600; }
-    .dev-soon-dot { width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; margin-top: 5px; }
 
     /* Webhooks list */
     .wh-list { display: flex; flex-direction: column; margin-top: 0.6rem; }
-    .wh-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 1rem; padding: 1rem 0.3rem; border-bottom: 1px solid var(--color-border); }
-    .wh-row.off { opacity: 0.55; }
+    .wh-item { border-bottom: 1px solid var(--color-border); }
+    .wh-item.off { opacity: 0.55; }
+    .wh-row { display: grid; grid-template-columns: auto 1fr auto auto auto; align-items: center; gap: 0.8rem; padding: 1rem 0.3rem; }
+    .wh-expand { background: none; border: none; cursor: pointer; color: #99a2af; padding: 2px; display: flex; align-items: center; transition: transform 0.25s var(--ease-spring), color 0.2s; }
+    .wh-expand svg { width: 15px; height: 15px; }
+    .wh-expand[aria-expanded="true"] { transform: rotate(90deg); color: var(--color-blue-deep); }
     .wh-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
     .wh-url { font-size: 0.88rem; font-weight: 600; color: var(--color-text); word-break: break-all; }
     .wh-sub { font-size: 0.72rem; color: #99a2af; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -257,7 +400,32 @@ Header:  Authorization: Bearer sk_live_xxxxxxxxxxxx</code></pre>
     .wh-sub i { font-style: normal; }
     .wh-stat.ok { color: var(--color-ok); }
     .wh-stat.err { color: var(--color-danger); }
+    .wh-test { font-family: var(--font-sans); font-size: 0.74rem; font-weight: 600; color: var(--color-blue-deep); background: none; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 11px; cursor: pointer; white-space: nowrap; transition: border-color 0.25s, background 0.2s; }
+    .wh-test:hover { border-color: var(--color-blue-deep); background: rgba(10,25,47,0.04); }
+    .wh-test:disabled { opacity: 0.5; cursor: wait; }
     .wh-toggle { margin: 0; }
+
+    /* Log de entregas (expandible) */
+    .wh-deliveries { padding: 0 0.3rem 1rem 2.4rem; }
+    .wh-del-body { background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; }
+    .wh-del-loading, .wh-del-empty { display: block; font-size: 0.78rem; color: var(--color-text-muted); padding: 0.9rem 1rem; }
+    .del-row { display: grid; grid-template-columns: auto 1fr auto auto auto; align-items: center; gap: 0.7rem; padding: 0.6rem 0.9rem; border-bottom: 1px solid var(--color-border); font-size: 0.76rem; }
+    .del-row:last-child { border-bottom: none; }
+    .del-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .del-dot.ok { background: var(--color-ok); }
+    .del-dot.err { background: var(--color-danger); }
+    .del-ev { font-family: ui-monospace, monospace; font-size: 0.72rem; color: var(--color-text); }
+    .del-ev .del-try { color: #99a2af; }
+    .del-ev .del-test { font-style: normal; color: #b45309; font-size: 0.62rem; font-weight: 700; text-transform: uppercase; margin-left: 5px; }
+    .del-status { font-family: ui-monospace, monospace; font-weight: 700; }
+    .del-status.ok { color: var(--color-ok); }
+    .del-status.err { color: var(--color-danger); }
+    .del-meta { font-size: 0.68rem; color: #99a2af; white-space: nowrap; }
+    .del-replay { font-family: var(--font-sans); font-size: 0.7rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 7px; padding: 4px 10px; cursor: pointer; transition: border-color 0.25s, color 0.25s; }
+    .del-replay:hover { border-color: var(--color-blue-deep); color: var(--color-blue-deep); }
+    .del-replay:disabled { opacity: 0.5; cursor: wait; }
+    @media (max-width: 600px) { .wh-row { grid-template-columns: auto 1fr auto; } .wh-test { display: none; } .del-row { grid-template-columns: auto 1fr auto; } .del-meta { display: none; } }
+
     .wh-checks { display: flex; flex-direction: column; gap: 0.6rem; }
     .wh-check { display: flex; align-items: center; gap: 9px; cursor: pointer; font-size: 0.82rem; color: var(--color-text); }
     .wh-check input { width: 16px; height: 16px; accent-color: var(--color-blue-deep); }
@@ -266,6 +434,15 @@ Header:  Authorization: Bearer sk_live_xxxxxxxxxxxx</code></pre>
     .api-btn-ghost { font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; }
     .api-btn-solid { font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; }
     .api-btn-solid:disabled { opacity: 0.6; cursor: wait; }
+
+    /* Scope selector (modal de llave) */
+    .scope-opts { display: flex; flex-direction: column; gap: 0.6rem; }
+    .scope-opt { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; border: 1px solid var(--color-border); border-radius: 11px; padding: 0.8rem 0.9rem; transition: border-color 0.2s, background 0.2s; }
+    .scope-opt:has(input:checked) { border-color: var(--color-blue-deep); background: rgba(10,25,47,0.03); }
+    .scope-opt input { margin-top: 2px; width: 16px; height: 16px; accent-color: var(--color-blue-deep); }
+    .scope-body { display: flex; flex-direction: column; gap: 2px; }
+    .scope-body b { font-size: 0.84rem; font-weight: 600; color: var(--color-text); }
+    .scope-body i { font-style: normal; font-size: 0.74rem; color: var(--color-text-muted); line-height: 1.4; }
 
     /* Modal clave */
     .kdlg { border: none; border-radius: 16px; padding: 0; max-width: 460px; width: 92vw; box-shadow: 0 40px 90px -30px rgba(10,25,47,0.5); }
@@ -285,7 +462,8 @@ Header:  Authorization: Bearer sk_live_xxxxxxxxxxxx</code></pre>
         const dialog = document.getElementById('kDialog') as HTMLDialogElement | null;
         const secretEl = document.getElementById('kdlgSecret');
         const newBtn = document.getElementById('kNew');
-        if (!dialog || !newBtn) return;
+        const createDlg = document.getElementById('kCreate') as HTMLDialogElement | null;
+        if (!dialog || !newBtn || !createDlg) return;
 
         // Segmented Vivo/Prueba → modo de la próxima llave (prueba por default).
         let mode = 'test';
@@ -295,23 +473,35 @@ Header:  Authorization: Bearer sk_live_xxxxxxxxxxxx</code></pre>
             mode = (b as HTMLElement).dataset.mode || 'test';
         }));
 
-        newBtn.addEventListener('click', async () => {
-            const nombre = prompt(`Nombre de la llave ${mode === 'test' ? 'de prueba' : 'EN VIVO'} (ej. "Producción", "Zapier"):`, mode === 'test' ? 'Pruebas' : 'Producción');
-            if (nombre === null) return;
-            (newBtn as HTMLButtonElement).disabled = true;
+        const nameIn = document.getElementById('kName') as HTMLInputElement;
+        const titleEl = document.getElementById('kCreateTitle')!;
+        newBtn.addEventListener('click', () => {
+            titleEl.textContent = mode === 'test' ? 'Nueva API key de prueba' : 'Nueva API key EN VIVO';
+            nameIn.value = mode === 'test' ? 'Pruebas' : 'Producción';
+            (createDlg.querySelector('input[name="kScope"][value="read"]') as HTMLInputElement).checked = true;
+            createDlg.showModal(); nameIn.focus(); nameIn.select();
+        });
+        document.getElementById('kCreateCancel')?.addEventListener('click', () => createDlg.close());
+
+        document.getElementById('kCreateGo')?.addEventListener('click', async () => {
+            const nombre = nameIn.value.trim() || 'Sin nombre';
+            const scope = (createDlg.querySelector('input[name="kScope"]:checked') as HTMLInputElement)?.value || 'read';
+            const go = document.getElementById('kCreateGo') as HTMLButtonElement;
+            go.disabled = true;
             try {
                 const res = await fetch('/api/keys', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre: nombre || 'Sin nombre', scope: 'write', mode }),
+                    body: JSON.stringify({ nombre, scope, mode }),
                 });
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || 'No se pudo crear');
+                createDlg.close();
                 if (secretEl) secretEl.textContent = d.secret;
                 dialog.showModal();
                 dialog.addEventListener('close', () => location.reload(), { once: true });
             } catch (err: any) {
                 alert(err.message || 'No se pudo crear la llave');
-            } finally { (newBtn as HTMLButtonElement).disabled = false; }
+            } finally { go.disabled = false; }
         });
 
         document.getElementById('kdlgCopy')?.addEventListener('click', async () => {
@@ -332,7 +522,100 @@ Header:  Authorization: Bearer sk_live_xxxxxxxxxxxx</code></pre>
         });
     }
 
-    // ── Webhooks ──
+    // ── MCP: connect card (config por cliente) + probador de tools ──
+    function initMcp() {
+        const cfg = document.getElementById('mcpConfig');
+        if (!cfg) return;
+        const URL_BASE = 'https://trato.flouvia.com/api/mcp';
+        const KEY = 'sk_live_xxxxxxxxxxxx';
+        const CONFIGS: Record<string, string> = {
+            claude: `{
+  "mcpServers": {
+    "trato": {
+      "url": "${URL_BASE}",
+      "headers": { "Authorization": "Bearer ${KEY}" }
+    }
+  }
+}`,
+            cursor: `{
+  "mcpServers": {
+    "trato": {
+      "url": "${URL_BASE}",
+      "headers": { "Authorization": "Bearer ${KEY}" }
+    }
+  }
+}`,
+            url: `URL:     ${URL_BASE}
+Header:  Authorization: Bearer ${KEY}`,
+        };
+        const setCfg = (c: string) => { cfg.textContent = CONFIGS[c] || CONFIGS.url; };
+        setCfg('claude');
+        document.querySelectorAll('.mcp-tab').forEach((t) => t.addEventListener('click', () => {
+            document.querySelectorAll('.mcp-tab').forEach((x) => x.classList.remove('active'));
+            t.classList.add('active');
+            setCfg((t as HTMLElement).dataset.client || 'claude');
+        }));
+        document.getElementById('mcpCopy')?.addEventListener('click', async () => {
+            try { await navigator.clipboard.writeText(cfg.textContent || ''); const b = document.getElementById('mcpCopy')!; b.textContent = '✓'; setTimeout(() => (b.textContent = 'Copiar'), 1500); } catch {}
+        });
+
+        // Probador
+        const runBtn = document.getElementById('mcpRun') as HTMLButtonElement | null;
+        const out = document.getElementById('mcpOut');
+        if (!runBtn || !out) return;
+        runBtn.addEventListener('click', async () => {
+            const tool = (document.getElementById('mcpTool') as HTMLSelectElement).value;
+            const argsRaw = (document.getElementById('mcpArgs') as HTMLInputElement).value.trim();
+            let args: any = {};
+            if (argsRaw) { try { args = JSON.parse(argsRaw); } catch { out.hidden = false; out.className = 'mcp-out err'; out.textContent = 'El JSON de args no es válido.'; return; } }
+            runBtn.disabled = true; out.hidden = false; out.className = 'mcp-out'; out.textContent = 'Ejecutando…';
+            try {
+                const res = await fetch('/api/mcp/playground', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tool, args }) });
+                const d = await res.json();
+                if (!res.ok) { out.className = 'mcp-out err'; out.textContent = d.error || 'Falló'; }
+                else out.textContent = JSON.stringify(d.result, null, 2);
+            } catch (err: any) { out.className = 'mcp-out err'; out.textContent = err.message || 'Error de red'; }
+            finally { runBtn.disabled = false; }
+        });
+    }
+
+    // ── Actividad del API: refrescar sin recargar ──
+    function initActivity() {
+        const btn = document.getElementById('actRefresh');
+        if (!btn) return;
+        btn.addEventListener('click', async () => {
+            (btn as HTMLButtonElement).disabled = true; btn.textContent = 'Actualizando…';
+            try {
+                const res = await fetch('/api/dev/activity');
+                if (res.ok) {
+                    const d = await res.json();
+                    document.getElementById('actTotal')!.textContent = String(d.total24);
+                    const errEl = document.getElementById('actErr')!;
+                    errEl.textContent = String(d.errores24);
+                    errEl.classList.toggle('bad', d.errores24 > 0);
+                    document.getElementById('actLat')!.innerHTML = `${d.latProm}<em>ms</em>`;
+                    renderActivity(d.recent);
+                }
+            } catch {}
+            (btn as HTMLButtonElement).disabled = false; btn.textContent = 'Actualizar';
+        });
+    }
+    function renderActivity(recent: any[]) {
+        const list = document.getElementById('actList');
+        if (!list) return;
+        if (!recent.length) { list.innerHTML = '<p class="dev-empty">Sin actividad todavía. Cuando llames la API con una llave, las requests aparecerán aquí.</p>'; return; }
+        const esc = (s: string) => String(s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c));
+        list.innerHTML = recent.map((r) => `
+            <div class="act-row">
+                <span class="act-m ${r.metodo.toLowerCase()}">${esc(r.metodo)}</span>
+                <code class="act-path">${esc(r.ruta)}</code>
+                <span class="act-status ${r.status >= 400 ? 'bad' : 'ok'}">${r.status}</span>
+                <span class="act-lat">${r.ms != null ? r.ms + 'ms' : '—'}</span>
+                <span class="act-when">${esc(r.cuando)}${r.mode === 'test' ? ' · test' : ''}</span>
+            </div>`).join('');
+    }
+
+    // ── Webhooks: crear, toggle, eliminar, PROBAR, expandir log + replay ──
     function initWebhooks() {
         const dlg = document.getElementById('whDialog') as HTMLDialogElement | null;
         const newBtn = document.getElementById('whNew') as HTMLButtonElement | null;
@@ -380,7 +663,7 @@ Header:  Authorization: Bearer sk_live_xxxxxxxxxxxx</code></pre>
                 try {
                     const res = await fetch('/api/webhooks', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, activo }) });
                     if (!res.ok) throw new Error();
-                    (el.closest('.wh-row') as HTMLElement)?.classList.toggle('off', !activo);
+                    (el.closest('.wh-item') as HTMLElement)?.classList.toggle('off', !activo);
                 } catch { (el as HTMLInputElement).checked = !activo; alert('No se pudo actualizar'); }
             });
         });
@@ -392,12 +675,75 @@ Header:  Authorization: Bearer sk_live_xxxxxxxxxxxx</code></pre>
                 try {
                     const res = await fetch('/api/webhooks', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
                     if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'No se pudo eliminar'); }
-                    (btn.closest('.wh-row') as HTMLElement)?.remove();
+                    (btn.closest('.wh-item') as HTMLElement)?.remove();
                 } catch (err: any) { alert(err.message || 'No se pudo eliminar'); }
+            });
+        });
+
+        // Enviar evento de prueba
+        document.querySelectorAll('[data-test]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const id = (btn as HTMLElement).dataset.test!;
+                const b = btn as HTMLButtonElement;
+                b.disabled = true; const orig = b.textContent; b.textContent = '…';
+                try {
+                    const res = await fetch('/api/webhooks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'test', id }) });
+                    const d = await res.json();
+                    b.textContent = d.ok ? '✓ Enviado' : `✗ ${d.status || 'falló'}`;
+                    // refrescar el log si está abierto
+                    const open = document.querySelector(`[data-expand="${id}"][aria-expanded="true"]`);
+                    if (open) loadDeliveries(id);
+                    setTimeout(() => (b.textContent = orig), 2400);
+                } catch { b.textContent = '✗ error'; setTimeout(() => (b.textContent = orig), 2400); }
+                finally { b.disabled = false; }
+            });
+        });
+
+        // Expandir / colapsar log de entregas
+        document.querySelectorAll('[data-expand]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const id = (btn as HTMLElement).dataset.expand!;
+                const panel = document.querySelector(`[data-deliveries="${id}"]`) as HTMLElement;
+                const open = btn.getAttribute('aria-expanded') === 'true';
+                btn.setAttribute('aria-expanded', String(!open));
+                panel.hidden = open;
+                if (!open) loadDeliveries(id);
             });
         });
     }
 
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { initApi(); initWebhooks(); });
-    else { initApi(); initWebhooks(); }
+    async function loadDeliveries(webhookId: string) {
+        const body = document.querySelector(`[data-delbody="${webhookId}"]`);
+        if (!body) return;
+        body.innerHTML = '<span class="wh-del-loading">Cargando entregas…</span>';
+        try {
+            const res = await fetch(`/api/webhooks?deliveries=${encodeURIComponent(webhookId)}`);
+            const d = await res.json();
+            const list: any[] = d.deliveries || [];
+            if (!list.length) { body.innerHTML = '<span class="wh-del-empty">Sin entregas aún. Usa "Probar" o espera a que pase un evento real.</span>'; return; }
+            body.innerHTML = list.map((x) => `
+                <div class="del-row">
+                    <span class="del-dot ${x.ok ? 'ok' : 'err'}"></span>
+                    <span class="del-ev">${x.evento}${x.intento > 1 ? `<span class="del-try"> · intento ${x.intento}</span>` : ''}${x.prueba ? '<i class="del-test">prueba</i>' : ''}</span>
+                    <span class="del-status ${x.ok ? 'ok' : 'err'}">${x.status || (x.error || 'falló')}</span>
+                    <span class="del-meta">${x.ms != null ? x.ms + 'ms' : ''} · ${x.cuando}</span>
+                    <button class="del-replay" data-replay="${x.id}">Reintentar</button>
+                </div>`).join('');
+            body.querySelectorAll('[data-replay]').forEach((rb) => {
+                rb.addEventListener('click', async () => {
+                    const deliveryId = (rb as HTMLElement).dataset.replay!;
+                    const b = rb as HTMLButtonElement; b.disabled = true; b.textContent = '…';
+                    try {
+                        const r = await fetch('/api/webhooks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'redeliver', deliveryId }) });
+                        const dd = await r.json();
+                        b.textContent = dd.ok ? '✓' : `✗ ${dd.status || ''}`;
+                        setTimeout(() => loadDeliveries(webhookId), 800);
+                    } catch { b.textContent = '✗'; b.disabled = false; }
+                });
+            });
+        } catch { body.innerHTML = '<span class="wh-del-empty">No se pudo cargar el log.</span>'; }
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { initApi(); initMcp(); initActivity(); initWebhooks(); });
+    else { initApi(); initMcp(); initActivity(); initWebhooks(); }
 </script>
