@@ -1,0 +1,209 @@
+---
+// Ajustes › Developers › API y webhooks.
+// API keys: REALES (tabla api_keys, hash sha-256). La clave en claro se muestra
+// UNA vez al crearla. Webhooks: maqueta (se cablea con el motor de eventos).
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getApiKeys, getOrg } from '../../../lib/queries';
+import { planTieneApi } from '../../../lib/permissions';
+const ORG = await getOrg();
+const KEYS = await getApiKeys();
+const tienePlan = planTieneApi(ORG.plan_raw);
+
+const EVENTOS_WH = ['quote.viewed', 'quote.approved', 'quote.rejected', 'quote.paid', 'invoice.stamped'];
+---
+
+<SettingsShell title="API y webhooks — Ajustes" tab="api"
+    intro="Conecta Trato con tu propio sistema: crea cotizaciones por API y recibe eventos por webhook. La documentación vive en trato.flouvia.com/docs (próximamente).">
+
+    {!tienePlan && (
+        <div class="dev-upsell">
+            <div>
+                <span class="dev-upsell-eyebrow">Plan Negocio</span>
+                <p>Las llaves <b>en vivo</b> requieren el plan Negocio. Las llaves de <b>prueba</b> (sk_test_) son gratis — intégrate hoy y activa producción cuando subas de plan.</p>
+            </div>
+            <a href="/app/ajustes/plan" class="dev-upsell-cta">Ver planes</a>
+        </div>
+    )}
+
+    <div class="s-block">
+        <div class="dev-head">
+            <h3>API keys</h3>
+            <div class="dev-head-actions">
+                <div class="dev-seg" role="tablist" aria-label="Modo de la llave">
+                    <button class="dev-seg-btn active" data-mode="test">Prueba</button>
+                    <button class={`dev-seg-btn ${tienePlan ? '' : 'locked'}`} data-mode="live">Vivo</button>
+                </div>
+                <button class="dev-new" id="kNew">+ Generar API key</button>
+            </div>
+        </div>
+
+        <div class="key-list" id="keyList">
+            {KEYS.length === 0 && (
+                <p class="dev-empty" id="keyEmpty">Aún no tienes llaves. Genera una para empezar a llamar la API.</p>
+            )}
+            {KEYS.map((k) => (
+                <div class:list={['key-row', { revoked: k.revocada }]} data-id={k.id}>
+                    <span class="key-info">
+                        <span class="key-name">{k.nombre}
+                            <span class={`key-mode ${k.mode}`}>{k.mode === 'test' ? 'Prueba' : 'Vivo'}</span>
+                            <span class={`key-scope ${k.scope}`}>{k.scope === 'write' ? 'Escritura' : 'Lectura'}</span>
+                            {k.revocada && <span class="key-scope revoked">Revocada</span>}
+                        </span>
+                        <code class="key-mask">{k.masked}</code>
+                        <span class="key-meta">Creada {k.creada}{k.ultimoUso ? ` · último uso ${k.ultimoUso}` : ' · sin uso aún'}</span>
+                    </span>
+                    {!k.revocada && <button class="key-revoke" data-revoke={k.id}>Revocar</button>}
+                </div>
+            ))}
+        </div>
+        <p class="dev-note">Las llaves dan acceso completo a tu cuenta por <code>org_id</code>. Trátalas como contraseñas: nunca las publiques en el front ni en repos.</p>
+    </div>
+
+    <div class="s-block">
+        <h3>Webhooks</h3>
+        <div class="s-body">
+            <div class="s-field">
+                <label for="whUrl">URL de destino</label>
+                <input class="s-input" id="whUrl" placeholder="https://tusistema.mx/webhooks/trato" disabled />
+            </div>
+            <div class="wh-events">
+                <span class="wh-events-label">Eventos a enviar</span>
+                <div class="wh-chips">
+                    {EVENTOS_WH.map((e) => <span class="wh-chip"><code>{e}</code></span>)}
+                </div>
+            </div>
+            <div class="dev-soon">
+                <span class="dev-soon-dot"></span>
+                <span>Los webhooks se activan junto con el motor de eventos (en preparación). Mientras tanto, conecta <a href="/app/ajustes/integraciones">Zapier/Make</a> para reaccionar a eventos de Trato.</span>
+            </div>
+        </div>
+    </div>
+</SettingsShell>
+
+<!-- Modal: clave recién creada (se muestra UNA vez) -->
+<dialog id="kDialog" class="kdlg">
+    <div class="kdlg-inner">
+        <h4 id="kdlgTitle">Tu nueva API key</h4>
+        <p class="kdlg-warn">Cópiala ahora. Por seguridad <b>no podrás volver a verla</b> — sólo verás el prefijo.</p>
+        <div class="kdlg-key">
+            <code id="kdlgSecret">sk_live_…</code>
+            <button id="kdlgCopy" class="kdlg-copy">Copiar</button>
+        </div>
+        <form method="dialog"><button class="kdlg-done">Listo, ya la guardé</button></form>
+    </div>
+</dialog>
+
+<style>
+    .dev-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--color-border); }
+    .dev-head h3 { margin: 0; padding: 0; border: none; }
+    .dev-new { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 8px 14px; cursor: pointer; transition: transform 0.3s var(--ease-spring); }
+    .dev-new:hover:not(:disabled) { transform: translateY(-1px); }
+    .dev-new:disabled { opacity: 0.4; cursor: not-allowed; }
+    .dev-head-actions { display: flex; align-items: center; gap: 0.7rem; }
+    .dev-seg { display: inline-flex; background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 2px; }
+    .dev-seg-btn { font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; color: var(--color-text-muted); background: none; border: none; border-radius: 7px; padding: 5px 12px; cursor: pointer; transition: background 0.2s, color 0.2s; }
+    .dev-seg-btn.active { background: #fff; color: var(--color-blue-deep); box-shadow: 0 1px 3px rgba(10,25,47,0.12); }
+    .dev-seg-btn.locked::after { content: ' 🔒'; font-size: 0.7em; }
+    .key-mode { font-size: 0.56rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 3px 7px; border-radius: 100px; }
+    .key-mode.test { color: #b45309; background: rgba(245,158,11,0.14); }
+    .key-mode.live { color: var(--color-ok); background: rgba(16,185,129,0.12); }
+    .dev-empty { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; padding: 0.6rem 0; }
+
+    .dev-upsell { display: flex; align-items: center; gap: 1.2rem; justify-content: space-between; background: linear-gradient(135deg, #112240, #0a192f); border-radius: 16px; padding: 1.2rem 1.4rem; margin-bottom: 2rem; }
+    .dev-upsell-eyebrow { display: block; font-size: 0.6rem; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: #7fd1c1; margin-bottom: 0.4rem; }
+    .dev-upsell p { font-size: 0.86rem; color: rgba(255,255,255,0.86); margin: 0; line-height: 1.5; }
+    .dev-upsell b { color: #fff; }
+    .dev-upsell-cta { flex-shrink: 0; font-size: 0.82rem; font-weight: 600; color: #0a192f; background: #fff; border-radius: 9px; padding: 9px 16px; text-decoration: none; white-space: nowrap; transition: transform 0.4s var(--ease-spring); }
+    .dev-upsell-cta:hover { transform: translateY(-2px); }
+
+    .key-list { display: flex; flex-direction: column; }
+    .key-row { display: flex; align-items: center; gap: 1rem; padding: 1rem 0.3rem; border-bottom: 1px solid var(--color-border); }
+    .key-row.revoked { opacity: 0.5; }
+    .key-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+    .key-name { font-size: 0.9rem; font-weight: 600; color: var(--color-text); display: flex; align-items: center; gap: 8px; }
+    .key-scope { font-size: 0.56rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 3px 7px; border-radius: 100px; }
+    .key-scope.read { color: var(--color-blue-deep); background: rgba(10,25,47,0.08); }
+    .key-scope.write { color: #b45309; background: rgba(245,158,11,0.12); }
+    .key-scope.revoked { color: var(--color-danger); background: rgba(239,68,68,0.1); }
+    .key-mask { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.78rem; color: var(--color-text-muted); letter-spacing: 0.5px; }
+    .key-meta { font-size: 0.7rem; color: #99a2af; }
+    .key-revoke { font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 12px; cursor: pointer; white-space: nowrap; transition: border-color 0.25s, color 0.25s; }
+    .key-revoke:hover { border-color: var(--color-danger); color: var(--color-danger); }
+    .dev-note { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.5; margin: 1.1rem 0 0; }
+    .dev-note code, .wh-chip code, .dev-soon code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.74rem; background: rgba(10,25,47,0.06); padding: 1px 5px; border-radius: 4px; }
+
+    .wh-events { margin: 0.4rem 0; }
+    .wh-events-label { display: block; font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; margin-bottom: 0.5rem; }
+    .wh-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .wh-chip { padding: 4px 4px; }
+    .dev-soon { display: flex; align-items: flex-start; gap: 9px; font-size: 0.8rem; color: var(--color-text-muted); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 12px 14px; line-height: 1.5; margin-top: 0.4rem; }
+    .dev-soon a { color: var(--color-blue-deep); font-weight: 600; }
+    .dev-soon-dot { width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; margin-top: 5px; }
+
+    /* Modal clave */
+    .kdlg { border: none; border-radius: 16px; padding: 0; max-width: 460px; width: 92vw; box-shadow: 0 40px 90px -30px rgba(10,25,47,0.5); }
+    .kdlg::backdrop { background: rgba(10,25,47,0.45); backdrop-filter: blur(3px); }
+    .kdlg-inner { padding: 1.6rem; }
+    .kdlg-inner h4 { font-size: 1.15rem; font-weight: 700; margin: 0 0 0.5rem; }
+    .kdlg-warn { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.5; margin: 0 0 1rem; }
+    .kdlg-warn b { color: var(--color-danger); }
+    .kdlg-key { display: flex; align-items: center; gap: 0.5rem; background: var(--color-blue-deep); border-radius: 10px; padding: 12px 14px; margin-bottom: 1.2rem; }
+    .kdlg-key code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.8rem; color: #fff; flex: 1; word-break: break-all; }
+    .kdlg-copy { font-family: var(--font-sans); font-size: 0.74rem; font-weight: 600; color: var(--color-blue-deep); background: #fff; border: none; border-radius: 7px; padding: 6px 12px; cursor: pointer; white-space: nowrap; }
+    .kdlg-done { font-family: var(--font-sans); font-size: 0.86rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 10px; padding: 11px 22px; cursor: pointer; }
+</style>
+
+<script>
+    function initApi() {
+        const dialog = document.getElementById('kDialog') as HTMLDialogElement | null;
+        const secretEl = document.getElementById('kdlgSecret');
+        const newBtn = document.getElementById('kNew');
+        if (!dialog || !newBtn) return;
+
+        // Segmented Vivo/Prueba → modo de la próxima llave (prueba por default).
+        let mode = 'test';
+        document.querySelectorAll('.dev-seg-btn').forEach((b) => b.addEventListener('click', () => {
+            document.querySelectorAll('.dev-seg-btn').forEach((x) => x.classList.remove('active'));
+            b.classList.add('active');
+            mode = (b as HTMLElement).dataset.mode || 'test';
+        }));
+
+        newBtn.addEventListener('click', async () => {
+            const nombre = prompt(`Nombre de la llave ${mode === 'test' ? 'de prueba' : 'EN VIVO'} (ej. "Producción", "Zapier"):`, mode === 'test' ? 'Pruebas' : 'Producción');
+            if (nombre === null) return;
+            (newBtn as HTMLButtonElement).disabled = true;
+            try {
+                const res = await fetch('/api/keys', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre: nombre || 'Sin nombre', scope: 'write', mode }),
+                });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || 'No se pudo crear');
+                if (secretEl) secretEl.textContent = d.secret;
+                dialog.showModal();
+                dialog.addEventListener('close', () => location.reload(), { once: true });
+            } catch (err: any) {
+                alert(err.message || 'No se pudo crear la llave');
+            } finally { (newBtn as HTMLButtonElement).disabled = false; }
+        });
+
+        document.getElementById('kdlgCopy')?.addEventListener('click', async () => {
+            const txt = secretEl?.textContent || '';
+            try { await navigator.clipboard.writeText(txt); const b = document.getElementById('kdlgCopy')!; b.textContent = '✓ Copiada'; setTimeout(() => (b.textContent = 'Copiar'), 1800); } catch {}
+        });
+
+        document.querySelectorAll('[data-revoke]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const id = (btn as HTMLElement).dataset.revoke!;
+                if (!confirm('¿Revocar esta API key? Dejará de funcionar de inmediato y no se puede deshacer.')) return;
+                try {
+                    const res = await fetch('/api/keys', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+                    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'No se pudo revocar'); }
+                    location.reload();
+                } catch (err: any) { alert(err.message || 'No se pudo revocar'); }
+            });
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initApi);
+    else initApi();
+</script>

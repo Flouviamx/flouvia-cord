@@ -45,6 +45,34 @@ const PRECIO: Record<string, string> = { Gratis: '$0', Profesional: '$590', Nego
     </div>
 
     <div class="s-block">
+        <h3>Timbres CFDI</h3>
+        <div class="usage">
+            <div class="usage-top">
+                <span class="usage-label">Timbres usados este periodo</span>
+                <span class="usage-count editorial">0 / {ORG.plan === 'Negocio' ? '500' : '0'}</span>
+            </div>
+            <div class="usage-bar"><span class="usage-fill" style="width:0%"></span></div>
+            <p class="usage-note">{ORG.plan === 'Negocio'
+                ? 'Tu plan incluye 500 timbres CFDI 4.0 al mes. Los timbres extra se cobran por volumen.'
+                : 'El timbrado CFDI 4.0 se incluye en el plan Negocio. Súbete para facturar automáticamente.'}</p>
+        </div>
+    </div>
+
+    <div class="s-block">
+        <h3>Método de pago</h3>
+        <div class="pay-row">
+            <span class="pay-card">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            </span>
+            <span class="pay-info">
+                <span class="pay-title">Sin método de pago</span>
+                <span class="pay-desc">Agrega una tarjeta para subir de plan. Se cobra de forma segura vía Stripe.</span>
+            </span>
+            <button class="plan-btn" disabled>Agregar tarjeta</button>
+        </div>
+    </div>
+
+    <div class="s-block">
         <h3>Comprobantes</h3>
         <p class="plan-empty">Tus recibos de pago aparecerán aquí cuando conectes Stripe Billing (pendiente).</p>
     </div>
@@ -69,4 +97,11 @@ const PRECIO: Record<string, string> = { Gratis: '$0', Profesional: '$590', Nego
     .usage-note { font-size: 0.78rem; color: var(--color-text-muted); margin: 0.6rem 0 0; line-height: 1.5; }
     .usage-unlim { font-size: 0.9rem; font-weight: 600; color: var(--color-ok); }
     .plan-empty { font-size: 0.82rem; color: var(--color-text-muted); margin: 0; }
+
+    .pay-row { display: flex; align-items: center; gap: 12px; border: 1px solid var(--color-border); border-radius: 10px; padding: 14px; }
+    .pay-card { width: 42px; height: 42px; border-radius: 9px; background: var(--color-bg-soft); border: 1px solid var(--color-border); display: flex; align-items: center; justify-content: center; color: var(--color-text-muted); flex-shrink: 0; }
+    .pay-card svg { width: 22px; height: 22px; }
+    .pay-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .pay-title { font-size: 0.9rem; font-weight: 600; color: var(--color-text); }
+    .pay-desc { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.45; }
 </style>

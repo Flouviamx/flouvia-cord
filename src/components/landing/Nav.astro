@@ -131,12 +131,16 @@
             </div>
 
             <div class="nav-right desktop-nav" id="nav-right">
-                <a href="/login" class="nav-login-pill" aria-label="Entrar a tu cuenta">
+                <a href="/login" class="nav-login-pill" aria-label="Entrar a tu cuenta"
+                   data-auth-swap data-out-href="/login" data-out-label="Entrar"
+                   data-in-href="/precios" data-in-label="Ver planes" data-in-aria="Ver planes">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    <span>Entrar</span>
+                    <span data-auth-label>Entrar</span>
                 </a>
-                <a href="/registro" class="btn-contact">
-                    <span class="btn-contact-label">Empezar gratis</span>
+                <a href="/registro" class="btn-contact"
+                   data-auth-swap data-out-href="/registro" data-out-label="Empezar gratis"
+                   data-in-href="/app" data-in-label="Ir al Dashboard">
+                    <span class="btn-contact-label" data-auth-label>Empezar gratis</span>
                     <svg class="contact-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/></svg>
                 </a>
             </div>
@@ -153,8 +157,10 @@
                             <img src="/imgs/logo-trato-white.png" alt="Trato" class="logo-mobile-img scrolled-logo" />
                         </a>
                     </div>
-                    <a href="/registro" class="btn-contact-mobile squircle">
-                        <span>Empezar gratis</span>
+                    <a href="/registro" class="btn-contact-mobile squircle"
+                       data-auth-swap data-out-href="/registro" data-out-label="Empezar gratis"
+                       data-in-href="/app" data-in-label="Ir al Dashboard">
+                        <span data-auth-label>Empezar gratis</span>
                         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/></svg>
                     </a>
                 </div>
@@ -166,9 +172,11 @@
     <div class="mobile-menu-overlay" id="mobile-menu">
         <div class="mobile-menu-content">
             <div class="menu-top-row">
-                <a href="/login" class="utility-pill">
+                <a href="/login" class="utility-pill"
+                   data-auth-swap data-out-href="/login" data-out-label="Entrar"
+                   data-in-href="/precios" data-in-label="Ver planes">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    Entrar
+                    <span data-auth-label>Entrar</span>
                 </a>
             </div>
 
@@ -535,6 +543,30 @@
 
     .squircle { border-radius: 100px; transform: translateZ(0); }
 </style>
+
+<script>
+    // ── ESTADO DE SESIÓN (Clerk) ──
+    // La landing es prerender:true (HTML estático), así que el auth NO se resuelve
+    // en el servidor: usamos el store de cliente de Clerk, que se prepobla en SSR y
+    // se actualiza al cargar clerk-js. El markup por defecto (deslogueado) es el que
+    // ve quien no tiene JS o no ha iniciado sesión; al detectar sesión se intercambian
+    // href + etiqueta a "Ir al Dashboard" / "Ver planes".
+    import { $authStore } from '@clerk/astro/client';
+
+    const applyAuthState = (signedIn: boolean) => {
+        document.querySelectorAll<HTMLAnchorElement>('[data-auth-swap]').forEach((el) => {
+            const href = signedIn ? el.dataset.inHref : el.dataset.outHref;
+            const label = signedIn ? el.dataset.inLabel : el.dataset.outLabel;
+            if (href) el.setAttribute('href', href);
+            const lbl = el.querySelector('[data-auth-label]');
+            if (lbl && label) lbl.textContent = label;
+            const aria = signedIn ? el.dataset.inAria : el.dataset.outAria;
+            if (aria) el.setAttribute('aria-label', aria);
+        });
+    };
+
+    $authStore.subscribe((auth) => applyAuthState(!!auth?.userId));
+</script>
 
 <script>
     import { gsap } from 'gsap';

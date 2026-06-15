@@ -224,3 +224,67 @@ insert into org_members (org_id, clerk_user_id, rol, estado, joined_at)
 select id, clerk_user_id, 'owner', 'activo', now() from orgs
 where clerk_user_id is not null
 on conflict do nothing;
+
+-- ── Centro de mando Enterprise — Ajustes ampliados (jun 2026) ───────────────
+-- General: localización del negocio.
+alter table orgs add column if not exists zona_horaria text not null default 'America/Mexico_City';
+alter table orgs add column if not exists idioma text not null default 'es-MX';
+-- Branding: identidad del portal de cliente (/q/{token}).
+alter table orgs add column if not exists color_secundario text;     -- acento secundario del portal
+alter table orgs add column if not exists portal_bienvenida text;    -- mensaje de bienvenida en el link público
+-- Notificaciones: matriz evento → canal (jsonb) + webhook de Slack.
+alter table orgs add column if not exists notif_prefs jsonb not null default '{}'::jsonb;
+alter table orgs add column if not exists slack_webhook_url text;
+-- Integraciones: qué conectores están activados (jsonb, maqueta que persiste).
+alter table orgs add column if not exists integraciones jsonb not null default '{}'::jsonb;
+-- Facturación/CFDI: estado del CSD (maqueta — el archivo real llega con el PAC).
+alter table orgs add column if not exists csd_estado text;           -- null | cargado | vencido
+alter table orgs add column if not exists csd_nombre text;           -- nombre del .cer cargado (display)
+alter table orgs add column if not exists csd_subido_at timestamptz;
+
+-- ── Developers — API keys (REAL, con hash) ──────────────────────────────────
+-- La clave en claro se muestra UNA sola vez al crearla; en DB sólo vive el hash
+-- sha-256. `prefix` (sk_live_xxxx) y `last4` son lo único legible después.
+create table if not exists api_keys (
+  id          uuid        default gen_random_uuid() primary key,
+  org_id      uuid        not null references orgs(id) on delete cascade,
+  nombre      text        not null,                 -- etiqueta ('Producción', 'Zapier'…)
+  prefix      text        not null,                 -- parte visible ('sk_live_a1b2c3')
+  last4       text        not null,                 -- últimos 4 (display)
+  hash        text        not null,                 -- sha-256(clave completa)
+  scope       text        not null default 'read',  -- read | write (maqueta)
+  created_by  text,
+  created_at  timestamptz default now(),
+  last_used_at timestamptz,
+  revoked_at  timestamptz
+);
+create index if not exists idx_apikeys_org on api_keys(org_id, created_at desc);
+-- Modo sandbox/test (jun 2026): las llaves sk_test_ no tocan datos reales y NO
+-- requieren plan Negocio (libres para probar). sk_live_ sí están gated.
+alter table api_keys add column if not exists mode text not null default 'live';  -- live | test
+
+-- ── Seguridad de la organización (jun 2026) ─────────────────────────────────
+alter table orgs add column if not exists require_2fa boolean not null default false;     -- exigir 2FA a todo el equipo
+alter table orgs add column if not exists session_timeout_min int not null default 0;     -- minutos de inactividad (0 = sin límite)
+alter table orgs add column if not exists invite_domains text;                             -- dominios permitidos para invitar (coma-sep); null = cualquiera
+
+-- ── Plantillas de mensaje reutilizables (jun 2026) ──────────────────────────
+-- Para WhatsApp/correo/notas al enviar cotizaciones. Variables: {cliente} {folio}
+-- {total} {link} {vigencia} {empresa}.
+create table if not exists plantillas_mensaje (
+  id          uuid        default gen_random_uuid() primary key,
+  org_id      uuid        not null references orgs(id) on delete cascade,
+  nombre      text        not null,
+  canal       text        not null default 'whatsapp',  -- whatsapp | email | nota
+  cuerpo      text        not null,
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now()
+);
+create index if not exists idx_plantillas_org on plantillas_mensaje(org_id, canal);
+
+-- ── TRATO Elements — embed del cotizador en sitios de terceros ───────────────
+-- Allowlist de dominios autorizados a embeber /embed/[token] vía <iframe>. Se usa
+-- para el header CSP `frame-ancestors` (anti-clickjacking). Lista separada por
+-- comas o saltos de línea (ej. "cliente-a.com, app.cliente-b.com"). Vacío =
+-- framing abierto (modo "Powered by Trato", útil para demo y plan gratis).
+alter table orgs add column if not exists embed_domains text not null default '';

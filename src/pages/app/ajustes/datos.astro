@@ -1,0 +1,73 @@
+---
+// Ajustes › Avanzado › Datos y privacidad — exportar todo + zona de peligro.
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getOrg } from '../../../lib/queries';
+const ORG = await getOrg();
+---
+
+<SettingsShell title="Datos y privacidad — Ajustes" tab="datos"
+    intro="Tus datos son tuyos. Expórtalos cuando quieras o cierra tu cuenta. Trato no vende ni comparte tu información.">
+
+    <div class="s-block">
+        <h3>Exportar tus datos</h3>
+        <div class="s-body">
+            <div class="datos-row">
+                <span class="datos-info">
+                    <span class="datos-title">Descargar todo (JSON)</span>
+                    <span class="datos-desc">Productos, clientes, cotizaciones (con líneas y eventos), tareas y registro de auditoría en un solo archivo portable.</span>
+                </span>
+                <a class="datos-btn" href="/api/org/export" download>Exportar</a>
+            </div>
+            <div class="datos-row">
+                <span class="datos-info">
+                    <span class="datos-title">Catálogo y clientes (CSV)</span>
+                    <span class="datos-desc">Para abrir en Excel o migrar a otra herramienta. Mismo formato que la importación.</span>
+                </span>
+                <span class="datos-soon">Próximamente</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="s-block">
+        <h3>Retención de datos</h3>
+        <p class="datos-note">Conservamos tus cotizaciones y CFDI mientras tu cuenta esté activa. Los CFDI timbrados se guardan <b>5 años</b> conforme al SAT. Las cotizaciones rechazadas o vencidas siguen disponibles para tu histórico hasta que las borres.</p>
+    </div>
+
+    <div class="s-block danger">
+        <h3>Zona de peligro</h3>
+        <div class="danger-box">
+            <div class="datos-row">
+                <span class="datos-info">
+                    <span class="datos-title">Eliminar la cuenta de {ORG.nombre}</span>
+                    <span class="datos-desc">Borra de forma permanente la organización y <b>todos</b> sus datos. No se puede deshacer. Exporta antes.</span>
+                </span>
+                <button class="danger-btn" id="delOrg">Eliminar cuenta</button>
+            </div>
+        </div>
+    </div>
+</SettingsShell>
+
+<style>
+    .datos-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0.3rem; border-bottom: 1px solid var(--color-border); }
+    .datos-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .datos-title { font-size: 0.9rem; font-weight: 600; color: var(--color-text); }
+    .datos-desc { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.45; }
+    .datos-desc b { color: var(--color-text); font-weight: 600; }
+    .datos-btn { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; text-decoration: none; white-space: nowrap; transition: transform 0.3s var(--ease-spring); }
+    .datos-btn:hover { transform: translateY(-1px); }
+    .datos-soon { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 4px 9px; border-radius: 100px; color: #b45309; background: rgba(245,158,11,0.1); white-space: nowrap; }
+    .datos-note { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.6; margin: 0; }
+    .datos-note b { color: var(--color-text); font-weight: 600; }
+
+    .s-block.danger > h3 { color: var(--color-danger); border-color: rgba(239,68,68,0.25); }
+    .danger-box { border: 1px solid rgba(239,68,68,0.3); border-radius: 12px; background: rgba(239,68,68,0.03); padding: 0 1rem; }
+    .danger-box .datos-row { border-bottom: none; }
+    .danger-btn { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-danger); background: none; border: 1px solid rgba(239,68,68,0.4); border-radius: 9px; padding: 9px 18px; cursor: pointer; white-space: nowrap; transition: background 0.25s, color 0.25s; }
+    .danger-btn:hover { background: var(--color-danger); color: #fff; border-color: var(--color-danger); }
+</style>
+
+<script>
+    document.getElementById('delOrg')?.addEventListener('click', () => {
+        alert('Eliminar la cuenta es permanente. Por seguridad, esta acción se habilita escribiendo a soporte@flouvia.com mientras conectamos el flujo de baja con verificación. Mientras tanto, puedes exportar todos tus datos arriba.');
+    });
+</script>

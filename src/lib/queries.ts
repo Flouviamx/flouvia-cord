@@ -86,7 +86,57 @@ export async function getOrg() {
         usoCfdi: (o.uso_cfdi as string) ?? '',
         cpFiscal: (o.cp_fiscal as string) ?? '',
         serieFolio: (o.serie_folio as string) ?? '',
+        // Centro de mando Enterprise (jun 2026)
+        zonaHoraria: (o.zona_horaria as string) || 'America/Mexico_City',
+        idioma: (o.idioma as string) || 'es-MX',
+        colorSecundario: (o.color_secundario as string) || '',
+        portalBienvenida: (o.portal_bienvenida as string) ?? '',
+        notifPrefs: (o.notif_prefs as Record<string, Record<string, boolean>>) ?? {},
+        slackWebhook: (o.slack_webhook_url as string) ?? '',
+        integraciones: (o.integraciones as Record<string, boolean>) ?? {},
+        csdEstado: (o.csd_estado as string) ?? '',
+        csdNombre: (o.csd_nombre as string) ?? '',
+        require2fa: (o.require_2fa as boolean) ?? false,
+        sessionTimeoutMin: num(o.session_timeout_min),
+        inviteDomains: (o.invite_domains as string) ?? '',
+        embedDomains: (o.embed_domains as string) ?? '',
     };
+}
+
+// ── API KEYS (Developers) ────────────────────────────────────────────────────
+// Lista enmascarada de llaves de la org. La clave en claro NUNCA se devuelve
+// (sólo prefix + last4); se mostró una vez al crearla.
+export async function getApiKeys() {
+    const orgId = await getActiveOrgId();
+    let rows: any[] = [];
+    try {
+        rows = await sql`select * from api_keys where org_id = ${orgId} order by created_at desc`;
+    } catch { return []; } // tabla aún no migrada
+    return rows.map((k) => ({
+        id: k.id as string,
+        nombre: k.nombre as string,
+        masked: `${k.prefix}${'•'.repeat(20)}${k.last4}`,
+        scope: (k.scope as string) || 'read',
+        mode: (k.mode as string) || 'live',
+        creada: fmtDate(k.created_at),
+        ultimoUso: k.last_used_at ? fmtRelative(k.last_used_at) : null,
+        revocada: !!k.revoked_at,
+    }));
+}
+
+// ── PLANTILLAS DE MENSAJE (reutilizables al enviar cotizaciones) ─────────────
+export async function getPlantillas() {
+    const orgId = await getActiveOrgId();
+    let rows: any[] = [];
+    try {
+        rows = await sql`select * from plantillas_mensaje where org_id = ${orgId} order by canal, nombre`;
+    } catch { return []; } // tabla aún no migrada
+    return rows.map((p) => ({
+        id: p.id as string,
+        nombre: p.nombre as string,
+        canal: (p.canal as string) || 'whatsapp',
+        cuerpo: (p.cuerpo as string) || '',
+    }));
 }
 
 // Uso del plan: cotizaciones "activas" (no cerradas) vs límite del plan.
@@ -206,7 +256,8 @@ export async function getCotizacionByToken(token: string) {
     const rows = await sql`
         select c.*, cl.empresa, coalesce(c.terminos, cl.terminos_default) as terminos,
                o.nombre as org_nombre, o.rfc as org_rfc, o.color_marca as org_color,
-               o.pdf_mensaje as org_pdf_mensaje, o.iva_pct as org_iva_pct
+               o.pdf_mensaje as org_pdf_mensaje, o.iva_pct as org_iva_pct,
+               o.embed_domains as org_embed_domains
         from cotizaciones c
         left join clientes cl on cl.id = c.cliente_id
         join orgs o on o.id = c.org_id
@@ -236,6 +287,8 @@ export async function getCotizacionByToken(token: string) {
             colorMarca: (rows[0].org_color as string) || '#0a192f',
             pdfMensaje: (rows[0].org_pdf_mensaje as string) ?? '',
             ivaPct: num(rows[0].org_iva_pct) || 16,
+            // Dominios autorizados a embeber esta cotización (TRATO Elements).
+            embedDomains: (rows[0].org_embed_domains as string) ?? '',
         },
     };
 }
@@ -622,7 +675,7 @@ export async function getSetupProgress() {
     const [{ nc }] = await sql`select count(*)::int as nc from clientes where org_id = ${orgId}`;
     const [{ nq }] = await sql`select count(*)::int as nq from cotizaciones where org_id = ${orgId}`;
     const tasks = [
-        { id: 'marca',      label: 'Personaliza tu marca',        desc: 'Logo, color y datos de contacto en tus documentos.', href: '/app/ajustes/marca',            done: !!(o?.logo_url || o?.email_contacto || o?.telefono) },
+        { id: 'marca',      label: 'Personaliza tu marca',        desc: 'Logo, color y datos de contacto en tus documentos.', href: '/app/ajustes/branding',         done: !!(o?.logo_url || o?.email_contacto || o?.telefono) },
         { id: 'productos',  label: 'Crea tu catálogo',            desc: 'Agrega los productos o servicios que vendes.',       href: '/app/productos',               done: Number(np) > 0 },
         { id: 'clientes',   label: 'Agrega tus clientes',         desc: 'A quién le cotizas, con sus términos de pago.',      href: '/app/clientes',                done: Number(nc) > 0 },
         { id: 'cotizacion', label: 'Crea tu primera cotización',  desc: 'El corazón de Trato — pruébalo en 2 minutos.',       href: '/app/cotizaciones/nueva',      done: Number(nq) > 0 },

@@ -48,17 +48,59 @@ const ORG = await getOrg();
 
     <div class="s-block">
         <h3>Certificado de Sello Digital (CSD)</h3>
+        <p class="csd-intro">Sube tu CSD para que Trato timbre CFDI 4.0 a tu nombre. Lo guardamos cifrado y sólo se usa para sellar. Disponible al activar el plan Negocio.</p>
+        <div class="csd-files">
+            <label class="csd-drop">
+                <input type="file" accept=".cer" disabled />
+                <span class="csd-drop-ico">.cer</span>
+                <span class="csd-drop-t">Certificado</span>
+                <span class="csd-drop-s">Arrastra tu archivo .cer</span>
+            </label>
+            <label class="csd-drop">
+                <input type="file" accept=".key" disabled />
+                <span class="csd-drop-ico">.key</span>
+                <span class="csd-drop-t">Llave privada</span>
+                <span class="csd-drop-s">Arrastra tu archivo .key</span>
+            </label>
+        </div>
+        <div class="s-field" style="max-width:50%; margin-top:1rem">
+            <label for="oCsdPass">Contraseña de la llave</label>
+            <input class="s-input" id="oCsdPass" type="password" placeholder="••••••••" disabled />
+            <span class="s-hint">Nunca se muestra ni se comparte. Sólo descifra tu .key al sellar.</span>
+        </div>
+    </div>
+
+    <div class="s-block">
+        <h3>Timbrado (PAC)</h3>
         <div class="s-body">
-            <div class="csd-state">
-                <span class="csd-dot"></span>
-                <span>Sin conectar — disponible al activar el plan Negocio. Necesitarás tu <b>.cer</b>, tu <b>.key</b> y la contraseña de la llave.</span>
+            <div class="pac-row">
+                <span class="csd-dot pac-dot"></span>
+                <span class="pac-info">
+                    <span class="pac-title">Proveedor de timbrado</span>
+                    <span class="pac-desc">El mismo PAC que usa la app de Shopify de Flouvia. Se conecta automáticamente al subir tu CSD en el plan Negocio.</span>
+                </span>
+                <span class="pac-badge">Sin conectar</span>
             </div>
         </div>
     </div>
 </SettingsShell>
 
 <style>
-    .csd-state { display: flex; align-items: center; gap: 9px; font-size: 0.8rem; color: var(--color-text-muted); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 12px 14px; line-height: 1.5; }
-    .csd-state b { color: var(--color-text); font-weight: 600; }
+    .csd-intro { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.55; margin: 0 0 1.1rem; }
+    .csd-files { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .csd-drop { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; border: 1.5px dashed var(--color-border); border-radius: 12px; padding: 1.4rem 1rem; cursor: not-allowed; background: var(--color-bg-soft); opacity: 0.7; }
+    .csd-drop input { display: none; }
+    .csd-drop-ico { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.7rem; font-weight: 700; color: #fff; background: var(--color-blue-deep); padding: 3px 8px; border-radius: 6px; margin-bottom: 4px; }
+    .csd-drop-t { font-size: 0.85rem; font-weight: 600; color: var(--color-text); }
+    .csd-drop-s { font-size: 0.72rem; color: #99a2af; }
+
+    .pac-row { display: flex; align-items: center; gap: 11px; border: 1px solid var(--color-border); border-radius: 10px; padding: 14px; }
+    .pac-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .pac-title { font-size: 0.88rem; font-weight: 600; color: var(--color-text); }
+    .pac-desc { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.45; }
     .csd-dot { width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; }
+    .pac-dot { align-self: flex-start; margin-top: 5px; }
+    .pac-badge { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 4px 9px; border-radius: 100px; color: #b45309; background: rgba(245,158,11,0.1); white-space: nowrap; }
+
+    @media (max-width: 560px) { .csd-files { grid-template-columns: 1fr; } }
 </style>

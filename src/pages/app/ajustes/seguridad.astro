@@ -1,0 +1,74 @@
+---
+// Ajustes › Equipo y permisos › Seguridad — políticas de acceso de la org.
+// Usa el guardado genérico del shell (data-field → PATCH /api/org).
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getOrg } from '../../../lib/queries';
+const ORG = await getOrg();
+
+const TIMEOUTS = [
+    { v: 0,    l: 'Sin límite' },
+    { v: 60,   l: '1 hora' },
+    { v: 240,  l: '4 horas' },
+    { v: 480,  l: '8 horas' },
+    { v: 1440, l: '24 horas' },
+];
+---
+
+<SettingsShell title="Seguridad — Ajustes" tab="seguridad"
+    intro="Reglas de acceso para todo tu equipo. La identidad la maneja Clerk; aquí defines las políticas que aplican a tu organización." save>
+
+    <div class="s-block">
+        <h3>Autenticación</h3>
+        <div class="s-body">
+            <div class="sec-toggle-row">
+                <span class="sec-info">
+                    <span class="sec-title">Exigir verificación en dos pasos (2FA)</span>
+                    <span class="sec-desc">Todos los miembros deberán tener 2FA activo para entrar. Protege tu cuenta aunque se filtre una contraseña.</span>
+                </span>
+                <label class="s-toggle">
+                    <input type="checkbox" data-field="require_2fa" checked={ORG.require2fa} />
+                    <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                </label>
+            </div>
+            <div class="sec-hint-box">
+                <span class="sec-dot"></span>
+                <span>La política se guarda de inmediato. El bloqueo de acceso se aplica con la instancia de <b>producción</b> de Clerk (la 2FA por usuario se configura en <a href="/app/ajustes/cuenta">Tu cuenta</a>).</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="s-block">
+        <h3>Sesiones</h3>
+        <div class="s-body">
+            <div class="s-field" style="max-width:50%">
+                <label for="oTimeout">Cierre por inactividad</label>
+                <select class="s-input" id="oTimeout" data-field="session_timeout_min">
+                    {TIMEOUTS.map((t) => <option value={t.v} selected={ORG.sessionTimeoutMin === t.v}>{t.l}</option>)}
+                </select>
+                <span class="s-hint">Tras este tiempo sin actividad, se pedirá iniciar sesión de nuevo.</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="s-block">
+        <h3>Dominios de invitación</h3>
+        <div class="s-body">
+            <div class="s-field">
+                <label for="oDomains">Dominios permitidos</label>
+                <input class="s-input" id="oDomains" data-field="invite_domains" value={ORG.inviteDomains} placeholder="tuempresa.mx, tuempresa.com" />
+                <span class="s-hint">Separados por coma. Si los defines, solo podrás invitar correos de esos dominios. Déjalo vacío para permitir cualquiera.</span>
+            </div>
+        </div>
+    </div>
+</SettingsShell>
+
+<style>
+    .sec-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; }
+    .sec-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .sec-title { font-size: 0.9rem; font-weight: 600; color: var(--color-text); }
+    .sec-desc { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.45; }
+    .sec-hint-box { display: flex; align-items: flex-start; gap: 9px; font-size: 0.78rem; color: var(--color-text-muted); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 12px 14px; line-height: 1.5; }
+    .sec-hint-box a { color: var(--color-blue-deep); font-weight: 600; }
+    .sec-hint-box b { color: var(--color-text); font-weight: 600; }
+    .sec-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-ok); flex-shrink: 0; margin-top: 5px; }
+</style>

@@ -26,7 +26,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (denied) return denied;
 
     const orgId = await getActiveOrgId();
-    const [org] = await sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`;
+    const [org] = await sql`select coalesce(plan,'free') as plan, invite_domains from orgs where id = ${orgId}`;
     if (!planTieneEquipo(org.plan as string)) {
         return json({ error: 'Invitar a tu equipo requiere el plan Negocio.' }, 402);
     }
@@ -35,6 +35,16 @@ export const POST: APIRoute = async ({ request }) => {
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
 
     const email = body.email ? String(body.email).trim().toLowerCase().slice(0, 160) : null;
+
+    // Restricción por dominio (Seguridad): si la org limitó los dominios de
+    // invitación, el correo debe pertenecer a uno de ellos.
+    const allowed = (org.invite_domains as string | null)?.split(',').map((d) => d.trim()).filter(Boolean) ?? [];
+    if (email && allowed.length) {
+        const dom = email.split('@')[1] ?? '';
+        if (!allowed.includes(dom)) {
+            return json({ error: `Solo puedes invitar correos de: ${allowed.join(', ')}. Cámbialo en Ajustes › Seguridad.` }, 422);
+        }
+    }
     const nombre = body.nombre ? String(body.nombre).trim().slice(0, 120) : null;
     const preset = String(body.preset ?? 'vendedor');
     const permisos = body.permisos ? cleanPermisos(body.permisos)

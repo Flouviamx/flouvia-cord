@@ -5,7 +5,8 @@ import { reqContext } from "./lib/context";
 //   /api/q/*       → vista pública del cliente (token secreto)
 //   /api/stripe/*  → webhook de Stripe (firma propia)
 //   /api/cron/*    → cron de Vercel (protegido por CRON_SECRET)
-const PUBLIC_API_PREFIXES = ["/api/q/", "/api/stripe/", "/api/cron/"];
+//   /api/v1/*      → API PÚBLICA (cada ruta se autentica por API key: Bearer)
+const PUBLIC_API_PREFIXES = ["/api/q/", "/api/stripe/", "/api/cron/", "/api/v1/"];
 
 export const onRequest = clerkMiddleware((auth, context, next) => {
     const { userId } = auth();

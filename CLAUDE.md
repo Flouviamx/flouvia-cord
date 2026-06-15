@@ -93,13 +93,18 @@ para que el swap a Neon sea cambiar imports por queries.
 ✅ **Presencia en vivo** — el cliente con `/q/[token]` abierto manda heartbeat
    (`POST /api/q/[token]` action `ping` → `cotizaciones.viewer_last_seen`); el vendedor
    ve "lo está viendo ahora" en el detalle (poll `/api/cotizaciones/[id]/presence`).
-✅ **Guía de configuración (onboarding, estilo Stripe — reemplazó al picker de
-   industria jun 2026)** — card en el dashboard con anillo de progreso + checklist
-   cuyo "done" se calcula de datos REALES (`getSetupProgress()` en queries.ts:
-   marca/productos/clientes/primera cotización/fiscal). Se oculta al completar (o
-   `/app?guia=1` para forzarla). El viejo overlay de industria se quitó; `src/lib/
-   onboarding.ts` + `/api/onboarding/seed` quedan como código muerto (reutilizable
-   si se quiere un "precargar ejemplos").
+✅ **Guía de configuración v2 — Widget flotante dinámico (jun 2026)** — tarjeta
+   acordeón fijada abajo-derecha (`src/components/app/OnboardingWidget.astro`):
+   pasos por `getSetupProgress()` (marca/fiscal/productos/clientes/cotización),
+   uno abierto a la vez, check animado al completar. Estado MINIMIZADO → píldora
+   "Guía de configuración" con anillo SVG radial en la topbar de `AppLayout`.
+   **Estado global persistente** entre páginas (store vanilla en `window.__tratoOnb`
+   + `localStorage` clave `trato.onb.v1` — equivalente de Zustand/Context en Astro SSR).
+   **Auto-completado por BD**: polling a `/api/onboarding/progress` cada 15 s +
+   `visibilitychange`/`focus` — los pasos se marcan solos sin recargar. Al llegar
+   a 100% celebra y se auto-descarta. `?guia=1` resetea el estado. La card inline
+   del dashboard fue ELIMINADA. `src/lib/onboarding.ts` + `/api/onboarding/seed`
+   quedan como código muerto (reutilizable si se quiere "precargar ejemplos").
 ✅ **Pipeline Kanban + Tareas** — toggle Lista/Tablero en `/app/cotizaciones` (drag&drop
    avanza el pipeline vía PATCH actions); tarjeta de "Tareas y recordatorios" en el
    dashboard (`/api/tareas`, tabla `tareas`, getTareas()).
@@ -124,6 +129,31 @@ para que el swap a Neon sea cambiar imports por queries.
    verificar dominio en Resend + setear `RESEND_API_KEY`/`RESEND_FROM`.
 ✅ **Pago en línea (Stripe)** — botón en `/q/[token]` → `/api/q/[token]/checkout` (Stripe
    Checkout vía REST) + `/api/stripe/webhook` marca `paid`. Gated por `STRIPE_SECRET_KEY`.
+✅ **Navbar con estado de sesión (jun 2026)** — `Nav.astro` detecta sesión en el cliente
+   vía `$authStore` de `@clerk/astro/client` (nanostores). El markup estático (landing
+   `prerender:true`) muestra por defecto "Entrar" + "Empezar gratis"; al detectar sesión
+   se intercambian a "Ver planes" (`/precios`) + "Ir al Dashboard" (`/app`). Cubre las 3
+   zonas: botones derecha desktop, CTA inferior móvil y overlay del menú móvil. Usa
+   `data-auth-swap`/`data-in-*`/`data-out-*` como atributos de datos en los nodos del DOM;
+   el script se suscribe a `$authStore` y aplica el cambio al resolver. Sin FOUC para el
+   visitante anónimo (el caso común de la landing); swap ocurre tras carga de clerk-js.
+✅ **TRATO Elements — cotizador embebible (jun 2026, FASE 1: iframe)** — el cotizador
+   `/q` vive ahora dentro del sitio de un tercero vía `<iframe>`. El corazón se extrajo
+   a `src/components/q/QuoteCard.astro` (REUTILIZADO por `/q/[token]` y `/embed/[token]`;
+   es la semilla del futuro paquete npm `@trato/elements`). El componente emite
+   CustomEvents en `window` (`trato:approved`/`rejected`/`message`/`pay`).
+   • `/embed/[token]` (`EmbedLayout`, fondo transparente, sin chrome) setea el header
+     CSP `frame-ancestors` desde la allowlist `orgs.embed_domains` (anti-clickjacking;
+     vacío = abierto, modo demo) y hace de puente: `ResizeObserver` → `postMessage`
+     `trato:resize` (auto-altura) + relay de eventos al window padre.
+   • `public/embed.js` = loader de "una línea": `<script src=…/embed.js>` + `<div
+     data-trato-cotizador data-token="…">` inyecta el iframe, ajusta altura y re-emite
+     los eventos como CustomEvents sobre el div anfitrión.
+   • Ajustes › Developers › **Cotizador embebible** (`/app/ajustes/elements`): copia el
+     snippet (con token real reciente) + gestiona dominios autorizados (`embed_domains`
+     vía save genérico → `/api/org`). Nueva columna `orgs.embed_domains`.
+   FASE 2 pendiente: paquete npm `@trato/elements` (Web Components / React) — repo
+   SEPARADO contra la API pública `/api/q/*`, NO migración de la app.
 ⬜ Pendiente: aprobación parcial por línea, versiones de cotización, multi-usuario con Clerk
    (proteger `/app`), Stripe Billing de suscripciones (planes).
 

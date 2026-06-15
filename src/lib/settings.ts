@@ -1,19 +1,29 @@
 // Configuración en 2 niveles (estilo Stripe): CATEGORÍAS → pestañas (sub-páginas).
 // El índice /app/ajustes lista las categorías; cada categoría abre su primera
 // pestaña y muestra una barra de pestañas horizontal (NO un rail lateral).
+//
+// Reorganizado jun 2026 → "centro de mando Enterprise" (7 secciones spine +
+// extras): General · Branding · Cotizaciones · Facturación y CFDI · Planes y
+// cobranza · Notificaciones · Equipo · Developers · Avanzado · Tu cuenta.
 
 export interface SettingsTab { id: string; label: string; href: string; }
 export interface SettingsCategory { id: string; label: string; desc: string; icon: string; tabs: SettingsTab[]; }
 
 export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     {
-        id: 'empresa', label: 'Empresa',
-        desc: 'Marca, datos fiscales y tu plan de Trato.',
+        id: 'general', label: 'General',
+        desc: 'Nombre del negocio, moneda base, contacto y localización.',
         icon: '<rect x="3" y="3" width="7" height="18" rx="1.5"/><path d="M10 9h7a2 2 0 0 1 2 2v10H10"/><line x1="14" y1="13" x2="15" y2="13"/><line x1="14" y1="17" x2="15" y2="17"/><line x1="6" y1="7" x2="7" y2="7"/><line x1="6" y1="11" x2="7" y2="11"/>',
         tabs: [
-            { id: 'marca',  label: 'Marca y contacto', href: '/app/ajustes/marca' },
-            { id: 'fiscal', label: 'Datos fiscales',   href: '/app/ajustes/fiscal' },
-            { id: 'plan',   label: 'Plan y facturación', href: '/app/ajustes/plan' },
+            { id: 'general', label: 'General', href: '/app/ajustes/general' },
+        ],
+    },
+    {
+        id: 'branding', label: 'Branding',
+        desc: 'Logo, colores de marca y portal de tus clientes.',
+        icon: '<circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.012 17.5 2 12 2z"/>',
+        tabs: [
+            { id: 'branding', label: 'Branding', href: '/app/ajustes/branding' },
         ],
     },
     {
@@ -24,23 +34,59 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
             { id: 'cotizaciones', label: 'Folio e impuestos', href: '/app/ajustes/cotizaciones' },
             { id: 'pdf',          label: 'Documento PDF',      href: '/app/ajustes/pdf' },
             { id: 'aprobaciones', label: 'Aprobaciones',       href: '/app/ajustes/aprobaciones' },
+            { id: 'plantillas',   label: 'Plantillas',         href: '/app/ajustes/plantillas' },
         ],
     },
     {
-        id: 'equipo', label: 'Equipo y roles',
-        desc: 'Invita a tu equipo y define permisos por sección.',
+        id: 'facturacion', label: 'Facturación y CFDI',
+        desc: 'Datos fiscales, certificado de sello (CSD) y timbrado.',
+        icon: '<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="12" y2="15"/>',
+        tabs: [
+            { id: 'fiscal', label: 'Datos fiscales', href: '/app/ajustes/fiscal' },
+        ],
+    },
+    {
+        id: 'planes', label: 'Planes y cobranza',
+        desc: 'Tu suscripción de Trato, uso del plan y método de pago.',
+        icon: '<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>',
+        tabs: [
+            { id: 'plan', label: 'Suscripción', href: '/app/ajustes/plan' },
+        ],
+    },
+    {
+        id: 'notificaciones', label: 'Notificaciones',
+        desc: 'Qué eventos te avisan y por qué canal (correo, Slack…).',
+        icon: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+        tabs: [
+            { id: 'notificaciones', label: 'Notificaciones', href: '/app/ajustes/notificaciones' },
+        ],
+    },
+    {
+        id: 'equipo', label: 'Equipo y permisos',
+        desc: 'Invita a tu equipo, define permisos y la seguridad de acceso.',
         icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
         tabs: [
-            { id: 'equipo', label: 'Miembros', href: '/app/ajustes/equipo' },
+            { id: 'equipo',    label: 'Miembros',  href: '/app/ajustes/equipo' },
+            { id: 'seguridad', label: 'Seguridad', href: '/app/ajustes/seguridad' },
+        ],
+    },
+    {
+        id: 'developers', label: 'Developers',
+        desc: 'API keys, webhooks e integraciones con tus plataformas.',
+        icon: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+        tabs: [
+            { id: 'api',           label: 'API y webhooks', href: '/app/ajustes/api' },
+            { id: 'integraciones', label: 'Integraciones',  href: '/app/ajustes/integraciones' },
+            { id: 'elements',      label: 'Cotizador embebible', href: '/app/ajustes/elements' },
         ],
     },
     {
         id: 'avanzado', label: 'Avanzado',
-        desc: 'Integraciones con ecommerce y registro de auditoría.',
-        icon: '<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>',
+        desc: 'Exportar tus datos, zona de peligro y registro de auditoría.',
+        icon: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
         tabs: [
-            { id: 'integraciones', label: 'Integraciones', href: '/app/ajustes/integraciones' },
-            { id: 'auditoria',     label: 'Auditoría',     href: '/app/ajustes/auditoria' },
+            { id: 'datos',     label: 'Datos y privacidad', href: '/app/ajustes/datos' },
+            { id: 'auditoria', label: 'Auditoría',          href: '/app/ajustes/auditoria' },
         ],
     },
     {

@@ -1,75 +1,107 @@
 ---
-// Ajustes › Integraciones — conecta Trato con ecommerce y otras plataformas.
-// Estado actual: andamiaje (todas "próximamente"). Estilo lista (sin tarjetas).
+// Ajustes › Developers › Integraciones — conecta Trato con ecommerce y herramientas.
+// Estilo LISTA (no tarjetas, regla de André). El toggle PERSISTE la intención en
+// orgs.integraciones (jsonb) vía /api/org/prefs; la conexión real (OAuth) llega
+// con cada conector.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
 const ORG = await getOrg();
+const ON = ORG.integraciones || {};
 
 const INTEGRACIONES = [
-    { id: 'shopify',  nombre: 'Shopify',       desc: 'Importa tu catálogo y clientes; convierte una cotización aprobada en un pedido (draft order).', estado: 'Próximamente', color: '#95BF47', letra: 'S' },
-    { id: 'woo',      nombre: 'WooCommerce',   desc: 'Sincroniza productos y precios desde tu tienda WordPress vía la REST API.', estado: 'Próximamente', color: '#7F54B3', letra: 'W' },
-    { id: 'meli',     nombre: 'Mercado Libre', desc: 'Trae tu publicación y crea cotizaciones B2B para compras por volumen.', estado: 'Próximamente', color: '#FFE600', letra: 'M', dark: true },
-    { id: 'api',      nombre: 'API + Webhooks', desc: 'Crea cotizaciones desde tu propio sistema y recibe eventos (vista, aprobada, pagada).', estado: 'En diseño', color: '#0a192f', letra: '{}' },
-    { id: 'zapier',   nombre: 'Zapier / Make',  desc: 'Conecta Trato con 6,000+ apps sin código: CRM, hojas de cálculo, Slack…', estado: 'Próximamente', color: '#FF4A00', letra: 'Z' },
-    { id: 'contpaqi', nombre: 'CONTPAQi / ERP', desc: 'Exporta cotizaciones y CFDI a tu contabilidad. Pensado para el cierre fiscal.', estado: 'Próximamente', color: '#E30613', letra: 'C' },
+    { id: 'shopify',  nombre: 'Shopify',       desc: 'Importa tu catálogo y clientes; convierte una cotización aprobada en un pedido (draft order).', color: '#95BF47', letra: 'S' },
+    { id: 'woo',      nombre: 'WooCommerce',   desc: 'Sincroniza productos y precios desde tu tienda WordPress vía la REST API.', color: '#7F54B3', letra: 'W' },
+    { id: 'meli',     nombre: 'Mercado Libre', desc: 'Trae tu publicación y crea cotizaciones B2B para compras por volumen.', color: '#FFE600', letra: 'M', dark: true },
+    { id: 'zapier',   nombre: 'Zapier / Make',  desc: 'Conecta Trato con 6,000+ apps sin código: CRM, hojas de cálculo, Slack…', color: '#FF4A00', letra: 'Z' },
+    { id: 'contpaqi', nombre: 'CONTPAQi / ERP', desc: 'Exporta cotizaciones y CFDI a tu contabilidad. Pensado para el cierre fiscal.', color: '#E30613', letra: 'C' },
+    { id: 'slack',    nombre: 'Slack',          desc: 'Recibe avisos de eventos (vista, aprobada, pagada) en tu canal. Configúralo en Notificaciones.', color: '#4A154B', letra: '#' },
 ];
 ---
 
 <SettingsShell title="Integraciones — Ajustes" tab="integraciones"
-    intro="Conecta Trato con tu tienda en línea y tus herramientas. Hoy todas están en preparación — escríbenos si quieres ser de los primeros en probar una.">
+    intro="Activa una integración para conectar Trato con tus plataformas. Hoy guardamos tu intención y te avisamos en cuanto el conector esté listo — Trato funciona perfecto sin conectar nada.">
 
     <div class="s-block">
-        <h3>Disponibles próximamente</h3>
-        <div class="int-rows">
+        <h3>Conectores</h3>
+        <div class="int-rows" data-integr>
             {INTEGRACIONES.map((it) => (
-                <div class="int-row">
+                <div class="int-row" data-int={it.id}>
                     <span class="int-logo" style={`background:${it.color}; color:${it.dark ? '#0a192f' : '#fff'}`}>{it.letra}</span>
                     <span class="int-body">
                         <span class="int-name">{it.nombre}</span>
                         <span class="int-desc">{it.desc}</span>
                     </span>
-                    <span class:list={['int-status', { soon: it.estado === 'Próximamente', design: it.estado === 'En diseño' }]}>{it.estado}</span>
-                    <button class="int-btn" disabled>Conectar</button>
+                    <span class="int-pend" data-pend={it.id} style={ON[it.id] ? '' : 'display:none'}>Pendiente de conexión</span>
+                    <label class="s-toggle" title="Activar">
+                        <input type="checkbox" data-toggle={it.id} checked={!!ON[it.id]} />
+                        <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                    </label>
                 </div>
             ))}
         </div>
+        <p class="int-note">Trato es <b>standalone</b> (sirve a cualquier negocio B2B, no solo a tiendas): las integraciones son <b>opcionales</b> y sólo te ahorran capturar el catálogo.</p>
     </div>
 
     <div class="s-block">
         <h3>¿Cómo funcionará?</h3>
         <ol class="int-how">
-            <li><b>Conectas tu cuenta</b> (OAuth con Shopify/Woo/Meli, o una API key). Trato guarda el token de tu tienda de forma segura por <code>org_id</code>.</li>
-            <li><b>Importamos catálogo y clientes</b> de la plataforma a Trato — sin recapturar nada. Reusa el flujo que ya existe de importación por CSV.</li>
-            <li><b>Cotizas en Trato</b> como siempre. Al aprobarse, opcionalmente se crea el pedido/borrador de venta en tu tienda (ej. <i>draft order</i> en Shopify).</li>
-            <li><b>Webhooks bidireccionales:</b> cambios de precio/stock entran a Trato; eventos de Trato (vista, aprobada, pagada) salen a tu sistema o a Zapier.</li>
+            <li><b>Activas el conector</b> (OAuth con Shopify/Woo/Meli, o una API key). Trato guarda el token de forma segura por <code>org_id</code>.</li>
+            <li><b>Importamos catálogo y clientes</b> de la plataforma a Trato — sin recapturar nada.</li>
+            <li><b>Cotizas en Trato</b> como siempre. Al aprobarse, opcionalmente se crea el pedido en tu tienda.</li>
+            <li><b>Eventos bidireccionales:</b> cambios de precio/stock entran; eventos de Trato salen a tu sistema o a Zapier.</li>
         </ol>
-        <p class="int-note">Trato es <b>standalone</b> (sirve a cualquier negocio B2B, no solo a tiendas), así que las integraciones son <b>opcionales</b>: funciona perfecto sin conectar nada, y conectar tu tienda solo te ahorra capturar el catálogo.</p>
     </div>
 </SettingsShell>
 
 <style>
     .int-rows { display: flex; flex-direction: column; }
-    .int-row {
-        display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 1rem;
-        padding: 1.1rem 0.4rem; border-bottom: 1px solid var(--color-border);
-    }
+    .int-row { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 1rem; padding: 1.1rem 0.4rem; border-bottom: 1px solid var(--color-border); }
     .int-logo { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0; }
     .int-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     .int-name { font-size: 0.92rem; font-weight: 600; color: var(--color-text); }
     .int-desc { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.45; }
-    .int-status { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 4px 9px; border-radius: 100px; color: var(--color-text-muted); background: var(--color-bg-soft); white-space: nowrap; }
-    .int-status.soon { color: #b45309; background: rgba(245,158,11,0.1); }
-    .int-status.design { color: var(--color-blue-deep); background: rgba(10,25,47,0.07); }
-    .int-btn { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 8px; padding: 7px 14px; cursor: not-allowed; opacity: 0.55; white-space: nowrap; }
-
+    .int-pend { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 4px 9px; border-radius: 100px; color: #b45309; background: rgba(245,158,11,0.12); white-space: nowrap; }
+    .int-note { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.55; margin: 1.2rem 0 0; }
+    .int-note b { color: var(--color-text); font-weight: 600; }
     .int-how { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.7rem; }
     .int-how li { font-size: 0.85rem; color: var(--color-text); line-height: 1.55; }
     .int-how b { font-weight: 600; }
     .int-how code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.78rem; background: rgba(10,25,47,0.06); padding: 1px 5px; border-radius: 4px; }
-    .int-note { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.55; margin: 1.2rem 0 0; }
 
     @media (max-width: 720px) {
-        .int-row { grid-template-columns: auto 1fr; grid-auto-rows: auto; }
-        .int-status, .int-btn { grid-column: 2; justify-self: start; }
+        .int-row { grid-template-columns: auto 1fr auto; }
+        .int-pend { grid-column: 2; justify-self: start; }
     }
 </style>
+
+<script>
+    function initIntegr() {
+        const wrap = document.querySelector('[data-integr]');
+        if (!wrap) return;
+
+        async function persist() {
+            const integraciones: Record<string, boolean> = {};
+            wrap!.querySelectorAll('input[data-toggle]').forEach((n) => {
+                const i = n as HTMLInputElement;
+                integraciones[i.dataset.toggle!] = i.checked;
+            });
+            try {
+                await fetch('/api/org/prefs', {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ integraciones }),
+                });
+            } catch {}
+        }
+
+        wrap.querySelectorAll('input[data-toggle]').forEach((n) => {
+            n.addEventListener('change', () => {
+                const i = n as HTMLInputElement;
+                const pend = wrap.querySelector(`[data-pend="${i.dataset.toggle}"]`) as HTMLElement | null;
+                if (pend) pend.style.display = i.checked ? '' : 'none';
+                persist();
+            });
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initIntegr);
+    else initIntegr();
+</script>

@@ -1,0 +1,184 @@
+---
+// Ajustes › Cotizaciones › Plantillas de mensaje — textos reutilizables para
+// enviar cotizaciones por WhatsApp / correo. CRUD real vía /api/plantillas.
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getPlantillas } from '../../../lib/queries';
+const PLANTILLAS = await getPlantillas();
+
+const CANAL_META: Record<string, { label: string; color: string; bg: string }> = {
+    whatsapp: { label: 'WhatsApp', color: '#128C7E', bg: 'rgba(18,140,126,0.1)' },
+    email:    { label: 'Correo',   color: '#0a192f', bg: 'rgba(10,25,47,0.08)' },
+    nota:     { label: 'Nota',     color: '#b45309', bg: 'rgba(245,158,11,0.12)' },
+};
+const VARS = ['{cliente}', '{empresa}', '{folio}', '{total}', '{link}', '{vigencia}'];
+---
+
+<SettingsShell title="Plantillas de mensaje — Ajustes" tab="plantillas"
+    intro="Escribe una vez, reutiliza siempre. Estos textos aparecen al enviar una cotización por WhatsApp o correo. Usa variables como {cliente} o {link} y se rellenan solas.">
+
+    <div class="s-block">
+        <div class="pl-head">
+            <h3>Tus plantillas</h3>
+            <button class="pl-new" id="plNew">+ Nueva plantilla</button>
+        </div>
+
+        <div class="pl-list" id="plList">
+            {PLANTILLAS.length === 0 && (
+                <p class="pl-empty">Aún no tienes plantillas. Crea una para mandar tus cotizaciones en segundos.</p>
+            )}
+            {PLANTILLAS.map((p) => (
+                <div class="pl-row" data-id={p.id} data-nombre={p.nombre} data-canal={p.canal} data-cuerpo={p.cuerpo}>
+                    <span class="pl-info">
+                        <span class="pl-name">{p.nombre}
+                            <span class="pl-canal" style={`color:${CANAL_META[p.canal]?.color}; background:${CANAL_META[p.canal]?.bg}`}>{CANAL_META[p.canal]?.label ?? p.canal}</span>
+                        </span>
+                        <span class="pl-body">{p.cuerpo}</span>
+                    </span>
+                    <span class="pl-actions">
+                        <button class="pl-edit" data-edit={p.id}>Editar</button>
+                        <button class="pl-del" data-del={p.id}>Eliminar</button>
+                    </span>
+                </div>
+            ))}
+        </div>
+    </div>
+
+    <div class="s-block">
+        <h3>Variables disponibles</h3>
+        <div class="pl-vars">
+            {VARS.map((v) => <code class="pl-var">{v}</code>)}
+        </div>
+        <p class="pl-note">Al enviar, cada variable se reemplaza con los datos reales de la cotización.</p>
+    </div>
+</SettingsShell>
+
+<dialog id="plDlg" class="pldlg">
+    <form class="pldlg-inner" id="plForm">
+        <h4 id="plTitle">Nueva plantilla</h4>
+        <input type="hidden" id="plId" />
+        <div class="s-field">
+            <label for="plNombre">Nombre</label>
+            <input class="s-input" id="plNombre" placeholder="Envío estándar" required maxlength="80" />
+        </div>
+        <div class="s-field">
+            <label for="plCanal">Canal</label>
+            <select class="s-input" id="plCanal">
+                <option value="whatsapp">WhatsApp</option>
+                <option value="email">Correo</option>
+                <option value="nota">Nota interna</option>
+            </select>
+        </div>
+        <div class="s-field">
+            <label for="plCuerpo">Mensaje</label>
+            <textarea class="s-input s-textarea" id="plCuerpo" rows="5" required maxlength="2000"
+                placeholder={"Hola {cliente}, te comparto la cotización {folio} por {total}. Puedes verla y aprobarla aquí: {link}\n\nVigencia: {vigencia}. ¡Gracias!"}></textarea>
+            <span class="s-hint">Toca una variable para insertarla:</span>
+            <div class="pl-vars" id="plInsert">
+                {VARS.map((v) => <button type="button" class="pl-var pl-var-btn" data-var={v}>{v}</button>)}
+            </div>
+        </div>
+        <div class="pldlg-foot">
+            <button type="button" class="pldlg-cancel" id="plCancel">Cancelar</button>
+            <button type="submit" class="pldlg-save" id="plSave">Guardar</button>
+        </div>
+    </form>
+</dialog>
+
+<style>
+    .pl-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--color-border); }
+    .pl-head h3 { margin: 0; padding: 0; border: none; }
+    .pl-new { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 8px 14px; cursor: pointer; transition: transform 0.3s var(--ease-spring); }
+    .pl-new:hover { transform: translateY(-1px); }
+    .pl-empty { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; padding: 0.6rem 0; }
+
+    .pl-list { display: flex; flex-direction: column; }
+    .pl-row { display: flex; align-items: center; gap: 1rem; padding: 1rem 0.3rem; border-bottom: 1px solid var(--color-border); }
+    .pl-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+    .pl-name { font-size: 0.9rem; font-weight: 600; color: var(--color-text); display: flex; align-items: center; gap: 8px; }
+    .pl-canal { font-size: 0.56rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 3px 7px; border-radius: 100px; }
+    .pl-body { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.45; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .pl-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+    .pl-edit, .pl-del { font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; background: none; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 12px; cursor: pointer; transition: border-color 0.25s, color 0.25s; }
+    .pl-edit { color: var(--color-text-muted); }
+    .pl-edit:hover { border-color: var(--color-blue-deep); color: var(--color-blue-deep); }
+    .pl-del { color: var(--color-text-muted); }
+    .pl-del:hover { border-color: var(--color-danger); color: var(--color-danger); }
+
+    .pl-vars { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.3rem; }
+    .pl-var { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.74rem; color: var(--color-blue-deep); background: rgba(10,25,47,0.06); padding: 4px 9px; border-radius: 6px; border: none; }
+    .pl-var-btn { cursor: pointer; transition: background 0.2s; }
+    .pl-var-btn:hover { background: rgba(10,25,47,0.12); }
+    .pl-note { font-size: 0.78rem; color: var(--color-text-muted); margin: 0.8rem 0 0; }
+
+    .pldlg { border: none; border-radius: 16px; padding: 0; max-width: 520px; width: 94vw; box-shadow: 0 40px 90px -30px rgba(10,25,47,0.5); }
+    .pldlg::backdrop { background: rgba(10,25,47,0.45); backdrop-filter: blur(3px); }
+    .pldlg-inner { padding: 1.6rem; display: flex; flex-direction: column; gap: 1.1rem; }
+    .pldlg-inner h4 { font-size: 1.15rem; font-weight: 700; margin: 0; }
+    .pldlg-foot { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.3rem; }
+    .pldlg-cancel { font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 9px; padding: 10px 18px; cursor: pointer; }
+    .pldlg-save { font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 10px 22px; cursor: pointer; }
+</style>
+
+<script>
+    function initPlantillas() {
+        const dlg = document.getElementById('plDlg') as HTMLDialogElement | null;
+        const form = document.getElementById('plForm') as HTMLFormElement | null;
+        if (!dlg || !form) return;
+        const $ = (id: string) => document.getElementById(id) as HTMLInputElement;
+        const idEl = $('plId'), nombre = $('plNombre'), canal = $('plCanal'), cuerpo = $('plCuerpo'), title = document.getElementById('plTitle');
+
+        function open(edit?: HTMLElement) {
+            if (edit) {
+                idEl.value = edit.dataset.id ?? '';
+                nombre.value = edit.dataset.nombre ?? '';
+                canal.value = edit.dataset.canal ?? 'whatsapp';
+                cuerpo.value = edit.dataset.cuerpo ?? '';
+                if (title) title.textContent = 'Editar plantilla';
+            } else {
+                idEl.value = ''; nombre.value = ''; canal.value = 'whatsapp'; cuerpo.value = '';
+                if (title) title.textContent = 'Nueva plantilla';
+            }
+            dlg!.showModal();
+        }
+
+        document.getElementById('plNew')?.addEventListener('click', () => open());
+        document.getElementById('plCancel')?.addEventListener('click', () => dlg.close());
+        document.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => open(b.closest('.pl-row') as HTMLElement)));
+
+        // Insertar variable en el cursor del textarea
+        document.querySelectorAll('[data-var]').forEach((b) => b.addEventListener('click', () => {
+            const v = (b as HTMLElement).dataset.var ?? '';
+            const start = cuerpo.selectionStart ?? cuerpo.value.length;
+            const end = cuerpo.selectionEnd ?? cuerpo.value.length;
+            cuerpo.value = cuerpo.value.slice(0, start) + v + cuerpo.value.slice(end);
+            cuerpo.focus(); cuerpo.selectionStart = cuerpo.selectionEnd = start + v.length;
+        }));
+
+        document.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => {
+            if (!confirm('¿Eliminar esta plantilla?')) return;
+            const id = (b as HTMLElement).dataset.del!;
+            try {
+                const res = await fetch('/api/plantillas', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+                if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+                location.reload();
+            } catch (e: any) { alert(e.message || 'No se pudo eliminar'); }
+        }));
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = idEl.value;
+            const payload = { id, nombre: nombre.value, canal: canal.value, cuerpo: cuerpo.value };
+            const save = document.getElementById('plSave') as HTMLButtonElement;
+            save.disabled = true;
+            try {
+                const res = await fetch('/api/plantillas', {
+                    method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+                });
+                if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+                location.reload();
+            } catch (e: any) { alert(e.message || 'No se pudo guardar'); save.disabled = false; }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPlantillas);
+    else initPlantillas();
+</script>

@@ -1,0 +1,168 @@
+---
+// Ajustes › Branding — logo, colores de marca y portal de cliente (/q/{token}).
+// Preview EN VIVO del encabezado del link público con los colores elegidos.
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getOrg } from '../../../lib/queries';
+const ORG = await getOrg();
+const SEC = ORG.colorSecundario || ORG.colorMarca;
+---
+
+<SettingsShell title="Branding — Ajustes" tab="branding"
+    intro="Tu logo y colores aparecen en el link público de cada cotización y en el PDF. Así lo ve tu cliente cuando abre el documento." save>
+
+    <div class="s-block">
+        <h3>Logo</h3>
+        <div class="s-body">
+            <div class="logo-row">
+                <div class="logo-prev">
+                    <img id="logoImg" src={ORG.logoUrl || undefined} alt="Logo" style={ORG.logoUrl ? '' : 'display:none'} />
+                    <span id="logoFallback" style={ORG.logoUrl ? 'display:none' : ''}>{ORG.inicial}</span>
+                </div>
+                <div class="logo-actions">
+                    <div class="logo-btns">
+                        <label class="logo-btn">
+                            <input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden />
+                            Subir logo
+                        </label>
+                        <button type="button" class="logo-remove" id="logoRemove">Quitar</button>
+                    </div>
+                    <span class="s-hint">PNG, JPG, SVG o WEBP. Máx ~1 MB. Si no subes logo, usamos la inicial.</span>
+                </div>
+            </div>
+            <input type="hidden" id="oLogo" data-field="logo_url" value={ORG.logoUrl} />
+        </div>
+    </div>
+
+    <div class="s-block">
+        <h3>Colores de marca</h3>
+        <div class="s-body">
+            <div class="s-row">
+                <div class="s-field">
+                    <label for="oColor">Color principal</label>
+                    <div class="color-row">
+                        <input type="color" id="oColorPick" value={ORG.colorMarca} aria-label="Elegir color principal" />
+                        <input class="s-input" id="oColor" data-field="color_marca" value={ORG.colorMarca} maxlength="7" />
+                    </div>
+                    <span class="s-hint">Botones y acentos del portal de cliente.</span>
+                </div>
+                <div class="s-field">
+                    <label for="oColorSec">Color secundario</label>
+                    <div class="color-row">
+                        <input type="color" id="oColorSecPick" value={SEC} aria-label="Elegir color secundario" />
+                        <input class="s-input" id="oColorSec" data-field="color_secundario" value={ORG.colorSecundario} maxlength="7" placeholder="#0a192f" />
+                    </div>
+                    <span class="s-hint">Fondo del encabezado y degradados. Opcional.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="s-block">
+        <h3>Portal de cliente</h3>
+        <div class="s-body">
+            <div class="s-field">
+                <label for="oPortalBien">Mensaje de bienvenida</label>
+                <textarea class="s-input s-textarea" id="oPortalBien" data-field="portal_bienvenida" rows="2" placeholder="Gracias por considerarnos. Cualquier duda, contáctanos.">{ORG.portalBienvenida}</textarea>
+                <span class="s-hint">Se muestra arriba de la cotización en el link público.</span>
+            </div>
+
+            <div class="brand-preview" id="brandPrev">
+                <span class="brand-pv-label">Vista previa del link público</span>
+                <div class="brand-card">
+                    <div class="brand-head" id="pvHead">
+                        <img class="brand-logo" id="pvLogo" alt="" src={ORG.logoUrl || undefined} style={ORG.logoUrl ? '' : 'display:none'} />
+                        <span class="brand-mark" id="pvMark" style={ORG.logoUrl ? 'display:none' : ''}>{ORG.inicial}</span>
+                        <span class="brand-name">{ORG.nombre}</span>
+                    </div>
+                    <div class="brand-body">
+                        <p class="brand-bien" id="pvBien">{ORG.portalBienvenida || 'Tu mensaje de bienvenida aparecerá aquí.'}</p>
+                        <div class="brand-line"></div>
+                        <div class="brand-line short"></div>
+                        <button class="brand-cta" id="pvCta">Aprobar cotización</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</SettingsShell>
+
+<style>
+    .logo-row { display: flex; align-items: center; gap: 1rem; }
+    .logo-prev { width: 60px; height: 60px; border-radius: 12px; flex-shrink: 0; overflow: hidden; background: var(--color-blue-deep); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; border: 1px solid var(--color-border); }
+    .logo-prev img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+    .logo-actions { display: flex; flex-direction: column; gap: 0.5rem; }
+    .logo-btns { display: flex; gap: 0.5rem; }
+    .logo-btn, .logo-remove { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; cursor: pointer; border-radius: 9px; padding: 8px 14px; border: 1px solid var(--color-border); background: var(--color-bg-soft); color: var(--color-text); transition: border-color 0.25s, color 0.25s; }
+    .logo-btn { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); }
+    .logo-remove:hover { border-color: var(--color-danger); color: var(--color-danger); }
+
+    /* Preview del portal de cliente */
+    .brand-preview { margin-top: 0.6rem; }
+    .brand-pv-label { display: block; font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; margin-bottom: 0.7rem; }
+    .brand-card { border: 1px solid var(--color-border); border-radius: 16px; overflow: hidden; max-width: 380px; box-shadow: 0 24px 50px -30px rgba(10,25,47,0.35); }
+    .brand-head { display: flex; align-items: center; gap: 10px; padding: 16px 18px; background: var(--color-blue-deep); }
+    .brand-logo { max-height: 26px; max-width: 90px; object-fit: contain; }
+    .brand-mark { width: 28px; height: 28px; border-radius: 7px; background: rgba(255,255,255,0.16); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.78rem; }
+    .brand-name { color: #fff; font-weight: 600; font-size: 0.9rem; }
+    .brand-body { padding: 18px; background: #fff; }
+    .brand-bien { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.5; margin: 0 0 14px; }
+    .brand-line { height: 9px; border-radius: 5px; background: var(--color-bg-soft); border: 1px solid var(--color-border); margin-bottom: 8px; }
+    .brand-line.short { width: 55%; }
+    .brand-cta { margin-top: 14px; width: 100%; font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 10px; cursor: default; }
+</style>
+
+<script>
+    function initBranding() {
+        const el = (id: string) => document.getElementById(id) as HTMLInputElement;
+        const oLogo = el('oLogo'), logoFile = el('logoFile'), logoImg = el('logoImg') as unknown as HTMLImageElement, logoFallback = el('logoFallback');
+        const pvLogo = document.getElementById('pvLogo') as HTMLImageElement | null;
+        const pvMark = document.getElementById('pvMark');
+        const head = document.getElementById('pvHead');
+        const cta = document.getElementById('pvCta');
+        const bien = document.getElementById('pvBien');
+        const colP = el('oColor'), colPick = el('oColorPick');
+        const secP = el('oColorSec'), secPick = el('oColorSecPick');
+        const bienIn = el('oPortalBien');
+        if (!oLogo) return;
+
+        const render = () => {
+            const main = /^#[0-9a-fA-F]{6}$/.test(colP.value) ? colP.value : '#0a192f';
+            const sec = /^#[0-9a-fA-F]{6}$/.test(secP.value) ? secP.value : main;
+            if (head) head.style.background = `linear-gradient(135deg, ${sec}, ${main})`;
+            if (cta) cta.style.background = main;
+        };
+
+        // Color principal ↔ picker (el script genérico del shell ya sincroniza oColor/oColorPick)
+        colP.addEventListener('input', render);
+        colPick.addEventListener('input', () => { colP.value = colPick.value; render(); });
+        // Color secundario
+        secPick.addEventListener('input', () => { secP.value = secPick.value; render(); });
+        secP.addEventListener('input', () => { if (/^#[0-9a-fA-F]{6}$/.test(secP.value)) secPick.value = secP.value; render(); });
+        // Mensaje
+        bienIn.addEventListener('input', () => { if (bien) bien.textContent = bienIn.value || 'Tu mensaje de bienvenida aparecerá aquí.'; });
+
+        // Logo
+        logoFile.addEventListener('change', () => {
+            const f = logoFile.files?.[0];
+            if (!f) return;
+            if (f.size > 1_000_000) { alert('El logo pesa más de 1 MB. Usa una imagen más ligera.'); logoFile.value = ''; return; }
+            const reader = new FileReader();
+            reader.onload = () => {
+                const url = String(reader.result);
+                oLogo.value = url;
+                logoImg.src = url; logoImg.style.display = ''; if (logoFallback) logoFallback.style.display = 'none';
+                if (pvLogo) { pvLogo.src = url; pvLogo.style.display = ''; } if (pvMark) pvMark.style.display = 'none';
+            };
+            reader.readAsDataURL(f);
+        });
+        document.getElementById('logoRemove')!.addEventListener('click', () => {
+            oLogo.value = ''; logoImg.removeAttribute('src'); logoImg.style.display = 'none'; if (logoFallback) logoFallback.style.display = '';
+            if (pvLogo) { pvLogo.removeAttribute('src'); pvLogo.style.display = 'none'; } if (pvMark) pvMark.style.display = '';
+            logoFile.value = '';
+        });
+
+        render();
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initBranding);
+    else initBranding();
+</script>

@@ -1,0 +1,306 @@
+---
+// OnboardingWidget — guía de configuración interactiva (Fase 3).
+//
+// • Tarjeta FLOTANTE tipo acordeón, fijada abajo-derecha (estado por defecto).
+// • Estado MINIMIZADO → píldora anidada en la topbar (#onbPill, vive en AppLayout)
+//   con anillo de progreso SVG radial.
+// • Los pasos se AUTO-MARCAN como completados al detectar cambios en la BD
+//   (polling a /api/onboarding/progress + refresco al volver a la pestaña).
+// • Estado GLOBAL persistente entre páginas: como Astro no usa React, el
+//   equivalente de Zustand/Context es un store vanilla en `window.__tratoOnb`
+//   respaldado por localStorage + un CustomEvent para sincronizar la UI.
+//
+// El server resuelve el avance inicial (getSetupProgress) y lo pasa por props;
+// el script lo refresca en vivo. Si la cuenta ya está 100% configurada, AppLayout
+// no monta este componente.
+
+import type { getSetupProgress } from '../../lib/queries';
+
+interface Props {
+    progress: Awaited<ReturnType<typeof getSetupProgress>>;
+}
+const { progress } = Astro.props;
+
+// Primer paso pendiente abierto por defecto (acordeón).
+const firstOpen = progress.tasks.find((t) => !t.done)?.id ?? '';
+const dash = (pct: number) => `${(pct * 0.9739).toFixed(2)} 100`;
+---
+
+<aside class="onb" id="onbCard" aria-label="Guía de configuración">
+    <div class="onb-card">
+        <header class="onb-head">
+            <span class="onb-ring" data-ring aria-hidden="true">
+                <svg viewBox="0 0 36 36">
+                    <circle class="onb-ring-bg" cx="18" cy="18" r="15.5"></circle>
+                    <circle class="onb-ring-fg" cx="18" cy="18" r="15.5" style={`stroke-dasharray:${dash(progress.pct)}`}></circle>
+                </svg>
+                <b class="editorial" data-pct>{progress.pct}%</b>
+            </span>
+            <div class="onb-titles">
+                <strong>Configura Trato</strong>
+                <span data-count>{progress.doneN} de {progress.total} pasos listos</span>
+            </div>
+            <button class="onb-min" id="onbMin" type="button" aria-label="Minimizar a la barra">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+        </header>
+
+        <div class="onb-steps" id="onbSteps">
+            {progress.tasks.map((t) => (
+                <div class="onb-step" data-id={t.id} data-done={t.done ? 'true' : 'false'} data-open={t.id === firstOpen ? 'true' : 'false'}>
+                    <button class="onb-step-head" type="button" data-toggle>
+                        <span class="onb-check" aria-hidden="true">
+                            <svg class="onb-check-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        <span class="onb-step-title">{t.label}</span>
+                        <svg class="onb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="onb-step-body">
+                        <div class="onb-step-inner">
+                            <p>{t.desc}</p>
+                            <a href={t.href} class="onb-step-cta">Configurar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></a>
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+
+        <div class="onb-done" id="onbDone" hidden>
+            <span class="onb-done-burst" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            <strong>¡Todo listo!</strong>
+            <p>Tu cuenta está configurada. A vender.</p>
+        </div>
+    </div>
+</aside>
+
+<script is:inline define:vars={{ initial: progress }}>
+    (() => {
+        const LS_KEY = 'trato.onb.v1';
+
+        // ── Store global (equivalente vanilla de Zustand/Context) ──
+        // Estado compartido por toda la app, persistido en localStorage para que
+        // sobreviva a la navegación SSR (cada página es una recarga completa).
+        const store = (window.__tratoOnb = window.__tratoOnb || (() => {
+            let saved = {};
+            try { saved = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch {}
+            const state = { view: saved.view === 'pill' ? 'pill' : 'card', dismissed: !!saved.dismissed };
+            const subs = new Set();
+            const persist = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch {} };
+            return {
+                get: () => state,
+                set(patch) { Object.assign(state, patch); persist(); subs.forEach((fn) => fn(state)); },
+                subscribe(fn) { subs.add(fn); return () => subs.delete(fn); },
+            };
+        })());
+
+        const card = document.getElementById('onbCard');
+        const pill = document.getElementById('onbPill');   // vive en la topbar (AppLayout)
+        if (!card) return;
+
+        // ?guia=1 → forzar que se vuelva a mostrar (resetea minimizado/descartado).
+        if (new URLSearchParams(location.search).has('guia')) store.set({ view: 'card', dismissed: false });
+
+        // ── Render según el store ──
+        function applyView(s) {
+            if (s.dismissed) { card.classList.remove('show'); pill && (pill.hidden = true); return; }
+            const asPill = s.view === 'pill';
+            card.classList.toggle('show', !asPill);
+            if (pill) pill.hidden = !asPill;
+        }
+        store.subscribe(applyView);
+        // Pequeño delay para la animación de entrada de la tarjeta.
+        requestAnimationFrame(() => applyView(store.get()));
+
+        // ── Controles de vista ──
+        document.getElementById('onbMin')?.addEventListener('click', () => store.set({ view: 'pill' }));
+        pill?.addEventListener('click', () => store.set({ view: 'card' }));
+
+        // ── Acordeón (uno abierto a la vez) ──
+        card.querySelectorAll('[data-toggle]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const step = btn.closest('.onb-step');
+                const open = step.getAttribute('data-open') === 'true';
+                card.querySelectorAll('.onb-step').forEach((s) => s.setAttribute('data-open', 'false'));
+                step.setAttribute('data-open', open ? 'false' : 'true');
+            });
+        });
+
+        // ── Anillo de progreso (tarjeta + píldora) ──
+        const dash = (pct) => `${(pct * 0.9739).toFixed(2)} 100`;
+        function paintProgress(p) {
+            const cardFg = card.querySelector('.onb-ring-fg');
+            if (cardFg) cardFg.style.strokeDasharray = dash(p.pct);
+            const cardPct = card.querySelector('[data-pct]');
+            if (cardPct) cardPct.textContent = p.pct + '%';
+            const cardCount = card.querySelector('[data-count]');
+            if (cardCount) cardCount.textContent = `${p.doneN} de ${p.total} pasos listos`;
+            if (pill) {
+                const pFg = pill.querySelector('.onb-ring-fg');
+                if (pFg) pFg.style.strokeDasharray = dash(p.pct);
+                const pPct = pill.querySelector('[data-pill-pct]');
+                if (pPct) pPct.textContent = p.pct + '%';
+            }
+        }
+
+        // ── Aplica un avance (marca pasos done con animación) ──
+        let done = false;
+        function applyProgress(p) {
+            if (!p || !Array.isArray(p.tasks)) return;
+            p.tasks.forEach((t) => {
+                const el = card.querySelector(`.onb-step[data-id="${t.id}"]`);
+                if (!el) return;
+                const was = el.getAttribute('data-done') === 'true';
+                if (t.done && !was) {
+                    el.setAttribute('data-done', 'true');
+                    el.setAttribute('data-open', 'false');
+                    el.classList.add('just-done');
+                    setTimeout(() => el.classList.remove('just-done'), 900);
+                } else if (!t.done && was) {
+                    el.setAttribute('data-done', 'false');
+                }
+            });
+            paintProgress(p);
+            if (p.complete && !done) {
+                done = true;
+                celebrate();
+            }
+        }
+
+        // ── Celebración + auto-descartar al completar ──
+        function celebrate() {
+            const steps = document.getElementById('onbSteps');
+            const doneCard = document.getElementById('onbDone');
+            // Si está minimizado, lo abrimos un momento para mostrar el cierre.
+            if (store.get().view === 'pill') store.set({ view: 'card' });
+            if (steps) steps.style.display = 'none';
+            if (doneCard) doneCard.hidden = false;
+            setTimeout(() => store.set({ dismissed: true }), 2800);
+        }
+
+        // ── Detección de cambios en la BD ──
+        // Polling ligero + refresco al volver a la pestaña: si el usuario crea un
+        // producto, sube su logo, etc. (aquí o en otra pestaña), el paso se marca
+        // solo sin recargar.
+        let busy = false;
+        async function refresh() {
+            if (busy || done) return;
+            busy = true;
+            try {
+                const res = await fetch('/api/onboarding/progress', { headers: { 'Accept': 'application/json' } });
+                if (res.ok) applyProgress(await res.json());
+            } catch {} finally { busy = false; }
+        }
+        applyProgress(initial);
+        const timer = setInterval(refresh, 15000);
+        window.addEventListener('beforeunload', () => clearInterval(timer));
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+        window.addEventListener('focus', refresh);
+    })();
+</script>
+
+<style>
+    /* ════════ Tarjeta flotante (acordeón) ════════ */
+    .onb {
+        position: fixed; right: 24px; bottom: 24px; z-index: 120;
+        width: 340px; max-width: calc(100vw - 32px);
+        opacity: 0; transform: translateY(16px) scale(0.98);
+        pointer-events: none;
+        transition: opacity 0.4s var(--ease-spring), transform 0.4s var(--ease-spring);
+    }
+    .onb.show { opacity: 1; transform: none; pointer-events: auto; }
+
+    .onb-card {
+        background: #fff; border: 1px solid var(--color-border); border-radius: 18px;
+        box-shadow: 0 30px 70px -28px rgba(10,25,47,0.5), 0 4px 14px -8px rgba(10,25,47,0.25);
+        overflow: hidden;
+    }
+
+    .onb-head {
+        display: flex; align-items: center; gap: 12px;
+        padding: 16px 16px 14px;
+        background: linear-gradient(180deg, #0c1d37 0%, #0a192f 100%);
+        color: #fff;
+    }
+    .onb-ring { position: relative; width: 44px; height: 44px; flex-shrink: 0; }
+    .onb-ring svg { width: 44px; height: 44px; transform: rotate(-90deg); }
+    .onb-ring-bg { fill: none; stroke: rgba(255,255,255,0.16); stroke-width: 3; }
+    .onb-ring-fg { fill: none; stroke: var(--color-ok); stroke-width: 3; stroke-linecap: round; transition: stroke-dasharray 0.7s var(--ease-spring); }
+    .onb-ring b { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; }
+    .onb-titles { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .onb-titles strong { font-size: 0.92rem; font-weight: 700; letter-spacing: -0.2px; }
+    .onb-titles span { font-size: 0.72rem; color: rgba(255,255,255,0.6); }
+    .onb-min {
+        flex-shrink: 0; width: 30px; height: 30px; border-radius: 8px;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(255,255,255,0.08); border: none; cursor: pointer; color: rgba(255,255,255,0.7);
+        transition: background 0.2s, color 0.2s;
+    }
+    .onb-min svg { width: 16px; height: 16px; }
+    .onb-min:hover { background: rgba(255,255,255,0.16); color: #fff; }
+
+    /* ── Pasos (acordeón) ── */
+    .onb-steps { padding: 6px 8px 8px; max-height: min(56vh, 420px); overflow-y: auto; }
+    .onb-step { border-radius: 11px; transition: background 0.25s var(--ease-ios); }
+    .onb-step[data-open="true"] { background: var(--color-bg-soft); }
+    .onb-step.just-done { animation: onb-flash 0.9s var(--ease-ios); }
+    @keyframes onb-flash { 0%, 100% { background: var(--color-bg-soft); } 30% { background: rgba(16,185,129,0.14); } }
+
+    .onb-step-head {
+        display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
+        padding: 11px 10px; border: none; background: none; cursor: pointer;
+        font-family: var(--font-sans); color: var(--color-text);
+    }
+    .onb-check {
+        width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: #fff; border: 1.5px solid var(--color-border); color: #fff;
+        transition: background 0.3s var(--ease-spring), border-color 0.3s var(--ease-spring);
+    }
+    .onb-check-tick { width: 12px; height: 12px; opacity: 0; transform: scale(0.5); transition: opacity 0.3s, transform 0.3s var(--ease-spring); }
+    .onb-step[data-done="true"] .onb-check { background: var(--color-ok); border-color: var(--color-ok); }
+    .onb-step[data-done="true"] .onb-check-tick { opacity: 1; transform: scale(1); }
+    .onb-step-title { flex: 1; min-width: 0; font-size: 0.86rem; font-weight: 600; }
+    .onb-step[data-done="true"] .onb-step-title { color: var(--color-text-muted); text-decoration: line-through; text-decoration-color: rgba(91,100,114,0.4); }
+    .onb-chev { width: 15px; height: 15px; color: #b3bac4; flex-shrink: 0; transition: transform 0.3s var(--ease-spring); }
+    .onb-step[data-open="true"] .onb-chev { transform: rotate(180deg); }
+    .onb-step[data-done="true"] .onb-chev { display: none; }
+
+    /* Cuerpo expandible (grid 0fr→1fr, sin medir alturas) */
+    .onb-step-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.32s var(--ease-spring); }
+    .onb-step[data-open="true"] .onb-step-body { grid-template-rows: 1fr; }
+    .onb-step-inner { overflow: hidden; padding: 0 10px 2px 43px; }
+    .onb-step[data-open="true"] .onb-step-inner { padding-bottom: 12px; }
+    .onb-step-body p { font-size: 0.78rem; line-height: 1.5; color: var(--color-text-muted); margin: 0 0 10px; }
+    .onb-step-cta {
+        display: inline-flex; align-items: center; gap: 5px;
+        font-size: 0.78rem; font-weight: 600; color: #fff; text-decoration: none;
+        background: var(--color-blue-deep); padding: 7px 13px; border-radius: 8px;
+        transition: transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-spring);
+    }
+    .onb-step-cta svg { width: 13px; height: 13px; }
+    .onb-step-cta:hover { transform: translateY(-1px); box-shadow: 0 7px 18px -8px rgba(10,25,47,0.5); }
+
+    /* ── Estado completado ── */
+    .onb-done { padding: 2rem 1.4rem 2.2rem; text-align: center; }
+    .onb-done-burst {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 52px; height: 52px; border-radius: 50%; margin-bottom: 12px;
+        background: rgba(16,185,129,0.12); color: var(--color-ok);
+        animation: onb-pop 0.5s var(--ease-spring);
+    }
+    .onb-done-burst svg { width: 26px; height: 26px; }
+    @keyframes onb-pop { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .onb-done strong { display: block; font-size: 1rem; font-weight: 700; }
+    .onb-done p { font-size: 0.82rem; color: var(--color-text-muted); margin: 4px 0 0; }
+
+    @media (max-width: 880px) {
+        /* Sobre la tab bar inferior móvil */
+        .onb { right: 12px; bottom: calc(64px + env(safe-area-inset-bottom)); width: calc(100vw - 24px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .onb, .onb-step-body, .onb-ring-fg, .onb-check, .onb-check-tick, .onb-chev { transition: none; }
+        .onb.show { opacity: 1; transform: none; }
+    }
+</style>

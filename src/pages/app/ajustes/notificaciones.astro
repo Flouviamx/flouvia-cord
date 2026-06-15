@@ -1,0 +1,127 @@
+---
+// Ajustes › Notificaciones — matriz evento → canal (correo / Slack / WhatsApp).
+// Guarda en orgs.notif_prefs (jsonb) vía /api/org/prefs. No usa el guardado
+// genérico del shell (por eso NO pasa `save`): tiene su propia barra.
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getOrg } from '../../../lib/queries';
+const ORG = await getOrg();
+const P = ORG.notifPrefs || {};
+
+const EVENTOS = [
+    { id: 'quote_viewed',    label: 'Tu cliente vio la cotización', desc: 'Cuando alguien abre el link público.' },
+    { id: 'quote_approved',  label: 'Cotización aprobada',          desc: 'El cliente aceptó la propuesta.' },
+    { id: 'quote_rejected',  label: 'Cotización rechazada',         desc: 'El cliente rechazó o contraofertó.' },
+    { id: 'quote_paid',      label: 'Pago recibido',                desc: 'Se registró el pago en línea.' },
+    { id: 'quote_expiring',  label: 'Cotización por vencer',        desc: '3 días antes de la fecha de vigencia.' },
+    { id: 'payment_overdue', label: 'Pago vencido',                 desc: 'Una cuenta por cobrar pasó su fecha.' },
+    { id: 'team_join',       label: 'Alguien se unió al equipo',    desc: 'Un invitado aceptó la invitación.' },
+];
+const CANALES = [
+    { id: 'email',    label: 'Correo' },
+    { id: 'slack',    label: 'Slack' },
+    { id: 'whatsapp', label: 'WhatsApp' },
+];
+const on = (ev: string, c: string) => !!(P[ev] && P[ev][c]);
+---
+
+<SettingsShell title="Notificaciones — Ajustes" tab="notificaciones"
+    intro="Decide qué eventos te avisan y por dónde. El correo usa tu cuenta de contacto; Slack y WhatsApp requieren conectar el canal abajo.">
+
+    <div class="s-block">
+        <h3>Eventos</h3>
+        <div class="notif-grid" data-notif>
+            <div class="notif-row notif-head">
+                <span></span>
+                {CANALES.map((c) => <span class="notif-ch">{c.label}</span>)}
+            </div>
+            {EVENTOS.map((ev) => (
+                <div class="notif-row" data-ev={ev.id}>
+                    <span class="notif-ev">
+                        <span class="notif-ev-label">{ev.label}</span>
+                        <span class="notif-ev-desc">{ev.desc}</span>
+                    </span>
+                    {CANALES.map((c) => (
+                        <label class="notif-cell">
+                            <input type="checkbox" data-canal={c.id} checked={on(ev.id, c.id)} />
+                            <span class="notif-box"></span>
+                        </label>
+                    ))}
+                </div>
+            ))}
+        </div>
+    </div>
+
+    <div class="s-block">
+        <h3>Canal de Slack</h3>
+        <div class="s-body">
+            <div class="s-field">
+                <label for="oSlack">Webhook entrante de Slack</label>
+                <input class="s-input" id="oSlack" value={ORG.slackWebhook} placeholder="https://hooks.slack.com/services/T000/B000/XXXX" />
+                <span class="s-hint">Crea un <b>Incoming Webhook</b> en tu workspace y pega la URL. Los eventos marcados con Slack se publicarán ahí.</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="s-save-row">
+        <button class="s-save" id="nBtn">Guardar cambios</button>
+        <span class="s-saved" id="nMsg">✓ Cambios guardados</span>
+    </div>
+</SettingsShell>
+
+<style>
+    .notif-grid { display: flex; flex-direction: column; }
+    .notif-row { display: grid; grid-template-columns: 1fr 72px 72px 72px; align-items: center; gap: 0.5rem; padding: 0.85rem 0.3rem; border-bottom: 1px solid var(--color-border); }
+    .notif-head { padding-top: 0; padding-bottom: 0.6rem; }
+    .notif-ch { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: #99a2af; text-align: center; }
+    .notif-ev { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .notif-ev-label { font-size: 0.86rem; font-weight: 600; color: var(--color-text); }
+    .notif-ev-desc { font-size: 0.72rem; color: var(--color-text-muted); line-height: 1.4; }
+    .notif-cell { display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .notif-cell input { position: absolute; opacity: 0; pointer-events: none; }
+    .notif-box { width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid var(--color-border); background: var(--color-bg-soft); position: relative; transition: background 0.2s, border-color 0.2s; }
+    .notif-box::after { content: ''; position: absolute; left: 6px; top: 2px; width: 5px; height: 10px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg) scale(0); transition: transform 0.2s var(--ease-spring); }
+    .notif-cell input:checked + .notif-box { background: var(--color-ok); border-color: var(--color-ok); }
+    .notif-cell input:checked + .notif-box::after { transform: rotate(45deg) scale(1); }
+
+    @media (max-width: 560px) {
+        .notif-row { grid-template-columns: 1fr 48px 48px 48px; }
+    }
+</style>
+
+<script>
+    function initNotif() {
+        const btn = document.getElementById('nBtn') as HTMLButtonElement | null;
+        const msg = document.getElementById('nMsg');
+        const grid = document.querySelector('[data-notif]');
+        const slack = document.getElementById('oSlack') as HTMLInputElement | null;
+        if (!btn || !msg || !grid) return;
+
+        btn.addEventListener('click', async () => {
+            const notif_prefs: Record<string, Record<string, boolean>> = {};
+            grid.querySelectorAll('.notif-row[data-ev]').forEach((row) => {
+                const ev = (row as HTMLElement).dataset.ev!;
+                const canales: Record<string, boolean> = {};
+                row.querySelectorAll('input[data-canal]').forEach((node) => {
+                    const i = node as HTMLInputElement;
+                    canales[i.dataset.canal!] = i.checked;
+                });
+                notif_prefs[ev] = canales;
+            });
+            btn.disabled = true; msg.className = 's-saved';
+            try {
+                const res = await fetch('/api/org/prefs', {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ notif_prefs, slack_webhook_url: slack?.value ?? '' }),
+                });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || 'No se pudo guardar');
+                msg.textContent = '✓ Cambios guardados'; msg.className = 's-saved show';
+                setTimeout(() => msg.classList.remove('show'), 2600);
+            } catch (err: any) {
+                msg.textContent = err.message || 'No se pudo guardar'; msg.className = 's-saved show error';
+            } finally { btn.disabled = false; }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initNotif);
+    else initNotif();
+</script>

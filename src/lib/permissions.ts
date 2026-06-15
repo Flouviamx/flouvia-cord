@@ -50,3 +50,8 @@ export const ROL_LABEL: Record<string, string> = {
 // código del tier más alto actual ('pro') y futuros 'business'/'negocio'.
 export const TEAM_PLANS = ['pro', 'business', 'negocio'];
 export const planTieneEquipo = (plan: string) => TEAM_PLANS.includes(plan);
+
+// Planes que incluyen la API pública + webhooks (mismo gating que Equipo: el
+// tier alto). La API es feature de plan Negocio.
+export const API_PLANS = ['pro', 'business', 'negocio'];
+export const planTieneApi = (plan: string) => API_PLANS.includes(plan);

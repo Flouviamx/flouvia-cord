@@ -3,9 +3,15 @@
 // La app usa CSS animations (NO GSAP) para entradas — regla del proyecto.
 // Datos reales desde Neon; la org se resuelve desde la sesión de Clerk (src/lib/db.ts).
 
-import { getOrg } from '../lib/queries';
+import { getOrg, getSetupProgress } from '../lib/queries';
 import { SignOutButton } from '@clerk/astro/components';
+import OnboardingWidget from '../components/app/OnboardingWidget.astro';
 const ORG = await getOrg();
+
+// Avance de configuración (Fase 3). Si la cuenta ya está 100% lista no montamos
+// el widget de onboarding ni la píldora de la topbar.
+const setup = await getSetupProgress();
+const pillDash = `${(setup.pct * 0.9739).toFixed(2)} 100`;
 
 interface Props {
     title: string;        // título del documento
@@ -85,6 +91,18 @@ const NAV = [
                     </button>
 
                     <div class="tb-right">
+                        {!setup.complete && (
+                            <button class="onb-pill" id="onbPill" type="button" hidden aria-label="Abrir guía de configuración">
+                                <span class="onb-pill-ring" aria-hidden="true">
+                                    <svg viewBox="0 0 36 36">
+                                        <circle class="onb-ring-bg" cx="18" cy="18" r="15.5"></circle>
+                                        <circle class="onb-ring-fg" cx="18" cy="18" r="15.5" style={`stroke-dasharray:${pillDash}`}></circle>
+                                    </svg>
+                                    <b data-pill-pct>{setup.pct}%</b>
+                                </span>
+                                <span class="onb-pill-label">Guía de configuración</span>
+                            </button>
+                        )}
                         <a class="tb-icon tb-activity" href="/app" title="Actividad" aria-label="Actividad">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                         </a>
@@ -128,6 +146,9 @@ const NAV = [
                 </div>
             </div>
         </div>
+
+        <!-- ── GUÍA DE CONFIGURACIÓN (widget flotante + píldora en topbar) ── -->
+        {!setup.complete && <OnboardingWidget progress={setup} />}
     </body>
 </html>
 
@@ -308,6 +329,25 @@ const NAV = [
     /* El engrane queda marcado cuando estás en cualquier página de Ajustes */
     .tb-icon.active { background: var(--color-blue-deep); color: #fff; }
 
+    /* ── Píldora de la guía de configuración (estado minimizado del widget) ── */
+    .onb-pill {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 5px 12px 5px 6px; border-radius: 100px;
+        background: var(--color-bg-soft); border: 1px solid var(--color-border);
+        color: var(--color-text); cursor: pointer; font-family: var(--font-sans);
+        animation: onb-pill-in 0.4s var(--ease-spring);
+        transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s var(--ease-spring);
+    }
+    .onb-pill[hidden] { display: none; }
+    .onb-pill:hover { border-color: rgba(10,25,47,0.2); transform: translateY(-1px); box-shadow: 0 6px 16px -10px rgba(10,25,47,0.5); }
+    @keyframes onb-pill-in { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: none; } }
+    .onb-pill-ring { position: relative; width: 26px; height: 26px; flex-shrink: 0; }
+    .onb-pill-ring svg { width: 26px; height: 26px; transform: rotate(-90deg); }
+    .onb-pill-ring .onb-ring-bg { fill: none; stroke: var(--color-border); stroke-width: 3.5; }
+    .onb-pill-ring .onb-ring-fg { fill: none; stroke: var(--color-ok); stroke-width: 3.5; stroke-linecap: round; transition: stroke-dasharray 0.7s var(--ease-spring); }
+    .onb-pill-ring b { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.5rem; font-weight: 800; letter-spacing: -0.02em; }
+    .onb-pill-label { font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+
     /* Hamburguesa + backdrop del drawer (solo móvil) */
     .tb-burger { display: none; align-items: center; justify-content: center; width: 38px; height: 38px; margin-left: -6px; border: none; background: none; color: var(--color-text); border-radius: 9px; cursor: pointer; }
     .tb-burger svg { width: 20px; height: 20px; }
@@ -393,6 +433,8 @@ const NAV = [
            (ya no está en la tab bar inferior). */
         .tb-activity { display: none; }
         .tb-gear { display: inline-flex; }
+        .onb-pill-label { display: none; }
+        .onb-pill { padding: 5px 6px; }
         .mobile-tabs {
             display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
             background: rgba(10,25,47,0.97);

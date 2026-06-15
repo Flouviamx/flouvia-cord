@@ -1,14 +1,27 @@
 ---
-// Ajustes › Marca y contacto
+// Ajustes › General — identidad del negocio, contacto, presencia y localización.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
 const ORG = await getOrg();
+
+const MONEDAS = [
+    { v: 'MXN', l: 'Peso mexicano (MXN)' },
+    { v: 'USD', l: 'Dólar estadounidense (USD)' },
+    { v: 'EUR', l: 'Euro (EUR)' },
+];
+const ZONAS = [
+    { v: 'America/Mexico_City', l: 'Centro — Ciudad de México (GMT-6)' },
+    { v: 'America/Tijuana',     l: 'Pacífico — Tijuana (GMT-8)' },
+    { v: 'America/Cancun',      l: 'Sureste — Cancún (GMT-5)' },
+    { v: 'America/Hermosillo',  l: 'Pacífico — Hermosillo (GMT-7)' },
+];
 ---
 
-<SettingsShell title="Marca y contacto — Ajustes" tab="marca"
-    intro="Tu nombre y color aparecen en el link público y en el PDF de cada cotización. El contacto se imprime en el documento." save>
+<SettingsShell title="General — Ajustes" tab="general"
+    intro="Lo esencial de tu negocio: cómo te llamas, cómo te contactan y en qué moneda operas. Estos datos viajan al link público y al PDF de cada cotización." save>
+
     <div class="s-block">
-        <h3>Identidad</h3>
+        <h3>Identidad del negocio</h3>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
@@ -16,11 +29,11 @@ const ORG = await getOrg();
                     <input class="s-input" id="oNombre" data-field="nombre" value={ORG.nombre} />
                 </div>
                 <div class="s-field">
-                    <label for="oColor">Color de marca</label>
-                    <div class="color-row">
-                        <input type="color" id="oColorPick" value={ORG.colorMarca} aria-label="Elegir color" />
-                        <input class="s-input" id="oColor" data-field="color_marca" value={ORG.colorMarca} maxlength="7" />
-                    </div>
+                    <label for="oMoneda">Moneda base</label>
+                    <select class="s-input" id="oMoneda" data-field="moneda">
+                        {MONEDAS.map((m) => <option value={m.v} selected={ORG.moneda === m.v}>{m.l}</option>)}
+                    </select>
+                    <span class="s-hint">Moneda en la que cotizas. Cambiarla no convierte montos existentes.</span>
                 </div>
             </div>
         </div>
@@ -58,6 +71,28 @@ const ORG = await getOrg();
                     <label for="oWa">WhatsApp</label>
                     <input class="s-input" id="oWa" data-field="whatsapp" value={ORG.whatsapp} placeholder="5215512345678" />
                     <span class="s-hint">Con lada país (52). Se usa en el botón "Enviar por WhatsApp".</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="s-block">
+        <h3>Localización</h3>
+        <div class="s-body">
+            <div class="s-row">
+                <div class="s-field">
+                    <label for="oZona">Zona horaria</label>
+                    <select class="s-input" id="oZona" data-field="zona_horaria">
+                        {ZONAS.map((z) => <option value={z.v} selected={ORG.zonaHoraria === z.v}>{z.l}</option>)}
+                    </select>
+                    <span class="s-hint">Para fechas de vencimiento y horarios de eventos.</span>
+                </div>
+                <div class="s-field">
+                    <label for="oIdioma">Idioma</label>
+                    <select class="s-input" id="oIdioma" data-field="idioma">
+                        <option value="es-MX" selected={ORG.idioma === 'es-MX'}>Español (México)</option>
+                        <option value="en-US" disabled>English (próximamente)</option>
+                    </select>
                 </div>
             </div>
         </div>

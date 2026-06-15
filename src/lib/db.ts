@@ -7,7 +7,7 @@
 // usar sql.query('... $1 ...', [params]).
 
 import { neon } from '@neondatabase/serverless';
-import { currentUserId } from './context';
+import { currentUserId, currentOrgIdOverride } from './context';
 
 const url = import.meta.env.DATABASE_URL || process.env.DATABASE_URL;
 
@@ -45,6 +45,11 @@ async function ensureOwnerMember(orgId: string, userId: string): Promise<void> {
 }
 
 export async function getActiveOrgId(): Promise<string> {
+    // 0) Carril máquina-a-máquina: si la request entró por API key, el middleware
+    //    de la ruta /api/v1 ya resolvió y guardó el org_id. Es la verdad absoluta.
+    const orgOverride = currentOrgIdOverride();
+    if (orgOverride) return orgOverride;
+
     const userId = currentUserId();
     if (!userId) return demoOrgId(); // sin sesión (cron, etc.) → org demo
 

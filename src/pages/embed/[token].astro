@@ -1,0 +1,92 @@
+---
+// TRATO Elements — el cotizador embebido en el sitio de un tercero vía <iframe>.
+// Reutiliza el MISMO QuoteCard que /q/[token]; la diferencia es el chrome mínimo
+// (EmbedLayout, fondo transparente) y dos piezas propias del embed:
+//   1) SEGURIDAD: header CSP `frame-ancestors` con la allowlist de la org
+//      (orgs.embed_domains) → anti-clickjacking. Vacío = framing abierto (demo).
+//   2) PUENTE con la página anfitriona: ResizeObserver → postMessage('trato:resize')
+//      para auto-altura, y relay de los CustomEvents del QuoteCard al window padre.
+export const prerender = false;
+
+import EmbedLayout from '../../layouts/EmbedLayout.astro';
+import QuoteCard from '../../components/q/QuoteCard.astro';
+import { getCotizacionByToken, markViewed } from '../../lib/queries';
+
+const { token } = Astro.params;
+const result = await getCotizacionByToken(token ?? '');
+
+if (!result) {
+    return new Response('Cotización no encontrada', { status: 404 });
+}
+
+const { quote: q, org: ORG, conversacion } = result;
+
+// Registra la apertura del cliente (igual que /q).
+await markViewed(token ?? '');
+
+// ── CSP: ¿quién puede embeber esta cotización? ──
+// Lista separada por comas / saltos de línea en orgs.embed_domains. Cada entrada
+// es un host-source de CSP ("cliente.com", "https://app.cliente.com", "*.cliente.com").
+const dominios = (ORG.embedDomains || '')
+    .split(/[\s,]+/)
+    .map((d: string) => d.trim())
+    .filter(Boolean);
+const frameAncestors = dominios.length
+    ? `frame-ancestors 'self' ${dominios.join(' ')}`
+    : `frame-ancestors *`; // sin allowlist → abierto (modo demo / "Powered by Trato")
+Astro.response.headers.set('Content-Security-Policy', frameAncestors);
+
+const yaAprobada = ['approved', 'paid', 'invoiced'].includes(q.status);
+const yaRechazada = q.status === 'rejected';
+const pagoActivo = !!(import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY);
+const puedePagar = pagoActivo && ['approved', 'invoiced'].includes(q.status);
+---
+
+<EmbedLayout title={`Cotización ${q.folio}`}>
+    <div class="embed-wrap">
+        <QuoteCard
+            quote={q}
+            org={ORG}
+            conversacion={conversacion}
+            yaAprobada={yaAprobada}
+            yaRechazada={yaRechazada}
+            puedePagar={puedePagar}
+        />
+    </div>
+</EmbedLayout>
+
+<script>
+    // ── Puente iframe ↔ sitio anfitrión ──
+    const post = (type: string, payload: Record<string, unknown> = {}) => {
+        try { window.parent.postMessage({ source: 'trato', type, ...payload }, '*'); } catch {}
+    };
+
+    // 1) Auto-altura: mide el contenido y avisa al padre en cada cambio de tamaño.
+    const reportHeight = () => post('trato:resize', { height: document.body.scrollHeight });
+    if ('ResizeObserver' in window) {
+        new ResizeObserver(reportHeight).observe(document.body);
+    } else {
+        window.addEventListener('resize', reportHeight);
+    }
+    window.addEventListener('load', reportHeight);
+    reportHeight();
+    post('trato:ready');
+
+    // 2) Relay: cada evento del QuoteCard → postMessage al padre.
+    for (const name of ['trato:approved', 'trato:rejected', 'trato:message', 'trato:pay'] as const) {
+        window.addEventListener(name, (e) => {
+            post(name, { detail: (e as CustomEvent).detail });
+            // tras aprobar/rechazar la altura cambia (aparece el estado final)
+            setTimeout(reportHeight, 50);
+        });
+    }
+</script>
+
+<style>
+    /* En el embed la tarjeta llena el ancho del iframe; el host controla el tamaño. */
+    .embed-wrap { padding: 4px; }
+    .embed-wrap :global(.q-card) {
+        max-width: none;
+        box-shadow: 0 1px 3px rgba(10, 25, 47, 0.06);
+    }
+</style>

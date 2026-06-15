@@ -74,6 +74,33 @@ export const PATCH: APIRoute = async ({ request }) => {
     const cpFiscal = body.cp_fiscal !== undefined ? (String(body.cp_fiscal) === '' ? null : String(body.cp_fiscal).replace(/\D/g, '').slice(0, 5) || null) : actual.cp_fiscal;
     const serieFolio = body.serie_folio !== undefined ? (String(body.serie_folio) === '' ? null : String(body.serie_folio).trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6) || null) : actual.serie_folio;
 
+    // ── Centro de mando Enterprise (jun 2026) ──
+    const MONEDAS = new Set(['MXN', 'USD', 'EUR']);
+    const moneda = body.moneda !== undefined ? (MONEDAS.has(String(body.moneda)) ? String(body.moneda) : 'MXN') : actual.moneda;
+    const zona = body.zona_horaria !== undefined ? (str(body.zona_horaria, 40) || 'America/Mexico_City') : actual.zona_horaria;
+    const idioma = body.idioma !== undefined ? (str(body.idioma, 10) || 'es-MX') : actual.idioma;
+    const colorSec = body.color_secundario !== undefined
+        ? (String(body.color_secundario) === '' ? null : (HEX.test(String(body.color_secundario).trim()) ? String(body.color_secundario).trim() : actual.color_secundario))
+        : actual.color_secundario;
+    const portalBien = body.portal_bienvenida !== undefined ? str(body.portal_bienvenida, 280) : actual.portal_bienvenida;
+
+    // ── Seguridad de la organización ──
+    const require2fa = body.require_2fa !== undefined ? Boolean(body.require_2fa) : actual.require_2fa;
+    const sessionTimeout = body.session_timeout_min !== undefined ? clamp(Math.round(Number(body.session_timeout_min) || 0), 0, 1440) : actual.session_timeout_min;
+    // Dominios de invitación: lista coma-sep saneada a host válido (sin @, minúsculas).
+    const inviteDomains = body.invite_domains !== undefined
+        ? (String(body.invite_domains).trim() === '' ? null
+            : String(body.invite_domains).toLowerCase().split(',').map((d) => d.trim().replace(/^@/, '')).filter((d) => /^[a-z0-9.-]+\.[a-z]{2,}$/.test(d)).slice(0, 20).join(',') || null)
+        : actual.invite_domains;
+
+    // ── TRATO Elements: allowlist de dominios que pueden embeber el cotizador.
+    // Cada entrada es un host-source de CSP: "cliente.com", "*.cliente.com" o con
+    // esquema "https://app.cliente.com". Saneada a comma-sep (col NOT NULL → '').
+    const EMBED_HOST = /^(https?:\/\/)?(\*\.)?[a-z0-9.-]+\.[a-z]{2,}$/;
+    const embedDomains = body.embed_domains !== undefined
+        ? String(body.embed_domains).toLowerCase().split(/[\s,]+/).map((d) => d.trim()).filter((d) => EMBED_HOST.test(d)).slice(0, 30).join(',')
+        : actual.embed_domains;
+
     await sql`
         update orgs set
             nombre = ${nombre}, rfc = ${rfc}, razon_social = ${razon},
@@ -85,7 +112,11 @@ export const PATCH: APIRoute = async ({ request }) => {
             vigencia_default_dias = ${vigDias}, terminos_default = ${termDef},
             retencion_isr_pct = ${retIsr}, retencion_iva_pct = ${retIva}, texto_legal = ${textoLegal},
             sitio_web = ${sitioWeb}, whatsapp = ${whatsapp},
-            regimen_fiscal = ${regimen}, uso_cfdi = ${usoCfdi}, cp_fiscal = ${cpFiscal}, serie_folio = ${serieFolio}
+            regimen_fiscal = ${regimen}, uso_cfdi = ${usoCfdi}, cp_fiscal = ${cpFiscal}, serie_folio = ${serieFolio},
+            moneda = ${moneda}, zona_horaria = ${zona}, idioma = ${idioma},
+            color_secundario = ${colorSec}, portal_bienvenida = ${portalBien},
+            require_2fa = ${require2fa}, session_timeout_min = ${sessionTimeout}, invite_domains = ${inviteDomains},
+            embed_domains = ${embedDomains}
         where id = ${orgId}`;
     await logAudit(orgId, { accion: 'org.actualizada', entidad: 'org', entidad_id: orgId, detalle: 'Se actualizaron los ajustes del negocio', ip: reqIp(request) });
     return json({ ok: true });
