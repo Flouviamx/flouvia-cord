@@ -7,10 +7,14 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
 import { notifyQuoteSent } from '../../lib/email';
+import { requirePerm } from '../../lib/queries';
 
 const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(Math.round(n));
 
 export const POST: APIRoute = async ({ request }) => {
+    const denied = await requirePerm('cotizar');
+    if (denied) return denied;
+
     let body: any;
     try { body = await request.json(); }
     catch { return json({ error: 'JSON inválido' }, 400); }

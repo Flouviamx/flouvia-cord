@@ -7,6 +7,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
+import { requirePerm } from '../../lib/queries';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const TEMPLATES = new Set(['clasico', 'minimal', 'detallado']);
@@ -16,6 +17,9 @@ const logoOk = (s: string) =>
     (/^data:image\/(png|jpe?g|webp|svg\+xml);base64,/.test(s) || /^https?:\/\//.test(s));
 
 export const PATCH: APIRoute = async ({ request }) => {
+    const denied = await requirePerm('ajustes');
+    if (denied) return denied;
+
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
 

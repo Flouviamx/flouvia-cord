@@ -150,8 +150,28 @@ Moneda v1 = MXN con IVA 16% configurable. Landing + app en el MISMO subdominio
 ## Multi-tenant
 
 PK de relación = **`org_id`** (NO `email_cliente` como el portal de flouvia-web).
-Cada negocio registrado es una `org`; v1 = 1 usuario Clerk por org
-(`orgs.clerk_user_id`; multi-usuario en fase 2 con Clerk Organizations).
+Cada negocio registrado es una `org`. El owner sigue en `orgs.clerk_user_id`.
+
+✅ **Equipo y roles MULTI-USUARIO (jun 2026):** tabla **`org_members`**
+(`org_id`, `clerk_user_id`, `email`, `rol`, `permisos jsonb`, `estado`, `token`).
+`getActiveOrgId()` (db.ts) ahora resuelve la org por **membresía activa** (membresía
+más reciente primero), con fallback a la org propia + auto-siembra de la membresía
+`owner` (backward-compatible; resiliente si la tabla no existe). **Permisos por
+sección custom** en `src/lib/permissions.ts` (PERMISOS: cotizar/aprobar/cobranza/
+clientes/productos/analitica/ajustes/equipo; PRESETS admin/vendedor/lectura; el
+owner = override total). Helpers en queries.ts: `getMembers`, `getMyMembership`,
+**`requirePerm(key)`** (devuelve Response 403). Enforcement REAL en `/api/org`
+(ajustes), `/api/equipo` (equipo), `/api/cotizaciones`(+[id], cotizar/aprobar),
+`/api/clientes`, `/api/productos`. **Invitación por LINK** (token): owner invita en
+`/app/ajustes/equipo` → comparte `/unirse/{token}` → la persona inicia sesión
+(login/registro honran `?redirect_url=`) y acepta vía `/api/equipo/join`. **Gating:
+invitar requiere plan Negocio** (`planTieneEquipo`, hoy `['pro','business','negocio']`).
+Pendiente: ocultar controles en el FRONT por permiso (hoy el gate es backend; un
+vendedor ve el botón pero recibe 403), org switcher (un usuario activo = 1 org),
+y migrar a Clerk Organizations nativo si se quiere SSO/switch nativo. NOTA: el
+"approach Clerk Organizations" elegido se implementó como **membresía propia** porque
+habilitar Organizations es config del dashboard de Clerk (no codeable aquí); la
+identidad sigue siendo Clerk (userId), solo la membresía/permiso es nuestra.
 
 **Tablas** (`db/schema.sql`):
 - `orgs` — el negocio (nombre, logo, datos fiscales/RFC/CSD, `quote_prefix`, plan, Stripe IDs)

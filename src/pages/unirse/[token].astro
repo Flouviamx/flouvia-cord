@@ -1,0 +1,100 @@
+---
+// /unirse/[token] — landing de invitación. Pública: muestra a qué org te invitan.
+// Si hay sesión → botón "Unirme" (POST /api/equipo/join → /app). Si no → a login
+// con redirect_url de vuelta aquí. El token es el secreto (no requiere auth para leer).
+export const prerender = false;
+import Layout from '../../layouts/Layout.astro';
+import { sql } from '../../lib/db';
+
+const { token } = Astro.params;
+const path = `/unirse/${token}`;
+const auth = Astro.locals.auth?.();
+const signedIn = !!auth?.userId;
+
+let invite: { nombre: string; rol: string; estado: string } | null = null;
+try {
+    const rows = await sql`
+        select o.nombre, m.rol, m.estado
+        from org_members m join orgs o on o.id = m.org_id
+        where m.token = ${token}`;
+    if (rows.length) invite = { nombre: rows[0].nombre as string, rol: rows[0].rol as string, estado: rows[0].estado as string };
+} catch { /* tabla no migrada → invite null */ }
+
+const ROL_LABEL: Record<string, string> = { admin: 'Administrador', vendedor: 'Vendedor', lectura: 'Solo lectura', miembro: 'Personalizado' };
+const valido = invite && invite.estado !== 'revocado';
+---
+
+<Layout title="Invitación — Trato" noindex={true}>
+    <main class="join-page">
+        <div class="join-card">
+            <a href="/"><img src="/imgs/logo-trato-navy.png" alt="Trato" class="join-logo" /></a>
+
+            {!valido && (
+                <>
+                    <h1>Invitación no válida</h1>
+                    <p>Este enlace expiró o fue cancelado. Pídele a quien te invitó que te comparta uno nuevo.</p>
+                    <a href="/" class="join-btn ghost">Ir al inicio</a>
+                </>
+            )}
+
+            {valido && (
+                <>
+                    <p class="join-eyebrow">TE INVITARON A UNIRTE</p>
+                    <h1>{invite!.nombre}</h1>
+                    <p class="join-rol">Como <b>{ROL_LABEL[invite!.rol] ?? 'miembro'}</b> en Trato.</p>
+
+                    {signedIn ? (
+                        <>
+                            <button class="join-btn" id="joinBtn" data-token={token}>Unirme a {invite!.nombre}</button>
+                            <p class="join-note" id="joinMsg"></p>
+                        </>
+                    ) : (
+                        <>
+                            <p class="join-sub">Inicia sesión o crea tu cuenta para aceptar.</p>
+                            <div class="join-actions">
+                                <a href={`/login?redirect_url=${encodeURIComponent(path)}`} class="join-btn">Iniciar sesión</a>
+                                <a href={`/registro?redirect_url=${encodeURIComponent(path)}`} class="join-btn ghost">Crear cuenta gratis</a>
+                            </div>
+                        </>
+                    )}
+                </>
+            )}
+        </div>
+    </main>
+</Layout>
+
+<script is:inline>
+    document.addEventListener('DOMContentLoaded', () => {
+        const btn = document.getElementById('joinBtn');
+        if (!btn) return;
+        btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            const msg = document.getElementById('joinMsg');
+            msg.textContent = 'Uniéndote…';
+            try {
+                const res = await fetch('/api/equipo/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: btn.dataset.token }) });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || 'No se pudo unir');
+                window.location.href = '/app';
+            } catch (e) { msg.textContent = e.message; msg.style.color = '#ef4444'; btn.disabled = false; }
+        });
+    });
+</script>
+
+<style>
+    .join-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; background: var(--color-bg-soft, #fafbfc); }
+    .join-card { width: min(420px, 100%); background: #fff; border: 1px solid rgba(10,25,47,0.08); border-radius: 20px; box-shadow: 0 30px 70px -30px rgba(10,25,47,0.25); padding: 2.4rem 2rem; text-align: center; }
+    .join-logo { height: 22px; margin-bottom: 1.6rem; }
+    .join-eyebrow { font-size: 0.62rem; font-weight: 800; letter-spacing: 2px; color: #99a2af; margin: 0 0 0.5rem; }
+    .join-card h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; margin: 0 0 0.4rem; }
+    .join-rol { font-size: 0.9rem; color: var(--color-text-muted, #555); margin: 0 0 1.8rem; }
+    .join-rol b { color: var(--color-text, #050505); }
+    .join-sub { font-size: 0.85rem; color: var(--color-text-muted, #555); margin: 0 0 1.4rem; }
+    .join-actions { display: flex; flex-direction: column; gap: 0.6rem; }
+    .join-btn { display: inline-block; font-family: var(--font-sans); font-size: 0.9rem; font-weight: 600; text-decoration: none; cursor: pointer; border: none; padding: 12px 22px; border-radius: 11px; background: #0a192f; color: #fff; transition: transform 0.3s var(--ease-spring, ease); }
+    .join-btn:hover { transform: translateY(-2px); }
+    .join-btn:disabled { opacity: 0.6; }
+    .join-btn.ghost { background: #fff; color: #0a192f; border: 1px solid rgba(10,25,47,0.14); }
+    .join-note { font-size: 0.82rem; color: var(--color-text-muted, #555); margin: 1rem 0 0; min-height: 1.2em; }
+    .join-card p { line-height: 1.5; }
+</style>

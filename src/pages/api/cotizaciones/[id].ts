@@ -7,6 +7,11 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
 import { notifyQuoteSent } from '../../../lib/email';
+import { requirePerm } from '../../../lib/queries';
+
+// Acciones que cambian la decisión de aprobación → requieren permiso 'aprobar';
+// el resto (enviar, marcar pago, facturar, responder) requiere 'cotizar'.
+const APROBAR_ACTIONS = new Set(['approve', 'reject', 'approve_request', 'reject_request']);
 
 // Transiciones permitidas: action → { desde[], status final, evento }
 const ACTIONS: Record<string, { from: string[]; to: string; evento: string; detalle: string }> = {
@@ -22,6 +27,10 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     const id = params.id ?? '';
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
+
+    // Permisos: aprobar/rechazar requieren 'aprobar'; lo demás, 'cotizar'.
+    const denied = await requirePerm(APROBAR_ACTIONS.has(String(body.action)) ? 'aprobar' : 'cotizar');
+    if (denied) return denied;
 
     // Respuesta del vendedor al cliente (no cambia estado; alimenta la conversación de /q)
     if (body.action === 'reply') {

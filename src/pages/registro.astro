@@ -4,9 +4,13 @@ export const prerender = false;
 import Layout from '../layouts/Layout.astro';
 import { SignUp } from '@clerk/astro/components';
 
-// Si ya hay sesión, directo a /app (evita el flash del formulario de registro).
+// redirect_url permite volver a una ruta interna tras registrarse (ej. /unirse/{token}).
+const rawRedirect = Astro.url.searchParams.get('redirect_url') ?? '';
+const dest = /^\/[^/]/.test(rawRedirect) ? rawRedirect : '/app';
+
+// Si ya hay sesión, directo al destino (evita el flash del formulario de registro).
 const auth = Astro.locals.auth?.();
-if (auth?.userId) return Astro.redirect('/app');
+if (auth?.userId) return Astro.redirect(dest);
 
 const clerkAppearance = {
     variables: {
@@ -40,7 +44,7 @@ const clerkAppearance = {
             </div>
 
             <div class="auth-form">
-                <SignUp appearance={clerkAppearance} forceRedirectUrl="/app" signInUrl="/login" />
+                <SignUp appearance={clerkAppearance} forceRedirectUrl={dest} signInUrl={`/login${dest !== '/app' ? `?redirect_url=${encodeURIComponent(dest)}` : ''}`} />
                 <p class="af-note">¿Ya tienes cuenta? <a href="/login">Entra aquí</a></p>
             </div>
         </div>

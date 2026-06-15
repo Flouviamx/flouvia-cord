@@ -6,6 +6,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
+import { requirePerm } from '../../lib/queries';
 
 const TERMINOS = ['contado', 'net30', 'net60'];
 const NIVELES = ['estandar', 'plata', 'oro', 'distribuidor'];
@@ -26,6 +27,7 @@ function clean(body: any) {
 }
 
 export const POST: APIRoute = async ({ request }) => {
+    const denied = await requirePerm('clientes'); if (denied) return denied;
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
     const c = clean(body);
@@ -41,6 +43,7 @@ export const POST: APIRoute = async ({ request }) => {
 };
 
 export const PATCH: APIRoute = async ({ request }) => {
+    const denied = await requirePerm('clientes'); if (denied) return denied;
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
     if (!body.id) return json({ error: 'Falta id' }, 400);
@@ -61,6 +64,7 @@ export const PATCH: APIRoute = async ({ request }) => {
 };
 
 export const DELETE: APIRoute = async ({ request }) => {
+    const denied = await requirePerm('clientes'); if (denied) return denied;
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
     if (!body.id) return json({ error: 'Falta id' }, 400);

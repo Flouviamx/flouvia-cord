@@ -33,21 +33,48 @@ async function demoOrgId(): Promise<string> {
     return rows[0].id as string;
 }
 
+// Siembra (idempotente) la membresía 'owner' del dueño de una org. Try/catch:
+// nunca debe romper la resolución si la tabla aún no existe (pre-migración).
+async function ensureOwnerMember(orgId: string, userId: string): Promise<void> {
+    try {
+        await sql`
+            insert into org_members (org_id, clerk_user_id, rol, estado, joined_at)
+            values (${orgId}, ${userId}, 'owner', 'activo', now())
+            on conflict (org_id, clerk_user_id) where clerk_user_id is not null do nothing`;
+    } catch { /* tabla aún no migrada → no-op */ }
+}
+
 export async function getActiveOrgId(): Promise<string> {
     const userId = currentUserId();
     if (!userId) return demoOrgId(); // sin sesión (cron, etc.) → org demo
 
-    // ¿Ya existe la org del usuario?
-    const rows = await sql`select id from orgs where clerk_user_id = ${userId} limit 1`;
-    if (rows.length) return rows[0].id as string;
+    // 1) ¿Es miembro ACTIVO de alguna org? (incluye al owner, sembrado como miembro).
+    //    Orden: membresía más reciente primero — un invitado que se une después
+    //    cae en la org a la que lo invitaron. Resiliente si la tabla no existe.
+    try {
+        const mem = await sql`
+            select org_id from org_members
+            where clerk_user_id = ${userId} and estado = 'activo'
+            order by joined_at desc nulls last, created_at desc
+            limit 1`;
+        if (mem.length) return mem[0].org_id as string;
+    } catch { /* tabla aún no migrada → seguimos con la lógica legacy */ }
 
-    // Primer login: crear la org. El upsert (do update no-op) hace que `returning`
-    // devuelva la fila aunque dos requests concurrentes intenten crearla a la vez.
+    // 2) ¿Tiene una org propia (creada antes de Equipo)? → sembrar su membresía owner.
+    const rows = await sql`select id from orgs where clerk_user_id = ${userId} limit 1`;
+    if (rows.length) {
+        await ensureOwnerMember(rows[0].id as string, userId);
+        return rows[0].id as string;
+    }
+
+    // 3) Primer login: crear la org. El upsert (do update no-op) hace que `returning`
+    //    devuelva la fila aunque dos requests concurrentes intenten crearla a la vez.
     const [created] = await sql`
         insert into orgs (clerk_user_id, nombre)
         values (${userId}, ${'Mi negocio'})
         on conflict (clerk_user_id) do update set clerk_user_id = excluded.clerk_user_id
         returning id`;
+    await ensureOwnerMember(created.id as string, userId);
     return created.id as string;
 }
 

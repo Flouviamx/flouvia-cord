@@ -4,10 +4,15 @@ export const prerender = false;
 import Layout from '../layouts/Layout.astro';
 import { SignIn } from '@clerk/astro/components';
 
-// Si ya hay sesión, vamos directo a /app — evita el "flash" de la pantalla de
+// redirect_url permite volver a una ruta interna tras autenticarse (ej. el flujo
+// de invitación /unirse/{token}). Solo rutas locales (anti open-redirect).
+const rawRedirect = Astro.url.searchParams.get('redirect_url') ?? '';
+const dest = /^\/[^/]/.test(rawRedirect) ? rawRedirect : '/app';
+
+// Si ya hay sesión, vamos directo al destino — evita el "flash" de la pantalla de
 // login al volver del OAuth de Google.
 const auth = Astro.locals.auth?.();
-if (auth?.userId) return Astro.redirect('/app');
+if (auth?.userId) return Astro.redirect(dest);
 
 const clerkAppearance = {
     variables: {
@@ -42,7 +47,7 @@ const clerkAppearance = {
                      cuando monta, su tarjeta lo cubre. Sin ocultar el SignIn (no rompe si no hay JS). -->
                 <div class="auth-loader" aria-hidden="true"><span class="auth-spin"></span><span>Cargando acceso seguro…</span></div>
                 <div class="auth-mount">
-                    <SignIn appearance={clerkAppearance} forceRedirectUrl="/app" signUpUrl="/registro" />
+                    <SignIn appearance={clerkAppearance} forceRedirectUrl={dest} signUpUrl={`/registro${dest !== '/app' ? `?redirect_url=${encodeURIComponent(dest)}` : ''}`} />
                     <p class="af-note">¿No tienes cuenta? <a href="/registro">Créala gratis</a></p>
                 </div>
             </div>

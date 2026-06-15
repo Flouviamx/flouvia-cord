@@ -195,3 +195,32 @@ alter table orgs add column if not exists regimen_fiscal text;  -- código c_Reg
 alter table orgs add column if not exists uso_cfdi text;        -- código c_UsoCFDI default (ej. G03)
 alter table orgs add column if not exists cp_fiscal text;       -- lugar de expedición (CP)
 alter table orgs add column if not exists serie_folio text;     -- serie de folio (ej. A, COT)
+
+-- ── Equipo y roles (multi-usuario por org, jun 2026) ────────────────────────
+-- Membresía de usuarios Clerk a una org + permisos por sección (custom).
+-- El owner se siembra como miembro rol='owner' (permisos totales, override).
+-- Invitación por TOKEN (link): clerk_user_id queda null hasta que la persona
+-- inicia sesión y acepta en /unirse/{token}.
+create table if not exists org_members (
+  id            uuid        default gen_random_uuid() primary key,
+  org_id        uuid        not null references orgs(id) on delete cascade,
+  clerk_user_id text,                                  -- null mientras está invitado
+  email         text,                                  -- correo de invitación (display)
+  nombre        text,                                  -- nombre para mostrar (opcional)
+  rol           text        not null default 'miembro', -- owner | admin | vendedor | lectura | miembro
+  permisos      jsonb       not null default '{}'::jsonb, -- { cotizar:true, aprobar:false, ... }
+  estado        text        not null default 'invitado', -- invitado | activo | revocado
+  token         text        unique,                    -- token del link de invitación
+  invited_by    text,
+  created_at    timestamptz default now(),
+  joined_at     timestamptz
+);
+create index if not exists idx_members_user on org_members(clerk_user_id) where clerk_user_id is not null;
+create index if not exists idx_members_org on org_members(org_id);
+create unique index if not exists uq_members_org_user on org_members(org_id, clerk_user_id) where clerk_user_id is not null;
+
+-- Sembrar al owner existente de cada org como miembro 'owner' (idempotente).
+insert into org_members (org_id, clerk_user_id, rol, estado, joined_at)
+select id, clerk_user_id, 'owner', 'activo', now() from orgs
+where clerk_user_id is not null
+on conflict do nothing;

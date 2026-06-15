@@ -4,6 +4,8 @@
 // Re-exporta los helpers puros y STATUS_META del mock (no se duplican).
 
 import { sql, getActiveOrgId } from './db';
+import { currentUserId } from './context';
+import { memberCan, type Membership, type PermKey, type PermMap } from './permissions';
 import {
     STATUS_META, IVA, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal,
     type QuoteStatus, type MockItem, type MockEvent, type MockQuote,
@@ -44,7 +46,7 @@ const fmtRelative = (d: string | Date) => {
 };
 
 // ── ORG ─────────────────────────────────────────────────────────────────────
-const PLAN_LABEL: Record<string, string> = { free: 'Gratis', basico: 'Básico', pro: 'Profesional' };
+const PLAN_LABEL: Record<string, string> = { free: 'Gratis', basico: 'Básico', pro: 'Profesional', negocio: 'Negocio', business: 'Negocio' };
 
 export async function getOrg() {
     const orgId = await getActiveOrgId();
@@ -542,4 +544,71 @@ export async function getDashboard() {
             id: e.cotizacion_id as string,
         })),
     };
+}
+
+// ── EQUIPO Y ROLES ────────────────────────────────────────────────────────────
+const fmtFecha = (d: unknown) => d ? new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d as string)) : '';
+
+export interface MemberRow {
+    id: string;
+    clerkUserId: string | null;
+    email: string;
+    nombre: string;
+    rol: string;
+    permisos: PermMap;
+    estado: string;      // invitado | activo | revocado
+    token: string | null;
+    inicial: string;
+    desde: string;
+    esYo: boolean;
+}
+
+/** Lista de miembros de la org activa (owner primero, luego por fecha). */
+export async function getMembers(): Promise<MemberRow[]> {
+    const orgId = await getActiveOrgId();
+    const me = currentUserId();
+    const rows = await sql`
+        select id, clerk_user_id, email, nombre, rol, permisos, estado, token, created_at, joined_at
+        from org_members where org_id = ${orgId} and estado <> 'revocado'
+        order by case when rol = 'owner' then 0 else 1 end, created_at asc`;
+    return rows.map((m) => {
+        const nombre = (m.nombre as string) || (m.email as string) || 'Invitado';
+        return {
+            id: m.id as string,
+            clerkUserId: (m.clerk_user_id as string) ?? null,
+            email: (m.email as string) ?? '',
+            nombre,
+            rol: m.rol as string,
+            permisos: (m.permisos as PermMap) ?? {},
+            estado: m.estado as string,
+            token: (m.token as string) ?? null,
+            inicial: initials(nombre),
+            desde: fmtFecha(m.joined_at || m.created_at),
+            esYo: !!me && m.clerk_user_id === me,
+        };
+    });
+}
+
+/** Membresía del usuario actual en la org activa (para permisos). */
+export async function getMyMembership(): Promise<Membership> {
+    const userId = currentUserId();
+    const orgId = await getActiveOrgId();
+    if (!userId) return { rol: 'owner', permisos: {}, esOwner: true }; // sin sesión → no restringir (cron)
+    try {
+        const rows = await sql`select rol, permisos from org_members where org_id = ${orgId} and clerk_user_id = ${userId} and estado = 'activo' limit 1`;
+        if (!rows.length) return { rol: 'owner', permisos: {}, esOwner: true }; // fallback: owner sin row
+        const m = rows[0];
+        return { rol: m.rol as string, permisos: (m.permisos as PermMap) ?? {}, esOwner: m.rol === 'owner' };
+    } catch {
+        return { rol: 'owner', permisos: {}, esOwner: true };
+    }
+}
+
+/** Guard para APIs: devuelve una Response 403 si el usuario NO puede `key`, o null si sí. */
+export async function requirePerm(key: PermKey): Promise<Response | null> {
+    const m = await getMyMembership();
+    if (memberCan(m, key)) return null;
+    return new Response(JSON.stringify({ error: 'No tienes permiso para esta acción.' }), {
+        status: 403, headers: { 'Content-Type': 'application/json' },
+    });
 }
