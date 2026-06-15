@@ -8,7 +8,6 @@ import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
 import { notifyQuoteSent } from '../../lib/email';
 
-const IVA_PCT = 0.16;
 const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(Math.round(n));
 
 export const POST: APIRoute = async ({ request }) => {
@@ -21,18 +20,21 @@ export const POST: APIRoute = async ({ request }) => {
 
     const orgId = await getActiveOrgId();
 
-    // Totales (server-side, no confiar en el cliente)
+    // Subtotal (server-side, no confiar en el cliente)
     let subtotal = 0;
     for (const it of items) {
         const precio = it.precio_negociado ?? it.precio_unitario ?? 0;
         subtotal += Number(precio) * Number(it.cantidad ?? 1);
     }
-    const iva = subtotal * IVA_PCT;
-    const total = subtotal + iva;
 
     // Folio + umbrales de aprobación de la org. select * → resiliente si aún no
     // se corre la migración (las columnas aprob_* simplemente vienen undefined → 0).
     const [org] = await sql`select * from orgs where id = ${orgId}`;
+
+    // IVA real de la org (Ajustes › Cotizaciones e impuestos). Fallback 16%.
+    const ivaPct = org.iva_pct !== undefined && org.iva_pct !== null ? Number(org.iva_pct) / 100 : 0.16;
+    const iva = subtotal * ivaPct;
+    const total = subtotal + iva;
     const [{ maxn }] = await sql`
         select coalesce(max(nullif(regexp_replace(folio, '\\D', '', 'g'), '')::int), 0) as maxn
         from cotizaciones where org_id = ${orgId}`;

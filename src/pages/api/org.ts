@@ -53,6 +53,23 @@ export const PATCH: APIRoute = async ({ request }) => {
         ? (String(body.logo_url) === '' ? null : (logoOk(String(body.logo_url)) ? String(body.logo_url) : actual.logo_url))
         : actual.logo_url;
 
+    // ── Superpoderes de configuración (jun 2026) ──
+    const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+    const TERMS = new Set(['contado', 'net30', 'net60']);
+    const str = (v: unknown, max = 200) => { const s = String(v).trim(); return s ? s.slice(0, max) : null; };
+
+    const vigDias = body.vigencia_default_dias !== undefined ? clamp(Math.round(Number(body.vigencia_default_dias) || 0), 1, 365) : actual.vigencia_default_dias;
+    const termDef = body.terminos_default !== undefined ? (TERMS.has(String(body.terminos_default)) ? String(body.terminos_default) : 'contado') : actual.terminos_default;
+    const retIsr = body.retencion_isr_pct !== undefined ? clamp(Number(body.retencion_isr_pct) || 0, 0, 100) : actual.retencion_isr_pct;
+    const retIva = body.retencion_iva_pct !== undefined ? clamp(Number(body.retencion_iva_pct) || 0, 0, 100) : actual.retencion_iva_pct;
+    const textoLegal = body.texto_legal !== undefined ? str(body.texto_legal, 600) : actual.texto_legal;
+    const sitioWeb = body.sitio_web !== undefined ? str(body.sitio_web, 200) : actual.sitio_web;
+    const whatsapp = body.whatsapp !== undefined ? (String(body.whatsapp) === '' ? null : String(body.whatsapp).replace(/[^0-9+]/g, '').slice(0, 20) || null) : actual.whatsapp;
+    const regimen = body.regimen_fiscal !== undefined ? str(body.regimen_fiscal, 5) : actual.regimen_fiscal;
+    const usoCfdi = body.uso_cfdi !== undefined ? str(body.uso_cfdi, 5) : actual.uso_cfdi;
+    const cpFiscal = body.cp_fiscal !== undefined ? (String(body.cp_fiscal) === '' ? null : String(body.cp_fiscal).replace(/\D/g, '').slice(0, 5) || null) : actual.cp_fiscal;
+    const serieFolio = body.serie_folio !== undefined ? (String(body.serie_folio) === '' ? null : String(body.serie_folio).trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6) || null) : actual.serie_folio;
+
     await sql`
         update orgs set
             nombre = ${nombre}, rfc = ${rfc}, razon_social = ${razon},
@@ -60,7 +77,11 @@ export const PATCH: APIRoute = async ({ request }) => {
             email_contacto = ${email}, telefono = ${telefono}, direccion = ${direccion},
             logo_url = ${logoUrl}, pdf_template = ${pdfTemplate},
             pdf_mensaje = ${pdfMensaje}, pdf_condiciones = ${pdfCond}, pdf_mostrar_lista = ${pdfLista},
-            aprob_descuento_max = ${aprobDesc}, aprob_monto_max = ${aprobMonto}, interes_moratorio_pct = ${interes}
+            aprob_descuento_max = ${aprobDesc}, aprob_monto_max = ${aprobMonto}, interes_moratorio_pct = ${interes},
+            vigencia_default_dias = ${vigDias}, terminos_default = ${termDef},
+            retencion_isr_pct = ${retIsr}, retencion_iva_pct = ${retIva}, texto_legal = ${textoLegal},
+            sitio_web = ${sitioWeb}, whatsapp = ${whatsapp},
+            regimen_fiscal = ${regimen}, uso_cfdi = ${usoCfdi}, cp_fiscal = ${cpFiscal}, serie_folio = ${serieFolio}
         where id = ${orgId}`;
     await logAudit(orgId, { accion: 'org.actualizada', entidad: 'org', entidad_id: orgId, detalle: 'Se actualizaron los ajustes del negocio', ip: reqIp(request) });
     return json({ ok: true });

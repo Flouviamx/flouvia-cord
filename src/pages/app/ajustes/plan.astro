@@ -1,31 +1,72 @@
 ---
-// Ajustes › Plan y facturación
+// Ajustes › Plan y facturación — suscripción + medidor de uso REAL.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
-import { getOrg } from '../../../lib/queries';
+import { getOrg, getPlanUsage } from '../../../lib/queries';
 const ORG = await getOrg();
+const USAGE = await getPlanUsage();
+const PRECIO: Record<string, string> = { Gratis: '$0', Profesional: '$590', Negocio: '$1,190' };
 ---
 
 <SettingsShell title="Plan y facturación — Ajustes" active="plan" heading="Plan y facturación"
-    desc="Gestiona tu suscripción de Trato, método de pago y comprobantes.">
+    desc="Tu suscripción de Trato, uso del plan y comprobantes.">
     <div class="s-block">
         <h3>Suscripción actual</h3>
-        <div class="plan-card">
-            <div>
+        <div class="plan-row">
+            <div class="plan-meta">
                 <span class="plan-name">Plan {ORG.plan}</span>
-                <span class="plan-price"><span class="editorial">$590</span> MXN/mes · IVA incluido</span>
+                <span class="plan-price"><span class="editorial">{PRECIO[ORG.plan] ?? '$0'}</span> MXN/mes · IVA incluido</span>
             </div>
             <button class="plan-btn" disabled>Gestionar suscripción</button>
         </div>
-        <p class="plan-note">La gestión de suscripción se habilita al conectar Stripe Billing (pendiente). Mientras tanto puedes cambiar de plan escribiéndonos.</p>
+    </div>
+
+    <div class="s-block">
+        <h3>Uso del plan</h3>
+        <div class="usage">
+            <div class="usage-top">
+                <span class="usage-label">Cotizaciones activas</span>
+                <span class="usage-count editorial">
+                    {USAGE.usadas}{USAGE.ilimitado ? '' : ` / ${USAGE.limite}`}
+                </span>
+            </div>
+            {USAGE.ilimitado ? (
+                <div class="usage-unlim">∞ Ilimitadas en tu plan</div>
+            ) : (
+                <>
+                    <div class="usage-bar"><span class:list={['usage-fill', { warn: USAGE.pct >= 80, full: USAGE.excedido }]} style={`width:${USAGE.pct}%`}></span></div>
+                    <p class="usage-note">
+                        {USAGE.excedido
+                            ? 'Llegaste al límite del plan Gratis. Sube a Profesional para cotizaciones ilimitadas.'
+                            : `Te quedan ${USAGE.limite! - USAGE.usadas} cotizaciones activas en el plan Gratis.`}
+                    </p>
+                </>
+            )}
+        </div>
+    </div>
+
+    <div class="s-block">
+        <h3>Comprobantes</h3>
+        <p class="plan-empty">Tus recibos de pago aparecerán aquí cuando conectes Stripe Billing (pendiente).</p>
     </div>
 </SettingsShell>
 
 <style>
-    .plan-card { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1.2rem 1.3rem; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-bg-soft); }
-    .plan-name { display: block; font-size: 1rem; font-weight: 700; }
+    .plan-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1.1rem 0.4rem; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+    .plan-meta { display: flex; flex-direction: column; gap: 3px; }
+    .plan-name { font-size: 1.05rem; font-weight: 700; }
     .plan-price { font-size: 0.8rem; color: var(--color-text-muted); }
     .plan-price .editorial { font-size: 1.1rem; color: var(--color-blue-deep); }
-    .plan-btn { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text); background: #fff; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; transition: border-color 0.25s; }
-    .plan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .plan-note { font-size: 0.78rem; color: var(--color-text-muted); margin: 0.9rem 0 0; line-height: 1.5; }
+    .plan-btn { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: not-allowed; opacity: 0.6; }
+
+    .usage { max-width: 460px; }
+    .usage-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.5rem; }
+    .usage-label { font-size: 0.85rem; color: var(--color-text); font-weight: 500; }
+    .usage-count { font-size: 1rem; color: var(--color-blue-deep); }
+    .usage-bar { height: 8px; border-radius: 100px; background: var(--color-bg-soft); border: 1px solid var(--color-border); overflow: hidden; }
+    .usage-fill { display: block; height: 100%; background: var(--color-ok); border-radius: 100px; transition: width 0.5s var(--ease-spring); }
+    .usage-fill.warn { background: var(--color-warn); }
+    .usage-fill.full { background: var(--color-danger); }
+    .usage-note { font-size: 0.78rem; color: var(--color-text-muted); margin: 0.6rem 0 0; line-height: 1.5; }
+    .usage-unlim { font-size: 0.9rem; font-weight: 600; color: var(--color-ok); }
+    .plan-empty { font-size: 0.82rem; color: var(--color-text-muted); margin: 0; }
 </style>

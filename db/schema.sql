@@ -178,3 +178,20 @@ create table if not exists audit_log (
   created_at  timestamptz default now()
 );
 create index if not exists idx_audit_org on audit_log(org_id, created_at desc);
+
+-- ── Superpoderes de configuración (jun 2026) ────────────────────────────────
+-- Defaults de cotización (los usa el editor /nueva y el POST de cotizaciones).
+alter table orgs add column if not exists vigencia_default_dias int not null default 30; -- días de vigencia por default
+alter table orgs add column if not exists terminos_default text not null default 'contado'; -- contado | net30 | net60
+-- Retenciones e impuestos avanzados (servicios / CFDI) + leyenda legal del PDF.
+alter table orgs add column if not exists retencion_isr_pct numeric not null default 0; -- % retención de ISR
+alter table orgs add column if not exists retencion_iva_pct numeric not null default 0; -- % retención de IVA
+alter table orgs add column if not exists texto_legal text; -- leyenda legal default (va al PDF)
+-- Marca: presencia en línea.
+alter table orgs add column if not exists sitio_web text;
+alter table orgs add column if not exists whatsapp text; -- número para el botón de WhatsApp
+-- Fiscales SAT (alimentan CFDI 4.0 a futuro).
+alter table orgs add column if not exists regimen_fiscal text;  -- código c_RegimenFiscal (ej. 601)
+alter table orgs add column if not exists uso_cfdi text;        -- código c_UsoCFDI default (ej. G03)
+alter table orgs add column if not exists cp_fiscal text;       -- lugar de expedición (CP)
+alter table orgs add column if not exists serie_folio text;     -- serie de folio (ej. A, COT)

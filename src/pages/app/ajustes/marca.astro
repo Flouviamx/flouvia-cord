@@ -45,4 +45,21 @@ const ORG = await getOrg();
             </div>
         </div>
     </div>
+
+    <div class="s-block">
+        <h3>Presencia en línea</h3>
+        <div class="s-body">
+            <div class="s-row">
+                <div class="s-field">
+                    <label for="oWeb">Sitio web</label>
+                    <input class="s-input" id="oWeb" data-field="sitio_web" value={ORG.sitioWeb} placeholder="https://tunegocio.mx" />
+                </div>
+                <div class="s-field">
+                    <label for="oWa">WhatsApp</label>
+                    <input class="s-input" id="oWa" data-field="whatsapp" value={ORG.whatsapp} placeholder="5215512345678" />
+                    <span class="s-hint">Con lada país (52). Se usa en el botón "Enviar por WhatsApp".</span>
+                </div>
+            </div>
+        </div>
+    </div>
 </SettingsShell>

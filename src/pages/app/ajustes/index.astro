@@ -1,68 +1,64 @@
 ---
-// Ajustes — HUB. Rejilla de categorías (estilo Stripe). Cada tarjeta abre su
-// sub-página. La personalización vive dividida por tema (marca, fiscal, PDF…).
+// Ajustes — ÍNDICE. Lista agrupada de secciones (estilo Stripe, sin tarjetas).
+// Cada sección abre su sub-página. La personalización vive dividida por tema.
 import AppLayout from '../../../layouts/AppLayout.astro';
 import { getOrg } from '../../../lib/queries';
-import { SETTINGS_SECTIONS } from '../../../lib/settings';
+import { SETTINGS_SECTIONS, SETTINGS_GROUPS } from '../../../lib/settings';
 
 const ORG = await getOrg();
 ---
 
 <AppLayout title="Ajustes — Trato" page="ajustes" heading="Ajustes">
-    <div class="hub">
-        <header class="hub-head">
-            <div>
-                <h2>Ajustes de {ORG.nombre}</h2>
-                <p>Configura todo lo que se personaliza en Trato. Cada sección guarda por separado.</p>
-            </div>
-            <span class="hub-plan">Plan {ORG.plan}</span>
+    <div class="idx">
+        <header class="idx-head">
+            <h2>Ajustes de {ORG.nombre}</h2>
+            <p>Configura todo lo que se personaliza en Trato. Cada sección guarda por separado.</p>
         </header>
 
-        <div class="hub-grid">
-            {SETTINGS_SECTIONS.map((s) => (
-                <a href={s.href} class="hub-card">
-                    <span class="hub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={s.icon} /></span>
-                    <span class="hub-card-body">
-                        <span class="hub-card-title">{s.label}</span>
-                        <span class="hub-card-desc">{s.desc}</span>
-                    </span>
-                    <svg class="hub-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </a>
-            ))}
-        </div>
+        {SETTINGS_GROUPS.map((group) => (
+            <section class="idx-grp">
+                <h3 class="idx-grp-title">{group}</h3>
+                <div class="idx-rows">
+                    {SETTINGS_SECTIONS.filter((s) => s.group === group).map((s) => (
+                        <a href={s.href} class="idx-row">
+                            <svg class="idx-row-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={s.icon} />
+                            <span class="idx-row-body">
+                                <span class="idx-row-title">{s.label}</span>
+                                <span class="idx-row-desc">{s.desc}</span>
+                            </span>
+                            <svg class="idx-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        </a>
+                    ))}
+                </div>
+            </section>
+        ))}
     </div>
 </AppLayout>
 
 <style>
-    .hub { max-width: 980px; }
-    .hub-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.8rem; }
-    .hub-head h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; margin: 0; }
-    .hub-head p { font-size: 0.88rem; color: var(--color-text-muted); margin: 0.4rem 0 0; }
-    .hub-plan { font-size: 0.72rem; font-weight: 700; color: var(--color-blue-deep); background: var(--color-bg-soft); border: 1px solid var(--color-border); padding: 6px 12px; border-radius: 100px; white-space: nowrap; flex-shrink: 0; }
+    .idx { max-width: 880px; }
+    .idx-head { margin-bottom: 2.4rem; }
+    .idx-head h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; margin: 0; }
+    .idx-head p { font-size: 0.88rem; color: var(--color-text-muted); margin: 0.4rem 0 0; }
 
-    .hub-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.9rem; }
-    .hub-card {
-        display: flex; align-items: flex-start; gap: 0.9rem;
-        padding: 1.2rem 1.3rem; border: 1px solid var(--color-border); border-radius: 14px;
-        background: #fff; text-decoration: none; color: inherit;
-        transition: border-color 0.25s, box-shadow 0.3s var(--ease-spring), transform 0.3s var(--ease-spring);
-    }
-    .hub-card:hover { border-color: rgba(10,25,47,0.18); box-shadow: 0 16px 34px -22px rgba(10,25,47,0.4); transform: translateY(-2px); }
-    .hub-ico {
-        width: 40px; height: 40px; border-radius: 11px; flex-shrink: 0;
-        display: flex; align-items: center; justify-content: center;
-        background: var(--color-bg-soft); color: var(--color-blue-deep);
-        border: 1px solid var(--color-border);
-    }
-    .hub-ico svg { width: 19px; height: 19px; }
-    .hub-card-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
-    .hub-card-title { font-size: 0.95rem; font-weight: 700; color: var(--color-text); }
-    .hub-card-desc { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.5; }
-    .hub-arrow { width: 16px; height: 16px; color: #c4cad3; flex-shrink: 0; margin-top: 3px; transition: transform 0.3s var(--ease-spring), color 0.25s; }
-    .hub-card:hover .hub-arrow { transform: translateX(3px); color: var(--color-blue-deep); }
+    .idx-grp { margin-bottom: 2.4rem; }
+    .idx-grp-title { font-size: 0.66rem; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; color: #99a2af; margin: 0 0 0.3rem; }
+    .idx-rows { display: flex; flex-direction: column; }
 
-    @media (max-width: 720px) {
-        .hub-grid { grid-template-columns: 1fr; }
-        .hub-head { flex-direction: column; }
+    /* Fila de enlace — sin borde de tarjeta; solo hairline entre filas */
+    .idx-row {
+        display: flex; align-items: center; gap: 1rem;
+        padding: 1.05rem 0.4rem; text-decoration: none; color: inherit;
+        border-bottom: 1px solid var(--color-border);
+        transition: padding-left 0.25s var(--ease-spring);
     }
+    .idx-row:hover { padding-left: 0.9rem; }
+    .idx-row-ico { width: 20px; height: 20px; color: var(--color-blue-deep); flex-shrink: 0; }
+    .idx-row-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+    .idx-row-title { font-size: 0.95rem; font-weight: 600; color: var(--color-text); }
+    .idx-row-desc { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.45; }
+    .idx-row-arrow { width: 16px; height: 16px; color: #c4cad3; flex-shrink: 0; opacity: 0; transform: translateX(-4px); transition: opacity 0.25s, transform 0.25s var(--ease-spring); }
+    .idx-row:hover .idx-row-arrow { opacity: 1; transform: translateX(0); color: var(--color-blue-deep); }
+
+    @media (max-width: 640px) { .idx-row-desc { display: none; } }
 </style>

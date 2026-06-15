@@ -71,6 +71,42 @@ export async function getOrg() {
         aprobDescuentoMax: num(o.aprob_descuento_max),
         aprobMontoMax: num(o.aprob_monto_max),
         interesMoratorioPct: num(o.interes_moratorio_pct),
+        // Superpoderes de configuración (jun 2026)
+        plan_raw: (o.plan as string) || 'free',
+        vigenciaDefaultDias: num(o.vigencia_default_dias) || 30,
+        terminosDefault: (o.terminos_default as string) || 'contado',
+        retencionIsrPct: num(o.retencion_isr_pct),
+        retencionIvaPct: num(o.retencion_iva_pct),
+        textoLegal: (o.texto_legal as string) ?? '',
+        sitioWeb: (o.sitio_web as string) ?? '',
+        whatsapp: (o.whatsapp as string) ?? '',
+        regimenFiscal: (o.regimen_fiscal as string) ?? '',
+        usoCfdi: (o.uso_cfdi as string) ?? '',
+        cpFiscal: (o.cp_fiscal as string) ?? '',
+        serieFolio: (o.serie_folio as string) ?? '',
+    };
+}
+
+// Uso del plan: cotizaciones "activas" (no cerradas) vs límite del plan.
+// El plan Gratis permite 5 activas; los de pago, ilimitadas. Alimenta el medidor
+// de uso de /app/ajustes/plan (100% real, sin columnas nuevas).
+export async function getPlanUsage() {
+    const orgId = await getActiveOrgId();
+    const [o] = await sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`;
+    const plan = (o?.plan as string) || 'free';
+    // "Activas" = todo lo que no está en un estado terminal.
+    const [{ activas }] = await sql`
+        select count(*)::int as activas from cotizaciones
+        where org_id = ${orgId} and status not in ('rejected', 'expired')`;
+    const limite = plan === 'free' ? 5 : null; // null = ilimitado
+    const usadas = Number(activas) || 0;
+    return {
+        plan,
+        usadas,
+        limite,
+        ilimitado: limite === null,
+        pct: limite ? Math.min(100, Math.round((usadas / limite) * 100)) : 0,
+        excedido: limite !== null && usadas >= limite,
     };
 }
 

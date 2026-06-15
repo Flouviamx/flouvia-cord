@@ -2,6 +2,7 @@
 // Ajustes › Datos fiscales
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
+import { REGIMENES_FISCALES, USOS_CFDI } from '../../../lib/sat';
 const ORG = await getOrg();
 ---
 
@@ -19,6 +20,28 @@ const ORG = await getOrg();
                     <label for="oRazon">Razón social</label>
                     <input class="s-input" id="oRazon" data-field="razon_social" value={ORG.razonSocial} placeholder="Mi Empresa S.A. de C.V." />
                 </div>
+            </div>
+            <div class="s-row">
+                <div class="s-field">
+                    <label for="oRegimen">Régimen fiscal</label>
+                    <select class="s-input" id="oRegimen" data-field="regimen_fiscal">
+                        <option value="" selected={!ORG.regimenFiscal}>Selecciona…</option>
+                        {REGIMENES_FISCALES.map((r) => <option value={r.codigo} selected={ORG.regimenFiscal === r.codigo}>{r.nombre}</option>)}
+                    </select>
+                </div>
+                <div class="s-field">
+                    <label for="oCp">CP de expedición</label>
+                    <input class="s-input" id="oCp" data-field="cp_fiscal" value={ORG.cpFiscal} maxlength="5" inputmode="numeric" placeholder="54000" />
+                    <span class="s-hint">Lugar de expedición del CFDI.</span>
+                </div>
+            </div>
+            <div class="s-field" style="max-width:50%">
+                <label for="oUso">Uso de CFDI por default</label>
+                <select class="s-input" id="oUso" data-field="uso_cfdi">
+                    <option value="" selected={!ORG.usoCfdi}>Selecciona…</option>
+                    {USOS_CFDI.map((u) => <option value={u.codigo} selected={ORG.usoCfdi === u.codigo}>{u.nombre}</option>)}
+                </select>
+                <span class="s-hint">Uso default; el cliente lo puede cambiar al facturar.</span>
             </div>
         </div>
     </div>

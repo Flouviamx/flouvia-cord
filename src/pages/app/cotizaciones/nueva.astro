@@ -3,10 +3,14 @@
 // agregas productos del catálogo, negocias precio por línea, el total se recalcula
 // en vivo con IVA, y al enviar hace POST a /api/cotizaciones (inserta en Neon).
 import AppLayout from '../../../layouts/AppLayout.astro';
-import { getProductos, getClientes } from '../../../lib/queries';
+import { getProductos, getClientes, getOrg } from '../../../lib/queries';
 
-const [productos, CLIENTES] = await Promise.all([getProductos(), getClientes()]);
+const [productos, CLIENTES, ORG] = await Promise.all([getProductos(), getClientes(), getOrg()]);
 const catalogo = productos.filter(p => p.activo);
+
+// Defaults reales desde Ajustes › Cotizaciones e impuestos.
+const TERM_DEFAULT_LABEL = ({ contado: 'Contado', net30: 'Net 30', net60: 'Net 60' } as Record<string, string>)[ORG.terminosDefault] ?? 'Contado';
+const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b) => a - b);
 ---
 
 <AppLayout title="Nueva cotización — Trato" page="cotizaciones" heading="Nueva cotización">
@@ -42,7 +46,7 @@ const catalogo = productos.filter(p => p.activo);
                     </select>
                     <div class="term-chips" id="termChips">
                         {['Contado', 'Net 30', 'Net 60'].map((t) => (
-                            <button class:list={['chip', { active: t === 'Net 30' }]} data-term={t}>{t}</button>
+                            <button class:list={['chip', { active: t === TERM_DEFAULT_LABEL }]} data-term={t}>{t}</button>
                         ))}
                     </div>
                 </div>
@@ -82,16 +86,15 @@ const catalogo = productos.filter(p => p.activo);
             <section class="ed-summary">
                 <div class="section-head"><h2>Resumen</h2></div>
                 <div class="sum-line"><span>Subtotal</span><span class="editorial" id="sumSubtotal">$0.00</span></div>
-                <div class="sum-line"><span>IVA 16%</span><span class="editorial" id="sumIva">$0.00</span></div>
+                <div class="sum-line"><span>IVA {ORG.ivaPct}%</span><span class="editorial" id="sumIva">$0.00</span></div>
+                <input type="hidden" id="cfgIva" value={ORG.ivaPct} />
                 <div class="sum-divider"></div>
                 <div class="sum-line sum-total"><span>Total</span><span class="editorial" id="sumTotal">$0.00</span></div>
 
                 <div class="sum-field">
                     <label>Vigencia</label>
                     <select class="ed-select">
-                        <option>15 días</option>
-                        <option selected>30 días</option>
-                        <option>60 días</option>
+                        {VIGENCIAS.map((n) => <option selected={n === ORG.vigenciaDefaultDias}>{n} días</option>)}
                     </select>
                 </div>
 
@@ -130,10 +133,11 @@ const catalogo = productos.filter(p => p.activo);
     };
 
     function recalc() {
+        const ivaPct = (Number((document.getElementById('cfgIva') as HTMLInputElement)?.value) || 0) / 100;
         const subtotal = lines.reduce((s, l) => s + (l.negociado ?? l.lista) * l.cantidad, 0);
         document.getElementById('sumSubtotal').textContent = fmt(subtotal);
-        document.getElementById('sumIva').textContent = fmt(subtotal * 0.16);
-        document.getElementById('sumTotal').textContent = fmt(subtotal * 1.16);
+        document.getElementById('sumIva').textContent = fmt(subtotal * ivaPct);
+        document.getElementById('sumTotal').textContent = fmt(subtotal * (1 + ivaPct));
     }
 
     function render() {

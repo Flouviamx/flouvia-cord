@@ -1,14 +1,19 @@
 ---
-// Ajustes › Cotizaciones e impuestos
+// Ajustes › Cotizaciones e impuestos — folio, IVA, defaults, retenciones y leyenda.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
 const ORG = await getOrg();
+const TERMS = [
+    { v: 'contado', l: 'Contado' },
+    { v: 'net30', l: 'Net 30' },
+    { v: 'net60', l: 'Net 60' },
+];
 ---
 
 <SettingsShell title="Cotizaciones e impuestos — Ajustes" active="cotizaciones" heading="Cotizaciones e impuestos"
-    desc="Folio e impuestos con los que se generan tus cotizaciones nuevas." save>
+    desc="Folio, impuestos y valores con los que arranca cada cotización nueva. El IVA y los defaults se aplican de verdad en el editor." save>
     <div class="s-block">
-        <h3>Folio e IVA</h3>
+        <h3>Folio</h3>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
@@ -17,10 +22,64 @@ const ORG = await getOrg();
                     <span class="s-hint">Ej. {ORG.prefix}-0149</span>
                 </div>
                 <div class="s-field">
+                    <label for="oSerie">Serie (opcional)</label>
+                    <input class="s-input" id="oSerie" data-field="serie_folio" value={ORG.serieFolio} maxlength="6" placeholder="A" />
+                    <span class="s-hint">Para numeración por serie en CFDI. Vacío = sin serie.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="s-block">
+        <h3>Impuestos</h3>
+        <div class="s-body">
+            <div class="s-row">
+                <div class="s-field">
                     <label for="oIva">IVA (%)</label>
                     <input class="s-input" id="oIva" data-field="iva_pct" type="number" min="0" max="100" step="1" value={ORG.ivaPct} />
-                    <span class="s-hint">16% en casi todo México; 8% en franja fronteriza.</span>
+                    <span class="s-hint">16% en casi todo México; 8% en franja fronteriza. <b>Ya se aplica en el editor y los totales.</b></span>
                 </div>
+                <div class="s-field">
+                    <label for="oRetIva">Retención de IVA (%)</label>
+                    <input class="s-input" id="oRetIva" data-field="retencion_iva_pct" type="number" min="0" max="100" step="0.5" value={ORG.retencionIvaPct} />
+                    <span class="s-hint">Servicios: típicamente 10.667%. 0 = sin retención.</span>
+                </div>
+            </div>
+            <div class="s-field" style="max-width:50%">
+                <label for="oRetIsr">Retención de ISR (%)</label>
+                <input class="s-input" id="oRetIsr" data-field="retencion_isr_pct" type="number" min="0" max="100" step="0.5" value={ORG.retencionIsrPct} />
+                <span class="s-hint">Servicios profesionales: típicamente 10%. 0 = sin retención.</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="s-block">
+        <h3>Valores por default de cada cotización</h3>
+        <div class="s-body">
+            <div class="s-row">
+                <div class="s-field">
+                    <label for="oVig">Vigencia por default (días)</label>
+                    <input class="s-input" id="oVig" data-field="vigencia_default_dias" type="number" min="1" max="365" step="1" value={ORG.vigenciaDefaultDias} />
+                    <span class="s-hint">El editor arranca con este número de días.</span>
+                </div>
+                <div class="s-field">
+                    <label for="oTerm">Términos de pago por default</label>
+                    <select class="s-input" id="oTerm" data-field="terminos_default">
+                        {TERMS.map((t) => <option value={t.v} selected={ORG.terminosDefault === t.v}>{t.l}</option>)}
+                    </select>
+                    <span class="s-hint">Preseleccionado al crear una cotización.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="s-block">
+        <h3>Leyenda legal</h3>
+        <div class="s-body">
+            <div class="s-field">
+                <label for="oLegal">Texto legal por default</label>
+                <textarea class="s-input s-textarea" id="oLegal" data-field="texto_legal" rows="2" placeholder="Esta cotización no es un comprobante fiscal. Precios en MXN. Vigencia sujeta a disponibilidad.">{ORG.textoLegal}</textarea>
+                <span class="s-hint">Aparece al pie de la cotización y del PDF.</span>
             </div>
         </div>
     </div>

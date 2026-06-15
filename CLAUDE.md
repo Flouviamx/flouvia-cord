@@ -42,8 +42,12 @@ Node requerido: **>=22.12.0** (ver `.nvmrc` → 22.13.0)
 middleware en `src/middleware.ts`, componentes `<SignIn/>`/`<SignUp/>` montados
 en `/login` y `/registro` (SSR, `prerender = false`). App de Clerk: "Trato"
 (`app_3Ey07ttoq6VjvVgWmPOnI0U9rW6`), login CLI como flouvia.mx@gmail.com
-(`clerk` CLI instalado en `~/.npm-global/bin/clerk`). Falta: instancia de
-producción + proteger `/app` con auth. **Aún NO hay Neon/Stripe** (jun 2026);
+(`clerk` CLI instalado en `~/.npm-global/bin/clerk`). ✅ **`/app` y las APIs
+internas YA están PROTEGIDAS** (`src/middleware.ts`: sin sesión → redirect a
+`/login`; APIs internas → 401; públicas `/api/q|stripe|cron` pasan). El `org_id`
+se resuelve por usuario de Clerk en `getActiveOrgId()` (crea la org en el primer
+login; la org demo `demo-user` solo es fallback sin sesión, ej. cron). Falta:
+instancia de PRODUCCIÓN de Clerk. **Aún NO hay Stripe** (jun 2026);
 la app corre con datos mock desde `src/lib/mock.ts` — mismo shape que el schema,
 para que el swap a Neon sea cambiar imports por queries.
 
@@ -245,7 +249,13 @@ guarda también data URLs de logos subidos en Ajustes. **Jun 2026 además:**
 `cotizaciones.viewer_last_seen` (presencia), tabla **`tareas`** (CRM), y la **fase
 enterprise**: `clientes.nivel`/`descuento_pct` (price tiers), `orgs.aprob_descuento_max`/
 `aprob_monto_max`/`interes_moratorio_pct` + `cotizaciones.aprob_estado`/`aprob_motivo`
-(aprobaciones), y la tabla **`audit_log`**. ⚠️ Correr `npm run db:migrate` tras pull.
+(aprobaciones), y la tabla **`audit_log`**. **Superpoderes de config (jun 2026):**
+`orgs.vigencia_default_dias`/`terminos_default` (defaults que el editor `/nueva` SÍ
+usa), `retencion_isr_pct`/`retencion_iva_pct`/`texto_legal`, `sitio_web`/`whatsapp`,
+y fiscales SAT `regimen_fiscal`/`uso_cfdi`/`cp_fiscal`/`serie_folio` (catálogos en
+`src/lib/sat.ts`). ⚠️ **El IVA ahora se respeta de verdad**: el editor y
+`POST /api/cotizaciones` calculan con `orgs.iva_pct` (antes estaba hardcodeado 16%).
+Medidor de uso real del plan en `getPlanUsage()`. ⚠️ Correr `npm run db:migrate` tras pull.
 
 **Mock data:** `src/lib/mock.ts` exporta `ORG`, `PRODUCTOS`, `CLIENTES`,
 `COTIZACIONES` (con items + eventos), `STATUS_META` (label/color/bg por estado),
@@ -401,6 +411,14 @@ Regla de oro: **misma alma, distinto cuerpo**. Tokens en `src/layouts/Layout.ast
   scrolled, mockups). Recortados a 780×300. NO recrear el wordmark con texto.
 
 **Layout / componentes:**
+- ⛔ **NADA de rejillas de tarjetas/cards como patrón de UI nueva (jun 2026, regla
+  de André: "las cards no me gustan").** No construir hubs, índices, listados de
+  features/integraciones ni settings con grids de tiles con borde+sombra. Preferir
+  el estilo **Stripe/Linear de LISTAS**: filas con hairline (`border-bottom`),
+  ícono + título + descripción en línea, tablas, secciones con eyebrow + hairline
+  y mucho aire. Ejemplo canónico = índice de Ajustes (`/app/ajustes`) e
+  integraciones (filas, NO tarjetas). Las `.card` ya existentes del dashboard/
+  analítica pueden quedarse, pero NO usar card-grids para cosas nuevas.
 - Secciones de la landing: `padding: 9rem` vertical (mucho aire, estilo Stripe/Linear).
 - **Watermarks gigantes: ELIMINADOS del index (jun 2026, petición de André) — NO
   reintroducirlos en la landing.** Solo sobreviven en login/registro y en /q
