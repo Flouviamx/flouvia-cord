@@ -93,9 +93,13 @@ para que el swap a Neon sea cambiar imports por queries.
 ✅ **Presencia en vivo** — el cliente con `/q/[token]` abierto manda heartbeat
    (`POST /api/q/[token]` action `ping` → `cotizaciones.viewer_last_seen`); el vendedor
    ve "lo está viendo ahora" en el detalle (poll `/api/cotizaciones/[id]/presence`).
-✅ **Onboarding que arranca lleno** — al entrar con catálogo vacío (o `/app?onboarding=1`),
-   eliges industria y precarga catálogo + clientes (`/api/onboarding/seed`, packs en
-   `src/lib/onboarding.ts`).
+✅ **Guía de configuración (onboarding, estilo Stripe — reemplazó al picker de
+   industria jun 2026)** — card en el dashboard con anillo de progreso + checklist
+   cuyo "done" se calcula de datos REALES (`getSetupProgress()` en queries.ts:
+   marca/productos/clientes/primera cotización/fiscal). Se oculta al completar (o
+   `/app?guia=1` para forzarla). El viejo overlay de industria se quitó; `src/lib/
+   onboarding.ts` + `/api/onboarding/seed` quedan como código muerto (reutilizable
+   si se quiere un "precargar ejemplos").
 ✅ **Pipeline Kanban + Tareas** — toggle Lista/Tablero en `/app/cotizaciones` (drag&drop
    avanza el pipeline vía PATCH actions); tarjeta de "Tareas y recordatorios" en el
    dashboard (`/api/tareas`, tabla `tareas`, getTareas()).
@@ -233,25 +237,26 @@ el valor antes de cada query (igual que `app.email_cliente` en flouvia-web).
                            IMPORTACIÓN CSV (botón → modal archivo/mapeo/preview →
                            POST /api/productos/import [dedupe por SKU] y
                            /api/clientes/import [dedupe por RFC/empresa]).
-/app/ajustes     → HUB hub-and-spoke (jun 2026, estilo Stripe): rejilla de tarjetas
-                   por categoría. Ajustes YA NO va en el sidebar — se entra por el
-                   engrane de la topbar (`page="ajustes"` lo marca activo). Secciones
-                   en `src/lib/settings.ts` (FUENTE ÚNICA: hub + rail). Cada sub-página
-                   usa `components/app/SettingsShell.astro` (rail vertical + slot +
-                   barra de guardar opcional). El guardado es GENÉRICO: el shell junta
-                   todos los `[data-field]` del form y los manda a PATCH /api/org (que
-                   solo toca los campos presentes). Sub-rutas:
-/app/ajustes/marca         → nombre, color (picker), correo, teléfono, dirección
-/app/ajustes/fiscal        → RFC, razón social, estado del CSD
-/app/ajustes/cotizaciones  → prefijo de folio + IVA
-/app/ajustes/aprobaciones  → topes de descuento/monto + interés moratorio
-/app/ajustes/pdf           → plantilla, logo (data URL), mensaje, condiciones, toggle
-                             lista + PREVIEW EN VIVO (marca/fiscales vienen del server,
-                             solo se live-bindean los campos del documento)
-/app/ajustes/integraciones → andamiaje de ecommerce (Shopify/Woo/Meli/API/Zapier/ERP),
-                             todo "próximamente" + explicación de la arquitectura
-/app/ajustes/plan          → plan (Stripe Billing pendiente)
-/app/ajustes/auditoria     → audit_log (solo lectura)
+/app/ajustes     → ÍNDICE (estilo Stripe): LISTA de CATEGORÍAS (no tarjetas, no
+                   rail). Ajustes YA NO va en el sidebar — se entra por el engrane de
+                   la topbar. Modelo en `src/lib/settings.ts`: **CATEGORÍAS → pestañas**
+                   (`SETTINGS_CATEGORIES`, `categoryOfTab()`). Cada categoría abre su
+                   primera pestaña; dentro, las sub-páginas son **PESTAÑAS horizontales**
+                   (NO rail lateral, jun 2026 — André lo pidió). El `SettingsShell.astro`
+                   recibe `tab="x"` (deriva la categoría), pinta breadcrumb + título +
+                   tabs + slot + barra de guardar opcional. Guardado GENÉRICO: junta los
+                   `[data-field]` → PATCH /api/org. Categorías:
+                   • Empresa: marca · fiscal · plan
+                   • Cotizaciones: cotizaciones (folio/IVA/retenciones/defaults/legal) · pdf · aprobaciones
+                   • Equipo y roles: equipo
+                   • Avanzado: integraciones · auditoria
+                   • Tu cuenta: **cuenta** → monta `<UserProfile>` de Clerk (perfil,
+                     SESIONES, 2FA, passkeys, cuentas conectadas — nivel "datos de
+                     usuario", distinto de los datos del negocio).
+/q/[token]       → vista PÚBLICA — aprobar/rechazar REALES via POST /api/q/[token]
+                   (token = secreto, sin auth); muestra estado si ya se decidió;
+                   "Descargar PDF" = window.print con @media print; color de marca
+                   de la org. Token demo: /q/demo
 /q/[token]       → vista PÚBLICA — aprobar/rechazar REALES via POST /api/q/[token]
                    (token = secreto, sin auth); muestra estado si ya se decidió;
                    "Descargar PDF" = window.print con @media print; color de marca

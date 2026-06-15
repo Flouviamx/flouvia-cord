@@ -1,12 +1,11 @@
 ---
 // Dashboard — pipeline, monto por cerrar, actividad reciente. Datos reales (Neon).
 import AppLayout from '../../layouts/AppLayout.astro';
-import { getDashboard, getProductos, getTareas, STATUS_META, money } from '../../lib/queries';
-import { PACKS } from '../../lib/onboarding';
+import { getDashboard, getTareas, getSetupProgress, STATUS_META, money } from '../../lib/queries';
 
 const { quotes: COTIZACIONES, porCerrar, cerradoMes, tasaCierre, abiertas, feed: eventosFeed } = await getDashboard();
-const productos = await getProductos();
-const showOnboarding = productos.length === 0 || Astro.url.searchParams.has('onboarding');
+const setup = await getSetupProgress();
+const showGuide = !setup.complete || Astro.url.searchParams.has('guia');
 const TAREAS = await getTareas();
 const recientes = COTIZACIONES.slice(0, 5);
 const aprobadasN = COTIZACIONES.filter(q => q.status === 'approved').length;
@@ -26,25 +25,38 @@ const dotColor = (tipo: string) =>
         + Nueva cotización
     </a>
 
-    {showOnboarding && (
-        <div class="onb" id="onb">
-            <div class="onb-card">
-                <p class="onb-eyebrow">BIENVENIDO A TRATO</p>
-                <h2 class="onb-title">¿Cuál es tu giro?</h2>
-                <p class="onb-sub">Elige tu industria y precargamos un catálogo y clientes de ejemplo. Llegas a tu primera cotización en 2 minutos — puedes editar o borrar todo después.</p>
-                <div class="onb-grid">
-                    {PACKS.map((p) => (
-                        <button class="onb-pack" data-slug={p.slug}>
-                            <span class="onb-emoji">{p.emoji}</span>
-                            <span class="onb-pack-name">{p.nombre}</span>
-                            <span class="onb-pack-desc">{p.descripcion}</span>
-                        </button>
-                    ))}
+    {showGuide && (
+        <section class="guide" id="setupGuide">
+            <div class="guide-head">
+                <div class="guide-titles">
+                    <h2>Guía de configuración</h2>
+                    <p>{setup.complete ? '¡Todo listo! Tu cuenta está configurada.' : `${setup.doneN} de ${setup.total} pasos completados — termina de configurar Trato.`}</p>
                 </div>
-                <button class="onb-skip" id="onbSkip">Prefiero empezar desde cero →</button>
-                <p class="onb-err" id="onbErr"></p>
+                <div class="guide-progress" aria-label={`${setup.pct}% completado`}>
+                    <svg viewBox="0 0 36 36" class="guide-ring">
+                        <circle class="guide-ring-bg" cx="18" cy="18" r="15.5"></circle>
+                        <circle class="guide-ring-fg" cx="18" cy="18" r="15.5" style={`stroke-dasharray:${setup.pct * 0.974} 100`}></circle>
+                    </svg>
+                    <span class="guide-pct editorial">{setup.pct}%</span>
+                </div>
             </div>
-        </div>
+            <div class="guide-tasks">
+                {setup.tasks.map((t) => (
+                    <a href={t.href} class:list={['guide-task', { done: t.done }]}>
+                        <span class="guide-check" aria-hidden="true">
+                            {t.done
+                                ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                : <span class="guide-dot"></span>}
+                        </span>
+                        <span class="guide-task-body">
+                            <span class="guide-task-title">{t.label}</span>
+                            <span class="guide-task-desc">{t.desc}</span>
+                        </span>
+                        {!t.done && <svg class="guide-task-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>}
+                    </a>
+                ))}
+            </div>
+        </section>
     )}
 
     <!-- KPIs -->
@@ -172,28 +184,33 @@ const dotColor = (tipo: string) =>
     }
     .btn-new:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -8px rgba(10,25,47,0.55); }
 
-    /* ── Onboarding (cuenta vacía) ── */
-    .onb { position: fixed; inset: 0; z-index: 400; display: flex; align-items: center; justify-content: center; padding: 1.5rem; background: rgba(10,25,47,0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-    .onb-card { width: min(680px, 100%); background: #fff; border-radius: 22px; padding: 2.4rem 2.4rem 2rem; box-shadow: 0 50px 110px -30px rgba(10,25,47,0.55); animation: onb-pop 0.4s var(--ease-spring); text-align: center; }
-    @keyframes onb-pop { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: none; } }
-    .onb-eyebrow { font-size: 0.6rem; font-weight: 800; letter-spacing: 2px; color: #99a2af; margin: 0 0 0.5rem; }
-    .onb-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; margin: 0 0 0.6rem; }
-    .onb-sub { font-size: 0.88rem; color: var(--color-text-muted); line-height: 1.55; max-width: 480px; margin: 0 auto 1.8rem; }
-    .onb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; text-align: left; }
-    .onb-pack {
-        font-family: var(--font-sans); cursor: pointer; display: flex; flex-direction: column; gap: 4px;
-        background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.1rem 1.2rem;
-        transition: transform 0.3s var(--ease-spring), border-color 0.25s, box-shadow 0.3s;
-    }
-    .onb-pack:hover { transform: translateY(-3px); border-color: var(--color-blue-deep); box-shadow: 0 18px 40px -22px rgba(10,25,47,0.4); }
-    .onb-pack:disabled { opacity: 0.55; cursor: wait; }
-    .onb-emoji { font-size: 1.4rem; }
-    .onb-pack-name { font-size: 0.92rem; font-weight: 700; color: var(--color-text); }
-    .onb-pack-desc { font-size: 0.74rem; color: var(--color-text-muted); line-height: 1.4; }
-    .onb-skip { margin-top: 1.6rem; background: none; border: none; cursor: pointer; font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); }
-    .onb-skip:hover { color: var(--color-blue-deep); }
-    .onb-err { font-size: 0.78rem; color: var(--color-danger); margin: 0.6rem 0 0; min-height: 1em; }
-    @media (max-width: 560px) { .onb-grid { grid-template-columns: 1fr; } .onb-card { padding: 1.8rem 1.4rem; } }
+    /* ── Guía de configuración (onboarding por checklist, estilo Stripe) ── */
+    .guide { background: #fff; border: 1px solid var(--color-border); border-radius: 16px; padding: 1.4rem 1.5rem; margin-bottom: 1.6rem; box-shadow: 0 10px 30px -22px rgba(10,25,47,0.35); }
+    .guide-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 1.1rem; margin-bottom: 0.6rem; border-bottom: 1px solid var(--color-border); }
+    .guide-titles h2 { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.3px; margin: 0; }
+    .guide-titles p { font-size: 0.8rem; color: var(--color-text-muted); margin: 0.25rem 0 0; }
+    .guide-progress { position: relative; width: 52px; height: 52px; flex-shrink: 0; }
+    .guide-ring { width: 52px; height: 52px; transform: rotate(-90deg); }
+    .guide-ring-bg { fill: none; stroke: var(--color-border); stroke-width: 3; }
+    .guide-ring-fg { fill: none; stroke: var(--color-ok); stroke-width: 3; stroke-linecap: round; transition: stroke-dasharray 0.6s var(--ease-spring); }
+    .guide-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.66rem; font-weight: 700; color: var(--color-blue-deep); }
+
+    .guide-tasks { display: flex; flex-direction: column; }
+    .guide-task { display: flex; align-items: center; gap: 0.9rem; padding: 0.85rem 0.3rem; text-decoration: none; color: inherit; border-bottom: 1px solid var(--color-border); transition: padding-left 0.25s var(--ease-spring); }
+    .guide-task:last-child { border-bottom: none; }
+    .guide-task:not(.done):hover { padding-left: 0.6rem; }
+    .guide-check { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--color-bg-soft); border: 1.5px solid var(--color-border); color: #fff; }
+    .guide-task.done .guide-check { background: var(--color-ok); border-color: var(--color-ok); }
+    .guide-check svg { width: 13px; height: 13px; }
+    .guide-dot { width: 7px; height: 7px; border-radius: 50%; background: #c4cad3; }
+    .guide-task-body { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+    .guide-task-title { font-size: 0.9rem; font-weight: 600; color: var(--color-text); }
+    .guide-task.done .guide-task-title { color: var(--color-text-muted); text-decoration: line-through; }
+    .guide-task-desc { font-size: 0.76rem; color: var(--color-text-muted); }
+    .guide-task.done .guide-task-desc { display: none; }
+    .guide-task-arrow { width: 15px; height: 15px; color: #c4cad3; flex-shrink: 0; }
+    .guide-task:hover .guide-task-arrow { color: var(--color-blue-deep); }
+    @media (max-width: 560px) { .guide-task-desc { display: none; } }
 
     .kpis {
         display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
@@ -328,29 +345,6 @@ const dotColor = (tipo: string) =>
 </script>
 
 <script>
-    // Onboarding: precarga un catálogo según la industria elegida.
-    document.querySelectorAll<HTMLButtonElement>('.onb-pack').forEach((b) => {
-        b.addEventListener('click', async () => {
-            const slug = b.dataset.slug;
-            const err = document.getElementById('onbErr');
-            document.querySelectorAll<HTMLButtonElement>('.onb-pack').forEach((x) => (x.disabled = true));
-            if (err) err.textContent = '';
-            try {
-                const res = await fetch('/api/onboarding/seed', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ industria: slug }),
-                });
-                const d = await res.json();
-                if (!res.ok) throw new Error(d.error || 'No se pudo precargar');
-                window.location.href = '/app';
-            } catch (e: any) {
-                if (err) err.textContent = e.message;
-                document.querySelectorAll<HTMLButtonElement>('.onb-pack').forEach((x) => (x.disabled = false));
-            }
-        });
-    });
-    document.getElementById('onbSkip')?.addEventListener('click', () => document.getElementById('onb')?.remove());
-
     // ── Tareas / recordatorios ──
     document.getElementById('taskAdd')?.addEventListener('submit', async (e) => {
         e.preventDefault();

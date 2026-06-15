@@ -1,44 +1,41 @@
 ---
-// SettingsShell — chasis de las sub-páginas de Ajustes (hub & spoke).
-// Rail vertical de secciones a la izquierda + contenido a la derecha.
-// Si `save`, pinta la barra de guardar y corre el guardado genérico que
-// lee todos los [data-field] del formulario y los manda a PATCH /api/org.
+// SettingsShell — chasis de las sub-páginas de Ajustes (estilo Stripe).
+// Encabezado "Configuración › Categoría" + BARRA DE PESTAÑAS horizontal de la
+// categoría (NO rail lateral) + contenido. Si `save`, pinta la barra de guardar
+// y corre el guardado genérico que lee los [data-field] → PATCH /api/org.
 import AppLayout from '../../layouts/AppLayout.astro';
-import { SETTINGS_SECTIONS } from '../../lib/settings';
+import { categoryOfTab } from '../../lib/settings';
 
 interface Props {
     title: string;       // título del documento
-    active: string;      // id de la sección activa
-    heading: string;     // título visible
-    desc?: string;       // bajada bajo el título
-    save?: boolean;      // ¿mostrar barra de guardar + guardado genérico?
+    tab: string;         // id de la pestaña activa (deriva la categoría)
+    intro?: string;      // bajada opcional bajo las pestañas
+    save?: boolean;      // ¿barra de guardar + guardado genérico?
 }
-const { title, active, heading, desc, save = false } = Astro.props;
+const { title, tab, intro, save = false } = Astro.props;
+const category = categoryOfTab(tab)!;
+const single = category.tabs.length <= 1;
 ---
 
 <AppLayout title={title} page="ajustes" heading="Ajustes">
-    <div class="set-grid">
-        <!-- Rail de secciones -->
-        <nav class="set-rail" aria-label="Secciones de ajustes">
-            <a href="/app/ajustes" class="set-rail-back">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                Todos los ajustes
-            </a>
-            {SETTINGS_SECTIONS.map((s) => (
-                <a href={s.href} class:list={['set-rail-item', { active: s.id === active }]}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={s.icon} />
-                    <span>{s.label}</span>
-                </a>
-            ))}
-        </nav>
+    <div class="set2">
+        <a href="/app/ajustes" class="set2-crumb">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Configuración
+        </a>
+        <h2 class="set2-title">{category.label}</h2>
+        <p class="set2-desc">{category.desc}</p>
 
-        <!-- Contenido -->
-        <div class="set-main" data-settings-form>
-            <header class="set-head">
-                <h2>{heading}</h2>
-                {desc && <p>{desc}</p>}
-            </header>
+        {!single && (
+            <nav class="set2-tabs" aria-label={`Pestañas de ${category.label}`}>
+                {category.tabs.map((t) => (
+                    <a href={t.href} class:list={['set2-tab', { active: t.id === tab }]}>{t.label}</a>
+                ))}
+            </nav>
+        )}
 
+        <div class="set2-content" data-settings-form>
+            {intro && <p class="set2-intro">{intro}</p>}
             <slot />
 
             {save && (
@@ -53,34 +50,23 @@ const { title, active, heading, desc, save = false } = Astro.props;
 
 <style is:global>
     /* ════════ ESTILOS COMPARTIDOS DE AJUSTES (globales: cruzan el slot) ════════ */
-    .set-grid { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 2.2rem; align-items: start; }
+    .set2 { max-width: 760px; }
+    .set2-crumb { display: inline-flex; align-items: center; gap: 5px; font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted); text-decoration: none; margin-bottom: 0.7rem; transition: color 0.2s; }
+    .set2-crumb svg { width: 14px; height: 14px; }
+    .set2-crumb:hover { color: var(--color-blue-deep); }
+    .set2-title { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.6px; margin: 0; }
+    .set2-desc { font-size: 0.88rem; color: var(--color-text-muted); margin: 0.4rem 0 0; }
 
-    /* Rail */
-    .set-rail { position: sticky; top: 90px; display: flex; flex-direction: column; gap: 1px; }
-    .set-rail-back {
-        display: inline-flex; align-items: center; gap: 8px;
-        font-size: 0.74rem; font-weight: 600; color: var(--color-text-muted);
-        text-decoration: none; padding: 7px 10px; margin-bottom: 0.6rem; border-radius: 8px;
-        transition: color 0.2s, background 0.2s;
-    }
-    .set-rail-back svg { width: 14px; height: 14px; }
-    .set-rail-back:hover { color: var(--color-blue-deep); background: var(--color-bg-soft); }
-    .set-rail-item {
-        display: flex; align-items: center; gap: 10px;
-        font-size: 0.83rem; font-weight: 500; color: var(--color-text-muted);
-        text-decoration: none; padding: 9px 11px; border-radius: 9px;
-        transition: color 0.2s, background 0.2s;
-    }
-    .set-rail-item svg { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; }
-    .set-rail-item:hover { color: var(--color-blue-deep); background: var(--color-bg-soft); }
-    .set-rail-item.active { color: var(--color-blue-deep); background: var(--color-bg-soft); font-weight: 600; }
-    .set-rail-item.active svg { opacity: 1; }
+    /* Pestañas horizontales con subrayado (estilo Stripe) */
+    .set2-tabs { display: flex; gap: 1.4rem; margin: 1.5rem 0 0; border-bottom: 1px solid var(--color-border); overflow-x: auto; }
+    .set2-tab { position: relative; font-size: 0.88rem; font-weight: 600; color: var(--color-text-muted); text-decoration: none; padding: 0 0 12px; white-space: nowrap; transition: color 0.2s; }
+    .set2-tab::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--color-blue-deep); border-radius: 2px; transform: scaleX(0); transition: transform 0.25s var(--ease-spring); }
+    .set2-tab:hover { color: var(--color-text); }
+    .set2-tab.active { color: var(--color-blue-deep); }
+    .set2-tab.active::after { transform: scaleX(1); }
 
-    /* Encabezado de la sección */
-    .set-main { min-width: 0; }
-    .set-head { margin-bottom: 1.6rem; padding-bottom: 1.1rem; border-bottom: 1px solid var(--color-border); }
-    .set-head h2 { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.4px; margin: 0; }
-    .set-head p { font-size: 0.86rem; color: var(--color-text-muted); margin: 0.4rem 0 0; line-height: 1.5; max-width: 60ch; }
+    .set2-content { padding-top: 1.8rem; }
+    .set2-intro { font-size: 0.86rem; color: var(--color-text-muted); margin: 0 0 1.6rem; line-height: 1.5; max-width: 62ch; }
 
     /* Bloques y campos (compartidos por todas las sub-páginas) */
     .s-block { margin-bottom: 2.2rem; }
@@ -126,11 +112,7 @@ const { title, active, heading, desc, save = false } = Astro.props;
     .s-saved.show { opacity: 1; }
     .s-saved.error { color: var(--color-danger); }
 
-    @media (max-width: 860px) {
-        .set-grid { grid-template-columns: 1fr; gap: 1.2rem; }
-        .set-rail { position: static; flex-direction: row; flex-wrap: wrap; gap: 6px; }
-        .set-rail-back { width: 100%; margin-bottom: 0.2rem; }
-        .set-rail-item { border: 1px solid var(--color-border); }
+    @media (max-width: 600px) {
         .s-row { grid-template-columns: 1fr; }
     }
 </style>
@@ -144,7 +126,6 @@ const { title, active, heading, desc, save = false } = Astro.props;
         const form = document.querySelector('[data-settings-form]');
         if (!btn || !msg || !form) return;
 
-        // Sincroniza color picker ↔ texto si existen en la página.
         const cp = document.getElementById('oColorPick') as HTMLInputElement | null;
         const ct = document.getElementById('oColor') as HTMLInputElement | null;
         if (cp && ct) {

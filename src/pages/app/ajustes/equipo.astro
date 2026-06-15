@@ -11,8 +11,8 @@ const teamEnabled = planTieneEquipo(ORG.plan_raw);
 const PRESETS_JSON = Object.fromEntries(Object.entries(PRESETS).map(([k, v]) => [k, v.permisos]));
 ---
 
-<SettingsShell title="Equipo y roles — Ajustes" active="equipo" heading="Equipo y roles"
-    desc="Invita a tu equipo y controla exactamente qué puede hacer cada quién, por sección.">
+<SettingsShell title="Equipo y roles — Ajustes" tab="equipo"
+    intro="Invita a tu equipo y controla exactamente qué puede hacer cada quién, por sección.">
 
     {!teamEnabled && (
         <div class="upsell">

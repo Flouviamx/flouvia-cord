@@ -612,3 +612,22 @@ export async function requirePerm(key: PermKey): Promise<Response | null> {
         status: 403, headers: { 'Content-Type': 'application/json' },
     });
 }
+
+// ── GUÍA DE CONFIGURACIÓN (onboarding por checklist, estilo Stripe) ───────────
+// Tareas con "done" calculado de datos REALES. Alimenta la guía del dashboard.
+export async function getSetupProgress() {
+    const orgId = await getActiveOrgId();
+    const [o] = await sql`select logo_url, email_contacto, telefono, rfc from orgs where id = ${orgId}`;
+    const [{ np }] = await sql`select count(*)::int as np from productos where org_id = ${orgId}`;
+    const [{ nc }] = await sql`select count(*)::int as nc from clientes where org_id = ${orgId}`;
+    const [{ nq }] = await sql`select count(*)::int as nq from cotizaciones where org_id = ${orgId}`;
+    const tasks = [
+        { id: 'marca',      label: 'Personaliza tu marca',        desc: 'Logo, color y datos de contacto en tus documentos.', href: '/app/ajustes/marca',            done: !!(o?.logo_url || o?.email_contacto || o?.telefono) },
+        { id: 'productos',  label: 'Crea tu catálogo',            desc: 'Agrega los productos o servicios que vendes.',       href: '/app/productos',               done: Number(np) > 0 },
+        { id: 'clientes',   label: 'Agrega tus clientes',         desc: 'A quién le cotizas, con sus términos de pago.',      href: '/app/clientes',                done: Number(nc) > 0 },
+        { id: 'cotizacion', label: 'Crea tu primera cotización',  desc: 'El corazón de Trato — pruébalo en 2 minutos.',       href: '/app/cotizaciones/nueva',      done: Number(nq) > 0 },
+        { id: 'fiscal',     label: 'Completa tus datos fiscales', desc: 'RFC y régimen para timbrar CFDI 4.0.',               href: '/app/ajustes/fiscal',          done: !!o?.rfc },
+    ];
+    const doneN = tasks.filter((t) => t.done).length;
+    return { tasks, doneN, total: tasks.length, pct: Math.round((doneN / tasks.length) * 100), complete: doneN === tasks.length };
+}

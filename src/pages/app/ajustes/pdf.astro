@@ -9,8 +9,8 @@ const accent = /^#[0-9a-fA-F]{6}$/.test(ORG.colorMarca) ? ORG.colorMarca : '#0a1
 const tpl = ORG.pdfTemplate || 'clasico';
 ---
 
-<SettingsShell title="Documento PDF — Ajustes" active="pdf" heading="Documento PDF"
-    desc="Personaliza el PDF que tus clientes descargan o reciben impreso. Cada cuenta tiene el suyo." save>
+<SettingsShell title="Documento PDF — Ajustes" tab="pdf"
+    intro="Personaliza el PDF que tus clientes descargan o reciben impreso. Cada cuenta tiene el suyo." save>
     <div class="pdf-layout">
         <!-- Columna del formulario -->
         <div class="pdf-form">
