@@ -35,6 +35,7 @@ Node requerido: **>=22.12.0** (ver `.nvmrc` → 22.13.0)
 | Emails | Resend (transaccionales: cotización vista, aprobada, etc.) |
 | CFDI | PAC de timbrado (mismo proveedor que la app de Shopify) |
 | Animaciones | GSAP 3 — **solo en landing/login**; dentro de la app, CSS animations |
+| Analytics | **Vercel Analytics** (`@vercel/analytics`) — `<Analytics />` en `Layout.astro` y `AppLayout.astro` |
 | Tipografía | **Inter única** (las serif se ELIMINARON jun 2026 a petición de André) — montos con clase `.editorial` = Inter 600, tracking −0.03em, `tabular-nums` |
 
 ✅ **Clerk YA está ACTIVO** (jun 2026): integración en `astro.config.mjs` con
@@ -261,6 +262,9 @@ usuario (el de IA ya está cableado en `ai-draft`).
    /03 Desarrolladores · /04 Recursos · /05 Empresa. Trust chips en el bloque de marca
    (🇲🇽 Hecho en México · CFDI 4.0 · Datos cifrados). Grid responsive (≤1020px → 3 cols,
    ≤620px → 2 cols).
+✅ **Vercel Analytics (jun 2026)** — `@vercel/analytics` instalado; componente `<Analytics />`
+   montado en `Layout.astro` (landing) y `AppLayout.astro` (app). Page views y eventos se
+   recopilan automáticamente en el dashboard de Vercel sin configuración adicional.
 ⬜ Pendiente: aprobación parcial por línea, versiones de cotización, multi-usuario con Clerk
    (proteger `/app`), Stripe Billing de suscripciones (planes).
 

@@ -12,10 +12,6 @@ import { MCP_TOOLS } from '../../../lib/mcp';
 const ORG = await getOrg();
 const tienePlan = planTieneApi(ORG.plan_raw);
 
-if (!tienePlan) {
-    return Astro.redirect('/precios?feature=api');
-}
-
 const KEYS = await getApiKeys();
 const WEBHOOKS = await getWebhooks();
 const ACTIVITY = await getApiActivity();

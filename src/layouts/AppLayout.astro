@@ -6,6 +6,7 @@
 import { getOrg, getSetupProgress, getSidebarBadges } from '../lib/queries';
 import { SignOutButton } from '@clerk/astro/components';
 import OnboardingWidget from '../components/app/OnboardingWidget.astro';
+import Analytics from '@vercel/analytics/astro';
 const ORG = await getOrg();
 
 // Avance de configuración (Fase 3). Si la cuenta ya está 100% lista no montamos
@@ -213,6 +214,7 @@ const NAV_FLAT = NAV_GROUPS.flatMap((g) => g.items);
 
         <!-- ── GUÍA DE CONFIGURACIÓN (widget flotante + píldora en topbar) ── -->
         {!setup.complete && <OnboardingWidget progress={setup} />}
+        <Analytics />
     </body>
 </html>
 

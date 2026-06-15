@@ -21,6 +21,8 @@ const {
 const SITE      = Astro.site ?? new URL('https://trato.flouvia.com');
 const canonical = new URL(Astro.url.pathname, SITE).href;
 const ogImage   = new URL(image, SITE).href;
+
+import Analytics from '@vercel/analytics/astro';
 ---
 
 <!doctype html>
@@ -67,6 +69,7 @@ const ogImage   = new URL(image, SITE).href;
     </head>
     <body>
         <slot />
+        <Analytics />
     </body>
 </html>
 
