@@ -22,7 +22,7 @@ const NAV = [
     { id: 'clientes',     href: '/app/clientes',     label: 'Clientes',     icon: 'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z' },
     { id: 'productos',    href: '/app/productos',    label: 'Productos',    icon: 'M20 7h-4V5l-2-2h-4L8 5v2H4c-1.1 0-2 .9-2 2v5c0 .75.4 1.38 1 1.73V19c0 1.11.89 2 2 2h14c1.11 0 2-.89 2-2v-3.28c.59-.35 1-.99 1-1.72V9c0-1.1-.9-2-2-2zM10 5h4v2h-4V5z' },
     { id: 'analitica',    href: '/app/analitica',    label: 'Analítica',    icon: 'M4 13h3v7H4v-7zm6.5-5h3v12h-3V8zM17 11h3v9h-3v-9z' },
-    { id: 'ajustes',      href: '/app/ajustes',      label: 'Ajustes',      icon: 'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.61 3.61 0 0 1 8.4 12c0-1.98 1.62-3.6 3.6-3.6s3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z' },
+    // Ajustes ya NO va en el sidebar — vive en el engrane de la topbar (petición de André).
 ];
 ---
 
@@ -85,10 +85,10 @@ const NAV = [
                     </button>
 
                     <div class="tb-right">
-                        <a class="tb-icon" href="/app" title="Actividad" aria-label="Actividad">
+                        <a class="tb-icon tb-activity" href="/app" title="Actividad" aria-label="Actividad">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                         </a>
-                        <a class="tb-icon" href="/app/ajustes" title="Ajustes" aria-label="Ajustes">
+                        <a class:list={['tb-icon', 'tb-gear', { active: page === 'ajustes' }]} href="/app/ajustes" title="Ajustes" aria-label="Ajustes">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                         </a>
                         <slot name="topbar-actions" />
@@ -305,6 +305,8 @@ const NAV = [
     }
     .tb-icon svg { width: 17px; height: 17px; }
     .tb-icon:hover { background: var(--color-bg-soft); color: var(--color-blue-deep); }
+    /* El engrane queda marcado cuando estás en cualquier página de Ajustes */
+    .tb-icon.active { background: var(--color-blue-deep); color: #fff; }
 
     /* Hamburguesa + backdrop del drawer (solo móvil) */
     .tb-burger { display: none; align-items: center; justify-content: center; width: 38px; height: 38px; margin-left: -6px; border: none; background: none; color: var(--color-text); border-radius: 9px; cursor: pointer; }
@@ -351,7 +353,16 @@ const NAV = [
     .cmdk-item-title { font-size: 0.88rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .cmdk-item-sub { font-size: 0.72rem; color: var(--color-text-muted); }
     .cmdk-pill { font-size: 0.62rem; font-weight: 700; color: var(--color-text-muted); flex-shrink: 0; }
-    .cmdk-empty { padding: 2rem 1rem; text-align: center; font-size: 0.85rem; color: var(--color-text-muted); }
+    /* Descripción a la derecha (estilo Stripe "filtros sugeridos") */
+    .cmdk-hint { font-size: 0.74rem; color: #99a2af; flex-shrink: 0; margin-left: auto; padding-left: 1rem; white-space: nowrap; }
+    .cmdk-item.sel .cmdk-hint { color: rgba(255,255,255,0.65); }
+    .cmdk-empty {
+        display: flex; flex-direction: column; align-items: center; gap: 4px;
+        padding: 2.4rem 1rem; text-align: center; color: var(--color-text-muted);
+    }
+    .cmdk-empty svg { width: 26px; height: 26px; color: #c4cad3; margin-bottom: 6px; }
+    .cmdk-empty p { font-size: 0.88rem; font-weight: 600; color: var(--color-text); margin: 0; }
+    .cmdk-empty span { font-size: 0.76rem; color: #99a2af; }
     .cmdk-foot { display: flex; gap: 1.2rem; padding: 9px 16px; border-top: 1px solid var(--color-border); background: var(--color-bg-soft); }
     .cmdk-foot span { font-size: 0.68rem; color: #99a2af; display: inline-flex; align-items: center; gap: 5px; }
     .cmdk-foot kbd { font-size: 0.62rem; font-weight: 700; background: #fff; border: 1px solid var(--color-border); border-radius: 4px; padding: 1px 5px; color: var(--color-text-muted); }
@@ -376,9 +387,12 @@ const NAV = [
         .app-content { padding: 1.2rem 1rem 6rem; }
         .topbar { padding: 0.9rem 1rem; }
         .tb-demo { display: none; }
-        .tb-search { max-width: none; flex: 0 0 auto; padding: 8px; }
+        .tb-search { max-width: none; flex: 1; padding: 8px; }
         .tb-search-label, .tb-kbd { display: none; }
-        .tb-icon { display: none; }
+        /* En móvil ocultamos Actividad pero el engrane de Ajustes se queda
+           (ya no está en la tab bar inferior). */
+        .tb-activity { display: none; }
+        .tb-gear { display: inline-flex; }
         .mobile-tabs {
             display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
             background: rgba(10,25,47,0.97);
@@ -416,14 +430,14 @@ const NAV = [
             external: '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>',
         };
         const NAV: any[] = [
-            ['Dashboard', '/app', I.dashboard], ['Cotizaciones', '/app/cotizaciones', I.doc], ['Cobranza', '/app/cobranza', I.card],
-            ['Clientes', '/app/clientes', I.users], ['Productos', '/app/productos', I.box], ['Analítica', '/app/analitica', I.chart], ['Ajustes', '/app/ajustes', I.gear],
-        ].map(([title, href, icon]) => ({ group: 'Ir a', title, href, icon }));
+            ['Dashboard', '/app', I.dashboard, 'Resumen y actividad'], ['Cotizaciones', '/app/cotizaciones', I.doc, 'Lista y pipeline'], ['Cobranza', '/app/cobranza', I.card, 'Cuentas por cobrar'],
+            ['Clientes', '/app/clientes', I.users, 'Directorio de clientes'], ['Productos', '/app/productos', I.box, 'Catálogo'], ['Analítica', '/app/analitica', I.chart, 'Métricas y forecast'], ['Ajustes', '/app/ajustes', I.gear, 'Marca, fiscal, PDF…'],
+        ].map(([title, href, icon, hint]) => ({ group: 'Ir a', title, href, icon, hint }));
         const ACTIONS: any[] = [
-            { group: 'Acciones', title: 'Nueva cotización', href: '/app/cotizaciones/nueva', icon: I.plus },
-            { group: 'Acciones', title: 'Nuevo cliente', href: '/app/clientes', icon: I.plus },
-            { group: 'Acciones', title: 'Nuevo producto', href: '/app/productos', icon: I.plus },
-            { group: 'Acciones', title: 'Ver sitio público', href: '/', icon: I.external },
+            { group: 'Acciones', title: 'Nueva cotización', href: '/app/cotizaciones/nueva', icon: I.plus, hint: 'Crear borrador' },
+            { group: 'Acciones', title: 'Nuevo cliente', href: '/app/clientes', icon: I.plus, hint: 'Agregar al directorio' },
+            { group: 'Acciones', title: 'Nuevo producto', href: '/app/productos', icon: I.plus, hint: 'Agregar al catálogo' },
+            { group: 'Acciones', title: 'Ver sitio público', href: '/', icon: I.external, hint: 'Abrir la landing' },
         ];
         const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
         const esc = (s: string) => String(s).replace(/</g, '&lt;');
@@ -446,25 +460,29 @@ const NAV = [
             staticMatches(q).forEach((c) => list.push(c));
             return list;
         };
-        const paint = () => {
-            if (!items.length) { results.innerHTML = '<div class="cmdk-empty">Sin resultados</div>'; return; }
+        const paint = (q = '') => {
+            if (!items.length) {
+                results.innerHTML = `<div class="cmdk-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>Sin resultados para “${esc(q)}”</p><span>Prueba con un folio, cliente, producto o sección.</span></div>`;
+                return;
+            }
             let html = ''; let last = '';
             items.forEach((it, i) => {
                 if (it.group !== last) { html += `<div class="cmdk-group-label">${it.group}</div>`; last = it.group; }
-                html += `<button class="cmdk-item ${i === sel ? 'sel' : ''}" data-i="${i}"><span class="cmdk-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${it.icon}</svg></span><span class="cmdk-item-body"><span class="cmdk-item-title">${esc(it.title)}</span></span></button>`;
+                const hint = it.hint ? `<span class="cmdk-hint">${esc(it.hint)}</span>` : (it.sub ? `<span class="cmdk-hint">${esc(it.sub)}</span>` : '');
+                html += `<button class="cmdk-item ${i === sel ? 'sel' : ''}" data-i="${i}"><span class="cmdk-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${it.icon}</svg></span><span class="cmdk-item-body"><span class="cmdk-item-title">${esc(it.title)}</span></span>${hint}</button>`;
             });
             results.innerHTML = html;
             results.querySelector('.cmdk-item.sel')?.scrollIntoView({ block: 'nearest' });
         };
         const render = async (q: string) => {
-            items = buildItems(q, null); sel = 0; paint();
+            items = buildItems(q, null); sel = 0; paint(q);
             if (q.trim().length >= 2) {
                 const my = ++seq;
                 try {
                     const res = await fetch('/api/search?q=' + encodeURIComponent(q.trim()));
                     const data = await res.json();
                     if (my !== seq) return;
-                    items = buildItems(q, data); sel = 0; paint();
+                    items = buildItems(q, data); sel = 0; paint(q);
                 } catch { /* ignora */ }
             }
         };

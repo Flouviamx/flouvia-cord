@@ -1,0 +1,31 @@
+---
+// Ajustes › Plan y facturación
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getOrg } from '../../../lib/queries';
+const ORG = await getOrg();
+---
+
+<SettingsShell title="Plan y facturación — Ajustes" active="plan" heading="Plan y facturación"
+    desc="Gestiona tu suscripción de Trato, método de pago y comprobantes.">
+    <div class="s-block">
+        <h3>Suscripción actual</h3>
+        <div class="plan-card">
+            <div>
+                <span class="plan-name">Plan {ORG.plan}</span>
+                <span class="plan-price"><span class="editorial">$590</span> MXN/mes · IVA incluido</span>
+            </div>
+            <button class="plan-btn" disabled>Gestionar suscripción</button>
+        </div>
+        <p class="plan-note">La gestión de suscripción se habilita al conectar Stripe Billing (pendiente). Mientras tanto puedes cambiar de plan escribiéndonos.</p>
+    </div>
+</SettingsShell>
+
+<style>
+    .plan-card { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1.2rem 1.3rem; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-bg-soft); }
+    .plan-name { display: block; font-size: 1rem; font-weight: 700; }
+    .plan-price { font-size: 0.8rem; color: var(--color-text-muted); }
+    .plan-price .editorial { font-size: 1.1rem; color: var(--color-blue-deep); }
+    .plan-btn { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text); background: #fff; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; transition: border-color 0.25s; }
+    .plan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .plan-note { font-size: 0.78rem; color: var(--color-text-muted); margin: 0.9rem 0 0; line-height: 1.5; }
+</style>

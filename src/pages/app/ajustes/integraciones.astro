@@ -1,0 +1,67 @@
+---
+// Ajustes › Integraciones — conecta Trato con ecommerce y otras plataformas.
+// Estado actual: andamiaje (todas "próximamente"). La arquitectura objetivo es
+// sincronizar catálogo/clientes/pedidos vía las APIs de cada plataforma + webhooks.
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getOrg } from '../../../lib/queries';
+const ORG = await getOrg();
+
+const INTEGRACIONES = [
+    { id: 'shopify',    nombre: 'Shopify',        desc: 'Importa tu catálogo y clientes; convierte una cotización aprobada en un pedido (draft order).', estado: 'Próximamente', color: '#95BF47', letra: 'S' },
+    { id: 'woo',        nombre: 'WooCommerce',    desc: 'Sincroniza productos y precios desde tu tienda WordPress vía la REST API.', estado: 'Próximamente', color: '#7F54B3', letra: 'W' },
+    { id: 'meli',       nombre: 'Mercado Libre',  desc: 'Trae tu publicación y crea cotizaciones B2B para compras por volumen.', estado: 'Próximamente', color: '#FFE600', letra: 'M', dark: true },
+    { id: 'api',        nombre: 'API + Webhooks',  desc: 'Crea cotizaciones desde tu propio sistema y recibe eventos (vista, aprobada, pagada).', estado: 'En diseño', color: '#0a192f', letra: '{}' },
+    { id: 'zapier',     nombre: 'Zapier / Make',   desc: 'Conecta Trato con 6,000+ apps sin código: CRM, hojas de cálculo, Slack…', estado: 'Próximamente', color: '#FF4A00', letra: 'Z' },
+    { id: 'contpaqi',   nombre: 'CONTPAQi / ERP',  desc: 'Exporta cotizaciones y CFDI a tu contabilidad. Pensado para el cierre fiscal.', estado: 'Próximamente', color: '#E30613', letra: 'C' },
+];
+---
+
+<SettingsShell title="Integraciones — Ajustes" active="integraciones" heading="Integraciones"
+    desc="Conecta Trato con tu tienda en línea y tus herramientas. Hoy todas están en preparación — escríbenos si quieres ser de los primeros en probar una.">
+
+    <div class="int-grid">
+        {INTEGRACIONES.map((it) => (
+            <div class="int-card">
+                <div class="int-top">
+                    <span class="int-logo" style={`background:${it.color}; color:${it.dark ? '#0a192f' : '#fff'}`}>{it.letra}</span>
+                    <span class:list={['int-status', { soon: it.estado === 'Próximamente', design: it.estado === 'En diseño' }]}>{it.estado}</span>
+                </div>
+                <h3 class="int-name">{it.nombre}</h3>
+                <p class="int-desc">{it.desc}</p>
+                <button class="int-btn" disabled>Conectar</button>
+            </div>
+        ))}
+    </div>
+
+    <div class="int-how">
+        <h3>¿Cómo funcionará una integración?</h3>
+        <ol>
+            <li><b>Conectas tu cuenta</b> (OAuth con Shopify/Woo/Meli, o una API key). Trato guarda el token de tu tienda de forma segura por <code>org_id</code>.</li>
+            <li><b>Importamos catálogo y clientes</b> de la plataforma a Trato — sin recapturar nada. Reusa el flujo que ya existe de importación por CSV.</li>
+            <li><b>Cotizas en Trato</b> como siempre. Al aprobarse, opcionalmente se crea el pedido/borrador de venta en tu tienda (ej. <i>draft order</i> en Shopify).</li>
+            <li><b>Webhooks bidireccionales:</b> cambios de precio/stock entran a Trato; eventos de Trato (vista, aprobada, pagada) salen a tu sistema o a Zapier.</li>
+        </ol>
+        <p class="int-note">Trato es <b>standalone</b> (sirve a cualquier negocio B2B, no solo a tiendas), así que las integraciones son <b>opcionales</b>: funciona perfecto sin conectar nada, y conectar tu tienda solo te ahorra capturar el catálogo.</p>
+    </div>
+</SettingsShell>
+
+<style>
+    .int-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.9rem; margin-bottom: 2.4rem; }
+    .int-card { display: flex; flex-direction: column; padding: 1.2rem 1.3rem; border: 1px solid var(--color-border); border-radius: 14px; background: #fff; }
+    .int-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.9rem; }
+    .int-logo { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; }
+    .int-status { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 4px 9px; border-radius: 100px; background: var(--color-bg-soft); color: var(--color-text-muted); border: 1px solid var(--color-border); }
+    .int-status.soon { color: #b45309; background: rgba(245,158,11,0.1); border-color: transparent; }
+    .int-status.design { color: var(--color-blue-deep); background: rgba(10,25,47,0.07); border-color: transparent; }
+    .int-name { font-size: 0.98rem; font-weight: 700; margin: 0 0 0.4rem; }
+    .int-desc { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.5; margin: 0 0 1.1rem; flex: 1; }
+    .int-btn { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: not-allowed; opacity: 0.6; width: max-content; }
+
+    .int-how { padding: 1.4rem 1.5rem; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-bg-soft); }
+    .int-how h3 { font-size: 0.95rem; font-weight: 700; margin: 0 0 1rem; }
+    .int-how ol { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.7rem; }
+    .int-how li { font-size: 0.85rem; color: var(--color-text); line-height: 1.55; }
+    .int-how b { font-weight: 600; }
+    .int-how code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.78rem; background: rgba(10,25,47,0.06); padding: 1px 5px; border-radius: 4px; }
+    .int-note { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.55; margin: 1.2rem 0 0; padding-top: 1rem; border-top: 1px solid var(--color-border); }
+</style>

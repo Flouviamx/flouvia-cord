@@ -1,0 +1,48 @@
+---
+// Ajustes › Marca y contacto
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getOrg } from '../../../lib/queries';
+const ORG = await getOrg();
+---
+
+<SettingsShell title="Marca y contacto — Ajustes" active="marca" heading="Marca y contacto"
+    desc="Tu nombre y color aparecen en el link público y en el PDF de cada cotización. El contacto se imprime en el documento." save>
+    <div class="s-block">
+        <h3>Identidad</h3>
+        <div class="s-body">
+            <div class="s-row">
+                <div class="s-field">
+                    <label for="oNombre">Nombre del negocio</label>
+                    <input class="s-input" id="oNombre" data-field="nombre" value={ORG.nombre} />
+                </div>
+                <div class="s-field">
+                    <label for="oColor">Color de marca</label>
+                    <div class="color-row">
+                        <input type="color" id="oColorPick" value={ORG.colorMarca} aria-label="Elegir color" />
+                        <input class="s-input" id="oColor" data-field="color_marca" value={ORG.colorMarca} maxlength="7" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="s-block">
+        <h3>Contacto</h3>
+        <div class="s-body">
+            <div class="s-row">
+                <div class="s-field">
+                    <label for="oEmail">Correo de contacto</label>
+                    <input class="s-input" id="oEmail" data-field="email_contacto" type="email" value={ORG.email} placeholder="ventas@tunegocio.mx" />
+                </div>
+                <div class="s-field">
+                    <label for="oTelefono">Teléfono</label>
+                    <input class="s-input" id="oTelefono" data-field="telefono" value={ORG.telefono} placeholder="55 1234 5678" />
+                </div>
+            </div>
+            <div class="s-field">
+                <label for="oDireccion">Dirección</label>
+                <input class="s-input" id="oDireccion" data-field="direccion" value={ORG.direccion} placeholder="Av. Industria 123, Tlalnepantla, Edo. Méx." />
+            </div>
+        </div>
+    </div>
+</SettingsShell>

@@ -1,0 +1,41 @@
+---
+// Ajustes › Datos fiscales
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getOrg } from '../../../lib/queries';
+const ORG = await getOrg();
+---
+
+<SettingsShell title="Datos fiscales — Ajustes" active="fiscal" heading="Datos fiscales"
+    desc="Necesarios para timbrar CFDI 4.0 ante el SAT (plan Negocio). Se usan tal cual en el comprobante." save>
+    <div class="s-block">
+        <h3>Identificación fiscal</h3>
+        <div class="s-body">
+            <div class="s-row">
+                <div class="s-field">
+                    <label for="oRfc">RFC</label>
+                    <input class="s-input" id="oRfc" data-field="rfc" value={ORG.rfc} maxlength="13" placeholder="XAXX010101000" />
+                </div>
+                <div class="s-field">
+                    <label for="oRazon">Razón social</label>
+                    <input class="s-input" id="oRazon" data-field="razon_social" value={ORG.razonSocial} placeholder="Mi Empresa S.A. de C.V." />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="s-block">
+        <h3>Certificado de Sello Digital (CSD)</h3>
+        <div class="s-body">
+            <div class="csd-state">
+                <span class="csd-dot"></span>
+                <span>Sin conectar — disponible al activar el plan Negocio. Necesitarás tu <b>.cer</b>, tu <b>.key</b> y la contraseña de la llave.</span>
+            </div>
+        </div>
+    </div>
+</SettingsShell>
+
+<style>
+    .csd-state { display: flex; align-items: center; gap: 9px; font-size: 0.8rem; color: var(--color-text-muted); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 12px 14px; line-height: 1.5; }
+    .csd-state b { color: var(--color-text); font-weight: 600; }
+    .csd-dot { width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; }
+</style>

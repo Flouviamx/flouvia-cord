@@ -108,6 +108,12 @@ para que el swap a Neon sea cambiar imports por queries.
    instrumentados org/cotizaciones/clientes/productos; vista de solo-lectura en Ajustes.
 ✅ **Recordatorios de cobro (Resend)** — `/api/cron/recordatorios` (cron en `vercel.json`,
    protegido por `CRON_SECRET`) manda correos 3 días antes del vencimiento vía Resend (REST).
+✅ **Correo al enviar cotización (Resend)** — helper `src/lib/email.ts` (`notifyQuoteSent`/
+   `sendEmail`); al crear-con-envío (`POST /api/cotizaciones`) o acción send/resend
+   (`PATCH /api/cotizaciones/[id]`) se manda el link público al correo del cliente y se
+   registra evento `email`. **Gated por `RESEND_API_KEY`**: sin la llave NO se manda nada
+   (por eso un envío de prueba no llega por correo) — el link se genera igual. Falta:
+   verificar dominio en Resend + setear `RESEND_API_KEY`/`RESEND_FROM`.
 ✅ **Pago en línea (Stripe)** — botón en `/q/[token]` → `/api/q/[token]/checkout` (Stripe
    Checkout vía REST) + `/api/stripe/webhook` marca `paid`. Gated por `STRIPE_SECRET_KEY`.
 ⬜ Pendiente: aprobación parcial por línea, versiones de cotización, multi-usuario con Clerk
@@ -203,11 +209,25 @@ el valor antes de cada query (igual que `app.email_cliente` en flouvia-web).
                            IMPORTACIÓN CSV (botón → modal archivo/mapeo/preview →
                            POST /api/productos/import [dedupe por SKU] y
                            /api/clientes/import [dedupe por RFC/empresa]).
-/app/ajustes     → guarda real via PATCH /api/org: marca (color picker), contacto,
-                   fiscales, folio/IVA, y sección "Documento PDF" con SELECTOR DE
-                   PLANTILLA, SUBIDOR DE LOGO (data URL) y PREVIEW EN VIVO del PDF
-                   (panel sticky que refleja todos los campos), mensaje de pie,
-                   condiciones, toggle precio de lista. Layout en grid de 2 columnas.
+/app/ajustes     → HUB hub-and-spoke (jun 2026, estilo Stripe): rejilla de tarjetas
+                   por categoría. Ajustes YA NO va en el sidebar — se entra por el
+                   engrane de la topbar (`page="ajustes"` lo marca activo). Secciones
+                   en `src/lib/settings.ts` (FUENTE ÚNICA: hub + rail). Cada sub-página
+                   usa `components/app/SettingsShell.astro` (rail vertical + slot +
+                   barra de guardar opcional). El guardado es GENÉRICO: el shell junta
+                   todos los `[data-field]` del form y los manda a PATCH /api/org (que
+                   solo toca los campos presentes). Sub-rutas:
+/app/ajustes/marca         → nombre, color (picker), correo, teléfono, dirección
+/app/ajustes/fiscal        → RFC, razón social, estado del CSD
+/app/ajustes/cotizaciones  → prefijo de folio + IVA
+/app/ajustes/aprobaciones  → topes de descuento/monto + interés moratorio
+/app/ajustes/pdf           → plantilla, logo (data URL), mensaje, condiciones, toggle
+                             lista + PREVIEW EN VIVO (marca/fiscales vienen del server,
+                             solo se live-bindean los campos del documento)
+/app/ajustes/integraciones → andamiaje de ecommerce (Shopify/Woo/Meli/API/Zapier/ERP),
+                             todo "próximamente" + explicación de la arquitectura
+/app/ajustes/plan          → plan (Stripe Billing pendiente)
+/app/ajustes/auditoria     → audit_log (solo lectura)
 /q/[token]       → vista PÚBLICA — aprobar/rechazar REALES via POST /api/q/[token]
                    (token = secreto, sin auth); muestra estado si ya se decidió;
                    "Descargar PDF" = window.print con @media print; color de marca

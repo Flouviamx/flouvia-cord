@@ -1,0 +1,33 @@
+---
+// Ajustes › Auditoría
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getAuditLog } from '../../../lib/queries';
+const AUDIT = await getAuditLog();
+---
+
+<SettingsShell title="Auditoría — Ajustes" active="auditoria" heading="Auditoría"
+    desc="Registro inmutable de cada cambio: qué, cuándo e IP. Solo lectura — para tus auditores.">
+    <div class="s-block">
+        <div class="audit-list">
+            {AUDIT.length === 0 && <p class="audit-empty">Aún no hay eventos registrados.</p>}
+            {AUDIT.map((a) => (
+                <div class="audit-row">
+                    <span class="audit-accion">{a.accion}</span>
+                    <span class="audit-detalle">{a.detalle}</span>
+                    <span class="audit-meta">{a.cuando}{a.ip && a.ip !== 'desconocida' ? ` · ${a.ip}` : ''}</span>
+                </div>
+            ))}
+        </div>
+    </div>
+</SettingsShell>
+
+<style>
+    .audit-list { display: flex; flex-direction: column; max-height: 560px; overflow-y: auto; }
+    .audit-row { display: grid; grid-template-columns: auto 1fr auto; gap: 0.9rem; align-items: baseline; padding: 0.65rem 0; border-bottom: 1px solid var(--color-border); }
+    .audit-row:last-child { border-bottom: none; }
+    .audit-accion { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.68rem; font-weight: 700; color: var(--color-blue-deep); white-space: nowrap; }
+    .audit-detalle { font-size: 0.82rem; color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .audit-meta { font-size: 0.66rem; color: var(--color-text-muted); white-space: nowrap; }
+    .audit-empty { font-size: 0.84rem; color: var(--color-text-muted); margin: 0.4rem 0; }
+    @media (max-width: 640px) { .audit-row { grid-template-columns: 1fr; gap: 0.2rem; } }
+</style>

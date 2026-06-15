@@ -6,6 +6,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
+import { notifyQuoteSent } from '../../lib/email';
 
 const IVA_PCT = 0.16;
 const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(Math.round(n));
@@ -103,7 +104,18 @@ export const POST: APIRoute = async ({ request }) => {
         detalle: folio + (needsApproval ? ' — ' + aprobMotivo : ''), ip: reqIp(request),
     });
 
-    return json({ id: cot.id, folio, token: cot.public_token, needsApproval, motivo: aprobMotivo });
+    // Si se envía (y no requiere aprobación), avisa al cliente por correo (si hay Resend).
+    let email: { sent: boolean; skipped?: string } | undefined;
+    if (body.send && !needsApproval) {
+        const origin = new URL(request.url).origin;
+        email = await notifyQuoteSent(orgId, cot.id, origin);
+        if (email.sent) {
+            await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                      values (${orgId}, ${cot.id}, 'email', 'Correo enviado al cliente')`;
+        }
+    }
+
+    return json({ id: cot.id, folio, token: cot.public_token, needsApproval, motivo: aprobMotivo, email });
 };
 
 function json(data: unknown, status = 200) {

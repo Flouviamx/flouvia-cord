@@ -6,6 +6,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
+import { notifyQuoteSent } from '../../../lib/email';
 
 // Transiciones permitidas: action → { desde[], status final, evento }
 const ACTIONS: Record<string, { from: string[]; to: string; evento: string; detalle: string }> = {
@@ -78,7 +79,18 @@ export const PATCH: APIRoute = async ({ params, request }) => {
               values (${orgId}, ${id}, ${action.evento}, ${action.detalle})`;
     await logAudit(orgId, { accion: `cotizacion.${body.action}`, entidad: 'cotizacion', entidad_id: id, detalle: `${actual} → ${action.to}`, ip: reqIp(request) });
 
-    return json({ ok: true, status: action.to });
+    // Al enviar/reenviar, intenta avisar al cliente por correo (si hay Resend).
+    let email: { sent: boolean; skipped?: string } | undefined;
+    if (action.to === 'sent') {
+        const origin = new URL(request.url).origin;
+        email = await notifyQuoteSent(orgId, id, origin);
+        if (email.sent) {
+            await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                      values (${orgId}, ${id}, 'email', 'Correo enviado al cliente')`;
+        }
+    }
+
+    return json({ ok: true, status: action.to, email });
 };
 
 export const DELETE: APIRoute = async ({ params }) => {

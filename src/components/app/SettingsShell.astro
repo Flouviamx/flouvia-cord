@@ -1,0 +1,178 @@
+---
+// SettingsShell — chasis de las sub-páginas de Ajustes (hub & spoke).
+// Rail vertical de secciones a la izquierda + contenido a la derecha.
+// Si `save`, pinta la barra de guardar y corre el guardado genérico que
+// lee todos los [data-field] del formulario y los manda a PATCH /api/org.
+import AppLayout from '../../layouts/AppLayout.astro';
+import { SETTINGS_SECTIONS } from '../../lib/settings';
+
+interface Props {
+    title: string;       // título del documento
+    active: string;      // id de la sección activa
+    heading: string;     // título visible
+    desc?: string;       // bajada bajo el título
+    save?: boolean;      // ¿mostrar barra de guardar + guardado genérico?
+}
+const { title, active, heading, desc, save = false } = Astro.props;
+---
+
+<AppLayout title={title} page="ajustes" heading="Ajustes">
+    <div class="set-grid">
+        <!-- Rail de secciones -->
+        <nav class="set-rail" aria-label="Secciones de ajustes">
+            <a href="/app/ajustes" class="set-rail-back">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                Todos los ajustes
+            </a>
+            {SETTINGS_SECTIONS.map((s) => (
+                <a href={s.href} class:list={['set-rail-item', { active: s.id === active }]}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={s.icon} />
+                    <span>{s.label}</span>
+                </a>
+            ))}
+        </nav>
+
+        <!-- Contenido -->
+        <div class="set-main" data-settings-form>
+            <header class="set-head">
+                <h2>{heading}</h2>
+                {desc && <p>{desc}</p>}
+            </header>
+
+            <slot />
+
+            {save && (
+                <div class="s-save-row">
+                    <button class="s-save" id="sBtn">Guardar cambios</button>
+                    <span class="s-saved" id="sMsg">✓ Cambios guardados</span>
+                </div>
+            )}
+        </div>
+    </div>
+</AppLayout>
+
+<style is:global>
+    /* ════════ ESTILOS COMPARTIDOS DE AJUSTES (globales: cruzan el slot) ════════ */
+    .set-grid { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 2.2rem; align-items: start; }
+
+    /* Rail */
+    .set-rail { position: sticky; top: 90px; display: flex; flex-direction: column; gap: 1px; }
+    .set-rail-back {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-size: 0.74rem; font-weight: 600; color: var(--color-text-muted);
+        text-decoration: none; padding: 7px 10px; margin-bottom: 0.6rem; border-radius: 8px;
+        transition: color 0.2s, background 0.2s;
+    }
+    .set-rail-back svg { width: 14px; height: 14px; }
+    .set-rail-back:hover { color: var(--color-blue-deep); background: var(--color-bg-soft); }
+    .set-rail-item {
+        display: flex; align-items: center; gap: 10px;
+        font-size: 0.83rem; font-weight: 500; color: var(--color-text-muted);
+        text-decoration: none; padding: 9px 11px; border-radius: 9px;
+        transition: color 0.2s, background 0.2s;
+    }
+    .set-rail-item svg { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; }
+    .set-rail-item:hover { color: var(--color-blue-deep); background: var(--color-bg-soft); }
+    .set-rail-item.active { color: var(--color-blue-deep); background: var(--color-bg-soft); font-weight: 600; }
+    .set-rail-item.active svg { opacity: 1; }
+
+    /* Encabezado de la sección */
+    .set-main { min-width: 0; }
+    .set-head { margin-bottom: 1.6rem; padding-bottom: 1.1rem; border-bottom: 1px solid var(--color-border); }
+    .set-head h2 { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.4px; margin: 0; }
+    .set-head p { font-size: 0.86rem; color: var(--color-text-muted); margin: 0.4rem 0 0; line-height: 1.5; max-width: 60ch; }
+
+    /* Bloques y campos (compartidos por todas las sub-páginas) */
+    .s-block { margin-bottom: 2.2rem; }
+    .s-block > h3 { font-size: 0.7rem; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: #99a2af; margin: 0 0 1rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--color-border); }
+    .s-body { display: flex; flex-direction: column; gap: 1.1rem; }
+    .s-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .s-field { display: flex; flex-direction: column; gap: 0.45rem; }
+    .s-field label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
+    .s-input {
+        font-family: var(--font-sans); font-size: 0.86rem; font-weight: 500;
+        color: var(--color-text); background: var(--color-bg-soft);
+        border: 1px solid var(--color-border); border-radius: 9px; padding: 10px 12px;
+        transition: border-color 0.25s;
+    }
+    .s-input:focus { outline: none; border-color: var(--color-blue-deep); }
+    .s-textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
+    .s-hint { font-size: 0.68rem; color: #99a2af; }
+
+    .color-row { display: flex; align-items: center; gap: 9px; }
+    .color-row input[type="color"] { width: 40px; height: 40px; padding: 0; border: 1px solid var(--color-border); border-radius: 9px; background: none; cursor: pointer; flex-shrink: 0; }
+    .color-row .s-input { flex: 1; }
+
+    /* Toggle */
+    .s-toggle { display: flex; align-items: center; gap: 11px; cursor: pointer; user-select: none; }
+    .s-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+    .s-toggle-track { width: 38px; height: 22px; border-radius: 100px; flex-shrink: 0; background: rgba(10,25,47,0.15); position: relative; transition: background 0.3s var(--ease-ios); }
+    .s-toggle-thumb { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.25); transition: transform 0.3s var(--ease-spring); }
+    .s-toggle input:checked + .s-toggle-track { background: var(--color-ok); }
+    .s-toggle input:checked + .s-toggle-track .s-toggle-thumb { transform: translateX(16px); }
+    .s-toggle-text { font-size: 0.82rem; color: var(--color-text); font-weight: 500; }
+
+    /* Barra de guardar */
+    .s-save-row { display: flex; align-items: center; gap: 1rem; margin-top: 0.4rem; }
+    .s-save {
+        font-family: var(--font-sans); font-size: 0.88rem; font-weight: 600;
+        background: var(--color-blue-deep); color: #fff; border: none; border-radius: 10px;
+        padding: 12px 26px; cursor: pointer; box-shadow: 0 8px 22px -10px rgba(10,25,47,0.5);
+        transition: transform 0.4s var(--ease-spring), opacity 0.2s;
+    }
+    .s-save:hover { transform: translateY(-2px); }
+    .s-save:disabled { opacity: 0.6; cursor: wait; transform: none; }
+    .s-saved { font-size: 0.8rem; font-weight: 600; color: var(--color-ok); opacity: 0; transition: opacity 0.3s var(--ease-ios); }
+    .s-saved.show { opacity: 1; }
+    .s-saved.error { color: var(--color-danger); }
+
+    @media (max-width: 860px) {
+        .set-grid { grid-template-columns: 1fr; gap: 1.2rem; }
+        .set-rail { position: static; flex-direction: row; flex-wrap: wrap; gap: 6px; }
+        .set-rail-back { width: 100%; margin-bottom: 0.2rem; }
+        .set-rail-item { border: 1px solid var(--color-border); }
+        .s-row { grid-template-columns: 1fr; }
+    }
+</style>
+
+<script>
+    // Guardado genérico de Ajustes: junta todos los [data-field] del formulario
+    // y los manda a PATCH /api/org (que solo toca los campos presentes).
+    function initSettingsSave() {
+        const btn = document.getElementById('sBtn') as HTMLButtonElement | null;
+        const msg = document.getElementById('sMsg');
+        const form = document.querySelector('[data-settings-form]');
+        if (!btn || !msg || !form) return;
+
+        // Sincroniza color picker ↔ texto si existen en la página.
+        const cp = document.getElementById('oColorPick') as HTMLInputElement | null;
+        const ct = document.getElementById('oColor') as HTMLInputElement | null;
+        if (cp && ct) {
+            cp.addEventListener('input', () => { ct.value = cp.value; ct.dispatchEvent(new Event('input', { bubbles: true })); });
+            ct.addEventListener('input', () => { if (/^#[0-9a-fA-F]{6}$/.test(ct.value)) cp.value = ct.value; });
+        }
+
+        btn.addEventListener('click', async () => {
+            const body: Record<string, unknown> = {};
+            form.querySelectorAll('[data-field]').forEach((node) => {
+                const el = node as HTMLInputElement;
+                const k = el.dataset.field!;
+                if (el.type === 'checkbox') body[k] = el.checked;
+                else if (el.type === 'radio') { if (el.checked) body[k] = el.value; }
+                else body[k] = el.value;
+            });
+            btn.disabled = true; msg.className = 's-saved';
+            try {
+                const res = await fetch('/api/org', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || 'No se pudo guardar');
+                msg.textContent = '✓ Cambios guardados'; msg.className = 's-saved show';
+                setTimeout(() => msg.classList.remove('show'), 2600);
+            } catch (err: any) {
+                msg.textContent = err.message || 'No se pudo guardar'; msg.className = 's-saved show error';
+            } finally { btn.disabled = false; }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSettingsSave);
+    else initSettingsSave();
+</script>

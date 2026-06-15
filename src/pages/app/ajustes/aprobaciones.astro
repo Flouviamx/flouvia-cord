@@ -1,0 +1,38 @@
+---
+// Ajustes › Aprobaciones y tesorería
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getOrg } from '../../../lib/queries';
+const ORG = await getOrg();
+---
+
+<SettingsShell title="Aprobaciones y tesorería — Ajustes" active="aprobaciones" heading="Aprobaciones y tesorería"
+    desc="Protege tus márgenes: topes que disparan aprobación de gerencia y la tasa de interés por mora." save>
+    <div class="s-block">
+        <h3>Umbrales de aprobación</h3>
+        <div class="s-body">
+            <div class="s-row">
+                <div class="s-field">
+                    <label for="oAprobDesc">Descuento máx. sin aprobación (%)</label>
+                    <input class="s-input" id="oAprobDesc" data-field="aprob_descuento_max" type="number" min="0" max="100" step="1" value={ORG.aprobDescuentoMax} />
+                    <span class="s-hint">0 = sin tope. Por encima, "Enviar" pide aprobación de gerencia.</span>
+                </div>
+                <div class="s-field">
+                    <label for="oAprobMonto">Monto máx. sin aprobación (MXN)</label>
+                    <input class="s-input" id="oAprobMonto" data-field="aprob_monto_max" type="number" min="0" step="1000" value={ORG.aprobMontoMax} />
+                    <span class="s-hint">0 = sin tope.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="s-block">
+        <h3>Tesorería</h3>
+        <div class="s-body">
+            <div class="s-field">
+                <label for="oInteres">Interés moratorio mensual (%)</label>
+                <input class="s-input" id="oInteres" data-field="interes_moratorio_pct" type="number" min="0" max="100" step="0.5" value={ORG.interesMoratorioPct} />
+                <span class="s-hint">Compuesto sobre el saldo vencido. Se calcula en Cobranza.</span>
+            </div>
+        </div>
+    </div>
+</SettingsShell>

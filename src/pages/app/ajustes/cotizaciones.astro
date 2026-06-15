@@ -1,0 +1,27 @@
+---
+// Ajustes › Cotizaciones e impuestos
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getOrg } from '../../../lib/queries';
+const ORG = await getOrg();
+---
+
+<SettingsShell title="Cotizaciones e impuestos — Ajustes" active="cotizaciones" heading="Cotizaciones e impuestos"
+    desc="Folio e impuestos con los que se generan tus cotizaciones nuevas." save>
+    <div class="s-block">
+        <h3>Folio e IVA</h3>
+        <div class="s-body">
+            <div class="s-row">
+                <div class="s-field">
+                    <label for="oPrefix">Prefijo de folio</label>
+                    <input class="s-input" id="oPrefix" data-field="quote_prefix" value={ORG.prefix} maxlength="6" />
+                    <span class="s-hint">Ej. {ORG.prefix}-0149</span>
+                </div>
+                <div class="s-field">
+                    <label for="oIva">IVA (%)</label>
+                    <input class="s-input" id="oIva" data-field="iva_pct" type="number" min="0" max="100" step="1" value={ORG.ivaPct} />
+                    <span class="s-hint">16% en casi todo México; 8% en franja fronteriza.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</SettingsShell>

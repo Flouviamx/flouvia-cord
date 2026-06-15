@@ -142,8 +142,12 @@ const BOARD_COLS = [
     .vt-btn svg { width: 14px; height: 14px; }
     .vt-btn.active { background: var(--color-blue-deep); color: #fff; }
 
+    /* El atributo [hidden] debe ganarle a display:grid/block de abajo, si no
+       las dos vistas se renderizan apiladas (bug: "se amontonan"). */
+    .table-card[hidden], .board[hidden] { display: none !important; }
+
     /* ── Tablero Kanban ── */
-    .board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(230px, 1fr); gap: 0.9rem; overflow-x: auto; padding-bottom: 0.5rem; align-items: start; }
+    .board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(230px, 1fr); gap: 0.9rem; overflow-x: auto; padding-bottom: 0.5rem; align-items: start; margin-top: 0.4rem; }
     .bd-col { background: transparent; border: none; padding: 0 0.4rem; min-height: 120px; border-left: 1px solid var(--color-border); }
     .bd-col:first-child { border-left: none; padding-left: 0; }
     .bd-col-head { display: flex; align-items: center; gap: 7px; font-size: 0.74rem; font-weight: 700; color: var(--color-text); text-transform: uppercase; letter-spacing: 0.4px; }
