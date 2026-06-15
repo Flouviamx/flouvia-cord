@@ -46,12 +46,14 @@ export const ROL_LABEL: Record<string, string> = {
     owner: 'Dueño', admin: 'Administrador', vendedor: 'Vendedor', lectura: 'Solo lectura', miembro: 'Personalizado',
 };
 
-// Planes que incluyen multi-usuario (gating: "solo plan Negocio"). Acepta el
-// código del tier más alto actual ('pro') y futuros 'business'/'negocio'.
-export const TEAM_PLANS = ['pro', 'business', 'negocio'];
+// Planes que incluyen multi-usuario. Matriz jun 2026: Pro (5), Scale (15),
+// Developer (ilimitados). Free/Starter = 1 usuario. Se aceptan los códigos
+// legacy 'business'/'negocio' por compatibilidad.
+export const TEAM_PLANS = ['pro', 'scale', 'developer', 'business', 'negocio'];
 export const planTieneEquipo = (plan: string) => TEAM_PLANS.includes(plan);
 
-// Planes que incluyen la API pública + webhooks (mismo gating que Equipo: el
-// tier alto). La API es feature de plan Negocio.
-export const API_PLANS = ['pro', 'business', 'negocio'];
+// Planes con acceso a la API pública + webhooks. Matriz jun 2026: todos los de
+// pago (Starter en adelante) la incluyen con cuota mensual; Developer es el
+// tier de infraestructura.
+export const API_PLANS = ['starter', 'pro', 'scale', 'developer', 'business', 'negocio'];
 export const planTieneApi = (plan: string) => API_PLANS.includes(plan);

@@ -1,6 +1,7 @@
 ---
-// Pricing — 3 planes. Datos desde src/lib/precios.ts (fuente única, compartida
-// con la página /precios). Plan Pro destacado.
+// Pricing — 5 planes (Free · Starter · Pro · Scale · Developer). Datos desde
+// src/lib/precios.ts (fuente única, compartida con /precios). Pro = el ANCLA:
+// va al centro, destacado en navy, ribbon "MÁS POPULAR".
 import { PLANES } from '../../lib/precios';
 
 const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
@@ -50,7 +51,7 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
 </section>
 
 <style>
-    .pricing { padding: 9rem 5%; max-width: 1120px; margin: 0 auto; }
+    .pricing { padding: 9rem 5%; max-width: 1320px; margin: 0 auto; }
     .pr-head { text-align: center; max-width: 600px; margin: 0 auto 3.5rem; }
     .pr-eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #888; margin: 0 0 1.2rem; }
     .pr-title { font-size: clamp(1.9rem, 3.6vw, 3rem); font-weight: 800; line-height: 1.1; letter-spacing: -1.2px; color: var(--color-text); margin: 0 0 1.1rem; }
@@ -58,31 +59,33 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
 
     .pr-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1.2rem;
-        align-items: start;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.85rem;
+        align-items: stretch;
     }
     .plan {
         position: relative;
         background: var(--color-bg-soft);
         border: 1px solid var(--color-border);
-        border-radius: 24px;
-        padding: 2.2rem 1.9rem;
+        border-radius: 22px;
+        padding: 1.9rem 1.4rem;
         display: flex;
         flex-direction: column;
-        gap: 1.4rem;
+        gap: 1.2rem;
         transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
     }
     .plan:hover { transform: translateY(-4px); box-shadow: 0 30px 70px -30px rgba(10,25,47,0.16); }
 
     .plan-featured {
+        position: relative;
+        z-index: 2;
         background: radial-gradient(ellipse at 50% 0%, #112240 0%, #0a192f 80%);
         border: none;
         color: #fff;
         box-shadow: 0 40px 90px -34px rgba(10,25,47,0.5);
-        transform: scale(1.03);
+        transform: scale(1.05);
     }
-    .plan-featured:hover { transform: scale(1.03) translateY(-4px); }
+    .plan-featured:hover { transform: scale(1.05) translateY(-4px); }
     .plan-ribbon {
         position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
         background: var(--color-ok); color: #fff;
@@ -90,13 +93,13 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
         padding: 5px 13px; border-radius: 100px;
     }
 
-    .plan-head { display: flex; flex-direction: column; gap: 0.4rem; }
-    .plan-name { font-size: 1.25rem; font-weight: 700; margin: 0; letter-spacing: -0.4px; }
-    .plan-tagline { font-size: 0.88rem; margin: 0; color: var(--color-text-muted); }
+    .plan-head { display: flex; flex-direction: column; gap: 0.35rem; min-height: 64px; }
+    .plan-name { font-size: 1.15rem; font-weight: 700; margin: 0; letter-spacing: -0.4px; }
+    .plan-tagline { font-size: 0.8rem; margin: 0; color: var(--color-text-muted); line-height: 1.35; }
     .plan-featured .plan-tagline { color: #8892b0; }
 
-    .plan-price { display: flex; align-items: baseline; gap: 8px; }
-    .plan-amount { font-size: 2.8rem; line-height: 1; color: var(--color-blue-deep); }
+    .plan-price { display: flex; align-items: baseline; gap: 7px; }
+    .plan-amount { font-size: 2.3rem; line-height: 1; color: var(--color-blue-deep); }
     .plan-featured .plan-amount { color: #fff; }
     .plan-cycle { font-size: 0.82rem; color: var(--color-text-muted); font-weight: 500; }
     .plan-featured .plan-cycle { color: #8892b0; }
@@ -123,8 +126,8 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
     }
     .plan-cta-solid:hover { transform: translateY(-2px); }
 
-    .plan-feats { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.85rem; }
-    .plan-feats li { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--color-text); }
+    .plan-feats { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+    .plan-feats li { display: flex; align-items: flex-start; gap: 9px; font-size: 0.82rem; line-height: 1.35; color: var(--color-text); }
     .plan-featured .plan-feats li { color: #cdd5e0; }
     .pf-check {
         width: 19px; height: 19px; flex-shrink: 0;
@@ -138,9 +141,13 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
     .pr-note a { color: var(--color-blue-deep); font-weight: 600; text-decoration: none; }
     .pr-note a:hover { text-decoration: underline; }
 
-    @media (max-width: 860px) {
-        .pr-grid { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
+    /* 5 → 3 columnas en laptops angostas (Pro sigue destacado) */
+    @media (max-width: 1180px) {
+        .pr-grid { grid-template-columns: repeat(3, 1fr); gap: 1rem; }
         .plan-featured { transform: none; }
         .plan-featured:hover { transform: translateY(-4px); }
+    }
+    @media (max-width: 860px) {
+        .pr-grid { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
     }
 </style>

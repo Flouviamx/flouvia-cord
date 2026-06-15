@@ -308,3 +308,32 @@ create table if not exists webhooks (
   last_delivery_at timestamptz
 );
 create index if not exists idx_webhooks_org on webhooks(org_id);
+
+-- ── Stripe Billing — suscripciones + medidores de uso (jun 2026) ─────────────
+-- Estado de la suscripción que el webhook (/api/stripe/webhook) sincroniza en
+-- tiempo real cuando el cliente cambia de plan, paga o se le rechaza el cobro.
+alter table orgs add column if not exists subscription_status text;          -- trialing|active|past_due|canceled|null
+alter table orgs add column if not exists billing_cycle text;                -- mensual|anual
+alter table orgs add column if not exists current_period_end timestamptz;    -- fin del ciclo actual
+
+-- Consumo del periodo (mes UTC 'YYYY-MM'). Lo incrementa reportUsage() en cada
+-- uso de IA/CFDI/API/usuario y se muestra en /app/ajustes/plan. El excedente
+-- sobre la cuota incluida (INCLUDED en src/lib/billing.ts) lo cobra Stripe vía
+-- meter events; aquí sólo llevamos el contador para la UI y los topes duros.
+create table if not exists uso_periodo (
+  org_id     uuid        not null references orgs(id) on delete cascade,
+  periodo    text        not null,                 -- 'YYYY-MM' (UTC)
+  ia         int         not null default 0,       -- armados con IA (Claude)
+  cfdi       int         not null default 0,       -- timbres CFDI 4.0
+  api        int         not null default 0,       -- llamadas a la API pública
+  usuarios   int         not null default 0,       -- usuarios extra activos
+  updated_at timestamptz not null default now(),
+  primary key (org_id, periodo)
+);
+
+-- Idempotencia del webhook de Stripe: si un event.id ya se procesó, se ignora.
+create table if not exists stripe_events (
+  id          text        primary key,             -- evt_…
+  type        text,
+  received_at timestamptz not null default now()
+);

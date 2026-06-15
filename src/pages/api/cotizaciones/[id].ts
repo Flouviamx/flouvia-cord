@@ -9,6 +9,7 @@ import { sql, getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
 import { notifyQuoteSent } from '../../../lib/email';
 import { requirePerm } from '../../../lib/queries';
 import { dispatchQuoteEvent, type WebhookEvent } from '../../../lib/webhooks';
+import { reportUsage } from '../../../lib/billing';
 
 // Evento interno (eventos.tipo) → evento público de webhook.
 const WH_MAP: Record<string, WebhookEvent> = {
@@ -99,6 +100,9 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     // Notifica el evento a las webhooks suscritas de la org (best-effort).
     const whev = WH_MAP[action.evento];
     if (whev) await dispatchQuoteEvent(orgId, id, whev);
+
+    // Timbrar el CFDI consume un folio: mide el uso del periodo (excedente vía Stripe).
+    if (action.to === 'invoiced') await reportUsage(orgId, 'timbrado', 1);
 
     // Al enviar/reenviar, intenta avisar al cliente por correo (si hay Resend).
     let email: { sent: boolean; skipped?: string } | undefined;

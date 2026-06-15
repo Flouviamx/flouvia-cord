@@ -12,6 +12,8 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import Anthropic from '@anthropic-ai/sdk';
 import { getProductos } from '../../../lib/queries';
+import { getActiveOrgId } from '../../../lib/db';
+import { reportUsage } from '../../../lib/billing';
 
 const API_KEY = import.meta.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
 const MODEL = import.meta.env.AI_MODEL || process.env.AI_MODEL || 'claude-opus-4-8';
@@ -98,6 +100,9 @@ export const POST: APIRoute = async ({ request }) => {
     }).filter((it) => it.nombre);
 
     if (!items.length) return json({ error: 'No identifiqué productos en el mensaje. Sé más específico o agrégalos a mano.' }, 422);
+
+    // Mide el consumo de IA del periodo (UI en vivo + cobro de excedente vía Stripe).
+    try { await reportUsage(await getActiveOrgId(), 'ia', 1); } catch { /* nunca bloquea */ }
 
     return json({ items });
 };

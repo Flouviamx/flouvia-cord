@@ -151,13 +151,13 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
                         {COMPARATIVA.map((g) => (
                             <>
                                 <tr class="pr-group-row">
-                                    <td colspan="4">{g.titulo}</td>
+                                    <td colspan="6">{g.titulo}</td>
                                 </tr>
                                 {g.rows.map((r) => (
                                     <tr>
                                         <td class="pr-cell-feat">{r.label}</td>
-                                        {([r.free, r.pro, r.negocio] as const).map((v, idx) => (
-                                            <td class:list={['pr-cell-val', { 'is-featured': idx === 1 }]}>
+                                        {([r.free, r.starter, r.pro, r.scale, r.developer] as const).map((v, idx) => (
+                                            <td class:list={['pr-cell-val', { 'is-featured': idx === 2 }]}>
                                                 {v === true ? (
                                                     <span class="pr-yes" aria-label="Incluido"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
                                                 ) : v === false ? (
@@ -257,33 +257,34 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
     .pr-toggle-btn.is-active .pr-toggle-save { background: rgba(255,255,255,0.18); color: #6ee7b7; }
 
     /* ════════ TARJETAS ════════ */
-    .pr-grid-wrap { max-width: 1120px; margin: 0 auto; padding: 3rem 5% 1rem; }
-    .pr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; align-items: start; }
+    .pr-grid-wrap { max-width: 1320px; margin: 0 auto; padding: 3rem 5% 1rem; }
+    .pr-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.85rem; align-items: stretch; }
     .plan {
         position: relative; background: var(--color-bg-soft);
-        border: 1px solid var(--color-border); border-radius: 24px;
-        padding: 2.2rem 1.9rem; display: flex; flex-direction: column; gap: 1.4rem;
+        border: 1px solid var(--color-border); border-radius: 22px;
+        padding: 1.9rem 1.4rem; display: flex; flex-direction: column; gap: 1.2rem;
         transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
     }
     .plan:hover { transform: translateY(-4px); box-shadow: 0 30px 70px -30px rgba(10,25,47,0.16); }
     .plan-featured {
+        position: relative; z-index: 2;
         background: radial-gradient(ellipse at 50% 0%, #112240 0%, #0a192f 80%);
         border: none; color: #fff;
-        box-shadow: 0 40px 90px -34px rgba(10,25,47,0.5); transform: scale(1.03);
+        box-shadow: 0 40px 90px -34px rgba(10,25,47,0.5); transform: scale(1.05);
     }
-    .plan-featured:hover { transform: scale(1.03) translateY(-4px); }
+    .plan-featured:hover { transform: scale(1.05) translateY(-4px); }
     .plan-ribbon {
         position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
         background: var(--color-ok); color: #fff;
         font-size: 0.58rem; font-weight: 800; letter-spacing: 1px;
         padding: 5px 13px; border-radius: 100px; white-space: nowrap;
     }
-    .plan-head { display: flex; flex-direction: column; gap: 0.4rem; }
-    .plan-name { font-size: 1.25rem; font-weight: 700; margin: 0; letter-spacing: -0.4px; }
-    .plan-tagline { font-size: 0.88rem; margin: 0; color: var(--color-text-muted); }
+    .plan-head { display: flex; flex-direction: column; gap: 0.35rem; min-height: 64px; }
+    .plan-name { font-size: 1.15rem; font-weight: 700; margin: 0; letter-spacing: -0.4px; }
+    .plan-tagline { font-size: 0.8rem; margin: 0; color: var(--color-text-muted); line-height: 1.35; }
     .plan-featured .plan-tagline { color: #8892b0; }
-    .plan-price { display: flex; align-items: baseline; gap: 10px; min-height: 46px; }
-    .plan-amount { font-size: 2.8rem; line-height: 1; color: var(--color-blue-deep); }
+    .plan-price { display: flex; align-items: baseline; gap: 8px; min-height: 46px; }
+    .plan-amount { font-size: 2.3rem; line-height: 1; color: var(--color-blue-deep); }
     .plan-featured .plan-amount { color: #fff; }
     .plan-cycle { display: flex; flex-direction: column; font-size: 0.82rem; color: var(--color-text-muted); font-weight: 500; }
     .plan-cycle .plan-billed { font-style: normal; font-size: 0.7rem; color: #99a2af; }
@@ -297,8 +298,8 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
     .plan-cta-ghost:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -12px rgba(10,25,47,0.2); }
     .plan-cta-solid { background: #fff; color: var(--color-blue-deep); box-shadow: 0 12px 28px -10px rgba(0,0,0,0.3); }
     .plan-cta-solid:hover { transform: translateY(-2px); }
-    .plan-feats { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.85rem; }
-    .plan-feats li { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--color-text); }
+    .plan-feats { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+    .plan-feats li { display: flex; align-items: flex-start; gap: 9px; font-size: 0.82rem; line-height: 1.35; color: var(--color-text); }
     .plan-featured .plan-feats li { color: #cdd5e0; }
     .pf-check {
         width: 19px; height: 19px; flex-shrink: 0;
@@ -354,11 +355,11 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
     .pr-compare { max-width: 1080px; margin: 0 auto; padding: 4rem 5%; }
     .pr-compare-head { text-align: center; margin-bottom: 3rem; }
     .pr-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 18px; }
-    .pr-table { width: 100%; border-collapse: collapse; min-width: 620px; }
+    .pr-table { width: 100%; border-collapse: collapse; min-width: 920px; }
     .pr-table thead th { position: sticky; top: 0; }
-    .pr-th-feat { width: 44%; }
+    .pr-th-feat { width: 28%; }
     .pr-th-plan {
-        padding: 1rem 1.2rem; text-align: center; vertical-align: bottom;
+        padding: 1rem 0.7rem; text-align: center; vertical-align: bottom;
         border-bottom: 2px solid var(--color-border);
     }
     .pr-th-plan b { display: block; font-size: 1rem; font-weight: 700; color: var(--color-text); }
@@ -371,10 +372,10 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
         font-size: 0.66rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
         color: #99a2af;
     }
-    .pr-cell-feat { padding: 0.85rem 1rem; font-size: 0.9rem; color: var(--color-text); border-bottom: 1px solid var(--color-border); }
+    .pr-cell-feat { padding: 0.85rem 1rem; font-size: 0.88rem; color: var(--color-text); border-bottom: 1px solid var(--color-border); }
     .pr-cell-val {
-        padding: 0.85rem 1.2rem; text-align: center; border-bottom: 1px solid var(--color-border);
-        font-size: 0.86rem; color: var(--color-text); font-weight: 600;
+        padding: 0.85rem 0.7rem; text-align: center; border-bottom: 1px solid var(--color-border);
+        font-size: 0.82rem; color: var(--color-text); font-weight: 600;
     }
     .pr-cell-val.is-featured { background: var(--color-bg-soft); }
     .pr-yes {
@@ -413,11 +414,15 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
     .pr-faq-body { padding: 0 0 1.3rem; }
     .pr-faq-body p { margin: 0; font-size: 0.95rem; line-height: 1.65; color: var(--color-text-muted); }
 
+    /* 5 → 3 columnas en laptops angostas (Pro sigue al centro y destacado) */
+    @media (max-width: 1180px) {
+        .pr-grid { grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        .plan-featured { transform: none; }
+        .plan-featured:hover { transform: translateY(-4px); }
+    }
     @media (max-width: 860px) {
         .pr-hero { padding-top: 9.5rem; }
         .pr-grid { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
-        .plan-featured { transform: none; }
-        .plan-featured:hover { transform: translateY(-4px); }
         .pr-roi-inner { grid-template-columns: 1fr; gap: 2.4rem; }
         .pr-roi-fields { max-width: none; }
     }

@@ -6,6 +6,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, logAudit, reqIp } from '../../../lib/db';
 import { currentUserId } from '../../../lib/context';
+import { reportUsage } from '../../../lib/billing';
 
 const json = (data: unknown, status = 200) =>
     new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -36,5 +37,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     await sql`update org_members set clerk_user_id = ${userId}, estado = 'activo', joined_at = now() where id = ${inv.id}`;
     await logAudit(orgId, { accion: 'equipo.union', entidad: 'miembro', entidad_id: inv.id, detalle: 'Aceptó la invitación', ip: reqIp(request) });
+    // Un miembro activo más cuenta como usuario del sistema (excedente vía Stripe).
+    await reportUsage(orgId, 'usuario', 1);
     return json({ ok: true, orgId });
 };

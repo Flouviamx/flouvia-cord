@@ -1,5 +1,5 @@
 {
-  "name": "@trato/elements",
+  "name": "@flouviahq/elements",
   "version": "0.1.0",
   "description": "Embebe el cotizador B2B de Trato en cualquier sitio — Web Component + wrapper de React. Tu marca, aprobación y pago en línea.",
   "type": "module",

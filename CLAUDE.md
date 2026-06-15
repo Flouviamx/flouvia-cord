@@ -47,9 +47,11 @@ internas YA están PROTEGIDAS** (`src/middleware.ts`: sin sesión → redirect a
 `/login`; APIs internas → 401; públicas `/api/q|stripe|cron` pasan). El `org_id`
 se resuelve por usuario de Clerk en `getActiveOrgId()` (crea la org en el primer
 login; la org demo `demo-user` solo es fallback sin sesión, ej. cron). Falta:
-instancia de PRODUCCIÓN de Clerk. **Aún NO hay Stripe** (jun 2026);
-la app corre con datos mock desde `src/lib/mock.ts` — mismo shape que el schema,
-para que el swap a Neon sea cambiar imports por queries.
+instancia de PRODUCCIÓN de Clerk. ✅ **Stripe Billing CONECTADO (jun 2026):**
+suscripciones de 5 planes + medidores de excedente (ver "Stripe Billing" abajo).
+Falta setear `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET` en prod, configurar el
+Customer Portal en el dashboard de Stripe y cablear los meter events de CFDI/API/
+usuario (el de IA ya está cableado en `ai-draft`).
 
 ---
 
@@ -140,7 +142,7 @@ para que el swap a Neon sea cambiar imports por queries.
 ✅ **TRATO Elements — cotizador embebible (jun 2026, FASE 1: iframe)** — el cotizador
    `/q` vive ahora dentro del sitio de un tercero vía `<iframe>`. El corazón se extrajo
    a `src/components/q/QuoteCard.astro` (REUTILIZADO por `/q/[token]` y `/embed/[token]`;
-   es la semilla del futuro paquete npm `@trato/elements`). El componente emite
+   es la semilla del futuro paquete npm `@flouviahq/elements`). El componente emite
    CustomEvents en `window` (`trato:approved`/`rejected`/`message`/`pay`).
    • `/embed/[token]` (`EmbedLayout`, fondo transparente, sin chrome) setea el header
      CSP `frame-ancestors` desde la allowlist `orgs.embed_domains` (anti-clickjacking;
@@ -161,21 +163,58 @@ para que el swap a Neon sea cambiar imports por queries.
      `trato:ready` (adiós a la caja vacía), `MutationObserver` auto-monta embeds inyectados
      después (SPAs/modales), `referrerpolicy`, `data-min-height`, respeta reduced-motion.
      El embed reporta altura del `.embed-wrap` y emite `ready` tras `fonts.ready`.
-✅ **TRATO Elements — FASE 2: paquete npm `@trato/elements` (jun 2026)** — versión
+✅ **TRATO Elements — FASE 2: paquete npm `@flouviahq/elements` (jun 2026)** — versión
    framework-native del embed, en `packages/elements/` (monorepo ligero, NO toca la app
    Astro; extraíble a su propio repo — solo habla con el iframe `/embed/*`). Arquitectura
    estilo Stripe: **core agnóstico** (`src/core.ts` = `mountCotizador(el, opts)` → iframe +
    skeleton + postMessage + relay, con `destroy()`), **Web Component** `<trato-cotizador>`
    (`src/element.ts`, auto-registrado al importar; re-emite eventos NATIVOS sin prefijo:
    `approved`/`pay`/… para HTML/Vue/Astro/Svelte), y **wrapper React** (`src/react.tsx`
-   → `@trato/elements/react`, `<TratoCotizador token onApproved … />`, React peer OPCIONAL).
+   → `@flouviahq/elements/react`, `<TratoCotizador token onApproved … />`, React peer OPCIONAL).
    Build con **esbuild** (`build.mjs` → ESM+CJS para `.` y `./react`; React externo); tipos
    `.d.ts` escritos A MANO en `types/` (no hay typescript instalado). `package.json` con
    exports map dual. Verificado E2E con Playwright: WC registra, `ready` dispara, auto-altura
    (300→1292px), `q-card` carga, 0 errores. Los tabs de `/elements` ahora muestran el paquete
-   (React/Next usan `@trato/elements/react`; Astro/Vue el WC; HTML/WordPress siguen con
-   `embed.js`). Para publicar: `cd packages/elements && npm publish` (correr `npm i` antes
-   para traer esbuild como devDep). Pendiente real: registrar el scope `@trato` en npm.
+   (React/Next usan `@flouviahq/elements/react`; Astro/Vue el WC; HTML/WordPress siguen con
+   `embed.js`). ✅ **PUBLICADO en npm como `@flouviahq/elements` v0.1.0** (el scope `@trato`
+   no estaba disponible → se usó la org `@flouviahq`). Re-publicar: subir `version` en
+   `package.json` + `cd packages/elements && npm run build && npm publish`. El nombre del
+   Web Component sigue siendo `<trato-cotizador>` (es marca de producto, no del paquete).
+✅ **API Pública (jun 2026)** — infraestructura de llaves API (`api_keys`, hashes SHA-256,
+   nunca en claro) + auth Bearer en `src/lib/apikey.ts` (`authApiKey`, `withApiAuth`).
+   Endpoints REST en `/api/v1/*`: `GET /me`, `GET|POST /cotizaciones`, `GET /cotizaciones/[id]`,
+   `GET|POST /clientes`, `GET|POST /productos`, `GET /cobranza`. Llaves test (`sk_test_`) /
+   live (`sk_live_`): las test no requieren plan; las live requieren plan Negocio. Scopes:
+   `read` / `write`. Tenancy M2M via `reqContext.run({userId:null, orgId})` (override en
+   `src/lib/context.ts`; `getActiveOrgId()` lo checa primero). Serializers sin exponer tokens
+   internos en `src/lib/apiv1.ts`. Lógica única de creación de cotización extraída a
+   `src/lib/cotizaciones.ts` (usada por `/api/cotizaciones` y `/api/v1/cotizaciones`).
+✅ **MCP — servidor JSON-RPC 2.0 (jun 2026)** — en `/api/mcp` (`src/pages/api/mcp.ts`);
+   auth Bearer mismo `authApiKey`. Métodos: `initialize`, `ping`, `tools/list`, `tools/call`.
+   7 herramientas definidas en `src/lib/mcp.ts`: `listar_cotizaciones`, `detalle_cotizacion`,
+   `cartera_vencida`, `resumen_negocio`, `buscar_cliente`, `listar_productos`,
+   `crear_cotizacion_borrador`. Herramientas write comprueban scope; errores de negocio
+   devuelven `isError: true` (no protocol error). Stateless (sin sesiones persistentes).
+✅ **Webhooks salientes (jun 2026)** — tabla `webhooks` (url, eventos jsonb, secret en claro
+   para firma, activo, last_status/last_error). Motor en `src/lib/webhooks.ts`:
+   `dispatchQuoteEvent(orgId, cotizacionId, evento)` — best-effort (NUNCA lanza), 5s timeout,
+   1 retry (300ms backoff), firma HMAC-sha256 en header `X-Trato-Signature: sha256=<hex>`.
+   Payload: `{ event, created_at, data: { id, folio, status, total, cliente, link_publico } }`.
+   Enganchado en los 6 eventos: `quote.sent`, `quote.viewed`, `quote.approved`,
+   `quote.rejected`, `quote.paid`, `quote.invoiced` (5 archivos). CRUD en `/api/webhooks`
+   (requiere permiso `ajustes` + plan API). Secret mostrado UNA vez al crear, luego enmascarado.
+   UI funcional en Ajustes › Developers (lista, toggle activo/inactivo, eliminar, modal crear).
+✅ **Páginas de desarrolladores (jun 2026)** — `/desarrolladores/[slug]` (prerender, mismo
+   sistema visual que `/producto/*`): `/desarrolladores/api` (terminal con curl + JSON response)
+   y `/desarrolladores/mcp` (chat UI con tool call `cartera_vencida`). Contenido en
+   `src/lib/desarrolladores.ts`. Animaciones `PageAnims`, masked-titles, count-ups, reveals.
+✅ **Navbar v3 (jun 2026)** — nuevo megamenú DESARROLLADORES entre SOLUCIONES y RECURSOS:
+   paneles API REST · MCP para IA · Trato Elements. PRECIOS movido al final como link simple.
+   Orden: PRODUCTO · SOLUCIONES · DESARROLLADORES · RECURSOS · PRECIOS.
+✅ **Footer v2 (jun 2026)** — expandido de 3 a 5 columnas: /01 Producto · /02 Soluciones ·
+   /03 Desarrolladores · /04 Recursos · /05 Empresa. Trust chips en el bloque de marca
+   (🇲🇽 Hecho en México · CFDI 4.0 · Datos cifrados). Grid responsive (≤1020px → 3 cols,
+   ≤620px → 2 cols).
 ⬜ Pendiente: aprobación parcial por línea, versiones de cotización, multi-usuario con Clerk
    (proteger `/app`), Stripe Billing de suscripciones (planes).
 
@@ -185,13 +224,21 @@ para que el swap a Neon sea cambiar imports por queries.
 
 Freemium tipo la app de Shopify: gratis hasta 5 cotizaciones activas con
 "Powered by Trato" en el link público; planes de pago vía Stripe Billing.
-Precios actuales en la landing (MXN/mes, IVA incluido):
+**Matriz maestra de 5 niveles (jun 2026)** — MXN/mes, IVA incluido, **Pro = el
+ancla** (destacado en la landing):
 
-| Plan | Precio | Incluye |
-|------|--------|---------|
-| Gratis | $0 | 5 cotizaciones activas, catálogo, link público + PDF, marca "Powered by Trato" |
-| Profesional | $590 MXN/mes | Cotizaciones ilimitadas, tu marca, seguimiento en vivo, Net 30/60, pago en línea |
-| Negocio | $1,190 MXN/mes | + CFDI 4.0 automático, clientes con límite de crédito, analítica, soporte prioritario |
+| Plan | Precio | Posición | Incluye (resumen) |
+|------|--------|----------|-------------------|
+| Gratis | $0 | gancho | 5 cotizaciones, 50 prod/cli, 3 IA/mes, "Powered by Trato" |
+| Starter | $240 | freelance | 50 cotizaciones, 500 prod/cli, 20 IA + 3 CFDI/mes, tu marca, CSV |
+| **Profesional** | **$590** | **DESTACADO** | Ilimitadas, 5 usuarios, 50 IA + 20 CFDI/mes, seguimiento en vivo, analítica, audit log |
+| Scale | $1,390 | corp | + 15 usuarios, 500 IA + 100 CFDI/mes, aprobaciones, cobranza, SMTP propio |
+| Developer | $2,990 | infra | + usuarios/IA ilimitados, 1,000 CFDI + 50,000 API/mes, excedentes más baratos |
+
+Cada plan de pago trae cuota mensual (IA/CFDI/API/usuarios); el **excedente se
+cobra por uso** vía Stripe Billing Meters (de Pro en adelante; Free/Starter =
+topes duros). Código de plan en `orgs.plan`: `free|starter|pro|scale|developer`.
+Cuotas incluidas y mapping de price_id/meter en **`src/lib/billing.ts`**.
 
 > ⚠️ Precios son placeholders comerciales — André los puede ajustar. Si cambian,
 > actualizar **`src/lib/precios.ts`** (FUENTE ÚNICA desde jun 2026): la consumen
@@ -200,6 +247,38 @@ Precios actuales en la landing (MXN/mes, IVA incluido):
 
 Moneda v1 = MXN con IVA 16% configurable. Landing + app en el MISMO subdominio
 (estilo linear.app: marketing en `/`, app en `/app`).
+
+### Stripe Billing (suscripciones + medidores de uso) — jun 2026
+
+REST puro (sin SDK), igual que el resto de la integración Stripe. Config CENTRAL
+en **`src/lib/billing.ts`**: `PLAN_PRICES` (price_id base × ciclo mensual/anual),
+`METER_PRICES` (price_id medido por plan × dimensión), `METERS` (mtr_ ids),
+`INCLUDED` (cuota mensual por plan), `PRICE_TO_PLAN` (reverse, para el webhook),
+y helpers `stripe()`, `getOrCreateCustomer()`, `reportUsage(orgId, dim, n)`.
+
+Flujo:
+- **Alta/cambio de plan:** `POST /api/billing/subscribe {plan, cycle}` (INTERNA,
+  exige sesión) → Checkout `mode=subscription` con precio base + items medidos +
+  7 días de prueba sin tarjeta (`payment_method_collection=if_required`).
+- **Gestionar:** `POST /api/billing/portal` → Customer Portal de Stripe.
+- **Webhook** `POST /api/stripe/webhook` (PÚBLICO, firma HMAC, idempotente vía
+  tabla `stripe_events`): `customer.subscription.created/updated` sincroniza
+  `orgs.plan/subscription_status/billing_cycle/current_period_end` (**cambio de
+  plan en vivo**); `.deleted` → free; `invoice.paid|payment_failed` → estado;
+  `checkout.session.completed` liga la suscripción (subscription) o marca la
+  cotización `paid` (payment, flujo del link público — sin cambios).
+- **Excedente (overage):** `reportUsage()` incrementa `uso_periodo` en Neon (UI en
+  vivo) **y** manda un meter event a Stripe (cobro al cierre). Ya cableado en
+  `api/cotizaciones/ai-draft` (dim `ia`). **Pendiente cablear** dims `timbrado`
+  (al timbrar CFDI), `api` (en el middleware de `/api/v1`) y `usuario` (al
+  aceptar invitación en `/api/equipo/join`).
+- **UI:** `/app/ajustes/plan` usa `getBillingUsage()` (medidores IA/CFDI/API del
+  periodo) + botones reales de subir de plan / portal.
+- Tablas nuevas: `uso_periodo` (org+periodo, contadores) y `stripe_events`
+  (idempotencia). Columnas nuevas en `orgs`: `subscription_status`,
+  `billing_cycle`, `current_period_end`. **Correr `npm run db:migrate` tras pull.**
+- Los price_id/meter_id NO son secretos (viven en `billing.ts`); el secreto es
+  `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (env).
 
 ---
 
@@ -237,6 +316,11 @@ identidad sigue siendo Clerk (userId), solo la membresía/permiso es nuestra.
 - `cotizacion_items` — líneas (permite línea libre sin producto; `precio_negociado` opcional)
 - `eventos` — timeline + "tu cliente vio la cotización" (**feature estrella**)
 - `facturas_cfdi` — timbrado SAT (fase 4)
+- `org_members` — equipo multi-usuario (rol, permisos jsonb, estado, token invitación)
+- `tareas` — recordatorios CRM del vendedor
+- `audit_log` — registro inmutable de acciones (logAudit/reqIp)
+- `api_keys` — llaves API públicas (hash SHA-256, mode test|live, scope read|write)
+- `webhooks` — endpoints salientes (HMAC-sha256, best-effort, 1 retry)
 
 Patrón RLS: `org_id = current_setting('app.org_id', TRUE)::uuid` — el backend setea
 el valor antes de cada query (igual que `app.email_cliente` en flouvia-web).
@@ -318,10 +402,20 @@ el valor antes de cada query (igual que `app.email_cliente` en flouvia-web).
                    (token = secreto, sin auth); muestra estado si ya se decidió;
                    "Descargar PDF" = window.print con @media print; color de marca
                    de la org. Token demo: /q/demo
-/q/[token]       → vista PÚBLICA — aprobar/rechazar REALES via POST /api/q/[token]
-                   (token = secreto, sin auth); muestra estado si ya se decidió;
-                   "Descargar PDF" = window.print con @media print; color de marca
-                   de la org. Token demo: /q/demo
+/desarrolladores/[slug] → páginas de desarrolladores (jun 2026, prerender, mismo
+                   sistema que /producto/*): api (terminal curl + JSON response) y
+                   mcp (chat UI con tool call). Contenido en src/lib/desarrolladores.ts.
+                   Enlazadas en el megamenú DESARROLLADORES del navbar.
+
+# API Pública (REST + MCP)
+/api/v1/me           → whoami (scope any)
+/api/v1/cotizaciones → GET list (filtros status/limit/offset) + POST crear
+/api/v1/cotizaciones/[id] → GET detalle (items + eventos)
+/api/v1/clientes     → GET list + POST crear
+/api/v1/productos    → GET list + POST crear
+/api/v1/cobranza     → GET cartera
+/api/mcp             → MCP JSON-RPC 2.0: initialize/ping/tools/list/tools/call
+/api/webhooks        → CRUD webhooks salientes (POST crea y devuelve secret 1 vez)
 
 # Legales (pendiente)
 /privacidad /terminos
@@ -341,7 +435,11 @@ usa), `retencion_isr_pct`/`retencion_iva_pct`/`texto_legal`, `sitio_web`/`whatsa
 y fiscales SAT `regimen_fiscal`/`uso_cfdi`/`cp_fiscal`/`serie_folio` (catálogos en
 `src/lib/sat.ts`). ⚠️ **El IVA ahora se respeta de verdad**: el editor y
 `POST /api/cotizaciones` calculan con `orgs.iva_pct` (antes estaba hardcodeado 16%).
-Medidor de uso real del plan en `getPlanUsage()`. ⚠️ Correr `npm run db:migrate` tras pull.
+Medidor de uso real del plan en `getPlanUsage()`. **Jun 2026 (API/Webhooks):** tabla
+`api_keys` (`org_id`, `key_hash` SHA-256, `mode` test|live, `scope` read|write, `label`,
+`last_used_at`, `revoked`); tabla `webhooks` (`org_id`, `url`, `eventos` jsonb, `secret`
+en claro para firma, `activo`, `last_status`, `last_error`, `last_delivery_at`);
+columna `orgs.embed_domains` (allowlist CSP para Elements). ⚠️ Correr `npm run db:migrate` tras pull.
 
 **Mock data:** `src/lib/mock.ts` exporta `ORG`, `PRODUCTOS`, `CLIENTES`,
 `COTIZACIONES` (con items + eventos), `STATUS_META` (label/color/bg por estado),

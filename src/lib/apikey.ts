@@ -15,6 +15,7 @@ import type { APIRoute } from 'astro';
 import { sql } from './db';
 import { reqContext } from './context';
 import { planTieneApi } from './permissions';
+import { reportUsage } from './billing';
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
@@ -107,6 +108,9 @@ export function withApiAuth(
     return async (ctx) => {
         const auth = await authApiKey(ctx.request, need);
         if (auth instanceof Response) return auth;
+        // Mide la llamada a la API pública (solo llaves en vivo se facturan).
+        // Fire-and-forget: reportUsage nunca lanza y no debe frenar la respuesta.
+        if (auth.mode === 'live') void reportUsage(auth.orgId, 'api', 1);
         // userId null → el carril Clerk queda inactivo; orgId manda la tenancy.
         return reqContext.run({ userId: null, orgId: auth.orgId }, () => handler(ctx, auth));
     };

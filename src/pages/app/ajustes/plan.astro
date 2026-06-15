@@ -1,92 +1,209 @@
 ---
-// Ajustes › Plan y facturación — suscripción + medidor de uso REAL.
+// Ajustes › Plan y facturación — suscripción REAL (Stripe Billing) + medidores
+// de uso del periodo. Subir de plan → /api/billing/subscribe (Checkout).
+// Gestionar → /api/billing/portal (Customer Portal).
 import SettingsShell from '../../../components/app/SettingsShell.astro';
-import { getOrg, getPlanUsage } from '../../../lib/queries';
+import { getOrg, getPlanUsage, getBillingUsage } from '../../../lib/queries';
+import { PLANES, precioAnualMensualizado } from '../../../lib/precios';
+
 const ORG = await getOrg();
 const USAGE = await getPlanUsage();
-const PRECIO: Record<string, string> = { Gratis: '$0', Profesional: '$590', Negocio: '$1,190' };
+const BILL = await getBillingUsage();
+
+const planRaw = ORG.plan_raw;
+const esPago = planRaw !== 'free';
+const PAID = PLANES.filter((p) => p.id !== 'free');
+const money = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
+
+const STATUS_LABEL: Record<string, string> = {
+    trialing: 'En prueba', active: 'Activa', past_due: 'Pago pendiente', canceled: 'Cancelada',
+};
+const planActual = PLANES.find((p) => p.id === planRaw);
 ---
 
 <SettingsShell title="Plan y facturación — Ajustes" tab="plan"
     intro="Tu suscripción de Trato, uso del plan y comprobantes.">
+
     <div class="s-block">
         <h3>Suscripción actual</h3>
         <div class="plan-row">
             <div class="plan-meta">
-                <span class="plan-name">Plan {ORG.plan}</span>
-                <span class="plan-price"><span class="editorial">{PRECIO[ORG.plan] ?? '$0'}</span> MXN/mes · IVA incluido</span>
+                <span class="plan-name">
+                    Plan {ORG.plan}
+                    {BILL.status && <span class={`plan-badge st-${BILL.status}`}>{STATUS_LABEL[BILL.status] ?? BILL.status}</span>}
+                </span>
+                <span class="plan-price">
+                    <span class="editorial">{planActual ? money(planActual.precioMensual) : '$0'}</span> MXN/mes · IVA incluido
+                    {BILL.cycle === 'anual' && ' · facturación anual'}
+                    {BILL.periodFin && <i class="plan-renews"> · renueva {BILL.periodFin}</i>}
+                </span>
             </div>
-            <button class="plan-btn" disabled>Gestionar suscripción</button>
+            {esPago && <button class="plan-btn solid" data-portal>Gestionar suscripción</button>}
         </div>
     </div>
 
+    <!-- ── ELEGIR / CAMBIAR DE PLAN ── -->
     <div class="s-block">
-        <h3>Uso del plan</h3>
+        <h3>{esPago ? 'Cambiar de plan' : 'Sube de plan'}</h3>
+        <div class="cycle-toggle" role="tablist" aria-label="Ciclo">
+            <button class="cyc-btn is-active" data-cycle="mensual">Mensual</button>
+            <button class="cyc-btn" data-cycle="anual">Anual <span class="cyc-save">2 meses gratis</span></button>
+        </div>
+        <div class="picker">
+            {PAID.map((p) => {
+                const anual = precioAnualMensualizado(p.precioMensual);
+                const actual = p.id === planRaw;
+                return (
+                    <div class:list={['pick-row', { destacado: p.destacado, actual }]}>
+                        <div class="pick-info">
+                            <span class="pick-name">{p.nombre} {p.destacado && <i class="pick-tag">Popular</i>}</span>
+                            <span class="pick-tag-line">{p.tagline}</span>
+                        </div>
+                        <div class="pick-price">
+                            <b class="editorial" data-mensual={String(p.precioMensual)} data-anual={String(anual)}>{money(p.precioMensual)}</b>
+                            <span>MXN / mes</span>
+                        </div>
+                        {actual ? (
+                            <span class="pick-current">Plan actual</span>
+                        ) : (
+                            <button class="plan-btn solid" data-subscribe={p.id}>Elegir</button>
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+        <p class="pick-foot">Prueba de 7 días sin tarjeta. Cambias o cancelas cuando quieras; el excedente se factura al cierre del periodo.</p>
+    </div>
+
+    <!-- ── MEDIDORES DE USO ── -->
+    <div class="s-block">
+        <h3>Uso del plan este periodo</h3>
+
         <div class="usage">
             <div class="usage-top">
                 <span class="usage-label">Cotizaciones activas</span>
-                <span class="usage-count editorial">
-                    {USAGE.usadas}{USAGE.ilimitado ? '' : ` / ${USAGE.limite}`}
-                </span>
+                <span class="usage-count editorial">{USAGE.usadas}{USAGE.ilimitado ? '' : ` / ${USAGE.limite}`}</span>
             </div>
             {USAGE.ilimitado ? (
                 <div class="usage-unlim">∞ Ilimitadas en tu plan</div>
             ) : (
-                <>
-                    <div class="usage-bar"><span class:list={['usage-fill', { warn: USAGE.pct >= 80, full: USAGE.excedido }]} style={`width:${USAGE.pct}%`}></span></div>
-                    <p class="usage-note">
-                        {USAGE.excedido
-                            ? 'Llegaste al límite del plan Gratis. Sube a Profesional para cotizaciones ilimitadas.'
-                            : `Te quedan ${USAGE.limite! - USAGE.usadas} cotizaciones activas en el plan Gratis.`}
-                    </p>
-                </>
+                <div class="usage-bar"><span class:list={['usage-fill', { warn: USAGE.pct >= 80, full: USAGE.excedido }]} style={`width:${USAGE.pct}%`}></span></div>
             )}
         </div>
-    </div>
 
-    <div class="s-block">
-        <h3>Timbres CFDI</h3>
-        <div class="usage">
-            <div class="usage-top">
-                <span class="usage-label">Timbres usados este periodo</span>
-                <span class="usage-count editorial">0 / {ORG.plan === 'Negocio' ? '500' : '0'}</span>
+        {[
+            { k: 'ia', label: 'Armados con IA', m: BILL.ia },
+            { k: 'cfdi', label: 'Timbres CFDI 4.0', m: BILL.cfdi },
+            { k: 'api', label: 'Llamadas a la API', m: BILL.api },
+        ].map(({ label, m }) => (
+            <div class="usage">
+                <div class="usage-top">
+                    <span class="usage-label">{label}</span>
+                    <span class="usage-count editorial">{m.usado}{m.ilimitado ? '' : ` / ${m.incluido}`}</span>
+                </div>
+                {m.ilimitado ? (
+                    <div class="usage-unlim">∞ Ilimitado en tu plan</div>
+                ) : (
+                    <>
+                        <div class="usage-bar"><span class:list={['usage-fill', { warn: m.pct >= 80, full: m.excedido }]} style={`width:${m.pct}%`}></span></div>
+                        {m.excedido && <p class="usage-note">Vas {m.usado - (m.incluido ?? 0)} por encima de lo incluido — el excedente se cobra al cierre del periodo.</p>}
+                    </>
+                )}
             </div>
-            <div class="usage-bar"><span class="usage-fill" style="width:0%"></span></div>
-            <p class="usage-note">{ORG.plan === 'Negocio'
-                ? 'Tu plan incluye 500 timbres CFDI 4.0 al mes. Los timbres extra se cobran por volumen.'
-                : 'El timbrado CFDI 4.0 se incluye en el plan Negocio. Súbete para facturar automáticamente.'}</p>
-        </div>
+        ))}
     </div>
 
     <div class="s-block">
-        <h3>Método de pago</h3>
-        <div class="pay-row">
-            <span class="pay-card">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-            </span>
-            <span class="pay-info">
-                <span class="pay-title">Sin método de pago</span>
-                <span class="pay-desc">Agrega una tarjeta para subir de plan. Se cobra de forma segura vía Stripe.</span>
-            </span>
-            <button class="plan-btn" disabled>Agregar tarjeta</button>
-        </div>
-    </div>
-
-    <div class="s-block">
-        <h3>Comprobantes</h3>
-        <p class="plan-empty">Tus recibos de pago aparecerán aquí cuando conectes Stripe Billing (pendiente).</p>
+        <h3>Método de pago y comprobantes</h3>
+        {esPago ? (
+            <p class="plan-empty">Tu tarjeta, recibos y facturas se gestionan en el portal seguro de Stripe. <button class="link-btn" data-portal>Abrir portal →</button></p>
+        ) : (
+            <p class="plan-empty">Agrega un método de pago al subir de plan. Se cobra de forma segura vía Stripe.</p>
+        )}
     </div>
 </SettingsShell>
 
+<script>
+    const post = async (url: string, body?: any) => {
+        const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok || !data.url) throw new Error(data.error || 'No se pudo continuar');
+        window.location.href = data.url;
+    };
+
+    // Toggle de ciclo → cambia precios mostrados y el ciclo que se envía.
+    let cycle: 'mensual' | 'anual' = 'mensual';
+    const fmt = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
+    document.querySelectorAll<HTMLButtonElement>('.cyc-btn').forEach((b) => {
+        b.addEventListener('click', () => {
+            cycle = (b.dataset.cycle as 'mensual' | 'anual') || 'mensual';
+            document.querySelectorAll('.cyc-btn').forEach((x) => x.classList.toggle('is-active', x === b));
+            document.querySelectorAll<HTMLElement>('.pick-price b').forEach((el) => {
+                const v = cycle === 'anual' ? el.dataset.anual : el.dataset.mensual;
+                if (v) el.textContent = fmt(parseInt(v, 10));
+            });
+        });
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('[data-subscribe]').forEach((b) => {
+        b.addEventListener('click', async () => {
+            b.disabled = true; b.textContent = 'Redirigiendo…';
+            try { await post('/api/billing/subscribe', { plan: b.dataset.subscribe, cycle }); }
+            catch (e: any) { alert(e.message); b.disabled = false; b.textContent = 'Elegir'; }
+        });
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('[data-portal]').forEach((b) => {
+        b.addEventListener('click', async () => {
+            const t = b.textContent; b.disabled = true; b.textContent = 'Abriendo…';
+            try { await post('/api/billing/portal'); }
+            catch (e: any) { alert(e.message); b.disabled = false; b.textContent = t; }
+        });
+    });
+</script>
+
 <style>
     .plan-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1.1rem 0.4rem; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
-    .plan-meta { display: flex; flex-direction: column; gap: 3px; }
-    .plan-name { font-size: 1.05rem; font-weight: 700; }
+    .plan-meta { display: flex; flex-direction: column; gap: 4px; }
+    .plan-name { font-size: 1.05rem; font-weight: 700; display: flex; align-items: center; gap: 9px; }
     .plan-price { font-size: 0.8rem; color: var(--color-text-muted); }
     .plan-price .editorial { font-size: 1.1rem; color: var(--color-blue-deep); }
-    .plan-btn { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: not-allowed; opacity: 0.6; }
+    .plan-renews { font-style: normal; }
+    .plan-badge { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.3px; padding: 3px 8px; border-radius: 100px; text-transform: uppercase; }
+    .st-trialing { background: rgba(245,158,11,0.14); color: #b45309; }
+    .st-active { background: rgba(16,185,129,0.14); color: #059669; }
+    .st-past_due { background: rgba(239,68,68,0.14); color: #dc2626; }
+    .st-canceled { background: rgba(0,0,0,0.06); color: var(--color-text-muted); }
 
-    .usage { max-width: 460px; }
+    .plan-btn { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text); background: #fff; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; }
+    .plan-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 18px -10px rgba(10,25,47,0.3); }
+    .plan-btn.solid { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); }
+    .plan-btn:disabled { opacity: 0.6; cursor: default; transform: none; box-shadow: none; }
+    .link-btn { background: none; border: none; color: var(--color-blue-deep); font-weight: 600; cursor: pointer; font-size: inherit; font-family: inherit; padding: 0; }
+
+    /* Toggle ciclo */
+    .cycle-toggle { display: inline-flex; gap: 2px; padding: 4px; border-radius: 100px; background: var(--color-bg-soft); border: 1px solid var(--color-border); margin-bottom: 1.2rem; }
+    .cyc-btn { border: none; background: none; cursor: pointer; font-family: inherit; font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted); padding: 7px 16px; border-radius: 100px; display: inline-flex; align-items: center; gap: 7px; }
+    .cyc-btn.is-active { background: var(--color-blue-deep); color: #fff; }
+    .cyc-save { font-size: 0.6rem; font-weight: 800; padding: 2px 6px; border-radius: 100px; background: rgba(16,185,129,0.16); color: #059669; }
+    .cyc-btn.is-active .cyc-save { background: rgba(255,255,255,0.18); color: #6ee7b7; }
+
+    /* Picker de planes (filas, no cards-grid) */
+    .picker { display: flex; flex-direction: column; }
+    .pick-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 1.2rem; padding: 1rem 0.4rem; border-bottom: 1px solid var(--color-border); }
+    .pick-row:first-child { border-top: 1px solid var(--color-border); }
+    .pick-row.destacado { background: linear-gradient(90deg, rgba(10,25,47,0.03), transparent); }
+    .pick-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .pick-name { font-size: 0.95rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .pick-tag { font-style: normal; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: #fff; background: var(--color-ok); padding: 2px 7px; border-radius: 100px; }
+    .pick-tag-line { font-size: 0.78rem; color: var(--color-text-muted); }
+    .pick-price { text-align: right; white-space: nowrap; }
+    .pick-price b { font-size: 1.15rem; color: var(--color-blue-deep); display: block; }
+    .pick-price span { font-size: 0.68rem; color: var(--color-text-muted); }
+    .pick-current { font-size: 0.78rem; font-weight: 600; color: var(--color-ok); white-space: nowrap; }
+    .pick-foot { font-size: 0.78rem; color: var(--color-text-muted); margin: 1rem 0 0; line-height: 1.5; }
+
+    .usage { max-width: 460px; margin-bottom: 1.4rem; }
     .usage-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.5rem; }
     .usage-label { font-size: 0.85rem; color: var(--color-text); font-weight: 500; }
     .usage-count { font-size: 1rem; color: var(--color-blue-deep); }
@@ -94,14 +211,7 @@ const PRECIO: Record<string, string> = { Gratis: '$0', Profesional: '$590', Nego
     .usage-fill { display: block; height: 100%; background: var(--color-ok); border-radius: 100px; transition: width 0.5s var(--ease-spring); }
     .usage-fill.warn { background: var(--color-warn); }
     .usage-fill.full { background: var(--color-danger); }
-    .usage-note { font-size: 0.78rem; color: var(--color-text-muted); margin: 0.6rem 0 0; line-height: 1.5; }
+    .usage-note { font-size: 0.78rem; color: var(--color-danger); margin: 0.6rem 0 0; line-height: 1.5; }
     .usage-unlim { font-size: 0.9rem; font-weight: 600; color: var(--color-ok); }
-    .plan-empty { font-size: 0.82rem; color: var(--color-text-muted); margin: 0; }
-
-    .pay-row { display: flex; align-items: center; gap: 12px; border: 1px solid var(--color-border); border-radius: 10px; padding: 14px; }
-    .pay-card { width: 42px; height: 42px; border-radius: 9px; background: var(--color-bg-soft); border: 1px solid var(--color-border); display: flex; align-items: center; justify-content: center; color: var(--color-text-muted); flex-shrink: 0; }
-    .pay-card svg { width: 22px; height: 22px; }
-    .pay-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-    .pay-title { font-size: 0.9rem; font-weight: 600; color: var(--color-text); }
-    .pay-desc { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.45; }
+    .plan-empty { font-size: 0.82rem; color: var(--color-text-muted); margin: 0; line-height: 1.6; }
 </style>

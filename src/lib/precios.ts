@@ -2,9 +2,15 @@
 // Fuente ÚNICA de los precios y la comparativa de planes.
 // La usan el home (components/landing/Pricing.astro) y la página /precios.
 // ⚠️ Si André ajusta precios, cámbialos AQUÍ (un solo lugar).
+//
+// Matriz maestra (jun 2026): 5 niveles. Pro es el plan ANCLA (el que se empuja).
+// Free = gancho · Starter = freelance · Pro = equipos (DESTACADO) ·
+// Scale = corp · Developer = infraestructura.
+
+export type PlanId = 'free' | 'starter' | 'pro' | 'scale' | 'developer';
 
 export interface Plan {
-    id: 'free' | 'pro' | 'negocio';
+    id: PlanId;
     nombre: string;
     tagline: string;
     precioMensual: number;        // MXN/mes (0 = gratis)
@@ -13,6 +19,7 @@ export interface Plan {
     ctaLabel: string;
     ctaHref: string;
     feats: string[];              // bullets de la card
+    stripeProductId?: string;     // producto en Stripe (el price_id se resuelve aparte)
 }
 
 // Anual = se pagan 10 meses (2 gratis). Cambia aquí si la promo es otra.
@@ -29,42 +36,77 @@ export const PLANES: Plan[] = [
         ctaLabel: 'Empezar gratis',
         ctaHref: '/registro',
         feats: [
-            'Hasta 5 cotizaciones activas',
-            'Catálogo de productos',
-            'Link público y PDF',
-            'Marca "Powered by Trato"',
+            '5 cotizaciones activas',
+            '50 productos y 50 clientes',
+            '3 armados con IA al mes',
+            'Link público + PDF',
+            'Marca “Powered by Trato”',
+        ],
+    },
+    {
+        id: 'starter',
+        nombre: 'Starter',
+        tagline: 'Para el que vende solo.',
+        precioMensual: 240,
+        ctaLabel: 'Probar 7 días gratis',
+        ctaHref: '/registro',
+        stripeProductId: 'prod_Ui3vQBd5goOHQ1',
+        feats: [
+            '50 cotizaciones activas',
+            '500 productos y clientes',
+            '20 armados con IA + 3 CFDI al mes',
+            'Tu marca (sin “Powered by”)',
+            'Importación por CSV',
         ],
     },
     {
         id: 'pro',
         nombre: 'Profesional',
-        tagline: 'Para vender en serio.',
+        tagline: 'Para equipos que venden en serio.',
         precioMensual: 590,
         destacado: true,
         ribbon: 'MÁS POPULAR',
         ctaLabel: 'Probar 7 días gratis',
         ctaHref: '/registro',
+        stripeProductId: 'prod_Ui45gzUJYA3O2w',
         feats: [
             'Cotizaciones ilimitadas',
-            'Tu marca (logo y colores)',
-            'Seguimiento en vivo',
-            'Términos Net 30 / Net 60',
-            'Pago en línea de cotizaciones',
+            'Hasta 5 usuarios',
+            '50 armados con IA + 20 CFDI al mes',
+            'Seguimiento en vivo y analítica',
+            'Audit log inmutable',
         ],
     },
     {
-        id: 'negocio',
-        nombre: 'Negocio',
-        tagline: 'Con CFDI y crédito.',
-        precioMensual: 1190,
+        id: 'scale',
+        nombre: 'Scale',
+        tagline: 'Para operaciones con control.',
+        precioMensual: 1390,
         ctaLabel: 'Probar 7 días gratis',
         ctaHref: '/registro',
+        stripeProductId: 'prod_Ui4AQicrCoCMUt',
         feats: [
             'Todo lo de Profesional',
-            'CFDI 4.0 automático ante el SAT',
-            'Clientes con límite de crédito',
-            'Analítica avanzada',
-            'Soporte prioritario',
+            'Hasta 15 usuarios',
+            '500 armados con IA + 100 CFDI al mes',
+            'Flujos de aprobación y cobranza',
+            'Correos desde tu dominio (SMTP)',
+        ],
+    },
+    {
+        id: 'developer',
+        nombre: 'Developer',
+        tagline: 'Para integrar a tu stack.',
+        precioMensual: 2990,
+        ctaLabel: 'Probar 7 días gratis',
+        ctaHref: '/registro',
+        stripeProductId: 'prod_Ui4Iff1aimaK0y',
+        feats: [
+            'Todo lo de Scale',
+            'Usuarios e IA ilimitados',
+            '1,000 CFDI + 50,000 API al mes',
+            'Excedentes al menor costo',
+            'Infraestructura para integrar',
         ],
     },
 ];
@@ -74,8 +116,10 @@ export const PLANES: Plan[] = [
 export interface CompareRow {
     label: string;
     free: boolean | string;
+    starter: boolean | string;
     pro: boolean | string;
-    negocio: boolean | string;
+    scale: boolean | string;
+    developer: boolean | string;
     hint?: string;
 }
 export interface CompareGroup {
@@ -85,43 +129,62 @@ export interface CompareGroup {
 
 export const COMPARATIVA: CompareGroup[] = [
     {
-        titulo: 'Cotizaciones',
+        titulo: 'Límites del sistema',
         rows: [
-            { label: 'Cotizaciones activas', free: '5', pro: 'Ilimitadas', negocio: 'Ilimitadas' },
-            { label: 'Editor con precios negociados', free: true, pro: true, negocio: true },
-            { label: 'Líneas libres (fuera de catálogo)', free: true, pro: true, negocio: true },
-            { label: 'IVA configurable y totales en vivo', free: true, pro: true, negocio: true },
-            { label: 'Folio consecutivo con tu prefijo', free: true, pro: true, negocio: true },
-            { label: 'Duplicar y usar como plantilla', free: true, pro: true, negocio: true },
+            { label: 'Cotizaciones activas', free: '5', starter: '50', pro: 'Ilimitadas', scale: 'Ilimitadas', developer: 'Ilimitadas' },
+            { label: 'Catálogo de productos', free: '50', starter: '500', pro: 'Ilimitado', scale: 'Ilimitado', developer: 'Ilimitado' },
+            { label: 'Directorio de clientes', free: '50', starter: '500', pro: 'Ilimitado', scale: 'Ilimitado', developer: 'Ilimitado' },
+            { label: 'Usuarios del sistema', free: '1', starter: '1', pro: '5', scale: '15', developer: 'Ilimitados' },
         ],
     },
     {
-        titulo: 'Catálogo y clientes',
+        titulo: 'Consumo mensual incluido',
         rows: [
-            { label: 'Catálogo de productos', free: true, pro: true, negocio: true },
-            { label: 'Importar productos y clientes por CSV', free: true, pro: true, negocio: true },
-            { label: 'Directorio de clientes', free: true, pro: true, negocio: true },
-            { label: 'Términos default por cliente (Net 30/60)', free: false, pro: true, negocio: true },
-            { label: 'Clientes con límite de crédito', free: false, pro: false, negocio: true },
+            { label: 'Armado de cotizaciones con IA', free: '3 / mes', starter: '20 / mes', pro: '50 / mes', scale: '500 / mes', developer: 'Ilimitado' },
+            { label: 'Timbrado CFDI 4.0 (SAT)', free: false, starter: '3 / mes', pro: '20 / mes', scale: '100 / mes', developer: '1,000 / mes' },
+            { label: 'Llamadas a la API pública', free: '100 / mes', starter: '1,000 / mes', pro: '5,000 / mes', scale: '10,000 / mes', developer: '50,000 / mes' },
         ],
     },
     {
-        titulo: 'Link público y seguimiento',
+        titulo: 'Identidad y datos',
         rows: [
-            { label: 'Link público + PDF descargable', free: true, pro: true, negocio: true },
-            { label: 'Aprobar / rechazar en un clic', free: true, pro: true, negocio: true },
-            { label: 'Seguimiento en vivo ("la vieron")', free: true, pro: true, negocio: true },
-            { label: 'Tu marca (sin "Powered by Trato")', free: false, pro: true, negocio: true },
-            { label: 'Logo y color de marca propios', free: false, pro: true, negocio: true },
-            { label: 'Pago en línea con Stripe', free: false, pro: true, negocio: true },
+            { label: 'Importación masiva (CSV)', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Quitar marca “Powered by Trato”', free: false, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Correos desde tu dominio (SMTP)', free: false, starter: false, pro: false, scale: true, developer: true },
+            { label: 'Multi-moneda (MXN, USD, EUR)', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
     },
     {
-        titulo: 'Facturación, analítica y soporte',
+        titulo: 'CRM, analítica y cierre',
         rows: [
-            { label: 'CFDI 4.0 automático (timbrado SAT)', free: false, pro: false, negocio: true },
-            { label: 'Analítica', free: false, pro: 'Esencial', negocio: 'Avanzada' },
-            { label: 'Soporte', free: 'Por correo', pro: 'Por correo', negocio: 'Prioritario' },
+            { label: 'Presencia “lo está viendo ahora”', free: false, starter: false, pro: true, scale: true, developer: true },
+            { label: 'Analítica: tasa de cierre y conversión', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Analítica: pronóstico y margen cedido', free: false, starter: true, pro: true, scale: true, developer: true },
+        ],
+    },
+    {
+        titulo: 'Riesgo y tesorería',
+        rows: [
+            { label: 'CFDI 4.0 automático ante el SAT', free: false, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Flujos de aprobación (tope de descuento/monto)', free: false, starter: false, pro: false, scale: true, developer: true },
+            { label: 'Módulo de cobranza (aging de cartera)', free: false, starter: false, pro: false, scale: true, developer: true },
+        ],
+    },
+    {
+        titulo: 'Infraestructura y desarrolladores',
+        rows: [
+            { label: 'Integración Zapier / Webhooks', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Cotizador embebible (Trato Elements)', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Audit log inmutable (traza en DB)', free: false, starter: false, pro: true, scale: true, developer: true },
+        ],
+    },
+    {
+        titulo: 'Excedentes (cobro por uso)',
+        rows: [
+            { label: 'Usuario adicional', free: 'Tope duro', starter: 'Tope duro', pro: '$300 / u', scale: '$300 / u', developer: '$200 / u' },
+            { label: 'Armado con IA extra', free: 'Tope duro', starter: '$4.00 / uso', pro: '$3.50 / uso', scale: '$3.00 / uso', developer: '$2.50 / uso' },
+            { label: 'Timbrado CFDI extra', free: false, starter: '$3.00 / folio', pro: '$3.00 / folio', scale: '$2.00 / folio', developer: '$1.50 / folio' },
+            { label: 'API extra (por 100 req)', free: 'Tope duro', starter: '$0.03 USD', pro: '$0.03 USD', scale: '$0.02 USD', developer: '$0.02 USD' },
         ],
     },
 ];
@@ -129,15 +192,19 @@ export const COMPARATIVA: CompareGroup[] = [
 export const FAQ_PRECIOS: { q: string; a: string }[] = [
     {
         q: '¿De verdad puedo empezar gratis?',
-        a: 'Sí. El plan Gratis es para siempre: hasta 5 cotizaciones activas, catálogo, link público y PDF. No pedimos tarjeta para registrarte.',
+        a: 'Sí. El plan Gratis es para siempre: hasta 5 cotizaciones activas, 50 productos, 50 clientes, link público y PDF. No pedimos tarjeta para registrarte.',
     },
     {
-        q: '¿Qué cuenta como "cotización activa"?',
-        a: 'Una cotización que sigue viva en tu pipeline (borrador, enviada, vista o aprobada sin cerrar). Las cerradas, pagadas o vencidas no consumen tu límite, así que el plan Gratis rinde más de lo que parece.',
+        q: '¿Qué cuenta como “cotización activa”?',
+        a: 'Una cotización que sigue viva en tu pipeline (borrador, enviada, vista o aprobada sin cerrar). Las cerradas, pagadas o vencidas no consumen tu límite, así que el plan rinde más de lo que parece.',
+    },
+    {
+        q: '¿Qué pasa si me paso del consumo incluido?',
+        a: 'Depende del plan. En Gratis y Starter algunos límites son topes duros (se pausan hasta el siguiente ciclo o hasta que subas de plan). De Profesional en adelante, el excedente se cobra por uso al final del mes vía Stripe: armados con IA, timbres CFDI, usuarios y llamadas a la API. Sin sorpresas: ves el consumo en tiempo real dentro de la app.',
     },
     {
         q: '¿Puedo cambiar de plan cuando quiera?',
-        a: 'Cuando quieras, sin contratos ni penalizaciones. Subes de plan al instante y bajas al final de tu ciclo. Si cancelas, tus datos siguen ahí en el plan Gratis.',
+        a: 'Cuando quieras, sin contratos ni penalizaciones. Subes de plan al instante (con prorrateo) y bajas al final de tu ciclo. Si cancelas, tus datos siguen ahí en el plan Gratis.',
     },
     {
         q: '¿Los precios llevan IVA?',
@@ -145,14 +212,14 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
     },
     {
         q: '¿Cómo funciona el CFDI 4.0?',
-        a: 'En el plan Negocio conectas tu Certificado de Sello Digital (CSD) una vez y, al cerrar una cotización, Trato timbra el CFDI 4.0 ante el SAT con los mismos datos. Sin recapturar en otro portal.',
+        a: 'Desde el plan Starter conectas tu Certificado de Sello Digital (CSD) una vez y, al cerrar una cotización, Trato timbra el CFDI 4.0 ante el SAT con los mismos datos. Sin recapturar en otro portal.',
     },
     {
         q: '¿Necesito tarjeta para la prueba de 7 días?',
-        a: 'La prueba de Profesional y Negocio dura 7 días. Si decides quedarte, agregas tu método de pago; si no, no se cobra nada y sigues en Gratis.',
+        a: 'La prueba de los planes de pago dura 7 días. Si decides quedarte, agregas tu método de pago; si no, no se cobra nada y sigues en Gratis.',
     },
     {
-        q: '¿Tienen algo a medida o integración con mi ERP?',
-        a: 'Sí, para volúmenes altos o integraciones (ERP, e-commerce, multi-sucursal) armamos un plan a la medida. Escríbenos a hola@flouvia.com.',
+        q: '¿El plan Developer es para integrar Trato a mi sistema?',
+        a: 'Exacto. Developer incluye 50,000 llamadas a la API al mes, los excedentes más baratos, usuarios e IA ilimitados y el cotizador embebible. Es la base para conectar Trato a tu ERP, e-commerce o portal de clientes.',
     },
 ];

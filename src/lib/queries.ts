@@ -7,6 +7,7 @@ import { sql, getActiveOrgId } from './db';
 import { currentUserId } from './context';
 import { dispatchQuoteEvent } from './webhooks';
 import { memberCan, type Membership, type PermKey, type PermMap } from './permissions';
+import { INCLUDED } from './billing';
 import {
     STATUS_META, IVA, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal,
     type QuoteStatus, type MockItem, type MockEvent, type MockQuote,
@@ -47,7 +48,7 @@ const fmtRelative = (d: string | Date) => {
 };
 
 // ── ORG ─────────────────────────────────────────────────────────────────────
-const PLAN_LABEL: Record<string, string> = { free: 'Gratis', basico: 'Básico', pro: 'Profesional', negocio: 'Negocio', business: 'Negocio' };
+const PLAN_LABEL: Record<string, string> = { free: 'Gratis', starter: 'Starter', basico: 'Básico', pro: 'Profesional', scale: 'Scale', developer: 'Developer', negocio: 'Negocio', business: 'Negocio' };
 
 export async function getOrg() {
     const orgId = await getActiveOrgId();
@@ -172,7 +173,8 @@ export async function getPlanUsage() {
     const [{ activas }] = await sql`
         select count(*)::int as activas from cotizaciones
         where org_id = ${orgId} and status not in ('rejected', 'expired')`;
-    const limite = plan === 'free' ? 5 : null; // null = ilimitado
+    // Límite de cotizaciones activas por tier (null = ilimitado).
+    const limite = plan === 'free' ? 5 : plan === 'starter' ? 50 : null;
     const usadas = Number(activas) || 0;
     return {
         plan,
@@ -181,6 +183,40 @@ export async function getPlanUsage() {
         ilimitado: limite === null,
         pct: limite ? Math.min(100, Math.round((usadas / limite) * 100)) : 0,
         excedido: limite !== null && usadas >= limite,
+    };
+}
+
+// Consumo del periodo actual (IA / CFDI / API) vs cuota incluida del plan.
+// Lee uso_periodo (lo alimenta reportUsage en src/lib/billing.ts). El excedente
+// lo cobra Stripe; aquí sólo mostramos el medidor en /app/ajustes/plan.
+export async function getBillingUsage() {
+    const orgId = await getActiveOrgId();
+    const [o] = await sql`select coalesce(plan,'free') as plan, subscription_status, billing_cycle, current_period_end from orgs where id = ${orgId}`;
+    const plan = (o?.plan as string) || 'free';
+    const inc = INCLUDED[plan as keyof typeof INCLUDED] ?? INCLUDED.free;
+    const periodo = new Date().toISOString().slice(0, 7); // YYYY-MM (UTC)
+    let row: any = {};
+    try {
+        const r = await sql`select * from uso_periodo where org_id = ${orgId} and periodo = ${periodo}`;
+        row = r[0] ?? {};
+    } catch { /* tabla aún no migrada */ }
+
+    const dim = (usado: number, incl: number | null) => ({
+        usado,
+        incluido: incl,
+        ilimitado: incl === null,
+        pct: incl ? Math.min(100, Math.round((usado / incl) * 100)) : 0,
+        excedido: incl !== null && usado > incl,
+    });
+
+    return {
+        plan,
+        status: (o?.subscription_status as string) ?? null,
+        cycle: (o?.billing_cycle as string) ?? null,
+        periodFin: o?.current_period_end ? fmtDate(o.current_period_end) : null,
+        ia: dim(Number(row.ia) || 0, inc.ia),
+        cfdi: dim(Number(row.cfdi) || 0, inc.cfdi),
+        api: dim(Number(row.api) || 0, inc.api),
     };
 }
 
