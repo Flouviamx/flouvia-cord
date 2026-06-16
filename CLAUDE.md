@@ -93,6 +93,16 @@ usuario (el de IA ya está cableado en `ai-draft`).
    marcar cobrada + recordatorio por WhatsApp. getCobranza() en queries.ts.
 ✅ **Forecast en Analítica** — pronóstico de cartera abierta (pipeline ponderado:
    enviadas 30% + vistas 50%) + comparativo cerrado vs mes anterior.
+✅ **CFO Dashboard (jun 2026)** — `/app/cfo`: inteligencia financiera avanzada.
+   `getCFO()` en queries.ts cruza historial real por cliente (tasa de cierre =
+   aprobadas/total, delay al pago = delta approved_at→evento paid) con el pipeline
+   abierto para proyectar ingreso esperado semana a semana (5 cubetas: esta semana,
+   próxima, +2, +3, +4 semanas). KPIs: pipeline total, ingreso esperado ponderado,
+   DSO con semáforo (verde ≤30d / amarillo ≤60d / rojo >60d) y concentración de
+   riesgo por cliente. Alertas automáticas: concentración ≥70% y cotizaciones
+   silenciadas (+7 días sin respuesta). Ranking de clientes ponderado (tasa hist.,
+   días a cierre, días a cobro, valor esperado). Sidebar grupo "Dinero", Cmd+K,
+   atajo `G+F`.
 ✅ **Link público 2.0** — en `/q/[token]`: contraoferta + chat (comentarios) del cliente;
    el vendedor responde desde el detalle (caja de respuesta → evento `reply`). Sin
    migración (usa `eventos` tipos comment/counter/reply). getCotizacionByToken devuelve
@@ -120,7 +130,7 @@ usuario (el de IA ya está cableado en `ai-draft`).
      al inicio de la sidebar; estado en localStorage (`cord.pins.v1`); `F` para fijar/quitar;
      tooltip al hover en modo colapsado igual que el resto del nav.
    • **Atajos de teclado globales**: `/` → abrir Cmd+K; `C` → nueva cotización;
-     `G+D/C/L/P/B/A` → navegar a la sección; `F` → fijar/quitar página del menú;
+     `G+D/C/L/P/B/A/F` → navegar a la sección (F = CFO Dashboard); `F` → fijar/quitar página del menú;
      `?` → overlay de ayuda. Ignorados cuando el foco está en un input/textarea/select.
    • **Barra de progreso de navegación** (estilo Linear/YouTube): barra azul de 2.5px en la
      parte superior que aparece al hacer click en un link y desaparece al cargar.
@@ -452,6 +462,9 @@ el valor antes de cada query (igual que `app.email_cliente` en flouvia-web).
 # App — CONECTADA a Neon (src/lib/queries.ts); usa AppLayout.astro
 /login /registro → Clerk SignIn/SignUp (es-MX)
 /app             → dashboard: KPIs (incl. "por dar seguimiento"), pipeline, recientes, feed
+/app/cfo         → CFO Dashboard (jun 2026): proyección de flujo de caja semanal,
+                   KPIs financieros (DSO, concentración de riesgo), alertas de
+                   silenciadas y ranking de clientes ponderado. getCFO() en queries.ts.
 /app/analitica   → analítica (jun 2026): KPIs (cerrado/tasa/ticket/días a cierre),
                    gráfica cotizado vs cerrado por mes, embudo de conversión, margen
                    cedido (lista vs negociado), top clientes y top productos. Charts en
