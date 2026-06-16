@@ -100,8 +100,34 @@ usuario (el de IA ya está cableado en `ai-draft`).
 ✅ **IA: armar cotización desde texto** — `/api/cotizaciones/ai-draft` (SDK @anthropic-ai/sdk,
    tool_choice forzado; modelo claude-opus-4-8 vía AI_MODEL) + panel "Armar con IA" en el
    editor `/nueva`. Empareja el pedido del cliente con el catálogo. Requiere ANTHROPIC_API_KEY.
-✅ **Topbar v2 + Menú de comandos (Cmd+K)** — AppLayout con buscador + iconos; overlay
-   global de comandos (navegación + acciones + búsqueda en vivo vía `/api/search`).
+✅ **Topbar v3 + App shell PRO (jun 2026)** — rediseño completo del AppLayout:
+   • **Topbar slim**: buscador pegado a la izquierda (ancho fijo ~360px), iconos a la derecha.
+   • **Page header**: banda con título de sección grande (1.6rem) debajo de la topbar; botones
+     de acción a la derecha (slot `topbar-actions` reubicado). Slot `page-tabs` para tabs de
+     sección. Helper `.ph-tab` / `.ph-tab.active` para tabs consistentes.
+   • **Breadcrumbs**: prop `crumbs=[{label, href?}]` en AppLayout; ya conectado en
+     `/app/cotizaciones/[id]` y `/app/cotizaciones/nueva`.
+   • **Cmd+K corregido y pulido**: los estilos de items inyectados por JS se movieron al
+     bloque `is:global` (Astro scopea por `[data-astro-cid]` y el HTML inyectado no lo lleva —
+     era la causa de que se viera feo). Selección sutil estilo Linear (barrita de acento navy,
+     no bloque sólido), flecha `↵` en el item activo, atajo `kbd` visible (ej. "C" en Nueva
+     cotización). **Recientes** en localStorage (`cord.recent.v1`) cuando el buscador está vacío.
+   • **Centro de notificaciones real**: campana en la topbar abre panel con feed de actividad
+     real (reusa tabla `eventos`); punto rojo si hay items no vistos (marcados en
+     `cord.notif.seen`); nuevo endpoint `GET /api/notificaciones`. Iconos por tipo (enviada/
+     vista/aprobada/rechazada/pagada/facturada/chat). "Marcar como leídas".
+   • **Fijados en el sidebar**: botón de pin (phPin) en el page-header + sección "Fijados"
+     al inicio de la sidebar; estado en localStorage (`cord.pins.v1`); `F` para fijar/quitar;
+     tooltip al hover en modo colapsado igual que el resto del nav.
+   • **Atajos de teclado globales**: `/` → abrir Cmd+K; `C` → nueva cotización;
+     `G+D/C/L/P/B/A` → navegar a la sección; `F` → fijar/quitar página del menú;
+     `?` → overlay de ayuda. Ignorados cuando el foco está en un input/textarea/select.
+   • **Barra de progreso de navegación** (estilo Linear/YouTube): barra azul de 2.5px en la
+     parte superior que aparece al hacer click en un link y desaparece al cargar.
+   • **Toasts globales**: `window.cordToast(msg, 'ok'|'error'|'info', ms?)` — toast centrado
+     en la parte inferior con ícono, auto-dismiss y botón X. Flash post-navegación vía
+     `sessionStorage 'cord.flash'`. Skeletons reutilizables: `.skeleton` + `.skeleton-line`.
+   • **Overlay de ayuda de atajos** (`?`): panel centrado con la tabla de todos los atajos.
 ✅ **Presencia en vivo** — el cliente con `/q/[token]` abierto manda heartbeat
    (`POST /api/q/[token]` action `ping` → `cotizaciones.viewer_last_seen`); el vendedor
    ve "lo está viendo ahora" en el detalle (poll `/api/cotizaciones/[id]/presence`).
@@ -477,6 +503,7 @@ el valor antes de cada query (igual que `app.email_cliente` en flouvia-web).
                    Enlazadas en el megamenú DESARROLLADORES del navbar.
 
 # API Pública (REST + MCP)
+/api/notificaciones  → GET feed de actividad reciente (reusa tabla eventos; último ts para punto rojo)
 /api/v1/me           → whoami (scope any)
 /api/v1/cotizaciones → GET list (filtros status/limit/offset) + POST crear
 /api/v1/cotizaciones/[id] → GET detalle (items + eventos)
@@ -530,10 +557,19 @@ La org demo es "Materiales del Valle" (construcción) — coherente con el mocku
 del hero (COT-0148 → El Zarco). Al conectar Neon: reemplazar imports por queries.
 
 **AppLayout (`src/layouts/AppLayout.astro`):** sidebar navy sticky (logo blanco,
-nav con íconos, card de org abajo), topbar con título + badge "DEMO" + slot
-`topbar-actions`, content max-width 1240px. Entradas con CSS `app-fadein`
-escalonado (NO GSAP — la app no carga GSAP). Mobile: sidebar → tab bar inferior
-fija. Clases globales reutilizables: `.card`, `.status-pill`, `.editorial`.
+nav con íconos, org-switcher arriba, "Fijados" antes de los grupos nav, footer con logo).
+Props: `title`, `page`, `heading?`, `crumbs?` (breadcrumbs). Slots: `topbar-actions`
+(botones del page-header, derecha), `page-sub` (subtítulo opcional bajo el título),
+`page-tabs` (tabs de sección, bajo el título — usar clase `.ph-tab`), slot default (contenido).
+Topbar: buscador izquierda → tb-right (onb-pill, campana/notificaciones, ajustes).
+Page-head: breadcrumbs → `h1.ph-title` + botón pin → ph-actions → ph-tabs-row.
+Clases globales reutilizables: `.card`, `.status-pill`, `.editorial`, `.skeleton`,
+`.skeleton-line`, `.ph-tab`. API JS global: `window.cordToast(msg, type, ms)`.
+`sessionStorage 'cord.flash'` para flash post-navegación. Entradas con CSS `app-fadein`
+escalonado (NO GSAP). Mobile: sidebar → drawer; tab bar inferior fija.
+⚠️ Estilos de contenido inyectado por JS (Cmd+K items, notif panel, toasts, pins)
+DEBEN vivir en `<style is:global>` — Astro scopea por `[data-astro-cid]` y el HTML
+dinámico no lleva ese atributo. NO moverlos al bloque `<style>` scopeado.
 
 ---
 

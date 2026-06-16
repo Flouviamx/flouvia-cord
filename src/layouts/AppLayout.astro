@@ -431,10 +431,28 @@ const NAV_FLAT = NAV_GROUPS.flatMap((g) => g.items);
     .notif-foot:hover { background: var(--color-bg-soft); }
     .notif-empty { padding: 2rem 1rem; text-align: center; font-size: 0.82rem; color: var(--color-text-muted); }
 
-    /* ════════ "Fijados" en el sidebar (localStorage) ════════ */
+    /* ════════ "Fijados" en el sidebar (localStorage, inyectado por JS → global) ════════ */
     .sb-pins[hidden] { display: none; }
+    /* El contenido de los pins se inyecta por JS, así que SUS estilos van aquí (global)
+       — los .sb-item scopeados no aplican al HTML dinámico. */
+    .sb-pins .sb-group-label {
+        font-size: 0.6rem; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase;
+        color: rgba(255,255,255,0.3); padding: 2px 11px 5px;
+    }
     .sb-pin-row { position: relative; display: flex; align-items: center; }
-    .sb-pin-row .sb-item { flex: 1; }
+    .sb-pin-row .sb-item {
+        flex: 1; display: flex; align-items: center; gap: 11px;
+        padding: 8px 11px; border-radius: 9px;
+        font-size: 0.86rem; font-weight: 500; color: rgba(255,255,255,0.55); text-decoration: none;
+        transition: color 0.25s, background 0.25s;
+    }
+    .sb-pin-row .sb-item svg { width: 16px; height: 16px; opacity: 0.75; flex-shrink: 0; }
+    .sb-pin-row .sb-item-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sb-pin-row .sb-item:hover { color: rgba(255,255,255,0.92); background: rgba(255,255,255,0.05); }
+    .sb-pin-row .sb-item.active { color: #fff; background: rgba(255,255,255,0.09); }
+    .sb-collapsed .sb-pins .sb-group-label { display: none; }
+    .sb-collapsed .sb-pin-row .sb-item { justify-content: center; padding: 9px; }
+    .sb-collapsed .sb-pin-row .sb-item-label { display: none; }
     .sb-pin-x {
         position: absolute; right: 6px; opacity: 0; border: none; background: none; cursor: pointer;
         color: rgba(255,255,255,0.5); padding: 3px; border-radius: 6px; line-height: 0;
