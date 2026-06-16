@@ -7,7 +7,7 @@
 // • Los pasos se AUTO-MARCAN como completados al detectar cambios en la BD
 //   (polling a /api/onboarding/progress + refresco al volver a la pestaña).
 // • Estado GLOBAL persistente entre páginas: como Astro no usa React, el
-//   equivalente de Zustand/Context es un store vanilla en `window.__tratoOnb`
+//   equivalente de Zustand/Context es un store vanilla en `window.__cordOnb`
 //   respaldado por localStorage + un CustomEvent para sincronizar la UI.
 //
 // El server resuelve el avance inicial (getSetupProgress) y lo pasa por props;
@@ -37,7 +37,7 @@ const dash = (pct: number) => `${(pct * 0.9739).toFixed(2)} 100`;
                 <b class="editorial" data-pct>{progress.pct}%</b>
             </span>
             <div class="onb-titles">
-                <strong>Configura Trato</strong>
+                <strong>Configura Cord</strong>
                 <span data-count>{progress.doneN} de {progress.total} pasos listos</span>
             </div>
             <button class="onb-min" id="onbMin" type="button" aria-label="Minimizar a la barra">
@@ -77,12 +77,12 @@ const dash = (pct: number) => `${(pct * 0.9739).toFixed(2)} 100`;
 
 <script is:inline define:vars={{ initial: progress }}>
     (() => {
-        const LS_KEY = 'trato.onb.v1';
+        const LS_KEY = 'cord.onb.v1';
 
         // ── Store global (equivalente vanilla de Zustand/Context) ──
         // Estado compartido por toda la app, persistido en localStorage para que
         // sobreviva a la navegación SSR (cada página es una recarga completa).
-        const store = (window.__tratoOnb = window.__tratoOnb || (() => {
+        const store = (window.__cordOnb = window.__cordOnb || (() => {
             let saved = {};
             try { saved = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch {}
             const state = { view: saved.view === 'pill' ? 'pill' : 'card', dismissed: !!saved.dismissed };

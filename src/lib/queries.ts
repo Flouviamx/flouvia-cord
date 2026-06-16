@@ -438,7 +438,7 @@ export async function getCotizacionByToken(token: string) {
             colorMarca: (rows[0].org_color as string) || '#0a192f',
             pdfMensaje: (rows[0].org_pdf_mensaje as string) ?? '',
             ivaPct: num(rows[0].org_iva_pct) || 16,
-            // Dominios autorizados a embeber esta cotización (TRATO Elements).
+            // Dominios autorizados a embeber esta cotización (CORD Elements).
             embedDomains: (rows[0].org_embed_domains as string) ?? '',
             // FASE 3 — Portal del cliente
             portalBanner: (rows[0].org_portal_banner as string) ?? '',
@@ -834,7 +834,7 @@ export async function getSetupProgress() {
         { id: 'marca',      label: 'Personaliza tu marca',        desc: 'Logo, color y datos de contacto en tus documentos.', href: '/app/ajustes/branding',         done: !!(o?.logo_url || o?.email_contacto || o?.telefono) },
         { id: 'productos',  label: 'Crea tu catálogo',            desc: 'Agrega los productos o servicios que vendes.',       href: '/app/productos',               done: Number(np) > 0 },
         { id: 'clientes',   label: 'Agrega tus clientes',         desc: 'A quién le cotizas, con sus términos de pago.',      href: '/app/clientes',                done: Number(nc) > 0 },
-        { id: 'cotizacion', label: 'Crea tu primera cotización',  desc: 'El corazón de Trato — pruébalo en 2 minutos.',       href: '/app/cotizaciones/nueva',      done: Number(nq) > 0 },
+        { id: 'cotizacion', label: 'Crea tu primera cotización',  desc: 'El corazón de Cord — pruébalo en 2 minutos.',       href: '/app/cotizaciones/nueva',      done: Number(nq) > 0 },
         { id: 'fiscal',     label: 'Completa tus datos fiscales', desc: 'RFC y régimen para timbrar CFDI 4.0.',               href: '/app/ajustes/fiscal',          done: !!o?.rfc },
     ];
     const doneN = tasks.filter((t) => t.done).length;

@@ -1,14 +1,23 @@
-# Trato — CLAUDE.md
+# Cord — CLAUDE.md
 
-SaaS de cotizaciones B2B standalone de Flouvia. Dominio: **trato.flouvia.com**.
+SaaS de cotizaciones B2B standalone de Flouvia. Dominio: **cord.flouvia.com**.
 Es la versión independiente de la app de Shopify "Flouvia Cotizaciones B2B"
 (repo hermano: `../flouvia/src/data/apps.ts`), dirigida a **cualquier negocio B2B
 en México** — no solo Shopify.
 
-> **Repo:** `~/Desktop/flouvia-trato` (carpeta HERMANA de `~/Desktop/flouvia`, NO
+> **Repo:** `~/Desktop/flouvia-cord` (carpeta HERMANA de `~/Desktop/flouvia`, NO
 > anidada — son dos repos git y dos proyectos Vercel independientes).
-> GitHub: `github.com/Flouviamx/flouvia-trato`. Deploy automático en Vercel a
-> `trato.flouvia.com` con cada push a `main`.
+> GitHub: `github.com/Flouviamx/flouvia-cord`. Deploy automático en Vercel a
+> `cord.flouvia.com` con cada push a `main`.
+>
+> ⚠️ **Rebrand Trato → Cord (jun 2026):** el código ya está renombrado a Cord. Lo
+> que sigue siendo "trato" y debe renombrarse MANUALMENTE fuera del repo: el repo de
+> GitHub (`flouvia-trato` → `flouvia-cord`), la carpeta local (`~/Desktop/flouvia-trato`),
+> el proyecto en Vercel y el subdominio DNS (`trato.flouvia.com` → `cord.flouvia.com`).
+> Los logos (`public/imgs/logo-cord-{navy,white}.png`) conservan el arte de Trato hasta
+> que André pase los nuevos. El paquete npm sigue siendo `@flouviahq/elements` (no
+> contiene "trato"), pero el Web Component ahora es `<cord-cotizador>`; re-publicar para
+> que el cambio llegue a quien lo consuma.
 
 ---
 
@@ -41,7 +50,7 @@ Node requerido: **>=22.12.0** (ver `.nvmrc` → 22.13.0)
 ✅ **Clerk YA está ACTIVO** (jun 2026): integración en `astro.config.mjs` con
 `localization: esMX` (`@clerk/localizations`), keys de development en `.env`,
 middleware en `src/middleware.ts`, componentes `<SignIn/>`/`<SignUp/>` montados
-en `/login` y `/registro` (SSR, `prerender = false`). App de Clerk: "Trato"
+en `/login` y `/registro` (SSR, `prerender = false`). App de Clerk: "Cord"
 (`app_3Ey07ttoq6VjvVgWmPOnI0U9rW6`), login CLI como flouvia.mx@gmail.com
 (`clerk` CLI instalado en `~/.npm-global/bin/clerk`). ✅ **`/app` y las APIs
 internas YA están PROTEGIDAS** (`src/middleware.ts`: sin sesión → redirect a
@@ -60,7 +69,7 @@ usuario (el de IA ya está cableado en `ai-draft`).
 
 ✅ Esqueleto Astro + tokens de diseño
 ✅ **Landing de ventas completa** (estilo Stripe/Linear con ADN Flouvia) — desplegada
-✅ **Logos reales** en `public/imgs/`: `logo-trato-navy.png` (fondos claros) y `logo-trato-white.png` (fondos oscuros) — recortados a 780×300
+✅ **Logos reales** en `public/imgs/`: `logo-cord-navy.png` (fondos claros) y `logo-cord-white.png` (fondos oscuros) — recortados a 780×300
 ✅ **App demo completa con datos mock** — dashboard, cotizaciones (lista + editor interactivo + detalle), clientes, productos, ajustes, link público `/q/{token}`
 ✅ **Clerk conectado** — `/login` y `/registro` con componentes reales (es-MX); falta proteger `/app`
 ✅ **Neon conectado** — la app lee/escribe real (`src/lib/queries.ts`, org demo `demo-user`)
@@ -101,8 +110,8 @@ usuario (el de IA ya está cableado en `ai-draft`).
    pasos por `getSetupProgress()` (marca/fiscal/productos/clientes/cotización),
    uno abierto a la vez, check animado al completar. Estado MINIMIZADO → píldora
    "Guía de configuración" con anillo SVG radial en la topbar de `AppLayout`.
-   **Estado global persistente** entre páginas (store vanilla en `window.__tratoOnb`
-   + `localStorage` clave `trato.onb.v1` — equivalente de Zustand/Context en Astro SSR).
+   **Estado global persistente** entre páginas (store vanilla en `window.__cordOnb`
+   + `localStorage` clave `cord.onb.v1` — equivalente de Zustand/Context en Astro SSR).
    **Auto-completado por BD**: polling a `/api/onboarding/progress` cada 15 s +
    `visibilitychange`/`focus` — los pasos se marcan solos sin recargar. Al llegar
    a 100% celebra y se auto-descarta. `?guia=1` resetea el estado. La card inline
@@ -148,17 +157,17 @@ usuario (el de IA ya está cableado en `ai-draft`).
    `data-auth-swap`/`data-in-*`/`data-out-*` como atributos de datos en los nodos del DOM;
    el script se suscribe a `$authStore` y aplica el cambio al resolver. Sin FOUC para el
    visitante anónimo (el caso común de la landing); swap ocurre tras carga de clerk-js.
-✅ **TRATO Elements — cotizador embebible (jun 2026, FASE 1: iframe)** — el cotizador
+✅ **CORD Elements — cotizador embebible (jun 2026, FASE 1: iframe)** — el cotizador
    `/q` vive ahora dentro del sitio de un tercero vía `<iframe>`. El corazón se extrajo
    a `src/components/q/QuoteCard.astro` (REUTILIZADO por `/q/[token]` y `/embed/[token]`;
    es la semilla del futuro paquete npm `@flouviahq/elements`). El componente emite
-   CustomEvents en `window` (`trato:approved`/`rejected`/`message`/`pay`).
+   CustomEvents en `window` (`cord:approved`/`rejected`/`message`/`pay`).
    • `/embed/[token]` (`EmbedLayout`, fondo transparente, sin chrome) setea el header
      CSP `frame-ancestors` desde la allowlist `orgs.embed_domains` (anti-clickjacking;
      vacío = abierto, modo demo) y hace de puente: `ResizeObserver` → `postMessage`
-     `trato:resize` (auto-altura) + relay de eventos al window padre.
+     `cord:resize` (auto-altura) + relay de eventos al window padre.
    • `public/embed.js` = loader de "una línea": `<script src=…/embed.js>` + `<div
-     data-trato-cotizador data-token="…">` inyecta el iframe, ajusta altura y re-emite
+     data-cord-cotizador data-token="…">` inyecta el iframe, ajusta altura y re-emite
      los eventos como CustomEvents sobre el div anfitrión.
    • Ajustes › Developers › **Cotizador embebible** (`/app/ajustes/elements`): copia el
      snippet (con token real reciente) + gestiona dominios autorizados (`embed_domains`
@@ -169,26 +178,26 @@ usuario (el de IA ya está cableado en `ai-draft`).
      no tarjetas), sección de eventos para devs y CTA. Enlazada en el megamenú Producto
      del navbar. Usa `PageAnims` (masked-titles/reveals).
    • **Mejoras al loader (`embed.js`)**: skeleton con shimmer mientras carga + fade-in al
-     `trato:ready` (adiós a la caja vacía), `MutationObserver` auto-monta embeds inyectados
+     `cord:ready` (adiós a la caja vacía), `MutationObserver` auto-monta embeds inyectados
      después (SPAs/modales), `referrerpolicy`, `data-min-height`, respeta reduced-motion.
      El embed reporta altura del `.embed-wrap` y emite `ready` tras `fonts.ready`.
-✅ **TRATO Elements — FASE 2: paquete npm `@flouviahq/elements` (jun 2026)** — versión
+✅ **CORD Elements — FASE 2: paquete npm `@flouviahq/elements` (jun 2026)** — versión
    framework-native del embed, en `packages/elements/` (monorepo ligero, NO toca la app
    Astro; extraíble a su propio repo — solo habla con el iframe `/embed/*`). Arquitectura
    estilo Stripe: **core agnóstico** (`src/core.ts` = `mountCotizador(el, opts)` → iframe +
-   skeleton + postMessage + relay, con `destroy()`), **Web Component** `<trato-cotizador>`
+   skeleton + postMessage + relay, con `destroy()`), **Web Component** `<cord-cotizador>`
    (`src/element.ts`, auto-registrado al importar; re-emite eventos NATIVOS sin prefijo:
    `approved`/`pay`/… para HTML/Vue/Astro/Svelte), y **wrapper React** (`src/react.tsx`
-   → `@flouviahq/elements/react`, `<TratoCotizador token onApproved … />`, React peer OPCIONAL).
+   → `@flouviahq/elements/react`, `<CordCotizador token onApproved … />`, React peer OPCIONAL).
    Build con **esbuild** (`build.mjs` → ESM+CJS para `.` y `./react`; React externo); tipos
    `.d.ts` escritos A MANO en `types/` (no hay typescript instalado). `package.json` con
    exports map dual. Verificado E2E con Playwright: WC registra, `ready` dispara, auto-altura
    (300→1292px), `q-card` carga, 0 errores. Los tabs de `/elements` ahora muestran el paquete
    (React/Next usan `@flouviahq/elements/react`; Astro/Vue el WC; HTML/WordPress siguen con
-   `embed.js`). ✅ **PUBLICADO en npm como `@flouviahq/elements` v0.1.0** (el scope `@trato`
+   `embed.js`). ✅ **PUBLICADO en npm como `@flouviahq/elements` v0.1.0** (el scope `@cord`
    no estaba disponible → se usó la org `@flouviahq`). Re-publicar: subir `version` en
    `package.json` + `cd packages/elements && npm run build && npm publish`. El nombre del
-   Web Component sigue siendo `<trato-cotizador>` (es marca de producto, no del paquete).
+   Web Component sigue siendo `<cord-cotizador>` (es marca de producto, no del paquete).
 ✅ **API Pública (jun 2026)** — infraestructura de llaves API (`api_keys`, hashes SHA-256,
    nunca en claro) + auth Bearer en `src/lib/apikey.ts` (`authApiKey`, `withApiAuth`).
    Endpoints REST en `/api/v1/*`: `GET /me`, `GET|POST /cotizaciones`, `GET /cotizaciones/[id]`,
@@ -207,7 +216,7 @@ usuario (el de IA ya está cableado en `ai-draft`).
 ✅ **Webhooks salientes (jun 2026)** — tabla `webhooks` (url, eventos jsonb, secret en claro
    para firma, activo, last_status/last_error). Motor en `src/lib/webhooks.ts`:
    `dispatchQuoteEvent(orgId, cotizacionId, evento)` — best-effort (NUNCA lanza), 5s timeout,
-   1 retry (300ms backoff), firma HMAC-sha256 en header `X-Trato-Signature: sha256=<hex>`.
+   1 retry (300ms backoff), firma HMAC-sha256 en header `X-Cord-Signature: sha256=<hex>`.
    Payload: `{ event, created_at, data: { id, folio, status, total, cliente, link_publico } }`.
    Enganchado en los 6 eventos: `quote.sent`, `quote.viewed`, `quote.approved`,
    `quote.rejected`, `quote.paid`, `quote.invoiced` (5 archivos). CRUD en `/api/webhooks`
@@ -234,7 +243,7 @@ usuario (el de IA ya está cableado en `ai-draft`).
    • **Portal del cliente** (`/app/ajustes/portal`, pestaña bajo *Branding*) — personaliza la
      página pública `/q`: `portal_banner`, `portal_bienvenida` (ya existía), toggles
      `portal_mostrar_chat` (oculta chat/contraoferta) y `portal_powered` (quita "enviado vía
-     Trato" + watermark; gated por plan). PREVIEW en vivo. **Cableado REAL:** `QuoteCard.astro`
+     Cord" + watermark; gated por plan). PREVIEW en vivo. **Cableado REAL:** `QuoteCard.astro`
      pinta banner/bienvenida y oculta `.q-chat`; `/q/[token].astro` oculta watermark + loop
      viral; `getCotizacionByToken` devuelve los campos portal_*.
    • **Correo** (`/app/ajustes/correo`, pestaña bajo *Notificaciones*) — remitente y plantilla
@@ -256,7 +265,7 @@ usuario (el de IA ya está cableado en `ai-draft`).
    y `/desarrolladores/mcp` (chat UI con tool call `cartera_vencida`). Contenido en
    `src/lib/desarrolladores.ts`. Animaciones `PageAnims`, masked-titles, count-ups, reveals.
 ✅ **Navbar v3 (jun 2026)** — nuevo megamenú DESARROLLADORES entre SOLUCIONES y RECURSOS:
-   paneles API REST · MCP para IA · Trato Elements. PRECIOS movido al final como link simple.
+   paneles API REST · MCP para IA · Cord Elements. PRECIOS movido al final como link simple.
    Orden: PRODUCTO · SOLUCIONES · DESARROLLADORES · RECURSOS · PRECIOS.
 ✅ **Footer v2 (jun 2026)** — expandido de 3 a 5 columnas: /01 Producto · /02 Soluciones ·
    /03 Desarrolladores · /04 Recursos · /05 Empresa. Trust chips en el bloque de marca
@@ -281,13 +290,13 @@ usuario (el de IA ya está cableado en `ai-draft`).
 ## Modelo de negocio
 
 Freemium tipo la app de Shopify: gratis hasta 5 cotizaciones activas con
-"Powered by Trato" en el link público; planes de pago vía Stripe Billing.
+"Powered by Cord" en el link público; planes de pago vía Stripe Billing.
 **Matriz maestra de 5 niveles (jun 2026)** — MXN/mes, IVA incluido, **Pro = el
 ancla** (destacado en la landing):
 
 | Plan | Precio | Posición | Incluye (resumen) |
 |------|--------|----------|-------------------|
-| Gratis | $0 | gancho | 5 cotizaciones, 50 prod/cli, 3 IA/mes, "Powered by Trato" |
+| Gratis | $0 | gancho | 5 cotizaciones, 50 prod/cli, 3 IA/mes, "Powered by Cord" |
 | Starter | $240 | freelance | 50 cotizaciones, 500 prod/cli, 20 IA + 3 CFDI/mes, tu marca, CSV |
 | **Profesional** | **$590** | **DESTACADO** | Ilimitadas, 5 usuarios, 50 IA + 20 CFDI/mes, seguimiento en vivo, analítica, audit log |
 | Scale | $1,390 | corp | + 15 usuarios, 500 IA + 100 CFDI/mes, aprobaciones, cobranza, SMTP propio |
@@ -404,11 +413,11 @@ el valor antes de cada query (igual que `app.email_cliente` en flouvia-web).
 /soluciones/[slug] → página rica por industria (jun 2026, espejo de /producto/[slug]):
                    distribuidoras, construccion, manufactura, servicios. Contenido en
                    src/lib/solucion.ts; mockup propio por industria en [slug].astro.
-/elements        → TRATO Elements (jun 2026, estilo Stripe Checkout): el cotizador
+/elements        → CORD Elements (jun 2026, estilo Stripe Checkout): el cotizador
                    embebible. Hero con <iframe> EN VIVO de /embed/demo en un mockup de
                    browser; snippet, pasos, features (lista), eventos dev. Enlazada en
                    el megamenú Producto.
-/embed/[token]   → cotizador embebible (TRATO Elements) para <iframe> de terceros.
+/embed/[token]   → cotizador embebible (CORD Elements) para <iframe> de terceros.
                    Reutiliza components/q/QuoteCard.astro (mismo corazón que /q) con
                    EmbedLayout (sin chrome). Setea CSP frame-ancestors desde
                    orgs.embed_domains; postMessage resize + relay de eventos. Loader:
@@ -569,8 +578,8 @@ Es el mismo patrón que `../flouvia/src/components/Navbar.astro`, adaptado:
   en el trigger (no con `.mega-open` global). Abre con hover/click, cierra con
   mouseleave, links sin mega, scroll y Escape. Variantes `.scrolled` (navy).
   Links del nav usan rutas absolutas (`/#precios`) para funcionar desde subpáginas.
-- **Logo central** `logo-trato-navy.png` (30px alto) que **desaparece al hacer
-  scroll** y reaparece como `pill-logo` (`logo-trato-white.png`, 17px) dentro de la
+- **Logo central** `logo-cord-navy.png` (30px alto) que **desaparece al hacer
+  scroll** y reaparece como `pill-logo` (`logo-cord-white.png`, 17px) dentro de la
   glass pill navy (misma mecánica que el logo de flouvia). En mobile: dos `<img>`
   apiladas (navy/white) que se intercambian por opacity con `.scrolled`.
 - **Derecha:** píldora glass "Entrar" con ícono de usuario (`.nav-login-pill`,
@@ -631,7 +640,7 @@ Es el mismo patrón que `../flouvia/src/components/Navbar.astro`, adaptado:
 2. **Loop completo** — link público `/q/{token}` + tracking `viewed` + PDF + emails (Resend)
 3. **Dinero** — Stripe Billing (límites del free) + pago en línea de cotizaciones
 4. **CFDI + cierre** — timbrado (mismo PAC que la app de Shopify), pulir landing,
-   listar Trato en `apps.ts` y footer de flouvia.com
+   listar Cord en `apps.ts` y footer de flouvia.com
 
 ---
 
@@ -663,8 +672,8 @@ Regla de oro: **misma alma, distinto cuerpo**. Tokens en `src/layouts/Layout.ast
   Es la firma "fintech" del producto (estilo Stripe). Nunca serif, nunca italic.
 - **Headings 100% Inter bold** — sin palabra-acento.
 - Eyebrows: `0.65rem`, weight 800, letter-spacing 3px, uppercase, color `#888`.
-- **Logos oficiales** (`public/imgs/`): `logo-trato-navy.png` para fondos claros,
-  `logo-trato-white.png` para fondos oscuros (sidebar de la app, footer, pill
+- **Logos oficiales** (`public/imgs/`): `logo-cord-navy.png` para fondos claros,
+  `logo-cord-white.png` para fondos oscuros (sidebar de la app, footer, pill
   scrolled, mockups). Recortados a 780×300. NO recrear el wordmark con texto.
 
 **Layout / componentes:**
@@ -679,7 +688,7 @@ Regla de oro: **misma alma, distinto cuerpo**. Tokens en `src/layouts/Layout.ast
 - Secciones de la landing: `padding: 9rem` vertical (mucho aire, estilo Stripe/Linear).
 - **Watermarks gigantes: ELIMINADOS del index (jun 2026, petición de André) — NO
   reintroducirlos en la landing.** Solo sobreviven en login/registro y en /q
-  (fondo "Trato"). Si se usan ahí: Inter 800, letter-spacing −0.06em (`rgba(0,0,0,0.025)`
+  (fondo "Cord"). Si se usan ahí: Inter 800, letter-spacing −0.06em (`rgba(0,0,0,0.025)`
   claro / `rgba(255,255,255,0.025)` oscuro) **solo en landing/login** — dentro de la
   app NO (es herramienta, no editorial).
 - Liquid Glass (blur + rim light + specular) en: navbar, topbar de la app y segmented
@@ -727,14 +736,14 @@ AI_MODEL=                                                       # opcional (defa
 ```
 
 Neon se recomienda provisionar vía **Vercel Marketplace → Neon** desde el proyecto
-de Vercel de trato (auto-inyecta `DATABASE_URL` en todos los environments).
+de Vercel de Cord (auto-inyecta `DATABASE_URL` en todos los environments).
 
 ---
 
 ## Deployment
 
 - **Plataforma:** Vercel (proyecto independiente del de flouvia.com).
-- **Dominio:** `trato.flouvia.com` (movido al proyecto de Trato en Vercel; DNS ya
+- **Dominio:** `cord.flouvia.com` (movido al proyecto de Cord en Vercel; DNS ya
   apunta a Vercel).
 - **Modo:** SSR (`output: 'server'`). La landing es `prerender: true`.
 - Todas las API routes futuras necesitan `export const prerender = false`.

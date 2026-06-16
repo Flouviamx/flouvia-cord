@@ -1,5 +1,5 @@
 ---
-// /elements — TRATO Elements: el cotizador embebible (landing estilo Stripe
+// /elements — CORD Elements: el cotizador embebible (landing estilo Stripe
 // Checkout). El hero monta un <iframe> EN VIVO de /embed/demo: la página se
 // demuestra a sí misma. Mismo lenguaje visual que /producto/* (PageAnims).
 export const prerender = true;
@@ -15,17 +15,17 @@ const CODES = [
     {
         id: 'html', label: 'HTML', file: 'index.html',
         code: `<!-- En cualquier sitio HTML -->
-<script src="https://trato.flouvia.com/embed.js" async></script>
-<div data-trato-cotizador data-token="abc123"></div>`,
+<script src="https://cord.flouvia.com/embed.js" async></script>
+<div data-cord-cotizador data-token="abc123"></div>`,
     },
     {
         id: 'react', label: 'React', file: 'Cotizacion.jsx',
         code: `// npm install @flouviahq/elements
-import { TratoCotizador } from '@flouviahq/elements/react';
+import { CordCotizador } from '@flouviahq/elements/react';
 
 export function Cotizacion({ token }) {
   return (
-    <TratoCotizador
+    <CordCotizador
       token={token}
       onApproved={(d) => console.log('Aprobada', d.folio)}
       onPay={() => location.assign('/gracias')}
@@ -37,11 +37,11 @@ export function Cotizacion({ token }) {
         id: 'next', label: 'Next.js', file: 'cotizacion.tsx',
         code: `'use client';
 // npm install @flouviahq/elements
-import { TratoCotizador } from '@flouviahq/elements/react';
+import { CordCotizador } from '@flouviahq/elements/react';
 
 export default function Cotizacion() {
   return (
-    <TratoCotizador
+    <CordCotizador
       token="abc123"
       onApproved={(d) => console.log('Aprobada', d.folio)}
     />
@@ -54,42 +54,42 @@ export default function Cotizacion() {
 // npm install @flouviahq/elements
 const { token } = Astro.props;
 ---
-<trato-cotizador token={token}></trato-cotizador>
+<cord-cotizador token={token}></cord-cotizador>
 
 <script>
-  import '@flouviahq/elements'; // registra <trato-cotizador>
+  import '@flouviahq/elements'; // registra <cord-cotizador>
 </script>`,
     },
     {
         id: 'vue', label: 'Vue', file: 'Cotizacion.vue',
         code: `<script setup>
 // npm install @flouviahq/elements
-import '@flouviahq/elements'; // registra <trato-cotizador>
+import '@flouviahq/elements'; // registra <cord-cotizador>
 defineProps({ token: String });
 </script>
 
 <template>
-  <trato-cotizador :token="token" @approved="onApproved" />
+  <cord-cotizador :token="token" @approved="onApproved" />
 </template>`,
     },
     {
         id: 'wordpress', label: 'WordPress', file: 'Bloque HTML',
         code: `<!-- Pega esto en un bloque "HTML personalizado" -->
-<script src="https://trato.flouvia.com/embed.js" async></script>
-<div data-trato-cotizador data-token="abc123"></div>`,
+<script src="https://cord.flouvia.com/embed.js" async></script>
+<div data-cord-cotizador data-token="abc123"></div>`,
     },
 ];
 
-const EVENTS = `document.querySelector('[data-trato-cotizador]')
-  .addEventListener('trato:approved', (e) => {
+const EVENTS = `document.querySelector('[data-cord-cotizador]')
+  .addEventListener('cord:approved', (e) => {
     // tu cliente aprobó — registra la venta, redirige, etc.
     analytics.track('cotizacion_aprobada', e.detail);
   });`;
 ---
 
 <Layout
-    title="Trato Elements — tu cotizador, embebido en cualquier sitio"
-    description="Lleva el cotizador de Trato a tu propio portal o al de tus clientes con una línea de código. Tu marca, aprobación y pago en línea, dentro de su ecosistema."
+    title="Cord Elements — tu cotizador, embebido en cualquier sitio"
+    description="Lleva el cotizador de Cord a tu propio portal o al de tus clientes con una línea de código. Tu marca, aprobación y pago en línea, dentro de su ecosistema."
 >
     <Nav />
     <main>
@@ -98,10 +98,10 @@ const EVENTS = `document.querySelector('[data-trato-cotizador]')
             <div class="el-hero-mesh" aria-hidden="true"></div>
             <div class="el-hero-grid">
                 <div class="el-hero-text">
-                    <p class="el-eyebrow reveal">TRATO ELEMENTS</p>
+                    <p class="el-eyebrow reveal">CORD ELEMENTS</p>
                     <h1 class="el-title masked-title">Tu cotizador,<br/>en cualquier sitio.</h1>
                     <p class="el-sub reveal">
-                        Lleva el cotizador de Trato al portal de tus clientes con <b>una línea
+                        Lleva el cotizador de Cord al portal de tus clientes con <b>una línea
                         de código</b>. Tu marca, tu catálogo, aprobación y pago en línea — todo
                         dentro de su ecosistema, sin que salgan de su web.
                     </p>
@@ -145,11 +145,11 @@ const EVENTS = `document.querySelector('[data-trato-cotizador]')
                             </div>
                             <p class="el-host-line" aria-hidden="true">Tu cotización está lista 👇</p>
                             <!-- iframe REAL del producto -->
-                            <iframe class="el-demo-frame" src="/embed/demo" title="Cotizador Trato (demo en vivo)" loading="lazy"></iframe>
+                            <iframe class="el-demo-frame" src="/embed/demo" title="Cotizador Cord (demo en vivo)" loading="lazy"></iframe>
                             <span class="el-host-foot" aria-hidden="true">© ACME Industrial · portal de clientes</span>
                         </div>
                     </div>
-                    <span class="el-demo-tag">▲ Cotizador de Trato, embebido en vivo</span>
+                    <span class="el-demo-tag">▲ Cotizador de Cord, embebido en vivo</span>
                 </div>
             </div>
         </section>
@@ -189,7 +189,7 @@ const EVENTS = `document.querySelector('[data-trato-cotizador]')
                 <div class="el-step reveal">
                     <span class="el-step-n">02</span>
                     <b>Aparece con tu marca</b>
-                    <span>Color, logo y datos fiscales salen de tu cuenta de Trato. Cero configuración extra en el sitio anfitrión.</span>
+                    <span>Color, logo y datos fiscales salen de tu cuenta de Cord. Cero configuración extra en el sitio anfitrión.</span>
                 </div>
                 <div class="el-step reveal">
                     <span class="el-step-n">03</span>
@@ -208,7 +208,7 @@ const EVENTS = `document.querySelector('[data-trato-cotizador]')
             <div class="el-feat-list">
                 <div class="el-feat reveal">
                     <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.012 17.5 2 12 2z"/></svg></span>
-                    <div><b>Tu marca, no la nuestra</b><span>Color, logo y razón social de tu cuenta. El cliente ve TU negocio, no a Trato (salvo el discreto "vía Trato" del plan gratis).</span></div>
+                    <div><b>Tu marca, no la nuestra</b><span>Color, logo y razón social de tu cuenta. El cliente ve TU negocio, no a Cord (salvo el discreto "vía Cord" del plan gratis).</span></div>
                 </div>
                 <div class="el-feat reveal">
                     <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
@@ -228,7 +228,7 @@ const EVENTS = `document.querySelector('[data-trato-cotizador]')
                 </div>
                 <div class="el-feat reveal">
                     <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
-                    <div><b>Eventos en tiempo real</b><span>Tu sitio escucha <code>trato:approved</code>, <code>trato:pay</code> y más — para disparar tu analítica, CRM o lo que sea.</span></div>
+                    <div><b>Eventos en tiempo real</b><span>Tu sitio escucha <code>cord:approved</code>, <code>cord:pay</code> y más — para disparar tu analítica, CRM o lo que sea.</span></div>
                 </div>
             </div>
         </section>
@@ -240,11 +240,11 @@ const EVENTS = `document.querySelector('[data-trato-cotizador]')
                 <h2 class="el-h2 masked-title">Reacciona a cada<br/>acción del cliente.</h2>
                 <p class="el-copy reveal">El contenedor emite <code>CustomEvents</code> sobre tu propio <code>&lt;div&gt;</code>. Conéctalos a tu analítica, redirige tras la aprobación o sincroniza tu CRM — el control queda en tu página.</p>
                 <ul class="el-events-list">
-                    <li class="reveal"><code>trato:ready</code><span>el cotizador cargó</span></li>
-                    <li class="reveal"><code>trato:approved</code><span>el cliente aprobó · <i>detail: folio, token</i></span></li>
-                    <li class="reveal"><code>trato:rejected</code><span>el cliente rechazó</span></li>
-                    <li class="reveal"><code>trato:message</code><span>comentario o contraoferta</span></li>
-                    <li class="reveal"><code>trato:pay</code><span>inició el pago en línea</span></li>
+                    <li class="reveal"><code>cord:ready</code><span>el cotizador cargó</span></li>
+                    <li class="reveal"><code>cord:approved</code><span>el cliente aprobó · <i>detail: folio, token</i></span></li>
+                    <li class="reveal"><code>cord:rejected</code><span>el cliente rechazó</span></li>
+                    <li class="reveal"><code>cord:message</code><span>comentario o contraoferta</span></li>
+                    <li class="reveal"><code>cord:pay</code><span>inició el pago en línea</span></li>
                 </ul>
             </div>
             <div class="el-code el-code-dev reveal-mockup">

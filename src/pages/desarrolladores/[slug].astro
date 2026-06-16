@@ -19,7 +19,7 @@ const { page } = Astro.props;
 const otra = DEV_PAGES.find((p) => p.slug !== page.slug)!;
 ---
 
-<Layout title={`${page.nav} — Trato`} description={page.sub}>
+<Layout title={`${page.nav} — Cord`} description={page.sub}>
     <Nav />
     <main>
         <!-- ── HERO ── -->
@@ -46,10 +46,10 @@ const otra = DEV_PAGES.find((p) => p.slug !== page.slug)!;
                             <div class="dv-term">
                                 <div class="dv-term-bar">
                                     <span class="dv-dots"><i></i><i></i><i></i></span>
-                                    <span class="dv-term-title">trato · API v1</span>
+                                    <span class="dv-term-title">cord · API v1</span>
                                     <span class="dv-pill">200 OK</span>
                                 </div>
-                                <pre class="dv-code"><code><span class="c-prompt">$</span> curl https://trato.flouvia.com/api/v1/cotizaciones \
+                                <pre class="dv-code"><code><span class="c-prompt">$</span> curl https://cord.flouvia.com/api/v1/cotizaciones \
   -H <span class="c-str">"Authorization: Bearer sk_live_xxxx"</span>
 
 {`{`}
@@ -70,7 +70,7 @@ const otra = DEV_PAGES.find((p) => p.slug !== page.slug)!;
                                 </div>
                                 <div class="dv-tool">
                                     <span class="dv-tool-dot"></span>
-                                    Trato · <b>cartera_vencida</b>
+                                    Cord · <b>cartera_vencida</b>
                                 </div>
                                 <div class="dv-msg dv-ai">
                                     <span>Tienes <b>3 facturas vencidas</b> que suman <b class="editorial">$412,300</b>. La más crítica es Constructora GAMA (COT-0131), con 47 días de atraso. ¿Les mando recordatorio de cobro?</span>

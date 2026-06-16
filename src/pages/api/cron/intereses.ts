@@ -11,7 +11,7 @@ import { sql, logAudit } from '../../../lib/db';
 
 const CRON_SECRET = import.meta.env.CRON_SECRET || process.env.CRON_SECRET;
 const RESEND_KEY  = import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
-const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Trato <cobranza@flouvia.com>';
+const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Cord <cobranza@flouvia.com>';
 
 const DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
 const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n);
@@ -122,7 +122,7 @@ export const GET: APIRoute = async ({ request }) => {
                     </tfoot>
                 </table>
                 <p style="color:#5b6472;font-size:13px;margin-top:20px">
-                    Estos cargos quedan registrados en el historial de cobranza de tu cuenta Trato.
+                    Estos cargos quedan registrados en el historial de cobranza de tu cuenta Cord.
                     Los intereses no modifican el total original de cada cotización.
                 </p>
             </div>`;

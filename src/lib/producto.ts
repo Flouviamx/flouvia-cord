@@ -47,7 +47,7 @@ export const FEATURES: Feature[] = [
             {
                 eyebrow: 'PRECIOS NEGOCIADOS',
                 titulo: 'Cada cliente tiene su precio.<br/>Respétalo sin pensarlo.',
-                copy: 'En B2B el precio de lista es solo el punto de partida. En Trato ajustas el precio de cada línea y el sistema te muestra el descuento aplicado al instante — tú decides hasta dónde llegar, el sistema se encarga de que los números cuadren.',
+                copy: 'En B2B el precio de lista es solo el punto de partida. En Cord ajustas el precio de cada línea y el sistema te muestra el descuento aplicado al instante — tú decides hasta dónde llegar, el sistema se encarga de que los números cuadren.',
                 bullets: [
                     'Precio negociado por línea, con el % de descuento visible',
                     'El precio de lista queda registrado — siempre sabes cuánto cediste',
@@ -93,7 +93,7 @@ export const FEATURES: Feature[] = [
             {
                 eyebrow: 'CERO FRICCIÓN',
                 titulo: 'Sin registro, sin PDF perdido<br/>en el correo.',
-                copy: 'El PDF adjunto muere en la bandeja de entrada. El link de Trato vive: tu cliente lo abre donde sea, ve la versión más reciente y actúa ahí mismo. Aprobar o rechazar es un botón, no una llamada.',
+                copy: 'El PDF adjunto muere en la bandeja de entrada. El link de Cord vive: tu cliente lo abre donde sea, ve la versión más reciente y actúa ahí mismo. Aprobar o rechazar es un botón, no una llamada.',
                 bullets: [
                     'Funciona en WhatsApp, correo o donde lo compartas',
                     'Siempre muestra la versión vigente de la cotización',
@@ -103,7 +103,7 @@ export const FEATURES: Feature[] = [
             {
                 eyebrow: 'TU MARCA',
                 titulo: 'La página la firma tu negocio,<br/>no el nuestro.',
-                copy: 'Tu logo, tu nombre y tus colores presiden la cotización. En los planes de pago desaparece el "Powered by Trato" y la experiencia es 100% tuya — tu cliente ve una empresa seria con sistemas serios.',
+                copy: 'Tu logo, tu nombre y tus colores presiden la cotización. En los planes de pago desaparece el "Powered by Cord" y la experiencia es 100% tuya — tu cliente ve una empresa seria con sistemas serios.',
                 bullets: [
                     'Logo y color de marca configurables en Ajustes',
                     'Diseño cuidado: tipografía fintech, montos protagonistas',
@@ -128,7 +128,7 @@ export const FEATURES: Feature[] = [
         nav: 'Seguimiento en vivo',
         eyebrow: 'SEGUIMIENTO EN VIVO',
         titulo: 'Sabes el momento exacto<br/>en que la ven.',
-        sub: 'Se acabó el "¿ya la revisaste?". Trato te avisa en cuanto tu cliente abre la cotización, cuántas veces la ha visto y qué hizo después — para que llames en el momento justo.',
+        sub: 'Se acabó el "¿ya la revisaste?". Cord te avisa en cuanto tu cliente abre la cotización, cuántas veces la ha visto y qué hizo después — para que llames en el momento justo.',
         plan: 'Disponible en todos los planes',
         stats: [
             { valor: '3', countup: 3, suffix: ' min', label: 'el aviso llega en cuanto abren el link' },
@@ -139,7 +139,7 @@ export const FEATURES: Feature[] = [
             {
                 eyebrow: 'LA SEÑAL QUE IMPORTA',
                 titulo: 'El interés se enfría rápido.<br/>Atrápalo caliente.',
-                copy: 'Una cotización vista hace 5 minutos es una venta viva; una vista hace 2 semanas, un pendiente muerto. Trato convierte la apertura del link en una señal accionable: te enteras al momento y puedes responder cuando tu cliente te tiene en la cabeza.',
+                copy: 'Una cotización vista hace 5 minutos es una venta viva; una vista hace 2 semanas, un pendiente muerto. Cord convierte la apertura del link en una señal accionable: te enteras al momento y puedes responder cuando tu cliente te tiene en la cabeza.',
                 bullets: [
                     'Evento "vista" con fecha y hora exactas',
                     'Cuenta de aperturas (¿la vio 3 veces? está comparando)',
@@ -185,7 +185,7 @@ export const FEATURES: Feature[] = [
             {
                 eyebrow: 'SIN RECAPTURAR',
                 titulo: 'Los datos ya están.<br/>Úsalos.',
-                copy: 'La cotización ya tiene los productos, las cantidades, los precios negociados y el RFC del cliente. Timbrar es un clic: Trato arma el CFDI 4.0 con esos mismos datos y lo manda al PAC. Cero transcripción, cero errores de dedo.',
+                copy: 'La cotización ya tiene los productos, las cantidades, los precios negociados y el RFC del cliente. Timbrar es un clic: Cord arma el CFDI 4.0 con esos mismos datos y lo manda al PAC. Cero transcripción, cero errores de dedo.',
                 bullets: [
                     'CFDI 4.0 con los datos exactos de la cotización',
                     'RFC y datos fiscales del cliente guardados en su ficha',
@@ -220,7 +220,7 @@ export const FEATURES: Feature[] = [
         nav: 'Clientes y crédito',
         eyebrow: 'CLIENTES Y CRÉDITO',
         titulo: 'El crédito es tu ventaja.<br/>Contrólalo.',
-        sub: 'En B2B vender a crédito es vender más — si lo controlas. Trato guarda los términos de cada cliente (Contado, Net 30, Net 60) y su límite de crédito, y los aplica solos en cada cotización.',
+        sub: 'En B2B vender a crédito es vender más — si lo controlas. Cord guarda los términos de cada cliente (Contado, Net 30, Net 60) y su límite de crédito, y los aplica solos en cada cotización.',
         plan: 'Plan Negocio',
         stats: [
             { valor: '3', countup: 3, label: 'términos por cliente: Contado, Net 30, Net 60' },

@@ -40,7 +40,7 @@ export const PLANES: Plan[] = [
             '50 productos y 50 clientes',
             '3 armados con IA al mes',
             'Link público + PDF',
-            'Marca “Powered by Trato”',
+            'Marca “Powered by Cord”',
         ],
     },
     {
@@ -149,7 +149,7 @@ export const COMPARATIVA: CompareGroup[] = [
         titulo: 'Identidad y datos',
         rows: [
             { label: 'Importación masiva (CSV)', free: true, starter: true, pro: true, scale: true, developer: true },
-            { label: 'Quitar marca “Powered by Trato”', free: false, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Quitar marca “Powered by Cord”', free: false, starter: true, pro: true, scale: true, developer: true },
             { label: 'Correos desde tu dominio (SMTP)', free: false, starter: false, pro: false, scale: true, developer: true },
             { label: 'Multi-moneda (MXN, USD, EUR)', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
@@ -174,7 +174,7 @@ export const COMPARATIVA: CompareGroup[] = [
         titulo: 'Infraestructura y desarrolladores',
         rows: [
             { label: 'Integración Zapier / Webhooks', free: true, starter: true, pro: true, scale: true, developer: true },
-            { label: 'Cotizador embebible (Trato Elements)', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Cotizador embebible (Cord Elements)', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Audit log inmutable (traza en DB)', free: false, starter: false, pro: true, scale: true, developer: true },
         ],
     },
@@ -212,14 +212,14 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
     },
     {
         q: '¿Cómo funciona el CFDI 4.0?',
-        a: 'Desde el plan Starter conectas tu Certificado de Sello Digital (CSD) una vez y, al cerrar una cotización, Trato timbra el CFDI 4.0 ante el SAT con los mismos datos. Sin recapturar en otro portal.',
+        a: 'Desde el plan Starter conectas tu Certificado de Sello Digital (CSD) una vez y, al cerrar una cotización, Cord timbra el CFDI 4.0 ante el SAT con los mismos datos. Sin recapturar en otro portal.',
     },
     {
-        q: '¿Puedo probar Trato sin pagar?',
+        q: '¿Puedo probar Cord sin pagar?',
         a: 'Sí. El plan Gratis es para siempre: 5 cotizaciones activas, sin tarjeta. Cuando estés listo subes a un plan de pago y se cobra desde el alta. Puedes cambiar o cancelar cuando quieras.',
     },
     {
-        q: '¿El plan Developer es para integrar Trato a mi sistema?',
-        a: 'Exacto. Developer incluye 50,000 llamadas a la API al mes, los excedentes más baratos, usuarios e IA ilimitados y el cotizador embebible. Es la base para conectar Trato a tu ERP, e-commerce o portal de clientes.',
+        q: '¿El plan Developer es para integrar Cord a mi sistema?',
+        a: 'Exacto. Developer incluye 50,000 llamadas a la API al mes, los excedentes más baratos, usuarios e IA ilimitados y el cotizador embebible. Es la base para conectar Cord a tu ERP, e-commerce o portal de clientes.',
     },
 ];

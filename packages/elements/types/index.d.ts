@@ -1,33 +1,33 @@
 // Tipos públicos de @flouviahq/elements (escritos a mano).
 
-export interface TratoEventDetail {
+export interface CordEventDetail {
     token?: string;
     folio?: string;
     [key: string]: unknown;
 }
 
-export interface TratoElementOptions {
+export interface CordElementOptions {
     token: string;
     baseUrl?: string;
     minHeight?: number;
     onReady?: () => void;
-    onApproved?: (detail: TratoEventDetail) => void;
-    onRejected?: (detail: TratoEventDetail) => void;
-    onMessage?: (detail: TratoEventDetail) => void;
-    onPay?: (detail: TratoEventDetail) => void;
-    onEvent?: (type: string, detail: TratoEventDetail) => void;
+    onApproved?: (detail: CordEventDetail) => void;
+    onRejected?: (detail: CordEventDetail) => void;
+    onMessage?: (detail: CordEventDetail) => void;
+    onPay?: (detail: CordEventDetail) => void;
+    onEvent?: (type: string, detail: CordEventDetail) => void;
 }
 
-export interface TratoController {
+export interface CordController {
     destroy(): void;
     readonly el: HTMLElement;
 }
 
 /** Monta el cotizador dentro de `target`. Devuelve un controller con destroy(). */
-export declare function mountCotizador(target: HTMLElement, opts: TratoElementOptions): TratoController;
+export declare function mountCotizador(target: HTMLElement, opts: CordElementOptions): CordController;
 
-/** Web Component <trato-cotizador>. Atributos: token, base-url, min-height. */
-export declare class TratoCotizadorElement extends HTMLElement {
+/** Web Component <cord-cotizador>. Atributos: token, base-url, min-height. */
+export declare class CordCotizadorElement extends HTMLElement {
     static get observedAttributes(): string[];
     connectedCallback(): void;
     disconnectedCallback(): void;
@@ -35,4 +35,4 @@ export declare class TratoCotizadorElement extends HTMLElement {
 }
 
 /** Registra el custom element (idempotente). Se llama solo al importar el paquete. */
-export declare function defineTratoElements(tag?: string): void;
+export declare function defineCordElements(tag?: string): void;

@@ -1,5 +1,5 @@
 ---
-// Ajustes › Developers › Cotizador embebible (TRATO Elements).
+// Ajustes › Developers › Cotizador embebible (CORD Elements).
 // Permite (1) copiar el snippet de instalación del <iframe> en sitios de terceros
 // y (2) gestionar la allowlist de dominios (orgs.embed_domains) que alimenta el
 // header CSP `frame-ancestors`. Estilo LISTA (regla de André, no tarjetas).
@@ -19,9 +19,9 @@ const [reciente] = await sql`
 const sampleToken = (reciente?.public_token as string) || 'TOKEN_DE_TU_COTIZACION';
 
 const base = Astro.url.origin;
-const snippet = `<!-- Cotizador Trato -->
+const snippet = `<!-- Cotizador Cord -->
 <script src="${base}/embed.js" async></script>
-<div data-trato-cotizador data-token="${sampleToken}"></div>`;
+<div data-cord-cotizador data-token="${sampleToken}"></div>`;
 const hasDomains = (ORG.embedDomains || '').trim().length > 0;
 ---
 
@@ -60,17 +60,17 @@ const hasDomains = (ORG.embedDomains || '').trim().length > 0;
         <h3>3 · Reacciona a los eventos (opcional)</h3>
         <p class="el-p">El contenedor emite eventos cuando el cliente actúa, para que tu sitio reaccione (analítica, redirigir, etc.):</p>
         <div class="el-code">
-            <pre><code>{`document.querySelector('[data-trato-cotizador]')
-  .addEventListener('trato:approved', (e) => {
+            <pre><code>{`document.querySelector('[data-cord-cotizador]')
+  .addEventListener('cord:approved', (e) => {
     console.log('Aprobada', e.detail.folio);
   });`}</code></pre>
         </div>
         <ul class="el-events">
-            <li><code>trato:ready</code> — el cotizador cargó</li>
-            <li><code>trato:approved</code> — el cliente aprobó <span>· detail: folio, token</span></li>
-            <li><code>trato:rejected</code> — el cliente rechazó</li>
-            <li><code>trato:message</code> — comentario o contraoferta</li>
-            <li><code>trato:pay</code> — inició el pago en línea</li>
+            <li><code>cord:ready</code> — el cotizador cargó</li>
+            <li><code>cord:approved</code> — el cliente aprobó <span>· detail: folio, token</span></li>
+            <li><code>cord:rejected</code> — el cliente rechazó</li>
+            <li><code>cord:message</code> — comentario o contraoferta</li>
+            <li><code>cord:pay</code> — inició el pago en línea</li>
         </ul>
     </div>
 </SettingsShell>

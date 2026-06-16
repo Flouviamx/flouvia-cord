@@ -19,7 +19,7 @@ const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
 ---
 
 <SettingsShell title="API y webhooks — Ajustes" tab="api"
-    intro="Conecta Trato con tu propio sistema (ERP, CRM, scripts): lee y crea cotizaciones, clientes y productos por API. Genera una llave abajo y consulta los endpoints disponibles.">
+    intro="Conecta Cord con tu propio sistema (ERP, CRM, scripts): lee y crea cotizaciones, clientes y productos por API. Genera una llave abajo y consulta los endpoints disponibles.">
 
     {!tienePlan && (
         <div class="dev-upsell">
@@ -67,7 +67,7 @@ const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
 
     <div class="s-block">
         <h3>Endpoints disponibles</h3>
-        <p class="dev-note" style="margin-top:0 0 1rem">Base: <code>https://trato.flouvia.com/api/v1</code> · autentícate con <code>Authorization: Bearer &lt;tu_key&gt;</code>.</p>
+        <p class="dev-note" style="margin-top:0 0 1rem">Base: <code>https://cord.flouvia.com/api/v1</code> · autentícate con <code>Authorization: Bearer &lt;tu_key&gt;</code>.</p>
         <div class="ep-rows">
             <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/me</code><span class="ep-d">A qué negocio pertenece la llave</span></div>
             <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/cotizaciones</code><span class="ep-d">Lista (filtra con <code>?status=</code>, pagina con <code>?limit=&amp;offset=</code>)</span></div>
@@ -81,7 +81,7 @@ const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
         </div>
         <div class="ep-code">
             <span class="ep-code-label">Ejemplo</span>
-            <pre><code>curl https://trato.flouvia.com/api/v1/cotizaciones \
+            <pre><code>curl https://cord.flouvia.com/api/v1/cotizaciones \
   -H "Authorization: Bearer sk_live_xxxxxxxxxxxx"</code></pre>
         </div>
     </div>
@@ -162,7 +162,7 @@ const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
             <h3>Webhooks</h3>
             <button class="dev-new" id="whNew" disabled={!tienePlan}>+ Agregar endpoint</button>
         </div>
-        <p class="dev-note" style="margin-top:0">Recibe un POST firmado (HMAC-sha256, header <code>X-Trato-Signature</code>) cuando algo pasa con una cotización. Verifica la firma con el secret del endpoint. Despliega un endpoint para ver su <b>log de entregas</b> y reintentar.</p>
+        <p class="dev-note" style="margin-top:0">Recibe un POST firmado (HMAC-sha256, header <code>X-Cord-Signature</code>) cuando algo pasa con una cotización. Verifica la firma con el secret del endpoint. Despliega un endpoint para ver su <b>log de entregas</b> y reintentar.</p>
 
         <div class="wh-list" id="whList">
             {WEBHOOKS.length === 0 && (
@@ -238,7 +238,7 @@ const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
         <h4>Agregar endpoint</h4>
         <div class="s-field" style="margin-bottom:1.1rem">
             <label for="whUrl">URL de destino</label>
-            <input class="s-input" id="whUrl" placeholder="https://tusistema.mx/webhooks/trato" />
+            <input class="s-input" id="whUrl" placeholder="https://tusistema.mx/webhooks/cord" />
         </div>
         <div class="wh-events">
             <span class="wh-events-label">Eventos (ninguno = todos)</span>
@@ -522,12 +522,12 @@ const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
     function initMcp() {
         const cfg = document.getElementById('mcpConfig');
         if (!cfg) return;
-        const URL_BASE = 'https://trato.flouvia.com/api/mcp';
+        const URL_BASE = 'https://cord.flouvia.com/api/mcp';
         const KEY = 'sk_live_xxxxxxxxxxxx';
         const CONFIGS: Record<string, string> = {
             claude: `{
   "mcpServers": {
-    "trato": {
+    "cord": {
       "url": "${URL_BASE}",
       "headers": { "Authorization": "Bearer ${KEY}" }
     }
@@ -535,7 +535,7 @@ const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
 }`,
             cursor: `{
   "mcpServers": {
-    "trato": {
+    "cord": {
       "url": "${URL_BASE}",
       "headers": { "Authorization": "Bearer ${KEY}" }
     }

@@ -1,5 +1,5 @@
 // src/lib/mcp.ts
-// Catálogo de TOOLS del servidor MCP de Trato. Cada tool envuelve una query/acción
+// Catálogo de TOOLS del servidor MCP de Cord. Cada tool envuelve una query/acción
 // que YA existe (queries.ts / cotizaciones.ts) y devuelve datos crudos — el endpoint
 // (/api/mcp) los serializa a texto para el modelo. Las tools corren dentro del
 // contexto de la org resuelta por la API key, así que reusan getActiveOrgId() sin
@@ -145,7 +145,7 @@ export const MCP_TOOLS: McpToolDef[] = [
                     notas: args?.notas || null,
                     items: Array.isArray(args?.items) ? args.items : [],
                     send: false,
-                }, { origin: 'https://trato.flouvia.com', ip: ctx.ip, actor: `mcp:${ctx.keyId}` });
+                }, { origin: 'https://cord.flouvia.com', ip: ctx.ip, actor: `mcp:${ctx.keyId}` });
                 return { id: r.id, folio: r.folio, link_publico: `/q/${r.token}`, estado: 'borrador' };
             } catch (e) {
                 if (e instanceof QuoteError) throw new McpToolError(e.message);

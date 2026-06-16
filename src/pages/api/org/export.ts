@@ -31,7 +31,7 @@ export const GET: APIRoute = async () => {
         exportado_en: new Date().toISOString(),
         org, productos, clientes, cotizaciones, cotizacion_items: items, eventos, tareas, api_keys: apiKeys, auditoria,
     };
-    const nombre = String(org?.nombre ?? 'trato').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'trato';
+    const nombre = String(org?.nombre ?? 'cord').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'cord';
 
     return new Response(JSON.stringify(payload, null, 2), {
         status: 200,

@@ -1,5 +1,5 @@
 ---
-// Ajustes › Developers › Integraciones — conecta Trato con ecommerce y herramientas.
+// Ajustes › Developers › Integraciones — conecta Cord con ecommerce y herramientas.
 // Estilo LISTA (no tarjetas, regla de André). El toggle PERSISTE la intención en
 // orgs.integraciones (jsonb) vía /api/org/prefs; la conexión real (OAuth) llega
 // con cada conector.
@@ -12,14 +12,14 @@ const INTEGRACIONES = [
     { id: 'shopify',  nombre: 'Shopify',       desc: 'Importa tu catálogo y clientes; convierte una cotización aprobada en un pedido (draft order).', color: '#95BF47', letra: 'S' },
     { id: 'woo',      nombre: 'WooCommerce',   desc: 'Sincroniza productos y precios desde tu tienda WordPress vía la REST API.', color: '#7F54B3', letra: 'W' },
     { id: 'meli',     nombre: 'Mercado Libre', desc: 'Trae tu publicación y crea cotizaciones B2B para compras por volumen.', color: '#FFE600', letra: 'M', dark: true },
-    { id: 'zapier',   nombre: 'Zapier / Make',  desc: 'Conecta Trato con 6,000+ apps sin código: CRM, hojas de cálculo, Slack…', color: '#FF4A00', letra: 'Z' },
+    { id: 'zapier',   nombre: 'Zapier / Make',  desc: 'Conecta Cord con 6,000+ apps sin código: CRM, hojas de cálculo, Slack…', color: '#FF4A00', letra: 'Z' },
     { id: 'contpaqi', nombre: 'CONTPAQi / ERP', desc: 'Exporta cotizaciones y CFDI a tu contabilidad. Pensado para el cierre fiscal.', color: '#E30613', letra: 'C' },
     { id: 'slack',    nombre: 'Slack',          desc: 'Recibe avisos de eventos (vista, aprobada, pagada) en tu canal. Configúralo en Notificaciones.', color: '#4A154B', letra: '#' },
 ];
 ---
 
 <SettingsShell title="Integraciones — Ajustes" tab="integraciones"
-    intro="Activa una integración para conectar Trato con tus plataformas. Hoy guardamos tu intención y te avisamos en cuanto el conector esté listo — Trato funciona perfecto sin conectar nada.">
+    intro="Activa una integración para conectar Cord con tus plataformas. Hoy guardamos tu intención y te avisamos en cuanto el conector esté listo — Cord funciona perfecto sin conectar nada.">
 
     <!-- ── Slack — conector REAL (Incoming Webhook) ── -->
     <div class="s-block">
@@ -61,16 +61,16 @@ const INTEGRACIONES = [
                 </div>
             ))}
         </div>
-        <p class="int-note">Trato es <b>standalone</b> (sirve a cualquier negocio B2B, no solo a tiendas): las integraciones son <b>opcionales</b> y sólo te ahorran capturar el catálogo.</p>
+        <p class="int-note">Cord es <b>standalone</b> (sirve a cualquier negocio B2B, no solo a tiendas): las integraciones son <b>opcionales</b> y sólo te ahorran capturar el catálogo.</p>
     </div>
 
     <div class="s-block">
         <h3>¿Cómo funcionará?</h3>
         <ol class="int-how">
-            <li><b>Activas el conector</b> (OAuth con Shopify/Woo/Meli, o una API key). Trato guarda el token de forma segura por <code>org_id</code>.</li>
-            <li><b>Importamos catálogo y clientes</b> de la plataforma a Trato — sin recapturar nada.</li>
-            <li><b>Cotizas en Trato</b> como siempre. Al aprobarse, opcionalmente se crea el pedido en tu tienda.</li>
-            <li><b>Eventos bidireccionales:</b> cambios de precio/stock entran; eventos de Trato salen a tu sistema o a Zapier.</li>
+            <li><b>Activas el conector</b> (OAuth con Shopify/Woo/Meli, o una API key). Cord guarda el token de forma segura por <code>org_id</code>.</li>
+            <li><b>Importamos catálogo y clientes</b> de la plataforma a Cord — sin recapturar nada.</li>
+            <li><b>Cotizas en Cord</b> como siempre. Al aprobarse, opcionalmente se crea el pedido en tu tienda.</li>
+            <li><b>Eventos bidireccionales:</b> cambios de precio/stock entran; eventos de Cord salen a tu sistema o a Zapier.</li>
         </ol>
     </div>
 </SettingsShell>

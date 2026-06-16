@@ -49,9 +49,9 @@ async function logDelivery(hook: any, evento: string, body: string, r: {
 async function deliver(hook: any, evento: string, body: string, prueba = false): Promise<void> {
     const headers = {
         'Content-Type': 'application/json',
-        'User-Agent': 'Trato-Webhooks/1.0',
-        'X-Trato-Event': evento,
-        'X-Trato-Signature': `sha256=${sign(hook.secret as string, body)}`,
+        'User-Agent': 'Cord-Webhooks/1.0',
+        'X-Cord-Event': evento,
+        'X-Cord-Signature': `sha256=${sign(hook.secret as string, body)}`,
     };
 
     let status = 0;
@@ -139,7 +139,7 @@ async function dispatchSlack(orgId: string, evento: string, q: any): Promise<voi
         const [o] = await sql`select slack_webhook_url from orgs where id = ${orgId}`;
         const url = o?.slack_webhook_url as string | null;
         if (!url) return;
-        const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://trato.flouvia.com';
+        const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cord.flouvia.com';
         await postToSlack(url, evento, {
             folio: q.folio as string,
             cliente: (q.empresa as string) ?? null,

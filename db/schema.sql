@@ -1,5 +1,5 @@
 -- ============================================================
--- Trato — schema multi-tenant (Neon / PostgreSQL)
+-- Cord — schema multi-tenant (Neon / PostgreSQL)
 -- PK de relación: org_id (NO email_cliente como el portal de flouvia-web).
 -- Cada negocio que se registra es una org; todo cuelga de ahí.
 -- Patrón RLS: org_id = current_setting('app.org_id', TRUE)::uuid
@@ -282,17 +282,17 @@ create table if not exists plantillas_mensaje (
 );
 create index if not exists idx_plantillas_org on plantillas_mensaje(org_id, canal);
 
--- ── TRATO Elements — embed del cotizador en sitios de terceros ───────────────
+-- ── CORD Elements — embed del cotizador en sitios de terceros ───────────────
 -- Allowlist de dominios autorizados a embeber /embed/[token] vía <iframe>. Se usa
 -- para el header CSP `frame-ancestors` (anti-clickjacking). Lista separada por
 -- comas o saltos de línea (ej. "cliente-a.com, app.cliente-b.com"). Vacío =
--- framing abierto (modo "Powered by Trato", útil para demo y plan gratis).
+-- framing abierto (modo "Powered by Cord", útil para demo y plan gratis).
 alter table orgs add column if not exists embed_domains text not null default '';
 
 -- ── Webhooks salientes (Developers, jun 2026) ───────────────────────────────
--- Cada org puede registrar URLs que reciben eventos de Trato (quote.sent,
+-- Cada org puede registrar URLs que reciben eventos de Cord (quote.sent,
 -- quote.viewed, quote.approved, quote.rejected, quote.paid, invoice.stamped).
--- La entrega es POST JSON firmado con HMAC-sha256 (header X-Trato-Signature).
+-- La entrega es POST JSON firmado con HMAC-sha256 (header X-Cord-Signature).
 -- `eventos` vacío = recibe TODOS. Guardamos el resultado de la última entrega
 -- para diagnóstico (last_status/last_error/last_delivery_at).
 create table if not exists webhooks (
@@ -356,10 +356,10 @@ create index if not exists idx_api_requests on api_requests(org_id, created_at d
 
 -- ── Portal del cliente — personaliza la página pública /q ────────────────────
 -- (color_marca y portal_bienvenida ya existen.) Banner = línea superior; los
--- toggles controlan el chat/contraoferta y el branding "Powered by Trato".
+-- toggles controlan el chat/contraoferta y el branding "Powered by Cord".
 alter table orgs add column if not exists portal_banner text;                              -- aviso superior en /q (null = sin banner)
 alter table orgs add column if not exists portal_mostrar_chat boolean not null default true; -- permitir comentarios/contraoferta del cliente
-alter table orgs add column if not exists portal_powered boolean not null default true;     -- mostrar "enviado vía Trato" + watermark (gated por plan)
+alter table orgs add column if not exists portal_powered boolean not null default true;     -- mostrar "enviado vía Cord" + watermark (gated por plan)
 
 -- ── Correo (Resend) — remitente y plantilla del correo al cliente ────────────
 -- El "from" usa el dominio verificado en Resend; aquí personalizamos el NOMBRE

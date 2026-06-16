@@ -1,11 +1,11 @@
 {
   "name": "@flouviahq/elements",
   "version": "0.1.0",
-  "description": "Embebe el cotizador B2B de Trato en cualquier sitio — Web Component + wrapper de React. Tu marca, aprobación y pago en línea.",
+  "description": "Embebe el cotizador B2B de Cord en cualquier sitio — Web Component + wrapper de React. Tu marca, aprobación y pago en línea.",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://trato.flouvia.com/elements",
-  "keywords": ["trato", "cotizaciones", "b2b", "quote", "embed", "web-component", "react", "mexico", "cfdi"],
+  "homepage": "https://cord.flouvia.com/elements",
+  "keywords": ["cord", "cotizaciones", "b2b", "quote", "embed", "web-component", "react", "mexico", "cfdi"],
   "exports": {
     ".": {
       "types": "./types/index.d.ts",

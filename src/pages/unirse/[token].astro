@@ -24,10 +24,10 @@ const ROL_LABEL: Record<string, string> = { admin: 'Administrador', vendedor: 'V
 const valido = invite && invite.estado !== 'revocado';
 ---
 
-<Layout title="Invitación — Trato" noindex={true}>
+<Layout title="Invitación — Cord" noindex={true}>
     <main class="join-page">
         <div class="join-card">
-            <a href="/"><img src="/imgs/logo-trato-navy.png" alt="Trato" class="join-logo" /></a>
+            <a href="/"><img src="/imgs/logo-cord-navy.png" alt="Cord" class="join-logo" /></a>
 
             {!valido && (
                 <>
@@ -41,7 +41,7 @@ const valido = invite && invite.estado !== 'revocado';
                 <>
                     <p class="join-eyebrow">TE INVITARON A UNIRTE</p>
                     <h1>{invite!.nombre}</h1>
-                    <p class="join-rol">Como <b>{ROL_LABEL[invite!.rol] ?? 'miembro'}</b> en Trato.</p>
+                    <p class="join-rol">Como <b>{ROL_LABEL[invite!.rol] ?? 'miembro'}</b> en Cord.</p>
 
                     {signedIn ? (
                         <>

@@ -3,7 +3,7 @@
 // vía la cabecera Svix. Requiere CLERK_WEBHOOK_SECRET en las env vars.
 //
 // Configurar en: Clerk Dashboard → Webhooks → Add endpoint
-//   URL: https://trato.flouvia.com/api/clerk/webhook
+//   URL: https://cord.flouvia.com/api/clerk/webhook
 //   Eventos: user.created, user.deleted
 
 export const prerender = false;

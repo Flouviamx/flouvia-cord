@@ -1,10 +1,10 @@
 ---
-// TRATO Elements — el cotizador embebido en el sitio de un tercero vía <iframe>.
+// CORD Elements — el cotizador embebido en el sitio de un tercero vía <iframe>.
 // Reutiliza el MISMO QuoteCard que /q/[token]; la diferencia es el chrome mínimo
 // (EmbedLayout, fondo transparente) y dos piezas propias del embed:
 //   1) SEGURIDAD: header CSP `frame-ancestors` con la allowlist de la org
 //      (orgs.embed_domains) → anti-clickjacking. Vacío = framing abierto (demo).
-//   2) PUENTE con la página anfitriona: ResizeObserver → postMessage('trato:resize')
+//   2) PUENTE con la página anfitriona: ResizeObserver → postMessage('cord:resize')
 //      para auto-altura, y relay de los CustomEvents del QuoteCard al window padre.
 export const prerender = false;
 
@@ -33,7 +33,7 @@ const dominios = (ORG.embedDomains || '')
     .filter(Boolean);
 const frameAncestors = dominios.length
     ? `frame-ancestors 'self' ${dominios.join(' ')}`
-    : `frame-ancestors *`; // sin allowlist → abierto (modo demo / "Powered by Trato")
+    : `frame-ancestors *`; // sin allowlist → abierto (modo demo / "Powered by Cord")
 Astro.response.headers.set('Content-Security-Policy', frameAncestors);
 
 const yaAprobada = ['approved', 'paid', 'invoiced'].includes(q.status);
@@ -58,7 +58,7 @@ const puedePagar = pagoActivo && ['approved', 'invoiced'].includes(q.status);
 <script>
     // ── Puente iframe ↔ sitio anfitrión ──
     const post = (type: string, payload: Record<string, unknown> = {}) => {
-        try { window.parent.postMessage({ source: 'trato', type, ...payload }, '*'); } catch {}
+        try { window.parent.postMessage({ source: 'cord', type, ...payload }, '*'); } catch {}
     };
 
     // 1) Auto-altura: mide el contenido y avisa al padre en cada cambio de tamaño.
@@ -67,7 +67,7 @@ const puedePagar = pagoActivo && ['approved', 'invoiced'].includes(q.status);
         const card = document.querySelector('.embed-wrap');
         return Math.ceil((card ? card.scrollHeight : document.body.scrollHeight));
     };
-    const reportHeight = () => post('trato:resize', { height: measure() });
+    const reportHeight = () => post('cord:resize', { height: measure() });
     if ('ResizeObserver' in window) {
         new ResizeObserver(reportHeight).observe(document.body);
     } else {
@@ -76,14 +76,14 @@ const puedePagar = pagoActivo && ['approved', 'invoiced'].includes(q.status);
     window.addEventListener('load', reportHeight);
 
     // 'ready' = contenido ya estilado (fuentes cargadas) → el padre revela el iframe.
-    const ready = () => { reportHeight(); post('trato:ready'); };
+    const ready = () => { reportHeight(); post('cord:ready'); };
     reportHeight();
     const fonts = (document as any).fonts?.ready;
     if (fonts) fonts.then(ready); else ready();
     window.addEventListener('load', ready);
 
     // 2) Relay: cada evento del QuoteCard → postMessage al padre.
-    for (const name of ['trato:approved', 'trato:rejected', 'trato:message', 'trato:pay'] as const) {
+    for (const name of ['cord:approved', 'cord:rejected', 'cord:message', 'cord:pay'] as const) {
         window.addEventListener(name, (e) => {
             post(name, { detail: (e as CustomEvent).detail });
             // tras aprobar/rechazar la altura cambia (aparece el estado final)

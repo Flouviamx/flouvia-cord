@@ -1,5 +1,5 @@
 ---
-// Landing de Trato — página de ventas completa.
+// Landing de Cord — página de ventas completa.
 export const prerender = true;
 
 import Layout from '../layouts/Layout.astro';
@@ -13,7 +13,10 @@ import Faq from '../components/landing/Faq.astro';
 import Footer from '../components/landing/Footer.astro';
 ---
 
-<Layout title="Trato — Cotizaciones B2B que cierran tratos | by Flouvia">
+<Layout
+    title="Cord — Plataforma B2B para cotizaciones, pedidos y CFDI | by Flouvia"
+    description="Cord digitaliza tus operaciones B2B: cotizaciones con precios negociados, aprobación en un clic, términos Net 30/60 y CFDI 4.0 automático ante el SAT. Para distribuidores y mayoristas en México. Un producto de Flouvia."
+>
     <Nav />
     <main>
         <Hero />
@@ -185,7 +188,7 @@ import Footer from '../components/landing/Footer.astro';
         // Trust strip del hero (está bajo el fold normalmente)
         const heroTrust = document.querySelector<HTMLElement>('.hero-trust');
         if (heroTrust) {
-            const logos = heroTrust.querySelectorAll('.trust-label, .trust-logos > *');
+            const logos = heroTrust.querySelectorAll('.trust-label, .trust-logos > *, .trust-usecase');
             gsap.set(heroTrust, { opacity: 1, y: 0 });
             gsap.set(logos, { opacity: 0, y: 8 });
             ScrollTrigger.create({

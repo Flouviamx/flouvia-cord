@@ -10,7 +10,7 @@ const TERM_VALUE: Record<string, string> = { 'Contado': 'contado', 'Net 30': 'ne
 const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Plata', oro: 'Oro', distribuidor: 'Distribuidor' };
 ---
 
-<AppLayout title="Clientes — Trato" page="clientes" heading="Clientes">
+<AppLayout title="Clientes — Cord" page="clientes" heading="Clientes">
     <div slot="topbar-actions" class="topbar-btns">
         <button class="btn-import" id="btnImport">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -145,7 +145,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
             </div>
 
             <div class="imp-step" id="impStepMap" hidden>
-                <p class="imp-lead">Empareja las columnas de tu archivo con los campos de Trato.</p>
+                <p class="imp-lead">Empareja las columnas de tu archivo con los campos de Cord.</p>
                 <label class="imp-check"><input type="checkbox" id="impHeader" checked /> La primera fila son encabezados</label>
                 <div class="imp-maps" id="impMaps"></div>
             </div>
@@ -612,7 +612,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = 'plantilla-clientes-trato.csv';
+            a.download = 'plantilla-clientes-cord.csv';
             a.click();
             URL.revokeObjectURL(a.href);
         });

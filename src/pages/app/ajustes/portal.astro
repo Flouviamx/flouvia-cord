@@ -1,13 +1,13 @@
 ---
 // Ajustes › Branding › Portal del cliente. Personaliza la página pública /q que
 // ve tu cliente: banner, mensaje de bienvenida, chat/contraoferta y el branding
-// "Powered by Trato". Guarda con el guardado genérico (PATCH /api/org). Preview
+// "Powered by Cord". Guarda con el guardado genérico (PATCH /api/org). Preview
 // en vivo de la tarjeta /q a la derecha.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
 import { planTieneApi } from '../../../lib/permissions';
 const ORG = await getOrg();
-// Quitar el "Powered by Trato" es feature de plan de pago (igual que el embed).
+// Quitar el "Powered by Cord" es feature de plan de pago (igual que el embed).
 const puedeQuitarMarca = planTieneApi(ORG.plan_raw);
 ---
 
@@ -57,9 +57,9 @@ const puedeQuitarMarca = planTieneApi(ORG.plan_raw);
                     <label class:list={['s-toggle', { disabled: !puedeQuitarMarca }]} style="margin-top:0.4rem">
                         <input type="checkbox" id="pPowered" data-field="portal_powered" checked={ORG.portalPowered} disabled={!puedeQuitarMarca} />
                         <span class="s-toggle-track" aria-hidden="true"><span class="s-toggle-thumb"></span></span>
-                        <span class="s-toggle-text">Mostrar "enviado vía Trato"{!puedeQuitarMarca && <span class="lock-tag">plan Negocio para quitarlo</span>}</span>
+                        <span class="s-toggle-text">Mostrar "enviado vía Cord"{!puedeQuitarMarca && <span class="lock-tag">plan Negocio para quitarlo</span>}</span>
                     </label>
-                    <span class="s-hint" style="margin-left:49px;margin-top:-6px">El branding sutil de Trato al pie del portal. Quitarlo requiere un plan de pago.</span>
+                    <span class="s-hint" style="margin-left:49px;margin-top:-6px">El branding sutil de Cord al pie del portal. Quitarlo requiere un plan de pago.</span>
                 </div>
             </div>
         </div>
@@ -88,7 +88,7 @@ const puedeQuitarMarca = planTieneApi(ORG.plan_raw);
                         <input disabled placeholder="Escribe un comentario o contraoferta…" />
                     </div>
                 </div>
-                <div class="pp-powered" id="ppPowered" style={ORG.portalPowered ? '' : 'display:none'}>enviado vía <b>Trato</b></div>
+                <div class="pp-powered" id="ppPowered" style={ORG.portalPowered ? '' : 'display:none'}>enviado vía <b>Cord</b></div>
             </div>
             <span class="portal-pane-hint">Datos de ejemplo. Tu cliente ve esto en el link /q y en el cotizador embebible.</span>
         </aside>

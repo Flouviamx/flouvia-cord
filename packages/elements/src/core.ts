@@ -2,10 +2,10 @@
 // /embed/{token}) con skeleton, auto-altura (postMessage) y relay de eventos.
 // Es la MISMA mecánica que public/embed.js, pero como módulo: cada instancia tiene
 // su propio listener (scoped por contentWindow) y se limpia con destroy().
-import type { TratoElementOptions, TratoController, TratoEventDetail } from './types';
+import type { CordElementOptions, CordController, CordEventDetail } from './types';
 
-const DEFAULT_BASE = 'https://trato.flouvia.com';
-const STYLE_ID = 'trato-elements-style';
+const DEFAULT_BASE = 'https://cord.flouvia.com';
+const STYLE_ID = 'cord-elements-style';
 
 const REDUCED =
     typeof window !== 'undefined' &&
@@ -13,22 +13,22 @@ const REDUCED =
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** Eventos que re-emitimos. El catch-all (onEvent) recibe todos. */
-const RELAYED = ['trato:ready', 'trato:approved', 'trato:rejected', 'trato:message', 'trato:pay'] as const;
+const RELAYED = ['cord:ready', 'cord:approved', 'cord:rejected', 'cord:message', 'cord:pay'] as const;
 
 function injectStyles() {
     if (typeof document === 'undefined' || document.getElementById(STYLE_ID)) return;
     const css =
-        '.trato-embed{position:relative;width:100%;}' +
-        '.trato-embed iframe{width:100%;border:0;display:block;background:transparent;' +
+        '.cord-embed{position:relative;width:100%;}' +
+        '.cord-embed iframe{width:100%;border:0;display:block;background:transparent;' +
         'opacity:0;transition:opacity .35s ease,height .2s ease;color-scheme:normal;}' +
-        '.trato-embed.is-ready iframe{opacity:1;}' +
-        '.trato-embed-skeleton{position:absolute;inset:0;border-radius:18px;overflow:hidden;' +
+        '.cord-embed.is-ready iframe{opacity:1;}' +
+        '.cord-embed-skeleton{position:absolute;inset:0;border-radius:18px;overflow:hidden;' +
         'background:#fcfcfc;box-shadow:inset 0 0 0 1px rgba(10,25,47,.06);}' +
-        '.trato-embed.is-ready .trato-embed-skeleton{opacity:0;transition:opacity .3s ease;pointer-events:none;}' +
-        '.trato-embed-shimmer{position:absolute;inset:0;background:linear-gradient(100deg,' +
+        '.cord-embed.is-ready .cord-embed-skeleton{opacity:0;transition:opacity .3s ease;pointer-events:none;}' +
+        '.cord-embed-shimmer{position:absolute;inset:0;background:linear-gradient(100deg,' +
         'transparent 20%,rgba(10,25,47,.05) 40%,rgba(10,25,47,.07) 50%,rgba(10,25,47,.05) 60%,transparent 80%);' +
-        'background-size:200% 100%;' + (REDUCED ? '' : 'animation:trato-shimmer 1.4s infinite linear;') + '}' +
-        '@keyframes trato-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}';
+        'background-size:200% 100%;' + (REDUCED ? '' : 'animation:cord-shimmer 1.4s infinite linear;') + '}' +
+        '@keyframes cord-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}';
     const st = document.createElement('style');
     st.id = STYLE_ID;
     st.textContent = css;
@@ -38,21 +38,21 @@ function injectStyles() {
 /**
  * Monta el cotizador dentro de `target`. Devuelve un controller con destroy().
  */
-export function mountCotizador(target: HTMLElement, opts: TratoElementOptions): TratoController {
-    if (!target) throw new Error('[Trato] target inválido');
-    if (!opts || !opts.token) throw new Error('[Trato] falta opts.token');
+export function mountCotizador(target: HTMLElement, opts: CordElementOptions): CordController {
+    if (!target) throw new Error('[Cord] target inválido');
+    if (!opts || !opts.token) throw new Error('[Cord] falta opts.token');
 
     const base = (opts.baseUrl || DEFAULT_BASE).replace(/\/$/, '');
     const origin = (() => { try { return new URL(base).origin; } catch { return base; } })();
     const minH = typeof opts.minHeight === 'number' && opts.minHeight > 0 ? opts.minHeight : 420;
 
     injectStyles();
-    target.classList.add('trato-embed');
+    target.classList.add('cord-embed');
 
     // Skeleton mientras carga.
     const skeleton = document.createElement('div');
-    skeleton.className = 'trato-embed-skeleton';
-    skeleton.innerHTML = '<div class="trato-embed-shimmer"></div>';
+    skeleton.className = 'cord-embed-skeleton';
+    skeleton.innerHTML = '<div class="cord-embed-shimmer"></div>';
     target.appendChild(skeleton);
 
     const iframe = document.createElement('iframe');
@@ -75,28 +75,28 @@ export function mountCotizador(target: HTMLElement, opts: TratoElementOptions): 
     const onMessage = (ev: MessageEvent) => {
         if (ev.origin !== origin) return;
         const data: any = ev.data;
-        if (!data || data.source !== 'trato' || !data.type) return;
+        if (!data || data.source !== 'cord' || !data.type) return;
         if (iframe.contentWindow && ev.source !== iframe.contentWindow) return;
 
-        if (data.type === 'trato:resize' && data.height) {
+        if (data.type === 'cord:resize' && data.height) {
             iframe.style.height = data.height + 'px';
             return;
         }
-        if (data.type === 'trato:ready') reveal();
+        if (data.type === 'cord:ready') reveal();
 
-        const detail: TratoEventDetail = data.detail || {};
+        const detail: CordEventDetail = data.detail || {};
         if (opts.onEvent) opts.onEvent(data.type, detail);
         switch (data.type) {
-            case 'trato:ready':    opts.onReady?.(); break;
-            case 'trato:approved': opts.onApproved?.(detail); break;
-            case 'trato:rejected': opts.onRejected?.(detail); break;
-            case 'trato:message':  opts.onMessage?.(detail); break;
-            case 'trato:pay':      opts.onPay?.(detail); break;
+            case 'cord:ready':    opts.onReady?.(); break;
+            case 'cord:approved': opts.onApproved?.(detail); break;
+            case 'cord:rejected': opts.onRejected?.(detail); break;
+            case 'cord:message':  opts.onMessage?.(detail); break;
+            case 'cord:pay':      opts.onPay?.(detail); break;
         }
     };
     window.addEventListener('message', onMessage);
 
-    // Fallback: si no llega 'trato:ready', revela al cargar el iframe.
+    // Fallback: si no llega 'cord:ready', revela al cargar el iframe.
     const onLoad = () => window.setTimeout(reveal, 250);
     iframe.addEventListener('load', onLoad);
 
@@ -107,7 +107,7 @@ export function mountCotizador(target: HTMLElement, opts: TratoElementOptions): 
             iframe.removeEventListener('load', onLoad);
             if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
             if (skeleton.parentNode) skeleton.parentNode.removeChild(skeleton);
-            target.classList.remove('trato-embed', 'is-ready');
+            target.classList.remove('cord-embed', 'is-ready');
         },
     };
 }

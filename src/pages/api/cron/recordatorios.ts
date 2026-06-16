@@ -9,7 +9,7 @@ import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit } from '../../../lib/db';
 
 const RESEND_KEY = import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
-const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Trato <cobranza@flouvia.com>';
+const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Cord <cobranza@flouvia.com>';
 const CRON_SECRET = import.meta.env.CRON_SECRET || process.env.CRON_SECRET;
 const DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
 const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n);
@@ -50,7 +50,7 @@ export const GET: APIRoute = async ({ request }) => {
             <p>Estimado equipo de <b>${esc(c.empresa)}</b>,</p>
             <p>Le recordamos amablemente que la cotización <b>${esc(c.folio)}</b> por <b>${money(c.total)}</b> vence el <b>${venceTxt}</b>.</p>
             <p>Puede revisarla y realizar su pago aquí:<br><a href="${link}" style="color:#0a192f;font-weight:600">${link}</a></p>
-            <p style="color:#5b6472;font-size:14px">Gracias por su preferencia.<br>${esc(org?.nombre ?? 'Trato')}</p>
+            <p style="color:#5b6472;font-size:14px">Gracias por su preferencia.<br>${esc(org?.nombre ?? 'Cord')}</p>
         </div>`;
         try {
             const res = await fetch('https://api.resend.com/emails', {

@@ -1,13 +1,13 @@
 // Entry principal de @flouviahq/elements (vanilla / Web Component).
-// Importarlo registra automáticamente <trato-cotizador>.
+// Importarlo registra automáticamente <cord-cotizador>.
 export { mountCotizador } from './core';
-export { TratoCotizadorElement, defineTratoElements } from './element';
+export { CordCotizadorElement, defineCordElements } from './element';
 export type {
-    TratoElementOptions,
-    TratoController,
-    TratoEventDetail,
+    CordElementOptions,
+    CordController,
+    CordEventDetail,
 } from './types';
 
-import { defineTratoElements } from './element';
+import { defineCordElements } from './element';
 // Auto-registro al importar (no-op en SSR / sin customElements).
-defineTratoElements();
+defineCordElements();

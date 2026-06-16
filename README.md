@@ -1,10 +1,10 @@
-# Trato
+# Cord
 
 **Cotizaciones B2B profesionales.** Crea, envía y da seguimiento a tus cotizaciones
 con precios negociados, términos de crédito (Contado / Net 30 / Net 60), PDF con tu
 marca y CFDI 4.0. Un producto de [Flouvia](https://flouvia.com).
 
-🌐 **trato.flouvia.com**
+🌐 **cord.flouvia.com**
 
 ## Desarrollo
 

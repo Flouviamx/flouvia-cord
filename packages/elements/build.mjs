@@ -1,4 +1,4 @@
-// Build de @trato/elements con esbuild (ESM + CJS para los entries `.` y `./react`).
+// Build de @flouviahq/elements con esbuild (ESM + CJS para los entries `.` y `./react`).
 // Los tipos (.d.ts) están escritos a mano en types/ (superficie pequeña).
 // En este monorepo esbuild se resuelve desde el node_modules de la raíz; como
 // paquete independiente, `npm i` lo trae vía devDependencies.
@@ -24,4 +24,4 @@ const targets = [
 for (const t of targets) {
     await esbuild.build({ ...common, ...t });
 }
-console.log('✓ @trato/elements compilado en dist/');
+console.log('✓ @flouviahq/elements compilado en dist/');

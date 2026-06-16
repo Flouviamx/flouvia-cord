@@ -5,7 +5,7 @@
 import { sql } from './db';
 
 const RESEND_KEY = import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
-const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Trato <cotizaciones@flouvia.com>';
+const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Cord <cotizaciones@flouvia.com>';
 
 const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(Number(n ?? 0));
 const esc = (s: string) => String(s ?? '').replace(/</g, '&lt;');
@@ -46,7 +46,7 @@ export async function sendEmail(opts: { to: string; subject: string; html: strin
 /**
  * Notifica al cliente que tiene una cotización lista para revisar. Busca el
  * folio/total/token + correo del cliente + nombre/color de la org y arma el
- * correo. `origin` = base URL (https://trato.flouvia.com) para el link público.
+ * correo. `origin` = base URL (https://cord.flouvia.com) para el link público.
  */
 export async function notifyQuoteSent(orgId: string, cotizacionId: string, origin: string): Promise<SendResult> {
     const rows = await sql`
@@ -75,7 +75,7 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, origi
         ? fill(r.email_intro)
         : `${esc(r.org_nombre)} le comparte la cotización <b>${esc(r.folio)}</b> por <b>${money(r.total)}</b>. Puede revisarla, dejar comentarios y aprobarla en línea:`;
     const firma = (r.email_firma && r.email_firma.trim()) ? fill(r.email_firma) : '';
-    const poweredLine = r.portal_powered === false ? esc(r.org_nombre) : `${esc(r.org_nombre)} · enviado con Trato`;
+    const poweredLine = r.portal_powered === false ? esc(r.org_nombre) : `${esc(r.org_nombre)} · enviado con Cord`;
     const html = `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#0f1729;max-width:480px;margin:0 auto">
         <p style="font-size:15px">Estimado equipo de <b>${esc(r.empresa || 'cliente')}</b>,</p>
         <p style="font-size:15px;line-height:1.5">${intro}</p>

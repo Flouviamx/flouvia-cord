@@ -1,5 +1,5 @@
 ---
-// Layout base de Trato — hereda el sistema de diseño Flouvia.
+// Layout base de Cord — hereda el sistema de diseño Flouvia.
 // v1 solo español (target: México). El i18n se añade después con el patrón de flouvia-web.
 
 interface Props {
@@ -12,13 +12,13 @@ interface Props {
 
 const {
     title,
-    description = 'Trato — cotizaciones B2B profesionales. Crea, envía y da seguimiento a tus cotizaciones con precios negociados, términos de crédito y CFDI. Un producto de Flouvia.',
-    image = '/og-trato.png',
+    description = 'Cord — cotizaciones B2B profesionales. Crea, envía y da seguimiento a tus cotizaciones con precios negociados, términos de crédito y CFDI. Un producto de Flouvia.',
+    image = '/og-cord.png',
     noindex = false,
     ogType = 'website',
 } = Astro.props;
 
-const SITE      = Astro.site ?? new URL('https://trato.flouvia.com');
+const SITE      = Astro.site ?? new URL('https://cord.flouvia.com');
 const canonical = new URL(Astro.url.pathname, SITE).href;
 const ogImage   = new URL(image, SITE).href;
 
@@ -45,7 +45,7 @@ import Analytics from '@vercel/analytics/astro';
 
         <!-- Open Graph -->
         <meta property="og:type" content={ogType} />
-        <meta property="og:site_name" content="Trato" />
+        <meta property="og:site_name" content="Cord" />
         <meta property="og:locale" content="es_MX" />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
@@ -75,7 +75,7 @@ import Analytics from '@vercel/analytics/astro';
 
 <style is:global>
     /* ==========================================================
-       TOKENS — sistema de diseño Flouvia, adaptado a Trato
+       TOKENS — sistema de diseño Flouvia, adaptado a Cord
        ========================================================== */
     :root {
         --color-bg: #ffffff;

@@ -12,11 +12,11 @@ const R = 26, C = 2 * Math.PI * R;
 const dash = C * (SETUP.pct / 100);
 ---
 
-<AppLayout title="Configuración — Trato" page="ajustes" heading="Ajustes">
+<AppLayout title="Configuración — Cord" page="ajustes" heading="Ajustes">
     <div class="idx">
         <header class="idx-head">
             <h2>Configuración</h2>
-            <p>Todo lo que se personaliza en Trato para {ORG.nombre}.</p>
+            <p>Todo lo que se personaliza en Cord para {ORG.nombre}.</p>
         </header>
 
         {!SETUP.complete && (
@@ -30,7 +30,7 @@ const dash = C * (SETUP.pct / 100);
                 </span>
                 <span class="idx-health-body">
                     <span class="idx-health-title">Tu cuenta está {SETUP.pct}% configurada</span>
-                    <span class="idx-health-desc">Te faltan {SETUP.total - SETUP.doneN} de {SETUP.total} pasos para sacarle todo el provecho a Trato.</span>
+                    <span class="idx-health-desc">Te faltan {SETUP.total - SETUP.doneN} de {SETUP.total} pasos para sacarle todo el provecho a Cord.</span>
                 </span>
                 <span class="idx-health-cta">Continuar →</span>
             </a>

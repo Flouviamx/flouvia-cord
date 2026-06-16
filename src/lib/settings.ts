@@ -49,7 +49,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     },
     {
         id: 'planes', label: 'Planes y cobranza',
-        desc: 'Tu suscripción de Trato, uso del plan y método de pago.',
+        desc: 'Tu suscripción de Cord, uso del plan y método de pago.',
         icon: '<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>',
         tabs: [
             { id: 'plan', label: 'Suscripción', href: '/app/ajustes/plan' },

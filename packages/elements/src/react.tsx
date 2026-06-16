@@ -1,27 +1,27 @@
 // Wrapper de React para @flouviahq/elements. React es peer dependency OPCIONAL:
 // solo se carga si importas '@flouviahq/elements/react'.
 //
-//   import { TratoCotizador } from '@flouviahq/elements/react';
-//   <TratoCotizador token="abc123" onApproved={(d) => …} />
+//   import { CordCotizador } from '@flouviahq/elements/react';
+//   <CordCotizador token="abc123" onApproved={(d) => …} />
 import { useRef, useEffect } from 'react';
 import { mountCotizador } from './core';
-import type { TratoElementOptions, TratoEventDetail } from './types';
+import type { CordElementOptions, CordEventDetail } from './types';
 
-export interface TratoCotizadorProps {
+export interface CordCotizadorProps {
     token: string;
     baseUrl?: string;
     minHeight?: number;
     className?: string;
     style?: React.CSSProperties;
     onReady?: () => void;
-    onApproved?: (detail: TratoEventDetail) => void;
-    onRejected?: (detail: TratoEventDetail) => void;
-    onMessage?: (detail: TratoEventDetail) => void;
-    onPay?: (detail: TratoEventDetail) => void;
-    onEvent?: (type: string, detail: TratoEventDetail) => void;
+    onApproved?: (detail: CordEventDetail) => void;
+    onRejected?: (detail: CordEventDetail) => void;
+    onMessage?: (detail: CordEventDetail) => void;
+    onPay?: (detail: CordEventDetail) => void;
+    onEvent?: (type: string, detail: CordEventDetail) => void;
 }
 
-export function TratoCotizador(props: TratoCotizadorProps) {
+export function CordCotizador(props: CordCotizadorProps) {
     const ref = useRef<HTMLDivElement>(null);
     // Callbacks en un ref para no re-montar el iframe cuando cambian de identidad.
     const cbs = useRef(props);
@@ -29,7 +29,7 @@ export function TratoCotizador(props: TratoCotizadorProps) {
 
     useEffect(() => {
         if (!ref.current) return;
-        const opts: TratoElementOptions = {
+        const opts: CordElementOptions = {
             token: props.token,
             baseUrl: props.baseUrl,
             minHeight: props.minHeight,
@@ -48,5 +48,5 @@ export function TratoCotizador(props: TratoCotizadorProps) {
     return <div ref={ref} className={props.className} style={props.style} />;
 }
 
-export default TratoCotizador;
-export type { TratoEventDetail } from './types';
+export default CordCotizador;
+export type { CordEventDetail } from './types';

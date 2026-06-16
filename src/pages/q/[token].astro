@@ -1,11 +1,11 @@
 ---
-// Link público de cotización — LA página mejor diseñada de Trato.
+// Link público de cotización — LA página mejor diseñada de Cord.
 // Es lo que ve el cliente final: marca del negocio, items, total y aprobar.
-// Cada cotización enviada es un demo del producto (loop viral con "vía trato").
+// Cada cotización enviada es un demo del producto (loop viral con "vía cord").
 //
 // El corazón de la tarjeta vive en components/q/QuoteCard.astro (reutilizado por
-// /embed/[token] para TRATO Elements). Aquí solo se añade el "chrome" de la
-// página pública: watermark, loop viral "vía Trato" y el fondo.
+// /embed/[token] para CORD Elements). Aquí solo se añade el "chrome" de la
+// página pública: watermark, loop viral "vía Cord" y el fondo.
 import Layout from '../../layouts/Layout.astro';
 import QuoteCard from '../../components/q/QuoteCard.astro';
 import { getCotizacionByToken, markViewed } from '../../lib/queries';
@@ -27,7 +27,7 @@ const puedePagar = pagoActivo && ['approved', 'invoiced'].includes(q.status);
 
 <Layout title={`Cotización ${q.folio} — ${ORG.nombre}`} noindex={true}>
     <main class="q-page">
-        {ORG.portalPowered !== false && <div class="q-watermark editorial" aria-hidden="true">Trato</div>}
+        {ORG.portalPowered !== false && <div class="q-watermark editorial" aria-hidden="true">Cord</div>}
 
         <QuoteCard
             quote={q}
@@ -41,7 +41,7 @@ const puedePagar = pagoActivo && ['approved', 'invoiced'].includes(q.status);
         {ORG.portalPowered !== false && (
             <!-- Loop viral (oculto si el plan permite quitar la marca) -->
             <a href="/" class="q-via">
-                Cotización enviada vía <img src="/imgs/logo-trato-navy.png" alt="Trato" /> — crea las tuyas gratis →
+                Cotización enviada vía <img src="/imgs/logo-cord-navy.png" alt="Cord" /> — crea las tuyas gratis →
             </a>
         )}
     </main>

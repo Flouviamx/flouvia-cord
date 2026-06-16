@@ -1,5 +1,5 @@
 ---
-// AppLayout — layout de la app de Trato (estilo Linear: compacto, hairlines, sobrio).
+// AppLayout — layout de la app de Cord (estilo Linear: compacto, hairlines, sobrio).
 // La app usa CSS animations (NO GSAP) para entradas — regla del proyecto.
 // Datos reales desde Neon; la org se resuelve desde la sesión de Clerk (src/lib/db.ts).
 
@@ -64,7 +64,7 @@ const NAV_FLAT = NAV_GROUPS.flatMap((g) => g.items);
         <title>{title}</title>
         <script is:inline>
             // Restaura el estado colapsado de la sidebar antes del primer paint (sin flash).
-            try { if (localStorage.getItem('trato.sb.collapsed') === '1') document.documentElement.classList.add('sb-collapsed'); } catch (e) {}
+            try { if (localStorage.getItem('cord.sb.collapsed') === '1') document.documentElement.classList.add('sb-collapsed'); } catch (e) {}
         </script>
     </head>
     <body>
@@ -135,7 +135,7 @@ const NAV_FLAT = NAV_GROUPS.flatMap((g) => g.items);
                     <button class="sb-expand" id="sbExpand" type="button" aria-label="Expandir menú" title="Expandir menú">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
                     </button>
-                    <img class="sb-foot-logo" src="/imgs/logo-trato-white.png" alt="Trato" />
+                    <img class="sb-foot-logo" src="/imgs/logo-cord-white.png" alt="Cord" />
                 </div>
             </aside>
 
@@ -734,7 +734,7 @@ const NAV_FLAT = NAV_GROUPS.flatMap((g) => g.items);
         // Colapsar / expandir (persistente). En colapsado, el switcher expande al hacer click.
         const setCollapsed = (v: boolean) => {
             root.classList.toggle('sb-collapsed', v);
-            try { localStorage.setItem('trato.sb.collapsed', v ? '1' : '0'); } catch (e) {}
+            try { localStorage.setItem('cord.sb.collapsed', v ? '1' : '0'); } catch (e) {}
         };
         document.getElementById('sbCollapse')?.addEventListener('click', (e) => { e.stopPropagation(); setCollapsed(true); });
         document.getElementById('sbExpand')?.addEventListener('click', (e) => { e.stopPropagation(); setCollapsed(false); });

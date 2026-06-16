@@ -5,7 +5,7 @@ import clerk from '@clerk/astro';
 import { esMX } from '@clerk/localizations';
 
 export default defineConfig({
-  site: 'https://trato.flouvia.com',
+  site: 'https://cord.flouvia.com',
   output: 'server',
 
   integrations: [clerk({ localization: esMX, afterSignOutUrl: '/' })],

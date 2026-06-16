@@ -37,7 +37,7 @@ export const SOLUCIONES: Solution[] = [
         nav: 'Distribuidoras y mayoristas',
         eyebrow: 'DISTRIBUIDORAS Y MAYORISTAS',
         titulo: 'Cada cliente,<br/>su propio precio.',
-        sub: 'Vendes lo mismo a 200 clientes a 200 precios distintos. Trato guarda el precio negociado y los términos de cada cliente y los aplica solos — para que cualquiera de tu equipo cotice rápido sin regalar margen ni romper acuerdos.',
+        sub: 'Vendes lo mismo a 200 clientes a 200 precios distintos. Cord guarda el precio negociado y los términos de cada cliente y los aplica solos — para que cualquiera de tu equipo cotice rápido sin regalar margen ni romper acuerdos.',
         dolor: 'El precio especial vive en la cabeza de una persona y en hojas de Excel desactualizadas.',
         stats: [
             { valor: '200+', label: 'clientes con su propio precio, sin hojas sueltas' },
@@ -48,7 +48,7 @@ export const SOLUCIONES: Solution[] = [
             {
                 eyebrow: 'PRECIO POR CLIENTE',
                 titulo: 'El precio correcto<br/>sale solo.',
-                copy: 'En distribución el precio de lista es solo el punto de partida: cada cliente tiene el suyo según volumen y relación. Trato registra el precio negociado de cada línea y te muestra el descuento aplicado, para que tu equipo cotice las mismas condiciones sin tener que preguntar.',
+                copy: 'En distribución el precio de lista es solo el punto de partida: cada cliente tiene el suyo según volumen y relación. Cord registra el precio negociado de cada línea y te muestra el descuento aplicado, para que tu equipo cotice las mismas condiciones sin tener que preguntar.',
                 bullets: [
                     'Precio negociado por línea, con el % de descuento visible',
                     'El precio de lista queda registrado — siempre sabes cuánto cediste',
@@ -83,7 +83,7 @@ export const SOLUCIONES: Solution[] = [
         nav: 'Construcción y materiales',
         eyebrow: 'CONSTRUCCIÓN Y MATERIALES',
         titulo: 'Volumen, obra<br/>y crédito, bajo control.',
-        sub: 'Cotizaciones de cientos de miles de pesos, entregas en obra y clientes que piden Net 60: el día a día del materialista. Trato le pone folio, vigencia y límite de crédito a cada trato — y te avisa en el momento en que lo aprueban.',
+        sub: 'Cotizaciones de cientos de miles de pesos, entregas en obra y clientes que piden Net 60: el día a día del materialista. Cord le pone folio, vigencia y límite de crédito a cada trato — y te avisa en el momento en que lo aprueban.',
         dolor: 'Cotizaciones enormes armadas a mano, con el riesgo de un error de dedo que se come el margen.',
         stats: [
             { valor: '$196,469', label: 'cotizados y aprobados el mismo día' },
@@ -129,7 +129,7 @@ export const SOLUCIONES: Solution[] = [
         nav: 'Manufactura',
         eyebrow: 'MANUFACTURA',
         titulo: 'Cotiza especificación,<br/>lote y entrega.',
-        sub: 'En manufactura cada cotización es un pequeño proyecto: especificaciones, cantidades mínimas, tiempos de entrega. Con líneas libres y notas por cotización, Trato documenta el acuerdo completo — y el timeline guarda quién aprobó qué y cuándo.',
+        sub: 'En manufactura cada cotización es un pequeño proyecto: especificaciones, cantidades mínimas, tiempos de entrega. Con líneas libres y notas por cotización, Cord documenta el acuerdo completo — y el timeline guarda quién aprobó qué y cuándo.',
         dolor: 'El acuerdo técnico se pierde entre correos y nadie recuerda a qué precio se cerró el lote anterior.',
         stats: [
             { valor: '100', countup: 100, suffix: '%', label: 'del acuerdo documentado en un solo lugar' },
@@ -186,7 +186,7 @@ export const SOLUCIONES: Solution[] = [
             {
                 eyebrow: 'TU MARCA',
                 titulo: 'La propuesta la firma<br/>tu despacho.',
-                copy: 'Tu logo, tu nombre y tu color presiden la propuesta. En los planes de pago desaparece el "Powered by Trato" y la experiencia es 100% tuya: tu prospecto ve una firma seria, con procesos serios, antes de leer el primer número.',
+                copy: 'Tu logo, tu nombre y tu color presiden la propuesta. En los planes de pago desaparece el "Powered by Cord" y la experiencia es 100% tuya: tu prospecto ve una firma seria, con procesos serios, antes de leer el primer número.',
                 bullets: [
                     'Logo y color de marca configurables',
                     'Página y PDF con tipografía cuidada, montos protagonistas',
@@ -196,7 +196,7 @@ export const SOLUCIONES: Solution[] = [
             {
                 eyebrow: 'LA SEÑAL QUE IMPORTA',
                 titulo: 'Sabes el momento<br/>en que la leen.',
-                copy: 'El interés se enfría rápido. Trato te avisa en cuanto tu prospecto abre la propuesta y cuántas veces la ha visto — para que llames cuando te tiene en la cabeza, no dos semanas después.',
+                copy: 'El interés se enfría rápido. Cord te avisa en cuanto tu prospecto abre la propuesta y cuántas veces la ha visto — para que llames cuando te tiene en la cabeza, no dos semanas después.',
                 bullets: [
                     'Aviso al instante cuando abren tu propuesta',
                     'Conteo de aperturas (¿la vio 3 veces? está decidiendo)',

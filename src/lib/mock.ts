@@ -1,5 +1,5 @@
 // src/lib/mock.ts
-// Datos mock de la app de Trato — simulan lo que vendrá de Neon (PostgreSQL).
+// Datos mock de la app de Cord — simulan lo que vendrá de Neon (PostgreSQL).
 // Cuando se conecte la DB real, las páginas cambian este import por queries
 // y el shape de los datos se mantiene (mismo modelo que db/schema.sql).
 

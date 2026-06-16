@@ -93,7 +93,7 @@ export const PATCH: APIRoute = async ({ request }) => {
             : String(body.invite_domains).toLowerCase().split(',').map((d) => d.trim().replace(/^@/, '')).filter((d) => /^[a-z0-9.-]+\.[a-z]{2,}$/.test(d)).slice(0, 20).join(',') || null)
         : actual.invite_domains;
 
-    // ── TRATO Elements: allowlist de dominios que pueden embeber el cotizador.
+    // ── CORD Elements: allowlist de dominios que pueden embeber el cotizador.
     // Cada entrada es un host-source de CSP: "cliente.com", "*.cliente.com" o con
     // esquema "https://app.cliente.com". Saneada a comma-sep (col NOT NULL → '').
     const EMBED_HOST = /^(https?:\/\/)?(\*\.)?[a-z0-9.-]+\.[a-z]{2,}$/;

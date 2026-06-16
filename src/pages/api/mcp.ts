@@ -1,11 +1,11 @@
-// /api/mcp — Servidor MCP (Model Context Protocol) de Trato.
+// /api/mcp — Servidor MCP (Model Context Protocol) de Cord.
 // Habla JSON-RPC 2.0 sobre HTTP (transporte "Streamable HTTP", modo sin sesión):
 // el cliente (Claude u otra IA) POSTea mensajes y recibe la respuesta en el cuerpo.
 // Se autentica con la MISMA API key que /api/v1 (Authorization: Bearer sk_...).
 // Las tools (src/lib/mcp.ts) operan sobre la org resuelta por la llave.
 //
 // Configúralo en un cliente MCP como servidor HTTP:
-//   url: https://trato.flouvia.com/api/mcp
+//   url: https://cord.flouvia.com/api/mcp
 //   header: Authorization: Bearer sk_live_xxxxxxxx
 export const prerender = false;
 
@@ -15,7 +15,7 @@ import { reqContext } from '../../lib/context';
 import { reqIp } from '../../lib/db';
 import { MCP_TOOLS, findTool, McpToolError } from '../../lib/mcp';
 
-const SERVER_INFO = { name: 'trato', title: 'Trato — Cotizaciones B2B', version: '1.0.0' };
+const SERVER_INFO = { name: 'cord', title: 'Cord — Cotizaciones B2B', version: '1.0.0' };
 const DEFAULT_PROTOCOL = '2025-06-18';
 const SUPPORTED_PROTOCOLS = ['2025-06-18', '2025-03-26', '2024-11-05'];
 
@@ -41,7 +41,7 @@ async function handle(msg: any, auth: { scope: string; keyId: string }, request:
                 protocolVersion,
                 capabilities: { tools: { listChanged: false } },
                 serverInfo: SERVER_INFO,
-                instructions: 'Herramientas para consultar y crear cotizaciones, clientes, productos y cobranza de un negocio B2B en Trato. Usa buscar_cliente y listar_productos antes de crear_cotizacion_borrador.',
+                instructions: 'Herramientas para consultar y crear cotizaciones, clientes, productos y cobranza de un negocio B2B en Cord. Usa buscar_cliente y listar_productos antes de crear_cotizacion_borrador.',
             };
         }
         case 'ping':

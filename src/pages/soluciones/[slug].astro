@@ -18,7 +18,7 @@ const { solucion } = Astro.props;
 const otras = SOLUCIONES.filter((s) => s.slug !== solucion.slug);
 ---
 
-<Layout title={`${solucion.nav} — Trato`} description={solucion.sub}>
+<Layout title={`${solucion.nav} — Cord`} description={solucion.sub}>
     <Nav />
     <main>
         <!-- ── HERO ── -->
@@ -135,7 +135,7 @@ const otras = SOLUCIONES.filter((s) => s.slug !== solucion.slug);
                                     <span class="mk-approve">Aprobar propuesta</span>
                                     <span class="mk-reject">Tengo una duda</span>
                                 </div>
-                                <span class="mk-via">vía <b>trato</b></span>
+                                <span class="mk-via">vía <b>cord</b></span>
                             </div>
                         )}
 
@@ -188,7 +188,7 @@ const otras = SOLUCIONES.filter((s) => s.slug !== solucion.slug);
         <section class="pp-more">
             <div class="pp-more-head">
                 <p class="pp-eyebrow reveal">OTRAS INDUSTRIAS</p>
-                <h2 class="pp-h2 masked-title">Trato funciona<br/>en tu sector también.</h2>
+                <h2 class="pp-h2 masked-title">Cord funciona<br/>en tu sector también.</h2>
             </div>
             <div class="pp-more-grid">
                 {otras.map((s) => (
