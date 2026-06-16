@@ -1,0 +1,467 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/landing/Nav.astro';
+import Footer from '../components/landing/Footer.astro';
+import PageAnims from '../components/landing/PageAnims.astro';
+
+export const prerender = true;
+---
+
+<Layout title="Aviso de Privacidad | TRATO by Flouvia">
+  <Nav />
+  
+  <PageAnims />
+
+  <main class="legal-page js-anim">
+    <div class="legal-header">
+      <h1 class="editorial masked-title">
+        Aviso de<br>Privacidad
+      </h1>
+      <div class="reveal">
+        <p class="last-updated">Última actualización: 15 de Junio de 2026</p>
+      </div>
+    </div>
+
+    <!-- Grid de 2 columnas: Sidebar + Contenido -->
+    <div class="legal-grid reveal">
+      
+      <!-- Índice Sticky (Izquierda) -->
+      <aside class="toc-sidebar">
+        <span class="toc-eyebrow">CONTENIDO</span>
+        <ul class="toc-list">
+          <li><a href="#rol" class="toc-link active">1. Responsable</a></li>
+          <li><a href="#datos" class="toc-link">2. Datos recabados</a></li>
+          <li><a href="#uso" class="toc-link">3. Finalidades</a></li>
+          <li><a href="#anonimizados" class="toc-link">4. Datos Anonimizados</a></li>
+          <li><a href="#cookies" class="toc-link">5. Política de Cookies</a></li>
+          <li><a href="#dpa" class="toc-link">6. DPA y Subencargados</a></li>
+          <li><a href="#internacionales" class="toc-link">7. Transf. Internacionales</a></li>
+          <li><a href="#negocio" class="toc-link">8. Transf. de Negocio</a></li>
+          <li><a href="#seguridad" class="toc-link">9. Seguridad</a></li>
+          <li><a href="#brechas" class="toc-link">10. Brechas de Datos</a></li>
+          <li><a href="#portabilidad" class="toc-link">11. Portabilidad</a></li>
+          <li><a href="#menores" class="toc-link">12. Menores de Edad</a></li>
+          <li><a href="#arco" class="toc-link">13. Derechos ARCO</a></li>
+          <li><a href="#cambios" class="toc-link">14. Cambios</a></li>
+        </ul>
+      </aside>
+
+      <!-- Contenido Legal (Derecha) -->
+      <div class="legal-content">
+        
+        <!-- Caja gris estilo Flouvia -->
+        <div class="intro-box">
+          <p>El presente Aviso de Privacidad Integral es emitido en cumplimiento a la <strong>Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP)</strong> y adopta los estándares internacionales de Acuerdos de Procesamiento de Datos (DPA) para el software B2B.</p>
+        </div>
+
+        <p>En <strong>Flouvia</strong> (legalmente representado por Andre Valle Ortega), creemos que la transparencia es el pilar de la confianza B2B. Este documento explica de manera clara cómo protegemos sus datos y los de su empresa al utilizar la plataforma TRATO (trato.flouvia.com).</p>
+
+        <!-- Los H2 ahora tienen un ID para anclarlos al índice -->
+        <h2 id="rol" class="editorial"><span class="num">01</span> Identidad del Responsable</h2>
+        <p>Para efectos legales y operativos, es importante distinguir cómo interactuamos con los datos:</p>
+        <ul>
+          <li><strong>Como Responsables (Data Controller):</strong> Actuamos como responsables sobre los datos de usted y su equipo (nuestros clientes directos) al crear una cuenta o suscribirse.</li>
+          <li><strong>Como Encargados (Data Processor):</strong> Actuamos como encargados sobre los datos de <em>sus propios clientes</em>. Nosotros solo procesamos esta información siguiendo sus instrucciones en la plataforma.</li>
+        </ul>
+
+        <h2 id="datos" class="editorial"><span class="num">02</span> Datos Personales Recabados</h2>
+        <p>Recopilamos información a través de tres vías principales:</p>
+        <ul>
+          <li><strong>Datos de Identidad:</strong> Nombre, correo electrónico y contraseñas (gestionadas de forma encriptada vía Clerk).</li>
+          <li><strong>Datos Fiscales (CFDI 4.0):</strong> RFC, Razón Social, Régimen Fiscal, Código Postal y Certificados de Sello Digital (CSD).</li>
+          <li><strong>Datos Financieros:</strong> Información de cobro. <em>Nota: TRATO no almacena tarjetas. Son tokenizadas directamente por Stripe, Inc.</em></li>
+          <li><strong>Datos de su Negocio:</strong> Catálogo de productos, listas de precios, y datos de las empresas a las que usted cotiza.</li>
+        </ul>
+
+        <h2 id="uso" class="editorial"><span class="num">03</span> Finalidades</h2>
+        <p>Los datos recabados se utilizan exclusivamente para los siguientes propósitos esenciales:</p>
+        <ul>
+          <li>Generar, almacenar y enviar cotizaciones B2B, y procesar el timbrado de facturas electrónicas.</li>
+          <li>Gestionar el cobro de su suscripción mensual y calcular el excedente de uso.</li>
+          <li><strong>Inteligencia Artificial Segura:</strong> Procesar texto para armar cotizaciones. Flouvia prohíbe contractualmente a nuestros proveedores (ej. Anthropic) utilizar sus datos para entrenar modelos públicos.</li>
+          <li>Enviar correos transaccionales y notificaciones.</li>
+        </ul>
+
+        <h2 id="anonimizados" class="editorial"><span class="num">04</span> Datos Anonimizados y Agregados</h2>
+        <p>Podemos crear datos agregados, desidentificados o anonimizados a partir de la información que recopilamos, eliminando cualquier identificador que haga que los datos apunten a un usuario particular (como nombres o RFCs). Podemos utilizar dichos datos anonimizados para nuestros fines comerciales legítimos, como analizar tendencias, mejorar la plataforma o promocionar nuestro negocio, con la garantía de que dichos datos nunca podrán utilizarse para identificarle.</p>
+
+        <h2 id="cookies" class="editorial"><span class="num">05</span> Política de Utilización de Cookies</h2>
+        <p>TRATO utiliza cookies y tecnologías de seguimiento de manera minimalista y no invasiva. No vendemos sus datos de navegación a redes publicitarias de terceros.</p>
+        <ul>
+          <li><strong>Cookies Estrictamente Necesarias:</strong> Utilizadas por <em>Clerk</em> para mantener su sesión activa, autenticar su identidad y prevenir ataques de falsificación de solicitudes (CSRF). Sin estas cookies, la aplicación no puede funcionar de manera segura.</li>
+          <li><strong>Cookies de Rendimiento y Analítica:</strong> Utilizadas a través de <em>Vercel Analytics</em> para medir tiempos de carga de la página, errores en la interfaz y adopción de funcionalidades. Estos datos son agregados y totalmente anonimizados.</li>
+        </ul>
+
+        <h2 id="dpa" class="editorial"><span class="num">06</span> DPA y Subencargados</h2>
+        <p>Al utilizar TRATO, usted y Flouvia celebran un Acuerdo de Procesamiento de Datos (Data Processing Agreement). Usted nos autoriza a procesar la información de sus clientes utilizando infraestructura de terceros. A continuación, presentamos nuestra <strong>Lista Oficial de Proveedores de Servicios (Sub-processors)</strong>, seleccionados bajo estrictos estándares normativos globales (SOC 2, PCI-DSS):</p>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Socio Tecnológico</th>
+                <th>Función en el Sistema</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Stripe</strong></td>
+                <td>Procesador de pagos y suscripciones recurrentes.</td>
+              </tr>
+              <tr>
+                <td><strong>Clerk</strong></td>
+                <td>Infraestructura de autenticación y sesiones.</td>
+              </tr>
+              <tr>
+                <td><strong>Neon / AWS</strong></td>
+                <td>Alojamiento de bases de datos (PostgreSQL).</td>
+              </tr>
+              <tr>
+                <td><strong>Anthropic</strong></td>
+                <td>Procesamiento algorítmico exclusivo para IA.</td>
+              </tr>
+              <tr>
+                <td><strong>PAC (SAT)</strong></td>
+                <td>Certificación (timbrado) de comprobantes fiscales.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="internacionales" class="editorial"><span class="num">07</span> Transferencias Internacionales de Datos</h2>
+        <p>TRATO es operado globalmente a través de proveedores de nube de primer nivel. Al utilizar los Servicios, usted reconoce y consiente expresamente que su información (y la de sus clientes) puede ser transferida, procesada y alojada en servidores ubicados en los Estados Unidos de América u otros países, cuyas leyes de protección de datos pueden diferir de las de su país de residencia. Garantizamos que nuestros subencargados operan bajo marcos de cumplimiento normativo globales como SOC 2 y cumplen con los estándares internacionales de transferencia de datos.</p>
+
+        <h2 id="negocio" class="editorial"><span class="num">08</span> Transferencias de Negocio (M&A)</h2>
+        <p>Todos los datos que recopilamos pueden ser transferidos a un tercero si Flouvia se somete a una fusión, adquisición, reestructuración corporativa, quiebra u otra transacción en la que dicho tercero asuma el control de nuestro negocio (en su totalidad o en parte). En tal caso, realizaremos esfuerzos razonables para notificarle a través de la plataforma o por correo electrónico antes de que su información quede sujeta a políticas de privacidad y seguridad diferentes.</p>
+
+        <h2 id="seguridad" class="editorial"><span class="num">09</span> Retención y Seguridad</h2>
+        <p>Implementamos medidas de seguridad administrativas y técnicas (cifrado TLS en tránsito y AES-256 en reposo) para proteger sus datos contra acceso no autorizado. Las facturas timbradas (CFDI) se conservarán por el plazo mínimo requerido por las autoridades fiscales mexicanas (5 años).</p>
+
+        <h2 id="brechas" class="editorial"><span class="num">10</span> Protocolo ante Brechas de Seguridad</h2>
+        <p>En el improbable caso de una vulneración de seguridad en nuestra infraestructura o la de nuestros subencargados que comprometa la confidencialidad de sus datos corporativos, Flouvia activará su protocolo de respuesta a incidentes. Nos comprometemos a notificar al Administrador de la cuenta en un plazo no mayor a 72 horas hábiles tras la confirmación de la brecha, detallando el alcance del incidente y las medidas de mitigación adoptadas.</p>
+
+        <h2 id="portabilidad" class="editorial"><span class="num">11</span> Portabilidad y Eliminación de Datos</h2>
+        <p>Usted es el único dueño de su información operativa. Si decide cancelar su suscripción, tiene derecho a solicitar la exportación de sus catálogos y clientes en un formato estructurado (CSV/JSON). Una vez cancelada la cuenta y concluido el periodo de retención fiscal obligatorio, Flouvia eliminará de forma irreversible y permanente sus bases de datos operativas de nuestros servidores.</p>
+
+        <h2 id="menores" class="editorial"><span class="num">12</span> Privacidad de Menores de Edad</h2>
+        <p>TRATO es una plataforma de software B2B diseñada exclusivamente para empresas y profesionales. No recopilamos ni solicitamos a sabiendas Información Personal de ninguna persona menor de 18 años. Si descubrimos que hemos recopilado información de un menor de edad sin el consentimiento corporativo o verificable adecuado, eliminaremos dicha información de nuestros servidores lo más rápido posible.</p>
+
+        <h2 id="arco" class="editorial"><span class="num">13</span> Derechos ARCO</h2>
+        <p>Puede ejercer sus derechos de Acceso, Rectificación, Cancelación u Oposición (ARCO). La mayoría de estos derechos pueden ejercerse directamente desde el panel de <em>Ajustes</em> de su cuenta.</p>
+        <p>Para solicitudes complejas, el Administrador deberá enviar un correo electrónico a <strong>legal@flouvia.com</strong>, detallando su solicitud y adjuntando una identificación oficial.</p>
+
+        <h2 id="cambios" class="editorial"><span class="num">14</span> Cambios al Aviso</h2>
+        <p>Si realizamos cambios significativos, o si añadimos un nuevo Subencargado a nuestra lista oficial, notificaremos al Administrador de la organización mediante un correo electrónico o a través de un aviso destacado dentro de la aplicación TRATO. El uso continuado de los Servicios tras dichos cambios constituirá su aceptación explícita de los mismos.</p>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>
+
+<!-- Lógica del Scrollspy (JavaScript Nativo) -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Seleccionamos todos los H2 con ID y todos los links del índice
+    const sections = document.querySelectorAll('.legal-content h2[id]');
+    const navLinks = document.querySelectorAll('.toc-link');
+
+    // Opciones del observador: El margen superior hace que se active un poco antes de llegar a la mitad de la pantalla
+    const observerOptions = {
+      root: null,
+      rootMargin: '-100px 0px -60% 0px',
+      threshold: 0
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.getAttribute('id');
+          
+          // Removemos la clase active de todos
+          navLinks.forEach(link => {
+            link.classList.remove('active');
+            // Si el link coincide con el ID de la sección visible, le ponemos active
+            if (link.getAttribute('href') === `#${id}`) {
+              link.classList.add('active');
+            }
+          });
+        }
+      });
+    }, observerOptions);
+
+    // Observamos cada sección
+    sections.forEach(section => observer.observe(section));
+  });
+</script>
+
+<style is:global>
+  ::selection {
+    background-color: var(--color-blue-deep);
+    color: #ffffff;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+</style>
+
+<style>
+  .legal-page {
+    padding: 12rem 2rem 9rem; 
+    min-height: 100vh;
+    background-color: var(--color-bg);
+    font-family: var(--font-sans), sans-serif;
+  }
+  
+  .legal-header {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  /* Forzando la tipografía tabular de TRATO */
+  .editorial {
+    font-family: var(--font-sans), sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" on;
+  }
+
+  h1.editorial {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    margin-bottom: 1.5rem;
+    color: var(--color-blue-deep);
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+  }
+
+  .last-updated {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    margin-bottom: 4rem;
+  }
+
+  /* Grid Layout */
+  .legal-grid {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 5rem;
+    max-width: 1000px;
+    margin: 0 auto;
+    align-items: start;
+  }
+
+  /* --- ESTILOS DEL SIDEBAR STICKY --- */
+  .toc-sidebar {
+    position: sticky;
+    top: 120px; 
+  }
+
+  .toc-eyebrow {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 1.5rem;
+  }
+
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-left: 1px solid var(--color-border);
+  }
+
+  .toc-link {
+    display: block;
+    padding: 0.5rem 0 0.5rem 1.25rem;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    text-decoration: none;
+    position: relative;
+    /* Microinteracción de movimiento fluido */
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), 
+                color 0.3s ease, 
+                border-color 0.3s ease;
+    margin-left: -1px; 
+    border-left: 2px solid transparent;
+    transform: translateX(0);
+  }
+
+  .toc-link:hover {
+    color: var(--color-text);
+    transform: translateX(3px); /* Toque táctil */
+  }
+
+  .toc-link.active {
+    color: var(--color-blue-deep);
+    font-weight: 600;
+    border-left: 2px solid var(--color-blue-deep); 
+    transform: translateX(3px);
+  }
+
+  /* --- ESTILOS DEL CONTENIDO --- */
+  .legal-content {
+    color: var(--color-text);
+    line-height: 1.75;
+    font-size: 1.05rem;
+  }
+
+  .intro-box {
+    background-color: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 3rem;
+    /* Microinteracción: Sutil sombra al pasar el mouse */
+    transition: box-shadow 0.4s var(--ease-smooth), transform 0.4s var(--ease-smooth);
+  }
+  
+  .intro-box:hover {
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+    transform: translateY(-2px);
+  }
+
+  .intro-box p {
+    margin: 0;
+    color: var(--color-text);
+  }
+
+  .legal-content h2.editorial {
+    font-size: 1.5rem;
+    margin-top: 5rem;
+    margin-bottom: 1.5rem;
+    color: var(--color-blue-deep);
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: color 0.3s ease;
+  }
+
+  .legal-content h2.editorial .num {
+    font-style: normal;
+    font-weight: 300;
+    color: var(--color-text-muted);
+    opacity: 0.4;
+    font-size: 1.25rem;
+    transition: opacity 0.4s ease, color 0.4s ease;
+  }
+
+  /* Microinteracción: El número se enciende al leer la sección */
+  .legal-content h2.editorial:hover .num {
+    opacity: 0.8;
+    color: var(--color-blue-deep);
+  }
+
+  .legal-content p {
+    margin-bottom: 1.5rem;
+    color: rgba(5, 5, 5, 0.85);
+  }
+
+  .legal-content ul {
+    margin-bottom: 2rem;
+    padding-left: 1.5rem;
+    list-style-type: none;
+  }
+
+  .legal-content li {
+    margin-bottom: 1rem;
+    position: relative;
+    color: rgba(5, 5, 5, 0.85);
+  }
+
+  .legal-content li::before {
+    content: "";
+    position: absolute;
+    left: -1.25rem;
+    top: 0.6rem;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--color-blue-deep);
+    opacity: 0.4;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  /* Microinteracción en bullets */
+  .legal-content li:hover::before {
+    opacity: 0.8;
+    transform: scale(1.2);
+  }
+
+  .legal-content strong {
+    color: var(--color-blue-deep);
+    font-weight: 600;
+  }
+
+  /* Enlaces en el texto con subrayado expansivo (Estilo Stripe/Linear) */
+  .legal-content p a {
+    color: var(--color-blue-deep);
+    text-decoration: none;
+    font-weight: 500;
+    background-image: linear-gradient(var(--color-blue-deep), var(--color-blue-deep));
+    background-size: 0% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .legal-content p a:hover {
+    background-size: 100% 1px;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    margin: 2rem 0;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.95rem;
+  }
+
+  th, td {
+    padding: 1.15rem 1.25rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  th {
+    background-color: var(--color-bg-soft);
+    font-weight: 600;
+    color: var(--color-blue-deep);
+    letter-spacing: -0.01em;
+  }
+
+  /* Microinteracción: Hover de filas de tabla */
+  tbody tr {
+    transition: background-color 0.2s ease;
+  }
+  
+  tbody tr:hover {
+    background-color: var(--color-bg-soft);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* Responsive */
+  @media (max-width: 860px) {
+    .legal-grid {
+      grid-template-columns: 1fr;
+    }
+    .toc-sidebar {
+      display: none;
+    }
+  }
+</style>

@@ -265,6 +265,14 @@ usuario (el de IA ya está cableado en `ai-draft`).
 ✅ **Vercel Analytics (jun 2026)** — `@vercel/analytics` instalado; componente `<Analytics />`
    montado en `Layout.astro` (landing) y `AppLayout.astro` (app). Page views y eventos se
    recopilan automáticamente en el dashboard de Vercel sin configuración adicional.
+✅ **Páginas legales (jun 2026)** — `/privacidad` (Aviso de Privacidad Integral LFPDPPP+DPA,
+   14 secciones: responsable/encargado, sub-processors, transferencias internacionales, ARCO,
+   portabilidad, brechas) y `/terminos` (17 cláusulas: PI, metered billing, autorización débito,
+   actividades prohibidas EFOS/lavado, SLA, límite de responsabilidad, API, uso de marca,
+   cancelaciones sin reembolso, ley aplicable México/CDMX). Ambas `prerender:true`, grid
+   TOC sidebar sticky con scrollspy `IntersectionObserver`, animaciones `PageAnims`
+   (`masked-title` en H1, `reveal` en grid), microinteracciones CSS puras (subrayado expansivo
+   en links, `translateX` activo en TOC, bullet `scale`, hover rows tabla).
 ⬜ Pendiente: aprobación parcial por línea, versiones de cotización, multi-usuario con Clerk
    (proteger `/app`), Stripe Billing de suscripciones (planes).
 
@@ -469,8 +477,21 @@ el valor antes de cada query (igual que `app.email_cliente` en flouvia-web).
 /api/mcp             → MCP JSON-RPC 2.0: initialize/ping/tools/list/tools/call
 /api/webhooks        → CRUD webhooks salientes (POST crea y devuelve secret 1 vez)
 
-# Legales (pendiente)
-/privacidad /terminos
+# Legales
+/privacidad      → Aviso de Privacidad Integral (LFPDPPP + DPA estándares internacionales):
+                   responsable/encargado, datos recabados, finalidades, datos anonimizados,
+                   cookies (Clerk + Vercel Analytics), tabla de sub-processors (Stripe/Clerk/
+                   Neon/Anthropic/PAC), transferencias internacionales, M&A, seguridad
+                   (TLS+AES-256), brechas (72h), portabilidad/eliminación, menores, ARCO
+                   (legal@flouvia.com). `prerender:true`, scrollspy IntersectionObserver,
+                   TOC sticky con 14 secciones.
+/terminos        → Términos y Condiciones (17 cláusulas): descripción del software, PI y
+                   Feedback, planes + metered billing, autorización de débito (Stripe),
+                   actividades prohibidas (EFOS/lavado), Fair Use, terceros, responsabilidad
+                   fiscal, confidencialidad, indemnización, SLA + Fuerza Mayor, límite de
+                   responsabilidad (12 meses pagados), API pública, uso de marca, cancelaciones
+                   (sin reembolsos), ley aplicable (México / CDMX) y cambios. `prerender:true`,
+                   scrollspy IntersectionObserver, TOC sticky con 17 secciones.
 ```
 
 **Columnas de personalización en `orgs`** (jun 2026, al final de `db/schema.sql`

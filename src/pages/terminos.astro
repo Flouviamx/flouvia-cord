@@ -1,0 +1,408 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/landing/Nav.astro';
+import Footer from '../components/landing/Footer.astro';
+import PageAnims from '../components/landing/PageAnims.astro';
+
+export const prerender = true;
+---
+
+<Layout title="Términos y Condiciones | TRATO by Flouvia">
+  <Nav />
+  
+  <PageAnims />
+
+  <main class="legal-page js-anim">
+    <div class="legal-header">
+      <h1 class="editorial masked-title">
+        Términos y<br>Condiciones
+      </h1>
+      <div class="reveal">
+        <p class="last-updated">Última actualización: 15 de Junio de 2026</p>
+      </div>
+    </div>
+
+    <!-- Grid de 2 columnas: Sidebar + Contenido -->
+    <div class="legal-grid reveal">
+      
+      <!-- Índice Sticky (Izquierda) -->
+      <aside class="toc-sidebar">
+        <span class="toc-eyebrow">CONTENIDO</span>
+        <ul class="toc-list">
+          <li><a href="#descripcion" class="toc-link active">1. El Software</a></li>
+          <li><a href="#pi" class="toc-link">2. Propiedad Int. y Feedback</a></li>
+          <li><a href="#facturacion" class="toc-link">3. Planes y Excedentes</a></li>
+          <li><a href="#pagos-autorizacion" class="toc-link">4. Autorización de Débito</a></li>
+          <li><a href="#prohibidas" class="toc-link">5. Actividades Prohibidas</a></li>
+          <li><a href="#fairuse" class="toc-link">6. Uso Justo (Fair Use)</a></li>
+          <li><a href="#terceros" class="toc-link">7. Apps de Terceros</a></li>
+          <li><a href="#fiscal" class="toc-link">8. Responsabilidad Fiscal</a></li>
+          <li><a href="#confidencialidad" class="toc-link">9. Confidencialidad</a></li>
+          <li><a href="#indemnizacion" class="toc-link">10. Indemnización</a></li>
+          <li><a href="#sla" class="toc-link">11. SLA y Fuerza Mayor</a></li>
+          <li><a href="#limite" class="toc-link">12. Límite de Responsabilidad</a></li>
+          <li><a href="#api" class="toc-link">13. API Pública</a></li>
+          <li><a href="#marca" class="toc-link">14. Uso de Marca</a></li>
+          <li><a href="#reembolsos" class="toc-link">15. Cancelaciones</a></li>
+          <li><a href="#ley" class="toc-link">16. Ley Aplicable</a></li>
+          <li><a href="#cambios" class="toc-link">17. Cambios a los Términos</a></li>
+        </ul>
+      </aside>
+
+      <!-- Contenido Legal (Derecha) -->
+      <div class="legal-content">
+        
+        <!-- Caja gris de introducción -->
+        <div class="intro-box">
+          <p>Bienvenido a TRATO (<a href="https://trato.flouvia.com">trato.flouvia.com</a>). Al crear una cuenta o utilizar nuestra plataforma de software como servicio (SaaS), usted y la entidad legal a la que representa aceptan estar legalmente vinculados por los siguientes Términos y Condiciones, operados por <strong>Andre Valle Ortega</strong> (en adelante "Flouvia", "nosotros" o "TRATO").</p>
+        </div>
+
+        <p>Si no está de acuerdo con estos términos, no debe utilizar nuestros servicios ni acceder a nuestras APIs.</p>
+
+        <h2 id="descripcion" class="editorial"><span class="num">01</span> Descripción del Software</h2>
+        <p>TRATO es una infraestructura tecnológica B2B diseñada para la generación de cotizaciones, gestión de cobranza y emisión de comprobantes fiscales digitales (CFDI 4.0). Flouvia provee la herramienta en la nube, pero el Usuario es el único responsable de la veracidad de los datos introducidos, los montos cotizados y las facturas emitidas.</p>
+
+        <h2 id="pi" class="editorial"><span class="num">02</span> Propiedad Intelectual y Feedback</h2>
+        <p>Flouvia le otorga una licencia limitada, no exclusiva e intransferible para usar el software TRATO. Todo el código, diseño, la interfaz (UI/UX) y los algoritmos nos pertenecen. Sin embargo, <strong>usted conserva el 100% de la propiedad intelectual sobre sus catálogos, listas de precios, logotipos y la información de sus clientes.</strong> No reclamamos ningún derecho sobre su información comercial.</p>
+        <p><strong>Feedback:</strong> Si usted nos proporciona sugerencias, comentarios o ideas para mejorar la plataforma ("Feedback"), nos otorga una licencia mundial, perpetua, irrevocable y libre de regalías para implementar, modificar y explotar dichas mejoras sin obligación de compensación o reconocimiento alguno.</p>
+
+        <h2 id="facturacion" class="editorial"><span class="num">03</span> Planes de Facturación y Excedentes</h2>
+        <p>El acceso a TRATO se rige por un esquema de suscripción gestionado de forma automatizada:</p>
+        <ul>
+          <li><strong>Límites del Plan:</strong> Cada suscripción incluye una cuota mensual base de usos de Inteligencia Artificial, Timbres CFDI, Llamadas a la API y asientos de Usuarios.</li>
+          <li><strong>Facturación por Uso Medido (Metered Billing):</strong> Para no interrumpir sus operaciones, TRATO <strong>no bloqueará</strong> su servicio si usted supera los límites de su plan. El sistema registrará los consumos adicionales y estos se facturarán automáticamente al cierre de su ciclo mensual mediante <em>Stripe</em>, a las tarifas unitarias vigentes en nuestra <a href="/precios">página de precios</a>.</li>
+        </ul>
+
+        <h2 id="pagos-autorizacion" class="editorial"><span class="num">04</span> Condiciones de Pago y Autorización de Débito</h2>
+        <p>Para utilizar nuestros planes de pago, usted debe proporcionar un método de pago válido. Al hacerlo, <strong>usted nos autoriza expresamente a nosotros y a nuestro procesador de pagos exclusivo (Stripe, Inc.)</strong> a realizar cargos automáticos y recurrentes en su tarjeta o cuenta bancaria por el monto de su suscripción y cualquier excedente generado.</p>
+        <p>Asimismo, al procesar pagos a través de TRATO, usted acepta estar sujeto al <a href="https://stripe.com/mx/legal/ssa" target="_blank" rel="noopener noreferrer">Acuerdo de Servicios de Stripe (Stripe Services Agreement)</a>. En caso de que el cobro automático falle, nos reservamos el derecho de suspender temporalmente el acceso a su cuenta hasta que se regularice el pago.</p>
+
+        <h2 id="prohibidas" class="editorial"><span class="num">05</span> Actividades Prohibidas y Restringidas</h2>
+        <p>TRATO es una plataforma para el comercio lícito. Como infraestructura que interactúa con el SAT para la emisión de CFDI, está <strong>terminantemente prohibido</strong> utilizar nuestro software para:</p>
+        <ul>
+          <li>La simulación de operaciones, evasión fiscal o emisión de facturas que amparen operaciones inexistentes (empresas clasificadas como EFOS/EDOS por las autoridades fiscales).</li>
+          <li>Lavado de dinero, financiamiento al terrorismo o cualquier actividad que viole las leyes federales o internacionales aplicables.</li>
+          <li>La comercialización de bienes o servicios ilegales, regulados sin autorización o prohibidos bajo la Política de Uso Aceptable de Stripe.</li>
+        </ul>
+        <p>Nos reservamos el derecho de suspender o cancelar permanentemente, sin previo aviso ni derecho a reembolso, cualquier cuenta que sospechemos está incurriendo en estas prácticas, y reportaremos dichas actividades a las autoridades competentes y a nuestros socios financieros.</p>
+
+        <h2 id="fairuse" class="editorial"><span class="num">06</span> Política de Uso Justo (Fair Use)</h2>
+        <p>Para proteger la estabilidad de la infraestructura compartida, las características comercializadas como "Ilimitadas" están sujetas a una Política de Uso Justo. Nos reservamos el derecho de auditar cuentas que presenten un consumo abusivo o anómalo (ej. uso de bots para saturar la API de Anthropic). En caso de detectar abuso, limitaremos temporalmente las peticiones (Rate Limiting) y contactaremos al Usuario para migrarlo a infraestructura dedicada.</p>
+
+        <h2 id="terceros" class="editorial"><span class="num">07</span> Aplicaciones e Integraciones de Terceros</h2>
+        <p>El Servicio puede interactuar con productos, servicios o aplicaciones de terceros que no son propiedad ni están controlados por Flouvia (por ejemplo, Shopify, CRMs externos). Usted reconoce y acepta que no respaldamos dichas aplicaciones y no somos responsables de sus fallas, vulnerabilidades de seguridad ni de la pérdida de datos que resulte del uso de las mismas. Su uso de aplicaciones de terceros corre bajo su propio riesgo.</p>
+
+        <h2 id="fiscal" class="editorial"><span class="num">08</span> Responsabilidad Fiscal y Legal</h2>
+        <p>TRATO actúa estrictamente como un proveedor de tecnología y un canal de comunicación hacia el Proveedor Autorizado de Certificación (PAC) y el SAT.</p>
+        <ul>
+          <li><strong>Sin Asesoría Contable:</strong> Flouvia no es un despacho fiscal. La configuración de impuestos, retenciones (IVA, ISR) y el uso de los catálogos del SAT recaen enteramente en el Usuario.</li>
+          <li><strong>Errores de Facturación:</strong> Flouvia no se hace responsable por multas, recargos o auditorías derivadas de CFDI emitidos con errores de captura por parte del Usuario.</li>
+        </ul>
+
+        <h2 id="confidencialidad" class="editorial"><span class="num">09</span> Confidencialidad</h2>
+        <p>Ambas partes ("Parte Receptora" y "Parte Divulgadora") pueden tener acceso a información técnica, financiera o comercial confidencial. La Parte Receptora se compromete a proteger la Información Confidencial de la Parte Divulgadora utilizando el mismo grado de cuidado que emplea para proteger la propia, y en ningún caso un grado menor al razonable. Esta obligación de confidencialidad sobrevivirá a la terminación de su suscripción a TRATO.</p>
+
+        <h2 id="indemnizacion" class="editorial"><span class="num">10</span> Indemnización</h2>
+        <p>El Usuario acepta defender, indemnizar y sacar en paz y a salvo a Flouvia, sus directores, empleados y proveedores tecnológicos de cualquier reclamación, demanda, multa o daño (incluyendo honorarios legales) que surja como resultado del mal uso de la Plataforma, la violación de estos términos o la emisión de CFDI con datos fraudulentos hacia terceros.</p>
+
+        <h2 id="sla" class="editorial"><span class="num">11</span> SLA, Disponibilidad y Fuerza Mayor</h2>
+        <p>Flouvia opera bajo un esquema de "Best-Effort" buscando mantener un uptime del 99.9%. Sin embargo, la arquitectura depende de infraestructura de terceros de clase mundial. No seremos responsables por interrupciones derivadas de caídas en la pasarela de pagos (<em>Stripe</em>), autenticación (<em>Clerk</em>), bases de datos (<em>Neon / AWS</em>) o inestabilidad en la conexión con el SAT.</p>
+        <p><strong>Fuerza Mayor:</strong> Flouvia no será responsable por fallas o retrasos en el desempeño de sus obligaciones causados por eventos fuera de su control razonable, incluyendo pero no limitado a desastres naturales, pandemias, actos de terrorismo, huelgas, fallas masivas de proveedores de internet o acciones gubernamentales.</p>
+
+        <h2 id="limite" class="editorial"><span class="num">12</span> Límite de Responsabilidad</h2>
+        <p>En la máxima medida permitida por la ley aplicable, la responsabilidad total y acumulada de Flouvia frente al Usuario por cualquier daño, pérdida o causa de acción relacionada con el uso de TRATO estará estrictamente limitada a la cantidad total que el Usuario haya pagado a Flouvia por el servicio durante los doce (12) meses inmediatamente anteriores al evento que dio lugar a la reclamación.</p>
+
+        <h2 id="api" class="editorial"><span class="num">13</span> Condiciones de la API Pública</h2>
+        <p>El uso de la API de TRATO y de los Webhooks salientes está restringido a los límites de su plan. El Cliente acepta proteger sus llaves de API (<code>sk_live_...</code>). Flouvia no se responsabiliza por la extracción de datos o la emisión de facturas fraudulentas derivadas de la filtración de sus credenciales.</p>
+
+        <h2 id="marca" class="editorial"><span class="num">14</span> Uso de Marca (Publicidad)</h2>
+        <p>A menos que el Cliente exprese explícitamente lo contrario por escrito, al utilizar los Servicios de TRATO, el Cliente otorga a Flouvia el derecho no exclusivo de utilizar y mostrar el nombre, logotipo y marcas comerciales del Cliente en el sitio web de Flouvia y en materiales de marketing con el fin de identificarlo como cliente de la plataforma.</p>
+
+        <h2 id="reembolsos" class="editorial"><span class="num">15</span> Cancelaciones y Reembolsos</h2>
+        <p>Todos los cobros son procesados de manera segura por Stripe. Las suscripciones se renuevan automáticamente. El Cliente puede cancelar en cualquier momento desde el Portal de Facturación. Al cancelar, el servicio se mantendrá activo hasta el final del periodo ya pagado. <strong>Flouvia no emite reembolsos totales ni parciales por meses no utilizados o consumos de excedentes.</strong></p>
+
+        <h2 id="ley" class="editorial"><span class="num">16</span> Ley Aplicable y Jurisdicción</h2>
+        <p>El presente Acuerdo se rige e interpreta de conformidad con las leyes vigentes de los <strong>Estados Unidos Mexicanos</strong>, sin dar efecto a sus principios de conflicto de leyes. Para cualquier controversia, disputa o reclamación derivada de o relacionada con estos Términos o el uso de la Plataforma, las partes se someten expresamente a la jurisdicción exclusiva de los <strong>Tribunales Federales o Locales competentes de la Ciudad de México</strong>, renunciando a cualquier otro fuero que pudiera corresponderles por razón de sus domicilios presentes o futuros.</p>
+
+        <h2 id="cambios" class="editorial"><span class="num">17</span> Modificaciones a los Términos</h2>
+        <p>Flouvia puede actualizar estos Términos y Condiciones en cualquier momento. Los cambios sustanciales serán notificados al Administrador de la cuenta vía correo electrónico o mediante un aviso en el Dashboard de la aplicación.</p>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>
+
+<!-- Lógica del Scrollspy (JavaScript Nativo) -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const sections = document.querySelectorAll('.legal-content h2[id]');
+    const navLinks = document.querySelectorAll('.toc-link');
+
+    const observerOptions = {
+      root: null,
+      rootMargin: '-100px 0px -60% 0px',
+      threshold: 0
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.getAttribute('id');
+          navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === `#${id}`) {
+              link.classList.add('active');
+            }
+          });
+        }
+      });
+    }, observerOptions);
+
+    sections.forEach(section => observer.observe(section));
+  });
+</script>
+
+<style is:global>
+  /* ::selection y html necesitan is:global — Astro scopea con [data-astro-cid] y estos selectores no lo aceptan */
+  ::selection {
+    background-color: var(--color-blue-deep);
+    color: #ffffff;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+</style>
+
+<style>
+  .legal-page {
+    padding: 12rem 2rem 9rem; 
+    min-height: 100vh;
+    background-color: var(--color-bg);
+    font-family: var(--font-sans), sans-serif;
+  }
+  
+  .legal-header {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  /* Forzando la tipografía tabular de TRATO */
+  .editorial {
+    font-family: var(--font-sans), sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" on;
+  }
+
+  h1.editorial {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    margin-bottom: 1.5rem;
+    color: var(--color-blue-deep);
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+  }
+
+  .last-updated {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    margin-bottom: 4rem;
+  }
+
+  /* Grid Layout */
+  .legal-grid {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 5rem;
+    max-width: 1000px;
+    margin: 0 auto;
+    align-items: start;
+  }
+
+  /* --- ESTILOS DEL SIDEBAR STICKY --- */
+  .toc-sidebar {
+    position: sticky;
+    top: 120px; 
+  }
+
+  .toc-eyebrow {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 1.5rem;
+  }
+
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-left: 1px solid var(--color-border);
+  }
+
+  .toc-link {
+    display: block;
+    padding: 0.5rem 0 0.5rem 1.25rem;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    text-decoration: none;
+    position: relative;
+    /* Microinteracción de movimiento fluido */
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), 
+                color 0.3s ease, 
+                border-color 0.3s ease;
+    margin-left: -1px; 
+    border-left: 2px solid transparent;
+    transform: translateX(0);
+  }
+
+  .toc-link:hover {
+    color: var(--color-text);
+    transform: translateX(3px); /* Toque táctil */
+  }
+
+  .toc-link.active {
+    color: var(--color-blue-deep);
+    font-weight: 600;
+    border-left: 2px solid var(--color-blue-deep); 
+    transform: translateX(3px);
+  }
+
+  /* --- ESTILOS DEL CONTENIDO --- */
+  .legal-content {
+    color: var(--color-text);
+    line-height: 1.75;
+    font-size: 1.05rem;
+  }
+
+  .intro-box {
+    background-color: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 3rem;
+    /* Microinteracción: Sutil sombra al pasar el mouse */
+    transition: box-shadow 0.4s var(--ease-smooth), transform 0.4s var(--ease-smooth);
+  }
+  
+  .intro-box:hover {
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+    transform: translateY(-2px);
+  }
+
+  .intro-box p {
+    margin: 0;
+    color: var(--color-text);
+  }
+
+  .legal-content h2.editorial {
+    font-size: 1.5rem;
+    margin-top: 5rem;
+    margin-bottom: 1.5rem;
+    color: var(--color-blue-deep);
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: color 0.3s ease;
+  }
+
+  .legal-content h2.editorial .num {
+    font-style: normal;
+    font-weight: 300;
+    color: var(--color-text-muted);
+    opacity: 0.4;
+    font-size: 1.25rem;
+    transition: opacity 0.4s ease, color 0.4s ease;
+  }
+
+  /* Microinteracción: El número se enciende al leer la sección */
+  .legal-content h2.editorial:hover .num {
+    opacity: 0.8;
+    color: var(--color-blue-deep);
+  }
+
+  .legal-content p {
+    margin-bottom: 1.5rem;
+    color: rgba(5, 5, 5, 0.85);
+  }
+
+  .legal-content ul {
+    margin-bottom: 2rem;
+    padding-left: 1.5rem;
+    list-style-type: none;
+  }
+
+  .legal-content li {
+    margin-bottom: 1rem;
+    position: relative;
+    color: rgba(5, 5, 5, 0.85);
+  }
+
+  .legal-content li::before {
+    content: "";
+    position: absolute;
+    left: -1.25rem;
+    top: 0.6rem;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--color-blue-deep);
+    opacity: 0.4;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  /* Microinteracción en bullets */
+  .legal-content li:hover::before {
+    opacity: 0.8;
+    transform: scale(1.2);
+  }
+
+  .legal-content strong {
+    color: var(--color-blue-deep);
+    font-weight: 600;
+  }
+
+  /* Estilos para fragmentos de código (ej. API_KEYS) */
+  .legal-content code {
+    background-color: var(--color-bg-soft);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+    color: var(--color-blue-deep);
+    border: 1px solid var(--color-border);
+  }
+
+  /* Enlaces en el texto con subrayado expansivo (Estilo Stripe/Linear) */
+  .legal-content p a, .legal-content li a {
+    color: var(--color-blue-deep);
+    text-decoration: none;
+    font-weight: 500;
+    background-image: linear-gradient(var(--color-blue-deep), var(--color-blue-deep));
+    background-size: 0% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .legal-content p a:hover, .legal-content li a:hover {
+    background-size: 100% 1px;
+  }
+
+  /* Responsive */
+  @media (max-width: 860px) {
+    .legal-grid {
+      grid-template-columns: 1fr;
+    }
+    .toc-sidebar {
+      display: none;
+    }
+  }
+</style>
