@@ -15,8 +15,15 @@ export type Cycle = 'mensual' | 'anual';
 export type MeterDim = 'api' | 'usuario' | 'ia' | 'timbrado';
 export type PaidPlan = Exclude<PlanId, 'free'>;
 
+const isTest = (STRIPE_KEY || '').startsWith('sk_test_') || (STRIPE_KEY || '').startsWith('rk_test_');
+
 // ── Precio base de suscripción por plan y ciclo (recurring flat) ──────────────
-export const PLAN_PRICES: Record<PaidPlan, Record<Cycle, string>> = {
+export const PLAN_PRICES: Record<PaidPlan, Record<Cycle, string>> = isTest ? {
+    starter:   { mensual: 'price_1Tj98JQuD2ZBXFA976GmOJOE', anual: 'price_1Tj98JQuD2ZBXFA9stHNNYwR' },
+    pro:       { mensual: 'price_1Tj98KQuD2ZBXFA9w4rgRbAz',  anual: 'price_1Tj98KQuD2ZBXFA9CEtJOY8x' },
+    scale:     { mensual: 'price_1Tj98KQuD2ZBXFA9zn9g72ps',  anual: 'price_1Tj98LQuD2ZBXFA94guqWqE7' },
+    developer: { mensual: 'price_1Tj98LQuD2ZBXFA9XVA7r2Fz',  anual: 'price_1Tj98LQuD2ZBXFA9f3gEbr7t' },
+} : {
     starter:   { mensual: 'price_1TidnNQuD2ZBXFA9dOWBavAE', anual: 'price_1TiekaQuD2ZBXFA9yPYD1WKq' },
     pro:       { mensual: 'price_1Tidx3QuD2ZBXFA99FzBCdJ2', anual: 'price_1TielcQuD2ZBXFA9fPd8XoXx' },
     scale:     { mensual: 'price_1Tie2WQuD2ZBXFA9bd6aMdZr', anual: 'price_1TiemaQuD2ZBXFA9AQBqsypx' },
@@ -26,7 +33,12 @@ export const PLAN_PRICES: Record<PaidPlan, Record<Cycle, string>> = {
 // ── Precios MEDIDOS (usage-based) por plan y dimensión ────────────────────────
 // Se agregan como items de la suscripción; Stripe los cobra según los meter
 // events que reportemos. Starter no cobra usuario extra (tope duro → 1 usuario).
-export const METER_PRICES: Record<PaidPlan, Partial<Record<MeterDim, string>>> = {
+export const METER_PRICES: Record<PaidPlan, Partial<Record<MeterDim, string>>> = isTest ? {
+    starter:   { api: 'price_1Tj98NQuD2ZBXFA9RrnYPDtC', ia: 'price_1Tj98NQuD2ZBXFA9TvslIK1h', timbrado: 'price_1Tj98OQuD2ZBXFA9APBme1NU' },
+    pro:       { api: 'price_1Tj98OQuD2ZBXFA9PQEZiRUy', usuario: 'price_1Tj98PQuD2ZBXFA9oiBhs22f', ia: 'price_1Tj98OQuD2ZBXFA9qhG8ms3S', timbrado: 'price_1Tj98PQuD2ZBXFA9odb3Zu4I' },
+    scale:     { api: 'price_1Tj98QQuD2ZBXFA9AnBCVMYl', usuario: 'price_1Tj98RQuD2ZBXFA9uZHkpmnT', ia: 'price_1Tj98QQuD2ZBXFA9D2eY3J8b', timbrado: 'price_1Tj98QQuD2ZBXFA9aWNVBwl3' },
+    developer: { api: 'price_1Tj98RQuD2ZBXFA9gGihI1gA', usuario: 'price_1Tj98SQuD2ZBXFA9f9iLWU2w', ia: 'price_1Tj98RQuD2ZBXFA9tspMUapV', timbrado: 'price_1Tj98SQuD2ZBXFA9VzREjYme' },
+} : {
     starter:   { api: 'price_1Tie8yQuD2ZBXFA95QlmfbIj',                                       ia: 'price_1TidsnQuD2ZBXFA9uGEPbBhF', timbrado: 'price_1TiduZQuD2ZBXFA91xtzCz0B' },
     pro:       { api: 'price_1Tie1sQuD2ZBXFA98nejH9l4', usuario: 'price_1TidxsQuD2ZBXFA9t1S7Uang', ia: 'price_1TidyJQuD2ZBXFA9CXUvMZIs', timbrado: 'price_1TidylQuD2ZBXFA9WIRLTZ0L' },
     scale:     { api: 'price_1Tie7OQuD2ZBXFA9RtEcbu8s', usuario: 'price_1Tie4zQuD2ZBXFA9kuhdEOIb', ia: 'price_1Tie5VQuD2ZBXFA9JUizxrkk', timbrado: 'price_1Tie5wQuD2ZBXFA9hLTY2QKi' },
@@ -36,7 +48,12 @@ export const METER_PRICES: Record<PaidPlan, Partial<Record<MeterDim, string>>> =
 // ── IDs de los billing meters (para reportar consumo) ─────────────────────────
 // El meter agrega los eventos; el price (de arriba) define la tarifa por plan.
 // El event_name de cada meter se resuelve en runtime desde la API y se cachea.
-export const METERS: Record<MeterDim, string> = {
+export const METERS: Record<MeterDim, string> = isTest ? {
+    api:      'mtr_test_61UsX5itlkw5brJ9A41QuD2ZBXFA9LHk',
+    usuario:  'mtr_test_61UsX5jtsxrXVSAA141QuD2ZBXFA90r2',
+    ia:       'mtr_test_61UsX5iy1a3BEKWl741QuD2ZBXFA90pk',
+    timbrado: 'mtr_test_61UsX5iL0exFIs7P241QuD2ZBXFA9KgS',
+} : {
     api:      'mtr_61Us1tKSHBU1Zhk4r41QuD2ZBXFA9QTo',
     usuario:  'mtr_61Us1t8pXL5GiRTZ741QuD2ZBXFA93Ee',
     ia:       'mtr_61Us1pzxJnZQjNBQO41QuD2ZBXFA9Mnw',
