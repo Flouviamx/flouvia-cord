@@ -127,15 +127,31 @@ async function syncSubscription(sub: any) {
     if (!rows.length) return;
     const orgId = rows[0].id as string;
 
-    await sql`update orgs set
-                plan = ${plan},
-                subscription_status = ${status},
-                billing_cycle = ${cycle},
-                stripe_subscription_id = ${sub.id},
-                stripe_customer_id = coalesce(stripe_customer_id, ${sub.customer}),
-                current_period_end = ${periodEnd ? new Date(periodEnd * 1000).toISOString() : null}
-              where id = ${orgId}`;
-    await logAudit(orgId, { accion: 'billing.plan_sync', entidad: 'org', entidad_id: orgId, detalle: `Plan ${plan} (${status})` });
+    // El plan SOLO se otorga cuando la suscripción está pagada/vigente. Con el
+    // Payment Element la suscripción nace `incomplete` (antes de pagar): en ese
+    // estado NO se debe upgradear el plan — se hace al llegar `active` (vía
+    // invoice.paid / subscription.updated). El resto de campos sí se sincroniza.
+    const grantsPlan = status === 'active' || status === 'trialing' || status === 'past_due';
+
+    if (grantsPlan) {
+        await sql`update orgs set
+                    plan = ${plan},
+                    subscription_status = ${status},
+                    billing_cycle = ${cycle},
+                    stripe_subscription_id = ${sub.id},
+                    stripe_customer_id = coalesce(stripe_customer_id, ${sub.customer}),
+                    current_period_end = ${periodEnd ? new Date(periodEnd * 1000).toISOString() : null}
+                  where id = ${orgId}`;
+    } else {
+        await sql`update orgs set
+                    subscription_status = ${status},
+                    billing_cycle = ${cycle},
+                    stripe_subscription_id = ${sub.id},
+                    stripe_customer_id = coalesce(stripe_customer_id, ${sub.customer}),
+                    current_period_end = ${periodEnd ? new Date(periodEnd * 1000).toISOString() : null}
+                  where id = ${orgId}`;
+    }
+    await logAudit(orgId, { accion: 'billing.plan_sync', entidad: 'org', entidad_id: orgId, detalle: `Plan ${grantsPlan ? plan : '(sin cambio)'} (${status})` });
 }
 
 // Cancelación → vuelve a Gratis.

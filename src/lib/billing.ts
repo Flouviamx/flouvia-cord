@@ -74,7 +74,12 @@ export const PRICE_TO_PLAN: Record<string, PaidPlan> = (() => {
 export const isPaidPlan = (p: string): p is PaidPlan => p in PLAN_PRICES;
 
 // ── Cliente REST mínimo de Stripe ─────────────────────────────────────────────
-export async function stripe(path: string, params?: Record<string, string>, method: 'GET' | 'POST' = 'POST'): Promise<any> {
+export async function stripe(
+    path: string,
+    params?: Record<string, string>,
+    method: 'GET' | 'POST' = 'POST',
+    opts?: { version?: string },
+): Promise<any> {
     if (!STRIPE_KEY) throw new Error('STRIPE_SECRET_KEY no configurada');
     const isGet = method === 'GET';
     const body = params ? new URLSearchParams(params).toString() : '';
@@ -84,6 +89,7 @@ export async function stripe(path: string, params?: Record<string, string>, meth
         headers: {
             Authorization: `Bearer ${STRIPE_KEY}`,
             ...(isGet ? {} : { 'Content-Type': 'application/x-www-form-urlencoded' }),
+            ...(opts?.version ? { 'Stripe-Version': opts.version } : {}),
         },
         body: isGet ? undefined : body,
     });

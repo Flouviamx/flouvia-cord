@@ -1,10 +1,11 @@
 ---
-// /app/checkout — host del Embedded Checkout de Stripe. El formulario de pago
-// vive DENTRO de cord.flouvia.com (no se muestra checkout.stripe.com).
-// Ruta protegida por src/middleware.ts (exige sesión Clerk).
-// Lee ?plan=&cycle= → pide client_secret a /api/billing/subscribe (ui:embedded)
-// → monta el formulario. Al completar, Stripe redirige al return_url
-// (/app/ajustes/plan?suscrito=1); el webhook sincroniza el plan real.
+// /app/checkout — página de pago CUSTOM con el Payment Element de Stripe. La
+// página es 100% nuestra; solo montamos el campo de pago (Appearance API con la
+// marca). Ruta protegida por src/middleware.ts (exige sesión Clerk).
+// Lee ?plan=&cycle= → /api/billing/subscribe (ui:'element') crea la suscripción
+// `incomplete` y devuelve client_secret → montamos el Payment Element y
+// confirmamos el pago. Al confirmar, Stripe redirige al return_url
+// (/app/ajustes/plan?suscrito=1); el webhook activa el plan real.
 export const prerender = false;
 
 import AppLayout from '../../layouts/AppLayout.astro';
@@ -43,11 +44,18 @@ const precio = cycle === 'anual' ? precioAnualMensualizado(plan.precioMensual) :
             <a href="/app/ajustes/plan" class="co-back">← Cambiar de plan</a>
         </aside>
 
-        <div class="co-form">
-            <div id="checkout" data-plan={plan.id} data-cycle={cycle}>
+        <div class="co-form" data-plan={plan.id} data-cycle={cycle}>
+            <div id="payment-element">
                 <div class="co-loading">Cargando pago seguro…</div>
             </div>
             <p id="co-error" class="co-error" hidden></p>
+            <button id="co-pay" class="co-pay" disabled>
+                <span class="co-pay-label">Pagar {money(precio)} MXN</span>
+            </button>
+            <p class="co-secure">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Pago cifrado procesado por Stripe
+            </p>
         </div>
     </div>
 </AppLayout>
@@ -55,31 +63,74 @@ const precio = cycle === 'anual' ? precioAnualMensualizado(plan.precioMensual) :
 <script src="https://js.stripe.com/v3/"></script>
 <script>
     const PK = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY;
-    const mount = document.getElementById('checkout');
+    const form = document.querySelector<HTMLElement>('.co-form');
+    const mount = document.getElementById('payment-element');
     const errEl = document.getElementById('co-error');
+    const payBtn = document.getElementById('co-pay') as HTMLButtonElement | null;
+    const payLabel = payBtn?.querySelector('.co-pay-label');
+    const defaultLabel = payLabel?.textContent ?? 'Pagar';
 
-    const fail = (msg: string) => {
-        if (mount) mount.innerHTML = '';
+    const showError = (msg: string) => {
         if (errEl) { errEl.textContent = msg; errEl.hidden = false; }
+    };
+    const setBusy = (busy: boolean) => {
+        if (!payBtn) return;
+        payBtn.disabled = busy;
+        if (payLabel) payLabel.textContent = busy ? 'Procesando…' : defaultLabel;
     };
 
     async function init() {
         const Stripe = (window as any).Stripe;
-        if (!Stripe || !PK) return fail('La facturación aún no está configurada.');
+        if (!Stripe || !PK) { if (mount) mount.innerHTML = ''; return showError('La facturación aún no está configurada.'); }
         try {
             const r = await fetch('/api/billing/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ plan: mount?.dataset.plan, cycle: mount?.dataset.cycle, ui: 'embedded' }),
+                body: JSON.stringify({ plan: form?.dataset.plan, cycle: form?.dataset.cycle, ui: 'element' }),
             });
             const data = await r.json().catch(() => ({}));
-            if (!r.ok || !data.client_secret) throw new Error(data.error || 'No se pudo iniciar el checkout');
+            if (!r.ok || !data.client_secret) {
+                if (mount) mount.innerHTML = '';
+                showError(data.error || 'No se pudo iniciar el pago');
+                if (errEl && r.status === 409) {
+                    const a = document.createElement('a');
+                    a.href = '/app/ajustes/plan'; a.textContent = ' Ir a Plan →'; a.className = 'co-error-link';
+                    errEl.appendChild(a);
+                }
+                return;
+            }
+
             const stripe = Stripe(PK);
-            const checkout = await stripe.initEmbeddedCheckout({ clientSecret: data.client_secret });
+            const appearance = {
+                theme: 'stripe',
+                variables: {
+                    colorPrimary: '#0a192f',
+                    colorText: '#050505',
+                    colorDanger: '#ef4444',
+                    fontFamily: 'Inter, system-ui, sans-serif',
+                    borderRadius: '12px',
+                    spacingUnit: '4px',
+                },
+            };
+            const elements = stripe.elements({ clientSecret: data.client_secret, appearance });
+            const paymentElement = elements.create('payment', { layout: 'tabs' });
             if (mount) mount.innerHTML = '';
-            checkout.mount('#checkout');
+            paymentElement.mount('#payment-element');
+            paymentElement.on('ready', () => { if (payBtn) payBtn.disabled = false; });
+
+            payBtn?.addEventListener('click', async () => {
+                if (errEl) errEl.hidden = true;
+                setBusy(true);
+                const { error } = await stripe.confirmPayment({
+                    elements,
+                    confirmParams: { return_url: location.origin + '/app/ajustes/plan?suscrito=1' },
+                });
+                // Si no hay error, Stripe ya redirigió. Si lo hay, se muestra y se reintenta.
+                if (error) { showError(error.message || 'No se pudo completar el pago'); setBusy(false); }
+            });
         } catch (e: any) {
-            fail(e?.message || 'No se pudo iniciar el checkout');
+            if (mount) mount.innerHTML = '';
+            showError(e?.message || 'No se pudo iniciar el pago');
         }
     }
     init();
@@ -112,8 +163,26 @@ const precio = cycle === 'anual' ? precioAnualMensualizado(plan.precioMensual) :
     .co-back:hover { color: var(--color-text); }
 
     .co-form { min-height: 420px; }
+    #payment-element { min-height: 180px; }
     .co-loading { padding: 3rem 1rem; text-align: center; color: var(--color-text-muted); font-size: 0.9rem; }
-    .co-error { color: var(--color-danger); font-size: 0.9rem; padding: 1rem; }
+    .co-error { color: var(--color-danger); font-size: 0.88rem; padding: 0.8rem 0 0; }
+    .co-error-link { color: var(--color-blue-deep); font-weight: 600; text-decoration: none; }
+
+    .co-pay {
+        width: 100%; margin-top: 1.4rem;
+        background: var(--color-blue-deep); color: #fff;
+        border: none; border-radius: 12px;
+        padding: 14px 20px; font-size: 0.95rem; font-weight: 600;
+        font-family: var(--font-sans); cursor: pointer;
+        transition: opacity 0.2s, transform 0.2s var(--ease-spring);
+    }
+    .co-pay:not(:disabled):hover { transform: translateY(-1px); }
+    .co-pay:disabled { opacity: 0.55; cursor: default; }
+    .co-secure {
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        margin: 0.9rem 0 0; font-size: 0.74rem; color: var(--color-text-muted);
+    }
+    .co-secure svg { width: 13px; height: 13px; }
 
     @media (max-width: 760px) {
         .co-wrap { grid-template-columns: 1fr; }

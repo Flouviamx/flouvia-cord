@@ -833,10 +833,11 @@ const NAV_FLAT = NAV_GROUPS.flatMap((g) => g.items);
     .tb-icon {
         display: inline-flex; align-items: center; justify-content: center;
         width: 36px; height: 36px; border-radius: 9px; color: var(--color-text-muted);
-        background: transparent; transition: background 0.2s, color 0.2s;
+        background: transparent; transition: background 0.2s, color 0.2s; outline: none;
     }
     .tb-icon svg { width: 17px; height: 17px; }
     .tb-icon:hover { background: var(--color-bg-soft); color: var(--color-blue-deep); }
+    .tb-icon:focus-visible { box-shadow: 0 0 0 2px var(--color-blue-deep); }
     /* El engrane queda marcado cuando estás en cualquier página de Ajustes */
     .tb-icon.active { background: var(--color-blue-deep); color: #fff; }
 
