@@ -99,9 +99,17 @@ export async function stripe(
 }
 
 // Crea (o reutiliza) el customer de Stripe de la org. Guarda el id en Neon.
+// Auto-sana: si el id guardado no existe bajo la API key actual (cambio de
+// cuenta o de modo test↔live), se recrea en vez de fallar ("No such customer").
 export async function getOrCreateCustomer(orgId: string, email?: string, nombre?: string): Promise<string> {
     const [o] = await sql`select stripe_customer_id from orgs where id = ${orgId}`;
-    if (o?.stripe_customer_id) return o.stripe_customer_id as string;
+    const existing = o?.stripe_customer_id as string | undefined;
+    if (existing) {
+        try {
+            const c = await stripe(`/v1/customers/${existing}`, undefined, 'GET');
+            if (c && !c.deleted) return existing;
+        } catch { /* no existe bajo esta key → recrear abajo */ }
+    }
     const cus = await stripe('/v1/customers', {
         ...(email ? { email } : {}),
         ...(nombre ? { name: nombre } : {}),
