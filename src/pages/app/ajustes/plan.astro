@@ -145,11 +145,11 @@ const planActual = PLANES.find((p) => p.id === planRaw);
         });
     });
 
+    // "Elegir" → checkout embebido dentro de la app (mismo flujo que landing/precios).
     document.querySelectorAll<HTMLButtonElement>('[data-subscribe]').forEach((b) => {
-        b.addEventListener('click', async () => {
+        b.addEventListener('click', () => {
             b.disabled = true; b.textContent = 'Redirigiendo…';
-            try { await post('/api/billing/subscribe', { plan: b.dataset.subscribe, cycle }); }
-            catch (e: any) { alert(e.message); b.disabled = false; b.textContent = 'Elegir'; }
+            window.location.href = `/app/checkout?plan=${b.dataset.subscribe}&cycle=${cycle}`;
         });
     });
 

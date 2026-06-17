@@ -72,7 +72,13 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
                                     </>
                                 )}
                             </div>
-                            <a href={p.ctaHref} class:list={['plan-cta', p.destacado ? 'plan-cta-solid' : 'plan-cta-ghost']}>{p.ctaLabel}</a>
+                            <a
+                                href={p.precioMensual === 0
+                                    ? p.ctaHref
+                                    : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}&cycle=mensual`)}`}
+                                data-cta-plan={p.precioMensual === 0 ? undefined : p.id}
+                                class:list={['plan-cta', p.destacado ? 'plan-cta-solid' : 'plan-cta-ghost']}
+                            >{p.ctaLabel}</a>
                             <ul class="plan-feats">
                                 {p.feats.map((f) => (
                                     <li><span class="pf-check">✓</span> {f}</li>
@@ -449,6 +455,11 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
                 if (v) el.textContent = fmt(parseInt(v, 10));
             });
             billed.forEach((el) => { el.textContent = cycle === 'anual' ? 'facturado anual' : 'facturado mensual'; });
+            // Arrastra el ciclo elegido al CTA → checkout del plan correcto.
+            document.querySelectorAll<HTMLAnchorElement>('[data-cta-plan]').forEach((a) => {
+                const dest = `/app/checkout?plan=${a.dataset.ctaPlan}&cycle=${cycle}`;
+                a.href = `/registro?redirect_url=${encodeURIComponent(dest)}`;
+            });
         };
         btns.forEach((b) => b.addEventListener('click', () => setCycle(b.dataset.cycle || 'mensual')));
 

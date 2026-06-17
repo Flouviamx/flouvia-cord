@@ -632,6 +632,128 @@ export async function getCobranza() {
     };
 }
 
+// ── CFO DASHBOARD (/app/cfo) ───────────────────────────────────────────────────
+// Proyección de flujo de caja semanal. Cruza el pipeline abierto (sent/viewed)
+// con el historial REAL por cliente: tasa de cierre (aprobadas / enviadas),
+// días promedio a cierre (created→approved) y días a cobro (approved→paid).
+export async function getCFO() {
+    const orgId = await getActiveOrgId();
+
+    const [activos, histRows, pagoRows] = await withOrgTx(orgId,
+        // Pipeline abierto.
+        sql`select c.id, c.folio, c.total, c.status, c.cliente_id,
+                   coalesce(cl.empresa, 'Sin cliente') as empresa,
+                   coalesce(c.viewer_last_seen, c.sent_at, c.created_at) as last_act
+            from cotizaciones c
+            left join clientes cl on cl.id = c.cliente_id
+            where c.org_id = ${orgId} and c.status in ('sent','viewed')`,
+        // Historial por cliente: tasa de cierre + días a cierre.
+        sql`select c.cliente_id,
+                   count(*) filter (where c.status in ('sent','viewed','approved','paid','invoiced')) as total_hist,
+                   count(*) filter (where c.status in ('approved','paid','invoiced')) as aprob_hist,
+                   coalesce(avg(extract(epoch from (c.approved_at - c.created_at))/86400)
+                            filter (where c.status in ('approved','paid','invoiced') and c.approved_at is not null), 0) as avg_cierre
+            from cotizaciones c where c.org_id = ${orgId}
+            group by c.cliente_id`,
+        // Días a cobro por cliente (approved → evento paid).
+        sql`select c.cliente_id,
+                   coalesce(avg(extract(epoch from (e.paid_at - coalesce(c.approved_at, c.created_at)))/86400), 0) as avg_pago
+            from cotizaciones c
+            join (select cotizacion_id, max(created_at) as paid_at from eventos
+                  where org_id = ${orgId} and tipo = 'paid' group by cotizacion_id) e
+              on e.cotizacion_id = c.id
+            where c.org_id = ${orgId} and c.status = 'paid'
+            group by c.cliente_id`,
+    );
+
+    type Hist = { totalHist: number; aprobHist: number; avgCierre: number; avgPago: number };
+    const histMap = new Map<string, Hist>();
+    for (const h of histRows) {
+        histMap.set(h.cliente_id as string, {
+            totalHist: num(h.total_hist), aprobHist: num(h.aprob_hist),
+            avgCierre: num(h.avg_cierre), avgPago: 0,
+        });
+    }
+    for (const p of pagoRows) {
+        const h = histMap.get(p.cliente_id as string);
+        if (h) h.avgPago = num(p.avg_pago);
+    }
+
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const MS = 86400000;
+
+    // Cada cotización abierta ponderada por la tasa de cierre de su cliente.
+    const items = activos.map((r) => {
+        const cid = r.cliente_id as string | null;
+        const h = cid ? histMap.get(cid) : undefined;
+        const status = r.status as string;
+        // Tasa: histórica si el cliente tiene pasado; conservadora si es nuevo.
+        const tasaPct = h && h.totalHist > 0
+            ? Math.max(5, Math.round((h.aprobHist / h.totalHist) * 100))
+            : (status === 'viewed' ? 50 : 25);
+        const avgDiasCierre = Math.round(h && h.avgCierre > 0 ? h.avgCierre : 14);
+        const avgDiasPago = Math.round(h && h.avgPago > 0 ? h.avgPago : 30);
+        const total = num(r.total);
+        const valorEsperado = Math.round(total * tasaPct / 100);
+        const diasParaCobro = avgDiasCierre + avgDiasPago;
+        const diasSilencio = Math.floor((today.getTime() - new Date(r.last_act as string).getTime()) / MS);
+        return {
+            id: r.id as string, folio: r.folio as string,
+            empresa: r.empresa as string, status, total,
+            tasaPct, valorEsperado, diasParaCobro,
+            avgDiasCierre, avgDiasPago, diasSilencio,
+            aprobHist: h?.aprobHist ?? 0, totalHist: h?.totalHist ?? 0,
+        };
+    }).sort((a, b) => b.valorEsperado - a.valorEsperado);
+
+    // Proyección de flujo de caja: 5 cubetas semanales por días a cobro.
+    const semLabels = ['Esta semana', 'Próxima semana', 'En 2 semanas', 'En 3 semanas', 'En 4+ semanas'];
+    const semanas = semLabels.map((label, i) => ({ n: 0, label, valorEsperado: 0 }));
+    for (const it of items) {
+        const idx = Math.min(4, Math.max(0, Math.floor(it.diasParaCobro / 7)));
+        semanas[idx].n += 1;
+        semanas[idx].valorEsperado += it.valorEsperado;
+    }
+    const maxSemana = Math.max(1, ...semanas.map((s) => s.valorEsperado));
+
+    // Ranking ponderado por cliente.
+    const rankMap = new Map<string, {
+        empresa: string; n: number; totalPipeline: number; valorEsperado: number;
+        tasaPct: number; avgDiasCierre: number; avgDiasPago: number; aprobHist: number; totalHist: number;
+    }>();
+    for (const it of items) {
+        const cur = rankMap.get(it.empresa) ?? {
+            empresa: it.empresa, n: 0, totalPipeline: 0, valorEsperado: 0,
+            tasaPct: it.tasaPct, avgDiasCierre: it.avgDiasCierre, avgDiasPago: it.avgDiasPago,
+            aprobHist: it.aprobHist, totalHist: it.totalHist,
+        };
+        cur.n += 1; cur.totalPipeline += it.total; cur.valorEsperado += it.valorEsperado;
+        rankMap.set(it.empresa, cur);
+    }
+    const rankClientes = [...rankMap.values()].sort((a, b) => b.valorEsperado - a.valorEsperado);
+
+    // KPIs financieros.
+    const totalPipeline = items.reduce((s, i) => s + i.total, 0);
+    const totalEsperado = items.reduce((s, i) => s + i.valorEsperado, 0);
+    const dso = totalPipeline > 0
+        ? Math.round(items.reduce((s, i) => s + i.diasParaCobro * i.total, 0) / totalPipeline)
+        : 0;
+    const concentracion = totalPipeline > 0 && rankClientes.length
+        ? Math.round((rankClientes[0].totalPipeline / totalPipeline) * 100)
+        : 0;
+
+    const silenciadas = items
+        .filter((i) => i.diasSilencio > 7)
+        .sort((a, b) => b.diasSilencio - a.diasSilencio)
+        .map((i) => ({ id: i.id, folio: i.folio, empresa: i.empresa, dias: i.diasSilencio, total: i.total }));
+
+    return {
+        items,
+        kpis: { totalPipeline, totalEsperado, dso, concentracion, nSilenciadas: silenciadas.length },
+        semanas, maxSemana, rankClientes, silenciadas,
+    };
+}
+
 // ── TAREAS / RECORDATORIOS (CRM ligero) ───────────────────────────────────────
 export async function getTareas() {
     const orgId = await getActiveOrgId();

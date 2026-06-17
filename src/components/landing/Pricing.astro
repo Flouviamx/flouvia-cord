@@ -35,7 +35,12 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
                         </>
                     )}
                 </div>
-                <a href={p.ctaHref} class:list={['plan-cta', p.destacado ? 'plan-cta-solid' : 'plan-cta-ghost']}>{p.ctaLabel}</a>
+                <a
+                    href={p.precioMensual === 0
+                        ? p.ctaHref
+                        : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}&cycle=mensual`)}`}
+                    class:list={['plan-cta', p.destacado ? 'plan-cta-solid' : 'plan-cta-ghost']}
+                >{p.ctaLabel}</a>
                 <ul class="plan-feats">
                     {p.feats.map((f) => (
                         <li><span class="pf-check">✓</span> {f}</li>

@@ -107,6 +107,20 @@ usuario (el de IA ya está cableado en `ai-draft`).
    el vendedor responde desde el detalle (caja de respuesta → evento `reply`). Sin
    migración (usa `eventos` tipos comment/counter/reply). getCotizacionByToken devuelve
    `conversacion`. Pendiente: aprobación parcial por línea (necesita columnas en items).
+✅ **Link público "Quiet Luxury" (jun 2026)** — rediseño completo de `/q/[token]` y
+   `QuoteCard.astro`. Fondo `#f3f2ef` con orbes radiales suaves. Card `border-radius:28px`,
+   sombra sutil, logo real de la org (o inicial con color de marca). Total hero centrado
+   `clamp(2.5rem,8vw,3.4rem)`. **Flujo de aprobación en 3 pasos** (sin modales externos):
+   1. Revisar — CTA "Aprobar" + PDF + "Rechazar" discreto.
+   2. Firma digital — nombre completo + checkbox de términos; botón deshabilitado hasta
+      que ambos estén completos; timestamp + IP registrados en `eventos` como
+      `"Firmado digitalmente por \"Nombre\" (IP x.x.x.x)"`.
+   3. Confirmado — checkmark animado SVG (circle + check dibujados en CSS) + sello
+      `"Firmado por X · fecha"` + botón de pago si aplica.
+   Rechazo mejorado: textarea inline (adiós al `prompt()` nativo). `getCotizacionByToken`
+   ahora incluye `logo_url` (como `org.logoUrl`) y `portal_bienvenida` (como
+   `org.portalBienvenida`, ya presente en la query pero faltaba en el objeto devuelto).
+   API `/api/q/[token]` acepta `signed_by` en el action `approve`.
 ✅ **IA: armar cotización desde texto** — `/api/cotizaciones/ai-draft` (SDK @anthropic-ai/sdk,
    tool_choice forzado; modelo claude-opus-4-8 vía AI_MODEL) + panel "Armar con IA" en el
    editor `/nueva`. Empareja el pedido del cliente con el catálogo. Requiere ANTHROPIC_API_KEY.
@@ -158,10 +172,16 @@ usuario (el de IA ya está cableado en `ai-draft`).
    dashboard (`/api/tareas`, tabla `tareas`, getTareas()).
 ✅ **Listas de precio por nivel** — clientes con `nivel` (estandar/plata/oro/distribuidor)
    y `descuento_pct`; el editor aplica el descuento del nivel a las líneas al elegir cliente.
-✅ **Flujos de aprobación** — umbrales en Ajustes (`orgs.aprob_descuento_max`, `aprob_monto_max`);
-   si al enviar se rebasan, la cotización queda `aprob_estado='pendiente'` (no se envía) y
-   gerencia aprueba/rechaza desde el detalle (`approve_request`/`reject_request`) o el filtro
-   "Por aprobar" de la lista.
+✅ **Flujos de aprobación + Auditor Silencioso (jun 2026)** — tres umbrales en Ajustes
+   (`orgs.aprob_descuento_max`, `aprob_monto_max`, `aprob_margen_min`); si al enviar se rebasa
+   cualquiera, la cotización queda `aprob_estado='pendiente'` (no se envía) y gerencia aprueba/
+   rechaza desde el detalle. **El Auditor Silencioso** es el tercer umbral: margen bruto mínimo
+   (%). Requiere que los productos tengan `costo` configurado; el costo se snapshotea en
+   `cotizacion_items.costo_unitario` al cotizar. El editor muestra un badge **Margen** por línea
+   en vivo (verde/rojo) que se actualiza al escribir el precio negociado. El motivo de bloqueo
+   queda registrado: *"margen bruto 18% está por debajo del mínimo de 25%"*. El campo de costo
+   está en el modal de Productos (`/app/productos`) y en la tabla `productos.costo`.
+   Filtro "Por aprobar" en la lista de cotizaciones. ⚠️ Correr `npm run db:migrate`.
 ✅ **Tesorería predictiva + interés moratorio** — en Cobranza: interés compuesto sobre saldo
    vencido (`orgs.interes_moratorio_pct`) y flujo de caja esperado (retraso de pago promedio
    real del historial). En getCobranza().
@@ -175,6 +195,22 @@ usuario (el de IA ya está cableado en `ai-draft`).
    `audit_log` (acción `interes_moratorio.aplicado`). ⚠️ Correr `npm run db:migrate` (1 tabla nueva).
 ✅ **Audit log inmutable** — tabla `audit_log` + helper `logAudit()`/`reqIp()` en db.ts;
    instrumentados org/cotizaciones/clientes/productos; vista de solo-lectura en Ajustes.
+✅ **RLS — Row Level Security en base de datos (jun 2026)** — defensa en profundidad a
+   nivel de Neon/PostgreSQL. `ENABLE ROW LEVEL SECURITY` en 18 tablas (SIN `FORCE` por
+   ahora: el rol dueño bypasea, lo que permite que `getActiveOrgId()` haga bootstrap sin
+   contexto de org establecido). Políticas en `db/schema.sql` al final. Dos helpers en
+   `src/lib/db.ts`:
+   • `withOrgTx(orgId, ...queries)` — setea `app.org_id` vía `set_config(..., true)`
+     (LOCAL a la transacción) y ejecuta todos los queries en **un solo batch HTTP** de
+     Neon (`sql.transaction([...])`). Satisface RLS + reduce roundtrips.
+   • `withPublicToken(token, ...queries)` — igual pero setea `app.public_token`; usado
+     en `/q/[token]` donde no hay org_id de sesión.
+   `queries.ts` completamente migrado: funciones multi-tenant usan `withOrgTx`; el link
+   público usa `withPublicToken`; tablas sin FORCE (`orgs`, `org_members`) siguen con
+   queries directas. Política especial en `cotizaciones`: permite acceso por `org_id` OR
+   por `public_token`. Fail-closed: si `app.org_id` no está seteado → ninguna fila
+   visible. Pendiente: agregar `FORCE ROW LEVEL SECURITY` cuando los handlers de
+   `/api/*` y helpers `logAudit`/`reportUsage` también usen `withOrgTx`.
 ✅ **Recordatorios de cobro (Resend)** — `/api/cron/recordatorios` (cron en `vercel.json`,
    diario a las 9am UTC) manda correos 3 días antes del vencimiento vía Resend (REST).
 ✅ **Correo al enviar cotización (Resend)** — helper `src/lib/email.ts` (`notifyQuoteSent`/
@@ -427,8 +463,12 @@ identidad sigue siendo Clerk (userId), solo la membresía/permiso es nuestra.
 - `webhooks` — endpoints salientes (HMAC-sha256, best-effort, 1 retry)
 - `intereses_moratorios` — cargos mensuales de interés moratorio por cotización (cron día 1; idempotente por cotizacion_id+periodo)
 
-Patrón RLS: `org_id = current_setting('app.org_id', TRUE)::uuid` — el backend setea
-el valor antes de cada query (igual que `app.email_cliente` en flouvia-web).
+Patrón RLS: `org_id = current_setting('app.org_id', TRUE)::uuid` — activo a nivel de
+base de datos (jun 2026). El backend usa `withOrgTx(orgId, ...queries)` en `db.ts`
+para setear `app.org_id` LOCAL dentro de una transacción Neon antes de cada query.
+Las tablas `orgs` y `org_members` tienen `ENABLE` sin `FORCE` (el rol dueño bypasea)
+para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
+`withPublicToken(token, ...)` que setea `app.public_token` en su lugar.
 
 ---
 
@@ -549,9 +589,9 @@ como `alter table … if not exists`): `color_marca`, `email_contacto`, `telefon
 (clasico|minimal|detallado, agregada jun 2026). `logo_url` (en la tabla base) ahora
 guarda también data URLs de logos subidos en Ajustes. **Jun 2026 además:**
 `cotizaciones.viewer_last_seen` (presencia), tabla **`tareas`** (CRM), y la **fase
-enterprise**: `clientes.nivel`/`descuento_pct` (price tiers), `orgs.aprob_descuento_max`/
-`aprob_monto_max`/`interes_moratorio_pct` + `cotizaciones.aprob_estado`/`aprob_motivo`
-(aprobaciones), y la tabla **`audit_log`**. **Superpoderes de config (jun 2026):**
+enterprise**: `clientes.nivel`/`descuento_pct` (price tiers), `orgs.aprob_descuento_max`/`aprob_monto_max`/`aprob_margen_min`/`interes_moratorio_pct` +
+`cotizaciones.aprob_estado`/`aprob_motivo` + `productos.costo` + `cotizacion_items.costo_unitario`
+(Auditor Silencioso de márgenes), y la tabla **`audit_log`**. **Superpoderes de config (jun 2026):**
 `orgs.vigencia_default_dias`/`terminos_default` (defaults que el editor `/nueva` SÍ
 usa), `retencion_isr_pct`/`retencion_iva_pct`/`texto_legal`, `sitio_web`/`whatsapp`,
 y fiscales SAT `regimen_fiscal`/`uso_cfdi`/`cp_fiscal`/`serie_folio` (catálogos en

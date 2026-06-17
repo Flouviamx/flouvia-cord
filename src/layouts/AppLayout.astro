@@ -181,6 +181,9 @@ const NAV_FLAT = NAV_GROUPS.flatMap((g) => g.items);
                                 <a class="notif-foot" href="/app">Ver toda la actividad</a>
                             </div>
                         </div>
+                        <button class="tb-icon tb-help" id="helpBtn" type="button" title="Ayuda" aria-label="Ayuda" aria-haspopup="dialog" aria-expanded="false">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/><path d="M9.1 9a2.9 2.9 0 0 1 5.6 1c0 2-2.9 2.9-2.9 2.9"/><line x1="12" y1="17" x2="12" y2="17"/></svg>
+                        </button>
                         <a class:list={['tb-icon', 'tb-gear', { active: page === 'ajustes' }]} href="/app/ajustes" title="Ajustes" aria-label="Ajustes">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                         </a>
@@ -269,6 +272,53 @@ const NAV_FLAT = NAV_GROUPS.flatMap((g) => g.items);
                     <div class="kbd-row"><span>Mostrar estos atajos</span><span><kbd>?</kbd></span></div>
                 </div>
             </div>
+        </div>
+
+        <!-- Drawer de Ayuda (se abre con el icono ? de la topbar) -->
+        <div class="help-drawer" id="helpDrawer" hidden>
+            <div class="help-backdrop" id="helpBackdrop"></div>
+            <aside class="help-panel" role="dialog" aria-modal="true" aria-label="Centro de ayuda">
+                <header class="help-head">
+                    <strong>Centro de ayuda</strong>
+                    <button id="helpClose" class="help-x" type="button" aria-label="Cerrar ayuda">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </header>
+                <div class="help-search">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input id="helpSearch" type="search" placeholder="Buscar ayuda…" autocomplete="off" spellcheck="false" />
+                </div>
+                <div class="help-body">
+                    <nav class="help-links">
+                        <button type="button" class="help-link" data-help-action="shortcuts">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="10"/><line x1="10" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="14" y2="10"/><line x1="18" y1="10" x2="18" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/></svg>
+                            <span>Atajos de teclado</span>
+                        </button>
+                        <button type="button" class="help-link" data-help-action="guide">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                            <span>Guía de configuración</span>
+                        </button>
+                        <a class="help-link" href="mailto:soporte@flouvia.com">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+                            <span>Escríbenos por correo</span>
+                        </a>
+                        <a class="help-link" href="https://wa.me/520000000000" target="_blank" rel="noopener">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></svg>
+                            <span>WhatsApp de soporte</span>
+                        </a>
+                    </nav>
+                    <div class="help-faq-head">Preguntas frecuentes</div>
+                    <div class="help-faq" id="helpFaq"></div>
+                    <div class="help-empty" id="helpEmpty" hidden>Sin resultados para tu búsqueda.</div>
+                </div>
+                <footer class="help-ai">
+                    <div class="help-ai-box" aria-disabled="true">
+                        <span class="help-ai-badge">Próximamente</span>
+                        <p class="help-ai-title">Pregúntale a la IA sobre tu negocio</p>
+                        <div class="help-ai-input">Escribe tu pregunta… (pronto)</div>
+                    </div>
+                </footer>
+            </aside>
         </div>
 
         <!-- ── GUÍA DE CONFIGURACIÓN (widget flotante + píldora en topbar) ── -->
@@ -546,6 +596,62 @@ const NAV_FLAT = NAV_GROUPS.flatMap((g) => g.items);
     .kbd-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 8px; font-size: 0.85rem; }
     .kbd-row + .kbd-row { border-top: 1px solid var(--color-border); }
     .kbd-row > span:last-child { display: inline-flex; gap: 4px; align-items: center; color: var(--color-text-muted); }
+
+    /* ════════ Drawer de Ayuda ════════ */
+    .help-drawer { position: fixed; inset: 0; z-index: 710; }
+    .help-drawer[hidden] { display: none; }
+    .help-backdrop { position: absolute; inset: 0; background: rgba(10,25,47,0.35); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); animation: cmdk-fade 0.2s ease; }
+    .help-panel {
+        position: absolute; top: 0; right: 0; height: 100%; width: min(420px, 100%);
+        display: flex; flex-direction: column; background: #fff;
+        border-left: 1px solid var(--color-border);
+        box-shadow: -30px 0 80px -30px rgba(10,25,47,0.5);
+        animation: help-slide 0.32s var(--ease-spring);
+    }
+    @keyframes help-slide { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    @media (prefers-reduced-motion: reduce) { .help-panel, .help-backdrop { animation: none; } }
+
+    .help-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--color-border); flex-shrink: 0; }
+    .help-head strong { font-size: 1rem; }
+    .help-x { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: none; background: none; border-radius: 8px; color: var(--color-text-muted); cursor: pointer; transition: background 0.14s ease, color 0.14s ease; }
+    .help-x svg { width: 17px; height: 17px; }
+    .help-x:hover { background: var(--color-bg-soft); color: var(--color-text); }
+
+    .help-search { display: flex; align-items: center; gap: 9px; padding: 11px 14px; margin: 12px 14px 4px; border: 1px solid var(--color-border); border-radius: 11px; background: var(--color-bg-soft); flex-shrink: 0; }
+    .help-search svg { width: 16px; height: 16px; color: var(--color-text-muted); flex-shrink: 0; }
+    .help-search input { flex: 1; border: none; background: none; outline: none; font-family: var(--font-sans); font-size: 0.88rem; color: var(--color-text); }
+    .help-search input::placeholder { color: var(--color-text-muted); }
+
+    .help-body { flex: 1; overflow-y: auto; padding: 10px 14px 18px; }
+
+    .help-links { display: flex; flex-direction: column; margin-bottom: 20px; }
+    .help-link { display: flex; align-items: center; gap: 11px; padding: 11px 6px; border: none; background: none; width: 100%; text-align: left; text-decoration: none; cursor: pointer; font-family: var(--font-sans); font-size: 0.86rem; font-weight: 500; color: var(--color-text); border-bottom: 1px solid var(--color-border); transition: padding-left 0.16s var(--ease-spring); }
+    .help-link:last-child { border-bottom: none; }
+    .help-link:hover { padding-left: 12px; }
+    .help-link svg { width: 17px; height: 17px; color: var(--color-blue-deep); flex-shrink: 0; }
+
+    .help-faq-head { font-size: 0.66rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: #99a2af; margin: 4px 6px 8px; }
+    .help-faq { display: flex; flex-direction: column; }
+    .faq-item { border-bottom: 1px solid var(--color-border); }
+    .faq-item[hidden] { display: none; }
+    .faq-q { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 13px 6px; border: none; background: none; cursor: pointer; font-family: var(--font-sans); font-size: 0.86rem; font-weight: 600; color: var(--color-text); text-align: left; }
+    .faq-q .faq-chev { width: 15px; height: 15px; flex-shrink: 0; color: var(--color-text-muted); transition: transform 0.26s var(--ease-spring); }
+    .faq-item.open .faq-chev { transform: rotate(180deg); }
+    .faq-a { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s var(--ease-spring); }
+    .faq-item.open .faq-a { grid-template-rows: 1fr; }
+    .faq-a > div { overflow: hidden; }
+    .faq-a p { padding: 0 6px 14px; margin: 0; font-size: 0.83rem; line-height: 1.55; color: var(--color-text-muted); }
+
+    .help-empty { padding: 1.5rem 1rem; text-align: center; font-size: 0.84rem; color: var(--color-text-muted); }
+    .help-empty[hidden] { display: none; }
+
+    .help-ai { padding: 14px; border-top: 1px solid var(--color-border); flex-shrink: 0; }
+    .help-ai-box { position: relative; border: 1px dashed var(--color-border); border-radius: 13px; padding: 14px; background: var(--color-bg-soft); opacity: 0.92; }
+    .help-ai-badge { display: inline-block; font-size: 0.6rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--color-blue-deep); background: rgba(10,25,47,0.07); border-radius: 999px; padding: 3px 9px; margin-bottom: 9px; }
+    .help-ai-title { margin: 0 0 10px; font-size: 0.84rem; font-weight: 600; color: var(--color-text); }
+    .help-ai-input { font-size: 0.8rem; color: var(--color-text-muted); background: #fff; border: 1px solid var(--color-border); border-radius: 9px; padding: 10px 12px; cursor: not-allowed; user-select: none; }
+
+    @media (max-width: 560px) { .help-panel { width: 100%; } }
 </style>
 
 <style>
@@ -1200,7 +1306,82 @@ const NAV_FLAT = NAV_GROUPS.flatMap((g) => g.items);
         });
     }
 
-    function initApp() { initCmdk(); initDrawer(); initSidebar(); initToasts(); initNavProgress(); initPins(); initNotifs(); initShortcuts(); }
+    // ── Drawer de Ayuda (icono ? de la topbar) ──
+    function initHelp() {
+        const btn = document.getElementById('helpBtn');
+        const drawer = document.getElementById('helpDrawer');
+        const backdrop = document.getElementById('helpBackdrop');
+        const closeBtn = document.getElementById('helpClose');
+        const search = document.getElementById('helpSearch') as HTMLInputElement | null;
+        const faqWrap = document.getElementById('helpFaq');
+        const empty = document.getElementById('helpEmpty');
+        if (!btn || !drawer || !faqWrap) return;
+
+        const FAQ = [
+            { q: '¿Cómo creo una cotización?', a: 'Ve a Cotizaciones y pulsa "Nueva cotización" (atajo C). Elige un cliente, agrega productos de tu catálogo o líneas libres, ajusta el precio negociado y guarda. Puedes guardarla como borrador o enviarla de inmediato.' },
+            { q: '¿Cómo le envío la cotización a mi cliente?', a: 'Desde el detalle de la cotización usa "Enviar" para mandar el link público por correo, o "Enviar por WhatsApp" para compartir un mensaje con el link ya armado. También puedes copiar el link y pegarlo donde quieras.' },
+            { q: '¿Qué ve mi cliente en el link público?', a: 'Tu cliente abre una página con tu marca donde revisa la cotización, descarga el PDF y la aprueba o rechaza con firma digital. Tú ves en vivo cuándo la abrió y cuándo la está viendo.' },
+            { q: '¿Cómo facturo (CFDI) una cotización?', a: 'Cuando una cotización está aprobada o pagada, usa la acción "Facturar" en el detalle para generar el CFDI. Antes asegúrate de tener tus datos fiscales completos en Ajustes › Fiscal.' },
+            { q: '¿Puedo importar mis productos y clientes?', a: 'Sí. En Productos y en Clientes hay un botón de Importar por CSV: subes el archivo, mapeas las columnas, revisas la vista previa y confirmas. Los productos se deduplican por SKU y los clientes por RFC o empresa.' },
+            { q: '¿Qué incluye mi plan y cómo subo de nivel?', a: 'En Ajustes › Plan ves tu uso del periodo (IA, CFDI, API) y los límites de tu plan. Desde ahí puedes subir de plan o abrir el portal de facturación para gestionar tu suscripción.' },
+            { q: '¿Cómo personalizo el PDF y el portal del cliente?', a: 'En Ajustes › PDF eliges plantilla, subes tu logo y defines color y mensajes, con vista previa en vivo. En Ajustes › Portal del cliente personalizas el banner, la bienvenida y qué se muestra en el link público.' },
+        ];
+
+        // Render del acordeón
+        faqWrap.innerHTML = FAQ.map((f, i) => `
+            <div class="faq-item" data-faq>
+                <button type="button" class="faq-q" aria-expanded="false">
+                    <span>${f.q}</span>
+                    <svg class="faq-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="faq-a"><div><p>${f.a}</p></div></div>
+            </div>`).join('');
+
+        faqWrap.querySelectorAll('.faq-q').forEach((q) => {
+            q.addEventListener('click', () => {
+                const item = q.closest('.faq-item') as HTMLElement;
+                const wasOpen = item.classList.contains('open');
+                faqWrap.querySelectorAll('.faq-item.open').forEach((el) => {
+                    el.classList.remove('open');
+                    el.querySelector('.faq-q')?.setAttribute('aria-expanded', 'false');
+                });
+                if (!wasOpen) { item.classList.add('open'); q.setAttribute('aria-expanded', 'true'); }
+            });
+        });
+
+        // Buscador
+        search?.addEventListener('input', () => {
+            const term = search.value.trim().toLowerCase();
+            let visible = 0;
+            FAQ.forEach((f, i) => {
+                const item = faqWrap.children[i] as HTMLElement;
+                if (!item) return;
+                const match = !term || (f.q + ' ' + f.a).toLowerCase().includes(term);
+                item.hidden = !match;
+                if (match) visible++;
+            });
+            if (empty) (empty as HTMLElement).hidden = visible > 0;
+        });
+
+        const open = () => { (drawer as HTMLElement).hidden = false; btn.setAttribute('aria-expanded', 'true'); setTimeout(() => search?.focus(), 60); };
+        const close = () => { (drawer as HTMLElement).hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+
+        btn.addEventListener('click', () => { (drawer as HTMLElement).hidden ? open() : close(); });
+        closeBtn?.addEventListener('click', close);
+        backdrop?.addEventListener('click', close);
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !(drawer as HTMLElement).hidden) close(); });
+
+        // Enlaces rápidos
+        drawer.querySelectorAll('[data-help-action]').forEach((el) => {
+            el.addEventListener('click', () => {
+                const action = (el as HTMLElement).dataset.helpAction;
+                if (action === 'shortcuts') { close(); const h = document.getElementById('kbdHelp'); if (h) (h as HTMLElement).hidden = false; }
+                else if (action === 'guide') { close(); document.getElementById('onbPill')?.click(); }
+            });
+        });
+    }
+
+    function initApp() { initCmdk(); initDrawer(); initSidebar(); initToasts(); initNavProgress(); initPins(); initNotifs(); initHelp(); initShortcuts(); }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initApp);
     else initApp();
 </script>

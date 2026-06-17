@@ -21,6 +21,7 @@ export const POST: APIRoute = async ({ request }) => {
     try { body = await request.json(); } catch { /* sin body */ }
     const plan = String(body.plan || '');
     const cycle: Cycle = body.cycle === 'anual' ? 'anual' : 'mensual';
+    const embedded = body.ui === 'embedded';
     if (!isPaidPlan(plan)) return json({ error: 'Plan inválido' }, 400);
 
     const orgId = await getActiveOrgId();
@@ -34,8 +35,6 @@ export const POST: APIRoute = async ({ request }) => {
         const params: Record<string, string> = {
             mode: 'subscription',
             customer,
-            success_url: `${origin}/app/ajustes/plan?suscrito=1`,
-            cancel_url: `${origin}/app/ajustes/plan`,
             allow_promotion_codes: 'true',
             'line_items[0][price]': PLAN_PRICES[plan][cycle],
             'line_items[0][quantity]': '1',
@@ -46,6 +45,15 @@ export const POST: APIRoute = async ({ request }) => {
             'metadata[plan]': plan,
             'metadata[cycle]': cycle,
         };
+        if (embedded) {
+            // Embedded Checkout: el formulario vive dentro de cord.flouvia.com.
+            // Solo return_url (success_url/cancel_url son rechazados en este modo).
+            params.ui_mode = 'embedded';
+            params.return_url = `${origin}/app/ajustes/plan?suscrito=1&session_id={CHECKOUT_SESSION_ID}`;
+        } else {
+            params.success_url = `${origin}/app/ajustes/plan?suscrito=1`;
+            params.cancel_url = `${origin}/app/ajustes/plan`;
+        }
         let i = 1;
         for (const price of Object.values(METER_PRICES[plan])) {
             if (!price) continue;
@@ -55,6 +63,7 @@ export const POST: APIRoute = async ({ request }) => {
 
         const session = await stripe('/v1/checkout/sessions', params);
         await logAudit(orgId, { accion: 'billing.checkout', entidad: 'org', entidad_id: orgId, detalle: `Checkout ${plan} (${cycle})`, ip: reqIp(request) });
+        if (embedded) return json({ client_secret: session.client_secret });
         return json({ url: session.url });
     } catch (e: any) {
         return json({ error: e?.message || 'No se pudo iniciar el checkout' }, 502);

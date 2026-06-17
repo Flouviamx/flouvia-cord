@@ -1,0 +1,122 @@
+---
+// /app/checkout — host del Embedded Checkout de Stripe. El formulario de pago
+// vive DENTRO de cord.flouvia.com (no se muestra checkout.stripe.com).
+// Ruta protegida por src/middleware.ts (exige sesión Clerk).
+// Lee ?plan=&cycle= → pide client_secret a /api/billing/subscribe (ui:embedded)
+// → monta el formulario. Al completar, Stripe redirige al return_url
+// (/app/ajustes/plan?suscrito=1); el webhook sincroniza el plan real.
+export const prerender = false;
+
+import AppLayout from '../../layouts/AppLayout.astro';
+import { PLANES, precioAnualMensualizado } from '../../lib/precios';
+
+const planId = Astro.url.searchParams.get('plan') ?? '';
+const cycle = Astro.url.searchParams.get('cycle') === 'anual' ? 'anual' : 'mensual';
+
+// Validar contra el catálogo (los gratis/inexistentes no van a checkout).
+const plan = PLANES.find((p) => p.id === planId && p.precioMensual > 0);
+if (!plan) return Astro.redirect('/app/ajustes/plan');
+
+const money = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
+const precio = cycle === 'anual' ? precioAnualMensualizado(plan.precioMensual) : plan.precioMensual;
+---
+
+<AppLayout
+    title={`Pagar ${plan.nombre} — Cord`}
+    page="plan"
+    heading="Finalizar suscripción"
+    crumbs={[{ label: 'Plan y facturación', href: '/app/ajustes/plan' }, { label: 'Pagar' }]}
+>
+    <div class="co-wrap">
+        <aside class="co-summary">
+            <span class="co-eyebrow">TU PLAN</span>
+            <h2 class="co-name">{plan.nombre}</h2>
+            <p class="co-price">
+                <span class="editorial">{money(precio)}</span> MXN / mes
+            </p>
+            <p class="co-cycle">{cycle === 'anual' ? 'Facturación anual (2 meses gratis)' : 'Facturación mensual'} · IVA incluido</p>
+            <ul class="co-feats">
+                {plan.feats.slice(0, 5).map((f) => (
+                    <li><span class="co-check">✓</span> {f}</li>
+                ))}
+            </ul>
+            <a href="/app/ajustes/plan" class="co-back">← Cambiar de plan</a>
+        </aside>
+
+        <div class="co-form">
+            <div id="checkout" data-plan={plan.id} data-cycle={cycle}>
+                <div class="co-loading">Cargando pago seguro…</div>
+            </div>
+            <p id="co-error" class="co-error" hidden></p>
+        </div>
+    </div>
+</AppLayout>
+
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    const PK = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    const mount = document.getElementById('checkout');
+    const errEl = document.getElementById('co-error');
+
+    const fail = (msg: string) => {
+        if (mount) mount.innerHTML = '';
+        if (errEl) { errEl.textContent = msg; errEl.hidden = false; }
+    };
+
+    async function init() {
+        const Stripe = (window as any).Stripe;
+        if (!Stripe || !PK) return fail('La facturación aún no está configurada.');
+        try {
+            const r = await fetch('/api/billing/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ plan: mount?.dataset.plan, cycle: mount?.dataset.cycle, ui: 'embedded' }),
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok || !data.client_secret) throw new Error(data.error || 'No se pudo iniciar el checkout');
+            const stripe = Stripe(PK);
+            const checkout = await stripe.initEmbeddedCheckout({ clientSecret: data.client_secret });
+            if (mount) mount.innerHTML = '';
+            checkout.mount('#checkout');
+        } catch (e: any) {
+            fail(e?.message || 'No se pudo iniciar el checkout');
+        }
+    }
+    init();
+</script>
+
+<style>
+    .co-wrap {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 2.5rem;
+        align-items: start;
+        max-width: 980px;
+    }
+    .co-summary {
+        position: sticky; top: 1.5rem;
+        background: #fff;
+        border: 1px solid var(--color-border);
+        border-radius: 16px;
+        padding: 1.6rem;
+    }
+    .co-eyebrow { font-size: 0.6rem; font-weight: 800; letter-spacing: 2.5px; color: #99a2af; }
+    .co-name { font-size: 1.4rem; font-weight: 700; margin: 0.5rem 0 0.2rem; letter-spacing: -0.02em; }
+    .co-price { margin: 0; font-size: 1rem; color: var(--color-text); }
+    .co-price .editorial { font-size: 1.7rem; }
+    .co-cycle { margin: 0.3rem 0 1.2rem; font-size: 0.78rem; color: var(--color-text-muted); }
+    .co-feats { list-style: none; padding: 1.1rem 0 0; margin: 0; border-top: 1px solid var(--color-border); display: flex; flex-direction: column; gap: 0.6rem; }
+    .co-feats li { display: flex; gap: 8px; font-size: 0.85rem; align-items: center; }
+    .co-check { color: #059669; font-weight: 700; }
+    .co-back { display: inline-block; margin-top: 1.2rem; font-size: 0.82rem; color: var(--color-text-muted); text-decoration: none; }
+    .co-back:hover { color: var(--color-text); }
+
+    .co-form { min-height: 420px; }
+    .co-loading { padding: 3rem 1rem; text-align: center; color: var(--color-text-muted); font-size: 0.9rem; }
+    .co-error { color: var(--color-danger); font-size: 0.9rem; padding: 1rem; }
+
+    @media (max-width: 760px) {
+        .co-wrap { grid-template-columns: 1fr; }
+        .co-summary { position: static; }
+    }
+</style>
