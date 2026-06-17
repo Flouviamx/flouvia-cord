@@ -73,25 +73,7 @@ const NAV_FLAT = NAV_GROUPS.flatMap((g) => g.items);
             <div class="sb-backdrop" id="sbBackdrop" aria-hidden="true"></div>
             <!-- ── SIDEBAR ── -->
             <aside class="sidebar">
-                <nav class="sb-nav">
-                    <div class="sb-group sb-pins" id="sbPins" hidden></div>
-                    {NAV_GROUPS.map((group) => (
-                        <div class="sb-group">
-                            <span class="sb-group-label">{group.label}</span>
-                            {group.items.map((item) => (
-                                <a href={item.href} class:list={['sb-item', { active: page === item.id }]} title={item.label}>
-                                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d={item.icon} /></svg>
-                                    <span class="sb-item-label">{item.label}</span>
-                                    {!!item.badge && item.badge > 0 && (
-                                        <span class:list={['sb-badge', { danger: item.tone === 'danger' }]}>{item.badge > 99 ? '99+' : item.badge}</span>
-                                    )}
-                                </a>
-                            ))}
-                        </div>
-                    ))}
-                </nav>
-
-                <!-- Cuenta — al final del nav, sin card por defecto -->
+                <!-- Cuenta — arriba -->
                 <div class="sb-account">
                     <button class="sb-org-switch" id="orgSwitch" type="button" aria-haspopup="menu" aria-expanded="false" title={ORG.nombre}>
                         <span class="sb-org-avatar">{ORG.inicial}</span>
@@ -129,6 +111,24 @@ const NAV_FLAT = NAV_GROUPS.flatMap((g) => g.items);
                         </SignOutButton>
                     </div>
                 </div>
+
+                <nav class="sb-nav">
+                    <div class="sb-group sb-pins" id="sbPins" hidden></div>
+                    {NAV_GROUPS.map((group) => (
+                        <div class="sb-group">
+                            <span class="sb-group-label">{group.label}</span>
+                            {group.items.map((item) => (
+                                <a href={item.href} class:list={['sb-item', { active: page === item.id }]} title={item.label}>
+                                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d={item.icon} /></svg>
+                                    <span class="sb-item-label">{item.label}</span>
+                                    {!!item.badge && item.badge > 0 && (
+                                        <span class:list={['sb-badge', { danger: item.tone === 'danger' }]}>{item.badge > 99 ? '99+' : item.badge}</span>
+                                    )}
+                                </a>
+                            ))}
+                        </div>
+                    ))}
+                </nav>
 
                 <div class="sb-footer">
                     <img class="sb-foot-logo" src="/imgs/logo-cord-white.png" alt="Cord" />
@@ -668,12 +668,12 @@ const NAV_FLAT = NAV_GROUPS.flatMap((g) => g.items);
         transition: width 0.28s var(--ease-spring), padding 0.28s var(--ease-spring);
     }
 
-    /* ── Nav agrupada (scroll con fade-out) ── */
+    /* ── Nav agrupada (scroll con fade-out solo en la parte inferior) ── */
     .sb-nav {
         display: flex; flex-direction: column; gap: 1rem;
         overflow-y: auto; flex: 1;
-        mask-image: linear-gradient(to bottom, transparent 0px, black 22px, black calc(100% - 22px), transparent 100%);
-        -webkit-mask-image: linear-gradient(to bottom, transparent 0px, black 22px, black calc(100% - 22px), transparent 100%);
+        mask-image: linear-gradient(to bottom, black calc(100% - 22px), transparent 100%);
+        -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 22px), transparent 100%);
     }
     .sb-group { display: flex; flex-direction: column; gap: 2px; }
     .sb-group-label {
@@ -712,16 +712,16 @@ const NAV_FLAT = NAV_GROUPS.flatMap((g) => g.items);
     }
     .sb-badge.danger { color: #fff; background: var(--color-danger); }
 
-    /* ── Cuenta — al final, sin card por defecto ── */
+    /* ── Cuenta — arriba, sin card por defecto ── */
     .sb-account {
         position: relative;
-        padding-top: 0.75rem;
+        padding-bottom: 0.5rem;
         margin-bottom: 0.3rem;
     }
-    /* Separador con degradado (cambio 3) */
-    .sb-account::before {
+    /* Separador con degradado debajo de la cuenta */
+    .sb-account::after {
         content: '';
-        position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
         background: linear-gradient(to right, transparent, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.1) 75%, transparent);
     }
     .sb-org-switch {
@@ -751,15 +751,15 @@ const NAV_FLAT = NAV_GROUPS.flatMap((g) => g.items);
     }
     .sb-org-switch[aria-expanded="true"] .sb-org-caret { transform: rotate(180deg); }
 
-    /* Dropdown — abre hacia ARRIBA (la cuenta está al fondo) */
+    /* Dropdown — abre hacia ABAJO (la cuenta está arriba) */
     .sb-org-menu {
-        position: absolute; bottom: calc(100% + 4px); left: 0; right: 0; z-index: 60;
+        position: absolute; top: calc(100% + 4px); bottom: auto; left: 0; right: 0; z-index: 60;
         background: #11233f; border-radius: 13px; padding: 6px;
         box-shadow: 0 24px 60px -18px rgba(0,0,0,0.7), inset 0 0 0 0.5px rgba(255,255,255,0.1);
         animation: sb-menu-in 0.18s var(--ease-spring);
     }
     .sb-org-menu[hidden] { display: none; }
-    @keyframes sb-menu-in { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: none; } }
+    @keyframes sb-menu-in { from { opacity: 0; transform: translateY(-6px) scale(0.98); } to { opacity: 1; transform: none; } }
     .sb-org-menu-head { display: flex; align-items: center; gap: 10px; padding: 8px 9px 9px; }
     .sb-org-menu-id { display: flex; flex-direction: column; min-width: 0; }
     .sb-org-menu-id strong { font-size: 0.82rem; font-weight: 650; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -779,7 +779,7 @@ const NAV_FLAT = NAV_GROUPS.flatMap((g) => g.items);
 
     /* ── Footer (logo + botones colapsar/expandir) ── */
     .sb-footer { padding-top: 0.7rem; display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; }
-    .sb-foot-logo { height: 15px; width: auto; opacity: 0.5; flex: 1; transition: opacity 0.2s var(--ease-ios); }
+    .sb-foot-logo { height: 15px; width: auto; opacity: 0.5; transition: opacity 0.2s var(--ease-ios); }
     .sb-collapse, .sb-expand {
         flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
         width: 28px; height: 28px; border-radius: 8px;
@@ -801,10 +801,10 @@ const NAV_FLAT = NAV_GROUPS.flatMap((g) => g.items);
     .sb-collapsed .sb-org-caret { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
     .sb-collapsed .sb-foot-logo { opacity: 0; width: 0; overflow: hidden; }
     .sb-collapsed .sb-collapse { display: none; }
-    .sb-collapsed .sb-account { padding-top: 0.5rem; }
-    .sb-collapsed .sb-account::before { display: none; }
+    .sb-collapsed .sb-account { padding-bottom: 0.3rem; }
+    .sb-collapsed .sb-account::after { display: none; }
     .sb-collapsed .sb-org-switch { justify-content: center; padding: 7px; }
-    .sb-collapsed .sb-org-menu { left: 0; right: auto; width: 210px; bottom: 0; top: auto; }
+    .sb-collapsed .sb-org-menu { left: 0; right: auto; width: 210px; top: calc(100% + 4px); bottom: auto; }
     .sb-collapsed .sb-item { justify-content: center; padding: 9px; }
     .sb-collapsed .sb-item.active::before { left: -0.6rem; }
     /* Badge → punto cuando está colapsado */
