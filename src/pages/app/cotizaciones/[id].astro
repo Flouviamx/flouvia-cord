@@ -54,7 +54,7 @@ const dotColor = (tipo: string) =>
                 <div class="dh-client">
                     <div class="dh-avatar">{q.clienteInicial}</div>
                     <div>
-                        <h2 class="dh-name">{q.cliente}</h2>
+                        <h2 class="dh-name">{q.cliente} <span class="version-badge">V{q.version}</span></h2>
                         <p class="dh-meta">{q.terminos} · Vigente hasta {q.vigencia} · Creada {q.creada}</p>
                     </div>
                 </div>
@@ -92,6 +92,23 @@ const dotColor = (tipo: string) =>
                     <p>{q.notas}</p>
                 </section>
             )}
+
+            {q.versiones && q.versiones.length > 0 && (
+                <section class="d-versions">
+                    <details class="v-accordion">
+                        <summary>Historial de versiones ({q.versiones.length})</summary>
+                        <div class="v-list">
+                            {q.versiones.map(v => (
+                                <div class="v-item">
+                                    <span class="v-badge">V{v.version}</span>
+                                    <span class="v-date">{v.fecha}</span>
+                                    <span class="editorial v-total">{money(v.total)}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </details>
+                </section>
+            )}
         </div>
 
         <!-- Sidebar: acciones + timeline -->
@@ -120,7 +137,7 @@ const dotColor = (tipo: string) =>
                     <button class="act-danger act-do" data-action="reject">Marcar rechazada</button>
                 )}
                 {(q.status === 'sent' || q.status === 'viewed') && canCotizar && (
-                    <button class="act-secondary act-do" data-action="resend">Reenviar al cliente</button>
+                    <a href={`/app/cotizaciones/${q.id}/editar`} class="act-secondary act-link" style="text-align: center; text-decoration: none; display: block;">Modificar y reenviar (V{q.version + 1})</a>
                 )}
                 {q.status === 'approved' && canAprobar && (
                     <button class="act-ok act-do" data-action="paid">Registrar pago</button>
@@ -129,7 +146,7 @@ const dotColor = (tipo: string) =>
                     <button class="act-cfdi act-do" data-action="invoiced">Timbrar CFDI 4.0</button>
                 )}
                 {q.status === 'expired' && canCotizar && (
-                    <button class="act-secondary act-do" data-action="resend">Reenviar al cliente</button>
+                    <a href={`/app/cotizaciones/${q.id}/editar`} class="act-secondary act-link" style="text-align: center; text-decoration: none; display: block;">Modificar y reenviar (V{q.version + 1})</a>
                 )}
                 {q.status === 'draft' && canCotizar && (
                     <button class="act-delete" id="btnDelete">Eliminar borrador</button>
@@ -265,6 +282,40 @@ const dotColor = (tipo: string) =>
         transition: background 0.25s, border-color 0.25s;
     }
     .act-secondary:hover { background: #fff; border-color: rgba(10,25,47,0.2); }
+    .act-secondary .act-delete { background: transparent; color: #ef4444; border: 1px solid transparent; }
+    .act-delete:hover { background: #fee2e2; border-color: #fca5a5; }
+
+    .version-badge {
+        font-size: 0.72rem; font-weight: 600;
+        background: var(--color-bg-soft); color: var(--color-text-muted);
+        border: 1px solid var(--color-border); border-radius: 4px;
+        padding: 2px 6px; margin-left: 8px; vertical-align: middle;
+    }
+
+    .d-versions { margin-top: 1.5rem; }
+    .v-accordion {
+        background: #fff; border: 1px solid var(--color-border); border-radius: 8px;
+    }
+    .v-accordion summary {
+        padding: 12px 16px; font-size: 0.85rem; font-weight: 600; color: var(--color-text);
+        cursor: pointer; list-style: none; user-select: none;
+    }
+    .v-accordion summary::-webkit-details-marker { display: none; }
+    .v-accordion summary::after {
+        content: '↓'; float: right; color: var(--color-text-muted); transition: transform 0.2s;
+    }
+    .v-accordion[open] summary::after { transform: rotate(180deg); }
+
+    .v-list { padding: 0 16px 12px; display: flex; flex-direction: column; gap: 8px; }
+    .v-item {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 8px 12px; background: var(--color-bg-soft); border-radius: 6px;
+        font-size: 0.8rem;
+    }
+    .v-badge { font-weight: 600; color: var(--color-text-muted); width: 30px; }
+    .v-date { color: var(--color-text-muted); flex: 1; text-align: left; }
+    .v-total { font-weight: 500; color: var(--color-text); }
+
     .act-whats {
         display: flex; align-items: center; justify-content: center; gap: 8px;
         font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; cursor: pointer;

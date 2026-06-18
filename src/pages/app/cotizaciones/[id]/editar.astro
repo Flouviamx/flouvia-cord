@@ -1,0 +1,316 @@
+---
+// Editor de cotizaciones para editar y crear nuevas versiones (V2, V3...).
+import AppLayout from '../../../../layouts/AppLayout.astro';
+import { getProductos, getClientes, getOrg, getCotizacion } from '../../../../lib/queries';
+
+const { id } = Astro.params;
+const [productos, CLIENTES, ORG, q] = await Promise.all([
+    getProductos(), getClientes(), getOrg(), getCotizacion(id ?? '')
+]);
+
+if (!q || (q.status !== 'sent' && q.status !== 'viewed' && q.status !== 'expired' && q.status !== 'draft')) {
+    return Astro.redirect(`/app/cotizaciones/${id}`);
+}
+
+const catalogo = productos.filter(p => p.activo);
+const TERM_DEFAULT_LABEL = ({ contado: 'Contado', net30: 'Net 30', net60: 'Net 60' } as Record<string, string>)[ORG.terminosDefault] ?? 'Contado';
+const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b) => a - b);
+const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - new Date().getTime()) / 86400000));
+---
+
+<AppLayout title={`Editar ${q.folio}`} page="cotizaciones" heading={`Nueva versión: ${q.folio}`} crumbs={[{ label: 'Cotizaciones', href: '/app/cotizaciones' }, { label: q.folio, href: `/app/cotizaciones/${id}` }]}>
+    <span slot="topbar-actions" class="draft-tag">V{q.version + 1} (Borrador)</span>
+
+    <div class="editor-grid">
+        <!-- ── Columna principal ── -->
+        <div class="ed-main">
+            <!-- Cliente (Solo lectura al editar versión) -->
+            <section class="ed-block">
+                <div class="section-head"><h2>Cliente</h2></div>
+                <div class="client-row">
+                    <select class="ed-select" id="clientSelect" disabled>
+                        <option value={q.cliente} selected>{q.cliente}</option>
+                    </select>
+                    <div class="term-chips" id="termChips">
+                        <button class="chip active" data-term={q.terminos}>{q.terminos}</button>
+                    </div>
+                </div>
+                <p class="desc-note">El cliente no se puede cambiar al generar una nueva versión.</p>
+            </section>
+
+            <!-- Productos -->
+            <section class="ed-block">
+                <div class="section-head">
+                    <h2>Productos</h2>
+                </div>
+
+                <div class="lines-head">
+                    <span>Producto</span><span>Cant.</span><span>Lista</span><span>Negociado</span><span class="lh-right">Importe</span><span class="lh-margen">Margen</span><span></span>
+                </div>
+                <div id="lines"></div>
+                
+                <div class="lines-empty" id="linesEmpty" hidden>
+                    <p>No hay productos en la cotización.</p>
+                </div>
+
+                <div class="add-actions">
+                    <select class="ed-select" id="productSelect">
+                        <option value="" disabled selected>+ Producto del catálogo…</option>
+                        {catalogo.map((p) => (
+                            <option value={p.id}>{p.nombre} — ${p.precio.toFixed(2)} / {p.unidad}</option>
+                        ))}
+                    </select>
+                    <button class="btn-free-line" id="btnFreeLine">+ Agregar línea libre</button>
+                </div>
+            </section>
+        </div>
+
+        <!-- ── Sidebar resumen ── -->
+        <aside class="ed-side">
+            <section class="ed-summary">
+                <div class="section-head"><h2>Resumen</h2></div>
+                <div class="sum-line"><span>Subtotal</span><span class="editorial" id="sumSubtotal">$0.00</span></div>
+                <div class="sum-line"><span>IVA {ORG.ivaPct}%</span><span class="editorial" id="sumIva">$0.00</span></div>
+                <input type="hidden" id="cfgIva" value={ORG.ivaPct} />
+                <div class="sum-divider"></div>
+                <div class="sum-line sum-total"><span>Total</span><span class="editorial" id="sumTotal">$0.00</span></div>
+
+                <button class="btn-send" id="btnSend">
+                    <span>Generar V{q.version + 1} y reenviar</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </button>
+                <a href={`/app/cotizaciones/${q.id}`} class="btn-draft" style="text-align: center; text-decoration: none; display: block;">Cancelar</a>
+                <p class="sum-note">Se creará un nuevo snapshot en el historial y el link público se actualizará a la V{q.version + 1}.</p>
+            </section>
+        </aside>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast" hidden>
+        <span class="toast-dot"></span>
+        <span id="toastMsg">Cotización enviada</span>
+    </div>
+</AppLayout>
+
+<script is:inline define:vars={{ catalogo, aprobMargenMin: ORG.aprobMargenMin, qItems: q.items, qId: q.id }}>
+    const lines = [...qItems].map(it => ({
+        id: it.producto_id || null, // Nota: el rowToQuote no incluye producto_id nativamente, requeriría arreglo si es vital, pero se asume nombre
+        nombre: it.descripcion,
+        unidad: it.unidad,
+        lista: it.precioLista,
+        costo: 0, // No tenemos el costo guardado en el render inicial de mock, pero es tolerable para visualización
+        negociado: it.precioNegociado,
+        cantidad: it.cantidad
+    }));
+
+    const $lines = document.getElementById('lines');
+    const $empty = document.getElementById('linesEmpty');
+    const $select = document.getElementById('productSelect');
+    const fmt = (n) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+    const fmtPct = (n) => Number.isFinite(n) ? Math.round(n) + '%' : '—';
+    const margenPct = (costo, precio) => (costo > 0 && precio > 0) ? (precio - costo) / precio * 100 : null;
+
+    const catMap = Object.fromEntries(catalogo.map(p => [p.id, p]));
+
+    function recalc() {
+        const ivaPct = (Number((document.getElementById('cfgIva') || {}).value) || 0) / 100;
+        const subtotal = lines.reduce((s, l) => s + (l.negociado ?? l.lista) * l.cantidad, 0);
+        document.getElementById('sumSubtotal').textContent = fmt(subtotal);
+        document.getElementById('sumIva').textContent = fmt(subtotal * ivaPct);
+        document.getElementById('sumTotal').textContent = fmt(subtotal * (1 + ivaPct));
+    }
+
+    function margenBadge(costo, precio) {
+        if (!costo) return '<span class="lr-margen lr-margen-na">—</span>';
+        const m = margenPct(costo, precio);
+        if (m === null) return '<span class="lr-margen lr-margen-na">—</span>';
+        const low = aprobMargenMin > 0 && m < aprobMargenMin;
+        return `<span class="lr-margen ${low ? 'lr-margen-low' : ''}" title="Margen bruto">${fmtPct(m)}</span>`;
+    }
+
+    function render() {
+        $empty.hidden = lines.length > 0;
+        $lines.innerHTML = '';
+        lines.forEach((l, idx) => {
+            const precioFinal = l.negociado ?? l.lista;
+            const importe = precioFinal * l.cantidad;
+            const row = document.createElement('div');
+            row.className = 'line-row';
+            
+            const nameHtml = `<input type="text" class="lr-input lr-desc-input" value="${l.nombre}" data-idx="${idx}" data-field="nombre" placeholder="Descripción de la línea..." />`;
+
+            row.innerHTML = `
+                ${nameHtml}
+                <input type="number" min="1" value="${l.cantidad}" class="lr-input" data-idx="${idx}" data-field="cantidad" />
+                <span class="lr-lista">${fmt(l.lista)}</span>
+                <input type="number" min="0" step="0.01" value="${precioFinal.toFixed(2)}" class="lr-input lr-nego ${l.negociado !== null && l.negociado < l.lista ? 'is-deal' : ''}" data-idx="${idx}" data-field="negociado" />
+                <span class="editorial lr-importe">${fmt(importe)}</span>
+                ${margenBadge(l.costo, precioFinal)}
+                <button class="lr-del" data-del="${idx}" aria-label="Quitar">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            `;
+            $lines.appendChild(row);
+        });
+        recalc();
+    }
+
+    $select.addEventListener('change', () => {
+        const p = catMap[$select.value];
+        if (!p) return;
+        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, lista: p.precio, costo: p.costo || 0, negociado: null, cantidad: 1 });
+        $select.selectedIndex = 0;
+        render();
+    });
+
+    document.getElementById('btnFreeLine')?.addEventListener('click', () => {
+        lines.push({ id: null, nombre: '', unidad: 'pieza', lista: 0, costo: 0, negociado: 0, cantidad: 1 });
+        render();
+    });
+
+    $lines.addEventListener('input', (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLInputElement)) return;
+        const idx = parseInt(t.dataset.idx, 10);
+        
+        if (t.dataset.field === 'nombre') {
+            lines[idx].nombre = t.value;
+            return;
+        }
+
+        const val = parseFloat(t.value) || 0;
+        if (t.dataset.field === 'cantidad') lines[idx].cantidad = Math.max(1, Math.round(val));
+        if (t.dataset.field === 'negociado') {
+            lines[idx].negociado = val;
+            t.classList.toggle('is-deal', val < lines[idx].lista);
+        }
+
+        const row = t.closest('.line-row');
+        const l = lines[idx];
+        const precioFinal = l.negociado ?? l.lista;
+        row.querySelector('.lr-importe').textContent = fmt(precioFinal * l.cantidad);
+        const badge = row.querySelector('.lr-margen');
+        if (badge) badge.outerHTML = margenBadge(l.costo, precioFinal);
+        
+        recalc();
+    });
+
+    $lines.addEventListener('click', (e) => {
+        const btn = e.target.closest('.lr-del');
+        if (!btn) return;
+        lines.splice(parseInt(btn.dataset.del, 10), 1);
+        render();
+    });
+
+    // ── Guardado real (PATCH /api/cotizaciones/[id] con action=resend e items) ──
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMsg');
+    const showToast = (msg, hide = 0) => {
+        toastMsg.textContent = msg; toast.hidden = false;
+        if (hide) setTimeout(() => { toast.hidden = true; }, hide);
+    };
+
+    async function save(btn) {
+        if (!lines.length) { showToast('Agrega al menos un producto', 2200); return; }
+        const original = btn.innerHTML;
+        btn.disabled = true; btn.style.opacity = '0.7';
+        showToast('Generando nueva versión y enviando…');
+        
+        const payload = {
+            action: 'resend',
+            items: lines.map(l => ({
+                producto_id: l.id || null,
+                descripcion: l.nombre || 'Línea',
+                cantidad: l.cantidad,
+                precio_unitario: l.lista,
+                precio_negociado: l.negociado,
+                costo_unitario: l.costo || 0,
+            }))
+        };
+
+        try {
+            const res = await fetch(`/api/cotizaciones/${qId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al guardar');
+            showToast(`Versión reenviada con éxito ✓`);
+            setTimeout(() => { window.location.href = `/app/cotizaciones/${qId}`; }, 1100);
+        } catch (err) {
+            btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = original;
+            showToast(err.message || 'Error de red', 2600);
+        }
+    }
+
+    document.getElementById('btnSend')?.addEventListener('click', (e) => save(e.currentTarget));
+
+    render();
+</script>
+
+<style is:global>
+    .line-row {
+        display: grid;
+        grid-template-columns: 1.8fr 70px 90px 110px 1fr 58px 30px;
+        gap: 0.8rem; align-items: center;
+        padding: 0.8rem 0;
+        border-bottom: 1px solid var(--color-border);
+    }
+    .line-row:last-child { border-bottom: none; }
+    .lr-name { font-size: 0.86rem; font-weight: 500; color: var(--color-text); display: flex; flex-direction: column; }
+    .lr-lista { font-size: 0.82rem; color: var(--color-text-muted); text-decoration: line-through; }
+    
+    .lr-input {
+        font-family: var(--font-sans); font-size: 0.85rem; font-weight: 500;
+        color: var(--color-text); background: transparent;
+        border: 1px solid transparent; border-radius: 6px;
+        padding: 6px 8px; width: 100%;
+        transition: border-color 0.2s, background-color 0.2s;
+    }
+    .lr-input:hover { background: var(--color-bg-soft); }
+    .lr-input:focus { outline: none; border-color: var(--color-blue-deep); background: #fff; box-shadow: 0 0 0 2px rgba(10,25,47,0.05); }
+    .lr-desc-input { border-color: var(--color-border); }
+    .lr-nego.is-deal { color: #059669; font-weight: 600; }
+    .lr-importe { font-size: 0.95rem; color: var(--color-text); text-align: right; font-weight: 500; }
+    .lr-margen { font-size: 0.72rem; font-weight: 600; text-align: center; border-radius: 4px; padding: 2px 6px; color: #059669; background: rgba(16,185,129,0.1); }
+    .lr-margen-na { color: #94a3b8; background: transparent; font-weight: 400; }
+    .lh-margen { font-size: 0.73rem; color: var(--color-text-muted); text-align: center; }
+    .lr-del { background: none; border: none; cursor: pointer; color: #94a3b8; display: flex; align-items: center; justify-content: center; border-radius: 6px; padding: 4px; transition: color 0.2s, background 0.2s; }
+    .lr-del:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+</style>
+
+<style>
+    .draft-tag { font-size: 0.72rem; font-weight: 600; color: #0ea5e9; background: rgba(14,165,233,0.1); border: 1px solid rgba(14,165,233,0.2); padding: 4px 10px; border-radius: 6px; }
+    .section-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+    .section-head h2 { font-size: 0.85rem; font-weight: 600; color: var(--color-text); margin: 0; }
+    .editor-grid { display: grid; grid-template-columns: 1fr 320px; gap: 3rem; align-items: start; }
+    .ed-main { display: flex; flex-direction: column; gap: 2.5rem; min-width: 0; }
+    .ed-block { padding: 0; }
+    .client-row { display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; }
+    .ed-select { font-family: var(--font-sans); font-size: 0.85rem; font-weight: 400; color: var(--color-text); background: transparent; border: 1px solid var(--color-border); border-radius: 6px; padding: 8px 12px; min-width: 260px; cursor: pointer; transition: border-color 0.2s; }
+    .ed-select:disabled { opacity: 0.6; cursor: not-allowed; background: var(--color-bg-soft); }
+    .term-chips { display: flex; gap: 0.4rem; }
+    .chip { font-family: var(--font-sans); font-size: 0.78rem; font-weight: 500; color: var(--color-text-muted); background: transparent; border: 1px solid var(--color-border); border-radius: 6px; padding: 6px 12px; }
+    .chip.active { background: var(--color-text); color: #fff; border-color: var(--color-text); }
+    .desc-note { font-size: 0.76rem; font-weight: 500; color: var(--color-text-muted); margin: 0.6rem 0 0; }
+    .lines-head { display: grid; grid-template-columns: 1.8fr 70px 90px 110px 1fr 58px 30px; gap: 0.8rem; font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted); padding: 0 0 0.5rem; border-bottom: 1px solid var(--color-border); }
+    .lh-right { text-align: right; }
+    .lines-empty { font-size: 0.85rem; color: var(--color-text-muted); padding: 2rem 0; text-align: center; border-bottom: 1px solid var(--color-border); }
+    .add-actions { display: flex; gap: 0.8rem; margin-top: 1rem; align-items: center; }
+    .btn-free-line { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 500; cursor: pointer; background: transparent; color: var(--color-text-muted); border: 1px dashed var(--color-border); border-radius: 6px; padding: 7px 12px; transition: all 0.2s; }
+    .btn-free-line:hover { color: var(--color-text); border-color: #cbd5e1; background: var(--color-bg-soft); }
+    .ed-side { position: sticky; top: 76px; }
+    .ed-summary { padding: 1.5rem; background: var(--color-bg-soft); border-radius: 12px; border: 1px solid var(--color-border); display: flex; flex-direction: column; gap: 0.8rem; }
+    .sum-line { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--color-text-muted); }
+    .sum-line .editorial { color: var(--color-text); font-size: 0.95rem; }
+    .sum-divider { height: 1px; background: var(--color-border); margin: 0.4rem 0; }
+    .sum-total { font-weight: 600; color: var(--color-text); }
+    .sum-total .editorial { font-size: 1.4rem; }
+    .btn-send { display: flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font-sans); font-size: 0.88rem; font-weight: 500; background: var(--color-blue-deep); color: #fff; border: none; border-radius: 8px; padding: 10px; cursor: pointer; transition: background 0.2s; margin-top: 0.8rem; }
+    .btn-send svg { width: 16px; height: 16px; }
+    .btn-draft { font-family: var(--font-sans); font-size: 0.85rem; font-weight: 500; color: var(--color-text); background: #fff; border: 1px solid var(--color-border); border-radius: 8px; padding: 9px; cursor: pointer; transition: background 0.2s; }
+    .sum-note { font-size: 0.75rem; color: var(--color-text-muted); margin: 0.4rem 0 0; line-height: 1.4; text-align: center; }
+    .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; background: var(--color-text); color: #fff; font-size: 0.85rem; font-weight: 500; padding: 10px 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 200; }
+    .toast-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-ok); }
+</style>

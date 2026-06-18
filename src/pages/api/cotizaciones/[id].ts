@@ -76,8 +76,30 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     if (!action) return json({ error: 'Acción no válida' }, 400);
 
     const orgId = await getActiveOrgId();
-    const rows = await sql`select id, status from cotizaciones where id = ${id} and org_id = ${orgId}`;
+    const rows = await sql`select id, status, version from cotizaciones where id = ${id} and org_id = ${orgId}`;
     if (!rows.length) return json({ error: 'Cotización no encontrada' }, 404);
+
+    // Si se reenvía con líneas modificadas, generamos nueva versión
+    if (body.action === 'resend' && Array.isArray(body.items)) {
+        let subtotal = 0;
+        for (const it of body.items) subtotal += Number(it.precio_negociado ?? it.precio_unitario ?? 0) * Number(it.cantidad ?? 1);
+        const [org] = await sql`select iva_pct from orgs where id = ${orgId}`;
+        const ivaPct = org.iva_pct !== undefined && org.iva_pct !== null ? Number(org.iva_pct) / 100 : 0.16;
+        const iva = subtotal * ivaPct;
+        const total = subtotal + iva;
+        const nextVersion = Number(rows[0].version || 1) + 1;
+
+        await sql`update cotizaciones set subtotal = ${subtotal}, iva = ${iva}, total = ${total}, version = ${nextVersion} where id = ${id}`;
+        await sql`delete from cotizacion_items where cotizacion_id = ${id}`;
+        let orden = 0;
+        for (const it of body.items) {
+            await sql`insert into cotizacion_items (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden)
+                      values (${id}, ${it.producto_id || null}, ${it.descripcion}, ${Number(it.cantidad) || 1}, ${Number(it.precio_unitario) || 0}, ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)}, ${Number(it.costo_unitario) || 0}, ${orden++})`;
+        }
+        await sql`insert into cotizacion_versiones (cotizacion_id, org_id, version, subtotal, iva, total, items, notas)
+                  values (${id}, ${orgId}, ${nextVersion}, ${subtotal}, ${iva}, ${total}, ${JSON.stringify(body.items)}, null)`;
+        await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'comment', ${'Versión ' + nextVersion + ' creada'})`;
+    }
 
     const actual = rows[0].status as string;
     if (!action.from.includes(actual)) {

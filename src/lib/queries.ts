@@ -305,6 +305,7 @@ export async function getProductos() {
         nombre: p.nombre as string,
         unidad: p.unidad as string,
         precio: num(p.precio_lista),
+        costo: num(p.costo),
         activo: p.activo as boolean,
     }));
 }
@@ -328,7 +329,7 @@ export async function getClientes() {
 }
 
 // ── COTIZACIONES ──────────────────────────────────────────────────────────────
-function rowToQuote(c: any, items: any[], eventos: any[]): MockQuote {
+function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = []): MockQuote {
     return {
         id: c.id,
         folio: c.folio,
@@ -343,6 +344,7 @@ function rowToQuote(c: any, items: any[], eventos: any[]): MockQuote {
         aprobEstado: (c.aprob_estado as string) ?? null,
         aprobMotivo: (c.aprob_motivo as string) ?? null,
         total: num(c.total),
+        version: num(c.version) || 1,
         items: items.map((it): MockItem => ({
             descripcion: it.descripcion,
             cantidad: num(it.cantidad),
@@ -354,6 +356,12 @@ function rowToQuote(c: any, items: any[], eventos: any[]): MockQuote {
             tipo: e.tipo,
             detalle: e.detalle ?? '',
             cuando: fmtRelative(e.created_at),
+        })),
+        versiones: versiones.map((v) => ({
+            version: num(v.version),
+            total: num(v.total),
+            fecha: fmtDate(v.created_at),
+            items: v.items as any[],
         })),
     };
 }
@@ -368,21 +376,22 @@ export async function getCotizaciones(): Promise<MockQuote[]> {
         left join clientes cl on cl.id = c.cliente_id
         where c.org_id = ${orgId}
         order by c.created_at desc`);
-    return rows.map(c => rowToQuote(c, [], []));
+    return rows.map(c => rowToQuote(c, [], [], []));
 }
 
-// Detalle con items y timeline. Tres queries en un solo batch.
+// Detalle con items y timeline. Cuatro queries en un solo batch.
 export async function getCotizacion(id: string): Promise<MockQuote | null> {
     const orgId = await getActiveOrgId();
-    const [rows, items, eventos] = await withOrgTx(orgId,
+    const [rows, items, eventos, versiones] = await withOrgTx(orgId,
         sql`select c.*, cl.empresa, coalesce(c.terminos, cl.terminos_default) as terminos
             from cotizaciones c left join clientes cl on cl.id = c.cliente_id
             where c.id = ${id} and c.org_id = ${orgId}`,
         sql`select * from cotizacion_items where cotizacion_id = ${id} order by orden`,
         sql`select * from eventos where cotizacion_id = ${id} order by created_at desc`,
+        sql`select * from cotizacion_versiones where cotizacion_id = ${id} order by version desc`,
     );
     if (!rows.length) return null;
-    return rowToQuote(rows[0], items, eventos);
+    return rowToQuote(rows[0], items, eventos, versiones);
 }
 
 // Link público — usa withPublicToken para satisfacer la política RLS de cotizaciones/items.

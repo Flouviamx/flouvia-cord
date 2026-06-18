@@ -553,3 +553,28 @@ create policy "rls_uso_periodo" on uso_periodo
 
 create policy "rls_intereses_moratorios" on intereses_moratorios
   using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+
+-- ── Sistema de Versiones de Cotización (jun 2026) ───────────────────────────
+-- Número de versión actual (V1, V2, V3…). Empieza en 1.
+alter table cotizaciones add column if not exists version int not null default 1;
+
+-- Snapshot inmutable de cada versión enviada.
+create table if not exists cotizacion_versiones (
+  id              uuid      primary key default gen_random_uuid(),
+  cotizacion_id   uuid      not null references cotizaciones(id) on delete cascade,
+  org_id          uuid      not null references orgs(id) on delete cascade,
+  version         int       not null,        -- 1, 2, 3…
+  subtotal        numeric   not null,
+  iva             numeric   not null,
+  total           numeric   not null,
+  items           jsonb     not null,         -- snapshot completo de las líneas
+  notas           text,
+  created_at      timestamptz default now(),
+  unique (cotizacion_id, version)
+);
+create index if not exists idx_versiones_cot on cotizacion_versiones(cotizacion_id, version);
+
+-- RLS
+alter table cotizacion_versiones enable row level security;
+create policy "rls_cotizacion_versiones" on cotizacion_versiones
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);

@@ -34,6 +34,8 @@ export interface MockQuote {
     eventos: MockEvent[];
     notas?: string;
     total?: number;   // total de la columna DB (la lista no carga items; usa esto)
+    version?: number;
+    versiones?: { version: number; total: number; fecha: string; items: any[] }[];
 }
 
 export const ORG = {

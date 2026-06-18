@@ -13,8 +13,8 @@ const TERM_DEFAULT_LABEL = ({ contado: 'Contado', net30: 'Net 30', net60: 'Net 6
 const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b) => a - b);
 ---
 
-<AppLayout title="Nueva cotización — Cord" page="cotizaciones" heading="Nueva cotización" crumbs={[{ label: 'Cotizaciones', href: '/app/cotizaciones' }]}>
-    <span slot="topbar-actions" class="draft-tag">Borrador · COT-0149</span>
+<AppLayout title="Nueva cotización" page="cotizaciones" heading="Nueva cotización" crumbs={[{ label: 'Cotizaciones', href: '/app/cotizaciones' }]}>
+    <span slot="topbar-actions" class="draft-tag">Borrador</span>
 
     <div class="editor-grid">
         <!-- ── Columna principal ── -->
@@ -40,8 +40,9 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
                 <div class="section-head"><h2>Cliente</h2></div>
                 <div class="client-row">
                     <select class="ed-select" id="clientSelect">
-                        {CLIENTES.map((c, i) => (
-                            <option value={c.id} selected={i === 0} data-desc={String(c.descuentoPct)} data-nivel={c.nivel}>{c.empresa} — {c.contacto}</option>
+                        <option value="" disabled selected>— Selecciona un cliente —</option>
+                        {CLIENTES.map((c) => (
+                            <option value={c.id} data-desc={String(c.descuentoPct)} data-nivel={c.nivel}>{c.empresa} — {c.contacto}</option>
                         ))}
                     </select>
                     <div class="term-chips" id="termChips">
@@ -57,21 +58,26 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
             <section class="ed-block">
                 <div class="section-head">
                     <h2>Productos</h2>
-                    <div class="add-product">
-                        <select class="ed-select" id="productSelect">
-                            <option value="" disabled selected>Agregar producto del catálogo…</option>
-                            {catalogo.map((p, i) => (
-                                <option value={i}>{p.nombre} — ${p.precio.toFixed(2)} / {p.unidad}</option>
-                            ))}
-                        </select>
-                    </div>
                 </div>
 
                 <div class="lines-head">
                     <span>Producto</span><span>Cant.</span><span>Lista</span><span>Negociado</span><span class="lh-right">Importe</span><span class="lh-margen">Margen</span><span></span>
                 </div>
                 <div id="lines"></div>
-                <p class="lines-empty" id="linesEmpty">Agrega productos del catálogo para empezar.</p>
+                
+                <div class="lines-empty" id="linesEmpty">
+                    <p>No hay productos en la cotización.</p>
+                </div>
+
+                <div class="add-actions">
+                    <select class="ed-select" id="productSelect">
+                        <option value="" disabled selected>+ Producto del catálogo…</option>
+                        {catalogo.map((p) => (
+                            <option value={p.id}>{p.nombre} — ${p.precio.toFixed(2)} / {p.unidad}</option>
+                        ))}
+                    </select>
+                    <button class="btn-free-line" id="btnFreeLine">+ Agregar línea libre</button>
+                </div>
             </section>
 
             <!-- Notas -->
@@ -99,11 +105,11 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
                 </div>
 
                 <button class="btn-send" id="btnSend">
-                    <span>Enviar cotización</span>
+                    <span>Crear y enviar</span>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                 </button>
-                <button class="btn-draft">Guardar borrador</button>
-                <p class="sum-note">Al enviar se genera el link público y el PDF con tu marca.</p>
+                <button class="btn-draft" id="btnDraft">Guardar borrador</button>
+                <p class="sum-note">Al enviar se generará la V1 y se creará el link público.</p>
             </section>
         </aside>
     </div>
@@ -124,18 +130,21 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     const fmtPct = (n) => Number.isFinite(n) ? Math.round(n) + '%' : '—';
     const margenPct = (costo, precio) => (costo > 0 && precio > 0) ? (precio - costo) / precio * 100 : null;
 
+    // Catálogo map para acceso rápido por ID
+    const catMap = Object.fromEntries(catalogo.map(p => [p.id, p]));
+
     // ── Descuento por nivel de cliente (price tiers) ──
     const $client = document.getElementById('clientSelect');
     const $descNote = document.getElementById('descNote');
-    const currentDesc = () => { const o = $client && $client.options[$client.selectedIndex]; return o ? (parseFloat(o.dataset.desc) || 0) : 0; };
+    const currentDesc = () => { const o = $client && $client.options[$client.selectedIndex]; return o && !o.disabled ? (parseFloat(o.dataset.desc) || 0) : 0; };
     const applyDesc = (lista) => { const d = currentDesc(); return d > 0 ? Math.round(lista * (1 - d / 100) * 100) / 100 : null; };
     const reflectDesc = () => {
         const d = currentDesc();
-        if ($descNote) { $descNote.textContent = d > 0 ? `Nivel del cliente: −${d}% aplicado automáticamente a las líneas.` : ''; $descNote.hidden = d <= 0; }
+        if ($descNote) { $descNote.textContent = d > 0 ? `Nivel del cliente: −${d}% aplicado automáticamente a los precios de lista.` : ''; $descNote.hidden = d <= 0; }
     };
 
     function recalc() {
-        const ivaPct = (Number((document.getElementById('cfgIva') as HTMLInputElement)?.value) || 0) / 100;
+        const ivaPct = (Number((document.getElementById('cfgIva') || {}).value) || 0) / 100;
         const subtotal = lines.reduce((s, l) => s + (l.negociado ?? l.lista) * l.cantidad, 0);
         document.getElementById('sumSubtotal').textContent = fmt(subtotal);
         document.getElementById('sumIva').textContent = fmt(subtotal * ivaPct);
@@ -157,14 +166,22 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
             const importe = precioFinal * l.cantidad;
             const row = document.createElement('div');
             row.className = 'line-row';
+            
+            // Si es línea libre, el nombre es editable.
+            const nameHtml = l.id 
+                ? `<span class="lr-name">${l.nombre}<small>${l.unidad}</small></span>`
+                : `<input type="text" class="lr-input lr-desc-input" value="${l.nombre}" data-idx="${idx}" data-field="nombre" placeholder="Descripción de la línea..." />`;
+
             row.innerHTML = `
-                <span class="lr-name">${l.nombre}<small>${l.unidad}</small></span>
+                ${nameHtml}
                 <input type="number" min="1" value="${l.cantidad}" class="lr-input" data-idx="${idx}" data-field="cantidad" />
-                <span class="lr-lista">${fmt(l.lista)}</span>
+                <span class="lr-lista">${l.id ? fmt(l.lista) : '—'}</span>
                 <input type="number" min="0" step="0.01" value="${precioFinal.toFixed(2)}" class="lr-input lr-nego ${l.negociado !== null && l.negociado < l.lista ? 'is-deal' : ''}" data-idx="${idx}" data-field="negociado" />
                 <span class="editorial lr-importe">${fmt(importe)}</span>
                 ${margenBadge(l.costo, precioFinal)}
-                <button class="lr-del" data-del="${idx}" aria-label="Quitar">×</button>
+                <button class="lr-del" data-del="${idx}" aria-label="Quitar">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             `;
             $lines.appendChild(row);
         });
@@ -172,17 +189,26 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     }
 
     $select.addEventListener('change', () => {
-        const p = catalogo[parseInt($select.value, 10)];
+        const p = catMap[$select.value];
         if (!p) return;
         lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, lista: p.precio, costo: p.costo || 0, negociado: applyDesc(p.precio), cantidad: 1 });
         $select.selectedIndex = 0;
         render();
     });
 
-    // Al cambiar de cliente, reaplica el descuento de su nivel a todas las líneas.
+    document.getElementById('btnFreeLine')?.addEventListener('click', () => {
+        lines.push({ id: null, nombre: '', unidad: 'pieza', lista: 0, costo: 0, negociado: 0, cantidad: 1 });
+        render();
+    });
+
+    // Al cambiar de cliente, reaplica el descuento a las líneas del catálogo
     $client?.addEventListener('change', () => {
         const d = currentDesc();
-        lines.forEach((l) => { l.negociado = d > 0 ? Math.round(l.lista * (1 - d / 100) * 100) / 100 : null; });
+        lines.forEach((l) => {
+            if (l.id) { // Solo aplica a items del catálogo
+                l.negociado = d > 0 ? Math.round(l.lista * (1 - d / 100) * 100) / 100 : null;
+            }
+        });
         reflectDesc();
         render();
     });
@@ -191,27 +217,34 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         const t = e.target;
         if (!(t instanceof HTMLInputElement)) return;
         const idx = parseInt(t.dataset.idx, 10);
+        
+        if (t.dataset.field === 'nombre') {
+            lines[idx].nombre = t.value;
+            return; // No necesita recalcular
+        }
+
         const val = parseFloat(t.value) || 0;
         if (t.dataset.field === 'cantidad') lines[idx].cantidad = Math.max(1, Math.round(val));
         if (t.dataset.field === 'negociado') {
             lines[idx].negociado = val;
-            t.classList.toggle('is-deal', val < lines[idx].lista);
+            if (lines[idx].id) t.classList.toggle('is-deal', val < lines[idx].lista);
         }
-        // recalcula sin re-render (no perder el foco del input)
+
+        // recalcula visualmente la fila actual sin perder el foco
         const row = t.closest('.line-row');
         const l = lines[idx];
         const precioFinal = l.negociado ?? l.lista;
         row.querySelector('.lr-importe').textContent = fmt(precioFinal * l.cantidad);
-        // actualiza badge de margen en vivo
         const badge = row.querySelector('.lr-margen');
         if (badge) badge.outerHTML = margenBadge(l.costo, precioFinal);
+        
         recalc();
     });
 
     $lines.addEventListener('click', (e) => {
-        const t = e.target;
-        if (!(t instanceof HTMLElement) || t.dataset.del === undefined) return;
-        lines.splice(parseInt(t.dataset.del, 10), 1);
+        const btn = e.target.closest('.lr-del');
+        if (!btn) return;
+        lines.splice(parseInt(btn.dataset.del, 10), 1);
         render();
     });
 
@@ -237,15 +270,19 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         const activeChip = document.querySelector('#termChips .chip.active');
         const vigSel = document.querySelector('.sum-field .ed-select');
         const notas = document.getElementById('notasText');
+        
+        // Validación del cliente
+        const cliente_id = clientSel && clientSel.value !== "" ? clientSel.value : null;
+
         return {
             send,
-            cliente_id: clientSel ? clientSel.value : null,
+            cliente_id,
             terminos: TERM_MAP[activeChip ? activeChip.dataset.term : 'Contado'] || 'contado',
             vigencia_dias: vigSel ? parseInt(vigSel.value, 10) || 30 : 30,
             notas: notas ? notas.value.trim() : '',
             items: lines.map(l => ({
                 producto_id: l.id || null,
-                descripcion: l.nombre,
+                descripcion: l.nombre || 'Línea libre',
                 cantidad: l.cantidad,
                 precio_unitario: l.lista,
                 precio_negociado: l.negociado,
@@ -276,8 +313,8 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         }
     }
 
-    document.getElementById('btnSend').addEventListener('click', (e) => save(true, e.currentTarget));
-    document.querySelector('.btn-draft').addEventListener('click', (e) => save(false, e.currentTarget));
+    document.getElementById('btnSend')?.addEventListener('click', (e) => save(true, e.currentTarget));
+    document.getElementById('btnDraft')?.addEventListener('click', (e) => save(false, e.currentTarget));
 
     // ── Armar con IA (POST /api/cotizaciones/ai-draft) ──
     const $aiBtn = document.getElementById('aiBtn');
@@ -298,7 +335,15 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'No se pudo armar');
                 lines.length = 0;
-                data.items.forEach((it) => lines.push(it));
+                data.items.forEach((it) => lines.push({
+                    id: it.id || null,
+                    nombre: it.nombre || it.descripcion,
+                    unidad: it.unidad || 'pieza',
+                    lista: it.lista || 0,
+                    costo: 0, 
+                    negociado: it.negociado,
+                    cantidad: it.cantidad || 1
+                }));
                 render();
                 const n = data.items.length;
                 $aiStatus.textContent = `✓ ${n} línea${n === 1 ? '' : 's'} armada${n === 1 ? '' : 's'}. Revisa cantidades y precios.`;
@@ -310,53 +355,57 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         });
     }
 
-    // arranca con una línea de ejemplo (precarga del primer producto del catálogo)
-    if (catalogo.length) {
-        const p0 = catalogo[0];
-        lines.push({ id: p0.id, nombre: p0.nombre, unidad: p0.unidad, lista: p0.precio, negociado: Math.round(p0.precio * 0.92 * 100) / 100, cantidad: 120 });
-    }
+    // Inicializa la interfaz vacía.
     render();
     reflectDesc();
 </script>
 
 <style is:global>
-    /* Filas del editor — inyectadas por JS, por eso van en is:global */
+    /* Estilo Stripe / Linear para el grid de líneas */
     .line-row {
         display: grid;
-        grid-template-columns: 1.7fr 70px 90px 110px 1fr 58px 30px;
+        grid-template-columns: 1.8fr 70px 90px 110px 1fr 58px 30px;
         gap: 0.8rem; align-items: center;
-        padding: 0.65rem 0;
-        border-bottom: 1px solid rgba(10,25,47,0.07);
+        padding: 0.8rem 0;
+        border-bottom: 1px solid var(--color-border);
     }
     .line-row:last-child { border-bottom: none; }
-    .lr-name { font-size: 0.86rem; font-weight: 600; color: #0f1729; display: flex; flex-direction: column; }
-    .lr-name small { font-size: 0.68rem; color: #99a2af; font-weight: 500; }
-    .lr-lista { font-size: 0.8rem; color: #99a2af; text-decoration: line-through; }
+    .lr-name { font-size: 0.86rem; font-weight: 500; color: var(--color-text); display: flex; flex-direction: column; }
+    .lr-name small { font-size: 0.68rem; color: var(--color-text-muted); font-weight: 500; }
+    .lr-lista { font-size: 0.82rem; color: var(--color-text-muted); text-decoration: line-through; }
+    
     .lr-input {
-        font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 600;
-        color: #0f1729; background: #fafbfc;
-        border: 1px solid rgba(10,25,47,0.1); border-radius: 8px;
-        padding: 8px 10px; width: 100%;
-        transition: border-color 0.25s, box-shadow 0.25s;
+        font-family: var(--font-sans); font-size: 0.85rem; font-weight: 500;
+        color: var(--color-text); background: transparent;
+        border: 1px solid transparent; border-radius: 6px;
+        padding: 6px 8px; width: 100%;
+        transition: border-color 0.2s, background-color 0.2s;
     }
-    .lr-input:focus { outline: none; border-color: #0a192f; box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
-    .lr-nego.is-deal { color: #059669; border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.04); }
-    .lr-importe { font-size: 0.98rem; color: #0a192f; text-align: right; }
+    .lr-input:hover { background: var(--color-bg-soft); }
+    .lr-input:focus { outline: none; border-color: var(--color-blue-deep); background: #fff; box-shadow: 0 0 0 2px rgba(10,25,47,0.05); }
+    
+    .lr-desc-input { border-color: var(--color-border); }
+    
+    .lr-nego.is-deal { color: #059669; font-weight: 600; }
+    
+    .lr-importe { font-size: 0.95rem; color: var(--color-text); text-align: right; font-weight: 500; }
     .lr-margen {
-        font-size: 0.75rem; font-weight: 700; letter-spacing: 0.02em;
-        text-align: center; border-radius: 6px; padding: 3px 6px;
-        color: #059669; background: rgba(16,185,129,0.08);
+        font-size: 0.72rem; font-weight: 600;
+        text-align: center; border-radius: 4px; padding: 2px 6px;
+        color: #059669; background: rgba(16,185,129,0.1);
     }
-    .lr-margen-na { color: #aab; background: transparent; }
-    .lr-margen-low { color: #dc2626; background: rgba(220,38,38,0.09); }
-    .lh-margen { font-size: 0.73rem; color: #99a2af; text-align: center; }
+    .lr-margen-na { color: #94a3b8; background: transparent; font-weight: 400; }
+    .lr-margen-low { color: #dc2626; background: rgba(220,38,38,0.1); }
+    
+    .lh-margen { font-size: 0.73rem; color: var(--color-text-muted); text-align: center; }
+    
     .lr-del {
         background: none; border: none; cursor: pointer;
-        color: #c3c9d2; font-size: 1.1rem; line-height: 1;
-        border-radius: 6px; padding: 4px 7px;
+        color: #94a3b8; display: flex; align-items: center; justify-content: center;
+        border-radius: 6px; padding: 4px;
         transition: color 0.2s, background 0.2s;
     }
-    .lr-del:hover { color: #ef4444; background: rgba(239,68,68,0.07); }
+    .lr-del:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
 
     @media (max-width: 720px) {
         .line-row { grid-template-columns: 1fr 60px 90px auto; }
@@ -365,129 +414,134 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
 </style>
 
 <style>
-    .draft-tag { font-size: 0.72rem; font-weight: 700; color: var(--color-text-muted); background: #fff; border: 1px solid var(--color-border); padding: 6px 12px; border-radius: 100px; }
+    .draft-tag { font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); background: var(--color-bg-soft); border: 1px solid var(--color-border); padding: 4px 10px; border-radius: 6px; }
 
-    /* Encabezados de sección — patrón plano editorial (idéntico al dashboard) */
-    .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.7rem; border-bottom: 1px solid var(--color-border); flex-wrap: wrap; }
-    .section-head h2 { font-size: 0.7rem; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; color: #99a2af; margin: 0; }
+    /* Encabezados flat */
+    .section-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+    .section-head h2 { font-size: 0.85rem; font-weight: 600; color: var(--color-text); margin: 0; }
 
-    /* Armar con IA */
-    .ai-block { padding-top: 0.2rem; }
+    /* Bloques limpios sin sombras */
+    .editor-grid { display: grid; grid-template-columns: 1fr 320px; gap: 3rem; align-items: start; }
+    .ed-main { display: flex; flex-direction: column; gap: 2.5rem; min-width: 0; }
+    .ed-block { padding: 0; }
+    .opt { font-size: 0.75rem; font-weight: 400; color: var(--color-text-muted); }
+
+    /* AI Block */
+    .ai-block { padding: 1.2rem; border: 1px dashed var(--color-border); border-radius: 12px; background: rgba(250,251,252,0.5); }
     .ai-head { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 0.9rem; }
-    .ai-spark { font-size: 0.9rem; color: var(--color-blue-deep); background: rgba(10,25,47,0.06); width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .ai-title { font-size: 0.92rem; font-weight: 700; margin: 0 0 2px; letter-spacing: -0.2px; }
-    .ai-sub { font-size: 0.78rem; color: var(--color-text-muted); margin: 0; line-height: 1.45; }
+    .ai-spark { font-size: 0.9rem; color: var(--color-blue-deep); background: rgba(10,25,47,0.06); width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ai-title { font-size: 0.9rem; font-weight: 600; margin: 0 0 2px; }
+    .ai-sub { font-size: 0.8rem; color: var(--color-text-muted); margin: 0; line-height: 1.4; }
     .ai-actions { display: flex; align-items: center; gap: 1rem; margin-top: 0.7rem; flex-wrap: wrap; }
     .ai-btn {
-        font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; cursor: pointer;
-        background: var(--color-blue-deep); color: #fff; border: none; border-radius: 10px; padding: 10px 18px;
-        box-shadow: 0 8px 22px -10px rgba(10,25,47,0.5);
-        transition: transform 0.4s var(--ease-spring), opacity 0.2s;
+        font-family: var(--font-sans); font-size: 0.82rem; font-weight: 500; cursor: pointer;
+        background: #fff; color: var(--color-text); border: 1px solid var(--color-border); border-radius: 6px; padding: 6px 14px;
+        transition: background 0.2s;
     }
-    .ai-btn:hover { transform: translateY(-2px); }
+    .ai-btn:hover { background: var(--color-bg-soft); }
     .ai-btn:disabled { opacity: 0.6; cursor: wait; }
-    .ai-status { font-size: 0.78rem; color: var(--color-text-muted); font-weight: 500; }
+    .ai-status { font-size: 0.78rem; color: var(--color-text-muted); font-weight: 400; }
 
-    .editor-grid { display: grid; grid-template-columns: 1fr 320px; gap: 3rem; align-items: start; }
-    .ed-main { display: flex; flex-direction: column; gap: 2.6rem; min-width: 0; }
-    .ed-block { padding: 0; }
-    .opt { font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted); text-transform: none; letter-spacing: 0; }
-
+    /* Client Row */
     .client-row { display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; }
     .ed-select {
-        font-family: var(--font-sans); font-size: 0.85rem; font-weight: 500;
-        color: var(--color-text); background: var(--color-bg-soft);
-        border: 1px solid var(--color-border); border-radius: 9px;
-        padding: 9px 12px; min-width: 220px; cursor: pointer;
-        transition: border-color 0.25s;
+        font-family: var(--font-sans); font-size: 0.85rem; font-weight: 400;
+        color: var(--color-text); background: transparent;
+        border: 1px solid var(--color-border); border-radius: 6px;
+        padding: 8px 12px; min-width: 260px; cursor: pointer;
+        transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .ed-select:focus { outline: none; border-color: var(--color-blue-deep); }
+    .ed-select:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 2px rgba(10,25,47,0.05); }
 
     .term-chips { display: flex; gap: 0.4rem; }
     .chip {
-        font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600;
-        color: var(--color-text-muted); background: #fff;
-        border: 1px solid var(--color-border); border-radius: 100px;
-        padding: 7px 13px; cursor: pointer;
-        transition: all 0.25s var(--ease-ios);
+        font-family: var(--font-sans); font-size: 0.78rem; font-weight: 500;
+        color: var(--color-text-muted); background: transparent;
+        border: 1px solid var(--color-border); border-radius: 6px;
+        padding: 6px 12px; cursor: pointer;
+        transition: all 0.2s;
     }
-    .chip.active { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); }
-    .desc-note { font-size: 0.76rem; font-weight: 600; color: #059669; margin: 0.7rem 0 0; }
+    .chip:hover { border-color: #cbd5e1; }
+    .chip.active { background: var(--color-text); color: #fff; border-color: var(--color-text); }
+    .desc-note { font-size: 0.76rem; font-weight: 500; color: #059669; margin: 0.6rem 0 0; }
     .desc-note[hidden] { display: none; }
 
+    /* Products list */
     .lines-head {
-        display: grid; grid-template-columns: 1.7fr 70px 90px 110px 1fr 58px 30px;
+        display: grid; grid-template-columns: 1.8fr 70px 90px 110px 1fr 58px 30px;
         gap: 0.8rem;
-        font-size: 0.6rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
-        color: #99a2af;
-        padding: 0.6rem 0 0.5rem; border-bottom: 1px solid var(--color-border);
+        font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted);
+        padding: 0 0 0.5rem; border-bottom: 1px solid var(--color-border);
     }
     .lh-right { text-align: right; }
-    .lines-empty { font-size: 0.82rem; color: var(--color-text-muted); padding: 1.4rem 0 0.6rem; margin: 0; }
+    .lines-empty { font-size: 0.85rem; color: var(--color-text-muted); padding: 2rem 0; text-align: center; border-bottom: 1px solid var(--color-border); }
+    
+    .add-actions { display: flex; gap: 0.8rem; margin-top: 1rem; align-items: center; }
+    .btn-free-line {
+        font-family: var(--font-sans); font-size: 0.82rem; font-weight: 500; cursor: pointer;
+        background: transparent; color: var(--color-text-muted); border: 1px dashed var(--color-border); border-radius: 6px; padding: 7px 12px;
+        transition: all 0.2s;
+    }
+    .btn-free-line:hover { color: var(--color-text); border-color: #cbd5e1; background: var(--color-bg-soft); }
 
     .ed-textarea {
-        font-family: var(--font-sans); font-size: 0.86rem; width: 100%;
-        color: var(--color-text); background: var(--color-bg-soft);
-        border: 1px solid var(--color-border); border-radius: 9px;
-        padding: 10px 12px; resize: vertical;
+        font-family: var(--font-sans); font-size: 0.85rem; width: 100%;
+        color: var(--color-text); background: transparent;
+        border: 1px solid var(--color-border); border-radius: 8px;
+        padding: 10px 12px; resize: vertical; line-height: 1.5;
+        transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .ed-textarea:focus { outline: none; border-color: var(--color-blue-deep); }
+    .ed-textarea:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 2px rgba(10,25,47,0.05); }
 
+    /* Sidebar summary */
     .ed-side { position: sticky; top: 76px; }
-    .ed-summary { padding: 0; display: flex; flex-direction: column; gap: 0.7rem; }
-    .ed-summary .section-head { margin-bottom: 0.4rem; }
-    .sum-line { display: flex; justify-content: space-between; font-size: 0.84rem; color: var(--color-text-muted); }
-    .sum-line .editorial { color: var(--color-blue-deep); font-size: 0.95rem; }
-    .sum-divider { height: 1px; background: var(--color-border); margin: 0.2rem 0; }
-    .sum-total { font-weight: 700; color: var(--color-text); }
-    .sum-total .editorial { font-size: 1.6rem; }
+    .ed-summary { padding: 1.5rem; background: var(--color-bg-soft); border-radius: 12px; border: 1px solid var(--color-border); display: flex; flex-direction: column; gap: 0.8rem; }
+    .ed-summary .section-head { margin-bottom: 0.2rem; }
+    .sum-line { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--color-text-muted); }
+    .sum-line .editorial { color: var(--color-text); font-size: 0.95rem; }
+    .sum-divider { height: 1px; background: var(--color-border); margin: 0.4rem 0; }
+    .sum-total { font-weight: 600; color: var(--color-text); }
+    .sum-total .editorial { font-size: 1.4rem; }
 
-    .sum-field { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.4rem; }
-    .sum-field label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; color: #99a2af; }
-    .sum-field .ed-select { min-width: 0; }
+    .sum-field { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.5rem; }
+    .sum-field label { font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted); }
 
     .btn-send {
-        display: flex; align-items: center; justify-content: center; gap: 9px;
-        font-family: var(--font-sans); font-size: 0.9rem; font-weight: 600;
-        background: var(--color-blue-deep); color: #fff;
-        border: none; border-radius: 11px; padding: 13px; cursor: pointer;
-        box-shadow: 0 10px 26px -10px rgba(10,25,47,0.55);
-        transition: transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-spring);
-        margin-top: 0.5rem;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        font-family: var(--font-sans); font-size: 0.88rem; font-weight: 500;
+        background: var(--color-text); color: #fff;
+        border: none; border-radius: 8px; padding: 10px; cursor: pointer;
+        transition: background 0.2s;
+        margin-top: 0.8rem;
     }
-    .btn-send svg { width: 15px; height: 15px; }
-    .btn-send:hover { transform: translateY(-2px); box-shadow: 0 14px 32px -10px rgba(10,25,47,0.6); }
+    .btn-send svg { width: 16px; height: 16px; }
+    .btn-send:hover { background: #334155; }
     .btn-draft {
-        font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600;
-        color: var(--color-text-muted); background: none;
-        border: 1px solid var(--color-border); border-radius: 11px;
-        padding: 11px; cursor: pointer;
-        transition: color 0.25s, border-color 0.25s;
+        font-family: var(--font-sans); font-size: 0.85rem; font-weight: 500;
+        color: var(--color-text); background: #fff;
+        border: 1px solid var(--color-border); border-radius: 8px;
+        padding: 9px; cursor: pointer;
+        transition: background 0.2s;
     }
-    .btn-draft:hover { color: var(--color-blue-deep); border-color: rgba(10,25,47,0.25); }
-    .sum-note { font-size: 0.7rem; color: #99a2af; margin: 0.2rem 0 0; line-height: 1.5; }
+    .btn-draft:hover { background: var(--color-bg-soft); }
+    .sum-note { font-size: 0.75rem; color: var(--color-text-muted); margin: 0.4rem 0 0; line-height: 1.4; text-align: center; }
 
     .toast {
-        position: fixed; bottom: 1.6rem; left: 50%; transform: translateX(-50%);
+        position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
         display: flex; align-items: center; gap: 10px;
-        background: var(--color-blue-deep); color: #fff;
-        font-size: 0.85rem; font-weight: 600;
-        padding: 12px 20px; border-radius: 12px;
-        box-shadow: 0 18px 44px -12px rgba(10,25,47,0.6);
+        background: var(--color-text); color: #fff;
+        font-size: 0.85rem; font-weight: 500;
+        padding: 10px 16px; border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         z-index: 200;
-        animation: toast-in 0.4s var(--ease-spring);
+        animation: toast-in 0.3s var(--ease-spring);
     }
-    @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
-    .toast-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-ok); }
+    @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+    .toast-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-ok); }
 
-    /* En pantallas anchas, la columna de resumen se separa con un hairline (no es card) */
-    @media (min-width: 981px) {
-        .ed-side { border-left: 1px solid var(--color-border); padding-left: 2rem; }
-        .editor-grid { gap: 1rem; }
-    }
     @media (max-width: 980px) {
-        .editor-grid { grid-template-columns: 1fr; gap: 2.6rem; }
-        .ed-side { position: static; border-top: 1px solid var(--color-border); padding-top: 1.4rem; }
+        .editor-grid { grid-template-columns: 1fr; gap: 2rem; }
+        .ed-side { position: static; }
     }
     @media (max-width: 720px) {
         .lines-head { grid-template-columns: 1fr 60px 90px auto; }

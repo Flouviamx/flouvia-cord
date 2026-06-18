@@ -140,6 +140,12 @@ export async function createCotizacion(
                  ${orden++})`;
     }
 
+    await sql`
+        insert into cotizacion_versiones
+            (cotizacion_id, org_id, version, subtotal, iva, total, items, notas)
+        values
+            (${cot.id}, ${orgId}, 1, ${subtotal}, ${iva}, ${total}, ${JSON.stringify(items)}, ${input.notas || null})`;
+
     await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
               values (${orgId}, ${cot.id}, 'created', 'Borrador creado')`;
     if (input.send && !needsApproval) {
