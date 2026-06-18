@@ -10,6 +10,11 @@ export default defineConfig({
   site: 'https://cord.flouvia.com',
   output: 'server',
 
+  redirects: {
+    '/login': '/sign-in',
+    '/registro': '/sign-up',
+  },
+
   integrations: [clerk({ localization: esMX, afterSignOutUrl: '/' }), react()],
 
   adapter: vercel(),

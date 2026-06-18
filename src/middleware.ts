@@ -75,9 +75,9 @@ export const onRequest = clerkMiddleware((auth, context, next) => {
         });
     }
 
-    // Proteger la app: sin sesión → a /login (evita ver datos / la UI sin auth).
+    // Proteger la app: sin sesión → a /sign-in (evita ver datos / la UI sin auth).
     if (isApp && !userId) {
-        return context.redirect("/login");
+        return context.redirect("/sign-in");
     }
     // Proteger las APIs internas (operan sobre la org del usuario). Las públicas pasan.
     if (isApi && !isPublicApi && !userId) {
