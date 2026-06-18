@@ -86,11 +86,40 @@ const total = money(quoteTotal(q));
             <span class="qi-right">Importe</span>
         </div>
         {q.items.map((it: any) => (
-            <div class="qi-row">
-                <span class="qi-name">{it.descripcion}</span>
-                <span class="qi-center qi-qty">{it.cantidad.toLocaleString('es-MX')} {it.unidad}</span>
-                <span class="editorial qi-right qi-price">{money(it.precioNegociado ?? it.precioLista)}</span>
-                <span class="editorial qi-right qi-total">{money(lineTotal(it))}</span>
+            <div class="qi-row-wrapper">
+                <div class="qi-row">
+                    <span class="qi-name">
+                        {it.descripcion}
+                        {mostrarChat && !yaAprobada && !yaRechazada && (
+                            <button class="qi-chat-btn" data-item-id={it.id} aria-label="Comentar en esta línea">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                {it.comentarios?.length > 0 ? it.comentarios.length : ''}
+                            </button>
+                        )}
+                    </span>
+                    <span class="qi-center qi-qty">{it.cantidad.toLocaleString('es-MX')} {it.unidad}</span>
+                    <span class="editorial qi-right qi-price">{money(it.precioNegociado ?? it.precioLista)}</span>
+                    <span class="editorial qi-right qi-total">{money(lineTotal(it))}</span>
+                </div>
+                
+                {mostrarChat && (
+                    <div class="qi-thread ql-hidden" id={`thread-${it.id}`}>
+                        <div class="qi-thread-inner">
+                            {(it.comentarios || []).map((c: any) => (
+                                <div class={`qi-msg ${c.tipo === 'cliente' ? 'mine' : 'theirs'}`}>
+                                    <span class="qi-msg-text">{c.contenido}</span>
+                                    <span class="qi-msg-time">{c.cuando}</span>
+                                </div>
+                            ))}
+                            {!yaAprobada && !yaRechazada && (
+                                <div class="qi-reply-box">
+                                    <input type="text" class="ql-input qi-reply-input" placeholder="Comentar sobre esta línea..." />
+                                    <button class="ql-ghost qi-reply-btn" data-item-id={it.id}>Enviar</button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         ))}
         <div class="qi-subtotals">
@@ -137,6 +166,10 @@ const total = money(quoteTotal(q));
                 <label class="ql-label" for="qSignerName">Nombre completo del firmante</label>
                 <input class="ql-input" id="qSignerName" type="text" autocomplete="name" placeholder="Ej. María García López" />
             </div>
+            <div class="ql-field">
+                <label class="ql-label" for="qSignerEmail">Correo electrónico (opcional)</label>
+                <input class="ql-input" id="qSignerEmail" type="email" autocomplete="email" placeholder="Ej. maria@empresa.com" />
+            </div>
             <label class="ql-check-row">
                 <input type="checkbox" id="qTermsCheck" class="ql-checkbox" />
                 <span class="ql-check-text">He revisado esta cotización y acepto los términos y condiciones indicados</span>
@@ -146,7 +179,10 @@ const total = money(quoteTotal(q));
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </button>
             <p class="ql-error" id="qSignError"></p>
-            <p class="ql-legal-note">Tu nombre, la fecha y la IP quedan registrados como evidencia de aceptación.</p>
+            <div class="ql-legal-box">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <span>Firma electrónica con validez legal. Tu nombre, IP y la fecha quedarán vinculados a un hash inmutable de esta cotización.</span>
+            </div>
         </div>
 
         <!-- Paso: rechazo -->
@@ -190,7 +226,15 @@ const total = money(quoteTotal(q));
                         Descargar comprobante
                     </button>
                 </div>
-                <p class="ql-stamp" id="qSignedStamp"></p>
+                {q.firma ? (
+                    <div class="ql-audit-stamp">
+                        <div class="ql-audit-row"><strong>Firmante:</strong> {q.firma.nombre} (IP: {q.firma.ip})</div>
+                        <div class="ql-audit-row"><strong>Fecha:</strong> {q.firma.cuando}</div>
+                        <div class="ql-audit-row"><strong>Sello:</strong> <span class="ql-hash">{q.firma.hash}</span></div>
+                    </div>
+                ) : (
+                    <p class="ql-stamp" id="qSignedStamp"></p>
+                )}
             </div>
         </div>
 
@@ -294,6 +338,7 @@ const total = money(quoteTotal(q));
 
     // ── Habilitar botón de firma ──
     const nameInput = document.getElementById('qSignerName') as HTMLInputElement | null;
+    const emailInput = document.getElementById('qSignerEmail') as HTMLInputElement | null;
     const termsCheck = document.getElementById('qTermsCheck') as HTMLInputElement | null;
     const confirmSignBtn = document.getElementById('qConfirmSign') as HTMLButtonElement | null;
     const updateSignBtn = () => {
@@ -306,19 +351,20 @@ const total = money(quoteTotal(q));
     // ── Confirmar firma ──
     confirmSignBtn?.addEventListener('click', async () => {
         const signedBy = nameInput?.value.trim() ?? '';
+        const email = emailInput?.value.trim() ?? '';
         const errEl = document.getElementById('qSignError');
         if (errEl) errEl.textContent = '';
         confirmSignBtn.disabled = true;
         confirmSignBtn.textContent = 'Firmando…';
         try {
-            await api('approve', { signed_by: signedBy });
+            const res = await api('approve', { signed_by: signedBy, email });
             const stamp = document.getElementById('qSignedStamp');
             if (stamp && signedBy) {
                 const now = new Date().toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' });
-                stamp.textContent = `Firmado por ${signedBy} · ${now}`;
+                stamp.innerHTML = `<strong>Firmante:</strong> ${signedBy}<br/><strong>Sello:</strong> <span class="ql-hash">${res.hash}</span><br/><strong>Fecha:</strong> ${now}`;
             }
             showStep('stepApproved');
-            emit('cord:approved', { signed_by: signedBy });
+            emit('cord:approved', { signed_by: signedBy, hash: res.hash });
         } catch (err: any) {
             if (errEl) errEl.textContent = (err as Error).message;
             confirmSignBtn.disabled = false;
@@ -420,6 +466,49 @@ const total = money(quoteTotal(q));
 
     document.getElementById('qSendMsg')?.addEventListener('click', (e) => sendNeg('comment', e.currentTarget as HTMLButtonElement));
     document.getElementById('qSendCounter')?.addEventListener('click', (e) => sendNeg('counter', e.currentTarget as HTMLButtonElement));
+
+    // ── Comentarios por línea ──
+    document.querySelectorAll('.qi-chat-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const itemId = (e.currentTarget as HTMLElement).dataset.itemId;
+            if (!itemId) return;
+            const thread = document.getElementById(`thread-${itemId}`);
+            if (thread) {
+                thread.classList.toggle('ql-hidden');
+            }
+        });
+    });
+
+    document.querySelectorAll('.qi-reply-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const target = e.currentTarget as HTMLButtonElement;
+            const itemId = target.dataset.itemId;
+            const input = target.previousElementSibling as HTMLInputElement;
+            const mensaje = input?.value.trim();
+            if (!itemId || !mensaje) return;
+
+            target.disabled = true;
+            try {
+                await api('item_comment', { item_id: itemId, mensaje });
+                
+                // Agregarlo a la UI localmente
+                const threadInner = target.closest('.qi-thread-inner');
+                const div = document.createElement('div');
+                div.className = 'qi-msg mine';
+                const t = document.createElement('span'); t.className = 'qi-msg-text'; t.textContent = mensaje;
+                const time = document.createElement('span'); time.className = 'qi-msg-time'; time.textContent = 'ahora';
+                div.append(t, time);
+                threadInner?.insertBefore(div, target.closest('.qi-reply-box'));
+                
+                input.value = '';
+                emit('cord:item_comment', { item_id: itemId, mensaje });
+            } catch (err: any) {
+                alert((err as Error).message);
+            } finally {
+                target.disabled = false;
+            }
+        });
+    });
 
     // ── Heartbeat de presencia ──
     if (token) {
@@ -662,6 +751,54 @@ const total = money(quoteTotal(q));
 .q-neg-btns { display: flex; gap: 0.6rem; }
 .ql-counter-btn { font-weight: 700; background: #fff !important; }
 .q-neg-ok { font-size: 0.8rem; color: #059669; font-weight: 600; margin: 0; }
+
+/* ── Elementos de Firma Inmutable ───────────────── */
+.ql-legal-box {
+    display: flex; align-items: flex-start; gap: 8px;
+    background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.15);
+    color: #059669; border-radius: 12px; padding: 12px 14px;
+    font-size: 0.72rem; line-height: 1.5; font-weight: 500;
+}
+.ql-legal-box svg { flex-shrink: 0; margin-top: 1px; }
+
+.ql-audit-stamp {
+    background: #f9fafb; border: 1px dashed rgba(10,25,47,0.15);
+    border-radius: 12px; padding: 12px 14px; text-align: left;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.65rem; color: #6b7280; line-height: 1.6;
+    margin-top: 0.5rem; width: 100%; word-break: break-all;
+}
+.ql-audit-row { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; }
+.ql-audit-row strong { color: #374151; font-weight: 600; }
+.ql-hash { color: #059669; font-weight: 600; }
+
+/* ── Elementos Hilos por Línea ───────────────────── */
+.qi-row-wrapper { border-bottom: 1px solid rgba(10,25,47,0.045); }
+.qi-row-wrapper .qi-row { border-bottom: none; }
+.qi-name { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #111; }
+.qi-chat-btn {
+    background: rgba(10,25,47,0.04); border: none; border-radius: 6px;
+    padding: 3px 6px; cursor: pointer; color: #6b7280;
+    display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 600;
+    transition: all 0.2s;
+}
+.qi-chat-btn:hover { background: rgba(10,25,47,0.08); color: #111; }
+
+.qi-thread {
+    padding: 0 1rem 1rem 1rem;
+    margin-top: -0.4rem;
+}
+.qi-thread-inner {
+    background: #fafafa; border-radius: 10px; border: 1px solid rgba(10,25,47,0.05);
+    padding: 0.8rem; display: flex; flex-direction: column; gap: 0.5rem;
+}
+.qi-msg { display: inline-flex; flex-direction: column; gap: 2px; font-size: 0.78rem; max-width: 90%; padding: 0.5rem 0.7rem; border-radius: 10px; }
+.qi-msg.mine { align-self: flex-end; background: #0a192f; color: #fff; border-bottom-right-radius: 4px; }
+.qi-msg.theirs { align-self: flex-start; background: #fff; border: 1px solid rgba(10,25,47,0.08); border-bottom-left-radius: 4px; }
+.qi-msg-time { font-size: 0.55rem; opacity: 0.6; }
+.qi-reply-box { display: flex; gap: 6px; margin-top: 0.3rem; }
+.qi-reply-input { font-size: 0.78rem; padding: 7px 10px; flex: 1; }
+.qi-reply-btn { font-size: 0.75rem; padding: 6px 12px; border-radius: 8px; }
 
 /* ── Responsive ───────────────────────────────── */
 @media (max-width: 600px) {

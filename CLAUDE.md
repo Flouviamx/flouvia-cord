@@ -169,9 +169,12 @@ config manual en el Dashboard de Clerk y correr la migración.
      dato secundario (SKU / contacto) debajo y precio/límite a la derecha. Bug de fecha en
      "Tareas y recordatorios" corregido: campo `.task-date` usa `color: var(--color-text)` y
      el formulario se apila a columna completa en móvil (`min-height: 44px`).
-✅ **Presencia en vivo** — el cliente con `/q/[token]` abierto manda heartbeat
+✅ **Presencia en vivo (gated) y Diseño Quiet Luxury** — el cliente con `/q/[token]` abierto manda heartbeat
    (`POST /api/q/[token]` action `ping` → `cotizaciones.viewer_last_seen`); el vendedor
-   ve "lo está viendo ahora" en el detalle (poll `/api/cotizaciones/[id]/presence`).
+   ve un indicador sutil `● Viendo ahora` en el detalle (poll `/api/cotizaciones/[id]/presence`).
+   **Gated por plan**: el polling de UI solo se activa si la org está en plan `pro`, `scale` o `developer`.
+✅ **Versiones de Cotizaciones (jun 2026)** — Historial inmutable (`cotizacion_versiones`). Al crear se genera V1. Al usar "Modificar y reenviar" en `/app/cotizaciones/[id]/editar` se crea la V2, etc., sin generar un folio nuevo. El detalle `/app/cotizaciones/[id]` muestra el badge de versión actual y un acordeón con el historial completo. El menú de acciones secundarias (PDF, Copiar link, WhatsApp) fue rediseñado a un grid compacto de iconos.
+✅ **Editor de Cotizaciones Rediseñado (jun 2026)** — `/app/cotizaciones/nueva` usa un diseño limpio tipo Stripe/Linear (sin tarjetas), se arregló el selector de productos usando `p.id`, incluye botón de línea libre ("+ Agregar línea libre"), e incluye el cálculo del margen bruto porque `getProductos` en `queries.ts` ahora retorna el `costo`.
 ✅ **Guía de configuración v2 — Widget flotante dinámico (jun 2026)** — tarjeta
    acordeón fijada abajo-derecha (`src/components/app/OnboardingWidget.astro`):
    pasos por `getSetupProgress()` (marca/fiscal/productos/clientes/cotización),
@@ -402,7 +405,18 @@ config manual en el Dashboard de Clerk y correr la migración.
      3. `npm run db:migrate` (agrega `orgs.clerk_org_id`).
      4. `npm run clerk:backfill-orgs` (migra orgs existentes a Clerk).
      5. Después del backfill: cambiar Membership a `required` si se quiere B2B-only.
-⬜ Pendiente: aprobación parcial por línea, versiones de cotización, producción de Clerk
+✅ **MCP Bidireccional y Gobernanza de Agentes (jun 2026)** — CORD funciona ahora como Servidor Inbound (HTTP/SSE en `/api/mcp/sse` y `/api/mcp/message`) y como Cliente Outbound (`McpClientManager` en `src/lib/mcp/client-manager.ts`). La Base de Datos incluye tablas de gobernanza (`mcp_servers`, `agentes_ia`, `agentes_permisos`) permitiendo que la IA interna de CORD acceda a CRMs corporativos bajo un control estricto (RLS). El endpoint `/api/cotizaciones/ai-draft` implementa un 'Agent Loop' que consulta dinámicamente las herramientas remotas MCP habilitadas para ese agente antes de generar la cotización.
+✅ **Rediseño UI/UX de Desarrolladores (Stripe-like) (jun 2026)** — La página de Configuración de API y Webhooks (`/app/ajustes/api.astro`) fue reconstruida usando una estética premium estilo Stripe (Vanilla CSS: `DeveloperUI.css`). Incorpora layout de tarjetas limpios, insignias semánticas, tipografía monoespaciada, toggles segmentados y un bloque "Terminal Oscura" con micro-interacciones para la conexión de servidores MCP y webhooks.
+✅ **Internacionalización B2B (Abstracción Fiscal Global) (jun 2026)** — Desacoplamiento del SAT. La tabla `orgs` ahora soporta `country_code` y los documentos se centralizan en la tabla abstracta `documentos_fiscales`. Implementación del patrón Adapter (`src/lib/fiscal`) con `FiscalFactory` que enruta a proveedores locales como `MexicoSatProvider` (CFDI) o `USInvoiceProvider` (Commercial Invoices).
+✅ **Multi-divisa con Cobertura Cambiaria (jun 2026)** — La tabla `cotizaciones` ahora soporta divisa de cotización (`base_currency`) independiente a la de facturación (`fiscal_currency`). Implementación de `FXService.ts` para obtener tasas *spot*, aplicar un *buffer%* de cobertura para proteger los márgenes, y congelar la tasa (FX lock) por 30 días para cotizaciones B2B.
+✅ **Clerk Custom UI & Motor B2B (jun 2026)** — Migración completa de los componentes prefabricados de Clerk a formularios React personalizados (`@clerk/clerk-react`) con diseño premium.
+   • **Flujos de Autenticación**: `SignInForm`, `SignUpForm`, verificación OTP ("inmaculada" con 6 inputs) y recuperación de contraseña unificados bajo `AuthForms.css`.
+   • **Motor B2B (Organizations)**: Reemplazo del control de miembros manual por las APIs nativas de Clerk (`useOrganizationList`, `useOrganization`).
+   • **Componentes B2B**: `WorkspaceSwitcher` integrado en la barra lateral de `AppLayout.astro`, `MembersManager` en `/app/ajustes/equipo` para control de roles (Admin/Miembro) y `InvitationsManager` en `/app/ajustes/invitaciones`. Flujo integrado para aceptar invitaciones en `/accept-invitation`.
+✅ **Colaboración en Tiempo Real y Firmas Nativas (jun 2026)** —
+   • **Hilos de negociación embebidos**: Comentarios interactivos por cada línea de la cotización (`cotizacion_comentarios`). Los clientes pueden debatir partidas específicas y llegar a un acuerdo granular en la misma vista pública de la cotización (`QuoteCard.astro` y `/api/q/[token].ts`).
+   • **Firmas Legales Inmutables**: Nuevo flujo legal (`cotizacion_firmas`) donde se captura Nombre, Correo, IP, User Agent y un hash criptográfico SHA-256 generado a partir del *snapshot* del estado de los ítems cotizados. La cotización exhibe el sello de auditoría tras ser aprobada, actuando como un contrato digital legal y verificable.
+⬜ Pendiente: aprobación parcial por línea, producción de Clerk
    (instancia real), Stripe Billing en prod (price_ids + webhook secret).
 
 ---
@@ -497,13 +511,13 @@ habilitar Organizations es config del dashboard de Clerk (no codeable aquí); la
 identidad sigue siendo Clerk (userId), solo la membresía/permiso es nuestra.
 
 **Tablas** (`db/schema.sql`):
-- `orgs` — el negocio (nombre, logo, datos fiscales/RFC/CSD, `quote_prefix`, plan, Stripe IDs, `clerk_org_id`)
+- `orgs` — el negocio (nombre, logo, datos fiscales en `fiscal_metadata`, `country_code`, `quote_prefix`, plan, Stripe IDs, `clerk_org_id`)
 - `productos` — catálogo de cada org
 - `clientes` — a quién se cotiza (con `terminos_default` y `limite_credito`)
-- `cotizaciones` — status `draft|sent|viewed|approved|rejected|expired|paid|invoiced` + `public_token` (para `/q/{token}`)
+- `cotizaciones` — status `draft|sent|viewed|approved|rejected|expired|paid|invoiced` + `public_token` + `base_currency` y `fiscal_currency` para coberturas FX.
 - `cotizacion_items` — líneas (permite línea libre sin producto; `precio_negociado` opcional)
 - `eventos` — timeline + "tu cliente vio la cotización" (**feature estrella**)
-- `facturas_cfdi` — timbrado SAT (fase 4)
+- `documentos_fiscales` — registro global de emisiones fiscales por país (reemplaza a la tabla legado `facturas_cfdi`)
 - `org_members` — equipo multi-usuario (rol, permisos jsonb, estado, token invitación); sincronizado desde Clerk vía webhook
 - `tareas` — recordatorios CRM del vendedor
 - `audit_log` — registro inmutable de acciones (logAudit/reqIp)
@@ -855,6 +869,8 @@ Sin SplitText, sin blur/scale en reveals de contenido.
 - Estilos de DOM inyectado en runtime (Clerk, librerías) → `<style is:global>` porque
   Astro scopea con `[data-astro-cid]` y el DOM inyectado no lo lleva.
 - `Clerk.signOut(cb)` necesita callback para no auto-navegar.
+- **Error 500 / TypeError de Clerk en SSR (Pantalla Blanca):** Al usar componentes de React de Clerk (como `<WorkspaceSwitcher />`, `<SignInForm />`, etc.) dentro de `.astro`, **siempre** usar `client:only="react"`, NUNCA `client:load`. Clerk depende de `<ClerkProvider>`, el cual no existe en el SSR de Astro. Usar `client:load` causa que Astro intente pre-renderizarlo en servidor, provocando un crasheo interno en Vite ("TypeError: Cannot read properties of undefined") y dejando la pantalla blanca.
+- **Corrupción de caché de Vite (tsconfig.json):** Mantén la configuración de TypeScript nativa de Astro. Forzar `"jsx": "react-jsx"` en `compilerOptions` corrompe el servidor de desarrollo (`npm run dev`) tirando TypeErrors fantasmas durante la transformación de dependencias. Si esto ocurre, borrar `.vite`, `.astro`, `node_modules` y hacer un `npm install` limpio.
 
 ---
 

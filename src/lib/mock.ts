@@ -7,11 +7,13 @@ export type QuoteStatus =
     | 'draft' | 'sent' | 'viewed' | 'approved' | 'rejected' | 'expired' | 'paid' | 'invoiced';
 
 export interface MockItem {
+    id?: string;
     descripcion: string;
     cantidad: number;
     unidad: string;
     precioLista: number;
     precioNegociado: number | null;
+    comentarios?: { autor: string; tipo: string; contenido: string; cuando: string }[];
 }
 
 export interface MockEvent {
@@ -36,6 +38,7 @@ export interface MockQuote {
     total?: number;   // total de la columna DB (la lista no carga items; usa esto)
     version?: number;
     versiones?: { version: number; total: number; fecha: string; items: any[] }[];
+    firma?: { nombre: string; ip: string; hash: string; cuando: string } | null;
 }
 
 export const ORG = {

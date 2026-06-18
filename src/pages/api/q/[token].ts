@@ -6,6 +6,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
+import { createHash } from 'node:crypto';
 import { sql } from '../../../lib/db';
 import { dispatchQuoteEvent } from '../../../lib/webhooks';
 
@@ -33,14 +34,33 @@ export const POST: APIRoute = async ({ params, request }) => {
         if (!alive) return json({ error: 'Esta cotización ya no se puede modificar', status: c.status }, 409);
         const signedBy = String(body.signed_by ?? '').trim().slice(0, 200);
         const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'desconocida';
+        const ua = request.headers.get('user-agent') ?? 'desconocido';
+        const email = String(body.email ?? '').trim().slice(0, 200);
+        
+        // Generar hash inmutable
+        const items = await sql`select id, descripcion, cantidad, precio_unitario, precio_negociado from cotizacion_items where cotizacion_id = ${c.id} order by orden`;
+        const payload = JSON.stringify({
+            quote_id: c.id,
+            status: 'approved',
+            signed_by: signedBy,
+            ip,
+            items
+        });
+        const snapshotHash = createHash('sha256').update(payload).digest('hex');
+
         const detalle = signedBy
             ? `Firmado digitalmente por "${signedBy}" (IP ${ip})`
             : 'El cliente aprobó la cotización desde el link';
-        await sql`update cotizaciones set status = 'approved', approved_at = now() where id = ${c.id}`;
-        await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                  values (${c.org_id}, ${c.id}, 'approved', ${detalle})`;
+        
+        await sql.begin(async (tx) => {
+            await tx`update cotizaciones set status = 'approved', approved_at = now() where id = ${c.id}`;
+            await tx`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                      values (${c.org_id}, ${c.id}, 'approved', ${detalle})`;
+            await tx`insert into cotizacion_firmas (org_id, cotizacion_id, firmante_nombre, firmante_email, firmante_ip, user_agent, snapshot_hash)
+                      values (${c.org_id}, ${c.id}, ${signedBy || 'Anónimo'}, ${email || null}, ${ip}, ${ua}, ${snapshotHash})`;
+        });
         await dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.approved');
-        return json({ ok: true, status: 'approved' });
+        return json({ ok: true, status: 'approved', hash: snapshotHash });
     }
 
     // ── Rechazar ──
@@ -73,6 +93,22 @@ export const POST: APIRoute = async ({ params, request }) => {
         const detalle = `Contraoferta del cliente${propuesta ? ` (${money(propuesta)})` : ''}${mensaje ? `: "${mensaje}"` : ''}`;
         await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                   values (${c.org_id}, ${c.id}, 'counter', ${detalle})`;
+        return json({ ok: true });
+    }
+
+    // ── Comentario por línea (no cambia estado) ──
+    if (action === 'item_comment') {
+        const mensaje = String(body.mensaje ?? '').trim().slice(0, 800);
+        const itemId = String(body.item_id ?? '').trim();
+        if (!mensaje || !itemId) return json({ error: 'Datos incompletos' }, 400);
+        if (c.status === 'draft') return json({ error: 'Cotización no disponible' }, 409);
+        
+        // Verificar que el item pertenece a la cotización
+        const [item] = await sql`select id from cotizacion_items where id = ${itemId} and cotizacion_id = ${c.id}`;
+        if (!item) return json({ error: 'Línea no encontrada' }, 404);
+
+        await sql`insert into cotizacion_comentarios (org_id, cotizacion_id, item_id, autor_tipo, autor_nombre, contenido)
+                  values (${c.org_id}, ${c.id}, ${itemId}, 'cliente', 'Cliente', ${mensaje})`;
         return json({ ok: true });
     }
 

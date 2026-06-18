@@ -661,3 +661,40 @@ create index if not exists idx_agentes_permisos_org on agentes_permisos(org_id);
 alter table agentes_permisos enable row level security;
 create policy "rls_agentes_permisos" on agentes_permisos
   using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+
+-- ── Cotizaciones Comentarios (Hilos de negociación por línea) ──
+create table if not exists cotizacion_comentarios (
+  id              uuid        default gen_random_uuid() primary key,
+  org_id          uuid        not null references orgs(id) on delete cascade,
+  cotizacion_id   uuid        not null references cotizaciones(id) on delete cascade,
+  item_id         uuid        references cotizacion_items(id) on delete cascade,
+  autor_tipo      text        not null default 'cliente', -- 'cliente' | 'usuario'
+  autor_nombre    text        not null,
+  contenido       text        not null,
+  created_at      timestamptz default now()
+);
+create index if not exists idx_cotizacion_comentarios_org on cotizacion_comentarios(org_id);
+create index if not exists idx_cotizacion_comentarios_item on cotizacion_comentarios(item_id);
+
+alter table cotizacion_comentarios enable row level security;
+create policy "rls_cotizacion_comentarios" on cotizacion_comentarios
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+
+-- ── Cotizaciones Firmas (Firmas legales nativas e inmutables) ──
+create table if not exists cotizacion_firmas (
+  id              uuid        default gen_random_uuid() primary key,
+  org_id          uuid        not null references orgs(id) on delete cascade,
+  cotizacion_id   uuid        not null references cotizaciones(id) on delete cascade,
+  firmante_nombre text        not null,
+  firmante_email  text,
+  firmante_ip     text,
+  user_agent      text,
+  snapshot_hash   text        not null, -- SHA-256 del payload de la cotización
+  firmado_en      timestamptz default now()
+);
+create index if not exists idx_cotizacion_firmas_org on cotizacion_firmas(org_id);
+create index if not exists idx_cotizacion_firmas_cotizacion on cotizacion_firmas(cotizacion_id);
+
+alter table cotizacion_firmas enable row level security;
+create policy "rls_cotizacion_firmas" on cotizacion_firmas
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);

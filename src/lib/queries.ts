@@ -346,11 +346,13 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [])
         total: num(c.total),
         version: num(c.version) || 1,
         items: items.map((it): MockItem => ({
+            id: it.id,
             descripcion: it.descripcion,
             cantidad: num(it.cantidad),
             unidad: it.unidad ?? 'pieza',
             precioLista: num(it.precio_unitario),
             precioNegociado: it.precio_negociado === null ? null : num(it.precio_negociado),
+            comentarios: it.comentarios ?? [],
         })),
         eventos: eventos.map((e): MockEvent => ({
             tipo: e.tipo,
@@ -397,7 +399,7 @@ export async function getCotizacion(id: string): Promise<MockQuote | null> {
 // Link público — usa withPublicToken para satisfacer la política RLS de cotizaciones/items.
 // Tres queries en un solo batch con el token como contexto de RLS.
 export async function getCotizacionByToken(token: string) {
-    const [rows, items, conv] = await withPublicToken(token,
+    const [rows, items, conv, comentarios, firmas] = await withPublicToken(token,
         sql`select c.*, cl.empresa, coalesce(c.terminos, cl.terminos_default) as terminos,
                o.nombre as org_nombre, o.rfc as org_rfc, o.color_marca as org_color,
                o.logo_url as org_logo_url,
@@ -416,9 +418,39 @@ export async function getCotizacionByToken(token: string) {
             join cotizaciones c on c.id = e.cotizacion_id
             where c.public_token = ${token} and e.tipo in ('comment', 'counter', 'reply')
             order by e.created_at asc`,
+        sql`select cc.* from cotizacion_comentarios cc
+            join cotizaciones c on c.id = cc.cotizacion_id
+            where c.public_token = ${token} order by cc.created_at asc`,
+        sql`select f.* from cotizacion_firmas f
+            join cotizaciones c on c.id = f.cotizacion_id
+            where c.public_token = ${token} order by f.firmado_en desc limit 1`
     );
     if (!rows.length) return null;
-    const quote = rowToQuote(rows[0], items, []);
+    
+    // Anexar comentarios a sus respectivos items
+    const itemsWithComments = items.map((it: any) => ({
+        ...it,
+        comentarios: comentarios
+            .filter((c: any) => c.item_id === it.id)
+            .map((c: any) => ({
+                autor: c.autor_nombre,
+                tipo: c.autor_tipo,
+                contenido: c.contenido,
+                cuando: fmtRelative(c.created_at),
+            }))
+    }));
+
+    const quote = rowToQuote(rows[0], itemsWithComments, []);
+    
+    if (firmas.length > 0) {
+        quote.firma = {
+            nombre: firmas[0].firmante_nombre as string,
+            ip: firmas[0].firmante_ip as string,
+            hash: firmas[0].snapshot_hash as string,
+            cuando: fmtDate(firmas[0].firmado_en as string),
+        };
+    }
+
     return {
         quote,
         conversacion: conv.map((e) => ({
