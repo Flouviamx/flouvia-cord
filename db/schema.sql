@@ -15,10 +15,12 @@ create table orgs (
   clerk_user_id       text        not null unique,   -- v1: dueño único; multi-usuario en fase 2 con Clerk Organizations
   nombre              text        not null,
   logo_url            text,
-  rfc                 text,
+  rfc                 text,              -- v1 (MX) -> En el futuro abstraer a tax_id
   razon_social        text,
   regimen_fiscal      text,
   cp_fiscal           text,
+  country_code        text        not null default 'MX', -- ISO 3166-1 alpha-2
+  fiscal_metadata     jsonb       not null default '{}'::jsonb, -- Datos específicos del país
   quote_prefix        text        not null default 'COT',  -- folio: COT-0001…
   moneda              text        not null default 'MXN',
   iva_pct             numeric     not null default 16,
@@ -69,7 +71,12 @@ create table cotizaciones (
   descuento     numeric     not null default 0,
   iva           numeric     not null default 0,
   total         numeric     not null default 0,
-  moneda        text        not null default 'MXN',
+  moneda        text        not null default 'MXN', -- Obsoleto, usar base_currency a futuro
+  base_currency text        not null default 'MXN', -- Moneda de presentación (ej. USD)
+  fiscal_currency text      not null default 'MXN', -- Moneda contable/fiscal (ej. MXN)
+  fx_rate       numeric     not null default 1,     -- Tipo de cambio aplicado
+  fx_rate_source text       not null default 'spot',-- 'spot' | 'buffer' | 'forward'
+  fx_locked_until timestamptz,                      -- Fecha de expiración de cobertura
   terminos      text        not null default 'contado', -- 'contado' | 'net30' | 'net60'
   vigencia      date,                                 -- fecha de expiración
   public_token  text        not null unique default encode(gen_random_bytes(16), 'hex'), -- /q/{token}
@@ -109,6 +116,7 @@ create index on eventos(org_id, created_at desc);
 create index on eventos(cotizacion_id, created_at desc);
 
 -- ── Facturas CFDI timbradas (fase 4 — reusa el PAC de la app de Shopify) ──
+-- (Legado / Específico de México)
 create table facturas_cfdi (
   id              uuid        default gen_random_uuid() primary key,
   org_id          uuid        not null references orgs(id) on delete cascade,
@@ -120,6 +128,22 @@ create table facturas_cfdi (
   created_at      timestamptz default now()
 );
 create index on facturas_cfdi(org_id, created_at desc);
+
+-- ── Documentos Fiscales Globales (Abstracción B2B Internacional) ──
+create table if not exists documentos_fiscales (
+  id              uuid        default gen_random_uuid() primary key,
+  org_id          uuid        not null references orgs(id) on delete cascade,
+  cotizacion_id   uuid        not null references cotizaciones(id) on delete cascade,
+  country_code    text        not null default 'MX', -- MX, US, ES, CO
+  document_type   text        not null,              -- 'invoice', 'cfdi_40', 'dian_einvoice'
+  fiscal_id       text,                              -- UUID SAT o identificador externo
+  status          text        not null default 'pending', -- pending | issued | cancelled | error
+  provider_data   jsonb,                             -- Data cruda del PAC/Stripe Tax/Avalara
+  pdf_url         text,
+  xml_url         text,
+  created_at      timestamptz default now()
+);
+create index if not exists idx_doc_fiscales_org on documentos_fiscales(org_id, created_at desc);
 
 -- ── Personalización de marca y PDF (jun 2026) ──
 -- Se aplican con `alter ... if not exists` para que db:migrate siga siendo re-ejecutable.
@@ -480,6 +504,7 @@ alter table cotizaciones       enable row level security;
 alter table cotizacion_items   enable row level security;
 alter table eventos            enable row level security;
 alter table facturas_cfdi      enable row level security;
+alter table documentos_fiscales enable row level security;
 alter table tareas             enable row level security;
 alter table audit_log          enable row level security;
 alter table api_keys           enable row level security;
@@ -522,6 +547,9 @@ create policy "rls_eventos" on eventos
   using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
 
 create policy "rls_facturas_cfdi" on facturas_cfdi
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+
+create policy "rls_documentos_fiscales" on documentos_fiscales
   using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
 
 create policy "rls_tareas" on tareas
