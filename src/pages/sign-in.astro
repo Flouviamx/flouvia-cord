@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import SignInForm from '../components/auth/SignInForm';
+
+// Only render on server if needed, but these are static forms
+---
+
+<Layout title="Iniciar sesión - Cord">
+    <SignInForm client:load />
+</Layout>

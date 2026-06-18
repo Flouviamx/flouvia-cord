@@ -1,4 +1,5 @@
 ---
+import '../../../components/developers/DeveloperUI.css';
 // Ajustes › Developers › API y webhooks.
 // API keys: REALES (tabla api_keys, hash sha-256). La clave en claro se muestra
 // UNA vez al crearla. Webhooks: REALES (tabla webhooks, entrega firmada HMAC) con
@@ -20,6 +21,7 @@ const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
 
 <SettingsShell title="API y webhooks — Ajustes" tab="api" perm="ajustes"
     intro="Conecta Cord con tu propio sistema (ERP, CRM, scripts): lee y crea cotizaciones, clientes y productos por API. Genera una llave abajo y consulta los endpoints disponibles.">
+<div class="dev-wrapper">
 
     {!tienePlan && (
         <div class="dev-upsell">
@@ -31,55 +33,55 @@ const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
         </div>
     )}
 
-    <div class="s-block">
-        <div class="dev-head">
-            <h3>API keys</h3>
+    <div class="dev-card">
+        <div class="dev-card-header">
+            <h3 class="dev-card-title">API keys</h3>
             <div class="dev-head-actions">
                 <div class="dev-seg" role="tablist" aria-label="Modo de la llave">
                     <button class="dev-seg-btn active" data-mode="test">Prueba</button>
                     <button class={`dev-seg-btn ${tienePlan ? '' : 'locked'}`} data-mode="live">Vivo</button>
                 </div>
-                <button class="dev-new" id="kNew">+ Generar API key</button>
+                <button class="dev-btn" id="kNew">+ Generar API key</button>
             </div>
         </div>
 
-        <div class="key-list" id="keyList">
+        <div class="dev-list" id="keyList">
             {KEYS.length === 0 && (
                 <p class="dev-empty" id="keyEmpty">Aún no tienes llaves. Genera una para empezar a llamar la API.</p>
             )}
             {KEYS.map((k) => (
                 <div class:list={['key-row', { revoked: k.revocada }]} data-id={k.id}>
-                    <span class="key-info">
-                        <span class="key-name">{k.nombre}
-                            <span class={`key-mode ${k.mode}`}>{k.mode === 'test' ? 'Prueba' : 'Vivo'}</span>
-                            <span class={`key-scope ${k.scope}`}>{k.scope === 'write' ? 'Escritura' : 'Lectura'}</span>
-                            {k.revocada && <span class="key-scope revoked">Revocada</span>}
+                    <span class="dev-key-info">
+                        <span class="dev-key-name">{k.nombre}
+                            <span class={`dev-badge ${k.mode}`}>{k.mode === 'test' ? 'Prueba' : 'Vivo'}</span>
+                            <span class={`dev-badge ${k.scope}`}>{k.scope === 'write' ? 'Escritura' : 'Lectura'}</span>
+                            {k.revocada && <span class="dev-badge revoked">Revocada</span>}
                         </span>
-                        <code class="key-mask">{k.masked}</code>
+                        <code class="dev-code">{k.masked}</code>
                         <span class="key-meta">Creada {k.creada}{k.ultimoUso ? ` · último uso ${k.ultimoUso}` : ' · sin uso aún'}</span>
                     </span>
-                    {!k.revocada && <button class="key-revoke" data-revoke={k.id}>Revocar</button>}
+                    {!k.revocada && <button class="dev-btn dev-btn-secondary" data-revoke={k.id}>Revocar</button>}
                 </div>
             ))}
         </div>
         <p class="dev-note">Las llaves dan acceso completo a tu cuenta por <code>org_id</code>. Trátalas como contraseñas: nunca las publiques en el front ni en repos.</p>
     </div>
 
-    <div class="s-block">
-        <h3>Endpoints disponibles</h3>
+    <div class="dev-card">
+        <h3 class="dev-card-title">Endpoints disponibles</h3>
         <p class="dev-note" style="margin-top:0 0 1rem">Base: <code>https://cord.flouvia.com/api/v1</code> · autentícate con <code>Authorization: Bearer &lt;tu_key&gt;</code>.</p>
         <div class="ep-rows">
-            <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/me</code><span class="ep-d">A qué negocio pertenece la llave</span></div>
-            <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/cotizaciones</code><span class="ep-d">Lista (filtra con <code>?status=</code>, pagina con <code>?limit=&amp;offset=</code>)</span></div>
-            <div class="ep-row"><span class="ep-m post">POST</span><code class="ep-path">/cotizaciones</code><span class="ep-d">Crea una cotización (requiere escritura)</span></div>
-            <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/cotizaciones/:id</code><span class="ep-d">Detalle con líneas y timeline</span></div>
-            <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/clientes</code><span class="ep-d">Directorio de clientes</span></div>
-            <div class="ep-row"><span class="ep-m post">POST</span><code class="ep-path">/clientes</code><span class="ep-d">Alta de cliente (requiere escritura)</span></div>
-            <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/productos</code><span class="ep-d">Catálogo</span></div>
-            <div class="ep-row"><span class="ep-m post">POST</span><code class="ep-path">/productos</code><span class="ep-d">Alta de producto (requiere escritura)</span></div>
-            <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/cobranza</code><span class="ep-d">Cartera, vencidos y aging</span></div>
+            <div class="dev-ep-row"><span class="dev-ep-method get">GET</span><code class="dev-ep-path">/me</code><span class="dev-ep-desc">A qué negocio pertenece la llave</span></div>
+            <div class="dev-ep-row"><span class="dev-ep-method get">GET</span><code class="dev-ep-path">/cotizaciones</code><span class="dev-ep-desc">Lista (filtra con <code>?status=</code>, pagina con <code>?limit=&amp;offset=</code>)</span></div>
+            <div class="dev-ep-row"><span class="dev-ep-method post">POST</span><code class="dev-ep-path">/cotizaciones</code><span class="dev-ep-desc">Crea una cotización (requiere escritura)</span></div>
+            <div class="dev-ep-row"><span class="dev-ep-method get">GET</span><code class="dev-ep-path">/cotizaciones/:id</code><span class="dev-ep-desc">Detalle con líneas y timeline</span></div>
+            <div class="dev-ep-row"><span class="dev-ep-method get">GET</span><code class="dev-ep-path">/clientes</code><span class="dev-ep-desc">Directorio de clientes</span></div>
+            <div class="dev-ep-row"><span class="dev-ep-method post">POST</span><code class="dev-ep-path">/clientes</code><span class="dev-ep-desc">Alta de cliente (requiere escritura)</span></div>
+            <div class="dev-ep-row"><span class="dev-ep-method get">GET</span><code class="dev-ep-path">/productos</code><span class="dev-ep-desc">Catálogo</span></div>
+            <div class="dev-ep-row"><span class="dev-ep-method post">POST</span><code class="dev-ep-path">/productos</code><span class="dev-ep-desc">Alta de producto (requiere escritura)</span></div>
+            <div class="dev-ep-row"><span class="dev-ep-method get">GET</span><code class="dev-ep-path">/cobranza</code><span class="dev-ep-desc">Cartera, vencidos y aging</span></div>
         </div>
-        <div class="ep-code">
+        <div class="dev-terminal">
             <span class="ep-code-label">Ejemplo</span>
             <pre><code>curl https://cord.flouvia.com/api/v1/cotizaciones \
   -H "Authorization: Bearer sk_live_xxxxxxxxxxxx"</code></pre>
@@ -87,15 +89,15 @@ const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
     </div>
 
     <!-- ── ACTIVIDAD DEL API (Developers PRO) ── -->
-    <div class="s-block">
-        <div class="dev-head">
-            <h3>Actividad del API</h3>
+    <div class="dev-card">
+        <div class="dev-card-header">
+            <h3 class="dev-card-title">Actividad del API</h3>
             <button class="dev-refresh" id="actRefresh" title="Actualizar">Actualizar</button>
         </div>
-        <div class="act-stats">
-            <div class="act-stat"><span class="act-stat-n editorial" id="actTotal">{ACTIVITY.total24}</span><span class="act-stat-l">requests · 24 h</span></div>
-            <div class="act-stat"><span class={`act-stat-n editorial ${ACTIVITY.errores24 > 0 ? 'bad' : ''}`} id="actErr">{ACTIVITY.errores24}</span><span class="act-stat-l">errores · 24 h</span></div>
-            <div class="act-stat"><span class="act-stat-n editorial" id="actLat">{ACTIVITY.latProm}<em>ms</em></span><span class="act-stat-l">latencia promedio</span></div>
+        <div class="dev-stats-grid">
+            <div class="dev-stat-box"><span class="dev-stat-value editorial" id="actTotal">{ACTIVITY.total24}</span><span class="dev-stat-label">requests · 24 h</span></div>
+            <div class="dev-stat-box"><span class={`dev-stat-value editorial ${ACTIVITY.errores24 > 0 ? 'bad' : ''}`} id="actErr">{ACTIVITY.errores24}</span><span class="dev-stat-label">errores · 24 h</span></div>
+            <div class="dev-stat-box"><span class="dev-stat-value editorial" id="actLat">{ACTIVITY.latProm}<em>ms</em></span><span class="dev-stat-label">latencia promedio</span></div>
         </div>
         <div class="act-list" id="actList">
             {ACTIVITY.recent.length === 0 && <p class="dev-empty" id="actEmpty">Sin actividad todavía. Cuando llames la API con una llave, las requests aparecerán aquí.</p>}
@@ -112,8 +114,8 @@ const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
     </div>
 
     <!-- ── MCP ── -->
-    <div class="s-block">
-        <h3>MCP — conecta una IA a tus datos</h3>
+    <div class="dev-card">
+        <h3 class="dev-card-title">MCP — conecta una IA a tus datos</h3>
         <p class="dev-note" style="margin-top:0">El servidor <b>MCP</b> deja que asistentes de IA (como Claude) consulten y creen información de tu negocio en lenguaje natural: <i>"¿qué facturas están vencidas?"</i>, <i>"arma una cotización para ACME de 50 sacos de cemento"</i>. Se autentica con la misma API key.</p>
 
         <div class="mcp-connect">
@@ -122,8 +124,8 @@ const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
                 <button class="mcp-tab" data-client="cursor">Cursor</button>
                 <button class="mcp-tab" data-client="url">URL directa</button>
             </div>
-            <div class="ep-code mcp-code">
-                <button class="mcp-copy" id="mcpCopy" type="button">Copiar</button>
+            <div class="dev-terminal mcp-code">
+                <button class="dev-terminal-copy" id="mcpCopy" type="button">Copiar</button>
                 <pre><code id="mcpConfig"></code></pre>
             </div>
             <p class="dev-note" style="margin-top:0.7rem">Pega esto en la configuración de tu cliente MCP y reemplaza la llave por una real (de arriba). Reinicia el cliente para que tome la conexión.</p>
@@ -157,10 +159,10 @@ const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
     </div>
 
     <!-- ── WEBHOOKS ── -->
-    <div class="s-block">
-        <div class="dev-head">
-            <h3>Webhooks</h3>
-            <button class="dev-new" id="whNew" disabled={!tienePlan}>+ Agregar endpoint</button>
+    <div class="dev-card">
+        <div class="dev-card-header">
+            <h3 class="dev-card-title">Webhooks</h3>
+            <button class="dev-btn" id="whNew" disabled={!tienePlan}>+ Agregar endpoint</button>
         </div>
         <p class="dev-note" style="margin-top:0">Recibe un POST firmado (HMAC-sha256, header <code>X-Cord-Signature</code>) cuando algo pasa con una cotización. Verifica la firma con el secret del endpoint. Despliega un endpoint para ver su <b>log de entregas</b> y reintentar.</p>
 
@@ -186,12 +188,12 @@ const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
                                 )}
                             </span>
                         </span>
-                        <button class="wh-test" data-test={w.id} title="Enviar evento de prueba">Probar</button>
+                        <button class="dev-btn dev-btn-secondary" data-test={w.id} title="Enviar evento de prueba">Probar</button>
                         <label class="s-toggle wh-toggle" title="Activar/pausar">
                             <input type="checkbox" data-toggle={w.id} checked={w.activo} />
                             <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
                         </label>
-                        <button class="key-revoke" data-del={w.id}>Eliminar</button>
+                        <button class="dev-btn dev-btn-secondary" data-del={w.id}>Eliminar</button>
                     </div>
                     <div class="wh-deliveries" data-deliveries={w.id} hidden>
                         <div class="wh-del-body" data-delbody={w.id}>
@@ -202,6 +204,7 @@ const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
             ))}
         </div>
     </div>
+</div>
 </SettingsShell>
 
 <!-- Modal: crear API key (nombre + scope) -->

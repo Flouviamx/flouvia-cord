@@ -1,0 +1,38 @@
+const fs = require('fs');
+const path = './src/pages/app/ajustes/api.astro';
+let content = fs.readFileSync(path, 'utf8');
+
+content = content.replace('---', '---\nimport \'../../../components/developers/DeveloperUI.css\';');
+content = content.replace(/class="s-block"/g, 'class="dev-card"');
+content = content.replace(/class="dev-head"/g, 'class="dev-card-header"');
+content = content.replace(/<h3>/g, '<h3 class="dev-card-title">');
+content = content.replace(/class="dev-new"/g, 'class="dev-btn"');
+content = content.replace(/class="dev-new /g, 'class="dev-btn ');
+content = content.replace(/(<SettingsShell[^>]*>)/, '$1\n<div class="dev-wrapper">');
+content = content.replace(/(<\/SettingsShell>)/, '</div>\n$1');
+content = content.replace(/class="key-list"/g, 'class="dev-list"');
+content = content.replace(/class="key-row"/g, 'class="dev-list-item"');
+content = content.replace(/class:list\{\[\'key-row\'/g, 'class:list={[\'dev-list-item\'');
+content = content.replace(/class="key-info"/g, 'class="dev-key-info"');
+content = content.replace(/class="key-name"/g, 'class="dev-key-name"');
+content = content.replace(/class="key-mask"/g, 'class="dev-code"');
+content = content.replace(/class="key-revoke"/g, 'class="dev-btn dev-btn-secondary"');
+content = content.replace(/class="wh-test"/g, 'class="dev-btn dev-btn-secondary"');
+content = content.replace(/class=\{\`key-mode \$\{k\.mode\}\`\}/g, 'class={`dev-badge ${k.mode}`}');
+content = content.replace(/class=\{\`key-scope \$\{k\.scope\}\`\}/g, 'class={`dev-badge ${k.scope}`}');
+content = content.replace(/class="key-scope revoked"/g, 'class="dev-badge revoked"');
+content = content.replace(/class="ep-row"/g, 'class="dev-ep-row"');
+content = content.replace(/class="ep-m /g, 'class="dev-ep-method ');
+content = content.replace(/class="ep-path"/g, 'class="dev-ep-path"');
+content = content.replace(/class="ep-d"/g, 'class="dev-ep-desc"');
+content = content.replace(/class="ep-code"/g, 'class="dev-terminal"');
+content = content.replace(/class="ep-code mcp-code"/g, 'class="dev-terminal mcp-code"');
+content = content.replace(/class="mcp-copy"/g, 'class="dev-terminal-copy"');
+content = content.replace(/class="act-stats"/g, 'class="dev-stats-grid"');
+content = content.replace(/class="act-stat"/g, 'class="dev-stat-box"');
+content = content.replace(/class="act-stat-n /g, 'class="dev-stat-value ');
+content = content.replace(/class=\{\`act-stat-n /g, 'class={`dev-stat-value ');
+content = content.replace(/class="act-stat-l"/g, 'class="dev-stat-label"');
+
+fs.writeFileSync(path, content, 'utf8');
+console.log('Refactored api.astro');

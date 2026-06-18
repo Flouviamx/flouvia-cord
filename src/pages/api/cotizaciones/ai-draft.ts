@@ -14,6 +14,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getProductos } from '../../../lib/queries';
 import { getActiveOrgId } from '../../../lib/db';
 import { reportUsage } from '../../../lib/billing';
+import { McpClientManager } from '../../../lib/mcp/client-manager';
 
 const API_KEY = import.meta.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
 const MODEL = import.meta.env.AI_MODEL || process.env.AI_MODEL || 'claude-haiku-4-5-20251001';
@@ -98,26 +99,87 @@ export const POST: APIRoute = async ({ request }) => {
         : '(catálogo vacío)';
     const byId = new Map(productos.map((p) => [p.id, p]));
 
+    const orgId = await getActiveOrgId();
+    const mcpManager = new McpClientManager(orgId); // Se asume agente_id indefinido por ahora
+    const { tools: mcpTools, clientMap } = await mcpManager.getAnthropicTools();
+    
+    const allTools = [TOOL, ...mcpTools];
+    
     const client = new Anthropic({ apiKey: API_KEY });
-    let msg: any;
-    try {
-        msg = await client.messages.create({
-            model: MODEL,
-            max_tokens: 512,
-            system: SYSTEM,
-            tools: [TOOL],
-            tool_choice: { type: 'tool', name: 'armar_cotizacion' },
-            messages: [{
-                role: 'user',
-                content: `Catálogo:\n${catalogoTexto}\n\nMensaje del cliente:\n"""${text}"""`,
-            }],
-        });
-    } catch (err: any) {
-        return json({ error: 'La IA no pudo procesar el pedido. Revisa tu llave o intenta de nuevo.' }, 502);
-    }
+    let messages: any[] = [{
+        role: 'user',
+        content: `Catálogo:\n${catalogoTexto}\n\nMensaje del cliente:\n"""${text}"""`,
+    }];
 
-    const tu = (msg.content || []).find((b: any) => b.type === 'tool_use');
-    const aiItems: any[] = tu && Array.isArray(tu.input?.items) ? tu.input.items : [];
+    let aiItems: any[] = [];
+    
+    // Agent Loop (máximo 5 iteraciones para evitar bucles infinitos)
+    for (let i = 0; i < 5; i++) {
+        let msg: any;
+        try {
+            msg = await client.messages.create({
+                model: MODEL,
+                max_tokens: 1024,
+                system: SYSTEM + "\n\nPuedes usar las herramientas adicionales proporcionadas para consultar información de CRMs o bases de datos externas si el cliente lo requiere implícitamente antes de armar la cotización. Tu objetivo final SIEMPRE debe ser llamar a la herramienta 'armar_cotizacion' con los resultados.",
+                tools: allTools,
+                tool_choice: { type: 'auto' },
+                messages: messages,
+            });
+        } catch (err: any) {
+            console.error(err);
+            return json({ error: 'La IA no pudo procesar el pedido. Revisa tu llave o intenta de nuevo.' }, 502);
+        }
+
+        const toolUses = msg.content.filter((b: any) => b.type === 'tool_use');
+        
+        // Si no usó herramientas, salimos del loop
+        if (toolUses.length === 0) {
+            break;
+        }
+
+        messages.push({ role: "assistant", content: msg.content });
+        let toolResults: any[] = [];
+
+        for (const tu of toolUses) {
+            if (tu.name === 'armar_cotizacion') {
+                aiItems = Array.isArray(tu.input?.items) ? tu.input.items : [];
+                // Podemos salir temprano si ya completó su tarea principal
+                toolResults.push({
+                    type: "tool_result",
+                    tool_use_id: tu.id,
+                    content: "Cotización armada con éxito. Termina tu respuesta.",
+                });
+            } else if (clientMap.has(tu.name)) {
+                // Ejecutar herramienta MCP externa
+                try {
+                    const mcpClient = clientMap.get(tu.name)!;
+                    // El nombre real en el servidor MCP puede no tener el prefijo
+                    // Para simplificar, asumimos que el MCP SDK de Anthropic requiere pasar los params
+                    const result = await mcpClient.callTool({
+                        name: tu.name.split("_").slice(1).join("_"), // Revertir prefijo (hack simple)
+                        arguments: tu.input
+                    });
+                    toolResults.push({
+                        type: "tool_result",
+                        tool_use_id: tu.id,
+                        content: JSON.stringify(result.content),
+                    });
+                } catch (e: any) {
+                    toolResults.push({
+                        type: "tool_result",
+                        tool_use_id: tu.id,
+                        content: `Error ejecutando herramienta: ${e.message}`,
+                        is_error: true
+                    });
+                }
+            }
+        }
+
+        messages.push({ role: "user", content: toolResults });
+
+        // Si ya obtuvimos los items de la cotización, no hace falta iterar más
+        if (aiItems.length > 0) break;
+    }
 
     const items = aiItems.map((it) => {
         const cantidad = Math.max(1, Math.round(Number(it.cantidad) || 1));
@@ -131,10 +193,10 @@ export const POST: APIRoute = async ({ request }) => {
         return { id: null, nombre: String(it.descripcion || '').trim() || 'Concepto', unidad: 'pieza', lista: precio, negociado: null, cantidad };
     }).filter((it) => it.nombre);
 
-    if (!items.length) return json({ error: 'No identifiqué productos en el mensaje. Sé más específico o agrégalos a mano.' }, 422);
+    if (!items.length) return json({ error: 'No identifiqué productos en el mensaje ni se generó la cotización.' }, 422);
 
     // Mide el consumo de IA del periodo (UI en vivo + cobro de excedente vía Stripe).
-    try { await reportUsage(await getActiveOrgId(), 'ia', 1); } catch { /* nunca bloquea */ }
+    try { await reportUsage(orgId, 'ia', 1); } catch { /* nunca bloquea */ }
 
     return json({ items });
 };

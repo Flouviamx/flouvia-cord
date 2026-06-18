@@ -1,14 +1,16 @@
 ---
 // Detalle de cotización — items, totales, timeline de eventos y acciones. Datos reales (Neon).
 import AppLayout from '../../../layouts/AppLayout.astro';
-import { getCotizacion, getMyMembership, STATUS_META, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal } from '../../../lib/queries';
+import { getCotizacion, getMyMembership, getOrg, STATUS_META, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal } from '../../../lib/queries';
 import { memberCan } from '../../../lib/permissions';
 
 const { id } = Astro.params;
-const [q, ME] = await Promise.all([getCotizacion(id ?? ''), getMyMembership()]);
+const [q, ME, ORG] = await Promise.all([getCotizacion(id ?? ''), getMyMembership(), getOrg()]);
 if (!q) return Astro.redirect('/app/cotizaciones');
 const canCotizar = memberCan(ME, 'cotizar');
 const canAprobar = memberCan(ME, 'aprobar');
+
+const hasLiveView = ['pro', 'scale', 'developer'].includes(ORG.plan_raw);
 
 const meta = STATUS_META[q.status];
 const dotColor = (tipo: string) =>
@@ -23,11 +25,6 @@ const dotColor = (tipo: string) =>
     <span slot="topbar-actions" class="status-pill tb-status" style={`color:${meta.color}; background:${meta.bg}`}>{meta.label}</span>
 
     <a href="/app/cotizaciones" class="back-link">← Cotizaciones</a>
-
-    <div class="live-viewing" id="liveViewing" hidden>
-        <span class="lv-dot"></span>
-        <span>El cliente está viendo esta cotización <b>ahora mismo</b> — buen momento para llamarle.</span>
-    </div>
 
     {q.aprobEstado === 'pendiente' && (
         <div class="approval-banner">
@@ -54,7 +51,15 @@ const dotColor = (tipo: string) =>
                 <div class="dh-client">
                     <div class="dh-avatar">{q.clienteInicial}</div>
                     <div>
-                        <h2 class="dh-name">{q.cliente} <span class="version-badge">V{q.version}</span></h2>
+                        <h2 class="dh-name">
+                            {q.cliente} 
+                            <span class="version-badge">V{q.version}</span>
+                            {hasLiveView && (
+                                <span class="lv-badge" id="liveViewing" hidden>
+                                    <span class="lv-dot"></span> Viendo ahora
+                                </span>
+                            )}
+                        </h2>
                         <p class="dh-meta">{q.terminos} · Vigente hasta {q.vigencia} · Creada {q.creada}</p>
                     </div>
                 </div>
@@ -113,30 +118,21 @@ const dotColor = (tipo: string) =>
 
         <!-- Sidebar: acciones + timeline -->
         <aside class="d-side">
-            <section class="d-actions" data-qid={q.id} data-token={q.token} data-folio={q.folio} data-cliente={q.cliente} data-total={money(quoteTotal(q))}>
-                <div class="section-head"><h2>Acciones</h2></div>
+            <section class="d-actions" data-qid={q.id} data-token={q.token} data-folio={q.folio} data-cliente={q.cliente} data-total={money(quoteTotal(q))} data-live-view={hasLiveView ? '1' : ''}>
+                <div class="section-head" style="margin-bottom: 0.5rem;"><h2>Acciones</h2></div>
+                
+                <!-- PRIMARY ACTIONS -->
                 {q.status === 'draft' && canCotizar && (
                     <button class="act-primary act-do" data-action="send">Enviar al cliente</button>
                 )}
-                <a href={`/q/${q.token}`} class:list={[q.status === 'draft' ? 'act-secondary act-link' : 'act-primary']} target="_blank">
-                    <span>Ver link público</span>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                </a>
-                <button class="act-whats" id="btnWhats">
-                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
-                    <span>Enviar por WhatsApp</span>
-                </button>
-                <button class="act-secondary" id="btnCopy">Copiar link</button>
-                <a href={`/app/cotizaciones/${q.id}/imprimir`} target="_blank" class="act-secondary act-link">Descargar PDF</a>
-                <button class="act-secondary" id="btnDuplicate">Duplicar cotización</button>
-
+                
                 {(q.status === 'sent' || q.status === 'viewed') && canAprobar && (
                     <button class="act-ok act-do" data-action="approve">Marcar aprobada</button>
                 )}
                 {(q.status === 'sent' || q.status === 'viewed') && canAprobar && (
                     <button class="act-danger act-do" data-action="reject">Marcar rechazada</button>
                 )}
-                {(q.status === 'sent' || q.status === 'viewed') && canCotizar && (
+                {(q.status === 'sent' || q.status === 'viewed' || q.status === 'expired') && canCotizar && (
                     <a href={`/app/cotizaciones/${q.id}/editar`} class="act-secondary act-link" style="text-align: center; text-decoration: none; display: block;">Modificar y reenviar (V{q.version + 1})</a>
                 )}
                 {q.status === 'approved' && canAprobar && (
@@ -145,11 +141,36 @@ const dotColor = (tipo: string) =>
                 {(q.status === 'approved' || q.status === 'paid') && canAprobar && (
                     <button class="act-cfdi act-do" data-action="invoiced">Timbrar CFDI 4.0</button>
                 )}
-                {q.status === 'expired' && canCotizar && (
-                    <a href={`/app/cotizaciones/${q.id}/editar`} class="act-secondary act-link" style="text-align: center; text-decoration: none; display: block;">Modificar y reenviar (V{q.version + 1})</a>
+
+                <!-- SECONDARY ACTIONS GRID -->
+                {q.status !== 'draft' && (
+                    <div class="act-grid">
+                        <a href={`/q/${q.token}`} class="act-util" target="_blank" title="Ver link público">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        </a>
+                        <button class="act-util" id="btnCopy" title="Copiar link">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        </button>
+                        <a href={`/app/cotizaciones/${q.id}/imprimir`} target="_blank" class="act-util" title="Descargar PDF">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        </a>
+                        <button class="act-util" id="btnWhats" title="Enviar por WhatsApp" style="color: #0b7a4b;">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
+                        </button>
+                    </div>
                 )}
+                {q.status === 'draft' && (
+                    <div class="act-grid">
+                        <a href={`/q/${q.token}`} class="act-util" target="_blank" title="Ver previsualización">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </a>
+                    </div>
+                )}
+
+                <button class="act-secondary" id="btnDuplicate" style="width: 100%; margin-top: 0.5rem;">Duplicar cotización</button>
+
                 {q.status === 'draft' && canCotizar && (
-                    <button class="act-delete" id="btnDelete">Eliminar borrador</button>
+                    <button class="act-delete" id="btnDelete" style="width: 100%; margin-top: 0.5rem;">Eliminar borrador</button>
                 )}
                 <p class="act-error" id="actError"></p>
             </section>
@@ -178,24 +199,19 @@ const dotColor = (tipo: string) =>
 
 <style>
     .tb-status { font-size: 0.74rem; }
-    .back-link {
-        display: inline-block; font-size: 0.78rem; font-weight: 600;
-        color: var(--color-text-muted); text-decoration: none; margin-bottom: 0.9rem;
-        transition: color 0.25s;
-    }
+    .back-link { font-size: 0.82rem; font-weight: 500; color: var(--color-text-muted); text-decoration: none; display: inline-flex; margin-bottom: 1.5rem; transition: color 0.2s; }
     .back-link:hover { color: var(--color-blue-deep); }
-
-    .live-viewing {
-        display: flex; align-items: center; gap: 10px;
-        background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3);
-        color: #047857; border-radius: 12px; padding: 10px 14px; margin-bottom: 0.9rem;
-        font-size: 0.85rem; font-weight: 600;
-        animation: lv-in 0.4s var(--ease-spring);
+    
+    .lv-badge {
+        font-size: 0.65rem; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.1);
+        border: 1px solid rgba(16,185,129,0.3); border-radius: 20px;
+        padding: 4px 10px; margin-left: 12px; display: inline-flex; align-items: center; gap: 6px;
+        vertical-align: middle;
+        animation: fadein 0.4s ease;
     }
-    @keyframes lv-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
-    .live-viewing b { font-weight: 800; }
-    .lv-dot { width: 9px; height: 9px; border-radius: 50%; background: #10b981; flex-shrink: 0; animation: lv-pulse 1.6s infinite; }
-    @keyframes lv-pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.45); } 70% { box-shadow: 0 0 0 8px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .lv-dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; box-shadow: 0 0 0 2px rgba(16,185,129,0.2); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); } 70% { box-shadow: 0 0 0 6px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
 
     .approval-banner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.35); border-radius: 12px; padding: 12px 16px; margin-bottom: 0.9rem; }
     .approval-banner.ap-rejected { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.3); }
@@ -278,75 +294,21 @@ const dotColor = (tipo: string) =>
         font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600;
         color: var(--color-text); background: var(--color-bg-soft);
         border: 1px solid var(--color-border); border-radius: 10px;
-        padding: 10px; cursor: pointer;
+        padding: 10px; cursor: pointer; text-align: center;
         transition: background 0.25s, border-color 0.25s;
     }
     .act-secondary:hover { background: #fff; border-color: rgba(10,25,47,0.2); }
-    .act-secondary .act-delete { background: transparent; color: #ef4444; border: 1px solid transparent; }
-    .act-delete:hover { background: #fee2e2; border-color: #fca5a5; }
-
-    .version-badge {
-        font-size: 0.72rem; font-weight: 600;
+    
+    .act-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-top: 0.5rem; }
+    .act-util {
+        display: flex; align-items: center; justify-content: center;
         background: var(--color-bg-soft); color: var(--color-text-muted);
-        border: 1px solid var(--color-border); border-radius: 4px;
-        padding: 2px 6px; margin-left: 8px; vertical-align: middle;
+        border: 1px solid var(--color-border); border-radius: 10px;
+        height: 42px; cursor: pointer; transition: all 0.2s; text-decoration: none;
     }
+    .act-util:hover { background: #fff; color: var(--color-blue-deep); border-color: rgba(10,25,47,0.2); transform: translateY(-1px); }
+    .act-util svg { width: 18px; height: 18px; }
 
-    .d-versions { margin-top: 1.5rem; }
-    .v-accordion {
-        background: #fff; border: 1px solid var(--color-border); border-radius: 8px;
-    }
-    .v-accordion summary {
-        padding: 12px 16px; font-size: 0.85rem; font-weight: 600; color: var(--color-text);
-        cursor: pointer; list-style: none; user-select: none;
-    }
-    .v-accordion summary::-webkit-details-marker { display: none; }
-    .v-accordion summary::after {
-        content: '↓'; float: right; color: var(--color-text-muted); transition: transform 0.2s;
-    }
-    .v-accordion[open] summary::after { transform: rotate(180deg); }
-
-    .v-list { padding: 0 16px 12px; display: flex; flex-direction: column; gap: 8px; }
-    .v-item {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 8px 12px; background: var(--color-bg-soft); border-radius: 6px;
-        font-size: 0.8rem;
-    }
-    .v-badge { font-weight: 600; color: var(--color-text-muted); width: 30px; }
-    .v-date { color: var(--color-text-muted); flex: 1; text-align: left; }
-    .v-total { font-weight: 500; color: var(--color-text); }
-
-    .act-whats {
-        display: flex; align-items: center; justify-content: center; gap: 8px;
-        font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; cursor: pointer;
-        color: #0b7a4b; background: rgba(37,211,102,0.1);
-        border: 1px solid rgba(37,211,102,0.3); border-radius: 10px; padding: 10px;
-        transition: background 0.25s, transform 0.4s var(--ease-spring);
-    }
-    .act-whats svg { width: 15px; height: 15px; }
-    .act-whats:hover { background: rgba(37,211,102,0.16); transform: translateY(-1px); }
-    .act-cfdi {
-        font-family: var(--font-sans); font-size: 0.82rem; font-weight: 700;
-        color: #059669; background: rgba(16,185,129,0.08);
-        border: 1px solid rgba(16,185,129,0.25); border-radius: 10px;
-        padding: 10px; cursor: pointer;
-        transition: background 0.25s;
-    }
-    .act-cfdi:hover { background: rgba(16,185,129,0.14); }
-
-    .act-primary.act-do {
-        font-family: var(--font-sans); font-size: 0.86rem; border: none; cursor: pointer;
-    }
-    .act-link { display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; text-align: center; }
-    .act-link svg { width: 13px; height: 13px; }
-    .act-ok {
-        font-family: var(--font-sans); font-size: 0.82rem; font-weight: 700;
-        color: #fff; background: var(--color-ok);
-        border: none; border-radius: 10px; padding: 10px; cursor: pointer;
-        box-shadow: 0 8px 22px -10px rgba(16,185,129,0.55);
-        transition: transform 0.4s var(--ease-spring);
-    }
-    .act-ok:hover { transform: translateY(-2px); }
     .act-danger {
         font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600;
         color: var(--color-danger); background: rgba(239,68,68,0.07);
@@ -355,12 +317,13 @@ const dotColor = (tipo: string) =>
         transition: background 0.25s;
     }
     .act-danger:hover { background: rgba(239,68,68,0.13); }
-    .act-delete {
-        font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600;
-        color: var(--color-text-muted); background: none; border: none;
-        padding: 6px; cursor: pointer; transition: color 0.25s;
-    }
-    .act-delete:hover { color: var(--color-danger); }
+    .act-ok { background: #10b981; color: #fff; border: 1px solid #059669; padding: 10px; border-radius: 10px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
+    .act-ok:hover { background: #059669; }
+    .act-cfdi { background: #3b82f6; color: #fff; border: 1px solid #2563eb; padding: 10px; border-radius: 10px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
+    .act-cfdi:hover { background: #2563eb; }
+    
+    .act-delete { background: transparent; color: #ef4444; border: 1px solid transparent; padding: 10px; font-weight: 600; border-radius: 10px; cursor: pointer; transition: background 0.2s; }
+    .act-delete:hover { background: #fee2e2; border-color: #fca5a5; }
     .act-error { font-size: 0.74rem; color: var(--color-danger); margin: 0; min-height: 0; }
     button:disabled { opacity: 0.55; cursor: wait; }
 
@@ -410,7 +373,9 @@ const dotColor = (tipo: string) =>
 
         // ── Presencia en vivo: "el cliente está viendo ahora" ──
         const lv = document.getElementById('liveViewing');
-        if (lv) {
+        const hasLiveView = panel.dataset.liveView === '1';
+        
+        if (lv && hasLiveView) {
             const checkPresence = async () => {
                 try {
                     const r = await fetch(`/api/cotizaciones/${qid}/presence`);

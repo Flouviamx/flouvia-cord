@@ -578,3 +578,58 @@ create index if not exists idx_versiones_cot on cotizacion_versiones(cotizacion_
 alter table cotizacion_versiones enable row level security;
 create policy "rls_cotizacion_versiones" on cotizacion_versiones
   using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- FASE 4 — MCP (Model Context Protocol) & Gobernanza de IA
+-- ════════════════════════════════════════════════════════════════════════════
+
+-- ── MCP Servers (Outbound) ──────────────────────────────────────────────────
+-- Catálogo de servidores externos que la org ha conectado (CRMs, DBs, etc.)
+create table if not exists mcp_servers (
+  id              uuid        default gen_random_uuid() primary key,
+  org_id          uuid        not null references orgs(id) on delete cascade,
+  nombre          text        not null,
+  url_sse         text        not null,
+  auth_token      text,                       -- Token/clave de acceso (idealmente encriptado)
+  activo          boolean     not null default true,
+  created_at      timestamptz default now()
+);
+create index if not exists idx_mcp_servers_org on mcp_servers(org_id, activo);
+
+alter table mcp_servers enable row level security;
+create policy "rls_mcp_servers" on mcp_servers
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+
+-- ── Gobernanza: Agentes de IA ───────────────────────────────────────────────
+create table if not exists agentes_ia (
+  id              uuid        default gen_random_uuid() primary key,
+  org_id          uuid        not null references orgs(id) on delete cascade,
+  nombre          text        not null,       -- ej: 'Asistente Ventas', 'Analista Datos'
+  descripcion     text,
+  activo          boolean     not null default true,
+  created_at      timestamptz default now()
+);
+create index if not exists idx_agentes_ia_org on agentes_ia(org_id, activo);
+
+alter table agentes_ia enable row level security;
+create policy "rls_agentes_ia" on agentes_ia
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+
+-- ── Gobernanza: Permisos de Agentes ─────────────────────────────────────────
+-- Dicta qué herramientas específicas del catálogo Inbound o Outbound
+-- (mcp_servers) tiene permitido usar cada agente.
+create table if not exists agentes_permisos (
+  id              uuid        default gen_random_uuid() primary key,
+  org_id          uuid        not null references orgs(id) on delete cascade,
+  agente_id       uuid        not null references agentes_ia(id) on delete cascade,
+  tipo_recurso    text        not null,       -- 'inbound' (local) | 'outbound' (remoto)
+  recurso_id      text,                       -- uuid de mcp_servers si es outbound, o null si es inbound
+  herramientas    jsonb       not null default '[]'::jsonb, -- Array de nombres de herramientas permitidas (ej. ["leer_cotizaciones"]) o ["*"]
+  created_at      timestamptz default now(),
+  unique (agente_id, tipo_recurso, recurso_id)
+);
+create index if not exists idx_agentes_permisos_org on agentes_permisos(org_id);
+
+alter table agentes_permisos enable row level security;
+create policy "rls_agentes_permisos" on agentes_permisos
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
