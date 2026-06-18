@@ -4,8 +4,8 @@
 // Datos reales desde Neon; la org se resuelve desde la sesión de Clerk (src/lib/db.ts).
 
 import { getOrg, getSetupProgress, getSidebarBadges } from '../lib/queries';
-import { SignOutButton } from '@clerk/astro/components';
-import WorkspaceSwitcher from '../components/b2b/WorkspaceSwitcher';
+import { SignOutButton, OrganizationSwitcher } from '@clerk/astro/components';
+import { clerkAppearance } from '../lib/clerk-theme';
 import OnboardingWidget from '../components/app/OnboardingWidget.astro';
 import Analytics from '@vercel/analytics/astro';
 const ORG = await getOrg();
@@ -124,8 +124,8 @@ const NAV_GROUPS = [
                     <!-- Org switcher de Clerk Organizations (cambiar / crear org).
                          Clerk es la fuente de verdad de identidad; el webhook
                          /api/clerk/webhook sincroniza orgs/miembros hacia Neon. -->
-                    <div class="sb-clerk-orgs">
-                        <WorkspaceSwitcher client:only="react" />
+                    <div class="sb-clerk-orgs" style="margin-top: 1rem;">
+                        <OrganizationSwitcher appearance={clerkAppearance} hidePersonal={true} />
                     </div>
                 </div>
 

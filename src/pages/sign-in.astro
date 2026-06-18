@@ -1,10 +1,11 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import SignInForm from '../components/auth/SignInForm';
-
-// Only render on server if needed, but these are static forms
+import { SignIn } from '@clerk/astro/components';
+import { clerkAppearance } from '../lib/clerk-theme';
 ---
 
 <Layout title="Iniciar sesión - Cord">
-    <SignInForm client:only="react" />
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #09090b; padding: 2rem;">
+        <SignIn appearance={clerkAppearance} routing="path" path="/sign-in" />
+    </div>
 </Layout>

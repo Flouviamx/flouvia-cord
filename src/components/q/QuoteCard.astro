@@ -654,12 +654,13 @@ const total = money(quoteTotal(q));
     color: #fff; border: none; border-radius: 14px;
     padding: 16px 22px; cursor: pointer; width: 100%;
     box-shadow: 0 10px 28px -10px rgba(10,25,47,0.42);
-    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.4s ease, opacity 0.2s;
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.4s ease, opacity 0.2s, filter 0.4s ease;
 }
-.ql-cta:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 16px 36px -10px rgba(10,25,47,0.5); }
+.ql-cta:hover:not(:disabled) { transform: translateY(-3px) scale(1.02); box-shadow: 0 20px 42px -12px rgba(10,25,47,0.55); filter: brightness(1.05); }
+.ql-cta:active:not(:disabled) { transform: translateY(1px) scale(0.98); box-shadow: 0 4px 12px -5px rgba(10,25,47,0.4); filter: brightness(0.95); transition-duration: 0.1s; }
 .ql-cta:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
 .ql-cta.ql-danger { background: #ef4444 !important; box-shadow: 0 10px 28px -10px rgba(239,68,68,0.4); }
-.ql-cta.ql-danger:hover:not(:disabled) { box-shadow: 0 16px 36px -10px rgba(239,68,68,0.5); }
+.ql-cta.ql-danger:hover:not(:disabled) { box-shadow: 0 20px 42px -12px rgba(239,68,68,0.55); filter: brightness(1.05); }
 
 /* Botones fantasma */
 .ql-secondary-row { display: flex; gap: 0.7rem; }
@@ -669,11 +670,13 @@ const total = money(quoteTotal(q));
     border: 1px solid rgba(10,25,47,0.1); border-radius: 12px;
     padding: 11px 16px; cursor: pointer;
     display: flex; align-items: center; justify-content: center; gap: 6px;
-    transition: color 0.2s, border-color 0.2s, background 0.2s;
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), color 0.3s, border-color 0.3s, background 0.3s, box-shadow 0.4s;
 }
-.ql-ghost:hover { color: #111; border-color: rgba(10,25,47,0.2); background: #f9f9f9; }
-.ql-reject-link { flex: none; padding-inline: 18px; border-color: transparent; color: #9ca3af; }
-.ql-reject-link:hover { color: #ef4444; border-color: rgba(239,68,68,0.18); background: rgba(239,68,68,0.03); }
+.ql-ghost:hover { color: #111; border-color: rgba(10,25,47,0.25); background: #f9f9f9; transform: translateY(-2px); box-shadow: 0 8px 24px -8px rgba(10,25,47,0.1); }
+.ql-ghost:active { transform: translateY(1px) scale(0.98); box-shadow: none; background: #f1f1f1; transition-duration: 0.1s; }
+.ql-reject-link { flex: none; padding-inline: 18px; border-color: transparent; color: #9ca3af; box-shadow: none; }
+.ql-reject-link:hover { color: #ef4444; border-color: rgba(239,68,68,0.18); background: rgba(239,68,68,0.03); transform: translateY(-2px); box-shadow: 0 8px 24px -8px rgba(239,68,68,0.15); }
+.ql-reject-link:active { transform: translateY(1px) scale(0.98); }
 
 /* ── Panel firma / rechazo ──────────────────── */
 .ql-step-header { display: flex; align-items: center; gap: 10px; margin-bottom: 0.2rem; }

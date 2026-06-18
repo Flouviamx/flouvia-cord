@@ -276,6 +276,41 @@ const dotColor = (tipo: string) =>
     .d-notes { margin-bottom: 2.6rem; }
     .d-notes p { font-size: 0.86rem; color: var(--color-text); margin: 0; line-height: 1.55; }
 
+    /* Historial de versiones */
+    .d-versions { margin-bottom: 2.6rem; }
+    .v-accordion { 
+        background: #fafafa; border: 1px solid var(--color-border); 
+        border-radius: 14px; overflow: hidden; transition: all 0.4s var(--ease-spring);
+    }
+    .v-accordion[open] { background: #fff; box-shadow: 0 12px 32px -12px rgba(10,25,47,0.08); border-color: rgba(10,25,47,0.15); }
+    .v-accordion summary { 
+        padding: 1.1rem 1.4rem; font-size: 0.86rem; font-weight: 600; color: var(--color-text);
+        cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between;
+        user-select: none; transition: background 0.3s;
+    }
+    .v-accordion summary:hover { background: rgba(10,25,47,0.02); }
+    .v-accordion summary::-webkit-details-marker { display: none; }
+    .v-accordion summary::after { 
+        content: '+'; font-size: 1.3rem; font-weight: 400; color: #99a2af; 
+        transition: transform 0.4s var(--ease-spring), color 0.3s;
+    }
+    .v-accordion[open] summary { border-bottom: 1px solid rgba(10,25,47,0.04); }
+    .v-accordion[open] summary::after { transform: rotate(45deg); color: var(--color-text); }
+    .v-list { padding: 1rem 1.4rem 1.4rem; display: flex; flex-direction: column; gap: 0.6rem; }
+    .v-item { 
+        display: flex; align-items: center; justify-content: space-between; 
+        padding: 0.9rem 1rem; background: var(--color-bg-soft); border-radius: 12px;
+        border: 1px solid rgba(10,25,47,0.04);
+        transition: transform 0.3s var(--ease-spring), background 0.3s, border-color 0.3s, box-shadow 0.3s;
+    }
+    .v-item:hover { background: #fff; transform: translateX(3px); border-color: rgba(10,25,47,0.08); box-shadow: 0 6px 16px -4px rgba(10,25,47,0.05); }
+    .v-badge { 
+        font-size: 0.68rem; font-weight: 800; color: var(--color-blue-deep); 
+        background: rgba(10,25,47,0.05); padding: 4px 8px; border-radius: 6px; letter-spacing: 0.5px;
+    }
+    .v-date { font-size: 0.84rem; color: var(--color-text-muted); flex: 1; margin-left: 14px; font-weight: 500; }
+    .v-total { font-size: 0.98rem; color: var(--color-text); }
+
     .d-side { display: flex; flex-direction: column; gap: 2.6rem; position: sticky; top: 76px; }
     .d-actions { display: flex; flex-direction: column; gap: 0.5rem; }
     /* el .section-head ocupa el ancho completo de la columna de acciones */

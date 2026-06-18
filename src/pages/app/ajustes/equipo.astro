@@ -1,11 +1,14 @@
 ---
 import SettingsShell from '../../../components/app/SettingsShell.astro';
-import MembersManager from '../../../components/b2b/MembersManager';
+import { OrganizationProfile } from '@clerk/astro/components';
+import { clerkAppearance } from '../../../lib/clerk-theme';
 ---
 
 <SettingsShell title="Equipo y roles — Ajustes" tab="equipo"
     intro="Administra quién tiene acceso a la agencia y define roles de Administrador o Miembro.">
     
-    <MembersManager client:only="react" />
+    <div style="margin-top: 2rem;">
+        <OrganizationProfile appearance={clerkAppearance} routing="hash" />
+    </div>
     
 </SettingsShell>
