@@ -78,7 +78,7 @@ Reglas:
             VALUES (${context.orgId}, ${context.cotizacionId}, ${cuotas}, ${monto_cuota}, 'propuesto')
           `;
           
-          finalMessage += \`\n\n[Sistema: El agente ha propuesto formalmente un plan de pago de \${cuotas} cuotas de $\${monto_cuota.toFixed(2)}]\`;
+          finalMessage += `\n\n[Sistema: El agente ha propuesto formalmente un plan de pago de ${cuotas} cuotas de $${monto_cuota.toFixed(2)}]`;
         }
       }
     }

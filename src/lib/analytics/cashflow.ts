@@ -122,7 +122,7 @@ export async function getCashFlowPrediction(orgId: string): Promise<{
         system: "Eres el CFO (Director Financiero) AI de la empresa. Analiza la proyección de flujo de caja y da 2-3 oraciones clave. Sé muy directo y profesional.",
         messages: [{
           role: 'user',
-          content: \`Proyección de cobros: \${JSON.stringify(promptData.slice(0, 30))}\`
+          content: `Proyección de cobros: ${JSON.stringify(promptData.slice(0, 30))}`
         }]
       });
       if (response.content[0].type === 'text') {

@@ -1,10 +1,9 @@
 import type { APIRoute } from 'astro';
 import { getCashFlowPrediction } from '../../../lib/analytics/cashflow';
-import { getAuth } from '@clerk/astro/server';
 
 export const GET: APIRoute = async (context) => {
   try {
-    const auth = await getAuth(context);
+    const auth = context.locals.auth();
     const orgId = auth?.orgId || auth?.sessionClaims?.org_id as string;
     
     if (!orgId) {
