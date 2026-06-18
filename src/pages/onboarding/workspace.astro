@@ -1,8 +1,11 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import CreateWorkspaceForm from '../../components/b2b/CreateWorkspaceForm';
+import { CreateOrganization } from '@clerk/astro/components';
+import { clerkAppearance } from '../../lib/clerk-theme';
 ---
 
 <Layout title="Crear Espacio - Cord">
-    <CreateWorkspaceForm client:only="react" />
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #09090b; padding: 2rem;">
+        <CreateOrganization appearance={clerkAppearance} routing="hash" />
+    </div>
 </Layout>

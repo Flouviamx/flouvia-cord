@@ -1,8 +1,11 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import AcceptInvitationFlow from '../components/b2b/AcceptInvitationFlow';
+import { SignUp } from '@clerk/astro/components';
+import { clerkAppearance } from '../lib/clerk-theme';
 ---
 
 <Layout title="Aceptar invitación - Cord">
-    <AcceptInvitationFlow client:only="react" />
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #09090b; padding: 2rem;">
+        <SignUp appearance={clerkAppearance} routing="path" path="/accept-invitation" />
+    </div>
 </Layout>
