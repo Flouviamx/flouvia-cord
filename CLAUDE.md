@@ -54,14 +54,19 @@ en `/login` y `/registro` (SSR, `prerender = false`). App de Clerk: "Cord"
 (`app_3Ey07ttoq6VjvVgWmPOnI0U9rW6`), login CLI como flouvia.mx@gmail.com
 (`clerk` CLI instalado en `~/.npm-global/bin/clerk`). ✅ **`/app` y las APIs
 internas YA están PROTEGIDAS** (`src/middleware.ts`: sin sesión → redirect a
-`/login`; APIs internas → 401; públicas `/api/q|stripe|cron` pasan). El `org_id`
-se resuelve por usuario de Clerk en `getActiveOrgId()` (crea la org en el primer
-login; la org demo `demo-user` solo es fallback sin sesión, ej. cron). Falta:
-instancia de PRODUCCIÓN de Clerk. ✅ **Stripe Billing CONECTADO (jun 2026):**
+`/login`; APIs internas → 401; públicas `/api/q|stripe|cron|clerk` pasan). El `org_id`
+se resuelve por usuario de Clerk en `getActiveOrgId()` — orden: (0) API key M2M,
+(0.5) Clerk active org (→ mapeo `clerk_org_id`→`orgs.id`, lazy-create si llega antes
+que el webhook), (1) membresía activa en `org_members`, (2) org propia legacy,
+(3) primera vez → crear. La org demo `demo-user` solo es fallback sin sesión (cron).
+Falta: instancia de PRODUCCIÓN de Clerk + activar Organizations en el Dashboard
+(ver sección "Clerk Organizations" abajo). ✅ **Stripe Billing CONECTADO (jun 2026):**
 suscripciones de 5 planes + medidores de excedente (ver "Stripe Billing" abajo).
 Falta setear `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET` en prod, configurar el
 Customer Portal en el dashboard de Stripe y cablear los meter events de CFDI/API/
-usuario (el de IA ya está cableado en `ai-draft`).
+usuario (el de IA ya está cableado en `ai-draft`). ✅ **Clerk Organizations HÍBRIDO
+(jun 2026):** código completamente implementado — ver sección abajo. Falta la
+config manual en el Dashboard de Clerk y correr la migración.
 
 ---
 
@@ -366,8 +371,39 @@ usuario (el de IA ya está cableado en `ai-draft`).
    TOC sidebar sticky con scrollspy `IntersectionObserver`, animaciones `PageAnims`
    (`masked-title` en H1, `reveal` en grid), microinteracciones CSS puras (subrayado expansivo
    en links, `translateX` activo en TOC, bullet `scale`, hover rows tabla).
-⬜ Pendiente: aprobación parcial por línea, versiones de cotización, multi-usuario con Clerk
-   (proteger `/app`), Stripe Billing de suscripciones (planes).
+✅ **Clerk Organizations — modo híbrido (jun 2026)** — Clerk = fuente de verdad de
+   identidad (org switcher, email invitations, SSO/SAML, multi-org); Neon = fuente de
+   verdad de datos de negocio (RLS, billing, 8 permisos granulares). Puente: columna
+   `orgs.clerk_org_id` (text unique). Archivos modificados:
+   • `db/schema.sql` — `alter table orgs add column if not exists clerk_org_id text unique;`
+     + `clerk_user_id` ahora nullable (orgs de Clerk no tienen dueño único en el schema).
+   • `src/lib/context.ts` — campo `clerkOrgId` en `ReqCtx` + `currentClerkOrgId()`.
+   • `src/middleware.ts` — inyecta `auth().orgId` → `clerkOrgId`; `/api/clerk/` en `PUBLIC_API_PREFIXES`.
+   • `src/lib/db.ts` — `getActiveOrgId()` resuelve por `clerk_org_id` primero (paso 0.5),
+     con lazy-upsert si el webhook aún no llegó; todo el carril legacy se conserva.
+   • `src/pages/api/clerk/webhook.ts` — sincroniza `organization.*` y
+     `organizationMembership.*` → upsert en `orgs`/`org_members`; role mapping
+     `org:admin`→preset `admin`, `org:member`→preset `vendedor`; no pisa permisos finos.
+   • `src/layouts/AppLayout.astro` — `<OrganizationSwitcher>` en el sidebar
+     (cambiar/crear orgs; `hidePersonal`, dark theme).
+   • `src/pages/api/equipo.ts` — POST usa `createOrganizationInvitation` vía BAPI
+     (Clerk manda el email); fallback a token/link si la org no tiene `clerk_org_id`.
+     DELETE también llama `deleteOrganizationMembership` para mantener Clerk en sync.
+   • `src/pages/app/ajustes/equipo.astro` — UI muestra "invitación enviada por correo"
+     cuando `d.emailed === true`.
+   • `scripts/backfill-clerk-orgs.mjs` — script de migración único (`npm run clerk:backfill-orgs`):
+     crea Organization en Clerk por cada org Neon sin `clerk_org_id`, guarda el mapeo
+     y agrega miembros activos. Re-ejecutable.
+   ⚠️ **Pasos manuales pendientes** (config, no código):
+     1. `clerk enable orgs` (o Dashboard → Organizations settings). Membership = **`optional`**.
+     2. Crear webhook en Clerk Dashboard → `https://cord.flouvia.com/api/clerk/webhook`
+        con los 8 eventos: `user.created/deleted` + `organization.created/updated/deleted`
+        + `organizationMembership.created/updated/deleted`. Copiar signing secret a `CLERK_WEBHOOK_SECRET`.
+     3. `npm run db:migrate` (agrega `orgs.clerk_org_id`).
+     4. `npm run clerk:backfill-orgs` (migra orgs existentes a Clerk).
+     5. Después del backfill: cambiar Membership a `required` si se quiere B2B-only.
+⬜ Pendiente: aprobación parcial por línea, versiones de cotización, producción de Clerk
+   (instancia real), Stripe Billing en prod (price_ids + webhook secret).
 
 ---
 
@@ -461,14 +497,14 @@ habilitar Organizations es config del dashboard de Clerk (no codeable aquí); la
 identidad sigue siendo Clerk (userId), solo la membresía/permiso es nuestra.
 
 **Tablas** (`db/schema.sql`):
-- `orgs` — el negocio (nombre, logo, datos fiscales/RFC/CSD, `quote_prefix`, plan, Stripe IDs)
+- `orgs` — el negocio (nombre, logo, datos fiscales/RFC/CSD, `quote_prefix`, plan, Stripe IDs, `clerk_org_id`)
 - `productos` — catálogo de cada org
 - `clientes` — a quién se cotiza (con `terminos_default` y `limite_credito`)
 - `cotizaciones` — status `draft|sent|viewed|approved|rejected|expired|paid|invoiced` + `public_token` (para `/q/{token}`)
 - `cotizacion_items` — líneas (permite línea libre sin producto; `precio_negociado` opcional)
 - `eventos` — timeline + "tu cliente vio la cotización" (**feature estrella**)
 - `facturas_cfdi` — timbrado SAT (fase 4)
-- `org_members` — equipo multi-usuario (rol, permisos jsonb, estado, token invitación)
+- `org_members` — equipo multi-usuario (rol, permisos jsonb, estado, token invitación); sincronizado desde Clerk vía webhook
 - `tareas` — recordatorios CRM del vendedor
 - `audit_log` — registro inmutable de acciones (logAudit/reqIp)
 - `api_keys` — llaves API públicas (hash SHA-256, mode test|live, scope read|write)
