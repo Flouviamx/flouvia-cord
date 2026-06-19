@@ -32,28 +32,28 @@ const NAV_GROUPS = [
     {
         label: 'Principal',
         items: [
-            { id: 'dashboard',    href: '/app',              label: 'Dashboard',    icon: 'M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z' },
-            { id: 'cotizaciones', href: '/app/cotizaciones', label: 'Cotizaciones', icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM14 3.5L18.5 8H14V3.5z', badge: badges.seguimiento, tone: 'neutral' },
+            { id: 'dashboard',    href: '/app',              label: 'Dashboard',    icon: 'M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z', shortcut: '⌘ 1' },
+            { id: 'cotizaciones', href: '/app/cotizaciones', label: 'Cotizaciones', icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM14 3.5L18.5 8H14V3.5z', badge: badges.seguimiento, tone: 'neutral', shortcut: '⌘ 2' },
         ],
     },
     {
         label: 'Dinero',
         items: [
-            { id: 'cobranza',  href: '/app/cobranza',  label: 'Cobranza',  icon: 'M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z', badge: badges.vencidas, tone: 'danger' },
-            { id: 'analitica', href: '/app/analitica', label: 'Analítica', icon: 'M4 13h3v7H4v-7zm6.5-5h3v12h-3V8zM17 11h3v9h-3v-9z' },
+            { id: 'cobranza',  href: '/app/cobranza',  label: 'Cobranza',  icon: 'M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z', badge: badges.vencidas, tone: 'danger', shortcut: '⌘ 3' },
+            { id: 'analitica', href: '/app/analitica', label: 'Analítica', icon: 'M4 13h3v7H4v-7zm6.5-5h3v12h-3V8zM17 11h3v9h-3v-9z', shortcut: '⌘ 4' },
         ],
     },
     {
         label: 'Catálogo',
         items: [
-            { id: 'clientes',  href: '/app/clientes',  label: 'Clientes',  icon: 'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z' },
-            { id: 'productos', href: '/app/productos', label: 'Productos', icon: 'M20 7h-4V5l-2-2h-4L8 5v2H4c-1.1 0-2 .9-2 2v5c0 .75.4 1.38 1 1.73V19c0 1.11.89 2 2 2h14c1.11 0 2-.89 2-2v-3.28c.59-.35 1-.99 1-1.72V9c0-1.1-.9-2-2-2zM10 5h4v2h-4V5z' },
+            { id: 'clientes',  href: '/app/clientes',  label: 'Clientes',  icon: 'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z', shortcut: '⌘ 5' },
+            { id: 'productos', href: '/app/productos', label: 'Productos', icon: 'M20 7h-4V5l-2-2h-4L8 5v2H4c-1.1 0-2 .9-2 2v5c0 .75.4 1.38 1 1.73V19c0 1.11.89 2 2 2h14c1.11 0 2-.89 2-2v-3.28c.59-.35 1-.99 1-1.72V9c0-1.1-.9-2-2-2zM10 5h4v2h-4V5z', shortcut: '⌘ 6' },
         ],
     },
     {
         label: 'Sistema',
         items: [
-            { id: 'ajustes', href: '/app/ajustes', label: 'Ajustes', icon: 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z' },
+            { id: 'ajustes', href: '/app/ajustes', label: 'Ajustes', icon: 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z', shortcut: '⌘ ,' },
         ],
     },
 ];
@@ -135,6 +135,9 @@ const NAV_GROUPS = [
                                 <a href={item.href} class:list={['sb-item', { active: page === item.id }]} title={item.label}>
                                     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d={item.icon} /></svg>
                                     <span class="sb-item-label">{item.label}</span>
+                                    {!!(item as any).shortcut && (
+                                        <kbd class="sb-shortcut">{(item as any).shortcut}</kbd>
+                                    )}
                                     {!!item.badge && item.badge > 0 && (
                                         <span class:list={['sb-badge', { danger: item.tone === 'danger' }]}>{item.badge > 99 ? '99+' : item.badge}</span>
                                     )}
@@ -657,14 +660,24 @@ const NAV_GROUPS = [
     .sidebar {
         width: var(--sidebar-w);
         flex-shrink: 0;
-        background: linear-gradient(180deg, #0c1d37 0%, #0a192f 55%, #081424 100%);
+        /* Estilo Pill Flotante (Glassmorphism oscuro) */
+        background: linear-gradient(180deg, rgba(24,46,80,0.62) 0%, rgba(10,25,47,0.5) 55%, rgba(8,20,38,0.58) 100%);
+        backdrop-filter: blur(34px) saturate(1.9) brightness(1.06);
+        -webkit-backdrop-filter: blur(34px) saturate(1.9) brightness(1.06);
+        border: 1px solid rgba(255,255,255,0.14);
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.22),
+            inset 0 0 0 0.5px rgba(255,255,255,0.08),
+            inset 0 -8px 18px rgba(0,0,0,0.22),
+            0 22px 60px rgba(0,0,0,0.34),
+            0 3px 10px rgba(0,0,0,0.18);
+        border-radius: 24px;
+        margin: 1rem;
+        height: calc(100vh - 2rem);
+        /* Fin Estilo Pill */
         display: flex; flex-direction: column;
-        padding: 1.4rem 0.9rem 1.1rem;
-        position: sticky; top: 0; height: 100vh;
-        /* z-index sube TODO el stacking context del sidebar por encima de la topbar
-           (z:50), el contenido y el widget de onboarding (z:120) — así el dropdown
-           del OrgSwitcher no se transparenta con la página. Los overlays de pantalla
-           completa (cmdk 500, drawers 710, toasts 800, nav-bar 999) siguen arriba. */
+        padding: 1.2rem 0.7rem 1rem;
+        position: sticky; top: 1rem;
         z-index: 130;
         transition: width 0.28s var(--ease-spring), padding 0.28s var(--ease-spring);
     }
@@ -685,31 +698,26 @@ const NAV_GROUPS = [
     .sb-item {
         position: relative;
         display: flex; align-items: center; gap: 11px;
-        padding: 8px 11px; border-radius: 9px;
+        padding: 8px 11px; border-radius: 12px;
         font-size: 0.86rem; font-weight: 500;
         color: rgba(255,255,255,0.55); text-decoration: none;
-        transition: color 0.25s var(--ease-ios), background 0.25s var(--ease-ios);
+        transition: color 0.25s var(--ease-ios), background 0.25s var(--ease-ios), box-shadow 0.25s var(--ease-ios), transform 0.2s var(--ease-ios);
     }
-    .sb-item svg { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; transition: opacity 0.22s var(--ease-ios), transform 0.28s var(--ease-spring); }
-    .sb-item:hover svg { opacity: 1; }
+    .sb-item svg { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; transition: opacity 0.22s var(--ease-ios), transform 0.4s var(--ease-spring); }
+    .sb-item:hover svg { opacity: 1; transform: scale(1.1); }
+    .sb-item:active svg { transform: scale(0.9); }
     .sb-item.active svg { opacity: 1; }
     .sb-item-label {
         flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         transition: opacity 0.2s var(--ease-ios);
     }
+    /* Estilos hover y active estilo "pill" */
     .sb-item:hover { color: rgba(255,255,255,0.92); background: rgba(255,255,255,0.05); }
     .sb-item.active {
-        color: #fff; background: rgba(255,255,255,0.09);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+        color: #fff;
+        background: rgba(255,255,255,0.12);
+        box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), inset 0 0 0 0.5px rgba(255,255,255,0.1), inset 0 -3px 8px rgba(0,0,0,0.12);
     }
-    /* Barra-acento del item activo (estilo Linear) — crece con un spring sutil */
-    .sb-item::before {
-        content: ''; position: absolute; left: -0.9rem; top: 50%;
-        width: 3px; height: 16px; border-radius: 0 3px 3px 0; background: #fff;
-        transform: translateY(-50%) scaleY(0); transform-origin: center;
-        opacity: 0; transition: transform 0.3s var(--ease-spring), opacity 0.2s var(--ease-ios);
-    }
-    .sb-item.active::before { transform: translateY(-50%) scaleY(1); opacity: 1; }
     .sb-badge {
         flex-shrink: 0; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 100px;
         display: inline-flex; align-items: center; justify-content: center;
@@ -717,6 +725,16 @@ const NAV_GROUPS = [
         color: rgba(255,255,255,0.85); background: rgba(255,255,255,0.12);
     }
     .sb-badge.danger { color: #fff; background: var(--color-danger); }
+    .sb-shortcut {
+        font-family: var(--font-mono, monospace);
+        font-size: 0.65rem;
+        color: rgba(255,255,255,0.3);
+        background: rgba(255,255,255,0.08);
+        padding: 2px 5px;
+        border-radius: 4px;
+        transition: opacity 0.2s var(--ease-ios);
+    }
+    .sb-item:hover .sb-shortcut { color: rgba(255,255,255,0.6); }
 
     /* ── Cuenta — arriba, sin card por defecto ── */
     .sb-account {
@@ -845,6 +863,7 @@ const NAV_GROUPS = [
     .sb-collapsed .sidebar { padding-left: 0.6rem; padding-right: 0.6rem; align-items: stretch; }
     /* Fade-out de labels (cambio 4) — no display:none para que la transition funcione */
     .sb-collapsed .sb-item-label,
+    .sb-collapsed .sb-shortcut,
     .sb-collapsed .sb-group-label { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
     .sb-collapsed .sb-org-info,
     .sb-collapsed .sb-org-caret { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
@@ -855,7 +874,6 @@ const NAV_GROUPS = [
     .sb-collapsed .sb-org-switch { justify-content: center; padding: 7px; }
     .sb-collapsed .sb-org-menu { left: 0; right: auto; width: 210px; top: calc(100% + 4px); bottom: auto; }
     .sb-collapsed .sb-item { justify-content: center; padding: 9px; }
-    .sb-collapsed .sb-item.active::before { left: -0.6rem; }
     /* Badge → punto cuando está colapsado */
     .sb-collapsed .sb-badge {
         position: absolute; top: 4px; right: 4px; min-width: 0; width: 7px; height: 7px;
