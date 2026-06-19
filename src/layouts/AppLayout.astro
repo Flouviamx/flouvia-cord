@@ -150,13 +150,14 @@ const NAV_GROUPS = [
 
                 <div class="sb-footer">
                     <img class="sb-foot-logo" src="/imgs/logo-cord-white.png" alt="Cord" />
-                    <button class="sb-expand" id="sbExpand" type="button" aria-label="Expandir menú" title="Expandir menú">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><path d="M11 8l4 4-4 4"/></svg>
-                    </button>
-                    <button class="sb-collapse" id="sbCollapse" type="button" aria-label="Colapsar menú" title="Colapsar menú">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><path d="M15 16l-4-4 4-4"/></svg>
-                    </button>
                 </div>
+                
+                <!-- Botón flotante premium para colapsar/expandir -->
+                <button class="sb-toggle-floating" id="sbToggleFloating" type="button" aria-label="Alternar menú">
+                    <svg class="sb-toggle-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
             </aside>
 
             <!-- ── MAIN ── -->
@@ -804,21 +805,26 @@ const NAV_GROUPS = [
     .sb-action-row svg { width: 17px; height: 17px; flex-shrink: 0; opacity: 0.85; }
     .sb-action-row:hover, .sb-action-row:active { background: rgba(255,255,255,0.1); color: #fff; }
 
-    /* ── Footer (logo + botones colapsar/expandir) ── */
-    .sb-footer { padding-top: 0.7rem; display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; }
+    /* ── Footer (logo) ── */
+    .sb-footer { padding-top: 0.7rem; display: flex; align-items: center; justify-content: flex-start; padding-left: 0.5rem; gap: 0.4rem; }
     .sb-foot-logo { height: 15px; width: auto; opacity: 0.5; transition: opacity 0.2s var(--ease-ios); }
-    .sb-collapse, .sb-expand {
-        flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
-        width: 28px; height: 28px; border-radius: 8px;
-        background: none; border: none; cursor: pointer;
-        color: rgba(255,255,255,0.35); transition: color 0.2s, background 0.2s, transform 0.2s var(--ease-spring);
+    
+    /* ── Floating Sidebar Toggle (Premium) ── */
+    .sb-toggle-floating {
+        position: absolute; top: 2.2rem; right: -13px;
+        width: 26px; height: 26px; border-radius: 50%;
+        background: #fff; border: 1px solid var(--color-border);
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; color: var(--color-text-muted);
+        box-shadow: 0 4px 12px rgba(10,25,47,0.06);
+        transition: transform 0.2s var(--ease-spring), color 0.2s, border-color 0.2s, opacity 0.2s;
+        z-index: 110; opacity: 0;
     }
-    .sb-collapse svg, .sb-expand svg { width: 16px; height: 16px; transition: transform 0.2s var(--ease-spring); }
-    .sb-collapse:hover, .sb-expand:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.08); }
-    .sb-collapse:active, .sb-expand:active { transform: scale(0.92); }
-    .sb-collapse:hover svg { transform: translateX(-2px); }
-    .sb-expand:hover svg { transform: translateX(2px); }
-    .sb-expand { display: none; }
+    .sidebar:hover .sb-toggle-floating, .sb-toggle-floating:focus-visible { opacity: 1; }
+    .sb-toggle-floating:hover { color: var(--color-blue-deep); border-color: rgba(10,25,47,0.2); transform: scale(1.08); }
+    .sb-toggle-floating:active { transform: scale(0.92); }
+    .sb-toggle-ico { width: 14px; height: 14px; transition: transform 0.4s var(--ease-spring); }
+    .sb-collapsed .sb-toggle-ico { transform: rotate(180deg); }
 
     /* ── Estado COLAPSADO (solo iconos) — solo desktop; en móvil el sidebar es drawer ── */
     @media (min-width: 881px) {
@@ -843,7 +849,7 @@ const NAV_GROUPS = [
         padding: 0; font-size: 0; border: 1.5px solid #0a192f;
     }
     .sb-collapsed .sb-expand { display: inline-flex; }
-    .sb-collapsed .sb-footer { justify-content: center; }
+    .sb-collapsed .sb-footer { justify-content: center; padding-left: 0; }
     /* Tooltip al hover en modo colapsado */
     .sb-collapsed .sb-item::after {
         content: attr(title); position: absolute; left: calc(100% + 12px); top: 50%; transform: translateY(-50%);
@@ -1171,8 +1177,10 @@ const NAV_GROUPS = [
             root.classList.toggle('sb-collapsed', v);
             try { localStorage.setItem('cord.sb.collapsed', v ? '1' : '0'); } catch (e) {}
         };
-        document.getElementById('sbCollapse')?.addEventListener('click', (e) => { e.stopPropagation(); setCollapsed(true); });
-        document.getElementById('sbExpand')?.addEventListener('click', (e) => { e.stopPropagation(); setCollapsed(false); });
+        document.getElementById('sbToggleFloating')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setCollapsed(!root.classList.contains('sb-collapsed'));
+        });
     }
 
     // ── Toasts globales — window.cordToast(msg, 'ok'|'error'|'info') ──

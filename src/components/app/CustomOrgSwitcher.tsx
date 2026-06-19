@@ -158,6 +158,20 @@ export default function CustomOrgSwitcher() {
           animation: pulse 1.5s infinite ease-in-out;
         }
 
+        :global(.sb-collapsed) .org-name,
+        :global(.sb-collapsed) .chevron-icon {
+          opacity: 0;
+          width: 0;
+          overflow: hidden;
+          margin: 0;
+          padding: 0;
+        }
+        
+        :global(.sb-collapsed) .org-switcher-btn {
+          justify-content: center;
+          padding: 0.5rem;
+        }
+
         .org-switcher-btn {
           display: flex;
           align-items: center;
