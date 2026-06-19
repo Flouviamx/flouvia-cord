@@ -238,13 +238,19 @@ export default function CustomOrgSwitcher() {
           top: calc(100% + 0.5rem);
           left: 0;
           width: 280px;
-          background: #0a192f;
-          border: 1px solid rgba(255, 255, 255, 0.15);
+          /* Fondo SÓLIDO opaco (sobre un degradado navy) + rim light interno para
+             que nunca se transparente con la página detrás. */
+          background: linear-gradient(180deg, #0d1f3a 0%, #0a192f 100%);
+          border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 14px;
-          box-shadow: 0 24px 40px -10px rgba(0, 0, 0, 0.5), 0 10px 20px -5px rgba(0, 0, 0, 0.3);
+          box-shadow:
+            0 32px 64px -16px rgba(0, 0, 0, 0.65),
+            0 12px 24px -8px rgba(0, 0, 0, 0.4),
+            inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
           padding: 0.5rem;
           z-index: 9999;
-          animation: dropdownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          transform-origin: top left;
+          animation: dropdownFade 0.22s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         @keyframes dropdownFade {
@@ -288,7 +294,6 @@ export default function CustomOrgSwitcher() {
 
         .org-list-item:hover {
           background: rgba(255, 255, 255, 0.06);
-          transform: translateX(2px);
           color: #ffffff;
         }
 

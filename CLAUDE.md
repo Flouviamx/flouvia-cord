@@ -453,6 +453,7 @@ config manual en el Dashboard de Clerk y correr la migración.
    • **Nanostore de Test Mode:** Se introdujo `testMode.ts` (estado global sincronizado con `localStorage` como `cord_test_mode`) y se acopló al interruptor "Entorno de prueba" en el `CustomOrgSwitcher.tsx`.
    • **Rediseño "Quiet Luxury" en Desarrolladores:** Se eliminó la dependencia de `DeveloperUI.css` (estilo Stripe morado/blanco) en `/app/ajustes/api.astro`. La interfaz ahora usa clases nativas de Cord (`.api-btn-solid`, `.api-btn-ghost`) asegurando un Modo Oscuro perfecto.
    • **Org Switcher UI Fix:** Corrección de contraste de texto y recortes `text-overflow` (`min-width: 0` + `ellipsis`) para nombres de usuario/emails largos.
+✅ **Integración Visual Nivel App (Clerk) (jun 2026)** — El componente `<OrganizationProfile>` (Ajustes de Equipo) ahora se integra de forma transparente en el layout claro de la App (`equipo.astro`) mediante un nuevo `clerkAppAppearance` definido en `clerk-theme.ts`, eliminando el choque visual del modo oscuro forzado.
 ⬜ Pendiente: aprobación parcial por línea, producción de Clerk
    (instancia real), Stripe Billing en prod (price_ids + webhook secret).
 
