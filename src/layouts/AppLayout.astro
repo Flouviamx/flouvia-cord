@@ -4,9 +4,8 @@
 // Datos reales desde Neon; la org se resuelve desde la sesión de Clerk (src/lib/db.ts).
 
 import { getOrg, getSetupProgress, getSidebarBadges } from '../lib/queries';
-import { UserButton, OrganizationSwitcher } from '@clerk/astro/components';
+import CustomOrgSwitcher from '../components/app/CustomOrgSwitcher';
 import { clerkAppearance } from '../lib/clerk-theme';
-import OnboardingWidget from '../components/app/OnboardingWidget.astro';
 import Analytics from '@vercel/analytics/astro';
 const ORG = await getOrg();
 
@@ -91,47 +90,8 @@ const NAV_GROUPS = [
             <aside class="sidebar">
                 <!-- Cuenta — arriba -->
                 <div class="sb-account" style="padding: 0.5rem;">
-                    <!-- Org switcher de Clerk Organizations (cambiar / crear org).
-                         Clerk es la fuente de verdad de identidad; el popup usa tema claro (estilo Stripe).
-                         El trigger se estiliza para integrarse en la sidebar oscura de Cord. -->
-                    <OrganizationSwitcher 
-                        hidePersonal={true} 
-                        appearance={{
-                            elements: {
-                                rootBox: { width: '100%' },
-                                organizationSwitcherTrigger: {
-                                    width: '100%',
-                                    backgroundColor: 'transparent',
-                                    color: '#e2e8f0',
-                                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                                    boxShadow: 'none',
-                                    padding: '0.5rem 0.75rem',
-                                    borderRadius: '8px',
-                                    justifyContent: 'space-between',
-                                    transition: 'all 0.2s ease',
-                                    '&:hover': {
-                                        backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                                        borderColor: 'rgba(255, 255, 255, 0.12)'
-                                    }
-                                },
-                                organizationSwitcherTriggerIcon: {
-                                    color: '#94a3b8'
-                                },
-                                organizationPreviewTextContainer: {
-                                    color: '#e2e8f0'
-                                },
-                                organizationPreviewSecondaryIdentifier: {
-                                    color: '#94a3b8'
-                                },
-                                // El popup mantiene el tema claro por defecto (clerkAppearance no se pasa aquí)
-                                organizationSwitcherPopoverCard: {
-                                    boxShadow: '0 10px 40px -10px rgba(10,25,47,0.2)',
-                                    border: '1px solid #e2e8f0',
-                                    borderRadius: '12px'
-                                }
-                            }
-                        }} 
-                    />
+                    <!-- Custom Org Switcher (full custom B2B motor) -->
+                    <CustomOrgSwitcher client:load />
                 </div>
 
                 <!-- Acciones móviles (solo en drawer) — crear / ayuda / config -->
@@ -181,30 +141,7 @@ const NAV_GROUPS = [
                 </nav>
 
                 <div class="sb-user" style="padding: 1rem; padding-bottom: 0;">
-                    <!-- UserButton para cerrar sesión y perfil personal -->
-                    <UserButton 
-                        showName={true} 
-                        appearance={{
-                            elements: {
-                                rootBox: { width: '100%' },
-                                userButtonTrigger: { 
-                                    width: '100%', 
-                                    justifyContent: 'flex-start', 
-                                    padding: '0.5rem', 
-                                    borderRadius: '8px', 
-                                    color: '#e2e8f0', 
-                                    transition: 'all 0.2s ease',
-                                    '&:hover': { background: 'rgba(255,255,255,0.06)' } 
-                                },
-                                userButtonBox: { flexDirection: 'row-reverse' },
-                                userPreviewTextContainer: { color: '#e2e8f0', textAlign: 'left' }
-                            }
-                        }}
-                    >
-                        <UserButton.MenuItems>
-                            <UserButton.Link label="Ver sitio público" href="/" />
-                        </UserButton.MenuItems>
-                    </UserButton>
+                    <!-- Org Switcher and User config are now handled centrally -->
                 </div>
 
                 <div class="sb-footer">
@@ -232,18 +169,6 @@ const NAV_GROUPS = [
                     </button>
 
                     <div class="tb-right">
-                        {!setup.complete && (
-                            <button class="onb-pill" id="onbPill" type="button" hidden aria-label="Abrir guía de configuración">
-                                <span class="onb-pill-ring" aria-hidden="true">
-                                    <svg viewBox="0 0 36 36">
-                                        <circle class="onb-ring-bg" cx="18" cy="18" r="15.5"></circle>
-                                        <circle class="onb-ring-fg" cx="18" cy="18" r="15.5" style={`stroke-dasharray:${pillDash}`}></circle>
-                                    </svg>
-                                    <b data-pill-pct>{setup.pct}%</b>
-                                </span>
-                                <span class="onb-pill-label">Guía de configuración</span>
-                            </button>
-                        )}
                         <a class:list={['tb-icon', 'tb-gear', { active: page === 'ajustes' }]} href="/app/ajustes" title="Ajustes" aria-label="Ajustes">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                         </a>
@@ -325,8 +250,6 @@ const NAV_GROUPS = [
         </div>
 
 
-        <!-- ── GUÍA DE CONFIGURACIÓN (widget flotante + píldora en topbar) ── -->
-        {!setup.complete && <OnboardingWidget progress={setup} />}
         <Analytics />
     </body>
 </html>

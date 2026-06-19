@@ -1,11 +1,142 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { CreateOrganization } from '@clerk/astro/components';
-import { clerkAppearance } from '../../lib/clerk-theme';
+import CreateWorkspace from '../../components/onboarding/CreateWorkspace';
 ---
 
-<Layout title="Crear Espacio - Cord">
-    <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #09090b; padding: 2rem;">
-        <CreateOrganization appearance={clerkAppearance} routing="hash" />
+<Layout title="Crear Workspace - Cord">
+    <div class="auth-page">
+        <div class="auth-wrapper">
+            <div class="stripe-gradient"></div>
+            
+            <div class="auth-header-top">
+                <a href="/">
+                    <h1 style="font-size: 1.5rem; font-weight: 800; color: #0a192f; letter-spacing: -0.05em;">cord</h1>
+                </a>
+            </div>
+            
+            <CreateWorkspace client:load />
+            
+            <div class="auth-footer-text">
+                &copy; 2026 Flouvia Cord. Hecho en México.
+            </div>
+        </div>
     </div>
 </Layout>
+
+<style is:global>
+    /* Estilos base reutilizados */
+    .auth-page {
+        min-height: 100vh;
+        background: #f8fafc;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+        font-family: var(--font-sans, system-ui, sans-serif);
+    }
+
+    .stripe-gradient {
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: 
+            radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0) 20%, #f8fafc 80%),
+            conic-gradient(from 0deg at 50% 50%, #fca5a5, #fcd34d, #6ee7b7, #93c5fd, #c4b5fd, #fca5a5);
+        opacity: 0.15;
+        z-index: 0;
+        pointer-events: none;
+        animation: rotateGradient 30s linear infinite;
+    }
+
+    @keyframes rotateGradient {
+        100% { transform: rotate(360deg); }
+    }
+
+    .auth-wrapper {
+        position: relative;
+        z-index: 1;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 2rem 1rem;
+        justify-content: center;
+    }
+
+    .auth-header-top {
+        width: 100%;
+        max-width: 440px;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: flex-start;
+        position: absolute;
+        top: 2rem;
+    }
+
+    .auth-header-top a {
+        text-decoration: none;
+    }
+
+    .auth-card {
+        background: #ffffff;
+        width: 100%;
+        max-width: 440px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        padding: 2.5rem;
+        animation: fadeinup 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .auth-header { margin-bottom: 2rem; }
+    .auth-title { font-size: 1.5rem; font-weight: 700; color: #0f172a; margin: 0; letter-spacing: -0.02em; }
+    .auth-form { display: flex; flex-direction: column; gap: 1.25rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .form-group label { font-size: 0.875rem; font-weight: 600; color: #334155; }
+    
+    .form-input {
+        padding: 0.75rem 1rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 1rem;
+        color: #0f172a;
+        transition: all 0.2s;
+        outline: none;
+    }
+    .form-input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+
+    .btn-primary {
+        margin-top: 0.5rem;
+        background: #818cf8;
+        color: #ffffff;
+        border: none;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .btn-primary:hover { background: #6366f1; }
+    .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
+
+    .auth-error {
+        font-size: 0.85rem;
+        color: #ef4444;
+        background: #fef2f2;
+        padding: 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #fecaca;
+    }
+
+    .auth-footer-text { margin-top: 3rem; font-size: 0.8rem; color: #94a3b8; position: absolute; bottom: 2rem;}
+
+    @keyframes fadeinup {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>

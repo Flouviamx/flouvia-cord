@@ -1,178 +1,287 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { SignIn } from '@clerk/astro/components';
+import CustomSignIn from '../components/auth/CustomSignIn';
 ---
 
 <Layout title="Iniciar sesión - Cord">
     <div class="auth-page">
-        <div class="auth-left">
-            <div class="auth-nav">
+        <div class="auth-wrapper">
+            <div class="stripe-gradient"></div>
+            
+            <div class="auth-header-top">
                 <a href="/">
-                    <img src="/imgs/logo-cord-navy.png" alt="Cord" class="logo-img" />
+                    <h1 style="font-size: 1.5rem; font-weight: 800; color: #0a192f; letter-spacing: -0.05em;">cord</h1>
                 </a>
             </div>
-            <div class="auth-container">
-                <SignIn routing="path" path="/sign-in" appearance={{
-                    elements: {
-                        rootBox: { width: '100%' },
-                        cardBox: { width: '100%', boxShadow: 'none' },
-                        card: { boxShadow: 'none', border: 'none', padding: '0', background: 'transparent' },
-                        headerTitle: { fontSize: '1.7rem', color: '#0a192f', fontWeight: '700', letterSpacing: '-0.02em' },
-                        headerSubtitle: { color: '#64748b', fontSize: '0.95rem' },
-                        formFieldLabel: { color: '#0a192f', fontWeight: '600' },
-                        formFieldInput: { borderRadius: '10px', borderColor: '#e2e8f0', padding: '0.65rem 1rem' },
-                        formButtonPrimary: { backgroundColor: '#0a192f', borderRadius: '10px', padding: '0.65rem 1rem', fontSize: '0.95rem', fontWeight: '600', textTransform: 'none', '&:hover': { backgroundColor: '#112240' } },
-                        footerActionLink: { color: '#0a192f', fontWeight: '600' },
-                        identityPreview: { borderColor: '#e2e8f0', background: '#f8fafc' },
-                        dividerLine: { background: '#e2e8f0' },
-                        dividerText: { color: '#94a3b8' },
-                        socialButtonsBlockButton: { borderColor: '#e2e8f0', '&:hover': { background: '#f8fafc' } },
-                        socialButtonsBlockButtonText: { color: '#0a192f', fontWeight: '500' }
-                    }
-                }} />
-            </div>
+            
+            <CustomSignIn client:load />
+            
             <div class="auth-footer-text">
                 &copy; 2026 Flouvia Cord. Hecho en México.
-            </div>
-        </div>
-        <div class="auth-right">
-            <div class="auth-right-content">
-                <div class="quote-mark">"</div>
-                <p class="quote-text">Desde que usamos Cord, redujimos el tiempo de cotización de 3 horas a solo 10 minutos. Nuestras ventas B2B nunca habían fluido tan rápido y nuestros clientes aman la experiencia.</p>
-                <div class="quote-author">
-                    <div class="author-avatar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    </div>
-                    <div class="author-info">
-                        <strong>Alejandro M.</strong>
-                        <span>Director Comercial, Distribuidora XYZ</span>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 </Layout>
 
-<style>
+<style is:global>
     .auth-page {
-        display: flex;
         min-height: 100vh;
-        background: #ffffff;
+        background: #f8fafc;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
         font-family: var(--font-sans, system-ui, sans-serif);
     }
-    .auth-left {
+
+    /* Stripe-like colorful mesh background */
+    .stripe-gradient {
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: 
+            radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0) 20%, #f8fafc 80%),
+            conic-gradient(from 0deg at 50% 50%, #fca5a5, #fcd34d, #6ee7b7, #93c5fd, #c4b5fd, #fca5a5);
+        opacity: 0.15;
+        z-index: 0;
+        pointer-events: none;
+        animation: rotateGradient 30s linear infinite;
+    }
+
+    @keyframes rotateGradient {
+        100% { transform: rotate(360deg); }
+    }
+
+    .auth-wrapper {
+        position: relative;
+        z-index: 1;
         flex: 1;
         display: flex;
         flex-direction: column;
-        padding: 2.5rem;
-        position: relative;
+        align-items: center;
+        padding: 2rem 1rem;
     }
-    .auth-nav {
-        margin-bottom: auto;
-    }
-    .logo-img {
-        height: 24px;
-        width: auto;
-        transition: opacity 0.2s;
-    }
-    .logo-img:hover {
-        opacity: 0.8;
-    }
-    .auth-container {
-        margin: auto;
+
+    .auth-header-top {
         width: 100%;
-        max-width: 400px;
-        animation: fadein 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+        max-width: 440px;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: flex-start;
     }
+
+    .auth-header-top a {
+        text-decoration: none;
+    }
+
+    /* CustomSignIn Component Styles */
+    .auth-card {
+        background: #ffffff;
+        width: 100%;
+        max-width: 440px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        padding: 2.5rem;
+        animation: fadeinup 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .auth-header {
+        margin-bottom: 2rem;
+    }
+
+    .auth-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+        letter-spacing: -0.02em;
+    }
+
+    .auth-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .label-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .form-group label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #334155;
+    }
+
+    .forgot-link {
+        font-size: 0.8rem;
+        color: #6366f1;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .forgot-link:hover {
+        color: #4f46e5;
+    }
+
+    .form-input {
+        padding: 0.75rem 1rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 1rem;
+        color: #0f172a;
+        transition: all 0.2s;
+        outline: none;
+    }
+
+    .form-input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+
+    .checkbox-row {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: -0.25rem;
+    }
+
+    .form-checkbox {
+        width: 1rem;
+        height: 1rem;
+        border-radius: 4px;
+        border: 1px solid #cbd5e1;
+        accent-color: #6366f1;
+    }
+
+    .checkbox-row label {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        margin-top: 0.5rem;
+        background: #818cf8;
+        color: #ffffff;
+        border: none;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .btn-primary:hover {
+        background: #6366f1;
+    }
+    .btn-primary:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    .auth-error {
+        font-size: 0.85rem;
+        color: #ef4444;
+        background: #fef2f2;
+        padding: 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #fecaca;
+    }
+
+    .auth-divider {
+        position: relative;
+        text-align: center;
+        margin: 2rem 0;
+    }
+
+    .auth-divider::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: #e2e8f0;
+        z-index: 0;
+    }
+
+    .auth-divider span {
+        position: relative;
+        background: #ffffff;
+        padding: 0 1rem;
+        color: #64748b;
+        font-size: 0.8rem;
+        font-weight: 500;
+        z-index: 1;
+    }
+
+    .auth-social {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .btn-social {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        padding: 0.65rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #334155;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-social:hover:not(:disabled) {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
+
+    .btn-social:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .auth-footer {
+        margin-top: 2.5rem;
+        text-align: center;
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+
+    .auth-footer a {
+        color: #6366f1;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .auth-footer a:hover {
+        text-decoration: underline;
+    }
+
     .auth-footer-text {
-        margin-top: auto;
+        margin-top: 3rem;
         font-size: 0.8rem;
         color: #94a3b8;
     }
-    .auth-right {
-        flex: 1;
-        background: #0a192f;
-        background-image: radial-gradient(circle at 100% 100%, #152c54 0%, #0a192f 100%);
-        display: none;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        padding: 4rem;
-        color: #fff;
-        position: relative;
-        overflow: hidden;
-    }
-    .auth-right::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: url('data:image/svg+xml;utf8,<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><circle cx="2" cy="2" r="1" fill="rgba(255,255,255,0.04)"/></svg>');
-        background-size: 20px 20px;
-        opacity: 0.5;
-    }
-    .auth-right-content {
-        max-width: 480px;
-        position: relative;
-        z-index: 1;
-        animation: fadeinup 0.7s cubic-bezier(0.16, 1, 0.3, 1) both 0.1s;
-    }
-    .quote-mark {
-        font-size: 5rem;
-        line-height: 1;
-        color: rgba(255,255,255,0.1);
-        font-family: Georgia, serif;
-        margin-bottom: -2rem;
-    }
-    .quote-text {
-        font-size: 1.4rem;
-        line-height: 1.55;
-        font-weight: 500;
-        margin-bottom: 2rem;
-        color: rgba(255,255,255,0.95);
-    }
-    .quote-author {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-    .author-avatar {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.1);
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid rgba(255,255,255,0.15);
-    }
-    .author-info {
-        display: flex;
-        flex-direction: column;
-        gap: 0.15rem;
-    }
-    .author-info strong {
-        font-size: 0.95rem;
-        font-weight: 600;
-    }
-    .author-info span {
-        font-size: 0.85rem;
-        color: rgba(255,255,255,0.55);
-    }
-    
-    @keyframes fadein {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
+
     @keyframes fadeinup {
-        from { opacity: 0; transform: translateY(20px); }
+        from { opacity: 0; transform: translateY(15px); }
         to { opacity: 1; transform: translateY(0); }
-    }
-    
-    @media (min-width: 1024px) {
-        .auth-right {
-            display: flex;
-            flex: 1.1;
-        }
     }
 </style>
