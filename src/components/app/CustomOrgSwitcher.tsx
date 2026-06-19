@@ -126,10 +126,10 @@ export default function CustomOrgSwitcher() {
         }
         
         .org-switcher-skeleton {
-          width: 180px;
-          height: 40px;
-          background: #e2e8f0;
-          border-radius: 8px;
+          width: 100%;
+          height: 48px;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 10px;
           animation: pulse 1.5s infinite ease-in-out;
         }
 
@@ -139,42 +139,45 @@ export default function CustomOrgSwitcher() {
           gap: 0.75rem;
           background: transparent;
           border: 1px solid transparent;
-          padding: 0.5rem;
-          border-radius: 8px;
+          padding: 0.5rem 0.6rem;
+          border-radius: 10px;
           cursor: pointer;
-          transition: all 0.2s;
-          color: #0f172a;
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          color: rgba(255, 255, 255, 0.9);
           width: 100%;
           text-align: left;
         }
         
         .org-switcher-btn:hover, .org-switcher-btn.active {
-          background: #f1f5f9;
+          background: rgba(255, 255, 255, 0.08);
+          color: #ffffff;
         }
 
         .org-avatar {
-          width: 28px;
-          height: 28px;
-          border-radius: 6px;
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
-          color: white;
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.03));
+          color: #ffffff;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-weight: 600;
+          font-weight: 700;
           font-size: 0.85rem;
           flex-shrink: 0;
+          border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .org-avatar.small {
           width: 24px;
           height: 24px;
           font-size: 0.75rem;
+          border-radius: 6px;
         }
 
         .org-name {
           font-weight: 600;
-          font-size: 0.9rem;
+          font-size: 0.85rem;
           flex: 1;
           white-space: nowrap;
           overflow: hidden;
@@ -182,12 +185,13 @@ export default function CustomOrgSwitcher() {
         }
 
         .chevron-icon {
-          color: #64748b;
-          transition: transform 0.2s;
+          color: rgba(255, 255, 255, 0.4);
+          transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
         
         .org-switcher-btn.active .chevron-icon {
           transform: rotate(180deg);
+          color: #ffffff;
         }
 
         .org-dropdown {
@@ -195,30 +199,30 @@ export default function CustomOrgSwitcher() {
           top: calc(100% + 0.5rem);
           left: 0;
           width: 260px;
-          background: white;
-          border: 1px solid #e2e8f0;
-          border-radius: 12px;
-          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+          background: #0a192f;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 14px;
+          box-shadow: 0 24px 40px -10px rgba(0, 0, 0, 0.5), 0 10px 20px -5px rgba(0, 0, 0, 0.3);
           padding: 0.5rem;
-          z-index: 50;
+          z-index: 9999;
           animation: dropdownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         @keyframes dropdownFade {
-          from { opacity: 0; transform: translateY(-5px); }
-          to { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .dropdown-header {
-          padding: 0.5rem 0.75rem;
+          padding: 0.4rem 0.6rem 0.6rem;
         }
 
         .dropdown-title {
-          font-size: 0.75rem;
-          font-weight: 600;
-          color: #64748b;
+          font-size: 0.65rem;
+          font-weight: 700;
+          color: rgba(255, 255, 255, 0.4);
           text-transform: uppercase;
-          letter-spacing: 0.05em;
+          letter-spacing: 0.08em;
         }
 
         .org-list {
@@ -232,22 +236,26 @@ export default function CustomOrgSwitcher() {
           display: flex;
           align-items: center;
           gap: 0.75rem;
-          padding: 0.5rem 0.75rem;
+          padding: 0.5rem 0.6rem;
           background: transparent;
           border: none;
-          border-radius: 6px;
+          border-radius: 8px;
           cursor: pointer;
-          transition: background 0.2s;
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
           text-align: left;
           width: 100%;
+          color: rgba(255, 255, 255, 0.85);
         }
 
         .org-list-item:hover {
-          background: #f8fafc;
+          background: rgba(255, 255, 255, 0.06);
+          transform: translateX(2px);
+          color: #ffffff;
         }
 
         .org-list-item.selected {
-          background: #eff6ff;
+          background: rgba(255, 255, 255, 0.1);
+          color: #ffffff;
         }
 
         .org-details {
@@ -259,54 +267,80 @@ export default function CustomOrgSwitcher() {
         .org-item-name {
           font-size: 0.85rem;
           font-weight: 500;
-          color: #0f172a;
         }
 
         .org-item-role {
           font-size: 0.7rem;
-          color: #64748b;
+          color: rgba(255, 255, 255, 0.4);
+        }
+        
+        .check-icon {
+          stroke: #ffffff;
+          opacity: 0.8;
         }
 
         .dropdown-divider {
           height: 1px;
-          background: #e2e8f0;
+          background: rgba(255, 255, 255, 0.08);
           margin: 0.5rem 0;
         }
 
         .dropdown-action-btn {
           display: flex;
           align-items: center;
-          gap: 0.5rem;
-          padding: 0.65rem 0.75rem;
+          gap: 0.6rem;
+          padding: 0.6rem;
           width: 100%;
           background: transparent;
           border: none;
-          border-radius: 6px;
+          border-radius: 8px;
           font-size: 0.85rem;
           font-weight: 500;
-          color: #334155;
+          color: rgba(255, 255, 255, 0.7);
           cursor: pointer;
-          transition: background 0.2s;
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .dropdown-action-btn:hover {
-          background: #f8fafc;
+          background: rgba(255, 255, 255, 0.06);
+          color: #ffffff;
         }
 
         .dropdown-action-btn svg {
-          color: #64748b;
+          color: rgba(255, 255, 255, 0.5);
+          transition: color 0.2s;
+        }
+        
+        .dropdown-action-btn:hover svg {
+          color: #ffffff;
         }
 
         .dropdown-action-btn.text-red {
-          color: #ef4444;
+          color: #f87171;
         }
         
         .dropdown-action-btn.text-red:hover {
-          background: #fef2f2;
+          background: rgba(239, 68, 68, 0.1);
+          color: #fca5a5;
         }
 
         .dropdown-action-btn.text-red svg {
-          color: #ef4444;
+          color: #f87171;
+        }
+        
+        /* Custom Scrollbar for org-list */
+        .org-list::-webkit-scrollbar {
+          width: 4px;
+        }
+        .org-list::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .org-list::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 4px;
+        }
+        .org-list::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.3);
         }
       `}</style>
     </div>
