@@ -29,8 +29,8 @@
     "@vercel/analytics": "^2.0.1",
     "astro": "6.1.2",
     "gsap": "^3.15.0",
+    "is-inside-container": "^1.0.0",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "ultrahtml": "^1.6.0"
+    "react-dom": "^19.2.7"
   }
 }

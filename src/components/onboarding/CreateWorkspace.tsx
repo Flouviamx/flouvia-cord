@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useOrganizationList, useUser } from '@clerk/astro/react';
+import { useOrganizationList, useUser } from '@clerk/clerk-react';
 
 export default function CreateWorkspace() {
   const { createOrganization, isLoaded } = useOrganizationList();

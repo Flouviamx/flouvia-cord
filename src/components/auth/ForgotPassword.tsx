@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSignIn } from '@clerk/astro/react';
+import { useSignIn } from '@clerk/clerk-react';
 
 export default function ForgotPassword() {
   const { isLoaded, signIn, setActive } = useSignIn();

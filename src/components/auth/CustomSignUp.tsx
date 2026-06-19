@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSignUp } from '@clerk/astro/react';
+import { useSignUp } from '@clerk/clerk-react';
 
 export default function CustomSignUp() {
   const { signUp, isLoaded } = useSignUp();

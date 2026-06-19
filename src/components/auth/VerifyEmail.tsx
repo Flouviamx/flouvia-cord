@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useSignUp } from '@clerk/astro/react';
+import { useSignUp } from '@clerk/clerk-react';
 
 export default function VerifyEmail() {
   const { isLoaded, signUp, setActive } = useSignUp();

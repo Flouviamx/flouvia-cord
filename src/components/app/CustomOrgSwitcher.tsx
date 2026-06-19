@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useOrganization, useOrganizationList, useUser, useAuth } from '@clerk/astro/react';
+import { useOrganization, useOrganizationList, useUser, useAuth } from '@clerk/clerk-react';
 
 export default function CustomOrgSwitcher() {
   const { isLoaded, organization } = useOrganization();
