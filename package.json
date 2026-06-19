@@ -23,6 +23,7 @@
     "@clerk/localizations": "^4.8.1",
     "@clerk/themes": "^2.4.57",
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@nanostores/react": "^1.1.0",
     "@neondatabase/serverless": "^1.1.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

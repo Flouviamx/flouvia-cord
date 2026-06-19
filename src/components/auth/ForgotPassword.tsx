@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import { useSignIn } from '@clerk/clerk-react';
+import { useStore } from '@nanostores/react';
+import { $clerkStore, $isLoadedStore } from '@clerk/astro/client';
 
 export default function ForgotPassword() {
-  const { isLoaded, signIn, setActive } = useSignIn();
+  const clerk = useStore($clerkStore);
+  const isLoaded = useStore($isLoadedStore);
+  const signIn = clerk?.client.signIn;
+  const setActive = clerk?.setActive;
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -13,7 +17,7 @@ export default function ForgotPassword() {
 
   const requestReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isLoaded) return;
+    if (!isLoaded || !signIn) return;
     setError('');
     setLoading(true);
 
@@ -36,7 +40,7 @@ export default function ForgotPassword() {
 
   const completeReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isLoaded) return;
+    if (!isLoaded || !signIn || !setActive) return;
     setError('');
     setLoading(true);
 

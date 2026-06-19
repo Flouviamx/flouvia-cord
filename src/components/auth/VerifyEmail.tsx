@@ -1,8 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useSignUp } from '@clerk/clerk-react';
+import { useStore } from '@nanostores/react';
+import { $clerkStore, $isLoadedStore } from '@clerk/astro/client';
 
 export default function VerifyEmail() {
-  const { isLoaded, signUp, setActive } = useSignUp();
+  const clerk = useStore($clerkStore);
+  const isLoaded = useStore($isLoadedStore);
+  const signUp = clerk?.client.signUp;
+  const setActive = clerk?.setActive;
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -49,7 +53,7 @@ export default function VerifyEmail() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isLoaded) return;
+    if (!isLoaded || !signUp || !setActive) return;
     const fullCode = code.join('');
     if (fullCode.length < 6) {
       setError('Por favor, ingresa el código completo de 6 dígitos.');
@@ -114,7 +118,7 @@ export default function VerifyEmail() {
       </form>
 
       <div className="auth-footer" style={{ marginTop: '1.5rem' }}>
-        ¿No recibiste el código? <button type="button" className="btn-link" onClick={() => signUp.prepareEmailAddressVerification({ strategy: 'email_code' })}>Reenviar código</button>
+        ¿No recibiste el código? <button type="button" className="btn-link" onClick={() => signUp?.prepareEmailAddressVerification({ strategy: 'email_code' })}>Reenviar código</button>
       </div>
     </div>
   );

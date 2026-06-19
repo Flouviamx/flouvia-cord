@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import { useSignIn } from '@clerk/clerk-react';
+import { useStore } from '@nanostores/react';
+import { $clerkStore, $isLoadedStore } from '@clerk/astro/client';
 
 export default function CustomSignIn() {
-  const { signIn, isLoaded, setActive } = useSignIn();
+  const clerk = useStore($clerkStore);
+  const isLoaded = useStore($isLoadedStore);
+  const signIn = clerk?.client.signIn;
+  const setActive = clerk?.setActive;
   
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -11,7 +15,7 @@ export default function CustomSignIn() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isLoaded) return;
+    if (!isLoaded || !signIn || !setActive) return;
     setError('');
     setLoading(true);
 
@@ -36,7 +40,7 @@ export default function CustomSignIn() {
   };
 
   const handleGoogleSSO = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded || !signIn) return;
     try {
       await signIn.authenticateWithRedirect({
         strategy: 'oauth_google',

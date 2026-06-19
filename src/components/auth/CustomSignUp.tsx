@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { useSignUp } from '@clerk/clerk-react';
+import { useStore } from '@nanostores/react';
+import { $clerkStore, $isLoadedStore } from '@clerk/astro/client';
 
 export default function CustomSignUp() {
-  const { signUp, isLoaded } = useSignUp();
+  const clerk = useStore($clerkStore);
+  const isLoaded = useStore($isLoadedStore);
+  const signUp = clerk?.client.signUp;
   
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -13,7 +16,7 @@ export default function CustomSignUp() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isLoaded) return;
+    if (!isLoaded || !signUp) return;
     setError('');
     setLoading(true);
 
@@ -41,7 +44,7 @@ export default function CustomSignUp() {
   };
 
   const handleGoogleSSO = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded || !signUp) return;
     try {
       await signUp.authenticateWithRedirect({
         strategy: 'oauth_google',

@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { useOrganizationList, useUser } from '@clerk/clerk-react';
+import { useStore } from '@nanostores/react';
+import { $clerkStore, $userStore, $isLoadedStore } from '@clerk/astro/client';
 
 export default function CreateWorkspace() {
-  const { createOrganization, isLoaded } = useOrganizationList();
-  const { user } = useUser();
+  const isLoaded = useStore($isLoadedStore);
+  const clerk = useStore($clerkStore);
+  const user = useStore($userStore);
+  const createOrganization = clerk?.createOrganization;
   const [orgName, setOrgName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);

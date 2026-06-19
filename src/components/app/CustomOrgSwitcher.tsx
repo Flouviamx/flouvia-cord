@@ -1,13 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useOrganization, useOrganizationList, useUser, useAuth } from '@clerk/clerk-react';
+import { useStore } from '@nanostores/react';
+import { $clerkStore, $userStore, $organizationStore, $isLoadedStore } from '@clerk/astro/client';
 
 export default function CustomOrgSwitcher() {
-  const { isLoaded, organization } = useOrganization();
-  const { userMemberships, setActive } = useOrganizationList({
-    userMemberships: { infinite: true },
-  });
-  const { user } = useUser();
-  const { signOut } = useAuth();
+  const isLoaded = useStore($isLoadedStore);
+  const user = useStore($userStore);
+  const organization = useStore($organizationStore);
+  const clerk = useStore($clerkStore);
   
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -30,8 +29,8 @@ export default function CustomOrgSwitcher() {
   const initial = activeName.charAt(0).toUpperCase();
 
   const handleSwitch = async (organizationId: string) => {
-    if (!setActive) return;
-    await setActive({ organization: organizationId });
+    if (!clerk?.setActive) return;
+    await clerk.setActive({ organization: organizationId });
     setIsOpen(false);
   };
 
@@ -40,7 +39,8 @@ export default function CustomOrgSwitcher() {
   };
 
   const handleLogout = async () => {
-    await signOut();
+    if (!clerk?.signOut) return;
+    await clerk.signOut();
     window.location.href = '/sign-in';
   };
 
@@ -65,7 +65,7 @@ export default function CustomOrgSwitcher() {
           </div>
 
           <div className="org-list">
-            {userMemberships.data?.map((mem) => (
+            {user?.organizationMemberships?.map((mem) => (
               <button 
                 key={mem.id} 
                 className={`org-list-item ${organization?.id === mem.organization.id ? 'selected' : ''}`}
