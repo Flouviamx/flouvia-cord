@@ -32,28 +32,28 @@ const NAV_GROUPS = [
     {
         label: 'Principal',
         items: [
-            { id: 'dashboard',    href: '/app',              label: 'Dashboard',    icon: 'M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z', shortcut: '⌘ 1' },
-            { id: 'cotizaciones', href: '/app/cotizaciones', label: 'Cotizaciones', icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM14 3.5L18.5 8H14V3.5z', badge: badges.seguimiento, tone: 'neutral', shortcut: '⌘ 2' },
+            { id: 'dashboard',    href: '/app',              label: 'Dashboard',    icon: 'M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z' },
+            { id: 'cotizaciones', href: '/app/cotizaciones', label: 'Cotizaciones', icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM14 3.5L18.5 8H14V3.5z', badge: badges.seguimiento, tone: 'neutral' },
         ],
     },
     {
         label: 'Dinero',
         items: [
-            { id: 'cobranza',  href: '/app/cobranza',  label: 'Cobranza',  icon: 'M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z', badge: badges.vencidas, tone: 'danger', shortcut: '⌘ 3' },
-            { id: 'analitica', href: '/app/analitica', label: 'Analítica', icon: 'M4 13h3v7H4v-7zm6.5-5h3v12h-3V8zM17 11h3v9h-3v-9z', shortcut: '⌘ 4' },
+            { id: 'cobranza',  href: '/app/cobranza',  label: 'Cobranza',  icon: 'M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z', badge: badges.vencidas, tone: 'danger' },
+            { id: 'analitica', href: '/app/analitica', label: 'Analítica', icon: 'M4 13h3v7H4v-7zm6.5-5h3v12h-3V8zM17 11h3v9h-3v-9z' },
         ],
     },
     {
         label: 'Catálogo',
         items: [
-            { id: 'clientes',  href: '/app/clientes',  label: 'Clientes',  icon: 'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z', shortcut: '⌘ 5' },
-            { id: 'productos', href: '/app/productos', label: 'Productos', icon: 'M20 7h-4V5l-2-2h-4L8 5v2H4c-1.1 0-2 .9-2 2v5c0 .75.4 1.38 1 1.73V19c0 1.11.89 2 2 2h14c1.11 0 2-.89 2-2v-3.28c.59-.35 1-.99 1-1.72V9c0-1.1-.9-2-2-2zM10 5h4v2h-4V5z', shortcut: '⌘ 6' },
+            { id: 'clientes',  href: '/app/clientes',  label: 'Clientes',  icon: 'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z' },
+            { id: 'productos', href: '/app/productos', label: 'Productos', icon: 'M20 7h-4V5l-2-2h-4L8 5v2H4c-1.1 0-2 .9-2 2v5c0 .75.4 1.38 1 1.73V19c0 1.11.89 2 2 2h14c1.11 0 2-.89 2-2v-3.28c.59-.35 1-.99 1-1.72V9c0-1.1-.9-2-2-2zM10 5h4v2h-4V5z' },
         ],
     },
     {
         label: 'Sistema',
         items: [
-            { id: 'ajustes', href: '/app/ajustes', label: 'Ajustes', icon: 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z', shortcut: '⌘ ,' },
+            { id: 'ajustes', href: '/app/ajustes', label: 'Ajustes', icon: 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z' },
         ],
     },
 ];
@@ -127,23 +127,36 @@ const NAV_GROUPS = [
                 </div>
 
                 <nav class="sb-nav">
+                    <!-- Botón Crear Rápido -->
+                    <div class="sb-quick-create">
+                        <a href="/app/cotizaciones/nueva" class="sb-btn-create">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            <span class="sb-btn-create-label">Nueva cotización</span>
+                        </a>
+                    </div>
+
                     <div class="sb-group sb-pins" id="sbPins" hidden></div>
                     {NAV_GROUPS.map((group) => (
-                        <div class="sb-group">
-                            <span class="sb-group-label">{group.label}</span>
-                            {group.items.map((item) => (
-                                <a href={item.href} class:list={['sb-item', { active: page === item.id }]} title={item.label}>
-                                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d={item.icon} /></svg>
-                                    <span class="sb-item-label">{item.label}</span>
-                                    {!!(item as any).shortcut && (
-                                        <kbd class="sb-shortcut">{(item as any).shortcut}</kbd>
-                                    )}
-                                    {!!item.badge && item.badge > 0 && (
-                                        <span class:list={['sb-badge', { danger: item.tone === 'danger' }]}>{item.badge > 99 ? '99+' : item.badge}</span>
-                                    )}
-                                </a>
-                            ))}
-                        </div>
+                        <details class="sb-group" open>
+                            <summary class="sb-group-label">
+                                {group.label}
+                                <svg class="sb-group-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </summary>
+                            <div class="sb-group-content">
+                                {group.items.map((item) => (
+                                    <a href={item.href} class:list={['sb-item', { active: page === item.id }]} title={item.label}>
+                                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d={item.icon} /></svg>
+                                        <span class="sb-item-label">{item.label}</span>
+                                        {!!(item as any).shortcut && (
+                                            <kbd class="sb-shortcut">{(item as any).shortcut}</kbd>
+                                        )}
+                                        {!!item.badge && item.badge > 0 && (
+                                            <span class:list={['sb-badge', { danger: item.tone === 'danger' }]}>{item.badge > 99 ? '99+' : item.badge}</span>
+                                        )}
+                                    </a>
+                                ))}
+                            </div>
+                        </details>
                     ))}
                 </nav>
 
@@ -660,17 +673,17 @@ const NAV_GROUPS = [
     .sidebar {
         width: var(--sidebar-w);
         flex-shrink: 0;
-        /* Estilo Pill Flotante (Glassmorphism oscuro) */
-        background: linear-gradient(180deg, rgba(24,46,80,0.62) 0%, rgba(10,25,47,0.5) 55%, rgba(8,20,38,0.58) 100%);
-        backdrop-filter: blur(34px) saturate(1.9) brightness(1.06);
-        -webkit-backdrop-filter: blur(34px) saturate(1.9) brightness(1.06);
-        border: 1px solid rgba(255,255,255,0.14);
+        /* Estilo Pill Flotante Light Glass */
+        background: linear-gradient(180deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.5) 48%, rgba(255,255,255,0.56) 100%);
+        backdrop-filter: blur(30px) saturate(1.9) brightness(1.04);
+        -webkit-backdrop-filter: blur(30px) saturate(1.9) brightness(1.04);
+        border: 1px solid rgba(255,255,255,0.55);
         box-shadow:
-            inset 0 1px 0 rgba(255,255,255,0.22),
-            inset 0 0 0 0.5px rgba(255,255,255,0.08),
-            inset 0 -8px 18px rgba(0,0,0,0.22),
-            0 22px 60px rgba(0,0,0,0.34),
-            0 3px 10px rgba(0,0,0,0.18);
+            inset 0 1px 1px rgba(255,255,255,0.95),
+            inset 0 0 0 0.5px rgba(255,255,255,0.4),
+            inset 0 -6px 14px rgba(255,255,255,0.18),
+            0 10px 34px rgba(10,25,47,0.1),
+            0 2px 6px rgba(10,25,47,0.06);
         border-radius: 24px;
         margin: 1rem;
         height: calc(100vh - 2rem);
@@ -689,18 +702,45 @@ const NAV_GROUPS = [
         mask-image: linear-gradient(to bottom, black calc(100% - 22px), transparent 100%);
         -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 22px), transparent 100%);
     }
+
+    /* ── Botón Crear Rápido ── */
+    .sb-quick-create { padding: 0 0.2rem 0.5rem; }
+    .sb-btn-create {
+        display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+        padding: 9px 12px; border: none; border-radius: 12px; cursor: pointer; text-decoration: none;
+        background: rgba(0,0,0,0.85); color: #fff;
+        font-family: var(--font-sans); font-size: 0.86rem; font-weight: 650;
+        box-shadow: 0 8px 16px -8px rgba(0,0,0,0.4);
+        transition: transform 0.2s var(--ease-spring), background 0.2s;
+    }
+    .sb-btn-create svg { width: 16px; height: 16px; transition: transform 0.3s var(--ease-spring); }
+    .sb-btn-create:hover { background: #000; transform: translateY(-1px); }
+    .sb-btn-create:active { transform: scale(0.98); }
+    .sb-collapsed .sb-btn-create-label { display: none; }
+    .sb-collapsed .sb-quick-create { padding: 0 0 0.5rem; }
+    .sb-collapsed .sb-btn-create { padding: 9px; justify-content: center; border-radius: 100px; width: 36px; height: 36px; margin: 0 auto; }
+    .sb-collapsed .sb-btn-create:hover svg { transform: rotate(90deg); }
+
+    /* ── Grupos Colapsables ── */
     .sb-group { display: flex; flex-direction: column; gap: 2px; }
     .sb-group-label {
         font-size: 0.6rem; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase;
-        color: rgba(255,255,255,0.3); padding: 2px 11px 5px;
-        transition: opacity 0.2s var(--ease-ios);
+        color: rgba(0,0,0,0.35); padding: 6px 11px;
+        transition: opacity 0.2s var(--ease-ios), color 0.2s;
+        cursor: pointer; list-style: none;
+        display: flex; align-items: center; justify-content: space-between;
     }
+    .sb-group-label::-webkit-details-marker { display: none; }
+    .sb-group-label:hover { color: rgba(0,0,0,0.6); }
+    .sb-group-caret { width: 12px; height: 12px; opacity: 0.5; transition: transform 0.25s var(--ease-spring); }
+    details[open] .sb-group-caret { transform: rotate(180deg); }
+    .sb-group-content { display: flex; flex-direction: column; gap: 2px; }
     .sb-item {
         position: relative;
         display: flex; align-items: center; gap: 11px;
         padding: 8px 11px; border-radius: 12px;
         font-size: 0.86rem; font-weight: 500;
-        color: rgba(255,255,255,0.55); text-decoration: none;
+        color: rgba(0,0,0,0.55); text-decoration: none;
         transition: color 0.25s var(--ease-ios), background 0.25s var(--ease-ios), box-shadow 0.25s var(--ease-ios), transform 0.2s var(--ease-ios);
     }
     .sb-item svg { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; transition: opacity 0.22s var(--ease-ios), transform 0.4s var(--ease-spring); }
@@ -712,29 +752,29 @@ const NAV_GROUPS = [
         transition: opacity 0.2s var(--ease-ios);
     }
     /* Estilos hover y active estilo "pill" */
-    .sb-item:hover { color: rgba(255,255,255,0.92); background: rgba(255,255,255,0.05); }
+    .sb-item:hover { color: rgba(0,0,0,0.95); background: rgba(0,0,0,0.03); }
     .sb-item.active {
-        color: #fff;
-        background: rgba(255,255,255,0.12);
-        box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), inset 0 0 0 0.5px rgba(255,255,255,0.1), inset 0 -3px 8px rgba(0,0,0,0.12);
+        color: rgba(0,0,0,0.95);
+        background: rgba(0,0,0,0.05);
+        box-shadow: inset 0 1px 1px rgba(255,255,255,0.7), inset 0 0 0 0.5px rgba(255,255,255,0.35), inset 0 -3px 8px rgba(255,255,255,0.12);
     }
     .sb-badge {
         flex-shrink: 0; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 100px;
         display: inline-flex; align-items: center; justify-content: center;
         font-size: 0.64rem; font-weight: 700; letter-spacing: -0.01em;
-        color: rgba(255,255,255,0.85); background: rgba(255,255,255,0.12);
+        color: rgba(0,0,0,0.75); background: rgba(0,0,0,0.06);
     }
     .sb-badge.danger { color: #fff; background: var(--color-danger); }
     .sb-shortcut {
         font-family: var(--font-mono, monospace);
         font-size: 0.65rem;
-        color: rgba(255,255,255,0.3);
-        background: rgba(255,255,255,0.08);
+        color: rgba(0,0,0,0.3);
+        background: rgba(0,0,0,0.05);
         padding: 2px 5px;
         border-radius: 4px;
         transition: opacity 0.2s var(--ease-ios);
     }
-    .sb-item:hover .sb-shortcut { color: rgba(255,255,255,0.6); }
+    .sb-item:hover .sb-shortcut { color: rgba(0,0,0,0.5); }
 
     /* ── Cuenta — arriba, sin card por defecto ── */
     .sb-account {
@@ -748,7 +788,7 @@ const NAV_GROUPS = [
     .sb-account::after {
         content: '';
         position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
-        background: linear-gradient(to right, transparent, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.1) 75%, transparent);
+        background: linear-gradient(to right, transparent, rgba(0,0,0,0.06) 25%, rgba(0,0,0,0.06) 75%, transparent);
     }
     .sb-org-switch {
         width: 100%; display: flex; align-items: center; gap: 10px;
@@ -757,22 +797,23 @@ const NAV_GROUPS = [
         font-family: var(--font-sans); text-align: left;
         transition: background 0.22s var(--ease-ios);
     }
-    .sb-org-switch:hover { background: rgba(255,255,255,0.06); }
-    .sb-org-switch[aria-expanded="true"] { background: rgba(255,255,255,0.1); }
+    .sb-org-switch:hover { background: rgba(0,0,0,0.03); }
+    .sb-org-switch[aria-expanded="true"] { background: rgba(0,0,0,0.05); }
     .sb-org-avatar {
         width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
-        background: linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08)); color: #fff;
+        background: linear-gradient(135deg, rgba(0,0,0,0.06), rgba(0,0,0,0.02)); color: #000;
         display: flex; align-items: center; justify-content: center;
         font-size: 0.76rem; font-weight: 800;
+        border: 1px solid rgba(0,0,0,0.05);
     }
     .sb-org-info {
         display: flex; flex-direction: column; min-width: 0; flex: 1;
         transition: opacity 0.2s var(--ease-ios);
     }
-    .sb-org-name { font-size: 0.84rem; font-weight: 650; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sb-org-plan { font-size: 0.68rem; color: rgba(255,255,255,0.42); margin-top: 1px; }
+    .sb-org-name { font-size: 0.84rem; font-weight: 650; color: #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sb-org-plan { font-size: 0.68rem; color: rgba(0,0,0,0.45); margin-top: 1px; }
     .sb-org-caret {
-        width: 15px; height: 15px; flex-shrink: 0; color: rgba(255,255,255,0.45);
+        width: 15px; height: 15px; flex-shrink: 0; color: rgba(0,0,0,0.45);
         transition: transform 0.25s var(--ease-spring), opacity 0.2s var(--ease-ios);
     }
     .sb-org-switch[aria-expanded="true"] .sb-org-caret { transform: rotate(180deg); }
@@ -780,28 +821,30 @@ const NAV_GROUPS = [
     /* Dropdown — abre hacia ABAJO (la cuenta está arriba) */
     .sb-org-menu {
         position: absolute; top: calc(100% + 4px); bottom: auto; left: 0; right: 0; z-index: 60;
-        background: #11233f; border-radius: 13px; padding: 6px;
-        box-shadow: 0 24px 60px -18px rgba(0,0,0,0.7), inset 0 0 0 0.5px rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.85); border-radius: 13px; padding: 6px;
+        backdrop-filter: blur(30px) saturate(1.9); -webkit-backdrop-filter: blur(30px) saturate(1.9);
+        border: 1px solid rgba(255,255,255,0.6);
+        box-shadow: 0 24px 60px -18px rgba(10,25,47,0.2), inset 0 0 0 0.5px rgba(255,255,255,0.8);
         animation: sb-menu-in 0.18s var(--ease-spring);
     }
     .sb-org-menu[hidden] { display: none; }
     @keyframes sb-menu-in { from { opacity: 0; transform: translateY(-6px) scale(0.98); } to { opacity: 1; transform: none; } }
     .sb-org-menu-head { display: flex; align-items: center; gap: 10px; padding: 8px 9px 9px; }
     .sb-org-menu-id { display: flex; flex-direction: column; min-width: 0; }
-    .sb-org-menu-id strong { font-size: 0.82rem; font-weight: 650; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sb-org-menu-id span { font-size: 0.66rem; color: rgba(255,255,255,0.42); }
-    .sb-menu-sep { height: 1px; background: rgba(255,255,255,0.08); margin: 5px 4px; }
+    .sb-org-menu-id strong { font-size: 0.82rem; font-weight: 650; color: #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sb-org-menu-id span { font-size: 0.66rem; color: rgba(0,0,0,0.45); }
+    .sb-menu-sep { height: 1px; background: rgba(0,0,0,0.05); margin: 5px 4px; }
     .sb-menu-item {
         display: flex; align-items: center; gap: 10px; width: 100%;
         padding: 9px 10px; border-radius: 9px; cursor: pointer;
         background: none; border: none; text-align: left; text-decoration: none;
         font-family: var(--font-sans); font-size: 0.84rem; font-weight: 500;
-        color: rgba(255,255,255,0.78); transition: background 0.18s, color 0.18s;
+        color: rgba(0,0,0,0.65); transition: background 0.18s, color 0.18s;
     }
     .sb-menu-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.8; }
-    .sb-menu-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
-    .sb-menu-danger { color: #fca5a5; }
-    .sb-menu-danger:hover { background: rgba(239,68,68,0.14); color: #fecaca; }
+    .sb-menu-item:hover { background: rgba(0,0,0,0.04); color: #000; }
+    .sb-menu-danger { color: #ef4444; }
+    .sb-menu-danger:hover { background: rgba(239,68,68,0.08); color: #dc2626; }
 
     /* ── Acciones móviles del drawer (crear / ayuda / config) — solo móvil ── */
     .sb-mobile-actions { display: none; }
@@ -818,24 +861,26 @@ const NAV_GROUPS = [
     .sb-create:active { transform: scale(0.98); }
     .sb-create-menu {
         position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 60;
-        background: #11233f; border-radius: 13px; padding: 6px;
-        box-shadow: 0 24px 60px -18px rgba(0,0,0,0.7), inset 0 0 0 0.5px rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.85); border-radius: 13px; padding: 6px;
+        backdrop-filter: blur(30px) saturate(1.9); -webkit-backdrop-filter: blur(30px) saturate(1.9);
+        border: 1px solid rgba(255,255,255,0.6);
+        box-shadow: 0 24px 60px -18px rgba(10,25,47,0.2), inset 0 0 0 0.5px rgba(255,255,255,0.8);
         animation: sb-menu-in 0.18s var(--ease-spring);
     }
     .sb-create-menu[hidden] { display: none; }
     .sb-action-row {
         display: flex; align-items: center; gap: 11px; width: 100%;
         padding: 11px 12px; border-radius: 11px; cursor: pointer;
-        background: rgba(255,255,255,0.05); border: none; text-align: left; text-decoration: none;
+        background: rgba(0,0,0,0.03); border: none; text-align: left; text-decoration: none;
         font-family: var(--font-sans); font-size: 0.86rem; font-weight: 500;
-        color: rgba(255,255,255,0.82); transition: background 0.18s, color 0.18s;
+        color: rgba(0,0,0,0.65); transition: background 0.18s, color 0.18s;
     }
     .sb-action-row svg { width: 17px; height: 17px; flex-shrink: 0; opacity: 0.85; }
-    .sb-action-row:hover, .sb-action-row:active { background: rgba(255,255,255,0.1); color: #fff; }
+    .sb-action-row:hover, .sb-action-row:active { background: rgba(0,0,0,0.06); color: #000; }
 
     /* ── Footer (logo + toggle de panel) ── */
     .sb-footer { padding-top: 0.7rem; display: flex; align-items: center; justify-content: flex-start; padding-left: 0.5rem; gap: 0.4rem; }
-    .sb-foot-logo { height: 15px; width: auto; opacity: 0.5; transition: opacity 0.2s var(--ease-ios); }
+    .sb-foot-logo { height: 15px; width: auto; opacity: 0.5; filter: invert(1); transition: opacity 0.2s var(--ease-ios); }
 
     /* ── Toggle estilo panel (Linear/VSCode), abajo a la derecha junto al logo ── */
     .sb-toggle {
@@ -843,12 +888,12 @@ const NAV_GROUPS = [
         width: 30px; height: 30px; border-radius: 8px;
         display: inline-flex; align-items: center; justify-content: center;
         background: transparent; border: none; cursor: pointer;
-        color: rgba(255,255,255,0.5);
+        color: rgba(0,0,0,0.45);
         transition: background 0.22s var(--ease-ios), color 0.22s var(--ease-ios), transform 0.2s var(--ease-spring);
     }
-    .sb-toggle:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .sb-toggle:hover { background: rgba(0,0,0,0.06); color: #000; }
     .sb-toggle:active { transform: scale(0.9); }
-    .sb-toggle:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(255,255,255,0.35); }
+    .sb-toggle:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(0,0,0,0.35); }
     .sb-toggle-ico { width: 17px; height: 17px; transition: transform 0.4s var(--ease-spring); }
     /* La divisoria (el "panel") se desliza sutil al hover = sensación de abrir/cerrar */
     .sb-toggle-div { transition: transform 0.35s var(--ease-spring); transform-origin: center; }
@@ -864,7 +909,8 @@ const NAV_GROUPS = [
     /* Fade-out de labels (cambio 4) — no display:none para que la transition funcione */
     .sb-collapsed .sb-item-label,
     .sb-collapsed .sb-shortcut,
-    .sb-collapsed .sb-group-label { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
+    .sb-collapsed .sb-group-label { opacity: 0; pointer-events: none; width: 0; overflow: hidden; padding-left: 0; padding-right: 0; }
+    .sb-collapsed .sb-group-caret { display: none; }
     .sb-collapsed .sb-org-info,
     .sb-collapsed .sb-org-caret { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
     .sb-collapsed .sb-foot-logo { opacity: 0; width: 0; overflow: hidden; }
@@ -872,7 +918,7 @@ const NAV_GROUPS = [
     .sb-collapsed .sb-account { padding-bottom: 0.3rem; }
     .sb-collapsed .sb-account::after { display: none; }
     .sb-collapsed .sb-org-switch { justify-content: center; padding: 7px; }
-    .sb-collapsed .sb-org-menu { left: 0; right: auto; width: 210px; top: calc(100% + 4px); bottom: auto; }
+    .sb-collapsed .sb-org-menu, .sb-collapsed .sb-create-menu { left: calc(100% + 12px); right: auto; width: 210px; top: 0; bottom: auto; }
     .sb-collapsed .sb-item { justify-content: center; padding: 9px; }
     /* Badge → punto cuando está colapsado */
     .sb-collapsed .sb-badge {
@@ -884,9 +930,11 @@ const NAV_GROUPS = [
     /* Tooltip al hover en modo colapsado */
     .sb-collapsed .sb-item::after {
         content: attr(title); position: absolute; left: calc(100% + 12px); top: 50%; transform: translateY(-50%);
-        background: #11233f; color: #fff; font-size: 0.76rem; font-weight: 600; white-space: nowrap;
+        background: rgba(255,255,255,0.9); color: rgba(0,0,0,0.85); font-size: 0.76rem; font-weight: 600; white-space: nowrap;
         padding: 6px 10px; border-radius: 8px; pointer-events: none; opacity: 0; z-index: 70;
-        box-shadow: 0 10px 30px -10px rgba(0,0,0,0.6), inset 0 0 0 0.5px rgba(255,255,255,0.1);
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.6);
+        box-shadow: 0 10px 30px -10px rgba(10,25,47,0.15), inset 0 0 0 0.5px rgba(255,255,255,0.8);
         transition: opacity 0.18s var(--ease-ios);
     }
     .sb-collapsed .sb-item:hover::after { opacity: 1; }
