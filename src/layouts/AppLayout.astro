@@ -150,14 +150,14 @@ const NAV_GROUPS = [
 
                 <div class="sb-footer">
                     <img class="sb-foot-logo" src="/imgs/logo-cord-white.png" alt="Cord" />
+                    <!-- Toggle estilo panel (Linear/VSCode) — colapsar/expandir -->
+                    <button class="sb-toggle" id="sbToggleFloating" type="button" aria-label="Alternar menú">
+                        <svg class="sb-toggle-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4.5" width="18" height="15" rx="2.6"></rect>
+                            <line class="sb-toggle-div" x1="9.5" y1="4.5" x2="9.5" y2="19.5"></line>
+                        </svg>
+                    </button>
                 </div>
-                
-                <!-- Botón flotante premium para colapsar/expandir -->
-                <button class="sb-toggle-floating" id="sbToggleFloating" type="button" aria-label="Alternar menú">
-                    <svg class="sb-toggle-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                </button>
             </aside>
 
             <!-- ── MAIN ── -->
@@ -815,38 +815,29 @@ const NAV_GROUPS = [
     .sb-action-row svg { width: 17px; height: 17px; flex-shrink: 0; opacity: 0.85; }
     .sb-action-row:hover, .sb-action-row:active { background: rgba(255,255,255,0.1); color: #fff; }
 
-    /* ── Footer (logo) ── */
+    /* ── Footer (logo + toggle de panel) ── */
     .sb-footer { padding-top: 0.7rem; display: flex; align-items: center; justify-content: flex-start; padding-left: 0.5rem; gap: 0.4rem; }
     .sb-foot-logo { height: 15px; width: auto; opacity: 0.5; transition: opacity 0.2s var(--ease-ios); }
-    
-    /* ── Floating Sidebar Toggle (estilo Linear: squircle, reveal sutil) ── */
-    .sb-toggle-floating {
-        position: absolute; top: 2.1rem; right: -12px;
-        width: 24px; height: 24px; border-radius: 8px;
-        background: #fff; border: 1px solid var(--color-border);
-        display: flex; align-items: center; justify-content: center;
-        cursor: pointer; color: var(--color-text-muted);
-        box-shadow: 0 2px 6px rgba(10,25,47,0.08), 0 1px 2px rgba(10,25,47,0.04);
-        transition: transform 0.3s var(--ease-spring), color 0.2s var(--ease-ios),
-                    border-color 0.2s var(--ease-ios), opacity 0.25s var(--ease-ios), box-shadow 0.25s var(--ease-ios);
-        z-index: 110;
-        /* Oculto: entra deslizándose desde el borde al hacer hover en el sidebar */
-        opacity: 0; transform: translateX(-5px) scale(0.85);
+
+    /* ── Toggle estilo panel (Linear/VSCode), abajo a la derecha junto al logo ── */
+    .sb-toggle {
+        margin-left: auto; flex-shrink: 0;
+        width: 30px; height: 30px; border-radius: 8px;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: transparent; border: none; cursor: pointer;
+        color: rgba(255,255,255,0.5);
+        transition: background 0.22s var(--ease-ios), color 0.22s var(--ease-ios), transform 0.2s var(--ease-spring);
     }
-    .sidebar:hover .sb-toggle-floating, .sb-toggle-floating:focus-visible {
-        opacity: 1; transform: translateX(0) scale(1);
-    }
-    .sb-toggle-floating:hover {
-        color: var(--color-blue-deep); border-color: rgba(10,25,47,0.16);
-        box-shadow: 0 5px 16px rgba(10,25,47,0.13), 0 1px 2px rgba(10,25,47,0.05);
-    }
-    .sb-toggle-floating:active,
-    .sidebar:hover .sb-toggle-floating:active { transform: scale(0.86); }
-    .sb-toggle-ico { width: 13px; height: 13px; transition: transform 0.35s var(--ease-spring); }
-    /* El ícono se desplaza hacia la dirección del colapso al hacer hover */
-    .sb-toggle-floating:hover .sb-toggle-ico { transform: translateX(-1.5px); }
-    .sb-collapsed .sb-toggle-ico { transform: rotate(180deg); }
-    .sb-collapsed .sb-toggle-floating:hover .sb-toggle-ico { transform: translateX(1.5px) rotate(180deg); }
+    .sb-toggle:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .sb-toggle:active { transform: scale(0.9); }
+    .sb-toggle:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(255,255,255,0.35); }
+    .sb-toggle-ico { width: 17px; height: 17px; transition: transform 0.4s var(--ease-spring); }
+    /* La divisoria (el "panel") se desliza sutil al hover = sensación de abrir/cerrar */
+    .sb-toggle-div { transition: transform 0.35s var(--ease-spring); transform-origin: center; }
+    .sb-toggle:hover .sb-toggle-div { transform: translateX(1.6px); }
+    /* Colapsado: el ícono se voltea (el panel mira al otro lado = "expandir") */
+    .sb-collapsed .sb-toggle-ico { transform: scaleX(-1); }
+    .sb-collapsed .sb-toggle { margin-left: 0; }
 
     /* ── Estado COLAPSADO (solo iconos) — solo desktop; en móvil el sidebar es drawer ── */
     @media (min-width: 881px) {
