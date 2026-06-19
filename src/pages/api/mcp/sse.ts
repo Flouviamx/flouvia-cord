@@ -3,20 +3,19 @@ export const prerender = false;
 import type { APIRoute } from "astro";
 import { cordMcpServer } from "../../../lib/mcp/cord-server";
 import { WebSseTransport, activeSessions } from "../../../lib/mcp/transport";
+import { authApiKey } from "../../../lib/apikey";
 
-// Para validar la llave de API, el usuario deberá enviarla en un query param o header
-// dado que los clientes SSE estándar a veces no soportan custom headers fácilmente.
-// Asumiremos que viene en el header Authorization: Bearer <token>.
-// (En un entorno real se debe validar con src/lib/db.ts y api_keys)
+// La llave de API viaja en el header Authorization: Bearer <sk_...>.
+// authApiKey la valida contra api_keys (hash sha-256), checa que no esté
+// revocada, valida el plan y resuelve el org_id. Ese org_id se guarda en la
+// sesión SSE para que /api/mcp/message ejecute las tools con la tenancy correcta.
 
 export const GET: APIRoute = async ({ request }) => {
-  const authHeader = request.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-  // TODO: Validar la API Key contra la base de datos (api_keys)
-  
+  const auth = await authApiKey(request, "read");
+  if (auth instanceof Response) return auth; // 401/403 ya formateado
+
   const transport = new WebSseTransport("/api/mcp/message");
+  transport.orgId = auth.orgId;
   activeSessions.set(transport.sessionId, transport);
 
   // Conectar el servidor MCP a este transporte.

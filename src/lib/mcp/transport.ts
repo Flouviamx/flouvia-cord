@@ -16,6 +16,9 @@ export class WebSseTransport implements Transport {
   public readonly stream: ReadableStream;
   public readonly sessionId: string;
   private readonly endpoint: string;
+  // org_id resuelto desde la API key al abrir la sesión SSE. Lo usa
+  // /api/mcp/message para ejecutar las tools con la tenancy correcta.
+  public orgId: string | null = null;
 
   constructor(endpoint: string) {
     this.endpoint = endpoint;

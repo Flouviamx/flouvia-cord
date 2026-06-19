@@ -95,6 +95,7 @@ export async function getOrg() {
         notifPrefs: (o.notif_prefs as Record<string, Record<string, boolean>>) ?? {},
         slackWebhook: (o.slack_webhook_url as string) ?? '',
         integraciones: (o.integraciones as Record<string, boolean>) ?? {},
+        aiCobranzaActiva: (o.ai_cobranza_activa as boolean) ?? false,
         csdEstado: (o.csd_estado as string) ?? '',
         csdNombre: (o.csd_nombre as string) ?? '',
         require2fa: (o.require_2fa as boolean) ?? false,

@@ -1,25 +1,46 @@
 import type { APIRoute } from 'astro';
 import { sql } from '../../../lib/db';
 import { runARAgent } from '../../../lib/agents/ar-agent';
+import { sendEmail } from '../../../lib/email';
 
-// Este cron job debería ser llamado diariamente (ej. vía Vercel Cron)
-export const GET: APIRoute = async () => {
+export const prerender = false;
+
+const CRON_SECRET = import.meta.env.CRON_SECRET || process.env.CRON_SECRET;
+
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// Cron de cobranza autónoma (AI Accounts Receivable). Protegido con CRON_SECRET
+// igual que /api/cron/intereses. NOTA: aún no está agendado en vercel.json a
+// propósito — enviar correos de cobranza autónomos a clientes reales exige un
+// opt-in por org antes de automatizarlo. Hoy se dispara manualmente/bajo demanda.
+export const GET: APIRoute = async ({ request }) => {
+  if (CRON_SECRET) {
+    const auth = request.headers.get('authorization') || '';
+    if (auth !== `Bearer ${CRON_SECRET}`) {
+      return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
+    }
+  }
+
   try {
-    // Buscar cotizaciones facturadas y vencidas (sin paid_at)
+    // Buscar cotizaciones facturadas y vencidas (sin paid_at) — SOLO de orgs que
+    // activaron explícitamente la cobranza autónoma con IA (opt-in).
     const overdueQuotes = await sql`
-      SELECT 
-        c.id as cotizacion_id, 
-        c.org_id, 
-        c.total as monto_adeudado, 
+      SELECT
+        c.id as cotizacion_id,
+        c.org_id,
+        c.total as monto_adeudado,
         c.vigencia,
         cl.empresa as cliente_nombre,
         cl.email as cliente_email,
         DATE_PART('day', NOW() - c.vigencia) as dias_vencido
       FROM cotizaciones c
       JOIN clientes cl ON c.cliente_id = cl.id
+      JOIN orgs o ON o.id = c.org_id
       WHERE c.status = 'invoiced'
         AND c.paid_at IS NULL
         AND c.vigencia < NOW()
+        AND o.ai_cobranza_activa = true
     `;
 
     const results = [];
@@ -49,10 +70,24 @@ export const GET: APIRoute = async () => {
         historialConversacion: mappedHistory as any
       });
 
-      // Aquí se integraría el envío real del correo vía Resend
-      // await sendEmail({ to: quote.cliente_email, subject: 'Aviso de factura vencida', body: agentResponse });
+      // Envío real del correo de cobranza vía Resend. sendEmail es best-effort:
+      // si falta RESEND_API_KEY devuelve { sent:false, skipped } sin lanzar.
+      let emailResult: { sent: boolean; skipped?: string; error?: string } = { sent: false, skipped: 'sin email' };
+      if (quote.cliente_email) {
+        const bodyHtml = `<div style="font-family:system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.6;color:#0a192f;white-space:pre-wrap">${escapeHtml(agentResponse)}</div>`;
+        emailResult = await sendEmail({
+          to: quote.cliente_email,
+          subject: `Recordatorio de pago — factura vencida (${Math.floor(quote.dias_vencido)} días)`,
+          html: bodyHtml,
+        });
+      }
 
-      results.push({ cotizacionId: quote.cotizacion_id, status: 'procesada' });
+      results.push({
+        cotizacionId: quote.cotizacion_id,
+        status: 'procesada',
+        emailSent: emailResult.sent,
+        emailSkipped: emailResult.skipped,
+      });
     }
 
     return new Response(JSON.stringify({ success: true, processed: results.length, results }), {

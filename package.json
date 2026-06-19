@@ -33,5 +33,8 @@
     "is-inside-container": "^1.0.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
+  },
+  "overrides": {
+    "zod": "4.4.3"
   }
 }

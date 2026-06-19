@@ -14,9 +14,17 @@ export interface McpServerConfig {
   auth_token: string | null;
 }
 
+// safeToolName → cómo ejecutarla (qué cliente + nombre real en el servidor).
+export interface ToolBinding {
+  client: Client;
+  realName: string;
+}
+
 export class McpClientManager {
   private orgId: string;
   private agenteId?: string;
+  // Clientes conectados en esta sesión, para cerrarlos al terminar (evita leaks).
+  private openClients: Client[] = [];
 
   constructor(orgId: string, agenteId?: string) {
     this.orgId = orgId;
@@ -58,52 +66,64 @@ export class McpClientManager {
     return permissions;
   }
 
-  // Instancia clientes MCP y devuelve las herramientas permitidas en formato Anthropic
-  async getAnthropicTools(): Promise<{ tools: any[], clientMap: Map<string, Client> }> {
+  // Instancia clientes MCP y devuelve las herramientas permitidas en formato Anthropic.
+  // toolMap mapea el nombre seguro (prefijado) → cómo ejecutarla (cliente + nombre real).
+  async getAnthropicTools(): Promise<{ tools: any[]; toolMap: Map<string, ToolBinding> }> {
     const servers = await this.getServers();
     const permissions = await this.getAgentPermissions();
-    
+
     const anthropicTools: any[] = [];
-    const clientMap = new Map<string, Client>();
+    const toolMap = new Map<string, ToolBinding>();
 
     for (const server of servers) {
       const allowedTools = permissions.get(server.id);
-      
-      // Si el agente no tiene este servidor en su allowlist, lo ignoramos
+
+      // Si el agente no tiene este servidor en su allowlist, lo ignoramos.
       if (!allowedTools || allowedTools.length === 0) continue;
 
       try {
         const url = new URL(server.url_sse);
-        const transport = new SSEClientTransport(url);
-        
-        // El SDK aún no soporta fácilmente inyectar headers dinámicos en SSEClientTransport en node,
-        // pero podemos intentarlo si extendemos o usamos proxy.
-        // Por simplicidad, asumimos que el transporte maneja la URL correctamente.
-        
+        // Inyectamos el auth_token del servidor (si existe) tanto en la conexión
+        // SSE inicial como en los POST recurrentes, así los servidores con auth
+        // (HubSpot, Salesforce…) autentican de verdad.
+        const authHeaders: Record<string, string> = server.auth_token
+          ? { Authorization: `Bearer ${server.auth_token}` }
+          : {};
+        const transport = new SSEClientTransport(url, {
+          requestInit: { headers: authHeaders },
+          eventSourceInit: {
+            fetch: (u: any, init: any) =>
+              fetch(u, { ...init, headers: { ...(init?.headers || {}), ...authHeaders } }),
+          },
+        } as any);
+
         const client = new Client(
           { name: "cord-mcp-client", version: "1.0.0" },
-          { capabilities: {} }
+          { capabilities: {} },
         );
 
         await client.connect(transport);
-        
+        this.openClients.push(client);
+
         const response = await client.listTools();
-        
+
         for (const tool of response.tools) {
-          // Chequear permisos: "*" significa todas las herramientas
+          // Chequear permisos: "*" significa todas las herramientas.
           if (allowedTools.includes("*") || allowedTools.includes(tool.name)) {
-            // Transformar el nombre de la herramienta para evitar colisiones 
-            // ej: "hubspot_buscar_contacto" en lugar de "buscar_contacto"
-            const safeToolName = `${server.nombre.toLowerCase().replace(/[^a-z0-9]/g, "_")}_${tool.name}`;
-            
+            // Prefijo por servidor para evitar colisiones de nombres entre
+            // distintos servidores (ej. "hubspot__buscar_contacto"). Doble guión
+            // bajo como separador → no se confunde con guiones del nombre real.
+            const slug = server.nombre.toLowerCase().replace(/[^a-z0-9]/g, "_");
+            const safeToolName = `${slug}__${tool.name}`;
+
             anthropicTools.push({
               name: safeToolName,
               description: tool.description || `Herramienta de ${server.nombre}`,
               input_schema: tool.inputSchema,
             });
 
-            // Guardamos la referencia para saber qué cliente usar
-            clientMap.set(safeToolName, client);
+            // Guardamos cliente + nombre REAL (sin el prefijo) para ejecutarla.
+            toolMap.set(safeToolName, { client, realName: tool.name });
           }
         }
       } catch (err) {
@@ -111,6 +131,12 @@ export class McpClientManager {
       }
     }
 
-    return { tools: anthropicTools, clientMap };
+    return { tools: anthropicTools, toolMap };
+  }
+
+  // Cierra todas las conexiones abiertas. Llamar siempre tras usar el agente.
+  async disconnectAll(): Promise<void> {
+    await Promise.allSettled(this.openClients.map((c) => c.close()));
+    this.openClients = [];
   }
 }

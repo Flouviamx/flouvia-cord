@@ -7,6 +7,7 @@
 import { sql, logAudit } from './db';
 import { notifyQuoteSent } from './email';
 import { dispatchQuoteEvent } from './webhooks';
+import { FXService } from './fx/FXService';
 
 const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(Math.round(n));
 
@@ -26,6 +27,11 @@ export interface NewQuoteInput {
     notas?: string | null;
     send?: boolean;
     items: NewQuoteItem[];
+    // Multi-divisa con cobertura (opcional). base = moneda que ve el cliente;
+    // fiscal = moneda en la que se factura. Si difieren, se congela el FX.
+    base_currency?: string | null;
+    fiscal_currency?: string | null;
+    fx_buffer_pct?: number | null;
 }
 
 export interface CreateQuoteResult {
@@ -119,12 +125,32 @@ export async function createCotizacion(
     const status = needsApproval ? 'draft' : (input.send ? 'sent' : 'draft');
     const sentAt = (!needsApproval && input.send) ? new Date().toISOString() : null;
 
+    // Multi-divisa con cobertura: si la moneda de presentación difiere de la
+    // fiscal, congelamos la tasa (spot + buffer) por 30 días para proteger el
+    // margen entre la aprobación y la facturación.
+    const baseCurrency = (input.base_currency || 'MXN').toUpperCase();
+    const fiscalCurrency = (input.fiscal_currency || baseCurrency).toUpperCase();
+    let fxRate = 1;
+    let fxSource = 'spot';
+    let fxLockedUntil: string | null = null;
+    if (baseCurrency !== fiscalCurrency) {
+        const fx = await FXService.getExchangeRate({
+            baseCurrency, fiscalCurrency, amount: total,
+            bufferPct: Number(input.fx_buffer_pct) || 0,
+        });
+        fxRate = fx.appliedRate;
+        fxSource = fx.source;
+        fxLockedUntil = fx.lockedUntil ? fx.lockedUntil.toISOString() : null;
+    }
+
     const [cot] = await sql`
         insert into cotizaciones
-            (org_id, cliente_id, folio, status, subtotal, iva, total, terminos, vigencia, notas, sent_at, aprob_estado, aprob_motivo)
+            (org_id, cliente_id, folio, status, subtotal, iva, total, terminos, vigencia, notas, sent_at, aprob_estado, aprob_motivo,
+             moneda, base_currency, fiscal_currency, fx_rate, fx_rate_source, fx_locked_until)
         values
             (${orgId}, ${clienteId}, ${folio}, ${status}, ${subtotal}, ${iva}, ${total},
-             ${terminos}, ${vigencia.toISOString()}, ${input.notas || null}, ${sentAt}, ${aprobEstado}, ${aprobMotivo})
+             ${terminos}, ${vigencia.toISOString()}, ${input.notas || null}, ${sentAt}, ${aprobEstado}, ${aprobMotivo},
+             ${baseCurrency}, ${baseCurrency}, ${fiscalCurrency}, ${fxRate}, ${fxSource}, ${fxLockedUntil})
         returning id, public_token`;
 
     let orden = 0;

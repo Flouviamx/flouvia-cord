@@ -15,6 +15,7 @@ import { getProductos } from '../../../lib/queries';
 import { getActiveOrgId } from '../../../lib/db';
 import { reportUsage } from '../../../lib/billing';
 import { McpClientManager } from '../../../lib/mcp/client-manager';
+import { getDefaultAgentId } from '../../../lib/agents/governance';
 
 const API_KEY = import.meta.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
 const MODEL = import.meta.env.AI_MODEL || process.env.AI_MODEL || 'claude-haiku-4-5-20251001';
@@ -100,8 +101,10 @@ export const POST: APIRoute = async ({ request }) => {
     const byId = new Map(productos.map((p) => [p.id, p]));
 
     const orgId = await getActiveOrgId();
-    const mcpManager = new McpClientManager(orgId); // Se asume agente_id indefinido por ahora
-    const { tools: mcpTools, clientMap } = await mcpManager.getAnthropicTools();
+    // Agente por defecto de la org → resuelve sus permisos sobre servidores MCP.
+    const agenteId = await getDefaultAgentId(orgId);
+    const mcpManager = new McpClientManager(orgId, agenteId);
+    const { tools: mcpTools, toolMap } = await mcpManager.getAnthropicTools();
     
     const allTools = [TOOL, ...mcpTools];
     
@@ -149,14 +152,12 @@ export const POST: APIRoute = async ({ request }) => {
                     tool_use_id: tu.id,
                     content: "Cotización armada con éxito. Termina tu respuesta.",
                 });
-            } else if (clientMap.has(tu.name)) {
-                // Ejecutar herramienta MCP externa
+            } else if (toolMap.has(tu.name)) {
+                // Ejecutar herramienta MCP externa con su nombre real en el servidor.
                 try {
-                    const mcpClient = clientMap.get(tu.name)!;
-                    // El nombre real en el servidor MCP puede no tener el prefijo
-                    // Para simplificar, asumimos que el MCP SDK de Anthropic requiere pasar los params
+                    const { client: mcpClient, realName } = toolMap.get(tu.name)!;
                     const result = await mcpClient.callTool({
-                        name: tu.name.split("_").slice(1).join("_"), // Revertir prefijo (hack simple)
+                        name: realName,
                         arguments: tu.input
                     });
                     toolResults.push({
@@ -180,6 +181,9 @@ export const POST: APIRoute = async ({ request }) => {
         // Si ya obtuvimos los items de la cotización, no hace falta iterar más
         if (aiItems.length > 0) break;
     }
+
+    // Cierra las conexiones MCP abiertas (evita fugas entre invocaciones).
+    await mcpManager.disconnectAll();
 
     const items = aiItems.map((it) => {
         const cantidad = Math.max(1, Math.round(Number(it.cantidad) || 1));

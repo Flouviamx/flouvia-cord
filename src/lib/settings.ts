@@ -80,6 +80,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         tabs: [
             { id: 'api',           label: 'API y webhooks', href: '/app/ajustes/api' },
             { id: 'integraciones', label: 'Integraciones',  href: '/app/ajustes/integraciones' },
+            { id: 'agentes',       label: 'Agentes IA y MCP', href: '/app/ajustes/agentes' },
             { id: 'elements',      label: 'Cotizador embebible', href: '/app/ajustes/elements' },
         ],
     },

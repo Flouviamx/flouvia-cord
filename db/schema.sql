@@ -741,3 +741,8 @@ create index if not exists idx_planes_pago_cot on planes_pago_negociados(cotizac
 alter table planes_pago_negociados enable row level security;
 create policy "rls_planes_pago_negociados" on planes_pago_negociados
   using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+
+-- ── Opt-in: cobranza autónoma con IA (jun 2026) ──
+-- El cron /api/cron/cobranza SOLO procesa orgs con este flag en true. Evita
+-- mandar correos de cobranza autónomos sin consentimiento explícito del negocio.
+alter table orgs add column if not exists ai_cobranza_activa boolean not null default false;

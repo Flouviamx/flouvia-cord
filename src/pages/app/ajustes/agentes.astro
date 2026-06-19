@@ -1,0 +1,188 @@
+---
+// Ajustes › Developers › Agentes IA y MCP — gobernanza de la IA de Cord.
+// 1) Cobranza autónoma (opt-in): activa el cron que negocia el cobro por correo.
+// 2) Servidores MCP: registra CRMs/sistemas (HubSpot, Salesforce…) y decide a
+//    cuáles puede conectarse el agente que arma cotizaciones. Estilo LISTA.
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getActiveOrgId } from '../../../lib/db';
+import { sql } from '../../../lib/db';
+import { listMcpServers } from '../../../lib/agents/governance';
+
+const orgId = await getActiveOrgId();
+const [org] = await sql`select ai_cobranza_activa from orgs where id = ${orgId}`;
+const aiCobranza = !!org?.ai_cobranza_activa;
+const servers = await listMcpServers(orgId);
+---
+
+<SettingsShell title="Agentes IA y MCP — Ajustes" tab="agentes" perm="ajustes"
+    intro="Controla qué puede hacer la IA de Cord: cobranza autónoma y a qué sistemas externos (CRMs, bases de datos) se conecta vía MCP. Las empresas B2B son celosas con su data — aquí defines los límites.">
+
+    <!-- ── Cobranza autónoma (opt-in) ── -->
+    <div class="s-block">
+        <div class="ag-head">
+            <div>
+                <h3 style="margin:0;padding:0;border:0">Cobranza autónoma con IA</h3>
+                <p class="ag-sub">Un agente envía correos de cobranza a clientes con facturas vencidas y negocia planes de pago (hasta 3 cuotas). Corre diario, solo sobre cotizaciones facturadas y vencidas.</p>
+            </div>
+            <label class="s-toggle" title="Activar cobranza autónoma">
+                <input type="checkbox" id="cobranzaToggle" checked={aiCobranza} />
+                <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+            </label>
+        </div>
+        <p class="ag-warn">⚠️ Al activarlo, Cord <b>enviará correos automáticos a tus clientes</b> en tu nombre. Requiere <code>RESEND_API_KEY</code> configurada. Desactívalo cuando quieras.</p>
+    </div>
+
+    <!-- ── Servidores MCP (gobernanza outbound) ── -->
+    <div class="s-block">
+        <div class="ag-head">
+            <div>
+                <h3 style="margin:0;padding:0;border:0">Servidores MCP conectados</h3>
+                <p class="ag-sub">Registra un servidor MCP (HubSpot, Salesforce, tu base de datos…). El agente solo podrá leer/ejecutar herramientas de los servidores que tengan el permiso <b>activado</b>.</p>
+            </div>
+            <button class="api-btn-solid" id="addBtn">+ Agregar servidor</button>
+        </div>
+
+        <div class="mcp-rows" id="mcpRows">
+            {servers.length === 0 && (
+                <p class="mcp-empty">Aún no hay servidores MCP. Agrega uno para que la IA de Cord pueda consultar tus sistemas.</p>
+            )}
+            {servers.map((s) => (
+                <div class="mcp-row" data-id={s.id}>
+                    <span class="mcp-dot" data-on={s.activo ? '1' : '0'}></span>
+                    <span class="mcp-body">
+                        <span class="mcp-name">{s.nombre}</span>
+                        <span class="mcp-url">{s.url_sse}{s.auth_token ? ' · 🔒 con token' : ''}</span>
+                    </span>
+                    <label class="mcp-perm" title="Permitir que el agente use este servidor">
+                        <input type="checkbox" data-perm checked={s.permitido} />
+                        <span>Permitir IA</span>
+                    </label>
+                    <label class="s-toggle" title="Activo">
+                        <input type="checkbox" data-activo checked={s.activo} />
+                        <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                    </label>
+                    <button class="mcp-del" data-del title="Eliminar">✕</button>
+                </div>
+            ))}
+        </div>
+        <p class="ag-note">Solo los servidores con <b>"Permitir IA"</b> activado entran al contexto del agente. Esta es tu capa de gobernanza: nada se conecta sin tu autorización explícita.</p>
+    </div>
+</SettingsShell>
+
+<!-- Modal alta de servidor MCP -->
+<dialog id="addModal" class="ag-dialog">
+    <form method="dialog" class="ag-form">
+        <h3>Nuevo servidor MCP</h3>
+        <label class="ag-l">Nombre<input id="mNombre" placeholder="HubSpot CRM" /></label>
+        <label class="ag-l">URL del endpoint SSE<input id="mUrl" placeholder="https://mcp.tuservicio.com/sse" /></label>
+        <label class="ag-l">Token de acceso (opcional)<input id="mToken" placeholder="Bearer token / API key" /></label>
+        <p class="ag-err" id="mErr"></p>
+        <div class="ag-form-actions">
+            <button type="button" class="api-btn-ghost" id="mCancel">Cancelar</button>
+            <button type="button" class="api-btn-solid" id="mSave">Agregar</button>
+        </div>
+    </form>
+</dialog>
+
+<style>
+    .ag-head { display: flex; align-items: flex-start; gap: 1rem; justify-content: space-between; }
+    .ag-sub { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.5; margin: 4px 0 0; max-width: 60ch; }
+    .ag-warn { font-size: 0.78rem; color: #b45309; background: rgba(245,158,11,0.1); padding: 0.7rem 0.9rem; border-radius: 10px; margin: 1rem 0 0; line-height: 1.5; }
+    .ag-warn code { font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem; background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 4px; }
+    .ag-note { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.55; margin: 1.1rem 0 0; }
+    .ag-note b { color: var(--color-text); font-weight: 600; }
+
+    .mcp-rows { display: flex; flex-direction: column; margin-top: 1rem; }
+    .mcp-empty { font-size: 0.84rem; color: var(--color-text-muted); padding: 1.2rem 0.2rem; }
+    .mcp-row { display: grid; grid-template-columns: auto 1fr auto auto auto; align-items: center; gap: 1rem; padding: 1rem 0.4rem; border-bottom: 1px solid var(--color-border); }
+    .mcp-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--color-text-muted); flex-shrink: 0; opacity: 0.4; }
+    .mcp-dot[data-on="1"] { background: var(--color-ok); opacity: 1; }
+    .mcp-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .mcp-name { font-size: 0.92rem; font-weight: 600; color: var(--color-text); }
+    .mcp-url { font-size: 0.74rem; color: var(--color-text-muted); font-family: ui-monospace, Menlo, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mcp-perm { display: flex; align-items: center; gap: 6px; font-size: 0.74rem; font-weight: 600; color: var(--color-text-muted); cursor: pointer; white-space: nowrap; }
+    .mcp-perm input { accent-color: var(--color-blue-deep); }
+    .mcp-del { background: none; border: none; color: var(--color-text-muted); cursor: pointer; font-size: 0.9rem; padding: 4px 8px; border-radius: 6px; }
+    .mcp-del:hover { color: var(--color-danger); background: rgba(239,68,68,0.08); }
+
+    .ag-dialog { border: none; border-radius: 16px; padding: 0; box-shadow: 0 30px 60px -20px rgba(0,0,0,0.4); max-width: 440px; width: 92%; }
+    .ag-dialog::backdrop { background: rgba(10,25,47,0.4); backdrop-filter: blur(3px); }
+    .ag-form { padding: 1.6rem; display: flex; flex-direction: column; gap: 0.9rem; }
+    .ag-form h3 { font-size: 1.05rem; font-weight: 700; margin: 0 0 0.2rem; }
+    .ag-l { display: flex; flex-direction: column; gap: 5px; font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted); }
+    .ag-l input { font-family: var(--font-sans); font-size: 0.88rem; padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 9px; color: var(--color-text); }
+    .ag-err { font-size: 0.78rem; color: var(--color-danger); min-height: 1em; margin: 0; }
+    .ag-form-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.4rem; }
+    .api-btn-solid { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; }
+    .api-btn-solid:disabled { opacity: 0.6; cursor: wait; }
+    .api-btn-ghost { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; }
+
+    @media (max-width: 720px) {
+        .mcp-row { grid-template-columns: auto 1fr auto; row-gap: 0.6rem; }
+        .mcp-perm { grid-column: 2; justify-self: start; }
+    }
+</style>
+
+<script>
+    function post(body: any) {
+        return fetch('/api/agentes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    }
+    function toast(msg: string, type: 'ok' | 'error' = 'ok') {
+        (window as any).cordToast?.(msg, type);
+    }
+
+    function init() {
+        // Cobranza toggle
+        const cob = document.getElementById('cobranzaToggle') as HTMLInputElement | null;
+        cob?.addEventListener('change', async () => {
+            const res = await post({ action: 'cobranza', value: cob.checked });
+            if (res.ok) toast(cob.checked ? 'Cobranza autónoma activada' : 'Cobranza autónoma desactivada');
+            else { cob.checked = !cob.checked; toast('No se pudo guardar', 'error'); }
+        });
+
+        // Row toggles (perm / activo / delete)
+        document.getElementById('mcpRows')?.querySelectorAll('.mcp-row').forEach((row) => {
+            const id = (row as HTMLElement).dataset.id!;
+            const perm = row.querySelector('[data-perm]') as HTMLInputElement | null;
+            const activo = row.querySelector('[data-activo]') as HTMLInputElement | null;
+            const del = row.querySelector('[data-del]') as HTMLButtonElement | null;
+            const dot = row.querySelector('.mcp-dot') as HTMLElement | null;
+
+            perm?.addEventListener('change', async () => {
+                const res = await post({ action: 'toggle_permiso', id, value: perm.checked });
+                if (res.ok) toast(perm.checked ? 'Permiso otorgado a la IA' : 'Permiso revocado');
+                else { perm.checked = !perm.checked; toast('No se pudo guardar', 'error'); }
+            });
+            activo?.addEventListener('change', async () => {
+                const res = await post({ action: 'toggle_activo', id, value: activo.checked });
+                if (res.ok && dot) dot.setAttribute('data-on', activo.checked ? '1' : '0');
+                else if (!res.ok) { activo.checked = !activo.checked; toast('No se pudo guardar', 'error'); }
+            });
+            del?.addEventListener('click', async () => {
+                if (!confirm('¿Eliminar este servidor MCP?')) return;
+                const res = await post({ action: 'delete', id });
+                if (res.ok) { row.remove(); toast('Servidor eliminado'); }
+                else toast('No se pudo eliminar', 'error');
+            });
+        });
+
+        // Add modal
+        const modal = document.getElementById('addModal') as HTMLDialogElement | null;
+        document.getElementById('addBtn')?.addEventListener('click', () => modal?.showModal());
+        document.getElementById('mCancel')?.addEventListener('click', () => modal?.close());
+        document.getElementById('mSave')?.addEventListener('click', async () => {
+            const nombre = (document.getElementById('mNombre') as HTMLInputElement).value;
+            const url_sse = (document.getElementById('mUrl') as HTMLInputElement).value;
+            const auth_token = (document.getElementById('mToken') as HTMLInputElement).value;
+            const err = document.getElementById('mErr')!;
+            err.textContent = '';
+            const res = await post({ action: 'add', nombre, url_sse, auth_token });
+            const d = await res.json();
+            if (!res.ok) { err.textContent = d.error || 'No se pudo agregar'; return; }
+            modal?.close();
+            location.reload();
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+</script>

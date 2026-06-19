@@ -104,6 +104,24 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
                     </select>
                 </div>
 
+                <div class="sum-field">
+                    <label>Moneda de la cotización</label>
+                    <select class="ed-select" id="fxBase">
+                        <option value="MXN" selected>Peso mexicano (MXN)</option>
+                        <option value="USD">Dólar estadounidense (USD)</option>
+                        <option value="EUR">Euro (EUR)</option>
+                    </select>
+                </div>
+
+                <div class="fx-cover" id="fxCover" hidden>
+                    <div class="sum-field" style="margin-top:0">
+                        <label>Cobertura cambiaria (buffer %)</label>
+                        <input class="ed-select" id="fxBuffer" type="number" min="0" max="20" step="0.5" value="2" />
+                    </div>
+                    <p class="fx-preview" id="fxPreview">Calculando tipo de cambio…</p>
+                    <p class="fx-hint">Se presenta al cliente en <b id="fxBaseLbl">USD</b> y se factura en <b>MXN</b>. La tasa se congela 30 días para proteger tu margen.</p>
+                </div>
+
                 <button class="btn-send" id="btnSend">
                     <span>Crear y enviar</span>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -274,12 +292,22 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         // Validación del cliente
         const cliente_id = clientSel && clientSel.value !== "" ? clientSel.value : null;
 
+        // Multi-divisa: si la moneda elegida no es MXN, se factura en MXN con cobertura.
+        const fxBaseSel = document.getElementById('fxBase');
+        const fxBufferEl = document.getElementById('fxBuffer');
+        const base_currency = fxBaseSel ? fxBaseSel.value : 'MXN';
+        const fiscal_currency = base_currency === 'MXN' ? 'MXN' : 'MXN';
+        const fx_buffer_pct = base_currency === 'MXN' ? 0 : (fxBufferEl ? parseFloat(fxBufferEl.value) || 0 : 0);
+
         return {
             send,
             cliente_id,
             terminos: TERM_MAP[activeChip ? activeChip.dataset.term : 'Contado'] || 'contado',
             vigencia_dias: vigSel ? parseInt(vigSel.value, 10) || 30 : 30,
             notas: notas ? notas.value.trim() : '',
+            base_currency,
+            fiscal_currency,
+            fx_buffer_pct,
             items: lines.map(l => ({
                 producto_id: l.id || null,
                 descripcion: l.nombre || 'Línea libre',
@@ -315,6 +343,48 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
 
     document.getElementById('btnSend')?.addEventListener('click', (e) => save(true, e.currentTarget));
     document.getElementById('btnDraft')?.addEventListener('click', (e) => save(false, e.currentTarget));
+
+    // ── Multi-divisa: mostrar cobertura + preview del tipo de cambio en vivo ──
+    const $fxBase = document.getElementById('fxBase');
+    const $fxBuffer = document.getElementById('fxBuffer');
+    const $fxCover = document.getElementById('fxCover');
+    const $fxPreview = document.getElementById('fxPreview');
+    const $fxBaseLbl = document.getElementById('fxBaseLbl');
+
+    function parseTotal() {
+        const t = (document.getElementById('sumTotal')?.textContent || '0').replace(/[^0-9.]/g, '');
+        return parseFloat(t) || 0;
+    }
+
+    let fxTimer = null;
+    async function refreshFx() {
+        if (!$fxBase) return;
+        const base = $fxBase.value;
+        const isForeign = base !== 'MXN';
+        if ($fxCover) $fxCover.hidden = !isForeign;
+        if (!isForeign) return;
+        if ($fxBaseLbl) $fxBaseLbl.textContent = base;
+        const buffer = $fxBuffer ? parseFloat($fxBuffer.value) || 0 : 0;
+        const amount = parseTotal();
+        if ($fxPreview) $fxPreview.textContent = 'Calculando tipo de cambio…';
+        try {
+            const res = await fetch(`/api/fx/quote?base=${base}&fiscal=MXN&amount=${amount}&buffer=${buffer}`);
+            const fx = await res.json();
+            const rate = Number(fx.appliedRate || 0);
+            const conv = Number(fx.convertedAmount || 0);
+            const nf = new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            if ($fxPreview) {
+                $fxPreview.innerHTML = `1 ${base} = <b>$${nf.format(rate)} MXN</b>` +
+                    (amount > 0 ? ` · factura ≈ <b>$${nf.format(conv)} MXN</b>` : '') +
+                    ` <span class="fx-lock">🔒 lock 30d</span>`;
+            }
+        } catch {
+            if ($fxPreview) $fxPreview.textContent = 'No se pudo obtener el tipo de cambio.';
+        }
+    }
+    function scheduleFx() { clearTimeout(fxTimer); fxTimer = setTimeout(refreshFx, 350); }
+    $fxBase?.addEventListener('change', refreshFx);
+    $fxBuffer?.addEventListener('input', scheduleFx);
 
     // ── Armar con IA (POST /api/cotizaciones/ai-draft) ──
     const $aiBtn = document.getElementById('aiBtn');
@@ -492,6 +562,14 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         transition: border-color 0.2s, box-shadow 0.2s;
     }
     .ed-textarea:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 2px rgba(10,25,47,0.05); }
+
+    /* Multi-divisa */
+    .fx-cover { margin-top: 0.6rem; padding: 0.8rem; background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 10px; display: flex; flex-direction: column; gap: 0.5rem; }
+    .fx-preview { font-size: 0.82rem; color: var(--color-text); margin: 0.2rem 0 0; line-height: 1.5; }
+    .fx-preview b { font-weight: 600; }
+    .fx-lock { font-size: 0.68rem; color: var(--color-text-muted); white-space: nowrap; }
+    .fx-hint { font-size: 0.72rem; color: var(--color-text-muted); line-height: 1.45; margin: 0; }
+    .fx-hint b { color: var(--color-text); font-weight: 600; }
 
     /* Sidebar summary */
     .ed-side { position: sticky; top: 76px; }

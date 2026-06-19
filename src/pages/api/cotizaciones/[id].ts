@@ -10,6 +10,7 @@ import { notifyQuoteSent } from '../../../lib/email';
 import { requirePerm } from '../../../lib/queries';
 import { dispatchQuoteEvent, type WebhookEvent } from '../../../lib/webhooks';
 import { reportUsage } from '../../../lib/billing';
+import { emitFiscalDocument } from '../../../lib/fiscal/emit';
 
 // Evento interno (eventos.tipo) → evento público de webhook.
 const WH_MAP: Record<string, WebhookEvent> = {
@@ -123,8 +124,15 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     const whev = WH_MAP[action.evento];
     if (whev) await dispatchQuoteEvent(orgId, id, whev);
 
-    // Timbrar el CFDI consume un folio: mide el uso del periodo (excedente vía Stripe).
-    if (action.to === 'invoiced') await reportUsage(orgId, 'timbrado', 1);
+    // Emisión fiscal: enruta al proveedor del país (CFDI MX, invoice US, …) vía
+    // FiscalFactory y registra el documento en documentos_fiscales. Best-effort:
+    // no rompe la facturación si el proveedor falla (queda como status 'error').
+    let fiscal: Awaited<ReturnType<typeof emitFiscalDocument>> | undefined;
+    if (action.to === 'invoiced') {
+        fiscal = await emitFiscalDocument(orgId, id);
+        // Timbrar consume un folio: mide el uso del periodo (excedente vía Stripe).
+        await reportUsage(orgId, 'timbrado', 1);
+    }
 
     // Al enviar/reenviar, intenta avisar al cliente por correo (si hay Resend).
     let email: { sent: boolean; skipped?: string } | undefined;
@@ -137,7 +145,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         }
     }
 
-    return json({ ok: true, status: action.to, email });
+    return json({ ok: true, status: action.to, email, fiscal });
 };
 
 export const DELETE: APIRoute = async ({ params }) => {
