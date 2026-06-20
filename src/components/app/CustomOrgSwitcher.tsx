@@ -153,7 +153,7 @@ export default function CustomOrgSwitcher() {
         .org-switcher-skeleton {
           width: 100%;
           height: 48px;
-          background: rgba(255, 255, 255, 0.05);
+          background: var(--sb-hover-bg);
           border-radius: 10px;
           animation: pulse 1.5s infinite ease-in-out;
         }
@@ -166,47 +166,58 @@ export default function CustomOrgSwitcher() {
           margin: 0;
           padding: 0;
         }
-        
+
+        /* Colapsado: el botón se vuelve un cuadro de 46px centrado, alineado
+           exactamente con la columna de íconos del nav. */
+        :global(.sb-collapsed) .custom-org-switcher {
+          display: flex;
+          justify-content: center;
+        }
         :global(.sb-collapsed) .org-switcher-btn {
           justify-content: center;
-          padding: 0.5rem;
+          gap: 0;
+          padding: 0;
+          width: 46px;
+          height: 46px;
+          border-radius: 13px;
         }
 
         .org-switcher-btn {
           display: flex;
           align-items: center;
-          gap: 0.75rem;
+          gap: 0.7rem;
           background: transparent;
           border: 1px solid transparent;
           padding: 0.5rem 0.6rem;
-          border-radius: 10px;
+          border-radius: 11px;
           cursor: pointer;
-          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-          color: rgba(255, 255, 255, 0.9);
+          transition: background 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s, box-shadow 0.2s;
+          color: var(--sb-text-strong);
           width: 100%;
           text-align: left;
         }
-        
+
         .org-switcher-btn:hover, .org-switcher-btn.active {
-          background: rgba(255, 255, 255, 0.09);
-          color: #ffffff;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), inset 0 0 0 0.5px rgba(255,255,255,0.1);
+          background: var(--sb-hover-bg);
+          color: var(--sb-text-strong);
+        }
+        .org-switcher-btn.active {
+          background: var(--sb-active-bg);
         }
 
         .org-avatar {
           width: 32px;
           height: 32px;
           border-radius: 9px;
-          background: linear-gradient(135deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.04));
-          color: #ffffff;
+          background: var(--sb-avatar-bg);
+          color: var(--sb-avatar-text);
           display: flex;
           align-items: center;
           justify-content: center;
           font-weight: 700;
           font-size: 0.85rem;
           flex-shrink: 0;
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          box-shadow: inset 0 1px 1px rgba(255,255,255,0.28), inset 0 -2px 5px rgba(0,0,0,0.18), 0 3px 8px -3px rgba(0,0,0,0.45);
+          box-shadow: inset 0 1px 1px rgba(255,255,255,0.22), 0 3px 8px -3px rgba(10,25,47,0.4);
         }
 
         .org-avatar.small {
@@ -226,13 +237,13 @@ export default function CustomOrgSwitcher() {
         }
 
         .chevron-icon {
-          color: rgba(255, 255, 255, 0.4);
-          transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          color: var(--sb-label);
+          transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s;
         }
-        
+
         .org-switcher-btn.active .chevron-icon {
           transform: rotate(180deg);
-          color: #ffffff;
+          color: var(--sb-text-strong);
         }
 
         .org-dropdown {
@@ -240,24 +251,20 @@ export default function CustomOrgSwitcher() {
           top: calc(100% + 0.5rem);
           left: 0;
           width: 280px;
-          /* Liquid glass navy: frosted casi-opaco (legible, NO se ve el contenido de
-             atrás) + blur muy fuerte estilo Apple. Rim lights en capas. */
-          background: linear-gradient(180deg, rgba(22,42,74,0.97) 0%, rgba(13,28,52,0.96) 60%, rgba(9,21,40,0.97) 100%);
-          backdrop-filter: blur(44px) saturate(1.9) brightness(1.08);
-          -webkit-backdrop-filter: blur(44px) saturate(1.9) brightness(1.08);
-          border: 1px solid rgba(255, 255, 255, 0.14);
+          /* Frosted casi-opaco como el menú "Crear" de la topbar: NO se ve el fondo.
+             Blanco en claro, navy en oscuro (vía --sb-menu-*). */
+          background: var(--sb-menu-bg);
+          backdrop-filter: blur(44px) saturate(1.9) brightness(1.03);
+          -webkit-backdrop-filter: blur(44px) saturate(1.9) brightness(1.03);
+          border: 1px solid var(--sb-menu-border);
           border-radius: 16px;
-          box-shadow:
-            inset 0 1px 0 rgba(255,255,255,0.22),
-            inset 0 0 0 0.5px rgba(255,255,255,0.08),
-            inset 0 -8px 18px rgba(0,0,0,0.22),
-            0 32px 64px -16px rgba(0, 0, 0, 0.6),
-            0 12px 24px -8px rgba(0, 0, 0, 0.38);
+          box-shadow: var(--sb-menu-shadow);
           padding: 0.5rem;
           z-index: 9999;
           transform-origin: top left;
           animation: dropdownFade 0.22s cubic-bezier(0.16, 1, 0.3, 1);
         }
+        :global(.sb-collapsed) .org-dropdown { width: 250px; }
 
         @keyframes dropdownFade {
           from { opacity: 0; transform: translateY(-8px) scale(0.98); }
@@ -271,7 +278,7 @@ export default function CustomOrgSwitcher() {
         .dropdown-title {
           font-size: 0.65rem;
           font-weight: 700;
-          color: rgba(255, 255, 255, 0.4);
+          color: var(--sb-menu-muted);
           text-transform: uppercase;
           letter-spacing: 0.08em;
         }
@@ -292,20 +299,18 @@ export default function CustomOrgSwitcher() {
           border: none;
           border-radius: 8px;
           cursor: pointer;
-          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: background 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s;
           text-align: left;
           width: 100%;
-          color: rgba(255, 255, 255, 0.85);
+          color: var(--sb-menu-text);
         }
 
         .org-list-item:hover {
-          background: rgba(255, 255, 255, 0.06);
-          color: #ffffff;
+          background: var(--sb-menu-hover);
         }
 
         .org-list-item.selected {
-          background: rgba(255, 255, 255, 0.1);
-          color: #ffffff;
+          background: var(--sb-menu-hover);
         }
 
         .org-details {
@@ -318,7 +323,7 @@ export default function CustomOrgSwitcher() {
         .org-item-name {
           font-size: 0.85rem;
           font-weight: 500;
-          color: rgba(255, 255, 255, 0.85);
+          color: var(--sb-menu-text);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -326,21 +331,21 @@ export default function CustomOrgSwitcher() {
 
         .org-item-role {
           font-size: 0.7rem;
-          color: rgba(255, 255, 255, 0.4);
+          color: var(--sb-menu-muted);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
         }
-        
+
         .check-icon {
-          stroke: #ffffff;
-          opacity: 0.8;
+          stroke: var(--sb-text-active);
+          opacity: 1;
           flex-shrink: 0;
         }
 
         .dropdown-divider {
           height: 1px;
-          background: rgba(255, 255, 255, 0.08);
+          background: var(--sb-divider);
           margin: 0.5rem 0;
         }
 
@@ -355,38 +360,37 @@ export default function CustomOrgSwitcher() {
           border-radius: 8px;
           font-size: 0.85rem;
           font-weight: 500;
-          color: rgba(255, 255, 255, 0.7);
+          color: var(--sb-menu-text);
           cursor: pointer;
-          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: background 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s;
           text-align: left;
         }
 
         .dropdown-action-btn:hover {
-          background: rgba(255, 255, 255, 0.06);
-          color: #ffffff;
+          background: var(--sb-menu-hover);
         }
 
         .dropdown-action-btn svg {
-          color: rgba(255, 255, 255, 0.5);
+          color: var(--sb-menu-muted);
           transition: color 0.2s;
           flex-shrink: 0;
         }
-        
+
         .dropdown-action-btn:hover svg {
-          color: #ffffff;
+          color: var(--sb-text-strong);
         }
 
         .dropdown-action-btn.text-red {
-          color: #f87171;
+          color: var(--color-danger);
         }
-        
+
         .dropdown-action-btn.text-red:hover {
           background: rgba(239, 68, 68, 0.1);
-          color: #fca5a5;
+          color: var(--color-danger);
         }
 
         .dropdown-action-btn.text-red svg {
-          color: #f87171;
+          color: var(--color-danger);
         }
         
         .flex-1 {
@@ -400,7 +404,7 @@ export default function CustomOrgSwitcher() {
         .toggle-switch {
           width: 28px;
           height: 16px;
-          background: rgba(255, 255, 255, 0.15);
+          background: var(--sb-badge-bg);
           border-radius: 8px;
           position: relative;
           transition: background 0.2s;
@@ -410,7 +414,7 @@ export default function CustomOrgSwitcher() {
         .toggle-thumb {
           width: 12px;
           height: 12px;
-          background: rgba(255, 255, 255, 0.7);
+          background: var(--sb-menu-muted);
           border-radius: 50%;
           position: absolute;
           top: 2px;
@@ -435,9 +439,9 @@ export default function CustomOrgSwitcher() {
         }
 
         .dev-mode-toggle:hover .toggle-thumb {
-          background: #ffffff;
+          background: var(--sb-menu-text);
         }
-        
+
         .user-profile-section {
           display: flex;
           align-items: center;
@@ -451,15 +455,15 @@ export default function CustomOrgSwitcher() {
           width: 28px;
           height: 28px;
           border-radius: 50%;
-          background: rgba(255, 255, 255, 0.1);
-          color: #ffffff;
+          background: var(--sb-hover-bg);
+          color: var(--sb-menu-text);
           display: flex;
           align-items: center;
           justify-content: center;
           font-weight: 600;
           font-size: 0.75rem;
           flex-shrink: 0;
-          border: 1px solid rgba(255, 255, 255, 0.15);
+          border: 1px solid var(--sb-divider);
         }
 
         /* Custom Scrollbar for org-list */
@@ -470,11 +474,11 @@ export default function CustomOrgSwitcher() {
           background: transparent;
         }
         .org-list::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.2);
+          background: var(--sb-divider);
           border-radius: 4px;
         }
         .org-list::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.3);
+          background: var(--sb-menu-muted);
         }
       `}</style>
     </div>

@@ -1,0 +1,574 @@
+---
+const { slug, index } = Astro.props;
+---
+<div class={`bm-wrap bm-${slug}-${index}`}>
+  <div class="bm-mesh" aria-hidden="true"></div>
+  <div class="bm-glow" aria-hidden="true"></div>
+
+  {/* ────────────────── EDITOR ────────────────── */}
+  {slug === 'editor' && index === 0 && (
+    <div class="bm-stage bm-editor-m0">
+      <div class="bm-floating bm-float-top-right">
+        <div class="bm-pill">
+          <i class="bm-dot bm-dot-blue"></i>
+          <span>Guardado automático</span>
+        </div>
+      </div>
+      <div class="bm-card">
+        <div class="bm-row"><span>Cemento gris 50kg</span><span>120</span><b class="editorial">$182.00</b></div>
+        <div class="bm-row bm-row-target">
+          <span>Varilla 3/8" × 12m</span><span>340</span>
+          <b class="editorial mk-green"><span class="price-val">$191.48</span> <i class="mk-chip bm-chip-hide">−12%</i></b>
+        </div>
+        <div class="bm-row"><span>Block hueco</span><span>2400</span><b class="editorial">$14.20</b></div>
+      </div>
+      <!-- Cursor falso -->
+      <div class="bm-fake-cursor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
+      </div>
+    </div>
+  )}
+
+  {slug === 'editor' && index === 1 && (
+    <div class="bm-stage bm-editor-m1">
+      <div class="bm-floating bm-float-bottom-left">
+        <div class="bm-pill bm-pill-dark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+          <span class="bm-margin-text">Margen 24%</span>
+        </div>
+      </div>
+      <div class="bm-card">
+        <div class="bm-head"><span>Costo Base</span><span>Lista</span></div>
+        <div class="bm-row"><span>$128.00</span><b>$182.00</b></div>
+        <div class="bm-row bm-active">
+           <span>$140.00</span>
+           <div class="bm-margin-bar-bg"><div class="bm-margin-bar-fill"></div></div>
+           <b>$168.50</b>
+        </div>
+        <div class="bm-row"><span>$9.80</span><b>$14.20</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'editor' && index === 2 && (
+    <div class="bm-stage bm-editor-m2">
+      <div class="bm-floating bm-float-bottom-right bm-stamp-hide">
+        <div class="bm-pill">
+          <i class="bm-dot bm-dot-green"></i>
+          <span>Subtotal calculado</span>
+        </div>
+      </div>
+      <div class="bm-card">
+        <div class="bm-row bm-stag-row"><span>Subtotal</span><b>$169,370.00</b></div>
+        <div class="bm-row bm-stag-row"><span>IVA 16%</span><b>$27,099.20</b></div>
+        <div class="bm-divider bm-stag-row"></div>
+        <div class="bm-row bm-stag-row bm-total-row"><span class="bm-bold">Total a pagar</span><b class="bm-large">$196,469.20</b></div>
+      </div>
+    </div>
+  )}
+
+  {/* ────────────────── LINK PÚBLICO ────────────────── */}
+  {slug === 'link-publico' && index === 0 && (
+    <div class="bm-stage bm-public-m0">
+      <div class="bm-floating bm-float-bottom-left bm-toast-hide">
+        <div class="bm-toast">
+          <span class="bm-avatar">MR</span>
+          <div class="bm-toast-text"><b>Mario Ruiz</b><i>dejó un comentario</i></div>
+        </div>
+      </div>
+      <div class="bm-card bm-chat">
+        <div class="bm-msg bm-msg-in"><span>¿Incluye la maniobra de descarga?</span></div>
+        <div class="bm-msg bm-msg-typing"><span>...</span></div>
+        <div class="bm-msg bm-msg-out bm-msg-hide"><span>Sí, la descarga a pie de obra está incluida en el total.</span></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'link-publico' && index === 1 && (
+    <div class="bm-stage bm-public-m1">
+      <div class="bm-floating bm-float-top-right">
+        <div class="bm-pill bm-pill-brand bm-logo-pill">
+          <span>Tu Logo</span>
+        </div>
+      </div>
+      <div class="bm-card bm-brand-card">
+        <div class="bm-brand-head">
+          <div class="bm-brand-logo"></div>
+          <div><b>Acero Monterrey</b><i>acero-monterrey.cord.mx</i></div>
+        </div>
+        <div class="bm-brand-color">
+          <span>Brand Color</span>
+          <div class="bm-color-swatch-wrap">
+             <div class="bm-color-swatch bm-swatch-1"></div>
+             <div class="bm-color-swatch bm-swatch-2"></div>
+             <div class="bm-color-swatch bm-swatch-3"></div>
+          </div>
+        </div>
+      </div>
+      <div class="bm-fake-cursor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
+      </div>
+    </div>
+  )}
+
+  {slug === 'link-publico' && index === 2 && (
+    <div class="bm-stage bm-public-m2">
+      <div class="bm-push-notif">
+         <div class="bm-push-icon"><img src="/imgs/logo-cord-white.png" alt="" /></div>
+         <div class="bm-push-body">
+            <b>Cord B2B</b>
+            <span>Distribuidora El Zarco acaba de abrir la cotización COT-0148.</span>
+         </div>
+      </div>
+      <div class="bm-card bm-dim">
+        <div class="bm-row"><span>Estado</span><b>Pendiente</b></div>
+        <div class="bm-row"><span>Total</span><b>$196k</b></div>
+      </div>
+    </div>
+  )}
+
+  {/* ────────────────── SEGUIMIENTO ────────────────── */}
+  {slug === 'seguimiento' && index === 0 && (
+    <div class="bm-stage bm-track-m0">
+      <div class="bm-timeline-card">
+         <div class="bm-tl-line">
+            <div class="bm-tl-fill"></div>
+         </div>
+         <div class="bm-tl-nodes">
+            <div class="bm-tl-node"><i class="bm-icon-check">✓</i><span>Borrador</span></div>
+            <div class="bm-tl-node"><i class="bm-icon-check">✓</i><span>Enviada</span></div>
+            <div class="bm-tl-node"><i class="bm-icon-check">✓</i><span>Vista</span></div>
+            <div class="bm-tl-node bm-node-pending"><i></i><span>Aprobada</span></div>
+         </div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'seguimiento' && index === 1 && (
+    <div class="bm-stage bm-track-m1">
+      <div class="bm-kanban">
+        <div class="bm-board-col">
+          <div class="bm-col-head">Negociación</div>
+          <div class="bm-board-card bm-kanban-drag">
+            <span class="bm-badge bm-badge-orange">COT-0148</span>
+            <b>$196k</b>
+            <div class="bm-card-foot"><span class="bm-avatar-sm">EZ</span><i>Hace 1h</i></div>
+          </div>
+        </div>
+        <div class="bm-board-col">
+          <div class="bm-col-head">Ganadas</div>
+          <div class="bm-board-card bm-dim">
+            <span class="bm-badge bm-badge-gray">COT-0149</span>
+            <b>$24k</b>
+            <div class="bm-card-foot"><span class="bm-avatar-sm">GF</span><i>Ayer</i></div>
+          </div>
+          <!-- Drop target -->
+          <div class="bm-kanban-drop"></div>
+        </div>
+      </div>
+      <div class="bm-fake-cursor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
+      </div>
+    </div>
+  )}
+
+  {slug === 'seguimiento' && index === 2 && (
+    <div class="bm-stage bm-track-m2">
+      <div class="bm-search">
+        <div class="bm-search-bar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span class="bm-search-type">_</span>
+        </div>
+        <div class="bm-search-res">
+          <div class="bm-s-res-1"><b>COT-0148</b><span>Varilla 3/8" × 12m</span></div>
+          <div class="bm-s-res-2"><b>COT-0092</b><span>Varilla 1/2" × 12m</span></div>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* ────────────────── CFDI ────────────────── */}
+  {slug === 'cfdi' && index === 0 && (
+    <div class="bm-stage bm-cfdi-m0">
+      <div class="bm-floating bm-float-top-left">
+          <div class="bm-pill bm-pill-brand">
+             <span>Timbrado SAT 4.0</span>
+          </div>
+      </div>
+      <div class="bm-card bm-cfdi-card">
+        <div class="bm-fake-xml bm-matrix-text">
+          &lt;cfdi:Comprobante Version="4.0"&gt;<br/>
+          &lt;cfdi:Emisor Rfc="MVA24..."/&gt;<br/>
+          &lt;cfdi:Conceptos&gt;...&lt;/cfdi&gt;
+        </div>
+        <div class="bm-row"><span>Status</span><b class="bm-green">Generado</b></div>
+        <div class="bm-row"><span>UUID</span><b>a1b2c3d4-9f01...</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'cfdi' && index === 1 && (
+    <div class="bm-stage bm-cfdi-m1">
+      <div class="bm-floating bm-float-bottom-right bm-cert-stamp">
+        <div class="bm-pill">
+           <i class="bm-dot bm-dot-green"></i>
+           <span>Conectado</span>
+        </div>
+      </div>
+      <div class="bm-terminal">
+        <div class="bm-term-head">
+          <i></i><i></i><i></i>
+          <span>cert.key</span>
+        </div>
+        <div class="bm-term-body">
+          <span class="bm-term-line line-1">Loading CSD...</span>
+          <span class="bm-term-line bm-term-ok line-2">[OK] Validating .CER</span>
+          <span class="bm-term-line line-3">Decrypting .KEY password...</span>
+          <span class="bm-term-line bm-term-ok line-4">[OK] Ready for signing</span>
+          <span class="bm-term-cursor">_</span>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'cfdi' && index === 2 && (
+    <div class="bm-stage bm-cfdi-m2">
+      <div class="bm-floating bm-float-top-right">
+        <div class="bm-pill bm-pill-dark">
+          <i class="bm-icon-check">✓</i>
+          <span>Autofactura</span>
+        </div>
+      </div>
+      <div class="bm-card">
+        <div class="bm-barcode">
+          <div class="bm-bars"></div>
+          <div class="bm-laser"></div>
+          <span>Ticket: 9812-7361-0021</span>
+        </div>
+        <div class="bm-btn bm-btn-outline">Ver PDF</div>
+      </div>
+    </div>
+  )}
+
+  {/* ────────────────── CLIENTES & CRÉDITO ────────────────── */}
+  {slug === 'clientes-credito' && index === 0 && (
+    <div class="bm-stage bm-credit-m0">
+       <div class="bm-floating bm-float-top-left bm-req-appr">
+          <div class="bm-pill">
+             <i class="bm-dot bm-dot-orange"></i>
+             <span>Requiere aprobación</span>
+          </div>
+       </div>
+      <div class="bm-card">
+        <div class="bm-head"><b>Distribuidora El Zarco</b><span class="bm-tag bm-tag-warn">Net 30</span></div>
+        <div class="bm-credit-bar">
+          <div class="bm-credit-fill"></div>
+        </div>
+        <div class="bm-row"><span>Crédito usado</span><b>$<span class="bm-credit-val">0</span>k / $500k</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'clientes-credito' && index === 1 && (
+    <div class="bm-stage bm-credit-m1">
+       <div class="bm-floating bm-float-bottom-left bm-spei-toast">
+          <div class="bm-toast bm-toast-sm bm-toast-success">
+             <i class="bm-icon-check">✓</i>
+             <div><span>Pago registrado</span><b>$45,000.00</b></div>
+          </div>
+       </div>
+      <div class="bm-card">
+        <div class="bm-row"><span>Factura F-102</span><b>$45,000.00</b></div>
+        <div class="bm-divider"></div>
+        <div class="bm-row"><span>Estado</span><b class="bm-spei-status bm-orange">Pendiente</b></div>
+        <div class="bm-row"><span>Método</span><b>SPEI</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'clientes-credito' && index === 2 && (
+    <div class="bm-stage bm-credit-m2">
+      <div class="bm-card">
+        <div class="bm-head"><span>Líneas de crédito</span></div>
+        <div class="bm-chart">
+          <div class="bm-chart-col c-1"><div class="bm-chart-col-fill"></div></div>
+          <div class="bm-chart-col c-2"><div class="bm-chart-col-fill"></div></div>
+          <div class="bm-chart-col c-3"><div class="bm-chart-col-fill"></div></div>
+          <div class="bm-chart-col c-4 bm-chart-active"><div class="bm-chart-col-fill"></div></div>
+          <div class="bm-chart-col c-5"><div class="bm-chart-col-fill"></div></div>
+        </div>
+        <div class="bm-row"><span>Total riesgo</span><b>$1.2M</b></div>
+      </div>
+    </div>
+  )}
+</div>
+
+<style>
+  /* 
+   * PREMIUM SOLID MOCKUP SYSTEM
+   * No glass — solid dark backgrounds with ambient glow
+   * Bigger mockups, premium shadows, complete CSS coverage
+   */
+  .bm-wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+    padding: 2rem 1.5rem;
+    background: transparent;
+  }
+
+  /* Static ambient glow — no rotation */
+  .bm-mesh {
+    position: absolute;
+    inset: -30%;
+    background: 
+      radial-gradient(ellipse 55% 50% at 30% 25%, rgba(59, 130, 246, 0.08) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 55% at 75% 70%, rgba(16, 185, 129, 0.06) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 50% at 50% 50%, rgba(10, 25, 47, 0.08) 0%, transparent 50%);
+    filter: blur(30px);
+    opacity: 1;
+    pointer-events: none;
+  }
+
+  /* Ambient glow behind the card */
+  .bm-glow {
+    position: absolute;
+    inset: 10% -5%;
+    background: radial-gradient(ellipse at center, rgba(10, 25, 47, 0.12) 0%, transparent 65%);
+    filter: blur(25px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .bm-stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 340px;
+    z-index: 2;
+  }
+
+  /* Floating elements — contained positioning */
+  .bm-floating { position: absolute; z-index: 10; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3)); }
+  .bm-float-top-right { top: -6px; right: -6px; transform: translate(10%, -40%); }
+  .bm-float-top-left { top: -6px; left: -6px; transform: translate(-10%, -40%); }
+  .bm-float-bottom-right { bottom: -6px; right: -6px; transform: translate(10%, 40%); }
+  .bm-float-bottom-left { bottom: -6px; left: -6px; transform: translate(-10%, 40%); }
+
+  /* ── SOLID dark card system (no glass) ── */
+  .bm-card, .bm-terminal, .bm-search, .bm-timeline-card, .bm-board-col, .bm-push-notif {
+    background: linear-gradient(165deg, #0e2240 0%, #0a192f 60%, #081424 100%);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow:
+      0 2px 4px rgba(0,0,0,0.1),
+      0 20px 40px -10px rgba(5, 11, 20, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 1.1rem;
+    width: 100%;
+    color: #f8fafc;
+    font-size: 0.72rem;
+    font-weight: 500;
+    position: relative;
+  }
+
+  b, .bm-bold { font-weight: 700; color: #fff; }
+  i { font-style: normal; color: rgba(255,255,255,0.5); font-size: 0.66rem; }
+  .bm-green { color: #34d399; }
+  .bm-orange { color: #f59e0b; }
+  .mk-green { color: #34d399; font-weight: 600; }
+  .editorial { font-family: var(--font-mono, monospace); letter-spacing: -0.2px; }
+
+  .bm-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 7px 10px; border-radius: 8px; margin-bottom: 4px;
+    background: rgba(255,255,255,0.025);
+    transition: background 0.3s;
+  }
+  .bm-row:last-child { margin-bottom: 0; }
+  .bm-row span { color: rgba(255,255,255,0.65); }
+  .bm-row-target { background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.12); }
+  .bm-active { background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); }
+  .bm-total-row { padding: 9px 10px; }
+  .bm-large { font-size: 1.05rem; }
+  .bm-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 8px 0; }
+  .bm-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(255,255,255,0.4); margin-bottom: 10px; padding: 0 4px; }
+  .bm-dim { opacity: 0.5; }
+
+  /* ── Pills & Toasts ── */
+  .bm-pill {
+    background: #0f172a;
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 6px 12px; border-radius: 100px;
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.62rem; font-weight: 600; white-space: nowrap;
+    color: #e2e8f0;
+  }
+  .bm-pill-dark { background: #020617; border-color: rgba(255,255,255,0.04); color: rgba(255,255,255,0.8); }
+  .bm-pill-brand { background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; color: #fff; box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+  .bm-pill-brand svg { width: 12px; height: 12px; }
+  .bm-pill svg { width: 12px; height: 12px; opacity: 0.7; }
+
+  .bm-toast {
+    background: #0a192f;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 8px 12px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 0.68rem; white-space: nowrap;
+    box-shadow: 0 12px 24px -8px rgba(0,0,0,0.4);
+  }
+  .bm-toast-success { background: rgba(6, 78, 59, 0.95); border-color: rgba(16, 185, 129, 0.25); }
+  .bm-toast-sm { padding: 6px 10px; font-size: 0.62rem; }
+  .bm-toast-text { display: flex; flex-direction: column; line-height: 1.25; }
+  .bm-toast-hide { opacity: 0; }
+
+  .bm-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .bm-dot-blue { background: #60a5fa; box-shadow: 0 0 6px rgba(96,165,250,0.6); }
+  .bm-dot-green { background: #34d399; box-shadow: 0 0 6px rgba(52,211,153,0.6); }
+  .bm-dot-orange { background: #fbbf24; box-shadow: 0 0 6px rgba(251,191,36,0.6); }
+
+  .bm-avatar { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, #3b82f6, #2563eb); display: flex; align-items: center; justify-content: center; font-size: 0.55rem; font-weight: 800; color: #fff; box-shadow: 0 2px 8px rgba(37,99,235,0.25); }
+  .bm-avatar-sm { width: 16px; height: 16px; border-radius: 4px; background: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 0.5rem; font-weight: 800; color: #fff; }
+  .bm-icon-check { width: 18px; height: 18px; border-radius: 50%; background: #10b981; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-style: normal; font-weight: 800; box-shadow: 0 2px 8px rgba(16,185,129,0.3); }
+
+  .bm-fake-cursor {
+    position: absolute; z-index: 50; top: 0; left: 0;
+    width: 22px; height: 22px; color: #fff; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5));
+    opacity: 0; pointer-events: none;
+  }
+
+  /* ── Chip & Tag states ── */
+  .mk-chip { display: inline-block; background: rgba(16,185,129,0.18); color: #34d399; padding: 2px 6px; border-radius: 4px; font-size: 0.55rem; font-style: normal; font-weight: 700; margin-left: 4px; border: 1px solid rgba(52,211,153,0.2); }
+  .bm-chip-hide { opacity: 0; transform: scale(0.5); }
+  .bm-stamp-hide { opacity: 0; }
+  .bm-msg-hide { display: none; }
+
+  .bm-tag { font-size: 0.52rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .bm-tag-warn { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
+
+  /* ── Specific Mockup Styles ── */
+
+  /* Margin bar */
+  .bm-margin-bar-bg { flex: 1; height: 5px; background: rgba(255,255,255,0.08); border-radius: 100px; margin: 0 10px; overflow: hidden; }
+  .bm-margin-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #3b82f6, #34d399); border-radius: 100px; }
+  .bm-margin-text { font-size: 0.65rem; font-weight: 600; }
+  
+  /* Chat */
+  .bm-chat { display: flex; flex-direction: column; gap: 8px; }
+  .bm-msg { padding: 8px 12px; border-radius: 12px; max-width: 85%; line-height: 1.35; font-size: 0.68rem; }
+  .bm-msg-in { background: rgba(255,255,255,0.07); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .bm-msg-out { background: #2563eb; align-self: flex-end; border-bottom-right-radius: 4px; color: #fff; }
+  .bm-msg-typing { background: rgba(255,255,255,0.04); align-self: flex-end; opacity: 0; }
+  
+  /* Branding card */
+  .bm-brand-card { display: flex; flex-direction: column; gap: 0.9rem; }
+  .bm-brand-head { display: flex; align-items: center; gap: 10px; }
+  .bm-brand-head b { font-size: 0.8rem; display: block; }
+  .bm-brand-head i { display: block; font-size: 0.6rem; color: rgba(255,255,255,0.4); margin-top: 2px; }
+  .bm-brand-logo { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04)); border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
+  .bm-brand-color { display: flex; flex-direction: column; gap: 4px; }
+  .bm-brand-color > span { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(255,255,255,0.4); font-weight: 700; }
+  .bm-logo-pill { font-size: 0.6rem; }
+  
+  .bm-color-swatch-wrap { display: flex; gap: 6px; margin-top: 4px; }
+  .bm-color-swatch { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.15); transition: border-color 0.2s, transform 0.3s var(--ease-spring, ease); }
+  .bm-color-swatch:hover { border-color: rgba(255,255,255,0.5); transform: scale(1.15); }
+  .bm-swatch-1 { background: #3b82f6; }
+  .bm-swatch-2 { background: #10b981; }
+  .bm-swatch-3 { background: #f43f5e; }
+
+  /* Push notification */
+  .bm-push-notif {
+     border-radius: 16px; padding: 12px 14px; display: flex; gap: 12px;
+     box-shadow: 0 16px 32px -8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+     max-width: 300px;
+     opacity: 0; transform: translateY(-20px);
+  }
+  .bm-push-icon img { width: 26px; height: 26px; border-radius: 7px; }
+  .bm-push-body { display: flex; flex-direction: column; gap: 3px; }
+  .bm-push-body b { font-size: 0.72rem; }
+  .bm-push-body span { font-size: 0.64rem; color: rgba(255,255,255,0.65); line-height: 1.35; }
+
+  /* Timeline */
+  .bm-timeline-card { padding: 1.1rem; }
+  .bm-tl-line { position: absolute; left: 24px; top: 1.5rem; bottom: 1.5rem; width: 2px; background: rgba(255,255,255,0.08); border-radius: 1px; }
+  .bm-tl-fill { width: 100%; height: 0%; background: linear-gradient(180deg, #3b82f6, #2563eb); box-shadow: 0 0 8px rgba(59,130,246,0.4); border-radius: 1px; }
+  .bm-tl-nodes { display: flex; flex-direction: column; gap: 1.1rem; position: relative; }
+  .bm-tl-node { display: flex; align-items: center; gap: 12px; }
+  .bm-tl-node span { font-size: 0.68rem; font-weight: 500; color: rgba(255,255,255,0.7); }
+  .bm-tl-node i { width: 20px; height: 20px; border-radius: 50%; background: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: #fff; z-index: 2; box-shadow: 0 0 0 4px #0a192f, 0 2px 8px rgba(37,99,235,0.3); }
+  .bm-node-pending { opacity: 0.4; }
+  .bm-node-pending i { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 0 0 4px #0a192f; }
+
+  /* Kanban */
+  .bm-kanban { display: flex; gap: 8px; width: 100%; }
+  .bm-board-col { padding: 10px; border-radius: 10px; }
+  .bm-col-head { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.6px; color: rgba(255,255,255,0.4); font-weight: 700; margin-bottom: 10px; }
+  .bm-board-card { background: rgba(255,255,255,0.04); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 6px; }
+  .bm-badge { font-size: 0.5rem; font-weight: 700; padding: 2px 7px; border-radius: 5px; align-self: flex-start; }
+  .bm-badge-orange { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
+  .bm-badge-gray { background: rgba(255,255,255,0.08); color: #94a3b8; }
+  .bm-card-foot { display: flex; justify-content: space-between; align-items: center; }
+  .bm-kanban-drop { height: 50px; border: 1px dashed rgba(255,255,255,0.15); border-radius: 10px; margin-top: 8px; opacity: 0; }
+
+  /* Search */
+  .bm-search { padding: 1.1rem; }
+  .bm-search-bar { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.04); padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.07); margin-bottom: 10px; }
+  .bm-search-bar svg { width: 14px; height: 14px; opacity: 0.4; }
+  .bm-search-type { color: rgba(255,255,255,0.5); font-family: var(--font-mono, monospace); }
+  .bm-search-res { display: flex; flex-direction: column; gap: 4px; }
+  .bm-search-res > div { padding: 9px 10px; border-radius: 8px; background: rgba(255,255,255,0.025); display: flex; flex-direction: column; gap: 3px; opacity: 0; border: 1px solid transparent; transition: border-color 0.2s; }
+  .bm-search-res > div:hover { border-color: rgba(255,255,255,0.06); }
+  
+  /* CFDI */
+  .bm-cfdi-card { overflow: hidden; position: relative; }
+  .bm-fake-xml { position: absolute; inset: 0; padding: 1rem; font-family: monospace; font-size: 0.5rem; color: rgba(255,255,255,0.04); z-index: 0; word-break: break-all; opacity: 0.5; user-select: none; }
+  .bm-matrix-text { transition: opacity 0.5s; }
+  .bm-cfdi-card .bm-row { position: relative; z-index: 1; background: rgba(10,25,47,0.7); }
+  
+  /* Terminal */
+  .bm-terminal { font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+  .bm-term-head { display: flex; align-items: center; gap: 6px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 10px; }
+  .bm-term-head i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.15); }
+  .bm-term-head span { font-size: 0.6rem; color: rgba(255,255,255,0.4); margin-left: auto; }
+  .bm-term-body { display: flex; flex-direction: column; gap: 4px; }
+  .bm-term-line { opacity: 0; font-size: 0.62rem; line-height: 1.5; }
+  .bm-term-ok { color: #34d399; }
+  .bm-term-cursor { display: inline-block; width: 6px; height: 13px; background: rgba(255,255,255,0.8); animation: bm-blink 1s step-end infinite; }
+  @keyframes bm-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* Barcode */
+  .bm-barcode { background: #fff; padding: 12px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; overflow: hidden; }
+  .bm-bars { width: 100%; height: 40px; background-image: repeating-linear-gradient(90deg, #1a1a2e 0, #1a1a2e 2px, transparent 2px, transparent 4px, #1a1a2e 4px, #1a1a2e 7px, transparent 7px, transparent 9px); }
+  .bm-barcode span { color: #1a1a2e; font-size: 0.58rem; font-family: ui-monospace, monospace; letter-spacing: 1px; }
+  .bm-laser { position: absolute; top: 0; left: 0; right: 0; height: 2px; background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.6); opacity: 0; }
+  .bm-btn { text-align: center; padding: 8px; border-radius: 8px; font-size: 0.68rem; font-weight: 600; cursor: default; }
+  .bm-btn-outline { border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
+
+  /* Credit */
+  .bm-credit-bar { height: 6px; background: rgba(255,255,255,0.08); border-radius: 100px; margin: 10px 0; overflow: hidden; }
+  .bm-credit-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #3b82f6, #60a5fa); border-radius: 100px; transition: background 0.3s; }
+
+  /* Chart */
+  .bm-chart { display: flex; align-items: flex-end; justify-content: space-between; height: 80px; margin: 10px 0; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); gap: 6px; }
+  .bm-chart-col { flex: 1; height: 100%; display: flex; align-items: flex-end; }
+  .bm-chart-col-fill { width: 100%; background: rgba(255,255,255,0.08); border-radius: 4px 4px 0 0; height: 0%; transition: height 0.3s; }
+  .bm-chart-active .bm-chart-col-fill { background: linear-gradient(180deg, #3b82f6, #2563eb); }
+
+  /* ── Responsive ── */
+  @media (max-width: 860px) {
+    .bm-wrap { min-height: 220px; padding: 1.5rem 1rem; }
+    .bm-stage { max-width: 300px; }
+    .bm-floating { filter: drop-shadow(0 6px 12px rgba(0,0,0,0.2)); }
+    .bm-float-top-right, .bm-float-bottom-right { right: 0; transform: translate(5%, -35%); }
+    .bm-float-top-left, .bm-float-bottom-left { left: 0; transform: translate(-5%, -35%); }
+    .bm-float-bottom-right, .bm-float-bottom-left { transform: translate(5%, 35%); }
+  }
+</style>

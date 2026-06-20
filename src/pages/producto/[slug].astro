@@ -8,6 +8,7 @@ import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
 import PageAnims from '../../components/landing/PageAnims.astro';
+import BlockMockup from '../../components/producto/BlockMockup.astro';
 import { FEATURES } from '../../lib/producto';
 
 export function getStaticPaths() {
@@ -60,7 +61,9 @@ const faqSchema = {
 
                 <!-- Mockup específico del feature -->
                 <div class="pp-mockup-wrap reveal-mockup">
+                    <div class="pp-mesh-bg" aria-hidden="true"></div>
                     <div class="pp-glow" aria-hidden="true"></div>
+
                     <div class="pp-mockup">
 
                         {feature.slug === 'editor' && (
@@ -68,103 +71,155 @@ const faqSchema = {
                                 <div class="mk-bar">
                                     <span class="mk-dots"><i></i><i></i><i></i></span>
                                     <span class="mk-bar-title">COT-0149 · Distribuidora El Zarco</span>
-                                    <span class="mk-badge mk-badge-draft">● Borrador</span>
-                                </div>
-                                <div class="mk-rows">
-                                    <div class="mk-row mk-row-head"><span>Producto</span><span>Cant.</span><span>Precio</span><span>Importe</span></div>
-                                    <div class="mk-row"><span>Cemento gris 50kg</span><span>120</span><span class="editorial">$182.00</span><span class="editorial">$21,840.00</span></div>
-                                    <div class="mk-row mk-row-edit">
-                                        <span>Varilla 3/8" × 12m</span><span>340</span>
-                                        <span class="editorial mk-green">$168.50 <i class="mk-chip">−12%</i></span>
-                                        <span class="editorial">$57,290.00</span>
+                                    <div class="mk-bar-actions">
+                                        <span class="mk-avatar-sm">RM</span>
+                                        <span class="mk-badge mk-badge-draft">● Borrador</span>
                                     </div>
-                                    <div class="mk-row"><span>Block hueco 15×20×40</span><span>2,400</span><span class="editorial">$14.20</span><span class="editorial">$34,080.00</span></div>
-                                    <div class="mk-row"><span>Malla electrosoldada 6×6</span><span>180</span><span class="editorial">$312.00</span><span class="editorial">$56,160.00</span></div>
                                 </div>
-                                <div class="mk-totals">
-                                    <span>Subtotal <b class="editorial">$169,370.00</b></span>
-                                    <span>IVA 16% <b class="editorial">$27,099.20</b></span>
-                                    <span class="mk-total-final">Total <b class="editorial">$196,469.20</b></span>
+                                <div class="mk-body">
+                                    <div class="mk-sidebar">
+                                        <div class="mk-sb-item mk-sb-active"><i>📄</i> Cotización actual</div>
+                                        <div class="mk-sb-item"><i>👤</i> Datos del cliente</div>
+                                        <div class="mk-sb-item"><i>⚙️</i> Configuración</div>
+                                    </div>
+                                    <div class="mk-content">
+                                        <div class="mk-rows">
+                                            <div class="mk-row mk-row-head"><span>Producto</span><span>Cant.</span><span>Precio</span><span>Importe</span></div>
+                                            <div class="mk-row"><span>Cemento gris 50kg</span><span>120</span><span class="editorial">$182.00</span><span class="editorial">$21,840.00</span></div>
+                                            <div class="mk-row mk-row-edit" id="editorTargetRow">
+                                                <span>Varilla 3/8" × 12m</span><span>340</span>
+                                                <span class="editorial mk-green" id="editorPrice">$191.48 <i class="mk-chip" id="editorChip">−12%</i></span>
+                                                <span class="editorial" id="editorImport">$65,103.20</span>
+                                            </div>
+                                            <div class="mk-row"><span>Block hueco 15×20×40</span><span>2,400</span><span class="editorial">$14.20</span><span class="editorial">$34,080.00</span></div>
+                                            <div class="mk-row"><span>Malla electrosoldada 6×6</span><span>180</span><span class="editorial">$312.00</span><span class="editorial">$56,160.00</span></div>
+                                        </div>
+                                        <div class="mk-totals">
+                                            <div class="mk-tot-col"><span>Subtotal</span><b class="editorial">$169,370.00</b></div>
+                                            <div class="mk-tot-col"><span>IVA 16%</span><b class="editorial">$27,099.20</b></div>
+                                            <div class="mk-tot-col mk-tot-final"><span>Total</span><b class="editorial" id="editorTotal">$196,469.20</b></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Cursor GSAP -->
+                                <div class="mk-cursor" id="editorCursor">
+                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 2l12 11.2-5.8.5 3.3 7.3-2.25 1-3.2-7.4-4.4 4.7z"/></svg>
                                 </div>
                             </div>
                         )}
 
                         {feature.slug === 'link-publico' && (
-                            <div class="mk-public">
-                                <div class="mk-public-head">
-                                    <span class="mk-avatar">MV</span>
-                                    <div>
-                                        <b>Materiales del Valle</b>
-                                        <i>te envió una cotización</i>
+                            <div class="mk-public" id="publicWrap">
+                                <div class="mk-public-card" id="publicCard">
+                                    <div class="mk-public-head">
+                                        <span class="mk-avatar">MV</span>
+                                        <div>
+                                            <b>Materiales del Valle</b>
+                                            <i>te envió una cotización</i>
+                                        </div>
+                                        <span class="mk-badge mk-badge-sent">● COT-0148</span>
                                     </div>
-                                    <span class="mk-badge mk-badge-sent">● COT-0148</span>
+                                    <div class="mk-public-total">
+                                        <span>Total con IVA</span>
+                                        <b class="editorial">$196,469.20</b>
+                                        <i>Net 30 · vigente al 24 jun 2026</i>
+                                    </div>
+                                    <div class="mk-public-actions">
+                                        <div class="mk-btn-wrap" id="publicApproveBtn">
+                                            <div class="mk-btn-glow" id="publicGlow"></div>
+                                            <span class="mk-approve">Aprobar cotización</span>
+                                        </div>
+                                        <span class="mk-reject">Rechazar</span>
+                                    </div>
+                                    <span class="mk-via">vía <b>cord</b></span>
                                 </div>
-                                <div class="mk-public-total">
-                                    <span>Total con IVA</span>
-                                    <b class="editorial">$196,469.20</b>
-                                    <i>Net 30 · vigente al 24 jun 2026</i>
+                                <div class="mk-success-overlay" id="publicSuccess">
+                                    <div class="mk-success-ring"></div>
+                                    <i class="mk-success-check">✓</i>
+                                    <b>¡Aprobada exitosamente!</b>
                                 </div>
-                                <div class="mk-public-actions">
-                                    <span class="mk-approve">Aprobar cotización</span>
-                                    <span class="mk-reject">Rechazar</span>
-                                </div>
-                                <span class="mk-via">vía <b>cord</b></span>
                             </div>
                         )}
 
                         {feature.slug === 'seguimiento' && (
                             <div class="mk-track">
-                                <div class="mk-toast">
-                                    <span class="mk-toast-dot"></span>
-                                    <span><b>Raúl Mendoza</b> abrió tu cotización · hace 3 min</span>
+                                <div class="mk-track-head">
+                                    <div class="mk-toast" id="trackToast">
+                                        <span class="mk-toast-dot"></span>
+                                        <div class="mk-toast-content">
+                                            <b>Raúl Mendoza</b> abrió tu cotización
+                                            <i>hace 3 min</i>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="mk-tl">
-                                    <div class="mk-tl-row mk-on"><i class="ok"></i><div><b>Aprobada</b><span>El Zarco aprobó la cotización · hoy, 12:36</span></div></div>
-                                    <div class="mk-tl-row mk-on"><i class="warn"></i><div><b>Vista (3 veces)</b><span>Raúl Mendoza abrió el link · hoy, 12:31</span></div></div>
-                                    <div class="mk-tl-row"><i></i><div><b>Enviada</b><span>Por correo y WhatsApp · hoy, 11:02</span></div></div>
-                                    <div class="mk-tl-row"><i></i><div><b>Creada</b><span>Borrador COT-0148 · hoy, 10:41</span></div></div>
+                                    <div class="mk-tl-row mk-on track-item"><i class="ok">✓</i><div class="mk-tl-info"><b>Aprobada</b><span>El Zarco aprobó la cotización · hoy, 12:36</span></div><span class="mk-avatar-sm">EZ</span></div>
+                                    <div class="mk-tl-row mk-on track-item"><i class="warn">👁</i><div class="mk-tl-info"><b>Vista (3 veces)</b><span>Raúl Mendoza abrió el link · hoy, 12:31</span></div><span class="mk-avatar-sm">RM</span></div>
+                                    <div class="mk-tl-row track-item"><i>✉️</i><div class="mk-tl-info"><b>Enviada</b><span>Por correo y WhatsApp · hoy, 11:02</span></div></div>
+                                    <div class="mk-tl-row track-item"><i>📄</i><div class="mk-tl-info"><b>Creada</b><span>Borrador COT-0148 · hoy, 10:41</span></div></div>
                                 </div>
                             </div>
                         )}
 
                         {feature.slug === 'cfdi' && (
                             <div class="mk-cfdi">
-                                <div class="mk-cfdi-head">
-                                    <b>Factura CFDI 4.0</b>
-                                    <span class="mk-badge mk-badge-ok">● Timbrada</span>
+                                <div class="mk-cfdi-bg-code">
+                                    &lt;cfdi:Comprobante Version="4.0" Serie="A" Folio="1048" Fecha="2026-06-24T12:00:00"&gt;<br/>
+                                    &nbsp;&nbsp;&lt;cfdi:Emisor Rfc="MVA240611AB3" Nombre="Materiales del Valle" RegimenFiscal="601"/&gt;<br/>
+                                    &nbsp;&nbsp;&lt;cfdi:Receptor Rfc="DEZ981123QX1" Nombre="Distribuidora El Zarco" UsoCFDI="G03"/&gt;<br/>
+                                    &nbsp;&nbsp;&lt;cfdi:Conceptos&gt;<br/>
+                                    &nbsp;&nbsp;&nbsp;&nbsp;&lt;cfdi:Concepto ClaveProdServ="30111500" Cantidad="120" ClaveUnidad="H87" Descripcion="Cemento gris 50kg"/&gt;<br/>
+                                    &nbsp;&nbsp;&lt;/cfdi:Conceptos&gt;<br/>
+                                    &lt;/cfdi:Comprobante&gt;
                                 </div>
-                                <div class="mk-cfdi-rows">
-                                    <div><span>UUID</span><b class="editorial">a1b2c3d4-9f01-4e22-b7aa-3c5d8e2f11f9</b></div>
-                                    <div><span>Emisor</span><b>Materiales del Valle · MVA240611AB3</b></div>
-                                    <div><span>Receptor</span><b>Distribuidora El Zarco · DEZ981123QX1</b></div>
-                                    <div><span>Total</span><b class="editorial">$196,469.20 MXN</b></div>
-                                </div>
-                                <div class="mk-cfdi-stamp">
-                                    <span class="mk-check">✓</span>
-                                    <span>Timbrada ante el SAT · desde la cotización COT-0148</span>
+                                <div class="mk-cfdi-front">
+                                    <div class="mk-cfdi-head">
+                                        <b>Factura CFDI 4.0</b>
+                                        <span class="mk-badge mk-badge-ok">● Timbrada</span>
+                                    </div>
+                                    <div class="mk-cfdi-rows">
+                                        <div><span>UUID</span><b class="editorial">a1b2c3d4-9f01-4e22-b7aa-3c5d8e2f11f9</b></div>
+                                        <div><span>Emisor</span><b>Materiales del Valle · MVA240611AB3</b></div>
+                                        <div><span>Receptor</span><b>Distribuidora El Zarco · DEZ981123QX1</b></div>
+                                        <div><span>Total</span><b class="editorial">$196,469.20 MXN</b></div>
+                                    </div>
+                                    <div class="mk-cfdi-stamp" id="cfdiStamp">
+                                        <div class="mk-stamp-ring"></div>
+                                        <span class="mk-check">✓</span>
+                                        <span>Timbrada ante el SAT · desde COT-0148</span>
+                                    </div>
                                 </div>
                             </div>
                         )}
 
                         {feature.slug === 'clientes-credito' && (
                             <div class="mk-cli">
-                                <div class="mk-cli-row">
-                                    <span class="mk-avatar">EZ</span>
+                                <div class="mk-cli-row cli-item">
+                                    <span class="mk-avatar mk-avatar-ez">EZ</span>
                                     <div class="mk-cli-info"><b>Distribuidora El Zarco</b><i>Raúl Mendoza · DEZ981123QX1</i></div>
-                                    <span class="mk-term">Net 30</span>
-                                    <div class="mk-credit"><i style="width: 46%"></i><span class="editorial">$230k / $500k</span></div>
+                                    <div class="mk-term-wrap"><span class="mk-term">Net 30</span></div>
+                                    <div class="mk-credit">
+                                        <div class="mk-credit-bar"><i style="width: 85%" class="warn-bar"></i></div>
+                                        <span class="editorial">$425k / $500k</span>
+                                    </div>
                                 </div>
-                                <div class="mk-cli-row">
-                                    <span class="mk-avatar">CG</span>
+                                <div class="mk-cli-row cli-item">
+                                    <span class="mk-avatar mk-avatar-cg">CG</span>
                                     <div class="mk-cli-info"><b>Constructora GAMA</b><i>Lucía Ferreira · CGA050617HJ8</i></div>
-                                    <span class="mk-term">Net 60</span>
-                                    <div class="mk-credit"><i style="width: 72%"></i><span class="editorial">$612k / $850k</span></div>
+                                    <div class="mk-term-wrap"><span class="mk-term">Net 60</span></div>
+                                    <div class="mk-credit">
+                                        <div class="mk-credit-bar"><i style="width: 72%"></i></div>
+                                        <span class="editorial">$612k / $850k</span>
+                                    </div>
                                 </div>
-                                <div class="mk-cli-row">
-                                    <span class="mk-avatar">GF</span>
+                                <div class="mk-cli-row cli-item">
+                                    <span class="mk-avatar mk-avatar-gf">GF</span>
                                     <div class="mk-cli-info"><b>Grupo Ferrex</b><i>Marco Ruiz · GFE120304TR2</i></div>
-                                    <span class="mk-term mk-term-cash">Contado</span>
-                                    <div class="mk-credit"><i style="width: 0%"></i><span class="editorial">Sin crédito</span></div>
+                                    <div class="mk-term-wrap"><span class="mk-term mk-term-cash">Contado</span></div>
+                                    <div class="mk-credit">
+                                        <div class="mk-credit-bar"><i></i></div>
+                                        <span class="editorial">Sin crédito</span>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -207,8 +262,8 @@ const faqSchema = {
                             ))}
                         </ul>
                     </div>
-                    <div class="pp-block-visual reveal-mockup">
-                        <div class="pp-card-num editorial">/0{i + 1}</div>
+                    <div class="pp-block-visual" style="align-items: center; justify-content: center; padding: 0;">
+                        <BlockMockup slug={feature.slug} index={i} />
                     </div>
                 </article>
             ))}
@@ -311,186 +366,283 @@ const faqSchema = {
     .pp-btn-ghost:hover { color: var(--color-blue-deep); }
     .pp-plan { font-size: 0.78rem; color: #99a2af; margin: 1.3rem 0 0; font-weight: 600; }
 
-    /* ── Mockup del hero ── */
-    .pp-mockup-wrap { position: relative; max-width: 760px; margin: 4.5rem auto 0; }
-    .pp-glow {
-        position: absolute; inset: 12% -8% -18%;
-        background: radial-gradient(ellipse at center, rgba(10,25,47,0.16) 0%, transparent 65%);
+    /* ── Mockup del hero (EXTREME MOTION GRAPHICS) ── */
+    .pp-mockup-wrap { position: relative; max-width: 820px; margin: 4.5rem auto 0; perspective: 1400px; transform-style: preserve-3d; }
+    
+    .pp-mesh-bg {
+        position: absolute;
+        top: -100px; left: 50%;
+        transform: translateX(-50%);
+        width: 1400px; height: 900px;
+        background:
+            radial-gradient(ellipse 40% 50% at 20% 30%, rgba(59,130,246,0.10), transparent 60%),
+            radial-gradient(ellipse 45% 45% at 80% 25%, rgba(16,185,129,0.07), transparent 60%),
+            radial-gradient(ellipse 50% 55% at 50% 10%, rgba(10,25,47,0.10), transparent 55%);
         filter: blur(30px);
         pointer-events: none;
+        opacity: 0.9;
     }
+    
+    .pp-glow {
+        position: absolute; inset: -8% -4% 12%;
+        background: radial-gradient(ellipse at center, rgba(10,25,47,0.18) 0%, transparent 70%);
+        filter: blur(40px); z-index: 0;
+        pointer-events: none;
+    }
+
     .pp-mockup {
         position: relative;
-        background: linear-gradient(165deg, #0e2240 0%, #0a192f 55%, #081424 100%);
-        border-radius: 22px;
-        padding: 1.6rem;
         text-align: left;
-        box-shadow:
-            0 50px 100px -36px rgba(5,11,20,0.75),
-            inset 0 0 0 0.5px rgba(255,255,255,0.08);
         color: #fff;
+        /* Removed background, padding, and backdrop-filter to prevent double-borders and clipping */
     }
 
     /* badges compartidos */
     .mk-badge {
-        font-size: 0.62rem; font-weight: 700; letter-spacing: 0.4px;
-        padding: 4px 10px; border-radius: 100px; white-space: nowrap;
+        font-size: 0.6rem; font-weight: 800; letter-spacing: 0.8px;
+        padding: 4px 10px; border-radius: 100px; white-space: nowrap; text-transform: uppercase;
     }
-    .mk-badge-draft { color: #aab4c4; background: rgba(255,255,255,0.08); }
-    .mk-badge-sent  { color: #7eb3ff; background: rgba(59,130,246,0.16); }
-    .mk-badge-ok    { color: #4ade80; background: rgba(16,185,129,0.16); }
+    .mk-badge-draft { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); }
+    .mk-badge-sent  { color: #93c5fd; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); }
+    .mk-badge-ok    { color: #34d399; background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); }
+    
     .mk-avatar {
         width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
-        background: rgba(255,255,255,0.1); color: #fff;
+        background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; 
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 12px rgba(37,99,235,0.3);
         display: inline-flex; align-items: center; justify-content: center;
-        font-size: 0.78rem; font-weight: 800;
+        font-size: 0.85rem; font-weight: 800;
+    }
+    .mk-avatar-ez { background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 12px rgba(217,119,6,0.3); }
+    .mk-avatar-cg { background: linear-gradient(135deg, #10b981, #059669); box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 12px rgba(5,150,105,0.3); }
+    .mk-avatar-gf { background: linear-gradient(135deg, #8b5cf6, #6d28d9); box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 12px rgba(109,40,217,0.3); }
+    
+    .mk-avatar-sm {
+        width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0;
+        background: #3b82f6; color: #fff;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 0.55rem; font-weight: 800;
     }
 
-    /* editor */
-    .mk-bar { display: flex; align-items: center; gap: 12px; padding-bottom: 1rem; }
-    .mk-dots { display: inline-flex; gap: 5px; }
-    .mk-dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.14); }
-    .mk-bar-title { font-size: 0.78rem; font-weight: 600; color: rgba(255,255,255,0.75); flex: 1; }
-    .mk-rows { display: flex; flex-direction: column; gap: 4px; }
+    /* ── EDITOR APP SIMULATION ── */
+    .mk-window {
+        background: #0a192f;
+        border-radius: 14px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.06);
+        position: relative; overflow: hidden;
+    }
+    .mk-bar { 
+        display: flex; align-items: center; justify-content: space-between; 
+        padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02);
+    }
+    .mk-dots { display: inline-flex; gap: 6px; }
+    .mk-dots i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.2); }
+    .mk-bar-title { font-size: 0.75rem; font-weight: 600; color: rgba(255,255,255,0.6); position: absolute; left: 50%; transform: translateX(-50%); }
+    .mk-bar-actions { display: flex; align-items: center; gap: 10px; }
+    
+    .mk-body { display: flex; height: 320px; }
+    .mk-sidebar { width: 180px; background: rgba(255,255,255,0.01); border-right: 1px solid rgba(255,255,255,0.03); padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+    .mk-sb-item { padding: 8px 10px; border-radius: 6px; font-size: 0.7rem; color: rgba(255,255,255,0.5); display: flex; align-items: center; gap: 8px; cursor: default; }
+    .mk-sb-active { background: rgba(59,130,246,0.1); color: #93c5fd; font-weight: 500; }
+    .mk-sb-item i { font-style: normal; opacity: 0.7; }
+    
+    .mk-content { flex: 1; padding: 1.5rem; display: flex; flex-direction: column; }
+    .mk-rows { display: flex; flex-direction: column; gap: 4px; flex: 1; }
     .mk-row {
-        display: grid; grid-template-columns: 1.6fr 0.5fr 1fr 1fr;
+        display: grid; grid-template-columns: 2fr 0.5fr 1fr 1fr;
         gap: 8px; align-items: center;
-        font-size: 0.78rem; color: rgba(255,255,255,0.82);
-        padding: 8px 10px; border-radius: 9px;
-        background: rgba(255,255,255,0.03);
+        font-size: 0.75rem; color: rgba(255,255,255,0.8); font-weight: 500;
+        padding: 8px 12px; border-radius: 8px;
+        background: transparent; border: 1px solid transparent;
+        transition: background 0.3s, border-color 0.3s;
     }
     .mk-row span:nth-child(n+2) { text-align: right; }
-    .mk-row-head { background: none; font-size: 0.62rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.35); }
-    .mk-row-edit { background: rgba(16,185,129,0.1); box-shadow: inset 0 0 0 1px rgba(16,185,129,0.25); }
-    .mk-green { color: #4ade80; }
+    .mk-row-head { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: rgba(255,255,255,0.4); padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); border-radius: 0; }
+    .mk-row-edit { background: rgba(16,185,129,0.04); border-color: rgba(16,185,129,0.1); position: relative; }
+    .mk-green { color: #34d399; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end; }
     .mk-chip {
-        font-style: normal; font-size: 0.6rem; font-weight: 800;
-        color: #052e1f; background: #4ade80;
-        padding: 1px 6px; border-radius: 6px; margin-left: 4px;
-        vertical-align: 1px;
+        font-style: normal; font-size: 0.55rem; font-weight: 800;
+        color: #34d399; background: rgba(16,185,129,0.15); border: 1px solid rgba(52,211,153,0.3);
+        padding: 2px 4px; border-radius: 4px;
+        opacity: 0; transform: scale(0.5); /* for GSAP */
     }
     .mk-totals {
-        display: flex; justify-content: flex-end; gap: 1.6rem; flex-wrap: wrap;
-        margin-top: 1rem; padding: 0.9rem 10px 0;
-        border-top: 1px solid rgba(255,255,255,0.09);
-        font-size: 0.74rem; color: rgba(255,255,255,0.55);
+        display: flex; justify-content: flex-end; gap: 2rem;
+        margin-top: auto; padding-top: 1rem;
+        border-top: 1px solid rgba(255,255,255,0.05);
     }
-    .mk-totals b { margin-left: 7px; color: #fff; font-weight: 600; }
-    .mk-total-final { font-weight: 700; color: rgba(255,255,255,0.85); }
-    .mk-total-final b { font-size: 1.05rem; }
+    .mk-tot-col { display: flex; flex-direction: column; gap: 4px; text-align: right; }
+    .mk-tot-col span { font-size: 0.65rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.5px; }
+    .mk-tot-col b { font-size: 0.8rem; color: rgba(255,255,255,0.9); font-weight: 600; }
+    .mk-tot-final b { font-size: 1.1rem; color: #fff; }
 
-    /* link público */
-    .mk-public { display: flex; flex-direction: column; gap: 1.1rem; max-width: 430px; margin: 0 auto; padding: 0.5rem 0.3rem; }
+    .mk-cursor {
+        position: absolute; top: 0; left: 0; width: 20px; height: 20px; color: #fff;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); z-index: 100;
+        pointer-events: none; opacity: 0;
+    }
+    
+    /* ── LINK PÚBLICO SIMULATION ── */
+    .mk-public { position: relative; max-width: 440px; margin: 0 auto; perspective: 1000px; }
+    .mk-public-card { 
+        display: flex; flex-direction: column; gap: 1.25rem; padding: 1.5rem;
+        background: linear-gradient(145deg, rgba(10,25,47,0.85), rgba(10,25,47,0.95));
+        border-radius: 18px; box-shadow: 0 24px 48px -12px rgba(2,6,12,0.8), inset 0 1px 1px rgba(255,255,255,0.1);
+        backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08);
+    }
     .mk-public-head { display: flex; align-items: center; gap: 12px; }
-    .mk-public-head b { display: block; font-size: 0.92rem; }
-    .mk-public-head i { display: block; font-style: normal; font-size: 0.74rem; color: rgba(255,255,255,0.5); }
+    .mk-public-head b { display: block; font-size: 0.95rem; font-weight: 600; color: #fff; }
+    .mk-public-head i { display: block; font-style: normal; font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-top: 2px; }
     .mk-public-head .mk-badge { margin-left: auto; }
     .mk-public-total {
-        text-align: center; padding: 1.4rem 1rem;
-        background: rgba(255,255,255,0.04); border-radius: 16px;
-        box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.07);
+        text-align: center; padding: 1.75rem 1rem;
+        background: rgba(255,255,255,0.02); border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.04);
     }
-    .mk-public-total span { display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 6px; }
-    .mk-public-total b { display: block; font-size: 2rem; font-weight: 600; letter-spacing: -0.03em; }
-    .mk-public-total i { display: block; font-style: normal; font-size: 0.74rem; color: rgba(255,255,255,0.45); margin-top: 6px; }
-    .mk-public-actions { display: flex; gap: 0.7rem; }
+    .mk-public-total span { display: block; font-size: 0.65rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 8px; }
+    .mk-public-total b { display: block; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px; color: #fff; }
+    .mk-public-total i { display: block; font-style: normal; font-size: 0.7rem; color: rgba(255,255,255,0.4); margin-top: 8px; }
+    .mk-public-actions { display: flex; gap: 0.85rem; }
+    
+    .mk-btn-wrap { position: relative; flex: 1; display: flex; cursor: pointer; }
+    .mk-btn-glow { position: absolute; inset: 0; background: #3b82f6; filter: blur(14px); opacity: 0; border-radius: 12px; transition: opacity 0.3s; }
     .mk-approve {
-        flex: 1; text-align: center;
-        background: #fff; color: var(--color-blue-deep);
-        font-size: 0.88rem; font-weight: 700;
-        padding: 13px; border-radius: 12px;
+        position: relative; flex: 1; text-align: center; display: flex; align-items: center; justify-content: center;
+        background: #fff; color: #0f172a;
+        font-size: 0.9rem; font-weight: 700;
+        padding: 14px; border-radius: 12px; box-shadow: 0 4px 12px rgba(255,255,255,0.15); z-index: 2;
     }
     .mk-reject {
-        text-align: center; color: rgba(255,255,255,0.6);
-        font-size: 0.88rem; font-weight: 600;
-        padding: 13px 20px; border-radius: 12px;
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14);
+        text-align: center; color: rgba(255,255,255,0.6); display: flex; align-items: center; justify-content: center;
+        font-size: 0.9rem; font-weight: 600;
+        padding: 14px 20px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
     }
-    .mk-via { text-align: center; font-size: 0.68rem; color: rgba(255,255,255,0.35); }
-    .mk-via b { color: rgba(255,255,255,0.6); }
+    .mk-via { text-align: center; font-size: 0.7rem; color: rgba(255,255,255,0.4); margin-top: -0.5rem; }
+    .mk-via b { color: rgba(255,255,255,0.7); }
+    
+    .mk-success-overlay {
+        position: absolute; inset: 0; background: rgba(16,185,129,0.9);
+        border-radius: 18px; backdrop-filter: blur(8px);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        opacity: 0; pointer-events: none; z-index: 10; gap: 12px;
+    }
+    .mk-success-ring { position: absolute; width: 80px; height: 80px; border-radius: 50%; border: 2px solid #fff; opacity: 0; }
+    .mk-success-check { font-size: 3rem; font-style: normal; color: #fff; font-weight: 800; }
+    .mk-success-overlay b { color: #fff; font-size: 1.2rem; }
 
-    /* seguimiento */
-    .mk-track { display: flex; flex-direction: column; gap: 1.2rem; max-width: 520px; margin: 0 auto; padding: 0.4rem 0.2rem; }
+    /* ── SEGUIMIENTO TIMELINE ── */
+    .mk-track { display: flex; flex-direction: column; gap: 1.25rem; max-width: 520px; margin: 0 auto; }
+    .mk-track-head { display: flex; justify-content: center; height: 50px; }
     .mk-toast {
-        display: flex; align-items: center; gap: 10px;
-        background: rgba(255,255,255,0.07); border-radius: 12px;
-        padding: 12px 14px; font-size: 0.8rem; color: rgba(255,255,255,0.85);
-        box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.1), 0 14px 30px -14px rgba(0,0,0,0.5);
+        display: flex; align-items: center; gap: 12px;
+        background: rgba(10,25,47,0.85); border-radius: 100px; border: 1px solid rgba(255,255,255,0.1);
+        padding: 8px 16px; font-size: 0.75rem; color: #f8fafc;
+        box-shadow: 0 12px 24px -8px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1);
+        backdrop-filter: blur(16px);
+        opacity: 0; transform: translateY(20px); /* GSAP target */
     }
     .mk-toast-dot {
-        width: 9px; height: 9px; border-radius: 50%; background: #4ade80; flex-shrink: 0;
-        box-shadow: 0 0 0 4px rgba(74,222,128,0.16);
-        animation: mk-pulse 2s infinite;
+        width: 8px; height: 8px; border-radius: 50%; background: #38bdf8; flex-shrink: 0;
+        box-shadow: 0 0 0 4px rgba(56,189,248,0.2); animation: mk-pulse 2s infinite;
     }
-    @keyframes mk-pulse {
-        0% { box-shadow: 0 0 0 0 rgba(74,222,128,0.35); }
-        70% { box-shadow: 0 0 0 7px rgba(74,222,128,0); }
-        100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
+    .mk-toast-content { display: flex; align-items: center; gap: 6px; }
+    .mk-toast-content i { color: rgba(255,255,255,0.4); }
+    
+    .mk-tl { 
+        display: flex; flex-direction: column; gap: 4px;
+        background: rgba(10,25,47,0.8);
+        border-radius: 18px; padding: 1.25rem; border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 24px 48px -12px rgba(2,6,12,0.8);
     }
-    .mk-tl { display: flex; flex-direction: column; gap: 2px; }
     .mk-tl-row {
-        display: flex; align-items: center; gap: 12px;
-        padding: 10px 12px; border-radius: 10px;
-        opacity: 0.55;
+        display: flex; align-items: center; gap: 14px;
+        padding: 12px 14px; border-radius: 12px;
+        opacity: 0; transform: translateX(-20px); /* GSAP staggered */
     }
-    .mk-tl-row.mk-on { opacity: 1; background: rgba(255,255,255,0.04); }
+    .mk-tl-row.mk-on { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.04); }
     .mk-tl-row i {
-        width: 9px; height: 9px; border-radius: 50%;
-        background: rgba(255,255,255,0.25); flex-shrink: 0;
+        width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        background: rgba(255,255,255,0.1); flex-shrink: 0; font-style: normal; font-size: 0.7rem; color: #fff;
+        box-shadow: inset 0 1px 1px rgba(255,255,255,0.2);
     }
-    .mk-tl-row i.ok { background: #4ade80; }
-    .mk-tl-row i.warn { background: #fbbf24; }
-    .mk-tl-row b { display: block; font-size: 0.82rem; }
-    .mk-tl-row span { display: block; font-size: 0.72rem; color: rgba(255,255,255,0.45); }
-
-    /* cfdi */
-    .mk-cfdi { display: flex; flex-direction: column; gap: 1rem; max-width: 520px; margin: 0 auto; padding: 0.4rem 0.2rem; }
-    .mk-cfdi-head { display: flex; align-items: center; justify-content: space-between; }
-    .mk-cfdi-head b { font-size: 0.95rem; }
-    .mk-cfdi-rows { display: flex; flex-direction: column; gap: 4px; }
+    .mk-tl-row i.ok { background: #10b981; box-shadow: 0 0 12px rgba(16,185,129,0.4); }
+    .mk-tl-row i.warn { background: #f59e0b; box-shadow: 0 0 12px rgba(245,158,11,0.4); }
+    .mk-tl-info { flex: 1; }
+    .mk-tl-info b { display: block; font-size: 0.85rem; color: #fff; margin-bottom: 2px; }
+    .mk-tl-info span { display: block; font-size: 0.7rem; color: rgba(255,255,255,0.5); }
+    
+    /* ── CFDI ── */
+    .mk-cfdi { 
+        position: relative; display: flex; flex-direction: column; max-width: 520px; margin: 0 auto; 
+        background: rgba(10,25,47,0.85);
+        border-radius: 18px; box-shadow: 0 24px 48px -12px rgba(2,6,12,0.8), inset 0 1px 1px rgba(255,255,255,0.1);
+        backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08);
+        overflow: hidden;
+    }
+    .mk-cfdi-bg-code {
+        position: absolute; inset: 0; padding: 1.5rem;
+        font-family: var(--font-mono, monospace); font-size: 0.6rem; color: rgba(255,255,255,0.04);
+        line-height: 1.6; user-select: none; z-index: 0;
+    }
+    .mk-cfdi-front { position: relative; z-index: 1; padding: 1.5rem; }
+    .mk-cfdi-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .mk-cfdi-head b { font-size: 0.95rem; color: #fff; font-weight: 600; }
+    .mk-cfdi-rows { display: flex; flex-direction: column; gap: 6px; }
     .mk-cfdi-rows > div {
-        display: flex; justify-content: space-between; gap: 1rem; align-items: baseline;
-        padding: 9px 12px; border-radius: 9px;
-        background: rgba(255,255,255,0.035);
-        font-size: 0.76rem;
+        display: flex; justify-content: space-between; gap: 1rem; align-items: center;
+        padding: 10px 14px; border-radius: 10px;
+        background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03);
+        font-size: 0.8rem;
     }
-    .mk-cfdi-rows span { color: rgba(255,255,255,0.45); font-weight: 700; font-size: 0.64rem; letter-spacing: 1px; text-transform: uppercase; }
-    .mk-cfdi-rows b { font-weight: 500; color: rgba(255,255,255,0.85); text-align: right; word-break: break-all; }
+    .mk-cfdi-rows span { color: rgba(255,255,255,0.4); font-weight: 700; font-size: 0.65rem; letter-spacing: 0.8px; text-transform: uppercase; }
+    .mk-cfdi-rows b { font-weight: 500; color: #f8fafc; text-align: right; }
     .mk-cfdi-stamp {
-        display: flex; align-items: center; gap: 10px;
-        font-size: 0.78rem; color: rgba(255,255,255,0.7);
-        padding-top: 0.4rem;
+        position: relative; display: flex; align-items: center; gap: 12px;
+        font-size: 0.75rem; color: rgba(255,255,255,0.6);
+        padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 1rem;
     }
+    .mk-stamp-ring { position: absolute; left: 0; width: 28px; height: 28px; border-radius: 50%; border: 1px solid #34d399; opacity: 0; }
     .mk-check {
-        width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
-        background: rgba(74,222,128,0.16); color: #4ade80;
+        width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; position: relative; z-index: 2;
+        background: #10b981; color: #fff; box-shadow: 0 4px 12px rgba(16,185,129,0.4);
         display: inline-flex; align-items: center; justify-content: center;
-        font-size: 0.8rem; font-weight: 800;
+        font-size: 0.9rem; font-weight: 800; transform: scale(0); /* GSAP */
     }
 
-    /* clientes y crédito */
-    .mk-cli { display: flex; flex-direction: column; gap: 6px; }
+    /* ── CLIENTES Y CRÉDITO ── */
+    .mk-cli { 
+        display: flex; flex-direction: column; gap: 8px; 
+        background: rgba(15,23,42,0.6);
+        border-radius: 18px; padding: 1.25rem; border: 1px solid rgba(255,255,255,0.06);
+    }
     .mk-cli-row {
-        display: grid; grid-template-columns: auto 1.5fr auto 1.2fr;
-        gap: 14px; align-items: center;
-        padding: 11px 13px; border-radius: 12px;
-        background: rgba(255,255,255,0.035);
+        display: grid; grid-template-columns: auto 1.5fr auto 1fr;
+        gap: 16px; align-items: center;
+        padding: 12px 14px; border-radius: 12px;
+        background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03);
+        opacity: 0; transform: translateY(15px); /* GSAP */
     }
-    .mk-cli-info b { display: block; font-size: 0.84rem; }
-    .mk-cli-info i { display: block; font-style: normal; font-size: 0.7rem; color: rgba(255,255,255,0.45); }
+    .mk-cli-info b { display: block; font-size: 0.85rem; color: #fff; font-weight: 600; margin-bottom: 2px; }
+    .mk-cli-info i { display: block; font-style: normal; font-size: 0.7rem; color: rgba(255,255,255,0.4); }
+    .mk-term-wrap { display: flex; justify-content: flex-end; }
     .mk-term {
-        font-size: 0.64rem; font-weight: 800; letter-spacing: 0.6px;
-        color: #7eb3ff; background: rgba(59,130,246,0.14);
-        padding: 4px 10px; border-radius: 100px;
+        font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px;
+        color: #93c5fd; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2);
+        padding: 4px 10px; border-radius: 100px; text-transform: uppercase;
     }
-    .mk-term-cash { color: #aab4c4; background: rgba(255,255,255,0.08); }
-    .mk-credit { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
-    .mk-credit i {
-        display: block; height: 5px; border-radius: 100px;
-        background: linear-gradient(90deg, #4ade80, #22c55e);
-        align-self: stretch;
+    .mk-term-cash { color: #cbd5e1; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+    .mk-credit { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+    .mk-credit-bar {
+        width: 100%; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.05);
+        overflow: hidden; display: flex;
     }
-    .mk-credit span { font-size: 0.68rem; color: rgba(255,255,255,0.55); }
+    .mk-credit-bar i {
+        height: 100%; border-radius: 2px; background: #3b82f6;
+        transform-origin: left; transform: scaleX(0); /* GSAP */
+    }
+    .mk-credit-bar i.warn-bar { background: linear-gradient(90deg, #3b82f6, #f59e0b); }
+    .mk-credit span { font-size: 0.7rem; color: rgba(255,255,255,0.5); font-weight: 500; font-family: var(--font-mono, monospace); }
 
     /* ════════ STATS ════════ */
     .pp-stats {
@@ -509,13 +661,14 @@ const faqSchema = {
     /* ════════ BLOQUES ════════ */
     .pp-blocks {
         max-width: 1080px; margin: 0 auto;
-        padding: 6rem 5% 3rem;
-        display: flex; flex-direction: column; gap: 7rem;
+        padding: 8rem 5% 6rem;
+        display: flex; flex-direction: column; gap: 14rem;
     }
     .pp-block {
         display: grid; grid-template-columns: 1.1fr 0.9fr;
         gap: 4.5rem; align-items: center;
     }
+    .pp-block-text, .pp-block-visual { min-width: 0; }
     .pp-block-flip .pp-block-text { order: 2; }
     .pp-block-flip .pp-block-visual { order: 1; }
 
@@ -532,17 +685,9 @@ const faqSchema = {
     .pp-block-visual {
         position: relative;
         min-height: 260px;
-        border-radius: 24px;
-        background:
-            radial-gradient(ellipse at 30% 20%, rgba(10,25,47,0.045) 0%, transparent 55%),
-            var(--color-bg-soft);
-        border: 1px solid var(--color-border);
-        display: flex; align-items: flex-end; justify-content: flex-start;
-        padding: 1.6rem;
-        overflow: clip;
-        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
+        display: flex; align-items: center; justify-content: center;
+        /* No background, no border, no overflow clip -> transparent stage */
     }
-    .pp-block-visual:hover { transform: translateY(-4px); box-shadow: 0 30px 70px -30px rgba(10,25,47,0.18); }
     .pp-card-num {
         font-size: 5rem; line-height: 0.9;
         color: rgba(10,25,47,0.08);
@@ -635,7 +780,7 @@ const faqSchema = {
         .pp-block { grid-template-columns: 1fr; gap: 1.8rem; }
         .pp-block-flip .pp-block-text { order: 1; }
         .pp-block-flip .pp-block-visual { order: 2; }
-        .pp-block-visual { min-height: 170px; }
+        .pp-block-visual { min-height: 170px; margin-top: 2rem; }
         .pp-more-grid { grid-template-columns: 1fr; }
         .mk-row { grid-template-columns: 1.4fr 0.5fr 1fr; }
         .mk-row span:nth-child(4) { display: none; }
@@ -646,7 +791,11 @@ const faqSchema = {
 </style>
 
 <script>
-    // FAQ: acordeón (un solo abierto a la vez); la animación la hace el CSS (grid 0fr→1fr).
+    import { gsap } from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    gsap.registerPlugin(ScrollTrigger);
+
+    // FAQ: acordeón (un solo abierto a la vez)
     document.addEventListener('DOMContentLoaded', () => {
         const items = Array.from(document.querySelectorAll<HTMLElement>('.pp-faq-item'));
         items.forEach((item) => {
@@ -664,5 +813,433 @@ const faqSchema = {
                 }
             });
         });
+
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!reduced) {
+            // Elegant 3D Entrance Animation for BlockMockups
+            const blocks = document.querySelectorAll('.pp-block-visual');
+            blocks.forEach((block) => {
+                const stage = block.querySelector('.bm-stage');
+                if (!stage) return;
+                
+                const internals = block.querySelectorAll('.bm-card, .bm-floating, .bm-search, .bm-timeline, .bm-board-col, .bm-stage > div');
+                const glow = block.querySelector('.bm-glow');
+
+                gsap.set(stage, { perspective: 1200 });
+                gsap.set(internals, { y: 60, z: -80, rotationX: -10, opacity: 0, scale: 0.95 });
+                if (glow) gsap.set(glow, { opacity: 0, scale: 0.5 });
+                
+                ScrollTrigger.create({
+                    trigger: block,
+                    start: 'top 85%',
+                    once: true,
+                    onEnter: () => {
+                        gsap.to(internals, { 
+                            y: 0, z: 0, rotationX: 0, opacity: 1, scale: 1, 
+                            duration: 1.2, ease: 'power3.out', stagger: 0.08, clearProps: 'transform' 
+                        });
+                        if (glow) {
+                            gsap.to(glow, { opacity: 1, scale: 1, duration: 2, ease: 'power3.out' });
+                        }
+                    }
+                });
+            });
+            
+            // ───────────────────────── HERO MOCKUP GSAP ─────────────────────────
+            const wrap = document.querySelector('.pp-mockup-wrap');
+            if (wrap) {
+                // Parallax 3D settle + EXPLODED VIEW on scroll (Nivel Dios)
+                gsap.set('.pp-mockup', { transformPerspective: 1600, transformStyle: 'preserve-3d', transformOrigin: 'center center' });
+                
+                // Set initial exploded state (floating layers)
+                const floatingElements = wrap.querySelectorAll('.mk-public-card, .mk-window, .mk-toast, .mk-badge, .mk-approve, .mk-cfdi-front, .mk-tl');
+                gsap.set(floatingElements, { z: 80, rotationX: 10, rotationY: -10, opacity: 0 });
+                gsap.set('.pp-mockup', { rotationX: 25, rotationY: -15, scale: 0.9 });
+                
+                // Re-assemble (un-explode) on scroll scrub
+                const assembleTl = gsap.timeline({
+                    scrollTrigger: { trigger: wrap, start: 'top 95%', end: 'top 30%', scrub: 1 }
+                });
+                
+                assembleTl.to('.pp-mockup', { rotationX: 0, rotationY: 0, scale: 1, ease: 'power2.out' }, 0);
+                assembleTl.to(floatingElements, { z: 0, rotationX: 0, rotationY: 0, opacity: 1, stagger: 0.05, ease: 'back.out(1.2)' }, 0);
+                
+                // Particle emitter on mousemove over wrap
+                wrap.addEventListener('mousemove', (e: Event) => {
+                    const evt = e as MouseEvent;
+                    const dot = document.createElement('div');
+                    dot.className = 'mk-particle';
+                    dot.style.left = evt.clientX + 'px';
+                    dot.style.top = evt.clientY + 'px';
+                    document.body.appendChild(dot);
+                    gsap.to(dot, { y: -50, x: (Math.random()-0.5)*50, opacity: 0, scale: 0, duration: 1+Math.random(), onComplete: () => dot.remove() });
+                });
+
+                // Editor Animation
+                const editorTarget = document.getElementById('editorTargetRow');
+                if (editorTarget) {
+                    const cursor = document.getElementById('editorCursor');
+                    const chip = document.getElementById('editorChip');
+                    const price = document.getElementById('editorPrice');
+                    const imp = document.getElementById('editorImport');
+                    const total = document.getElementById('editorTotal');
+                    
+                    const tl = gsap.timeline({ repeat: -1, repeatDelay: 3 });
+                    tl.set(cursor, { x: 300, y: 250, opacity: 0 })
+                      .set(chip, { scale: 0, opacity: 0 })
+                      .to(cursor, { opacity: 1, duration: 0.5 })
+                      .to(cursor, { x: 280, y: 155, duration: 1, ease: 'power3.inOut' })
+                      .to(cursor, { scale: 0.8, duration: 0.1, yoyo: true, repeat: 1 }) // click
+                      .to(editorTarget, { backgroundColor: 'rgba(16,185,129,0.16)', duration: 0.3 })
+                      .to(chip, { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(1.5)' })
+                      .to(editorTarget, { backgroundColor: 'rgba(16,185,129,0.04)', duration: 0.3 })
+                      .to(cursor, { x: 100, y: 350, opacity: 0, duration: 1, ease: 'power2.inOut' }, '+=0.5')
+                      .to([price, imp, total], { color: '#34d399', duration: 0.2 }, '-=1')
+                      .to([price, imp, total], { color: '', duration: 0.4 }, '-=0.5');
+                }
+
+                // Public Link Animation
+                const pubWrap = document.getElementById('publicWrap');
+                if (pubWrap) {
+                    const btn = document.getElementById('publicApproveBtn');
+                    const glow = document.getElementById('publicGlow');
+                    const card = document.getElementById('publicCard');
+                    const success = document.getElementById('publicSuccess');
+                    const ring = document.querySelector('.mk-success-ring');
+                    const check = document.querySelector('.mk-success-check');
+                    
+                    const tl = gsap.timeline({ repeat: -1, repeatDelay: 2 });
+                    tl.to(glow, { opacity: 0.8, duration: 0.8, yoyo: true, repeat: 3 })
+                      .to(btn, { scale: 0.95, duration: 0.1 }) // click
+                      .to(btn, { scale: 1, duration: 0.1 })
+                      .to(card, { scale: 0.95, opacity: 0, duration: 0.4, ease: 'power2.in' })
+                      .to(success, { opacity: 1, duration: 0.3 })
+                      .fromTo(ring, { scale: 0.5, opacity: 1 }, { scale: 1.5, opacity: 0, duration: 0.8, ease: 'power2.out' }, '<')
+                      .fromTo(check, { scale: 0, rotation: -45 }, { scale: 1, rotation: 0, duration: 0.6, ease: 'back.out(2)' }, '<0.1')
+                      .to(success, { opacity: 0, duration: 0.5 }, '+=2')
+                      .to(card, { scale: 1, opacity: 1, duration: 0.5 }, '<');
+                }
+
+                // Seguimiento Animation
+                const trackItems = document.querySelectorAll('.track-item');
+                if (trackItems.length) {
+                    const toast = document.getElementById('trackToast');
+                    gsap.to(trackItems, { 
+                        opacity: 1, x: 0, duration: 0.8, stagger: 0.15, ease: 'power2.out',
+                        scrollTrigger: { trigger: '.mk-track', start: 'top 80%', once: true }
+                    });
+                    gsap.to(toast, { 
+                        opacity: 1, y: 0, duration: 0.6, ease: 'back.out(1.2)', delay: 0.8,
+                        scrollTrigger: { trigger: '.mk-track', start: 'top 80%', once: true }
+                    });
+                }
+                
+                // CFDI Animation
+                const cfdiStamp = document.getElementById('cfdiStamp');
+                if (cfdiStamp) {
+                    const check = cfdiStamp.querySelector('.mk-check');
+                    const ring = cfdiStamp.querySelector('.mk-stamp-ring');
+                    gsap.to(check, { 
+                        scale: 1, duration: 0.6, ease: 'back.out(1.5)',
+                        scrollTrigger: { trigger: '.mk-cfdi', start: 'top 80%', once: true }
+                    });
+                    gsap.fromTo(ring, { scale: 0.5, opacity: 1 }, { scale: 2, opacity: 0, duration: 1,
+                        scrollTrigger: { trigger: '.mk-cfdi', start: 'top 80%', once: true }
+                    });
+                }
+                
+                // Clientes Animation
+                const cliItems = document.querySelectorAll('.cli-item');
+                if (cliItems.length) {
+                    const bars = document.querySelectorAll('.mk-credit-bar i');
+                    gsap.to(cliItems, {
+                        opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out',
+                        scrollTrigger: { trigger: '.mk-cli', start: 'top 80%', once: true }
+                    });
+                    gsap.to(bars, {
+                        scaleX: 1, duration: 1, stagger: 0.1, ease: 'power3.out', delay: 0.4,
+                        scrollTrigger: { trigger: '.mk-cli', start: 'top 80%', once: true }
+                    });
+                }
+            }
+
+            // ───────────────────────── BLOCK MOCKUPS GSAP ─────────────────────────
+            // Editor M0 (Discount Row & Cursor)
+            const bEditor0 = document.querySelector('.bm-editor-m0');
+            if (bEditor0) {
+                const cursor = bEditor0.querySelector('.bm-fake-cursor');
+                const row = bEditor0.querySelector('.bm-row-target');
+                const chip = bEditor0.querySelector('.mk-chip');
+                const price = bEditor0.querySelector('.price-val');
+                const obj = { val: 191.48 };
+
+                ScrollTrigger.create({
+                    trigger: bEditor0, start: 'top 85%',
+                    onEnter: () => {
+                        const tl = gsap.timeline({ repeat: -1, repeatDelay: 2 });
+                        tl.set(cursor, { x: 120, y: 150, opacity: 0 })
+                          .set(chip, { opacity: 0, scale: 0.5 })
+                          .to(cursor, { opacity: 1, duration: 0.4 })
+                          .to(cursor, { x: 190, y: 40, duration: 1, ease: 'power3.inOut' })
+                          .to(cursor, { scale: 0.85, duration: 0.1, yoyo: true, repeat: 1 })
+                          .to(row, { backgroundColor: 'rgba(16,185,129,0.15)', duration: 0.3 })
+                          .to(chip, { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(1.5)' })
+                          .to(row, { backgroundColor: 'rgba(255,255,255,0.02)', duration: 0.3 })
+                          .to(obj, { val: 168.50, duration: 0.8, onUpdate: () => price.textContent = `$${obj.val.toFixed(2)}` }, '-=0.3')
+                          .to(cursor, { opacity: 0, y: '+=30', duration: 0.5 });
+                    }
+                });
+                
+                // 3D Tilt Effect on mousemove (Nivel Dios)
+                bEditor0.addEventListener('mousemove', (e: Event) => {
+                    const evt = e as MouseEvent;
+                    const rect = bEditor0.getBoundingClientRect();
+                    const x = (evt.clientX - rect.left) / rect.width - 0.5;
+                    const y = (evt.clientY - rect.top) / rect.height - 0.5;
+                    gsap.to(bEditor0.querySelector('.bm-card'), {
+                        rotationY: x * 20, rotationX: -y * 20,
+                        transformPerspective: 1000, ease: 'power1.out', duration: 0.5
+                    });
+                });
+                bEditor0.addEventListener('mouseleave', () => {
+                    gsap.to(bEditor0.querySelector('.bm-card'), { rotationY: 0, rotationX: 0, ease: 'power3.out', duration: 0.8 });
+                });
+            }
+
+            // Editor M1 (Margin Bar)
+            const bEditor1 = document.querySelector('.bm-editor-m1');
+            if (bEditor1) {
+                const fill = bEditor1.querySelector('.bm-margin-bar-fill');
+                gsap.to(fill, {
+                    width: '85%', ease: 'none',
+                    scrollTrigger: { trigger: bEditor1, start: 'top 95%', end: 'top 40%', scrub: 1 }
+                });
+            }
+
+            // Editor M2 (Staggered Taxes)
+            const bEditor2 = document.querySelector('.bm-editor-m2');
+            if (bEditor2) {
+                const rows = bEditor2.querySelectorAll('.bm-stag-row');
+                const stamp = bEditor2.querySelector('.bm-stamp-hide');
+                ScrollTrigger.create({
+                    trigger: bEditor2, start: 'top 85%', once: true,
+                    onEnter: () => {
+                        gsap.fromTo(rows, { opacity: 0, x: -10 }, { opacity: 1, x: 0, stagger: 0.15, duration: 0.6, ease: 'power2.out', delay: 0.3 });
+                        gsap.fromTo(stamp, { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.5)', delay: 1 });
+                    }
+                });
+            }
+
+            // Public M0 (Chat)
+            const bPub0 = document.querySelector('.bm-public-m0');
+            if (bPub0) {
+                const typing = bPub0.querySelector('.bm-msg-typing');
+                const outMsg = bPub0.querySelector('.bm-msg-out');
+                ScrollTrigger.create({
+                    trigger: bPub0, start: 'top 85%',
+                    onEnter: () => {
+                        const tl = gsap.timeline({ repeat: -1, repeatDelay: 3 });
+                        tl.set(outMsg, { display: 'none', opacity: 0, y: 10 })
+                          .set(typing, { display: 'block', opacity: 0 })
+                          .to(typing, { opacity: 1, duration: 0.3, delay: 0.5 })
+                          .to(typing, { opacity: 0, duration: 0.3 }, '+=1.5')
+                          .set(typing, { display: 'none' })
+                          .set(outMsg, { display: 'block' })
+                          .to(outMsg, { opacity: 1, y: 0, duration: 0.4, ease: 'back.out(1.2)' });
+                    }
+                });
+            }
+
+            // Public M1 (Branding Colors Scrub)
+            const bPub1 = document.querySelector('.bm-public-m1');
+            if (bPub1) {
+                const card = bPub1.querySelector('.bm-brand-card');
+                const logoPill = bPub1.querySelector('.bm-logo-pill');
+                
+                const tl = gsap.timeline({
+                    scrollTrigger: { trigger: bPub1, start: 'top 95%', end: 'top 30%', scrub: 1 }
+                });
+                tl.to(card, { borderColor: '#10b981', boxShadow: '0 0 30px rgba(16,185,129,0.2)', ease: 'none' }, 0)
+                  .to(logoPill, { background: '#10b981', ease: 'none' }, 0);
+            }
+
+            // Public M2 (Push Notif)
+            const bPub2 = document.querySelector('.bm-public-m2');
+            if (bPub2) {
+                const push = bPub2.querySelector('.bm-push-notif');
+                ScrollTrigger.create({
+                    trigger: bPub2, start: 'top 85%',
+                    onEnter: () => {
+                        const tl = gsap.timeline({ repeat: -1, repeatDelay: 3 });
+                        tl.set(push, { opacity: 0, y: -20, scale: 0.95 })
+                          .to(push, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.5)' })
+                          .to(push, { x: -3, duration: 0.05, yoyo: true, repeat: 3 }, '+=0.2') // vibrate
+                          .to(push, { opacity: 0, y: -10, duration: 0.4 }, '+=2.5');
+                    }
+                });
+            }
+
+            // Seguimiento M0 (Timeline Fill)
+            const bTrack0 = document.querySelector('.bm-track-m0');
+            if (bTrack0) {
+                const fill = bTrack0.querySelector('.bm-tl-fill');
+                const node = bTrack0.querySelector('.bm-node-pending');
+                ScrollTrigger.create({
+                    trigger: bTrack0, start: 'top 85%', once: true,
+                    onEnter: () => {
+                        gsap.to(fill, { height: '80%', duration: 2, ease: 'power2.inOut', delay: 0.5 });
+                        gsap.to(node, { opacity: 1, duration: 0.5, delay: 2.2 });
+                    }
+                });
+            }
+
+            // Seguimiento M1 (Kanban Drag SCRUB)
+            const bTrack1 = document.querySelector('.bm-track-m1');
+            if (bTrack1) {
+                const card = bTrack1.querySelector('.bm-kanban-drag');
+                const drop = bTrack1.querySelector('.bm-kanban-drop');
+                
+                const tl = gsap.timeline({
+                    scrollTrigger: { trigger: bTrack1, start: 'top 95%', end: 'top 20%', scrub: 1 }
+                });
+                
+                tl.to(card, { rotation: 5, scale: 1.05, boxShadow: '0 20px 40px rgba(0,0,0,0.5)', duration: 0.1 })
+                  .to(drop, { opacity: 1, duration: 0.1 }, '<')
+                  .to(card, { x: 120, y: 70, duration: 0.8, ease: 'none' })
+                  .to(card, { rotation: 0, scale: 1, boxShadow: 'none', duration: 0.1 })
+                  .to(drop, { opacity: 0, duration: 0.1 }, '<');
+            }
+
+            // Seguimiento M2 (Search)
+            const bTrack2 = document.querySelector('.bm-track-m2');
+            if (bTrack2) {
+                const type = bTrack2.querySelector('.bm-search-type');
+                const res1 = bTrack2.querySelector('.bm-s-res-1');
+                const res2 = bTrack2.querySelector('.bm-s-res-2');
+                ScrollTrigger.create({
+                    trigger: bTrack2, start: 'top 85%',
+                    onEnter: () => {
+                        const tl = gsap.timeline({ repeat: -1, repeatDelay: 2 });
+                        const text = 'varilla';
+                        let curr = '';
+                        tl.set([res1, res2], { opacity: 0, y: 10 });
+                        
+                        text.split('').forEach(char => {
+                            tl.add(() => { curr += char; type.textContent = curr + '_'; }, '+=0.1');
+                        });
+                        tl.add(() => type.textContent = curr, '+=0.2')
+                          .to([res1, res2], { opacity: 1, y: 0, duration: 0.4, stagger: 0.1 }, '+=0.2')
+                          .to(type, { opacity: 0, duration: 0.1 }, '+=1.5')
+                          .add(() => type.textContent = '_')
+                          .to(type, { opacity: 1, duration: 0.1 });
+                    }
+                });
+            }
+
+            // CFDI M0 (XML Matrix Scramble)
+            const bCfdi0 = document.querySelector('.bm-cfdi-m0');
+            if (bCfdi0) {
+                const matrix = bCfdi0.querySelector('.bm-matrix-text');
+                const orig = matrix.innerHTML;
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*';
+                ScrollTrigger.create({
+                    trigger: bCfdi0, start: 'top 85%', once: true,
+                    onEnter: () => {
+                        let iters = 0;
+                        const interval = setInterval(() => {
+                            matrix.innerHTML = orig.split('').map(c => {
+                                if (c === '<' || c === '>' || c === ' ' || c === '\\n') return c;
+                                return Math.random() > 0.5 ? chars[Math.floor(Math.random() * chars.length)] : c;
+                            }).join('');
+                            iters++;
+                            if (iters > 15) { clearInterval(interval); matrix.innerHTML = orig; gsap.to(matrix, { opacity: 0.2, duration: 1 }); }
+                        }, 50);
+                    }
+                });
+            }
+
+            // CFDI M1 (Terminal SCRUB)
+            const bCfdi1 = document.querySelector('.bm-cfdi-m1');
+            if (bCfdi1) {
+                const lines = bCfdi1.querySelectorAll('.bm-term-line');
+                const stamp = bCfdi1.querySelector('.bm-cert-stamp');
+                
+                const tl = gsap.timeline({
+                    scrollTrigger: { trigger: bCfdi1, start: 'top 95%', end: 'top 40%', scrub: 1 }
+                });
+                
+                gsap.set(stamp, { opacity: 0, scale: 0 });
+                lines.forEach((l, i) => {
+                    tl.to(l, { opacity: 1, duration: 0.1 }, i * 0.1);
+                });
+                tl.to(stamp, { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.5)' });
+            }
+
+            // CFDI M2 (Laser Barcode)
+            const bCfdi2 = document.querySelector('.bm-cfdi-m2');
+            if (bCfdi2) {
+                const laser = bCfdi2.querySelector('.bm-laser');
+                ScrollTrigger.create({
+                    trigger: bCfdi2, start: 'top 85%',
+                    onEnter: () => {
+                        gsap.to(laser, { opacity: 1, duration: 0.2, repeat: -1, repeatDelay: 2, yoyo: true });
+                        gsap.to(laser, { top: '100%', duration: 1, repeat: -1, repeatDelay: 1.2, ease: 'none' });
+                    }
+                });
+            }
+
+            // Credit M0 (Progress Bar SCRUB)
+            const bCred0 = document.querySelector('.bm-credit-m0');
+            if (bCred0) {
+                const fill = bCred0.querySelector('.bm-credit-fill');
+                const val = bCred0.querySelector('.bm-credit-val');
+                const req = bCred0.querySelector('.bm-req-appr');
+                const obj = { v: 0 };
+                
+                const tl = gsap.timeline({
+                    scrollTrigger: { trigger: bCred0, start: 'top 95%', end: 'top 30%', scrub: 1 }
+                });
+                
+                gsap.set(req, { opacity: 0, scale: 0 });
+                tl.to(fill, { width: '85%', duration: 2, ease: 'none' }, 0)
+                  .to(obj, { v: 425, duration: 2, ease: 'none', onUpdate: () => val.textContent = Math.round(obj.v).toString() }, 0)
+                  .to(fill, { backgroundColor: '#f59e0b', duration: 0.5 }, 1.5)
+                  .to(req, { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.5)' }, 1.8);
+            }
+
+            // Credit M1 (SPEI Payment)
+            const bCred1 = document.querySelector('.bm-credit-m1');
+            if (bCred1) {
+                const status = bCred1.querySelector('.bm-spei-status');
+                const toast = bCred1.querySelector('.bm-spei-toast');
+                ScrollTrigger.create({
+                    trigger: bCred1, start: 'top 85%',
+                    onEnter: () => {
+                        const tl = gsap.timeline({ repeat: -1, repeatDelay: 3 });
+                        tl.set(toast, { opacity: 0, y: 10 })
+                          .to(status, { opacity: 0.4, duration: 0.4, yoyo: true, repeat: 3 })
+                          .to(toast, { opacity: 1, y: 0, duration: 0.5, ease: 'back.out(1.5)' })
+                          .to(status, { color: '#34d399', onStart: () => status.textContent = 'Pagado' }, '<')
+                          .to(toast, { opacity: 0, duration: 0.4 }, '+=2')
+                          .set(status, { clearProps: 'all', textContent: 'Pendiente' });
+                    }
+                });
+            }
+
+            // Credit M2 (Bar Chart SCRUB)
+            const bCred2 = document.querySelector('.bm-credit-m2');
+            if (bCred2) {
+                const cols = bCred2.querySelectorAll('.bm-chart-col-fill');
+                const heights = ['40%', '70%', '50%', '90%', '60%'];
+                
+                const tl = gsap.timeline({
+                    scrollTrigger: { trigger: bCred2, start: 'top 95%', end: 'top 30%', scrub: 1 }
+                });
+                
+                cols.forEach((c, i) => {
+                    tl.to(c, { height: heights[i], duration: 1, ease: 'none' }, i * 0.1);
+                });
+            }
+        }
     });
 </script>

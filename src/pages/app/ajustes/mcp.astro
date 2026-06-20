@@ -1,0 +1,127 @@
+---
+// Ajustes › Developers › MCP.
+// Conecta una IA (Claude, Cursor…) al servidor MCP de Cord: consulta y crea
+// información del negocio en lenguaje natural. Se autentica con una API key.
+// Incluye config por cliente + catálogo de herramientas + probador en vivo.
+// Separado de la API (jun 2026). La gobernanza de servidores MCP SALIENTES y los
+// agentes de IA viven en la pestaña "Agentes IA".
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { MCP_TOOLS } from '../../../lib/mcp';
+import '../../../styles/developers.css';
+const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
+---
+
+<SettingsShell title="MCP — Ajustes" tab="mcp" perm="ajustes"
+    intro="El servidor MCP deja que asistentes de IA como Claude consulten y creen información de tu negocio en lenguaje natural — “¿qué facturas están vencidas?”, “arma una cotización para ACME de 50 sacos de cemento”.">
+<div class="dev-wrapper">
+
+    <div class="dev-card">
+        <h3 class="dev-card-title">Conecta tu cliente de IA</h3>
+        <p class="dev-note" style="margin-top:0.5rem">Se autentica con la misma API key de Cord. Genera una en la pestaña <a href="/app/ajustes/api" style="color:var(--color-blue-deep);font-weight:600">API</a> y pégala en la configuración de abajo.</p>
+
+        <div class="mcp-connect">
+            <div class="mcp-tabs" role="tablist">
+                <button class="mcp-tab active" data-client="claude">Claude Desktop</button>
+                <button class="mcp-tab" data-client="cursor">Cursor</button>
+                <button class="mcp-tab" data-client="url">URL directa</button>
+            </div>
+            <div class="dev-terminal mcp-code">
+                <button class="dev-terminal-copy" id="mcpCopy" type="button">Copiar</button>
+                <pre><code id="mcpConfig"></code></pre>
+            </div>
+            <p class="dev-note" style="margin-top:0.7rem">Pega esto en la configuración de tu cliente MCP y reemplaza la clave por una real. Reinicia el cliente para que tome la conexión.</p>
+        </div>
+    </div>
+
+    <div class="dev-card">
+        <h3 class="dev-card-title">Herramientas disponibles ({MCP_TOOLS.length})</h3>
+        <p class="dev-note" style="margin:0.4rem 0 0">Esto es exactamente lo que la IA puede hacer con tus datos. Las de <b>escritura</b> requieren una clave con permiso de escritura.</p>
+        <div class="mcp-tools">
+            {MCP_TOOLS.map((t) => (
+                <div class="mcp-tool">
+                    <div class="mcp-tool-head">
+                        <code>{t.name}</code>
+                        <span class={`mcp-scope ${t.scope}`}>{t.scope === 'write' ? 'escritura' : 'lectura'}</span>
+                    </div>
+                    <p>{t.description}</p>
+                </div>
+            ))}
+        </div>
+
+        <div class="mcp-try">
+            <span class="wh-events-label">Probar una herramienta</span>
+            <p class="dev-note" style="margin:0 0 0.8rem">Corre una tool de lectura con tus datos reales (usa tu sesión, sin clave). Así ves exactamente qué recibe la IA.</p>
+            <div class="mcp-try-row">
+                <select class="s-input mcp-select" id="mcpTool">
+                    {READ_TOOLS.map((t) => <option value={t.name}>{t.name}</option>)}
+                </select>
+                <input class="s-input mcp-args" id="mcpArgs" placeholder='args JSON (opcional), ej. {"limit": 5}' />
+                <button class="api-btn-solid" id="mcpRun" type="button">Ejecutar</button>
+            </div>
+            <pre class="mcp-out" id="mcpOut" hidden></pre>
+        </div>
+    </div>
+</div>
+</SettingsShell>
+
+<script>
+    // ── MCP: connect card (config por cliente) + probador de tools ──
+    function initMcp() {
+        const cfg = document.getElementById('mcpConfig');
+        if (!cfg) return;
+        const URL_BASE = 'https://cord.flouvia.com/api/mcp';
+        const KEY = 'sk_live_xxxxxxxxxxxx';
+        const CONFIGS: Record<string, string> = {
+            claude: `{
+  "mcpServers": {
+    "cord": {
+      "url": "${URL_BASE}",
+      "headers": { "Authorization": "Bearer ${KEY}" }
+    }
+  }
+}`,
+            cursor: `{
+  "mcpServers": {
+    "cord": {
+      "url": "${URL_BASE}",
+      "headers": { "Authorization": "Bearer ${KEY}" }
+    }
+  }
+}`,
+            url: `URL:     ${URL_BASE}
+Header:  Authorization: Bearer ${KEY}`,
+        };
+        const setCfg = (c: string) => { cfg.textContent = CONFIGS[c] || CONFIGS.url; };
+        setCfg('claude');
+        document.querySelectorAll('.mcp-tab').forEach((t) => t.addEventListener('click', () => {
+            document.querySelectorAll('.mcp-tab').forEach((x) => x.classList.remove('active'));
+            t.classList.add('active');
+            setCfg((t as HTMLElement).dataset.client || 'claude');
+        }));
+        document.getElementById('mcpCopy')?.addEventListener('click', async () => {
+            try { await navigator.clipboard.writeText(cfg.textContent || ''); const b = document.getElementById('mcpCopy')!; b.textContent = '✓'; setTimeout(() => (b.textContent = 'Copiar'), 1500); } catch {}
+        });
+
+        // Probador
+        const runBtn = document.getElementById('mcpRun') as HTMLButtonElement | null;
+        const out = document.getElementById('mcpOut');
+        if (!runBtn || !out) return;
+        runBtn.addEventListener('click', async () => {
+            const tool = (document.getElementById('mcpTool') as HTMLSelectElement).value;
+            const argsRaw = (document.getElementById('mcpArgs') as HTMLInputElement).value.trim();
+            let args: any = {};
+            if (argsRaw) { try { args = JSON.parse(argsRaw); } catch { out.hidden = false; out.className = 'mcp-out err'; out.textContent = 'El JSON de args no es válido.'; return; } }
+            runBtn.disabled = true; out.hidden = false; out.className = 'mcp-out'; out.textContent = 'Ejecutando…';
+            try {
+                const res = await fetch('/api/mcp/playground', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tool, args }) });
+                const d = await res.json();
+                if (!res.ok) { out.className = 'mcp-out err'; out.textContent = d.error || 'Falló'; }
+                else out.textContent = JSON.stringify(d.result, null, 2);
+            } catch (err: any) { out.className = 'mcp-out err'; out.textContent = err.message || 'Error de red'; }
+            finally { runBtn.disabled = false; }
+        });
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initMcp);
+    else initMcp();
+</script>

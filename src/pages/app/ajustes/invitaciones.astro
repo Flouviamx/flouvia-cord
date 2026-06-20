@@ -1,0 +1,11 @@
+---
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import InvitationsManager from '../../../components/b2b/InvitationsManager';
+---
+
+<SettingsShell title="Invitaciones — Ajustes" tab="invitaciones"
+    intro="Añade nuevos miembros a tu espacio de trabajo y gestiona invitaciones pendientes.">
+    
+    <InvitationsManager client:only="react" />
+    
+</SettingsShell>

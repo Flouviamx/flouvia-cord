@@ -959,19 +959,30 @@ export async function requirePerm(key: PermKey): Promise<Response | null> {
 // ── GUÍA DE CONFIGURACIÓN ─────────────────────────────────────────────────────
 export async function getSetupProgress() {
     const orgId = await getActiveOrgId();
-    const [o] = await sql`select logo_url, email_contacto, telefono, rfc from orgs where id = ${orgId}`;
-    // Tres conteos en un solo batch.
-    const [[{ np }], [{ nc }], [{ nq }]] = await withOrgTx(orgId,
+    const [o] = await sql`select logo_url, email_contacto, telefono, rfc, color_marca,
+        pdf_mensaje, pdf_condiciones, portal_bienvenida from orgs where id = ${orgId}`;
+    // Señales de avance en un solo batch (mismas tablas multi-tenant → seguras bajo RLS).
+    const [[{ np }], [{ nc }], [{ nq }], [{ nsent }], [{ ncobro }], [{ nmem }]] = await withOrgTx(orgId,
         sql`select count(*)::int as np from productos where org_id = ${orgId}`,
         sql`select count(*)::int as nc from clientes where org_id = ${orgId}`,
         sql`select count(*)::int as nq from cotizaciones where org_id = ${orgId}`,
+        sql`select count(*)::int as nsent from cotizaciones where org_id = ${orgId} and status <> 'draft'`,
+        sql`select count(*)::int as ncobro from cotizaciones where org_id = ${orgId} and status in ('paid','invoiced')`,
+        sql`select count(*)::int as nmem from org_members where org_id = ${orgId} and estado in ('activo','invitado')`,
     );
+    // Flujo de aprendizaje (orden = secuencia recomendada; el widget abre el primer
+    // paso pendiente). Más pasos y más específicos para que la gente aprenda a usar
+    // Cord de punta a punta: configurar → cotizar → enviar → cobrar → escalar.
     const tasks = [
-        { id: 'marca',      label: 'Personaliza tu marca',        desc: 'Logo, color y datos de contacto en tus documentos.', href: '/app/ajustes/branding',    done: !!(o?.logo_url || o?.email_contacto || o?.telefono) },
-        { id: 'productos',  label: 'Crea tu catálogo',            desc: 'Agrega los productos o servicios que vendes.',       href: '/app/productos',          done: Number(np) > 0 },
-        { id: 'clientes',   label: 'Agrega tus clientes',         desc: 'A quién le cotizas, con sus términos de pago.',      href: '/app/clientes',           done: Number(nc) > 0 },
-        { id: 'cotizacion', label: 'Crea tu primera cotización',  desc: 'El corazón de Cord — pruébalo en 2 minutos.',       href: '/app/cotizaciones/nueva', done: Number(nq) > 0 },
-        { id: 'fiscal',     label: 'Completa tus datos fiscales', desc: 'RFC y régimen para timbrar CFDI 4.0.',               href: '/app/ajustes/fiscal',     done: !!o?.rfc },
+        { id: 'marca',      label: 'Personaliza tu marca',        desc: 'Sube tu logo, elige tu color y agrega tus datos de contacto — aparecen en cada cotización, PDF y en el link de tu cliente.', href: '/app/ajustes/branding',    done: !!(o?.logo_url || o?.email_contacto || o?.telefono) },
+        { id: 'fiscal',     label: 'Completa tus datos fiscales', desc: 'RFC, régimen fiscal y código postal: necesarios para timbrar CFDI 4.0 válidos ante el SAT.', href: '/app/ajustes/fiscal',     done: !!o?.rfc },
+        { id: 'productos',  label: 'Crea tu catálogo',            desc: 'Agrega los productos o servicios que vendes. Puedes importarlos en lote por CSV.', href: '/app/productos',          done: Number(np) > 0 },
+        { id: 'clientes',   label: 'Agrega tus clientes',         desc: 'A quién le cotizas, con sus términos de pago, nivel de precios y límite de crédito.', href: '/app/clientes',           done: Number(nc) > 0 },
+        { id: 'cotizacion', label: 'Crea tu primera cotización',  desc: 'El corazón de Cord — elige un cliente, agrega líneas y guarda. Te toma 2 minutos.', href: '/app/cotizaciones/nueva', done: Number(nq) > 0 },
+        { id: 'enviar',     label: 'Envía tu primera cotización', desc: 'Compártela por link, correo o WhatsApp y mira EN VIVO cuándo tu cliente la abre y la aprueba con firma.', href: '/app/cotizaciones',       done: Number(nsent) > 0 },
+        { id: 'documento',  label: 'Personaliza tu PDF y portal', desc: 'Elige plantilla de PDF, escribe tu mensaje y condiciones, y ajusta el portal que ve tu cliente. Todo con vista previa.', href: '/app/ajustes/pdf',        done: !!(o?.pdf_mensaje || o?.pdf_condiciones || o?.portal_bienvenida) },
+        { id: 'cobro',      label: 'Cobra y factura',             desc: 'Cobra en línea con Stripe o márcala como pagada, factura el CFDI 4.0 y cierra el ciclo de venta en Cobranza.', href: '/app/cobranza',           done: Number(ncobro) > 0 },
+        { id: 'equipo',     label: 'Invita a tu equipo',          desc: 'Suma vendedores y define permisos por rol (cotizar, aprobar, cobranza…) para trabajar en conjunto.', href: '/app/ajustes/equipo',     done: Number(nmem) > 1 },
     ];
     const doneN = tasks.filter((t) => t.done).length;
     return { tasks, doneN, total: tasks.length, pct: Math.round((doneN / tasks.length) * 100), complete: doneN === tasks.length };

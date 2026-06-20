@@ -86,14 +86,7 @@
             });
         });
 
-        const otherMockups = gsap.utils.toArray<HTMLElement>('.reveal-mockup').filter((el) => !el.closest('.pp-hero'));
-        otherMockups.forEach((el) => {
-            gsap.set(el, { y: 36, scale: 0.985 });
-            ScrollTrigger.create({
-                trigger: el, start: 'top 85%', once: true,
-                onEnter: () => gsap.to(el, { opacity: 1, y: 0, scale: 1, duration: 1.1, ease: 'power3.out' }),
-            });
-        });
+
 
         // ── Count-ups ([data-countup] con data-decimals/data-prefix/data-suffix) ──
         gsap.utils.toArray<HTMLElement>('[data-countup]').forEach((el) => {

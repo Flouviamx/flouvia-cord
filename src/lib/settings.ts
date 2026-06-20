@@ -75,12 +75,14 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     },
     {
         id: 'developers', label: 'Developers',
-        desc: 'API keys, webhooks e integraciones con tus plataformas.',
+        desc: 'API, webhooks, MCP e integraciones con tus plataformas.',
         icon: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
         tabs: [
-            { id: 'api',           label: 'API y webhooks', href: '/app/ajustes/api' },
-            { id: 'integraciones', label: 'Integraciones',  href: '/app/ajustes/integraciones' },
-            { id: 'agentes',       label: 'Agentes IA y MCP', href: '/app/ajustes/agentes' },
+            { id: 'api',           label: 'API',                 href: '/app/ajustes/api' },
+            { id: 'webhooks',      label: 'Webhooks',            href: '/app/ajustes/webhooks' },
+            { id: 'mcp',           label: 'MCP',                 href: '/app/ajustes/mcp' },
+            { id: 'integraciones', label: 'Integraciones',       href: '/app/ajustes/integraciones' },
+            { id: 'agentes',       label: 'Agentes IA',          href: '/app/ajustes/agentes' },
             { id: 'elements',      label: 'Cotizador embebible', href: '/app/ajustes/elements' },
         ],
     },

@@ -5,6 +5,7 @@
 
 import { getOrg, getSetupProgress, getSidebarBadges } from '../lib/queries';
 import CustomOrgSwitcher from '../components/app/CustomOrgSwitcher';
+import OnboardingWidget from '../components/app/OnboardingWidget.astro';
 import { clerkAppearance } from '../lib/clerk-theme';
 import Analytics from '@vercel/analytics/astro';
 const ORG = await getOrg();
@@ -156,7 +157,8 @@ const NAV_GROUPS = [
                 </div>
 
                 <div class="sb-footer">
-                    <img class="sb-foot-logo" src="/imgs/logo-cord-white.png" alt="Cord" />
+                    <img class="sb-foot-logo sb-foot-logo-navy" src="/imgs/logo-cord-navy.png" alt="Cord" />
+                    <img class="sb-foot-logo sb-foot-logo-white" src="/imgs/logo-cord-white.png" alt="Cord" />
                     <!-- Toggle estilo panel (Linear/VSCode) — colapsar/expandir -->
                     <button class="sb-toggle" id="sbToggleFloating" type="button" aria-label="Alternar menú">
                         <svg class="sb-toggle-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -181,6 +183,15 @@ const NAV_GROUPS = [
                     </button>
 
                     <div class="tb-right">
+                        {!setup.complete && (
+                            <button class="onb-pill" id="onbPill" type="button" hidden aria-label="Guía de configuración">
+                                <span class="onb-pill-ring" aria-hidden="true">
+                                    <svg viewBox="0 0 36 36"><circle class="onb-ring-bg" cx="18" cy="18" r="15.5"></circle><circle class="onb-ring-fg" cx="18" cy="18" r="15.5" style={`stroke-dasharray:${pillDash}`}></circle></svg>
+                                    <b class="editorial" data-pill-pct>{setup.pct}%</b>
+                                </span>
+                                <span class="onb-pill-label">Guía de configuración</span>
+                            </button>
+                        )}
                         <div class="tb-create-wrap">
                             <button class="tb-create" id="tbCreate" type="button" aria-haspopup="menu" aria-expanded="false">
                                 <svg class="tb-create-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -373,6 +384,8 @@ const NAV_GROUPS = [
         </div>
 
 
+        {!setup.complete && <OnboardingWidget progress={setup} />}
+
         <Analytics />
     </body>
 </html>
@@ -398,6 +411,44 @@ const NAV_GROUPS = [
         --ease-ios: cubic-bezier(0.25, 1, 0.5, 1);
         --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
         --sidebar-w: 232px;
+        --content-max: 1240px;
+
+        /* ── Sidebar (espejo de la topbar): vidrio BLANCO en claro, navy en oscuro.
+           Todo el contenido de la sidebar lee estas variables, así que cambia de tema
+           sin duplicar reglas. Los valores light van aquí; el bloque dark los reescribe. */
+        --sb-bg: linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.64) 100%);
+        --sb-border: rgba(255,255,255,0.6);
+        --sb-shadow:
+            inset 0 1px 1px rgba(255,255,255,0.95),
+            inset 0 0 0 0.5px rgba(255,255,255,0.5),
+            inset 0 -6px 14px rgba(255,255,255,0.18),
+            0 12px 36px -8px rgba(10,25,47,0.14),
+            0 2px 6px rgba(10,25,47,0.06);
+        --sb-sheen: radial-gradient(135% 50% at 50% -10%, rgba(10,25,47,0.045), transparent 60%);
+        --sb-text: var(--color-text-muted);
+        --sb-text-strong: var(--color-text);
+        --sb-text-active: var(--color-blue-deep);
+        --sb-label: #99a2af;
+        --sb-divider: var(--color-border);
+        --sb-hover-bg: rgba(10,25,47,0.05);
+        --sb-active-bg: rgba(10,25,47,0.07);
+        --sb-icon-op: 0.62;
+        --sb-indicator-bg: rgba(10,25,47,0.055);
+        --sb-indicator-shadow: inset 0 0 0 0.5px rgba(10,25,47,0.08), 0 1px 2px rgba(10,25,47,0.05);
+        --sb-badge-bg: rgba(10,25,47,0.07);
+        --sb-badge-text: var(--color-text-muted);
+        --sb-toggle-bg: rgba(10,25,47,0.04);
+        --sb-toggle-shadow: inset 0 0 0 0.5px rgba(10,25,47,0.08);
+        --sb-toggle-hover-bg: rgba(10,25,47,0.08);
+        /* Dropdowns de la sidebar (cuenta, crear) — frosted casi-opaco como el menú "Crear" de la topbar */
+        --sb-menu-bg: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(252,253,255,0.96));
+        --sb-menu-border: rgba(255,255,255,0.7);
+        --sb-menu-shadow: inset 0 1px 1px rgba(255,255,255,0.95), inset 0 0 0 0.5px rgba(255,255,255,0.6), 0 24px 60px -18px rgba(10,25,47,0.42), 0 4px 12px rgba(10,25,47,0.1);
+        --sb-menu-text: var(--color-text);
+        --sb-menu-muted: var(--color-text-muted);
+        --sb-menu-hover: rgba(10,25,47,0.06);
+        --sb-avatar-bg: linear-gradient(135deg, #1b3a64, #0a192f);
+        --sb-avatar-text: #ffffff;
     }
 
     /* ── Tema oscuro (data-theme="dark" en <html>) ──
@@ -414,6 +465,46 @@ const NAV_GROUPS = [
         --color-border: rgba(255, 255, 255, 0.1);
         --surface: #141c28;
         --surface-2: #1a2230;
+
+        /* Sidebar en oscuro → vidrio navy rico (el look anterior, ahora vía variables) */
+        --sb-bg: linear-gradient(180deg, rgba(23,44,78,0.95) 0%, rgba(13,29,53,0.94) 55%, rgba(9,21,40,0.96) 100%);
+        --sb-border: rgba(255,255,255,0.12);
+        --sb-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.2),
+            inset 0 0 0 0.5px rgba(255,255,255,0.07),
+            inset 0 -10px 24px rgba(0,0,0,0.22),
+            0 18px 50px -14px rgba(0,0,0,0.5),
+            0 3px 10px rgba(0,0,0,0.3);
+        --sb-sheen:
+            radial-gradient(135% 55% at 50% -12%, rgba(255,255,255,0.12), transparent 62%),
+            radial-gradient(90% 40% at 18% 0%, rgba(120,160,230,0.10), transparent 70%);
+        --sb-text: rgba(255,255,255,0.55);
+        --sb-text-strong: rgba(255,255,255,0.92);
+        --sb-text-active: #ffffff;
+        --sb-label: rgba(255,255,255,0.3);
+        --sb-divider: rgba(255,255,255,0.1);
+        --sb-hover-bg: rgba(255,255,255,0.06);
+        --sb-active-bg: rgba(255,255,255,0.1);
+        --sb-icon-op: 0.7;
+        --sb-indicator-bg: rgba(255,255,255,0.11);
+        --sb-indicator-shadow:
+            inset 0 1px 1px rgba(255,255,255,0.26),
+            inset 0 0 0 0.5px rgba(255,255,255,0.14),
+            inset 0 -4px 9px rgba(0,0,0,0.16),
+            0 4px 14px -6px rgba(0,0,0,0.5);
+        --sb-badge-bg: rgba(255,255,255,0.12);
+        --sb-badge-text: rgba(255,255,255,0.85);
+        --sb-toggle-bg: rgba(255,255,255,0.045);
+        --sb-toggle-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.09), inset 0 1px 0 rgba(255,255,255,0.06);
+        --sb-toggle-hover-bg: rgba(255,255,255,0.12);
+        --sb-menu-bg: linear-gradient(180deg, rgba(28,37,53,0.98), rgba(17,24,35,0.97));
+        --sb-menu-border: rgba(255,255,255,0.12);
+        --sb-menu-shadow: inset 0 1px 0 rgba(255,255,255,0.12), inset 0 0 0 0.5px rgba(255,255,255,0.06), 0 24px 60px -18px rgba(0,0,0,0.75);
+        --sb-menu-text: rgba(255,255,255,0.88);
+        --sb-menu-muted: rgba(255,255,255,0.45);
+        --sb-menu-hover: rgba(255,255,255,0.08);
+        --sb-avatar-bg: linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08));
+        --sb-avatar-text: #ffffff;
     }
     html[data-theme="dark"] body { background: #0b1018; }
     /* Topbar: en oscuro, vidrio navy translúcido (en claro es blanco) */
@@ -581,30 +672,30 @@ const NAV_GROUPS = [
        — los .sb-item scopeados no aplican al HTML dinámico. */
     .sb-pins .sb-group-label {
         font-size: 0.6rem; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase;
-        color: rgba(255,255,255,0.3); padding: 2px 11px 5px;
+        color: var(--sb-label); padding: 2px 11px 5px;
     }
     .sb-pin-row { position: relative; display: flex; align-items: center; }
     .sb-pin-row .sb-item {
         flex: 1; display: flex; align-items: center; gap: 11px;
         padding: 8px 11px; border-radius: 9px;
-        font-size: 0.86rem; font-weight: 500; color: rgba(255,255,255,0.55); text-decoration: none;
+        font-size: 0.86rem; font-weight: 500; color: var(--sb-text); text-decoration: none;
         transition: color 0.25s, background 0.25s;
     }
-    .sb-pin-row .sb-item svg { width: 16px; height: 16px; opacity: 0.75; flex-shrink: 0; }
+    .sb-pin-row .sb-item svg { width: 16px; height: 16px; opacity: var(--sb-icon-op); flex-shrink: 0; }
     .sb-pin-row .sb-item-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sb-pin-row .sb-item:hover { color: rgba(255,255,255,0.92); background: rgba(255,255,255,0.05); }
-    .sb-pin-row .sb-item.active { color: #fff; background: rgba(255,255,255,0.09); }
+    .sb-pin-row .sb-item:hover { color: var(--sb-text-strong); background: var(--sb-hover-bg); }
+    .sb-pin-row .sb-item.active { color: var(--sb-text-active); background: var(--sb-active-bg); }
     .sb-collapsed .sb-pins .sb-group-label { display: none; }
     .sb-collapsed .sb-pin-row .sb-item { justify-content: center; padding: 0; width: 44px; height: 40px; }
     .sb-collapsed .sb-pin-row .sb-item-label { display: none; }
     .sb-pin-x {
         position: absolute; right: 6px; opacity: 0; border: none; background: none; cursor: pointer;
-        color: rgba(255,255,255,0.5); padding: 3px; border-radius: 6px; line-height: 0;
+        color: var(--sb-label); padding: 3px; border-radius: 6px; line-height: 0;
         transition: opacity 0.15s, color 0.15s, background 0.15s;
     }
     .sb-pin-x svg { width: 13px; height: 13px; }
     .sb-pin-row:hover .sb-pin-x { opacity: 1; }
-    .sb-pin-x:hover { color: #fff; background: rgba(255,255,255,0.12); }
+    .sb-pin-x:hover { color: var(--sb-text-strong); background: var(--sb-active-bg); }
     .sb-collapsed .sb-pin-x { display: none; }
 
     /* Botón de fijar en el page-head */
@@ -626,7 +717,7 @@ const NAV_GROUPS = [
     .ph-crumbs a:hover { color: var(--color-blue-deep); }
     .ph-crumbs a::after, .ph-crumbs > span:not(.ph-crumb-here)::after { content: '/'; margin-left: 6px; color: #c4cad3; }
     .ph-crumb-here { color: var(--color-text); font-weight: 600; }
-    .ph-tabs-row { max-width: 1240px; }
+    .ph-tabs-row { max-width: var(--content-max); }
     .ph-tabs-row:not(:empty) { margin-top: 1rem; border-bottom: 1px solid var(--color-border); display: flex; gap: 2px; }
     /* Helper para que las páginas pinten tabs consistentes (slot page-tabs) */
     .ph-tab {
@@ -755,18 +846,13 @@ const NAV_GROUPS = [
     .sidebar {
         width: var(--sidebar-w);
         flex-shrink: 0;
-        /* Pill flotante navy RICO (opacidad alta → no se ve gris lavado sobre el fondo;
-           un toque de frost para el feel de vidrio, pero menos translúcido que la navbar pública). */
-        background: linear-gradient(180deg, rgba(23,44,78,0.95) 0%, rgba(13,29,53,0.94) 55%, rgba(9,21,40,0.96) 100%);
-        backdrop-filter: blur(22px) saturate(1.5);
-        -webkit-backdrop-filter: blur(22px) saturate(1.5);
-        border: 1px solid rgba(255,255,255,0.12);
-        box-shadow:
-            inset 0 1px 0 rgba(255,255,255,0.2),
-            inset 0 0 0 0.5px rgba(255,255,255,0.07),
-            inset 0 -10px 24px rgba(0,0,0,0.22),
-            0 18px 50px -14px rgba(10,25,47,0.32),
-            0 3px 10px rgba(10,25,47,0.12);
+        /* Pill flotante de VIDRIO — espejo de la topbar: blanca en claro, navy en oscuro.
+           Todo via variables --sb-* (definidas en :root y reescritas en data-theme="dark"). */
+        background: var(--sb-bg);
+        backdrop-filter: blur(34px) saturate(1.9) brightness(1.03);
+        -webkit-backdrop-filter: blur(34px) saturate(1.9) brightness(1.03);
+        border: 1px solid var(--sb-border);
+        box-shadow: var(--sb-shadow);
         border-radius: 22px;
         margin: 1rem;
         height: calc(100vh - 2rem);
@@ -780,9 +866,7 @@ const NAV_GROUPS = [
     /* Sheen superior (specular highlight tipo liquid glass) — detrás del contenido */
     .sidebar::before {
         content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
-        background:
-            radial-gradient(135% 55% at 50% -12%, rgba(255,255,255,0.12), transparent 62%),
-            radial-gradient(90% 40% at 18% 0%, rgba(120,160,230,0.10), transparent 70%);
+        background: var(--sb-sheen);
     }
     .sidebar > * { position: relative; z-index: 1; }
 
@@ -798,30 +882,26 @@ const NAV_GROUPS = [
     .sb-indicator {
         position: absolute; left: 0; right: 0; top: 0; height: 0;
         border-radius: 12px; opacity: 0; pointer-events: none; z-index: 0;
-        background: rgba(255,255,255,0.11);
-        box-shadow:
-            inset 0 1px 1px rgba(255,255,255,0.26),
-            inset 0 0 0 0.5px rgba(255,255,255,0.14),
-            inset 0 -4px 9px rgba(0,0,0,0.16),
-            0 4px 14px -6px rgba(0,0,0,0.5);
+        background: var(--sb-indicator-bg);
+        box-shadow: var(--sb-indicator-shadow);
         transition: top 0.42s var(--ease-spring), height 0.42s var(--ease-spring), opacity 0.3s var(--ease-ios);
         will-change: top, height;
     }
     .sb-group { display: flex; flex-direction: column; gap: 2px; }
     .sb-group-label {
         font-size: 0.6rem; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase;
-        color: rgba(255,255,255,0.3); padding: 2px 11px 5px;
-        transition: opacity 0.2s var(--ease-ios);
+        color: var(--sb-label); padding: 2px 11px 5px;
+        transition: opacity 0.2s var(--ease-ios), color 0.25s var(--ease-ios);
     }
     .sb-item {
         position: relative; z-index: 1;
         display: flex; align-items: center; gap: 11px;
         padding: 8px 11px; border-radius: 12px;
         font-size: 0.86rem; font-weight: 500;
-        color: rgba(255,255,255,0.55); text-decoration: none;
+        color: var(--sb-text); text-decoration: none;
         transition: color 0.25s var(--ease-ios), background 0.25s var(--ease-ios), box-shadow 0.25s var(--ease-ios), transform 0.2s var(--ease-ios);
     }
-    .sb-item svg { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; transition: opacity 0.22s var(--ease-ios), transform 0.4s var(--ease-spring); }
+    .sb-item svg { width: 16px; height: 16px; opacity: var(--sb-icon-op); flex-shrink: 0; transition: opacity 0.22s var(--ease-ios), transform 0.4s var(--ease-spring); }
     .sb-item:hover svg { opacity: 1; transform: scale(1.1); }
     .sb-item:active svg { transform: scale(0.9); }
     .sb-item.active svg { opacity: 1; }
@@ -830,27 +910,27 @@ const NAV_GROUPS = [
         transition: opacity 0.2s var(--ease-ios);
     }
     /* Hover/active: el color cambia; el realce de "pill" lo da .sb-indicator (vidrio) */
-    .sb-item:hover { color: rgba(255,255,255,0.92); }
-    .sb-item.active { color: #fff; }
+    .sb-item:hover { color: var(--sb-text-strong); }
+    .sb-item.active { color: var(--sb-text-active); font-weight: 600; }
     /* Antes de que el indicador de vidrio se posicione (pre-JS): pill sutil en el activo */
-    .sb-nav:not(.sb-ind-ready) .sb-item.active { background: rgba(255,255,255,0.1); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.12); }
+    .sb-nav:not(.sb-ind-ready) .sb-item.active { background: var(--sb-active-bg); box-shadow: var(--sb-indicator-shadow); }
     .sb-badge {
         flex-shrink: 0; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 100px;
         display: inline-flex; align-items: center; justify-content: center;
         font-size: 0.64rem; font-weight: 700; letter-spacing: -0.01em;
-        color: rgba(255,255,255,0.85); background: rgba(255,255,255,0.12);
+        color: var(--sb-badge-text); background: var(--sb-badge-bg);
     }
     .sb-badge.danger { color: #fff; background: var(--color-danger); }
     .sb-shortcut {
         font-family: var(--font-mono, monospace);
         font-size: 0.65rem;
-        color: rgba(255,255,255,0.3);
-        background: rgba(255,255,255,0.08);
+        color: var(--sb-label);
+        background: var(--sb-badge-bg);
         padding: 2px 5px;
         border-radius: 4px;
         transition: opacity 0.2s var(--ease-ios);
     }
-    .sb-item:hover .sb-shortcut { color: rgba(255,255,255,0.6); }
+    .sb-item:hover .sb-shortcut { color: var(--sb-text-strong); }
 
     /* ── Cuenta — arriba, sin card por defecto ── */
     .sb-account {
@@ -864,7 +944,7 @@ const NAV_GROUPS = [
     .sb-account::after {
         content: '';
         position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
-        background: linear-gradient(to right, transparent, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.1) 75%, transparent);
+        background: linear-gradient(to right, transparent, var(--sb-divider) 25%, var(--sb-divider) 75%, transparent);
     }
     .sb-org-switch {
         width: 100%; display: flex; align-items: center; gap: 10px;
@@ -906,18 +986,19 @@ const NAV_GROUPS = [
     .sb-org-menu-id { display: flex; flex-direction: column; min-width: 0; }
     .sb-org-menu-id strong { font-size: 0.82rem; font-weight: 650; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .sb-org-menu-id span { font-size: 0.66rem; color: rgba(255,255,255,0.42); }
-    .sb-menu-sep { height: 1px; background: rgba(255,255,255,0.08); margin: 5px 4px; }
+    .sb-menu-sep { height: 1px; background: var(--sb-divider); margin: 5px 4px; }
     .sb-menu-item {
         display: flex; align-items: center; gap: 10px; width: 100%;
         padding: 9px 10px; border-radius: 9px; cursor: pointer;
         background: none; border: none; text-align: left; text-decoration: none;
         font-family: var(--font-sans); font-size: 0.84rem; font-weight: 500;
-        color: rgba(255,255,255,0.78); transition: background 0.18s, color 0.18s;
+        color: var(--sb-menu-text); transition: background 0.18s, color 0.18s;
     }
-    .sb-menu-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.8; }
-    .sb-menu-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
-    .sb-menu-danger { color: #fca5a5; }
-    .sb-menu-danger:hover { background: rgba(239,68,68,0.14); color: #fecaca; }
+    .sb-menu-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.8; color: var(--sb-menu-muted); }
+    .sb-menu-item:hover { background: var(--sb-menu-hover); color: var(--sb-text-active); }
+    .sb-menu-item:hover svg { color: var(--sb-text-active); }
+    .sb-menu-danger { color: var(--color-danger); }
+    .sb-menu-danger:hover { background: rgba(239,68,68,0.12); color: var(--color-danger); }
 
     /* ── Acciones móviles del drawer (crear / ayuda / config) — solo móvil ── */
     .sb-mobile-actions { display: none; }
@@ -934,38 +1015,46 @@ const NAV_GROUPS = [
     .sb-create:active { transform: scale(0.98); }
     .sb-create-menu {
         position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 60;
-        background: #11233f; border-radius: 13px; padding: 6px;
-        box-shadow: 0 24px 60px -18px rgba(0,0,0,0.7), inset 0 0 0 0.5px rgba(255,255,255,0.1);
+        background: var(--sb-menu-bg);
+        backdrop-filter: blur(44px) saturate(1.9);
+        -webkit-backdrop-filter: blur(44px) saturate(1.9);
+        border: 1px solid var(--sb-menu-border);
+        border-radius: 13px; padding: 6px;
+        box-shadow: var(--sb-menu-shadow);
         animation: sb-menu-in 0.18s var(--ease-spring);
     }
     .sb-create-menu[hidden] { display: none; }
     .sb-action-row {
         display: flex; align-items: center; gap: 11px; width: 100%;
         padding: 11px 12px; border-radius: 11px; cursor: pointer;
-        background: rgba(255,255,255,0.05); border: none; text-align: left; text-decoration: none;
+        background: var(--sb-hover-bg); border: none; text-align: left; text-decoration: none;
         font-family: var(--font-sans); font-size: 0.86rem; font-weight: 500;
-        color: rgba(255,255,255,0.82); transition: background 0.18s, color 0.18s;
+        color: var(--sb-text-strong); transition: background 0.18s, color 0.18s;
     }
     .sb-action-row svg { width: 17px; height: 17px; flex-shrink: 0; opacity: 0.85; }
-    .sb-action-row:hover, .sb-action-row:active { background: rgba(255,255,255,0.1); color: #fff; }
+    .sb-action-row:hover, .sb-action-row:active { background: var(--sb-active-bg); color: var(--sb-text-active); }
 
     /* ── Footer (logo + toggle de panel) ── */
     .sb-footer { padding-top: 0.7rem; display: flex; align-items: center; justify-content: flex-start; padding-left: 0.5rem; gap: 0.4rem; }
-    .sb-foot-logo { height: 15px; width: auto; opacity: 0.5; transition: opacity 0.2s var(--ease-ios); }
+    .sb-foot-logo { height: 15px; width: auto; opacity: 0.55; transition: opacity 0.2s var(--ease-ios); }
+    /* Logo: navy sobre vidrio claro, white sobre vidrio navy (oscuro) */
+    .sb-foot-logo-white { display: none; }
+    html[data-theme="dark"] .sb-foot-logo-navy { display: none; }
+    html[data-theme="dark"] .sb-foot-logo-white { display: inline-block; opacity: 0.5; }
 
     /* ── Toggle estilo panel (Linear/VSCode), abajo a la derecha junto al logo ── */
     .sb-toggle {
         margin-left: auto; flex-shrink: 0;
         width: 30px; height: 30px; border-radius: 9px;
         display: inline-flex; align-items: center; justify-content: center;
-        background: rgba(255,255,255,0.045); border: none; cursor: pointer;
-        box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.09), inset 0 1px 0 rgba(255,255,255,0.06);
-        color: rgba(255,255,255,0.5);
+        background: var(--sb-toggle-bg); border: none; cursor: pointer;
+        box-shadow: var(--sb-toggle-shadow);
+        color: var(--sb-text);
         transition: background 0.22s var(--ease-ios), color 0.22s var(--ease-ios), box-shadow 0.22s var(--ease-ios), transform 0.2s var(--ease-spring);
     }
-    .sb-toggle:hover { background: rgba(255,255,255,0.12); color: #fff; box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.18), inset 0 1px 1px rgba(255,255,255,0.22); }
+    .sb-toggle:hover { background: var(--sb-toggle-hover-bg); color: var(--sb-text-strong); }
     .sb-toggle:active { transform: scale(0.9); }
-    .sb-toggle:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(255,255,255,0.35); }
+    .sb-toggle:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--sb-text-active); }
     .sb-toggle-ico { width: 17px; height: 17px; transition: transform 0.4s var(--ease-spring); }
     /* La divisoria (el "panel") se desliza sutil al hover = sensación de abrir/cerrar */
     .sb-toggle-div { transition: transform 0.35s var(--ease-spring); transform-origin: center; }
@@ -976,10 +1065,12 @@ const NAV_GROUPS = [
 
     /* ── Estado COLAPSADO (solo iconos) — solo desktop; en móvil el sidebar es drawer ── */
     @media (min-width: 881px) {
-    .sb-collapsed .app-shell { --sidebar-w: 76px; }
-    .sb-collapsed .sidebar { padding-left: 0.7rem; padding-right: 0.7rem; align-items: stretch; }
-    .sb-collapsed .sb-nav { gap: 0.85rem; align-items: center; }
-    .sb-collapsed .sb-group { width: 100%; align-items: center; gap: 4px; }
+    .sb-collapsed .app-shell { --sidebar-w: 74px; }
+    /* Al colapsar, el contenido gana ancho real (no solo se recorre) */
+    .sb-collapsed { --content-max: 1440px; }
+    .sb-collapsed .sidebar { padding-left: 0; padding-right: 0; align-items: stretch; }
+    .sb-collapsed .sb-nav { gap: 0.9rem; align-items: center; }
+    .sb-collapsed .sb-group { width: 100%; align-items: center; gap: 5px; }
     /* Fade-out de labels — no display:none para que la transition funcione.
        Los group-labels SÍ colapsan en alto/padding (si no, dejan huecos vacíos). */
     .sb-collapsed .sb-item-label,
@@ -993,16 +1084,18 @@ const NAV_GROUPS = [
     .sb-collapsed .sb-account::after { display: none; }
     .sb-collapsed .sb-org-switch { justify-content: center; padding: 6px; }
     .sb-collapsed .sb-org-menu { left: 0; right: auto; width: 210px; top: calc(100% + 4px); bottom: auto; }
-    /* Ítems = cuadros uniformes centrados (columna limpia, sin hueco de label) */
-    .sb-collapsed .sb-item { justify-content: center; padding: 0; width: 46px; height: 42px; }
-    .sb-collapsed .sb-item svg { width: 19px; height: 19px; opacity: 0.85; }
+    /* Ítems = cuadros uniformes grandes, perfectamente centrados en el rail */
+    .sb-collapsed .sb-item { justify-content: center; gap: 0; padding: 0; width: 46px; height: 46px; border-radius: 13px; }
+    .sb-collapsed .sb-item svg { width: 21px; height: 21px; opacity: 0.82; }
     .sb-collapsed .sb-item.active svg { opacity: 1; }
     /* Indicador de vidrio → cuadrado centrado detrás del ícono activo */
-    .sb-collapsed .sb-indicator { left: 50%; right: auto; width: 46px; margin-left: -23px; border-radius: 14px; }
-    /* Badge → punto cuando está colapsado */
+    .sb-collapsed .sb-indicator { left: 50%; right: auto; width: 46px; margin-left: -23px; border-radius: 13px; }
+    .sb-collapsed .sb-pin-row { justify-content: center; }
+    .sb-collapsed .sb-pin-row .sb-item { width: 46px; height: 46px; border-radius: 13px; }
+    /* Badge → punto cuando está colapsado (el aro toma el color de la superficie de la sidebar) */
     .sb-collapsed .sb-badge {
-        position: absolute; top: 3px; right: 7px; min-width: 0; width: 7px; height: 7px;
-        padding: 0; font-size: 0; border: 1.5px solid #0a192f;
+        position: absolute; top: 6px; right: 9px; min-width: 0; width: 7px; height: 7px;
+        padding: 0; font-size: 0; border: 1.5px solid var(--surface);
     }
     .sb-collapsed .sb-expand { display: inline-flex; }
     .sb-collapsed .sb-footer { justify-content: center; padding-left: 0; }
@@ -1166,9 +1259,10 @@ const NAV_GROUPS = [
         animation: app-fadein 0.5s var(--ease-spring) both;
     }
     .ph-inner {
-        max-width: 1240px; width: 100%;
+        max-width: var(--content-max); width: 100%;
         display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem;
         flex-wrap: wrap;
+        transition: max-width 0.28s var(--ease-spring);
     }
     .ph-titles { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
     .ph-title {
@@ -1179,7 +1273,7 @@ const NAV_GROUPS = [
     /* Subtítulo opcional (slot name="page-sub") */
     .page-head :global(.ph-sub) { font-size: 0.86rem; color: var(--color-text-muted); margin: 0; }
 
-    .app-content { padding: 1.4rem 2rem 4rem; max-width: 1240px; width: 100%; }
+    .app-content { padding: 1.4rem 2rem 4rem; max-width: var(--content-max); width: 100%; transition: max-width 0.28s var(--ease-spring); }
 
     /* ════════ MENÚ DE COMANDOS (Cmd+K) ════════ */
     .cmdk { position: fixed; inset: 0; z-index: 500; display: flex; align-items: flex-start; justify-content: center; padding: 12vh 1rem 1rem; }

@@ -1,0 +1,245 @@
+---
+// Ajustes › Developers › Webhooks.
+// Endpoints salientes REALES (tabla webhooks, entrega firmada HMAC-sha256) con
+// LOG DE ENTREGAS + replay + envío de prueba. Separado de la API (jun 2026).
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getOrg, getWebhooks } from '../../../lib/queries';
+import { planTieneApi } from '../../../lib/permissions';
+import { WEBHOOK_EVENTS } from '../../../lib/webhooks';
+import '../../../styles/developers.css';
+const ORG = await getOrg();
+const tienePlan = planTieneApi(ORG.plan_raw);
+const WEBHOOKS = await getWebhooks();
+---
+
+<SettingsShell title="Webhooks — Ajustes" tab="webhooks" perm="ajustes"
+    intro="Recibe un POST firmado en tu sistema cada vez que algo pasa con una cotización (enviada, vista, aprobada, pagada, facturada). Despliega un endpoint para ver su log de entregas y reintentar.">
+<div class="dev-wrapper">
+
+    {!tienePlan && (
+        <div class="dev-upsell">
+            <div>
+                <span class="dev-upsell-eyebrow">Plan Negocio</span>
+                <p>Los <b>webhooks</b> salientes requieren el plan Negocio. Sube de plan para recibir eventos en tiempo real en tu propio sistema.</p>
+            </div>
+            <a href="/app/ajustes/plan" class="dev-upsell-cta">Ver planes</a>
+        </div>
+    )}
+
+    <div class="dev-card">
+        <div class="dev-card-header">
+            <div>
+                <h3 class="dev-card-title">Endpoints de webhook</h3>
+                <p class="dev-card-sub">Cada entrega lleva la firma <code>X-Cord-Signature: sha256=&lt;hmac&gt;</code>. Verifícala con el secret del endpoint.</p>
+            </div>
+            <button class="api-btn-solid" id="whNew" disabled={!tienePlan}>+ Agregar endpoint</button>
+        </div>
+
+        <div class="wh-list" id="whList">
+            {WEBHOOKS.length === 0 && (
+                <p class="dev-empty" id="whEmpty">Aún no tienes endpoints. Agrega uno para recibir eventos en tu sistema.</p>
+            )}
+            {WEBHOOKS.map((w) => (
+                <div class:list={['wh-item', { off: !w.activo }]} data-id={w.id}>
+                    <div class="wh-row">
+                        <button class="wh-expand" data-expand={w.id} title="Ver entregas" aria-expanded="false">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                        <span class="wh-info">
+                            <span class="wh-url">{w.url}</span>
+                            <span class="wh-sub">
+                                <code>{w.secretMasked}</code>
+                                {w.eventos.length === 0 ? <i>· todos los eventos</i> : <i>· {w.eventos.length} evento{w.eventos.length > 1 ? 's' : ''}</i>}
+                                {w.ultimaEntrega && (
+                                    <i class:list={['wh-stat', { ok: w.lastStatus && w.lastStatus < 400, err: !w.lastStatus || w.lastStatus >= 400 }]}>
+                                        · última {w.ultimaEntrega} {w.lastStatus ? `(${w.lastStatus})` : '(falló)'}
+                                    </i>
+                                )}
+                            </span>
+                        </span>
+                        <button class="api-btn-ghost wh-test" data-test={w.id} title="Enviar evento de prueba">Probar</button>
+                        <label class="s-toggle wh-toggle" title="Activar/pausar">
+                            <input type="checkbox" data-toggle={w.id} checked={w.activo} />
+                            <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                        </label>
+                        <button class="api-btn-ghost" data-del={w.id}>Eliminar</button>
+                    </div>
+                    <div class="wh-deliveries" data-deliveries={w.id} hidden>
+                        <div class="wh-del-body" data-delbody={w.id}>
+                            <span class="wh-del-loading">Cargando entregas…</span>
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+</div>
+</SettingsShell>
+
+<!-- Modal: agregar webhook -->
+<dialog id="whDialog" class="kdlg">
+    <div class="kdlg-inner" id="whStepForm">
+        <h4>Agregar endpoint</h4>
+        <div class="s-field" style="margin-bottom:1.1rem">
+            <label for="whUrl">URL de destino</label>
+            <input class="s-input" id="whUrl" placeholder="https://tusistema.mx/webhooks/cord" />
+        </div>
+        <div class="wh-events">
+            <span class="wh-events-label">Eventos (ninguno = todos)</span>
+            <div class="wh-checks">
+                {WEBHOOK_EVENTS.map((e) => (
+                    <label class="wh-check">
+                        <input type="checkbox" value={e.id} />
+                        <span><code>{e.id}</code> {e.label}</span>
+                    </label>
+                ))}
+            </div>
+        </div>
+        <div class="wh-dlg-actions">
+            <button type="button" class="api-btn-ghost" id="whCancel">Cancelar</button>
+            <button type="button" class="api-btn-solid" id="whCreate">Crear endpoint</button>
+        </div>
+    </div>
+    <div class="kdlg-inner" id="whStepDone" hidden>
+        <h4>Endpoint creado</h4>
+        <p class="kdlg-warn">Guarda este <b>secret</b> para verificar la firma. Vuelve a verse enmascarado después.</p>
+        <div class="kdlg-key">
+            <code id="whSecret"></code>
+            <button id="whCopy" class="kdlg-copy" type="button">Copiar</button>
+        </div>
+        <button class="kdlg-done" type="button" id="whDone">Listo</button>
+    </div>
+</dialog>
+
+<script>
+    // ── Webhooks: crear, toggle, eliminar, PROBAR, expandir log + replay ──
+    function initWebhooks() {
+        const dlg = document.getElementById('whDialog') as HTMLDialogElement | null;
+        const newBtn = document.getElementById('whNew') as HTMLButtonElement | null;
+        if (!dlg || !newBtn) return;
+        const urlIn = document.getElementById('whUrl') as HTMLInputElement;
+        const stepForm = document.getElementById('whStepForm')!;
+        const stepDone = document.getElementById('whStepDone')!;
+        const secretEl = document.getElementById('whSecret')!;
+        const createBtn = document.getElementById('whCreate') as HTMLButtonElement;
+
+        newBtn.addEventListener('click', () => {
+            stepForm.hidden = false; stepDone.hidden = true;
+            urlIn.value = '';
+            dlg.querySelectorAll<HTMLInputElement>('.wh-check input').forEach((c) => (c.checked = false));
+            createBtn.disabled = false;
+            dlg.showModal(); urlIn.focus();
+        });
+        document.getElementById('whCancel')?.addEventListener('click', () => dlg.close());
+        document.getElementById('whDone')?.addEventListener('click', () => { dlg.close(); location.reload(); });
+        document.getElementById('whCopy')?.addEventListener('click', async () => {
+            try { await navigator.clipboard.writeText(secretEl.textContent || ''); const b = document.getElementById('whCopy')!; b.textContent = '✓ Copiado'; setTimeout(() => (b.textContent = 'Copiar'), 1800); } catch {}
+        });
+
+        createBtn.addEventListener('click', async () => {
+            const url = urlIn.value.trim();
+            if (!url) { urlIn.focus(); return; }
+            const eventos = Array.from(dlg.querySelectorAll<HTMLInputElement>('.wh-check input:checked')).map((c) => c.value);
+            createBtn.disabled = true;
+            try {
+                const res = await fetch('/api/webhooks', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, eventos }),
+                });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || 'No se pudo crear');
+                secretEl.textContent = d.secret;
+                stepForm.hidden = true; stepDone.hidden = false;
+            } catch (err: any) { alert(err.message || 'No se pudo crear'); createBtn.disabled = false; }
+        });
+
+        document.querySelectorAll('[data-toggle]').forEach((el) => {
+            el.addEventListener('change', async () => {
+                const id = (el as HTMLElement).dataset.toggle!;
+                const activo = (el as HTMLInputElement).checked;
+                try {
+                    const res = await fetch('/api/webhooks', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, activo }) });
+                    if (!res.ok) throw new Error();
+                    (el.closest('.wh-item') as HTMLElement)?.classList.toggle('off', !activo);
+                } catch { (el as HTMLInputElement).checked = !activo; alert('No se pudo actualizar'); }
+            });
+        });
+
+        document.querySelectorAll('[data-del]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const id = (btn as HTMLElement).dataset.del!;
+                if (!confirm('¿Eliminar este endpoint? Dejará de recibir eventos.')) return;
+                try {
+                    const res = await fetch('/api/webhooks', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+                    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'No se pudo eliminar'); }
+                    (btn.closest('.wh-item') as HTMLElement)?.remove();
+                } catch (err: any) { alert(err.message || 'No se pudo eliminar'); }
+            });
+        });
+
+        // Enviar evento de prueba
+        document.querySelectorAll('[data-test]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const id = (btn as HTMLElement).dataset.test!;
+                const b = btn as HTMLButtonElement;
+                b.disabled = true; const orig = b.textContent; b.textContent = '…';
+                try {
+                    const res = await fetch('/api/webhooks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'test', id }) });
+                    const d = await res.json();
+                    b.textContent = d.ok ? '✓ Enviado' : `✗ ${d.status || 'falló'}`;
+                    const open = document.querySelector(`[data-expand="${id}"][aria-expanded="true"]`);
+                    if (open) loadDeliveries(id);
+                    setTimeout(() => (b.textContent = orig), 2400);
+                } catch { b.textContent = '✗ error'; setTimeout(() => (b.textContent = orig), 2400); }
+                finally { b.disabled = false; }
+            });
+        });
+
+        // Expandir / colapsar log de entregas
+        document.querySelectorAll('[data-expand]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const id = (btn as HTMLElement).dataset.expand!;
+                const panel = document.querySelector(`[data-deliveries="${id}"]`) as HTMLElement;
+                const open = btn.getAttribute('aria-expanded') === 'true';
+                btn.setAttribute('aria-expanded', String(!open));
+                panel.hidden = open;
+                if (!open) loadDeliveries(id);
+            });
+        });
+    }
+
+    async function loadDeliveries(webhookId: string) {
+        const body = document.querySelector(`[data-delbody="${webhookId}"]`);
+        if (!body) return;
+        body.innerHTML = '<span class="wh-del-loading">Cargando entregas…</span>';
+        try {
+            const res = await fetch(`/api/webhooks?deliveries=${encodeURIComponent(webhookId)}`);
+            const d = await res.json();
+            const list: any[] = d.deliveries || [];
+            if (!list.length) { body.innerHTML = '<span class="wh-del-empty">Sin entregas aún. Usa "Probar" o espera a que pase un evento real.</span>'; return; }
+            body.innerHTML = list.map((x) => `
+                <div class="del-row">
+                    <span class="del-dot ${x.ok ? 'ok' : 'err'}"></span>
+                    <span class="del-ev">${x.evento}${x.intento > 1 ? `<span class="del-try"> · intento ${x.intento}</span>` : ''}${x.prueba ? '<i class="del-test">prueba</i>' : ''}</span>
+                    <span class="del-status ${x.ok ? 'ok' : 'err'}">${x.status || (x.error || 'falló')}</span>
+                    <span class="del-meta">${x.ms != null ? x.ms + 'ms' : ''} · ${x.cuando}</span>
+                    <button class="del-replay" data-replay="${x.id}">Reintentar</button>
+                </div>`).join('');
+            body.querySelectorAll('[data-replay]').forEach((rb) => {
+                rb.addEventListener('click', async () => {
+                    const deliveryId = (rb as HTMLElement).dataset.replay!;
+                    const b = rb as HTMLButtonElement; b.disabled = true; b.textContent = '…';
+                    try {
+                        const r = await fetch('/api/webhooks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'redeliver', deliveryId }) });
+                        const dd = await r.json();
+                        b.textContent = dd.ok ? '✓' : `✗ ${dd.status || ''}`;
+                        setTimeout(() => loadDeliveries(webhookId), 800);
+                    } catch { b.textContent = '✗'; b.disabled = false; }
+                });
+            });
+        } catch { body.innerHTML = '<span class="wh-del-empty">No se pudo cargar el log.</span>'; }
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initWebhooks);
+    else initWebhooks();
+</script>

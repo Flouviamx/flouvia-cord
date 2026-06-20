@@ -1,0 +1,405 @@
+---
+export interface Props {
+    slug: string;
+    index: number;
+}
+
+const { slug, index } = Astro.props;
+---
+<div class="sbm-wrap">
+  <div class="sbm-mesh" aria-hidden="true"></div>
+  
+  <div class="sbm-stage">
+    {slug === 'distribuidoras' && index === 0 && (
+      <div class="sbm-dist-m0 sbm-card">
+        <div class="bm-head">Precios Negociados</div>
+        <div class="bm-row bm-row-target">
+            <span>Construrama</span><span class="bm-bold price-val">$182.00</span>
+        </div>
+        <div class="bm-fake-cursor">👆</div>
+      </div>
+    )}
+    {slug === 'distribuidoras' && index === 1 && (
+      <div class="sbm-dist-m1 sbm-search">
+        <div class="bm-head">Buscar Producto</div>
+        <div class="editorial bm-search-type">_</div>
+        <div class="bm-row bm-s-res-1"><span>Cemento gris 50kg</span></div>
+      </div>
+    )}
+    {slug === 'distribuidoras' && index === 2 && (
+      <div class="sbm-dist-m2 sbm-card">
+        <div class="bm-head">Crédito del Cliente</div>
+        <div class="bm-margin-bar-bg"><div class="bm-margin-bar-fill"></div></div>
+      </div>
+    )}
+
+    {slug === 'construccion' && index === 0 && (
+      <div class="sbm-const-m0 sbm-card">
+        <div class="bm-head">Materiales Cotizados</div>
+        <div class="bm-row"><span>Cemento gris</span><b class="sbm-countup">0</b></div>
+      </div>
+    )}
+    {slug === 'construccion' && index === 1 && (
+      <div class="sbm-const-m1 sbm-timeline-card">
+        <div class="bm-head">Entregas en Obra</div>
+        <div class="bm-track"><div class="bm-tl-fill"></div></div>
+        <div class="bm-node">En ruta</div>
+        <div class="bm-node">En obra</div>
+      </div>
+    )}
+    {slug === 'construccion' && index === 2 && (
+      <div class="sbm-const-m2 sbm-card">
+        <div class="bm-head">Flujo de Pagos</div>
+        <div class="bm-toast sbm-status">Pendiente</div>
+      </div>
+    )}
+
+    {slug === 'manufactura' && index === 0 && (
+      <div class="sbm-manu-m0 sbm-terminal">
+        <div class="bm-head">Especificación CNC</div>
+        <div class="bm-term-line">Maquinado pieza 4F-22...</div>
+        <div class="bm-term-line">Tolerancia ±0.2mm</div>
+      </div>
+    )}
+    {slug === 'manufactura' && index === 1 && (
+      <div class="sbm-manu-m1 sbm-card">
+        <div class="bm-head">Lote MOQ</div>
+        <div class="sbm-flip-card">
+            <div class="sbm-flip-front">1 pza: $120.00</div>
+            <div class="sbm-flip-back">500 pza: $86.50</div>
+        </div>
+      </div>
+    )}
+    {slug === 'manufactura' && index === 2 && (
+      <div class="sbm-manu-m2 sbm-card">
+        <div class="bm-head">Tipo de Cambio</div>
+        <svg class="sbm-fx-chart" viewBox="0 0 100 50">
+            <path d="M0,50 L20,30 L40,40 L60,10 L100,20" fill="none" stroke="#3b82f6" stroke-width="2" class="sbm-path"></path>
+        </svg>
+      </div>
+    )}
+
+    {slug === 'servicios' && index === 0 && (
+      <div class="sbm-serv-m0 sbm-card">
+        <div class="bm-head">Honorarios</div>
+        <div class="bm-row sbm-stag-row"><span>Subtotal</span><b>$84,000</b></div>
+        <div class="bm-row sbm-stag-row"><span>Retenciones</span><b>-$8,400</b></div>
+        <div class="bm-row sbm-stag-row"><span>Total</span><b class="bm-green">$89,040</b></div>
+      </div>
+    )}
+    {slug === 'servicios' && index === 1 && (
+      <div class="sbm-serv-m1 sbm-card sbm-brand-card">
+        <div class="bm-head">Propuesta</div>
+        <div class="sbm-btn">Aprobar Propuesta</div>
+      </div>
+    )}
+    {slug === 'servicios' && index === 2 && (
+      <div class="sbm-serv-m2 sbm-terminal">
+        <div class="bm-head">Factura XML</div>
+        <div class="sbm-matrix-text">&lt;cfdi:Comprobante&gt;...</div>
+      </div>
+    )}
+
+  </div>
+</div>
+
+<style>
+  /* ═══════ WRAPPER ═══════ */
+  .sbm-wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 2rem 1.5rem;
+    background: transparent;
+  }
+
+  /* ═══════ AMBIENT GLOW (replaces rotating mesh) ═══════ */
+  .sbm-mesh {
+    position: absolute;
+    inset: -20%;
+    background:
+      radial-gradient(ellipse 60% 50% at 40% 30%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 75% 70%, rgba(16, 185, 129, 0.06) 0%, transparent 55%),
+      radial-gradient(ellipse 45% 45% at 25% 65%, rgba(139, 92, 246, 0.06) 0%, transparent 50%);
+    filter: blur(50px);
+    opacity: 0.9;
+    animation: sbm-breathe 6s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+  @keyframes sbm-breathe {
+    0%   { opacity: 0.7; transform: scale(1); }
+    100% { opacity: 1;   transform: scale(1.04); }
+  }
+
+  /* ═══════ AMBIENT GLOW DOT (the .sbm-glow div) ═══════ */
+  .sbm-glow {
+    position: absolute;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 70%);
+    filter: blur(30px);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* ═══════ STAGE (bigger: 340px) ═══════ */
+  .sbm-stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 340px;
+    z-index: 2;
+  }
+
+  /* ═══════ CARD BASE — SOLID, NO GLASS ═══════ */
+  .sbm-card, .sbm-terminal, .sbm-search, .sbm-timeline-card {
+    background: linear-gradient(165deg, #0e2240 0%, #0a192f 55%, #081424 100%);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow:
+      0 20px 40px rgba(0, 0, 0, 0.5),
+      inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 1.15rem 1.25rem;
+    width: 100%;
+    color: #f8fafc;
+    font-size: 0.72rem;
+    font-weight: 500;
+    position: relative;
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .sbm-card:hover, .sbm-terminal:hover, .sbm-search:hover, .sbm-timeline-card:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 24px 48px rgba(0, 0, 0, 0.55),
+      inset 0 1px 1px rgba(255, 255, 255, 0.12);
+  }
+
+  /* ═══════ TYPOGRAPHY ═══════ */
+  b, .bm-bold { font-weight: 700; color: #fff; }
+  i { font-style: normal; color: rgba(255,255,255,0.55); font-size: 0.65rem; }
+  .bm-green { color: #34d399; }
+  .editorial { font-family: var(--font-mono, monospace); letter-spacing: -0.2px; }
+
+  /* ═══════ ROW ═══════ */
+  .bm-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 7px 10px; border-radius: 8px; margin-bottom: 4px;
+    background: rgba(255,255,255,0.03);
+    transition: background 0.3s ease;
+  }
+  .bm-row:hover { background: rgba(255,255,255,0.06); }
+  .bm-row span { color: rgba(255,255,255,0.7); }
+
+  /* ═══════ ROW TARGET (highlighted row) ═══════ */
+  .bm-row-target {
+    background: rgba(59,130,246,0.1);
+    border: 1px solid rgba(59,130,246,0.2);
+  }
+  .bm-row-target:hover { background: rgba(59,130,246,0.14); }
+
+  /* ═══════ HEAD ═══════ */
+  .bm-head {
+    display: flex; justify-content: space-between;
+    font-size: 0.6rem; text-transform: uppercase;
+    letter-spacing: 0.8px; font-weight: 700;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 10px; padding: 0 4px;
+  }
+
+  /* ═══════ FAKE CURSOR ═══════ */
+  .bm-fake-cursor {
+    position: absolute; z-index: 50; top: 0; left: 0;
+    width: 24px; height: 24px; color: #fff;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+    opacity: 0; pointer-events: none;
+  }
+
+  /* ═══════ SEARCH TYPE (blinking cursor) ═══════ */
+  .bm-search-type {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.4);
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    animation: sbm-cursor-blink 1s step-end infinite;
+  }
+  @keyframes sbm-cursor-blink {
+    0%, 50% { border-color: rgba(59,130,246,0.3); }
+    51%, 100% { border-color: rgba(255,255,255,0.06); }
+  }
+
+  /* ═══════ SEARCH RESULT (appears via GSAP) ═══════ */
+  .bm-s-res-1 {
+    opacity: 0;
+    background: rgba(59,130,246,0.08);
+    border: 1px solid rgba(59,130,246,0.15);
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: rgba(255,255,255,0.85);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* ═══════ MARGIN BAR ═══════ */
+  .bm-margin-bar-bg {
+    flex: 1; height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 100px; overflow: hidden; margin-top: 12px;
+  }
+  .bm-margin-bar-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    border-radius: 100px;
+    transition: width 0.3s ease;
+  }
+
+  /* ═══════ TIMELINE TRACK ═══════ */
+  .bm-track {
+    width: 4px; height: 80px;
+    background: rgba(255,255,255,0.08);
+    margin: 10px auto; position: relative; border-radius: 100px;
+  }
+  .bm-tl-fill {
+    position: absolute; top: 0; width: 100%;
+    height: 0%; background: linear-gradient(180deg, #10b981, #34d399);
+    border-radius: 100px;
+  }
+
+  /* ═══════ NODE (timeline steps) ═══════ */
+  .bm-node {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px; border-radius: 8px;
+    background: rgba(255,255,255,0.03);
+    color: rgba(255,255,255,0.6);
+    font-size: 0.68rem; font-weight: 600;
+    margin-top: 4px;
+    position: relative;
+    padding-left: 20px;
+  }
+  .bm-node::before {
+    content: '';
+    position: absolute; left: 8px; top: 50%;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    transform: translateY(-50%);
+  }
+
+  /* ═══════ STATUS TOAST ═══════ */
+  .sbm-status {
+    color: #fbbf24;
+    border-color: rgba(251,191,36,0.2) !important;
+    background: rgba(251,191,36,0.08) !important;
+    transition: background 0.5s ease, border-color 0.5s ease, color 0.5s ease;
+  }
+
+  /* ═══════ COUNTUP DISPLAY ═══════ */
+  .sbm-countup {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.82rem;
+    color: #60a5fa;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ═══════ FLIP CARD ═══════ */
+  .sbm-flip-card { perspective: 1000px; height: 64px; position: relative; }
+  .sbm-flip-front, .sbm-flip-back {
+    position: absolute; width: 100%; height: 100%;
+    backface-visibility: hidden;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.04);
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    font-weight: bold; font-size: 0.78rem;
+  }
+  .sbm-flip-back {
+    transform: rotateX(180deg);
+    background: rgba(59,130,246,0.12);
+    border-color: rgba(59,130,246,0.25);
+    color: #93c5fd;
+  }
+
+  /* ═══════ SVG PATH (FX Chart) ═══════ */
+  .sbm-path { stroke-dasharray: 200; stroke-dashoffset: 200; }
+  .sbm-fx-chart { display: block; margin-top: 8px; }
+
+  /* ═══════ BUTTON ═══════ */
+  .sbm-btn {
+    text-align: center;
+    background: #fff; color: #0a192f;
+    font-weight: 700; font-size: 0.74rem;
+    padding: 11px; border-radius: 10px;
+    margin-top: 12px;
+    transition: background 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
+  }
+
+  /* ═══════ BRAND CARD (servicios propuesta) ═══════ */
+  .sbm-brand-card {
+    border-color: rgba(255,255,255,0.1);
+    transition: border-color 0.5s ease, box-shadow 0.5s ease;
+  }
+
+  /* ═══════ STAGGER ROWS (servicios honorarios) ═══════ */
+  .sbm-stag-row {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+
+  /* ═══════ TOAST ═══════ */
+  .bm-toast {
+    background: rgba(10,25,47,0.95);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; padding: 9px 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  /* ═══════ TERMINAL LINES ═══════ */
+  .bm-term-line {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.68rem;
+    color: rgba(255,255,255,0.6);
+    padding: 4px 8px;
+    line-height: 1.7;
+    opacity: 0;
+  }
+  .bm-term-line::before {
+    content: '▸ ';
+    color: #3b82f6;
+    font-size: 0.6rem;
+  }
+
+  /* ═══════ MATRIX TEXT (XML decode animation) ═══════ */
+  .sbm-matrix-text {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.62rem;
+    line-height: 1.8;
+    color: #4ade80;
+    padding: 8px 10px;
+    background: rgba(0,0,0,0.25);
+    border-radius: 8px;
+    margin-top: 6px;
+    word-break: break-all;
+    overflow: hidden;
+  }
+
+  /* ═══════ PRICE VALUE (distribuidoras) ═══════ */
+  .price-val {
+    color: #60a5fa;
+    font-family: var(--font-mono, monospace);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

@@ -8,6 +8,7 @@ import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
 import PageAnims from '../../components/landing/PageAnims.astro';
+import SolucionBlockMockup from '../../components/soluciones/SolucionBlockMockup.astro';
 import { SOLUCIONES } from '../../lib/solucion';
 
 export function getStaticPaths() {
@@ -204,8 +205,8 @@ const faqSchema = {
                             ))}
                         </ul>
                     </div>
-                    <div class="pp-block-visual reveal-mockup">
-                        <div class="pp-card-num editorial">/0{i + 1}</div>
+                    <div class="pp-block-visual" style="align-items: center; justify-content: center; padding: 0;">
+                        <SolucionBlockMockup slug={solucion.slug} index={i} />
                     </div>
                 </article>
             ))}
@@ -436,7 +437,13 @@ const faqSchema = {
     .mk-note p { margin: 4px 0 0; font-size: 0.74rem; color: rgba(255,255,255,0.7); line-height: 1.5; }
 
     /* propuesta pública (servicios) */
-    .mk-public { display: flex; flex-direction: column; gap: 1.1rem; max-width: 430px; margin: 0 auto; padding: 0.5rem 0.3rem; }
+    .mk-public { position: relative; max-width: 440px; margin: 0 auto; perspective: 1000px; }
+    .mk-public-card { 
+        display: flex; flex-direction: column; gap: 1.25rem; padding: 1.5rem;
+        background: linear-gradient(145deg, rgba(10,25,47,0.85), rgba(15,23,42,0.95));
+        border-radius: 18px; box-shadow: 0 24px 48px -12px rgba(2,6,12,0.8), inset 0 1px 1px rgba(255,255,255,0.1);
+        backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08);
+    }
     .mk-public-head { display: flex; align-items: center; gap: 12px; }
     .mk-public-head b { display: block; font-size: 0.92rem; }
     .mk-public-head i { display: block; font-style: normal; font-size: 0.74rem; color: rgba(255,255,255,0.5); }
@@ -465,6 +472,15 @@ const faqSchema = {
     .mk-via { text-align: center; font-size: 0.68rem; color: rgba(255,255,255,0.35); }
     .mk-via b { color: rgba(255,255,255,0.6); }
 
+    /* ── EDITOR APP SIMULATION ── */
+    .mk-window {
+        background: #0a192f;
+        border-radius: 14px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.06);
+        position: relative; overflow: hidden;
+    }
+
     /* ════════ STATS ════════ */
     .pp-stats {
         display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem;
@@ -482,13 +498,14 @@ const faqSchema = {
     /* ════════ BLOQUES ════════ */
     .pp-blocks {
         max-width: 1080px; margin: 0 auto;
-        padding: 6rem 5% 3rem;
-        display: flex; flex-direction: column; gap: 7rem;
+        padding: 8rem 5% 6rem;
+        display: flex; flex-direction: column; gap: 14rem;
     }
     .pp-block {
         display: grid; grid-template-columns: 1.1fr 0.9fr;
         gap: 4.5rem; align-items: center;
     }
+    .pp-block-text, .pp-block-visual { min-width: 0; }
     .pp-block-flip .pp-block-text { order: 2; }
     .pp-block-flip .pp-block-visual { order: 1; }
 
@@ -506,16 +523,11 @@ const faqSchema = {
         position: relative;
         min-height: 260px;
         border-radius: 24px;
-        background:
-            radial-gradient(ellipse at 30% 20%, rgba(10,25,47,0.045) 0%, transparent 55%),
-            var(--color-bg-soft);
-        border: 1px solid var(--color-border);
-        display: flex; align-items: flex-end; justify-content: flex-start;
+        background: transparent;
+        border: none;
+        display: flex; align-items: center; justify-content: center;
         padding: 1.6rem;
-        overflow: clip;
-        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
     }
-    .pp-block-visual:hover { transform: translateY(-4px); box-shadow: 0 30px 70px -30px rgba(10,25,47,0.18); }
     .pp-card-num {
         font-size: 5rem; line-height: 0.9;
         color: rgba(10,25,47,0.08);
@@ -694,5 +706,138 @@ const faqSchema = {
                 }
             });
         });
+
+        // Solo ejecutar GSAP si está disponible (cargado por PageAnims o globalmente)
+        if (typeof window !== 'undefined' && (window as any).gsap && (window as any).ScrollTrigger) {
+            const gsap = (window as any).gsap;
+            const ScrollTrigger = (window as any).ScrollTrigger;
+
+            // ───────────────────────── HERO MOCKUP GSAP ─────────────────────────
+            const wrap = document.querySelector('.pp-mockup-wrap');
+            if (wrap) {
+                gsap.set('.pp-mockup', { transformPerspective: 1600, transformStyle: 'preserve-3d', transformOrigin: 'center center' });
+                const floatingElements = wrap.querySelectorAll('.mk-window, .mk-public-card');
+                gsap.set(floatingElements, { z: 80, rotationX: 10, rotationY: -10, opacity: 0 });
+                gsap.set('.pp-mockup', { rotationX: 25, rotationY: -15, scale: 0.9 });
+                
+                const assembleTl = gsap.timeline({
+                    scrollTrigger: { trigger: wrap, start: 'top 95%', end: 'top 30%', scrub: 1 }
+                });
+                assembleTl.to('.pp-mockup', { rotationX: 0, rotationY: 0, scale: 1, ease: 'power2.out' }, 0);
+                assembleTl.to(floatingElements, { z: 0, rotationX: 0, rotationY: 0, opacity: 1, stagger: 0.05, ease: 'back.out(1.2)' }, 0);
+                
+                wrap.addEventListener('mousemove', (e: Event) => {
+                    const evt = e as MouseEvent;
+                    const dot = document.createElement('div');
+                    dot.className = 'mk-particle';
+                    dot.style.left = evt.clientX + 'px';
+                    dot.style.top = evt.clientY + 'px';
+                    document.body.appendChild(dot);
+                    gsap.to(dot, { y: -50, x: (Math.random()-0.5)*50, opacity: 0, scale: 0, duration: 1+Math.random(), onComplete: () => dot.remove() });
+                });
+            }
+
+            // ───────────────────────── BLOCK MOCKUPS GSAP (SCRUB) ─────────────────────────
+            
+            // DISTRIBUIDORAS
+            const distM0 = document.querySelector('.sbm-dist-m0');
+            if (distM0) {
+                distM0.addEventListener('mousemove', (e: Event) => {
+                    const evt = e as MouseEvent;
+                    const rect = distM0.getBoundingClientRect();
+                    const x = (evt.clientX - rect.left) / rect.width - 0.5;
+                    const y = (evt.clientY - rect.top) / rect.height - 0.5;
+                    gsap.to(distM0.querySelector('.sbm-card'), { rotationY: x*20, rotationX: -y*20, transformPerspective: 1000, ease: 'power1.out', duration: 0.5 });
+                });
+                distM0.addEventListener('mouseleave', () => {
+                    gsap.to(distM0.querySelector('.sbm-card'), { rotationY: 0, rotationX: 0, ease: 'power3.out', duration: 0.8 });
+                });
+            }
+            const distM1 = document.querySelector('.sbm-dist-m1');
+            if (distM1) {
+                const type = distM1.querySelector('.bm-search-type');
+                const res = distM1.querySelector('.bm-s-res-1');
+                const tl = gsap.timeline({ scrollTrigger: { trigger: distM1, start: 'top 90%', end: 'top 40%', scrub: 1 } });
+                tl.set(res, { opacity: 0, y: 10 })
+                  .to(type, { opacity: 0.5, duration: 0.1, yoyo: true, repeat: 5 })
+                  .to(res, { opacity: 1, y: 0, duration: 0.5, ease: 'back.out(1.5)' });
+            }
+            const distM2 = document.querySelector('.sbm-dist-m2');
+            if (distM2) {
+                const fill = distM2.querySelector('.bm-margin-bar-fill');
+                gsap.to(fill, { width: '85%', ease: 'none', scrollTrigger: { trigger: distM2, start: 'top 95%', end: 'top 30%', scrub: 1 } });
+            }
+
+            // CONSTRUCCION
+            const constM0 = document.querySelector('.sbm-const-m0');
+            if (constM0) {
+                const counter = constM0.querySelector('.sbm-countup');
+                const obj = { v: 0 };
+                gsap.to(obj, { v: 120, ease: 'none', scrollTrigger: { trigger: constM0, start: 'top 95%', end: 'top 30%', scrub: 1 }, onUpdate: () => counter.textContent = Math.floor(obj.v) + ' sacos' });
+            }
+            const constM1 = document.querySelector('.sbm-const-m1');
+            if (constM1) {
+                const fill = constM1.querySelector('.bm-tl-fill');
+                gsap.to(fill, { height: '100%', ease: 'none', scrollTrigger: { trigger: constM1, start: 'top 95%', end: 'top 20%', scrub: 1 } });
+            }
+            const constM2 = document.querySelector('.sbm-const-m2');
+            if (constM2) {
+                const status = constM2.querySelector('.sbm-status');
+                const tl = gsap.timeline({ scrollTrigger: { trigger: constM2, start: 'top 80%', end: 'top 40%', scrub: 1 } });
+                tl.to(status, { background: 'rgba(6,78,59,0.9)', borderColor: 'rgba(16,185,129,0.3)', color: '#34d399', ease: 'none', onStart: () => status.textContent = 'Abono recibido', onReverseComplete: () => status.textContent = 'Pendiente' });
+            }
+
+            // MANUFACTURA
+            const manuM0 = document.querySelector('.sbm-manu-m0');
+            if (manuM0) {
+                const lines = manuM0.querySelectorAll('.bm-term-line');
+                const tl = gsap.timeline({ scrollTrigger: { trigger: manuM0, start: 'top 95%', end: 'top 30%', scrub: 1 } });
+                gsap.set(lines, { opacity: 0 });
+                lines.forEach((l, i) => tl.to(l, { opacity: 1, duration: 0.1 }, i*0.2));
+            }
+            const manuM1 = document.querySelector('.sbm-manu-m1');
+            if (manuM1) {
+                const flip = manuM1.querySelector('.sbm-flip-card');
+                gsap.to(flip, { rotationX: 180, transformStyle: 'preserve-3d', ease: 'none', scrollTrigger: { trigger: manuM1, start: 'top 80%', end: 'top 30%', scrub: 1 } });
+            }
+            const manuM2 = document.querySelector('.sbm-manu-m2');
+            if (manuM2) {
+                const path = manuM2.querySelector('.sbm-path');
+                gsap.to(path, { strokeDashoffset: 0, ease: 'none', scrollTrigger: { trigger: manuM2, start: 'top 95%', end: 'top 20%', scrub: 1 } });
+            }
+
+            // SERVICIOS
+            const servM0 = document.querySelector('.sbm-serv-m0');
+            if (servM0) {
+                const rows = servM0.querySelectorAll('.sbm-stag-row');
+                const tl = gsap.timeline({ scrollTrigger: { trigger: servM0, start: 'top 90%', end: 'top 30%', scrub: 1 } });
+                gsap.set(rows, { opacity: 0, x: -20 });
+                rows.forEach((r, i) => tl.to(r, { opacity: 1, x: 0, duration: 0.2 }, i*0.2));
+            }
+            const servM1 = document.querySelector('.sbm-serv-m1');
+            if (servM1) {
+                const card = servM1.querySelector('.sbm-brand-card');
+                const btn = servM1.querySelector('.sbm-btn');
+                const tl = gsap.timeline({ scrollTrigger: { trigger: servM1, start: 'top 90%', end: 'top 30%', scrub: 1 } });
+                tl.to(card, { borderColor: '#10b981', boxShadow: '0 0 30px rgba(16,185,129,0.2)', ease: 'none' }, 0)
+                  .to(btn, { background: '#10b981', color: '#fff', ease: 'none' }, 0);
+            }
+            const servM2 = document.querySelector('.sbm-serv-m2');
+            if (servM2) {
+                const matrix = servM2.querySelector('.sbm-matrix-text');
+                const orig = '&lt;cfdi:Comprobante&gt;<br/>&nbsp;&nbsp;&lt;cfdi:Emisor Rfc="DESP21"/&gt;<br/>&lt;/cfdi:Comprobante&gt;';
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*';
+                ScrollTrigger.create({
+                    trigger: servM2, start: 'top 80%', once: true,
+                    onEnter: () => {
+                        let iters = 0;
+                        const interval = setInterval(() => {
+                            matrix.innerHTML = orig.split('').map(c => Math.random() < 0.1 ? chars[Math.floor(Math.random()*chars.length)] : c).join('');
+                            if (iters++ > 20) { clearInterval(interval); matrix.innerHTML = orig; }
+                        }, 50);
+                    }
+                });
+            }
+        }
     });
 </script>

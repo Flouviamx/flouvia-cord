@@ -9,6 +9,7 @@ import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
 import PageAnims from '../../components/landing/PageAnims.astro';
+import DevBlockMockup from '../../components/desarrolladores/DevBlockMockup.astro';
 import { DEV_PAGES } from '../../lib/desarrolladores';
 
 export function getStaticPaths() {
@@ -113,15 +114,8 @@ const otra = DEV_PAGES.find((p) => p.slug !== page.slug)!;
                             ))}
                         </ul>
                     </div>
-                    <div class="pp-block-visual reveal-mockup">
-                        {b.code ? (
-                            <div class="dv-snippet">
-                                <span class="dv-snippet-label">{b.code.label}</span>
-                                <pre><code>{b.code.body}</code></pre>
-                            </div>
-                        ) : (
-                            <div class="pp-card-num editorial">/0{i + 1}</div>
-                        )}
+                    <div class="pp-block-visual" style="align-items: center; justify-content: center; padding: 0;">
+                        <DevBlockMockup slug={page.slug} index={i} />
                     </div>
                 </article>
             ))}
@@ -165,6 +159,93 @@ const otra = DEV_PAGES.find((p) => p.slug !== page.slug)!;
     <PageAnims />
 </Layout>
 
+<script>
+    import { gsap } from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    gsap.registerPlugin(ScrollTrigger);
+
+    window.addEventListener('load', () => {
+        // GSAP Animations
+        const stats = document.querySelectorAll('.pp-stat');
+        if (stats.length) {
+            gsap.fromTo(stats, 
+                { opacity: 0, y: 20 },
+                { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out', scrollTrigger: { trigger: '.pp-stats', start: 'top 85%', once: true } }
+            );
+        }
+
+        // ───────────────────────── HERO MOCKUP GSAP ─────────────────────────
+        const wrap = document.querySelector('.pp-mockup-wrap');
+        if (wrap) {
+            gsap.set('.pp-mockup', { transformPerspective: 1600, transformStyle: 'preserve-3d', transformOrigin: 'center center' });
+            
+            // Efecto inicial
+            gsap.set('.pp-mockup', { rotationX: 25, rotationY: -15, scale: 0.9 });
+            
+            const assembleTl = gsap.timeline({ scrollTrigger: { trigger: wrap, start: 'top 95%', end: 'top 30%', scrub: 1 } });
+            assembleTl.to('.pp-mockup', { rotationX: 0, rotationY: 0, scale: 1, ease: 'power2.out' });
+        }
+
+        // ───────────────────────── BLOCK MOCKUPS GSAP (SCRUB) ─────────────────────────
+        
+        // API M0
+        const apiM0 = document.querySelector('.dbm-api-m0');
+        if (apiM0) {
+            const dot = apiM0.querySelector('.dbm-dot');
+            gsap.to(dot, { left: '100%', ease: 'none', scrollTrigger: { trigger: apiM0, start: 'top 90%', end: 'top 20%', scrub: 1 } });
+        }
+        
+        // API M1
+        const apiM1 = document.querySelector('.dbm-api-m1');
+        if (apiM1) {
+            const cursor = apiM1.querySelector('.dbm-cursor');
+            gsap.to(cursor, { opacity: 0, duration: 0.4, repeat: -1, yoyo: true });
+            apiM1.addEventListener('mousemove', (e: Event) => {
+                const evt = e as MouseEvent;
+                const rect = apiM1.getBoundingClientRect();
+                gsap.to(apiM1.querySelector('.dbm-card') || apiM1.querySelector('.dbm-terminal'), { 
+                    rotationY: ((evt.clientX - rect.left) / rect.width - 0.5)*20, 
+                    rotationX: -((evt.clientY - rect.top) / rect.height - 0.5)*20, 
+                    transformPerspective: 1000, ease: 'power1.out', duration: 0.5 
+                });
+            });
+            apiM1.addEventListener('mouseleave', () => { gsap.to(apiM1.querySelector('.dbm-terminal'), { rotationY: 0, rotationX: 0, ease: 'power3.out', duration: 0.8 }); });
+        }
+
+        // API M2
+        const apiM2 = document.querySelector('.dbm-api-m2');
+        if (apiM2) {
+            const hl = apiM2.querySelector('.dbm-hl-target');
+            gsap.to(hl, { color: '#10b981', textShadow: '0 0 10px rgba(16,185,129,0.5)', ease: 'none', scrollTrigger: { trigger: apiM2, start: 'top 80%', end: 'top 40%', scrub: 1 } });
+        }
+
+        // MCP M0
+        const mcpM0 = document.querySelector('.dbm-mcp-m0');
+        if (mcpM0) {
+            const line = mcpM0.querySelector('.dbm-pulse-line');
+            gsap.to(line, { strokeDashoffset: 0, ease: 'none', scrollTrigger: { trigger: mcpM0, start: 'top 95%', end: 'top 20%', scrub: 1 } });
+        }
+
+        // MCP M1
+        const mcpM1 = document.querySelector('.dbm-mcp-m1');
+        if (mcpM1) {
+            const log1 = mcpM1.querySelector('.dbm-log-1');
+            const log2 = mcpM1.querySelector('.dbm-log-2');
+            const tl = gsap.timeline({ scrollTrigger: { trigger: mcpM1, start: 'top 90%', end: 'top 40%', scrub: 1 } });
+            gsap.set([log1, log2], { opacity: 0, y: 10 });
+            tl.to(log1, { opacity: 1, y: 0, duration: 0.5 })
+              .to(log2, { opacity: 1, y: 0, duration: 0.5 }, '+=0.5');
+        }
+
+        // MCP M2
+        const mcpM2 = document.querySelector('.dbm-mcp-m2');
+        if (mcpM2) {
+            const hl = mcpM2.querySelector('.dbm-hl-target');
+            gsap.to(hl, { color: '#10b981', ease: 'none', scrollTrigger: { trigger: mcpM2, start: 'top 80%', end: 'top 40%', scrub: 1 } });
+        }
+    });
+</script>
+
 <style>
     /* ════════ HERO (mismo sistema que /producto) ════════ */
     .pp-hero { position: relative; padding: 11.5rem 5% 5rem; text-align: center; overflow: clip; background: var(--color-bg); }
@@ -205,7 +286,13 @@ const otra = DEV_PAGES.find((p) => p.slug !== page.slug)!;
         color: #fff;
     }
 
-    /* terminal (api) */
+    /* ════════ HERO MOCKUP ════════ */
+    .dv-term {
+        background: rgba(10,25,47,0.85); border-radius: 14px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+        overflow: hidden; max-width: 520px; width: 100%; margin: 0 auto;
+    }
     .dv-term-bar { display: flex; align-items: center; gap: 12px; padding: 0 0.3rem 1rem; }
     .dv-dots { display: inline-flex; gap: 5px; }
     .dv-dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.14); }
@@ -236,8 +323,16 @@ const otra = DEV_PAGES.find((p) => p.slug !== page.slug)!;
     .pp-stat-label { font-size: 0.88rem; color: var(--color-text-muted); max-width: 240px; margin: 0 auto; line-height: 1.5; }
 
     /* ════════ BLOQUES ════════ */
-    .pp-blocks { max-width: 1080px; margin: 0 auto; padding: 6rem 5% 3rem; display: flex; flex-direction: column; gap: 7rem; }
-    .pp-block { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 4.5rem; align-items: center; }
+    .pp-blocks {
+        max-width: 1080px; margin: 0 auto;
+        padding: 8rem 5% 6rem;
+        display: flex; flex-direction: column; gap: 14rem;
+    }
+    .pp-block {
+        display: grid; grid-template-columns: 1.1fr 0.9fr;
+        gap: 4.5rem; align-items: center;
+    }
+    .pp-block-text, .pp-block-visual { min-width: 0; }
     .pp-block-flip .pp-block-text { order: 2; }
     .pp-block-flip .pp-block-visual { order: 1; }
     .pp-h2 { font-size: clamp(1.7rem, 3vw, 2.4rem); font-weight: 800; line-height: 1.12; letter-spacing: -0.03em; color: var(--color-text); margin: 0 0 1.1rem; }
