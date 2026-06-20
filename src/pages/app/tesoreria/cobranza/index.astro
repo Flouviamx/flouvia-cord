@@ -6,69 +6,99 @@ import { sql } from '../../../../lib/db';
 const ME = await getMyMembership();
 const orgId = ME?.org_id;
 
-let conversaciones = [];
+let conversaciones: any[] = [];
+let activa = false;
 if (orgId) {
+  const [org] = await sql`select ai_cobranza_activa from orgs where id = ${orgId}`;
+  activa = !!org?.ai_cobranza_activa;
   conversaciones = await sql`
-    SELECT 
-      c.id, c.cotizacion_id, c.autor_tipo, c.mensaje, c.created_at,
-      cot.total, cl.empresa
+    SELECT c.id, c.cotizacion_id, c.autor_tipo, c.mensaje, c.created_at,
+           cot.total, cot.folio, cl.empresa
     FROM cobranza_conversaciones c
     JOIN cotizaciones cot ON c.cotizacion_id = cot.id
     JOIN clientes cl ON cot.cliente_id = cl.id
     WHERE c.org_id = ${orgId}
     ORDER BY c.created_at DESC
-    LIMIT 50
-  `;
+    LIMIT 50`;
 }
+
+const money = (n: any) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(Number(n) || 0);
 ---
 
-<AppLayout title="Agentes de Cobranza (AI AR)" page="ai-ar" heading="Supervisión de Agentes de Cobranza">
-  <section class="max-w-4xl mx-auto py-8">
-    <div class="mb-8 flex justify-between items-center">
-      <div>
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Bandeja de Negociaciones Activas</h2>
-        <p class="text-gray-500">Supervisa las interacciones autónomas de tu agente de cobranza con los clientes.</p>
-      </div>
-      <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium text-sm">
-        Forzar Ejecución del Agente
-      </button>
-    </div>
+<AppLayout title="Agentes de Cobranza — Cord" page="ai-ar" heading="Agentes de cobranza (IA)">
+  <p slot="page-sub">Supervisa las negociaciones autónomas de tu agente de cobranza con clientes morosos.</p>
+  <button slot="topbar-actions" class="ac-run" id="runBtn">Forzar ejecución del agente</button>
 
+  {!activa && (
+    <div class="ac-banner">
+      La cobranza autónoma está <b>desactivada</b>. Actívala en <a href="/app/ajustes/agentes">Ajustes › Agentes IA y MCP</a> para que el agente empiece a negociar el cobro.
+    </div>
+  )}
+
+  <div class="ac-list">
     {conversaciones.length === 0 ? (
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-8 text-center border border-gray-200 dark:border-gray-700">
-        <p class="text-gray-500">No hay interacciones recientes del agente de cobranza.</p>
-      </div>
+      <div class="card ac-empty">Aún no hay interacciones del agente de cobranza. Cuando corra, verás aquí cada correo y respuesta.</div>
     ) : (
-      <div class="space-y-6">
-        {conversaciones.map((conv) => (
-          <div class={`bg-white dark:bg-gray-800 rounded-lg p-6 border ${conv.autor_tipo === 'agente_ia' ? 'border-blue-200 dark:border-blue-900' : 'border-green-200 dark:border-green-900'} shadow-sm`}>
-            <div class="flex justify-between items-center mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">
-              <div class="flex items-center gap-2">
-                <span class="font-semibold text-gray-900 dark:text-white">{conv.empresa}</span>
-                <span class="text-gray-400 text-sm">•</span>
-                <span class="text-gray-600 dark:text-gray-300 text-sm">Factura de ${parseFloat(conv.total).toFixed(2)}</span>
-              </div>
-              <div class="text-xs text-gray-400">
-                {new Date(conv.created_at).toLocaleString()}
-              </div>
+      conversaciones.map((conv) => (
+        <div class="card ac-conv" data-rol={conv.autor_tipo}>
+          <div class="ac-head">
+            <div class="ac-who">
+              <span class="ac-empresa">{conv.empresa}</span>
+              <span class="ac-sep">·</span>
+              <span class="ac-folio">{conv.folio}</span>
+              <span class="ac-sep">·</span>
+              <span class="editorial ac-total">{money(conv.total)}</span>
             </div>
-            
-            <div class="mb-2">
-              <span class={`inline-block px-2 py-1 text-xs rounded-full font-medium ${conv.autor_tipo === 'agente_ia' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
-                {conv.autor_tipo === 'agente_ia' ? 'Agente de IA' : 'Cliente'}
-              </span>
-            </div>
-            
-            <p class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap text-sm">{conv.mensaje}</p>
-            
-            {conv.autor_tipo === 'agente_ia' && (
-              <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-end">
-                <button class="text-red-600 hover:text-red-700 text-sm font-medium">Tomar el control manual</button>
-              </div>
-            )}
+            <span class="ac-date">{new Date(conv.created_at).toLocaleString('es-MX')}</span>
           </div>
-        ))}
-      </div>
+          <span class:list={['ac-pill', conv.autor_tipo === 'agente_ia' ? 'ia' : 'cli']}>
+            {conv.autor_tipo === 'agente_ia' ? 'Agente IA' : 'Cliente'}
+          </span>
+          <p class="ac-msg">{conv.mensaje}</p>
+        </div>
+      ))
     )}
-  </section>
+  </div>
 </AppLayout>
+
+<style>
+  .ac-run { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 16px; cursor: pointer; }
+  .ac-run:disabled { opacity: 0.6; cursor: wait; }
+  .ac-banner { font-size: 0.84rem; color: #b45309; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 0.9rem 1.1rem; margin-bottom: 1.2rem; line-height: 1.5; }
+  .ac-banner a { color: var(--color-blue-deep); font-weight: 600; }
+  .ac-list { display: flex; flex-direction: column; gap: 0.9rem; }
+  .ac-empty { padding: 2.5rem 1.4rem; text-align: center; color: var(--color-text-muted); font-size: 0.88rem; }
+  .ac-conv { padding: 1.2rem 1.4rem; border-left: 3px solid var(--color-border); }
+  .ac-conv[data-rol="agente_ia"] { border-left-color: var(--color-blue-deep); }
+  .ac-conv[data-rol="cliente"] { border-left-color: var(--color-ok); }
+  .ac-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 0.6rem; flex-wrap: wrap; }
+  .ac-who { display: flex; align-items: center; gap: 0.5rem; font-size: 0.86rem; flex-wrap: wrap; }
+  .ac-empresa { font-weight: 600; color: var(--color-text); }
+  .ac-sep { color: var(--color-text-muted); }
+  .ac-folio { font-family: ui-monospace, Menlo, monospace; font-size: 0.74rem; color: var(--color-text-muted); }
+  .ac-total { color: var(--color-text); }
+  .ac-date { font-size: 0.72rem; color: var(--color-text-muted); }
+  .ac-pill { display: inline-block; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; padding: 3px 9px; border-radius: 100px; margin-bottom: 0.6rem; }
+  .ac-pill.ia { background: rgba(10,25,47,0.08); color: var(--color-blue-deep); }
+  .ac-pill.cli { background: rgba(16,185,129,0.12); color: var(--color-ok); }
+  .ac-msg { font-size: 0.88rem; line-height: 1.6; color: var(--color-text); white-space: pre-wrap; margin: 0; }
+</style>
+
+<script>
+  document.getElementById('runBtn')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget as HTMLButtonElement;
+    btn.disabled = true; const prev = btn.textContent; btn.textContent = 'Ejecutando…';
+    try {
+      const res = await fetch('/api/agentes', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'run_cobranza' }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Falló');
+      (window as any).cordToast?.(`Agente ejecutado: ${d.procesadas ?? 0} cotización(es)`, 'ok');
+      if ((d.procesadas ?? 0) > 0) setTimeout(() => location.reload(), 1200);
+    } catch (err: any) {
+      (window as any).cordToast?.(err.message || 'No se pudo ejecutar', 'error');
+    } finally { btn.disabled = false; btn.textContent = prev; }
+  });
+</script>

@@ -188,15 +188,16 @@ export default function CustomOrgSwitcher() {
         }
         
         .org-switcher-btn:hover, .org-switcher-btn.active {
-          background: rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.09);
           color: #ffffff;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), inset 0 0 0 0.5px rgba(255,255,255,0.1);
         }
 
         .org-avatar {
           width: 32px;
           height: 32px;
-          border-radius: 8px;
-          background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.03));
+          border-radius: 9px;
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.04));
           color: #ffffff;
           display: flex;
           align-items: center;
@@ -204,7 +205,8 @@ export default function CustomOrgSwitcher() {
           font-weight: 700;
           font-size: 0.85rem;
           flex-shrink: 0;
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          box-shadow: inset 0 1px 1px rgba(255,255,255,0.28), inset 0 -2px 5px rgba(0,0,0,0.18), 0 3px 8px -3px rgba(0,0,0,0.45);
         }
 
         .org-avatar.small {
@@ -238,15 +240,19 @@ export default function CustomOrgSwitcher() {
           top: calc(100% + 0.5rem);
           left: 0;
           width: 280px;
-          /* Fondo SÓLIDO opaco (sobre un degradado navy) + rim light interno para
-             que nunca se transparente con la página detrás. */
-          background: linear-gradient(180deg, #0d1f3a 0%, #0a192f 100%);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 14px;
+          /* Liquid glass navy: base translúcida + blur fuerte para que se lea el vidrio
+             sin perder legibilidad del texto. Rim lights en capas (receta del navbar). */
+          background: linear-gradient(180deg, rgba(18,38,68,0.86) 0%, rgba(10,25,47,0.82) 60%, rgba(8,20,38,0.85) 100%);
+          backdrop-filter: blur(30px) saturate(1.8) brightness(1.05);
+          -webkit-backdrop-filter: blur(30px) saturate(1.8) brightness(1.05);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 16px;
           box-shadow:
-            0 32px 64px -16px rgba(0, 0, 0, 0.65),
-            0 12px 24px -8px rgba(0, 0, 0, 0.4),
-            inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+            inset 0 1px 0 rgba(255,255,255,0.22),
+            inset 0 0 0 0.5px rgba(255,255,255,0.08),
+            inset 0 -8px 18px rgba(0,0,0,0.22),
+            0 32px 64px -16px rgba(0, 0, 0, 0.6),
+            0 12px 24px -8px rgba(0, 0, 0, 0.38);
           padding: 0.5rem;
           z-index: 9999;
           transform-origin: top left;

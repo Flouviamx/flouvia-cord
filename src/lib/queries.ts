@@ -397,6 +397,28 @@ export async function getCotizacion(id: string): Promise<MockQuote | null> {
     return rowToQuote(rows[0], items, eventos, versiones);
 }
 
+// Documentos fiscales emitidos para una cotización (CFDI / invoice). Plain sql
+// con filtro explícito por org (documentos_fiscales no tiene RLS FORCE).
+export async function getDocumentosFiscales(cotizacionId: string) {
+    const orgId = await getActiveOrgId();
+    const rows = await sql`
+        select id, country_code, document_type, fiscal_id, status, provider_data, pdf_url, xml_url, created_at
+        from documentos_fiscales
+        where cotizacion_id = ${cotizacionId} and org_id = ${orgId}
+        order by created_at desc`;
+    return rows.map((r: any) => ({
+        id: r.id as string,
+        pais: r.country_code as string,
+        tipo: r.document_type as string,
+        fiscalId: (r.fiscal_id as string) || null,
+        status: r.status as string,
+        simulado: !!(r.provider_data && (r.provider_data.simulado === true)),
+        pdfUrl: (r.pdf_url as string) || null,
+        xmlUrl: (r.xml_url as string) || null,
+        creado: fmtDate(r.created_at as string),
+    }));
+}
+
 // Link público — usa withPublicToken para satisfacer la política RLS de cotizaciones/items.
 // Tres queries en un solo batch con el token como contexto de RLS.
 export async function getCotizacionByToken(token: string) {

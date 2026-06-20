@@ -1,12 +1,14 @@
 ---
 // Detalle de cotización — items, totales, timeline de eventos y acciones. Datos reales (Neon).
 import AppLayout from '../../../layouts/AppLayout.astro';
-import { getCotizacion, getMyMembership, getOrg, STATUS_META, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal } from '../../../lib/queries';
+import { getCotizacion, getDocumentosFiscales, getMyMembership, getOrg, STATUS_META, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal } from '../../../lib/queries';
 import { memberCan } from '../../../lib/permissions';
 
 const { id } = Astro.params;
 const [q, ME, ORG] = await Promise.all([getCotizacion(id ?? ''), getMyMembership(), getOrg()]);
 if (!q) return Astro.redirect('/app/cotizaciones');
+const docsFiscales = await getDocumentosFiscales(id ?? '');
+const DOC_LABEL: Record<string, string> = { cfdi_40: 'CFDI 4.0', invoice: 'Factura comercial', dian_einvoice: 'Factura DIAN' };
 const canCotizar = memberCan(ME, 'cotizar');
 const canAprobar = memberCan(ME, 'aprobar');
 
@@ -114,6 +116,38 @@ const dotColor = (tipo: string) =>
                     </details>
                 </section>
             )}
+
+            {docsFiscales.length > 0 && (
+                <section class="d-fiscal">
+                    <div class="section-head"><h2>Documentos fiscales</h2></div>
+                    <div class="df-list">
+                        {docsFiscales.map((d) => (
+                            <div class="df-row" data-status={d.status}>
+                                <span class="df-icon">{d.status === 'issued' ? '🧾' : '⚠️'}</span>
+                                <div class="df-body">
+                                    <div class="df-top">
+                                        <span class="df-type">{DOC_LABEL[d.tipo] || d.tipo}</span>
+                                        <span class="df-pais">{d.pais}</span>
+                                        {d.simulado && <span class="df-sim">Simulado</span>}
+                                        <span class:list={['df-state', d.status]}>
+                                            {d.status === 'issued' ? 'Emitido' : d.status === 'error' ? 'Error' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    {d.fiscalId && <div class="df-uuid">UUID: <code>{d.fiscalId}</code></div>}
+                                    <div class="df-meta">{d.creado}</div>
+                                </div>
+                                <div class="df-actions">
+                                    {d.pdfUrl && <a href={d.pdfUrl} target="_blank" rel="noopener" class="df-link">PDF</a>}
+                                    {d.xmlUrl && <a href={d.xmlUrl} target="_blank" rel="noopener" class="df-link">XML</a>}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    {docsFiscales.some((d) => d.simulado) && (
+                        <p class="df-note">Un timbre <b>simulado</b> significa que aún no hay PAC conectado (faltan <code>PAC_API_URL</code>/<code>PAC_API_KEY</code>). El registro queda para auditoría, pero no es un CFDI válido ante el SAT.</p>
+                    )}
+                </section>
+            )}
         </div>
 
         <!-- Sidebar: acciones + timeline -->
@@ -177,6 +211,9 @@ const dotColor = (tipo: string) =>
 
             <section class="d-timeline">
                 <div class="section-head"><h2>Actividad</h2></div>
+                <button class="tl-new" id="tlNew" hidden>
+                    <span class="tl-new-dot"></span> Hay mensajes nuevos · actualizar
+                </button>
                 <div class="tl">
                     {q.eventos.map((e) => (
                         <div class="tl-item">
@@ -277,6 +314,29 @@ const dotColor = (tipo: string) =>
     .d-notes p { font-size: 0.86rem; color: var(--color-text); margin: 0; line-height: 1.55; }
 
     /* Historial de versiones */
+    .d-fiscal { margin-bottom: 2.6rem; }
+    .df-list { display: flex; flex-direction: column; gap: 0.6rem; }
+    .df-row { display: flex; align-items: center; gap: 0.9rem; padding: 0.9rem 1rem; border: 1px solid var(--color-border); border-radius: 12px; }
+    .df-row[data-status="error"] { border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.03); }
+    .df-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .df-body { flex: 1; min-width: 0; }
+    .df-top { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .df-type { font-size: 0.88rem; font-weight: 600; color: var(--color-text); }
+    .df-pais { font-size: 0.66rem; font-weight: 700; padding: 1px 7px; border-radius: 100px; background: rgba(10,25,47,0.06); color: var(--color-text-muted); }
+    .df-sim { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; padding: 2px 7px; border-radius: 100px; color: #b45309; background: rgba(245,158,11,0.12); }
+    .df-state { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; padding: 2px 8px; border-radius: 100px; }
+    .df-state.issued { color: var(--color-ok); background: rgba(16,185,129,0.12); }
+    .df-state.error { color: var(--color-danger); background: rgba(239,68,68,0.12); }
+    .df-state.pending { color: var(--color-text-muted); background: rgba(0,0,0,0.05); }
+    .df-uuid { font-size: 0.72rem; color: var(--color-text-muted); margin-top: 3px; }
+    .df-uuid code { font-family: ui-monospace, Menlo, monospace; font-size: 0.68rem; }
+    .df-meta { font-size: 0.72rem; color: var(--color-text-muted); margin-top: 2px; }
+    .df-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+    .df-link { font-size: 0.74rem; font-weight: 600; color: var(--color-blue-deep); border: 1px solid var(--color-border); border-radius: 7px; padding: 5px 11px; text-decoration: none; }
+    .df-link:hover { background: var(--color-bg-soft); }
+    .df-note { font-size: 0.74rem; color: var(--color-text-muted); line-height: 1.5; margin: 0.8rem 0 0; }
+    .df-note code { font-family: ui-monospace, Menlo, monospace; font-size: 0.68rem; background: rgba(10,25,47,0.06); padding: 1px 4px; border-radius: 4px; }
+
     .d-versions { margin-bottom: 2.6rem; }
     .v-accordion { 
         background: #fafafa; border: 1px solid var(--color-border); 
@@ -363,6 +423,10 @@ const dotColor = (tipo: string) =>
     button:disabled { opacity: 0.55; cursor: wait; }
 
     .d-timeline { display: flex; flex-direction: column; }
+    .tl-new { display: flex; align-items: center; gap: 7px; width: 100%; font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; color: var(--color-blue-deep); background: rgba(10,25,47,0.05); border: 1px solid var(--color-border); border-radius: 9px; padding: 8px 12px; margin-bottom: 0.9rem; cursor: pointer; transition: background 0.2s; }
+    .tl-new:hover { background: rgba(10,25,47,0.09); }
+    .tl-new-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-blue-deep); animation: tlPulse 1.6s ease-in-out infinite; }
+    @keyframes tlPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
     .tl { display: flex; flex-direction: column; gap: 1rem; position: relative; }
     .tl::before { content: ''; position: absolute; left: 3.5px; top: 8px; bottom: 8px; width: 1px; background: var(--color-border); }
     .tl-item { display: flex; gap: 13px; position: relative; }
@@ -406,21 +470,27 @@ const dotColor = (tipo: string) =>
         const token = panel.dataset.token!;
         const errorEl = document.getElementById('actError')!;
 
-        // ── Presencia en vivo: "el cliente está viendo ahora" ──
+        // ── Presencia + conversación en vivo (polling cada 8s) ──
+        // La presencia ("viendo ahora") se muestra solo en planes con la feature;
+        // el aviso de mensajes nuevos aplica para todos (no recarga solo: ofrece botón).
         const lv = document.getElementById('liveViewing');
         const hasLiveView = panel.dataset.liveView === '1';
-        
-        if (lv && hasLiveView) {
-            const checkPresence = async () => {
-                try {
-                    const r = await fetch(`/api/cotizaciones/${qid}/presence`);
-                    const d = await r.json();
-                    lv.hidden = !d.online;
-                } catch { /* ignora */ }
-            };
-            checkPresence();
-            setInterval(checkPresence, 8000);
-        }
+        const tlNew = document.getElementById('tlNew');
+        let convBaseline: number | null = null;
+
+        const poll = async () => {
+            try {
+                const r = await fetch(`/api/cotizaciones/${qid}/presence`);
+                const d = await r.json();
+                if (lv && hasLiveView) lv.hidden = !d.online;
+                const count = Number(d.convCount) || 0;
+                if (convBaseline === null) convBaseline = count;
+                else if (tlNew && count > convBaseline) tlNew.hidden = false;
+            } catch { /* ignora */ }
+        };
+        poll();
+        setInterval(poll, 8000);
+        tlNew?.addEventListener('click', () => location.reload());
 
         // ── Flujo de aprobación (gerencia) ──
         const apAction = async (action: string, btn: HTMLButtonElement) => {

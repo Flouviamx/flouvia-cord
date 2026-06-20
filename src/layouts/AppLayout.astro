@@ -40,7 +40,15 @@ const NAV_GROUPS = [
         label: 'Dinero',
         items: [
             { id: 'cobranza',  href: '/app/cobranza',  label: 'Cobranza',  icon: 'M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z', badge: badges.vencidas, tone: 'danger' },
+            { id: 'cfo',       href: '/app/cfo',       label: 'CFO Dashboard', icon: 'M3 3v18h18M7 14l3-3 3 3 5-5' },
             { id: 'analitica', href: '/app/analitica', label: 'Analítica', icon: 'M4 13h3v7H4v-7zm6.5-5h3v12h-3V8zM17 11h3v9h-3v-9z' },
+        ],
+    },
+    {
+        label: 'Tesorería IA',
+        items: [
+            { id: 'flujo-caja', href: '/app/tesoreria/flujo',    label: 'Flujo predictivo', icon: 'M12 3v18M5 10l7-7 7 7M5 14l7 7 7-7' },
+            { id: 'ai-ar',      href: '/app/tesoreria/cobranza', label: 'Agentes de cobranza', icon: 'M12 2a5 5 0 0 0-5 5v2a5 5 0 0 0 10 0V7a5 5 0 0 0-5-5zM4 20a8 8 0 0 1 16 0' },
         ],
     },
     {
@@ -121,6 +129,7 @@ const NAV_GROUPS = [
                 </div>
 
                 <nav class="sb-nav">
+                    <div class="sb-indicator" id="sbIndicator" aria-hidden="true"></div>
                     <div class="sb-group sb-pins" id="sbPins" hidden></div>
                     {NAV_GROUPS.map((group) => (
                         <div class="sb-group">
@@ -675,13 +684,35 @@ const NAV_GROUPS = [
         z-index: 130;
         transition: width 0.28s var(--ease-spring), padding 0.28s var(--ease-spring);
     }
+    /* Sheen superior (specular highlight tipo liquid glass) — detrás del contenido */
+    .sidebar::before {
+        content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
+        background:
+            radial-gradient(135% 55% at 50% -12%, rgba(255,255,255,0.12), transparent 62%),
+            radial-gradient(90% 40% at 18% 0%, rgba(120,160,230,0.10), transparent 70%);
+    }
+    .sidebar > * { position: relative; z-index: 1; }
 
     /* ── Nav agrupada (scroll con fade-out solo en la parte inferior) ── */
     .sb-nav {
+        position: relative;
         display: flex; flex-direction: column; gap: 1rem;
         overflow-y: auto; flex: 1;
         mask-image: linear-gradient(to bottom, black calc(100% - 22px), transparent 100%);
         -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 22px), transparent 100%);
+    }
+    /* Indicador deslizante (segmented control tipo iOS) — sigue al hover, regresa al activo */
+    .sb-indicator {
+        position: absolute; left: 0; right: 0; top: 0; height: 0;
+        border-radius: 12px; opacity: 0; pointer-events: none; z-index: 0;
+        background: rgba(255,255,255,0.11);
+        box-shadow:
+            inset 0 1px 1px rgba(255,255,255,0.26),
+            inset 0 0 0 0.5px rgba(255,255,255,0.14),
+            inset 0 -4px 9px rgba(0,0,0,0.16),
+            0 4px 14px -6px rgba(0,0,0,0.5);
+        transition: top 0.42s var(--ease-spring), height 0.42s var(--ease-spring), opacity 0.3s var(--ease-ios);
+        will-change: top, height;
     }
     .sb-group { display: flex; flex-direction: column; gap: 2px; }
     .sb-group-label {
@@ -690,7 +721,7 @@ const NAV_GROUPS = [
         transition: opacity 0.2s var(--ease-ios);
     }
     .sb-item {
-        position: relative;
+        position: relative; z-index: 1;
         display: flex; align-items: center; gap: 11px;
         padding: 8px 11px; border-radius: 12px;
         font-size: 0.86rem; font-weight: 500;
@@ -705,13 +736,11 @@ const NAV_GROUPS = [
         flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         transition: opacity 0.2s var(--ease-ios);
     }
-    /* Estilos hover y active estilo "pill" */
-    .sb-item:hover { color: rgba(255,255,255,0.92); background: rgba(255,255,255,0.05); }
-    .sb-item.active {
-        color: #fff;
-        background: rgba(255,255,255,0.12);
-        box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), inset 0 0 0 0.5px rgba(255,255,255,0.1), inset 0 -3px 8px rgba(0,0,0,0.12);
-    }
+    /* Hover/active: el color cambia; el realce de "pill" lo da .sb-indicator (vidrio) */
+    .sb-item:hover { color: rgba(255,255,255,0.92); }
+    .sb-item.active { color: #fff; }
+    /* Antes de que el indicador de vidrio se posicione (pre-JS): pill sutil en el activo */
+    .sb-nav:not(.sb-ind-ready) .sb-item.active { background: rgba(255,255,255,0.1); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.12); }
     .sb-badge {
         flex-shrink: 0; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 100px;
         display: inline-flex; align-items: center; justify-content: center;
@@ -834,13 +863,14 @@ const NAV_GROUPS = [
     /* ── Toggle estilo panel (Linear/VSCode), abajo a la derecha junto al logo ── */
     .sb-toggle {
         margin-left: auto; flex-shrink: 0;
-        width: 30px; height: 30px; border-radius: 8px;
+        width: 30px; height: 30px; border-radius: 9px;
         display: inline-flex; align-items: center; justify-content: center;
-        background: transparent; border: none; cursor: pointer;
+        background: rgba(255,255,255,0.045); border: none; cursor: pointer;
+        box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.09), inset 0 1px 0 rgba(255,255,255,0.06);
         color: rgba(255,255,255,0.5);
-        transition: background 0.22s var(--ease-ios), color 0.22s var(--ease-ios), transform 0.2s var(--ease-spring);
+        transition: background 0.22s var(--ease-ios), color 0.22s var(--ease-ios), box-shadow 0.22s var(--ease-ios), transform 0.2s var(--ease-spring);
     }
-    .sb-toggle:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .sb-toggle:hover { background: rgba(255,255,255,0.12); color: #fff; box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.18), inset 0 1px 1px rgba(255,255,255,0.22); }
     .sb-toggle:active { transform: scale(0.9); }
     .sb-toggle:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(255,255,255,0.35); }
     .sb-toggle-ico { width: 17px; height: 17px; transition: transform 0.4s var(--ease-spring); }
@@ -1208,6 +1238,38 @@ const NAV_GROUPS = [
         });
     }
 
+    // ── Indicador deslizante del sidebar (segmented control tipo iOS) ──
+    function initSidebarIndicator() {
+        const nav = document.querySelector('.sb-nav');
+        const ind = document.getElementById('sbIndicator');
+        if (!nav || !ind) return;
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const el = ind as HTMLElement;
+        const activeItem = () => nav.querySelector('.sb-item.active') as HTMLElement | null;
+        const moveTo = (it: HTMLElement | null, animate = true) => {
+            if (!it) { el.style.opacity = '0'; return; }
+            if (!animate || reduce) el.style.transition = 'none';
+            el.style.top = it.offsetTop + 'px';
+            el.style.height = it.offsetHeight + 'px';
+            el.style.opacity = '1';
+            if (!animate || reduce) { void el.offsetHeight; el.style.transition = ''; }
+        };
+        const settle = () => moveTo(activeItem(), false);
+        // Delegación: cubre también los "Fijados" inyectados después.
+        nav.addEventListener('mouseover', (e) => {
+            const it = (e.target as HTMLElement).closest('.sb-item') as HTMLElement | null;
+            if (it && nav.contains(it)) moveTo(it);
+        });
+        nav.addEventListener('mouseleave', () => moveTo(activeItem()));
+        window.addEventListener('resize', settle);
+        document.getElementById('sbToggleFloating')?.addEventListener('click', () => setTimeout(settle, 320));
+        // Posición inicial (tras pins + fuentes).
+        settle();
+        nav.classList.add('sb-ind-ready');
+        requestAnimationFrame(settle);
+        setTimeout(settle, 120);
+    }
+
     // ── Toasts globales — window.cordToast(msg, 'ok'|'error'|'info') ──
     function initToasts() {
         const stack = document.getElementById('toastStack');
@@ -1489,7 +1551,7 @@ const NAV_GROUPS = [
         });
     }
 
-    function initApp() { initCmdk(); initDrawer(); initSidebar(); initToasts(); initNavProgress(); initPins(); initNotifs(); initHelp(); initShortcuts(); initMobileActions(); }
+    function initApp() { initCmdk(); initDrawer(); initSidebar(); initToasts(); initNavProgress(); initPins(); initSidebarIndicator(); initNotifs(); initHelp(); initShortcuts(); initMobileActions(); }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initApp);
     else initApp();
 </script>

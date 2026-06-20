@@ -454,8 +454,56 @@ config manual en el Dashboard de Clerk y correr la migración.
    • **Rediseño "Quiet Luxury" en Desarrolladores:** Se eliminó la dependencia de `DeveloperUI.css` (estilo Stripe morado/blanco) en `/app/ajustes/api.astro`. La interfaz ahora usa clases nativas de Cord (`.api-btn-solid`, `.api-btn-ghost`) asegurando un Modo Oscuro perfecto.
    • **Org Switcher UI Fix:** Corrección de contraste de texto y recortes `text-overflow` (`min-width: 0` + `ellipsis`) para nombres de usuario/emails largos.
 ✅ **Integración Visual Nivel App (Clerk) (jun 2026)** — El componente `<OrganizationProfile>` (Ajustes de Equipo) ahora se integra de forma transparente en el layout claro de la App (`equipo.astro`) mediante un nuevo `clerkAppAppearance` definido en `clerk-theme.ts`, eliminando el choque visual del modo oscuro forzado.
-⬜ Pendiente: aprobación parcial por línea, producción de Clerk
-   (instancia real), Stripe Billing en prod (price_ids + webhook secret).
+✅ **Cableado real de features "andamiaje" (jun 2026)** — auditoría que conectó al
+   flujo real varias features que existían como tablas+clases pero NO se invocaban:
+   • **Fix de dependencia (zod):** `@modelcontextprotocol/sdk` rompía en runtime por
+     `zod@4.1.11` con la carpeta de compat `/v3/` ESM incompleta (faltaba `util.js`).
+     Solución: `"overrides": { "zod": "4.4.3" }` en `package.json` + `vite.ssr.noExternal:
+     ['@modelcontextprotocol/sdk']` en `astro.config.mjs`. ⚠️ El **build de prod no se
+     afecta**, pero `npm ci` desde el lockfile puede romper el DEV de Vite (error
+     "reading 'call'" en todos los `.astro`/`.ts`); la instalación que funciona en dev es
+     `npm install` (regenera lockfile). Si truena: `rm -rf node_modules package-lock.json
+     node_modules/.vite .astro && npm install`.
+   • **Abstracción fiscal CABLEADA:** `src/lib/fiscal/emit.ts` junta datos (org/cliente/
+     items/totales/país), enruta por `FiscalFactory` y registra en `documentos_fiscales`.
+     Enganchado en la acción `invoiced` de `/api/cotizaciones/[id]`. `MexicoSatProvider`
+     ahora timbra REAL si `PAC_API_URL`+`PAC_API_KEY` están seteadas; si no, devuelve
+     respuesta marcada `provider_data.simulado=true` (honesto, ya no finge UUID).
+     UI de documentos fiscales en el detalle de cotización (`getDocumentosFiscales`).
+   • **FX REAL + multi-divisa cableada:** `FXService` hace fetch a Frankfurter (BCE, sin
+     key) con fallback a mock; conectado a `createCotizacion` (puebla `base_currency`/
+     `fiscal_currency`/`fx_rate`/`fx_locked_until`). Endpoint `/api/fx/quote` (preview) +
+     selector de divisa/buffer/preview en vivo en el editor `/nueva`.
+   • **MCP entrante SEGURO:** `/api/mcp/sse` valida la API key con `authApiKey` (antes
+     `Bearer x` daba acceso total) y guarda el `orgId` en la sesión; `/api/mcp/message`
+     ejecuta las tools dentro de `reqContext.run({orgId})` (tenancy real por RLS).
+   • **MCP saliente FUNCIONAL:** `ai-draft` pasa el `agenteId` del agente por defecto
+     (`getDefaultAgentId` en `src/lib/agents/governance.ts`) — antes se instanciaba sin
+     agente y nunca cargaba servidores; `client-manager` inyecta el `auth_token`, mapea el
+     nombre REAL de la tool (`toolMap`) y cierra conexiones (`disconnectAll`).
+   • **Gobernanza de agentes (UI):** `/app/ajustes/agentes` (Developers › "Agentes IA y
+     MCP") — CRUD de `mcp_servers`, toggle "Permitir IA" por servidor (`agentes_permisos`,
+     herramientas `["*"]`) y toggle de cobranza autónoma. API `/api/agentes`.
+   • **Cobranza IA con opt-in:** columna `orgs.ai_cobranza_activa` (default false); el cron
+     `/api/cron/cobranza` solo procesa orgs con el flag, está protegido por `CRON_SECRET`,
+     **manda el correo de verdad** vía Resend y ya está agendado en `vercel.json` (diario
+     16:00 UTC). Botón "Forzar ejecución" (acción `run_cobranza`). El AR agent (`ar-agent.ts`)
+     usa `AI_MODEL || claude-opus-4-8` (antes modelo hardcodeado).
+   • **Tesorería en el menú:** `/app/tesoreria/flujo` y `/app/tesoreria/cobranza` se
+     reescribieron con el sistema de diseño de Cord (usaban clases TAILWIND inexistentes →
+     se veían rotas) y se enlazaron en el sidebar (grupo "Tesorería IA"; CFO restaurado al
+     grupo "Dinero").
+   • **Conversación en vivo:** el endpoint de presencia devuelve `convCount`; el detalle
+     muestra un banner "Hay mensajes nuevos · actualizar" cuando el cliente comenta (sin
+     recargar solo). Sigue siendo polling (8s), no SSE.
+   ⚠️ Correr `npm run db:migrate` (columna `orgs.ai_cobranza_activa`). Nueva env opcional:
+   `PAC_API_URL` (endpoint del PAC; el timbrado es simulado sin ella).
+⬜ Pendiente: aprobación parcial por línea (toca la firma legal SHA-256 + el flujo público
+   de `QuoteCard`/`/q` → merece pasada propia), `USInvoiceProvider` real (US), "tiempo real"
+   full vía SSE/WebSocket, producción de Clerk (instancia real), Stripe Billing en prod
+   (price_ids + webhook secret). Deuda: doc drift (la app usa componentes `Custom*` de Clerk,
+   no los nativos `<SignIn/>`), el "Entorno de prueba" es cosmético (solo cambia el prefijo de
+   API key), y 5 vulnerabilidades de `npm audit`.
 
 ---
 
@@ -924,7 +972,8 @@ STRIPE_SECRET_KEY=  STRIPE_WEBHOOK_SECRET=  PUBLIC_STRIPE_PUBLISHABLE_KEY=
 RESEND_API_KEY=  RESEND_FROM=                                   # recordatorios de cobro
 CRON_SECRET=                                                    # protege /api/cron/recordatorios
 PAC_API_KEY=                                                    # timbrado CFDI
-ANTHROPIC_API_KEY=                                              # IA "armar cotización desde texto"
+PAC_API_URL=                                                    # endpoint del PAC (sin ella el timbrado es SIMULADO)
+ANTHROPIC_API_KEY=                                              # IA "armar cotización desde texto" + cobranza/MCP
 AI_MODEL=                                                       # opcional (default claude-opus-4-8)
 ```
 

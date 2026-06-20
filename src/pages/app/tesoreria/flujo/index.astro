@@ -6,94 +6,117 @@ import { getCashFlowPrediction } from '../../../../lib/analytics/cashflow';
 const ME = await getMyMembership();
 const orgId = ME?.org_id;
 
-let predictions = [];
-let aiSummary = "Cargando proyecciones...";
+let predictions: any[] = [];
+let aiSummary = '';
 let total90Days = 0;
 
 if (orgId) {
   const data = await getCashFlowPrediction(orgId);
   predictions = data.predictions;
   aiSummary = data.aiSummary;
-  
   total90Days = predictions.reduce((acc, p) => acc + p.expectedAmount, 0);
 }
+
+const conIngreso = predictions.filter((p) => p.expectedAmount > 0);
+const fmtFecha = (d: any) => new Date(d).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
 ---
 
-<AppLayout title="Proyección de Flujo de Caja" page="flujo-caja" heading="Flujo de Caja Predictivo">
-  <section class="max-w-5xl mx-auto py-8">
-    <div class="mb-8 flex justify-between items-end">
+<AppLayout title="Flujo de Caja Predictivo — Cord" page="flujo-caja" heading="Flujo de caja predictivo">
+  <p slot="page-sub">Estimación de ingresos a 90 días, cruzando tu pipeline con el historial real de pago de cada cliente.</p>
+
+  <!-- KPI hero -->
+  <div class="tf-kpis">
+    <div class="card tf-kpi">
+      <span class="tf-eyebrow">Total esperado · 90 días</span>
+      <span class="editorial tf-big">{money(total90Days)}</span>
+    </div>
+    <div class="card tf-kpi">
+      <span class="tf-eyebrow">Fechas con ingreso</span>
+      <span class="editorial tf-big">{conIngreso.length}</span>
+    </div>
+  </div>
+
+  <!-- AI CFO Insight -->
+  {aiSummary && (
+    <div class="tf-insight">
+      <span class="tf-spark">✦</span>
       <div>
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Proyección a 90 Días</h2>
-        <p class="text-gray-500">Estimación de ingresos basada en tu pipeline y el historial de pagos de tus clientes.</p>
-      </div>
-      <div class="text-right">
-        <div class="text-sm text-gray-500 uppercase tracking-wide font-semibold">Total Esperado (90d)</div>
-        <div class="text-3xl font-bold text-green-600 dark:text-green-400">{money(total90Days)}</div>
+        <span class="tf-insight-label">AI CFO Insight</span>
+        <p class="tf-insight-text">{aiSummary}</p>
       </div>
     </div>
+  )}
 
-    <!-- AI Summary -->
-    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-800 p-6 rounded-xl border border-blue-100 dark:border-gray-700 mb-8 shadow-sm relative overflow-hidden">
-      <div class="absolute top-0 right-0 p-4 opacity-10">
-        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-      </div>
-      <h3 class="text-sm font-bold uppercase tracking-wider text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-        AI CFO Insight
-      </h3>
-      <p class="text-gray-800 dark:text-gray-200 text-lg leading-relaxed">{aiSummary}</p>
-    </div>
-
-    <!-- Data Visualization (Simple table for now, later a chart) -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-        <h3 class="font-semibold text-gray-800 dark:text-gray-200">Desglose de Proyecciones por Fecha</h3>
-      </div>
-      <div class="divide-y divide-gray-200 dark:divide-gray-700">
-        {predictions.filter(p => p.expectedAmount > 0).length === 0 ? (
-          <div class="p-8 text-center text-gray-500">
-            No hay proyecciones de ingresos para los próximos 90 días. Crea o envía cotizaciones para ver el impacto aquí.
-          </div>
-        ) : (
-          predictions.filter(p => p.expectedAmount > 0).map(p => (
-            <div class="p-6 flex items-start justify-between hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
-              <div>
-                <div class="font-medium text-gray-900 dark:text-white mb-1">
-                  {new Date(p.date).toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+  <!-- Desglose -->
+  <div class="card tf-table">
+    <div class="tf-thead">Proyección por fecha</div>
+    {conIngreso.length === 0 ? (
+      <div class="tf-empty">No hay proyecciones para los próximos 90 días. Crea o envía cotizaciones para ver el impacto aquí.</div>
+    ) : (
+      conIngreso.map((p) => (
+        <div class="tf-row">
+          <div class="tf-row-main">
+            <div class="tf-date">{fmtFecha(p.date)}</div>
+            <div class="tf-quotes">
+              {p.contributingQuotes.map((q: any) => (
+                <div class="tf-quote">
+                  <span class="tf-folio">{q.folio}</span>
+                  <span class="tf-empresa">{q.empresa}</span>
+                  <span class="tf-sep">·</span>
+                  <span class="editorial tf-monto">{money(q.amount)}</span>
+                  <span class="tf-prob">{Math.round(q.probability * 100)}%</span>
                 </div>
-                <div class="space-y-1 mt-3">
-                  {p.contributingQuotes.map(q => (
-                    <div class="text-sm flex items-center gap-2">
-                      <span class="text-gray-500">{q.folio}</span>
-                      <span class="font-medium text-gray-700 dark:text-gray-300">{q.empresa}</span>
-                      <span class="text-gray-400">·</span>
-                      <span class="text-gray-600 dark:text-gray-400">{money(q.amount)}</span>
-                      <span class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-gray-600 dark:text-gray-300">
-                        {Math.round(q.probability * 100)}% prob.
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div class="text-right">
-                <div class="text-xl font-bold text-gray-900 dark:text-white">{money(p.expectedAmount)}</div>
-                <div class="text-xs text-gray-500 mt-1">Escenario Esperado</div>
-                
-                <div class="mt-4 flex flex-col gap-1 items-end text-xs">
-                  <div class="flex gap-2">
-                    <span class="text-gray-400">Optimista:</span>
-                    <span class="text-green-600 font-medium">{money(p.optimisticAmount)}</span>
-                  </div>
-                  <div class="flex gap-2">
-                    <span class="text-gray-400">Conservador:</span>
-                    <span class="text-yellow-600 font-medium">{money(p.conservativeAmount)}</span>
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
-          ))
-        )}
-      </div>
-    </div>
-  </section>
+          </div>
+          <div class="tf-row-right">
+            <span class="editorial tf-expected">{money(p.expectedAmount)}</span>
+            <span class="tf-expected-lbl">Escenario esperado</span>
+            <div class="tf-scenarios">
+              <span><b style="color:var(--color-ok)">{money(p.optimisticAmount)}</b> optimista</span>
+              <span><b style="color:var(--color-warn)">{money(p.conservativeAmount)}</b> conservador</span>
+            </div>
+          </div>
+        </div>
+      ))
+    )}
+  </div>
 </AppLayout>
+
+<style>
+  .tf-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.2rem; }
+  .tf-kpi { padding: 1.2rem 1.4rem; display: flex; flex-direction: column; gap: 0.4rem; }
+  .tf-eyebrow { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--color-text-muted); }
+  .tf-big { font-size: 1.8rem; color: var(--color-text); }
+
+  .tf-insight { display: flex; gap: 1rem; align-items: flex-start; padding: 1.2rem 1.4rem; border-radius: 16px; margin-bottom: 1.4rem;
+    background: radial-gradient(ellipse at 0% 0%, rgba(10,25,47,0.05), transparent 70%), var(--color-bg-soft); border: 1px solid var(--color-border); }
+  .tf-spark { font-size: 1.1rem; color: var(--color-blue-deep); flex-shrink: 0; }
+  .tf-insight-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--color-blue-deep); }
+  .tf-insight-text { font-size: 0.98rem; line-height: 1.55; color: var(--color-text); margin: 0.3rem 0 0; }
+
+  .tf-table { padding: 0; overflow: hidden; }
+  .tf-thead { font-size: 0.82rem; font-weight: 700; color: var(--color-text); padding: 1rem 1.4rem; border-bottom: 1px solid var(--color-border); background: var(--color-bg-soft); }
+  .tf-empty { padding: 2.5rem 1.4rem; text-align: center; color: var(--color-text-muted); font-size: 0.88rem; }
+  .tf-row { display: flex; justify-content: space-between; gap: 1.5rem; padding: 1.2rem 1.4rem; border-bottom: 1px solid var(--color-border); }
+  .tf-row:last-child { border-bottom: none; }
+  .tf-row:hover { background: var(--color-bg-soft); }
+  .tf-date { font-size: 0.92rem; font-weight: 600; color: var(--color-text); text-transform: capitalize; margin-bottom: 0.6rem; }
+  .tf-quotes { display: flex; flex-direction: column; gap: 0.35rem; }
+  .tf-quote { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; flex-wrap: wrap; }
+  .tf-folio { font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem; color: var(--color-text-muted); }
+  .tf-empresa { font-weight: 600; color: var(--color-text); }
+  .tf-sep { color: var(--color-text-muted); }
+  .tf-monto { color: var(--color-text); }
+  .tf-prob { font-size: 0.66rem; font-weight: 700; padding: 2px 7px; border-radius: 100px; background: rgba(10,25,47,0.06); color: var(--color-text-muted); }
+  .tf-row-right { text-align: right; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; align-items: flex-end; }
+  .tf-expected { font-size: 1.25rem; color: var(--color-text); }
+  .tf-expected-lbl { font-size: 0.66rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
+  .tf-scenarios { display: flex; flex-direction: column; gap: 2px; margin-top: 0.5rem; font-size: 0.72rem; color: var(--color-text-muted); }
+
+  @media (max-width: 720px) {
+    .tf-kpis { grid-template-columns: 1fr; }
+    .tf-row { flex-direction: column; gap: 0.8rem; }
+    .tf-row-right { text-align: left; align-items: flex-start; }
+  }
+</style>
