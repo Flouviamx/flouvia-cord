@@ -37,7 +37,7 @@ Node requerido: **>=22.12.0** (ver `.nvmrc` → 24.15.0; alineado a Node 24 LTS,
 
 | Capa | Tecnología |
 |------|-----------|
-| Framework | Astro 6.1.2 (`output: 'server'`) + `@astrojs/vercel` |
+| Framework | Astro 6.4.8 (`output: 'server'`) + `@astrojs/vercel` |
 | Auth | Clerk (`@clerk/astro`) — **signup ABIERTO** (no invitation-only como el portal de flouvia) |
 | DB | **Neon (PostgreSQL serverless)** — schema en `db/schema.sql`. Decisión jun 2026: Neon en vez de Supabase. Crear vía Vercel Marketplace → integración Neon (auto-provisiona `DATABASE_URL`). |
 | Billing | Stripe Billing (freemium) |
