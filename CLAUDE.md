@@ -498,12 +498,22 @@ config manual en el Dashboard de Clerk y correr la migración.
      recargar solo). Sigue siendo polling (8s), no SSE.
    ⚠️ Correr `npm run db:migrate` (columna `orgs.ai_cobranza_activa`). Nueva env opcional:
    `PAC_API_URL` (endpoint del PAC; el timbrado es simulado sin ella).
-⬜ Pendiente: aprobación parcial por línea (toca la firma legal SHA-256 + el flujo público
-   de `QuoteCard`/`/q` → merece pasada propia), `USInvoiceProvider` real (US), "tiempo real"
-   full vía SSE/WebSocket, producción de Clerk (instancia real), Stripe Billing en prod
-   (price_ids + webhook secret). Deuda: doc drift (la app usa componentes `Custom*` de Clerk,
-   no los nativos `<SignIn/>`), el "Entorno de prueba" es cosmético (solo cambia el prefijo de
-   API key), y 5 vulnerabilidades de `npm audit`.
+✅ **Aprobación parcial por línea (jun 2026)** — el cliente puede aprobar solo un
+   subconjunto de líneas desde `/q`. Columna `cotizacion_items.aprobado` (default true).
+   En `QuoteCard` cada línea tiene checkbox (solo si la cotización está viva) con total a
+   aprobar EN VIVO; el botón se deshabilita si no hay líneas seleccionadas. `/api/q/[token]`
+   acción `approve` acepta `accepted_items[]`: marca cada línea, y **la firma legal SHA-256
+   cubre SOLO las líneas aceptadas** (el snapshot hashea `firmadas`, no todas). El evento
+   registra "aprobó N de M líneas ($X de $Y)". El detalle del vendedor muestra las líneas
+   excluidas tachadas con badge "No incluida" + nota de aprobación parcial. ⚠️ Correr
+   `npm run db:migrate` (columna `cotizacion_items.aprobado`).
+⬜ Pendiente: `USInvoiceProvider` real (US), "tiempo real" full vía SSE/WebSocket, producción
+   de Clerk (instancia real), Stripe Billing en prod (price_ids + webhook secret). NOTA: la
+   facturación/CFDI sigue timbrando sobre el total original — si se factura una aprobación
+   PARCIAL, conviene emitir solo las líneas con `aprobado=true` (pendiente de cablear en
+   `emit.ts`). Deuda: doc drift (la app usa componentes `Custom*` de Clerk, no los nativos
+   `<SignIn/>`), el "Entorno de prueba" es cosmético (solo cambia el prefijo de API key), y
+   5 vulnerabilidades de `npm audit`.
 
 ---
 

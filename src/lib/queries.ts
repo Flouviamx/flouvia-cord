@@ -353,6 +353,7 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [])
             unidad: it.unidad ?? 'pieza',
             precioLista: num(it.precio_unitario),
             precioNegociado: it.precio_negociado === null ? null : num(it.precio_negociado),
+            aprobado: it.aprobado !== false,   // default true (sin columna o no decidido = incluida)
             comentarios: it.comentarios ?? [],
         })),
         eventos: eventos.map((e): MockEvent => ({

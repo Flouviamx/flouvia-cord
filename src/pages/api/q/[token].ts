@@ -37,30 +37,53 @@ export const POST: APIRoute = async ({ params, request }) => {
         const ua = request.headers.get('user-agent') ?? 'desconocido';
         const email = String(body.email ?? '').trim().slice(0, 200);
         
-        // Generar hash inmutable
-        const items = await sql`select id, descripcion, cantidad, precio_unitario, precio_negociado from cotizacion_items where cotizacion_id = ${c.id} order by orden`;
+        const allItems = await sql`select id, descripcion, cantidad, precio_unitario, precio_negociado from cotizacion_items where cotizacion_id = ${c.id} order by orden`;
+
+        // Aprobación parcial: el cliente puede incluir solo un subconjunto de líneas.
+        // accepted_items = ids que SÍ aprueba; si no viene o las cubre todas, es total.
+        const acceptedRaw = Array.isArray(body.accepted_items) ? body.accepted_items.map((x: any) => String(x)) : null;
+        const validIds = new Set(allItems.map((it: any) => String(it.id)));
+        const accepted = acceptedRaw ? new Set(acceptedRaw.filter((id: string) => validIds.has(id))) : null;
+        if (accepted && accepted.size === 0) return json({ error: 'Selecciona al menos una línea para aprobar' }, 400);
+        const isPartial = !!accepted && accepted.size < allItems.length;
+
+        // Las líneas que firma legalmente el cliente = las aceptadas (o todas).
+        const lineSub = (it: any) => Number(it.cantidad) * Number(it.precio_negociado ?? it.precio_unitario);
+        const firmadas = accepted ? allItems.filter((it: any) => accepted.has(String(it.id))) : allItems;
+        const subAceptado = firmadas.reduce((s: number, it: any) => s + lineSub(it), 0);
+        const subTotal = allItems.reduce((s: number, it: any) => s + lineSub(it), 0);
+
+        // El hash inmutable cubre SOLO lo aceptado (lo que el cliente realmente firmó).
         const payload = JSON.stringify({
             quote_id: c.id,
-            status: 'approved',
+            status: isPartial ? 'approved_partial' : 'approved',
             signed_by: signedBy,
             ip,
-            items
+            items: firmadas,
         });
         const snapshotHash = createHash('sha256').update(payload).digest('hex');
 
-        const detalle = signedBy
-            ? `Firmado digitalmente por "${signedBy}" (IP ${ip})`
-            : 'El cliente aprobó la cotización desde el link';
-        
+        const detalle = isPartial
+            ? `Firmado por "${signedBy || 'Anónimo'}" — aprobó ${firmadas.length} de ${allItems.length} líneas (${money(subAceptado)} de ${money(subTotal)}) (IP ${ip})`
+            : (signedBy ? `Firmado digitalmente por "${signedBy}" (IP ${ip})` : 'El cliente aprobó la cotización desde el link');
+
         await sql.begin(async (tx) => {
             await tx`update cotizaciones set status = 'approved', approved_at = now() where id = ${c.id}`;
+            // Marca el estado de cada línea (solo cambia algo en aprobación parcial).
+            if (isPartial) {
+                for (const it of allItems) {
+                    const ok = accepted!.has(String(it.id));
+                    await tx`update cotizacion_items set aprobado = ${ok} where id = ${it.id} and cotizacion_id = ${c.id}`;
+                }
+            }
+
             await tx`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                       values (${c.org_id}, ${c.id}, 'approved', ${detalle})`;
             await tx`insert into cotizacion_firmas (org_id, cotizacion_id, firmante_nombre, firmante_email, firmante_ip, user_agent, snapshot_hash)
                       values (${c.org_id}, ${c.id}, ${signedBy || 'Anónimo'}, ${email || null}, ${ip}, ${ua}, ${snapshotHash})`;
         });
         await dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.approved');
-        return json({ ok: true, status: 'approved', hash: snapshotHash });
+        return json({ ok: true, status: 'approved', hash: snapshotHash, partial: isPartial });
     }
 
     // ── Rechazar ──

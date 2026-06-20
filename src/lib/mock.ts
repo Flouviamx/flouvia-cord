@@ -13,6 +13,7 @@ export interface MockItem {
     unidad: string;
     precioLista: number;
     precioNegociado: number | null;
+    aprobado?: boolean;   // false = el cliente NO incluyó esta línea al aprobar (aprobación parcial)
     comentarios?: { autor: string; tipo: string; contenido: string; cuando: string }[];
 }
 

@@ -99,8 +99,8 @@ const dotColor = (tipo: string) =>
                 <div class="section-head"><h2>Detalle</h2></div>
                 <div class="di-head"><span>Producto</span><span>Cant.</span><span>Precio</span><span class="di-right">Importe</span></div>
                 {q.items.map((it) => (
-                    <div class="di-row">
-                        <span class="di-name">{it.descripcion}<small>{it.unidad}</small></span>
+                    <div class:list={['di-row', { 'di-excluida': it.aprobado === false }]}>
+                        <span class="di-name">{it.descripcion}<small>{it.unidad}</small>{it.aprobado === false && <span class="di-excluida-tag">No incluida</span>}</span>
                         <span class="di-qty">{it.cantidad.toLocaleString('es-MX')}</span>
                         <span class="di-price">
                             {it.precioNegociado !== null && <s>{money(it.precioLista)}</s>}
@@ -109,6 +109,12 @@ const dotColor = (tipo: string) =>
                         <span class="editorial di-amount di-right">{money(lineTotal(it))}</span>
                     </div>
                 ))}
+                {q.items.some((it) => it.aprobado === false) && (
+                    <div class="di-partial-note">
+                        ⚠️ Aprobación parcial — el cliente firmó solo las líneas incluidas
+                        (<b class="editorial">{money(q.items.filter((it) => it.aprobado !== false).reduce((s, it) => s + lineTotal(it), 0))}</b> de <span class="editorial">{money(quoteSubtotal(q))}</span> + IVA).
+                    </div>
+                )}
                 <div class="di-totals">
                     <div class="dt-line"><span>Subtotal</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
                     <div class="dt-line"><span>IVA 16%</span><span class="editorial">{money(quoteIva(q))}</span></div>
@@ -338,6 +344,11 @@ const dotColor = (tipo: string) =>
     .di-price .editorial { font-size: 0.92rem; color: var(--color-blue-deep); }
     .di-amount { font-size: 0.98rem; color: var(--color-blue-deep); }
     .di-right { text-align: right; }
+    .di-row.di-excluida { opacity: 0.5; }
+    .di-row.di-excluida .di-name { text-decoration: line-through; text-decoration-color: rgba(0,0,0,0.25); }
+    .di-excluida-tag { align-self: flex-start; text-decoration: none; margin-top: 3px; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: #b91c1c; background: rgba(239,68,68,0.1); padding: 2px 7px; border-radius: 100px; }
+    .di-partial-note { font-size: 0.78rem; color: #92400e; background: rgba(245,158,11,0.1); border-radius: 10px; padding: 0.7rem 0.9rem; margin-top: 0.9rem; line-height: 1.5; }
+    .di-partial-note b { font-weight: 700; }
 
     .di-totals { padding: 1.1rem 0.6rem 0; display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end; }
     .dt-line { display: flex; justify-content: space-between; gap: 3rem; min-width: 230px; font-size: 0.82rem; color: var(--color-text-muted); }

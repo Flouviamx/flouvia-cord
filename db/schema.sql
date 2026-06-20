@@ -746,3 +746,8 @@ create policy "rls_planes_pago_negociados" on planes_pago_negociados
 -- El cron /api/cron/cobranza SOLO procesa orgs con este flag en true. Evita
 -- mandar correos de cobranza autónomos sin consentimiento explícito del negocio.
 alter table orgs add column if not exists ai_cobranza_activa boolean not null default false;
+
+-- ── Aprobación parcial por línea (jun 2026) ──
+-- false = el cliente excluyó esta línea al aprobar el link público. Default true
+-- para que toda cotización existente / aprobación total quede como "incluida".
+alter table cotizacion_items add column if not exists aprobado boolean not null default true;

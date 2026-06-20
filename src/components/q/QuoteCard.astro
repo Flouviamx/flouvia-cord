@@ -23,7 +23,7 @@ const folio = q.folio as string;
 const total = money(quoteTotal(q));
 ---
 
-<div class="q-card" data-token={q.token} data-folio={folio} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'}>
+<div class="q-card" data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'}>
     {banner && <div class="q-banner" style={`background:${color}`}>{banner}</div>}
 
     <!-- Cabecera: marca del emisor -->
@@ -86,10 +86,17 @@ const total = money(quoteTotal(q));
             <span class="qi-right">Importe</span>
         </div>
         {q.items.map((it: any) => (
-            <div class="qi-row-wrapper">
+            <div data-line-id={it.id} data-importe={lineTotal(it)} class:list={['qi-row-wrapper', { 'qi-excluida': yaAprobada && it.aprobado === false }]}>
                 <div class="qi-row">
                     <span class="qi-name">
+                        {!yaAprobada && !yaRechazada && (
+                            <label class="qi-pick" title="Incluir esta línea en tu aprobación">
+                                <input type="checkbox" class="qi-pick-cb" data-pick={it.id} checked />
+                                <span class="qi-pick-box"></span>
+                            </label>
+                        )}
                         {it.descripcion}
+                        {yaAprobada && it.aprobado === false && <span class="qi-excluida-tag">No incluida</span>}
                         {mostrarChat && !yaAprobada && !yaRechazada && (
                             <button class="qi-chat-btn" data-item-id={it.id} aria-label="Comentar en esta línea">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -138,6 +145,9 @@ const total = money(quoteTotal(q));
 
         <!-- Paso: review (default si cotización viva) -->
         <div class="ql-step" id="stepReview">
+            <div class="ql-partial" id="qPartialNote" hidden>
+                Aprobarás <b id="qPartialCount"></b> · Total a aprobar: <b class="editorial" id="qPartialTotal"></b>
+            </div>
             <button class="ql-cta" id="qApproveBtn" style={`background:${color}`}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 Aprobar cotización
@@ -330,8 +340,52 @@ const total = money(quoteTotal(q));
         return data;
     };
 
+    // ── Aprobación parcial: selección de líneas + total en vivo ──
+    const ivaPct = Number((document.querySelector('.q-card') as HTMLElement)?.dataset.iva ?? '16') / 100;
+    const moneyFmt = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n);
+    const picks = Array.from(document.querySelectorAll<HTMLInputElement>('.qi-pick-cb'));
+    const approveBtn = document.getElementById('qApproveBtn') as HTMLButtonElement | null;
+    const partialNote = document.getElementById('qPartialNote');
+
+    function acceptedIds(): string[] {
+        return picks.filter(p => p.checked).map(p => p.dataset.pick!).filter(Boolean);
+    }
+    function refreshSelection() {
+        if (!picks.length) return;
+        const total = picks.length;
+        const sel = picks.filter(p => p.checked);
+        const n = sel.length;
+        // Subtotal de lo seleccionado (data-importe ya es el importe por línea, sin IVA).
+        let sub = 0;
+        sel.forEach(p => {
+            const w = p.closest('.qi-row-wrapper') as HTMLElement | null;
+            sub += Number(w?.dataset.importe ?? 0);
+            if (w) w.classList.toggle('qi-deseleccionada', false);
+        });
+        picks.filter(p => !p.checked).forEach(p => {
+            const w = p.closest('.qi-row-wrapper') as HTMLElement | null;
+            if (w) w.classList.toggle('qi-deseleccionada', true);
+        });
+        if (approveBtn) approveBtn.disabled = n === 0;
+        // Solo mostramos la nota cuando es una selección PARCIAL (no todas).
+        if (partialNote) {
+            if (n > 0 && n < total) {
+                partialNote.hidden = false;
+                const cnt = document.getElementById('qPartialCount');
+                const tot = document.getElementById('qPartialTotal');
+                if (cnt) cnt.textContent = `${n} de ${total} líneas`;
+                if (tot) tot.textContent = moneyFmt(sub * (1 + ivaPct));
+            } else {
+                partialNote.hidden = true;
+            }
+        }
+    }
+    picks.forEach(p => p.addEventListener('change', refreshSelection));
+    refreshSelection();
+
     // ── Abrir firma ──
-    document.getElementById('qApproveBtn')?.addEventListener('click', () => {
+    approveBtn?.addEventListener('click', () => {
+        if (picks.length && acceptedIds().length === 0) return;
         showStep('stepSign');
         (document.getElementById('qSignerName') as HTMLInputElement | null)?.focus();
     });
@@ -357,7 +411,7 @@ const total = money(quoteTotal(q));
         confirmSignBtn.disabled = true;
         confirmSignBtn.textContent = 'Firmando…';
         try {
-            const res = await api('approve', { signed_by: signedBy, email });
+            const res = await api('approve', { signed_by: signedBy, email, accepted_items: acceptedIds() });
             const stamp = document.getElementById('qSignedStamp');
             if (stamp && signedBy) {
                 const now = new Date().toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' });
@@ -786,6 +840,21 @@ const total = money(quoteTotal(q));
     transition: all 0.2s;
 }
 .qi-chat-btn:hover { background: rgba(10,25,47,0.08); color: #111; }
+
+/* ── Aprobación parcial: selección de líneas ── */
+.qi-pick { display: inline-flex; align-items: center; cursor: pointer; flex-shrink: 0; }
+.qi-pick-cb { position: absolute; opacity: 0; width: 0; height: 0; }
+.qi-pick-box { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid #cbd5e1; background: #fff; display: inline-flex; align-items: center; justify-content: center; transition: all 0.18s; }
+.qi-pick-cb:checked + .qi-pick-box { background: #0a192f; border-color: #0a192f; }
+.qi-pick-cb:checked + .qi-pick-box::after { content: ''; width: 5px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-0.5px, -1px); }
+.qi-pick-cb:focus-visible + .qi-pick-box { box-shadow: 0 0 0 3px rgba(10,25,47,0.15); }
+.qi-row-wrapper.qi-deseleccionada { opacity: 0.5; }
+.qi-row-wrapper.qi-deseleccionada .qi-name { text-decoration: line-through; text-decoration-color: rgba(0,0,0,0.3); }
+.qi-row-wrapper.qi-excluida { opacity: 0.55; }
+.qi-row-wrapper.qi-excluida .qi-name { text-decoration: line-through; text-decoration-color: rgba(0,0,0,0.25); }
+.qi-excluida-tag { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: #b91c1c; background: rgba(239,68,68,0.1); padding: 2px 7px; border-radius: 100px; }
+.ql-partial { font-size: 0.82rem; color: #374151; text-align: center; margin-bottom: 0.8rem; padding: 0.6rem 0.9rem; background: rgba(10,25,47,0.04); border-radius: 10px; }
+.ql-partial b { color: #111; font-weight: 700; }
 
 .qi-thread {
     padding: 0 1rem 1rem 1rem;
