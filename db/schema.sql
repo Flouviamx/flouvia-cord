@@ -751,3 +751,15 @@ alter table orgs add column if not exists ai_cobranza_activa boolean not null de
 -- false = el cliente excluyó esta línea al aprobar el link público. Default true
 -- para que toda cotización existente / aprobación total quede como "incluida".
 alter table cotizacion_items add column if not exists aprobado boolean not null default true;
+
+-- ── FIX (jun 2026): columnas que vivían SOLO en el CREATE TABLE ──
+-- Las tablas creadas antes de agregar estas columnas al CREATE nunca las
+-- recibían (el migrate ignora "already exists"). Se re-declaran como ALTER
+-- idempotente para que existan en TODAS las bases. Crítico: createCotizacion
+-- inserta en base_currency/fx_* y emit.ts (facturación) lee orgs.country_code.
+alter table cotizaciones add column if not exists base_currency   text        not null default 'MXN';
+alter table cotizaciones add column if not exists fiscal_currency text        not null default 'MXN';
+alter table cotizaciones add column if not exists fx_rate         numeric     not null default 1;
+alter table cotizaciones add column if not exists fx_rate_source  text        not null default 'spot';
+alter table cotizaciones add column if not exists fx_locked_until timestamptz;
+alter table orgs         add column if not exists country_code    text        not null default 'MX';
