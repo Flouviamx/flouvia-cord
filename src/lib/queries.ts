@@ -429,6 +429,7 @@ export async function getCotizacionByToken(token: string) {
                o.logo_url as org_logo_url,
                o.pdf_mensaje as org_pdf_mensaje, o.iva_pct as org_iva_pct,
                o.embed_domains as org_embed_domains,
+               o.email_contacto as org_email, o.telefono as org_tel, o.whatsapp as org_wa,
                o.portal_banner as org_portal_banner, o.portal_bienvenida as org_portal_bienvenida,
                o.portal_mostrar_chat as org_portal_chat, o.portal_powered as org_portal_powered
             from cotizaciones c
@@ -465,7 +466,14 @@ export async function getCotizacionByToken(token: string) {
     }));
 
     const quote = rowToQuote(rows[0], itemsWithComments, []);
-    
+
+    // Días restantes de vigencia (para la cuenta regresiva del link público).
+    if (rows[0].vigencia) {
+        const venc = new Date(rows[0].vigencia as string);
+        const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+        (quote as any).diasVigencia = Math.ceil((venc.getTime() - hoy.getTime()) / 86400000);
+    }
+
     if (firmas.length > 0) {
         quote.firma = {
             nombre: firmas[0].firmante_nombre as string,
@@ -492,6 +500,9 @@ export async function getCotizacionByToken(token: string) {
             pdfMensaje: (rows[0].org_pdf_mensaje as string) ?? '',
             ivaPct: num(rows[0].org_iva_pct) || 16,
             embedDomains: (rows[0].org_embed_domains as string) ?? '',
+            emailContacto: (rows[0].org_email as string) ?? '',
+            telefono: (rows[0].org_tel as string) ?? '',
+            whatsapp: (rows[0].org_wa as string) ?? '',
             portalBanner: (rows[0].org_portal_banner as string) ?? '',
             portalBienvenida: (rows[0].org_portal_bienvenida as string) ?? '',
             portalMostrarChat: (rows[0].org_portal_chat as boolean) ?? true,
