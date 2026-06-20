@@ -755,18 +755,19 @@ const NAV_GROUPS = [
     .sidebar {
         width: var(--sidebar-w);
         flex-shrink: 0;
-        /* Estilo Pill Flotante (Glassmorphism oscuro) */
-        background: linear-gradient(180deg, rgba(24,46,80,0.62) 0%, rgba(10,25,47,0.5) 55%, rgba(8,20,38,0.58) 100%);
-        backdrop-filter: blur(34px) saturate(1.9) brightness(1.06);
-        -webkit-backdrop-filter: blur(34px) saturate(1.9) brightness(1.06);
-        border: 1px solid rgba(255,255,255,0.14);
+        /* Pill flotante navy RICO (opacidad alta → no se ve gris lavado sobre el fondo;
+           un toque de frost para el feel de vidrio, pero menos translúcido que la navbar pública). */
+        background: linear-gradient(180deg, rgba(23,44,78,0.95) 0%, rgba(13,29,53,0.94) 55%, rgba(9,21,40,0.96) 100%);
+        backdrop-filter: blur(22px) saturate(1.5);
+        -webkit-backdrop-filter: blur(22px) saturate(1.5);
+        border: 1px solid rgba(255,255,255,0.12);
         box-shadow:
-            inset 0 1px 0 rgba(255,255,255,0.22),
-            inset 0 0 0 0.5px rgba(255,255,255,0.08),
-            inset 0 -8px 18px rgba(0,0,0,0.22),
-            0 22px 60px rgba(0,0,0,0.34),
-            0 3px 10px rgba(0,0,0,0.18);
-        border-radius: 24px;
+            inset 0 1px 0 rgba(255,255,255,0.2),
+            inset 0 0 0 0.5px rgba(255,255,255,0.07),
+            inset 0 -10px 24px rgba(0,0,0,0.22),
+            0 18px 50px -14px rgba(10,25,47,0.32),
+            0 3px 10px rgba(10,25,47,0.12);
+        border-radius: 22px;
         margin: 1rem;
         height: calc(100vh - 2rem);
         /* Fin Estilo Pill */
@@ -993,9 +994,11 @@ const NAV_GROUPS = [
     .sb-collapsed .sb-org-switch { justify-content: center; padding: 6px; }
     .sb-collapsed .sb-org-menu { left: 0; right: auto; width: 210px; top: calc(100% + 4px); bottom: auto; }
     /* Ítems = cuadros uniformes centrados (columna limpia, sin hueco de label) */
-    .sb-collapsed .sb-item { justify-content: center; padding: 0; width: 44px; height: 40px; }
+    .sb-collapsed .sb-item { justify-content: center; padding: 0; width: 46px; height: 42px; }
+    .sb-collapsed .sb-item svg { width: 19px; height: 19px; opacity: 0.85; }
+    .sb-collapsed .sb-item.active svg { opacity: 1; }
     /* Indicador de vidrio → cuadrado centrado detrás del ícono activo */
-    .sb-collapsed .sb-indicator { left: 50%; right: auto; width: 44px; margin-left: -22px; border-radius: 13px; }
+    .sb-collapsed .sb-indicator { left: 50%; right: auto; width: 46px; margin-left: -23px; border-radius: 14px; }
     /* Badge → punto cuando está colapsado */
     .sb-collapsed .sb-badge {
         position: absolute; top: 3px; right: 7px; min-width: 0; width: 7px; height: 7px;
