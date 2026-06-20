@@ -712,47 +712,75 @@ const faqSchema = {
             const gsap = (window as any).gsap;
             const ScrollTrigger = (window as any).ScrollTrigger;
 
-            // ───────────────────────── HERO MOCKUP GSAP ─────────────────────────
-            const wrap = document.querySelector('.pp-mockup-wrap');
-            if (wrap) {
-                gsap.set('.pp-mockup', { transformPerspective: 1600, transformStyle: 'preserve-3d', transformOrigin: 'center center' });
-                const floatingElements = wrap.querySelectorAll('.mk-window, .mk-public-card');
-                gsap.set(floatingElements, { z: 80, rotationX: 10, rotationY: -10, opacity: 0 });
-                gsap.set('.pp-mockup', { rotationX: 25, rotationY: -15, scale: 0.9 });
-                
-                const assembleTl = gsap.timeline({
-                    scrollTrigger: { trigger: wrap, start: 'top 95%', end: 'top 30%', scrub: 1 }
-                });
-                assembleTl.to('.pp-mockup', { rotationX: 0, rotationY: 0, scale: 1, ease: 'power2.out' }, 0);
-                assembleTl.to(floatingElements, { z: 0, rotationX: 0, rotationY: 0, opacity: 1, stagger: 0.05, ease: 'back.out(1.2)' }, 0);
-                
-                wrap.addEventListener('mousemove', (e: Event) => {
-                    const evt = e as MouseEvent;
-                    const dot = document.createElement('div');
-                    dot.className = 'mk-particle';
-                    dot.style.left = evt.clientX + 'px';
-                    dot.style.top = evt.clientY + 'px';
-                    document.body.appendChild(dot);
-                    gsap.to(dot, { y: -50, x: (Math.random()-0.5)*50, opacity: 0, scale: 0, duration: 1+Math.random(), onComplete: () => dot.remove() });
-                });
+            // ───────────────────────── HERO MOCKUP ─────────────────────────
+            // El "settle" del mockup del hero (perspectiva → plano con el scroll) lo
+            // maneja PageAnims.astro, idéntico al index. Sin exploded-view ni partículas.
+            // Aquí: una micro-historia que se auto-reproduce DENTRO del mockup según la industria.
+            const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const heroMk = document.querySelector('.pp-hero .pp-mockup');
+            if (heroMk && !reduced) {
+                // Distribuidoras — revelar precios por cliente + pop de los chips de descuento
+                const distRows = heroMk.querySelectorAll('.mk-rows-4 .mk-row:not(.mk-row-head)');
+                if (distRows.length) {
+                    const chips = heroMk.querySelectorAll('.mk-rows-4 .mk-chip');
+                    gsap.set(distRows, { opacity: 0, x: -12 });
+                    gsap.set(chips, { scale: 0, opacity: 0 });
+                    ScrollTrigger.create({
+                        trigger: heroMk, start: 'top 78%', once: true,
+                        onEnter: () => gsap.timeline({ delay: 0.5 })
+                            .to(distRows, { opacity: 1, x: 0, duration: 0.6, stagger: 0.14, ease: 'power2.out' })
+                            .to(chips, { scale: 1, opacity: 1, duration: 0.45, stagger: 0.12, ease: 'back.out(1.6)' }, '-=0.3'),
+                    });
+                }
+                // Construcción — revelar materiales + llenar la barra de crédito de GAMA
+                const conRows = heroMk.querySelectorAll('.mk-rows-con .mk-row:not(.mk-row-head)');
+                if (conRows.length) {
+                    const creditFill = heroMk.querySelector('.mk-credit i');
+                    const w = creditFill ? (creditFill.style.width || '72%') : '0%';
+                    gsap.set(conRows, { opacity: 0, x: -12 });
+                    if (creditFill) gsap.set(creditFill, { width: '0%' });
+                    ScrollTrigger.create({
+                        trigger: heroMk, start: 'top 78%', once: true,
+                        onEnter: () => {
+                            gsap.to(conRows, { opacity: 1, x: 0, duration: 0.6, stagger: 0.12, ease: 'power2.out', delay: 0.5 });
+                            if (creditFill) gsap.to(creditFill, { width: w, duration: 1.2, ease: 'power2.out', delay: 1.1 });
+                        },
+                    });
+                }
+                // Manufactura — revelar las especificaciones técnicas y la nota del lote
+                const specLines = heroMk.querySelectorAll('.mk-spec-line');
+                if (specLines.length) {
+                    const note = heroMk.querySelector('.mk-note');
+                    gsap.set(specLines, { opacity: 0, y: 12 });
+                    if (note) gsap.set(note, { opacity: 0, y: 12 });
+                    ScrollTrigger.create({
+                        trigger: heroMk, start: 'top 78%', once: true,
+                        onEnter: () => {
+                            const tl = gsap.timeline({ delay: 0.5 });
+                            tl.to(specLines, { opacity: 1, y: 0, duration: 0.6, stagger: 0.18, ease: 'power2.out' });
+                            if (note) tl.to(note, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, '-=0.1');
+                        },
+                    });
+                }
+                // Servicios — pulso de "Vista" + glow del botón Aprobar en loop
+                const servApprove = heroMk.querySelector('.mk-public .mk-approve');
+                if (servApprove) {
+                    const badge = heroMk.querySelector('.mk-public .mk-badge');
+                    ScrollTrigger.create({
+                        trigger: heroMk, start: 'top 78%', once: true,
+                        onEnter: () => {
+                            gsap.timeline({ repeat: -1, repeatDelay: 1.4, delay: 0.6 })
+                                .to(servApprove, { boxShadow: '0 0 0 6px rgba(255,255,255,0.12), 0 14px 30px rgba(0,0,0,0.3)', duration: 0.75, ease: 'power2.out' })
+                                .to(servApprove, { boxShadow: '0 0 0 0 rgba(255,255,255,0)', duration: 0.75, ease: 'power2.in' });
+                            if (badge) gsap.fromTo(badge, { opacity: 0.5 }, { opacity: 1, duration: 1, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+                        },
+                    });
+                }
             }
 
-            // ───────────────────────── BLOCK MOCKUPS GSAP (SCRUB) ─────────────────────────
-            
-            // DISTRIBUIDORAS
-            const distM0 = document.querySelector('.sbm-dist-m0');
-            if (distM0) {
-                distM0.addEventListener('mousemove', (e: Event) => {
-                    const evt = e as MouseEvent;
-                    const rect = distM0.getBoundingClientRect();
-                    const x = (evt.clientX - rect.left) / rect.width - 0.5;
-                    const y = (evt.clientY - rect.top) / rect.height - 0.5;
-                    gsap.to(distM0.querySelector('.sbm-card'), { rotationY: x*20, rotationX: -y*20, transformPerspective: 1000, ease: 'power1.out', duration: 0.5 });
-                });
-                distM0.addEventListener('mouseleave', () => {
-                    gsap.to(distM0.querySelector('.sbm-card'), { rotationY: 0, rotationX: 0, ease: 'power3.out', duration: 0.8 });
-                });
-            }
+            // ───────────────────────── BLOCK MOCKUPS GSAP ─────────────────────────
+
+            // DISTRIBUIDORAS — el mockup de precio por cliente se queda estático y limpio.
             const distM1 = document.querySelector('.sbm-dist-m1');
             if (distM1) {
                 const type = distM1.querySelector('.bm-search-type');
@@ -797,8 +825,12 @@ const faqSchema = {
             }
             const manuM1 = document.querySelector('.sbm-manu-m1');
             if (manuM1) {
-                const flip = manuM1.querySelector('.sbm-flip-card');
-                gsap.to(flip, { rotationX: 180, transformStyle: 'preserve-3d', ease: 'none', scrollTrigger: { trigger: manuM1, start: 'top 80%', end: 'top 30%', scrub: 1 } });
+                const rows = manuM1.querySelectorAll('.sbm-vol-row');
+                gsap.set(rows, { opacity: 0, y: 12 });
+                ScrollTrigger.create({
+                    trigger: manuM1, start: 'top 85%', once: true,
+                    onEnter: () => gsap.to(rows, { opacity: 1, y: 0, duration: 0.6, stagger: 0.2, ease: 'power2.out' }),
+                });
             }
             const manuM2 = document.querySelector('.sbm-manu-m2');
             if (manuM2) {

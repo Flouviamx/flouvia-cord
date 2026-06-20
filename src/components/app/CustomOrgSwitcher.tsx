@@ -158,8 +158,8 @@ export default function CustomOrgSwitcher() {
           animation: pulse 1.5s infinite ease-in-out;
         }
 
-        :global(.sb-collapsed) .org-name,
-        :global(.sb-collapsed) .chevron-icon {
+        .sb-collapsed .org-name,
+        .sb-collapsed .chevron-icon {
           opacity: 0;
           width: 0;
           overflow: hidden;
@@ -169,11 +169,11 @@ export default function CustomOrgSwitcher() {
 
         /* Colapsado: el botón se vuelve un cuadro de 46px centrado, alineado
            exactamente con la columna de íconos del nav. */
-        :global(.sb-collapsed) .custom-org-switcher {
+        .sb-collapsed .custom-org-switcher {
           display: flex;
           justify-content: center;
         }
-        :global(.sb-collapsed) .org-switcher-btn {
+        .sb-collapsed .org-switcher-btn {
           justify-content: center;
           gap: 0;
           padding: 0;
@@ -251,9 +251,10 @@ export default function CustomOrgSwitcher() {
           top: calc(100% + 0.5rem);
           left: 0;
           width: 280px;
-          /* Frosted casi-opaco como el menú "Crear" de la topbar: NO se ve el fondo.
-             Blanco en claro, navy en oscuro (vía --sb-menu-*). */
-          background: var(--sb-menu-bg);
+          /* SÓLIDO opaco: base tema-aware (--surface: blanco claro / navy oscuro) bajo
+             el gradiente, así NUNCA se transparenta el fondo aunque --sb-menu-bg no resuelva. */
+          background-color: var(--surface, #ffffff);
+          background-image: var(--sb-menu-bg);
           backdrop-filter: blur(44px) saturate(1.9) brightness(1.03);
           -webkit-backdrop-filter: blur(44px) saturate(1.9) brightness(1.03);
           border: 1px solid var(--sb-menu-border);
@@ -264,7 +265,7 @@ export default function CustomOrgSwitcher() {
           transform-origin: top left;
           animation: dropdownFade 0.22s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        :global(.sb-collapsed) .org-dropdown { width: 250px; }
+        .sb-collapsed .org-dropdown { width: 250px; }
 
         @keyframes dropdownFade {
           from { opacity: 0; transform: translateY(-8px) scale(0.98); }

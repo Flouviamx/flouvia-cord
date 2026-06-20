@@ -14,7 +14,6 @@ import { createHash } from 'node:crypto';
 import type { APIRoute } from 'astro';
 import { sql } from './db';
 import { reqContext } from './context';
-import { planTieneApi } from './permissions';
 import { reportUsage } from './billing';
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
@@ -77,11 +76,8 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
 
     const mode: ApiMode = row.mode === 'test' ? 'test' : 'live';
 
-    // Gating por plan: SOLO las llaves en VIVO requieren plan Negocio. Las de
-    // prueba (sk_test_) operan libres para que cualquiera integre antes de pagar.
-    if (mode === 'live' && !planTieneApi(row.plan as string)) {
-        return jsonError('Las llaves en vivo requieren el plan Negocio. Usa una llave de prueba o actualiza tu plan.', 'plan_required', 403);
-    }
+    // La API está disponible en TODOS los planes (incluido free, limitado). El
+    // consumo de las llaves en vivo se mide/factura por uso (Stripe Billing).
 
     const scope: ApiScope = row.scope === 'write' ? 'write' : 'read';
     if (need === 'write' && scope !== 'write') {

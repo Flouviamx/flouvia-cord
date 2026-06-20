@@ -224,6 +224,36 @@ const faqSchema = {
                             </div>
                         )}
 
+                        {feature.slug === 'cobranza-ia' && (
+                            <div class="mk-ar">
+                                <div class="mk-ar-head">
+                                    <span class="mk-avatar mk-avatar-ez">EZ</span>
+                                    <div>
+                                        <b>Distribuidora El Zarco</b>
+                                        <i>COT-0131 · $412,300 por cobrar</i>
+                                    </div>
+                                    <span class="mk-badge mk-ar-overdue">● 47 días vencido</span>
+                                </div>
+                                <div class="mk-ar-thread" id="arThread">
+                                    <div class="mk-ar-bubble mk-ar-ai">
+                                        <span class="mk-ar-tag">Agente Cord</span>
+                                        Hola Raúl, tu saldo de $412,300 venció hace 47 días. ¿Te ayudo a liquidarlo en 3 pagos mensuales sin recargos?
+                                    </div>
+                                    <div class="mk-ar-bubble mk-ar-client">Sí, me funciona en 3 partes.</div>
+                                    <div class="mk-ar-bubble mk-ar-ai">
+                                        <span class="mk-ar-tag">Agente Cord</span>
+                                        Perfecto. Plan propuesto — esperando tu visto bueno:
+                                    </div>
+                                </div>
+                                <div class="mk-ar-plan" id="arPlan">
+                                    <div class="mk-ar-cuota"><span>Cuota 1 · 15 jul</span><b class="editorial">$137,433</b></div>
+                                    <div class="mk-ar-cuota"><span>Cuota 2 · 15 ago</span><b class="editorial">$137,433</b></div>
+                                    <div class="mk-ar-cuota"><span>Cuota 3 · 15 sep</span><b class="editorial">$137,434</b></div>
+                                    <div class="mk-ar-approve">Aprobar plan de pagos</div>
+                                </div>
+                            </div>
+                        )}
+
                     </div>
                 </div>
             </div>
@@ -644,6 +674,34 @@ const faqSchema = {
     .mk-credit-bar i.warn-bar { background: linear-gradient(90deg, #3b82f6, #f59e0b); }
     .mk-credit span { font-size: 0.7rem; color: rgba(255,255,255,0.5); font-weight: 500; font-family: var(--font-mono, monospace); }
 
+    /* ── COBRANZA IA (agente AR que negocia un plan de pagos) ── */
+    .mk-ar {
+        max-width: 470px; margin: 0 auto;
+        display: flex; flex-direction: column; gap: 1rem; padding: 1.4rem;
+        background: linear-gradient(160deg, rgba(14,34,64,0.92), rgba(8,20,36,0.96));
+        border-radius: 18px; border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 24px 48px -12px rgba(2,6,12,0.8), inset 0 1px 1px rgba(255,255,255,0.08);
+    }
+    .mk-ar-head { display: flex; align-items: center; gap: 12px; }
+    .mk-ar-head b { display: block; font-size: 0.92rem; color: #fff; font-weight: 600; }
+    .mk-ar-head i { display: block; font-style: normal; font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-top: 2px; }
+    .mk-ar-overdue { margin-left: auto; color: #fca5a5; background: rgba(239,68,68,0.14); border: 1px solid rgba(239,68,68,0.28); }
+    .mk-ar-thread { display: flex; flex-direction: column; gap: 8px; }
+    .mk-ar-bubble { font-size: 0.8rem; line-height: 1.5; padding: 10px 13px; border-radius: 13px; max-width: 90%; color: #f1f5f9; }
+    .mk-ar-ai { align-self: flex-start; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.2); border-bottom-left-radius: 4px; }
+    .mk-ar-client { align-self: flex-end; background: #fff; color: #0f172a; font-weight: 500; border-bottom-right-radius: 4px; }
+    .mk-ar-tag { display: block; font-size: 0.55rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #93c5fd; margin-bottom: 4px; }
+    .mk-ar-plan {
+        display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 13px;
+        background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+    }
+    .mk-ar-cuota { display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; color: rgba(255,255,255,0.7); }
+    .mk-ar-cuota b { color: #fff; font-weight: 600; }
+    .mk-ar-approve {
+        margin-top: 4px; text-align: center; font-size: 0.82rem; font-weight: 700;
+        padding: 11px; border-radius: 11px; background: #34d399; color: #052e1f;
+    }
+
     /* ════════ STATS ════════ */
     .pp-stats {
         display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem;
@@ -816,65 +874,39 @@ const faqSchema = {
 
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (!reduced) {
-            // Elegant 3D Entrance Animation for BlockMockups
+            // Entrada limpia de los BlockMockups: fade + rise (sin rotación 3D — igual al index)
             const blocks = document.querySelectorAll('.pp-block-visual');
             blocks.forEach((block) => {
                 const stage = block.querySelector('.bm-stage');
                 if (!stage) return;
-                
+
                 const internals = block.querySelectorAll('.bm-card, .bm-floating, .bm-search, .bm-timeline, .bm-board-col, .bm-stage > div');
                 const glow = block.querySelector('.bm-glow');
 
-                gsap.set(stage, { perspective: 1200 });
-                gsap.set(internals, { y: 60, z: -80, rotationX: -10, opacity: 0, scale: 0.95 });
-                if (glow) gsap.set(glow, { opacity: 0, scale: 0.5 });
-                
+                gsap.set(internals, { y: 28, opacity: 0 });
+                if (glow) gsap.set(glow, { opacity: 0, scale: 0.6 });
+
                 ScrollTrigger.create({
                     trigger: block,
                     start: 'top 85%',
                     once: true,
                     onEnter: () => {
-                        gsap.to(internals, { 
-                            y: 0, z: 0, rotationX: 0, opacity: 1, scale: 1, 
-                            duration: 1.2, ease: 'power3.out', stagger: 0.08, clearProps: 'transform' 
+                        gsap.to(internals, {
+                            y: 0, opacity: 1,
+                            duration: 0.9, ease: 'power3.out', stagger: 0.08, clearProps: 'transform',
                         });
-                        if (glow) {
-                            gsap.to(glow, { opacity: 1, scale: 1, duration: 2, ease: 'power3.out' });
-                        }
-                    }
+                        if (glow) gsap.to(glow, { opacity: 1, scale: 1, duration: 1.6, ease: 'power3.out' });
+                    },
                 });
             });
             
-            // ───────────────────────── HERO MOCKUP GSAP ─────────────────────────
+            // ───────────────────────── HERO MOCKUP ─────────────────────────
+            // El "settle" del mockup del hero (perspectiva → plano con el scroll) lo
+            // maneja PageAnims.astro, idéntico al index. Aquí solo viven las
+            // micro-historias que se auto-reproducen DENTRO del mockup (motion graphics):
+            // cursor que negocia el precio, aprobación, timeline, timbrado, crédito.
             const wrap = document.querySelector('.pp-mockup-wrap');
             if (wrap) {
-                // Parallax 3D settle + EXPLODED VIEW on scroll (Nivel Dios)
-                gsap.set('.pp-mockup', { transformPerspective: 1600, transformStyle: 'preserve-3d', transformOrigin: 'center center' });
-                
-                // Set initial exploded state (floating layers)
-                const floatingElements = wrap.querySelectorAll('.mk-public-card, .mk-window, .mk-toast, .mk-badge, .mk-approve, .mk-cfdi-front, .mk-tl');
-                gsap.set(floatingElements, { z: 80, rotationX: 10, rotationY: -10, opacity: 0 });
-                gsap.set('.pp-mockup', { rotationX: 25, rotationY: -15, scale: 0.9 });
-                
-                // Re-assemble (un-explode) on scroll scrub
-                const assembleTl = gsap.timeline({
-                    scrollTrigger: { trigger: wrap, start: 'top 95%', end: 'top 30%', scrub: 1 }
-                });
-                
-                assembleTl.to('.pp-mockup', { rotationX: 0, rotationY: 0, scale: 1, ease: 'power2.out' }, 0);
-                assembleTl.to(floatingElements, { z: 0, rotationX: 0, rotationY: 0, opacity: 1, stagger: 0.05, ease: 'back.out(1.2)' }, 0);
-                
-                // Particle emitter on mousemove over wrap
-                wrap.addEventListener('mousemove', (e: Event) => {
-                    const evt = e as MouseEvent;
-                    const dot = document.createElement('div');
-                    dot.className = 'mk-particle';
-                    dot.style.left = evt.clientX + 'px';
-                    dot.style.top = evt.clientY + 'px';
-                    document.body.appendChild(dot);
-                    gsap.to(dot, { y: -50, x: (Math.random()-0.5)*50, opacity: 0, scale: 0, duration: 1+Math.random(), onComplete: () => dot.remove() });
-                });
-
                 // Editor Animation
                 const editorTarget = document.getElementById('editorTargetRow');
                 if (editorTarget) {
@@ -961,6 +993,24 @@ const faqSchema = {
                         scrollTrigger: { trigger: '.mk-cli', start: 'top 80%', once: true }
                     });
                 }
+
+                // Cobranza IA Animation (agente que negocia un plan de pagos en cuotas)
+                const arThread = document.getElementById('arThread');
+                if (arThread) {
+                    const bubbles = arThread.querySelectorAll('.mk-ar-bubble');
+                    const plan = document.getElementById('arPlan');
+                    const cuotas = plan ? plan.querySelectorAll('.mk-ar-cuota') : [];
+                    const approve = plan ? plan.querySelector('.mk-ar-approve') : null;
+                    gsap.set(bubbles, { opacity: 0, y: 12 });
+                    gsap.set(cuotas, { opacity: 0, y: 8 });
+                    const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.6, delay: 0.5 });
+                    tl.set(bubbles, { opacity: 0, y: 12 })
+                      .set(cuotas, { opacity: 0, y: 8 });
+                    bubbles.forEach((b, i) => tl.to(b, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, i === 0 ? '>' : '+=0.85'));
+                    tl.to(cuotas, { opacity: 1, y: 0, duration: 0.45, stagger: 0.14, ease: 'power2.out' }, '+=0.3');
+                    if (approve) tl.fromTo(approve, { boxShadow: '0 0 0 0 rgba(52,211,153,0)' }, { boxShadow: '0 0 0 5px rgba(52,211,153,0.2)', duration: 0.6, yoyo: true, repeat: 3, ease: 'sine.inOut' }, '+=0.2');
+                    tl.to([...bubbles, ...cuotas], { opacity: 0, duration: 0.5 }, '+=2.2');
+                }
             }
 
             // ───────────────────────── BLOCK MOCKUPS GSAP ─────────────────────────
@@ -988,21 +1038,6 @@ const faqSchema = {
                           .to(obj, { val: 168.50, duration: 0.8, onUpdate: () => price.textContent = `$${obj.val.toFixed(2)}` }, '-=0.3')
                           .to(cursor, { opacity: 0, y: '+=30', duration: 0.5 });
                     }
-                });
-                
-                // 3D Tilt Effect on mousemove (Nivel Dios)
-                bEditor0.addEventListener('mousemove', (e: Event) => {
-                    const evt = e as MouseEvent;
-                    const rect = bEditor0.getBoundingClientRect();
-                    const x = (evt.clientX - rect.left) / rect.width - 0.5;
-                    const y = (evt.clientY - rect.top) / rect.height - 0.5;
-                    gsap.to(bEditor0.querySelector('.bm-card'), {
-                        rotationY: x * 20, rotationX: -y * 20,
-                        transformPerspective: 1000, ease: 'power1.out', duration: 0.5
-                    });
-                });
-                bEditor0.addEventListener('mouseleave', () => {
-                    gsap.to(bEditor0.querySelector('.bm-card'), { rotationY: 0, rotationX: 0, ease: 'power3.out', duration: 0.8 });
                 });
             }
 
@@ -1093,21 +1128,24 @@ const faqSchema = {
                 });
             }
 
-            // Seguimiento M1 (Kanban Drag SCRUB)
+            // Seguimiento M1 (Kanban — auto-drag en loop, motion graphic)
             const bTrack1 = document.querySelector('.bm-track-m1');
             if (bTrack1) {
                 const card = bTrack1.querySelector('.bm-kanban-drag');
                 const drop = bTrack1.querySelector('.bm-kanban-drop');
-                
-                const tl = gsap.timeline({
-                    scrollTrigger: { trigger: bTrack1, start: 'top 95%', end: 'top 20%', scrub: 1 }
+                ScrollTrigger.create({
+                    trigger: bTrack1, start: 'top 80%', once: true,
+                    onEnter: () => {
+                        const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.8 });
+                        tl.set(card, { x: 0, y: 0, scale: 1, boxShadow: '0 2px 4px rgba(0,0,0,0.12)' })
+                          .set(drop, { opacity: 0 })
+                          .to(card, { scale: 1.04, boxShadow: '0 18px 36px rgba(0,0,0,0.45)', duration: 0.35, ease: 'power2.out' }, '+=0.5')
+                          .to(drop, { opacity: 1, duration: 0.3 }, '<')
+                          .to(card, { x: 120, y: 70, duration: 0.9, ease: 'power2.inOut' }, '+=0.15')
+                          .to(card, { scale: 1, boxShadow: '0 2px 4px rgba(0,0,0,0.12)', duration: 0.3, ease: 'power2.out' })
+                          .to(drop, { opacity: 0, duration: 0.3 }, '<');
+                    }
                 });
-                
-                tl.to(card, { rotation: 5, scale: 1.05, boxShadow: '0 20px 40px rgba(0,0,0,0.5)', duration: 0.1 })
-                  .to(drop, { opacity: 1, duration: 0.1 }, '<')
-                  .to(card, { x: 120, y: 70, duration: 0.8, ease: 'none' })
-                  .to(card, { rotation: 0, scale: 1, boxShadow: 'none', duration: 0.1 })
-                  .to(drop, { opacity: 0, duration: 0.1 }, '<');
             }
 
             // Seguimiento M2 (Search)
@@ -1238,6 +1276,51 @@ const faqSchema = {
                 
                 cols.forEach((c, i) => {
                     tl.to(c, { height: heights[i], duration: 1, ease: 'none' }, i * 0.1);
+                });
+            }
+
+            // Cobranza IA M0 (la negociación cierra: respuesta + "Plan aceptado")
+            const bAr0 = document.querySelector('.bm-ar-m0');
+            if (bAr0) {
+                const reply = bAr0.querySelector('.bm-ar-reply-hide');
+                const badge = bAr0.querySelector('.bm-ar-badge-hide');
+                ScrollTrigger.create({
+                    trigger: bAr0, start: 'top 85%',
+                    onEnter: () => {
+                        const tl = gsap.timeline({ repeat: -1, repeatDelay: 3 });
+                        tl.set(reply, { opacity: 0, y: 10 })
+                          .set(badge, { opacity: 0, scale: 0.6 })
+                          .to(reply, { opacity: 1, y: 0, duration: 0.5, ease: 'back.out(1.2)' }, '+=1')
+                          .to(badge, { opacity: 1, scale: 1, duration: 0.45, ease: 'back.out(1.5)' }, '+=0.3')
+                          .to(badge, { opacity: 0, duration: 0.4 }, '+=2');
+                    }
+                });
+            }
+
+            // Cobranza IA M1 (flujo de caja proyectado — barras suben al entrar)
+            const bAr1 = document.querySelector('.bm-ar-m1');
+            if (bAr1) {
+                const cols = bAr1.querySelectorAll('.bm-chart-col-fill');
+                const heights = ['45%', '65%', '80%', '95%', '70%'];
+                const tl = gsap.timeline({ scrollTrigger: { trigger: bAr1, start: 'top 90%', once: true } });
+                cols.forEach((c, i) => tl.to(c, { height: heights[i], duration: 0.6, ease: 'power2.out' }, i * 0.12));
+            }
+
+            // Cobranza IA M2 (supervisión — filas + cambio de estado en vivo)
+            const bAr2 = document.querySelector('.bm-ar-m2');
+            if (bAr2) {
+                const rows = bAr2.querySelectorAll('.bm-ar-row');
+                const status = bAr2.querySelector('.bm-ar-status');
+                ScrollTrigger.create({
+                    trigger: bAr2, start: 'top 85%', once: true,
+                    onEnter: () => {
+                        gsap.fromTo(rows, { opacity: 0, x: -10 }, { opacity: 1, x: 0, stagger: 0.14, duration: 0.5, ease: 'power2.out' });
+                        if (status) {
+                            gsap.timeline({ repeat: -1, repeatDelay: 3, delay: 1.6 })
+                                .to(status, { color: '#34d399', duration: 0.4, onStart: () => { status.textContent = 'Pagado'; } })
+                                .to(status, { color: '#fbbf24', duration: 0.4, onStart: () => { status.textContent = 'Negociando'; } }, '+=2.2');
+                        }
+                    }
                 });
             }
         }

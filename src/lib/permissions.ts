@@ -57,3 +57,27 @@ export const planTieneEquipo = (plan: string) => TEAM_PLANS.includes(plan);
 // tier de infraestructura.
 export const API_PLANS = ['starter', 'pro', 'scale', 'developer', 'business', 'negocio'];
 export const planTieneApi = (plan: string) => API_PLANS.includes(plan);
+
+// ── Límites por plan: API pública + webhooks (jun 2026) ──
+// Decisión de André: la API y los webhooks YA NO se bloquean por plan. TODOS los
+// planes (incluido free) los tienen, pero LIMITADOS por cantidad — free = prueba
+// real (muy poquito), de pago = progresivamente más. El CONSUMO de la API además
+// se mide por uso (Stripe Billing) de Pro en adelante.
+export const PLAN_LABELS: Record<string, string> = {
+    free: 'Gratis', starter: 'Starter', pro: 'Profesional', scale: 'Scale',
+    developer: 'Developer', business: 'Negocio', negocio: 'Negocio',
+};
+export const planLabel = (plan: string): string => PLAN_LABELS[plan] ?? 'Gratis';
+
+// Máximo de endpoints de webhook por plan.
+export const WEBHOOK_LIMITS: Record<string, number> = {
+    free: 1, starter: 3, pro: 10, scale: 25, developer: 100, business: 10, negocio: 10,
+};
+export const webhookLimit = (plan: string): number => WEBHOOK_LIMITS[plan] ?? WEBHOOK_LIMITS.free;
+
+// Máximo de API keys ACTIVAS (no revocadas) por plan. Las de prueba y en vivo
+// cuentan igual; el consumo se mide aparte.
+export const APIKEY_LIMITS: Record<string, number> = {
+    free: 2, starter: 5, pro: 20, scale: 50, developer: 200, business: 20, negocio: 20,
+};
+export const apiKeyLimit = (plan: string): number => APIKEY_LIMITS[plan] ?? APIKEY_LIMITS.free;

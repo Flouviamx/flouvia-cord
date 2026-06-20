@@ -10,6 +10,9 @@ export interface FiscalDocumentRequest {
     total: number;
     currency: string;
   };
+  // Llave LIVE de la organización Facturapi de ESTA org (multi-tenant): si está
+  // presente, el CFDI se timbra bajo el RFC del cliente; si no, cae a la global.
+  providerApiKey?: string;
 }
 
 export interface FiscalDocumentResponse {

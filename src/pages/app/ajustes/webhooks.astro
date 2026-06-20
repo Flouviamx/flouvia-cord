@@ -4,27 +4,19 @@
 // LOG DE ENTREGAS + replay + envío de prueba. Separado de la API (jun 2026).
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg, getWebhooks } from '../../../lib/queries';
-import { planTieneApi } from '../../../lib/permissions';
+import { webhookLimit, planLabel } from '../../../lib/permissions';
 import { WEBHOOK_EVENTS } from '../../../lib/webhooks';
 import '../../../styles/developers.css';
 const ORG = await getOrg();
-const tienePlan = planTieneApi(ORG.plan_raw);
 const WEBHOOKS = await getWebhooks();
+const LIMITE = webhookLimit(ORG.plan_raw);
+const USADOS = WEBHOOKS.length;
+const AT_LIMIT = USADOS >= LIMITE;
 ---
 
 <SettingsShell title="Webhooks — Ajustes" tab="webhooks" perm="ajustes"
     intro="Recibe un POST firmado en tu sistema cada vez que algo pasa con una cotización (enviada, vista, aprobada, pagada, facturada). Despliega un endpoint para ver su log de entregas y reintentar.">
 <div class="dev-wrapper">
-
-    {!tienePlan && (
-        <div class="dev-upsell">
-            <div>
-                <span class="dev-upsell-eyebrow">Plan Negocio</span>
-                <p>Los <b>webhooks</b> salientes requieren el plan Negocio. Sube de plan para recibir eventos en tiempo real en tu propio sistema.</p>
-            </div>
-            <a href="/app/ajustes/plan" class="dev-upsell-cta">Ver planes</a>
-        </div>
-    )}
 
     <div class="dev-card">
         <div class="dev-card-header">
@@ -32,8 +24,14 @@ const WEBHOOKS = await getWebhooks();
                 <h3 class="dev-card-title">Endpoints de webhook</h3>
                 <p class="dev-card-sub">Cada entrega lleva la firma <code>X-Cord-Signature: sha256=&lt;hmac&gt;</code>. Verifícala con el secret del endpoint.</p>
             </div>
-            <button class="api-btn-solid" id="whNew" disabled={!tienePlan}>+ Agregar endpoint</button>
+            <div class="dev-head-actions">
+                <span class="dev-limit">Plan {planLabel(ORG.plan_raw)}: <b>{USADOS}/{LIMITE}</b></span>
+                <button class="api-btn-solid" id="whNew" disabled={AT_LIMIT} title={AT_LIMIT ? `Tu plan permite ${LIMITE} webhook(s). Sube de plan para más.` : ''}>+ Agregar endpoint</button>
+            </div>
         </div>
+        {AT_LIMIT && (
+            <p class="dev-limit-note">Llegaste al límite de tu plan ({LIMITE} webhook{LIMITE === 1 ? '' : 's'}). <a href="/app/ajustes/plan">Sube de plan</a> para agregar más, o elimina uno existente.</p>
+        )}
 
         <div class="wh-list" id="whList">
             {WEBHOOKS.length === 0 && (

@@ -63,11 +63,13 @@ const { slug, index } = Astro.props;
     )}
     {slug === 'manufactura' && index === 1 && (
       <div class="sbm-manu-m1 sbm-card">
-        <div class="bm-head">Lote MOQ</div>
-        <div class="sbm-flip-card">
-            <div class="sbm-flip-front">1 pza: $120.00</div>
-            <div class="sbm-flip-back">500 pza: $86.50</div>
+        <div class="bm-head">Precio por volumen</div>
+        <div class="bm-row sbm-vol-row"><span>1 pza</span><b class="editorial">$120.00</b></div>
+        <div class="bm-row sbm-vol-row sbm-vol-best">
+          <span>500 pza <i class="sbm-vol-tag">MOQ</i></span>
+          <b class="editorial bm-green">$86.50</b>
         </div>
+        <div class="sbm-vol-foot">−28% al alcanzar el lote mínimo</div>
       </div>
     )}
     {slug === 'manufactura' && index === 2 && (
@@ -313,22 +315,20 @@ const { slug, index } = Astro.props;
     font-variant-numeric: tabular-nums;
   }
 
-  /* ═══════ FLIP CARD ═══════ */
-  .sbm-flip-card { perspective: 1000px; height: 64px; position: relative; }
-  .sbm-flip-front, .sbm-flip-back {
-    position: absolute; width: 100%; height: 100%;
-    backface-visibility: hidden;
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(255,255,255,0.04);
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.08);
-    font-weight: bold; font-size: 0.78rem;
+  /* ═══════ PRECIO POR VOLUMEN ═══════ */
+  .sbm-vol-row { display: flex; justify-content: space-between; align-items: center; }
+  .sbm-vol-best {
+    background: rgba(59,130,246,0.1);
+    border: 1px solid rgba(59,130,246,0.22);
   }
-  .sbm-flip-back {
-    transform: rotateX(180deg);
-    background: rgba(59,130,246,0.12);
-    border-color: rgba(59,130,246,0.25);
-    color: #93c5fd;
+  .sbm-vol-tag {
+    font-style: normal; font-size: 0.5rem; font-weight: 800; letter-spacing: 0.4px;
+    color: #93c5fd; background: rgba(59,130,246,0.16); border: 1px solid rgba(59,130,246,0.3);
+    padding: 1px 5px; border-radius: 5px; margin-left: 6px; vertical-align: 1px;
+  }
+  .sbm-vol-foot {
+    margin-top: 9px; text-align: center;
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.3px; color: #34d399;
   }
 
   /* ═══════ SVG PATH (FX Chart) ═══════ */

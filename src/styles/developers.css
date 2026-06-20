@@ -21,6 +21,11 @@
 .dev-seg-btn.active { background: var(--surface); color: var(--color-blue-deep); box-shadow: 0 1px 3px rgba(10,25,47,0.12); }
 .dev-seg-btn.locked::after { content: ' 🔒'; font-size: 0.7em; }
 .dev-empty { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; padding: 0.6rem 0; }
+/* Indicador de límite por plan (X/Y) + nota al llegar al tope */
+.dev-limit { font-size: 0.76rem; color: var(--color-text-muted); white-space: nowrap; }
+.dev-limit b { color: var(--color-text); font-variant-numeric: tabular-nums; }
+.dev-limit-note { font-size: 0.8rem; color: #b45309; background: rgba(245,158,11,0.1); border-radius: 9px; padding: 0.7rem 0.9rem; margin: 0 0 1rem; line-height: 1.5; }
+.dev-limit-note a { color: var(--color-blue-deep); font-weight: 600; }
 
 .dev-upsell { display: flex; align-items: center; gap: 1.2rem; justify-content: space-between; background: linear-gradient(135deg, #112240, #0a192f); border-radius: 16px; padding: 1.2rem 1.4rem; margin-bottom: 2rem; }
 .dev-upsell-eyebrow { display: block; font-size: 0.6rem; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: #7fd1c1; margin-bottom: 0.4rem; }

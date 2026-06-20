@@ -6,28 +6,20 @@
 // la antigua página "API y webhooks" en API · Webhooks · MCP).
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getApiKeys, getOrg, getApiActivity } from '../../../lib/queries';
-import { planTieneApi } from '../../../lib/permissions';
+import { apiKeyLimit, planLabel } from '../../../lib/permissions';
 import '../../../styles/developers.css';
 const ORG = await getOrg();
-const tienePlan = planTieneApi(ORG.plan_raw);
 
 const KEYS = await getApiKeys();
 const ACTIVITY = await getApiActivity();
+const LIMITE = apiKeyLimit(ORG.plan_raw);
+const ACTIVAS = KEYS.filter((k) => !k.revocada).length;
+const AT_LIMIT = ACTIVAS >= LIMITE;
 ---
 
 <SettingsShell title="API — Ajustes" tab="api" perm="ajustes"
     intro="Conecta Cord con tu propio sistema (ERP, CRM, scripts): lee y crea cotizaciones, clientes y productos por API. Genera una clave abajo y consulta los endpoints disponibles.">
 <div class="dev-wrapper">
-
-    {!tienePlan && (
-        <div class="dev-upsell">
-            <div>
-                <span class="dev-upsell-eyebrow">Plan Negocio</span>
-                <p>Las claves <b>en vivo</b> requieren el plan Negocio. Las claves de <b>prueba</b> (sk_test_) son gratis — intégrate hoy y activa producción cuando subas de plan.</p>
-            </div>
-            <a href="/app/ajustes/plan" class="dev-upsell-cta">Ver planes</a>
-        </div>
-    )}
 
     <!-- ── CLAVES DE API (tabla estilo Stripe) ── -->
     <div class="dev-card">
@@ -39,11 +31,15 @@ const ACTIVITY = await getApiActivity();
             <div class="dev-head-actions">
                 <div class="dev-seg" role="tablist" aria-label="Modo de la clave">
                     <button class="dev-seg-btn active" data-mode="test">Prueba</button>
-                    <button class={`dev-seg-btn ${tienePlan ? '' : 'locked'}`} data-mode="live">Vivo</button>
+                    <button class="dev-seg-btn" data-mode="live">Vivo</button>
                 </div>
-                <button class="api-btn-solid" id="kNew">+ Generar clave</button>
+                <span class="dev-limit">Plan {planLabel(ORG.plan_raw)}: <b>{ACTIVAS}/{LIMITE}</b></span>
+                <button class="api-btn-solid" id="kNew" disabled={AT_LIMIT} title={AT_LIMIT ? `Tu plan permite ${LIMITE} claves activas. Revoca una o sube de plan.` : ''}>+ Generar clave</button>
             </div>
         </div>
+        {AT_LIMIT && (
+            <p class="dev-limit-note">Llegaste al límite de claves de tu plan ({LIMITE} activas). <a href="/app/ajustes/plan">Sube de plan</a> o revoca una clave existente.</p>
+        )}
 
         <div class="key-table" id="keyList">
             <div class="key-thead">

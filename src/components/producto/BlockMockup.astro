@@ -301,6 +301,50 @@ const { slug, index } = Astro.props;
       </div>
     </div>
   )}
+
+  {/* ────────────────── COBRANZA CON IA ────────────────── */}
+  {slug === 'cobranza-ia' && index === 0 && (
+    <div class="bm-stage bm-ar-m0">
+      <div class="bm-floating bm-float-top-right bm-ar-badge-hide">
+        <div class="bm-pill"><i class="bm-dot bm-dot-green"></i><span>Plan aceptado</span></div>
+      </div>
+      <div class="bm-card bm-chat">
+        <div class="bm-msg bm-msg-in"><span>El agente escribió a Raúl por correo</span></div>
+        <div class="bm-msg bm-msg-out"><span>Propuesta: 3 pagos de $137,433 · sin recargos</span></div>
+        <div class="bm-msg bm-msg-in bm-ar-reply-hide"><span>De acuerdo, empiezo el 15 de julio</span></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'cobranza-ia' && index === 1 && (
+    <div class="bm-stage bm-ar-m1">
+      <div class="bm-floating bm-float-top-left">
+        <div class="bm-pill bm-pill-brand"><span>AI CFO Insight</span></div>
+      </div>
+      <div class="bm-card">
+        <div class="bm-head"><span>Flujo esperado · 90 días</span><span class="bm-green">IA</span></div>
+        <div class="bm-chart">
+          <div class="bm-chart-col"><div class="bm-chart-col-fill"></div></div>
+          <div class="bm-chart-col"><div class="bm-chart-col-fill"></div></div>
+          <div class="bm-chart-col"><div class="bm-chart-col-fill"></div></div>
+          <div class="bm-chart-col bm-chart-active"><div class="bm-chart-col-fill"></div></div>
+          <div class="bm-chart-col"><div class="bm-chart-col-fill"></div></div>
+        </div>
+        <div class="bm-row"><span>Ingreso proyectado</span><b>$1.84M</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'cobranza-ia' && index === 2 && (
+    <div class="bm-stage bm-ar-m2">
+      <div class="bm-card">
+        <div class="bm-head"><span>Conversaciones de cobranza</span></div>
+        <div class="bm-row bm-ar-row"><span>Distribuidora El Zarco</span><b class="bm-ar-status bm-orange">Negociando</b></div>
+        <div class="bm-row bm-ar-row"><span>Constructora GAMA</span><b class="bm-green">Plan activo</b></div>
+        <div class="bm-row bm-ar-row"><span>Grupo Ferrex</span><b>Esperando tu OK</b></div>
+      </div>
+    </div>
+  )}
 </div>
 
 <style>

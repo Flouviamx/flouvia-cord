@@ -73,6 +73,35 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
 
 ## Estado actual (jun 2026)
 
+✅ **Sidebar themed + Developers separado + onboarding ampliado (jun 2026)** — iteración de UI a
+   petición de André:
+   • **Sidebar = espejo de la topbar (vidrio BLANCO en claro, navy en oscuro)** — antes era
+     siempre navy. Se introdujo un set de variables **`--sb-*`** en `:root` y su contraparte en
+     `html[data-theme="dark"]` (`AppLayout.astro`); TODA la sidebar (nav, group-labels, badges,
+     indicador, footer, toggle, acciones móviles, pins inyectados por JS) y el `CustomOrgSwitcher`
+     leen esas variables → cambia de tema sin duplicar reglas. El **logo del footer** ahora son dos
+     `<img>` (`.sb-foot-logo-navy`/`.sb-foot-logo-white`) que se intercambian por tema. Los
+     dropdowns de cuenta y "Crear" usan **frosted casi-opaco** vía `--sb-menu-*` (mismo look del
+     menú "Crear" de la topbar). Patrón a seguir para cualquier color nuevo en la sidebar: usar
+     `var(--sb-*)`, NO `rgba(255,255,255,…)` hardcodeado.
+   • **Colapsado pulido** — íconos 46px cuadrados centrados (ícono 21px), rail 74px sin huecos,
+     badge = punto con aro `var(--surface)`, avatar de cuenta alineado con la columna de íconos.
+   • **El contenido gana ancho al colapsar** — variable **`--content-max`** (1240px → **1440px**
+     en `.sb-collapsed`, con transición) aplicada a `.app-content`/`.ph-inner`/`.ph-tabs-row`. Ya
+     no solo se recorre.
+   • **Developers SEPARADO en pestañas** — la antigua página combinada "API y webhooks" se partió
+     (`settings.ts`): **API · Webhooks · MCP · Integraciones · Agentes IA · Cotizador embebible**.
+     CSS compartido extraído a **`src/styles/developers.css`** (importado por las 3 páginas nuevas;
+     antes vivía scopeado en `api.astro`). `api.astro` rediseñada **estilo Stripe** (tabla "Claves
+     de API": Nombre · Token · Permisos · Último uso · Creación — clases `.key-table/.key-trow`);
+     **`webhooks.astro`** (log de entregas + replay + prueba) y **`mcp.astro`** (connect + tools +
+     probador) son páginas nuevas. Los 4 `init*()` JS originales se repartieron por página.
+   • **Onboarding 5 → 9 pasos + RE-MONTADO** — `getSetupProgress()` ahora enseña el flujo completo:
+     marca → fiscal → catálogo → clientes → crear → **enviar 1ª** → **PDF/portal** → **cobrar y
+     facturar** → **invitar equipo** (cada uno con detección real en BD). ⚠️ El widget estaba
+     **huérfano** (sus vars `setup`/`pillDash` y su CSS `.onb-pill` seguían en `AppLayout` pero el
+     componente y la píldora ya no se renderizaban): se RE-MONTÓ `<OnboardingWidget>` + la píldora
+     en `.tb-right`, ambos gated por `!setup.complete`.
 ✅ **App shell PREMIUM "liquid glass" (jun 2026)** — rediseño del `AppLayout.astro` para sentirse Apple/Linear/Stripe:
    • **Sidebar liquid-glass** — receta del navbar (rim lights en capas + sheen `::before`) e
      **indicador deslizante tipo iOS** (`.sb-indicator`): píldora de vidrio que sigue al hover
@@ -102,7 +131,9 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
    `--surface`/`--surface-2` (paneles/modales migrados de `#fff` → `var(--surface)`), y mueve
    `--color-blue-deep` a un azul vivo (era invisible en oscuro; sirve de acento). Toggle sol/luna
    en la topbar + **anti-flash** vía `<script is:inline>` en `<head>` + persistencia en
-   `localStorage cord.theme`. El sidebar y el org switcher ya eran navy → no cambian.
+   `localStorage cord.theme`. ⚠️ **Actualizado (jun 2026):** el sidebar y el org switcher YA NO son
+   navy fijo — ahora son blancos en claro / navy en oscuro vía las variables `--sb-*` (ver la
+   entrada "Sidebar themed" arriba).
    ⚠️ **Pendiente** (follow-up): migrar los `#fff` hardcodeados de Ajustes (`/app/ajustes/*`),
    editores (`cotizaciones/nueva`/`editar`) y checkout; el resto del flujo (dashboard,
    cotizaciones, clientes, productos, analítica, CFO, cobranza) ya es dark-safe.
@@ -851,8 +882,10 @@ helpers de dinero (`money`, `quoteTotal`…) y `findQuote`/`findQuoteByToken`.
 La org demo es "Materiales del Valle" (construcción) — coherente con el mockup
 del hero (COT-0148 → El Zarco). Al conectar Neon: reemplazar imports por queries.
 
-**AppLayout (`src/layouts/AppLayout.astro`):** sidebar navy sticky (logo blanco,
-nav con íconos, org-switcher arriba, "Fijados" antes de los grupos nav, footer con logo).
+**AppLayout (`src/layouts/AppLayout.astro`):** sidebar de vidrio sticky **temada con `--sb-*`**
+(blanca en claro / navy en oscuro; logo navy↔blanco según tema, nav con íconos, org-switcher
+arriba, "Fijados" antes de los grupos nav, footer con logo). El `<OnboardingWidget>` y su píldora
+(`#onbPill` en `.tb-right`) se montan aquí, gated por `!setup.complete`.
 Props: `title`, `page`, `heading?`, `crumbs?` (breadcrumbs). Slots: `topbar-actions`
 (botones del page-header, derecha), `page-sub` (subtítulo opcional bajo el título),
 `page-tabs` (tabs de sección, bajo el título — usar clase `.ph-tab`), slot default (contenido).

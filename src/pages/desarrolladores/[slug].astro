@@ -174,20 +174,11 @@ const otra = DEV_PAGES.find((p) => p.slug !== page.slug)!;
             );
         }
 
-        // ───────────────────────── HERO MOCKUP GSAP ─────────────────────────
-        const wrap = document.querySelector('.pp-mockup-wrap');
-        if (wrap) {
-            gsap.set('.pp-mockup', { transformPerspective: 1600, transformStyle: 'preserve-3d', transformOrigin: 'center center' });
-            
-            // Efecto inicial
-            gsap.set('.pp-mockup', { rotationX: 25, rotationY: -15, scale: 0.9 });
-            
-            const assembleTl = gsap.timeline({ scrollTrigger: { trigger: wrap, start: 'top 95%', end: 'top 30%', scrub: 1 } });
-            assembleTl.to('.pp-mockup', { rotationX: 0, rotationY: 0, scale: 1, ease: 'power2.out' });
-        }
+        // ───────────────────────── HERO MOCKUP ─────────────────────────
+        // El "settle" del mockup del hero lo maneja PageAnims.astro, idéntico al index.
 
-        // ───────────────────────── BLOCK MOCKUPS GSAP (SCRUB) ─────────────────────────
-        
+        // ───────────────────────── BLOCK MOCKUPS GSAP ─────────────────────────
+
         // API M0
         const apiM0 = document.querySelector('.dbm-api-m0');
         if (apiM0) {
@@ -195,21 +186,11 @@ const otra = DEV_PAGES.find((p) => p.slug !== page.slug)!;
             gsap.to(dot, { left: '100%', ease: 'none', scrollTrigger: { trigger: apiM0, start: 'top 90%', end: 'top 20%', scrub: 1 } });
         }
         
-        // API M1
+        // API M1 — cursor parpadeante en la terminal (sin tilt con el mouse)
         const apiM1 = document.querySelector('.dbm-api-m1');
         if (apiM1) {
             const cursor = apiM1.querySelector('.dbm-cursor');
             gsap.to(cursor, { opacity: 0, duration: 0.4, repeat: -1, yoyo: true });
-            apiM1.addEventListener('mousemove', (e: Event) => {
-                const evt = e as MouseEvent;
-                const rect = apiM1.getBoundingClientRect();
-                gsap.to(apiM1.querySelector('.dbm-card') || apiM1.querySelector('.dbm-terminal'), { 
-                    rotationY: ((evt.clientX - rect.left) / rect.width - 0.5)*20, 
-                    rotationX: -((evt.clientY - rect.top) / rect.height - 0.5)*20, 
-                    transformPerspective: 1000, ease: 'power1.out', duration: 0.5 
-                });
-            });
-            apiM1.addEventListener('mouseleave', () => { gsap.to(apiM1.querySelector('.dbm-terminal'), { rotationY: 0, rotationX: 0, ease: 'power3.out', duration: 0.8 }); });
         }
 
         // API M2

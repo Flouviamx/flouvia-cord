@@ -8,7 +8,7 @@ import type { APIRoute } from 'astro';
 import { createHash, randomBytes } from 'node:crypto';
 import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
 import { requirePerm } from '../../lib/queries';
-import { planTieneApi } from '../../lib/permissions';
+import { apiKeyLimit, planLabel } from '../../lib/permissions';
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
@@ -25,13 +25,16 @@ export const POST: APIRoute = async ({ request }) => {
 
     const orgId = await getActiveOrgId();
 
-    // Gating por plan: la API pública en VIVO es feature del plan Negocio. Las
-    // llaves de PRUEBA (sk_test_) son libres para que cualquiera integre primero.
-    if (mode === 'live') {
-        const [{ plan }] = await sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`;
-        if (!planTieneApi(plan as string)) {
-            return json({ error: 'Las llaves en vivo requieren el plan Negocio. Usa una llave de prueba (sk_test_) o actualiza tu plan.' }, 403);
-        }
+    // Límite por plan de claves ACTIVAS (no revocadas). Todos los planes (incluido
+    // free) pueden generar claves de prueba Y en vivo, pero la cantidad está
+    // limitada — free = prueba real (poquito); el consumo se mide por uso aparte.
+    const [{ plan }] = await sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`;
+    let activas = 0;
+    try { const [c] = await sql`select count(*)::int as n from api_keys where org_id = ${orgId} and revoked_at is null`; activas = (c?.n as number) ?? 0; }
+    catch { return json({ error: 'No se pudo crear la llave. ¿Corriste la migración (npm run db:migrate)?' }, 500); }
+    const limite = apiKeyLimit(plan as string);
+    if (activas >= limite) {
+        return json({ error: `Tu plan ${planLabel(plan as string)} permite ${limite} claves activas. Revoca una o sube de plan.` }, 403);
     }
 
     // sk_(live|test)_ + 48 hex. prefix visible = sk_xxxx_ + 8, last4 = últimos 4.

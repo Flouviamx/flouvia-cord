@@ -26,6 +26,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
   const [head] = await sql`
     select
       o.country_code, o.iva_pct, o.cp_fiscal as org_cp, o.uso_cfdi as org_uso,
+      o.facturapi_live_key,
       c.subtotal, c.iva, c.total, c.fiscal_currency,
       cl.empresa as cliente_empresa, cl.rfc as cliente_rfc,
       cl.email as cliente_email, cl.contacto as cliente_contacto
@@ -67,6 +68,8 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
       orgId,
       quoteId: cotizacionId,
       countryCode: country,
+      // Si la org subió su CSD, timbra bajo SU RFC con su llave LIVE de Facturapi.
+      providerApiKey: (head.facturapi_live_key as string) || undefined,
       customerData: {
         legal_name: head.cliente_empresa,
         tax_id: head.cliente_rfc,

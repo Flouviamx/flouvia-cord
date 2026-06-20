@@ -345,6 +345,68 @@ export const FEATURES: Feature[] = [
         ],
         cta: { titulo: 'Conoce a tus clientes por sus números.', sub: 'Empieza gratis y carga tu directorio en minutos.' },
     },
+    {
+        slug: 'cobranza-ia',
+        nav: 'Cobranza con IA',
+        eyebrow: 'COBRANZA AUTÓNOMA CON IA',
+        titulo: 'Tu cobranza trabaja sola,<br/>hasta de noche.',
+        sub: 'Un agente de inteligencia artificial da seguimiento a cada factura vencida por ti: le escribe al cliente, negocia un plan de pagos en cuotas y te avisa solo cuando necesita tu visto bueno. Tú apruebas, la IA persigue — sin que se te enfríe la cartera.',
+        metaTitle: 'Cobranza automática con IA para empresas B2B en México — Cord by Flouvia',
+        metaDescription: 'El agente de cobranza con IA de Cord da seguimiento a las facturas vencidas, negocia planes de pago de hasta 3 cuotas mensuales y proyecta tu flujo de caja a 90 días. Tú apruebas cada acuerdo; queda todo en bitácora. Para negocios B2B en México.',
+        plan: 'Plan Scale en adelante',
+        stats: [
+            { valor: '24/7', label: 'el agente da seguimiento sin descanso ni olvidos' },
+            { valor: '3', countup: 3, label: 'cuotas mensuales que puede negociar por sí solo' },
+            { valor: '90', countup: 90, suffix: ' días', label: 'de flujo de caja proyectado con IA' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'AGENTE AUTÓNOMO',
+                titulo: 'No es un recordatorio.<br/>Es un cobrador que negocia.',
+                copy: 'Activas la cobranza autónoma por cliente y el agente toma la cartera vencida: contacta por correo, lee la respuesta y propone un plan de pagos de hasta tres cuotas mensuales. Si el cliente acepta dentro de los límites que tú definiste, cierra el acuerdo; si pide algo fuera de rango, te lo escala. Trabaja de noche y en fin de semana — la cartera no se enfría esperando a que alguien marque.',
+                bullets: [
+                    'Contacta por correo y entiende la respuesta del cliente',
+                    'Negocia hasta 3 cuotas mensuales dentro de tus reglas',
+                    'Escala a un humano cuando se sale de los límites',
+                ],
+            },
+            {
+                eyebrow: 'FLUJO DE CAJA PREDICTIVO',
+                titulo: 'Sabes cuánto vas a cobrar<br/>antes de cobrarlo.',
+                copy: 'Cord cruza el retraso de pago promedio real de cada cliente con tu pipeline ponderado para proyectar tus ingresos semana a semana, hasta 90 días. En vez de adivinar, ves el flujo esperado con escenarios de probabilidad y un "AI CFO Insight" que te dice dónde está el riesgo y qué cobrar primero.',
+                bullets: [
+                    'Proyección a 90 días basada en tu historial real de pago',
+                    'Escenarios de probabilidad, no una sola cifra optimista',
+                    'Detecta concentración de riesgo y cartera que se va a atrasar',
+                ],
+            },
+            {
+                eyebrow: 'TÚ MANDAS',
+                titulo: 'La IA propone.<br/>Tú apruebas.',
+                copy: 'La cobranza autónoma es opt-in y la controlas tú: enciendes el agente por cliente, defines hasta dónde puede negociar y revisas cada plan desde un tablero de supervisión. Todo lo que el agente hace queda en la bitácora de auditoría — cada correo, cada acuerdo, cada cuota. Nunca es una caja negra.',
+                bullets: [
+                    'Opt-in por cliente: tú decides a quién persigue la IA',
+                    'Tablero de supervisión con cada conversación en vivo',
+                    'Cada acción registrada en el audit log inmutable',
+                ],
+            },
+        ],
+        faqs: [
+            {
+                q: '¿Cómo cobra de forma automática el agente de IA de Cord?',
+                a: 'El agente de cobranza con IA de Cord da seguimiento a las facturas vencidas por su cuenta: contacta al cliente por correo, interpreta la respuesta y propone un plan de pagos de hasta tres cuotas mensuales. Si el cliente acepta dentro de los límites que el negocio configuró, el acuerdo se registra; si se sale de esos límites, el agente lo escala a una persona. Funciona las 24 horas y queda todo en la bitácora de auditoría.',
+            },
+            {
+                q: '¿La cobranza con IA es segura? ¿Quién aprueba los acuerdos?',
+                a: 'Sí. La cobranza autónoma es opt-in y se activa cliente por cliente. El negocio define hasta cuántas cuotas y qué condiciones puede negociar el agente, y revisa cada plan desde un tablero de supervisión. Toda acción del agente —correos, acuerdos, cuotas— queda registrada en el audit log inmutable de Cord, así que nunca es una caja negra.',
+            },
+            {
+                q: '¿Qué es la proyección de flujo de caja con IA de Cord?',
+                a: 'Cord estima tus ingresos hasta 90 días hacia adelante cruzando el retraso de pago promedio real de cada cliente con el valor ponderado de tu pipeline. En lugar de una sola cifra, muestra escenarios de probabilidad y un panel "AI CFO Insight" que señala la concentración de riesgo y qué cartera conviene cobrar primero. Disponible en el plan Scale en adelante.',
+            },
+        ],
+        cta: { titulo: 'Deja que la IA persiga tu cartera.', sub: 'La cobranza autónoma vive en el plan Scale. Tú apruebas, ella cobra.' },
+    },
 ];
 
 export const findFeature = (slug: string) => FEATURES.find(f => f.slug === slug);

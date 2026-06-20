@@ -12,7 +12,7 @@ import type { APIRoute } from 'astro';
 import { randomBytes } from 'node:crypto';
 import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
 import { requirePerm, getWebhookDeliveries } from '../../lib/queries';
-import { planTieneApi } from '../../lib/permissions';
+import { webhookLimit, planLabel } from '../../lib/permissions';
 import { WEBHOOK_EVENT_IDS, sendTestEvent, redeliver } from '../../lib/webhooks';
 
 export const GET: APIRoute = async ({ request, url }) => {
@@ -62,9 +62,14 @@ export const POST: APIRoute = async ({ request }) => {
     if (!validUrl(url)) return json({ error: 'La URL no es válida (debe empezar con https://)' }, 400);
 
     const orgId = await getActiveOrgId();
+    // Límite por plan (free también tiene, pero poquito). Contamos los existentes.
     const [{ plan }] = await sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`;
-    if (!planTieneApi(plan as string)) {
-        return json({ error: 'Los webhooks requieren el plan Negocio.' }, 403);
+    let usados = 0;
+    try { const [c] = await sql`select count(*)::int as n from webhooks where org_id = ${orgId}`; usados = (c?.n as number) ?? 0; }
+    catch { return json({ error: 'No se pudo crear. ¿Corriste la migración (npm run db:migrate)?' }, 500); }
+    const limite = webhookLimit(plan as string);
+    if (usados >= limite) {
+        return json({ error: `Tu plan ${planLabel(plan as string)} permite ${limite} webhook${limite === 1 ? '' : 's'}. Elimina uno o sube de plan para agregar más.` }, 403);
     }
 
     const eventos = cleanEventos(body.eventos);

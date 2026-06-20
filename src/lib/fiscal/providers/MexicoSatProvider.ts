@@ -11,8 +11,8 @@ import type { FiscalProvider, FiscalDocumentRequest, FiscalDocumentResponse } fr
 const FACTURAPI_KEY = process.env.FACTURAPI_API_KEY || process.env.FACTURAPI_KEY || '';
 const FACTURAPI_BASE = (process.env.FACTURAPI_URL || 'https://www.facturapi.io/v2').replace(/\/$/, '');
 
-function authHeader(): string {
-  return 'Basic ' + Buffer.from(`${FACTURAPI_KEY}:`).toString('base64');
+function authHeader(key: string): string {
+  return 'Basic ' + Buffer.from(`${key}:`).toString('base64');
 }
 
 export class MexicoSatProvider implements FiscalProvider {
@@ -21,13 +21,17 @@ export class MexicoSatProvider implements FiscalProvider {
   }
 
   async issueDocument(request: FiscalDocumentRequest): Promise<FiscalDocumentResponse> {
-    // Sin Facturapi configurado → timbre simulado, honesto (no finge un UUID real).
-    if (!FACTURAPI_KEY) {
+    // Multi-tenant: si la org subió su CSD, usamos SU llave LIVE (timbra bajo su
+    // RFC). Si no, caemos a la llave global de la cuenta (modo una-sola-cuenta).
+    const apiKey = request.providerApiKey || FACTURAPI_KEY;
+
+    // Sin ninguna llave → timbre simulado, honesto (no finge un UUID real).
+    if (!apiKey) {
       return {
         success: true,
         documentId: 'sim_mx_' + request.quoteId,
         fiscalId: undefined,
-        rawProviderData: { simulado: true, motivo: 'Facturapi no configurado (falta FACTURAPI_KEY)' },
+        rawProviderData: { simulado: true, motivo: 'Facturapi no configurado (falta CSD del cliente y FACTURAPI_API_KEY global)' },
       };
     }
 
@@ -71,7 +75,7 @@ export class MexicoSatProvider implements FiscalProvider {
     try {
       const res = await fetch(`${FACTURAPI_BASE}/invoices`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: authHeader() },
+        headers: { 'Content-Type': 'application/json', Authorization: authHeader(apiKey) },
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(25000),
       });
@@ -99,12 +103,13 @@ export class MexicoSatProvider implements FiscalProvider {
   }
 
   async cancelDocument(documentId: string, reason?: string): Promise<boolean> {
+    // Nota: cancelar usa la llave global (la interfaz no recibe el contexto de org).
     if (!FACTURAPI_KEY) return true; // simulado
     try {
       // Facturapi: DELETE /invoices/{id}?motive=02 (02 = comprobante con errores sin relación).
       const res = await fetch(`${FACTURAPI_BASE}/invoices/${documentId}?motive=${encodeURIComponent(reason || '02')}`, {
         method: 'DELETE',
-        headers: { Authorization: authHeader() },
+        headers: { Authorization: authHeader(FACTURAPI_KEY) },
         signal: AbortSignal.timeout(25000),
       });
       return res.ok;

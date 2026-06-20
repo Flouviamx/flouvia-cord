@@ -7,7 +7,7 @@ const ORG = await getOrg();
 ---
 
 <SettingsShell title="Datos fiscales — Ajustes" tab="fiscal" perm="ajustes"
-    intro="Necesarios para timbrar CFDI 4.0 ante el SAT (plan Negocio). Se usan tal cual en el comprobante." save>
+    intro="Necesarios para timbrar CFDI 4.0 ante el SAT. Se usan tal cual en el comprobante; sube tu CSD abajo para emitir bajo tu RFC." save>
     <div class="s-block">
         <h3>Identificación fiscal</h3>
         <div class="s-body">
@@ -48,25 +48,39 @@ const ORG = await getOrg();
 
     <div class="s-block">
         <h3>Certificado de Sello Digital (CSD)</h3>
-        <p class="csd-intro">Sube tu CSD para que Cord timbre CFDI 4.0 a tu nombre. Lo guardamos cifrado y sólo se usa para sellar. Disponible al activar el plan Negocio.</p>
+        <p class="csd-intro">Sube tu CSD para que Cord timbre CFDI 4.0 bajo <b>tu RFC</b>. Se manda cifrado a nuestro PAC (Facturapi); la contraseña no se guarda en Cord.</p>
+
+        <div class="csd-state" id="csdState" data-on={ORG.csdEstado === 'cargado' ? '1' : '0'}>
+            <span class="csd-state-dot"></span>
+            <span class="csd-state-info">
+                <span class="csd-state-title" id="csdStateTitle">{ORG.csdEstado === 'cargado' ? 'CSD cargado' : 'Sin CSD'}</span>
+                <span class="csd-state-sub" id="csdName">{ORG.csdEstado === 'cargado' ? (ORG.csdNombre || 'Certificado activo') : 'Sube tu .cer y .key para empezar a timbrar.'}</span>
+            </span>
+            <button type="button" class="csd-btn-ghost" id="csdRemove" style={ORG.csdEstado === 'cargado' ? '' : 'display:none'}>Quitar</button>
+        </div>
+
         <div class="csd-files">
-            <label class="csd-drop">
-                <input type="file" accept=".cer" disabled />
+            <label class="csd-drop" id="cerDrop">
+                <input type="file" id="cerFile" accept=".cer" />
                 <span class="csd-drop-ico">.cer</span>
                 <span class="csd-drop-t">Certificado</span>
-                <span class="csd-drop-s">Arrastra tu archivo .cer</span>
+                <span class="csd-drop-s" id="cerName">Elige tu archivo .cer</span>
             </label>
-            <label class="csd-drop">
-                <input type="file" accept=".key" disabled />
+            <label class="csd-drop" id="keyDrop">
+                <input type="file" id="keyFile" accept=".key" />
                 <span class="csd-drop-ico">.key</span>
                 <span class="csd-drop-t">Llave privada</span>
-                <span class="csd-drop-s">Arrastra tu archivo .key</span>
+                <span class="csd-drop-s" id="keyName">Elige tu archivo .key</span>
             </label>
         </div>
         <div class="s-field" style="max-width:50%; margin-top:1rem">
             <label for="oCsdPass">Contraseña de la llave</label>
-            <input class="s-input" id="oCsdPass" type="password" placeholder="••••••••" disabled />
-            <span class="s-hint">Nunca se muestra ni se comparte. Sólo descifra tu .key al sellar.</span>
+            <input class="s-input" id="oCsdPass" type="password" placeholder="••••••••" autocomplete="off" />
+            <span class="s-hint">Sólo se envía a Facturapi para descifrar tu .key al sellar. No se almacena en Cord.</span>
+        </div>
+        <div class="csd-actions">
+            <button type="button" class="csd-btn-solid" id="csdUpload">Subir CSD y conectar</button>
+            <span class="csd-msg" id="csdMsg"></span>
         </div>
     </div>
 
@@ -74,12 +88,12 @@ const ORG = await getOrg();
         <h3>Timbrado (PAC)</h3>
         <div class="s-body">
             <div class="pac-row">
-                <span class="csd-dot pac-dot"></span>
+                <span class="csd-dot pac-dot" id="pacDot" data-on={ORG.csdEstado === 'cargado' ? '1' : '0'}></span>
                 <span class="pac-info">
-                    <span class="pac-title">Proveedor de timbrado</span>
-                    <span class="pac-desc">El mismo PAC que usa la app de Shopify de Flouvia. Se conecta automáticamente al subir tu CSD en el plan Negocio.</span>
+                    <span class="pac-title">Facturapi · CFDI 4.0</span>
+                    <span class="pac-desc">Timbramos vía Facturapi. Al subir tu CSD creamos tu organización y conectamos tu RFC automáticamente.</span>
                 </span>
-                <span class="pac-badge">Sin conectar</span>
+                <span class="pac-badge" id="pacBadge" data-on={ORG.csdEstado === 'cargado' ? '1' : '0'}>{ORG.csdEstado === 'cargado' ? 'Conectado' : 'Sin conectar'}</span>
             </div>
         </div>
     </div>
@@ -87,9 +101,31 @@ const ORG = await getOrg();
 
 <style>
     .csd-intro { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.55; margin: 0 0 1.1rem; }
+    .csd-intro b { color: var(--color-text); font-weight: 600; }
     .csd-files { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .csd-drop { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; border: 1.5px dashed var(--color-border); border-radius: 12px; padding: 1.4rem 1rem; cursor: not-allowed; background: var(--color-bg-soft); opacity: 0.7; }
+    .csd-drop { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; border: 1.5px dashed var(--color-border); border-radius: 12px; padding: 1.4rem 1rem; cursor: pointer; background: var(--color-bg-soft); transition: border-color 0.2s, background 0.2s; }
+    .csd-drop:hover { border-color: var(--color-blue-deep); }
+    .csd-drop.has-file { border-style: solid; border-color: var(--color-ok); background: rgba(16,185,129,0.06); }
     .csd-drop input { display: none; }
+
+    /* Estado del CSD */
+    .csd-state { display: flex; align-items: center; gap: 11px; border: 1px solid var(--color-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 1.1rem; }
+    .csd-state-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--color-text-muted); flex-shrink: 0; }
+    .csd-state[data-on="1"] .csd-state-dot { background: var(--color-ok); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+    .csd-state-info { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+    .csd-state-title { font-size: 0.86rem; font-weight: 600; color: var(--color-text); }
+    .csd-state-sub { font-size: 0.76rem; color: var(--color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Acciones + botones (estilo Cord, dark-safe) */
+    .csd-actions { display: flex; align-items: center; gap: 0.7rem; margin-top: 1.1rem; }
+    .csd-btn-solid { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; transition: transform 0.2s var(--ease-spring), opacity 0.2s; }
+    .csd-btn-solid:hover { transform: translateY(-1px); }
+    .csd-btn-solid:disabled { opacity: 0.6; cursor: wait; transform: none; }
+    .csd-btn-ghost { font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 8px; padding: 7px 13px; cursor: pointer; }
+    .csd-btn-ghost:hover { border-color: var(--color-danger); color: var(--color-danger); }
+    .csd-msg { font-size: 0.78rem; font-weight: 600; line-height: 1.4; }
+    .csd-msg.ok { color: var(--color-ok); }
+    .csd-msg.err { color: var(--color-danger); }
     .csd-drop-ico { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.7rem; font-weight: 700; color: #fff; background: var(--color-blue-deep); padding: 3px 8px; border-radius: 6px; margin-bottom: 4px; }
     .csd-drop-t { font-size: 0.85rem; font-weight: 600; color: var(--color-text); }
     .csd-drop-s { font-size: 0.72rem; color: #99a2af; }
@@ -99,8 +135,100 @@ const ORG = await getOrg();
     .pac-title { font-size: 0.88rem; font-weight: 600; color: var(--color-text); }
     .pac-desc { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.45; }
     .csd-dot { width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; }
+    .csd-dot[data-on="1"] { background: var(--color-ok); }
     .pac-dot { align-self: flex-start; margin-top: 5px; }
     .pac-badge { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 4px 9px; border-radius: 100px; color: #b45309; background: rgba(245,158,11,0.1); white-space: nowrap; }
+    .pac-badge[data-on="1"] { color: var(--color-ok); background: rgba(16,185,129,0.12); }
 
     @media (max-width: 560px) { .csd-files { grid-template-columns: 1fr; } }
 </style>
+
+<script>
+    // ── CSD: subir .cer + .key + contraseña a /api/fiscal/csd (Facturapi) ──
+    function initCsd() {
+        const cerFile = document.getElementById('cerFile') as HTMLInputElement | null;
+        const keyFile = document.getElementById('keyFile') as HTMLInputElement | null;
+        const passIn = document.getElementById('oCsdPass') as HTMLInputElement | null;
+        const upBtn = document.getElementById('csdUpload') as HTMLButtonElement | null;
+        const rmBtn = document.getElementById('csdRemove') as HTMLButtonElement | null;
+        const msg = document.getElementById('csdMsg');
+        if (!cerFile || !keyFile || !passIn || !upBtn || !msg) return;
+
+        const flash = (text: string, ok: boolean) => {
+            msg.textContent = text;
+            msg.className = 'csd-msg ' + (ok ? 'ok' : 'err');
+            if (ok) setTimeout(() => { msg.textContent = ''; msg.className = 'csd-msg'; }, 5000);
+        };
+
+        // Reflejar el archivo elegido en el "drop".
+        const bind = (input: HTMLInputElement, labelId: string, dropId: string, fallback: string) => {
+            input.addEventListener('change', () => {
+                const f = input.files?.[0];
+                const lbl = document.getElementById(labelId);
+                const drop = document.getElementById(dropId);
+                if (lbl) lbl.textContent = f ? f.name : fallback;
+                if (drop) drop.classList.toggle('has-file', !!f);
+            });
+        };
+        bind(cerFile, 'cerName', 'cerDrop', 'Elige tu archivo .cer');
+        bind(keyFile, 'keyName', 'keyDrop', 'Elige tu archivo .key');
+
+        upBtn.addEventListener('click', async () => {
+            const cer = cerFile.files?.[0];
+            const key = keyFile.files?.[0];
+            const password = passIn.value;
+            if (!cer || !key) { flash('Elige tu archivo .cer y .key.', false); return; }
+            if (!password) { flash('Escribe la contraseña de la llave.', false); return; }
+
+            const fd = new FormData();
+            fd.append('cer', cer);
+            fd.append('key', key);
+            fd.append('password', password);
+
+            upBtn.disabled = true; const orig = upBtn.textContent; upBtn.textContent = 'Subiendo…';
+            try {
+                const res = await fetch('/api/fiscal/csd', { method: 'POST', body: fd });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(d.error || 'No se pudo subir el CSD');
+                flash('✓ CSD cargado. Ya puedes timbrar bajo tu RFC.', true);
+                passIn.value = '';
+                // Actualiza el estado visual sin recargar.
+                const state = document.getElementById('csdState');
+                const title = document.getElementById('csdStateTitle');
+                const name = document.getElementById('csdName');
+                if (state) state.setAttribute('data-on', '1');
+                if (title) title.textContent = 'CSD cargado';
+                if (name) name.textContent = d.csd_nombre || 'Certificado activo';
+                if (rmBtn) rmBtn.style.display = '';
+                document.getElementById('pacBadge')?.setAttribute('data-on', '1');
+                const pb = document.getElementById('pacBadge'); if (pb) pb.textContent = 'Conectado';
+                document.getElementById('pacDot')?.setAttribute('data-on', '1');
+                (window as any).cordToast?.('CSD conectado a Facturapi', 'ok');
+            } catch (err: any) {
+                flash(err.message || 'No se pudo subir el CSD', false);
+            } finally { upBtn.disabled = false; upBtn.textContent = orig; }
+        });
+
+        rmBtn?.addEventListener('click', async () => {
+            if (!confirm('¿Quitar el CSD? Dejarás de poder timbrar hasta subir uno nuevo.')) return;
+            rmBtn.disabled = true;
+            try {
+                const res = await fetch('/api/fiscal/csd', { method: 'DELETE' });
+                if (!res.ok) throw new Error();
+                const state = document.getElementById('csdState');
+                const title = document.getElementById('csdStateTitle');
+                const name = document.getElementById('csdName');
+                if (state) state.setAttribute('data-on', '0');
+                if (title) title.textContent = 'Sin CSD';
+                if (name) name.textContent = 'Sube tu .cer y .key para empezar a timbrar.';
+                rmBtn.style.display = 'none';
+                document.getElementById('pacBadge')?.setAttribute('data-on', '0');
+                const pb = document.getElementById('pacBadge'); if (pb) pb.textContent = 'Sin conectar';
+                document.getElementById('pacDot')?.setAttribute('data-on', '0');
+                flash('CSD removido.', true);
+            } catch { flash('No se pudo quitar el CSD', false); } finally { rmBtn.disabled = false; }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCsd);
+    else initCsd();
+</script>

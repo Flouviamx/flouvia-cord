@@ -276,10 +276,13 @@ alter table orgs add column if not exists notif_prefs jsonb not null default '{}
 alter table orgs add column if not exists slack_webhook_url text;
 -- Integraciones: qué conectores están activados (jsonb, maqueta que persiste).
 alter table orgs add column if not exists integraciones jsonb not null default '{}'::jsonb;
--- Facturación/CFDI: estado del CSD (maqueta — el archivo real llega con el PAC).
+-- Facturación/CFDI: estado del CSD. REAL (jun 2026) vía Facturapi Organizations
+-- (multi-tenant): cada org de Cord = una organización en Facturapi con SU CSD.
 alter table orgs add column if not exists csd_estado text;           -- null | cargado | vencido
 alter table orgs add column if not exists csd_nombre text;           -- nombre del .cer cargado (display)
 alter table orgs add column if not exists csd_subido_at timestamptz;
+alter table orgs add column if not exists facturapi_org_id text;     -- id de la organización en Facturapi
+alter table orgs add column if not exists facturapi_live_key text;   -- llave LIVE de esa organización (para timbrar bajo su RFC)
 
 -- ── Developers — API keys (REAL, con hash) ──────────────────────────────────
 -- La clave en claro se muestra UNA sola vez al crearla; en DB sólo vive el hash

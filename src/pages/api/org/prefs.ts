@@ -48,10 +48,16 @@ export const PATCH: APIRoute = async ({ request }) => {
 
     const notif = body.notif_prefs !== undefined ? sanitizeNotif(body.notif_prefs) : actual.notif_prefs;
     const integr = body.integraciones !== undefined ? sanitizeIntegr(body.integraciones) : actual.integraciones;
-    const slack = body.slack_webhook_url !== undefined
-        ? (String(body.slack_webhook_url).trim() === '' ? null
-            : (/^https:\/\/hooks\.slack\.com\//.test(String(body.slack_webhook_url).trim()) ? String(body.slack_webhook_url).trim() : actual.slack_webhook_url))
-        : actual.slack_webhook_url;
+
+    // Slack: vacío = desconectar; URL válida = guardar; URL inválida = ERROR claro
+    // (antes se ignoraba en silencio, así que "guardar" no hacía nada y parecía roto).
+    let slack = actual.slack_webhook_url;
+    if (body.slack_webhook_url !== undefined) {
+        const raw = String(body.slack_webhook_url).trim();
+        if (raw === '') slack = null;
+        else if (/^https:\/\/hooks\.slack\.com\//.test(raw)) slack = raw;
+        else return json({ error: 'La URL de Slack debe empezar con https://hooks.slack.com/' }, 400);
+    }
 
     await sql`update orgs set notif_prefs = ${JSON.stringify(notif)}::jsonb,
                               integraciones = ${JSON.stringify(integr)}::jsonb,
