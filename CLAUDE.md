@@ -29,7 +29,7 @@ npm run build    # build de producción
 npm run preview  # preview del build
 ```
 
-Node requerido: **>=22.12.0** (ver `.nvmrc` → 22.13.0)
+Node requerido: **>=22.12.0** (ver `.nvmrc` → 24.15.0; alineado a Node 24 LTS, el default de Vercel)
 
 ---
 
@@ -72,6 +72,59 @@ config manual en el Dashboard de Clerk y correr la migración.
 
 ## Estado actual (jun 2026)
 
+✅ **App shell PREMIUM "liquid glass" (jun 2026)** — rediseño del `AppLayout.astro` para sentirse Apple/Linear/Stripe:
+   • **Sidebar liquid-glass** — receta del navbar (rim lights en capas + sheen `::before`) e
+     **indicador deslizante tipo iOS** (`.sb-indicator`): píldora de vidrio que sigue al hover
+     entre los `.sb-item` y regresa al activo. CSS puro manejado por JS mínimo
+     (`initSidebarIndicator` setea `top/height/opacity`); delegación `mouseover` cubre los
+     "Fijados" inyectados; respeta `prefers-reduced-motion`; reposiciona en resize/colapso.
+     Fallback pre-JS: `.sb-nav:not(.sb-ind-ready) .sb-item.active` muestra un realce sutil.
+   • **Sidebar colapsado pulido** — los `.sb-group-label` colapsan en alto/padding (antes
+     dejaban huecos vacíos); ítems = cuadros uniformes (44×40) centrados; el indicador pasa a
+     **cuadrado centrado** (`left:50%`); ancho 76px.
+   • **Topbar = pill flotante de vidrio** — ya NO es barra con borde inferior: `margin:1rem`,
+     `border-radius:17px`, glass con rim lights + sombra luxe, `position:sticky; top:1rem`
+     (el contenido se desliza desenfocado debajo, efecto Apple). En móvil margen menor.
+   • **Org switcher de vidrio** (`CustomOrgSwitcher.tsx`) — botón con hover de vidrio, avatar con
+     rim/sheen, y dropdown **frosted casi-opaco** (`blur(44px)` + opacidad ~0.97 → se ve el
+     vidrio pero NO se transparenta el fondo; mismo fix aplicado al menú "Crear").
+✅ **Topbar PRO: botón "Crear" + Cmd+K potente + quick-add tarea (jun 2026)** —
+   • Botón **"Crear"** (desktop) en `.tb-right` con menú de vidrio: Cotización · Cliente ·
+     Producto · **Tarea** (abre `#qtask`, un modal quick-add → `POST /api/tareas`). El JS
+     `initCreateMenu(btnId, menuId)` es genérico (reusado por el menú móvil `sbCreate` y el de
+     topbar `tbCreate`). Se eliminaron los `.btn-new` "+ Nueva cotización" sueltos del dashboard
+     y de la lista (el botón global los cubre).
+   • **Cmd+K** ampliado: rutas de Tesorería/CFO, acciones con `?nuevo=1`, "Nueva tarea" que
+     ejecuta callback (soporte `it.run` en `activate`).
+✅ **Tema claro/oscuro (jun 2026)** — sistema por tokens en `AppLayout.astro`:
+   `html[data-theme="dark"]` remapea `--color-bg/bg-soft/text/text-muted/border`, agrega
+   `--surface`/`--surface-2` (paneles/modales migrados de `#fff` → `var(--surface)`), y mueve
+   `--color-blue-deep` a un azul vivo (era invisible en oscuro; sirve de acento). Toggle sol/luna
+   en la topbar + **anti-flash** vía `<script is:inline>` en `<head>` + persistencia en
+   `localStorage cord.theme`. El sidebar y el org switcher ya eran navy → no cambian.
+   ⚠️ **Pendiente** (follow-up): migrar los `#fff` hardcodeados de Ajustes (`/app/ajustes/*`),
+   editores (`cotizaciones/nueva`/`editar`) y checkout; el resto del flujo (dashboard,
+   cotizaciones, clientes, productos, analítica, CFO, cobranza) ya es dark-safe.
+✅ **Dashboard con analíticas nuevas + páginas sin cards (jun 2026)** —
+   • Dashboard (`src/pages/app/index.astro`) cablea `getCFO()`+`getAnalytics()` (Promise.all) y
+     agrega 4 widgets HAIRLINE: **Salud del pipeline** (DSO/concentración con semáforo),
+     **Flujo esperado · 5 semanas** (mini bar chart CSS), **Necesitan seguimiento** (silenciadas
+     accionables), **Mix** (clientes por tasa de aprobación + productos por ingreso).
+   • Se quitaron los cards restantes: **Kanban** (`cotizaciones/index`) ahora son filas hairline;
+     **detalle** (`cotizaciones/[id]`) con docs fiscales y versiones en hairline + nuevo
+     **stepper de estado** (draft→sent→viewed→approved→paid/invoiced) + chips de acción de vidrio.
+✅ **Link público 3.0 — "Apple premium" (jun 2026)** — mejoras a `QuoteCard.astro` (reusado por
+   `/q` y `/embed`; gated por prop `standalone` para no romper el iframe):
+   • **Barra de acción flotante** (`#qSticky`, solo `/q`): pill de vidrio fija abajo con total +
+     "Aprobar"; aparece mientras el CTA real no está visible (IntersectionObserver) y solo en
+     estado review. Al pulsar hace scroll al área y dispara el flujo de firma.
+   • **Señales de confianza**: chip de **vigencia con urgencia** ("Vence en X días", ámbar si
+     ≤7d / vencida), strip "● Conectado en tiempo real" + "Cifrado · firma con validez legal",
+     y **bloque de contacto del vendedor** (WhatsApp/Correo/Llamar) — nuevos campos en
+     `getCotizacionByToken`: `org.emailContacto/telefono/whatsapp` y `quote.diasVigencia`.
+   • **Pago pulido**: panel con monto restated + "Pago protegido vía Stripe" + chips de tarjeta.
+   • **Micro-lujo**: count-up del total al cargar (`data-countup`) + reveal escalonado de las
+     líneas (`.qi-reveal`). Todo respeta `prefers-reduced-motion`.
 ✅ **Restauración UI (jun 2026)** — Se restauraron los botones de Notificaciones y Ayuda en la topbar que se habían borrado accidentalmente y se corrigió el CSS (`.tb-icon`) para eliminar bordes azules de focus nativos en Safari/macOS.
 ✅ Esqueleto Astro + tokens de diseño
 ✅ **Landing de ventas completa** (estilo Stripe/Linear con ADN Flouvia) — desplegada
@@ -416,6 +469,17 @@ config manual en el Dashboard de Clerk y correr la migración.
 ✅ **Rediseño UI/UX de Desarrolladores (Stripe-like) (jun 2026)** — La página de Configuración de API y Webhooks (`/app/ajustes/api.astro`) fue reconstruida usando una estética premium estilo Stripe (Vanilla CSS: `DeveloperUI.css`). Incorpora layout de tarjetas limpios, insignias semánticas, tipografía monoespaciada, toggles segmentados y un bloque "Terminal Oscura" con micro-interacciones para la conexión de servidores MCP y webhooks.
 ✅ **Internacionalización B2B (Abstracción Fiscal Global) (jun 2026)** — Desacoplamiento del SAT. La tabla `orgs` ahora soporta `country_code` y los documentos se centralizan en la tabla abstracta `documentos_fiscales`. Implementación del patrón Adapter (`src/lib/fiscal`) con `FiscalFactory` que enruta a proveedores locales como `MexicoSatProvider` (CFDI) o `USInvoiceProvider` (Commercial Invoices).
 ✅ **Multi-divisa con Cobertura Cambiaria (jun 2026)** — La tabla `cotizaciones` ahora soporta divisa de cotización (`base_currency`) independiente a la de facturación (`fiscal_currency`). Implementación de `FXService.ts` para obtener tasas *spot*, aplicar un *buffer%* de cobertura para proteger los márgenes, y congelar la tasa (FX lock) por 30 días para cotizaciones B2B.
+⚠️ **EXACTITUD (doc drift, corregido jun 2026):** la app **NO usa los componentes
+   nativos `<SignIn/>`/`<SignUp/>` de Clerk** para los flujos de auth — usa **islas React
+   propias** basadas en nanostores (`CustomSignIn`, `CustomSignUp`, `CustomOrgSwitcher`,
+   `ForgotPassword`, `VerifyEmail`, `CreateWorkspace`) que escuchan la instancia global
+   `$clerkStore`/`$userStore` inyectada por `@clerk/astro`. Sí se usan nativos para
+   `<OrganizationProfile/>` (Ajustes › Equipo) y `<UserProfile/>` (Ajustes › Cuenta). Las
+   entradas de abajo que dicen "componentes nativos/oficiales de Clerk" reflejan un intento
+   que se revirtió a los `Custom*`. **El "Entorno de prueba" (`testMode.ts` / `cord_test_mode`)
+   es COSMÉTICO**: solo cambia el prefijo de API key mostrado en Ajustes › Developers; NO
+   aísla datos de test (no hay sandbox real). ⚠️ Auth en re-trabajo activo (André): hay
+   componentes nuevos sin commitear en `src/components/auth/` (`SignInForm.tsx`, etc.).
 ✅ **Clerk Premium UI & Nativos (jun 2026)** — Retorno a los componentes oficiales de Clerk (`<SignIn />`, `<SignUp />`, `<OrganizationSwitcher />`, `<OrganizationProfile />`) estilizados globalmente vía `appearance` con un diseño oscuro premium estilo Stripe/Linear (`src/lib/clerk-theme.ts`), eliminando código React manual redundante.
    • **Flujos de Autenticación**: Las rutas `/sign-in` y `/sign-up` montan los componentes nativos de `@clerk/astro` con redirecciones server-side desde `/login` y `/registro` en `astro.config.mjs`.
    • **Motor B2B (Organizations)**: Todo el control de equipo (invitaciones, roles, accesos) se centralizó en `<OrganizationProfile />` (en `/app/ajustes/equipo`), eliminando componentes y pestañas de invitaciones sueltos.

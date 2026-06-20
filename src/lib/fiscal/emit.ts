@@ -25,7 +25,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
   // 1. Datos de la org (país) + cotización (totales, divisa) + cliente.
   const [head] = await sql`
     select
-      o.country_code,
+      o.country_code, o.iva_pct,
       c.subtotal, c.iva, c.total, c.fiscal_currency,
       cl.empresa as cliente_empresa, cl.rfc as cliente_rfc,
       cl.email as cliente_email, cl.contacto as cliente_contacto
@@ -38,9 +38,25 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
   if (!head) return { emitted: false, status: 'error', error: 'cotización no encontrada' };
 
   const country: string = (head.country_code as string) || 'MX';
-  const items = await sql`
-    select descripcion, cantidad, precio_unitario, precio_negociado
+  const allItems = await sql`
+    select descripcion, cantidad, precio_unitario, precio_negociado, aprobado
     from cotizacion_items where cotizacion_id = ${cotizacionId} order by orden asc`;
+
+  // Facturar SOLO las líneas aprobadas. Si fue aprobación parcial, recalculamos
+  // los totales desde las líneas aceptadas (los totales del head son del original).
+  const items = allItems.filter((it: any) => it.aprobado !== false);
+  if (items.length === 0) return { emitted: false, status: 'error', error: 'no hay líneas aprobadas para facturar' };
+
+  const isPartial = items.length < allItems.length;
+  const ivaPct = head.iva_pct !== null && head.iva_pct !== undefined ? Number(head.iva_pct) / 100 : 0.16;
+  let subtotal = Number(head.subtotal) || 0;
+  let taxes = Number(head.iva) || 0;
+  let total = Number(head.total) || 0;
+  if (isPartial) {
+    subtotal = items.reduce((s: number, it: any) => s + Number(it.cantidad) * Number(it.precio_negociado ?? it.precio_unitario), 0);
+    taxes = subtotal * ivaPct;
+    total = subtotal + taxes;
+  }
 
   const docType = documentTypeFor(country);
 
@@ -59,9 +75,9 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
       },
       items: items as any[],
       totalAmounts: {
-        subtotal: Number(head.subtotal) || 0,
-        taxes: Number(head.iva) || 0,
-        total: Number(head.total) || 0,
+        subtotal,
+        taxes,
+        total,
         currency: (head.fiscal_currency as string) || 'MXN',
       },
     });
@@ -74,12 +90,14 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
   }
 
   const status: 'issued' | 'error' = resp.success ? 'issued' : 'error';
+  // Anotamos en provider_data si se facturó una aprobación parcial (subset de líneas).
+  const providerData = { ...(resp.rawProviderData ?? {}), ...(isPartial ? { aprobacion_parcial: true, lineas_facturadas: items.length, lineas_totales: allItems.length } : {}) };
   await sql`
     insert into documentos_fiscales
       (org_id, cotizacion_id, country_code, document_type, fiscal_id, status, provider_data, pdf_url, xml_url)
     values
       (${orgId}, ${cotizacionId}, ${country}, ${docType}, ${resp.fiscalId ?? null}, ${status},
-       ${JSON.stringify(resp.rawProviderData ?? {})}, ${resp.pdfUrl ?? null}, ${resp.xmlUrl ?? null})`;
+       ${JSON.stringify(providerData)}, ${resp.pdfUrl ?? null}, ${resp.xmlUrl ?? null})`;
 
   return {
     emitted: resp.success,
