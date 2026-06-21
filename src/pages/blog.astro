@@ -26,6 +26,24 @@ const CATEGORIES = ['Todos', ...new Set(allPosts.map(p => p.data.category))];
 
 const featuredAuthorName = FEATURED_POST.authorName || 'Equipo Cord';
 const featuredAuthorRole = FEATURED_POST.authorRole || 'Redacción';
+
+const getCategoryIcon = (category) => {
+    switch (category) {
+        case 'Finanzas':
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>`;
+        case 'Ventas B2B':
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>`;
+        case 'Fiscal':
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
+        case 'Tecnología':
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>`;
+        case 'Operaciones':
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`;
+        default:
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+    }
+};
+
 const featuredAuthorAvatar = FEATURED_POST.authorAvatar || '/images/blog/cord-author-avatar.png';
 ---
 
@@ -97,9 +115,7 @@ const featuredAuthorAvatar = FEATURED_POST.authorAvatar || '/images/blog/cord-au
                             <div class="stripe-shape shape-1"></div>
                             <div class="stripe-shape shape-2"></div>
                             <div class="stripe-pattern-overlay"></div>
-                            <div class="abstract-category-icon">
-                                {FEATURED_POST.category.substring(0, 2).toUpperCase()}
-                            </div>
+                            <div class="abstract-category-icon" set:html={getCategoryIcon(FEATURED_POST.category)}></div>
                         </div>
                     </a>
                 </div>
@@ -127,9 +143,7 @@ const featuredAuthorAvatar = FEATURED_POST.authorAvatar || '/images/blog/cord-au
                                 <div class="stripe-shape shape-1"></div>
                                 <div class="stripe-shape shape-2"></div>
                                 <div class="stripe-pattern-overlay"></div>
-                                <div class="abstract-category-icon small">
-                                    {post.category.substring(0, 2).toUpperCase()}
-                                </div>
+                                <div class="abstract-category-icon small" set:html={getCategoryIcon(post.category)}></div>
                                 <div class="blog-category-badge">{post.category}</div>
                             </div>
                             <div class="blog-content">
@@ -451,13 +465,14 @@ const featuredAuthorAvatar = FEATURED_POST.authorAvatar || '/images/blog/cord-au
     .shape-2 { width: 100%; height: 100%; bottom: -30%; right: -30%; background: radial-gradient(circle, rgba(0,0,0,0.1) 0%, transparent 70%); }
     
     .abstract-category-icon {
-        position: relative; z-index: 2; font-size: 6rem; font-weight: 900;
-        letter-spacing: -0.05em; color: rgba(255,255,255,0.85);
-        background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.3) 100%);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        transform: rotate(-10deg); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative; z-index: 2;
+        width: 140px; height: 140px;
+        color: rgba(255,255,255,0.9);
+        filter: drop-shadow(0 8px 24px rgba(0,0,0,0.15));
+        transform: rotate(-5deg); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .small { font-size: 4rem; }
+    .abstract-category-icon svg { width: 100%; height: 100%; }
+    .small { width: 80px; height: 80px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1)); }
     .floating-card:hover .abstract-category-icon { transform: rotate(0deg) scale(1.05); }
     .blog-card-link:hover .abstract-category-icon { transform: rotate(0deg) scale(1.1); }
 
