@@ -73,9 +73,11 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
             <aside class="article-sidebar article-sidebar-left">
                 {headings.length > 0 && (
                     <div class="toc-container sticky reveal" style="transition-delay: 500ms">
-                        <span class="toc-title">En este artículo</span>
+                        <div class="toc-title"><span class="toc-dash"></span>EN ESTE ARTÍCULO</div>
                         <div class="toc-body">
-                            <div class="toc-indicator" id="toc-indicator"></div>
+                            <div class="toc-track">
+                                <div class="toc-indicator" id="toc-indicator"></div>
+                            </div>
                             <ul class="toc-list" id="toc-list">
                                 {headings.map(h => (
                                     <li class={`toc-depth-${h.depth}`}>
@@ -83,6 +85,12 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
                                     </li>
                                 ))}
                             </ul>
+                        </div>
+                        <div class="toc-footer">
+                            <a href="/blog" class="toc-back-link">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                                Volver al Blog
+                            </a>
                         </div>
                     </div>
                 )}
@@ -429,48 +437,74 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
     .share-btn.copied .tooltip { opacity: 1; transform: translateY(-50%) translateX(0); }
 
     /* ==========================================================
-       LEFT SIDEBAR: TOC SCROLLSPY (Premium & Animated)
+       LEFT SIDEBAR: TOC SCROLLSPY (Match Screenshot)
        ========================================================== */
     .article-sidebar-left { padding-right: 2rem; display: flex; justify-content: flex-end; align-items: flex-start; }
     
     .toc-container {
         position: relative;
-        padding-right: 1.5rem; text-align: right;
-        min-width: 200px;
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 2rem 1.8rem;
+        box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05), inset 0 0 0 1px rgba(0,0,0,0.06);
+        min-width: 260px;
+        max-width: 280px;
+        text-align: left;
     }
     
     .toc-title {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em;
-        color: #9ca3af; display: block; margin-bottom: 1.5rem;
+        color: #9ca3af; display: flex; align-items: center; margin-bottom: 2rem;
     }
     
-    .toc-body { position: relative; display: flex; justify-content: flex-end; }
+    .toc-dash {
+        display: inline-block; width: 16px; height: 1px; background: #d1d5db; margin-right: 10px;
+    }
     
-    /* The sliding pill indicator instead of a full line */
+    .toc-body { position: relative; padding-left: 0; display: flex; }
+    
+    .toc-track {
+        width: 2px; background: rgba(0,0,0,0.06); border-radius: 2px;
+        position: absolute; left: 0; top: 0; bottom: 0;
+    }
+    
     .toc-indicator {
-        position: absolute; right: -1.5rem; top: 0; width: 4px; height: 0;
-        background: var(--color-blue-deep); border-radius: 4px;
-        transition: top 0.4s cubic-bezier(0.16, 1, 0.3, 1), height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
-        opacity: 0; transform: translateX(50%);
+        position: absolute; left: -1px; width: 4px; border-radius: 4px;
+        background: #0a192f;
+        transition: top 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s;
+        opacity: 0;
     }
     
-    .toc-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.8rem; position: relative; width: 100%; }
+    .toc-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 1.2rem; position: relative; width: 100%; padding-left: 1.5rem; }
     
     .toc-list li { position: relative; }
     
     .toc-list li a {
         display: block;
-        font-size: 0.85rem; color: #9ca3af; text-decoration: none; line-height: 1.5;
-        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); font-weight: 500;
-        transform-origin: right;
+        font-size: 0.9rem; color: #9ca3af; text-decoration: none; line-height: 1.4;
+        transition: color 0.2s ease; font-weight: 500;
     }
     
-    .toc-list li a:hover { color: #111827; transform: translateX(-4px); }
+    .toc-list li a:hover { color: #4b5563; }
     
-    .toc-list li a.active { color: #111827; font-weight: 600; transform: translateX(-6px); }
+    .toc-list li a.active { color: #111827; font-weight: 700; }
     
-    .toc-depth-3 { padding-right: 1rem; font-size: 0.8rem; opacity: 0.8; }
+    .toc-depth-3 { padding-left: 1rem; font-size: 0.85rem; }
+
+    .toc-footer {
+        margin-top: 2rem; padding-top: 1.5rem;
+        border-top: 1px solid rgba(0,0,0,0.06);
+    }
+    
+    .toc-back-link {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 0.85rem; font-weight: 600; color: #9ca3af;
+        text-decoration: none; transition: color 0.2s ease;
+    }
+    
+    .toc-back-link:hover { color: #111827; }
+    .toc-back-link svg { transition: transform 0.2s ease; }
+    .toc-back-link:hover svg { transform: translateX(-3px); }
 
     @media (max-width: 1024px) {
         .article-layout { grid-template-columns: 1fr; gap: 0; }
