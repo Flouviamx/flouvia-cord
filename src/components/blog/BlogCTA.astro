@@ -1,0 +1,144 @@
+---
+// BlogCTA.astro
+---
+<section class="article-footer-cta">
+    <div class="bento-grid">
+        
+        <!-- Columna Grande: Suscripción -->
+        <div class="bento-card span-2 hairline-border">
+            <h3>Suscríbete al Blog de Cord</h3>
+            <p>Estrategias financieras, análisis de mercado y novedades de producto directamente en tu bandeja de entrada.</p>
+            
+            <form class="subscribe-form" onsubmit="event.preventDefault()">
+                <input type="email" placeholder="tu@empresa.com" required />
+                <button type="submit" class="btn-primary">
+                    Suscribirme <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+            </form>
+            <span class="privacy-note">Cord tratará tus datos según su <a href="/privacidad">Política de Privacidad</a>.</span>
+        </div>
+
+        <!-- Columna Pequeña 1: Careers -->
+        <div class="bento-card hairline-border">
+            <div class="bento-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            </div>
+            <h4>¿Te gusta lo que lees?</h4>
+            <p>Cord construye infraestructura financiera para acelerar las ventas B2B. Únete al equipo.</p>
+            <a href="/unirse" class="bento-link">Ver vacantes <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <!-- Columna Pequeña 2: Contact -->
+        <div class="bento-card hairline-border">
+            <div class="bento-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            </div>
+            <h4>¿Dudas o comentarios?</h4>
+            <p>Nos encantaría escuchar tu opinión sobre este artículo o tu flujo de ventas.</p>
+            <a href="mailto:hello@cord.mx" class="bento-link">Contáctanos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+    </div>
+</section>
+
+<style>
+    .article-footer-cta {
+        max-width: 1200px; margin: 0 auto 6rem; padding: 0 5%;
+    }
+    .bento-grid {
+        display: grid; grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem; align-items: stretch;
+    }
+
+    .bento-card {
+        background: #fff; border-radius: 20px; padding: 2.5rem;
+        display: flex; flex-direction: column; justify-content: space-between;
+        transition: transform 0.3s;
+    }
+    :global(html[data-theme="dark"]) .bento-card { background: rgba(255,255,255,0.02); }
+    .bento-card:hover { transform: translateY(-2px); }
+
+    .span-2 { grid-column: span 2; }
+
+    .bento-card h3 {
+        font-size: 1.6rem; font-weight: 700; color: #111827; letter-spacing: -0.02em;
+        margin-bottom: 0.8rem;
+    }
+    :global(html[data-theme="dark"]) .bento-card h3 { color: #fff; }
+    
+    .bento-card h4 {
+        font-size: 1.15rem; font-weight: 700; color: #111827;
+        margin-bottom: 0.5rem;
+    }
+    :global(html[data-theme="dark"]) .bento-card h4 { color: #fff; }
+
+    .bento-card p {
+        font-size: 1rem; color: #4b5563; line-height: 1.5; margin-bottom: 2rem;
+    }
+    :global(html[data-theme="dark"]) .bento-card p { color: #9ca3af; }
+
+    .bento-icon {
+        width: 48px; height: 48px; border-radius: 12px;
+        background: rgba(10,37,218,0.06); color: var(--color-blue-deep);
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 2rem;
+    }
+    :global(html[data-theme="dark"]) .bento-icon {
+        background: rgba(59,130,246,0.15); color: #60a5fa;
+    }
+    .bento-icon svg { width: 24px; height: 24px; }
+
+    /* Formulario de Suscripción */
+    .subscribe-form {
+        display: flex; gap: 0.8rem; margin-bottom: 1rem;
+    }
+    .subscribe-form input {
+        flex: 1; padding: 0 1rem; border-radius: 100px;
+        background: #f3f4f6; border: none;
+        font-family: inherit; font-size: 1rem; color: #111827;
+        box-shadow: inset 0 0 0 1px transparent; transition: box-shadow 0.2s;
+    }
+    :global(html[data-theme="dark"]) .subscribe-form input {
+        background: #1f2937; color: #fff;
+    }
+    .subscribe-form input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--color-blue-deep); }
+    :global(html[data-theme="dark"]) .subscribe-form input:focus { box-shadow: inset 0 0 0 2px #60a5fa; }
+
+    .btn-primary {
+        background: var(--color-blue-deep); color: #fff;
+        padding: 0 1.5rem; height: 48px; border-radius: 100px;
+        font-weight: 600; font-size: 0.95rem; border: none;
+        display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+        transition: background 0.2s, transform 0.2s;
+    }
+    :global(html[data-theme="dark"]) .btn-primary { background: #3b82f6; }
+    .btn-primary:hover { background: #081e9e; transform: translateY(-1px); }
+    :global(html[data-theme="dark"]) .btn-primary:hover { background: #2563eb; }
+    .btn-primary svg { width: 16px; height: 16px; transition: transform 0.3s; }
+    .btn-primary:hover svg { transform: translateX(3px); }
+
+    .privacy-note {
+        font-size: 0.8rem; color: #9ca3af;
+    }
+    .privacy-note a { color: inherit; text-decoration: underline; }
+
+    .bento-link {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 0.95rem; font-weight: 600; color: var(--color-blue-deep);
+        text-decoration: none; transition: gap 0.3s;
+    }
+    :global(html[data-theme="dark"]) .bento-link { color: #60a5fa; }
+    .bento-link svg { width: 16px; height: 16px; transition: transform 0.3s; }
+    .bento-link:hover { gap: 10px; }
+
+    @media (max-width: 992px) {
+        .bento-grid { grid-template-columns: 1fr 1fr; }
+        .span-2 { grid-column: span 2; }
+    }
+    @media (max-width: 768px) {
+        .bento-grid { grid-template-columns: 1fr; }
+        .span-2 { grid-column: span 1; }
+        .subscribe-form { flex-direction: column; }
+        .subscribe-form input { height: 48px; }
+    }
+</style>

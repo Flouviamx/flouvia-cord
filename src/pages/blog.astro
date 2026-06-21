@@ -6,6 +6,7 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/landing/Nav.astro';
 import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
+import BlogCTA from '../components/blog/BlogCTA.astro';
 
 import { getCollection } from 'astro:content';
 
@@ -137,6 +138,10 @@ const featuredAuthorAvatar = FEATURED_POST.authorAvatar || 'https://images.unspl
                 ))}
             </div>
         </section>
+
+        <!-- SUSCRIPCIÓN BENTO CTA -->
+        <BlogCTA />
+        
     </main>
 
     <Footer 
