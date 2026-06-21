@@ -16,7 +16,7 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { Content } = await render(entry);
+const { Content, headings } = await render(entry);
 
 // Fallbacks para el post en caso de faltar datos opcionales
 const authorName = entry.data.authorName || 'Equipo Cord';
@@ -32,6 +32,9 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
     
     <!-- Ruido analógico de lujo -->
     <div class="analog-noise" aria-hidden="true"></div>
+
+    <!-- Barra de progreso -->
+    <div id="reading-progress" class="reading-progress-bar"></div>
 
     <main class="blog-article-main">
         <!-- HEADER DEL ARTÍCULO -->
@@ -66,12 +69,48 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
             </div>
         </header>
 
-        <!-- CUERPO DEL ARTÍCULO (Markdown) -->
-        <article class="article-body">
-            <div class="prose-container reveal">
-                <Content />
-            </div>
-        </article>
+        <!-- LAYOUT DE 3 COLUMNAS -->
+        <div class="article-layout">
+            
+            <!-- Izquierda: Share Pill -->
+            <aside class="article-sidebar article-sidebar-left">
+                <div class="share-pill sticky reveal" style="transition-delay: 500ms">
+                    <button id="btn-copy-link" class="share-btn" aria-label="Copiar enlace" title="Copiar enlace">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                        <span class="tooltip">¡Copiado!</span>
+                    </button>
+                    <a href={`https://www.linkedin.com/sharing/share-offsite/?url=https://cord.flouvia.com/blog/${entry.id}`} target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en LinkedIn" title="LinkedIn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                    </a>
+                    <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(entry.data.title)}&url=https://cord.flouvia.com/blog/${entry.id}`} target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en X" title="X (Twitter)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l11.733 16h4.267l-11.733 -16z"></path><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path></svg>
+                    </a>
+                </div>
+            </aside>
+
+            <!-- Centro: CUERPO DEL ARTÍCULO (Markdown) -->
+            <article class="article-body">
+                <div class="prose-container" id="prose-content">
+                    <Content />
+                </div>
+            </article>
+
+            <!-- Derecha: Índice Flotante -->
+            <aside class="article-sidebar article-sidebar-right">
+                {headings.length > 0 && (
+                    <div class="toc-container sticky reveal" style="transition-delay: 500ms">
+                        <span class="toc-title">En este artículo</span>
+                        <ul class="toc-list" id="toc-list">
+                            {headings.map(h => (
+                                <li class={`toc-depth-${h.depth}`}>
+                                    <a href={`#${h.slug}`}>{h.text}</a>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+            </aside>
+        </div>
 
         <!-- BENTO CTA FINAL (Estilo Stripe / Cord) -->
         <section class="article-footer-cta">
@@ -122,6 +161,94 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
     />
     <PageAnims />
 </Layout>
+
+<script is:inline>
+    // UX Interactivity Script
+    document.addEventListener('DOMContentLoaded', () => {
+        // 1. Progress Bar
+        const progressBar = document.getElementById('reading-progress');
+        const prose = document.getElementById('prose-content');
+        
+        // 2. Scrollspy (TOC)
+        const tocLinks = document.querySelectorAll('#toc-list a');
+        const headings = Array.from(document.querySelectorAll('#prose-content h2, #prose-content h3'));
+        
+        // 3. Prose Micro-reveals
+        const proseElements = document.querySelectorAll('#prose-content > *');
+        proseElements.forEach((el, i) => {
+            el.classList.add('micro-reveal');
+            el.style.transitionDelay = `${(i % 5) * 50}ms`; // Stagger init
+        });
+
+        // 4. Copy Link
+        const copyBtn = document.getElementById('btn-copy-link');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(window.location.href);
+                copyBtn.classList.add('copied');
+                setTimeout(() => copyBtn.classList.remove('copied'), 2000);
+            });
+        }
+
+        // --- Intersection Observers ---
+        
+        // Reveals
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { rootMargin: '0px 0px -10% 0px' });
+        
+        proseElements.forEach(el => revealObserver.observe(el));
+
+        // TOC Highlight
+        let currentActive = null;
+        const tocObserver = new IntersectionObserver((entries) => {
+            // Find the intersecting heading nearest to top
+            let activeId = currentActive;
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    activeId = entry.target.id;
+                }
+            });
+            
+            if (activeId !== currentActive) {
+                tocLinks.forEach(link => {
+                    link.classList.toggle('active', link.getAttribute('href') === `#${activeId}`);
+                });
+                currentActive = activeId;
+            }
+        }, { rootMargin: '0px 0px -80% 0px', threshold: 1.0 });
+
+        headings.forEach(h => tocObserver.observe(h));
+
+        // --- Scroll Event ---
+        window.addEventListener('scroll', () => {
+            if (!prose || !progressBar) return;
+            const rect = prose.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+            
+            // Calculate how much of prose is scrolled
+            const totalScrollable = rect.height - windowHeight;
+            let scrolled = -rect.top;
+            
+            if (scrolled < 0) scrolled = 0;
+            if (scrolled > totalScrollable) scrolled = totalScrollable;
+            
+            let progress = 0;
+            if (totalScrollable > 0) {
+                progress = (scrolled / totalScrollable) * 100;
+            } else if (rect.top <= 0) {
+                progress = 100;
+            }
+            
+            progressBar.style.transform = `scaleX(${progress / 100})`;
+        }, { passive: true });
+    });
+</script>
 
 <style>
     /* ==========================================================
@@ -255,9 +382,102 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
         border-left: 4px solid var(--color-blue-deep);
         padding-left: 1.5rem; margin: 2.5rem 0;
         font-size: 1.35rem; font-style: italic; color: #111827;
+        background: rgba(10,37,218,0.02); padding: 1.5rem;
+        border-radius: 0 12px 12px 0;
     }
     :global(html[data-theme="dark"]) .prose-container :global(blockquote) {
-        border-color: #60a5fa; color: #fff;
+        border-color: #60a5fa; color: #fff; background: rgba(59,130,246,0.05);
+    }
+
+    /* Micro-reveals in Prose */
+    .prose-container :global(.micro-reveal) {
+        opacity: 0; transform: translateY(15px);
+        transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .prose-container :global(.micro-reveal.visible) {
+        opacity: 1; transform: translateY(0);
+    }
+
+    /* ==========================================================
+       UX IMPROVEMENTS (PROGRESS, TOC, SHARE)
+       ========================================================== */
+    .reading-progress-bar {
+        position: fixed; top: 0; left: 0; width: 100%; height: 3px;
+        background: var(--color-blue-deep); z-index: 9999;
+        transform-origin: 0 50%; transform: scaleX(0);
+        transition: transform 0.1s ease-out;
+    }
+    :global(html[data-theme="dark"]) .reading-progress-bar { background: #60a5fa; }
+
+    .article-layout {
+        display: grid; grid-template-columns: 1fr minmax(auto, 680px) 1fr;
+        gap: 2rem; max-width: 1300px; margin: 0 auto; padding: 0 5%;
+        align-items: start;
+    }
+
+    .article-body { padding: 0 0 6rem; }
+    
+    .sticky { position: sticky; top: 120px; }
+
+    /* Share Pill */
+    .article-sidebar-left { display: flex; justify-content: flex-end; padding-right: 2rem; }
+    .share-pill {
+        display: flex; flex-direction: column; gap: 0.8rem;
+        background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        padding: 0.8rem; border-radius: 100px;
+        box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.08), 0 8px 16px -4px rgba(0,0,0,0.05);
+    }
+    :global(html[data-theme="dark"]) .share-pill {
+        background: rgba(20,20,20,0.6); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.08);
+    }
+    
+    .share-btn {
+        width: 40px; height: 40px; border-radius: 50%; border: none;
+        display: flex; align-items: center; justify-content: center;
+        background: transparent; color: #4b5563; cursor: pointer;
+        transition: all 0.2s; text-decoration: none; position: relative;
+    }
+    :global(html[data-theme="dark"]) .share-btn { color: #9ca3af; }
+    .share-btn:hover { background: rgba(0,0,0,0.05); color: #111827; }
+    :global(html[data-theme="dark"]) .share-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .share-btn svg { width: 18px; height: 18px; }
+
+    .share-btn .tooltip {
+        position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%) translateX(-5px);
+        background: #111827; color: #fff; padding: 4px 10px; border-radius: 6px;
+        font-size: 0.75rem; font-weight: 600; opacity: 0; pointer-events: none;
+        transition: all 0.2s; white-space: nowrap;
+    }
+    :global(html[data-theme="dark"]) .share-btn .tooltip { background: #fff; color: #111827; }
+    .share-btn.copied .tooltip { opacity: 1; transform: translateY(-50%) translateX(0); }
+
+    /* TOC Scrollspy */
+    .article-sidebar-right { padding-left: 2rem; }
+    .toc-container {
+        border-left: 1px solid rgba(0,0,0,0.08); padding-left: 1.5rem;
+    }
+    :global(html[data-theme="dark"]) .toc-container { border-left-color: rgba(255,255,255,0.1); }
+    
+    .toc-title {
+        font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+        color: #9ca3af; display: block; margin-bottom: 1rem;
+    }
+    .toc-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.8rem; }
+    .toc-list li a {
+        font-size: 0.9rem; color: #6b7280; text-decoration: none; line-height: 1.4;
+        display: block; transition: color 0.2s; font-weight: 500;
+    }
+    :global(html[data-theme="dark"]) .toc-list li a { color: #9ca3af; }
+    .toc-list li a:hover { color: #111827; }
+    :global(html[data-theme="dark"]) .toc-list li a:hover { color: #fff; }
+    .toc-list li a.active { color: var(--color-blue-deep); font-weight: 600; }
+    :global(html[data-theme="dark"]) .toc-list li a.active { color: #60a5fa; }
+    
+    .toc-depth-3 { padding-left: 1rem; font-size: 0.85rem; }
+
+    @media (max-width: 1024px) {
+        .article-layout { grid-template-columns: 1fr; gap: 0; }
+        .article-sidebar-left, .article-sidebar-right { display: none; } /* Hide sticky sidebars on mobile */
     }
 
     /* ==========================================================
