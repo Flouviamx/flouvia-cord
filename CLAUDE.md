@@ -1275,3 +1275,10 @@ El componente `Sidebar.astro` es el menú principal de la app y presenta un dise
 - **Normal Mode (Expanded):** Sigue la misma filosofía limpia que el modo Dock. Utiliza hover elástico sutil (sin físicas excesivas) y textos sólidos. El indicador de ítem activo es un cuadro de cristal líquido (`backdrop-filter`) idéntico en ambos modos, asegurando cohesión visual.
 - **Microinteracciones:** Las tooltips en modo colapsado utilizan `transform-origin: left center` para brotar elásticamente desde el ícono. El indicador de ítem activo es una "pastilla de cristal" calculada matemáticamente en JS mediante `getBoundingClientRect()` para evitar bugs de offsetTop en anidamientos CSS.
 - **Sombra Premium:** `--sb-shadow` iguala de forma idéntica la sombra doble de la `topbar` (`0 12px 36px -8px rgba(10,25,47,0.14)`) para asegurar que la sidebar no luzca plana frente al resto de los paneles, creando un volumen 3D ultra-premium.
+
+### Blog Aesthetics (Stripe/Flouvia Pattern)
+El blog público (`/blog`) emplea un diseño sin imágenes (image-less) fuertemente inspirado en Stripe, adaptado a los colores corporativos de Flouvia (Cord).
+- **Portadas CSS:** En lugar de fotografías genéricas, los posts utilizan portadas dinámicas generadas 100% con HTML y CSS (`.stripe-cover` con abstract shapes y glassmorphism).
+- **Flouvia Gradients:** Se usa una paleta tech/B2B estricta (navy, cyan, teal, silver glass) a través de clases `.gradient-1` a `.gradient-5`.
+- **Íconos Vectoriales Abstractos:** Las portadas inyectan SVG minimalistas translúcidos mapeados dinámicamente a la categoría del artículo (Finanzas, Ventas B2B, Fiscal, Tecnología, etc.), flotando sobre los gradientes con sombra (`drop-shadow`).
+- **Avatares Minimalistas:** Los avatares de autor utilizan un componente de inicial estilizada (`.fc-author-initial`) en lugar de fotografías reales. Es un círculo con gradiente azul corporativo y texto en blanco, garantizando un aspecto "Quiet Luxury" y limpio sin importar qué autor publique.

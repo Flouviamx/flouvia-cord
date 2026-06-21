@@ -86,6 +86,17 @@
             });
         });
 
+        // ── Mockups on-scroll fuera del hero ──
+        const otherMockups = gsap.utils.toArray<HTMLElement>('.reveal-mockup')
+            .filter((el) => !el.closest('.pp-hero'));
+        otherMockups.forEach((el) => {
+            gsap.set(el, { y: 40 });
+            ScrollTrigger.create({
+                trigger: el, start: 'top 85%', once: true,
+                onEnter: () => gsap.to(el, { opacity: 1, y: 0, duration: 1.2, ease: 'power3.out', clearProps: 'transform' }),
+            });
+        });
+
 
 
         // ── Count-ups ([data-countup] con data-decimals/data-prefix/data-suffix) ──
