@@ -24,7 +24,7 @@ const {
             </a>
             <a href="mailto:hola@flouvia.com" class="fc-link">Hablar con el equipo</a>
         </div>
-        <p class="fc-micro">Sin tarjeta · Plan gratis para siempre · Hecho en México</p>
+        <p class="fc-micro">Sin tarjeta · Plan gratis para siempre</p>
     </div>
 </section>
 
@@ -37,11 +37,6 @@ const {
                 <a href="https://flouvia.com" target="_blank" rel="noopener" class="footer-byflouvia">
                     Un producto de <b>Flouvia</b> →
                 </a>
-                <div class="footer-trust">
-                    <span class="footer-chip">🇲🇽 Hecho en México</span>
-                    <span class="footer-chip">CFDI 4.0</span>
-                    <span class="footer-chip">Datos cifrados</span>
-                </div>
             </div>
 
             <div class="footer-cols">
@@ -90,7 +85,7 @@ const {
         </div>
 
         <div class="footer-bottom">
-            <p>&copy; <span class="editorial">2026</span> <span class="editorial">Cord</span> · by Flouvia. Hecho en CDMX.</p>
+            <p>&copy; <span class="editorial">2026</span> <span class="editorial">Cord</span> · by Flouvia.</p>
             <div class="footer-legal">
                 <a href="/privacidad">Privacidad</a>
                 <span>·</span>
@@ -159,18 +154,13 @@ const {
     .footer-byflouvia:hover { color: #cdd5e0; }
     .footer-byflouvia:hover b { color: #fff; }
 
-    .footer-trust { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.5rem; }
-    .footer-chip {
-        font-size: 0.68rem; font-weight: 600; color: #aab4c4;
-        background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
-        padding: 5px 11px; border-radius: 100px; white-space: nowrap;
-    }
+
 
     .footer-cols { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1.8rem; }
-    .footer-col { display: flex; flex-direction: column; gap: 0.9rem; }
-    .footer-col-title { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.5px; color: rgba(255,255,255,0.4); text-transform: uppercase; margin-bottom: 0.4rem; }
-    .footer-col a { font-size: 0.9rem; color: #8892b0; text-decoration: none; transition: color 0.3s var(--ease-ios); width: max-content; }
-    .footer-col a:hover { color: #fff; }
+    .footer-col { display: flex; flex-direction: column; gap: 1.25rem; }
+    .footer-col-title { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.5px; color: rgba(255,255,255,0.4); text-transform: uppercase; margin-bottom: 0.6rem; }
+    .footer-col a { font-size: 0.9rem; color: #8892b0; text-decoration: none; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); width: max-content; display: inline-block; }
+    .footer-col a:hover { color: #fff; transform: translateX(6px); }
 
     .footer-bottom {
         display: flex; justify-content: space-between; align-items: center;
