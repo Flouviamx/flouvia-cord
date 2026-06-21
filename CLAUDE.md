@@ -1211,3 +1211,16 @@ de Vercel de Cord (auto-inyecta `DATABASE_URL` en todos los environments).
   apunta a Vercel).
 - **Modo:** SSR (`output: 'server'`). La landing es `prerender: true`.
 - Todas las API routes futuras necesitan `export const prerender = false`.
+
+---
+
+## Support Hub Architecture (Astro Content Collections)
+
+El Centro de Ayuda (`/soporte`) es un sistema de documentación *Stripe-level* impulsado por **Astro Content Collections** (Astro 6.0).
+
+- **Estructura de Datos:** Los artículos viven en `src/content/support/*.md`. Contamos con ~61 artículos enriquecidos y estructurados con Markdown alerts (`> [!NOTE]`).
+- **Ruteo Dinámico (`prerender = true`):** 
+  - `src/pages/soporte/[slug].astro`: Plantilla de lectura con Sidebar dinámico izquierdo (artículos relacionados), Breadcrumbs y Paginación Siguiente/Anterior.
+  - `src/pages/soporte/categoria/[categoria].astro`: Índice de categoría en formato de lista minimalista (diseño cardless corporativo).
+- **Buscador Client-Side:** El autocompletado en `SupportHero.astro` consulta `/api/support-search.json.ts` y filtra en el cliente para latencia cero.
+- **Diseño sin Emojis:** Todos los íconos de soporte utilizan SVGs estilo Lucide en lugar de emojis de texto. Todo el estilo "tarjeta" pesado fue removido en favor de fondos transparentes, divisores sutiles y estética corporativa.
