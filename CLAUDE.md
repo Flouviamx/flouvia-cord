@@ -505,7 +505,10 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
 ✅ **Navbar v3 (jun 2026)** — nuevo megamenú DESARROLLADORES entre SOLUCIONES y RECURSOS:
    paneles API REST · MCP para IA · Cord Elements. PRECIOS movido al final como link simple.
    Orden: PRODUCTO · SOLUCIONES · DESARROLLADORES · RECURSOS · PRECIOS.
-✅ **Footer Stripe/Linear (jun 2026)** — rediseño premium estilo Stripe/Linear sin badges, sin prefijos numéricos, con tipografía sutil, enlaces gris técnico que hacen fade a blanco y enlace directo a soporte. Grid asimétrico (2fr 6fr).
+✅ **Footer v2 (jun 2026)** — expandido de 3 a 5 columnas: /01 Producto · /02 Soluciones ·
+   /03 Desarrolladores · /04 Recursos · /05 Empresa. Trust chips en el bloque de marca
+   (🇲🇽 Hecho en México · CFDI 4.0 · Datos cifrados). Grid responsive (≤1020px → 3 cols,
+   ≤620px → 2 cols).
 ✅ **Vercel Analytics (jun 2026)** — `@vercel/analytics` instalado; componente `<Analytics />`
    montado en `Layout.astro` (landing) y `AppLayout.astro` (app). Page views y eventos se
    recopilan automáticamente en el dashboard de Vercel sin configuración adicional.

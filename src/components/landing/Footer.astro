@@ -21,6 +21,8 @@ const {
             <a href="/registro" class="fc-btn">
                 <span>Empezar gratis</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+            <a href="mailto:hola@flouvia.com" class="fc-link">Hablar con el equipo</a>
         </div>
         <p class="fc-micro">Sin tarjeta · Plan gratis para siempre</p>
     </div>
@@ -34,6 +36,11 @@ const {
                 <p class="footer-tagline">Operaciones B2B que cierran ventas. La plataforma moderna para cualquier negocio que vende a otras empresas en México.</p>
                 <a href="https://flouvia.com" target="_blank" rel="noopener" class="footer-byflouvia">
                     Un producto de <b>Flouvia</b> →
+                </a>
+                <br />
+                <a href="/status" class="footer-status">
+                    <span class="status-dot"></span>
+                    Sistemas operativos
                 </a>
             </div>
 
@@ -67,7 +74,6 @@ const {
                 </div>
                 <div class="footer-col">
                     <span class="footer-col-title">Recursos</span>
-                    <a href="/soporte">Soporte</a>
                     <a href="/#como">Cómo funciona</a>
                     <a href="/q/demo">Cotización de ejemplo</a>
                     <a href="/#precios">Precios</a>
@@ -77,6 +83,7 @@ const {
                     <span class="footer-col-title">Empresa</span>
                     <a href="/registro">Crear cuenta</a>
                     <a href="/sign-in">Entrar</a>
+                    <a href="mailto:hola@flouvia.com">hola@flouvia.com</a>
                     <a href="https://flouvia.com" target="_blank" rel="noopener">flouvia.com</a>
                 </div>
             </div>
@@ -151,6 +158,9 @@ const {
     .footer-byflouvia b { color: #fff; font-weight: 500; }
     .footer-byflouvia:hover { color: #ededed; }
 
+    .footer-status { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 500; color: #8a8f98; text-decoration: none; margin-top: 1.5rem; padding: 0.4rem 0.6rem; border-radius: 6px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); transition: background 0.2s ease, color 0.2s ease; }
+    .footer-status:hover { background: rgba(255,255,255,0.06); color: #ededed; }
+    .status-dot { width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px rgba(16,185,129,0.4); }
 
     .footer-cols { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2rem; }
     .footer-col { display: flex; flex-direction: column; gap: 1rem; }
