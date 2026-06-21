@@ -74,13 +74,16 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
                 {headings.length > 0 && (
                     <div class="toc-container sticky reveal" style="transition-delay: 500ms">
                         <span class="toc-title">En este artículo</span>
-                        <ul class="toc-list" id="toc-list">
-                            {headings.map(h => (
-                                <li class={`toc-depth-${h.depth}`}>
-                                    <a href={`#${h.slug}`}>{h.text}</a>
-                                </li>
-                            ))}
-                        </ul>
+                        <div class="toc-body">
+                            <div class="toc-indicator" id="toc-indicator"></div>
+                            <ul class="toc-list" id="toc-list">
+                                {headings.map(h => (
+                                    <li class={`toc-depth-${h.depth}`}>
+                                        <a href={`#${h.slug}`}>{h.text}</a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                     </div>
                 )}
             </aside>
@@ -164,8 +167,9 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
 
         // TOC Highlight
         let currentActive = null;
+        const tocIndicator = document.getElementById('toc-indicator');
+
         const tocObserver = new IntersectionObserver((entries) => {
-            // Find the intersecting heading nearest to top
             let activeId = currentActive;
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -175,7 +179,15 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
             
             if (activeId !== currentActive) {
                 tocLinks.forEach(link => {
-                    link.classList.toggle('active', link.getAttribute('href') === `#${activeId}`);
+                    const isActive = link.getAttribute('href') === `#${activeId}`;
+                    link.classList.toggle('active', isActive);
+                    
+                    if (isActive && tocIndicator) {
+                        const linkParent = link.parentElement;
+                        tocIndicator.style.top = `${linkParent.offsetTop}px`;
+                        tocIndicator.style.height = `${linkParent.offsetHeight}px`;
+                        tocIndicator.style.opacity = '1';
+                    }
                 });
                 currentActive = activeId;
             }
@@ -380,66 +392,85 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
     }
 
     /* ==========================================================
-       RIGHT SIDEBAR: SHARE PILL (Minimalist)
+       RIGHT SIDEBAR: SHARE PILL (Premium & Animated)
        ========================================================== */
-    .article-sidebar-right { display: flex; justify-content: flex-start; padding-left: 2rem; }
+    .article-sidebar-right { display: flex; justify-content: flex-start; padding-left: 2rem; align-items: flex-start; }
     
     .share-pill {
         display: flex; flex-direction: column; gap: 0.5rem;
+        background: #ffffff;
+        padding: 0.5rem; border-radius: 100px;
+        box-shadow: 0 12px 30px -10px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(0,0,0,0.05);
+        transform: translateZ(0);
     }
     
     .share-btn {
         width: 44px; height: 44px; border-radius: 50%; border: none;
         display: flex; align-items: center; justify-content: center;
-        background: transparent; color: #9ca3af; cursor: pointer;
-        transition: all 0.3s ease; text-decoration: none; position: relative;
+        background: transparent; color: #6b7280; cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); text-decoration: none; position: relative;
     }
     
     .share-btn:hover { 
-        color: #111827; 
-        background: rgba(0,0,0,0.03);
+        color: #111827; background: #f9fafb;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05), inset 0 0 0 1px rgba(0,0,0,0.05);
+        transform: scale(1.08) translateY(-2px);
     }
     .share-btn svg { width: 20px; height: 20px; transition: transform 0.3s; }
     .share-btn:hover svg { transform: scale(1.1); }
 
     .share-btn .tooltip {
-        position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%) translateX(-10px);
-        background: #111827; color: #fff; padding: 4px 10px; border-radius: 6px;
+        position: absolute; left: calc(100% + 14px); top: 50%; transform: translateY(-50%) translateX(-10px);
+        background: #111827; color: #fff; padding: 6px 12px; border-radius: 8px;
         font-size: 0.75rem; font-weight: 600; opacity: 0; pointer-events: none;
-        transition: all 0.2s ease; white-space: nowrap;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); white-space: nowrap;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
     .share-btn.copied .tooltip { opacity: 1; transform: translateY(-50%) translateX(0); }
 
     /* ==========================================================
-       LEFT SIDEBAR: TOC SCROLLSPY (Minimalist)
+       LEFT SIDEBAR: TOC SCROLLSPY (Premium & Animated)
        ========================================================== */
-    .article-sidebar-left { padding-right: 2rem; display: flex; justify-content: flex-end; }
+    .article-sidebar-left { padding-right: 2rem; display: flex; justify-content: flex-end; align-items: flex-start; }
     
     .toc-container {
         position: relative;
         padding-right: 1.5rem; text-align: right;
-        border-right: 1px solid rgba(0,0,0,0.08);
-        min-width: 180px;
+        min-width: 200px;
     }
     
     .toc-title {
-        font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
-        color: #9ca3af; display: block; margin-bottom: 1.2rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em;
+        color: #9ca3af; display: block; margin-bottom: 1.5rem;
     }
     
-    .toc-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.8rem; }
+    .toc-body { position: relative; display: flex; justify-content: flex-end; }
+    
+    /* The sliding pill indicator instead of a full line */
+    .toc-indicator {
+        position: absolute; right: -1.5rem; top: 0; width: 4px; height: 0;
+        background: var(--color-blue-deep); border-radius: 4px;
+        transition: top 0.4s cubic-bezier(0.16, 1, 0.3, 1), height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
+        opacity: 0; transform: translateX(50%);
+    }
+    
+    .toc-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.8rem; position: relative; width: 100%; }
+    
+    .toc-list li { position: relative; }
     
     .toc-list li a {
         display: block;
-        font-size: 0.85rem; color: #9ca3af; text-decoration: none; line-height: 1.4;
-        transition: color 0.2s ease; font-weight: 500;
+        font-size: 0.85rem; color: #9ca3af; text-decoration: none; line-height: 1.5;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); font-weight: 500;
+        transform-origin: right;
     }
     
-    .toc-list li a:hover { color: #111827; }
+    .toc-list li a:hover { color: #111827; transform: translateX(-4px); }
     
-    .toc-list li a.active { color: var(--color-blue-deep); font-weight: 600; }
+    .toc-list li a.active { color: #111827; font-weight: 600; transform: translateX(-6px); }
     
-    .toc-depth-3 { padding-right: 1rem; font-size: 0.8rem; }
+    .toc-depth-3 { padding-right: 1rem; font-size: 0.8rem; opacity: 0.8; }
 
     @media (max-width: 1024px) {
         .article-layout { grid-template-columns: 1fr; gap: 0; }
