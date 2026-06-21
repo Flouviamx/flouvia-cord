@@ -27,13 +27,50 @@ const BOARD_COLS = [
     { key: 'approved', label: 'Aprobada', statuses: ['approved'] },
     { key: 'paid',     label: 'Pagada',   statuses: ['paid', 'invoiced'] },
 ];
+
+// Conteos por filtro (para mostrarlos en las píldoras) + resumen de cabecera.
+const countFor = (key: string) =>
+    key === 'all' ? COTIZACIONES.length
+    : key === 'approval' ? COTIZACIONES.filter(q => q.aprobEstado === 'pendiente').length
+    : COTIZACIONES.filter(q => groupOf(q.status) === key).length;
+const sumWhere = (fn: (q: typeof COTIZACIONES[number]) => boolean) =>
+    COTIZACIONES.filter(fn).reduce((s, q) => s + (q.total ?? 0), 0);
+const openCount = countFor('open');
+const openValue = sumWhere(q => groupOf(q.status) === 'open');
+const approvedValue = sumWhere(q => q.status === 'approved');
+const pendingCount = countFor('approval');
 ---
 
 <AppLayout title="Cotizaciones — Cord" page="cotizaciones" heading="Cotizaciones">
+    {COTIZACIONES.length === 0 ? (
+    <div class="cot-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+        <h3>Aún no tienes cotizaciones</h3>
+        <p>Arma tu primera cotización, mándala por link y mira en vivo cuándo la abre tu cliente.</p>
+        <a href="/app/cotizaciones/nueva" class="cot-empty-cta">+ Nueva cotización</a>
+    </div>
+    ) : (
+    <Fragment>
+    <div class="cot-summary">
+        <div class="cs-item">
+            <span class="cs-val editorial">{money(openValue, 0)}</span>
+            <span class="cs-lbl">en pipeline · {openCount} {openCount === 1 ? 'abierta' : 'abiertas'}</span>
+        </div>
+        <div class="cs-item">
+            <span class="cs-val editorial">{money(approvedValue, 0)}</span>
+            <span class="cs-lbl">aprobado, por cobrar</span>
+        </div>
+        {pendingCount > 0 && (
+            <div class="cs-item cs-warn">
+                <span class="cs-val editorial">{pendingCount}</span>
+                <span class="cs-lbl">esperan tu aprobación</span>
+            </div>
+        )}
+    </div>
     <div class="view-row">
         <div class="filters" id="filters">
             {FILTERS.map((f, i) => (
-                <button class:list={['filter-pill', { active: i === 0 }]} data-filter={f.key}>{f.label}</button>
+                <button class:list={['filter-pill', { active: i === 0 }]} data-filter={f.key}>{f.label}<span class="fp-count">{countFor(f.key)}</span></button>
             ))}
         </div>
         <div class="view-toggle" id="viewToggle">
@@ -47,6 +84,8 @@ const BOARD_COLS = [
             </button>
         </div>
     </div>
+
+    <p class="board-hint" id="boardHint" hidden>↔ Arrastra las tarjetas para avanzar cada cotización en su pipeline.</p>
 
     <section class="table-card">
         <div class="t-head">
@@ -103,9 +142,34 @@ const BOARD_COLS = [
     </section>
 
     <div class="board-toast" id="boardToast" hidden></div>
+    </Fragment>
+    )}
 </AppLayout>
 
 <style>
+    /* Resumen de cabecera (hairline, sin tarjetas) */
+    .cot-summary { display: flex; flex-wrap: wrap; gap: 2rem; padding: 0 0 1.1rem; margin-bottom: 1.1rem; border-bottom: 1px solid var(--color-border); }
+    .cs-item { display: flex; flex-direction: column; gap: 3px; }
+    .cs-val { font-size: 1.5rem; color: var(--color-blue-deep); line-height: 1; }
+    .cs-lbl { font-size: 0.74rem; color: var(--color-text-muted); }
+    .cs-warn .cs-val { color: var(--color-warn); }
+
+    /* Conteo dentro de cada píldora de filtro */
+    .fp-count { display: inline-flex; align-items: center; justify-content: center; min-width: 17px; height: 17px; padding: 0 5px; margin-left: 7px; border-radius: 100px; font-size: 0.66rem; font-weight: 700; background: var(--color-bg-soft); color: var(--color-text-muted); vertical-align: 1px; }
+    .filter-pill.active .fp-count { background: rgba(255,255,255,0.22); color: #fff; }
+
+    /* Pista del Kanban (solo en vista tablero) */
+    .board-hint { font-size: 0.78rem; color: var(--color-text-muted); margin: 0 0 1rem; }
+    .board-hint[hidden] { display: none; }
+
+    /* Estado vacío total (sin ninguna cotización) */
+    .cot-empty { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 4rem 1rem; text-align: center; }
+    .cot-empty svg { width: 42px; height: 42px; color: #cbd5e1; margin-bottom: 0.3rem; }
+    .cot-empty h3 { font-size: 1.05rem; font-weight: 600; color: var(--color-text); margin: 0; }
+    .cot-empty p { font-size: 0.85rem; color: var(--color-text-muted); margin: 0; max-width: 380px; line-height: 1.5; }
+    .cot-empty-cta { margin-top: 0.7rem; font-size: 0.84rem; font-weight: 600; text-decoration: none; background: var(--color-blue-deep); color: #fff; padding: 9px 18px; border-radius: 9px; box-shadow: 0 6px 18px -8px rgba(10,25,47,0.5); transition: transform 0.4s var(--ease-spring); }
+    .cot-empty-cta:hover { transform: translateY(-2px); }
+
     .filters { display: flex; gap: 0.4rem; margin-bottom: 1rem; flex-wrap: wrap; }
     .filter-pill {
         font-family: var(--font-sans);
@@ -236,12 +300,14 @@ const BOARD_COLS = [
     const filtersBar = document.getElementById('filters');
     const listView = document.querySelector<HTMLElement>('.table-card');
     const boardView = document.getElementById('boardView');
+    const boardHint = document.getElementById('boardHint');
     vtBtns.forEach((btn) => btn.addEventListener('click', () => {
         vtBtns.forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
         const board = btn.dataset.view === 'board';
         if (boardView) boardView.hidden = !board;
         if (listView) listView.hidden = board;
+        if (boardHint) boardHint.hidden = !board;
         if (filtersBar) filtersBar.style.visibility = board ? 'hidden' : '';
     }));
 

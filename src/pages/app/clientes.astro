@@ -56,7 +56,16 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
             </button>
         ))}
         {CLIENTES.length === 0 && (
-            <p class="t-empty">Aún no tienes clientes. Crea el primero con "+ Nuevo cliente".</p>
+            <div class="t-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <p><b>Aún no tienes clientes</b><br/>Agrega tu primer cliente o impórtalos en lote desde un CSV.</p>
+                {canEdit && (
+                    <div class="t-empty-cta">
+                        <button class="btn-new" id="btnNewEmpty">+ Nuevo cliente</button>
+                        <button class="btn-import" id="btnImportEmpty">Importar CSV</button>
+                    </div>
+                )}
+            </div>
         )}
     </section>
 
@@ -92,22 +101,27 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
                     <input class="m-input" id="fLimite" name="limite" type="number" min="0" step="1000" placeholder="500000" />
                 </div>
             </div>
-            <div class="m-row">
-                <div class="m-field">
-                    <label for="fNivel">Nivel de precio</label>
-                    <select class="m-input" id="fNivel">
-                        <option value="estandar">Estándar (precio de lista)</option>
-                        <option value="plata">Plata</option>
-                        <option value="oro">Oro</option>
-                        <option value="distribuidor">Distribuidor</option>
-                    </select>
+            <div class="m-field">
+                <label>Nivel de precio</label>
+                <div class="m-chips m-tiers" id="fTiers">
+                    <button type="button" class="chip tier active" data-v="estandar" data-sug="0">Estándar</button>
+                    <button type="button" class="chip tier" data-v="plata" data-sug="5">Plata</button>
+                    <button type="button" class="chip tier" data-v="oro" data-sug="10">Oro</button>
+                    <button type="button" class="chip tier" data-v="distribuidor" data-sug="15">Distribuidor</button>
                 </div>
-                <div class="m-field">
-                    <label for="fDescuento">Descuento automático (%)</label>
-                    <input class="m-input" id="fDescuento" type="number" min="0" max="100" step="1" placeholder="0" />
-                </div>
+                <input type="hidden" id="fNivel" value="estandar" />
             </div>
-            <span class="m-hint">El descuento del nivel se aplica solo a las líneas al cotizarle a este cliente.</span>
+            <div class="m-field">
+                <label for="fDescuento">Descuento automático en sus precios</label>
+                <div class="disc-row">
+                    <div class="disc-input">
+                        <input class="m-input" id="fDescuento" type="number" min="0" max="100" step="1" placeholder="0" />
+                        <span class="disc-suffix">%</span>
+                    </div>
+                    <span class="disc-preview" id="discPreview">Sin descuento</span>
+                </div>
+                <span class="m-hint">Cada vez que le cotices, sus precios bajan este % solos. Ej. <b>Oro = −10%</b>: un producto de $1,000 le sale en $900.</span>
+            </div>
             <div class="m-field">
                 <label>Términos de pago</label>
                 <div class="m-chips" id="fTerminos">
@@ -134,6 +148,12 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
             <div class="m-head">
                 <h2>Importar clientes por CSV</h2>
                 <button type="button" class="m-close" id="impClose" aria-label="Cerrar">✕</button>
+            </div>
+
+            <div class="imp-steps" id="impSteps">
+                <span class="imp-stepdot active" data-s="file"><i>1</i> Archivo</span>
+                <span class="imp-stepdot" data-s="map"><i>2</i> Columnas</span>
+                <span class="imp-stepdot" data-s="prev"><i>3</i> Revisar</span>
             </div>
 
             <div class="imp-step" id="impStepFile">
@@ -192,6 +212,14 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
 
     /* ── Modal importación ── */
     .modal-lg { width: min(700px, calc(100vw - 2rem)); }
+    .imp-steps { display: flex; align-items: center; gap: 0.4rem; margin: -0.2rem 0 0.2rem; }
+    .imp-stepdot { display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; font-weight: 600; color: var(--color-text-muted); }
+    .imp-stepdot i { display: inline-flex; align-items: center; justify-content: center; width: 19px; height: 19px; border-radius: 50%; border: 1px solid var(--color-border); font-size: 0.66rem; font-style: normal; font-weight: 700; transition: all 0.25s; }
+    .imp-stepdot:not(:last-child)::after { content: ''; width: 18px; height: 1px; background: var(--color-border); margin-left: 0.4rem; }
+    .imp-stepdot.active { color: var(--color-blue-deep); }
+    .imp-stepdot.active i { border-color: var(--color-blue-deep); background: var(--color-blue-deep); color: #fff; }
+    .imp-stepdot.done { color: #059669; }
+    .imp-stepdot.done i { border-color: #10b981; background: #10b981; color: #fff; }
     .imp-step { display: flex; flex-direction: column; gap: 0.9rem; }
     .imp-lead { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; }
     .imp-drop {
@@ -271,7 +299,10 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
     .m-hint { font-size: 0.7rem; color: var(--color-text-muted); margin: -0.3rem 0 0; }
     .t-amount { font-size: 0.95rem; color: var(--color-blue-deep); }
     .t-right { text-align: right; }
-    .t-empty { padding: 2rem 0; font-size: 0.85rem; color: var(--color-text-muted); margin: 0; }
+    .t-empty { display: flex; flex-direction: column; align-items: center; gap: 0.7rem; padding: 3rem 0; font-size: 0.85rem; color: var(--color-text-muted); margin: 0; text-align: center; line-height: 1.5; }
+    .t-empty svg { width: 34px; height: 34px; color: #cbd5e1; }
+    .t-empty b { color: var(--color-text); font-weight: 600; }
+    .t-empty-cta { display: flex; gap: 0.6rem; margin-top: 0.3rem; }
 
     /* ── Modal ── */
     .modal {
@@ -300,6 +331,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
     .m-input:focus { outline: none; border-color: var(--color-blue-deep); }
 
     .m-chips { display: flex; gap: 0.5rem; }
+    .m-tiers { flex-wrap: wrap; }
     .chip {
         font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600;
         color: var(--color-text-muted); background: var(--color-bg-soft);
@@ -308,6 +340,15 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
         transition: all 0.25s var(--ease-ios);
     }
     .chip.active { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); }
+
+    /* Descuento por nivel: input con sufijo % + vista previa en pesos */
+    .disc-row { display: flex; align-items: center; gap: 0.7rem; }
+    .disc-input { position: relative; flex: 0 0 120px; }
+    .disc-input .m-input { padding-right: 26px; width: 100%; }
+    .disc-suffix { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.85rem; color: var(--color-text-muted); pointer-events: none; }
+    .disc-preview { font-size: 0.82rem; font-weight: 500; color: var(--color-text-muted); }
+    .disc-preview.on { color: #059669; }
+    .disc-preview b { font-weight: 700; }
 
     .m-error { font-size: 0.78rem; color: var(--color-danger); margin: 0; min-height: 1em; }
 
@@ -360,6 +401,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
         const btnDelete = document.getElementById('mDelete') as HTMLButtonElement;
         const btnSave = document.getElementById('mSave') as HTMLButtonElement;
         const chips = Array.from(document.querySelectorAll<HTMLButtonElement>('#fTerminos .chip'));
+        const tierChips = Array.from(document.querySelectorAll<HTMLButtonElement>('#fTiers .chip'));
 
         let editId: string | null = null;
         let terminos = 'contado';
@@ -369,6 +411,27 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
             terminos = v;
             chips.forEach(c => c.classList.toggle('active', c.dataset.v === v));
         };
+
+        // Vista previa en vivo: traduce el % a pesos sobre un ejemplo de $1,000.
+        const updateDiscPreview = () => {
+            const d = parseFloat(input('fDescuento').value) || 0;
+            const el = document.getElementById('discPreview');
+            if (!el) return;
+            if (d <= 0) { el.innerHTML = 'Sin descuento'; el.classList.remove('on'); }
+            else { el.innerHTML = `$1,000 → <b>$${Math.round(1000 * (1 - d / 100)).toLocaleString('es-MX')}</b>`; el.classList.add('on'); }
+        };
+        // Elegir un nivel pinta el chip y (si lo pides) sugiere su descuento típico.
+        const setNivel = (v: string, applySuggested = false) => {
+            input('fNivel').value = v;
+            tierChips.forEach(c => c.classList.toggle('active', c.dataset.v === v));
+            if (applySuggested) {
+                const chip = tierChips.find(c => c.dataset.v === v);
+                input('fDescuento').value = chip && chip.dataset.sug && chip.dataset.sug !== '0' ? chip.dataset.sug : '';
+            }
+            updateDiscPreview();
+        };
+        tierChips.forEach(c => c.addEventListener('click', () => setNivel(c.dataset.v!, true)));
+        input('fDescuento').addEventListener('input', updateDiscPreview);
 
         const open = (data?: DOMStringMap) => {
             errorEl.textContent = '';
@@ -380,13 +443,14 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
             input('fEmail').value = data?.email ?? '';
             input('fRfc').value = data?.rfc ?? '';
             input('fLimite').value = data?.limite ?? '';
-            input('fNivel').value = data?.nivel ?? 'estandar';
             input('fDescuento').value = data?.descuento ?? '';
+            setNivel(data?.nivel ?? 'estandar', false);
             setTerm(data?.terminos ?? 'contado');
             modal.showModal();
         };
 
         document.getElementById('btnNew')?.addEventListener('click', () => open());
+        document.getElementById('btnNewEmpty')?.addEventListener('click', () => open());
         document.querySelectorAll<HTMLElement>('.t-row[data-id]').forEach(row =>
             row.addEventListener('click', () => open(row.dataset)));
         // Auto-abrir el modal de alta cuando se llega con ?nuevo=1 (botón "+" del drawer móvil)
@@ -518,6 +582,12 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
             errorEl.textContent = '';
             if (s === 'file') { btnNext.disabled = true; btnNext.textContent = 'Continuar'; }
             if (s === 'map') { btnNext.disabled = false; btnNext.textContent = 'Continuar'; }
+            const order: Record<string, number> = { file: 0, map: 1, prev: 2 };
+            document.querySelectorAll<HTMLElement>('#impSteps .imp-stepdot').forEach((d) => {
+                const di = order[d.dataset.s || 'file']; const ci = order[s];
+                d.classList.toggle('active', di === ci);
+                d.classList.toggle('done', di < ci);
+            });
         };
         const ncols = () => grid.reduce((m, r) => Math.max(m, r.length), 0);
 
@@ -604,6 +674,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
         };
 
         document.getElementById('btnImport')?.addEventListener('click', () => { showStep('file'); modal.showModal(); });
+        document.getElementById('btnImportEmpty')?.addEventListener('click', () => { showStep('file'); modal.showModal(); });
         $('impClose').addEventListener('click', () => modal.close());
         $('impCancel').addEventListener('click', () => modal.close());
         fileInput.addEventListener('change', () => { if (fileInput.files?.[0]) loadFile(fileInput.files[0]); });

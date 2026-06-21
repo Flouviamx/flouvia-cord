@@ -44,7 +44,16 @@ const canEdit = memberCan(ME, 'productos');
             </button>
         ))}
         {PRODUCTOS.length === 0 && (
-            <p class="t-empty">Tu catálogo está vacío. Agrega tu primer producto con "+ Nuevo producto".</p>
+            <div class="t-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                <p><b>Tu catálogo está vacío</b><br/>Agrega tu primer producto o impórtalos en lote desde un CSV.</p>
+                {canEdit && (
+                    <div class="t-empty-cta">
+                        <button class="btn-new" id="btnNewEmpty">+ Nuevo producto</button>
+                        <button class="btn-import" id="btnImportEmpty">Importar CSV</button>
+                    </div>
+                )}
+            </div>
         )}
     </section>
 
@@ -72,14 +81,18 @@ const canEdit = memberCan(ME, 'productos');
             </div>
             <div class="m-row">
                 <div class="m-field">
-                    <label for="fPrecio">Precio de lista (MXN) *</label>
+                    <label for="fPrecio">Precio de venta (MXN) *</label>
                     <input class="m-input" id="fPrecio" type="number" min="0" step="0.01" required placeholder="198.00" />
                 </div>
                 <div class="m-field">
-                    <label for="fCosto">Costo unitario (MXN)</label>
+                    <label for="fCosto">¿Cuánto te cuesta? (MXN)</label>
                     <input class="m-input" id="fCosto" type="number" min="0" step="0.01" placeholder="0.00" />
-                    <span class="m-hint">Opcional. Permite auditar márgenes en el editor.</span>
+                    <span class="m-hint">Opcional. Nos deja mostrarte tu ganancia.</span>
                 </div>
+            </div>
+            <div class="margin-strip" id="marginStrip" hidden>
+                <div class="ms-bar"><span class="ms-fill" id="msFill"></span></div>
+                <div class="ms-text" id="msText"></div>
             </div>
             <div class="m-row">
                 <div class="m-field" style="flex:0 0 auto">
@@ -108,6 +121,12 @@ const canEdit = memberCan(ME, 'productos');
             <div class="m-head">
                 <h2 id="impTitle">Importar productos por CSV</h2>
                 <button type="button" class="m-close" id="impClose" aria-label="Cerrar">✕</button>
+            </div>
+
+            <div class="imp-steps" id="impSteps">
+                <span class="imp-stepdot active" data-s="file"><i>1</i> Archivo</span>
+                <span class="imp-stepdot" data-s="map"><i>2</i> Columnas</span>
+                <span class="imp-stepdot" data-s="prev"><i>3</i> Revisar</span>
             </div>
 
             <!-- Paso 1: archivo -->
@@ -169,6 +188,14 @@ const canEdit = memberCan(ME, 'productos');
 
     /* ── Modal importación ── */
     .modal-lg { width: min(680px, calc(100vw - 2rem)); }
+    .imp-steps { display: flex; align-items: center; gap: 0.4rem; margin: -0.2rem 0 0.2rem; }
+    .imp-stepdot { display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; font-weight: 600; color: var(--color-text-muted); }
+    .imp-stepdot i { display: inline-flex; align-items: center; justify-content: center; width: 19px; height: 19px; border-radius: 50%; border: 1px solid var(--color-border); font-size: 0.66rem; font-style: normal; font-weight: 700; transition: all 0.25s; }
+    .imp-stepdot:not(:last-child)::after { content: ''; width: 18px; height: 1px; background: var(--color-border); margin-left: 0.4rem; }
+    .imp-stepdot.active { color: var(--color-blue-deep); }
+    .imp-stepdot.active i { border-color: var(--color-blue-deep); background: var(--color-blue-deep); color: #fff; }
+    .imp-stepdot.done { color: #059669; }
+    .imp-stepdot.done i { border-color: #10b981; background: #10b981; color: #fff; }
     .imp-step { display: flex; flex-direction: column; gap: 0.9rem; }
     .imp-lead { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; }
     .imp-drop {
@@ -248,7 +275,24 @@ const canEdit = memberCan(ME, 'productos');
     .t-state { font-size: 0.72rem; font-weight: 700; }
     .t-state.on { color: #059669; }
     .t-state.off { color: #99a2af; }
-    .t-empty { padding: 2rem 0.6rem; font-size: 0.85rem; color: var(--color-text-muted); margin: 0; }
+    .t-empty { display: flex; flex-direction: column; align-items: center; gap: 0.7rem; padding: 3rem 0.6rem; font-size: 0.85rem; color: var(--color-text-muted); margin: 0; text-align: center; line-height: 1.5; }
+    .t-empty svg { width: 34px; height: 34px; color: #cbd5e1; }
+    .t-empty b { color: var(--color-text); font-weight: 600; }
+    .t-empty-cta { display: flex; gap: 0.6rem; margin-top: 0.3rem; }
+
+    /* Medidor de margen en vivo dentro del modal de producto */
+    .margin-strip { display: flex; flex-direction: column; gap: 0.4rem; margin-top: -0.2rem; }
+    .margin-strip[hidden] { display: none; }
+    .ms-bar { height: 6px; border-radius: 100px; background: var(--color-bg-soft); overflow: hidden; border: 1px solid var(--color-border); }
+    .ms-fill { display: block; height: 100%; border-radius: 100px; transition: width 0.35s var(--ease-spring), background 0.3s; }
+    .ms-fill.good { background: #10b981; }
+    .ms-fill.warn { background: #f59e0b; }
+    .ms-fill.bad { background: #ef4444; }
+    .ms-text { font-size: 0.78rem; color: var(--color-text-muted); }
+    .ms-text b { font-weight: 700; color: var(--color-text); }
+    .ms-text.good b { color: #059669; }
+    .ms-text.warn b { color: #b45309; }
+    .ms-text.bad b { color: #dc2626; }
 
     /* ── Modal (mismo lenguaje que clientes) ── */
     .modal {
@@ -347,6 +391,29 @@ const canEdit = memberCan(ME, 'productos');
             chips.forEach(c => c.classList.toggle('active', Boolean(c.dataset.v) === v));
         };
 
+        // Medidor de margen en vivo: traduce precio − costo en pesos ganados + %.
+        const moneyFmt = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n);
+        const updateMargin = () => {
+            const precio = parseFloat(input('fPrecio').value) || 0;
+            const costo = parseFloat(input('fCosto').value) || 0;
+            const strip = document.getElementById('marginStrip')!;
+            const fill = document.getElementById('msFill')!;
+            const text = document.getElementById('msText')!;
+            if (costo <= 0 || precio <= 0) { strip.hidden = true; return; }
+            strip.hidden = false;
+            const ganancia = precio - costo;
+            const m = (ganancia / precio) * 100;
+            const cls = m < 15 ? 'bad' : m < 30 ? 'warn' : 'good';
+            fill.style.width = Math.max(0, Math.min(100, m)) + '%';
+            fill.className = 'ms-fill ' + cls;
+            text.className = 'ms-text ' + cls;
+            text.innerHTML = ganancia < 0
+                ? `Pierdes <b>${moneyFmt(Math.abs(ganancia))}</b> por unidad — tu costo supera el precio`
+                : `Ganas <b>${moneyFmt(ganancia)}</b> por unidad · margen <b>${Math.round(m)}%</b>`;
+        };
+        input('fPrecio').addEventListener('input', updateMargin);
+        input('fCosto').addEventListener('input', updateMargin);
+
         const open = (data?: DOMStringMap) => {
             errorEl.textContent = '';
             editId = data?.id ?? null;
@@ -358,10 +425,12 @@ const canEdit = memberCan(ME, 'productos');
             input('fPrecio').value = data?.precio ?? '';
             input('fCosto').value = data?.costo && data.costo !== '0' ? data.costo : '';
             setActivo(data ? Boolean(data.activo) : true);
+            updateMargin();
             modal.showModal();
         };
 
         document.getElementById('btnNew')?.addEventListener('click', () => open());
+        document.getElementById('btnNewEmpty')?.addEventListener('click', () => open());
         document.querySelectorAll<HTMLElement>('.t-row[data-id]').forEach(row =>
             row.addEventListener('click', () => open(row.dataset)));
         // Auto-abrir el modal de alta cuando se llega con ?nuevo=1 (botón "+" del drawer móvil)
@@ -481,6 +550,12 @@ const canEdit = memberCan(ME, 'productos');
             errorEl.textContent = '';
             if (s === 'file') { btnNext.disabled = true; btnNext.textContent = 'Continuar'; }
             if (s === 'map') { btnNext.disabled = false; btnNext.textContent = 'Continuar'; }
+            const order: Record<string, number> = { file: 0, map: 1, prev: 2 };
+            document.querySelectorAll<HTMLElement>('#impSteps .imp-stepdot').forEach((d) => {
+                const di = order[d.dataset.s || 'file']; const ci = order[s];
+                d.classList.toggle('active', di === ci);
+                d.classList.toggle('done', di < ci);
+            });
         };
 
         const ncols = () => grid.reduce((m, r) => Math.max(m, r.length), 0);
@@ -572,6 +647,7 @@ const canEdit = memberCan(ME, 'productos');
 
         // ── Eventos ──
         document.getElementById('btnImport')?.addEventListener('click', () => { showStep('file'); modal.showModal(); });
+        document.getElementById('btnImportEmpty')?.addEventListener('click', () => { showStep('file'); modal.showModal(); });
         $('impClose').addEventListener('click', () => modal.close());
         $('impCancel').addEventListener('click', () => modal.close());
         fileInput.addEventListener('change', () => { if (fileInput.files?.[0]) loadFile(fileInput.files[0]); });

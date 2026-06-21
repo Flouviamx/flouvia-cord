@@ -37,7 +37,13 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
 
             <!-- Cliente -->
             <section class="ed-block">
-                <div class="section-head"><h2>Cliente</h2></div>
+                <div class="section-head step-head">
+                    <span class="step-num">1</span>
+                    <div class="step-text">
+                        <h2>¿A quién le cotizas?</h2>
+                        <p class="step-hint">Elige el cliente y cómo te paga. Si tiene un nivel con descuento, se aplica solo a los precios.</p>
+                    </div>
+                </div>
                 <div class="client-row">
                     <select class="ed-select" id="clientSelect">
                         <option value="" disabled selected>— Selecciona un cliente —</option>
@@ -56,17 +62,22 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
 
             <!-- Productos -->
             <section class="ed-block">
-                <div class="section-head">
-                    <h2>Productos</h2>
+                <div class="section-head step-head">
+                    <span class="step-num">2</span>
+                    <div class="step-text">
+                        <h2>¿Qué le vas a cotizar?</h2>
+                        <p class="step-hint">Agrega productos de tu catálogo o una línea libre. Baja el precio en <b>Negociado</b> sin tocar tu lista.</p>
+                    </div>
                 </div>
 
                 <div class="lines-head">
-                    <span>Producto</span><span>Cant.</span><span>Lista</span><span>Negociado</span><span class="lh-right">Importe</span><span class="lh-margen">Margen</span><span></span>
+                    <span>Producto</span><span>Cant.</span><span>Lista</span><span>Negociado</span><span class="lh-right">Importe</span><span class="lh-margen">Margen <span class="lh-i" title="Tu ganancia sobre el precio negociado, ya descontando el costo. Verde = sano · rojo = por debajo de tu mínimo.">?</span></span><span></span>
                 </div>
                 <div id="lines"></div>
-                
+
                 <div class="lines-empty" id="linesEmpty">
-                    <p>No hay productos en la cotización.</p>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v4H3z"/><path d="M3 7v14h18V7"/><path d="M9 12h6"/></svg>
+                    <p><b>Aún no agregas productos</b><br/>Elige uno de tu catálogo abajo o agrega una línea libre.</p>
                 </div>
 
                 <div class="add-actions">
@@ -90,8 +101,10 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         <!-- ── Sidebar resumen ── -->
         <aside class="ed-side">
             <section class="ed-summary">
-                <div class="section-head"><h2>Resumen</h2></div>
+                <div class="section-head"><h2>Revisa y envía</h2></div>
+                <div class="sum-count" id="sumCount">Agrega productos para ver el total</div>
                 <div class="sum-line"><span>Subtotal</span><span class="editorial" id="sumSubtotal">$0.00</span></div>
+                <div class="sum-line sum-save" id="sumSaveLine" hidden><span>Le descontaste</span><span class="editorial" id="sumSave">$0.00</span></div>
                 <div class="sum-line"><span>IVA {ORG.ivaPct}%</span><span class="editorial" id="sumIva">$0.00</span></div>
                 <input type="hidden" id="cfgIva" value={ORG.ivaPct} />
                 <div class="sum-divider"></div>
@@ -105,21 +118,39 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
                 </div>
 
                 <div class="sum-field">
-                    <label>Moneda de la cotización</label>
+                    <label>¿En qué moneda le cotizas?</label>
                     <select class="ed-select" id="fxBase">
-                        <option value="MXN" selected>Peso mexicano (MXN)</option>
-                        <option value="USD">Dólar estadounidense (USD)</option>
-                        <option value="EUR">Euro (EUR)</option>
+                        <option value="MXN" selected>🇲🇽 Pesos mexicanos (MXN)</option>
+                        <option value="USD">🇺🇸 Dólares (USD)</option>
+                        <option value="EUR">🇪🇺 Euros (EUR)</option>
                     </select>
                 </div>
 
                 <div class="fx-cover" id="fxCover" hidden>
-                    <div class="sum-field" style="margin-top:0">
-                        <label>Cobertura cambiaria (buffer %)</label>
-                        <input class="ed-select" id="fxBuffer" type="number" min="0" max="20" step="0.5" value="2" />
+                    <p class="fx-explain">Le muestras precios en <b id="fxBaseLbl2">USD</b>, pero tu factura sale en pesos 🇲🇽. Congelamos el tipo de cambio de hoy para que un peso volátil no te coma el margen si tarda en pagarte.</p>
+
+                    <div class="fx-stepper">
+                        <div class="fx-step">
+                            <span class="fx-step-lbl">Tipo de cambio hoy</span>
+                            <span class="fx-step-val editorial" id="fxSpot">—</span>
+                        </div>
+                        <span class="fx-arrow" aria-hidden="true">→</span>
+                        <div class="fx-step fx-step-on">
+                            <span class="fx-step-lbl">Tu tasa protegida <span id="fxBufLbl">+2%</span></span>
+                            <span class="fx-step-val editorial" id="fxApplied">—</span>
+                        </div>
                     </div>
-                    <p class="fx-preview" id="fxPreview">Calculando tipo de cambio…</p>
-                    <p class="fx-hint">Se presenta al cliente en <b id="fxBaseLbl">USD</b> y se factura en <b>MXN</b>. La tasa se congela 30 días para proteger tu margen.</p>
+
+                    <label class="fx-cushion-lbl">¿Qué tan cauto quieres ser?</label>
+                    <div class="fx-cushion" id="fxCushion">
+                        <button type="button" class="fx-cush-chip" data-buf="1"><b>Poco</b><small>+1%</small></button>
+                        <button type="button" class="fx-cush-chip active" data-buf="2"><b>Normal</b><small>+2%</small></button>
+                        <button type="button" class="fx-cush-chip" data-buf="5"><b>Cauto</b><small>+5%</small></button>
+                    </div>
+                    <input type="hidden" id="fxBuffer" value="2" />
+
+                    <p class="fx-client-sees" id="fxPreview">Tu cliente verá ≈ <b>US$—</b></p>
+                    <div class="fx-lock-row"><span class="fx-lock-ic">🔒</span> Tasa congelada 30 días — tú decides el colchón</div>
                 </div>
 
                 <button class="btn-send" id="btnSend">
@@ -167,6 +198,25 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         document.getElementById('sumSubtotal').textContent = fmt(subtotal);
         document.getElementById('sumIva').textContent = fmt(subtotal * ivaPct);
         document.getElementById('sumTotal').textContent = fmt(subtotal * (1 + ivaPct));
+
+        // Conteo de líneas/piezas + cuánto le descontaste al cliente (lista vs negociado)
+        const nLines = lines.length;
+        const pieces = lines.reduce((s, l) => s + l.cantidad, 0);
+        const saved = lines.reduce((s, l) => {
+            const neg = l.negociado ?? l.lista;
+            return s + (l.lista > neg ? (l.lista - neg) * l.cantidad : 0);
+        }, 0);
+        const $cnt = document.getElementById('sumCount');
+        if ($cnt) $cnt.textContent = nLines === 0
+            ? 'Agrega productos para ver el total'
+            : `${nLines} ${nLines === 1 ? 'línea' : 'líneas'} · ${pieces} ${pieces === 1 ? 'pieza' : 'piezas'}`;
+        const $save = document.getElementById('sumSaveLine');
+        const $saveV = document.getElementById('sumSave');
+        if ($save && $saveV) { $save.hidden = saved <= 0; $saveV.textContent = '−' + fmt(saved); }
+
+        // Si cotiza en divisa extranjera, el monto cambió → refrescar el FX
+        const cov = document.getElementById('fxCover');
+        if (cov && !cov.hidden) scheduleFx();
     }
 
     function margenBadge(costo, precio) {
@@ -344,12 +394,18 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     document.getElementById('btnSend')?.addEventListener('click', (e) => save(true, e.currentTarget));
     document.getElementById('btnDraft')?.addEventListener('click', (e) => save(false, e.currentTarget));
 
-    // ── Multi-divisa: mostrar cobertura + preview del tipo de cambio en vivo ──
+    // ── Multi-divisa: tipo de cambio en lenguaje simple + colchón visual ──
     const $fxBase = document.getElementById('fxBase');
     const $fxBuffer = document.getElementById('fxBuffer');
     const $fxCover = document.getElementById('fxCover');
     const $fxPreview = document.getElementById('fxPreview');
-    const $fxBaseLbl = document.getElementById('fxBaseLbl');
+    const $fxBaseLbl2 = document.getElementById('fxBaseLbl2');
+    const $fxSpot = document.getElementById('fxSpot');
+    const $fxApplied = document.getElementById('fxApplied');
+    const $fxBufLbl = document.getElementById('fxBufLbl');
+    const $fxCushion = document.getElementById('fxCushion');
+    const nfFx = new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const symFx = (c) => c === 'USD' ? 'US$' : c === 'EUR' ? '€' : '$';
 
     function parseTotal() {
         const t = (document.getElementById('sumTotal')?.textContent || '0').replace(/[^0-9.]/g, '');
@@ -363,28 +419,40 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         const isForeign = base !== 'MXN';
         if ($fxCover) $fxCover.hidden = !isForeign;
         if (!isForeign) return;
-        if ($fxBaseLbl) $fxBaseLbl.textContent = base;
+        if ($fxBaseLbl2) $fxBaseLbl2.textContent = base;
         const buffer = $fxBuffer ? parseFloat($fxBuffer.value) || 0 : 0;
+        if ($fxBufLbl) $fxBufLbl.textContent = '+' + buffer + '%';
         const amount = parseTotal();
-        if ($fxPreview) $fxPreview.textContent = 'Calculando tipo de cambio…';
         try {
             const res = await fetch(`/api/fx/quote?base=${base}&fiscal=MXN&amount=${amount}&buffer=${buffer}`);
             const fx = await res.json();
-            const rate = Number(fx.appliedRate || 0);
-            const conv = Number(fx.convertedAmount || 0);
-            const nf = new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const spot = Number(fx.spotRate || 0);
+            const applied = Number(fx.appliedRate || 0);
+            // Tasas: hoy vs. protegida (con tu colchón)
+            if ($fxSpot) $fxSpot.textContent = '$' + nfFx.format(spot);
+            if ($fxApplied) $fxApplied.textContent = '$' + nfFx.format(applied);
+            // Lo que el cliente verá en SU moneda = total en pesos ÷ tasa protegida
+            const clientSees = applied > 0 ? amount / applied : 0;
             if ($fxPreview) {
-                $fxPreview.innerHTML = `1 ${base} = <b>$${nf.format(rate)} MXN</b>` +
-                    (amount > 0 ? ` · factura ≈ <b>$${nf.format(conv)} MXN</b>` : '') +
-                    ` <span class="fx-lock">🔒 lock 30d</span>`;
+                $fxPreview.innerHTML = amount > 0
+                    ? `Tu cliente verá ≈ <b>${symFx(base)}${nfFx.format(clientSees)}</b> · tú facturas <b>$${nfFx.format(amount)} MXN</b>`
+                    : `Agrega productos para ver el total en ${base}.`;
             }
         } catch {
             if ($fxPreview) $fxPreview.textContent = 'No se pudo obtener el tipo de cambio.';
         }
     }
-    function scheduleFx() { clearTimeout(fxTimer); fxTimer = setTimeout(refreshFx, 350); }
+    function scheduleFx() { clearTimeout(fxTimer); fxTimer = setTimeout(refreshFx, 250); }
     $fxBase?.addEventListener('change', refreshFx);
-    $fxBuffer?.addEventListener('input', scheduleFx);
+    // Colchón: chips de preset (Poco / Normal / Cauto)
+    $fxCushion?.querySelectorAll('.fx-cush-chip').forEach((chip) => {
+        chip.addEventListener('click', () => {
+            $fxCushion.querySelectorAll('.fx-cush-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            if ($fxBuffer) $fxBuffer.value = chip.dataset.buf;
+            refreshFx();
+        });
+    });
 
     // ── Armar con IA (POST /api/cotizaciones/ai-draft) ──
     const $aiBtn = document.getElementById('aiBtn');
@@ -544,7 +612,10 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         padding: 0 0 0.5rem; border-bottom: 1px solid var(--color-border);
     }
     .lh-right { text-align: right; }
-    .lines-empty { font-size: 0.85rem; color: var(--color-text-muted); padding: 2rem 0; text-align: center; border-bottom: 1px solid var(--color-border); }
+    .lines-empty { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: var(--color-text-muted); padding: 2.2rem 0; text-align: center; border-bottom: 1px solid var(--color-border); line-height: 1.5; }
+    .lines-empty svg { width: 30px; height: 30px; color: #cbd5e1; }
+    .lines-empty b { color: var(--color-text); font-weight: 600; }
+    .lines-empty[hidden] { display: none; }
     
     .add-actions { display: flex; gap: 0.8rem; margin-top: 1rem; align-items: center; }
     .btn-free-line {
@@ -563,13 +634,46 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     }
     .ed-textarea:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 2px rgba(10,25,47,0.05); }
 
-    /* Multi-divisa */
-    .fx-cover { margin-top: 0.6rem; padding: 0.8rem; background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 10px; display: flex; flex-direction: column; gap: 0.5rem; }
-    .fx-preview { font-size: 0.82rem; color: var(--color-text); margin: 0.2rem 0 0; line-height: 1.5; }
-    .fx-preview b { font-weight: 600; }
-    .fx-lock { font-size: 0.68rem; color: var(--color-text-muted); white-space: nowrap; }
-    .fx-hint { font-size: 0.72rem; color: var(--color-text-muted); line-height: 1.45; margin: 0; }
-    .fx-hint b { color: var(--color-text); font-weight: 600; }
+    /* Pasos numerados (guía visual del flujo) */
+    .step-head { display: flex; align-items: flex-start; gap: 0.7rem; margin-bottom: 1.1rem; }
+    .step-num { flex-shrink: 0; width: 24px; height: 24px; border-radius: 7px; background: var(--color-blue-deep); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 700; margin-top: 1px; }
+    .step-text h2 { font-size: 0.95rem; font-weight: 600; color: var(--color-text); margin: 0 0 2px; }
+    .step-hint { font-size: 0.78rem; color: var(--color-text-muted); margin: 0; line-height: 1.45; }
+    .step-hint b { color: var(--color-text); font-weight: 600; }
+
+    /* Marcador "?" de ayuda en encabezados */
+    .lh-i { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--color-border); font-size: 0.6rem; color: var(--color-text-muted); cursor: help; margin-left: 3px; font-weight: 700; }
+
+    /* Resumen: conteo + ahorro al cliente */
+    .sum-count { font-size: 0.74rem; color: var(--color-text-muted); margin: -0.2rem 0 0.3rem; }
+    .sum-save { color: #059669; }
+    .sum-save .editorial { color: #059669; }
+    .sum-save[hidden] { display: none; }
+
+    /* Multi-divisa — panel visual en lenguaje simple */
+    .fx-cover { margin-top: 0.6rem; padding: 0.9rem; background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 12px; display: flex; flex-direction: column; gap: 0.7rem; }
+    .fx-cover[hidden] { display: none; }
+    .fx-explain { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.5; margin: 0; }
+    .fx-explain b { color: var(--color-text); font-weight: 600; }
+    .fx-stepper { display: flex; align-items: stretch; gap: 0.45rem; }
+    .fx-step { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--color-border); background: var(--color-bg); }
+    .fx-step-on { border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.07); }
+    .fx-step-lbl { font-size: 0.62rem; font-weight: 600; color: var(--color-text-muted); line-height: 1.25; }
+    .fx-step-on .fx-step-lbl { color: #059669; }
+    .fx-step-val { font-size: 0.98rem; color: var(--color-text); }
+    .fx-arrow { align-self: center; font-size: 0.9rem; color: var(--color-text-muted); }
+    .fx-cushion-lbl { font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted); }
+    .fx-cushion { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; }
+    .fx-cush-chip { font-family: var(--font-sans); display: flex; flex-direction: column; align-items: center; gap: 1px; cursor: pointer; padding: 7px 4px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg); transition: all 0.2s; }
+    .fx-cush-chip b { font-size: 0.74rem; font-weight: 600; color: var(--color-text); }
+    .fx-cush-chip small { font-size: 0.64rem; color: var(--color-text-muted); }
+    .fx-cush-chip:hover { border-color: #cbd5e1; }
+    .fx-cush-chip.active { border-color: var(--color-blue-deep); background: var(--color-blue-deep); }
+    .fx-cush-chip.active b, .fx-cush-chip.active small { color: #fff; }
+    .fx-client-sees { font-size: 0.8rem; color: var(--color-text); margin: 0; line-height: 1.4; }
+    .fx-client-sees b { font-weight: 600; }
+    .fx-lock-row { display: flex; align-items: center; gap: 6px; font-size: 0.68rem; color: var(--color-text-muted); }
+    .fx-lock-ic { font-size: 0.7rem; }
 
     /* Sidebar summary */
     .ed-side { position: sticky; top: 76px; }
