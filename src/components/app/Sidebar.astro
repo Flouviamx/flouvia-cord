@@ -371,47 +371,47 @@ const NAV_GROUPS = [
     .sb-toggle-div { transition: transform 0.35s var(--ease-spring); transform-origin: center; }
     .sb-toggle:hover .sb-toggle-div { transform: translateX(1.6px); }
     /* Colapsado: el ícono se voltea (el panel mira al otro lado = "expandir") */
-    .sb-collapsed .sb-toggle-ico { transform: scaleX(-1); }
-    .sb-collapsed .sb-toggle { margin-left: 0; }
+    :global(.sb-collapsed) .sb-toggle-ico { transform: scaleX(-1); }
+    :global(.sb-collapsed) .sb-toggle { margin-left: 0; }
 
     /* ── Estado COLAPSADO (solo iconos) — solo desktop; en móvil el sidebar es drawer ── */
     @media (min-width: 881px) {
-    .sb-collapsed .app-shell { --sidebar-w: 74px; }
+    :global(.sb-collapsed) .app-shell { --sidebar-w: 68px; }
     /* Al colapsar, el contenido gana ancho real (no solo se recorre) */
-    .sb-collapsed { --content-max: 1440px; }
-    .sb-collapsed .sidebar { padding-left: 0; padding-right: 0; align-items: stretch; }
-    .sb-collapsed .sb-nav { gap: 0.9rem; align-items: center; }
-    .sb-collapsed .sb-group { width: 100%; align-items: center; gap: 5px; }
+    :global(.sb-collapsed) { --content-max: 1440px; }
+    :global(.sb-collapsed) .sidebar { padding-left: 0; padding-right: 0; align-items: stretch; }
+    :global(.sb-collapsed) .sb-nav { gap: 0.9rem; align-items: center; }
+    :global(.sb-collapsed) .sb-group { width: 100%; align-items: center; gap: 5px; }
     /* Fade-out de labels — no display:none para que la transition funcione.
        Los group-labels SÍ colapsan en alto/padding (si no, dejan huecos vacíos). */
-    .sb-collapsed .sb-item-label,
-    .sb-collapsed .sb-shortcut { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
-    .sb-collapsed .sb-group-label { opacity: 0; height: 0; padding: 0; margin: 0; overflow: hidden; pointer-events: none; }
-    .sb-collapsed .sb-org-info,
-    .sb-collapsed .sb-org-caret { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
-    .sb-collapsed .sb-foot-logo { opacity: 0; width: 0; overflow: hidden; }
-    .sb-collapsed .sb-collapse { display: none; }
-    .sb-collapsed .sb-account { padding-bottom: 0.4rem; }
-    .sb-collapsed .sb-account::after { display: none; }
-    .sb-collapsed .sb-org-switch { justify-content: center; padding: 6px; }
-    .sb-collapsed .sb-org-menu { left: 0; right: auto; width: 210px; top: calc(100% + 4px); bottom: auto; }
+    :global(.sb-collapsed) .sb-item-label,
+    :global(.sb-collapsed) .sb-shortcut { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
+    :global(.sb-collapsed) .sb-group-label { opacity: 0; height: 0; padding: 0; margin: 0; overflow: hidden; pointer-events: none; }
+    :global(.sb-collapsed) .sb-org-info,
+    :global(.sb-collapsed) .sb-org-caret { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
+    :global(.sb-collapsed) .sb-foot-logo { opacity: 0; width: 0; overflow: hidden; }
+    :global(.sb-collapsed) .sb-collapse { display: none; }
+    :global(.sb-collapsed) .sb-account { padding-bottom: 0.4rem; }
+    :global(.sb-collapsed) .sb-account::after { display: none; }
+    :global(.sb-collapsed) .sb-org-switch { justify-content: center; padding: 6px; }
+    :global(.sb-collapsed) .sb-org-menu { left: 0; right: auto; width: 210px; top: calc(100% + 4px); bottom: auto; }
     /* Ítems = cuadros uniformes grandes, perfectamente centrados en el rail */
-    .sb-collapsed .sb-item { justify-content: center; gap: 0; padding: 0; width: 46px; height: 46px; border-radius: 13px; }
-    .sb-collapsed .sb-item svg { width: 21px; height: 21px; opacity: 0.82; }
-    .sb-collapsed .sb-item.active svg { opacity: 1; }
+    :global(.sb-collapsed) .sb-item { justify-content: center; gap: 0; padding: 0; width: 42px; height: 42px; border-radius: 12px; }
+    :global(.sb-collapsed) .sb-item svg { width: 20px; height: 20px; opacity: 0.82; }
+    :global(.sb-collapsed) .sb-item.active svg { opacity: 1; }
     /* Indicador de vidrio → cuadrado centrado detrás del ícono activo */
-    .sb-collapsed .sb-indicator { left: 50%; right: auto; width: 46px; margin-left: -23px; border-radius: 13px; }
-    .sb-collapsed .sb-pin-row { justify-content: center; }
-    .sb-collapsed .sb-pin-row .sb-item { width: 46px; height: 46px; border-radius: 13px; }
+    :global(.sb-collapsed) .sb-indicator { left: 50%; right: auto; width: 42px; margin-left: -21px; border-radius: 12px; }
+    :global(.sb-collapsed) .sb-pin-row { justify-content: center; }
+    :global(.sb-collapsed) .sb-pin-row .sb-item { width: 42px; height: 42px; border-radius: 12px; }
     /* Badge → punto cuando está colapsado (el aro toma el color de la superficie de la sidebar) */
-    .sb-collapsed .sb-badge {
+    :global(.sb-collapsed) .sb-badge {
         position: absolute; top: 6px; right: 9px; min-width: 0; width: 7px; height: 7px;
         padding: 0; font-size: 0; border: 1.5px solid var(--surface);
     }
-    .sb-collapsed .sb-expand { display: inline-flex; }
-    .sb-collapsed .sb-footer { justify-content: center; padding-left: 0; }
+    :global(.sb-collapsed) .sb-expand { display: inline-flex; }
+    :global(.sb-collapsed) .sb-footer { justify-content: center; padding-left: 0; }
     /* Tooltip al hover en modo colapsado */
-    .sb-collapsed .sb-item::after {
+    :global(.sb-collapsed) .sb-item::after {
         content: attr(title); position: absolute; left: calc(100% + 12px); top: 50%; 
         transform: translate(-10px, -50%);
         background: #11233f; color: #fff; font-size: 0.76rem; font-weight: 600; white-space: nowrap;
@@ -420,7 +420,7 @@ const NAV_GROUPS = [
         /* Transición de salida rápida, sin delay */
         transition: opacity 0.15s var(--ease-ios), transform 0.15s var(--ease-ios);
     }
-    .sb-collapsed .sb-item:hover::after { 
+    :global(.sb-collapsed) .sb-item:hover::after { 
         opacity: 1; 
         transform: translate(0, -50%); 
         /* Transición de entrada con delay para evitar parpadeos masivos al pasar rápido */
