@@ -8,11 +8,12 @@
     <div class="hero-mesh" aria-hidden="true"></div>
 
     <div class="hero-inner">
-        <a href="#producto" class="hero-pill reveal">
-            <span class="pill-dot"></span>
+        <div class="hero-status reveal">
+            <span class="hero-status-dot" aria-hidden="true"></span>
             <span>OPERACIONES B2B · POR FLOUVIA</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </a>
+        </div>
+
+        <p class="eyebrow reveal">PRIVATE B2B INFRASTRUCTURE</p>
 
         <h1 class="hero-title reveal">
             La infraestructura B2B<br />
@@ -35,9 +36,10 @@
         </div>
 
         <div class="hero-actions reveal">
-            <a href="/registro" class="btn-primary">
+            <a href="/registro" class="btn-luxe">
                 <span>Empezar gratis</span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                <div class="btn-shimmer"></div>
             </a>
             <a href="#como" class="btn-ghost">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polygon points="5 3 19 12 5 21 5 3"/></svg>
@@ -177,37 +179,56 @@
         text-align: left;
     }
 
-    /* Pill anuncio estilo Linear */
-    .hero-pill {
-        display: inline-flex; align-items: center; gap: 9px;
-        background: rgba(255,255,255,0.8);
-        border: 1px solid var(--color-border);
-        padding: 6px 8px 6px 14px;
+    /* Status estilo Flouvia */
+    .hero-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 14px;
         border-radius: 100px;
-        font-size: 0.82rem; font-weight: 500;
-        color: var(--color-text-muted);
-        text-decoration: none;
-        margin-bottom: 2.2rem;
-        box-shadow: 0 4px 16px -6px rgba(10,25,47,0.1);
-        transition: transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-spring);
+        border: 1px solid rgba(16, 185, 129, 0.22);
+        background: rgba(16, 185, 129, 0.04);
+        width: max-content;
+        margin-bottom: 1.6rem;
     }
-    .hero-pill:hover { transform: translateY(-1px); box-shadow: 0 8px 22px -6px rgba(10,25,47,0.15); }
-    .pill-dot { width: 6px; height: 6px; background: var(--color-ok); border-radius: 50%; animation: pulse-dot 2.5s infinite; }
-    .hero-pill svg { width: 14px; height: 14px; opacity: 0.5; }
-    @keyframes pulse-dot {
-        0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
-        70% { box-shadow: 0 0 0 6px rgba(16,185,129,0); }
-        100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+    .hero-status span:not(.hero-status-dot) {
+        font-size: 0.7rem;
+        color: #059669;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+    .hero-status-dot {
+        width: 6px;
+        height: 6px;
+        background: #10b981;
+        border-radius: 50%;
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+        animation: hero-status-pulse 2s infinite;
+    }
+    @keyframes hero-status-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
+
+    /* Eyebrow estilo Flouvia */
+    .eyebrow {
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 3px;
+        color: #888;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
     }
 
     .hero-title {
-        font-size: clamp(2rem, 4vw, 3.2rem);
-        font-weight: 600;
-        line-height: 1.15;
-        letter-spacing: -0.02em;
-        color: var(--color-text);
-        margin: 0 0 1.6rem 0;
-        max-width: 800px;
+        font-size: clamp(1.9rem, 3.6vw, 3.4rem);
+        line-height: 1.14;
+        font-weight: 800;
+        letter-spacing: -1.2px;
+        color: #050505;
+        margin: 0 0 2.5rem 0;
+        max-width: 880px;
     }
 
     .hero-desc {
@@ -233,17 +254,61 @@
 
     .hero-actions { display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: flex-start; margin-bottom: 1.3rem; }
 
-    .btn-primary {
-        display: inline-flex; align-items: center; gap: 10px;
-        background: var(--color-blue-deep); color: #fff;
-        text-decoration: none; font-size: 1rem; font-weight: 600;
-        padding: 15px 28px; border-radius: 13px;
-        box-shadow: 0 18px 44px -16px rgba(10,25,47,0.5);
-        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
+    .btn-luxe {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #050505;
+        color: #fff;
+        padding: 16px 38px;
+        border-radius: 100px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        overflow: hidden;
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04), 0 10px 20px rgba(0, 0, 0, 0.08);
     }
-    .btn-primary svg { width: 16px; height: 16px; transition: transform 0.5s var(--ease-spring); }
-    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 26px 56px -16px rgba(10,25,47,0.6); }
-    .btn-primary:hover svg { transform: translateX(4px); }
+    .btn-luxe span {
+        position: relative;
+        z-index: 2;
+    }
+    .btn-luxe svg.btn-arrow {
+        position: relative;
+        z-index: 2;
+        display: inline-block;
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        width: 16px;
+        height: 16px;
+        margin-left: 6px;
+    }
+    .btn-luxe:hover svg.btn-arrow {
+        transform: translate(4px);
+    }
+    .btn-shimmer {
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+        transform: skew(-20deg);
+        transition: 0s;
+        z-index: 1;
+    }
+    .btn-luxe:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12), 0 24px 48px rgba(0, 0, 0, 0.16);
+    }
+    .btn-luxe:active {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    }
+    .btn-luxe:hover .btn-shimmer {
+        left: 150%;
+        transition: left 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    }
 
     .btn-ghost {
         display: inline-flex; align-items: center; gap: 9px;
