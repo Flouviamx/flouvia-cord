@@ -1141,8 +1141,8 @@ Regla de oro: **misma alma, distinto cuerpo**. Tokens en `src/layouts/Layout.ast
   y mucho aire. Ejemplo canónico = índice de Ajustes (`/app/ajustes`) e
   integraciones (filas, NO tarjetas). Las `.card` ya existentes del dashboard/
   analítica pueden quedarse, pero NO usar card-grids para cosas nuevas.
-- **Sidebar Ultra-Compacta (Premium Linear-style)**: El sidebar colapsado ahora tiene 56px de ancho absoluto (bypass de Astro optimizer en `AppLayout.astro`) para mantener el "soul" Linear. Los íconos no se centran, sino que mantienen `padding-left` con microinteracciones táctiles de `scale(0.94)` al click (`:active`).
-- **Org Switcher Sólido**: El `<CustomOrgSwitcher />` tiene z-index masivo y un background blanco/navy absoluto (inyectado via `<style is:inline>`) con sombras agresivas para separarlo físicamente del efecto Liquid Glass de la sidebar y prevenir ilusiones de translucidez o superposición por `stacking context`.
+- **Sidebar Ultra-Compacta (Premium Linear-style)**: El sidebar colapsado ahora tiene 56px de ancho absoluto (bypass de Astro optimizer en `AppLayout.astro`) para mantener el "soul" Linear. Los íconos no se centran, sino que mantienen `padding-left` con microinteracciones táctiles de `scale(0.94)` al click (`:active`). El z-index de la sidebar se elevó globalmente a 800 para prevenir overlapping del contenido principal.
+- **Org Switcher Sólido**: El `<CustomOrgSwitcher />` y la cuenta tienen z-index masivo global (9999) y un background blanco/navy absoluto (inyectado via `<style is:inline>`) con sombras agresivas para separarlo físicamente del efecto Liquid Glass de la sidebar. Esto previene ilusiones de translucidez o superposición del dashboard tanto en modo expandido como colapsado.
 - Secciones de la landing: `padding: 9rem` vertical (mucho aire, estilo Stripe/Linear).
 - **Watermarks gigantes: ELIMINADOS del index (jun 2026, petición de André) — NO
   reintroducirlos en la landing.** Solo sobreviven en login/registro y en /q
