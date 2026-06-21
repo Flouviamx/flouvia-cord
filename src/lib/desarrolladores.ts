@@ -119,73 +119,141 @@ export const DEV_PAGES: DevPage[] = [
     {
         slug: 'mcp',
         nav: 'MCP para IA',
-        eyebrow: 'MCP · INTELIGENCIA ARTIFICIAL',
-        titulo: 'Habla con tu negocio.<br/>En lenguaje natural.',
-        sub: 'MCP (Model Context Protocol) es la evolución de la API: deja que una inteligencia artificial como Claude entienda tus datos. En vez de programar, preguntas — y la IA consulta tu cartera, arma cotizaciones y te avisa qué cobrar.',
-        plan: 'Plan Negocio · usa la misma API key',
+        eyebrow: 'MCP BIDIRECCIONAL · GOBERNANZA DE AGENTES',
+        titulo: 'Tu negocio habla con la IA.<br/>Y la IA habla con tus sistemas.',
+        sub: 'El MCP de Cord ya no va en un solo sentido. Cord es servidor: una IA como Claude consulta tu cartera y arma cotizaciones con 7 herramientas. Y Cord es cliente: se conecta a los servidores MCP de tu CRM o ERP, bajo permisos que tú firmas. Tú decides quién toca qué.',
+        plan: 'Disponible en todos los planes · usa la misma API key (más llaves activas conforme subes de plan; el consumo en vivo se mide por uso)',
         stats: [
-            { valor: '7', countup: 7, label: 'herramientas que la IA puede usar sobre tu negocio' },
-            { valor: '0', countup: 0, label: 'líneas de código para conectarlo' },
-            { valor: '1', countup: 1, label: 'minuto para configurarlo en tu cliente de IA' },
+            { valor: '7', countup: 7, label: 'herramientas que Cord expone a la IA por JSON-RPC' },
+            { valor: '2', countup: 2, label: 'transportes entrantes: HTTP sin estado y HTTP/SSE con sesión' },
+            { valor: '5', countup: 5, label: 'iteraciones máximas del agent loop antes de cotizar (tope de seguridad)' },
         ],
         blocks: [
             {
-                eyebrow: '¿QUÉ ES MCP?',
-                titulo: 'No es un chatbot.<br/>Es tu negocio, con contexto.',
-                copy: 'Mientras una API la usan programadores, el MCP lo usa una IA directamente. Conectas Cord a un asistente como Claude y este puede leer tu base de datos para responder con números reales: "Tienes 3 facturas en riesgo de impago, ¿les mando recordatorio?".',
+                eyebrow: 'CORD COMO SERVIDOR',
+                titulo: '7 herramientas.<br/>Dos formas de conectarse.',
+                copy: 'Conectas Cord a un asistente como Claude y la IA trabaja con tus datos reales: revisa el pipeline, encuentra lo vencido, busca un cliente o arma un borrador. Hay dos puertas de entrada: JSON-RPC 2.0 sobre HTTP sin estado en /api/mcp, donde viven las 7 herramientas; y un canal HTTP/SSE con sesión en /api/mcp/sse + /api/mcp/message. Ambas se autentican con tu API key y respetan el scope de cada herramienta.',
                 bullets: [
-                    'La IA ve tus datos en vivo — no inventa, consulta',
-                    'Funciona en clientes compatibles con MCP (como Claude)',
-                    'Mismas llaves y permisos que la API: tú controlas el acceso',
-                ],
-            },
-            {
-                eyebrow: 'LO QUE PUEDE HACER',
-                titulo: 'Pregunta como le hablarías<br/>a tu mejor analista.',
-                copy: 'La IA tiene herramientas para consultar y actuar: revisar el pipeline, encontrar lo vencido, buscar un cliente, leer el catálogo y hasta armar una cotización en borrador. Tú decides cuáles permites según el scope de la llave.',
-                bullets: [
-                    '"¿Cómo va el negocio este mes?" → resumen_negocio',
-                    '"¿Qué facturas están vencidas?" → cartera_vencida',
-                    '"Arma una cotización para ACME de 50 sacos" → crear_cotizacion_borrador',
+                    'Las 7 tools corren dentro de tu org — la IA consulta, no inventa',
+                    'Las acciones de escritura exigen una llave con permiso de escritura',
+                    'La sesión SSE queda atada a tu org_id: cada query respeta tu RLS',
                 ],
                 code: {
-                    label: 'Herramientas disponibles',
-                    body: `listar_cotizaciones      detalle_cotizacion
-cartera_vencida          resumen_negocio
-buscar_cliente           listar_productos
+                    label: 'Herramientas que expone Cord',
+                    body: `listar_cotizaciones       detalle_cotizacion
+cartera_vencida           resumen_negocio
+buscar_cliente            listar_productos
 crear_cotizacion_borrador`,
                 },
             },
             {
-                eyebrow: 'CONECTARLO',
-                titulo: 'Un servidor. Una URL.<br/>Tu llave de siempre.',
-                copy: 'Agrega Cord como servidor MCP en tu cliente de IA con la URL y tu API key en el header. Listo: la IA ya puede trabajar con tu negocio. Sin instalar nada, sin servidores que mantener.',
+                eyebrow: 'CORD COMO CLIENTE',
+                titulo: 'Cord también consulta<br/>los sistemas de tu cliente.',
+                copy: 'Da la vuelta a la flecha. Registras la URL de los servidores MCP de tu CRM o ERP y Cord se conecta a ellos como cliente. Cuando armas una cotización con IA, el agent loop de /api/cotizaciones/ai-draft pregunta primero a esos sistemas remotos —saldo de un cliente, último pedido, condiciones pactadas— y luego arma las líneas con ese contexto. Hasta 5 vueltas como tope, y al terminar cierra cada conexión.',
                 bullets: [
-                    'Transporte HTTP estándar (JSON-RPC) — sin estado',
-                    'Autenticación por Authorization: Bearer',
-                    'Las acciones quedan registradas en tu bitácora de auditoría',
+                    'Conecta por SSE inyectando el token de autorización de cada servidor remoto',
+                    'Cada herramienta externa se prefija por servidor para no colisionar',
+                    'El agent loop intercala tus tools y las remotas en una sola conversación',
                 ],
                 code: {
-                    label: 'Configuración del cliente MCP',
-                    body: `{
-  "mcpServers": {
-    "cord": {
-      "url": "https://cord.flouvia.com/api/mcp",
-      "headers": {
-        "Authorization": "Bearer sk_live_xxxx"
-      }
-    }
-  }
-}`,
+                    label: 'El agent loop arma con contexto remoto',
+                    body: `// /api/cotizaciones/ai-draft
+const { tools, toolMap } =
+  await mcpManager.getAnthropicTools();
+const allTools = [armar_cotizacion, ...tools];
+// la IA consulta tu CRM antes de cotizar (max 5 vueltas)
+await mcpManager.disconnectAll();`,
                 },
+            },
+            {
+                eyebrow: 'GOBERNANZA DE AGENTES',
+                titulo: 'Cada agente toca<br/>solo lo que le firmas.',
+                copy: 'Nada de accesos abiertos. Cada org tiene un agente por defecto, el Asistente Cord, y una tabla de permisos que dicta a qué servidores externos puede conectarse. Si un servidor no está en su allowlist, el agente ni lo ve. Todo vive con Row Level Security en la base: cada consulta filtra por tu org_id y nadie cruza datos entre negocios.',
+                bullets: [
+                    'Registras y activas/desactivas servidores MCP en Ajustes › Developers',
+                    'Otorgas o revocas el permiso del agente por servidor, al instante',
+                    'RLS en mcp_servers, agentes_ia y agentes_permisos: aislamiento por org',
+                ],
             },
         ],
         steps: [
-            { titulo: 'Genera tu llave', copy: 'La misma API key de Ajustes › Developers › API. Una llave sirve para API y MCP.' },
-            { titulo: 'Conecta el servidor', copy: 'Agrega https://cord.flouvia.com/api/mcp en tu cliente MCP con el header de autorización.' },
-            { titulo: 'Pregunta', copy: 'Habla con tu negocio en lenguaje natural — la IA usa las herramientas por ti.' },
+            { titulo: 'Genera tu llave', copy: 'La misma API key de Ajustes › Developers › API. Una llave sirve para la API REST y para el MCP entrante.' },
+            { titulo: 'Conecta el servidor', copy: 'Agrega https://cord.flouvia.com/api/mcp en tu cliente de IA con el header de autorización. Para streaming con sesión, usa el canal SSE.' },
+            { titulo: 'Registra y permite', copy: 'Suma la URL de los servidores MCP de tu CRM o ERP y otorga a tu agente acceso a ellos. La IA ya consulta tus sistemas antes de cotizar.' },
         ],
-        cta: { titulo: 'Dale a la IA acceso a tu negocio.', sub: 'Conéctalo en un minuto con la misma llave de la API.' },
+        cta: { titulo: 'Conecta la IA a tu negocio. En los dos sentidos.', sub: 'Mismo header, misma llave. Expón tus 7 herramientas y enlaza tus sistemas con permisos que tú controlas.' },
+    },
+    {
+        slug: 'elements',
+        nav: 'Cord Elements',
+        eyebrow: 'CORD ELEMENTS · COTIZADOR EMBEBIBLE',
+        titulo: 'Tu cotizador,<br/>dentro de su web.',
+        sub: 'Lleva el cotizador de Cord al portal de tus clientes con una línea de código. Tu marca, aprobación, contraoferta y pago en línea — todo dentro de su ecosistema, sin que salgan de su sitio.',
+        plan: 'Signup gratis. En el plan Gratis el link público lleva el discreto "vía Cord"; lo quitas y dejas solo tu marca desde Ajustes › Developers, donde también defines la allowlist de dominios autorizados para embeber.',
+        stats: [
+            { valor: '1', countup: 1, label: 'línea de código para montarlo en cualquier sitio' },
+            { valor: '5', countup: 5, label: 'formas de usarlo hoy: HTML (embed.js), React, y el Web Component en Vue, Astro y HTML' },
+            { valor: '5', countup: 5, label: 'eventos en vivo: ready, approved, rejected, message y pay' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'UNA LÍNEA DE CÓDIGO',
+                titulo: 'Pegar. Listo.<br/>Sin backend.',
+                copy: 'Un script y un <div>. El cotizador aparece como un <iframe> servido por Cord, muestra un skeleton mientras carga y se ajusta solo a la altura del contenido vía postMessage. No hay servidor que mantener ni datos que sincronizar: el token público de la cotización es todo lo que necesitas.',
+                bullets: [
+                    'Funciona en cualquier stack: WordPress, HTML plano, lo que sea',
+                    'Altura automática — el embed mide su contenido y le avisa a tu página',
+                    'Skeleton con shimmer mientras carga y fade-in al estar listo: nada de cajas vacías',
+                ],
+                code: {
+                    label: 'En cualquier sitio HTML',
+                    body: `<!-- Una línea + un div -->
+<script src="https://cord.flouvia.com/embed.js" async></script>
+<div data-cord-cotizador data-token="abc123"></div>`,
+                },
+            },
+            {
+                eyebrow: 'NATIVO EN TU FRAMEWORK',
+                titulo: 'Un paquete de npm.<br/>React o Web Component.',
+                copy: 'Instala @flouviahq/elements y úsalo como un componente más. En React importas <CordCotizador> con callbacks tipados; en Vue, Astro o HTML usas el Web Component <cord-cotizador>, que re-emite los eventos como CustomEvents nativos sin prefijo. Mismo iframe por debajo, la integración que prefiera tu equipo.',
+                bullets: [
+                    'import { CordCotizador } from \'@flouviahq/elements/react\'',
+                    'Web Component &lt;cord-cotizador token="…"&gt; para Vue, Astro, Svelte y HTML',
+                    'Callbacks tipados: onApproved, onRejected, onMessage, onPay y onReady',
+                ],
+                code: {
+                    label: 'React / Next.js',
+                    body: `// npm install @flouviahq/elements
+import { CordCotizador } from '@flouviahq/elements/react';
+
+export function Cotizacion({ token }) {
+  return (
+    <CordCotizador
+      token={token}
+      onApproved={(d) => console.log('Aprobada', d.folio)}
+      onPay={() => location.assign('/gracias')}
+    />
+  );
+}`,
+                },
+            },
+            {
+                eyebrow: 'TU MARCA · SEGURO POR DISEÑO',
+                titulo: 'El cotizador completo,<br/>no un widget de juguete.',
+                copy: 'Dentro del embed va el mismo cotizador de tu cuenta: tu color, tu logo y tus datos. El cliente aprueba, rechaza, negocia el precio o paga con Stripe sin salir de su portal, y tú decides en qué dominios puede embeberse con una allowlist por cuenta (CSP frame-ancestors) que blinda contra clickjacking.',
+                bullets: [
+                    'Tu marca, no la nuestra — color, logo y datos de tu cuenta de Cord',
+                    'Aprobación, contraoferta, chat y pago en línea, todos embebidos',
+                    'Allowlist de dominios por cuenta: solo tú decides dónde puede vivir',
+                ],
+            },
+        ],
+        steps: [
+            { titulo: 'Copia tu snippet', copy: 'Agrega el script de embed.js, instala @flouviahq/elements o pega el Web Component — según tu stack. Lo único que cambia es cómo cargas el cotizador.' },
+            { titulo: 'Aparece con tu marca', copy: 'Pasa el token público de la cotización. El color, logo y datos salen de tu cuenta de Cord — cero configuración extra en el sitio anfitrión.' },
+            { titulo: 'Reacciona al cliente', copy: 'Escucha cord:approved, cord:pay y los demás eventos en tu propia página para disparar tu analítica, redirigir o sincronizar tu CRM en tiempo real.' },
+        ],
+        cta: { titulo: 'Lleva tu cotizador a donde están tus clientes.', sub: 'Crea tu cuenta gratis y embebe tu primer cotizador hoy mismo — una línea de código.' },
     },
 ];
 

@@ -41,33 +41,78 @@ const { slug, index } = Astro.props;
 
     {slug === 'mcp' && index === 0 && (
       <div class="dbm-mcp-m0 dbm-card">
-        <div class="dbm-head">MCP Bridge</div>
-        <svg class="dbm-bridge-svg" viewBox="0 0 100 50">
-            <circle cx="20" cy="25" r="10" fill="#0a192f" stroke="#3b82f6" stroke-width="2"/>
-            <text x="20" y="28" fill="#3b82f6" font-size="8" text-anchor="middle">AI</text>
-            <circle cx="80" cy="25" r="10" fill="#0a192f" stroke="#10b981" stroke-width="2"/>
-            <text x="80" y="28" fill="#10b981" font-size="8" text-anchor="middle">DB</text>
-            <path d="M30 25 L70 25" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
-            <path class="dbm-pulse-line" d="M30 25 L70 25" stroke="#3b82f6" stroke-width="2"/>
-        </svg>
+        <div class="dbm-head"><span>Cord como servidor</span></div>
+        <div class="dbm-seg">
+            <span class="dbm-seg-on">HTTP · JSON-RPC</span>
+            <span>SSE</span>
+        </div>
+        <div class="dbm-toollist">
+            <div class="dbm-toolrow"><i></i>listar_cotizaciones</div>
+            <div class="dbm-toolrow"><i></i>cartera_vencida</div>
+            <div class="dbm-toolrow"><i></i>buscar_cliente</div>
+            <div class="dbm-toolrow"><i></i>crear_cotizacion_borrador</div>
+        </div>
       </div>
     )}
     {slug === 'mcp' && index === 1 && (
-      <div class="dbm-mcp-m1 dbm-terminal">
-        <div class="dbm-head">Server Init</div>
-        <div class="dbm-code dbm-log-lines">
-            <div><span class="dbm-prompt">&gt;</span> npx @flouvia/cord-mcp</div>
-            <div class="dbm-log-1">Starting MCP Server...</div>
-            <div class="dbm-log-2 dbm-success">✓ Server running on stdio</div>
+      <div class="dbm-mcp-m1 dbm-card">
+        <div class="dbm-head"><span>Cord como cliente</span></div>
+        <div class="dbm-flow-container">
+            <div class="dbm-node dbm-brand">Cord</div>
+            <div class="dbm-path"><div class="dbm-dot"></div></div>
+            <div class="dbm-node">CRM</div>
+        </div>
+        <div class="dbm-code dbm-log-lines dbm-mcp-log">
+            <div class="dbm-log-1">conectando…</div>
+            <div class="dbm-log-2">listTools() → 4 tools</div>
+            <div class="dbm-log-3 dbm-success">contexto recibido</div>
         </div>
       </div>
     )}
     {slug === 'mcp' && index === 2 && (
       <div class="dbm-mcp-m2 dbm-card">
-        <div class="dbm-head">AI Context</div>
-        <div class="dbm-chat-bubble">
-            Entendido. La cotización <b>COT-0149</b> tiene un saldo de <span class="dbm-hl-target">$196k</span>. Procedo a notificar.
+        <div class="dbm-head"><span>Gobernanza</span><span>RLS · por org</span></div>
+        <div class="dbm-gov">
+            <div class="dbm-gov-row"><span>Servidor A</span><span class="dbm-gov-pill dbm-gov-on">permitido</span></div>
+            <div class="dbm-gov-row dbm-gov-target"><span>CRM externo</span><span class="dbm-gov-pill dbm-gov-off" id="govPill">sin acceso</span></div>
+            <div class="dbm-gov-row"><span>Servidor C</span><span class="dbm-gov-pill dbm-gov-off">sin acceso</span></div>
         </div>
+      </div>
+    )}
+
+    {slug === 'elements' && index === 0 && (
+      <div class="dbm-el-m0 dbm-terminal">
+        <div class="dbm-head"><span>Una línea de código</span></div>
+        <div class="dbm-code">
+            <span class="dbm-prompt">&lt;script</span> src=<span class="dbm-str">"…/embed.js"</span><span class="dbm-prompt">&gt;</span><br/>
+            <span class="dbm-prompt">&lt;div</span> data-cord-cotizador<span class="dbm-prompt">&gt;</span><span class="dbm-cursor"></span>
+        </div>
+        <div class="dbm-el-preview">
+            <div class="dbm-el-skel" id="elSkel"></div>
+            <div class="dbm-el-mini" id="elMini"><span>Cotización</span><b class="editorial">$196k</b></div>
+        </div>
+      </div>
+    )}
+    {slug === 'elements' && index === 1 && (
+      <div class="dbm-el-m1 dbm-terminal">
+        <div class="dbm-seg dbm-el-tabs">
+            <span class="dbm-seg-on">HTML</span><span>React</span><span>Web Component</span>
+        </div>
+        <div class="dbm-code dbm-el-code" id="elCode">
+            <span class="dbm-prompt">&lt;script src=</span><span class="dbm-str">"…/embed.js"</span><span class="dbm-prompt">&gt;</span>
+        </div>
+        <div class="dbm-el-pkg">npm @flouviahq/elements</div>
+      </div>
+    )}
+    {slug === 'elements' && index === 2 && (
+      <div class="dbm-el-m2">
+        <div class="dbm-el-card">
+            <div class="dbm-el-cardhead"><span class="dbm-el-brand">MV</span><b>Tu cotización</b><span class="dbm-el-badge" id="elBadge">Revisar</span></div>
+            <div class="dbm-el-line"><span>Total con IVA</span><b class="editorial">$196,469.20</b></div>
+            <div class="dbm-el-approve" id="elApprove">Aprobar</div>
+        </div>
+        <div class="dbm-el-csp">frame-ancestors: tudominio.com</div>
+        <div class="dbm-el-cursor" id="elCursor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg></div>
       </div>
     )}
 
@@ -82,13 +127,12 @@ const { slug, index } = Astro.props;
   }
   .dbm-mesh {
     position: absolute; inset: -50%;
-    background: 
+    background:
       radial-gradient(circle at 50% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 40%),
       radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.12) 0%, transparent 40%);
     filter: blur(40px); opacity: 0.8;
-    animation: dbm-mesh-rotate 20s linear infinite; pointer-events: none;
+    pointer-events: none;
   }
-  @keyframes dbm-mesh-rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
   .dbm-stage { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; max-width: 260px; z-index: 2; }
 
@@ -129,4 +173,51 @@ const { slug, index } = Astro.props;
     line-height: 1.5; border: 1px solid rgba(255,255,255,0.05);
   }
   .dbm-chat-bubble b { color: #fff; }
+
+  /* ── Segmented control (MCP transports / Elements tabs) ── */
+  .dbm-seg { display: inline-flex; background: rgba(255,255,255,0.04); border-radius: 9px; padding: 3px; gap: 2px; margin-bottom: 12px; }
+  .dbm-seg span { font-size: 0.6rem; font-weight: 600; color: rgba(255,255,255,0.45); padding: 5px 10px; border-radius: 7px; white-space: nowrap; }
+  .dbm-seg .dbm-seg-on { background: rgba(59,130,246,0.2); color: #93c5fd; box-shadow: inset 0 0 0 1px rgba(59,130,246,0.3); }
+
+  /* ── MCP servidor: lista de tools ── */
+  .dbm-toollist { display: flex; flex-direction: column; gap: 5px; }
+  .dbm-toolrow { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono, monospace); font-size: 0.66rem; color: rgba(255,255,255,0.75); padding: 6px 9px; border-radius: 7px; background: rgba(255,255,255,0.025); }
+  .dbm-toolrow i { width: 6px; height: 6px; border-radius: 50%; background: #34d399; box-shadow: 0 0 6px rgba(52,211,153,0.6); flex-shrink: 0; }
+
+  /* ── MCP cliente: log ── */
+  .dbm-mcp-log { margin-top: 12px; display: flex; flex-direction: column; gap: 3px; }
+  .dbm-mcp-log > div { font-size: 0.62rem; }
+
+  /* ── MCP gobernanza: tabla de permisos ── */
+  .dbm-gov { display: flex; flex-direction: column; gap: 5px; }
+  .dbm-gov-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,0.025); font-size: 0.68rem; color: rgba(255,255,255,0.75); }
+  .dbm-gov-target { background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.12); }
+  .dbm-gov-pill { font-size: 0.55rem; font-weight: 700; padding: 3px 9px; border-radius: 100px; }
+  .dbm-gov-on { color: #34d399; background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.25); }
+  .dbm-gov-off { color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); }
+
+  /* ── Elements M0: preview skeleton → card ── */
+  .dbm-el-preview { position: relative; margin-top: 12px; height: 50px; border-radius: 9px; overflow: hidden; }
+  .dbm-el-skel { position: absolute; inset: 0; border-radius: 9px; background: rgba(255,255,255,0.05); background-image: linear-gradient(100deg, transparent 30%, rgba(255,255,255,0.08) 50%, transparent 70%); background-size: 200% 100%; }
+  .dbm-el-mini { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; border-radius: 9px; background: #fff; color: #0a192f; opacity: 0; }
+  .dbm-el-mini span { font-size: 0.68rem; color: #64748b; font-weight: 600; }
+  .dbm-el-mini b { font-size: 0.9rem; color: #0a192f; }
+
+  /* ── Elements M1: tabs + código ── */
+  .dbm-el-code { min-height: 34px; font-size: 0.6rem; }
+  .dbm-el-pkg { margin-top: 12px; font-family: var(--font-mono, monospace); font-size: 0.6rem; color: #93c5fd; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); padding: 5px 10px; border-radius: 7px; display: inline-block; }
+
+  /* ── Elements M2: cotizador embebido (claro) ── */
+  .dbm-el-m2 { position: relative; width: 100%; }
+  .dbm-el-card { background: #fff; border-radius: 12px; padding: 0.9rem; box-shadow: 0 14px 34px rgba(2,6,12,0.5); }
+  .dbm-el-cardhead { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .dbm-el-brand { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg,#f59e0b,#d97706); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.52rem; font-weight: 800; }
+  .dbm-el-cardhead b { font-size: 0.72rem; color: #0a192f; flex: 1; }
+  .dbm-el-badge { font-size: 0.52rem; font-weight: 800; padding: 3px 8px; border-radius: 100px; color: #d97706; background: rgba(245,158,11,0.14); white-space: nowrap; }
+  .dbm-el-line { display: flex; justify-content: space-between; align-items: center; font-size: 0.68rem; color: #475569; padding: 6px 0 10px; }
+  .dbm-el-line .editorial { color: #0a192f; font-weight: 600; }
+  .dbm-el-approve { text-align: center; font-size: 0.7rem; font-weight: 700; color: #fff; background: #0a192f; border-radius: 8px; padding: 9px; }
+  .dbm-el-csp { margin-top: 10px; font-family: var(--font-mono, monospace); font-size: 0.55rem; color: rgba(52,211,153,0.8); text-align: center; }
+  .dbm-el-cursor { position: absolute; bottom: 38px; right: 26px; width: 18px; height: 18px; color: #0a192f; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); z-index: 5; }
+  .dbm-el-cursor svg { width: 100%; height: 100%; }
 </style>

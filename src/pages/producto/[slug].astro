@@ -254,6 +254,59 @@ const faqSchema = {
                             </div>
                         )}
 
+                        {feature.slug === 'divisas' && (
+                            <div class="mk-window mk-fx" id="fxHero">
+                                <div class="mk-bar">
+                                    <span class="mk-dots"><i></i><i></i><i></i></span>
+                                    <span class="mk-bar-title">COT-0150 · Acme Imports</span>
+                                    <span class="mk-badge mk-badge-sent">● USD</span>
+                                </div>
+                                <div class="mk-fx-body">
+                                    <div class="mk-fx-controls">
+                                        <div class="mk-fx-field">
+                                            <label>Moneda de presentación</label>
+                                            <div class="mk-fx-seg"><span class="on">USD</span><span>EUR</span><span>MXN</span></div>
+                                        </div>
+                                        <div class="mk-fx-field">
+                                            <label>Cobertura (buffer)</label>
+                                            <div class="mk-fx-buffer">2.0%</div>
+                                        </div>
+                                    </div>
+                                    <div class="mk-fx-rate">
+                                        <span class="mk-fx-rate-line">1 USD = <b class="editorial" id="fxRate">$18.50 MXN</b></span>
+                                        <span class="mk-fx-lock" id="fxLock">🔒 lock 30 días</span>
+                                    </div>
+                                    <div class="mk-fx-totals">
+                                        <div class="mk-fx-total"><span>El cliente ve</span><b class="editorial">USD 10,620.50</b></div>
+                                        <div class="mk-fx-total mk-fx-total-mxn" id="fxMxn"><span>Se factura</span><b class="editorial">$196,469.20 MXN</b></div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {feature.slug === 'internacional' && (
+                            <div class="mk-window mk-intl" id="intlHero">
+                                <div class="mk-bar">
+                                    <span class="mk-dots"><i></i><i></i><i></i></span>
+                                    <span class="mk-bar-title">COT-0151 · Pacific Hardware (US)</span>
+                                    <span class="mk-badge mk-badge-sent">● USD → MXN</span>
+                                </div>
+                                <div class="mk-intl-pill" id="intlPill">🔒 Tasa blindada</div>
+                                <div class="mk-intl-body">
+                                    <div class="mk-rows mk-rows-intl">
+                                        <div class="mk-row mk-row-head"><span>Producto</span><span>Cant.</span><span>Precio USD</span><span>Importe</span></div>
+                                        <div class="mk-row"><span>Válvula industrial 4"</span><span>40</span><span class="editorial">$182.00</span><span class="editorial">$7,280.00</span></div>
+                                        <div class="mk-row"><span>Acople bridado 6"</span><span>25</span><span class="editorial">$208.02</span><span class="editorial">$5,200.50</span></div>
+                                    </div>
+                                    <div class="mk-intl-totals">
+                                        <div class="mk-intl-tot"><span>Total (USD) · presentación</span><b class="editorial">USD 12,480.00</b></div>
+                                        <div class="mk-intl-tot mk-intl-tot-fiscal" id="intlFiscal"><span>Total fiscal (MXN) · se factura</span><b class="editorial">$230,880.00</b></div>
+                                        <span class="mk-intl-rate">Tasa 18.50 · congelada 30 días</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                     </div>
                 </div>
             </div>
@@ -702,6 +755,38 @@ const faqSchema = {
         padding: 11px; border-radius: 11px; background: #34d399; color: #052e1f;
     }
 
+    /* ── MULTI-DIVISA / FX (panel del editor) ── */
+    .mk-fx-body { padding: 1.2rem 1.3rem 1.4rem; }
+    .mk-fx-controls { display: flex; gap: 1rem; margin-bottom: 1rem; }
+    .mk-fx-field { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .mk-fx-field label { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+    .mk-fx-seg { display: inline-flex; background: rgba(255,255,255,0.04); border-radius: 9px; padding: 3px; gap: 2px; align-self: flex-start; }
+    .mk-fx-seg span { font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.5); padding: 5px 11px; border-radius: 7px; }
+    .mk-fx-seg span.on { background: rgba(59,130,246,0.2); color: #93c5fd; box-shadow: inset 0 0 0 1px rgba(59,130,246,0.3); }
+    .mk-fx-buffer { font-size: 0.85rem; font-weight: 600; color: #fff; background: rgba(255,255,255,0.04); border-radius: 9px; padding: 8px 12px; align-self: flex-start; }
+    .mk-fx-rate { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; border-radius: 11px; background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.14); margin-bottom: 1rem; }
+    .mk-fx-rate-line { font-size: 0.82rem; color: rgba(255,255,255,0.7); }
+    .mk-fx-rate-line b { color: #fff; margin-left: 4px; }
+    .mk-fx-lock { font-size: 0.66rem; font-weight: 700; color: #93c5fd; background: rgba(59,130,246,0.14); border: 1px solid rgba(59,130,246,0.25); padding: 4px 9px; border-radius: 100px; white-space: nowrap; }
+    .mk-fx-totals { display: flex; flex-direction: column; gap: 6px; }
+    .mk-fx-total { display: flex; align-items: center; justify-content: space-between; padding: 11px 13px; border-radius: 11px; background: rgba(255,255,255,0.03); }
+    .mk-fx-total span { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+    .mk-fx-total b { font-size: 1.05rem; color: #fff; }
+    .mk-fx-total-mxn b { color: #34d399; }
+
+    /* ── FACTURACIÓN INTERNACIONAL (US/MX) ── */
+    .mk-intl { position: relative; }
+    .mk-intl-body { padding: 1.1rem 1.2rem 1.3rem; }
+    .mk-rows-intl { display: flex; flex-direction: column; gap: 4px; }
+    .mk-rows-intl .mk-row { grid-template-columns: 1.7fr 0.6fr 1fr 1fr; }
+    .mk-intl-totals { display: flex; flex-direction: column; gap: 6px; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.06); }
+    .mk-intl-tot { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; border-radius: 10px; background: rgba(255,255,255,0.03); }
+    .mk-intl-tot span { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+    .mk-intl-tot b { font-size: 0.95rem; color: #fff; }
+    .mk-intl-tot-fiscal b { color: #34d399; }
+    .mk-intl-rate { font-size: 0.66rem; color: rgba(255,255,255,0.4); text-align: right; padding-right: 4px; }
+    .mk-intl-pill { position: absolute; top: 46px; right: 14px; z-index: 3; font-size: 0.64rem; font-weight: 700; color: #93c5fd; background: rgba(10,25,47,0.82); border: 1px solid rgba(59,130,246,0.3); padding: 5px 11px; border-radius: 100px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+
     /* ════════ STATS ════════ */
     .pp-stats {
         display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem;
@@ -1010,6 +1095,41 @@ const faqSchema = {
                     tl.to(cuotas, { opacity: 1, y: 0, duration: 0.45, stagger: 0.14, ease: 'power2.out' }, '+=0.3');
                     if (approve) tl.fromTo(approve, { boxShadow: '0 0 0 0 rgba(52,211,153,0)' }, { boxShadow: '0 0 0 5px rgba(52,211,153,0.2)', duration: 0.6, yoyo: true, repeat: 3, ease: 'sine.inOut' }, '+=0.2');
                     tl.to([...bubbles, ...cuotas], { opacity: 0, duration: 0.5 }, '+=2.2');
+                }
+
+                // Multi-divisa Animation (count-up de la tasa + pop del lock + flash del total MXN)
+                const fxHero = document.getElementById('fxHero');
+                if (fxHero) {
+                    const rate = document.getElementById('fxRate');
+                    const lock = document.getElementById('fxLock');
+                    const mxn = document.getElementById('fxMxn');
+                    gsap.set(lock, { opacity: 0, scale: 0.6 });
+                    ScrollTrigger.create({
+                        trigger: fxHero, start: 'top 78%', once: true,
+                        onEnter: () => {
+                            const obj = { v: 17.9 };
+                            gsap.timeline({ delay: 0.5 })
+                                .to(obj, { v: 18.50, duration: 1, ease: 'power2.out', onUpdate: () => { if (rate) rate.textContent = '$' + obj.v.toFixed(2) + ' MXN'; } })
+                                .to(lock, { opacity: 1, scale: 1, duration: 0.45, ease: 'back.out(1.6)' }, '-=0.25')
+                                .fromTo(mxn, { backgroundColor: 'rgba(16,185,129,0.18)' }, { backgroundColor: 'rgba(255,255,255,0.03)', duration: 1.1, ease: 'power2.out' }, '-=0.1');
+                        },
+                    });
+                }
+
+                // Facturación internacional Animation (pill "Tasa blindada" + flash del total fiscal)
+                const intlHero = document.getElementById('intlHero');
+                if (intlHero) {
+                    const fiscal = document.getElementById('intlFiscal');
+                    const pill = document.getElementById('intlPill');
+                    gsap.set(pill, { opacity: 0, scale: 0.6, y: -6 });
+                    ScrollTrigger.create({
+                        trigger: intlHero, start: 'top 78%', once: true,
+                        onEnter: () => {
+                            gsap.timeline({ delay: 0.5 })
+                                .to(pill, { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: 'back.out(1.6)' })
+                                .fromTo(fiscal, { backgroundColor: 'rgba(16,185,129,0.2)' }, { backgroundColor: 'rgba(255,255,255,0.03)', duration: 1.1, ease: 'power2.out' }, '-=0.1');
+                        },
+                    });
                 }
             }
 
@@ -1322,6 +1442,79 @@ const faqSchema = {
                         }
                     }
                 });
+            }
+
+            // Multi-divisa M0 (dos monedas — filas entran)
+            const bFx0 = document.querySelector('.bm-fx-m0');
+            if (bFx0) {
+                const rows = bFx0.querySelectorAll('.bm-row');
+                ScrollTrigger.create({ trigger: bFx0, start: 'top 88%', once: true,
+                    onEnter: () => gsap.fromTo(rows, { opacity: 0, x: -10 }, { opacity: 1, x: 0, stagger: 0.15, duration: 0.5, ease: 'power2.out' }) });
+            }
+
+            // Multi-divisa M1 (tipo de cambio — terminal que se enciende)
+            const bFx1 = document.querySelector('.bm-fx-m1');
+            if (bFx1) {
+                const lines = bFx1.querySelectorAll('.bm-term-line');
+                gsap.set(lines, { opacity: 0 });
+                ScrollTrigger.create({ trigger: bFx1, start: 'top 88%', once: true,
+                    onEnter: () => gsap.to(lines, { opacity: 1, stagger: 0.25, duration: 0.15 }) });
+            }
+
+            // Multi-divisa M2 (cobertura — barra + tasa aplicada en loop)
+            const bFx2 = document.querySelector('.bm-fx-m2');
+            if (bFx2) {
+                const fill = bFx2.querySelector('.bm-fx-buffer-fill');
+                const applied = bFx2.querySelector('.bm-fx-applied');
+                ScrollTrigger.create({ trigger: bFx2, start: 'top 85%', once: true,
+                    onEnter: () => {
+                        const obj = { v: 18.50 };
+                        gsap.timeline({ repeat: -1, repeatDelay: 2 })
+                            .set(fill, { width: '0%' })
+                            .call(() => { if (applied) applied.textContent = '$18.50'; })
+                            .to(fill, { width: '80%', duration: 1, ease: 'power2.out' })
+                            .to(obj, { v: 18.87, duration: 0.8, ease: 'power2.out', onUpdate: () => { if (applied) applied.textContent = '$' + obj.v.toFixed(2); } }, '<')
+                            .set(obj, { v: 18.50 })
+                            .to({}, { duration: 1.6 });
+                    } });
+            }
+
+            // Internacional M0 (cobertura — spot count-up + chip de buffer)
+            const bIntl0 = document.querySelector('.bm-intl-m0');
+            if (bIntl0) {
+                const spot = bIntl0.querySelector('.bm-intl-spot');
+                const chip = bIntl0.querySelector('.bm-intl-chip');
+                gsap.set(chip, { opacity: 0, scale: 0.5 });
+                ScrollTrigger.create({ trigger: bIntl0, start: 'top 85%', once: true,
+                    onEnter: () => {
+                        const obj = { v: 18.10 };
+                        gsap.timeline()
+                            .to(obj, { v: 18.42, duration: 0.8, ease: 'power2.out', onUpdate: () => { if (spot) spot.textContent = '$' + obj.v.toFixed(2); } })
+                            .to(chip, { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(1.6)' });
+                    } });
+            }
+
+            // Internacional M1 (dos divisas — convertido USD→MXN en loop)
+            const bIntl1 = document.querySelector('.bm-intl-m1');
+            if (bIntl1) {
+                const conv = bIntl1.querySelector('.bm-intl-conv');
+                ScrollTrigger.create({ trigger: bIntl1, start: 'top 85%', once: true,
+                    onEnter: () => {
+                        const obj = { v: 12480 };
+                        gsap.timeline({ repeat: -1, repeatDelay: 2.4 })
+                            .set(obj, { v: 12480 })
+                            .to(obj, { v: 230880, duration: 1.1, ease: 'power2.out', onUpdate: () => { if (conv) conv.textContent = '$' + Math.round(obj.v).toLocaleString('es-MX') + '.00'; } })
+                            .to({}, { duration: 1.8 });
+                    } });
+            }
+
+            // Internacional M2 (CFDI real — status "Timbrado" hace pop)
+            const bIntl2 = document.querySelector('.bm-intl-m2');
+            if (bIntl2) {
+                const status = bIntl2.querySelector('.bm-intl-status');
+                gsap.set(status, { scale: 0.7, opacity: 0.5 });
+                ScrollTrigger.create({ trigger: bIntl2, start: 'top 85%', once: true,
+                    onEnter: () => gsap.to(status, { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(1.6)', delay: 0.4 }) });
             }
         }
     });

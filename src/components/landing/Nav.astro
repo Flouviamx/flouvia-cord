@@ -61,6 +61,14 @@
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M22 12A10 10 0 0 0 12 2v10Z"/><path d="m9 12 2 2 4-4"/></svg></span>
                                     <span class="mega-copy"><b>Cobranza con IA</b><i>Un agente que persigue tu cartera</i></span>
                                 </a>
+                                <a href="/producto/divisas" class="mega-item">
+                                    <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M8 21H3v-5"/><path d="M3 21l7-7"/></svg></span>
+                                    <span class="mega-copy"><b>Multi-divisa y FX</b><i>Cotiza en dólares, factura en pesos</i></span>
+                                </a>
+                                <a href="/producto/internacional" class="mega-item">
+                                    <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20Z"/></svg></span>
+                                    <span class="mega-copy"><b>Facturación internacional</b><i>CFDI 4.0 real + arquitectura global</i></span>
+                                </a>
                                 <a href="/q/demo" class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M12 18h.01"/></svg></span>
                                     <span class="mega-copy"><b>Cotización de ejemplo</b><i>Mira lo que recibe tu cliente</i></span>
@@ -111,7 +119,7 @@
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4L12 3z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7L19 15z"/></svg></span>
                                     <span class="mega-copy"><b>MCP para IA</b><i>Que una IA lea y cotice por ti</i></span>
                                 </a>
-                                <a href="/elements" class="mega-item">
+                                <a href="/desarrolladores/elements" class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span>
                                     <span class="mega-copy"><b>Cord Elements</b><i>Embebe el cotizador en tu sitio</i></span>
                                 </a>
@@ -199,28 +207,146 @@
 
     <div class="mobile-menu-overlay" id="mobile-menu">
         <div class="mobile-menu-content">
-            <div class="menu-top-row">
-                <a href="/sign-in" class="utility-pill"
-                   data-auth-swap data-out-href="/sign-in" data-out-label="Entrar"
-                   data-in-href="/precios" data-in-label="Ver planes">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    <span data-auth-label>Entrar</span>
-                </a>
+            <div class="mm-scroll">
+                <nav class="mobile-acc" id="mobile-acc">
+
+                    <!-- PRODUCTO -->
+                    <div class="m-acc" data-acc>
+                        <button class="m-acc-head" aria-expanded="false">
+                            <span class="m-acc-title">Producto</span>
+                            <span class="m-acc-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+                        </button>
+                        <div class="m-acc-body"><div class="m-acc-inner"><div class="m-acc-stack">
+                            <a href="/producto/editor" class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
+                                <span class="m-sub-copy"><b>Editor de cotizaciones</b><i>Precios negociados, línea por línea</i></span>
+                            </a>
+                            <a href="/producto/link-publico" class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></span>
+                                <span class="m-sub-copy"><b>Link público</b><i>Tu cliente aprueba en un clic</i></span>
+                            </a>
+                            <a href="/producto/seguimiento" class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>
+                                <span class="m-sub-copy"><b>Seguimiento en vivo</b><i>Sabes el momento en que la ven</i></span>
+                            </a>
+                            <a href="/producto/cfdi" class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg></span>
+                                <span class="m-sub-copy"><b>CFDI 4.0</b><i>Timbrado automático ante el SAT</i></span>
+                            </a>
+                            <a href="/producto/clientes-credito" class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+                                <span class="m-sub-copy"><b>Clientes y crédito</b><i>Net 30/60 y límite por cliente</i></span>
+                            </a>
+                            <a href="/producto/cobranza-ia" class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M22 12A10 10 0 0 0 12 2v10Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+                                <span class="m-sub-copy"><b>Cobranza con IA</b><i>Un agente que persigue tu cartera</i></span>
+                            </a>
+                        </div></div></div>
+                    </div>
+
+                    <!-- SOLUCIONES -->
+                    <div class="m-acc" data-acc>
+                        <button class="m-acc-head" aria-expanded="false">
+                            <span class="m-acc-title">Soluciones</span>
+                            <span class="m-acc-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+                        </button>
+                        <div class="m-acc-body"><div class="m-acc-inner"><div class="m-acc-stack">
+                            <a href="/soluciones/distribuidoras" class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8Z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>
+                                <span class="m-sub-copy"><b>Distribuidoras y mayoristas</b><i>Listas de precios por cliente</i></span>
+                            </a>
+                            <a href="/soluciones/construccion" class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M5 20V8l7-5 7 5v12"/><path d="M9 20v-6h6v6"/></svg></span>
+                                <span class="m-sub-copy"><b>Construcción y materiales</b><i>Volumen, obra y crédito</i></span>
+                            </a>
+                            <a href="/soluciones/manufactura" class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M4 20V10l5 3V10l5 3V8l6 4v8"/></svg></span>
+                                <span class="m-sub-copy"><b>Manufactura</b><i>Cotiza especificación y lote</i></span>
+                            </a>
+                            <a href="/soluciones/servicios" class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+                                <span class="m-sub-copy"><b>Servicios profesionales</b><i>Propuestas que se aprueban solas</i></span>
+                            </a>
+                        </div></div></div>
+                    </div>
+
+                    <!-- DESARROLLADORES -->
+                    <div class="m-acc" data-acc>
+                        <button class="m-acc-head" aria-expanded="false">
+                            <span class="m-acc-title">Desarrolladores</span>
+                            <span class="m-acc-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+                        </button>
+                        <div class="m-acc-body"><div class="m-acc-inner"><div class="m-acc-stack">
+                            <a href="/desarrolladores/api" class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
+                                <span class="m-sub-copy"><b>API REST</b><i>Conecta tu ERP o sistema a Cord</i></span>
+                            </a>
+                            <a href="/desarrolladores/mcp" class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4L12 3z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7L19 15z"/></svg></span>
+                                <span class="m-sub-copy"><b>MCP para IA</b><i>Que una IA lea y cotice por ti</i></span>
+                            </a>
+                            <a href="/desarrolladores/elements" class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span>
+                                <span class="m-sub-copy"><b>Cord Elements</b><i>Embebe el cotizador en tu sitio</i></span>
+                            </a>
+                        </div></div></div>
+                    </div>
+
+                    <!-- RECURSOS -->
+                    <div class="m-acc" data-acc>
+                        <button class="m-acc-head" aria-expanded="false">
+                            <span class="m-acc-title">Recursos</span>
+                            <span class="m-acc-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+                        </button>
+                        <div class="m-acc-body"><div class="m-acc-inner"><div class="m-acc-stack">
+                            <a href="/#como" class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg></span>
+                                <span class="m-sub-copy"><b>Cómo funciona</b><i>El flujo completo, en tres pasos</i></span>
+                            </a>
+                            <a href="/q/demo" class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M12 18h.01"/></svg></span>
+                                <span class="m-sub-copy"><b>Cotización de ejemplo</b><i>Lo que tu cliente recibe</i></span>
+                            </a>
+                            <a href="/#faq" class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
+                                <span class="m-sub-copy"><b>Preguntas frecuentes</b><i>Planes, CFDI, seguridad y más</i></span>
+                            </a>
+                            <a href="mailto:hola@flouvia.com" class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+                                <span class="m-sub-copy"><b>Hablar con el equipo</b><i>hola@flouvia.com</i></span>
+                            </a>
+                        </div></div></div>
+                    </div>
+
+                    <!-- PRECIOS (link directo) -->
+                    <a href="/#precios" class="m-acc-link" data-close>
+                        <span class="m-acc-title">Precios</span>
+                        <svg class="m-acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </a>
+                </nav>
             </div>
 
-            <nav class="mobile-links" id="mobile-links">
-                <a href="/#producto" class="m-link">Producto</a>
-                <a href="/soluciones" class="m-link">Soluciones</a>
-                <a href="/desarrolladores/api" class="m-link">Desarrolladores</a>
-                <a href="/#faq" class="m-link">Recursos</a>
-                <a href="/#precios" class="m-link">Precios</a>
-            </nav>
-
-            <div class="mobile-menu-footer">
-                <p class="m-eyebrow">COTIZACIONES B2B · POR FLOUVIA</p>
-                <div class="m-legal">
-                    <span>CDMX — OP. GLOBAL</span>
-                    <a href="mailto:hola@flouvia.com">hola@flouvia.com</a>
+            <div class="mm-foot">
+                <div class="mm-cta">
+                    <a href="/sign-in" class="mm-btn ghost" data-close
+                       data-auth-swap data-out-href="/sign-in" data-out-label="Entrar"
+                       data-in-href="/precios" data-in-label="Ver planes">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span data-auth-label>Entrar</span>
+                    </a>
+                    <a href="/registro" class="mm-btn solid" data-close
+                       data-auth-swap data-out-href="/registro" data-out-label="Empezar gratis"
+                       data-in-href="/app" data-in-label="Ir al Dashboard">
+                        <span data-auth-label>Empezar gratis</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/></svg>
+                    </a>
+                </div>
+                <div class="mm-meta">
+                    <p class="m-eyebrow">COTIZACIONES B2B · POR FLOUVIA</p>
+                    <div class="m-legal">
+                        <span>CDMX — OP. GLOBAL</span>
+                        <a href="mailto:hola@flouvia.com">hola@flouvia.com</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -532,42 +658,114 @@
 
         .mobile-menu-overlay {
             display: flex; position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
-            background: rgba(6,17,33,0.92); backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);
+            background:
+                radial-gradient(ellipse 90% 55% at 88% -5%, rgba(31,58,100,0.55) 0%, transparent 58%),
+                radial-gradient(ellipse 80% 60% at -10% 105%, rgba(16,38,75,0.5) 0%, transparent 55%),
+                linear-gradient(180deg, #0a192f 0%, #061121 100%);
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
             z-index: 15000; opacity: 0; visibility: hidden; clip-path: circle(0% at 88% 8%);
-            transition: clip-path 0.75s var(--ease-expo), opacity 0.3s, visibility 0s 0.75s;
+            transition: clip-path 0.8s var(--ease-expo), opacity 0.3s, visibility 0s 0.8s;
         }
-        .navbar-wrapper.menu-open .mobile-menu-overlay { opacity: 1; visibility: visible; clip-path: circle(160% at 88% 8%); transition: clip-path 0.75s var(--ease-expo), opacity 0.2s, visibility 0s 0s; }
-        .mobile-menu-content { padding: 120px 9% 44px; display: flex; flex-direction: column; justify-content: space-between; height: 100%; width: 100%; }
-
-        .menu-top-row { display: flex; gap: 10px; opacity: 0; transform: translateY(16px); filter: blur(6px); transition: all 0.55s var(--ease-expo) 0.25s; }
-        .navbar-wrapper.menu-open .menu-top-row { opacity: 1; transform: translateY(0); filter: blur(0); }
-        .utility-pill {
-            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.8);
-            padding: 10px 18px; border-radius: 100px; font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
-            text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.35s var(--ease-expo);
+        .navbar-wrapper.menu-open .mobile-menu-overlay { opacity: 1; visibility: visible; clip-path: circle(165% at 88% 8%); transition: clip-path 0.8s var(--ease-expo), opacity 0.2s, visibility 0s 0s; }
+        .mobile-menu-content {
+            display: flex; flex-direction: column; height: 100%; width: 100%;
+            padding: calc(env(safe-area-inset-top) + 92px) 7% calc(env(safe-area-inset-bottom) + 26px);
         }
-        .utility-pill:hover { background: rgba(255,255,255,0.12); color: #fff; }
 
-        .mobile-links { display: flex; flex-direction: column; gap: 0.4rem; }
-        .m-link {
-            font-size: clamp(2.2rem, 8.4vw, 3rem); font-weight: 700;
-            font-family: var(--font-sans);
-            color: rgba(255,255,255,0.9); text-decoration: none; letter-spacing: -0.045em; line-height: 1.18;
-            opacity: 0; transform: translateY(20px); filter: blur(5px);
-            transition: all 0.6s var(--ease-expo); display: inline-block; width: max-content;
+        /* ── Área scrolleable de navegación ── */
+        .mm-scroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; margin: 0 -8px; padding: 0 8px; scrollbar-width: none; }
+        .mm-scroll::-webkit-scrollbar { display: none; }
+        .mobile-acc { display: flex; flex-direction: column; }
+
+        /* Fila de acordeón / link directo: misma firma de revelado escalonado */
+        .m-acc, .m-acc-link {
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            opacity: 0; transform: translateY(22px); filter: blur(6px);
+            transition: opacity 0.6s var(--ease-expo), transform 0.6s var(--ease-expo), filter 0.6s var(--ease-expo);
         }
-        .m-link:hover { color: #fff; }
-        .navbar-wrapper.menu-open .m-link { opacity: 1; transform: translateY(0); filter: blur(0); }
-        .m-link:nth-child(1) { transition-delay: 0.22s; }
-        .m-link:nth-child(2) { transition-delay: 0.31s; }
-        .m-link:nth-child(3) { transition-delay: 0.40s; }
-        .m-link:nth-child(4) { transition-delay: 0.49s; }
+        .navbar-wrapper.menu-open .m-acc,
+        .navbar-wrapper.menu-open .m-acc-link { opacity: 1; transform: translateY(0); filter: blur(0); }
+        .mobile-acc > *:nth-child(1) { transition-delay: 0.20s; }
+        .mobile-acc > *:nth-child(2) { transition-delay: 0.28s; }
+        .mobile-acc > *:nth-child(3) { transition-delay: 0.36s; }
+        .mobile-acc > *:nth-child(4) { transition-delay: 0.44s; }
+        .mobile-acc > *:nth-child(5) { transition-delay: 0.52s; }
 
-        .mobile-menu-footer { border-top: 1px solid rgba(255,255,255,0.07); padding-top: 2rem; opacity: 0; transform: translateY(16px); filter: blur(6px); transition: all 0.65s var(--ease-expo) 0.55s; }
-        .navbar-wrapper.menu-open .mobile-menu-footer { opacity: 1; transform: translateY(0); filter: blur(0); }
-        .m-eyebrow { font-size: 8px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: rgba(255,255,255,0.25); margin-bottom: 1.4rem; }
-        .m-legal { display: flex; justify-content: space-between; font-size: 9px; color: rgba(255,255,255,0.3); letter-spacing: 1px; font-weight: 600; }
+        .m-acc-head, .m-acc-link {
+            display: flex; align-items: center; justify-content: space-between; width: 100%;
+            background: transparent; border: none; cursor: pointer; text-align: left; text-decoration: none;
+            padding: 1.15rem 0.15rem; -webkit-tap-highlight-color: transparent;
+        }
+        .m-acc-title {
+            font-size: clamp(1.65rem, 6.6vw, 2.15rem); font-weight: 700;
+            font-family: var(--font-sans); letter-spacing: -0.04em; line-height: 1;
+            color: rgba(255,255,255,0.92); transition: color 0.3s var(--ease-spring);
+        }
+        .m-acc.open .m-acc-title, .m-acc-link:active .m-acc-title { color: #fff; }
+        .m-acc-chev { display: flex; color: rgba(255,255,255,0.38); transition: transform 0.5s var(--ease-spring), color 0.3s; }
+        .m-acc-chev svg { width: 22px; height: 22px; }
+        .m-acc.open .m-acc-chev { transform: rotate(180deg); color: rgba(255,255,255,0.85); }
+        .m-acc-arrow { width: 19px; height: 19px; color: rgba(255,255,255,0.38); transition: transform 0.4s var(--ease-spring), color 0.3s; flex-shrink: 0; }
+        .m-acc-link:active .m-acc-arrow { transform: translateX(4px); color: #fff; }
+
+        /* Cuerpo del acordeón: expansión grid 0fr → 1fr (bulletproof, sin medir alturas) */
+        .m-acc-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.5s var(--ease-expo); }
+        .m-acc.open .m-acc-body { grid-template-rows: 1fr; }
+        .m-acc-inner { overflow: hidden; min-height: 0; }
+        .m-acc-stack { display: flex; flex-direction: column; padding-bottom: 0.7rem; }
+
+        .m-sub {
+            display: flex; align-items: center; gap: 13px;
+            padding: 10px 10px; border-radius: 14px; text-decoration: none;
+            -webkit-tap-highlight-color: transparent;
+            opacity: 0; transform: translateY(8px);
+            transition: opacity 0.45s var(--ease-expo), transform 0.45s var(--ease-expo), background 0.25s;
+        }
+        .m-acc.open .m-sub { opacity: 1; transform: translateY(0); }
+        .m-acc.open .m-sub:nth-child(1) { transition-delay: 0.06s; }
+        .m-acc.open .m-sub:nth-child(2) { transition-delay: 0.10s; }
+        .m-acc.open .m-sub:nth-child(3) { transition-delay: 0.14s; }
+        .m-acc.open .m-sub:nth-child(4) { transition-delay: 0.18s; }
+        .m-acc.open .m-sub:nth-child(5) { transition-delay: 0.22s; }
+        .m-acc.open .m-sub:nth-child(6) { transition-delay: 0.26s; }
+        .m-sub:active { background: rgba(255,255,255,0.07); }
+        .m-sub-ico {
+            width: 38px; height: 38px; flex-shrink: 0; border-radius: 11px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09);
+            color: rgba(255,255,255,0.82); box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+        .m-sub-ico svg { width: 18px; height: 18px; }
+        .m-sub-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .m-sub-copy b { font-size: 0.92rem; font-weight: 650; letter-spacing: -0.01em; color: rgba(255,255,255,0.92); }
+        .m-sub-copy i { font-style: normal; font-size: 0.76rem; font-weight: 500; line-height: 1.3; color: rgba(255,255,255,0.45); }
+
+        /* ── Pie: CTAs + meta ── */
+        .mm-foot { flex-shrink: 0; padding-top: 1.3rem; opacity: 0; transform: translateY(16px); filter: blur(6px); transition: opacity 0.65s var(--ease-expo) 0.5s, transform 0.65s var(--ease-expo) 0.5s, filter 0.65s var(--ease-expo) 0.5s; }
+        .navbar-wrapper.menu-open .mm-foot { opacity: 1; transform: translateY(0); filter: blur(0); }
+        .mm-cta { display: flex; gap: 10px; margin-bottom: 1.4rem; }
+        .mm-btn {
+            flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+            height: 52px; border-radius: 100px; text-decoration: none;
+            font-size: 0.74rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;
+            transition: transform 0.35s var(--ease-expo), background 0.3s, box-shadow 0.3s;
+        }
+        .mm-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+        .mm-btn.ghost { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); color: rgba(255,255,255,0.85); }
+        .mm-btn.ghost:active { background: rgba(255,255,255,0.12); transform: scale(0.97); }
+        .mm-btn.solid { background: #fff; color: var(--nb-dark); box-shadow: 0 12px 34px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.6); }
+        .mm-btn.solid:active { transform: scale(0.97); box-shadow: 0 6px 18px rgba(0,0,0,0.3); }
+
+        .mm-meta { border-top: 1px solid rgba(255,255,255,0.07); padding-top: 1.3rem; }
+        .m-eyebrow { font-size: 8px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: rgba(255,255,255,0.28); margin-bottom: 0.9rem; }
+        .m-legal { display: flex; justify-content: space-between; font-size: 9px; color: rgba(255,255,255,0.32); letter-spacing: 1px; font-weight: 600; }
         .m-legal a { color: rgba(255,255,255,0.6); text-decoration: none; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .mobile-menu-overlay { transition: opacity 0.2s, visibility 0s 0.2s; clip-path: none; }
+            .navbar-wrapper.menu-open .mobile-menu-overlay { transition: opacity 0.2s, visibility 0s 0s; clip-path: none; }
+            .m-acc, .m-acc-link, .mm-foot, .m-sub { transition: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
+        }
     }
 
     .squircle { border-radius: 100px; transform: translateZ(0); }
@@ -821,25 +1019,50 @@
 
         // ── MOBILE MENU ──
         if (navbar && toggle) {
-            toggle.addEventListener('click', () => {
-                navbar.classList.toggle('menu-open');
-                const main = document.querySelector('main');
-                if (navbar.classList.contains('menu-open')) {
-                    document.body.style.overflow = 'hidden';
-                    if (main) gsap.to(main, { scale: 0.96, y: 10, filter: 'blur(4px)', borderRadius: '20px', duration: 0.6, ease: 'expo.out' });
-                } else {
-                    document.body.style.overflow = '';
-                    if (main) gsap.to(main, { scale: 1, y: 0, filter: 'blur(0px)', borderRadius: '0px', duration: 0.5, ease: 'expo.out' });
-                }
-            });
-            document.querySelectorAll('.m-link, .utility-pill').forEach(el => {
-                el.addEventListener('click', () => {
-                    navbar.classList.remove('menu-open');
-                    document.body.style.overflow = '';
-                    const main = document.querySelector('main');
-                    if (main) gsap.to(main, { scale: 1, y: 0, filter: 'blur(0px)', borderRadius: '0px', duration: 0.45, ease: 'expo.out' });
+            const accs = Array.from(document.querySelectorAll<HTMLElement>('.m-acc'));
+
+            // Acordeones: uno abierto a la vez (mismo patrón que el FAQ)
+            accs.forEach((acc) => {
+                const head = acc.querySelector<HTMLButtonElement>('.m-acc-head');
+                head?.addEventListener('click', () => {
+                    const willOpen = !acc.classList.contains('open');
+                    accs.forEach((a) => {
+                        a.classList.remove('open');
+                        a.querySelector('.m-acc-head')?.setAttribute('aria-expanded', 'false');
+                    });
+                    if (willOpen) { acc.classList.add('open'); head.setAttribute('aria-expanded', 'true'); }
                 });
             });
+
+            const blurMain = (open: boolean) => {
+                const main = document.querySelector('main');
+                if (!main) return;
+                if (reducedMotion) return;
+                if (open) gsap.to(main, { scale: 0.96, y: 10, filter: 'blur(4px)', borderRadius: '20px', duration: 0.6, ease: 'expo.out' });
+                else gsap.to(main, { scale: 1, y: 0, filter: 'blur(0px)', borderRadius: '0px', duration: 0.5, ease: 'expo.out' });
+            };
+
+            const closeMenu = () => {
+                navbar.classList.remove('menu-open');
+                document.body.style.overflow = '';
+                accs.forEach((a) => { a.classList.remove('open'); a.querySelector('.m-acc-head')?.setAttribute('aria-expanded', 'false'); });
+                blurMain(false);
+            };
+
+            toggle.addEventListener('click', () => {
+                const open = !navbar.classList.contains('menu-open');
+                if (open) {
+                    navbar.classList.add('menu-open');
+                    document.body.style.overflow = 'hidden';
+                    blurMain(true);
+                } else {
+                    closeMenu();
+                }
+            });
+
+            // Cualquier destino navegable cierra el menú
+            document.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', closeMenu));
+            window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && navbar.classList.contains('menu-open')) closeMenu(); });
         }
     });
 </script>

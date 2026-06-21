@@ -345,6 +345,95 @@ const { slug, index } = Astro.props;
       </div>
     </div>
   )}
+
+  {/* ────────────────── MULTI-DIVISA / FX ────────────────── */}
+  {slug === 'divisas' && index === 0 && (
+    <div class="bm-stage bm-fx-m0">
+      <div class="bm-floating bm-float-top-right">
+        <div class="bm-pill"><i class="bm-dot bm-dot-blue"></i><span>Factura en MXN</span></div>
+      </div>
+      <div class="bm-card">
+        <div class="bm-head"><span>Presentación</span><span>Factura</span></div>
+        <div class="bm-row"><span>USD 10,620.50</span><b class="editorial">$196,469.20</b></div>
+        <div class="bm-row"><span>EUR 9,760.00</span><b class="editorial">$196,176.00</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'divisas' && index === 1 && (
+    <div class="bm-stage bm-fx-m1">
+      <div class="bm-floating bm-float-top-left">
+        <div class="bm-pill"><i class="bm-dot bm-dot-green"></i><span>En vivo</span></div>
+      </div>
+      <div class="bm-terminal">
+        <div class="bm-term-head"><i></i><i></i><i></i><span>fx.spot</span></div>
+        <div class="bm-term-body">
+          <span class="bm-term-line">Consultando BCE…</span>
+          <span class="bm-term-line bm-term-ok">[OK] USD/MXN 18.50</span>
+          <span class="bm-term-line bm-term-ok">[OK] EUR/MXN 20.10</span>
+          <span class="bm-term-line">spot lock listo · 30 días</span>
+          <span class="bm-term-cursor">_</span>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'divisas' && index === 2 && (
+    <div class="bm-stage bm-fx-m2">
+      <div class="bm-floating bm-float-bottom-right">
+        <div class="bm-pill bm-pill-brand"><span>🔒 Lock 30 días</span></div>
+      </div>
+      <div class="bm-card">
+        <div class="bm-head"><span>Cobertura</span></div>
+        <div class="bm-row"><span>Tasa spot</span><b class="editorial">$18.50</b></div>
+        <div class="bm-row"><span>Buffer +2%</span><div class="bm-margin-bar-bg"><div class="bm-margin-bar-fill bm-fx-buffer-fill"></div></div></div>
+        <div class="bm-row bm-active"><span>Tasa aplicada</span><b class="editorial bm-green bm-fx-applied">$18.50</b></div>
+      </div>
+    </div>
+  )}
+
+  {/* ────────────────── FACTURACIÓN INTERNACIONAL ────────────────── */}
+  {slug === 'internacional' && index === 0 && (
+    <div class="bm-stage bm-intl-m0">
+      <div class="bm-floating bm-float-top-right">
+        <div class="bm-pill bm-pill-brand"><span>🔒 30 días</span></div>
+      </div>
+      <div class="bm-card">
+        <div class="bm-head"><span>Cobertura cambiaria</span></div>
+        <div class="bm-row"><span>Tasa spot (BCE)</span><b class="editorial bm-intl-spot">$18.42</b></div>
+        <div class="bm-row bm-row-target"><span>Tasa aplicada</span><b class="editorial bm-green"><span class="bm-intl-applied">$18.79</span> <i class="mk-chip bm-intl-chip">+2%</i></b></div>
+        <div class="bm-row"><span>FX lock</span><b>30 días</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'internacional' && index === 1 && (
+    <div class="bm-stage bm-intl-m1">
+      <div class="bm-card">
+        <div class="bm-head"><span>Divisas del trato</span></div>
+        <div class="bm-row"><span>Presentación (cliente)</span><span class="bm-tag bm-tag-blue">USD</span></div>
+        <div class="bm-row"><span>Fiscal (factura)</span><span class="bm-tag bm-tag-mxn">MXN</span></div>
+        <div class="bm-divider"></div>
+        <div class="bm-row"><span>Convertido</span><b class="editorial bm-intl-conv">$230,880.00</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'internacional' && index === 2 && (
+    <div class="bm-stage bm-intl-m2">
+      <div class="bm-floating bm-float-top-right">
+        <div class="bm-pill bm-pill-brand"><span>México · SAT 4.0</span></div>
+      </div>
+      <div class="bm-floating bm-float-bottom-left bm-intl-us">
+        <div class="bm-pill bm-pill-dark"><span>EE.UU. · en desarrollo</span></div>
+      </div>
+      <div class="bm-card bm-cfdi-card">
+        <div class="bm-fake-xml">&lt;cfdi:Comprobante Version="4.0"&gt;<br/>&lt;cfdi:Emisor Rfc="MVA24..."/&gt;<br/>&lt;/cfdi:Comprobante&gt;</div>
+        <div class="bm-row"><span>Status</span><b class="bm-green bm-intl-status">Timbrado</b></div>
+        <div class="bm-row"><span>UUID</span><b>a1b2c3d4-9f01...</b></div>
+      </div>
+    </div>
+  )}
 </div>
 
 <style>
@@ -496,6 +585,9 @@ const { slug, index } = Astro.props;
 
   .bm-tag { font-size: 0.52rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
   .bm-tag-warn { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
+  .bm-tag-blue { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.25); }
+  .bm-tag-mxn { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
+  .bm-intl-us { opacity: 0.55; }
 
   /* ── Specific Mockup Styles ── */
 

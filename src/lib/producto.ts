@@ -407,6 +407,130 @@ export const FEATURES: Feature[] = [
         ],
         cta: { titulo: 'Deja que la IA persiga tu cartera.', sub: 'La cobranza autónoma vive en el plan Scale. Tú apruebas, ella cobra.' },
     },
+    {
+        slug: 'divisas',
+        nav: 'Multi-divisa y FX',
+        eyebrow: 'MULTI-DIVISA Y COBERTURA CAMBIARIA',
+        titulo: 'Cotiza en dólares.<br/>Factura en pesos.<br/>Cuida tu margen.',
+        sub: 'Tu cliente ve el precio en su moneda; tú facturas en pesos. Cord congela el tipo de cambio del día por 30 días y le suma una cobertura, para que el margen que cerraste sea el margen que cobras.',
+        metaTitle: 'Cotizaciones en dólares y euros con cobertura cambiaria para empresas en México — Cord by Flouvia',
+        metaDescription: 'Cotiza en USD o EUR y factura en pesos. Cord toma la tasa spot del Banco Central Europeo, le aplica un buffer de cobertura para proteger tu margen y congela el tipo de cambio 30 días (FX lock). Para negocios B2B en México que venden con divisas.',
+        plan: 'Disponible en todos los planes',
+        stats: [
+            { valor: '30', countup: 30, suffix: ' días', label: 'que se congela el tipo de cambio por cotización' },
+            { valor: '3', countup: 3, label: 'monedas de presentación: USD, EUR y MXN — siempre facturas en pesos' },
+            { valor: '2', countup: 2, suffix: '%', label: 'de cobertura sugerida sobre el tipo de cambio spot, ajustable' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'DOS MONEDAS, UN TRATO',
+                titulo: 'El cliente ve dólares.<br/>El SAT ve pesos.',
+                copy: 'En Cord la moneda de presentación y la moneda fiscal son dos cosas distintas. Tu cliente revisa y aprueba la cotización en dólares o euros, como espera; tú facturas en pesos, como vives en México. Cord guarda ambas monedas y la tasa con la que las amarró dentro de la misma cotización, sin que tengas que llevar la conversión a mano.',
+                bullets: [
+                    'Presenta en USD, EUR o MXN; factura siempre en pesos',
+                    'La tasa aplicada queda guardada en la cotización',
+                    'El cliente decide en su moneda; tú cumples en la tuya',
+                ],
+            },
+            {
+                eyebrow: 'TIPO DE CAMBIO REAL',
+                titulo: 'La tasa del día,<br/>no la del Excel viejo.',
+                copy: 'Cord trae el tipo de cambio spot en vivo desde los datos del Banco Central Europeo, sin que captures nada ni dependas de una hoja desactualizada. Si por alguna razón el servicio externo no responde, Cord usa una tasa de respaldo para que tu cotización nunca se quede a medias. Lo ves en el editor antes de guardar.',
+                bullets: [
+                    'Tasa spot en vivo (datos del BCE), sin capturar nada',
+                    'Preview del tipo de cambio mientras armas la cotización',
+                    'Tasa de respaldo si el servicio externo falla — nunca se traba',
+                ],
+            },
+            {
+                eyebrow: 'COBERTURA Y FX LOCK',
+                titulo: 'El margen que cierras<br/>es el que cobras.',
+                copy: 'Entre que el cliente aprueba en dólares y tú facturas semanas después en pesos, el tipo de cambio se mueve y se come tu utilidad. Cord le suma un buffer de cobertura a la tasa spot (2% por defecto, tú lo ajustas) y congela ese número 30 días. No es un forward de banco: es un margen de seguridad que Cord calcula y deja fijo para que apruebes hoy o factures en tres semanas con el mismo número.',
+                bullets: [
+                    'Buffer de cobertura configurable sobre la tasa spot',
+                    'FX lock: la tasa se congela 30 días por cotización',
+                    'Protege tu utilidad del movimiento entre aprobar y facturar',
+                ],
+            },
+        ],
+        faqs: [
+            {
+                q: '¿Puedo cotizar en dólares y facturar en pesos con Cord?',
+                a: 'Sí. En Cord la moneda de presentación es independiente de la moneda fiscal. Tu cliente revisa y aprueba la cotización en dólares (USD) o euros (EUR), mientras que tú facturas en pesos mexicanos (MXN). Cord guarda ambas monedas y el tipo de cambio aplicado dentro de la misma cotización, así que no necesitas llevar la conversión por separado en un Excel. La factura siempre se emite en pesos.',
+            },
+            {
+                q: '¿De dónde saca Cord el tipo de cambio?',
+                a: 'Cord obtiene la tasa spot en vivo a partir de los datos del Banco Central Europeo, sin que tengas que capturar nada manualmente. El tipo de cambio se muestra en el editor de cotizaciones antes de guardar. Si el servicio externo no responde por un problema de red, Cord aplica una tasa de respaldo para que la cotización nunca se quede sin generar. Las monedas de presentación disponibles son USD, EUR y MXN.',
+            },
+            {
+                q: '¿Qué es la cobertura cambiaria y el FX lock de Cord?',
+                a: 'La cobertura cambiaria es un porcentaje extra (buffer) que Cord suma al tipo de cambio spot para darte margen ante movimientos de la moneda; por defecto es 2% y tú lo puedes ajustar. No es un forward ni una cobertura contratada con un banco: es un colchón que el software calcula y deja fijo. El FX lock congela esa tasa 30 días desde que creas la cotización, así que aunque el cliente apruebe hoy y tú factures semanas después, el tipo de cambio que cobras es el mismo que cerraste y la volatilidad del dólar no se come la utilidad que negociaste.',
+            },
+        ],
+        cta: { titulo: 'Vende en dólares sin perder en el cambio.', sub: 'Cotiza en USD o EUR, factura en pesos y deja que Cord proteja tu margen. Gratis para empezar.' },
+    },
+    {
+        slug: 'internacional',
+        nav: 'Facturación internacional',
+        eyebrow: 'FACTURACIÓN INTERNACIONAL (US/MX)',
+        titulo: 'Cotiza en dólares.<br/>Factura como debe ser.',
+        sub: 'Vende a clientes en Estados Unidos sin perder el margen al tipo de cambio: cotiza en USD, blinda la tasa por 30 días y factura en MXN con CFDI 4.0 real. Una sola plataforma para el negocio que ya no cabe en una frontera.',
+        metaTitle: 'Facturación internacional US/MX: cotiza en dólares, factura CFDI 4.0 en pesos — Cord by Flouvia',
+        metaDescription: 'Cord cotiza en USD con cobertura cambiaria (tasa congelada 30 días) y factura en MXN con CFDI 4.0 timbrado ante el SAT vía Facturapi. Arquitectura multi-país lista para crecer. Para empresas B2B mexicanas que exportan o venden en dólares.',
+        plan: 'Cobertura cambiaria y multi-divisa en todos los planes (incluido el gratuito); el timbrado CFDI 4.0 ante el SAT desde el plan Starter',
+        stats: [
+            { valor: '30', countup: 30, suffix: ' días', label: 'que congelas el tipo de cambio de la cotización (FX lock)' },
+            { valor: '2', countup: 2, label: 'divisas por trato: una para cotizar, otra para facturar' },
+            { valor: '4.0', label: 'versión del CFDI que Cord timbra real ante el SAT' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'COBERTURA CAMBIARIA',
+                titulo: 'El dólar se mueve.<br/>Tu margen no.',
+                copy: 'Entre que tu cliente aprueba en dólares y tú facturas semanas después, el tipo de cambio puede comerse tu utilidad. Cord toma la tasa spot real del Banco Central Europeo, le suma el buffer de cobertura que tú definas y congela ese tipo de cambio por 30 días. El margen que prometiste es el margen que cobras.',
+                bullets: [
+                    'Tasa spot en vivo (USD a MXN, EUR a MXN) desde fuente del BCE',
+                    'Buffer de cobertura configurable para absorber la volatilidad',
+                    'FX lock de 30 días: la tasa queda guardada con la cotización',
+                ],
+            },
+            {
+                eyebrow: 'DOS DIVISAS, UN TRATO',
+                titulo: 'Cotizas en la divisa<br/>que tu cliente entiende.',
+                copy: 'En el editor eliges la divisa de presentación —la que ve tu cliente en el extranjero— y la divisa fiscal con la que vas a facturar. Cord guarda ambas en la cotización junto con la tasa congelada, así el documento que aprueba el cliente y el CFDI que entra a tu contabilidad nunca se contradicen.',
+                bullets: [
+                    'Divisa de presentación (USD) separada de la divisa fiscal (MXN)',
+                    'Vista previa del monto convertido antes de enviar',
+                    'Tasa, fuente y vigencia quedan registradas en el trato',
+                ],
+            },
+            {
+                eyebrow: 'CFDI REAL + ARQUITECTURA GLOBAL',
+                titulo: 'México timbra de verdad.<br/>El resto, ya está cableado.',
+                copy: 'Cuando el trato se cierra en México, Cord emite CFDI 4.0 real ante el SAT a través de Facturapi: UUID, XML y PDF timbrados. Por dentro, un patrón de proveedores fiscales enruta cada emisión según el país del negocio y la centraliza en un solo registro: la base lista para sumar más países conforme crezcas.',
+                bullets: [
+                    'CFDI 4.0 real timbrado ante el SAT (México) vía Facturapi',
+                    'Registro fiscal unificado por país en un solo lugar',
+                    'Arquitectura multi-país preparada para expandirse',
+                ],
+            },
+        ],
+        faqs: [
+            {
+                q: '¿Cord permite cotizar en dólares y facturar en pesos?',
+                a: 'Sí. En el editor de Cord defines dos divisas: la divisa de presentación con la que tu cliente ve la cotización (por ejemplo USD) y la divisa fiscal con la que vas a facturar (por ejemplo MXN). Cord obtiene la tasa de cambio spot real, le aplica el buffer de cobertura que configures y la congela por 30 días junto con la cotización. Al cerrar el trato en México, la factura se emite como CFDI 4.0 en pesos.',
+            },
+            {
+                q: '¿Cómo protege Cord mi margen ante movimientos del tipo de cambio?',
+                a: 'Cord usa cobertura cambiaria. Toma la tasa spot en vivo (datos del Banco Central Europeo vía Frankfurter), le suma un porcentaje de buffer que tú defines para absorber la volatilidad, y bloquea ese tipo de cambio por 30 días (FX lock). Así, aunque el dólar se mueva entre la aprobación y la facturación, tú facturas a la tasa que pactaste y conservas el margen. La cobertura cambiaria y la multi-divisa están disponibles en todos los planes, incluido el gratuito.',
+            },
+            {
+                q: '¿Cord factura clientes en Estados Unidos igual que en México?',
+                a: 'No de la misma forma, y es importante ser claros. En México, Cord timbra CFDI 4.0 real ante el SAT a través de un Proveedor Autorizado de Certificación (Facturapi), con UUID, XML y PDF válidos. Para Estados Unidos no existe un timbre del gobierno equivalente: la emisión de facturas comerciales (Commercial Invoice) en EE.UU. está en la arquitectura como módulo en desarrollo, no como timbrado real equivalente al CFDI. Hoy, lo que cierra de verdad el ciclo fiscal es México; la base multi-país ya está construida para crecer hacia otros países.',
+            },
+        ],
+        cta: { titulo: 'Vende sin frontera. Factura sin sorpresas.', sub: 'Cotiza en dólares con la tasa blindada y timbra tu CFDI 4.0 en pesos. Empieza gratis.' },
+    },
 ];
 
 export const findFeature = (slug: string) => FEATURES.find(f => f.slug === slug);

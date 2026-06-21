@@ -73,6 +73,22 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
 
 ## Estado actual (jun 2026)
 
+✅ **Navbar móvil — menú premium con acordeones (jun 2026)** — reescritura completa del
+   overlay de `Nav.astro` a petición de André ("neta, carbona, estéticamente Cord"):
+   • **Antes:** 5 links de texto plano (`Producto · Soluciones · Desarrolladores · Recursos · Precios`).
+   • **Ahora:** 4 **acordeones colapsables** (uno abierto a la vez, misma mecánica que el FAQ)
+     + 1 link directo para Precios. Cada acordeón expone los sub-items con ícono + título +
+     subtítulo — reusando íconos y copys de los megamenús de escritorio → misma profundidad
+     de producto en móvil. Expansión `grid-template-rows: 0fr → 1fr` (bulletproof, sin medir alturas).
+   • **Fondo:** navy con mesh radial de marca (los mismos orbes `#0a192f/ellipse` de las secciones
+     oscuras del sitio) en vez del gris sólido anterior.
+   • **Bloque de CTA fijo abajo:** "Entrar" (ghost de vidrio) + "Empezar gratis" (sólido blanco),
+     ambos full-width con `data-auth-swap` intacto para el swap Clerk en cliente.
+   • Títulos editoriales Inter 700, `letter-spacing: -0.04em`; íconos 38px con borde de vidrio;
+     chevron rota 180° al abrir; stagger blur-in en filas y sub-items; `env(safe-area-inset)`
+     para notch/home-bar; área de nav scrolleable con pie anclado; estados `:active` táctiles.
+   • Respeta `prefers-reduced-motion` (sin clip-path, blur ni transforms). Build verde.
+
 ✅ **Mockups de landing pulidos + página "Cobranza con IA" (jun 2026)** — limpieza de
    animaciones de las subpáginas (`/producto/*`, `/soluciones/*`, `/desarrolladores/*`) +
    primera página de las integraciones nuevas:
