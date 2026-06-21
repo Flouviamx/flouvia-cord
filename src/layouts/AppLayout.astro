@@ -51,16 +51,16 @@ const { title, page, heading, crumbs = [] } = Astro.props;
         </script>
         <style is:inline>
             /* ASTRO OPTIMIZATION BYPASS: Forced CSS injection */
-            html.sb-collapsed .sidebar { width: 56px !important; padding-left: 0 !important; padding-right: 0 !important; align-items: stretch !important; }
+            html.sb-collapsed .sidebar { width: 56px !important; padding-left: 0 !important; padding-right: 0 !important; align-items: stretch !important; z-index: 800 !important; }
             html.sb-collapsed .sb-item { width: 100% !important; height: 36px !important; justify-content: flex-start !important; padding-left: 18px !important; border-radius: 10px !important; margin: 0 !important; }
             html.sb-collapsed .sb-item svg { width: 20px !important; height: 20px !important; flex-shrink: 0 !important; }
             html.sb-collapsed .sb-indicator { width: calc(100% - 16px) !important; left: 8px !important; margin-left: 0 !important; border-radius: 10px !important; }
             /* Centrado de la cuenta / org switcher */
-            html.sb-collapsed .sb-account { display: flex !important; justify-content: center !important; align-items: center !important; padding: 0 !important; margin-bottom: 0.6rem !important; }
-            html.sb-collapsed .custom-org-switcher { display: flex !important; justify-content: center !important; width: 100% !important; }
+            html.sb-collapsed .sb-account { display: flex !important; justify-content: center !important; align-items: center !important; padding: 0 !important; margin-bottom: 0.6rem !important; position: relative !important; z-index: 9999 !important; }
+            html.sb-collapsed .custom-org-switcher { display: flex !important; justify-content: center !important; width: 100% !important; position: relative !important; z-index: 9999 !important; }
             html.sb-collapsed .org-switcher-btn { width: 36px !important; height: 36px !important; justify-content: center !important; padding: 0 !important; border-radius: 10px !important; }
-            /* Nuke de translucidez absoluto */
-            .org-dropdown { background-color: #ffffff !important; background-image: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; opacity: 1 !important; box-shadow: 0 30px 60px -12px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.05) !important; }
+            /* Nuke de translucidez absoluto + Stacking context z-index */
+            .org-dropdown { background-color: #ffffff !important; background-image: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; opacity: 1 !important; box-shadow: 0 30px 60px -12px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.05) !important; z-index: 99999 !important; }
             html[data-theme="dark"] .org-dropdown { background-color: #111823 !important; box-shadow: 0 30px 60px -12px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.1) !important; }
             
             /* Microinteracciones Premium (Linear-style) */
