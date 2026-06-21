@@ -85,7 +85,7 @@ const featuredAuthorAvatar = FEATURED_POST?.authorAvatar || '/images/blog/cord-a
 
                 <!-- Floating Featured Card (Quiet Luxury Hairlines) -->
                 <div class="floating-card-wrapper reveal">
-                    <a href={`/blog/${FEATURED_POST.id}`} class="floating-card hairline-border">
+                    <a href={isEn ? `/en/blog/${featuredPostId?.replace('en/', '')}` : `/blog/${featuredPostId?.replace('es/', '')}`} class="floating-card hairline-border">
                         <!-- Left: Text -->
                         <div class="fc-text">
                             <div class="fc-meta-top">
@@ -142,7 +142,7 @@ const featuredAuthorAvatar = FEATURED_POST?.authorAvatar || '/images/blog/cord-a
             <div class="blog-grid" id="blog-grid">
                 {POSTS.map((post, i) => (
                     <article class="blog-card hairline-border reveal" data-category={post.category} style={`transition-delay: ${(i % 3) * 50}ms`}>
-                        <a href={`/blog/${post.id}`} class="blog-card-link">
+                        <a href={isEn ? `/en/blog/${post.id.replace('en/', '')}` : `/blog/${post.id.replace('es/', '')}`} class="blog-card-link">
                             <div class={`blog-img-wrap stripe-cover gradient-${(i % 5) + 1}`}>
                                 <div class="stripe-shape shape-1"></div>
                                 <div class="stripe-shape shape-2"></div>
