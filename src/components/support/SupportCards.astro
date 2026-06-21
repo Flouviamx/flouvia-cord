@@ -1,88 +1,192 @@
 ---
 // /src/components/support/SupportCards.astro
+const faqs = [
+    { q: "¿Cuándo se deposita el dinero en mi cuenta?", a: "Los pagos procesados con tarjeta se depositan en tu cuenta bancaria configurada en un plazo de 24 a 48 horas hábiles, dependiendo del esquema que hayas elegido en tu onboarding." },
+    { q: "¿Cómo cancelo una factura (CFDI)?", a: "Ve a la sección de Facturación en tu portal, busca la factura emitida, selecciona 'Opciones' y haz clic en 'Cancelar CFDI'. Deberás proporcionar el motivo de cancelación ante el SAT." },
+    { q: "¿Puedo cobrar en dólares (USD)?", a: "Sí. Cord te permite emitir cotizaciones y recibir pagos en USD. El monto se convertirá a MXN al tipo de cambio interbancario del día en que se procese el pago de forma transparente." },
+    { q: "¿Qué pasa si un cliente no paga a tiempo?", a: "Cord enviará recordatorios automáticos según la configuración de tu cuenta. Si el pago excede la fecha límite, la liga de pago se desactiva y el estado cambiará a 'Vencido'." },
+    { q: "¿Cómo invito a alguien de mi equipo?", a: "Desde la configuración de tu cuenta, ve a 'Equipo', haz clic en 'Invitar miembro', ingresa su correo electrónico y asígnale un rol (Administrador, Ventas, o Lector)." },
+    { q: "¿Dónde encuentro mis API Keys?", a: "Si eres desarrollador, puedes encontrar tus llaves de prueba y producción en Ajustes > Desarrolladores > Claves de API. Recuerda nunca compartir tu llave secreta." }
+];
 ---
 
 <section class="support-content">
     <div class="content-wrapper">
-        <h2 class="pr-h2 masked-title">Artículos destacados</h2>
-        <div class="articles-grid reveal">
-            <!-- Article Card 1 -->
-            <a href="#" class="article-card">
-                <div class="card-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                        <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
-                </div>
-                <div class="card-text">
-                    <h3>Crear tu primera cotización</h3>
-                    <p>Aprende a generar, enviar y dar seguimiento a cotizaciones profesionales en minutos.</p>
+        
+        <!-- ── NUEVOS EN CORD (GETTING STARTED) ── -->
+        <h2 class="pr-h2 masked-title">Nuevos en Cord</h2>
+        <div class="getting-started-grid reveal">
+            <a href="#" class="step-card">
+                <span class="step-num">1</span>
+                <div class="step-content">
+                    <h3>Configura tu cuenta</h3>
+                    <p>Conecta tu cuenta bancaria y añade los datos fiscales de tu empresa para poder operar.</p>
                 </div>
             </a>
-            <!-- Article Card 2 -->
-            <a href="#" class="article-card">
-                <div class="card-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="1" x2="12" y2="23"></line>
-                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                    </svg>
-                </div>
-                <div class="card-text">
-                    <h3>Estado de pagos</h3>
-                    <p>Entiende los estados de tus pagos, tiempos de procesamiento y transferencias bancarias.</p>
+            <a href="#" class="step-card">
+                <span class="step-num">2</span>
+                <div class="step-content">
+                    <h3>Crea tu primera cotización</h3>
+                    <p>Agrega productos, establece precios y envía un enlace interactivo a tu cliente.</p>
                 </div>
             </a>
-            <!-- Article Card 3 -->
-            <a href="#" class="article-card">
-                <div class="card-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
-                        <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
-                    </svg>
-                </div>
-                <div class="card-text">
-                    <h3>Revisar facturación y CFDI</h3>
-                    <p>Configura la facturación automática y emite CFDI 4.0 directamente desde Cord.</p>
+            <a href="#" class="step-card">
+                <span class="step-num">3</span>
+                <div class="step-content">
+                    <h3>Recibe tu primer pago</h3>
+                    <p>Permite que tu cliente pague en línea con tarjeta o transferencia SPEI automatizada.</p>
                 </div>
             </a>
         </div>
 
-        <h2 class="pr-h2 masked-title mt-24">Explorar por tema</h2>
-        <div class="topics-grid reveal">
-            <a href="#" class="topic-pill">
-                <span class="topic-icon">💳</span>
-                <span class="topic-name">Pagos y transferencias</span>
-            </a>
-            <a href="#" class="topic-pill">
-                <span class="topic-icon">📄</span>
-                <span class="topic-name">Cotizaciones</span>
-            </a>
-            <a href="#" class="topic-pill">
-                <span class="topic-icon">🏢</span>
-                <span class="topic-name">Gestión de cuenta</span>
-            </a>
-            <a href="#" class="topic-pill">
-                <span class="topic-icon">⚡️</span>
-                <span class="topic-name">Facturación (CFDI)</span>
-            </a>
-            <a href="#" class="topic-pill">
-                <span class="topic-icon">👨‍💻</span>
-                <span class="topic-name">Desarrolladores y API</span>
-            </a>
-            <a href="#" class="topic-pill">
-                <span class="topic-icon">🔐</span>
-                <span class="topic-name">Seguridad y Privacidad</span>
-            </a>
+        <!-- ── EXPLORAR POR CATEGORÍA ── -->
+        <h2 class="pr-h2 masked-title mt-32">Explorar por categoría</h2>
+        <div class="categories-grid reveal">
+            <!-- Categoria 1 -->
+            <div class="category-card">
+                <div class="cat-header">
+                    <div class="cat-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                            <line x1="2" y1="10" x2="22" y2="10"></line>
+                        </svg>
+                    </div>
+                    <h3>Pagos y Depósitos</h3>
+                </div>
+                <ul class="cat-links">
+                    <li><a href="/soporte/tiempos-de-deposito">Tiempos de depósito a cuenta bancaria</a></li>
+                    <li><a href="#">Comisiones y tarifas de procesamiento</a></li>
+                    <li><a href="#">Manejo de disputas y contracargos</a></li>
+                    <li><a href="#">Emitir reembolsos a clientes</a></li>
+                </ul>
+                <a href="#" class="cat-view-all">Ver todos (12) →</a>
+            </div>
+
+            <!-- Categoria 2 -->
+            <div class="category-card">
+                <div class="cat-header">
+                    <div class="cat-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                    </div>
+                    <h3>Cotizaciones</h3>
+                </div>
+                <ul class="cat-links">
+                    <li><a href="#">Estructura de una cotización interactiva</a></li>
+                    <li><a href="#">Aprobar y rechazar tratos (Flujo de clientes)</a></li>
+                    <li><a href="#">Añadir términos de crédito (Net 30/60)</a></li>
+                    <li><a href="#">Seguimiento y notificaciones de lectura</a></li>
+                </ul>
+                <a href="#" class="cat-view-all">Ver todos (8) →</a>
+            </div>
+
+            <!-- Categoria 3 -->
+            <div class="category-card">
+                <div class="cat-header">
+                    <div class="cat-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                            <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                        </svg>
+                    </div>
+                    <h3>Facturación y CFDI</h3>
+                </div>
+                <ul class="cat-links">
+                    <li><a href="/soporte/emitir-cfdi">Configurar facturación automática al pago</a></li>
+                    <li><a href="#">Catálogos SAT y claves de producto</a></li>
+                    <li><a href="#">Complementos de pago (REP)</a></li>
+                    <li><a href="#">Cancelar facturas y notas de crédito</a></li>
+                </ul>
+                <a href="#" class="cat-view-all">Ver todos (15) →</a>
+            </div>
+
+            <!-- Categoria 4 -->
+            <div class="category-card">
+                <div class="cat-header">
+                    <div class="cat-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <h3>Cuenta y Equipo</h3>
+                </div>
+                <ul class="cat-links">
+                    <li><a href="#">Configurar autenticación en dos pasos (2FA)</a></li>
+                    <li><a href="#">Invitar miembros y roles (RBAC)</a></li>
+                    <li><a href="#">Actualizar datos bancarios (CLABE)</a></li>
+                    <li><a href="#">Cambiar plan de suscripción Cord</a></li>
+                </ul>
+                <a href="#" class="cat-view-all">Ver todos (9) →</a>
+            </div>
+
+            <!-- Categoria 5 -->
+            <div class="category-card">
+                <div class="cat-header">
+                    <div class="cat-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 18 22 12 16 6"></polyline>
+                            <polyline points="8 6 2 12 8 18"></polyline>
+                        </svg>
+                    </div>
+                    <h3>Desarrolladores</h3>
+                </div>
+                <ul class="cat-links">
+                    <li><a href="#">Autenticación y Claves API (API Keys)</a></li>
+                    <li><a href="#">Configurar e inspeccionar Webhooks</a></li>
+                    <li><a href="#">Cord Elements (Componentes UI embebibles)</a></li>
+                    <li><a href="#">Límites de peticiones (Rate limits)</a></li>
+                </ul>
+                <a href="#" class="cat-view-all">Ver todos (14) →</a>
+            </div>
+
+            <!-- Categoria 6 -->
+            <div class="category-card">
+                <div class="cat-header">
+                    <div class="cat-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                    <h3>Seguridad y Privacidad</h3>
+                </div>
+                <ul class="cat-links">
+                    <li><a href="#">Cumplimiento PCI-DSS</a></li>
+                    <li><a href="#">Retención de datos y privacidad</a></li>
+                    <li><a href="#">Reportar vulnerabilidades</a></li>
+                    <li><a href="#">Acuerdos de confidencialidad (NDA)</a></li>
+                </ul>
+                <a href="#" class="cat-view-all">Ver todos (5) →</a>
+            </div>
         </div>
 
-        <!-- Contact CTA -->
+        <!-- ── PREGUNTAS FRECUENTES (FAQ) ── -->
+        <h2 class="pr-h2 masked-title mt-32">Preguntas frecuentes</h2>
+        <div class="pr-faq-list reveal">
+            {faqs.map((f) => (
+                <details class="pr-faq-item">
+                    <summary>
+                        <span>{f.q}</span>
+                        <i class="pr-faq-ico" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        </i>
+                    </summary>
+                    <div class="pr-faq-body"><p>{f.a}</p></div>
+                </details>
+            ))}
+        </div>
+
+        <!-- ── CONTACT CTA ── -->
         <div class="contact-cta reveal">
             <div class="cta-content">
                 <h2>¿No encuentras lo que buscas?</h2>
-                <p>Nuestro equipo de soporte técnico está listo para ayudarte con cualquier duda o problema.</p>
+                <p>Nuestro equipo de soporte técnico está listo para ayudarte con cualquier duda o problema específico.</p>
             </div>
             <a href="mailto:soporte@flouvia.com" class="cta-button">Contactar a soporte</a>
         </div>
@@ -95,28 +199,28 @@
         background-color: var(--color-bg);
     }
     .content-wrapper {
-        max-width: 1080px;
+        max-width: 1100px;
         margin: 0 auto;
     }
     .pr-h2 {
-        font-size: clamp(1.7rem, 3vw, 2.4rem);
+        font-size: clamp(1.6rem, 3vw, 2.2rem);
         font-weight: 800;
         line-height: 1.12;
         letter-spacing: -0.03em;
         color: var(--color-text);
         margin: 0 0 2rem;
     }
-    .mt-24 {
+    .mt-32 {
         margin-top: 5rem;
     }
 
-    /* Articles Grid */
-    .articles-grid {
+    /* ── GETTING STARTED GRID ── */
+    .getting-started-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        grid-template-columns: repeat(3, 1fr);
         gap: 20px;
     }
-    .article-card {
+    .step-card {
         display: flex;
         flex-direction: column;
         padding: 2rem;
@@ -125,101 +229,184 @@
         border-radius: 20px;
         text-decoration: none;
         color: inherit;
-        transition: all 0.4s var(--ease-spring);
         position: relative;
         overflow: hidden;
+        transition: transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-spring), border-color 0.4s;
     }
-    .article-card::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(145deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 100%);
-        opacity: 0;
-        transition: opacity 0.4s ease;
-        z-index: 0;
-    }
-    .article-card:hover {
+    .step-card:hover {
         transform: translateY(-4px);
         box-shadow: 0 20px 40px -10px rgba(10, 25, 47, 0.12);
-        border-color: rgba(10, 25, 47, 0.15);
+        border-color: rgba(10, 25, 47, 0.2);
         background: #ffffff;
     }
-    .article-card:hover::before {
-        opacity: 1;
-    }
-    .card-icon {
-        width: 48px;
-        height: 48px;
-        background: #f5f7fa;
-        border-radius: 12px;
+    .step-num {
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--color-blue-deep);
-        margin-bottom: 24px;
-        position: relative;
-        z-index: 1;
-        transition: transform 0.4s var(--ease-spring), background 0.4s ease;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: var(--color-blue-deep);
+        color: #ffffff;
+        font-size: 1.1rem;
+        font-weight: 800;
+        margin-bottom: 1.5rem;
     }
-    .article-card:hover .card-icon {
-        transform: scale(1.05);
-        background: #eef2f6;
-    }
-    .card-icon svg {
-        width: 24px;
-        height: 24px;
-    }
-    .card-text {
-        position: relative;
-        z-index: 1;
-    }
-    .card-text h3 {
+    .step-content h3 {
         font-size: 1.15rem;
         font-weight: 700;
         margin: 0 0 10px 0;
         color: var(--color-text);
         letter-spacing: -0.01em;
     }
-    .card-text p {
+    .step-content p {
         font-size: 0.95rem;
-        line-height: 1.6;
+        line-height: 1.5;
         color: var(--color-text-muted);
         margin: 0;
     }
 
-    /* Topics Grid */
-    .topics-grid {
+    /* ── CATEGORIES GRID ── */
+    .categories-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 16px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
     }
-    .topic-pill {
+    .category-card {
+        background: #ffffff;
+        border: 1px solid var(--color-border);
+        border-radius: 20px;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        transition: box-shadow 0.3s ease, border-color 0.3s ease;
+    }
+    .category-card:hover {
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.05);
+        border-color: rgba(10,25,47,0.15);
+    }
+    .cat-header {
         display: flex;
         align-items: center;
-        padding: 1.25rem 1.5rem;
+        gap: 16px;
+        margin-bottom: 1.5rem;
+    }
+    .cat-icon {
+        width: 44px;
+        height: 44px;
+        background: #f5f7fa;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-blue-deep);
+    }
+    .cat-icon svg {
+        width: 22px;
+        height: 22px;
+        stroke-width: 2.2px;
+    }
+    .cat-header h3 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--color-text);
+    }
+    .cat-links {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 1.5rem 0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .cat-links li a {
+        color: var(--color-text-muted);
+        text-decoration: none;
+        font-size: 0.95rem;
+        transition: color 0.2s ease;
+        display: inline-block;
+    }
+    .cat-links li a:hover {
+        color: var(--color-blue-deep);
+        text-decoration: underline;
+        text-underline-offset: 4px;
+    }
+    .cat-view-all {
+        margin-top: auto;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--color-blue-deep);
+        text-decoration: none;
+        display: inline-block;
+    }
+    .cat-view-all:hover {
+        text-decoration: underline;
+        text-underline-offset: 4px;
+    }
+
+    /* ── FAQ ── */
+    .pr-faq-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+        max-width: 860px;
+    }
+    .pr-faq-item {
         background: var(--color-bg-soft);
         border: 1px solid var(--color-border);
         border-radius: 16px;
-        text-decoration: none;
-        transition: all 0.3s var(--ease-spring);
+        padding: 0 1.4rem;
+        overflow: hidden;
+        transition: border-color 0.3s, box-shadow 0.4s;
     }
-    .topic-pill:hover {
+    .pr-faq-item[open] {
+        border-color: rgba(10,25,47,0.14);
+        box-shadow: 0 20px 50px -30px rgba(10,25,47,0.18);
         background: #ffffff;
-        border-color: rgba(10, 25, 47, 0.2);
-        box-shadow: 0 8px 24px -8px rgba(10, 25, 47, 0.1);
-        transform: translateY(-2px);
     }
-    .topic-icon {
-        font-size: 1.4rem;
-        margin-right: 16px;
-    }
-    .topic-name {
-        font-size: 1rem;
+    .pr-faq-item summary {
+        list-style: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.25rem 0;
+        font-size: 1.05rem;
         font-weight: 600;
         color: var(--color-text);
     }
+    .pr-faq-item summary::-webkit-details-marker { display: none; }
+    .pr-faq-ico {
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(10,25,47,0.04);
+        color: var(--color-blue-deep);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.4s var(--ease-spring), background 0.3s;
+    }
+    .pr-faq-ico svg { width: 14px; height: 14px; }
+    .pr-faq-item[open] .pr-faq-ico {
+        transform: rotate(135deg);
+        background: var(--color-blue-deep);
+        color: #fff;
+    }
+    .pr-faq-body {
+        padding: 0 0 1.4rem;
+    }
+    .pr-faq-body p {
+        margin: 0;
+        font-size: 1rem;
+        line-height: 1.6;
+        color: var(--color-text-muted);
+    }
 
-    /* Contact CTA */
+    /* ── CONTACT CTA ── */
     .contact-cta {
         margin-top: 6rem;
         padding: 4rem;
@@ -294,11 +481,11 @@
             width: 100%;
         }
     }
-    @media (max-width: 600px) {
-        .articles-grid {
+    @media (max-width: 768px) {
+        .categories-grid {
             grid-template-columns: 1fr;
         }
-        .topics-grid {
+        .getting-started-grid {
             grid-template-columns: 1fr;
         }
         .pr-h2 {

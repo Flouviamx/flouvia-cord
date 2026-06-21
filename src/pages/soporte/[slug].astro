@@ -1,0 +1,104 @@
+---
+import { getCollection, render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../../components/landing/Nav.astro';
+import Footer from '../../components/landing/Footer.astro';
+import PageAnims from '../../components/landing/PageAnims.astro';
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const supportEntries = await getCollection('support');
+  return supportEntries.map(entry => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+
+<Layout
+    title={`${entry.data.title} — Centro de Ayuda Cord`}
+    description={entry.data.description}
+>
+    <Nav />
+    <main class="article-layout">
+        <div class="article-container reveal">
+            <a href="/soporte" class="back-link">← Volver al Centro de Ayuda</a>
+            <article class="markdown-body">
+                <Content />
+            </article>
+        </div>
+    </main>
+    <Footer ctaTitle="¿Necesitas más ayuda?" ctaSub="Contacta a nuestro equipo especializado." />
+    <PageAnims />
+</Layout>
+
+<style>
+    .article-layout {
+        padding: 140px 5% 80px;
+        background-color: var(--color-bg);
+        min-height: 80vh;
+    }
+    .article-container {
+        max-width: 760px;
+        margin: 0 auto;
+    }
+    .back-link {
+        display: inline-block;
+        margin-bottom: 2rem;
+        color: var(--color-text-muted);
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.95rem;
+        transition: color 0.2s;
+    }
+    .back-link:hover {
+        color: var(--color-blue-deep);
+    }
+    
+    /* Estilos básicos para el contenido Markdown */
+    .markdown-body {
+        color: var(--color-text);
+        line-height: 1.7;
+    }
+    .markdown-body :global(h1) {
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 800;
+        color: var(--color-blue-deep);
+        margin-bottom: 1.5rem;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+    }
+    .markdown-body :global(h2) {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--color-text);
+        margin-top: 3rem;
+        margin-bottom: 1rem;
+        letter-spacing: -0.02em;
+    }
+    .markdown-body :global(p) {
+        margin-bottom: 1.5rem;
+        font-size: 1.05rem;
+    }
+    .markdown-body :global(ul), .markdown-body :global(ol) {
+        margin-bottom: 1.5rem;
+        padding-left: 1.5rem;
+    }
+    .markdown-body :global(li) {
+        margin-bottom: 0.5rem;
+        font-size: 1.05rem;
+    }
+    .markdown-body :global(strong) {
+        font-weight: 600;
+        color: var(--color-blue-deep);
+    }
+    .markdown-body :global(a) {
+        color: var(--color-blue-deep);
+        text-decoration: underline;
+        text-underline-offset: 4px;
+    }
+</style>

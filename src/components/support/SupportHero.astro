@@ -12,7 +12,17 @@
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" placeholder="Busca artículos, guías y más..." class="search-input" />
+            <input type="text" id="support-search-input" placeholder="Busca guías, solución de problemas y más..." class="search-input" autocomplete="off" />
+            <div id="search-results-dropdown" class="search-dropdown hidden">
+                <!-- Resultados de búsqueda inyectados vía JS -->
+            </div>
+        </div>
+        <div class="popular-searches reveal">
+            <span class="ps-label">Búsquedas populares:</span>
+            <a href="/soporte/emitir-cfdi" class="ps-tag">Emitir CFDI 4.0</a>
+            <a href="/soporte/tiempos-de-deposito" class="ps-tag">Tiempos de pago</a>
+            <a href="#" class="ps-tag">Configurar cuenta bancaria</a>
+            <a href="#" class="ps-tag">Invitar equipo</a>
         </div>
     </div>
 </section>
@@ -121,4 +131,129 @@
             height: 20px;
         }
     }
+
+    /* ── SEARCH DROPDOWN STYLES ── */
+    .search-dropdown {
+        position: absolute;
+        top: calc(100% + 12px);
+        left: 0;
+        right: 0;
+        background: #ffffff;
+        border: 1px solid var(--color-border);
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(10, 25, 47, 0.12);
+        max-height: 400px;
+        overflow-y: auto;
+        z-index: 100;
+        text-align: left;
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        transition: all 0.3s var(--ease-spring);
+    }
+    .search-dropdown.hidden {
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px);
+    }
+    .search-result-item {
+        display: block;
+        padding: 16px 24px;
+        text-decoration: none;
+        color: var(--color-text);
+        border-bottom: 1px solid var(--color-border);
+        transition: background 0.2s;
+    }
+    .search-result-item:last-child {
+        border-bottom: none;
+    }
+    .search-result-item:hover, .search-result-item.active {
+        background: var(--color-bg-soft);
+    }
+    .sr-title {
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: var(--color-blue-deep);
+        margin-bottom: 4px;
+    }
+    .sr-desc {
+        font-size: 0.9rem;
+        color: var(--color-text-muted);
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .sr-empty {
+        padding: 24px;
+        text-align: center;
+        color: var(--color-text-muted);
+        font-size: 0.95rem;
+    }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const input = document.getElementById('support-search-input') as HTMLInputElement;
+        const dropdown = document.getElementById('search-results-dropdown');
+        if (!input || !dropdown) return;
+
+        let articles: any[] = [];
+        let searchTimeout: any;
+
+        // Fetch index on focus
+        input.addEventListener('focus', async () => {
+            if (articles.length === 0) {
+                try {
+                    const res = await fetch('/api/support-search.json');
+                    articles = await res.json();
+                } catch (e) {
+                    console.error('Failed to load search index', e);
+                }
+            }
+            if (input.value.trim().length > 0) {
+                dropdown.classList.remove('hidden');
+            }
+        });
+
+        // Filter on input
+        input.addEventListener('input', (e) => {
+            const query = (e.target as HTMLInputElement).value.toLowerCase().trim();
+            clearTimeout(searchTimeout);
+
+            if (query.length === 0) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                dropdown.classList.remove('hidden');
+                const results = articles.filter(a => 
+                    a.title.toLowerCase().includes(query) || 
+                    a.description.toLowerCase().includes(query) ||
+                    a.category.toLowerCase().includes(query)
+                ).slice(0, 5); // Limit to 5 results
+
+                if (results.length === 0) {
+                    dropdown.innerHTML = '<div class="sr-empty">No se encontraron artículos para "' + query + '"</div>';
+                    return;
+                }
+
+                dropdown.innerHTML = results.map((r: any) => `
+                    <a href="/soporte/${r.slug}" class="search-result-item">
+                        <div class="sr-title">${r.title}</div>
+                        <div class="sr-desc">${r.description}</div>
+                    </a>
+                `).join('');
+            }, 150); // Debounce
+        });
+
+        // Close on click outside
+        document.addEventListener('click', (e) => {
+            if (!input.contains(e.target as Node) && !dropdown.contains(e.target as Node)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+    });
+</script>
