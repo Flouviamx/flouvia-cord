@@ -539,9 +539,16 @@ const NAV_GROUPS = [
         const moveTo = (it: HTMLElement | null, animate = true) => {
             if (!it) { el.style.opacity = '0'; return; }
             if (!animate || reduce) el.style.transition = 'none';
-            el.style.top = it.offsetTop + 'px';
-            el.style.height = it.offsetHeight + 'px';
+            
+            // Usamos getBoundingClientRect para ser 100% precisos sin importar los contenedores con position:relative (acordeones)
+            const navRect = nav.getBoundingClientRect();
+            const itRect = it.getBoundingClientRect();
+            const relativeTop = itRect.top - navRect.top + nav.scrollTop;
+            
+            el.style.top = relativeTop + 'px';
+            el.style.height = itRect.height + 'px';
             el.style.opacity = '1';
+            
             if (!animate || reduce) { void el.offsetHeight; el.style.transition = ''; }
         };
         const settle = () => moveTo(activeItem(), false);
@@ -553,6 +560,14 @@ const NAV_GROUPS = [
         nav.addEventListener('mouseleave', () => moveTo(activeItem()));
         window.addEventListener('resize', settle);
         document.getElementById('sbToggleFloating')?.addEventListener('click', () => setTimeout(settle, 320));
+        
+        // El acordeón también necesita reposicionar el indicador al animar
+        document.querySelectorAll('.sb-group-label').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setTimeout(settle, 350);
+            });
+        });
+
         // Posición inicial (tras pins + fuentes).
         settle();
         nav.classList.add('sb-ind-ready');
