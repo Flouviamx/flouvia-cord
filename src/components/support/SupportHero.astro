@@ -132,6 +132,40 @@
         }
     }
 
+    /* ── POPULAR SEARCHES ── */
+    .popular-searches {
+        margin-top: 1.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+    }
+    .ps-label {
+        font-size: 0.9rem;
+        color: var(--color-text-muted);
+        font-weight: 500;
+        margin-right: 4px;
+    }
+    .ps-tag {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--color-blue-deep);
+        background: rgba(10, 25, 47, 0.04);
+        padding: 6px 14px;
+        border-radius: 20px;
+        text-decoration: none;
+        transition: all 0.3s var(--ease-spring);
+        border: 1px solid transparent;
+    }
+    .ps-tag:hover {
+        background: #ffffff;
+        color: var(--color-blue-deep);
+        border-color: rgba(10, 25, 47, 0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(10, 25, 47, 0.06);
+    }
+
     /* ── SEARCH DROPDOWN STYLES ── */
     .search-dropdown {
         position: absolute;

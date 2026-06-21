@@ -8,124 +8,333 @@ export const prerender = true;
 
 export async function getStaticPaths() {
   const categories = [
-    { slug: 'pagos', name: 'Pagos y Depósitos' },
-    { slug: 'cotizaciones', name: 'Cotizaciones' },
-    { slug: 'facturacion', name: 'Facturación y CFDI' },
-    { slug: 'cuenta', name: 'Cuenta y Equipo' },
-    { slug: 'desarrolladores', name: 'Desarrolladores' },
-    { slug: 'seguridad', name: 'Seguridad y Privacidad' },
+    { slug: 'pagos', name: 'Pagos y Depósitos', desc: 'Todo sobre recepción de fondos, tiempos de liquidación y comisiones.', icon: '💳' },
+    { slug: 'cotizaciones', name: 'Cotizaciones', desc: 'Guías para enviar y gestionar cotizaciones interactivas.', icon: '📄' },
+    { slug: 'facturacion', name: 'Facturación y CFDI', desc: 'Configura la facturación automática 4.0 al instante.', icon: '⚡️' },
+    { slug: 'cuenta', name: 'Cuenta y Equipo', desc: 'Administra accesos, roles y configuraciones de tu organización.', icon: '🏢' },
+    { slug: 'desarrolladores', name: 'Desarrolladores', desc: 'Documentación para APIs, Webhooks y CORD Elements.', icon: '👨‍💻' },
+    { slug: 'seguridad', name: 'Seguridad y Privacidad', desc: 'Información sobre cumplimiento PCI-DSS y protección de datos.', icon: '🔐' },
   ];
   return categories.map(cat => ({
     params: { categoria: cat.slug },
-    props: { name: cat.name },
+    props: { name: cat.name, desc: cat.desc, icon: cat.icon },
   }));
 }
 
 const { categoria } = Astro.params;
-const { name } = Astro.props;
+const { name, desc, icon } = Astro.props;
 const allArticles = await getCollection('support');
+// We map and filter to find articles for this category. We'll also just add some dummy placeholders if it's empty to make it look premium.
 const categoryArticles = allArticles.filter(a => a.data.category === name);
+
+// If there are few articles, we'll populate the UI with 'coming soon' or just show the real ones.
+const hasArticles = categoryArticles.length > 0;
 ---
 
-<Layout title={`${name} - Soporte Cord`} description={`Artículos de ayuda sobre ${name}`}>
+<Layout title={`${name} - Centro de Ayuda Cord`} description={`Artículos de ayuda sobre ${name}`}>
     <Nav />
     <main class="cat-page-layout">
-        <div class="cat-container reveal">
-            <a href="/soporte" class="back-link">← Volver al Centro de Ayuda</a>
-            <h1 class="cat-title">{name}</h1>
-            <p class="cat-desc">Explora todas las guías y artículos relacionados con este tema.</p>
+        <div class="pr-mesh" aria-hidden="true"></div>
+        <div class="cat-container">
+            <a href="/soporte" class="back-link reveal">← Volver al Centro de Ayuda</a>
             
-            <div class="cat-articles-list">
-                {categoryArticles.length > 0 ? (
-                    categoryArticles.map(article => (
-                        <a href={`/soporte/${article.id}`} class="article-item">
-                            <h3>{article.data.title}</h3>
-                            <p>{article.data.description}</p>
-                        </a>
-                    ))
+            <div class="cat-header reveal">
+                <div class="cat-icon-wrapper">
+                    <span class="cat-icon-emoji">{icon}</span>
+                </div>
+                <h1 class="cat-title masked-title">{name}</h1>
+                <p class="cat-desc">{desc}</p>
+            </div>
+            
+            <div class="cat-content reveal">
+                {hasArticles ? (
+                    <div class="articles-grid">
+                        {categoryArticles.map(article => (
+                            <a href={`/soporte/${article.id}`} class="article-card">
+                                <h3>{article.data.title}</h3>
+                                <p>{article.data.description}</p>
+                                <span class="read-more">Leer artículo →</span>
+                            </a>
+                        ))}
+                    </div>
                 ) : (
-                    <div class="empty-state">
-                        <p>Aún no hay artículos publicados en esta categoría.</p>
+                    <div class="premium-empty-state">
+                        <div class="empty-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        </div>
+                        <h2>Estamos preparando estas guías</h2>
+                        <p>Nuestro equipo está documentando los mejores procesos para <strong>{name}</strong>. Pronto encontrarás artículos detallados aquí.</p>
+                        <a href="mailto:soporte@flouvia.com" class="empty-cta">Pregúntale a Soporte directamente</a>
                     </div>
                 )}
             </div>
+
+            <!-- Contact CTA (similar to main page to keep the flow) -->
+            <div class="contact-cta reveal">
+                <div class="cta-content">
+                    <h2>¿Aún tienes dudas?</h2>
+                    <p>No te preocupes, nuestro equipo de expertos está a un correo de distancia para resolver cualquier problema.</p>
+                </div>
+                <a href="mailto:soporte@flouvia.com" class="cta-button">Escribir a soporte</a>
+            </div>
         </div>
     </main>
-    <Footer ctaTitle="¿No encuentras lo que buscas?" ctaSub="Contacta a nuestro equipo de soporte." />
+    <Footer ctaTitle="¿Listo para acelerar tus ventas?" ctaSub="Únete a las empresas que ya cotizan como profesionales con Cord." />
 </Layout>
 
 <style>
     .cat-page-layout {
-        padding: 140px 5% 100px;
+        position: relative;
+        padding: 130px 5% 100px;
         background-color: var(--color-bg);
         min-height: 80vh;
+        overflow: hidden;
+    }
+    .pr-mesh {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 600px;
+        background: radial-gradient(ellipse 60% 60% at 50% -10%, rgba(10,25,47,0.04) 0%, transparent 70%);
+        pointer-events: none;
     }
     .cat-container {
-        max-width: 800px;
+        max-width: 960px;
         margin: 0 auto;
+        position: relative;
+        z-index: 1;
     }
+    
     .back-link {
-        display: inline-block;
-        margin-bottom: 2rem;
+        display: inline-flex;
+        align-items: center;
+        margin-bottom: 3rem;
         color: var(--color-text-muted);
         text-decoration: none;
-        font-weight: 500;
+        font-weight: 600;
         font-size: 0.95rem;
-        transition: color 0.2s;
+        transition: color 0.2s, transform 0.2s;
     }
     .back-link:hover {
         color: var(--color-blue-deep);
+        transform: translateX(-4px);
     }
-    .cat-title {
-        font-size: clamp(2.5rem, 4vw, 3.5rem);
-        font-weight: 800;
-        color: var(--color-text);
-        margin-bottom: 0.5rem;
-        letter-spacing: -0.03em;
+
+    /* Header */
+    .cat-header {
+        text-align: center;
+        margin-bottom: 5rem;
     }
-    .cat-desc {
-        font-size: 1.15rem;
-        color: var(--color-text-muted);
-        margin-bottom: 3rem;
-    }
-    
-    .cat-articles-list {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-    }
-    .article-item {
-        display: block;
-        padding: 1.5rem 2rem;
+    .cat-icon-wrapper {
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 1.5rem;
         background: #ffffff;
         border: 1px solid var(--color-border);
-        border-radius: 16px;
-        text-decoration: none;
-        transition: all 0.3s var(--ease-spring);
+        box-shadow: 0 10px 30px -10px rgba(10,25,47,0.08);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform: rotate(-3deg);
+        transition: transform 0.4s var(--ease-spring);
     }
-    .article-item:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 30px -10px rgba(10, 25, 47, 0.1);
-        border-color: rgba(10, 25, 47, 0.15);
+    .cat-header:hover .cat-icon-wrapper {
+        transform: rotate(0deg) scale(1.05);
     }
-    .article-item h3 {
+    .cat-icon-emoji {
+        font-size: 2.2rem;
+    }
+    .cat-title {
+        font-size: clamp(2.6rem, 5vw, 3.8rem);
+        font-weight: 800;
+        color: var(--color-text);
+        margin-bottom: 1rem;
+        letter-spacing: -0.035em;
+        line-height: 1.1;
+    }
+    .cat-desc {
         font-size: 1.25rem;
-        font-weight: 700;
-        color: var(--color-blue-deep);
-        margin: 0 0 0.5rem 0;
-    }
-    .article-item p {
-        font-size: 1rem;
         color: var(--color-text-muted);
-        margin: 0;
+        max-width: 600px;
+        margin: 0 auto;
         line-height: 1.5;
     }
-    .empty-state {
-        padding: 3rem;
-        text-align: center;
-        background: var(--color-bg-soft);
-        border-radius: 16px;
-        border: 1px dashed var(--color-border);
+    
+    /* Articles Grid */
+    .articles-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        gap: 24px;
+        margin-bottom: 6rem;
+    }
+    .article-card {
+        display: flex;
+        flex-direction: column;
+        padding: 2.5rem;
+        background: #ffffff;
+        border: 1px solid var(--color-border);
+        border-radius: 24px;
+        text-decoration: none;
+        transition: all 0.4s var(--ease-spring);
+        position: relative;
+        overflow: hidden;
+    }
+    .article-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 40px -10px rgba(10, 25, 47, 0.08);
+        border-color: rgba(10, 25, 47, 0.15);
+    }
+    .article-card h3 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--color-blue-deep);
+        margin: 0 0 1rem 0;
+        letter-spacing: -0.02em;
+    }
+    .article-card p {
+        font-size: 1.05rem;
         color: var(--color-text-muted);
+        margin: 0 0 2rem 0;
+        line-height: 1.6;
+        flex-grow: 1;
+    }
+    .read-more {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--color-blue-deep);
+        margin-top: auto;
+        display: inline-block;
+    }
+    
+    /* Premium Empty State */
+    .premium-empty-state {
+        text-align: center;
+        padding: 5rem 2rem;
+        background: var(--color-bg-soft);
+        border: 1px dashed rgba(10,25,47,0.15);
+        border-radius: 24px;
+        margin-bottom: 6rem;
+    }
+    .empty-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 1.5rem;
+        background: #ffffff;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-text-muted);
+        box-shadow: 0 8px 20px rgba(10,25,47,0.04);
+    }
+    .empty-icon svg { width: 32px; height: 32px; stroke-width: 1.5px; }
+    .premium-empty-state h2 {
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        color: var(--color-text);
+    }
+    .premium-empty-state p {
+        font-size: 1.1rem;
+        color: var(--color-text-muted);
+        max-width: 500px;
+        margin: 0 auto 2rem;
+        line-height: 1.5;
+    }
+    .empty-cta {
+        display: inline-block;
+        padding: 12px 24px;
+        background: var(--color-blue-deep);
+        color: #ffffff;
+        font-weight: 600;
+        border-radius: 12px;
+        text-decoration: none;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .empty-cta:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(10,25,47,0.15);
+    }
+
+    /* Contact CTA (Copied from SupportCards to match style) */
+    .contact-cta {
+        padding: 4rem;
+        background: radial-gradient(ellipse at 50% 0%, #112240 0%, #0a192f 80%);
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: #ffffff;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 30px 60px -20px rgba(10,25,47,0.5);
+    }
+    .contact-cta::after {
+        content: '';
+        position: absolute;
+        top: -50%; right: -10%;
+        width: 500px; height: 500px;
+        background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    .cta-content h2 {
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin: 0 0 16px 0;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+    }
+    .cta-content p {
+        font-size: 1.1rem;
+        color: rgba(255,255,255,0.7);
+        margin: 0;
+        max-width: 480px;
+        line-height: 1.6;
+    }
+    .cta-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px 32px;
+        background: #ffffff;
+        color: var(--color-blue-deep);
+        font-weight: 700;
+        font-size: 1rem;
+        border-radius: 12px;
+        text-decoration: none;
+        transition: all 0.4s var(--ease-spring);
+        white-space: nowrap;
+        margin-left: 32px;
+        box-shadow: 0 12px 28px -10px rgba(0,0,0,0.3);
+        position: relative;
+        z-index: 1;
+    }
+    .cta-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 40px -15px rgba(0,0,0,0.4);
+    }
+
+    @media (max-width: 768px) {
+        .articles-grid {
+            grid-template-columns: 1fr;
+        }
+        .contact-cta {
+            flex-direction: column;
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+        .cta-content p { margin: 0 auto; }
+        .cta-button {
+            margin-left: 0;
+            margin-top: 32px;
+            width: 100%;
+        }
     }
 </style>
