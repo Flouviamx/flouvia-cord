@@ -223,21 +223,16 @@ const faqs = [
     .step-card {
         display: flex;
         flex-direction: column;
-        padding: 2rem;
-        background: var(--color-bg-soft);
-        border: 1px solid var(--color-border);
-        border-radius: 20px;
+        padding: 2.5rem 0;
+        background: transparent;
+        border-top: 1px solid var(--color-border);
         text-decoration: none;
         color: inherit;
         position: relative;
-        overflow: hidden;
-        transition: transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-spring), border-color 0.4s;
+        transition: transform 0.3s ease;
     }
     .step-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 20px 40px -10px rgba(10, 25, 47, 0.12);
-        border-color: rgba(10, 25, 47, 0.2);
-        background: #ffffff;
+        transform: translateX(4px);
     }
     .step-num {
         display: flex;
@@ -270,20 +265,19 @@ const faqs = [
     .categories-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 24px;
+        gap: 2rem 5rem;
+        border-top: 1px solid var(--color-border);
+        padding-top: 2rem;
     }
     .category-card {
-        background: #ffffff;
-        border: 1px solid var(--color-border);
-        border-radius: 20px;
-        padding: 2rem;
+        background: transparent;
+        border: none;
+        padding: 1rem 0 3rem;
         display: flex;
         flex-direction: column;
-        transition: box-shadow 0.3s ease, border-color 0.3s ease;
     }
     .category-card:hover {
-        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.05);
-        border-color: rgba(10,25,47,0.15);
+        /* No hover card effect, just clean text layout */
     }
     .cat-header {
         display: flex;
@@ -292,19 +286,17 @@ const faqs = [
         margin-bottom: 1.5rem;
     }
     .cat-icon {
-        width: 44px;
-        height: 44px;
-        background: #f5f7fa;
-        border-radius: 12px;
+        width: 32px;
+        height: 32px;
+        color: var(--color-blue-deep);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--color-blue-deep);
     }
     .cat-icon svg {
-        width: 22px;
-        height: 22px;
-        stroke-width: 2.2px;
+        width: 24px;
+        height: 24px;
+        stroke-width: 2px;
     }
     .cat-header h3 {
         font-size: 1.2rem;
