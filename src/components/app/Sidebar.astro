@@ -270,15 +270,17 @@ const NAV_GROUPS = [
     }
     .sb-item:hover::before, .sb-action-row:hover::before { opacity: 1; }
 
-    /* ── Físicas Magnéticas (Spring Snapback) ── */
-    /* Cuando el mouse entra, la transición es rápida y tensa para seguir el cursor. */
+    /* ── Hover elástico estilo Dock ── */
     .sb-item svg, .sb-action-row svg {
-        transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.22s var(--ease-ios), filter 0.15s linear;
+        transition: transform 0.4s var(--ease-spring), opacity 0.22s var(--ease-ios), filter 0.25s linear;
         will-change: transform, filter;
     }
-    /* Cuando el mouse sale, hace un "spring" elástico para volver al centro. */
-    .sb-item:not(:hover) svg, .sb-action-row:not(:hover) svg {
-        transition: transform 0.6s var(--ease-spring), filter 0.6s var(--ease-spring);
+    .sb-item:hover svg, .sb-action-row:hover svg {
+        transform: scale(1.12) translateY(-0.5px);
+    }
+    .sb-item:active svg, .sb-action-row:active svg {
+        transform: scale(0.92);
+        transition: transform 0.1s;
     }
 
     /* Antes de que el indicador de vidrio se posicione (pre-JS): pill sutil en el activo */
@@ -763,77 +765,21 @@ const NAV_GROUPS = [
         });
     }
 
-    // ── Nivel Dios: Físicas Magnéticas 3D + Spotlight + Ripple ──
-    function initGodTierIcons() {
+    // ── Spotlight Tracking (sin físicas magnéticas, solo glow) ──
+    function initSpotlight() {
         const items = document.querySelectorAll('.sb-item, .sb-action-row');
         items.forEach(el => {
-            const svg = el.querySelector('svg');
             const htmlEl = el as HTMLElement;
-            
-            // Mouse tracking (Spotlight + Magnetism)
             htmlEl.addEventListener('mousemove', (e) => {
                 const rect = htmlEl.getBoundingClientRect();
                 const x = e.clientX - rect.left;
                 const y = e.clientY - rect.top;
-                
-                // Set spotlight coordinates
                 htmlEl.style.setProperty('--mx', `${x}px`);
                 htmlEl.style.setProperty('--my', `${y}px`);
-                
-                if (svg && !svg.classList.contains('sb-group-chevron')) {
-                    const cx = rect.width / 2;
-                    const cy = rect.height / 2;
-                    const dx = x - cx;
-                    const dy = y - cy;
-                    
-                    // Fuerza magnética (tira del SVG hacia el cursor)
-                    const magX = dx * 0.25;
-                    const magY = dy * 0.25;
-                    
-                    // Tilt 3D Holográfico (rota basándose en la posición del mouse)
-                    const tiltX = (dy / cy) * -15; // Invertido para rotar hacia el cursor
-                    const tiltY = (dx / cx) * 15;
-                    
-                    svg.style.transform = `perspective(400px) translate3d(${magX}px, ${magY}px, 8px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.2)`;
-                    // Sombra dinámica que se opone a la luz (mouse)
-                    svg.style.filter = `drop-shadow(${dx * -0.15}px ${dy * -0.15}px 6px rgba(59,130,246,0.6))`;
-                }
             });
-            
-            // Spring Snapback
             htmlEl.addEventListener('mouseleave', () => {
                 htmlEl.style.setProperty('--mx', `-100px`);
                 htmlEl.style.setProperty('--my', `-100px`);
-                if (svg) {
-                    svg.style.transform = '';
-                    svg.style.filter = '';
-                }
-            });
-            
-            // Sonar Ghost Ripple on Click
-            htmlEl.addEventListener('click', (e) => {
-                if (!svg) return;
-                const clone = svg.cloneNode(true) as SVGElement;
-                clone.style.position = 'absolute';
-                clone.style.pointerEvents = 'none';
-                clone.style.left = svg.offsetLeft + 'px';
-                clone.style.top = svg.offsetTop + 'px';
-                clone.style.margin = '0';
-                clone.style.opacity = '0.5';
-                clone.style.color = 'var(--color-blue-deep)';
-                clone.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease';
-                clone.style.transform = 'scale(1)';
-                clone.style.filter = 'blur(2px)';
-                clone.style.zIndex = '0';
-                
-                htmlEl.appendChild(clone);
-                
-                // Force reflow
-                void clone.offsetWidth;
-                
-                clone.style.transform = 'scale(2.8)';
-                clone.style.opacity = '0';
-                setTimeout(() => clone.remove(), 500);
             });
         });
     }
@@ -845,7 +791,7 @@ const NAV_GROUPS = [
         initPins();
         initMobileActions();
         initGroupAccordions();
-        initGodTierIcons();
+        initSpotlight();
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSidebarComponent);
