@@ -1,169 +1,118 @@
 ---
 // /src/components/support/SupportCards.astro
+import { getCollection } from 'astro:content';
+
+const allSupport = await getCollection('support');
+
+// Categorías esperadas con sus iconos SVG
+const categoryMap = [
+    {
+        name: 'Pagos y Depósitos',
+        slug: 'pagos',
+        icon: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>'
+    },
+    {
+        name: 'Cotizaciones',
+        slug: 'cotizaciones',
+        icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline>'
+    },
+    {
+        name: 'Facturación y CFDI',
+        slug: 'facturacion',
+        icon: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path>'
+    },
+    {
+        name: 'Cuenta y Equipo',
+        slug: 'cuenta',
+        icon: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>'
+    },
+    {
+        name: 'Desarrolladores',
+        slug: 'desarrolladores',
+        icon: '<polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>'
+    },
+    {
+        name: 'Seguridad y Privacidad',
+        slug: 'seguridad',
+        icon: '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>'
+    }
+];
+
+// Agrupar artículos por categoría (limitar a 4 por tarjeta)
+const categoriesWithArticles = categoryMap.map(cat => {
+    const articles = allSupport.filter(a => a.data.category === cat.name);
+    return {
+        ...cat,
+        articles: articles.slice(0, 4),
+        totalCount: articles.length
+    };
+});
+
 const faqs = [
-    { q: "¿Cuándo se deposita el dinero en mi cuenta?", a: "Los pagos procesados con tarjeta se depositan en tu cuenta bancaria configurada en un plazo de 24 a 48 horas hábiles, dependiendo del esquema que hayas elegido en tu onboarding." },
-    { q: "¿Cómo cancelo una factura (CFDI)?", a: "Ve a la sección de Facturación en tu portal, busca la factura emitida, selecciona 'Opciones' y haz clic en 'Cancelar CFDI'. Deberás proporcionar el motivo de cancelación ante el SAT." },
-    { q: "¿Puedo cobrar en dólares (USD)?", a: "Sí. Cord te permite emitir cotizaciones y recibir pagos en USD. El monto se convertirá a MXN al tipo de cambio interbancario del día en que se procese el pago de forma transparente." },
-    { q: "¿Qué pasa si un cliente no paga a tiempo?", a: "Cord enviará recordatorios automáticos según la configuración de tu cuenta. Si el pago excede la fecha límite, la liga de pago se desactiva y el estado cambiará a 'Vencido'." },
-    { q: "¿Cómo invito a alguien de mi equipo?", a: "Desde la configuración de tu cuenta, ve a 'Equipo', haz clic en 'Invitar miembro', ingresa su correo electrónico y asígnale un rol (Administrador, Ventas, o Lector)." },
-    { q: "¿Dónde encuentro mis API Keys?", a: "Si eres desarrollador, puedes encontrar tus llaves de prueba y producción en Ajustes > Desarrolladores > Claves de API. Recuerda nunca compartir tu llave secreta." }
+    { q: "¿Cuándo se deposita el dinero en mi cuenta?", a: "Los pagos procesados con tarjeta se depositan en tu cuenta bancaria configurada en un plazo de T+3 a T+7 días naturales, dependiendo del calendario Payout de tu cuenta conectada de Stripe." },
+    { q: "¿Cómo cancelo una factura (CFDI)?", a: "Ve a la sección de Facturación en tu portal, busca la factura emitida, selecciona 'Opciones' y haz clic en 'Generar Egreso (Nota de Crédito)'. Cord vinculará automáticamente el UUID padre." },
+    { q: "¿Puedo cobrar en dólares (USD)?", a: "Sí. Cord te permite emitir cotizaciones en USD. Stripe se encargará de hacer la conversión cambiaria si tu cuenta destino está en pesos." },
+    { q: "¿Qué pasa si un cliente no paga a tiempo?", a: "Cord enviará recordatorios automáticos según la configuración de tu cuenta y, si configuraste el interés moratorio, lo calculará sobre el saldo vencido." },
+    { q: "¿Cord cobra comisiones por transacción?", a: "No. Cord es una plataforma SaaS y solo pagas tu mensualidad. Los cobros con tarjeta generan la comisión estándar directa de Stripe, sin intermediarios." },
+    { q: "¿Dónde encuentro mis API Keys?", a: "Puedes encontrar tus llaves (Test y Live) en Ajustes > Desarrolladores > Claves de API. Las llaves de producción requieren el plan Scale o Developer." }
 ];
 ---
 
 <section class="support-content">
     <div class="content-wrapper">
         
-        <!-- ── NUEVOS EN CORD (GETTING STARTED) ── -->
-        <h2 class="pr-h2 masked-title">Nuevos en Cord</h2>
-        <div class="getting-started-grid reveal">
-            <a href="#" class="step-card">
-                <span class="step-num">1</span>
-                <div class="step-content">
-                    <h3>Configura tu cuenta</h3>
-                    <p>Conecta tu cuenta bancaria y añade los datos fiscales de tu empresa para poder operar.</p>
+        <!-- ── RUTAS RÁPIDAS (BENTO BOX) ── -->
+        <h2 class="pr-h2 masked-title">Rutas rápidas</h2>
+        <div class="bento-grid reveal">
+            <a href="/soporte/categoria/desarrolladores" class="bento-card bento-devs">
+                <div class="bento-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
                 </div>
+                <h3>Para Desarrolladores</h3>
+                <p>Integra Cord a tu ERP usando la API REST, escucha Webhooks y despliega el Cotizador Embebible nativo.</p>
+                <span class="bento-cta">Ver documentación API &rarr;</span>
             </a>
-            <a href="#" class="step-card">
-                <span class="step-num">2</span>
-                <div class="step-content">
-                    <h3>Crea tu primera cotización</h3>
-                    <p>Agrega productos, establece precios y envía un enlace interactivo a tu cliente.</p>
+            <a href="/soporte/categoria/facturacion" class="bento-card bento-accountants">
+                <div class="bento-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><line x1="12" x2="12" y1="18" y2="18.01"/><path d="M12 14v-2"/><path d="M12 10V8"/></svg>
                 </div>
+                <h3>Para Contadores</h3>
+                <p>Configura los catálogos del SAT, Emisión de Complementos (REP) y facturación multidivisa.</p>
+                <span class="bento-cta">Aprender más &rarr;</span>
             </a>
-            <a href="#" class="step-card">
-                <span class="step-num">3</span>
-                <div class="step-content">
-                    <h3>Recibe tu primer pago</h3>
-                    <p>Permite que tu cliente pague en línea con tarjeta o transferencia SPEI automatizada.</p>
+            <a href="/soporte/estructura-cotizacion" class="bento-card bento-sales">
+                <div class="bento-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                 </div>
+                <h3>Primeros pasos</h3>
+                <p>Domina el pipeline de ventas y los flujos de aprobación.</p>
             </a>
         </div>
 
-        <!-- ── EXPLORAR POR CATEGORÍA ── -->
+        <!-- ── EXPLORAR POR CATEGORÍA (LIQUID GLASS) ── -->
         <h2 class="pr-h2 masked-title mt-32">Explorar por categoría</h2>
         <div class="categories-grid reveal">
-            <!-- Categoria 1 -->
-            <div class="category-card">
-                <div class="cat-header">
-                    <div class="cat-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="2" y="5" width="20" height="14" rx="2"></rect>
-                            <line x1="2" y1="10" x2="22" y2="10"></line>
-                        </svg>
+            {categoriesWithArticles.map(cat => (
+                <div class="category-glass-card">
+                    <div class="cat-header">
+                        <div class="cat-icon-container">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={cat.icon} />
+                        </div>
+                        <h3>{cat.name}</h3>
                     </div>
-                    <h3>Pagos y Depósitos</h3>
+                    <ul class="cat-links">
+                        {cat.articles.map((a: any) => (
+                            <li>
+                                <a href={`/soporte/${a.id}`}>
+                                    <span class="link-bullet"></span>
+                                    {a.data.title}
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
+                    <a href={`/soporte/categoria/${cat.slug}`} class="cat-view-all">Ver todos los artículos ({cat.totalCount}) &rarr;</a>
                 </div>
-                <ul class="cat-links">
-                    <li><a href="/soporte/tiempos-de-deposito">Tiempos de depósito a cuenta bancaria</a></li>
-                    <li><a href="#">Comisiones y tarifas de procesamiento</a></li>
-                    <li><a href="#">Manejo de disputas y contracargos</a></li>
-                    <li><a href="#">Emitir reembolsos a clientes</a></li>
-                </ul>
-                <a href="/soporte/categoria/pagos" class="cat-view-all">Ver todos (12) →</a>
-            </div>
-
-            <!-- Categoria 2 -->
-            <div class="category-card">
-                <div class="cat-header">
-                    <div class="cat-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                            <polyline points="10 9 9 9 8 9"></polyline>
-                        </svg>
-                    </div>
-                    <h3>Cotizaciones</h3>
-                </div>
-                <ul class="cat-links">
-                    <li><a href="#">Estructura de una cotización interactiva</a></li>
-                    <li><a href="#">Aprobar y rechazar tratos (Flujo de clientes)</a></li>
-                    <li><a href="#">Añadir términos de crédito (Net 30/60)</a></li>
-                    <li><a href="#">Seguimiento y notificaciones de lectura</a></li>
-                </ul>
-                <a href="/soporte/categoria/cotizaciones" class="cat-view-all">Ver todos (8) →</a>
-            </div>
-
-            <!-- Categoria 3 -->
-            <div class="category-card">
-                <div class="cat-header">
-                    <div class="cat-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
-                            <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
-                        </svg>
-                    </div>
-                    <h3>Facturación y CFDI</h3>
-                </div>
-                <ul class="cat-links">
-                    <li><a href="/soporte/emitir-cfdi">Configurar facturación automática al pago</a></li>
-                    <li><a href="#">Catálogos SAT y claves de producto</a></li>
-                    <li><a href="#">Complementos de pago (REP)</a></li>
-                    <li><a href="#">Cancelar facturas y notas de crédito</a></li>
-                </ul>
-                <a href="/soporte/categoria/facturacion" class="cat-view-all">Ver todos (15) →</a>
-            </div>
-
-            <!-- Categoria 4 -->
-            <div class="category-card">
-                <div class="cat-header">
-                    <div class="cat-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                    </div>
-                    <h3>Cuenta y Equipo</h3>
-                </div>
-                <ul class="cat-links">
-                    <li><a href="#">Configurar autenticación en dos pasos (2FA)</a></li>
-                    <li><a href="#">Invitar miembros y roles (RBAC)</a></li>
-                    <li><a href="#">Actualizar datos bancarios (CLABE)</a></li>
-                    <li><a href="#">Cambiar plan de suscripción Cord</a></li>
-                </ul>
-                <a href="/soporte/categoria/cuenta" class="cat-view-all">Ver todos (9) →</a>
-            </div>
-
-            <!-- Categoria 5 -->
-            <div class="category-card">
-                <div class="cat-header">
-                    <div class="cat-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="16 18 22 12 16 6"></polyline>
-                            <polyline points="8 6 2 12 8 18"></polyline>
-                        </svg>
-                    </div>
-                    <h3>Desarrolladores</h3>
-                </div>
-                <ul class="cat-links">
-                    <li><a href="#">Autenticación y Claves API (API Keys)</a></li>
-                    <li><a href="#">Configurar e inspeccionar Webhooks</a></li>
-                    <li><a href="#">Cord Elements (Componentes UI embebibles)</a></li>
-                    <li><a href="#">Límites de peticiones (Rate limits)</a></li>
-                </ul>
-                <a href="/soporte/categoria/desarrolladores" class="cat-view-all">Ver todos (14) →</a>
-            </div>
-
-            <!-- Categoria 6 -->
-            <div class="category-card">
-                <div class="cat-header">
-                    <div class="cat-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                        </svg>
-                    </div>
-                    <h3>Seguridad y Privacidad</h3>
-                </div>
-                <ul class="cat-links">
-                    <li><a href="#">Cumplimiento PCI-DSS</a></li>
-                    <li><a href="#">Retención de datos y privacidad</a></li>
-                    <li><a href="#">Reportar vulnerabilidades</a></li>
-                    <li><a href="#">Acuerdos de confidencialidad (NDA)</a></li>
-                </ul>
-                <a href="/soporte/categoria/seguridad" class="cat-view-all">Ver todos (5) →</a>
-            </div>
+            ))}
         </div>
 
         <!-- ── PREGUNTAS FRECUENTES (FAQ) ── -->
@@ -182,13 +131,17 @@ const faqs = [
             ))}
         </div>
 
-        <!-- ── CONTACT CTA ── -->
-        <div class="contact-cta reveal">
-            <div class="cta-content">
+        <!-- ── CONTACT CTA PREMIUM ── -->
+        <div class="premium-cta reveal">
+            <div class="pcta-glow"></div>
+            <div class="pcta-content">
                 <h2>¿No encuentras lo que buscas?</h2>
-                <p>Nuestro equipo de soporte técnico está listo para ayudarte con cualquier duda o problema específico.</p>
+                <p>El soporte técnico avanzado está incluido en todos los planes. Contáctanos directamente y resolvemos tu duda en menos de 2 horas hábiles.</p>
             </div>
-            <a href="mailto:soporte@flouvia.com" class="cta-button">Contactar a soporte</a>
+            <a href="mailto:soporte@flouvia.com" class="pcta-button">
+                Hablar con un experto
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </a>
         </div>
     </div>
 </section>
@@ -199,7 +152,7 @@ const faqs = [
         background-color: var(--color-bg);
     }
     .content-wrapper {
-        max-width: 1100px;
+        max-width: 1200px;
         margin: 0 auto;
     }
     .pr-h2 {
@@ -214,70 +167,100 @@ const faqs = [
         margin-top: 5rem;
     }
 
-    /* ── GETTING STARTED GRID ── */
-    .getting-started-grid {
+    /* ── BENTO BOX (RUTAS RÁPIDAS) ── */
+    .bento-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
+        grid-auto-rows: 240px;
         gap: 20px;
     }
-    .step-card {
+    .bento-card {
+        background: var(--color-surface, #ffffff);
+        border: 1px solid var(--color-border);
+        border-radius: 20px;
+        padding: 32px;
+        text-decoration: none;
         display: flex;
         flex-direction: column;
-        padding: 2.5rem 0;
-        background: transparent;
-        border-top: 1px solid var(--color-border);
-        text-decoration: none;
-        color: inherit;
+        justify-content: flex-start;
         position: relative;
-        transition: transform 0.3s ease;
+        overflow: hidden;
+        transition: transform 0.4s var(--ease-spring), box-shadow 0.4s ease;
     }
-    .step-card:hover {
-        transform: translateX(4px);
+    :global(html[data-theme="dark"]) .bento-card {
+        background: rgba(10,25,47,0.4);
     }
-    .step-num {
+    .bento-devs {
+        grid-column: span 2;
+        background: radial-gradient(ellipse at top right, rgba(9, 105, 218, 0.05), transparent 70%), var(--color-surface, #ffffff);
+    }
+    :global(html[data-theme="dark"]) .bento-devs {
+        background: radial-gradient(ellipse at top right, rgba(9, 105, 218, 0.1), transparent 70%), rgba(10,25,47,0.4);
+    }
+    .bento-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+    }
+    .bento-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: var(--color-bg-soft);
+        color: var(--color-blue-deep);
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        background: var(--color-blue-deep);
-        color: #ffffff;
-        font-size: 1.1rem;
-        font-weight: 800;
         margin-bottom: 1.5rem;
+        border: 1px solid var(--color-border);
     }
-    .step-content h3 {
-        font-size: 1.15rem;
+    .bento-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+    .bento-card h3 {
+        font-size: 1.25rem;
         font-weight: 700;
-        margin: 0 0 10px 0;
         color: var(--color-text);
+        margin: 0 0 12px 0;
         letter-spacing: -0.01em;
     }
-    .step-content p {
+    .bento-card p {
         font-size: 0.95rem;
         line-height: 1.5;
         color: var(--color-text-muted);
         margin: 0;
+        max-width: 90%;
+    }
+    .bento-cta {
+        margin-top: auto;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--color-blue-deep);
+        display: inline-block;
     }
 
-    /* ── CATEGORIES GRID ── */
+    /* ── CATEGORÍAS (LIQUID GLASS) ── */
     .categories-grid {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 2rem 5rem;
-        border-top: 1px solid var(--color-border);
-        padding-top: 2rem;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 24px;
     }
-    .category-card {
-        background: transparent;
-        border: none;
-        padding: 1rem 0 3rem;
+    .category-glass-card {
+        background: var(--color-surface, #ffffff);
+        border: 1px solid var(--color-border);
+        border-radius: 20px;
+        padding: 32px;
         display: flex;
         flex-direction: column;
+        transition: transform 0.3s ease, border-color 0.3s;
     }
-    .category-card:hover {
-        /* No hover card effect, just clean text layout */
+    :global(html[data-theme="dark"]) .category-glass-card {
+        background: rgba(255,255,255,0.02);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .category-glass-card:hover {
+        border-color: rgba(9, 105, 218, 0.3);
+        transform: translateY(-2px);
     }
     .cat-header {
         display: flex;
@@ -285,21 +268,22 @@ const faqs = [
         gap: 16px;
         margin-bottom: 1.5rem;
     }
-    .cat-icon {
-        width: 32px;
-        height: 32px;
+    .cat-icon-container {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: rgba(9, 105, 218, 0.08);
         color: var(--color-blue-deep);
         display: flex;
         align-items: center;
         justify-content: center;
     }
-    .cat-icon svg {
-        width: 24px;
-        height: 24px;
-        stroke-width: 2px;
+    .cat-icon-container svg {
+        width: 20px;
+        height: 20px;
     }
     .cat-header h3 {
-        font-size: 1.2rem;
+        font-size: 1.15rem;
         font-weight: 700;
         margin: 0;
         color: var(--color-text);
@@ -307,34 +291,49 @@ const faqs = [
     .cat-links {
         list-style: none;
         padding: 0;
-        margin: 0 0 1.5rem 0;
+        margin: 0 0 2rem 0;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 14px;
     }
     .cat-links li a {
         color: var(--color-text-muted);
         text-decoration: none;
         font-size: 0.95rem;
+        line-height: 1.4;
         transition: color 0.2s ease;
-        display: inline-block;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .link-bullet {
+        display: block;
+        flex-shrink: 0;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--color-border);
+        margin-top: 7px;
+        transition: background 0.2s;
     }
     .cat-links li a:hover {
         color: var(--color-blue-deep);
-        text-decoration: underline;
-        text-underline-offset: 4px;
+    }
+    .cat-links li a:hover .link-bullet {
+        background: var(--color-blue-deep);
     }
     .cat-view-all {
         margin-top: auto;
         font-size: 0.9rem;
         font-weight: 600;
-        color: var(--color-blue-deep);
+        color: var(--color-text);
         text-decoration: none;
-        display: inline-block;
+        padding-top: 1rem;
+        border-top: 1px solid var(--color-border);
+        transition: color 0.2s;
     }
     .cat-view-all:hover {
-        text-decoration: underline;
-        text-underline-offset: 4px;
+        color: var(--color-blue-deep);
     }
 
     /* ── FAQ ── */
@@ -349,17 +348,19 @@ const faqs = [
         margin: 0 auto;
     }
     .pr-faq-item {
-        background: var(--color-bg-soft);
+        background: var(--color-surface, #ffffff);
         border: 1px solid var(--color-border);
         border-radius: 16px;
         padding: 0 1.4rem;
         overflow: hidden;
         transition: border-color 0.3s, box-shadow 0.4s;
     }
+    :global(html[data-theme="dark"]) .pr-faq-item {
+        background: rgba(10,25,47,0.3);
+    }
     .pr-faq-item[open] {
-        border-color: rgba(10,25,47,0.14);
-        box-shadow: 0 20px 50px -30px rgba(10,25,47,0.18);
-        background: #ffffff;
+        border-color: rgba(9, 105, 218, 0.3);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.04);
     }
     .pr-faq-item summary {
         list-style: none;
@@ -379,18 +380,17 @@ const faqs = [
         width: 32px;
         height: 32px;
         border-radius: 50%;
-        background: rgba(10,25,47,0.04);
-        color: var(--color-blue-deep);
+        background: var(--color-bg-soft);
+        color: var(--color-text-muted);
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: transform 0.4s var(--ease-spring), background 0.3s;
+        transition: transform 0.4s var(--ease-spring), color 0.3s;
     }
     .pr-faq-ico svg { width: 14px; height: 14px; }
     .pr-faq-item[open] .pr-faq-ico {
         transform: rotate(135deg);
-        background: var(--color-blue-deep);
-        color: #fff;
+        color: var(--color-blue-deep);
     }
     .pr-faq-body {
         padding: 0 0 1.4rem;
@@ -402,86 +402,100 @@ const faqs = [
         color: var(--color-text-muted);
     }
 
-    /* ── CONTACT CTA ── */
-    .contact-cta {
+    /* ── PREMIUM CONTACT CTA ── */
+    .premium-cta {
         margin-top: 6rem;
-        padding: 4rem;
-        background: radial-gradient(ellipse at 50% 0%, #112240 0%, #0a192f 80%);
+        padding: 4rem 5rem;
+        background: #0a0f1c; /* Very dark blue, almost black */
+        border: 1px solid rgba(255,255,255,0.08);
         border-radius: 24px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        color: #ffffff;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 30px 60px -20px rgba(10,25,47,0.5);
+        box-shadow: 0 30px 60px -20px rgba(0,0,0,0.5);
     }
-    .contact-cta::after {
-        content: '';
+    .pcta-glow {
         position: absolute;
-        top: -50%; right: -10%;
-        width: 500px; height: 500px;
-        background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 70%);
-        border-radius: 50%;
+        top: -50%;
+        left: 30%;
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, rgba(9, 105, 218, 0.15) 0%, transparent 60%);
         pointer-events: none;
     }
-    .cta-content h2 {
+    .pcta-content {
+        position: relative;
+        z-index: 2;
+        max-width: 500px;
+    }
+    .pcta-content h2 {
         font-size: 2.2rem;
         font-weight: 800;
         margin: 0 0 16px 0;
         letter-spacing: -0.03em;
-        line-height: 1.1;
+        color: #ffffff;
     }
-    .cta-content p {
-        font-size: 1.1rem;
-        color: rgba(255,255,255,0.7);
+    .pcta-content p {
+        font-size: 1.05rem;
+        color: #a1a1aa;
         margin: 0;
-        max-width: 480px;
         line-height: 1.6;
     }
-    .cta-button {
+    .pcta-button {
+        position: relative;
+        z-index: 2;
         display: inline-flex;
         align-items: center;
-        justify-content: center;
+        gap: 12px;
         padding: 16px 32px;
         background: #ffffff;
-        color: var(--color-blue-deep);
-        font-weight: 700;
+        color: #000000;
+        font-weight: 600;
         font-size: 1rem;
         border-radius: 12px;
         text-decoration: none;
-        transition: all 0.4s var(--ease-spring);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
         white-space: nowrap;
-        margin-left: 32px;
-        box-shadow: 0 12px 28px -10px rgba(0,0,0,0.3);
-        position: relative;
-        z-index: 1;
+        margin-left: 2rem;
     }
-    .cta-button:hover {
+    .pcta-button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 20px 40px -15px rgba(0,0,0,0.4);
+        box-shadow: 0 10px 25px rgba(255,255,255,0.15);
     }
 
-    @media (max-width: 900px) {
-        .contact-cta {
+    @media (max-width: 1024px) {
+        .bento-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .bento-devs {
+            grid-column: span 2;
+        }
+        .premium-cta {
             flex-direction: column;
             text-align: center;
             padding: 3rem 2rem;
         }
-        .cta-content p {
+        .pcta-content {
             margin: 0 auto;
         }
-        .cta-button {
+        .pcta-button {
             margin-left: 0;
             margin-top: 32px;
             width: 100%;
+            justify-content: center;
         }
     }
     @media (max-width: 768px) {
-        .categories-grid {
+        .bento-grid {
             grid-template-columns: 1fr;
+            grid-auto-rows: auto;
         }
-        .getting-started-grid {
+        .bento-devs {
+            grid-column: span 1;
+        }
+        .categories-grid {
             grid-template-columns: 1fr;
         }
         .pr-h2 {
