@@ -61,7 +61,7 @@ const { title, page, heading, crumbs = [] } = Astro.props;
             html.sb-collapsed .sidebar { width: 56px !important; padding-left: 0 !important; padding-right: 0 !important; align-items: stretch !important; }
             html.sb-collapsed .sb-item { width: 100% !important; height: 36px !important; justify-content: flex-start !important; padding-left: 18px !important; border-radius: 10px !important; margin: 0 !important; }
             html.sb-collapsed .sb-item svg { width: 20px !important; height: 20px !important; flex-shrink: 0 !important; }
-            html.sb-collapsed .sb-indicator { width: calc(100% - 16px) !important; left: 8px !important; margin-left: 0 !important; border-radius: 10px !important; }
+            html.sb-collapsed .sb-indicator { display: none !important; }
             
             /* Centrado de la cuenta / org switcher (solo colapsado) */
             html.sb-collapsed .sb-account { display: flex !important; justify-content: center !important; align-items: center !important; padding: 0 !important; margin-bottom: 0.6rem !important; }
@@ -345,8 +345,7 @@ const { title, page, heading, crumbs = [] } = Astro.props;
             inset 0 1px 1px rgba(255,255,255,0.95),
             inset 0 0 0 0.5px rgba(255,255,255,0.5),
             inset 0 -6px 14px rgba(255,255,255,0.18),
-            0 12px 36px -8px rgba(10,25,47,0.14),
-            0 2px 6px rgba(10,25,47,0.06);
+            0 16px 44px -10px rgba(0,0,0,0.15);
         --sb-sheen: radial-gradient(135% 50% at 50% -10%, rgba(10,25,47,0.045), transparent 60%);
         --sb-text: var(--color-text-muted);
         --sb-text-strong: var(--color-text);

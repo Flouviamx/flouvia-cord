@@ -30,7 +30,10 @@ const NAV_GROUPS = [
         items: [
             { id: 'cobranza',  href: '/app/cobranza',  label: 'Cobranza',  icon: 'M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z', badge: badges.vencidas, tone: 'danger' },
             { id: 'cfo',       href: '/app/cfo',       label: 'CFO Dashboard', icon: 'M3 3v18h18M7 14l3-3 3 3 5-5' },
-            { id: 'analitica', href: '/app/analitica', label: 'Analítica', icon: 'M4 13h3v7H4v-7zm6.5-5h3v12h-3V8zM17 11h3v9h-3v-9z' },
+            { id: 'analitica', href: '/app/analitica', label: 'Analítica', icon: 'M4 13h3v7H4v-7zm6.5-5h3v12h-3V8zM17 11h3v9h-3v-9z', children: [
+                { id: 'metricas', href: '/app/analitica/metricas', label: 'Métricas clave' },
+                { id: 'reportes', href: '/app/analitica/reportes', label: 'Reportes guardados' }
+            ] },
         ],
     },
     {
@@ -97,18 +100,40 @@ const NAV_GROUPS = [
         {NAV_GROUPS.map((group) => (
             <div class="sb-group">
                 <span class="sb-group-label">{group.label}</span>
+                <div class="sb-group-items">
                 {group.items.map((item) => (
-                    <a href={item.href} class:list={['sb-item', { active: page === item.id }]} title={item.label}>
-                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d={item.icon} /></svg>
-                        <span class="sb-item-label">{item.label}</span>
-                        {!!(item as any).shortcut && (
-                            <kbd class="sb-shortcut">{(item as any).shortcut}</kbd>
-                        )}
-                        {!!item.badge && item.badge > 0 && (
-                            <span class:list={['sb-badge', { danger: item.tone === 'danger' }]}>{item.badge > 99 ? '99+' : item.badge}</span>
-                        )}
-                    </a>
+                    item.children ? (
+                        <div class="sb-accordion">
+                            <button type="button" class:list={['sb-item', 'sb-acc-trigger', { active: page === item.id || item.children.some(c => c.id === page) }]} title={item.label} aria-expanded="false" data-href={item.href}>
+                                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d={item.icon} /></svg>
+                                <span class="sb-item-label">{item.label}</span>
+                                <svg class="sb-acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>
+                            <div class="sb-acc-content">
+                                <div class="sb-acc-inner">
+                                    {item.children.map(child => (
+                                        <a href={child.href} class:list={['sb-subitem', { active: page === child.id }]} title={child.label}>
+                                            <span class="sb-subitem-dot"></span>
+                                            <span class="sb-subitem-label">{child.label}</span>
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <a href={item.href} class:list={['sb-item', { active: page === item.id }]} title={item.label}>
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d={item.icon} /></svg>
+                            <span class="sb-item-label">{item.label}</span>
+                            {!!(item as any).shortcut && (
+                                <kbd class="sb-shortcut">{(item as any).shortcut}</kbd>
+                            )}
+                            {!!item.badge && item.badge > 0 && (
+                                <span class:list={['sb-badge', { danger: item.tone === 'danger' }]}>{item.badge > 99 ? '99+' : item.badge}</span>
+                            )}
+                        </a>
+                    )
                 ))}
+                </div>
             </div>
         ))}
     </nav>
@@ -182,6 +207,28 @@ const NAV_GROUPS = [
         will-change: top, height;
     }
     .sb-group { display: flex; flex-direction: column; gap: 2px; }
+    .sb-group-items { display: flex; flex-direction: column; gap: 2px; min-height: 4px; }
+    
+    /* Accordion */
+    .sb-accordion { display: flex; flex-direction: column; }
+    .sb-acc-trigger { width: 100%; border: none; background: none; cursor: pointer; text-align: left; }
+    .sb-acc-chevron { width: 14px !important; height: 14px !important; margin-left: auto; transition: transform 0.3s var(--ease-spring); opacity: 0.4; }
+    .sb-acc-trigger[aria-expanded="true"] .sb-acc-chevron { transform: rotate(180deg); }
+    .sb-acc-content { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s var(--ease-spring); }
+    .sb-acc-trigger[aria-expanded="true"] + .sb-acc-content { grid-template-rows: 1fr; }
+    .sb-acc-inner { overflow: hidden; display: flex; flex-direction: column; gap: 2px; padding-left: 28px; padding-top: 2px; margin-bottom: 2px; }
+    .sb-subitem {
+        display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px;
+        font-size: 0.8rem; font-weight: 500; color: var(--sb-text); text-decoration: none;
+        transition: color 0.2s, background 0.2s;
+    }
+    .sb-subitem:hover { color: var(--sb-text-strong); background: var(--sb-hover-bg); }
+    .sb-subitem.active { color: var(--sb-text-active); font-weight: 600; }
+    .sb-subitem-dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: 0.4; }
+    .sb-subitem.active .sb-subitem-dot { opacity: 1; }
+
+    /* SortableJS Ghost */
+    .sb-ghost { opacity: 0.4; transform: scale(0.96); background: var(--sb-hover-bg) !important; border-radius: 12px; }
     .sb-group-label {
         font-size: 0.58rem; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase;
         color: var(--sb-label); padding: 4px 11px 6px;
@@ -386,6 +433,8 @@ const NAV_GROUPS = [
     :global(.sb-collapsed) .sb-group { width: 100%; align-items: center; gap: 5px; }
     /* Líneas divisorias de grupos en modo colapsado */
     :global(.sb-collapsed) .sb-group + .sb-group { position: relative; margin-top: 5px; padding-top: 5px; }
+    :global(.sb-collapsed) .sb-acc-chevron { display: none; }
+    :global(.sb-collapsed) .sb-acc-content { display: none !important; }
     :global(.sb-collapsed) .sb-group + .sb-group::before {
         content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 1px;
         background: var(--sb-divider); opacity: 0.6;
@@ -545,75 +594,82 @@ const NAV_GROUPS = [
         const current = () => ({ href: location.pathname, label: (document.querySelector('.ph-title')?.textContent || document.title).trim() });
         const isPinned = () => getPins().some((p) => p.href === location.pathname);
         const syncBtn = () => { if (pinBtn) { const on = isPinned(); pinBtn.classList.toggle('pinned', on); pinBtn.setAttribute('title', on ? 'Quitar del menú' : 'Fijar en el menú'); } };
+        
+        let sortableInstance: any = null;
+        let groupInstances: any[] = [];
+        
         const renderMount = () => {
             if (!mount) return;
             let pins = getPins();
             if (!pins.length) { (mount as HTMLElement).hidden = true; mount.innerHTML = ''; return; }
             (mount as HTMLElement).hidden = false;
-            let html = '<span class="sb-group-label">Fijados</span>';
+            let html = '<span class="sb-group-label">Fijados</span><div class="sb-pins-list">';
             pins.forEach((p, idx) => {
                 const active = p.href === location.pathname ? ' active' : '';
-                html += `<div class="sb-pin-row" draggable="true" data-idx="${idx}"><a href="${eA(p.href)}" class="sb-item${active}" title="${eA(p.label)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${PIN_ICON}</svg><span class="sb-item-label">${eH(p.label)}</span></a><button class="sb-pin-x" data-href="${eA(p.href)}" aria-label="Quitar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>`;
+                html += `<div class="sb-pin-row" data-href="${eA(p.href)}" data-label="${eA(p.label)}"><a href="${eA(p.href)}" class="sb-item${active}" title="${eA(p.label)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${PIN_ICON}</svg><span class="sb-item-label">${eH(p.label)}</span></a><button class="sb-pin-x" aria-label="Quitar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>`;
             });
+            html += '</div>';
             mount.innerHTML = html;
             
-            // Lógica de eliminación
             mount.querySelectorAll('.sb-pin-x').forEach((b) => b.addEventListener('click', (e) => {
                 e.preventDefault(); e.stopPropagation();
-                const href = (b as HTMLElement).dataset.href;
+                const row = (b as HTMLElement).closest('.sb-pin-row');
+                if(!row) return;
+                const href = (row as HTMLElement).dataset.href;
                 setPins(getPins().filter((x) => x.href !== href)); renderMount(); syncBtn();
             }));
+            
+            initSortable();
+        };
 
-            // Drag & Drop nativo de HTML5
-            let dragSrcEl: HTMLElement | null = null;
-            mount.querySelectorAll('.sb-pin-row').forEach((row: Element) => {
-                const el = row as HTMLElement;
-                el.addEventListener('dragstart', (e) => {
-                    dragSrcEl = el;
-                    e.dataTransfer!.effectAllowed = 'move';
-                    el.classList.add('dragging');
-                });
-                el.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    e.dataTransfer!.dropEffect = 'move';
-                    if (dragSrcEl === el) return;
-                    const rect = el.getBoundingClientRect();
-                    const mid = rect.top + rect.height / 2;
-                    el.classList.remove('drag-over-top', 'drag-over-bottom');
-                    el.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bottom');
-                });
-                el.addEventListener('dragleave', () => {
-                    el.classList.remove('drag-over-top', 'drag-over-bottom');
-                });
-                el.addEventListener('drop', (e) => {
-                    e.stopPropagation();
-                    el.classList.remove('drag-over-top', 'drag-over-bottom');
-                    if (dragSrcEl !== el && dragSrcEl) {
-                        const srcIdx = parseInt(dragSrcEl.dataset.idx || '0');
-                        const tgtIdx = parseInt(el.dataset.idx || '0');
-                        const rect = el.getBoundingClientRect();
-                        const isTop = e.clientY < (rect.top + rect.height / 2);
-                        
-                        let newPins = [...pins];
-                        const [movedItem] = newPins.splice(srcIdx, 1);
-                        
-                        // Ajustar índice de destino para no off-by-one
-                        let finalIdx = tgtIdx;
-                        if (srcIdx < tgtIdx && isTop) finalIdx--;
-                        if (srcIdx > tgtIdx && !isTop) finalIdx++;
-                        
-                        newPins.splice(finalIdx, 0, movedItem);
+        const initSortable = async () => {
+            if (typeof window === 'undefined') return;
+            const Sortable = (await import('https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/+esm')).default;
+            
+            const listEl = mount?.querySelector('.sb-pins-list');
+            if (listEl) {
+                if (sortableInstance) sortableInstance.destroy();
+                sortableInstance = new Sortable(listEl, {
+                    group: 'sidebar',
+                    animation: 250,
+                    easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+                    ghostClass: 'sb-ghost',
+                    onEnd: () => {
+                        const newPins = Array.from(listEl.children).map((row: any) => ({
+                            href: row.dataset.href,
+                            label: row.dataset.label
+                        })).filter(p => p.href);
                         setPins(newPins);
                         renderMount();
-                        syncBtn();
                     }
                 });
-                el.addEventListener('dragend', () => {
-                    el.classList.remove('dragging');
-                    mount.querySelectorAll('.sb-pin-row').forEach(r => r.classList.remove('drag-over-top', 'drag-over-bottom'));
-                });
+            }
+
+            // Hacer que los grupos principales sean arrastrables hacia Fijados (Clonación)
+            groupInstances.forEach(g => g.destroy());
+            groupInstances = [];
+            document.querySelectorAll('.sb-group-items').forEach(el => {
+                groupInstances.push(new Sortable(el, {
+                    group: { name: 'sidebar', pull: 'clone', put: false },
+                    animation: 250,
+                    easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+                    sort: false,
+                    ghostClass: 'sb-ghost',
+                    onClone: (evt: any) => {
+                        const clone = evt.clone;
+                        const a = clone.querySelector('a') || clone.querySelector('button');
+                        if (!a) return;
+                        const href = clone.dataset.href || a.getAttribute('href') || '/app';
+                        const label = clone.querySelector('.sb-item-label')?.textContent?.trim() || a.textContent.trim();
+                        clone.className = 'sb-pin-row';
+                        clone.dataset.href = href;
+                        clone.dataset.label = label;
+                        clone.innerHTML = `<a href="${href}" class="sb-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${PIN_ICON}</svg><span class="sb-item-label">${label}</span></a>`;
+                    }
+                }));
             });
         };
+
         const toggle = () => {
             const c = current(); const pins = getPins(); const has = pins.some((p) => p.href === c.href);
             if (has) { setPins(pins.filter((p) => p.href !== c.href)); (window as any).cordToast?.('Quitado de fijados'); }
@@ -623,6 +679,23 @@ const NAV_GROUPS = [
         pinBtn?.addEventListener('click', toggle);
         (window as any).__cordTogglePin = toggle;
         renderMount(); syncBtn();
+    }
+
+    function initAccordions() {
+        document.querySelectorAll('.sb-acc-trigger').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Si estamos colapsados, el acordeón se desactiva y el botón actúa como link normal
+                if (document.documentElement.classList.contains('sb-collapsed')) {
+                    const href = btn.getAttribute('data-href');
+                    if (href) window.location.href = href;
+                    return;
+                }
+                const expanded = btn.getAttribute('aria-expanded') === 'true';
+                btn.setAttribute('aria-expanded', String(!expanded));
+                setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+            });
+        });
     }
 
     // ── Menú "Crear" genérico (botón + popover) — reusado por móvil y desktop ──
@@ -661,6 +734,7 @@ const NAV_GROUPS = [
         initSidebar();
         initSidebarIndicator();
         initPins();
+        initAccordions();
         initMobileActions();
     }
 
