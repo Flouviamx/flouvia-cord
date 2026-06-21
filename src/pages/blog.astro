@@ -1,5 +1,6 @@
 ---
 // Blog — Artículos sobre B2B, cotizaciones y tecnología
+// Diseño: Quiet Luxury (Stripe/Linear aesthetics)
 export const prerender = true;
 
 import Layout from '../layouts/Layout.astro';
@@ -13,7 +14,7 @@ const FEATURED_POST = {
     excerpt: 'Analizamos más de 10,000 transacciones B2B y descubrimos cómo la fricción de descargar, imprimir y firmar PDFs retrasa las ventas. Descubre cómo los enlaces dinámicos aumentan la conversión en un 32%.',
     category: 'Ventas B2B',
     date: '18 Jun 2026',
-    readTime: '4 min de lectura',
+    readTime: '04 MIN',
     author: {
         name: 'André Valle',
         role: 'CEO',
@@ -29,7 +30,7 @@ const POSTS = [
         excerpt: 'Todo lo que necesitas saber sobre los complementos de pago, la carta porte y cómo automatizar el timbrado sin dolores de cabeza fiscales ni multas.',
         category: 'Fiscal',
         date: '12 Jun 2026',
-        readTime: '7 min',
+        readTime: '07 MIN',
         img: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     },
     {
@@ -38,7 +39,7 @@ const POSTS = [
         excerpt: 'Dar crédito es obligatorio en el mundo B2B, pero hacerlo a ciegas destruye tu flujo de caja. Aprende a fijar límites dinámicos.',
         category: 'Finanzas',
         date: '05 Jun 2026',
-        readTime: '5 min',
+        readTime: '05 MIN',
         img: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     },
     {
@@ -47,7 +48,7 @@ const POSTS = [
         excerpt: 'El verdadero impacto de la inteligencia artificial no está en escribir correos, sino en la automatización del seguimiento y la negociación de deuda.',
         category: 'Tecnología',
         date: '28 May 2026',
-        readTime: '6 min',
+        readTime: '06 MIN',
         img: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     },
     {
@@ -56,7 +57,7 @@ const POSTS = [
         excerpt: 'Venderle a 200 clientes a 200 precios distintos es una pesadilla administrativa. Estrategias para mantener márgenes y evitar que los vendedores den descuentos de más.',
         category: 'Operaciones',
         date: '15 May 2026',
-        readTime: '8 min',
+        readTime: '08 MIN',
         img: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     },
     {
@@ -65,7 +66,7 @@ const POSTS = [
         excerpt: 'La adopción del Model Context Protocol permite que cualquier agente de IA consulte tu catálogo y cotice en tu nombre. Así es como funciona nuestra arquitectura bidireccional.',
         category: 'Tecnología',
         date: '02 May 2026',
-        readTime: '10 min',
+        readTime: '10 MIN',
         img: 'https://images.unsplash.com/photo-1518770660439-4636190af475?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     },
     {
@@ -74,7 +75,7 @@ const POSTS = [
         excerpt: 'Estudiamos los patrones visuales y de interacción de las cotizaciones con mayores tasas de conversión. La clave: urgencia, claridad y un solo clic para aprobar.',
         category: 'Ventas B2B',
         date: '20 Abr 2026',
-        readTime: '5 min',
+        readTime: '05 MIN',
         img: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     }
 ];
@@ -87,13 +88,21 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
     description="Artículos, guías y estrategias sobre ventas B2B, facturación, y cómo acelerar tu flujo de ingresos."
 >
     <Nav />
+    
+    <!-- Filtro de ruido analógico global -->
+    <div class="analog-noise" aria-hidden="true"></div>
+
     <main class="blog-main">
         <!-- Hero Encabezado -->
         <section class="blog-header">
             <div class="blog-header-inner">
-                <h1 class="blog-main-title masked-title">El blog de Cord</h1>
-                <p class="blog-main-sub reveal">
-                    Estrategias e ingeniería para acelerar tus ventas B2B y automatizar tu back-office financiero.
+                <h1 class="blog-main-title">
+                    <span class="stagger-mask"><span class="stagger-line" style="animation-delay: 0ms">El blog de</span></span>
+                    <span class="stagger-mask"><span class="stagger-line" style="animation-delay: 80ms">Cord</span></span>
+                </h1>
+                <p class="blog-main-sub">
+                    <span class="stagger-mask"><span class="stagger-line" style="animation-delay: 160ms">Estrategias e ingeniería para acelerar tus ventas B2B</span></span>
+                    <span class="stagger-mask"><span class="stagger-line" style="animation-delay: 240ms">y automatizar tu back-office financiero.</span></span>
                 </p>
             </div>
             <div class="blog-header-mesh" aria-hidden="true"></div>
@@ -101,14 +110,14 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
 
         <!-- Artículo Destacado -->
         <section class="blog-featured">
-            <a href={`/blog/${FEATURED_POST.id}`} class="featured-card reveal">
+            <a href={`/blog/${FEATURED_POST.id}`} class="featured-card hairline-border reveal">
                 <div class="featured-img-wrap">
                     <img src={FEATURED_POST.img} alt={FEATURED_POST.title} fetchpriority="high" />
                 </div>
                 <div class="featured-content">
                     <div class="featured-meta">
                         <span class="featured-cat">{FEATURED_POST.category}</span>
-                        <span class="featured-date">{FEATURED_POST.date}</span>
+                        <span class="technical-meta">{FEATURED_POST.date}</span>
                     </div>
                     <h2 class="featured-title">{FEATURED_POST.title}</h2>
                     <p class="featured-excerpt">{FEATURED_POST.excerpt}</p>
@@ -117,7 +126,7 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
                         <img src={FEATURED_POST.author.avatar} alt={FEATURED_POST.author.name} class="author-avatar" />
                         <div class="author-info">
                             <strong>{FEATURED_POST.author.name}</strong>
-                            <span>{FEATURED_POST.author.role} · {FEATURED_POST.readTime}</span>
+                            <span class="technical-meta">{FEATURED_POST.author.role} · {FEATURED_POST.readTime}</span>
                         </div>
                         <div class="featured-arrow">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -127,22 +136,22 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
             </a>
         </section>
 
-        <!-- Filtros -->
-        <section class="blog-filters-section reveal">
-            <div class="blog-filters" id="blog-filters">
+        <!-- Filtros Flotantes (Sticky Glass Pill) -->
+        <div class="blog-sticky-nav reveal">
+            <div class="blog-filters-glass" id="blog-filters">
                 {CATEGORIES.map((cat, i) => (
                     <button class={`filter-btn ${i === 0 ? 'active' : ''}`} data-filter={cat === 'Todos' ? 'all' : cat}>
                         {cat}
                     </button>
                 ))}
             </div>
-        </section>
+        </div>
 
         <!-- Grid de Artículos Recientes -->
         <section class="blog-grid-section">
             <div class="blog-grid" id="blog-grid">
                 {POSTS.map((post, i) => (
-                    <article class="blog-card reveal" data-category={post.category} style={`transition-delay: ${(i % 3) * 50}ms`}>
+                    <article class="blog-card hairline-border reveal" data-category={post.category} style={`transition-delay: ${(i % 3) * 50}ms`}>
                         <a href={`/blog/${post.id}`} class="blog-card-link">
                             <div class="blog-img-wrap">
                                 <img src={post.img} alt={post.title} loading="lazy" />
@@ -150,9 +159,9 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
                             </div>
                             <div class="blog-content">
                                 <div class="blog-meta">
-                                    <span>{post.date}</span>
+                                    <span class="technical-meta">{post.date}</span>
                                     <span class="dot">·</span>
-                                    <span>{post.readTime}</span>
+                                    <span class="technical-meta">{post.readTime}</span>
                                 </div>
                                 <h3 class="blog-title">{post.title}</h3>
                                 <p class="blog-excerpt">{post.excerpt}</p>
@@ -176,7 +185,7 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
 </Layout>
 
 <script>
-    // Microinteracción: Filtrado de categorías con animación GSAP/CSS
+    // Microinteracción: Filtrado de categorías con animación fluida
     document.addEventListener('DOMContentLoaded', () => {
         const filters = document.querySelectorAll('.filter-btn');
         const grid = document.getElementById('blog-grid');
@@ -217,21 +226,44 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
 
 <style>
     /* ==========================================================
-       VARIABLES Y RESET LOCAL
+       RUIDO ANALÓGICO & TIPOGRAFÍA TÉCNICA
        ========================================================== */
+    .analog-noise {
+        position: fixed; inset: 0; z-index: 1000; pointer-events: none;
+        opacity: 0.035; /* Efecto sutil */
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+    :global(html[data-theme="dark"]) .analog-noise { opacity: 0.05; }
+
+    .technical-meta {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-variant-numeric: tabular-nums;
+        font-size: 0.75rem; font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    /* ==========================================================
+       BORDES HAIRLINE Y SOMBRAS
+       ========================================================== */
+    .hairline-border {
+        border: none !important;
+        box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.08), 0 20px 40px -20px rgba(0,0,0,0.04);
+    }
+    :global(html[data-theme="dark"]) .hairline-border {
+        box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.08), 0 20px 40px -20px rgba(0,0,0,0.5);
+    }
+
     .blog-main {
-        background: #f8fafc;
+        background: #fdfdfd;
         color: #111827;
         min-height: 100vh;
         overflow-x: hidden;
     }
-    :global(html[data-theme="dark"]) .blog-main {
-        background: #000;
-        color: #f3f4f6;
-    }
+    :global(html[data-theme="dark"]) .blog-main { background: #050505; color: #f3f4f6; }
 
     /* ==========================================================
-       HEADER HERO
+       HEADER HERO Y STAGGER MASK
        ========================================================== */
     .blog-header {
         position: relative;
@@ -243,10 +275,26 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
         position: relative; z-index: 2;
         max-width: 800px; margin: 0 auto;
     }
+
+    /* Animación Stagger Mask */
+    .stagger-mask {
+        display: inline-block;
+        overflow: hidden;
+        vertical-align: top;
+    }
+    .stagger-line {
+        display: inline-block;
+        transform: translateY(110%);
+        animation: slideUpReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes slideUpReveal {
+        to { transform: translateY(0); }
+    }
+
     .blog-main-title {
         font-size: clamp(3rem, 6vw, 4.5rem);
         font-weight: 800; line-height: 1.05; letter-spacing: -0.04em;
-        margin: 0 0 1rem; color: #111827;
+        margin: 0 0 1.2rem; color: #111827;
     }
     :global(html[data-theme="dark"]) .blog-main-title { color: #fff; }
     
@@ -258,11 +306,11 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
 
     .blog-header-mesh {
         position: absolute; top: -50%; left: -20%; right: -20%; bottom: 0;
-        background: radial-gradient(ellipse 50% 50% at 50% 0%, rgba(10, 37, 218, 0.08) 0%, transparent 100%);
+        background: radial-gradient(ellipse 50% 50% at 50% 0%, rgba(10, 37, 218, 0.06) 0%, transparent 100%);
         pointer-events: none; z-index: 1;
     }
     :global(html[data-theme="dark"]) .blog-header-mesh {
-        background: radial-gradient(ellipse 50% 50% at 50% 0%, rgba(59, 130, 246, 0.12) 0%, transparent 100%);
+        background: radial-gradient(ellipse 50% 50% at 50% 0%, rgba(59, 130, 246, 0.1) 0%, transparent 100%);
     }
 
     /* ==========================================================
@@ -275,66 +323,50 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
     }
 
     .featured-card {
-        display: grid;
-        grid-template-columns: 1.3fr 1fr;
-        background: #fff;
-        border-radius: 24px;
-        overflow: hidden;
-        text-decoration: none;
-        color: inherit;
-        border: 1px solid rgba(0,0,0,0.06);
-        box-shadow: 0 20px 40px -20px rgba(0,0,0,0.05);
-        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        display: grid; grid-template-columns: 1.3fr 1fr;
+        background: linear-gradient(145deg, #ffffff 0%, #f9fafb 100%);
+        border-radius: 24px; overflow: hidden;
+        text-decoration: none; color: inherit;
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
     :global(html[data-theme="dark"]) .featured-card {
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.05);
-        box-shadow: 0 30px 60px -20px rgba(0,0,0,0.4);
+        background: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
     }
 
     .featured-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 30px 60px -20px rgba(10,37,218,0.12);
+        box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.08), 0 30px 60px -20px rgba(10,37,218,0.12);
     }
     :global(html[data-theme="dark"]) .featured-card:hover {
-        box-shadow: 0 30px 60px -20px rgba(0,0,0,0.6);
+        box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.12), 0 30px 60px -20px rgba(0,0,0,0.6);
     }
 
     .featured-img-wrap {
-        position: relative; overflow: hidden;
-        height: 100%; min-height: 400px;
+        position: relative; overflow: hidden; height: 100%; min-height: 400px;
     }
     .featured-img-wrap img {
         width: 100%; height: 100%; object-fit: cover;
-        transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .featured-card:hover .featured-img-wrap img {
-        transform: scale(1.04);
-    }
+    .featured-card:hover .featured-img-wrap img { transform: scale(1.03); }
 
     .featured-content {
-        padding: 4rem 3.5rem;
+        padding: 4.5rem 3.5rem;
         display: flex; flex-direction: column; justify-content: center;
     }
 
-    .featured-meta {
-        display: flex; align-items: center; gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
+    .featured-meta { display: flex; align-items: center; gap: 1.2rem; margin-bottom: 1.5rem; }
+    
     .featured-cat {
-        font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+        font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
         color: var(--color-blue-deep);
-        background: rgba(10,37,218,0.08); padding: 4px 12px; border-radius: 100px;
+        background: rgba(10,37,218,0.06); padding: 6px 14px; border-radius: 100px;
     }
-    :global(html[data-theme="dark"]) .featured-cat {
-        color: #60a5fa; background: rgba(59,130,246,0.15);
-    }
-    .featured-date { font-size: 0.9rem; color: #6b7280; font-weight: 500; }
-    :global(html[data-theme="dark"]) .featured-date { color: #9ca3af; }
-
+    :global(html[data-theme="dark"]) .featured-cat { color: #60a5fa; background: rgba(59,130,246,0.15); }
+    
     .featured-title {
         font-size: clamp(2rem, 3.5vw, 2.8rem);
-        font-weight: 800; line-height: 1.1; letter-spacing: -0.03em;
+        font-weight: 800; line-height: 1.05; letter-spacing: -0.035em;
         margin: 0 0 1.2rem; color: #111827;
         transition: color 0.3s;
     }
@@ -343,136 +375,132 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
     :global(html[data-theme="dark"]) .featured-card:hover .featured-title { color: #60a5fa; }
 
     .featured-excerpt {
-        font-size: 1.15rem; color: #4b5563; line-height: 1.6;
-        margin: 0 0 2.5rem;
+        font-size: 1.15rem; color: #4b5563; line-height: 1.6; margin: 0 0 2.5rem;
     }
     :global(html[data-theme="dark"]) .featured-excerpt { color: #d1d5db; }
 
     .featured-author {
         display: flex; align-items: center; gap: 1rem; margin-top: auto;
     }
-    .author-avatar {
-        width: 48px; height: 48px; border-radius: 50%; object-fit: cover;
-    }
-    .author-info { display: flex; flex-direction: column; }
+    .author-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+    .author-info { display: flex; flex-direction: column; gap: 2px; }
     .author-info strong { font-size: 0.95rem; font-weight: 700; color: #111827; }
     :global(html[data-theme="dark"]) .author-info strong { color: #fff; }
-    .author-info span { font-size: 0.85rem; color: #6b7280; }
+    .author-info span { color: #6b7280; }
 
     .featured-arrow {
-        margin-left: auto; width: 40px; height: 40px;
+        margin-left: auto; width: 42px; height: 42px;
         border-radius: 50%; background: #f1f5f9;
         display: flex; align-items: center; justify-content: center;
-        color: #111827; transition: background 0.3s, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        color: #111827; transition: background 0.4s, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s;
     }
-    :global(html[data-theme="dark"]) .featured-arrow { background: rgba(255,255,255,0.1); color: #fff; }
-    .featured-arrow svg { width: 18px; height: 18px; transition: transform 0.3s; }
+    :global(html[data-theme="dark"]) .featured-arrow { background: rgba(255,255,255,0.08); color: #fff; }
+    .featured-arrow svg { width: 18px; height: 18px; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    
     .featured-card:hover .featured-arrow {
         background: var(--color-blue-deep); color: #fff; transform: scale(1.05);
+        box-shadow: 0 8px 20px rgba(10,37,218,0.25);
     }
     .featured-card:hover .featured-arrow svg { transform: translateX(3px); }
 
     /* ==========================================================
-       FILTROS (CATEGORÍAS)
+       FILTROS FLOTANTES (STICKY GLASS PILL)
        ========================================================== */
-    .blog-filters-section {
-        padding: 0 5% 3rem;
-        max-width: 1280px; margin: 0 auto;
+    .blog-sticky-nav {
+        position: sticky; top: 1.5rem; z-index: 50;
+        display: flex; justify-content: center;
+        margin-bottom: 4rem; padding: 0 5%;
+        pointer-events: none; /* Dejamos que los clicks pasen al fondo si no tocan la píldora */
     }
-    .blog-filters {
-        display: flex; flex-wrap: wrap; gap: 0.8rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid rgba(0,0,0,0.08);
+    .blog-filters-glass {
+        pointer-events: auto; /* Activamos clicks solo en la píldora */
+        display: inline-flex; flex-wrap: nowrap; gap: 0.4rem;
+        background: rgba(255, 255, 255, 0.65);
+        backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+        padding: 6px; border-radius: 100px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06), inset 0 0 0 0.5px rgba(255,255,255,0.8);
+        overflow-x: auto; scrollbar-width: none;
     }
-    :global(html[data-theme="dark"]) .blog-filters { border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .blog-filters-glass::-webkit-scrollbar { display: none; }
+    
+    :global(html[data-theme="dark"]) .blog-filters-glass {
+        background: rgba(15, 23, 42, 0.5);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 0 0 0.5px rgba(255,255,255,0.1);
+    }
 
     .filter-btn {
-        background: transparent; border: 1px solid transparent;
-        padding: 8px 16px; border-radius: 100px;
-        font-size: 0.95rem; font-weight: 600; color: #6b7280;
-        cursor: pointer; transition: all 0.3s;
+        background: transparent; border: none; outline: none;
+        padding: 8px 18px; border-radius: 100px;
+        font-size: 0.85rem; font-weight: 600; color: #4b5563;
+        cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        white-space: nowrap;
     }
     :global(html[data-theme="dark"]) .filter-btn { color: #9ca3af; }
+    
     .filter-btn:hover { color: #111827; background: rgba(0,0,0,0.04); }
     :global(html[data-theme="dark"]) .filter-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
     
-    .filter-btn.active {
-        background: #111827; color: #fff;
-    }
-    :global(html[data-theme="dark"]) .filter-btn.active {
-        background: #fff; color: #000;
-    }
+    .filter-btn.active { background: #111827; color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    :global(html[data-theme="dark"]) .filter-btn.active { background: #fff; color: #000; box-shadow: 0 4px 12px rgba(255,255,255,0.15); }
 
     /* ==========================================================
        GRID DE ARTÍCULOS RECIENTES
        ========================================================== */
-    .blog-grid-section {
-        padding: 0 5% 8rem;
-        max-width: 1280px; margin: 0 auto;
-    }
+    .blog-grid-section { padding: 0 5% 8rem; max-width: 1280px; margin: 0 auto; }
 
     .blog-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
         gap: 3rem 2rem;
         transition: opacity 0.3s ease, transform 0.3s ease;
     }
-    .blog-grid.filtering {
-        opacity: 0; transform: translateY(10px);
-    }
+    .blog-grid.filtering { opacity: 0; transform: translateY(10px); }
 
     .blog-card {
         display: flex; flex-direction: column;
+        background: #fff; border-radius: 20px;
+        padding: 1rem;
+        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s;
     }
+    :global(html[data-theme="dark"]) .blog-card { background: rgba(255,255,255,0.02); }
 
-    .blog-card-link {
-        text-decoration: none; color: inherit; display: flex; flex-direction: column; height: 100%;
-        group: hover;
-    }
+    .blog-card:hover { transform: translateY(-4px); box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.08), 0 20px 40px -20px rgba(10,37,218,0.08); }
+    :global(html[data-theme="dark"]) .blog-card:hover { box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.12), 0 20px 40px -20px rgba(0,0,0,0.4); }
+
+    .blog-card-link { text-decoration: none; color: inherit; display: flex; flex-direction: column; height: 100%; group: hover; }
 
     .blog-img-wrap {
-        position: relative;
-        width: 100%; aspect-ratio: 16/10;
-        border-radius: 16px; overflow: hidden;
-        margin-bottom: 1.5rem;
+        position: relative; width: 100%; aspect-ratio: 16/10;
+        border-radius: 12px; overflow: hidden; margin-bottom: 1.5rem;
         background: #f3f4f6;
     }
     :global(html[data-theme="dark"]) .blog-img-wrap { background: #1f2937; }
     
     .blog-img-wrap img {
         width: 100%; height: 100%; object-fit: cover;
-        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .blog-card-link:hover .blog-img-wrap img {
-        transform: scale(1.05);
-    }
+    .blog-card-link:hover .blog-img-wrap img { transform: scale(1.04); }
 
     .blog-category-badge {
         position: absolute; top: 1rem; left: 1rem;
-        background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);
-        color: #111827; font-size: 0.75rem; font-weight: 700;
-        padding: 6px 12px; border-radius: 100px;
-        text-transform: uppercase; letter-spacing: 0.5px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
+        color: #111827; font-size: 0.65rem; font-weight: 700;
+        padding: 4px 10px; border-radius: 100px;
+        text-transform: uppercase; letter-spacing: 0.05em;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
-    :global(html[data-theme="dark"]) .blog-category-badge {
-        background: rgba(0,0,0,0.7); color: #fff;
-    }
+    :global(html[data-theme="dark"]) .blog-category-badge { background: rgba(0,0,0,0.6); color: #fff; }
 
-    .blog-content {
-        display: flex; flex-direction: column; flex-grow: 1;
-    }
+    .blog-content { display: flex; flex-direction: column; flex-grow: 1; padding: 0 0.5rem; }
 
     .blog-meta {
-        font-size: 0.85rem; color: #6b7280; font-weight: 500;
-        display: flex; align-items: center; gap: 8px; margin-bottom: 0.8rem;
+        color: #6b7280; display: flex; align-items: center; gap: 8px; margin-bottom: 0.8rem;
     }
     :global(html[data-theme="dark"]) .blog-meta { color: #9ca3af; }
     
     .blog-title {
-        font-size: 1.4rem; font-weight: 800; line-height: 1.3; letter-spacing: -0.02em;
-        color: #111827; margin: 0 0 0.8rem;
-        transition: color 0.2s;
+        font-size: 1.35rem; font-weight: 800; line-height: 1.3; letter-spacing: -0.02em;
+        color: #111827; margin: 0 0 0.8rem; transition: color 0.3s;
     }
     :global(html[data-theme="dark"]) .blog-title { color: #fff; }
     .blog-card-link:hover .blog-title { color: var(--color-blue-deep); }
@@ -487,9 +515,8 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
 
     .blog-read-more {
         display: inline-flex; align-items: center; gap: 6px;
-        font-size: 0.95rem; font-weight: 700; color: #111827;
-        margin-top: auto;
-        transition: gap 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s;
+        font-size: 0.95rem; font-weight: 700; color: #111827; margin-top: auto;
+        transition: gap 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s;
     }
     :global(html[data-theme="dark"]) .blog-read-more { color: #fff; }
     .blog-read-more svg { width: 16px; height: 16px; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -503,14 +530,13 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
         .featured-card { grid-template-columns: 1fr; }
         .featured-img-wrap { min-height: 300px; }
         .featured-content { padding: 3rem 2rem; }
+        .blog-header { padding-top: 8rem; }
     }
     
     @media (max-width: 768px) {
-        .blog-header { padding-top: 8rem; }
-        .blog-main-title { font-size: 2.5rem; }
-        .blog-grid { grid-template-columns: 1fr; gap: 4rem; }
-        .blog-filters { overflow-x: auto; padding-bottom: 1rem; scrollbar-width: none; }
-        .blog-filters::-webkit-scrollbar { display: none; }
-        .filter-btn { white-space: nowrap; }
+        .blog-main-title { font-size: 2.8rem; }
+        .blog-grid { grid-template-columns: 1fr; gap: 3rem; }
+        .blog-sticky-nav { padding: 0 1rem; }
+        .blog-filters-glass { width: 100%; justify-content: flex-start; }
     }
 </style>
