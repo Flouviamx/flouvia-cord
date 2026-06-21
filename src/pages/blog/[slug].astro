@@ -69,31 +69,8 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
         <!-- LAYOUT DE 3 COLUMNAS -->
         <div class="article-layout">
             
-            <!-- Izquierda: Share Pill -->
+            <!-- Izquierda: Índice Flotante -->
             <aside class="article-sidebar article-sidebar-left">
-                <div class="share-pill sticky reveal" style="transition-delay: 500ms">
-                    <button id="btn-copy-link" class="share-btn" aria-label="Copiar enlace" title="Copiar enlace">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-                        <span class="tooltip">¡Copiado!</span>
-                    </button>
-                    <a href={`https://www.linkedin.com/sharing/share-offsite/?url=https://cord.flouvia.com/blog/${entry.id}`} target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en LinkedIn" title="LinkedIn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
-                    </a>
-                    <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(entry.data.title)}&url=https://cord.flouvia.com/blog/${entry.id}`} target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en X" title="X (Twitter)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l11.733 16h4.267l-11.733 -16z"></path><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path></svg>
-                    </a>
-                </div>
-            </aside>
-
-            <!-- Centro: CUERPO DEL ARTÍCULO (Markdown) -->
-            <article class="article-body">
-                <div class="prose-container" id="prose-content">
-                    <Content />
-                </div>
-            </article>
-
-            <!-- Derecha: Índice Flotante -->
-            <aside class="article-sidebar article-sidebar-right">
                 {headings.length > 0 && (
                     <div class="toc-container sticky reveal" style="transition-delay: 500ms">
                         <span class="toc-title">En este artículo</span>
@@ -106,6 +83,29 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
                         </ul>
                     </div>
                 )}
+            </aside>
+
+            <!-- Centro: CUERPO DEL ARTÍCULO (Markdown) -->
+            <article class="article-body">
+                <div class="prose-container" id="prose-content">
+                    <Content />
+                </div>
+            </article>
+
+            <!-- Derecha: Share Pill -->
+            <aside class="article-sidebar article-sidebar-right">
+                <div class="share-pill sticky reveal" style="transition-delay: 500ms">
+                    <button id="btn-copy-link" class="share-btn" aria-label="Copiar enlace" title="Copiar enlace">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                        <span class="tooltip">¡Copiado!</span>
+                    </button>
+                    <a href={`https://www.linkedin.com/sharing/share-offsite/?url=https://cord.flouvia.com/blog/${entry.id}`} target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en LinkedIn" title="LinkedIn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                    </a>
+                    <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(entry.data.title)}&url=https://cord.flouvia.com/blog/${entry.id}`} target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en X" title="X (Twitter)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l11.733 16h4.267l-11.733 -16z"></path><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path></svg>
+                    </a>
+                </div>
             </aside>
         </div>
         
@@ -371,7 +371,7 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
     .sticky { position: sticky; top: 120px; }
 
     /* Share Pill */
-    .article-sidebar-left { display: flex; justify-content: flex-end; padding-right: 2rem; }
+    .article-sidebar-right { display: flex; justify-content: flex-start; padding-left: 2rem; align-items: flex-start; }
     .share-pill {
         display: flex; flex-direction: column; gap: 0.8rem;
         background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -403,11 +403,11 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
     .share-btn.copied .tooltip { opacity: 1; transform: translateY(-50%) translateX(0); }
 
     /* TOC Scrollspy */
-    .article-sidebar-right { padding-left: 2rem; }
+    .article-sidebar-left { padding-right: 2rem; display: flex; justify-content: flex-end; align-items: flex-start; }
     .toc-container {
-        border-left: 1px solid rgba(0,0,0,0.08); padding-left: 1.5rem;
+        border-right: 1px solid rgba(0,0,0,0.08); padding-right: 1.5rem; text-align: right;
     }
-    :global(html[data-theme="dark"]) .toc-container { border-left-color: rgba(255,255,255,0.1); }
+    :global(html[data-theme="dark"]) .toc-container { border-right-color: rgba(255,255,255,0.1); }
     
     .toc-title {
         font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
