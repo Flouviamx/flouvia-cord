@@ -22,6 +22,10 @@ const POSTS = allPosts.filter(p => p.id !== featuredPostId).map(p => ({
 }));
 
 const CATEGORIES = ['Todos', ...new Set(allPosts.map(p => p.data.category))];
+
+const featuredAuthorName = FEATURED_POST.authorName || 'Equipo Cord';
+const featuredAuthorRole = FEATURED_POST.authorRole || 'Redacción';
+const featuredAuthorAvatar = FEATURED_POST.authorAvatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80';
 ---
 
 <Layout
@@ -72,10 +76,10 @@ const CATEGORIES = ['Todos', ...new Set(allPosts.map(p => p.data.category))];
                             
                             <div class="fc-footer-flex">
                                 <div class="fc-author">
-                                    <img src={FEATURED_POST.author.avatar} alt={FEATURED_POST.author.name} />
+                                    <img src={featuredAuthorAvatar} alt={featuredAuthorName} />
                                     <div class="fc-author-info">
-                                        <strong>{FEATURED_POST.author.name}</strong>
-                                        <span class="technical-meta">{FEATURED_POST.author.role}</span>
+                                        <strong>{featuredAuthorName}</strong>
+                                        <span class="technical-meta">{featuredAuthorRole}</span>
                                     </div>
                                 </div>
                                 
