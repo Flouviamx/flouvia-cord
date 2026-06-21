@@ -22,7 +22,6 @@ const {
                 <span>Empezar gratis</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
-            <a href="mailto:hola@flouvia.com" class="fc-link">Hablar con el equipo</a>
         </div>
         <p class="fc-micro">Sin tarjeta · Plan gratis para siempre</p>
     </div>
@@ -37,16 +36,11 @@ const {
                 <a href="https://flouvia.com" target="_blank" rel="noopener" class="footer-byflouvia">
                     Un producto de <b>Flouvia</b> →
                 </a>
-                <br />
-                <a href="/status" class="footer-status">
-                    <span class="status-dot"></span>
-                    Sistemas operativos
-                </a>
             </div>
 
             <div class="footer-cols">
                 <div class="footer-col">
-                    <span class="footer-col-title">Producto</span>
+                    <span class="footer-col-title">/01 Producto</span>
                     <a href="/producto/editor">Editor de cotizaciones</a>
                     <a href="/producto/link-publico">Link público</a>
                     <a href="/producto/seguimiento">Seguimiento en vivo</a>
@@ -57,7 +51,7 @@ const {
                     <a href="/producto/internacional">Facturación internacional</a>
                 </div>
                 <div class="footer-col">
-                    <span class="footer-col-title">Soluciones</span>
+                    <span class="footer-col-title">/02 Soluciones</span>
                     <a href="/soluciones/distribuidoras">Distribuidoras</a>
                     <a href="/soluciones/construccion">Construcción</a>
                     <a href="/soluciones/manufactura">Manufactura</a>
@@ -65,25 +59,25 @@ const {
                     <a href="/soluciones">Ver todas →</a>
                 </div>
                 <div class="footer-col">
-                    <span class="footer-col-title">Desarrolladores</span>
+                    <span class="footer-col-title">/03 Desarrolladores</span>
                     <a href="/desarrolladores/api">API REST</a>
                     <a href="/desarrolladores/mcp">MCP para IA</a>
                     <a href="/desarrolladores/elements">Cord Elements</a>
-                    <a href="/elements">Documentación</a>
+                    <a href="/elements">Cord Elements</a>
                     <a href="/registro">Generar API key</a>
                 </div>
                 <div class="footer-col">
-                    <span class="footer-col-title">Recursos</span>
+                    <span class="footer-col-title">/04 Recursos</span>
+                    <a href="/soporte">Soporte</a>
                     <a href="/#como">Cómo funciona</a>
                     <a href="/q/demo">Cotización de ejemplo</a>
                     <a href="/#precios">Precios</a>
                     <a href="/#faq">Preguntas frecuentes</a>
                 </div>
                 <div class="footer-col">
-                    <span class="footer-col-title">Empresa</span>
+                    <span class="footer-col-title">/05 Empresa</span>
                     <a href="/registro">Crear cuenta</a>
                     <a href="/sign-in">Entrar</a>
-                    <a href="mailto:hola@flouvia.com">hola@flouvia.com</a>
                     <a href="https://flouvia.com" target="_blank" rel="noopener">flouvia.com</a>
                 </div>
             </div>
@@ -147,37 +141,36 @@ const {
     .footer-inner { position: relative; z-index: 2; max-width: 1120px; margin: 0 auto; }
     .footer-top {
         display: grid;
-        grid-template-columns: 2fr 6fr;
-        gap: 4rem;
-        padding-bottom: 3.5rem;
-        border-bottom: 1px solid rgba(255,255,255,0.06);
+        grid-template-columns: 1fr 3fr;
+        gap: 3rem;
+        padding-bottom: 3rem;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
     }
-    .footer-logo-img { height: 22px; width: auto; display: block; opacity: 0.9; }
-    .footer-tagline { font-size: 0.85rem; line-height: 1.6; color: #8a8f98; margin: 1.2rem 0; max-width: 260px; font-weight: 400; }
-    .footer-byflouvia { font-size: 0.85rem; color: #8a8f98; text-decoration: none; transition: color 0.2s ease; display: inline-flex; align-items: center; gap: 0.4rem; }
-    .footer-byflouvia b { color: #fff; font-weight: 500; }
-    .footer-byflouvia:hover { color: #ededed; }
+    .footer-logo-img { height: 24px; width: auto; display: block; }
+    .footer-tagline { font-size: 0.92rem; line-height: 1.55; color: #8892b0; margin: 0.8rem 0 1.2rem; max-width: 260px; }
+    .footer-byflouvia { font-size: 0.88rem; color: #66728c; text-decoration: none; transition: color 0.3s; }
+    .footer-byflouvia b { color: #aab; }
+    .footer-byflouvia:hover { color: #cdd5e0; }
+    .footer-byflouvia:hover b { color: #fff; }
 
-    .footer-status { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 500; color: #8a8f98; text-decoration: none; margin-top: 1.5rem; padding: 0.4rem 0.6rem; border-radius: 6px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); transition: background 0.2s ease, color 0.2s ease; }
-    .footer-status:hover { background: rgba(255,255,255,0.06); color: #ededed; }
-    .status-dot { width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px rgba(16,185,129,0.4); }
 
-    .footer-cols { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2rem; }
-    .footer-col { display: flex; flex-direction: column; gap: 1rem; }
-    .footer-col-title { font-size: 0.875rem; font-weight: 500; color: #ededed; margin-bottom: 0.5rem; }
-    .footer-col a { font-size: 0.875rem; color: #8a8f98; text-decoration: none; transition: color 0.2s ease; width: fit-content; display: inline-block; }
-    .footer-col a:hover { color: #ededed; }
+
+    .footer-cols { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1.8rem; }
+    .footer-col { display: flex; flex-direction: column; gap: 1.25rem; }
+    .footer-col-title { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.5px; color: rgba(255,255,255,0.4); text-transform: uppercase; margin-bottom: 0.6rem; }
+    .footer-col a { font-size: 0.9rem; color: #8892b0; text-decoration: none; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); width: max-content; display: inline-block; }
+    .footer-col a:hover { color: #fff; transform: translateX(6px); }
 
     .footer-bottom {
         display: flex; justify-content: space-between; align-items: center;
         padding-top: 2rem; gap: 1.5rem; flex-wrap: wrap;
-        font-size: 0.85rem; color: #8a8f98;
+        font-size: 0.82rem; color: #66728c;
     }
     .footer-bottom p { margin: 0; }
-    .footer-bottom .editorial { color: #8a8f98; }
-    .footer-legal { display: flex; gap: 1rem; align-items: center; }
-    .footer-legal a { color: #8a8f98; text-decoration: none; transition: color 0.2s ease; }
-    .footer-legal a:hover { color: #ededed; }
+    .footer-bottom .editorial { color: rgba(255,255,255,0.7); }
+    .footer-legal { display: flex; gap: 0.8rem; align-items: center; }
+    .footer-legal a { color: #66728c; text-decoration: none; transition: color 0.3s; }
+    .footer-legal a:hover { color: #fff; }
 
     @media (max-width: 1020px) {
         .footer-top { grid-template-columns: 1fr; gap: 2.8rem; }
