@@ -11,6 +11,23 @@ const supportCollection = defineCollection({
   }),
 });
 
+const blogCollection = defineCollection({
+  loader: glob({ pattern: "**/*.md", base: "./src/content/blog" }),
+  schema: z.object({
+    title: z.string(),
+    excerpt: z.string(),
+    category: z.string(),
+    date: z.string(),
+    readTime: z.string(),
+    img: z.string(),
+    authorName: z.string().optional(),
+    authorRole: z.string().optional(),
+    authorAvatar: z.string().optional(),
+    featured: z.boolean().optional(),
+  }),
+});
+
 export const collections = {
   'support': supportCollection,
+  'blog': blogCollection,
 };

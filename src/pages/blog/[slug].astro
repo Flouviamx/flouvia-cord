@@ -1,0 +1,365 @@
+---
+import { getCollection, render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../../components/landing/Nav.astro';
+import Footer from '../../components/landing/Footer.astro';
+import PageAnims from '../../components/landing/PageAnims.astro';
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+    const blogEntries = await getCollection('blog');
+    return blogEntries.map(entry => ({
+        params: { slug: entry.id },
+        props: { entry },
+    }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+
+// Fallbacks para el post en caso de faltar datos opcionales
+const authorName = entry.data.authorName || 'Equipo Cord';
+const authorRole = entry.data.authorRole || 'Redacción';
+const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80';
+---
+
+<Layout
+    title={`${entry.data.title} | Blog de Cord`}
+    description={entry.data.excerpt}
+>
+    <Nav />
+    
+    <!-- Ruido analógico de lujo -->
+    <div class="analog-noise" aria-hidden="true"></div>
+
+    <main class="blog-article-main">
+        <!-- HEADER DEL ARTÍCULO -->
+        <header class="article-hero">
+            <div class="hero-container">
+                <div class="article-meta reveal">
+                    <span class="category-badge">{entry.data.category}</span>
+                    <span class="technical-meta">{entry.data.date}</span>
+                    <span class="dot">·</span>
+                    <span class="technical-meta">{entry.data.readTime}</span>
+                </div>
+                
+                <h1 class="article-title">
+                    <span class="stagger-mask"><span class="stagger-line" style="animation-delay: 100ms">{entry.data.title}</span></span>
+                </h1>
+                
+                <p class="article-excerpt reveal" style="transition-delay: 200ms">
+                    {entry.data.excerpt}
+                </p>
+
+                <div class="article-author reveal" style="transition-delay: 300ms">
+                    <img src={authorAvatar} alt={authorName} />
+                    <div class="author-details">
+                        <strong>{authorName}</strong>
+                        <span class="technical-meta">{authorRole}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="article-hero-image reveal" style="transition-delay: 400ms">
+                <img src={entry.data.img} alt={entry.data.title} fetchpriority="high" />
+            </div>
+        </header>
+
+        <!-- CUERPO DEL ARTÍCULO (Markdown) -->
+        <article class="article-body">
+            <div class="prose-container reveal">
+                <Content />
+            </div>
+        </article>
+
+        <!-- BENTO CTA FINAL (Estilo Stripe / Cord) -->
+        <section class="article-footer-cta">
+            <div class="bento-grid">
+                
+                <!-- Columna Grande: Suscripción -->
+                <div class="bento-card span-2 hairline-border">
+                    <h3>Suscríbete al Blog de Cord</h3>
+                    <p>Estrategias financieras, análisis de mercado y novedades de producto directamente en tu bandeja de entrada.</p>
+                    
+                    <form class="subscribe-form" onsubmit="event.preventDefault()">
+                        <input type="email" placeholder="tu@empresa.com" required />
+                        <button type="submit" class="btn-primary">
+                            Suscribirme <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </button>
+                    </form>
+                    <span class="privacy-note">Cord tratará tus datos según su <a href="/privacidad">Política de Privacidad</a>.</span>
+                </div>
+
+                <!-- Columna Pequeña 1: Careers -->
+                <div class="bento-card hairline-border">
+                    <div class="bento-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    </div>
+                    <h4>¿Te gusta lo que lees?</h4>
+                    <p>Cord construye infraestructura financiera para acelerar las ventas B2B. Únete al equipo.</p>
+                    <a href="/unirse" class="bento-link">Ver vacantes <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                </div>
+
+                <!-- Columna Pequeña 2: Contact -->
+                <div class="bento-card hairline-border">
+                    <div class="bento-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    </div>
+                    <h4>¿Dudas o comentarios?</h4>
+                    <p>Nos encantaría escuchar tu opinión sobre este artículo o tu flujo de ventas.</p>
+                    <a href="mailto:hello@cord.mx" class="bento-link">Contáctanos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <Footer 
+        ctaTitle="Acelera tus ciclos de venta"
+        ctaSub="Con Cord, tus prospectos aprueban y pagan cotizaciones en minutos, no en semanas."
+    />
+    <PageAnims />
+</Layout>
+
+<style>
+    /* ==========================================================
+       RUIDO ANALÓGICO & TIPOGRAFÍA TÉCNICA
+       ========================================================== */
+    .analog-noise {
+        position: fixed; inset: 0; z-index: 1000; pointer-events: none;
+        opacity: 0.035; 
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+    :global(html[data-theme="dark"]) .analog-noise { opacity: 0.05; }
+
+    .technical-meta {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-variant-numeric: tabular-nums;
+        font-size: 0.75rem; font-weight: 600;
+        letter-spacing: 0.04em; color: #6b7280;
+        text-transform: uppercase;
+    }
+    :global(html[data-theme="dark"]) .technical-meta { color: #9ca3af; }
+
+    .stagger-mask { display: inline-block; overflow: hidden; vertical-align: top; }
+    .stagger-line {
+        display: inline-block; transform: translateY(110%);
+        animation: slideUpReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes slideUpReveal { to { transform: translateY(0); } }
+
+    /* ==========================================================
+       BORDES HAIRLINE
+       ========================================================== */
+    .hairline-border {
+        border: none !important;
+        box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.08), 0 20px 40px -20px rgba(0,0,0,0.04);
+    }
+    :global(html[data-theme="dark"]) .hairline-border {
+        box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.08), 0 20px 40px -20px rgba(0,0,0,0.5);
+    }
+
+    /* ==========================================================
+       BASE Y LAYOUT
+       ========================================================== */
+    .blog-article-main {
+        background: #fdfdfd; color: #111827;
+        min-height: 100vh; font-family: 'Inter', sans-serif;
+        padding-top: 100px;
+    }
+    :global(html[data-theme="dark"]) .blog-article-main { background: #050505; color: #f3f4f6; }
+
+    /* ==========================================================
+       HERO DEL ARTÍCULO
+       ========================================================== */
+    .article-hero {
+        width: 100%; max-width: 1000px; margin: 0 auto 4rem;
+        padding: 4rem 5% 0; display: flex; flex-direction: column; align-items: center;
+        text-align: center;
+    }
+
+    .article-meta {
+        display: flex; align-items: center; justify-content: center; gap: 0.8rem;
+        margin-bottom: 2rem;
+    }
+    .category-badge {
+        font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+        color: var(--color-blue-deep); background: rgba(10,37,218,0.06);
+        padding: 6px 14px; border-radius: 100px;
+    }
+    :global(html[data-theme="dark"]) .category-badge { color: #60a5fa; background: rgba(59,130,246,0.15); }
+    .dot { color: #d1d5db; }
+
+    .article-title {
+        font-size: clamp(2.5rem, 5vw, 4.5rem); font-weight: 800; line-height: 1.05;
+        letter-spacing: -0.04em; color: #111827; margin: 0 0 2rem;
+        max-width: 900px;
+    }
+    :global(html[data-theme="dark"]) .article-title { color: #fff; }
+
+    .article-excerpt {
+        font-size: 1.25rem; color: #4b5563; line-height: 1.6;
+        max-width: 700px; margin: 0 auto 3rem;
+    }
+    :global(html[data-theme="dark"]) .article-excerpt { color: #d1d5db; }
+
+    .article-author {
+        display: flex; align-items: center; justify-content: center; gap: 1rem;
+        margin-bottom: 4rem;
+    }
+    .article-author img { width: 50px; height: 50px; border-radius: 50%; }
+    .author-details { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+    .author-details strong { font-size: 1rem; font-weight: 700; color: #111827; }
+    :global(html[data-theme="dark"]) .author-details strong { color: #fff; }
+
+    .article-hero-image {
+        width: 100%; max-width: 1200px; aspect-ratio: 2/1;
+        border-radius: 24px; overflow: hidden; margin: 0 auto;
+        box-shadow: 0 30px 60px -30px rgba(0,0,0,0.15);
+    }
+    .article-hero-image img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* ==========================================================
+       PROSE (MARKDOWN BODY)
+       ========================================================== */
+    .article-body { padding: 2rem 5% 6rem; }
+    .prose-container {
+        max-width: 680px; margin: 0 auto;
+        font-size: 1.15rem; line-height: 1.8; color: #374151;
+    }
+    :global(html[data-theme="dark"]) .prose-container { color: #cbd5e1; }
+
+    /* Estilos globales para el HTML generado por Markdown */
+    .prose-container :global(h2) {
+        font-size: 2rem; font-weight: 700; color: #111827; letter-spacing: -0.02em;
+        margin: 3.5rem 0 1.5rem; line-height: 1.2;
+    }
+    :global(html[data-theme="dark"]) .prose-container :global(h2) { color: #fff; }
+
+    .prose-container :global(h3) {
+        font-size: 1.5rem; font-weight: 600; color: #111827;
+        margin: 2.5rem 0 1rem; line-height: 1.3;
+    }
+    :global(html[data-theme="dark"]) .prose-container :global(h3) { color: #f3f4f6; }
+
+    .prose-container :global(p) { margin-bottom: 1.5rem; }
+    
+    .prose-container :global(ul), .prose-container :global(ol) {
+        margin-bottom: 2rem; padding-left: 1.5rem;
+    }
+    .prose-container :global(li) { margin-bottom: 0.5rem; }
+
+    .prose-container :global(blockquote) {
+        border-left: 4px solid var(--color-blue-deep);
+        padding-left: 1.5rem; margin: 2.5rem 0;
+        font-size: 1.35rem; font-style: italic; color: #111827;
+    }
+    :global(html[data-theme="dark"]) .prose-container :global(blockquote) {
+        border-color: #60a5fa; color: #fff;
+    }
+
+    /* ==========================================================
+       BENTO CTA (SUBSCRIBE FOOTER)
+       ========================================================== */
+    .article-footer-cta {
+        max-width: 1200px; margin: 0 auto 6rem; padding: 0 5%;
+    }
+    .bento-grid {
+        display: grid; grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem; align-items: stretch;
+    }
+
+    .bento-card {
+        background: #fff; border-radius: 20px; padding: 2.5rem;
+        display: flex; flex-direction: column; justify-content: space-between;
+        transition: transform 0.3s;
+    }
+    :global(html[data-theme="dark"]) .bento-card { background: rgba(255,255,255,0.02); }
+    .bento-card:hover { transform: translateY(-2px); }
+
+    .span-2 { grid-column: span 2; }
+
+    .bento-card h3 {
+        font-size: 1.6rem; font-weight: 700; color: #111827; letter-spacing: -0.02em;
+        margin-bottom: 0.8rem;
+    }
+    :global(html[data-theme="dark"]) .bento-card h3 { color: #fff; }
+    
+    .bento-card h4 {
+        font-size: 1.15rem; font-weight: 700; color: #111827;
+        margin-bottom: 0.5rem;
+    }
+    :global(html[data-theme="dark"]) .bento-card h4 { color: #fff; }
+
+    .bento-card p {
+        font-size: 1rem; color: #4b5563; line-height: 1.5; margin-bottom: 2rem;
+    }
+    :global(html[data-theme="dark"]) .bento-card p { color: #9ca3af; }
+
+    .bento-icon {
+        width: 48px; height: 48px; border-radius: 12px;
+        background: rgba(10,37,218,0.06); color: var(--color-blue-deep);
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 2rem;
+    }
+    :global(html[data-theme="dark"]) .bento-icon {
+        background: rgba(59,130,246,0.15); color: #60a5fa;
+    }
+    .bento-icon svg { width: 24px; height: 24px; }
+
+    /* Formulario de Suscripción */
+    .subscribe-form {
+        display: flex; gap: 0.8rem; margin-bottom: 1rem;
+    }
+    .subscribe-form input {
+        flex: 1; padding: 0 1rem; border-radius: 100px;
+        background: #f3f4f6; border: none;
+        font-family: inherit; font-size: 1rem; color: #111827;
+        box-shadow: inset 0 0 0 1px transparent; transition: box-shadow 0.2s;
+    }
+    :global(html[data-theme="dark"]) .subscribe-form input {
+        background: #1f2937; color: #fff;
+    }
+    .subscribe-form input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--color-blue-deep); }
+    :global(html[data-theme="dark"]) .subscribe-form input:focus { box-shadow: inset 0 0 0 2px #60a5fa; }
+
+    .btn-primary {
+        background: var(--color-blue-deep); color: #fff;
+        padding: 0 1.5rem; height: 48px; border-radius: 100px;
+        font-weight: 600; font-size: 0.95rem; border: none;
+        display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+        transition: background 0.2s, transform 0.2s;
+    }
+    :global(html[data-theme="dark"]) .btn-primary { background: #3b82f6; }
+    .btn-primary:hover { background: #081e9e; transform: translateY(-1px); }
+    :global(html[data-theme="dark"]) .btn-primary:hover { background: #2563eb; }
+    .btn-primary svg { width: 16px; height: 16px; transition: transform 0.3s; }
+    .btn-primary:hover svg { transform: translateX(3px); }
+
+    .privacy-note {
+        font-size: 0.8rem; color: #9ca3af;
+    }
+    .privacy-note a { color: inherit; text-decoration: underline; }
+
+    .bento-link {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 0.95rem; font-weight: 600; color: var(--color-blue-deep);
+        text-decoration: none; transition: gap 0.3s;
+    }
+    :global(html[data-theme="dark"]) .bento-link { color: #60a5fa; }
+    .bento-link svg { width: 16px; height: 16px; transition: transform 0.3s; }
+    .bento-link:hover { gap: 10px; }
+
+    @media (max-width: 992px) {
+        .bento-grid { grid-template-columns: 1fr 1fr; }
+        .span-2 { grid-column: span 2; }
+    }
+    @media (max-width: 768px) {
+        .bento-grid { grid-template-columns: 1fr; }
+        .span-2 { grid-column: span 1; }
+        .subscribe-form { flex-direction: column; }
+        .subscribe-form input { height: 48px; }
+    }
+</style>
