@@ -1,15 +1,17 @@
 ---
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 // Sección de features — bento grid con la estética producto-vibrante.
 ---
 
 <section class="features" id="producto">
     <div class="ft-head">
-        <p class="ft-eyebrow reveal">TODO EN UN SOLO LUGAR</p>
-        <h2 class="ft-title reveal">El sistema que conecta<br />todo tu proceso de venta B2B.</h2>
+        <p class="ft-eyebrow reveal">{t("ft.eyebrow")}</p>
+        <h2 class="ft-title reveal">{t("ft.title")}</h2>
         <p class="ft-sub reveal">
-            Deja de armar cotizaciones a mano y perseguir aprobaciones por WhatsApp.
-            Cord es el hilo que conecta tu catálogo, tus clientes, tus precios negociados
-            y tu facturación — en una sola plataforma, sin salir de la misma pantalla.
+            {t("ft.sub")}
         </p>
     </div>
 
@@ -17,66 +19,60 @@
         <!-- Card grande: editor -->
         <article class="bento-card bento-lg reveal">
             <div class="bento-text">
-                <span class="bento-tag">EDITOR</span>
-                <h3 class="bento-h">Precios negociados, producto por producto.</h3>
+                <span class="bento-tag">{t("ft.c1.tag")}</span>
+                <h3 class="bento-h">{t("ft.c1.h")}</h3>
                 <p class="bento-p">
-                    Arrastra productos de tu catálogo, ajusta el precio de cada línea,
-                    aplica descuentos por volumen y define términos: Contado, Net 30 o Net 60.
-                    El total se recalcula con IVA en vivo.
+                    {t("ft.c1.p")}
                 </p>
             </div>
             <div class="bento-visual editor-visual">
                 <div class="ev-line"><span>Cemento gris 50kg</span><span class="editorial">$182.00</span></div>
                 <div class="ev-line ev-edit"><span>Varilla 3/8"</span><span class="editorial">$168.50</span><span class="ev-tag">−12%</span></div>
                 <div class="ev-line"><span>Block hueco</span><span class="editorial">$14.20</span></div>
-                <div class="ev-total"><span>Total con IVA</span><span class="editorial">$196,469.20</span></div>
+                <div class="ev-total"><span>{t("ft.c1.t")}</span><span class="editorial">$196,469.20</span></div>
             </div>
         </article>
 
         <!-- Card: seguimiento -->
         <article class="bento-card reveal">
-            <span class="bento-tag">SEGUIMIENTO EN VIVO</span>
-            <h3 class="bento-h">Sabes cuándo la vio.</h3>
+            <span class="bento-tag">{t("ft.c2.tag")}</span>
+            <h3 class="bento-h">{t("ft.c2.h")}</h3>
             <p class="bento-p">
-                Notificación al instante en cuanto tu cliente abre la cotización.
-                Se acabó el "¿ya la revisaste?".
+                {t("ft.c2.p")}
             </p>
             <div class="bento-visual track-visual">
                 <span class="track-dot"></span>
-                <span>El Zarco la vio · hace 3 min</span>
+                <span>{t("ft.c2.v")}</span>
             </div>
         </article>
 
         <!-- Card: CFDI -->
         <article class="bento-card reveal">
-            <span class="bento-tag">FACTURACIÓN</span>
-            <h3 class="bento-h">CFDI 4.0 automático.</h3>
+            <span class="bento-tag">{t("ft.c3.tag")}</span>
+            <h3 class="bento-h">{t("ft.c3.h")}</h3>
             <p class="bento-p">
-                Timbra ante el SAT directo desde la cotización aprobada.
-                Sin recapturar, sin otro portal.
+                {t("ft.c3.p")}
             </p>
             <div class="bento-visual cfdi-visual">
                 <span class="cfdi-check">✓</span>
-                <span>Timbrado · UUID a1b2…f9</span>
+                <span>{t("ft.c3.v")}</span>
             </div>
         </article>
 
         <!-- Card ancha: link público -->
         <article class="bento-card bento-wide reveal">
             <div class="bento-text">
-                <span class="bento-tag">LINK PÚBLICO</span>
-                <h3 class="bento-h">Tu cliente aprueba en un clic.</h3>
+                <span class="bento-tag">{t("ft.c4.tag")}</span>
+                <h3 class="bento-h">{t("ft.c4.h")}</h3>
                 <p class="bento-p">
-                    Cada cotización es un link elegante con tu marca. Tu cliente lo abre
-                    desde el celular, lo aprueba y paga en línea — o queda a crédito según
-                    los términos. Sin PDFs perdidos en el correo.
+                    {t("ft.c4.p")}
                 </p>
             </div>
             <div class="bento-visual link-visual">
                 <div class="lv-pill">cord.flouvia.com/q/a1b2c3</div>
                 <div class="lv-actions">
-                    <span class="lv-approve">Aprobar cotización</span>
-                    <span class="lv-reject">Rechazar</span>
+                    <span class="lv-approve">{t("ft.c4.v1")}</span>
+                    <span class="lv-reject">{t("ft.c4.v2")}</span>
                 </div>
             </div>
         </article>

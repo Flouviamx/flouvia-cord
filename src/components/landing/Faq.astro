@@ -1,42 +1,25 @@
 ---
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 // FAQ — acordeón nativo (<details>) con estilo Flouvia.
 const faqs = [
-    {
-        q: '¿Qué es Cord?',
-        a: 'Cord es una plataforma B2B para cotizaciones, pedidos y facturación, creada por Flouvia. Permite gestionar precios negociados por cliente, términos de crédito Net 30/60 y timbrar CFDI 4.0 automáticamente ante el SAT. Disponible para cualquier negocio B2B en México.',
-    },
-    {
-        q: '¿Necesito tener una tienda en línea para usar Cord?',
-        a: 'No. Cord es independiente — funciona para cualquier negocio B2B: distribuidoras, mayoristas, manufactura o servicios. Subes tu catálogo (o cotizas líneas libres) y empiezas a mandar cotizaciones. Si además vendes en Shopify, tenemos una app que se integra.',
-    },
-    {
-        q: '¿Cómo funciona el plan gratis?',
-        a: 'Gratis para siempre, hasta 5 cotizaciones activas a la vez, con la marca "Powered by Cord" en el link público. Cuando cierras una cotización liberas el cupo. Sin tarjeta para empezar.',
-    },
-    {
-        q: '¿El CFDI funciona con el SAT de verdad?',
-        a: 'Sí. En el plan Negocio timbras CFDI 4.0 real ante el SAT directo desde la cotización aprobada. Solo necesitas tu CSD (Certificado de Sello Digital). La conexión toma menos de 5 minutos. Disponible solo para México.',
-    },
-    {
-        q: '¿Mi cliente tiene que crear una cuenta para aprobar?',
-        a: 'No. Tu cliente abre el link, revisa la cotización con tu marca y aprueba o paga sin registrarse. Cero fricción — por eso cierran más rápido.',
-    },
-    {
-        q: '¿Mis datos están seguros?',
-        a: 'Cord está construido por Flouvia sobre la misma infraestructura que usamos para marcas con operación establecida. Cada negocio vive aislado: tus cotizaciones, precios y clientes solo los ves tú.',
-    },
-    {
-        q: '¿Puedo cancelar cuando quiera?',
-        a: 'Cuando quieras, desde tu panel. Sin contratos ni penalizaciones. Si cancelas un plan de pago, bajas al gratis y conservas tu información.',
-    },
+    { q: t('faq.1.q'), a: t('faq.1.a') },
+    { q: t('faq.2.q'), a: t('faq.2.a') },
+    { q: t('faq.3.q'), a: t('faq.3.a') },
+    { q: t('faq.4.q'), a: t('faq.4.a') },
+    { q: t('faq.5.q'), a: t('faq.5.a') },
+    { q: t('faq.6.q'), a: t('faq.6.a') },
+    { q: t('faq.7.q'), a: t('faq.7.a') },
 ];
 ---
 
 <section class="faq" id="faq">
     <div class="faq-inner">
         <div class="faq-head">
-            <p class="faq-eyebrow reveal">PREGUNTAS FRECUENTES</p>
-            <h2 class="faq-title reveal">Lo que más nos preguntan.</h2>
+            <p class="faq-eyebrow reveal">{t("faq.eyebrow")}</p>
+            <h2 class="faq-title reveal">{t("faq.title")}</h2>
         </div>
 
         <div class="pr-faq-list reveal">

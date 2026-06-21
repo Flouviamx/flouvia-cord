@@ -3,11 +3,15 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/landing/Nav.astro';
 import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
+import { getLangFromUrl } from '../i18n/utils';
 
 export const prerender = true;
+
+const lang = getLangFromUrl(Astro.url);
+const isEn = lang === 'en';
 ---
 
-<Layout title="Aviso de Privacidad | CORD by Flouvia">
+<Layout title={isEn ? "Privacy Policy | CORD by Flouvia" : "Aviso de Privacidad | CORD by Flouvia"}>
   <Nav />
   
   <PageAnims />
@@ -15,10 +19,10 @@ export const prerender = true;
   <main class="legal-page js-anim">
     <div class="legal-header">
       <h1 class="editorial masked-title">
-        Aviso de<br>Privacidad
+        {isEn ? <Fragment>Privacy<br>Policy</Fragment> : <Fragment>Aviso de<br>Privacidad</Fragment>}
       </h1>
       <div class="reveal">
-        <p class="last-updated">Última actualización: 15 de Junio de 2026</p>
+        <p class="last-updated">{isEn ? 'Last updated: June 15, 2026' : 'Última actualización: 15 de Junio de 2026'}</p>
       </div>
     </div>
 
@@ -27,22 +31,22 @@ export const prerender = true;
       
       <!-- Índice Sticky (Izquierda) -->
       <aside class="toc-sidebar">
-        <span class="toc-eyebrow">CONTENIDO</span>
+        <span class="toc-eyebrow">{isEn ? 'CONTENTS' : 'CONTENIDO'}</span>
         <ul class="toc-list">
-          <li><a href="#rol" class="toc-link active">1. Responsable</a></li>
-          <li><a href="#datos" class="toc-link">2. Datos recabados</a></li>
-          <li><a href="#uso" class="toc-link">3. Finalidades</a></li>
-          <li><a href="#anonimizados" class="toc-link">4. Datos Anonimizados</a></li>
-          <li><a href="#cookies" class="toc-link">5. Política de Cookies</a></li>
-          <li><a href="#dpa" class="toc-link">6. DPA y Subencargados</a></li>
-          <li><a href="#internacionales" class="toc-link">7. Transf. Internacionales</a></li>
-          <li><a href="#negocio" class="toc-link">8. Transf. de Negocio</a></li>
-          <li><a href="#seguridad" class="toc-link">9. Seguridad</a></li>
-          <li><a href="#brechas" class="toc-link">10. Brechas de Datos</a></li>
-          <li><a href="#portabilidad" class="toc-link">11. Portabilidad</a></li>
-          <li><a href="#menores" class="toc-link">12. Menores de Edad</a></li>
-          <li><a href="#arco" class="toc-link">13. Derechos ARCO</a></li>
-          <li><a href="#cambios" class="toc-link">14. Cambios</a></li>
+          <li><a href="#rol" class="toc-link active">{isEn ? '1. Controller' : '1. Responsable'}</a></li>
+          <li><a href="#datos" class="toc-link">{isEn ? '2. Data collected' : '2. Datos recabados'}</a></li>
+          <li><a href="#uso" class="toc-link">{isEn ? '3. Purposes' : '3. Finalidades'}</a></li>
+          <li><a href="#anonimizados" class="toc-link">{isEn ? '4. Anonymized Data' : '4. Datos Anonimizados'}</a></li>
+          <li><a href="#cookies" class="toc-link">{isEn ? '5. Cookie Policy' : '5. Política de Cookies'}</a></li>
+          <li><a href="#dpa" class="toc-link">{isEn ? '6. DPA and Sub-processors' : '6. DPA y Subencargados'}</a></li>
+          <li><a href="#internacionales" class="toc-link">{isEn ? '7. International Transfers' : '7. Transf. Internacionales'}</a></li>
+          <li><a href="#negocio" class="toc-link">{isEn ? '8. Business Transfers' : '8. Transf. de Negocio'}</a></li>
+          <li><a href="#seguridad" class="toc-link">{isEn ? '9. Security' : '9. Seguridad'}</a></li>
+          <li><a href="#brechas" class="toc-link">{isEn ? '10. Data Breaches' : '10. Brechas de Datos'}</a></li>
+          <li><a href="#portabilidad" class="toc-link">{isEn ? '11. Portability' : '11. Portabilidad'}</a></li>
+          <li><a href="#menores" class="toc-link">{isEn ? '12. Minors' : '12. Menores de Edad'}</a></li>
+          <li><a href="#arco" class="toc-link">{isEn ? '13. Privacy Rights' : '13. Derechos ARCO'}</a></li>
+          <li><a href="#cambios" class="toc-link">{isEn ? '14. Changes' : '14. Cambios'}</a></li>
         </ul>
       </aside>
 
@@ -51,106 +55,106 @@ export const prerender = true;
         
         <!-- Caja gris estilo Flouvia -->
         <div class="intro-box">
-          <p>El presente Aviso de Privacidad Integral es emitido en cumplimiento a la <strong>Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP)</strong> y adopta los estándares internacionales de Acuerdos de Procesamiento de Datos (DPA) para el software B2B.</p>
+          {isEn ? <p>This Comprehensive Privacy Policy is issued in compliance with the <strong>Federal Law on Protection of Personal Data Held by Private Parties (LFPDPPP)</strong> and adopts international standards for Data Processing Agreements (DPA) for B2B software.</p> : <p>El presente Aviso de Privacidad Integral es emitido en cumplimiento a la <strong>Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP)</strong> y adopta los estándares internacionales de Acuerdos de Procesamiento de Datos (DPA) para el software B2B.</p>}
         </div>
 
-        <p>En <strong>Flouvia</strong> (legalmente representado por Andre Valle Ortega), creemos que la transparencia es el pilar de la confianza B2B. Este documento explica de manera clara cómo protegemos sus datos y los de su empresa al utilizar la plataforma CORD (cord.flouvia.com).</p>
+        {isEn ? <p>At <strong>Flouvia</strong> (legally represented by Andre Valle Ortega), we believe transparency is the pillar of B2B trust. This document clearly explains how we protect your data and your company's data when using the CORD platform (cord.flouvia.com).</p> : <p>En <strong>Flouvia</strong> (legalmente representado por Andre Valle Ortega), creemos que la transparencia es el pilar de la confianza B2B. Este documento explica de manera clara cómo protegemos sus datos y los de su empresa al utilizar la plataforma CORD (cord.flouvia.com).</p>}
 
         <!-- Los H2 ahora tienen un ID para anclarlos al índice -->
-        <h2 id="rol" class="editorial"><span class="num">01</span> Identidad del Responsable</h2>
-        <p>Para efectos legales y operativos, es importante distinguir cómo interactuamos con los datos:</p>
+        <h2 id="rol" class="editorial"><span class="num">01</span> {isEn ? 'Identity of the Controller' : 'Identidad del Responsable'}</h2>
+        {isEn ? <p>For legal and operational purposes, it is important to distinguish how we interact with data:</p> : <p>Para efectos legales y operativos, es importante distinguir cómo interactuamos con los datos:</p>}
         <ul>
-          <li><strong>Como Responsables (Data Controller):</strong> Actuamos como responsables sobre los datos de usted y su equipo (nuestros clientes directos) al crear una cuenta o suscribirse.</li>
-          <li><strong>Como Encargados (Data Processor):</strong> Actuamos como encargados sobre los datos de <em>sus propios clientes</em>. Nosotros solo procesamos esta información siguiendo sus instrucciones en la plataforma.</li>
+          <li>{isEn ? <Fragment><strong>As Data Controller:</strong> We act as controllers over the data of you and your team (our direct clients) when creating an account or subscribing.</Fragment> : <Fragment><strong>Como Responsables (Data Controller):</strong> Actuamos como responsables sobre los datos de usted y su equipo (nuestros clientes directos) al crear una cuenta o suscribirse.</Fragment>}</li>
+          <li>{isEn ? <Fragment><strong>As Data Processor:</strong> We act as processors over the data of <em>your own clients</em>. We only process this information following your instructions on the platform.</Fragment> : <Fragment><strong>Como Encargados (Data Processor):</strong> Actuamos como encargados sobre los datos de <em>sus propios clientes</em>. Nosotros solo procesamos esta información siguiendo sus instrucciones en la plataforma.</Fragment>}</li>
         </ul>
 
-        <h2 id="datos" class="editorial"><span class="num">02</span> Datos Personales Recabados</h2>
-        <p>Recopilamos información a través de tres vías principales:</p>
+        <h2 id="datos" class="editorial"><span class="num">02</span> {isEn ? 'Personal Data Collected' : 'Datos Personales Recabados'}</h2>
+        {isEn ? <p>We collect information through three main channels:</p> : <p>Recopilamos información a través de tres vías principales:</p>}
         <ul>
-          <li><strong>Datos de Identidad:</strong> Nombre, correo electrónico y contraseñas (gestionadas de forma encriptada vía Clerk).</li>
-          <li><strong>Datos Fiscales (CFDI 4.0):</strong> RFC, Razón Social, Régimen Fiscal, Código Postal y Certificados de Sello Digital (CSD).</li>
-          <li><strong>Datos Financieros:</strong> Información de cobro. <em>Nota: CORD no almacena tarjetas. Son tokenizadas directamente por Stripe, Inc.</em></li>
-          <li><strong>Datos de su Negocio:</strong> Catálogo de productos, listas de precios, y datos de las empresas a las que usted cotiza.</li>
+          <li>{isEn ? <Fragment><strong>Identity Data:</strong> Name, email address, and passwords (managed securely via Clerk).</Fragment> : <Fragment><strong>Datos de Identidad:</strong> Nombre, correo electrónico y contraseñas (gestionadas de forma encriptada vía Clerk).</Fragment>}</li>
+          <li>{isEn ? <Fragment><strong>Tax Data (CFDI 4.0):</strong> RFC, Legal Name, Tax Regime, Zip Code, and Digital Seal Certificates (CSD).</Fragment> : <Fragment><strong>Datos Fiscales (CFDI 4.0):</strong> RFC, Razón Social, Régimen Fiscal, Código Postal y Certificados de Sello Digital (CSD).</Fragment>}</li>
+          <li>{isEn ? <Fragment><strong>Financial Data:</strong> Billing information. <em>Note: CORD does not store credit cards. They are tokenized directly by Stripe, Inc.</em></Fragment> : <Fragment><strong>Datos Financieros:</strong> Información de cobro. <em>Nota: CORD no almacena tarjetas. Son tokenizadas directamente por Stripe, Inc.</em></Fragment>}</li>
+          <li>{isEn ? <Fragment><strong>Business Data:</strong> Product catalog, price lists, and data of the companies you quote to.</Fragment> : <Fragment><strong>Datos de su Negocio:</strong> Catálogo de productos, listas de precios, y datos de las empresas a las que usted cotiza.</Fragment>}</li>
         </ul>
 
-        <h2 id="uso" class="editorial"><span class="num">03</span> Finalidades</h2>
-        <p>Los datos recabados se utilizan exclusivamente para los siguientes propósitos esenciales:</p>
+        <h2 id="uso" class="editorial"><span class="num">03</span> {isEn ? 'Purposes' : 'Finalidades'}</h2>
+        {isEn ? <p>The collected data is used exclusively for the following essential purposes:</p> : <p>Los datos recabados se utilizan exclusivamente para los siguientes propósitos esenciales:</p>}
         <ul>
-          <li>Generar, almacenar y enviar cotizaciones B2B, y procesar el timbrado de facturas electrónicas.</li>
-          <li>Gestionar el cobro de su suscripción mensual y calcular el excedente de uso.</li>
-          <li><strong>Inteligencia Artificial Segura:</strong> Procesar texto para armar cotizaciones. Flouvia prohíbe contractualmente a nuestros proveedores (ej. Anthropic) utilizar sus datos para entrenar modelos públicos.</li>
-          <li>Enviar correos transaccionales y notificaciones.</li>
+          <li>{isEn ? 'Generate, store, and send B2B quotes, and process the stamping of electronic invoices.' : 'Generar, almacenar y enviar cotizaciones B2B, y procesar el timbrado de facturas electrónicas.'}</li>
+          <li>{isEn ? 'Manage the billing of your monthly subscription and calculate excess usage.' : 'Gestionar el cobro de su suscripción mensual y calcular el excedente de uso.'}</li>
+          <li>{isEn ? <Fragment><strong>Secure Artificial Intelligence:</strong> Process text to build quotes. Flouvia contractually prohibits our providers (e.g. Anthropic) from using your data to train public models.</Fragment> : <Fragment><strong>Inteligencia Artificial Segura:</strong> Procesar texto para armar cotizaciones. Flouvia prohíbe contractualmente a nuestros proveedores (ej. Anthropic) utilizar sus datos para entrenar modelos públicos.</Fragment>}</li>
+          <li>{isEn ? 'Send transactional emails and notifications.' : 'Enviar correos transaccionales y notificaciones.'}</li>
         </ul>
 
-        <h2 id="anonimizados" class="editorial"><span class="num">04</span> Datos Anonimizados y Agregados</h2>
-        <p>Podemos crear datos agregados, desidentificados o anonimizados a partir de la información que recopilamos, eliminando cualquier identificador que haga que los datos apunten a un usuario particular (como nombres o RFCs). Podemos utilizar dichos datos anonimizados para nuestros fines comerciales legítimos, como analizar tendencias, mejorar la plataforma o promocionar nuestro negocio, con la garantía de que dichos datos nunca podrán utilizarse para identificarle.</p>
+        <h2 id="anonimizados" class="editorial"><span class="num">04</span> {isEn ? 'Anonymized and Aggregated Data' : 'Datos Anonimizados y Agregados'}</h2>
+        {isEn ? <p>We may create aggregated, de-identified or anonymized data from the information we collect by removing any identifier that makes the data point to a particular user (such as names or RFCs). We may use such anonymized data for our legitimate business purposes, such as analyzing trends, improving the platform or promoting our business, with the guarantee that such data can never be used to identify you.</p> : <p>Podemos crear datos agregados, desidentificados o anonimizados a partir de la información que recopilamos, eliminando cualquier identificador que haga que los datos apunten a un usuario particular (como nombres o RFCs). Podemos utilizar dichos datos anonimizados para nuestros fines comerciales legítimos, como analizar tendencias, mejorar la plataforma o promocionar nuestro negocio, con la garantía de que dichos datos nunca podrán utilizarse para identificarle.</p>}
 
-        <h2 id="cookies" class="editorial"><span class="num">05</span> Política de Utilización de Cookies</h2>
-        <p>CORD utiliza cookies y tecnologías de seguimiento de manera minimalista y no invasiva. No vendemos sus datos de navegación a redes publicitarias de terceros.</p>
+        <h2 id="cookies" class="editorial"><span class="num">05</span> {isEn ? 'Cookie Policy' : 'Política de Utilización de Cookies'}</h2>
+        {isEn ? <p>CORD uses cookies and tracking technologies in a minimalist and non-invasive manner. We do not sell your browsing data to third-party advertising networks.</p> : <p>CORD utiliza cookies y tecnologías de seguimiento de manera minimalista y no invasiva. No vendemos sus datos de navegación a redes publicitarias de terceros.</p>}
         <ul>
-          <li><strong>Cookies Estrictamente Necesarias:</strong> Utilizadas por <em>Clerk</em> para mantener su sesión activa, autenticar su identidad y prevenir ataques de falsificación de solicitudes (CSRF). Sin estas cookies, la aplicación no puede funcionar de manera segura.</li>
-          <li><strong>Cookies de Rendimiento y Analítica:</strong> Utilizadas a través de <em>Vercel Analytics</em> para medir tiempos de carga de la página, errores en la interfaz y adopción de funcionalidades. Estos datos son agregados y totalmente anonimizados.</li>
+          <li>{isEn ? <Fragment><strong>Strictly Necessary Cookies:</strong> Used by <em>Clerk</em> to keep your session active, authenticate your identity, and prevent Cross-Site Request Forgery (CSRF) attacks. Without these cookies, the application cannot function securely.</Fragment> : <Fragment><strong>Cookies Estrictamente Necesarias:</strong> Utilizadas por <em>Clerk</em> para mantener su sesión activa, autenticar su identidad y prevenir ataques de falsificación de solicitudes (CSRF). Sin estas cookies, la aplicación no puede funcionar de manera segura.</Fragment>}</li>
+          <li>{isEn ? <Fragment><strong>Performance and Analytics Cookies:</strong> Used via <em>Vercel Analytics</em> to measure page load times, UI errors, and feature adoption. This data is aggregated and completely anonymized.</Fragment> : <Fragment><strong>Cookies de Rendimiento y Analítica:</strong> Utilizadas a través de <em>Vercel Analytics</em> para medir tiempos de carga de la página, errores en la interfaz y adopción de funcionalidades. Estos datos son agregados y totalmente anonimizados.</Fragment>}</li>
         </ul>
 
-        <h2 id="dpa" class="editorial"><span class="num">06</span> DPA y Subencargados</h2>
-        <p>Al utilizar CORD, usted y Flouvia celebran un Acuerdo de Procesamiento de Datos (Data Processing Agreement). Usted nos autoriza a procesar la información de sus clientes utilizando infraestructura de terceros. A continuación, presentamos nuestra <strong>Lista Oficial de Proveedores de Servicios (Sub-processors)</strong>, seleccionados bajo estrictos estándares normativos globales (SOC 2, PCI-DSS):</p>
+        <h2 id="dpa" class="editorial"><span class="num">06</span> {isEn ? 'DPA and Sub-processors' : 'DPA y Subencargados'}</h2>
+        {isEn ? <p>By using CORD, you and Flouvia enter into a Data Processing Agreement. You authorize us to process your clients' information using third-party infrastructure. Below is our <strong>Official List of Service Providers (Sub-processors)</strong>, selected under strict global regulatory standards (SOC 2, PCI-DSS):</p> : <p>Al utilizar CORD, usted y Flouvia celebran un Acuerdo de Procesamiento de Datos (Data Processing Agreement). Usted nos autoriza a procesar la información de sus clientes utilizando infraestructura de terceros. A continuación, presentamos nuestra <strong>Lista Oficial de Proveedores de Servicios (Sub-processors)</strong>, seleccionados bajo estrictos estándares normativos globales (SOC 2, PCI-DSS):</p>}
         <div class="table-wrapper">
           <table>
             <thead>
               <tr>
-                <th>Socio Tecnológico</th>
-                <th>Función en el Sistema</th>
+                <th>{isEn ? 'Technology Partner' : 'Socio Tecnológico'}</th>
+                <th>{isEn ? 'Function in the System' : 'Función en el Sistema'}</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td><strong>Stripe</strong></td>
-                <td>Procesador de pagos y suscripciones recurrentes.</td>
+                <td>{isEn ? 'Processor for payments and recurring subscriptions.' : 'Procesador de pagos y suscripciones recurrentes.'}</td>
               </tr>
               <tr>
                 <td><strong>Clerk</strong></td>
-                <td>Infraestructura de autenticación y sesiones.</td>
+                <td>{isEn ? 'Authentication and session infrastructure.' : 'Infraestructura de autenticación y sesiones.'}</td>
               </tr>
               <tr>
                 <td><strong>Neon / AWS</strong></td>
-                <td>Alojamiento de bases de datos (PostgreSQL).</td>
+                <td>{isEn ? 'Database hosting (PostgreSQL).' : 'Alojamiento de bases de datos (PostgreSQL).'}</td>
               </tr>
               <tr>
                 <td><strong>Anthropic</strong></td>
-                <td>Procesamiento algorítmico exclusivo para IA.</td>
+                <td>{isEn ? 'Exclusive algorithmic processing for AI.' : 'Procesamiento algorítmico exclusivo para IA.'}</td>
               </tr>
               <tr>
                 <td><strong>PAC (SAT)</strong></td>
-                <td>Certificación (timbrado) de comprobantes fiscales.</td>
+                <td>{isEn ? 'Certification (stamping) of electronic invoices.' : 'Certificación (timbrado) de comprobantes fiscales.'}</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <h2 id="internacionales" class="editorial"><span class="num">07</span> Transferencias Internacionales de Datos</h2>
-        <p>CORD es operado globalmente a través de proveedores de nube de primer nivel. Al utilizar los Servicios, usted reconoce y consiente expresamente que su información (y la de sus clientes) puede ser transferida, procesada y alojada en servidores ubicados en los Estados Unidos de América u otros países, cuyas leyes de protección de datos pueden diferir de las de su país de residencia. Garantizamos que nuestros subencargados operan bajo marcos de cumplimiento normativo globales como SOC 2 y cumplen con los estándares internacionales de transferencia de datos.</p>
+        <h2 id="internacionales" class="editorial"><span class="num">07</span> {isEn ? 'International Data Transfers' : 'Transferencias Internacionales de Datos'}</h2>
+        {isEn ? <p>CORD is operated globally through top-tier cloud providers. By using the Services, you expressly acknowledge and consent that your information (and that of your clients) may be transferred, processed, and hosted on servers located in the United States of America or other countries, whose data protection laws may differ from those of your country of residence. We guarantee that our sub-processors operate under global compliance frameworks such as SOC 2 and comply with international data transfer standards.</p> : <p>CORD es operado globalmente a través de proveedores de nube de primer nivel. Al utilizar los Servicios, usted reconoce y consiente expresamente que su información (y la de sus clientes) puede ser transferida, procesada y alojada en servidores ubicados en los Estados Unidos de América u otros países, cuyas leyes de protección de datos pueden diferir de las de su país de residencia. Garantizamos que nuestros subencargados operan bajo marcos de cumplimiento normativo globales como SOC 2 y cumplen con los estándares internacionales de transferencia de datos.</p>}
 
-        <h2 id="negocio" class="editorial"><span class="num">08</span> Transferencias de Negocio (M&A)</h2>
-        <p>Todos los datos que recopilamos pueden ser transferidos a un tercero si Flouvia se somete a una fusión, adquisición, reestructuración corporativa, quiebra u otra transacción en la que dicho tercero asuma el control de nuestro negocio (en su totalidad o en parte). En tal caso, realizaremos esfuerzos razonables para notificarle a través de la plataforma o por correo electrónico antes de que su información quede sujeta a políticas de privacidad y seguridad diferentes.</p>
+        <h2 id="negocio" class="editorial"><span class="num">08</span> {isEn ? 'Business Transfers (M&A)' : 'Transferencias de Negocio (M&A)'}</h2>
+        {isEn ? <p>All data we collect may be transferred to a third party if Flouvia undergoes a merger, acquisition, corporate restructuring, bankruptcy, or other transaction where such third party assumes control of our business (in whole or in part). In such event, we will make reasonable efforts to notify you via the platform or email before your information becomes subject to different privacy and security policies.</p> : <p>Todos los datos que recopilamos pueden ser transferidos a un tercero si Flouvia se somete a una fusión, adquisición, reestructuración corporativa, quiebra u otra transacción en la que dicho tercero asuma el control de nuestro negocio (en su totalidad o en parte). En tal caso, realizaremos esfuerzos razonables para notificarle a través de la plataforma o por correo electrónico antes de que su información quede sujeta a políticas de privacidad y seguridad diferentes.</p>}
 
-        <h2 id="seguridad" class="editorial"><span class="num">09</span> Retención y Seguridad</h2>
-        <p>Implementamos medidas de seguridad administrativas y técnicas (cifrado TLS en tránsito y AES-256 en reposo) para proteger sus datos contra acceso no autorizado. Las facturas timbradas (CFDI) se conservarán por el plazo mínimo requerido por las autoridades fiscales mexicanas (5 años).</p>
+        <h2 id="seguridad" class="editorial"><span class="num">09</span> {isEn ? 'Retention and Security' : 'Retención y Seguridad'}</h2>
+        {isEn ? <p>We implement administrative and technical security measures (TLS encryption in transit and AES-256 at rest) to protect your data against unauthorized access. Stamped invoices (CFDI) will be kept for the minimum period required by Mexican tax authorities (5 years).</p> : <p>Implementamos medidas de seguridad administrativas y técnicas (cifrado TLS en tránsito y AES-256 en reposo) para proteger sus datos contra acceso no autorizado. Las facturas timbradas (CFDI) se conservarán por el plazo mínimo requerido por las autoridades fiscales mexicanas (5 años).</p>}
 
-        <h2 id="brechas" class="editorial"><span class="num">10</span> Protocolo ante Brechas de Seguridad</h2>
-        <p>En el improbable caso de una vulneración de seguridad en nuestra infraestructura o la de nuestros subencargados que comprometa la confidencialidad de sus datos corporativos, Flouvia activará su protocolo de respuesta a incidentes. Nos comprometemos a notificar al Administrador de la cuenta en un plazo no mayor a 72 horas hábiles tras la confirmación de la brecha, detallando el alcance del incidente y las medidas de mitigación adoptadas.</p>
+        <h2 id="brechas" class="editorial"><span class="num">10</span> {isEn ? 'Security Breach Protocol' : 'Protocolo ante Brechas de Seguridad'}</h2>
+        {isEn ? <p>In the unlikely event of a security breach in our infrastructure or that of our sub-processors that compromises the confidentiality of your corporate data, Flouvia will activate its incident response protocol. We commit to notifying the account Administrator within 72 business hours after confirming the breach, detailing the scope of the incident and the mitigation measures taken.</p> : <p>En el improbable caso de una vulneración de seguridad en nuestra infraestructura o la de nuestros subencargados que comprometa la confidencialidad de sus datos corporativos, Flouvia activará su protocolo de respuesta a incidentes. Nos comprometemos a notificar al Administrador de la cuenta en un plazo no mayor a 72 horas hábiles tras la confirmación de la brecha, detallando el alcance del incidente y las medidas de mitigación adoptadas.</p>}
 
-        <h2 id="portabilidad" class="editorial"><span class="num">11</span> Portabilidad y Eliminación de Datos</h2>
-        <p>Usted es el único dueño de su información operativa. Si decide cancelar su suscripción, tiene derecho a solicitar la exportación de sus catálogos y clientes en un formato estructurado (CSV/JSON). Una vez cancelada la cuenta y concluido el periodo de retención fiscal obligatorio, Flouvia eliminará de forma irreversible y permanente sus bases de datos operativas de nuestros servidores.</p>
+        <h2 id="portabilidad" class="editorial"><span class="num">11</span> {isEn ? 'Data Portability and Deletion' : 'Portabilidad y Eliminación de Datos'}</h2>
+        {isEn ? <p>You are the sole owner of your operational information. If you decide to cancel your subscription, you have the right to request the export of your catalogs and clients in a structured format (CSV/JSON). Once the account is canceled and the mandatory tax retention period has concluded, Flouvia will irreversibly and permanently delete your operational databases from our servers.</p> : <p>Usted es el único dueño de su información operativa. Si decide cancelar su suscripción, tiene derecho a solicitar la exportación de sus catálogos y clientes en un formato estructurado (CSV/JSON). Una vez cancelada la cuenta y concluido el periodo de retención fiscal obligatorio, Flouvia eliminará de forma irreversible y permanente sus bases de datos operativas de nuestros servidores.</p>}
 
-        <h2 id="menores" class="editorial"><span class="num">12</span> Privacidad de Menores de Edad</h2>
-        <p>CORD es una plataforma de software B2B diseñada exclusivamente para empresas y profesionales. No recopilamos ni solicitamos a sabiendas Información Personal de ninguna persona menor de 18 años. Si descubrimos que hemos recopilado información de un menor de edad sin el consentimiento corporativo o verificable adecuado, eliminaremos dicha información de nuestros servidores lo más rápido posible.</p>
+        <h2 id="menores" class="editorial"><span class="num">12</span> {isEn ? 'Minors Privacy' : 'Privacidad de Menores de Edad'}</h2>
+        {isEn ? <p>CORD is a B2B software platform designed exclusively for businesses and professionals. We do not knowingly collect or solicit Personal Information from anyone under the age of 18. If we learn that we have collected information from a minor without proper verifiable corporate consent, we will delete that information from our servers as quickly as possible.</p> : <p>CORD es una plataforma de software B2B diseñada exclusivamente para empresas y profesionales. No recopilamos ni solicitamos a sabiendas Información Personal de ninguna persona menor de 18 años. Si descubrimos que hemos recopilado información de un menor de edad sin el consentimiento corporativo o verificable adecuado, eliminaremos dicha información de nuestros servidores lo más rápido posible.</p>}
 
-        <h2 id="arco" class="editorial"><span class="num">13</span> Derechos ARCO</h2>
-        <p>Puede ejercer sus derechos de Acceso, Rectificación, Cancelación u Oposición (ARCO). La mayoría de estos derechos pueden ejercerse directamente desde el panel de <em>Ajustes</em> de su cuenta.</p>
-        <p>Para solicitudes complejas, el Administrador deberá enviar un correo electrónico a <strong>legal@flouvia.com</strong>, detallando su solicitud y adjuntando una identificación oficial.</p>
+        <h2 id="arco" class="editorial"><span class="num">13</span> {isEn ? 'Privacy Rights' : 'Derechos ARCO'}</h2>
+        {isEn ? <p>You may exercise your rights of Access, Rectification, Cancellation, or Opposition. Most of these rights can be exercised directly from the <em>Settings</em> panel of your account.</p> : <p>Puede ejercer sus derechos de Acceso, Rectificación, Cancelación u Oposición (ARCO). La mayoría de estos derechos pueden ejercerse directamente desde el panel de <em>Ajustes</em> de su cuenta.</p>}
+        {isEn ? <p>For complex requests, the Administrator must send an email to <strong>legal@flouvia.com</strong>, detailing the request and attaching an official ID.</p> : <p>Para solicitudes complejas, el Administrador deberá enviar un correo electrónico a <strong>legal@flouvia.com</strong>, detallando su solicitud y adjuntando una identificación oficial.</p>}
 
-        <h2 id="cambios" class="editorial"><span class="num">14</span> Cambios al Aviso</h2>
-        <p>Si realizamos cambios significativos, o si añadimos un nuevo Subencargado a nuestra lista oficial, notificaremos al Administrador de la organización mediante un correo electrónico o a través de un aviso destacado dentro de la aplicación CORD. El uso continuado de los Servicios tras dichos cambios constituirá su aceptación explícita de los mismos.</p>
+        <h2 id="cambios" class="editorial"><span class="num">14</span> {isEn ? 'Changes to the Policy' : 'Cambios al Aviso'}</h2>
+        {isEn ? <p>If we make significant changes, or if we add a new Sub-processor to our official list, we will notify the organization's Administrator via email or through a prominent notice within the CORD application. Your continued use of the Services after such changes will constitute your explicit acceptance of them.</p> : <p>Si realizamos cambios significativos, o si añadimos un nuevo Subencargado a nuestra lista oficial, notificaremos al Administrador de la organización mediante un correo electrónico o a través de un aviso destacado dentro de la aplicación CORD. El uso continuado de los Servicios tras dichos cambios constituirá su aceptación explícita de los mismos.</p>}
       </div>
     </div>
   </main>

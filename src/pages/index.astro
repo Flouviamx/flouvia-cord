@@ -11,50 +11,66 @@ import ClientView from '../components/landing/ClientView.astro';
 import Pricing from '../components/landing/Pricing.astro';
 import Faq from '../components/landing/Faq.astro';
 import Footer from '../components/landing/Footer.astro';
+import { getLangFromUrl } from '../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const isEn = lang === 'en';
 
 // ── Datos estructurados (JSON-LD) — HowTo del flujo de venta B2B de Cord.
 //    Lo lee Google para enriquecer el resultado de búsqueda de la home.
 const howToSchema = {
     '@context': 'https://schema.org',
     '@type': 'HowTo',
-    name: 'Cómo funciona Cord: del primer contacto al CFDI',
-    description:
-        'Cord digitaliza el proceso de venta B2B en tres pasos: desde la creación de la cotización hasta el timbrado del CFDI 4.0 ante el SAT, sin recaptura de datos.',
+    name: isEn ? 'How Cord works: from first contact to CFDI' : 'Cómo funciona Cord: del primer contacto al CFDI',
+    description: isEn 
+        ? 'Cord digitizes the B2B sales process in three steps: from quote creation to SAT-stamped CFDI 4.0, without data re-entry.'
+        : 'Cord digitaliza el proceso de venta B2B en tres pasos: desde la creación de la cotización hasta el timbrado del CFDI 4.0 ante el SAT, sin recaptura de datos.',
     totalTime: 'PT10M',
     tool: [
-        { '@type': 'HowToTool', name: 'Cuenta de Cord (gratuita)' },
-        { '@type': 'HowToTool', name: 'Catálogo de productos cargado en Cord' },
+        { '@type': 'HowToTool', name: isEn ? 'Cord account (free)' : 'Cuenta de Cord (gratuita)' },
+        { '@type': 'HowToTool', name: isEn ? 'Product catalog loaded in Cord' : 'Catálogo de productos cargado en Cord' },
     ],
     step: [
         {
             '@type': 'HowToStep',
             position: '1',
-            name: 'Arma la cotización',
-            text: 'Elige al cliente desde el directorio, agrega productos del catálogo y negocia el precio de cada línea. Define los términos de crédito (Contado, Net 30 o Net 60), aplica descuentos por volumen y establece la vigencia. El total con IVA se recalcula en tiempo real. Todo listo en minutos.',
-            url: 'https://cord.flouvia.com/producto/editor',
+            name: isEn ? 'Build the quote' : 'Arma la cotización',
+            text: isEn 
+                ? 'Choose the client from the directory, add catalog products, and negotiate line prices. Define credit terms (Cash, Net 30/60), apply volume discounts, and set validity. The total with tax recalculates in real-time. All done in minutes.'
+                : 'Elige al cliente desde el directorio, agrega productos del catálogo y negocia el precio de cada línea. Define los términos de crédito (Contado, Net 30 o Net 60), aplica descuentos por volumen y establece la vigencia. El total con IVA se recalcula en tiempo real. Todo listo en minutos.',
+            url: isEn ? 'https://cord.flouvia.com/en/producto/editor' : 'https://cord.flouvia.com/producto/editor',
         },
         {
             '@type': 'HowToStep',
             position: '2',
-            name: 'Envía el link',
-            text: 'Cord genera un link con tu marca (logo, colores y datos fiscales) que el cliente puede abrir desde cualquier dispositivo. También puedes descargar un PDF. Recibes una notificación en el instante exacto en que tu cliente abre la cotización.',
-            url: 'https://cord.flouvia.com/producto/link-publico',
+            name: isEn ? 'Send the link' : 'Envía el link',
+            text: isEn 
+                ? 'Cord generates a branded link (logo, colors, and tax details) that the client can open from any device. You also get a PDF. Receive a notification the exact moment your client opens the quote.'
+                : 'Cord genera un link con tu marca (logo, colores y datos fiscales) que el cliente puede abrir desde cualquier dispositivo. También puedes descargar un PDF. Recibes una notificación en el instante exacto en que tu cliente abre la cotización.',
+            url: isEn ? 'https://cord.flouvia.com/en/producto/link-publico' : 'https://cord.flouvia.com/producto/link-publico',
         },
         {
             '@type': 'HowToStep',
             position: '3',
-            name: 'Cierra y factura',
-            text: 'El cliente aprueba con un clic y paga en línea, o la cotización queda a crédito según los términos definidos. La cotización se convierte automáticamente en pedido y el CFDI 4.0 se timbra ante el SAT sin necesidad de recapturar datos en otro portal.',
-            url: 'https://cord.flouvia.com/producto/cfdi',
+            name: isEn ? 'Close and invoice' : 'Cierra y factura',
+            text: isEn 
+                ? 'The client approves with one click and pays online, or the quote stays on credit based on defined terms. The quote automatically turns into an order and the CFDI 4.0 is stamped with the SAT with no data re-entry needed.'
+                : 'El cliente aprueba con un clic y paga en línea, o la cotización queda a crédito según los términos definidos. La cotización se convierte automáticamente en pedido y el CFDI 4.0 se timbra ante el SAT sin necesidad de recapturar datos en otro portal.',
+            url: isEn ? 'https://cord.flouvia.com/en/producto/cfdi' : 'https://cord.flouvia.com/producto/cfdi',
         },
     ],
 };
+
+const title = isEn 
+    ? "Cord — B2B platform for quotes, orders and CFDI | by Flouvia"
+    : "Cord — Plataforma B2B para cotizaciones, pedidos y CFDI | by Flouvia";
+
+const description = isEn
+    ? "Cord digitizes your B2B operations: quotes with negotiated prices, one-click approval, Net 30/60 terms, and automated SAT CFDI 4.0. For distributors and wholesalers in Mexico. A Flouvia product."
+    : "Cord digitaliza tus operaciones B2B: cotizaciones con precios negociados, aprobación en un clic, términos Net 30/60 y CFDI 4.0 automático ante el SAT. Para distribuidores y mayoristas en México. Un producto de Flouvia.";
 ---
 
-<Layout
-    title="Cord — Plataforma B2B para cotizaciones, pedidos y CFDI | by Flouvia"
-    description="Cord digitaliza tus operaciones B2B: cotizaciones con precios negociados, aprobación en un clic, términos Net 30/60 y CFDI 4.0 automático ante el SAT. Para distribuidores y mayoristas en México. Un producto de Flouvia."
->
+<Layout title={title} description={description}>
     <script
         slot="head"
         type="application/ld+json"

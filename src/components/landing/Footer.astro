@@ -1,4 +1,9 @@
 ---
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
+
 // CTA final + footer — dark navy, coherente con el footer de flouvia.com.
 // Las subpáginas (/producto/*, /soluciones) pueden personalizar el CTA via props.
 interface Props {
@@ -6,24 +11,24 @@ interface Props {
     ctaSub?: string;
 }
 const {
-    ctaTitle = 'Tu próxima cotización<br />merece verse como Cord.',
-    ctaSub = 'Crea tu cuenta gratis y manda tu primera cotización en menos de 10 minutos.',
+    ctaTitle = lang === 'en' ? 'Your next quote<br />deserves to look like Cord.' : 'Tu próxima cotización<br />merece verse como Cord.',
+    ctaSub = lang === 'en' ? 'Create your free account and send your first quote in under 10 minutes.' : 'Crea tu cuenta gratis y manda tu primera cotización en menos de 10 minutos.',
 } = Astro.props;
 ---
 
 <section class="final-cta">
     <div class="fc-glow" aria-hidden="true"></div>
     <div class="fc-inner reveal">
-        <p class="fc-eyebrow">EMPIEZA HOY</p>
+        <p class="fc-eyebrow">{t("footer.cta.eyebrow")}</p>
         <h2 class="fc-title masked-title" set:html={ctaTitle} />
         <p class="fc-sub">{ctaSub}</p>
         <div class="fc-actions">
-            <a href="/registro" class="fc-btn">
-                <span>Empezar gratis</span>
+            <a href={l("/registro")} class="fc-btn">
+                <span>{t("footer.cta.btn")}</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
         </div>
-        <p class="fc-micro">Sin tarjeta · Plan gratis para siempre</p>
+        <p class="fc-micro">{t("footer.cta.micro")}</p>
     </div>
 </section>
 
@@ -32,52 +37,52 @@ const {
         <div class="footer-top">
             <div class="footer-brand">
                 <img src="/imgs/logo-cord-white.png" alt="Cord" class="footer-logo-img" />
-                <p class="footer-tagline">Operaciones B2B que cierran ventas. La plataforma moderna para cualquier negocio que vende a otras empresas en México.</p>
+                <p class="footer-tagline">{t("footer.tagline")}</p>
                 <a href="https://flouvia.com" target="_blank" rel="noopener" class="footer-byflouvia">
-                    Un producto de <b>Flouvia</b> →
+                    {t("footer.by")} <b>Flouvia</b> →
                 </a>
             </div>
 
             <div class="footer-cols">
                 <div class="footer-col">
-                    <span class="footer-col-title">Producto</span>
-                    <a href="/producto/editor">Editor de cotizaciones</a>
-                    <a href="/producto/link-publico">Link público</a>
-                    <a href="/producto/seguimiento">Seguimiento en vivo</a>
-                    <a href="/producto/cfdi">CFDI 4.0</a>
-                    <a href="/producto/clientes-credito">Clientes y crédito</a>
-                    <a href="/producto/cobranza-ia">Cobranza con IA</a>
-                    <a href="/producto/divisas">Multi-divisa y FX</a>
-                    <a href="/producto/internacional">Facturación internacional</a>
+                    <span class="footer-col-title">{t("nav.producto")}</span>
+                    <a href={l("/producto/editor")}>{t("nav.mega.prod.1.title")}</a>
+                    <a href={l("/producto/link-publico")}>{t("nav.mega.prod.2.title")}</a>
+                    <a href={l("/producto/seguimiento")}>{t("nav.mega.prod.3.title")}</a>
+                    <a href={l("/producto/cfdi")}>{t("nav.mega.prod.4.title")}</a>
+                    <a href={l("/producto/clientes-credito")}>{t("nav.mega.prod.5.title")}</a>
+                    <a href={l("/producto/cobranza-ia")}>{t("nav.mega.prod.6.title")}</a>
+                    <a href={l("/producto/divisas")}>{t("nav.mega.prod.7.title")}</a>
+                    <a href={l("/producto/internacional")}>{t("nav.mega.prod.8.title")}</a>
                 </div>
                 <div class="footer-col">
-                    <span class="footer-col-title">Soluciones</span>
-                    <a href="/soluciones/distribuidoras">Distribuidoras</a>
-                    <a href="/soluciones/construccion">Construcción</a>
-                    <a href="/soluciones/manufactura">Manufactura</a>
-                    <a href="/soluciones/servicios">Servicios</a>
-                    <a href="/soluciones">Ver todas →</a>
+                    <span class="footer-col-title">{t("nav.soluciones")}</span>
+                    <a href={l("/soluciones/distribuidoras")}>{t("nav.mega.sol.1.title").split(" ")[0]}</a>
+                    <a href={l("/soluciones/construccion")}>{t("nav.mega.sol.2.title").split(" ")[0]}</a>
+                    <a href={l("/soluciones/manufactura")}>{t("nav.mega.sol.3.title")}</a>
+                    <a href={l("/soluciones/servicios")}>{t("nav.mega.sol.4.title").split(" ")[0]}</a>
+                    <a href={l("/soluciones")}>{t("footer.link.todas")}</a>
                 </div>
                 <div class="footer-col">
-                    <span class="footer-col-title">Desarrolladores</span>
-                    <a href="/desarrolladores/api">API REST</a>
-                    <a href="/desarrolladores/mcp">MCP para IA</a>
-                    <a href="/desarrolladores/elements">Cord Elements</a>
-                    <a href="/elements">Documentación</a>
-                    <a href="/registro">Generar API key</a>
+                    <span class="footer-col-title">{t("nav.desarrolladores")}</span>
+                    <a href={l("/desarrolladores/api")}>{t("nav.mega.dev.1.title")}</a>
+                    <a href={l("/desarrolladores/mcp")}>{t("nav.mega.dev.2.title")}</a>
+                    <a href={l("/desarrolladores/elements")}>{t("nav.mega.dev.3.title")}</a>
+                    <a href={l("/elements")}>{t("footer.link.docs")}</a>
+                    <a href={l("/registro")}>{t("footer.link.api")}</a>
                 </div>
                 <div class="footer-col">
-                    <span class="footer-col-title">Recursos</span>
-                    <a href="/soporte">Soporte</a>
-                    <a href="/blog">Blog</a>
-                    <a href="/q/demo">Cotización de ejemplo</a>
-                    <a href="/precios">Precios</a>
-                    <a href="/planes-soporte">Planes de soporte</a>
+                    <span class="footer-col-title">{t("nav.recursos")}</span>
+                    <a href={l("/soporte")}>{t("footer.link.soporte")}</a>
+                    <a href={l("/blog")}>{t("nav.mega.rec.1.title")}</a>
+                    <a href={l("/q/demo")}>{t("nav.mega.rec.2.title")}</a>
+                    <a href={l("/precios")}>{t("nav.precios")}</a>
+                    <a href={l("/planes-soporte")}>{t("nav.mega.rec.4.title")}</a>
                 </div>
                 <div class="footer-col">
-                    <span class="footer-col-title">Empresa</span>
-                    <a href="/registro">Crear cuenta</a>
-                    <a href="/sign-in">Entrar</a>
+                    <span class="footer-col-title">{t("footer.col.empresa")}</span>
+                    <a href={l("/registro")}>{t("footer.link.crear")}</a>
+                    <a href={l("/sign-in")}>{t("footer.link.entrar")}</a>
                     <a href="https://flouvia.com" target="_blank" rel="noopener">flouvia.com</a>
                 </div>
             </div>
@@ -104,9 +109,9 @@ const {
                     </a>
                 </div>
                 <div class="footer-legal">
-                    <a href="/privacidad">Privacidad</a>
+                    <a href={l("/privacidad")}>{t("footer.legal.priv")}</a>
                     <span>·</span>
-                    <a href="/terminos">Términos</a>
+                    <a href={l("/terminos")}>{t("footer.legal.term")}</a>
                 </div>
             </div>
         </div>

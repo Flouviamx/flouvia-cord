@@ -2,16 +2,20 @@
 // Navbar de Cord — replica el sistema de flouvia.com:
 // top-bar editorial + glass pill con indicador deslizante + wordmark central
 // que se transforma en píldora al hacer scroll. Wordmark "cord" en texto (no SVG).
+import { altLangUrls, useTranslations } from '../../i18n/utils';
+const { esUrl, enUrl, lang } = altLangUrls(Astro.url);
+const t = useTranslations(lang);
+const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 ---
 
 <header class="navbar-wrapper" id="navbar">
     <div class="top-bar" id="top-bar">
         <div class="top-bar-inner">
-            <span class="top-text">PLATAFORMA B2B</span>
+            <span class="top-text">{t("nav.top.plataforma")}</span>
             <span class="top-dot desktop-only">·</span>
-            <span class="top-text desktop-only">UN PRODUCTO DE FLOUVIA</span>
+            <span class="top-text desktop-only">{t("nav.top.producto_de")}</span>
             <span class="top-dot desktop-only">·</span>
-            <span class="top-text desktop-only">HECHO EN MÉXICO</span>
+            <span class="top-text desktop-only">{t("nav.top.hecho_en")}</span>
         </div>
     </div>
 
@@ -23,54 +27,54 @@
                     <div class="pill-shimmer" aria-hidden="true"></div>
                     <span class="nav-indicator" id="nav-indicator" aria-hidden="true"></span>
                     <div class="pill-row" id="pill-row">
-                        <a href="/" class="pill-logo" id="pill-logo">
+                        <a href={l("/")} class="pill-logo" id="pill-logo">
                             <img src="/imgs/logo-cord-white.png" alt="Cord" class="pill-logo-img" />
                         </a>
-                        <a href="/#producto" class="nav-link" data-mega="producto" aria-haspopup="true" aria-expanded="false">PRODUCTO<svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></a>
-                        <a href="/soluciones" class="nav-link" data-mega="soluciones" aria-haspopup="true" aria-expanded="false">SOLUCIONES<svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></a>
-                        <a href="/desarrolladores/api" class="nav-link" data-mega="desarrolladores" aria-haspopup="true" aria-expanded="false">DESARROLLADORES<svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></a>
-                        <a href="/#faq" class="nav-link" data-mega="recursos" aria-haspopup="true" aria-expanded="false">RECURSOS<svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></a>
-                        <a href="/precios" class="nav-link" data-path="/precios">PRECIOS</a>
+                        <a href="/#producto" class="nav-link" data-mega="producto" aria-haspopup="true" aria-expanded="false">{t("nav.producto")}<svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></a>
+                        <a href={l("/soluciones")} class="nav-link" data-mega="soluciones" aria-haspopup="true" aria-expanded="false">{t("nav.soluciones")}<svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></a>
+                        <a href={l("/desarrolladores/api")} class="nav-link" data-mega="desarrolladores" aria-haspopup="true" aria-expanded="false">{t("nav.desarrolladores")}<svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></a>
+                        <a href="/#faq" class="nav-link" data-mega="recursos" aria-haspopup="true" aria-expanded="false">{t("nav.recursos")}<svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></a>
+                        <a href={l("/precios")} class="nav-link" data-path={l("/precios")}>{t("nav.precios")}</a>
                     </div>
 
                     <!-- Megamenús: la píldora se expande verticalmente y revela el panel activo -->
                     <div class="pill-mega" data-panel="producto" aria-hidden="true">
                         <div class="mega-inner">
                             <div class="mega-grid">
-                                <a href="/producto/editor" class="mega-item">
+                                <a href={l("/producto/editor")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
-                                    <span class="mega-copy"><b>Editor de cotizaciones</b><i>Precios negociados, línea por línea</i></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.prod.1.title")}</b><i>{t("nav.mega.prod.1.desc")}</i></span>
                                 </a>
-                                <a href="/producto/link-publico" class="mega-item">
+                                <a href={l("/producto/link-publico")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></span>
-                                    <span class="mega-copy"><b>Link público</b><i>Tu cliente aprueba en un clic</i></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.prod.2.title")}</b><i>{t("nav.mega.prod.2.desc")}</i></span>
                                 </a>
-                                <a href="/producto/seguimiento" class="mega-item">
+                                <a href={l("/producto/seguimiento")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>
-                                    <span class="mega-copy"><b>Seguimiento en vivo</b><i>Sabes el momento en que la ven</i></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.prod.3.title")}</b><i>{t("nav.mega.prod.3.desc")}</i></span>
                                 </a>
-                                <a href="/producto/cfdi" class="mega-item">
+                                <a href={l("/producto/cfdi")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg></span>
-                                    <span class="mega-copy"><b>CFDI 4.0</b><i>Timbrado automático ante el SAT</i></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.prod.4.title")}</b><i>{t("nav.mega.prod.4.desc")}</i></span>
                                 </a>
-                                <a href="/producto/clientes-credito" class="mega-item">
+                                <a href={l("/producto/clientes-credito")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-                                    <span class="mega-copy"><b>Clientes y crédito</b><i>Net 30/60 y límite por cliente</i></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.prod.5.title")}</b><i>{t("nav.mega.prod.5.desc")}</i></span>
                                 </a>
-                                <a href="/producto/cobranza-ia" class="mega-item">
+                                <a href={l("/producto/cobranza-ia")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M22 12A10 10 0 0 0 12 2v10Z"/><path d="m9 12 2 2 4-4"/></svg></span>
-                                    <span class="mega-copy"><b>Cobranza con IA</b><i>Un agente que persigue tu cartera</i></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.prod.6.title")}</b><i>{t("nav.mega.prod.6.desc")}</i></span>
                                 </a>
-                                <a href="/producto/divisas" class="mega-item">
+                                <a href={l("/producto/divisas")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M8 21H3v-5"/><path d="M3 21l7-7"/></svg></span>
-                                    <span class="mega-copy"><b>Multi-divisa y FX</b><i>Cotiza en dólares, factura en pesos</i></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.prod.7.title")}</b><i>{t("nav.mega.prod.7.desc")}</i></span>
                                 </a>
-                                <a href="/producto/internacional" class="mega-item">
+                                <a href={l("/producto/internacional")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20Z"/></svg></span>
-                                    <span class="mega-copy"><b>Facturación internacional</b><i>CFDI 4.0 real + arquitectura global</i></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.prod.8.title")}</b><i>{t("nav.mega.prod.8.desc")}</i></span>
                             </div>
-                            <a href="/blog" class="mega-foot">
-                                <span>Lee nuestro Blog</span>
+                            <a href={l("/blog")} class="mega-foot">
+                                <span>{t("nav.mega.prod.foot")}</span>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                             </a>
                         </div>
@@ -79,25 +83,25 @@
                     <div class="pill-mega" data-panel="soluciones" aria-hidden="true">
                         <div class="mega-inner">
                             <div class="mega-grid">
-                                <a href="/soluciones/distribuidoras" class="mega-item">
+                                <a href={l("/soluciones/distribuidoras")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8Z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>
-                                    <span class="mega-copy"><b>Distribuidoras y mayoristas</b><i>Listas de precios por cliente</i></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.sol.1.title")}</b><i>{t("nav.mega.sol.1.desc")}</i></span>
                                 </a>
-                                <a href="/soluciones/construccion" class="mega-item">
+                                <a href={l("/soluciones/construccion")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M5 20V8l7-5 7 5v12"/><path d="M9 20v-6h6v6"/></svg></span>
-                                    <span class="mega-copy"><b>Construcción y materiales</b><i>Volumen, obra y crédito</i></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.sol.2.title")}</b><i>{t("nav.mega.sol.2.desc")}</i></span>
                                 </a>
-                                <a href="/soluciones/manufactura" class="mega-item">
+                                <a href={l("/soluciones/manufactura")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M4 20V10l5 3V10l5 3V8l6 4v8"/></svg></span>
-                                    <span class="mega-copy"><b>Manufactura</b><i>Cotiza especificación y lote</i></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.sol.3.title")}</b><i>{t("nav.mega.sol.3.desc")}</i></span>
                                 </a>
-                                <a href="/soluciones/servicios" class="mega-item">
+                                <a href={l("/soluciones/servicios")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
-                                    <span class="mega-copy"><b>Servicios profesionales</b><i>Propuestas que se aprueban solas</i></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.sol.4.title")}</b><i>{t("nav.mega.sol.4.desc")}</i></span>
                                 </a>
                             </div>
-                            <a href="/soluciones" class="mega-foot">
-                                <span>Ver todas las soluciones</span>
+                            <a href={l("/soluciones")} class="mega-foot">
+                                <span>{t("nav.mega.sol.foot")}</span>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                             </a>
                         </div>
@@ -106,21 +110,21 @@
                     <div class="pill-mega" data-panel="desarrolladores" aria-hidden="true">
                         <div class="mega-inner">
                             <div class="mega-grid">
-                                <a href="/desarrolladores/api" class="mega-item">
+                                <a href={l("/desarrolladores/api")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
-                                    <span class="mega-copy"><b>API REST</b><i>Conecta tu ERP o sistema a Cord</i></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.dev.1.title")}</b><i>{t("nav.mega.dev.1.desc")}</i></span>
                                 </a>
-                                <a href="/desarrolladores/mcp" class="mega-item">
+                                <a href={l("/desarrolladores/mcp")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4L12 3z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7L19 15z"/></svg></span>
-                                    <span class="mega-copy"><b>MCP para IA</b><i>Que una IA lea y cotice por ti</i></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.dev.2.title")}</b><i>{t("nav.mega.dev.2.desc")}</i></span>
                                 </a>
-                                <a href="/desarrolladores/elements" class="mega-item">
+                                <a href={l("/desarrolladores/elements")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span>
-                                    <span class="mega-copy"><b>Cord Elements</b><i>Embebe el cotizador en tu sitio</i></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.dev.3.title")}</b><i>{t("nav.mega.dev.3.desc")}</i></span>
                                 </a>
                             </div>
-                            <a href="/registro" class="mega-foot">
-                                <span>Genera tu API key gratis</span>
+                            <a href={l("/registro")} class="mega-foot">
+                                <span>{t("nav.mega.dev.foot")}</span>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                             </a>
                         </div>
@@ -129,25 +133,25 @@
                     <div class="pill-mega" data-panel="recursos" aria-hidden="true">
                         <div class="mega-inner">
                             <div class="mega-grid">
-                                <a href="/blog" class="mega-item">
+                                <a href={l("/blog")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg></span>
-                                    <span class="mega-copy"><b>Blog</b><i>Artículos sobre ventas B2B y tecnología</i></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.rec.1.title")}</b><i>{t("nav.mega.rec.1.desc")}</i></span>
                                 </a>
-                                <a href="/q/demo" class="mega-item">
+                                <a href={l("/q/demo")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M12 18h.01"/></svg></span>
-                                    <span class="mega-copy"><b>Cotización de ejemplo</b><i>Lo que tu cliente recibe</i></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.rec.2.title")}</b><i>{t("nav.mega.rec.2.desc")}</i></span>
                                 </a>
-                                <a href="/soporte" class="mega-item">
+                                <a href={l("/soporte")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
-                                    <span class="mega-copy"><b>Centro de ayuda</b><i>Artículos, guías y resolución de problemas</i></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.rec.3.title")}</b><i>{t("nav.mega.rec.3.desc")}</i></span>
                                 </a>
-                                <a href="/planes-soporte" class="mega-item">
+                                <a href={l("/planes-soporte")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-                                    <span class="mega-copy"><b>Planes de soporte</b><i>Soporte técnico y planes premium</i></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.rec.4.title")}</b><i>{t("nav.mega.rec.4.desc")}</i></span>
                                 </a>
                             </div>
                             <a href="https://flouvia.com" target="_blank" rel="noopener" class="mega-foot">
-                                <span>Conoce Flouvia, la casa de Cord</span>
+                                <span>{t("nav.mega.rec.foot")}</span>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                             </a>
                         </div>
@@ -156,22 +160,26 @@
             </div>
 
             <div class="nav-center desktop-nav">
-                <a href="/" class="main-logo" id="main-logo">
+                <a href={l("/")} class="main-logo" id="main-logo">
                     <img src="/imgs/logo-cord-navy.png" alt="Cord" class="main-logo-img" />
                 </a>
             </div>
 
             <div class="nav-right desktop-nav" id="nav-right">
-                <a href="/sign-in" class="nav-login-pill" aria-label="Entrar a tu cuenta"
-                   data-auth-swap data-out-href="/sign-in" data-out-label="Entrar"
-                   data-in-href="/app" data-in-label="Ir al Dashboard" data-in-aria="Ir al Dashboard">
+                <div class="lang-switch">
+                    <a href={esUrl} class="lang-option" class:list={[{ active: lang === 'es' }]}>ES</a>
+                    <a href={enUrl} class="lang-option" class:list={[{ active: lang === 'en' }]}>EN</a>
+                </div>
+                <a href={l("/sign-in")} class="nav-login-pill" aria-label={t("nav.entrar")}
+                   data-auth-swap data-out-href={l("/sign-in")} data-out-label={t("nav.entrar")}
+                   data-in-href={l("/app")} data-in-label={t("nav.dashboard")} data-in-aria={t("nav.dashboard")}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    <span data-auth-label>Entrar</span>
+                    <span data-auth-label>{t("nav.entrar")}</span>
                 </a>
-                <a href="/registro" class="btn-contact"
-                   data-auth-swap data-out-href="/registro" data-out-label="Empezar gratis"
-                   data-in-href="/precios" data-in-label="Ver planes">
-                    <span class="btn-contact-label" data-auth-label>Empezar gratis</span>
+                <a href={l("/registro")} class="btn-contact"
+                   data-auth-swap data-out-href={l("/registro")} data-out-label={t("nav.empezar")}
+                   data-in-href={l("/precios")} data-in-label={t("nav.mobile.plans")}>
+                    <span class="btn-contact-label" data-auth-label>{t("nav.empezar")}</span>
                     <svg class="contact-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/></svg>
                 </a>
             </div>
@@ -180,18 +188,18 @@
             <div class="mobile-pill-nav">
                 <div class="mobile-pill-inner squircle" id="mobile-pill">
                     <div class="pill-left-group">
-                        <button class="hamburger-btn" id="menu-toggle" aria-label="Menú">
+                        <button class="hamburger-btn" id="menu-toggle" aria-label={t("nav.mobile.menu")}>
                             <div class="burger-lines"><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
                         </button>
-                        <a href="/" class="mobile-logo">
+                        <a href={l("/")} class="mobile-logo">
                             <img src="/imgs/logo-cord-navy.png" alt="Cord" class="logo-mobile-img default-logo" />
                             <img src="/imgs/logo-cord-white.png" alt="Cord" class="logo-mobile-img scrolled-logo" />
                         </a>
                     </div>
-                    <a href="/registro" class="btn-contact-mobile squircle"
-                       data-auth-swap data-out-href="/registro" data-out-label="Empezar gratis"
-                       data-in-href="/app" data-in-label="Ir al Dashboard">
-                        <span data-auth-label>Empezar gratis</span>
+                    <a href={l("/registro")} class="btn-contact-mobile squircle"
+                       data-auth-swap data-out-href={l("/registro")} data-out-label={t("nav.empezar")}
+                       data-in-href={l("/app")} data-in-label={t("nav.dashboard")}>
+                        <span data-auth-label>{t("nav.empezar")}</span>
                         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/></svg>
                     </a>
                 </div>
@@ -200,41 +208,47 @@
         </div>
     </nav>
 
-    <div class="mobile-menu-overlay" id="mobile-menu">
+        <div class="mobile-menu-overlay" id="mobile-menu">
         <div class="mobile-menu-content">
+            <div class="menu-top-row">
+                <div class="lang-switch-mobile">
+                    <a href={esUrl} class="lang-option-m" class:list={[{ active: lang === 'es' }]}>ES</a>
+                    <a href={enUrl} class="lang-option-m" class:list={[{ active: lang === 'en' }]}>EN</a>
+                </div>
+            </div>
             <div class="mm-scroll">
                 <nav class="mobile-acc" id="mobile-acc">
 
                     <!-- PRODUCTO -->
                     <div class="m-acc" data-acc>
                         <button class="m-acc-head" aria-expanded="false">
-                            <span class="m-acc-title">Producto</span>
+                            <span class="m-acc-title">{t("nav.producto")}</span>
                             <span class="m-acc-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
                         </button>
                         <div class="m-acc-body"><div class="m-acc-inner"><div class="m-acc-stack">
-                            <a href="/producto/editor" class="m-sub" data-close>
+                            <a href={l("/producto/editor")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
-                                <span class="m-sub-copy"><b>Editor de cotizaciones</b><i>Precios negociados, línea por línea</i></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.prod.1.title")}</b><i>{t("nav.mega.prod.1.desc")}</i></span>
                             </a>
-                            <a href="/producto/link-publico" class="m-sub" data-close>
+                            <a href={l("/producto/link-publico")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></span>
-                                <span class="m-sub-copy"><b>Link público</b><i>Tu cliente aprueba en un clic</i></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.prod.2.title")}</b><i>{t("nav.mega.prod.2.desc")}</i></span>
                             </a>
-                            <a href="/producto/seguimiento" class="m-sub" data-close>
+                            <a href={l("/producto/seguimiento")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>
-                                <span class="m-sub-copy"><b>Seguimiento en vivo</b><i>Sabes el momento en que la ven</i></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.prod.3.title")}</b><i>{t("nav.mega.prod.3.desc")}</i></span>
                             </a>
-                            <a href="/producto/cfdi" class="m-sub" data-close>
+                            <a href={l("/producto/cfdi")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg></span>
-                                <span class="m-sub-copy"><b>CFDI 4.0</b><i>Timbrado automático ante el SAT</i></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.prod.4.title")}</b><i>{t("nav.mega.prod.4.desc")}</i></span>
                             </a>
-                            <a href="/producto/clientes-credito" class="m-sub" data-close>
+                            <a href={l("/producto/clientes-credito")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-                                <span class="m-sub-copy"><b>Clientes y crédito</b><i>Net 30/60 y límite por cliente</i></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.prod.5.title")}</b><i>{t("nav.mega.prod.5.desc")}</i></span>
                             </a>
-                            <a href="/producto/cobranza-ia" class="m-sub" data-close>
+                            <a href={l("/producto/cobranza-ia")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M22 12A10 10 0 0 0 12 2v10Z"/><path d="m9 12 2 2 4-4"/></svg></span>
-                                <span class="m-sub-copy"><b>Cobranza con IA</b><i>Un agente que persigue tu cartera</i></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.prod.6.title")}</b><i>{t("nav.mega.prod.6.desc")}</i></span>
                             </a>
                         </div></div></div>
                     </div>
@@ -242,25 +256,25 @@
                     <!-- SOLUCIONES -->
                     <div class="m-acc" data-acc>
                         <button class="m-acc-head" aria-expanded="false">
-                            <span class="m-acc-title">Soluciones</span>
+                            <span class="m-acc-title">{t("nav.soluciones")}</span>
                             <span class="m-acc-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
                         </button>
                         <div class="m-acc-body"><div class="m-acc-inner"><div class="m-acc-stack">
-                            <a href="/soluciones/distribuidoras" class="m-sub" data-close>
+                            <a href={l("/soluciones/distribuidoras")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8Z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>
-                                <span class="m-sub-copy"><b>Distribuidoras y mayoristas</b><i>Listas de precios por cliente</i></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.sol.1.title")}</b><i>{t("nav.mega.sol.1.desc")}</i></span>
                             </a>
-                            <a href="/soluciones/construccion" class="m-sub" data-close>
+                            <a href={l("/soluciones/construccion")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M5 20V8l7-5 7 5v12"/><path d="M9 20v-6h6v6"/></svg></span>
-                                <span class="m-sub-copy"><b>Construcción y materiales</b><i>Volumen, obra y crédito</i></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.sol.2.title")}</b><i>{t("nav.mega.sol.2.desc")}</i></span>
                             </a>
-                            <a href="/soluciones/manufactura" class="m-sub" data-close>
+                            <a href={l("/soluciones/manufactura")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M4 20V10l5 3V10l5 3V8l6 4v8"/></svg></span>
-                                <span class="m-sub-copy"><b>Manufactura</b><i>Cotiza especificación y lote</i></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.sol.3.title")}</b><i>{t("nav.mega.sol.3.desc")}</i></span>
                             </a>
-                            <a href="/soluciones/servicios" class="m-sub" data-close>
+                            <a href={l("/soluciones/servicios")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
-                                <span class="m-sub-copy"><b>Servicios profesionales</b><i>Propuestas que se aprueban solas</i></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.sol.4.title")}</b><i>{t("nav.mega.sol.4.desc")}</i></span>
                             </a>
                         </div></div></div>
                     </div>
@@ -268,21 +282,21 @@
                     <!-- DESARROLLADORES -->
                     <div class="m-acc" data-acc>
                         <button class="m-acc-head" aria-expanded="false">
-                            <span class="m-acc-title">Desarrolladores</span>
+                            <span class="m-acc-title">{t("nav.desarrolladores")}</span>
                             <span class="m-acc-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
                         </button>
                         <div class="m-acc-body"><div class="m-acc-inner"><div class="m-acc-stack">
-                            <a href="/desarrolladores/api" class="m-sub" data-close>
+                            <a href={l("/desarrolladores/api")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
-                                <span class="m-sub-copy"><b>API REST</b><i>Conecta tu ERP o sistema a Cord</i></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.dev.1.title")}</b><i>{t("nav.mega.dev.1.desc")}</i></span>
                             </a>
-                            <a href="/desarrolladores/mcp" class="m-sub" data-close>
+                            <a href={l("/desarrolladores/mcp")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4L12 3z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7L19 15z"/></svg></span>
-                                <span class="m-sub-copy"><b>MCP para IA</b><i>Que una IA lea y cotice por ti</i></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.dev.2.title")}</b><i>{t("nav.mega.dev.2.desc")}</i></span>
                             </a>
-                            <a href="/desarrolladores/elements" class="m-sub" data-close>
+                            <a href={l("/desarrolladores/elements")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span>
-                                <span class="m-sub-copy"><b>Cord Elements</b><i>Embebe el cotizador en tu sitio</i></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.dev.3.title")}</b><i>{t("nav.mega.dev.3.desc")}</i></span>
                             </a>
                         </div></div></div>
                     </div>
@@ -290,32 +304,32 @@
                     <!-- RECURSOS -->
                     <div class="m-acc" data-acc>
                         <button class="m-acc-head" aria-expanded="false">
-                            <span class="m-acc-title">Recursos</span>
+                            <span class="m-acc-title">{t("nav.recursos")}</span>
                             <span class="m-acc-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
                         </button>
                         <div class="m-acc-body"><div class="m-acc-inner"><div class="m-acc-stack">
-                            <a href="/blog" class="m-sub" data-close>
+                            <a href={l("/blog")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg></span>
-                                <span class="m-sub-copy"><b>Blog</b><i>Artículos sobre ventas B2B y tecnología</i></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.rec.1.title")}</b><i>{t("nav.mega.rec.1.desc")}</i></span>
                             </a>
-                            <a href="/q/demo" class="m-sub" data-close>
+                            <a href={l("/q/demo")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M12 18h.01"/></svg></span>
-                                <span class="m-sub-copy"><b>Cotización de ejemplo</b><i>Lo que tu cliente recibe</i></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.rec.2.title")}</b><i>{t("nav.mega.rec.2.desc")}</i></span>
                             </a>
-                            <a href="/soporte" class="m-sub" data-close>
+                            <a href={l("/soporte")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
-                                <span class="m-sub-copy"><b>Centro de ayuda</b><i>Artículos, guías y resolución de problemas</i></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.rec.3.title")}</b><i>{t("nav.mega.rec.3.desc")}</i></span>
                             </a>
-                            <a href="/planes-soporte" class="m-sub" data-close>
+                            <a href={l("/planes-soporte")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-                                <span class="m-sub-copy"><b>Planes de soporte</b><i>Soporte técnico y planes premium</i></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.rec.4.title")}</b><i>{t("nav.mega.rec.4.desc")}</i></span>
                             </a>
                         </div></div></div>
                     </div>
 
                     <!-- PRECIOS (link directo) -->
-                    <a href="/precios" class="m-acc-link" data-close>
-                        <span class="m-acc-title">Precios</span>
+                    <a href={l("/precios")} class="m-acc-link" data-close>
+                        <span class="m-acc-title">{t("nav.precios")}</span>
                         <svg class="m-acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                     </a>
                 </nav>
@@ -323,23 +337,23 @@
 
             <div class="mm-foot">
                 <div class="mm-cta">
-                    <a href="/sign-in" class="mm-btn ghost" data-close
-                       data-auth-swap data-out-href="/sign-in" data-out-label="Entrar"
-                       data-in-href="/precios" data-in-label="Ver planes">
+                    <a href={l("/sign-in")} class="mm-btn ghost" data-close
+                       data-auth-swap data-out-href={l("/sign-in")} data-out-label={t("nav.entrar")}
+                       data-in-href={l("/precios")} data-in-label={t("nav.mobile.plans")}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        <span data-auth-label>Entrar</span>
+                        <span data-auth-label>{t("nav.entrar")}</span>
                     </a>
-                    <a href="/registro" class="mm-btn solid" data-close
-                       data-auth-swap data-out-href="/registro" data-out-label="Empezar gratis"
-                       data-in-href="/app" data-in-label="Ir al Dashboard">
-                        <span data-auth-label>Empezar gratis</span>
+                    <a href={l("/registro")} class="mm-btn solid" data-close
+                       data-auth-swap data-out-href={l("/registro")} data-out-label={t("nav.empezar")}
+                       data-in-href={l("/app")} data-in-label={t("nav.dashboard")}>
+                        <span data-auth-label>{t("nav.empezar")}</span>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/></svg>
                     </a>
                 </div>
                 <div class="mm-meta">
                     <p class="m-eyebrow">COTIZACIONES B2B · POR FLOUVIA</p>
                     <div class="m-legal">
-                        <span>CDMX — OP. GLOBAL</span>
+                        <span>{t("nav.mobile.footer.op")}</span>
                         <a href="mailto:hola@flouvia.com">hola@flouvia.com</a>
                     </div>
                 </div>
@@ -535,6 +549,44 @@
 
     /* ── RIGHT ── */
     .nav-right { justify-content: flex-end; gap: 14px; }
+
+    /* Switch de idioma ES/EN (estilo flouvia.com): segmented control de vidrio */
+    .lang-switch {
+        display: flex; align-items: center;
+        background: linear-gradient(180deg, rgba(255,255,255,0.62) 0%, rgba(255,255,255,0.42) 100%);
+        backdrop-filter: blur(24px) saturate(1.8) brightness(1.04);
+        -webkit-backdrop-filter: blur(24px) saturate(1.8) brightness(1.04);
+        border: 1px solid rgba(255,255,255,0.5); border-radius: 100px; padding: 3px;
+        box-shadow:
+            inset 0 1px 1px rgba(255,255,255,0.9),
+            inset 0 0 0 0.5px rgba(255,255,255,0.35),
+            0 4px 14px rgba(10,25,47,0.07);
+        transition: background 0.7s var(--ease-spring), border-color 0.7s var(--ease-spring),
+                    box-shadow 0.7s var(--ease-spring), backdrop-filter 0.7s var(--ease-spring);
+    }
+    .lang-option {
+        padding: 5px 11px; font-size: 9px; font-weight: 800; letter-spacing: 1px;
+        color: rgba(0,0,0,0.4); text-decoration: none; border-radius: 100px;
+        transition: color 0.4s var(--ease-spring), background 0.45s var(--ease-spring),
+                    box-shadow 0.45s var(--ease-spring); z-index: 2;
+    }
+    .lang-option.active {
+        color: #000;
+        background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.86) 100%);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,1), 0 2px 8px rgba(10,25,47,0.12);
+    }
+    .lang-option:not(.active):hover { color: rgba(0,0,0,0.78); }
+    .navbar-wrapper.scrolled .lang-switch {
+        background: linear-gradient(180deg, rgba(24,46,80,0.6) 0%, rgba(10,25,47,0.5) 100%);
+        border-color: rgba(255,255,255,0.14);
+        backdrop-filter: blur(30px) saturate(1.9) brightness(1.05);
+        -webkit-backdrop-filter: blur(30px) saturate(1.9) brightness(1.05);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 0.5px rgba(255,255,255,0.07);
+    }
+    .navbar-wrapper.scrolled .lang-option { color: rgba(255,255,255,0.35); }
+    .navbar-wrapper.scrolled .lang-option:not(.active):hover { color: rgba(255,255,255,0.7); }
+    .navbar-wrapper.scrolled .lang-option.active { background: #fff; color: var(--nb-dark); box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
+
     /* Píldora de login (estilo flouvia.com): glass con ícono de usuario */
     .nav-login-pill {
         display: inline-flex; align-items: center; gap: 7px;

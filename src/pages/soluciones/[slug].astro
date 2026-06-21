@@ -778,97 +778,403 @@ const faqSchema = {
                 }
             }
 
-            // ───────────────────────── BLOCK MOCKUPS GSAP ─────────────────────────
-
-            // DISTRIBUIDORAS — el mockup de precio por cliente se queda estático y limpio.
-            const distM1 = document.querySelector('.sbm-dist-m1');
-            if (distM1) {
-                const type = distM1.querySelector('.bm-search-type');
-                const res = distM1.querySelector('.bm-s-res-1');
-                const tl = gsap.timeline({ scrollTrigger: { trigger: distM1, start: 'top 90%', end: 'top 40%', scrub: 1 } });
-                tl.set(res, { opacity: 0, y: 10 })
-                  .to(type, { opacity: 0.5, duration: 0.1, yoyo: true, repeat: 5 })
-                  .to(res, { opacity: 1, y: 0, duration: 0.5, ease: 'back.out(1.5)' });
-            }
-            const distM2 = document.querySelector('.sbm-dist-m2');
-            if (distM2) {
-                const fill = distM2.querySelector('.bm-margin-bar-fill');
-                gsap.to(fill, { width: '85%', ease: 'none', scrollTrigger: { trigger: distM2, start: 'top 95%', end: 'top 30%', scrub: 1 } });
-            }
-
-            // CONSTRUCCION
-            const constM0 = document.querySelector('.sbm-const-m0');
-            if (constM0) {
-                const counter = constM0.querySelector('.sbm-countup');
-                const obj = { v: 0 };
-                gsap.to(obj, { v: 120, ease: 'none', scrollTrigger: { trigger: constM0, start: 'top 95%', end: 'top 30%', scrub: 1 }, onUpdate: () => counter.textContent = Math.floor(obj.v) + ' sacos' });
-            }
-            const constM1 = document.querySelector('.sbm-const-m1');
-            if (constM1) {
-                const fill = constM1.querySelector('.bm-tl-fill');
-                gsap.to(fill, { height: '100%', ease: 'none', scrollTrigger: { trigger: constM1, start: 'top 95%', end: 'top 20%', scrub: 1 } });
-            }
-            const constM2 = document.querySelector('.sbm-const-m2');
-            if (constM2) {
-                const status = constM2.querySelector('.sbm-status');
-                const tl = gsap.timeline({ scrollTrigger: { trigger: constM2, start: 'top 80%', end: 'top 40%', scrub: 1 } });
-                tl.to(status, { background: 'rgba(6,78,59,0.9)', borderColor: 'rgba(16,185,129,0.3)', color: '#34d399', ease: 'none', onStart: () => status.textContent = 'Abono recibido', onReverseComplete: () => status.textContent = 'Pendiente' });
-            }
-
-            // MANUFACTURA
-            const manuM0 = document.querySelector('.sbm-manu-m0');
-            if (manuM0) {
-                const lines = manuM0.querySelectorAll('.bm-term-line');
-                const tl = gsap.timeline({ scrollTrigger: { trigger: manuM0, start: 'top 95%', end: 'top 30%', scrub: 1 } });
-                gsap.set(lines, { opacity: 0 });
-                lines.forEach((l, i) => tl.to(l, { opacity: 1, duration: 0.1 }, i*0.2));
-            }
-            const manuM1 = document.querySelector('.sbm-manu-m1');
-            if (manuM1) {
-                const rows = manuM1.querySelectorAll('.sbm-vol-row');
-                gsap.set(rows, { opacity: 0, y: 12 });
-                ScrollTrigger.create({
-                    trigger: manuM1, start: 'top 85%', once: true,
-                    onEnter: () => gsap.to(rows, { opacity: 1, y: 0, duration: 0.6, stagger: 0.2, ease: 'power2.out' }),
+            // ───────────────────────── BLOCK MOCKUPS (motion graphics) ─────────────────────────
+            // Cada mockup cuenta su historia con loops auto-reproducidos (repeat:-1) o
+            // un timeline disparado al entrar (once:true) — NUNCA scrub-on-drag. El HTML
+            // por defecto queda en estado FINAL, así que con reduced-motion se ve completo.
+            if (!reduced) {
+                // Entrada limpia: cada card sube con fade (igual al index/producto).
+                document.querySelectorAll('.pp-block-visual').forEach((block) => {
+                    const card = block.querySelector('.sbm-card');
+                    const glow = block.querySelector('.sbm-glow');
+                    if (!card) return;
+                    gsap.set(card, { y: 28, opacity: 0 });
+                    if (glow) gsap.set(glow, { opacity: 0, scale: 0.6 });
+                    ScrollTrigger.create({
+                        trigger: block, start: 'top 85%', once: true,
+                        onEnter: () => {
+                            gsap.to(card, { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', clearProps: 'transform' });
+                            if (glow) gsap.to(glow, { opacity: 1, scale: 1, duration: 1.6, ease: 'power3.out' });
+                        },
+                    });
                 });
-            }
-            const manuM2 = document.querySelector('.sbm-manu-m2');
-            if (manuM2) {
-                const path = manuM2.querySelector('.sbm-path');
-                gsap.to(path, { strokeDashoffset: 0, ease: 'none', scrollTrigger: { trigger: manuM2, start: 'top 95%', end: 'top 20%', scrub: 1 } });
-            }
 
-            // SERVICIOS
-            const servM0 = document.querySelector('.sbm-serv-m0');
-            if (servM0) {
-                const rows = servM0.querySelectorAll('.sbm-stag-row');
-                const tl = gsap.timeline({ scrollTrigger: { trigger: servM0, start: 'top 90%', end: 'top 30%', scrub: 1 } });
-                gsap.set(rows, { opacity: 0, x: -20 });
-                rows.forEach((r, i) => tl.to(r, { opacity: 1, x: 0, duration: 0.2 }, i*0.2));
-            }
-            const servM1 = document.querySelector('.sbm-serv-m1');
-            if (servM1) {
-                const card = servM1.querySelector('.sbm-brand-card');
-                const btn = servM1.querySelector('.sbm-btn');
-                const tl = gsap.timeline({ scrollTrigger: { trigger: servM1, start: 'top 90%', end: 'top 30%', scrub: 1 } });
-                tl.to(card, { borderColor: '#10b981', boxShadow: '0 0 30px rgba(16,185,129,0.2)', ease: 'none' }, 0)
-                  .to(btn, { background: '#10b981', color: '#fff', ease: 'none' }, 0);
-            }
-            const servM2 = document.querySelector('.sbm-serv-m2');
-            if (servM2) {
-                const matrix = servM2.querySelector('.sbm-matrix-text');
-                const orig = '&lt;cfdi:Comprobante&gt;<br/>&nbsp;&nbsp;&lt;cfdi:Emisor Rfc="DESP21"/&gt;<br/>&lt;/cfdi:Comprobante&gt;';
-                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*';
-                ScrollTrigger.create({
-                    trigger: servM2, start: 'top 80%', once: true,
-                    onEnter: () => {
-                        let iters = 0;
-                        const interval = setInterval(() => {
-                            matrix.innerHTML = orig.split('').map(c => Math.random() < 0.1 ? chars[Math.floor(Math.random()*chars.length)] : c).join('');
-                            if (iters++ > 20) { clearInterval(interval); matrix.innerHTML = orig; }
-                        }, 50);
+                // ───────── DISTRIBUIDORAS ─────────
+                {   // m0 · el cursor negocia el precio por línea y baja el monto con flash verde
+                    const el = document.querySelector('.sbm-dist-m0');
+                    if (el) {
+                        const cursor = el.querySelector('.sbm-cursor');
+                        const price = el.querySelector('.sbm-dist-price');
+                        const chip = el.querySelector('.sbm-dist-chip');
+                        const row = el.querySelector('.bm-row');
+                        const pill = el.querySelector('.sbm-floating');
+                        const fmt = (n) => '$' + n.toFixed(2) + ' ';
+                        ScrollTrigger.create({
+                            trigger: el, start: 'top 85%', once: true,
+                            onEnter: () => {
+                                const obj = { v: 191.48 };
+                                const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.4 });
+                                tl.set(cursor, { x: 60, y: 130, opacity: 0 })
+                                  .set(chip, { opacity: 0, scale: 0.4 })
+                                  .set(pill, { opacity: 0, y: 10, scale: 0.9 })
+                                  .set(obj, { v: 191.48 })
+                                  .call(() => { price.firstChild.textContent = fmt(191.48); })
+                                  .to(cursor, { opacity: 1, duration: 0.4 })
+                                  .to(cursor, { x: 250, y: 42, duration: 1, ease: 'power3.inOut' })
+                                  .to(cursor, { scale: 0.82, duration: 0.1, yoyo: true, repeat: 1 })
+                                  .to(row, { backgroundColor: 'rgba(16,185,129,0.16)', duration: 0.3 })
+                                  .to(chip, { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(1.6)' }, '<')
+                                  .to(obj, { v: 168.50, duration: 0.8, ease: 'power2.out', onUpdate: () => { price.firstChild.textContent = fmt(obj.v); } }, '<')
+                                  .to(row, { backgroundColor: 'rgba(255,255,255,0.03)', duration: 0.5 }, '+=0.1')
+                                  .to(pill, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.5)' }, '-=0.3')
+                                  .to(cursor, { x: 80, y: 200, opacity: 0, duration: 0.8, ease: 'power2.inOut' }, '+=0.4')
+                                  .to(pill, { opacity: 0, y: 8, duration: 0.5 }, '+=1.6');
+                            }
+                        });
                     }
-                });
+                }
+                {   // m1 · búsqueda instantánea del catálogo: teclea, revela resultados, agrega
+                    const el = document.querySelector('.sbm-dist-m1');
+                    if (el) {
+                        const cursor = el.querySelector('.sbm-cursor');
+                        const type = el.querySelector('.sbm-dist-type');
+                        const caret = el.querySelector('.sbm-dist-caret');
+                        const res1 = el.querySelector('.sbm-dist-res-1');
+                        const res2 = el.querySelector('.sbm-dist-res-2');
+                        const price1 = res1.querySelector('.editorial');
+                        const word = 'cement';
+                        gsap.set([res1, res2], { opacity: 0, y: 10 });
+                        gsap.to(caret, { opacity: 0.2, duration: 0.5, repeat: -1, yoyo: true, ease: 'power1.inOut' });
+                        ScrollTrigger.create({
+                            trigger: el, start: 'top 85%', once: true,
+                            onEnter: () => {
+                                const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.6 });
+                                tl.call(() => { type.textContent = ''; })
+                                  .set([res1, res2], { opacity: 0, y: 10 })
+                                  .set(res1, { backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'transparent' })
+                                  .call(() => { price1.textContent = '$182.00'; })
+                                  .set(cursor, { x: 60, y: 150, opacity: 0 });
+                                word.split('').forEach((ch) => {
+                                    tl.call(() => { type.textContent += ch; }, null, '+=0.11');
+                                });
+                                tl.to([res1, res2], { opacity: 1, y: 0, duration: 0.45, stagger: 0.14, ease: 'power2.out' }, '+=0.25')
+                                  .to(cursor, { opacity: 1, duration: 0.3 }, '+=0.3')
+                                  .to(cursor, { x: 200, y: 72, duration: 0.9, ease: 'power3.inOut' })
+                                  .to(cursor, { scale: 0.82, duration: 0.1, yoyo: true, repeat: 1 })
+                                  .to(res1, { backgroundColor: 'rgba(16,185,129,0.1)', borderColor: 'rgba(52,211,153,0.3)', duration: 0.35 }, '<')
+                                  .call(() => { price1.innerHTML = '<span style="color:#34d399;font-size:0.6rem;font-weight:800;">+ Agregado</span>'; })
+                                  .to(cursor, { x: 90, y: 200, opacity: 0, duration: 0.8, ease: 'power2.inOut' }, '+=0.5');
+                            }
+                        });
+                    }
+                }
+                {   // m2 · términos Net 30 que se aplican solos, crédito que sube y pago que entra
+                    const el = document.querySelector('.sbm-dist-m2');
+                    if (el) {
+                        const terms = el.querySelector('.sbm-dist-terms');
+                        const fill = el.querySelector('.sbm-dist-fill');
+                        const used = el.querySelector('.sbm-dist-used');
+                        const avail = el.querySelector('.sbm-dist-avail');
+                        const push = el.querySelector('.sbm-dist-push');
+                        ScrollTrigger.create({
+                            trigger: el, start: 'top 85%', once: true,
+                            onEnter: () => {
+                                const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.8 });
+                                const u = { v: 0 };
+                                tl.set(terms, { opacity: 0, scale: 0.5 })
+                                  .set(fill, { width: '0%', clearProps: 'backgroundColor' })
+                                  .call(() => { used.textContent = '0'; avail.textContent = '$500k'; })
+                                  .set(avail, { clearProps: 'color' })
+                                  .set(push, { opacity: 0, y: -20, scale: 0.95 })
+                                  .to(terms, { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(1.6)' }, '+=0.3')
+                                  .to(fill, { width: '68%', duration: 1.1, ease: 'power2.out' }, '+=0.1')
+                                  .to(u, { v: 342, duration: 1.1, ease: 'power2.out', onUpdate: () => { used.textContent = Math.round(u.v); } }, '<')
+                                  .call(() => { avail.textContent = '$158k'; }, null, '<+=1.1')
+                                  .to(push, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.5)' }, '+=0.7')
+                                  .to(push, { x: -3, duration: 0.05, yoyo: true, repeat: 3 }, '+=0.1')
+                                  .to(fill, { width: '50%', backgroundColor: '#34d399', duration: 0.7, ease: 'power2.out' }, '+=0.3')
+                                  .call(() => { used.textContent = '252'; avail.textContent = '$248k'; })
+                                  .to(avail, { color: '#34d399', duration: 0.3 }, '<')
+                                  .to(push, { opacity: 0, y: -12, duration: 0.5 }, '+=2');
+                            }
+                        });
+                    }
+                }
+
+                // ───────── CONSTRUCCIÓN ─────────
+                {   // m0 · el cursor edita la cantidad y subtotal/IVA/total recalculan con flash
+                    const el = document.querySelector('.sbm-const-m0');
+                    if (el) {
+                        const cursor = el.querySelector('.sbm-const-cur0');
+                        const ton = el.querySelector('.sbm-const-ton');
+                        const sub = el.querySelector('.sbm-const-sub');
+                        const iva = el.querySelector('.sbm-const-iva');
+                        const tot = el.querySelector('.sbm-const-tot');
+                        const tonRow = ton.closest('.sbm-const-line');
+                        const trow = el.querySelector('.sbm-const-trow');
+                        const fmt = (n) => '$' + Math.round(n).toLocaleString('es-MX');
+                        const calc = (tons) => { const s = tons * 3180 + 360 * 248 + 18 * 9400; return { s, iva: s * 0.16, t: s * 1.16 }; };
+                        ScrollTrigger.create({
+                            trigger: el, start: 'top 85%', once: true,
+                            onEnter: () => {
+                                const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.6 });
+                                const s0 = { tons: 42 };
+                                tl.set(cursor, { x: 150, y: 150, opacity: 0 })
+                                  .set([ton, sub, iva, tot], { clearProps: 'color' })
+                                  .call(() => { ton.textContent = '42'; const r = calc(42); sub.textContent = fmt(r.s); iva.textContent = fmt(r.iva); tot.textContent = fmt(r.t); s0.tons = 42; })
+                                  .to(cursor, { opacity: 1, duration: 0.4 })
+                                  .to(cursor, { x: 232, y: 70, duration: 1.1, ease: 'power3.inOut' })
+                                  .to(cursor, { scale: 0.82, duration: 0.1, yoyo: true, repeat: 1 })
+                                  .to(tonRow, { backgroundColor: 'rgba(59,130,246,0.14)', duration: 0.3 })
+                                  .to(s0, { tons: 58, duration: 0.9, ease: 'power2.out', onUpdate: () => { const v = Math.round(s0.tons); ton.textContent = v; const r = calc(v); sub.textContent = fmt(r.s); iva.textContent = fmt(r.iva); tot.textContent = fmt(r.t); } }, '-=0.1')
+                                  .to([sub, iva, tot], { color: '#34d399', duration: 0.2 }, '<')
+                                  .to(trow, { boxShadow: '0 0 0 4px rgba(52,211,153,0.18)', duration: 0.4, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<')
+                                  .to(tonRow, { backgroundColor: 'rgba(255,255,255,0.03)', duration: 0.4 }, '-=0.4')
+                                  .to([sub, iva, tot], { color: '#fff', duration: 0.5 }, '-=0.3')
+                                  .to(cursor, { x: 120, y: 240, opacity: 0, duration: 0.9, ease: 'power2.inOut' }, '+=0.4');
+                            }
+                        });
+                    }
+                }
+                {   // m1 · la barra de crédito se llena y avisa cuando el trato rebasaría el límite
+                    const el = document.querySelector('.sbm-const-m1');
+                    if (el) {
+                        const fill = el.querySelector('.sbm-const-bar-fill');
+                        const used = el.querySelector('.sbm-const-used');
+                        const disp = el.querySelector('.sbm-const-dispval');
+                        const toast = el.querySelector('.sbm-const-toast1');
+                        const newrow = el.querySelector('.sbm-const-newrow');
+                        const fmt = (n) => Math.round(n).toLocaleString('es-MX');
+                        ScrollTrigger.create({
+                            trigger: el, start: 'top 88%', once: true,
+                            onEnter: () => {
+                                const o = { used: 0 };
+                                const tl = gsap.timeline({ delay: 0.3 });
+                                gsap.set(fill, { width: '0%' });
+                                gsap.set(toast, { opacity: 0, y: 8, scale: 0.92 });
+                                gsap.set(newrow, { opacity: 0, x: -8 });
+                                gsap.set(disp, { color: '#34d399' });
+                                tl.to(fill, { width: '84%', duration: 1.4, ease: 'power2.out' }, 0)
+                                  .to(o, { used: 420000, duration: 1.4, ease: 'power2.out', onUpdate: () => { used.textContent = fmt(o.used); disp.textContent = '$' + fmt(500000 - o.used); } }, 0)
+                                  .to(newrow, { opacity: 1, x: 0, duration: 0.5, ease: 'power2.out' }, '+=0.3')
+                                  .to(fill, { background: 'linear-gradient(90deg,#f59e0b,#fbbf24)', duration: 0.4 }, '+=0.1')
+                                  .to(disp, { color: '#fbbf24', duration: 0.3 }, '<')
+                                  .to(toast, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.5)' }, '<0.1')
+                                  .to(toast, { x: -3, duration: 0.05, yoyo: true, repeat: 3 }, '+=0.1');
+                            }
+                        });
+                    }
+                }
+                {   // m2 · push de aprobación desde la obra → timeline → sello CFDI 4.0
+                    const el = document.querySelector('.sbm-const-m2');
+                    if (el) {
+                        const push = el.querySelector('.sbm-const-push');
+                        const fill = el.querySelector('.sbm-const-tl-fill');
+                        const finalNode = el.querySelector('.sbm-const-node-final');
+                        const cfdi = el.querySelector('.sbm-const-cfdi');
+                        const stamp = el.querySelector('.sbm-const-cfdi-stamp');
+                        ScrollTrigger.create({
+                            trigger: el, start: 'top 86%', once: true,
+                            onEnter: () => {
+                                const tl = gsap.timeline({ delay: 0.3 });
+                                gsap.set(push, { opacity: 0, y: -20, scale: 0.95 });
+                                gsap.set(fill, { height: '0%' });
+                                gsap.set(finalNode, { opacity: 0.35 });
+                                gsap.set(cfdi, { opacity: 0, y: 10 });
+                                gsap.set(stamp, { scale: 0, rotation: -45 });
+                                tl.to(push, { opacity: 1, y: 0, scale: 1, duration: 0.55, ease: 'back.out(1.5)' })
+                                  .to(push, { x: -3, duration: 0.05, yoyo: true, repeat: 3 }, '+=0.15')
+                                  .to(fill, { height: '100%', duration: 1.4, ease: 'power2.inOut' }, '+=0.2')
+                                  .to(finalNode, { opacity: 1, duration: 0.4 }, '-=0.4')
+                                  .to(cfdi, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, '+=0.1')
+                                  .to(stamp, { scale: 1, rotation: 0, duration: 0.6, ease: 'back.out(2)' }, '<0.1');
+                            }
+                        });
+                    }
+                }
+
+                // ───────── MANUFACTURA ─────────
+                {   // m0 · el cursor agrega una línea libre y se despliega la especificación del lote
+                    const el = document.querySelector('.sbm-manu-m0');
+                    if (el) {
+                        const cursor = el.querySelector('.sbm-cursor');
+                        const free = el.querySelector('.sbm-manu-m0-free');
+                        const spec = el.querySelector('.sbm-manu-m0-spec');
+                        const specRows = el.querySelectorAll('.sbm-manu-m0-spec-row');
+                        const pill = el.querySelector('.sbm-manu-m0-pill');
+                        const total = el.querySelector('.sbm-manu-m0-total b');
+                        const specH = spec.scrollHeight;
+                        ScrollTrigger.create({
+                            trigger: el, start: 'top 85%', once: true,
+                            onEnter: () => {
+                                const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.4 });
+                                tl.set(cursor, { x: 80, y: 150, opacity: 0 })
+                                  .set(free, { opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0, marginBottom: 0, overflow: 'hidden' })
+                                  .set(spec, { height: 0, opacity: 0 })
+                                  .set(specRows, { opacity: 0, y: 6 })
+                                  .set(pill, { opacity: 0, scale: 0.6, y: -6 })
+                                  .to(cursor, { opacity: 1, duration: 0.4 })
+                                  .to(cursor, { x: 150, y: 56, duration: 0.9, ease: 'power3.inOut' })
+                                  .to(cursor, { scale: 0.85, duration: 0.1, yoyo: true, repeat: 1 })
+                                  .to(free, { opacity: 1, height: 'auto', paddingTop: 7, paddingBottom: 7, marginBottom: 4, duration: 0.5, ease: 'power2.out' }, '<')
+                                  .to(pill, { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.6)' }, '-=0.2')
+                                  .to(spec, { height: specH, opacity: 1, duration: 0.5, ease: 'power2.out' }, '+=0.15')
+                                  .to(specRows, { opacity: 1, y: 0, duration: 0.4, stagger: 0.1, ease: 'power2.out' }, '-=0.3')
+                                  .fromTo(total, { color: '#34d399' }, { color: '#fff', duration: 0.6 }, '+=0.2')
+                                  .to(cursor, { opacity: 0, y: '+=24', duration: 0.5 }, '<')
+                                  .to([free, spec, pill], { opacity: 0, duration: 0.5 }, '+=2');
+                            }
+                        });
+                    }
+                }
+                {   // m1 · el historial del cliente entra como timeline con count-up por lote
+                    const el = document.querySelector('.sbm-manu-m1');
+                    if (el) {
+                        const fill = el.querySelector('.sbm-manu-m1-fill');
+                        const items = el.querySelectorAll('.sbm-manu-m1-item');
+                        const nodes = el.querySelectorAll('.sbm-manu-m1-node');
+                        const vals = el.querySelectorAll('.sbm-manu-m1-v');
+                        const pill = el.querySelector('.sbm-manu-m1-pill');
+                        ScrollTrigger.create({
+                            trigger: el, start: 'top 85%', once: true,
+                            onEnter: () => {
+                                gsap.set(items, { opacity: 0, x: -12 });
+                                gsap.set(nodes, { scale: 0 });
+                                gsap.set(fill, { scaleY: 0, transformOrigin: 'top' });
+                                gsap.set(pill, { opacity: 0, scale: 0.6, y: 6 });
+                                const tl = gsap.timeline({ delay: 0.3 });
+                                tl.to(fill, { scaleY: 1, duration: 1.1, ease: 'power2.inOut' }, 0)
+                                  .to(items, { opacity: 1, x: 0, duration: 0.5, stagger: 0.22, ease: 'power2.out' }, 0.15)
+                                  .to(nodes, { scale: 1, duration: 0.4, stagger: 0.22, ease: 'back.out(2)' }, 0.2);
+                                vals.forEach((v, i) => {
+                                    const to = parseFloat(v.dataset.to);
+                                    const o = { n: 0 };
+                                    tl.to(o, { n: to, duration: 0.6, ease: 'power2.out', onUpdate: () => { v.textContent = o.n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } }, 0.25 + i * 0.22);
+                                });
+                                tl.to(pill, { opacity: 1, scale: 1, y: 0, duration: 0.45, ease: 'back.out(1.6)' }, '+=0.1');
+                            }
+                        });
+                    }
+                }
+                {   // m2 · sello de evidencia + CFDI que se arma solo (sin recapturar)
+                    const el = document.querySelector('.sbm-manu-m2');
+                    if (el) {
+                        const check = el.querySelector('.sbm-manu-m2-check');
+                        const stampTxt = el.querySelector('.sbm-manu-m2-stamp-txt');
+                        const badge = el.querySelector('.sbm-manu-m2-badge');
+                        const doc = el.querySelector('.sbm-manu-m2-doc');
+                        const files = el.querySelectorAll('.sbm-manu-m2-file');
+                        const pill = el.querySelector('.sbm-manu-m2-pill');
+                        ScrollTrigger.create({
+                            trigger: el, start: 'top 85%', once: true,
+                            onEnter: () => {
+                                const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.6 });
+                                tl.set(check, { scale: 0 })
+                                  .set(stampTxt, { opacity: 0, x: -6 })
+                                  .set(badge, { opacity: 0, scale: 0.5 })
+                                  .set(doc, { opacity: 0, y: 8 })
+                                  .set(files, { opacity: 0, y: 8 })
+                                  .set(pill, { opacity: 0, scale: 0.6, y: -6 })
+                                  .to(check, { scale: 1, duration: 0.55, ease: 'back.out(2)' })
+                                  .to(stampTxt, { opacity: 1, x: 0, duration: 0.4, ease: 'power2.out' }, '-=0.25')
+                                  .to(badge, { opacity: 1, scale: 1, duration: 0.45, ease: 'back.out(1.6)' }, '+=0.3')
+                                  .to(doc, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }, '-=0.1')
+                                  .to(files, { opacity: 1, y: 0, duration: 0.4, stagger: 0.12, ease: 'power2.out' }, '-=0.15')
+                                  .to(pill, { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.6)' }, '-=0.2')
+                                  .to([badge, doc, files, pill], { opacity: 0, duration: 0.5 }, '+=2.2');
+                            }
+                        });
+                    }
+                }
+
+                // ───────── SERVICIOS ─────────
+                {   // m0 · el header de la propuesta se reviste del color de marca; adiós "Powered by Cord"
+                    const el = document.querySelector('.sbm-serv-m0');
+                    if (el) {
+                        const head = el.querySelector('.sbm-serv-doc-head');
+                        const logo = el.querySelector('.sbm-serv-logo');
+                        const badge = el.querySelector('.sbm-serv-foot-badge');
+                        const pill = el.querySelector('.sbm-floating');
+                        gsap.set(pill, { opacity: 0, scale: 0.6, y: -6 });
+                        ScrollTrigger.create({
+                            trigger: el, start: 'top 85%', once: true,
+                            onEnter: () => {
+                                const tl = gsap.timeline({ delay: 0.4 });
+                                tl.to(head, { backgroundColor: 'rgba(59,130,246,0.14)', duration: 0.7, ease: 'power2.out' })
+                                  .to(logo, { background: 'linear-gradient(135deg,#60a5fa,#2563eb)', boxShadow: '0 6px 18px rgba(37,99,235,0.55)', duration: 0.6, ease: 'power2.out' }, '<')
+                                  .to(pill, { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: 'back.out(1.6)' }, '-=0.3')
+                                  .to(badge, { color: '#4ade80', backgroundColor: 'rgba(16,185,129,0.16)', onStart: () => { badge.textContent = 'Tu marca · sin Cord'; }, duration: 0.5, ease: 'power2.out' }, '+=0.2');
+                            }
+                        });
+                    }
+                }
+                {   // m1 · push "abrió tu propuesta" + contador de aperturas + estado que avanza solo
+                    const el = document.querySelector('.sbm-serv-m1');
+                    if (el) {
+                        const push = el.querySelector('.sbm-serv-push');
+                        const count = el.querySelector('.sbm-serv-opencount');
+                        const state = el.querySelector('.sbm-serv-state');
+                        const stepNow = el.querySelector('.sbm-serv-step-now i');
+                        gsap.set(push, { opacity: 0, y: -26, scale: 0.95 });
+                        ScrollTrigger.create({
+                            trigger: el, start: 'top 85%', once: true,
+                            onEnter: () => {
+                                const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.8 });
+                                const obj = { v: 1 };
+                                tl.set(push, { opacity: 0, y: -26, scale: 0.95 })
+                                  .call(() => { count.textContent = '1'; })
+                                  .call(() => { state.textContent = 'Enviada'; })
+                                  .set(state, { color: '#7eb3ff', backgroundColor: 'rgba(59,130,246,0.16)' })
+                                  .to(push, { opacity: 1, y: 0, scale: 1, duration: 0.55, ease: 'back.out(1.5)' }, '+=0.3')
+                                  .to(push, { x: -3, duration: 0.05, yoyo: true, repeat: 3 }, '+=0.15')
+                                  .to(state, { color: '#fbbf24', backgroundColor: 'rgba(251,191,36,0.14)', duration: 0.3, onStart: () => { state.textContent = 'Vista'; } }, '+=0.2')
+                                  .fromTo(stepNow, { boxShadow: '0 0 0 3px #0a192f, 0 0 0 rgba(251,191,36,0)' }, { boxShadow: '0 0 0 3px #0a192f, 0 0 12px rgba(251,191,36,0.8)', duration: 0.4, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<')
+                                  .to(obj, { v: 3, duration: 1, ease: 'power2.out', onUpdate: () => { count.textContent = Math.round(obj.v).toString(); } }, '+=0.3')
+                                  .to(push, { opacity: 0, y: -14, duration: 0.45, ease: 'power2.in' }, '+=2.2');
+                            }
+                        });
+                    }
+                }
+                {   // m2 · el cursor aprueba con un clic → anillo de éxito → anticipo pagado vía Stripe
+                    const el = document.querySelector('.sbm-serv-m2');
+                    if (el) {
+                        const cursor = el.querySelector('.sbm-serv-cursor');
+                        const cta = el.querySelector('.sbm-serv-cta');
+                        const glow = el.querySelector('.sbm-serv-cta-glow');
+                        const success = el.querySelector('.sbm-serv-success');
+                        const ring = el.querySelector('.sbm-serv-ring');
+                        const check = el.querySelector('.sbm-serv-check');
+                        const paid = el.querySelector('.sbm-serv-paid');
+                        gsap.set(paid, { opacity: 0, scale: 0.6, y: 10 });
+                        ScrollTrigger.create({
+                            trigger: el, start: 'top 85%', once: true,
+                            onEnter: () => {
+                                const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.6 });
+                                tl.set(cursor, { opacity: 0, x: 80, y: 70 })
+                                  .set(success, { opacity: 0 })
+                                  .set(check, { scale: 0, rotation: -30 })
+                                  .set(ring, { scale: 0.5, opacity: 0 })
+                                  .set(cta, { opacity: 1, scale: 1 })
+                                  .set(paid, { opacity: 0, scale: 0.6, y: 10 })
+                                  .set(glow, { boxShadow: '0 0 0 0 rgba(52,211,153,0)' })
+                                  .to(cursor, { opacity: 1, duration: 0.4 })
+                                  .to(cursor, { x: 0, y: 0, duration: 1, ease: 'power3.inOut' })
+                                  .to(glow, { boxShadow: '0 0 0 6px rgba(52,211,153,0.25)', duration: 0.4, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<0.3')
+                                  .to(cursor, { scale: 0.82, duration: 0.1, yoyo: true, repeat: 1 })
+                                  .to(cta, { scale: 0.96, duration: 0.1 }, '<')
+                                  .to(cta, { scale: 1, duration: 0.1 })
+                                  .to(cursor, { opacity: 0, duration: 0.3 }, '+=0.1')
+                                  .to(cta, { scale: 0.95, opacity: 0, duration: 0.35, ease: 'power2.in' })
+                                  .to(success, { opacity: 1, duration: 0.25 }, '<0.1')
+                                  .fromTo(ring, { scale: 0.5, opacity: 1 }, { scale: 1.5, opacity: 0, duration: 0.8, ease: 'power2.out' }, '<')
+                                  .fromTo(check, { scale: 0, rotation: -30 }, { scale: 1, rotation: 0, duration: 0.55, ease: 'back.out(2)' }, '<0.1')
+                                  .to(paid, { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: 'back.out(1.6)' }, '+=0.3')
+                                  .to([success, paid], { opacity: 0, duration: 0.5 }, '+=2')
+                                  .to(cta, { opacity: 1, scale: 1, duration: 0.4 }, '<');
+                            }
+                        });
+                    }
+                }
             }
         }
     });

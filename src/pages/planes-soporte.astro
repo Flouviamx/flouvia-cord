@@ -7,22 +7,24 @@ import Nav from '../components/landing/Nav.astro';
 import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
 import Faq from '../components/landing/Faq.astro';
+import { getLangFromUrl } from '../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const isEn = lang === 'en';
 ---
 
 <Layout
-    title="Planes de Soporte | Cord"
-    description="Elige el nivel adecuado de orientación y asistencia técnica con los equipos de soporte de Cord."
+    title={isEn ? "Support Plans | Cord" : "Planes de Soporte | Cord"}
+    description={isEn ? "Choose the right level of guidance and technical assistance with Cord's support teams." : "Elige el nivel adecuado de orientación y asistencia técnica con los equipos de soporte de Cord."}
 >
     <Nav />
     <main class="sp-main">
         <section class="sp-hero">
             <div class="sp-hero-inner">
-                <p class="sp-eyebrow reveal">SOPORTE TÉCNICO Y DE CUENTA</p>
-                <h1 class="sp-title masked-title">Elige el soporte adecuado para tu empresa.</h1>
+                <p class="sp-eyebrow reveal">{isEn ? 'TECHNICAL & ACCOUNT SUPPORT' : 'SOPORTE TÉCNICO Y DE CUENTA'}</p>
+                <h1 class="sp-title masked-title">{isEn ? 'Choose the right support for your business.' : 'Elige el soporte adecuado para tu empresa.'}</h1>
                 <p class="sp-sub reveal">
-                    Todos los clientes de Cord reciben ayuda por correo electrónico y acceso a la documentación técnica. 
-                    Si necesitas tiempos de respuesta garantizados, atención en tiempo real o un gerente de cuenta, 
-                    conoce nuestros planes de soporte avanzado.
+                    {isEn ? 'All Cord clients receive email support and access to technical documentation. If you need guaranteed response times, real-time attention or an account manager, explore our advanced support plans.' : 'Todos los clientes de Cord reciben ayuda por correo electrónico y acceso a la documentación técnica. Si necesitas tiempos de respuesta garantizados, atención en tiempo real o un gerente de cuenta, conoce nuestros planes de soporte avanzado.'}
                 </p>
             </div>
         </section>
@@ -42,20 +44,20 @@ import Faq from '../components/landing/Faq.astro';
                                 <th></th>
                                 <th>
                                     <div class="sp-tier-head">
-                                        <h3>Básico</h3>
-                                        <p>Ayuda asíncrona para dudas generales y facturación.</p>
+                                        <h3>{isEn ? 'Basic' : 'Básico'}</h3>
+                                        <p>{isEn ? 'Asynchronous help for general and billing questions.' : 'Ayuda asíncrona para dudas generales y facturación.'}</p>
                                     </div>
                                 </th>
                                 <th>
                                     <div class="sp-tier-head">
                                         <h3>Premium</h3>
-                                        <p>Prioridad y orientación técnica continua para tu equipo.</p>
+                                        <p>{isEn ? 'Priority and continuous technical guidance for your team.' : 'Prioridad y orientación técnica continua para tu equipo.'}</p>
                                     </div>
                                 </th>
                                 <th>
                                     <div class="sp-tier-head">
                                         <h3>Enterprise</h3>
-                                        <p>Asociación técnica dedicada para arquitecturas complejas.</p>
+                                        <p>{isEn ? 'Dedicated technical partnership for complex architectures.' : 'Asociación técnica dedicada para arquitecturas complejas.'}</p>
                                     </div>
                                 </th>
                             </tr>
@@ -63,34 +65,34 @@ import Faq from '../components/landing/Faq.astro';
                         <tbody>
                             <!-- SECCIÓN: CANALES -->
                             <tr class="sp-row-header">
-                                <td colspan="4">Canales de contacto</td>
+                                <td colspan="4">{isEn ? 'Contact channels' : 'Canales de contacto'}</td>
                             </tr>
                             <tr>
-                                <td>Centro de Ayuda y Documentación</td>
-                                <td><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></td>
-                                <td><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></td>
-                                <td><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></td>
-                            </tr>
-                            <tr>
-                                <td>Soporte por correo electrónico</td>
+                                <td>{isEn ? 'Help Center and Documentation' : 'Centro de Ayuda y Documentación'}</td>
                                 <td><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></td>
                                 <td><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></td>
                                 <td><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></td>
                             </tr>
                             <tr>
-                                <td>Soporte por chat en vivo</td>
+                                <td>{isEn ? 'Email support' : 'Soporte por correo electrónico'}</td>
+                                <td><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></td>
+                                <td><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></td>
+                                <td><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></td>
+                            </tr>
+                            <tr>
+                                <td>{isEn ? 'Live chat support' : 'Soporte por chat en vivo'}</td>
                                 <td><span class="dash">—</span></td>
                                 <td><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></td>
                                 <td><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></td>
                             </tr>
                             <tr>
-                                <td>Canal de Slack o Microsoft Teams</td>
+                                <td>{isEn ? 'Slack or Microsoft Teams channel' : 'Canal de Slack o Microsoft Teams'}</td>
                                 <td><span class="dash">—</span></td>
                                 <td><span class="dash">—</span></td>
                                 <td><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></td>
                             </tr>
                             <tr>
-                                <td>Escalamiento telefónico de emergencias</td>
+                                <td>{isEn ? 'Emergency phone escalation' : 'Escalamiento telefónico de emergencias'}</td>
                                 <td><span class="dash">—</span></td>
                                 <td><span class="dash">—</span></td>
                                 <td><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></td>
@@ -98,51 +100,51 @@ import Faq from '../components/landing/Faq.astro';
 
                             <!-- SECCIÓN: TIEMPOS DE RESPUESTA -->
                             <tr class="sp-row-header">
-                                <td colspan="4">Tiempos de respuesta objetivo (SLA)</td>
+                                <td colspan="4">{isEn ? 'Target response times (SLA)' : 'Tiempos de respuesta objetivo (SLA)'}</td>
                             </tr>
                             <tr>
-                                <td>Consultas generales y facturación</td>
-                                <td>24 - 48 horas</td>
-                                <td>≤ 12 horas</td>
-                                <td>≤ 4 horas</td>
+                                <td>{isEn ? 'General & billing inquiries' : 'Consultas generales y facturación'}</td>
+                                <td>{isEn ? '24 - 48 hours' : '24 - 48 horas'}</td>
+                                <td>{isEn ? '≤ 12 hours' : '≤ 12 horas'}</td>
+                                <td>{isEn ? '≤ 4 hours' : '≤ 4 horas'}</td>
                             </tr>
                             <tr>
-                                <td>Consultas técnicas de integración</td>
-                                <td>24 - 48 horas</td>
-                                <td>≤ 4 horas</td>
-                                <td>≤ 2 horas</td>
+                                <td>{isEn ? 'Technical integration inquiries' : 'Consultas técnicas de integración'}</td>
+                                <td>{isEn ? '24 - 48 hours' : '24 - 48 horas'}</td>
+                                <td>{isEn ? '≤ 4 hours' : '≤ 4 horas'}</td>
+                                <td>{isEn ? '≤ 2 hours' : '≤ 2 horas'}</td>
                             </tr>
                             <tr>
-                                <td>Interrupciones o incidentes críticos</td>
-                                <td>Mejor esfuerzo</td>
-                                <td>≤ 2 horas (Horas hábiles)</td>
+                                <td>{isEn ? 'Outages or critical incidents' : 'Interrupciones o incidentes críticos'}</td>
+                                <td>{isEn ? 'Best effort' : 'Mejor esfuerzo'}</td>
+                                <td>{isEn ? '≤ 2 hours (Business hours)' : '≤ 2 horas (Horas hábiles)'}</td>
                                 <td>≤ 30 min (24/7/365)</td>
                             </tr>
 
                             <!-- SECCIÓN: SERVICIOS AVANZADOS -->
                             <tr class="sp-row-header">
-                                <td colspan="4">Asesoramiento y servicios avanzados</td>
+                                <td colspan="4">{isEn ? 'Advisory and advanced services' : 'Asesoramiento y servicios avanzados'}</td>
                             </tr>
                             <tr>
-                                <td>Enrutamiento prioritario a desarrolladores</td>
+                                <td>{isEn ? 'Priority routing to developers' : 'Enrutamiento prioritario a desarrolladores'}</td>
                                 <td><span class="dash">—</span></td>
                                 <td><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></td>
                                 <td><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></td>
                             </tr>
                             <tr>
-                                <td>Revisión de arquitectura e integración</td>
+                                <td>{isEn ? 'Architecture and integration review' : 'Revisión de arquitectura e integración'}</td>
                                 <td><span class="dash">—</span></td>
-                                <td>Anual</td>
-                                <td>Trimestral</td>
+                                <td>{isEn ? 'Annual' : 'Anual'}</td>
+                                <td>{isEn ? 'Quarterly' : 'Trimestral'}</td>
                             </tr>
                             <tr>
-                                <td>Gerente Técnico de Cuenta (TAM) asignado</td>
+                                <td>{isEn ? 'Designated Technical Account Manager (TAM)' : 'Gerente Técnico de Cuenta (TAM) asignado'}</td>
                                 <td><span class="dash">—</span></td>
                                 <td><span class="dash">—</span></td>
                                 <td><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></td>
                             </tr>
                             <tr>
-                                <td>Soporte en planificación de eventos de alto volumen</td>
+                                <td>{isEn ? 'High-volume event planning support' : 'Soporte en planificación de eventos de alto volumen'}</td>
                                 <td><span class="dash">—</span></td>
                                 <td><span class="dash">—</span></td>
                                 <td><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></td>
@@ -155,10 +157,10 @@ import Faq from '../components/landing/Faq.astro';
                                     <!-- Botón transparente para simetría visual -->
                                 </td>
                                 <td>
-                                    <a href="mailto:ventas@flouvia.com?subject=Interés%20en%20Soporte%20Premium" class="sp-btn ghost">Contactar a ventas</a>
+                                    <a href="mailto:ventas@flouvia.com?subject=Interés%20en%20Soporte%20Premium" class="sp-btn ghost">{isEn ? 'Contact sales' : 'Contactar a ventas'}</a>
                                 </td>
                                 <td>
-                                    <a href="mailto:ventas@flouvia.com?subject=Interés%20en%20Soporte%20Enterprise" class="sp-btn solid">Contactar a ventas</a>
+                                    <a href="mailto:ventas@flouvia.com?subject=Interés%20en%20Soporte%20Enterprise" class="sp-btn solid">{isEn ? 'Contact sales' : 'Contactar a ventas'}</a>
                                 </td>
                             </tr>
                         </tfoot>
@@ -171,14 +173,14 @@ import Faq from '../components/landing/Faq.astro';
             <div class="sp-blocks-inner">
                 <article class="sp-infoblock reveal">
                     <div class="sp-infoblock-content">
-                        <h3>Soporte prioritario e interacciones contextuales</h3>
-                        <p>Las empresas que adquieren un plan Premium o Enterprise obtienen enrutamiento directo a especialistas que conocen a fondo su modelo de integración, historial de cuenta y entorno tecnológico. Resolvemos problemas complejos en una fracción del tiempo normal, evitando la repetición de explicaciones básicas.</p>
+                        <h3>{isEn ? 'Priority support and contextual interactions' : 'Soporte prioritario e interacciones contextuales'}</h3>
+                        <p>{isEn ? 'Companies that purchase a Premium or Enterprise plan get direct routing to specialists who deeply understand their integration model, account history, and technology stack. We solve complex problems in a fraction of the normal time, avoiding the repetition of basic explanations.' : 'Las empresas que adquieren un plan Premium o Enterprise obtienen enrutamiento directo a especialistas que conocen a fondo su modelo de integración, historial de cuenta y entorno tecnológico. Resolvemos problemas complejos en una fracción del tiempo normal, evitando la repetición de explicaciones básicas.'}</p>
                     </div>
                 </article>
                 <article class="sp-infoblock reveal">
                     <div class="sp-infoblock-content">
-                        <h3>Asociación técnica continua (Enterprise)</h3>
-                        <p>No se trata solo de arreglar problemas, sino de prevenirlos. Con un Gerente Técnico de Cuenta (TAM) dedicado en el plan Enterprise, analizamos tus cuellos de botella de red, preparamos tu integración para picos de venta masivos (como Hot Sale o Buen Fin) y realizamos revisiones conjuntas de tu arquitectura de pagos.</p>
+                        <h3>{isEn ? 'Continuous technical partnership (Enterprise)' : 'Asociación técnica continua (Enterprise)'}</h3>
+                        <p>{isEn ? 'It is not just about fixing problems, but preventing them. With a dedicated Technical Account Manager (TAM) on the Enterprise plan, we analyze your network bottlenecks, prepare your integration for massive sales peaks, and conduct joint reviews of your payment architecture.' : 'No se trata solo de arreglar problemas, sino de prevenirlos. Con un Gerente Técnico de Cuenta (TAM) dedicado en el plan Enterprise, analizamos tus cuellos de botella de red, preparamos tu integración para picos de venta masivos (como Hot Sale o Buen Fin) y realizamos revisiones conjuntas de tu arquitectura de pagos.'}</p>
                     </div>
                 </article>
             </div>
@@ -191,8 +193,8 @@ import Faq from '../components/landing/Faq.astro';
     </main>
 
     <Footer 
-        ctaTitle="Obtén el nivel de ayuda que necesitas."
-        ctaSub="Desde integraciones iniciales hasta operaciones de alto rendimiento a escala."
+        ctaTitle={isEn ? "Get the level of help you need." : "Obtén el nivel de ayuda que necesitas."}
+        ctaSub={isEn ? "From initial integrations to high-performance operations at scale." : "Desde integraciones iniciales hasta operaciones de alto rendimiento a escala."}
     />
     <PageAnims />
 </Layout>

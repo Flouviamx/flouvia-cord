@@ -1,4 +1,8 @@
 ---
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 // Hero — estilo Stripe/Linear: gradient mesh sutil, mucho aire, tipografía grande,
 // mockup grande con glow. Manteniendo navy/Inter/serif-italic de Flouvia.
 ---
@@ -12,41 +16,37 @@
     <div class="hero-inner">
         <!-- Badge superior ultra-clean estilo Linear/Vercel -->
         <a href="#como" class="hero-badge reveal" aria-label="Ver novedades">
-            <span class="badge-tag">Nuevo</span>
-            <span class="badge-text">Flujo B2B end-to-end</span>
+            <span class="badge-tag">{t("hero.badge.tag")}</span>
+            <span class="badge-text">{t("hero.badge.text")}</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </a>
 
         <h1 class="hero-title">
-            La infraestructura B2B<br />
-            que tu equipo de ventas<br />
-            estaba esperando.
+            {t("hero.title")}
         </h1>
 
         <p class="hero-desc reveal">
-            Cord conecta tu catálogo, clientes y facturación en un solo lugar.
-            Cotizaciones con precios negociados, aprobación en un clic y CFDI 4.0
-            automático. Sin Excel, sin PDF perdidos, sin recaptura.
+            {t("hero.desc")}
         </p>
 
         <div class="hero-actions reveal">
-            <a href="/registro" class="btn-luxe">
-                <span>Empezar gratis</span>
+            <a href={l("/registro")} class="btn-luxe">
+                <span>{t("hero.btn.start")}</span>
                 <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                 <div class="btn-shimmer"></div>
             </a>
             <a href="#como" class="btn-ghost">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                <span>Ver demo en 2 min</span>
+                <span>{t("hero.btn.demo")}</span>
             </a>
         </div>
 
         <div class="hero-points reveal" aria-hidden="false">
-            <span class="hp-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Aprobación en un clic</span>
+            <span class="hp-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>{t("hero.point.1")}</span>
             <span class="hp-sep"></span>
-            <span class="hp-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>CFDI 4.0 automatizado</span>
+            <span class="hp-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>{t("hero.point.2")}</span>
             <span class="hp-sep"></span>
-            <span class="hp-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Gratis para empezar</span>
+            <span class="hp-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>{t("hero.point.3")}</span>
         </div>
     </div>
 
@@ -54,11 +54,11 @@
     <div class="mockup-wrap reveal-mockup" id="heroDemo">
         <!-- Control de pasos: el visitante recorre el flujo de una cotización -->
         <div class="demo-steps" id="demoSteps" role="tablist" aria-label="Recorre el flujo de una cotización">
-            <button class="demo-step is-active" data-step="0" role="tab" aria-selected="true"><span class="ds-n">1</span><span class="ds-label">Creas</span><span class="ds-fill" aria-hidden="true"></span></button>
-            <button class="demo-step" data-step="1" role="tab" aria-selected="false"><span class="ds-n">2</span><span class="ds-label">Envías</span><span class="ds-fill" aria-hidden="true"></span></button>
-            <button class="demo-step" data-step="2" role="tab" aria-selected="false"><span class="ds-n">3</span><span class="ds-label">La ven</span><span class="ds-fill" aria-hidden="true"></span></button>
-            <button class="demo-step" data-step="3" role="tab" aria-selected="false"><span class="ds-n">4</span><span class="ds-label">Aprueban</span><span class="ds-fill" aria-hidden="true"></span></button>
-            <button class="demo-step" data-step="4" role="tab" aria-selected="false"><span class="ds-n">5</span><span class="ds-label">Facturas</span><span class="ds-fill" aria-hidden="true"></span></button>
+            <button class="demo-step is-active" data-step="0" role="tab" aria-selected="true"><span class="ds-n">1</span><span class="ds-label">{t("demo.step.1")}</span><span class="ds-fill" aria-hidden="true"></span></button>
+            <button class="demo-step" data-step="1" role="tab" aria-selected="false"><span class="ds-n">2</span><span class="ds-label">{t("demo.step.2")}</span><span class="ds-fill" aria-hidden="true"></span></button>
+            <button class="demo-step" data-step="2" role="tab" aria-selected="false"><span class="ds-n">3</span><span class="ds-label">{t("demo.step.3")}</span><span class="ds-fill" aria-hidden="true"></span></button>
+            <button class="demo-step" data-step="3" role="tab" aria-selected="false"><span class="ds-n">4</span><span class="ds-label">{t("demo.step.4")}</span><span class="ds-fill" aria-hidden="true"></span></button>
+            <button class="demo-step" data-step="4" role="tab" aria-selected="false"><span class="ds-n">5</span><span class="ds-label">{t("demo.step.5")}</span><span class="ds-fill" aria-hidden="true"></span></button>
         </div>
 
         <div class="mockup-glow" aria-hidden="true"></div>
@@ -72,11 +72,11 @@
                 <aside class="mk-side">
                     <div class="mk-brand"><img src="/imgs/logo-cord-white.png" alt="Cord" /></div>
                     <nav class="mk-nav">
-                        <span class="mk-navitem">Dashboard</span>
-                        <span class="mk-navitem active">Cotizaciones</span>
-                        <span class="mk-navitem">Clientes</span>
-                        <span class="mk-navitem">Productos</span>
-                        <span class="mk-navitem">Ajustes</span>
+                        <span class="mk-navitem">{t("mk.nav.1")}</span>
+                        <span class="mk-navitem active">{t("mk.nav.2")}</span>
+                        <span class="mk-navitem">{t("mk.nav.3")}</span>
+                        <span class="mk-navitem">{t("mk.nav.4")}</span>
+                        <span class="mk-navitem">{t("mk.nav.5")}</span>
                     </nav>
                 </aside>
 
@@ -86,48 +86,48 @@
                             <div class="mk-folio">COT-0148</div>
                             <div class="mk-client">Distribuidora El Zarco · Net 30</div>
                         </div>
-                        <span class="mk-badge mk-badge-ok" id="mkStatus">● Aprobada</span>
+                        <span class="mk-badge mk-badge-ok" id="mkStatus">{t("mk.status")}</span>
                     </div>
 
                     <div class="mk-table">
-                        <div class="mk-row mk-row-head"><span>Producto</span><span>Cant.</span><span>Negociado</span><span>Importe</span></div>
-                        <div class="mk-row"><span class="mk-prod">Cemento gris 50kg</span><span>120</span><span class="editorial mk-num">$182.00</span><span class="editorial mk-num">$21,840.00</span></div>
-                        <div class="mk-row"><span class="mk-prod">Varilla 3/8" × 12m</span><span>340</span><span class="editorial mk-num">$168.50</span><span class="editorial mk-num">$57,290.00</span></div>
-                        <div class="mk-row"><span class="mk-prod">Block hueco 15×20×40</span><span>2,400</span><span class="editorial mk-num">$14.20</span><span class="editorial mk-num">$34,080.00</span></div>
-                        <div class="mk-row mk-row-muted"><span class="mk-prod">Malla electrosoldada</span><span>180</span><span class="editorial mk-num">$312.00</span><span class="editorial mk-num">$56,160.00</span></div>
+                        <div class="mk-row mk-row-head"><span>{t("mk.row.head.1")}</span><span>{t("mk.row.head.2")}</span><span>{t("mk.row.head.3")}</span><span>{t("mk.row.head.4")}</span></div>
+                        <div class="mk-row"><span class="mk-prod">{t("mk.prod.1")}</span><span>120</span><span class="editorial mk-num">$182.00</span><span class="editorial mk-num">$21,840.00</span></div>
+                        <div class="mk-row"><span class="mk-prod">{t("mk.prod.2")}</span><span>340</span><span class="editorial mk-num">$168.50</span><span class="editorial mk-num">$57,290.00</span></div>
+                        <div class="mk-row"><span class="mk-prod">{t("mk.prod.3")}</span><span>2,400</span><span class="editorial mk-num">$14.20</span><span class="editorial mk-num">$34,080.00</span></div>
+                        <div class="mk-row mk-row-muted"><span class="mk-prod">{t("mk.prod.4")}</span><span>180</span><span class="editorial mk-num">$312.00</span><span class="editorial mk-num">$56,160.00</span></div>
                     </div>
 
                     <div class="mk-total">
-                        <div class="mk-total-line"><span>Subtotal</span><span class="editorial">$169,370.00</span></div>
-                        <div class="mk-total-line"><span>IVA 16%</span><span class="editorial">$27,099.20</span></div>
-                        <div class="mk-total-line mk-total-grand"><span>Total</span><span class="editorial mk-grand" data-countup="196469.20" data-decimals="2">$196,469.20</span></div>
+                        <div class="mk-total-line"><span>{t("mk.tot.1")}</span><span class="editorial">$169,370.00</span></div>
+                        <div class="mk-total-line"><span>{t("mk.tot.2")}</span><span class="editorial">$27,099.20</span></div>
+                        <div class="mk-total-line mk-total-grand"><span>{t("mk.tot.3")}</span><span class="editorial mk-grand" data-countup="196469.20" data-decimals="2">$196,469.20</span></div>
                     </div>
                 </main>
 
                 <aside class="mk-timeline">
-                    <div class="mk-tl-title">Actividad</div>
-                    <div class="mk-tl-item" data-story="approved"><span class="mk-tl-dot dot-green"></span><div><div class="mk-tl-text"><b>Cotización aprobada</b></div><div class="mk-tl-time">hace un momento</div></div></div>
-                    <div class="mk-tl-item" data-story="viewed"><span class="mk-tl-dot dot-green"></span><div><div class="mk-tl-text"><b>Tu cliente la vio</b></div><div class="mk-tl-time">hace 3 min</div></div></div>
-                    <div class="mk-tl-item" data-story="sent"><span class="mk-tl-dot dot-blue"></span><div><div class="mk-tl-text">Cotización enviada</div><div class="mk-tl-time">hoy, 11:02</div></div></div>
-                    <div class="mk-tl-item" data-story="created"><span class="mk-tl-dot dot-grey"></span><div><div class="mk-tl-text">Borrador creado</div><div class="mk-tl-time">hoy, 10:41</div></div></div>
+                    <div class="mk-tl-title">{t("mk.tl.title")}</div>
+                    <div class="mk-tl-item" data-story="approved"><span class="mk-tl-dot dot-green"></span><div><div class="mk-tl-text"><b>{t("mk.tl.1.t")}</b></div><div class="mk-tl-time">{t("mk.tl.1.d")}</div></div></div>
+                    <div class="mk-tl-item" data-story="viewed"><span class="mk-tl-dot dot-green"></span><div><div class="mk-tl-text"><b>{t("mk.tl.2.t")}</b></div><div class="mk-tl-time">{t("mk.tl.2.d")}</div></div></div>
+                    <div class="mk-tl-item" data-story="sent"><span class="mk-tl-dot dot-blue"></span><div><div class="mk-tl-text">{t("mk.tl.3.t")}</div><div class="mk-tl-time">{t("mk.tl.3.d")}</div></div></div>
+                    <div class="mk-tl-item" data-story="created"><span class="mk-tl-dot dot-grey"></span><div><div class="mk-tl-text">{t("mk.tl.4.t")}</div><div class="mk-tl-time">{t("mk.tl.4.d")}</div></div></div>
                 </aside>
             </div>
         </div>
 
         <div class="mk-toast" id="mkToast">
             <span class="mk-toast-dot"></span>
-            <span><b>El Zarco</b> abrió tu cotización</span>
+            <span><b>{t("mk.toast.b")}</b> abrió tu cotización</span>
         </div>
 
         <div class="mk-chip" id="mkChip">
             <span class="mk-chip-check">✓</span>
-            <span>CFDI 4.0 timbrado · SAT</span>
+            <span>{t("mk.chip")}</span>
         </div>
     </div>
 
     <!-- Trust strip -->
     <div class="hero-trust reveal">
-        <span class="trust-label">CONSTRUIDO SOBRE LA INGENIERÍA DE</span>
+        <span class="trust-label">{t("trust.label")}</span>
         <div class="trust-logos">
             <span class="trust-logo">Flouvia</span>
             <span class="trust-sep"></span>
@@ -138,7 +138,7 @@
             <span class="trust-logo">Stripe</span>
         </div>
         <p class="trust-usecase">
-            Usado por distribuidores en <b>La Central de Abastos CDMX</b>
+            Usado por distribuidores en <b>{t("trust.usecase.2")}</b>
             <span class="tu-sep">·</span> <b>−67%</b> tiempo de procesamiento
             <span class="tu-sep">·</span> <b>+25%</b> ticket promedio
             <span class="tu-sep">·</span> <b>100%</b> automatización de órdenes

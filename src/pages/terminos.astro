@@ -3,11 +3,16 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/landing/Nav.astro';
 import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
 
 export const prerender = true;
+
+const lang = getLangFromUrl(Astro.url);
+const isEn = lang === 'en';
+const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 ---
 
-<Layout title="Términos y Condiciones | CORD by Flouvia">
+<Layout title={isEn ? "Terms and Conditions | CORD by Flouvia" : "Términos y Condiciones | CORD by Flouvia"}>
   <Nav />
   
   <PageAnims />
@@ -15,10 +20,10 @@ export const prerender = true;
   <main class="legal-page js-anim">
     <div class="legal-header">
       <h1 class="editorial masked-title">
-        Términos y<br>Condiciones
+        {isEn ? <Fragment>Terms and<br>Conditions</Fragment> : <Fragment>Términos y<br>Condiciones</Fragment>}
       </h1>
       <div class="reveal">
-        <p class="last-updated">Última actualización: 15 de Junio de 2026</p>
+        <p class="last-updated">{isEn ? 'Last updated: June 15, 2026' : 'Última actualización: 15 de Junio de 2026'}</p>
       </div>
     </div>
 
@@ -27,25 +32,25 @@ export const prerender = true;
       
       <!-- Índice Sticky (Izquierda) -->
       <aside class="toc-sidebar">
-        <span class="toc-eyebrow">CONTENIDO</span>
+        <span class="toc-eyebrow">{isEn ? 'CONTENTS' : 'CONTENIDO'}</span>
         <ul class="toc-list">
-          <li><a href="#descripcion" class="toc-link active">1. El Software</a></li>
-          <li><a href="#pi" class="toc-link">2. Propiedad Int. y Feedback</a></li>
-          <li><a href="#facturacion" class="toc-link">3. Planes y Excedentes</a></li>
-          <li><a href="#pagos-autorizacion" class="toc-link">4. Autorización de Débito</a></li>
-          <li><a href="#prohibidas" class="toc-link">5. Actividades Prohibidas</a></li>
-          <li><a href="#fairuse" class="toc-link">6. Uso Justo (Fair Use)</a></li>
-          <li><a href="#terceros" class="toc-link">7. Apps de Terceros</a></li>
-          <li><a href="#fiscal" class="toc-link">8. Responsabilidad Fiscal</a></li>
-          <li><a href="#confidencialidad" class="toc-link">9. Confidencialidad</a></li>
-          <li><a href="#indemnizacion" class="toc-link">10. Indemnización</a></li>
-          <li><a href="#sla" class="toc-link">11. SLA y Fuerza Mayor</a></li>
-          <li><a href="#limite" class="toc-link">12. Límite de Responsabilidad</a></li>
-          <li><a href="#api" class="toc-link">13. API Pública</a></li>
-          <li><a href="#marca" class="toc-link">14. Uso de Marca</a></li>
-          <li><a href="#reembolsos" class="toc-link">15. Cancelaciones</a></li>
-          <li><a href="#ley" class="toc-link">16. Ley Aplicable</a></li>
-          <li><a href="#cambios" class="toc-link">17. Cambios a los Términos</a></li>
+          <li><a href="#descripcion" class="toc-link active">{isEn ? '1. The Software' : '1. El Software'}</a></li>
+          <li><a href="#pi" class="toc-link">{isEn ? '2. IP and Feedback' : '2. Propiedad Int. y Feedback'}</a></li>
+          <li><a href="#facturacion" class="toc-link">{isEn ? '3. Plans and Overages' : '3. Planes y Excedentes'}</a></li>
+          <li><a href="#pagos-autorizacion" class="toc-link">{isEn ? '4. Debit Authorization' : '4. Autorización de Débito'}</a></li>
+          <li><a href="#prohibidas" class="toc-link">{isEn ? '5. Prohibited Activities' : '5. Actividades Prohibidas'}</a></li>
+          <li><a href="#fairuse" class="toc-link">{isEn ? '6. Fair Use Policy' : '6. Uso Justo (Fair Use)'}</a></li>
+          <li><a href="#terceros" class="toc-link">{isEn ? '7. Third-Party Apps' : '7. Apps de Terceros'}</a></li>
+          <li><a href="#fiscal" class="toc-link">{isEn ? '8. Tax Responsibility' : '8. Responsabilidad Fiscal'}</a></li>
+          <li><a href="#confidencialidad" class="toc-link">{isEn ? '9. Confidentiality' : '9. Confidencialidad'}</a></li>
+          <li><a href="#indemnizacion" class="toc-link">{isEn ? '10. Indemnification' : '10. Indemnización'}</a></li>
+          <li><a href="#sla" class="toc-link">{isEn ? '11. SLA and Force Majeure' : '11. SLA y Fuerza Mayor'}</a></li>
+          <li><a href="#limite" class="toc-link">{isEn ? '12. Limitation of Liability' : '12. Límite de Responsabilidad'}</a></li>
+          <li><a href="#api" class="toc-link">{isEn ? '13. Public API' : '13. API Pública'}</a></li>
+          <li><a href="#marca" class="toc-link">{isEn ? '14. Brand Usage' : '14. Uso de Marca'}</a></li>
+          <li><a href="#reembolsos" class="toc-link">{isEn ? '15. Cancellations' : '15. Cancelaciones'}</a></li>
+          <li><a href="#ley" class="toc-link">{isEn ? '16. Applicable Law' : '16. Ley Aplicable'}</a></li>
+          <li><a href="#cambios" class="toc-link">{isEn ? '17. Changes to Terms' : '17. Cambios a los Términos'}</a></li>
         </ul>
       </aside>
 
@@ -54,78 +59,78 @@ export const prerender = true;
         
         <!-- Caja gris de introducción -->
         <div class="intro-box">
-          <p>Bienvenido a CORD (<a href="https://cord.flouvia.com">cord.flouvia.com</a>). Al crear una cuenta o utilizar nuestra plataforma de software como servicio (SaaS), usted y la entidad legal a la que representa aceptan estar legalmente vinculados por los siguientes Términos y Condiciones, operados por <strong>Andre Valle Ortega</strong> (en adelante "Flouvia", "nosotros" o "CORD").</p>
+          {isEn ? <p>Welcome to CORD (<a href="https://cord.flouvia.com">cord.flouvia.com</a>). By creating an account or using our software as a service (SaaS) platform, you and the legal entity you represent agree to be legally bound by the following Terms and Conditions, operated by <strong>Andre Valle Ortega</strong> (hereinafter "Flouvia", "we", or "CORD").</p> : <p>Bienvenido a CORD (<a href="https://cord.flouvia.com">cord.flouvia.com</a>). Al crear una cuenta o utilizar nuestra plataforma de software como servicio (SaaS), usted y la entidad legal a la que representa aceptan estar legalmente vinculados por los siguientes Términos y Condiciones, operados por <strong>Andre Valle Ortega</strong> (en adelante "Flouvia", "nosotros" o "CORD").</p>}
         </div>
 
-        <p>Si no está de acuerdo con estos términos, no debe utilizar nuestros servicios ni acceder a nuestras APIs.</p>
+        {isEn ? <p>If you do not agree with these terms, you must not use our services or access our APIs.</p> : <p>Si no está de acuerdo con estos términos, no debe utilizar nuestros servicios ni acceder a nuestras APIs.</p>}
 
-        <h2 id="descripcion" class="editorial"><span class="num">01</span> Descripción del Software</h2>
-        <p>CORD es una infraestructura tecnológica B2B diseñada para la generación de cotizaciones, gestión de cobranza y emisión de comprobantes fiscales digitales (CFDI 4.0). Flouvia provee la herramienta en la nube, pero el Usuario es el único responsable de la veracidad de los datos introducidos, los montos cotizados y las facturas emitidas.</p>
+        <h2 id="descripcion" class="editorial"><span class="num">01</span> {isEn ? 'Software Description' : 'Descripción del Software'}</h2>
+        {isEn ? <p>CORD is a B2B technological infrastructure designed for quote generation, collection management, and issuance of digital tax receipts (CFDI 4.0). Flouvia provides the cloud tool, but the User is solely responsible for the accuracy of the data entered, the amounts quoted, and the invoices issued.</p> : <p>CORD es una infraestructura tecnológica B2B diseñada para la generación de cotizaciones, gestión de cobranza y emisión de comprobantes fiscales digitales (CFDI 4.0). Flouvia provee la herramienta en la nube, pero el Usuario es el único responsable de la veracidad de los datos introducidos, los montos cotizados y las facturas emitidas.</p>}
 
-        <h2 id="pi" class="editorial"><span class="num">02</span> Propiedad Intelectual y Feedback</h2>
-        <p>Flouvia le otorga una licencia limitada, no exclusiva e intransferible para usar el software CORD. Todo el código, diseño, la interfaz (UI/UX) y los algoritmos nos pertenecen. Sin embargo, <strong>usted conserva el 100% de la propiedad intelectual sobre sus catálogos, listas de precios, logotipos y la información de sus clientes.</strong> No reclamamos ningún derecho sobre su información comercial.</p>
-        <p><strong>Feedback:</strong> Si usted nos proporciona sugerencias, comentarios o ideas para mejorar la plataforma ("Feedback"), nos otorga una licencia mundial, perpetua, irrevocable y libre de regalías para implementar, modificar y explotar dichas mejoras sin obligación de compensación o reconocimiento alguno.</p>
+        <h2 id="pi" class="editorial"><span class="num">02</span> {isEn ? 'Intellectual Property and Feedback' : 'Propiedad Intelectual y Feedback'}</h2>
+        {isEn ? <p>Flouvia grants you a limited, non-exclusive, non-transferable license to use the CORD software. All code, design, interface (UI/UX), and algorithms belong to us. However, <strong>you retain 100% intellectual property over your catalogs, price lists, logos, and client information.</strong> We claim no rights over your business information.</p> : <p>Flouvia le otorga una licencia limitada, no exclusiva e intransferible para usar el software CORD. Todo el código, diseño, la interfaz (UI/UX) y los algoritmos nos pertenecen. Sin embargo, <strong>usted conserva el 100% de la propiedad intelectual sobre sus catálogos, listas de precios, logotipos y la información de sus clientes.</strong> No reclamamos ningún derecho sobre su información comercial.</p>}
+        {isEn ? <p><strong>Feedback:</strong> If you provide us with suggestions, comments, or ideas to improve the platform ("Feedback"), you grant us a worldwide, perpetual, irrevocable, and royalty-free license to implement, modify, and exploit such improvements without obligation of compensation or recognition.</p> : <p><strong>Feedback:</strong> Si usted nos proporciona sugerencias, comentarios o ideas para mejorar la plataforma ("Feedback"), nos otorga una licencia mundial, perpetua, irrevocable y libre de regalías para implementar, modificar y explotar dichas mejoras sin obligación de compensación o reconocimiento alguno.</p>}
 
-        <h2 id="facturacion" class="editorial"><span class="num">03</span> Planes de Facturación y Excedentes</h2>
-        <p>El acceso a CORD se rige por un esquema de suscripción gestionado de forma automatizada:</p>
+        <h2 id="facturacion" class="editorial"><span class="num">03</span> {isEn ? 'Billing Plans and Overages' : 'Planes de Facturación y Excedentes'}</h2>
+        {isEn ? <p>Access to CORD is governed by an automated subscription scheme:</p> : <p>El acceso a CORD se rige por un esquema de suscripción gestionado de forma automatizada:</p>}
         <ul>
-          <li><strong>Límites del Plan:</strong> Cada suscripción incluye una cuota mensual base de usos de Inteligencia Artificial, Timbres CFDI, Llamadas a la API y asientos de Usuarios.</li>
-          <li><strong>Facturación por Uso Medido (Metered Billing):</strong> Para no interrumpir sus operaciones, CORD <strong>no bloqueará</strong> su servicio si usted supera los límites de su plan. El sistema registrará los consumos adicionales y estos se facturarán automáticamente al cierre de su ciclo mensual mediante <em>Stripe</em>, a las tarifas unitarias vigentes en nuestra <a href="/precios">página de precios</a>.</li>
+          <li>{isEn ? <Fragment><strong>Plan Limits:</strong> Each subscription includes a base monthly quota of AI uses, CFDI stamps, API calls, and User seats.</Fragment> : <Fragment><strong>Límites del Plan:</strong> Cada suscripción incluye una cuota mensual base de usos de Inteligencia Artificial, Timbres CFDI, Llamadas a la API y asientos de Usuarios.</Fragment>}</li>
+          <li>{isEn ? <Fragment><strong>Metered Billing:</strong> To avoid interrupting your operations, CORD <strong>will not block</strong> your service if you exceed your plan limits. The system will record the additional consumption, which will be automatically billed at the end of your monthly cycle via <em>Stripe</em> at the unit rates listed on our <a href={l("/precios")}>pricing page</a>.</Fragment> : <Fragment><strong>Facturación por Uso Medido (Metered Billing):</strong> Para no interrumpir sus operaciones, CORD <strong>no bloqueará</strong> su servicio si usted supera los límites de su plan. El sistema registrará los consumos adicionales y estos se facturarán automáticamente al cierre de su ciclo mensual mediante <em>Stripe</em>, a las tarifas unitarias vigentes en nuestra <a href="/precios">página de precios</a>.</Fragment>}</li>
         </ul>
 
-        <h2 id="pagos-autorizacion" class="editorial"><span class="num">04</span> Condiciones de Pago y Autorización de Débito</h2>
-        <p>Para utilizar nuestros planes de pago, usted debe proporcionar un método de pago válido. Al hacerlo, <strong>usted nos autoriza expresamente a nosotros y a nuestro procesador de pagos exclusivo (Stripe, Inc.)</strong> a realizar cargos automáticos y recurrentes en su tarjeta o cuenta bancaria por el monto de su suscripción y cualquier excedente generado.</p>
-        <p>Asimismo, al procesar pagos a través de CORD, usted acepta estar sujeto al <a href="https://stripe.com/mx/legal/ssa" target="_blank" rel="noopener noreferrer">Acuerdo de Servicios de Stripe (Stripe Services Agreement)</a>. En caso de que el cobro automático falle, nos reservamos el derecho de suspender temporalmente el acceso a su cuenta hasta que se regularice el pago.</p>
+        <h2 id="pagos-autorizacion" class="editorial"><span class="num">04</span> {isEn ? 'Payment Terms and Debit Authorization' : 'Condiciones de Pago y Autorización de Débito'}</h2>
+        {isEn ? <p>To use our paid plans, you must provide a valid payment method. By doing so, <strong>you expressly authorize us and our exclusive payment processor (Stripe, Inc.)</strong> to make automatic and recurring charges to your card or bank account for your subscription amount and any generated overages.</p> : <p>Para utilizar nuestros planes de pago, usted debe proporcionar un método de pago válido. Al hacerlo, <strong>usted nos autoriza expresamente a nosotros y a nuestro procesador de pagos exclusivo (Stripe, Inc.)</strong> a realizar cargos automáticos y recurrentes en su tarjeta o cuenta bancaria por el monto de su suscripción y cualquier excedente generado.</p>}
+        {isEn ? <p>Additionally, by processing payments through CORD, you agree to be bound by the <a href="https://stripe.com/mx/legal/ssa" target="_blank" rel="noopener noreferrer">Stripe Services Agreement</a>. If automatic billing fails, we reserve the right to temporarily suspend access to your account until payment is regularized.</p> : <p>Asimismo, al procesar pagos a través de CORD, usted acepta estar sujeto al <a href="https://stripe.com/mx/legal/ssa" target="_blank" rel="noopener noreferrer">Acuerdo de Servicios de Stripe (Stripe Services Agreement)</a>. En caso de que el cobro automático falle, nos reservamos el derecho de suspender temporalmente el acceso a su cuenta hasta que se regularice el pago.</p>}
 
-        <h2 id="prohibidas" class="editorial"><span class="num">05</span> Actividades Prohibidas y Restringidas</h2>
-        <p>CORD es una plataforma para el comercio lícito. Como infraestructura que interactúa con el SAT para la emisión de CFDI, está <strong>terminantemente prohibido</strong> utilizar nuestro software para:</p>
+        <h2 id="prohibidas" class="editorial"><span class="num">05</span> {isEn ? 'Prohibited and Restricted Activities' : 'Actividades Prohibidas y Restringidas'}</h2>
+        {isEn ? <p>CORD is a platform for lawful commerce. As an infrastructure that interacts with the SAT for issuing CFDI, it is <strong>strictly prohibited</strong> to use our software for:</p> : <p>CORD es una plataforma para el comercio lícito. Como infraestructura que interactúa con el SAT para la emisión de CFDI, está <strong>terminantemente prohibido</strong> utilizar nuestro software para:</p>}
         <ul>
-          <li>La simulación de operaciones, evasión fiscal o emisión de facturas que amparen operaciones inexistentes (empresas clasificadas como EFOS/EDOS por las autoridades fiscales).</li>
-          <li>Lavado de dinero, financiamiento al terrorismo o cualquier actividad que viole las leyes federales o internacionales aplicables.</li>
-          <li>La comercialización de bienes o servicios ilegales, regulados sin autorización o prohibidos bajo la Política de Uso Aceptable de Stripe.</li>
+          <li>{isEn ? 'Simulating operations, tax evasion, or issuing invoices covering non-existent operations (companies classified as EFOS/EDOS by tax authorities).' : 'La simulación de operaciones, evasión fiscal o emisión de facturas que amparen operaciones inexistentes (empresas clasificadas como EFOS/EDOS por las autoridades fiscales).'}</li>
+          <li>{isEn ? 'Money laundering, terrorist financing, or any activity that violates applicable federal or international laws.' : 'Lavado de dinero, financiamiento al terrorismo o cualquier actividad que viole las leyes federales o internacionales aplicables.'}</li>
+          <li>{isEn ? 'Selling illegal, unauthorized regulated goods or services, or those prohibited under Stripe\'s Acceptable Use Policy.' : 'La comercialización de bienes o servicios ilegales, regulados sin autorización o prohibidos bajo la Política de Uso Aceptable de Stripe.'}</li>
         </ul>
-        <p>Nos reservamos el derecho de suspender o cancelar permanentemente, sin previo aviso ni derecho a reembolso, cualquier cuenta que sospechemos está incurriendo en estas prácticas, y reportaremos dichas actividades a las autoridades competentes y a nuestros socios financieros.</p>
+        {isEn ? <p>We reserve the right to suspend or permanently cancel, without prior notice or right to refund, any account we suspect is engaging in these practices, and we will report such activities to the competent authorities and our financial partners.</p> : <p>Nos reservamos el derecho de suspender o cancelar permanentemente, sin previo aviso ni derecho a reembolso, cualquier cuenta que sospechemos está incurriendo en estas prácticas, y reportaremos dichas actividades a las autoridades competentes y a nuestros socios financieros.</p>}
 
-        <h2 id="fairuse" class="editorial"><span class="num">06</span> Política de Uso Justo (Fair Use)</h2>
-        <p>Para proteger la estabilidad de la infraestructura compartida, las características comercializadas como "Ilimitadas" están sujetas a una Política de Uso Justo. Nos reservamos el derecho de auditar cuentas que presenten un consumo abusivo o anómalo (ej. uso de bots para saturar la API de Anthropic). En caso de detectar abuso, limitaremos temporalmente las peticiones (Rate Limiting) y contactaremos al Usuario para migrarlo a infraestructura dedicada.</p>
+        <h2 id="fairuse" class="editorial"><span class="num">06</span> {isEn ? 'Fair Use Policy' : 'Política de Uso Justo (Fair Use)'}</h2>
+        {isEn ? <p>To protect the stability of the shared infrastructure, features marketed as "Unlimited" are subject to a Fair Use Policy. We reserve the right to audit accounts showing abusive or anomalous consumption (e.g. using bots to saturate the Anthropic API). If abuse is detected, we will temporarily limit requests (Rate Limiting) and contact the User to migrate them to dedicated infrastructure.</p> : <p>Para proteger la estabilidad de la infraestructura compartida, las características comercializadas como "Ilimitadas" están sujetas a una Política de Uso Justo. Nos reservamos el derecho de auditar cuentas que presenten un consumo abusivo o anómalo (ej. uso de bots para saturar la API de Anthropic). En caso de detectar abuso, limitaremos temporalmente las peticiones (Rate Limiting) y contactaremos al Usuario para migrarlo a infraestructura dedicada.</p>}
 
-        <h2 id="terceros" class="editorial"><span class="num">07</span> Aplicaciones e Integraciones de Terceros</h2>
-        <p>El Servicio puede interactuar con productos, servicios o aplicaciones de terceros que no son propiedad ni están controlados por Flouvia (por ejemplo, Shopify, CRMs externos). Usted reconoce y acepta que no respaldamos dichas aplicaciones y no somos responsables de sus fallas, vulnerabilidades de seguridad ni de la pérdida de datos que resulte del uso de las mismas. Su uso de aplicaciones de terceros corre bajo su propio riesgo.</p>
+        <h2 id="terceros" class="editorial"><span class="num">07</span> {isEn ? 'Third-Party Apps and Integrations' : 'Aplicaciones e Integraciones de Terceros'}</h2>
+        {isEn ? <p>The Service may interact with third-party products, services, or applications not owned or controlled by Flouvia (e.g. Shopify, external CRMs). You acknowledge and agree that we do not endorse such applications and are not responsible for their failures, security vulnerabilities, or data loss resulting from their use. Your use of third-party applications is at your own risk.</p> : <p>El Servicio puede interactuar con productos, servicios o aplicaciones de terceros que no son propiedad ni están controlados por Flouvia (por ejemplo, Shopify, CRMs externos). Usted reconoce y acepta que no respaldamos dichas aplicaciones y no somos responsables de sus fallas, vulnerabilidades de seguridad ni de la pérdida de datos que resulte del uso de las mismas. Su uso de aplicaciones de terceros corre bajo su propio riesgo.</p>}
 
-        <h2 id="fiscal" class="editorial"><span class="num">08</span> Responsabilidad Fiscal y Legal</h2>
-        <p>CORD actúa estrictamente como un proveedor de tecnología y un canal de comunicación hacia el Proveedor Autorizado de Certificación (PAC) y el SAT.</p>
+        <h2 id="fiscal" class="editorial"><span class="num">08</span> {isEn ? 'Tax and Legal Responsibility' : 'Responsabilidad Fiscal y Legal'}</h2>
+        {isEn ? <p>CORD acts strictly as a technology provider and communication channel to the Authorized Certification Provider (PAC) and the SAT.</p> : <p>CORD actúa estrictamente como un proveedor de tecnología y un canal de comunicación hacia el Proveedor Autorizado de Certificación (PAC) y el SAT.</p>}
         <ul>
-          <li><strong>Sin Asesoría Contable:</strong> Flouvia no es un despacho fiscal. La configuración de impuestos, retenciones (IVA, ISR) y el uso de los catálogos del SAT recaen enteramente en el Usuario.</li>
-          <li><strong>Errores de Facturación:</strong> Flouvia no se hace responsable por multas, recargos o auditorías derivadas de CFDI emitidos con errores de captura por parte del Usuario.</li>
+          <li>{isEn ? <Fragment><strong>No Accounting Advice:</strong> Flouvia is not a tax firm. The configuration of taxes, withholdings (IVA, ISR), and the use of SAT catalogs fall entirely on the User.</Fragment> : <Fragment><strong>Sin Asesoría Contable:</strong> Flouvia no es un despacho fiscal. La configuración de impuestos, retenciones (IVA, ISR) y el uso de los catálogos del SAT recaen enteramente en el Usuario.</Fragment>}</li>
+          <li>{isEn ? <Fragment><strong>Billing Errors:</strong> Flouvia is not responsible for fines, surcharges, or audits resulting from CFDI issued with data entry errors by the User.</Fragment> : <Fragment><strong>Errores de Facturación:</strong> Flouvia no se hace responsable por multas, recargos o auditorías derivadas de CFDI emitidos con errores de captura por parte del Usuario.</Fragment>}</li>
         </ul>
 
-        <h2 id="confidencialidad" class="editorial"><span class="num">09</span> Confidencialidad</h2>
-        <p>Ambas partes ("Parte Receptora" y "Parte Divulgadora") pueden tener acceso a información técnica, financiera o comercial confidencial. La Parte Receptora se compromete a proteger la Información Confidencial de la Parte Divulgadora utilizando el mismo grado de cuidado que emplea para proteger la propia, y en ningún caso un grado menor al razonable. Esta obligación de confidencialidad sobrevivirá a la terminación de su suscripción a CORD.</p>
+        <h2 id="confidencialidad" class="editorial"><span class="num">09</span> {isEn ? 'Confidentiality' : 'Confidencialidad'}</h2>
+        {isEn ? <p>Both parties ("Receiving Party" and "Disclosing Party") may have access to confidential technical, financial, or business information. The Receiving Party commits to protecting the Disclosing Party's Confidential Information using the same degree of care it uses to protect its own, and in no event less than a reasonable degree. This confidentiality obligation shall survive the termination of your CORD subscription.</p> : <p>Ambas partes ("Parte Receptora" y "Parte Divulgadora") pueden tener acceso a información técnica, financiera o comercial confidencial. La Parte Receptora se compromete a proteger la Información Confidencial de la Parte Divulgadora utilizando el mismo grado de cuidado que emplea para proteger la propia, y en ningún caso un grado menor al razonable. Esta obligación de confidencialidad sobrevivirá a la terminación de su suscripción a CORD.</p>}
 
-        <h2 id="indemnizacion" class="editorial"><span class="num">10</span> Indemnización</h2>
-        <p>El Usuario acepta defender, indemnizar y sacar en paz y a salvo a Flouvia, sus directores, empleados y proveedores tecnológicos de cualquier reclamación, demanda, multa o daño (incluyendo honorarios legales) que surja como resultado del mal uso de la Plataforma, la violación de estos términos o la emisión de CFDI con datos fraudulentos hacia terceros.</p>
+        <h2 id="indemnizacion" class="editorial"><span class="num">10</span> {isEn ? 'Indemnification' : 'Indemnización'}</h2>
+        {isEn ? <p>The User agrees to defend, indemnify, and hold harmless Flouvia, its directors, employees, and technology providers from any claim, demand, fine, or damage (including legal fees) arising from the misuse of the Platform, the violation of these terms, or the issuance of CFDI with fraudulent data to third parties.</p> : <p>El Usuario acepta defender, indemnizar y sacar en paz y a salvo a Flouvia, sus directores, empleados y proveedores tecnológicos de cualquier reclamación, demanda, multa o daño (incluyendo honorarios legales) que surja como resultado del mal uso de la Plataforma, la violación de estos términos o la emisión de CFDI con datos fraudulentos hacia terceros.</p>}
 
-        <h2 id="sla" class="editorial"><span class="num">11</span> SLA, Disponibilidad y Fuerza Mayor</h2>
-        <p>Flouvia opera bajo un esquema de "Best-Effort" buscando mantener un uptime del 99.9%. Sin embargo, la arquitectura depende de infraestructura de terceros de clase mundial. No seremos responsables por interrupciones derivadas de caídas en la pasarela de pagos (<em>Stripe</em>), autenticación (<em>Clerk</em>), bases de datos (<em>Neon / AWS</em>) o inestabilidad en la conexión con el SAT.</p>
-        <p><strong>Fuerza Mayor:</strong> Flouvia no será responsable por fallas o retrasos en el desempeño de sus obligaciones causados por eventos fuera de su control razonable, incluyendo pero no limitado a desastres naturales, pandemias, actos de terrorismo, huelgas, fallas masivas de proveedores de internet o acciones gubernamentales.</p>
+        <h2 id="sla" class="editorial"><span class="num">11</span> {isEn ? 'SLA, Availability and Force Majeure' : 'SLA, Disponibilidad y Fuerza Mayor'}</h2>
+        {isEn ? <p>Flouvia operates on a "Best-Effort" basis aiming for 99.9% uptime. However, the architecture relies on world-class third-party infrastructure. We will not be liable for interruptions arising from downtime in the payment gateway (<em>Stripe</em>), authentication (<em>Clerk</em>), databases (<em>Neon / AWS</em>), or instability in the connection with the SAT.</p> : <p>Flouvia opera bajo un esquema de "Best-Effort" buscando mantener un uptime del 99.9%. Sin embargo, la arquitectura depende de infraestructura de terceros de clase mundial. No seremos responsables por interrupciones derivadas de caídas en la pasarela de pagos (<em>Stripe</em>), autenticación (<em>Clerk</em>), bases de datos (<em>Neon / AWS</em>) o inestabilidad en la conexión con el SAT.</p>}
+        {isEn ? <p><strong>Force Majeure:</strong> Flouvia shall not be liable for failure or delay in performing its obligations caused by events beyond its reasonable control, including but not limited to natural disasters, pandemics, acts of terrorism, strikes, massive failures of internet providers, or government actions.</p> : <p><strong>Fuerza Mayor:</strong> Flouvia no será responsable por fallas o retrasos en el desempeño de sus obligaciones causados por eventos fuera de su control razonable, incluyendo pero no limitado a desastres naturales, pandemias, actos de terrorismo, huelgas, fallas masivas de proveedores de internet o acciones gubernamentales.</p>}
 
-        <h2 id="limite" class="editorial"><span class="num">12</span> Límite de Responsabilidad</h2>
-        <p>En la máxima medida permitida por la ley aplicable, la responsabilidad total y acumulada de Flouvia frente al Usuario por cualquier daño, pérdida o causa de acción relacionada con el uso de CORD estará estrictamente limitada a la cantidad total que el Usuario haya pagado a Flouvia por el servicio durante los doce (12) meses inmediatamente anteriores al evento que dio lugar a la reclamación.</p>
+        <h2 id="limite" class="editorial"><span class="num">12</span> {isEn ? 'Limitation of Liability' : 'Límite de Responsabilidad'}</h2>
+        {isEn ? <p>To the maximum extent permitted by applicable law, Flouvia's total and cumulative liability to the User for any damage, loss, or cause of action related to the use of CORD shall be strictly limited to the total amount the User has paid to Flouvia for the service during the twelve (12) months immediately preceding the event giving rise to the claim.</p> : <p>En la máxima medida permitida por la ley aplicable, la responsabilidad total y acumulada de Flouvia frente al Usuario por cualquier daño, pérdida o causa de acción relacionada con el uso de CORD estará estrictamente limitada a la cantidad total que el Usuario haya pagado a Flouvia por el servicio durante los doce (12) meses inmediatamente anteriores al evento que dio lugar a la reclamación.</p>}
 
-        <h2 id="api" class="editorial"><span class="num">13</span> Condiciones de la API Pública</h2>
-        <p>El uso de la API de CORD y de los Webhooks salientes está restringido a los límites de su plan. El Cliente acepta proteger sus llaves de API (<code>sk_live_...</code>). Flouvia no se responsabiliza por la extracción de datos o la emisión de facturas fraudulentas derivadas de la filtración de sus credenciales.</p>
+        <h2 id="api" class="editorial"><span class="num">13</span> {isEn ? 'Public API Terms' : 'Condiciones de la API Pública'}</h2>
+        {isEn ? <p>The use of the CORD API and outgoing Webhooks is restricted to your plan limits. The Client agrees to protect their API keys (<code>sk_live_...</code>). Flouvia is not responsible for data extraction or the issuance of fraudulent invoices resulting from the leak of your credentials.</p> : <p>El uso de la API de CORD y de los Webhooks salientes está restringido a los límites de su plan. El Cliente acepta proteger sus llaves de API (<code>sk_live_...</code>). Flouvia no se responsabiliza por la extracción de datos o la emisión de facturas fraudulentas derivadas de la filtración de sus credenciales.</p>}
 
-        <h2 id="marca" class="editorial"><span class="num">14</span> Uso de Marca (Publicidad)</h2>
-        <p>A menos que el Cliente exprese explícitamente lo contrario por escrito, al utilizar los Servicios de CORD, el Cliente otorga a Flouvia el derecho no exclusivo de utilizar y mostrar el nombre, logotipo y marcas comerciales del Cliente en el sitio web de Flouvia y en materiales de marketing con el fin de identificarlo como cliente de la plataforma.</p>
+        <h2 id="marca" class="editorial"><span class="num">14</span> {isEn ? 'Brand Usage (Publicity)' : 'Uso de Marca (Publicidad)'}</h2>
+        {isEn ? <p>Unless the Client explicitly expresses otherwise in writing, by using the CORD Services, the Client grants Flouvia the non-exclusive right to use and display the Client's name, logo, and trademarks on the Flouvia website and in marketing materials for the purpose of identifying them as a customer of the platform.</p> : <p>A menos que el Cliente exprese explícitamente lo contrario por escrito, al utilizar los Servicios de CORD, el Cliente otorga a Flouvia el derecho no exclusivo de utilizar y mostrar el nombre, logotipo y marcas comerciales del Cliente en el sitio web de Flouvia y en materiales de marketing con el fin de identificarlo como cliente de la plataforma.</p>}
 
-        <h2 id="reembolsos" class="editorial"><span class="num">15</span> Cancelaciones y Reembolsos</h2>
-        <p>Todos los cobros son procesados de manera segura por Stripe. Las suscripciones se renuevan automáticamente. El Cliente puede cancelar en cualquier momento desde el Portal de Facturación. Al cancelar, el servicio se mantendrá activo hasta el final del periodo ya pagado. <strong>Flouvia no emite reembolsos totales ni parciales por meses no utilizados o consumos de excedentes.</strong></p>
+        <h2 id="reembolsos" class="editorial"><span class="num">15</span> {isEn ? 'Cancellations and Refunds' : 'Cancelaciones y Reembolsos'}</h2>
+        {isEn ? <p>All charges are securely processed by Stripe. Subscriptions renew automatically. The Client can cancel at any time from the Billing Portal. Upon cancellation, the service will remain active until the end of the already paid period. <strong>Flouvia does not issue full or partial refunds for unused months or overage consumption.</strong></p> : <p>Todos los cobros son procesados de manera segura por Stripe. Las suscripciones se renuevan automáticamente. El Cliente puede cancelar en cualquier momento desde el Portal de Facturación. Al cancelar, el servicio se mantendrá activo hasta el final del periodo ya pagado. <strong>Flouvia no emite reembolsos totales ni parciales por meses no utilizados o consumos de excedentes.</strong></p>}
 
-        <h2 id="ley" class="editorial"><span class="num">16</span> Ley Aplicable y Jurisdicción</h2>
-        <p>El presente Acuerdo se rige e interpreta de conformidad con las leyes vigentes de los <strong>Estados Unidos Mexicanos</strong>, sin dar efecto a sus principios de conflicto de leyes. Para cualquier controversia, disputa o reclamación derivada de o relacionada con estos Términos o el uso de la Plataforma, las partes se someten expresamente a la jurisdicción exclusiva de los <strong>Tribunales Federales o Locales competentes de la Ciudad de México</strong>, renunciando a cualquier otro fuero que pudiera corresponderles por razón de sus domicilios presentes o futuros.</p>
+        <h2 id="ley" class="editorial"><span class="num">16</span> {isEn ? 'Applicable Law and Jurisdiction' : 'Ley Aplicable y Jurisdicción'}</h2>
+        {isEn ? <p>This Agreement is governed by and construed in accordance with the current laws of the <strong>United Mexican States</strong>, without giving effect to its conflict of law principles. For any controversy, dispute, or claim arising from or related to these Terms or the use of the Platform, the parties expressly submit to the exclusive jurisdiction of the <strong>competent Federal or Local Courts of Mexico City</strong>, waiving any other jurisdiction that may correspond to them due to their present or future domiciles.</p> : <p>El presente Acuerdo se rige e interpreta de conformidad con las leyes vigentes de los <strong>Estados Unidos Mexicanos</strong>, sin dar efecto a sus principios de conflicto de leyes. Para cualquier controversia, disputa o reclamación derivada de o relacionada con estos Términos o el uso de la Plataforma, las partes se someten expresamente a la jurisdicción exclusiva de los <strong>Tribunales Federales o Locales competentes de la Ciudad de México</strong>, renunciando a cualquier otro fuero que pudiera corresponderles por razón de sus domicilios presentes o futuros.</p>}
 
-        <h2 id="cambios" class="editorial"><span class="num">17</span> Modificaciones a los Términos</h2>
-        <p>Flouvia puede actualizar estos Términos y Condiciones en cualquier momento. Los cambios sustanciales serán notificados al Administrador de la cuenta vía correo electrónico o mediante un aviso en el Dashboard de la aplicación.</p>
+        <h2 id="cambios" class="editorial"><span class="num">17</span> {isEn ? 'Modifications to the Terms' : 'Modificaciones a los Términos'}</h2>
+        {isEn ? <p>Flouvia may update these Terms and Conditions at any time. Substantial changes will be notified to the account Administrator via email or through a notice in the application Dashboard.</p> : <p>Flouvia puede actualizar estos Términos y Condiciones en cualquier momento. Los cambios sustanciales serán notificados al Administrador de la cuenta vía correo electrónico o mediante un aviso en el Dashboard de la aplicación.</p>}
       </div>
     </div>
   </main>

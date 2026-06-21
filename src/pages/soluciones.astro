@@ -7,8 +7,14 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/landing/Nav.astro';
 import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
 
-const SOLUCIONES = [
+const lang = getLangFromUrl(Astro.url);
+const isEn = lang === 'en';
+const t = useTranslations(lang);
+const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
+
+const SOLUCIONES_ES = [
     {
         id: 'distribuidoras',
         eyebrow: 'DISTRIBUIDORAS Y MAYORISTAS',
@@ -58,22 +64,74 @@ const SOLUCIONES = [
         kpi: { num: '1 clic', label: 'entre tu propuesta y el "sí"' },
     },
 ];
+
+const SOLUCIONES_EN = [
+    {
+        id: 'distribuidoras',
+        eyebrow: 'DISTRIBUTORS & WHOLESALERS',
+        titulo: 'Every client, their own<br/>price list.',
+        copy: 'You sell the same thing to 200 clients at 200 different prices. Cord records the negotiated price of each line and the terms of each client, so anyone on your team can quote without giving away margin or breaking agreements.',
+        bullets: [
+            'Negotiated price per line with visible discount',
+            'Default terms per client: Cash, Net 30, Net 60',
+            'Central catalog — no more outdated Excel lists',
+        ],
+        kpi: { num: '−12%', label: 'controlled discount, not improvised' },
+    },
+    {
+        id: 'construccion',
+        eyebrow: 'CONSTRUCTION & MATERIALS',
+        titulo: 'Volume, site<br/>and credit under control.',
+        copy: 'Quotes for hundreds of thousands of pesos, site deliveries and clients asking for Net 60: the daily life of materials suppliers. Cord adds a folio, validity and credit limit to each deal — and alerts you when they approve.',
+        bullets: [
+            'Large quotes with real units: bags, m³, pieces, rolls',
+            'Credit limit per client to say yes with confidence',
+            'Quote notes: site, delivery conditions, advance payment',
+        ],
+        kpi: { num: '$196,469', label: 'quoted and approved on the same day' },
+    },
+    {
+        id: 'manufactura',
+        eyebrow: 'MANUFACTURING',
+        titulo: 'Quote spec,<br/>batch and delivery time.',
+        copy: 'In manufacturing each quote is a small project: specifications, minimum quantities, times. With free lines and quote notes, Cord documents the entire agreement — and the timeline saves who approved what and when.',
+        bullets: [
+            'Free lines for concepts outside the catalog',
+            'Complete history per client: what they ordered, at what price, when',
+            'CFDI 4.0 upon closing — without retyping in another system',
+        ],
+        kpi: { num: '100%', label: 'of the agreement documented in one place' },
+    },
+    {
+        id: 'servicios',
+        eyebrow: 'PROFESSIONAL SERVICES',
+        titulo: 'Proposals that look<br/>as serious as your work.',
+        copy: 'A generic PDF proposal competes poorly against an elegant page with your brand, clear amounts and an approve button. Send a link that closes for you — and find out the moment your prospect opens it.',
+        bullets: [
+            'Public link with your logo and brand color',
+            'Instant alert when they view your proposal',
+            'One-click approval, no accounts or friction',
+        ],
+        kpi: { num: '1 click', label: 'between your proposal and the "yes"' },
+    },
+];
+
+const SOLUCIONES = isEn ? SOLUCIONES_EN : SOLUCIONES_ES;
 ---
 
 <Layout
-    title="Soluciones — Cord"
-    description="Cord para distribuidoras, construcción, manufactura y servicios profesionales. Cotizaciones B2B con precios negociados, crédito y CFDI para tu industria."
+    title={isEn ? "Solutions — Cord" : "Soluciones — Cord"}
+    description={isEn ? "Cord for distributors, construction, manufacturing and professional services. B2B quotes with negotiated prices, credit and CFDI for your industry." : "Cord para distribuidoras, construcción, manufactura y servicios profesionales. Cotizaciones B2B con precios negociados, crédito y CFDI para tu industria."}
 >
     <Nav />
     <main>
         <section class="pp-hero sol-hero">
             <div class="sol-mesh" aria-hidden="true"></div>
             <div class="sol-hero-inner">
-                <p class="sol-eyebrow reveal">SOLUCIONES</p>
-                <h1 class="sol-title masked-title">Si cotizas para vender,<br/>Cord es para ti.</h1>
+                <p class="sol-eyebrow reveal">{isEn ? 'SOLUTIONS' : 'SOLUCIONES'}</p>
+                <h1 class="sol-title masked-title" set:html={isEn ? 'If you quote to sell,<br/>Cord is for you.' : 'Si cotizas para vender,<br/>Cord es para ti.'} />
                 <p class="sol-sub reveal">
-                    Cord funciona para cualquier negocio B2B en México. Así se ve en cuatro
-                    industrias donde cotizar bien es la diferencia entre cerrar o perder el trato.
+                    {isEn ? 'Cord works for any B2B business in Mexico. Here is how it looks in four industries where quoting well is the difference between closing or losing the deal.' : 'Cord funciona para cualquier negocio B2B en México. Así se ve en cuatro industrias donde cotizar bien es la diferencia entre cerrar o perder el trato.'}
                 </p>
                 <div class="sol-jump reveal">
                     {SOLUCIONES.map((s) => (
@@ -98,15 +156,15 @@ const SOLUCIONES = [
                                 </li>
                             ))}
                         </ul>
-                        <a href={`/soluciones/${s.id}`} class="sol-link reveal">
-                            Ver solución completa
+                        <a href={l(`/soluciones/${s.id}`)} class="sol-link reveal">
+                            {isEn ? 'View full solution' : 'Ver solución completa'}
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         </a>
                     </div>
-                    <a href={`/soluciones/${s.id}`} class="sol-visual reveal-mockup" aria-label={`Ver solución para ${s.eyebrow.toLowerCase()}`}>
+                    <a href={l(`/soluciones/${s.id}`)} class="sol-visual reveal-mockup" aria-label={`${isEn ? 'View solution for' : 'Ver solución para'} ${s.eyebrow.toLowerCase()}`}>
                         <span class="sol-kpi editorial">{s.kpi.num}</span>
                         <span class="sol-kpi-label">{s.kpi.label}</span>
-                        <span class="sol-visual-cta">Ver solución →</span>
+                        <span class="sol-visual-cta">{isEn ? 'View solution →' : 'Ver solución →'}</span>
                     </a>
                 </article>
             ))}
@@ -114,8 +172,8 @@ const SOLUCIONES = [
     </main>
 
     <Footer
-        ctaTitle="Tu industria ya cotiza<br />con Cord."
-        ctaSub="Empieza gratis hoy — 5 cotizaciones activas, sin tarjeta."
+        ctaTitle={isEn ? 'Your industry already quotes<br />with Cord.' : 'Tu industria ya cotiza<br />con Cord.'}
+        ctaSub={isEn ? 'Start for free today — 5 active quotes, no card.' : 'Empieza gratis hoy — 5 cotizaciones activas, sin tarjeta.'}
     />
     <PageAnims />
 </Layout>

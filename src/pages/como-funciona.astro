@@ -8,26 +8,35 @@ import Nav from '../components/landing/Nav.astro';
 import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
 import Steps from '../components/landing/Steps.astro';
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const isEn = lang === 'en';
+const t = useTranslations(lang);
+const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
+
+const title = isEn ? "How it works | Cord" : "Cómo funciona | Cord";
+const description = isEn 
+    ? "Discover how Cord works. From first contact to CFDI without friction, all in a single platform designed for B2B."
+    : "Descubre cómo funciona Cord. Del primer contacto al CFDI sin fricción, todo en una sola plataforma diseñada para B2B.";
 ---
 
-<Layout
-    title="Cómo funciona | Cord"
-    description="Descubre cómo funciona Cord. Del primer contacto al CFDI sin fricción, todo en una sola plataforma diseñada para B2B."
->
+<Layout title={title} description={description}>
     <Nav />
     <main>
         <section class="cf-hero">
             <div class="cf-mesh" aria-hidden="true"></div>
             <div class="cf-hero-inner">
-                <p class="cf-eyebrow reveal">CÓMO FUNCIONA CORD</p>
-                <h1 class="cf-title masked-title">Vende más rápido.<br/>Cobra a tiempo.</h1>
+                <p class="cf-eyebrow reveal">{isEn ? 'HOW CORD WORKS' : 'CÓMO FUNCIONA CORD'}</p>
+                <h1 class="cf-title masked-title" set:html={isEn ? 'Sell faster.<br/>Get paid on time.' : 'Vende más rápido.<br/>Cobra a tiempo.'} />
                 <p class="cf-sub reveal">
-                    Olvídate de los PDFs estáticos, los hilos interminables de correo y la doble captura.
-                    Cord optimiza todo el ciclo de ventas B2B para que tú te enfoques en cerrar tratos.
+                    {isEn 
+                        ? 'Forget static PDFs, endless email threads, and double data entry. Cord optimizes the entire B2B sales cycle so you can focus on closing deals.'
+                        : 'Olvídate de los PDFs estáticos, los hilos interminables de correo y la doble captura. Cord optimiza todo el ciclo de ventas B2B para que tú te enfoques en cerrar tratos.'}
                 </p>
                 <div class="cf-hero-actions reveal">
-                    <a href="/registro" class="cf-btn-primary">Empieza gratis</a>
-                    <a href="/q/demo" class="cf-btn-secondary">Ver demo interactiva</a>
+                    <a href={l("/registro")} class="cf-btn-primary">{isEn ? 'Start for free' : 'Empieza gratis'}</a>
+                    <a href={l("/q/demo")} class="cf-btn-secondary">{isEn ? 'View interactive demo' : 'Ver demo interactiva'}</a>
                 </div>
             </div>
             
@@ -42,7 +51,7 @@ import Steps from '../components/landing/Steps.astro';
                         <div class="cf-skeleton-line title"></div>
                         <div class="cf-skeleton-line"></div>
                         <div class="cf-skeleton-line short"></div>
-                        <div class="cf-mockup-btn">Aprobar cotización</div>
+                        <div class="cf-mockup-btn">{isEn ? 'Approve quote' : 'Aprobar cotización'}</div>
                     </div>
                 </div>
             </div>
@@ -57,8 +66,8 @@ import Steps from '../components/landing/Steps.astro';
         <section class="cf-features">
             <div class="cf-features-inner">
                 <div class="cf-features-head reveal">
-                    <h2 class="cf-h2 masked-title">Todo lo que necesitas, sin la complejidad de un ERP.</h2>
-                    <p class="cf-p">Diseñado para la velocidad de las ventas modernas, con el rigor financiero que exige tu operación.</p>
+                    <h2 class="cf-h2 masked-title">{isEn ? 'Everything you need, without the complexity of an ERP.' : 'Todo lo que necesitas, sin la complejidad de un ERP.'}</h2>
+                    <p class="cf-p">{isEn ? 'Designed for the speed of modern sales, with the financial rigor your operation demands.' : 'Diseñado para la velocidad de las ventas modernas, con el rigor financiero que exige tu operación.'}</p>
                 </div>
 
                 <div class="cf-grid">
@@ -66,32 +75,40 @@ import Steps from '../components/landing/Steps.astro';
                         <div class="cf-card-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                         </div>
-                        <h3>Aprobaciones con un clic</h3>
-                        <p>Tu cliente recibe un enlace único. Sin contraseñas ni registros, puede revisar el detalle, aceptar los términos y aprobar la cotización al instante desde su celular.</p>
+                        <h3>{isEn ? 'One-click approvals' : 'Aprobaciones con un clic'}</h3>
+                        <p>{isEn 
+                            ? 'Your client receives a unique link. Without passwords or signups, they can review the details, accept the terms, and approve the quote instantly from their phone.'
+                            : 'Tu cliente recibe un enlace único. Sin contraseñas ni registros, puede revisar el detalle, aceptar los términos y aprobar la cotización al instante desde su celular.'}</p>
                     </article>
 
                     <article class="cf-card reveal">
                         <div class="cf-card-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                         </div>
-                        <h3>Notificaciones en tiempo real</h3>
-                        <p>Deja de preguntar "¿Ya pudiste revisar mi correo?". Cord te avisa exactamente en el momento en que tu cliente abre la cotización para que llames en el momento perfecto.</p>
+                        <h3>{isEn ? 'Real-time notifications' : 'Notificaciones en tiempo real'}</h3>
+                        <p>{isEn 
+                            ? 'Stop asking "Did you check my email?". Cord alerts you the exact moment your client opens the quote so you can call at the perfect time.'
+                            : 'Deja de preguntar "¿Ya pudiste revisar mi correo?". Cord te avisa exactamente en el momento en que tu cliente abre la cotización para que llames en el momento perfecto.'}</p>
                     </article>
 
                     <article class="cf-card reveal">
                         <div class="cf-card-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
                         </div>
-                        <h3>Catálogo y Precios dinámicos</h3>
-                        <p>Maneja múltiples listas de precios o precios negociados por cliente. Si actualizas un precio base, las reglas se aplican automáticamente para todos.</p>
+                        <h3>{isEn ? 'Catalog and dynamic pricing' : 'Catálogo y Precios dinámicos'}</h3>
+                        <p>{isEn 
+                            ? 'Manage multiple price lists or negotiated prices per client. If you update a base price, the rules apply automatically for everyone.'
+                            : 'Maneja múltiples listas de precios o precios negociados por cliente. Si actualizas un precio base, las reglas se aplican automáticamente para todos.'}</p>
                     </article>
 
                     <article class="cf-card reveal">
                         <div class="cf-card-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                         </div>
-                        <h3>Facturación nativa (CFDI 4.0)</h3>
-                        <p>Una vez que el proyecto se entrega o el producto se envía, convierte la cotización aprobada en una factura válida ante el SAT en un par de clics, sin errores de captura.</p>
+                        <h3>{isEn ? 'Native e-invoicing (CFDI 4.0)' : 'Facturación nativa (CFDI 4.0)'}</h3>
+                        <p>{isEn 
+                            ? 'Once the project is delivered or shipped, turn the approved quote into a valid SAT invoice in a couple of clicks, without typing errors.'
+                            : 'Una vez que el proyecto se entrega o el producto se envía, convierte la cotización aprobada en una factura válida ante el SAT en un par de clics, sin errores de captura.'}</p>
                     </article>
                 </div>
             </div>
@@ -99,8 +116,8 @@ import Steps from '../components/landing/Steps.astro';
     </main>
 
     <Footer
-        ctaTitle="¿Listo para profesionalizar<br/>tus ventas?"
-        ctaSub="Empieza gratis hoy — 5 cotizaciones activas al mes, sin tarjeta de crédito."
+        ctaTitle={isEn ? 'Ready to professionalize<br/>your sales?' : '¿Listo para profesionalizar<br/>tus ventas?'}
+        ctaSub={isEn ? 'Start for free today — 5 active quotes per month, no credit card.' : 'Empieza gratis hoy — 5 cotizaciones activas al mes, sin tarjeta de crédito.'}
     />
     <PageAnims />
 </Layout>

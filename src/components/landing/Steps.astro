@@ -1,21 +1,24 @@
 ---
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 // Cómo funciona — 3 pasos sobre fondo navy (contraste, estilo sección Casos de flouvia).
 ---
 
 <section class="steps" id="como">
     <div class="steps-inner">
         <div class="steps-head">
-            <p class="steps-eyebrow reveal">EN TRES PASOS</p>
-            <h2 class="steps-title reveal">Del primer contacto al CFDI,<br />sin fricción.</h2>
+            <p class="steps-eyebrow reveal">{t("st.eyebrow")}</p>
+            <h2 class="steps-title reveal">{t("st.title")}</h2>
         </div>
 
         <div class="steps-grid">
             <article class="step reveal">
                 <span class="step-num editorial">/01</span>
-                <h3 class="step-h">Arma la cotización</h3>
+                <h3 class="step-h">{t("st.1.h")}</h3>
                 <p class="step-p">
-                    Elige al cliente, agrega productos de tu catálogo y negocia los
-                    precios. Define términos de crédito y vigencia. Listo en minutos.
+                    {t("st.1.p")}
                 </p>
             </article>
 
@@ -25,10 +28,9 @@
 
             <article class="step reveal">
                 <span class="step-num editorial">/02</span>
-                <h3 class="step-h">Envía el link</h3>
+                <h3 class="step-h">{t("st.2.h")}</h3>
                 <p class="step-p">
-                    Manda un link con tu marca o un PDF. Tu cliente lo abre desde donde
-                    sea y tú recibes el aviso en cuanto lo ve.
+                    {t("st.2.p")}
                 </p>
             </article>
 
@@ -38,10 +40,9 @@
 
             <article class="step reveal">
                 <span class="step-num editorial">/03</span>
-                <h3 class="step-h">Cierra y factura</h3>
+                <h3 class="step-h">{t("st.3.h")}</h3>
                 <p class="step-p">
-                    El cliente aprueba y paga, o queda a crédito según los términos.
-                    La cotización se vuelve pedido y el CFDI se timbra automáticamente.
+                    {t("st.3.p")}
                 </p>
             </article>
         </div>

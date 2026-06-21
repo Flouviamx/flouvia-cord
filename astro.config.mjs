@@ -10,6 +10,15 @@ export default defineConfig({
   site: 'https://cord.flouvia.com',
   output: 'server',
 
+  i18n: {
+    locales: ['es', 'en'],
+    defaultLocale: 'es',
+    routing: {
+      prefixDefaultLocale: false, // es → /  ·  en → /en/
+      redirectToDefaultLocale: false,
+    },
+  },
+
   redirects: {
     '/login': '/sign-in',
     '/registro': '/sign-up',

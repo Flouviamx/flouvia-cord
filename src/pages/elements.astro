@@ -8,6 +8,7 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/landing/Nav.astro';
 import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
 
 // Snippets de instalación por framework (tabs estilo Stripe). El embed es el mismo
 // iframe en todos; cambia sólo cómo cargas el script según tu stack.
@@ -80,6 +81,10 @@ defineProps({ token: String });
     },
 ];
 
+const lang = getLangFromUrl(Astro.url);
+const isEn = lang === 'en';
+const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
+
 const EVENTS = `document.querySelector('[data-cord-cotizador]')
   .addEventListener('cord:approved', (e) => {
     // tu cliente aprobó — registra la venta, redirige, etc.
@@ -88,8 +93,8 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
 ---
 
 <Layout
-    title="Cord Elements — tu cotizador, embebido en cualquier sitio"
-    description="Lleva el cotizador de Cord a tu propio portal o al de tus clientes con una línea de código. Tu marca, aprobación y pago en línea, dentro de su ecosistema."
+    title={isEn ? "Cord Elements — your quote builder, embedded anywhere" : "Cord Elements — tu cotizador, embebido en cualquier sitio"}
+    description={isEn ? "Bring Cord's quote builder to your own portal or your clients' with one line of code. Your brand, approval, and online payment, inside their ecosystem." : "Lleva el cotizador de Cord a tu propio portal o al de tus clientes con una línea de código. Tu marca, aprobación y pago en línea, dentro de su ecosistema."}
 >
     <Nav />
     <main>
@@ -99,30 +104,28 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
             <div class="el-hero-grid">
                 <div class="el-hero-text">
                     <p class="el-eyebrow reveal">CORD ELEMENTS</p>
-                    <h1 class="el-title masked-title">Tu cotizador,<br/>en cualquier sitio.</h1>
+                    <h1 class="el-title masked-title" set:html={isEn ? 'Your quote builder,<br/>embedded anywhere.' : 'Tu cotizador,<br/>en cualquier sitio.'} />
                     <p class="el-sub reveal">
-                        Lleva el cotizador de Cord al portal de tus clientes con <b>una línea
-                        de código</b>. Tu marca, tu catálogo, aprobación y pago en línea — todo
-                        dentro de su ecosistema, sin que salgan de su web.
+                        {isEn ? <Fragment>Bring Cord's quote builder to your clients' portal with <b>one line of code</b>. Your brand, your catalog, approval and online payment — all inside their ecosystem, without leaving their site.</Fragment> : <Fragment>Lleva el cotizador de Cord al portal de tus clientes con <b>una línea de código</b>. Tu marca, tu catálogo, aprobación y pago en línea — todo dentro de su ecosistema, sin que salgan de su web.</Fragment>}
                     </p>
                     <div class="el-actions reveal">
-                        <a href="/registro" class="el-btn-primary">
-                            <span>Empezar gratis</span>
+                        <a href={l("/registro")} class="el-btn-primary">
+                            <span>{isEn ? 'Start for free' : 'Empezar gratis'}</span>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         </a>
-                        <a href="#instalar" class="el-btn-ghost">Ver el código</a>
+                        <a href="#instalar" class="el-btn-ghost">{isEn ? 'View code' : 'Ver el código'}</a>
                     </div>
 
                     <div class="el-cmd reveal" data-install-cmd>
                         <code><span class="el-cmd-prompt">$</span>npm install @flouviahq/elements</code>
-                        <button class="el-cmd-copy" type="button" aria-label="Copiar comando">
+                        <button class="el-cmd-copy" type="button" aria-label={isEn ? "Copy command" : "Copiar comando"}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                         </button>
                     </div>
                     <p class="el-plan reveal">
                         <a href="https://www.npmjs.com/package/@flouviahq/elements" target="_blank" rel="noopener" class="el-npm">
                             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M0 7.334v8h6.666v1.332H12v-1.332h12v-8H0zm6.666 6.664H5.334v-4H3.999v4H1.335V8.667h5.331v5.331zm4 0v1.336H8.001V8.667h5.334v5.332h-2.669v-.001zm12.001 0h-1.33v-4h-1.336v4h-1.335v-4h-1.33v4h-2.671V8.667h8.002v5.331zM10.665 10H12v2.667h-1.335V10z"/></svg>
-                            Disponible en npm · @flouviahq/elements
+                            {isEn ? 'Available on npm · @flouviahq/elements' : 'Disponible en npm · @flouviahq/elements'}
                         </a>
                     </p>
                 </div>
@@ -143,37 +146,37 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
                                 <span class="el-host-logo">ACME Industrial</span>
                                 <span class="el-host-nav"><i></i><i></i><i></i></span>
                             </div>
-                            <p class="el-host-line" aria-hidden="true">Tu cotización está lista 👇</p>
+                            <p class="el-host-line" aria-hidden="true">{isEn ? 'Your quote is ready 👇' : 'Tu cotización está lista 👇'}</p>
                             <!-- iframe REAL del producto -->
-                            <iframe class="el-demo-frame" src="/embed/demo" title="Cotizador Cord (demo en vivo)" loading="lazy"></iframe>
-                            <span class="el-host-foot" aria-hidden="true">© ACME Industrial · portal de clientes</span>
+                            <iframe class="el-demo-frame" src="/embed/demo" title={isEn ? "Cord Quote Builder (live demo)" : "Cotizador Cord (demo en vivo)"} loading="lazy"></iframe>
+                            <span class="el-host-foot" aria-hidden="true">{isEn ? '© ACME Industrial · client portal' : '© ACME Industrial · portal de clientes'}</span>
                         </div>
                     </div>
-                    <span class="el-demo-tag">▲ Cotizador de Cord, embebido en vivo</span>
+                    <span class="el-demo-tag">{isEn ? '▲ Cord Quote Builder, embedded live' : '▲ Cotizador de Cord, embebido en vivo'}</span>
                 </div>
             </div>
         </section>
 
         <!-- ════════ TRUST / VALOR ════════ -->
         <section class="el-strip">
-            <p class="el-strip-lead reveal">Para empresas B2B que <b>ya tienen su propio portal</b> pero no quieren construir —ni mantener— un cotizador que negocie precios, dé seguimiento y timbre CFDI en México.</p>
+            <p class="el-strip-lead reveal">{isEn ? <Fragment>For B2B companies that <b>already have their own portal</b> but don't want to build —or maintain— a quote builder that negotiates prices, tracks opens, and issues CFDI invoices in Mexico.</Fragment> : <Fragment>Para empresas B2B que <b>ya tienen su propio portal</b> pero no quieren construir —ni mantener— un cotizador que negocie precios, dé seguimiento y timbre CFDI en México.</Fragment>}</p>
         </section>
 
         <!-- ════════ INSTALAR (snippet) ════════ -->
         <section class="el-install" id="instalar">
             <div class="el-install-head">
-                <p class="el-eyebrow reveal">UNA LÍNEA DE CÓDIGO</p>
-                <h2 class="el-h2 masked-title">Pegar. Listo.<br/>Sin backend.</h2>
-                <p class="el-copy reveal">Un script y un <code>&lt;div&gt;</code>. El cotizador aparece con tu marca, se ajusta solo a la altura del contenido y hereda el estilo de la página anfitriona.</p>
+                <p class="el-eyebrow reveal">{isEn ? 'ONE LINE OF CODE' : 'UNA LÍNEA DE CÓDIGO'}</p>
+                <h2 class="el-h2 masked-title" set:html={isEn ? 'Paste. Done.<br/>No backend.' : 'Pegar. Listo.<br/>Sin backend.'} />
+                <p class="el-copy reveal">{isEn ? <Fragment>A script and a <code>&lt;div&gt;</code>. The quote builder appears with your brand, auto-adjusts its height, and inherits the host page's style.</Fragment> : <Fragment>Un script y un <code>&lt;div&gt;</code>. El cotizador aparece con tu marca, se ajusta solo a la altura del contenido y hereda el estilo de la página anfitriona.</Fragment>}</p>
             </div>
             <div class="el-code el-tabs reveal-mockup" data-el-tabs>
                 <div class="el-tabbar" role="tablist">
                     {CODES.map((c, i) => (
                         <button class:list={['el-tab', { active: i === 0 }]} role="tab" data-tab={c.id}>{c.label}</button>
                     ))}
-                    <button class="el-copybtn" data-copy type="button" aria-label="Copiar código">
+                    <button class="el-copybtn" data-copy type="button" aria-label={isEn ? "Copy code" : "Copiar código"}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                        <span>Copiar</span>
+                        <span>{isEn ? 'Copy' : 'Copiar'}</span>
                     </button>
                 </div>
                 {CODES.map((c, i) => (
@@ -183,18 +186,18 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
             <div class="el-steps">
                 <div class="el-step reveal">
                     <span class="el-step-n">01</span>
-                    <b>Pega el snippet</b>
-                    <span>En la página donde quieras el cotizador. Funciona en cualquier stack: WordPress, React, Webflow, HTML plano.</span>
+                    <b>{isEn ? 'Paste the snippet' : 'Pega el snippet'}</b>
+                    <span>{isEn ? 'On the page where you want the quote builder. Works on any stack: WordPress, React, Webflow, plain HTML.' : 'En la página donde quieras el cotizador. Funciona en cualquier stack: WordPress, React, Webflow, HTML plano.'}</span>
                 </div>
                 <div class="el-step reveal">
                     <span class="el-step-n">02</span>
-                    <b>Aparece con tu marca</b>
-                    <span>Color, logo y datos fiscales salen de tu cuenta de Cord. Cero configuración extra en el sitio anfitrión.</span>
+                    <b>{isEn ? 'Appears with your brand' : 'Aparece con tu marca'}</b>
+                    <span>{isEn ? 'Color, logo, and tax details come from your Cord account. Zero extra setup on the host site.' : 'Color, logo y datos fiscales salen de tu cuenta de Cord. Cero configuración extra en el sitio anfitrión.'}</span>
                 </div>
                 <div class="el-step reveal">
                     <span class="el-step-n">03</span>
-                    <b>Tu cliente aprueba y paga</b>
-                    <span>Aprobación, contraoferta y pago en línea — sin salir del portal. Tú recibes el evento en tiempo real.</span>
+                    <b>{isEn ? 'Your client approves and pays' : 'Tu cliente aprueba y paga'}</b>
+                    <span>{isEn ? 'Approval, counteroffers, and online payment — without leaving the portal. You receive the event in real time.' : 'Aprobación, contraoferta y pago en línea — sin salir del portal. Tú recibes el evento en tiempo real.'}</span>
                 </div>
             </div>
         </section>
@@ -202,33 +205,33 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
         <!-- ════════ CARACTERÍSTICAS (lista, no tarjetas) ════════ -->
         <section class="el-features">
             <div class="el-feat-head">
-                <p class="el-eyebrow reveal">POR QUÉ ELEMENTS</p>
-                <h2 class="el-h2 masked-title">El cotizador completo,<br/>no un widget de juguete.</h2>
+                <p class="el-eyebrow reveal">{isEn ? 'WHY ELEMENTS' : 'POR QUÉ ELEMENTS'}</p>
+                <h2 class="el-h2 masked-title" set:html={isEn ? 'The complete quote builder,<br/>not a toy widget.' : 'El cotizador completo,<br/>no un widget de juguete.'} />
             </div>
             <div class="el-feat-list">
                 <div class="el-feat reveal">
                     <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.012 17.5 2 12 2z"/></svg></span>
-                    <div><b>Tu marca, no la nuestra</b><span>Color, logo y razón social de tu cuenta. El cliente ve TU negocio, no a Cord (salvo el discreto "vía Cord" del plan gratis).</span></div>
+                    <div><b>{isEn ? 'Your brand, not ours' : 'Tu marca, no la nuestra'}</b><span>{isEn ? 'Color, logo, and business name from your account. The client sees YOUR business, not Cord (except for the discreet "via Cord" on the free plan).' : 'Color, logo y razón social de tu cuenta. El cliente ve TU negocio, no a Cord (salvo el discreto "vía Cord" del plan gratis).'}</span></div>
                 </div>
                 <div class="el-feat reveal">
                     <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
-                    <div><b>Aprobación y contraoferta</b><span>El cliente aprueba, rechaza o negocia el precio sin salir de su portal. El chat de la cotización viaja embebido.</span></div>
+                    <div><b>{isEn ? 'Approval and counteroffers' : 'Aprobación y contraoferta'}</b><span>{isEn ? 'The client approves, rejects, or negotiates the price without leaving their portal. The quote chat is also embedded.' : 'El cliente aprueba, rechaza o negocia el precio sin salir de su portal. El chat de la cotización viaja embebido.'}</span></div>
                 </div>
                 <div class="el-feat reveal">
                     <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span>
-                    <div><b>Pago en línea integrado</b><span>Stripe Checkout dentro del iframe (atributo <code>allow="payment"</code>). Cobras sin redirigir a otra pestaña.</span></div>
+                    <div><b>{isEn ? 'Integrated online payment' : 'Pago en línea integrado'}</b><span>{isEn ? <Fragment>Stripe Checkout inside the iframe (<code>allow="payment"</code> attribute). Get paid without redirecting to another tab.</Fragment> : <Fragment>Stripe Checkout dentro del iframe (atributo <code>allow="payment"</code>). Cobras sin redirigir a otra pestaña.</Fragment>}</span></div>
                 </div>
                 <div class="el-feat reveal">
                     <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
-                    <div><b>Altura automática</b><span>El embed mide su contenido y le avisa a tu página vía <code>postMessage</code>. Nada de barras de scroll ni cajas vacías.</span></div>
+                    <div><b>{isEn ? 'Automatic height' : 'Altura automática'}</b><span>{isEn ? <Fragment>The embed measures its content and notifies your page via <code>postMessage</code>. No scrollbars or empty boxes.</Fragment> : <Fragment>El embed mide su contenido y le avisa a tu página vía <code>postMessage</code>. Nada de barras de scroll ni cajas vacías.</Fragment>}</span></div>
                 </div>
                 <div class="el-feat reveal">
                     <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-                    <div><b>Seguro por diseño</b><span>Allowlist de dominios por cuenta (CSP <code>frame-ancestors</code>). Solo TÚ decides en qué sitios puede embeberse — anti-clickjacking.</span></div>
+                    <div><b>{isEn ? 'Secure by design' : 'Seguro por diseño'}</b><span>{isEn ? <Fragment>Domain allowlist per account (CSP <code>frame-ancestors</code>). Only YOU decide which sites can embed it — anti-clickjacking.</Fragment> : <Fragment>Allowlist de dominios por cuenta (CSP <code>frame-ancestors</code>). Solo TÚ decides en qué sitios puede embeberse — anti-clickjacking.</Fragment>}</span></div>
                 </div>
                 <div class="el-feat reveal">
                     <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
-                    <div><b>Eventos en tiempo real</b><span>Tu sitio escucha <code>cord:approved</code>, <code>cord:pay</code> y más — para disparar tu analítica, CRM o lo que sea.</span></div>
+                    <div><b>{isEn ? 'Real-time events' : 'Eventos en tiempo real'}</b><span>{isEn ? <Fragment>Your site listens to <code>cord:approved</code>, <code>cord:pay</code>, and more — to trigger your analytics, CRM, or whatever you need.</Fragment> : <Fragment>Tu sitio escucha <code>cord:approved</code>, <code>cord:pay</code> y más — para disparar tu analítica, CRM o lo que sea.</Fragment>}</span></div>
                 </div>
             </div>
         </section>
@@ -236,15 +239,15 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
         <!-- ════════ EVENTOS / DEV ════════ -->
         <section class="el-dev">
             <div class="el-dev-text">
-                <p class="el-eyebrow reveal">PARA DESARROLLADORES</p>
-                <h2 class="el-h2 masked-title">Reacciona a cada<br/>acción del cliente.</h2>
-                <p class="el-copy reveal">El contenedor emite <code>CustomEvents</code> sobre tu propio <code>&lt;div&gt;</code>. Conéctalos a tu analítica, redirige tras la aprobación o sincroniza tu CRM — el control queda en tu página.</p>
+                <p class="el-eyebrow reveal">{isEn ? 'FOR DEVELOPERS' : 'PARA DESARROLLADORES'}</p>
+                <h2 class="el-h2 masked-title" set:html={isEn ? 'React to every<br/>client action.' : 'Reacciona a cada<br/>acción del cliente.'} />
+                <p class="el-copy reveal">{isEn ? <Fragment>The container emits <code>CustomEvents</code> on your own <code>&lt;div&gt;</code>. Connect them to your analytics, redirect after approval, or sync your CRM — you keep control on your page.</Fragment> : <Fragment>El contenedor emite <code>CustomEvents</code> sobre tu propio <code>&lt;div&gt;</code>. Conéctalos a tu analítica, redirige tras la aprobación o sincroniza tu CRM — el control queda en tu página.</Fragment>}</p>
                 <ul class="el-events-list">
-                    <li class="reveal"><code>cord:ready</code><span>el cotizador cargó</span></li>
-                    <li class="reveal"><code>cord:approved</code><span>el cliente aprobó · <i>detail: folio, token</i></span></li>
-                    <li class="reveal"><code>cord:rejected</code><span>el cliente rechazó</span></li>
-                    <li class="reveal"><code>cord:message</code><span>comentario o contraoferta</span></li>
-                    <li class="reveal"><code>cord:pay</code><span>inició el pago en línea</span></li>
+                    <li class="reveal"><code>cord:ready</code><span>{isEn ? 'the quote builder loaded' : 'el cotizador cargó'}</span></li>
+                    <li class="reveal"><code>cord:approved</code><span>{isEn ? <Fragment>the client approved · <i>detail: folio, token</i></Fragment> : <Fragment>el cliente aprobó · <i>detail: folio, token</i></Fragment>}</span></li>
+                    <li class="reveal"><code>cord:rejected</code><span>{isEn ? 'the client rejected' : 'el cliente rechazó'}</span></li>
+                    <li class="reveal"><code>cord:message</code><span>{isEn ? 'comment or counteroffer' : 'comentario o contraoferta'}</span></li>
+                    <li class="reveal"><code>cord:pay</code><span>{isEn ? 'online payment started' : 'inició el pago en línea'}</span></li>
                 </ul>
             </div>
             <div class="el-code el-code-dev reveal-mockup">
@@ -255,15 +258,15 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
 
         <!-- ════════ CTA secundario ════════ -->
         <section class="el-mid">
-            <h2 class="el-mid-title masked-title">¿Prefieres no embeber?<br/>Comparte el link.</h2>
-            <p class="el-mid-sub reveal">Cada cotización vive también en su propia página pública <code>/q/{'{'}token{'}'}</code> — el mismo cotizador, sin tocar código. El embed es para cuando quieres que viva <i>dentro</i> de tu sitio.</p>
-            <a href="/q/demo" class="el-btn-ghost reveal" target="_blank" rel="noopener">Ver una cotización real ↗</a>
+            <h2 class="el-mid-title masked-title" set:html={isEn ? 'Prefer not to embed?<br/>Share the link.' : '¿Prefieres no embeber?<br/>Comparte el link.'} />
+            <p class="el-mid-sub reveal">{isEn ? <Fragment>Each quote also lives on its own public page <code>/q/{'{'}token{'}'}</code> — the exact same builder, zero code. Embedding is for when you want it to live <i>inside</i> your site.</Fragment> : <Fragment>Cada cotización vive también en su propia página pública <code>/q/{'{'}token{'}'}</code> — el mismo cotizador, sin tocar código. El embed es para cuando quieres que viva <i>dentro</i> de tu sitio.</Fragment>}</p>
+            <a href={l("/q/demo")} class="el-btn-ghost reveal" target="_blank" rel="noopener">{isEn ? 'View a real quote ↗' : 'Ver una cotización real ↗'}</a>
         </section>
     </main>
 
     <Footer
-        ctaTitle="Lleva tu cotizador<br />a donde están tus clientes."
-        ctaSub="Crea tu cuenta gratis y embebe tu primer cotizador hoy mismo."
+        ctaTitle={isEn ? 'Bring your quote builder<br />to where your clients are.' : 'Lleva tu cotizador<br />a donde están tus clientes.'}
+        ctaSub={isEn ? 'Create your free account and embed your first quote builder today.' : 'Crea tu cuenta gratis y embebe tu primer cotizador hoy mismo.'}
     />
     <PageAnims />
 </Layout>
@@ -580,8 +583,8 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
                 await navigator.clipboard.writeText(active?.textContent || '');
                 const label = copyBtn.querySelector('span');
                 copyBtn.classList.add('done');
-                if (label) label.textContent = '¡Copiado!';
-                setTimeout(() => { copyBtn.classList.remove('done'); if (label) label.textContent = 'Copiar'; }, 2000);
+                if (label) label.textContent = document.documentElement.lang === 'en' ? 'Copied!' : '¡Copiado!';
+                setTimeout(() => { copyBtn.classList.remove('done'); if (label) label.textContent = document.documentElement.lang === 'en' ? 'Copy' : 'Copiar'; }, 2000);
             } catch {}
         });
     }

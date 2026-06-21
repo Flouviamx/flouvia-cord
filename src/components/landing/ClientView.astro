@@ -1,4 +1,8 @@
 ---
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 // El diferenciador — cómo ve tu cliente la cotización (mockup del link público /q/).
 // El teléfono auto-reproduce un demo: el monto cuenta hacia arriba, un cursor
 // aparece, aprueba la cotización y se dibuja un checkmark de éxito. (Orquestado
@@ -8,18 +12,16 @@
 <section class="cv">
     <div class="cv-inner">
         <div class="cv-text">
-            <p class="cv-eyebrow reveal">LA EXPERIENCIA DE TU CLIENTE</p>
-            <h2 class="cv-title reveal">Cada cotización de Cord<br />se ve como tu mejor venta.</h2>
+            <p class="cv-eyebrow reveal">{t("cv.eyebrow")}</p>
+            <h2 class="cv-title reveal">{t("cv.title")}</h2>
             <p class="cv-p reveal">
-                Tu cliente no recibe un PDF perdido en el correo. Recibe un link con tu
-                logo, tus colores y tus datos — donde ve los productos, el total y aprueba
-                con un botón. Profesional, en su celular, en segundos.
+                {t("cv.p")}
             </p>
             <ul class="cv-list">
-                <li class="reveal"><span class="cv-check">✓</span> Con tu marca: logo, colores y datos fiscales</li>
-                <li class="reveal"><span class="cv-check">✓</span> Aprueba o paga sin crear cuenta</li>
-                <li class="reveal"><span class="cv-check">✓</span> Tú te enteras en el momento exacto en que la ve</li>
-                <li class="reveal"><span class="cv-check">✓</span> Válida hasta la fecha que tú definas</li>
+                <li class="reveal"><span class="cv-check">✓</span> {t("cv.l1")}</li>
+                <li class="reveal"><span class="cv-check">✓</span> {t("cv.l2")}</li>
+                <li class="reveal"><span class="cv-check">✓</span> {t("cv.l3")}</li>
+                <li class="reveal"><span class="cv-check">✓</span> {t("cv.l4")}</li>
             </ul>
         </div>
 
@@ -38,23 +40,23 @@
                     <div class="ps-amount">
                         <span class="ps-amount-label">TOTAL</span>
                         <span class="editorial ps-amount-val" id="cvAmount">$196,469.20</span>
-                        <span class="ps-amount-cur">MXN · IVA incluido · Net 30</span>
+                        <span class="ps-amount-cur">{t("cv.mk.cur")}</span>
                     </div>
 
                     <div class="ps-items">
                         <div class="ps-item"><span>Cemento gris 50kg ×120</span><span class="editorial">$21,840</span></div>
                         <div class="ps-item"><span>Varilla 3/8" ×340</span><span class="editorial">$57,290</span></div>
                         <div class="ps-item"><span>Block hueco ×2,400</span><span class="editorial">$34,080</span></div>
-                        <div class="ps-item ps-more">+ 1 producto más</div>
+                        <div class="ps-item ps-more">{t("cv.mk.more")}</div>
                     </div>
 
                     <button class="ps-approve" id="cvApprove">
-                        <span>Aprobar cotización</span>
+                        <span>{t("cv.mk.app")}</span>
                         <span class="ps-ring" aria-hidden="true"></span>
                     </button>
-                    <button class="ps-secondary">Descargar PDF</button>
+                    <button class="ps-secondary">{t("cv.mk.pdf")}</button>
 
-                    <div class="ps-footer">Cotización válida hasta el 24 jun · vía <b>cord</b></div>
+                    <div class="ps-footer">{t("cv.mk.foot1")}<b>cord</b></div>
 
                     <!-- Cursor del demo (animado) -->
                     <svg class="ps-cursor" id="cvCursor" viewBox="0 0 24 24" aria-hidden="true">
@@ -66,8 +68,8 @@
                         <div class="ps-success-circle">
                             <svg class="ps-check" viewBox="0 0 24 24"><path id="cvCheck" d="M4 12.5l5 5L20 6.5"/></svg>
                         </div>
-                        <div class="ps-success-text">Cotización aprobada</div>
-                        <div class="ps-success-sub">El Zarco · hace un momento</div>
+                        <div class="ps-success-text">{t("cv.mk.ok")}</div>
+                        <div class="ps-success-sub">{t("cv.mk.oksub")}</div>
                     </div>
                 </div>
             </div>

@@ -1,17 +1,23 @@
 ---
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 // Pricing — 5 planes (Free · Starter · Pro · Scale · Developer). Datos desde
 // src/lib/precios.ts (fuente única, compartida con /precios). Pro = el ANCLA:
 // va al centro, destacado en navy, ribbon "MÁS POPULAR".
-import { PLANES } from '../../lib/precios';
+import { PLANES as PLANES_ES } from '../../lib/precios';
+import { PLANES_EN } from '../../lib/precios.en';
 
+const PLANES = lang === 'es' ? PLANES_ES : PLANES_EN;
 const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
 ---
 
 <section class="pricing" id="precios">
     <div class="pr-head">
-        <p class="pr-eyebrow reveal">PRECIOS</p>
-        <h2 class="pr-title reveal">Empieza gratis.<br />Crece cuando cierres más.</h2>
-        <p class="pr-sub reveal">Sin contratos. Cancela cuando quieras. Precios en pesos, IVA incluido.</p>
+        <p class="pr-eyebrow reveal">{t("pr.eyebrow")}</p>
+        <h2 class="pr-title reveal">{t("pr.title")}</h2>
+        <p class="pr-sub reveal">{t("pr.sub")}</p>
     </div>
 
     <div class="pr-grid">
@@ -26,12 +32,12 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
                     {p.precioMensual === 0 ? (
                         <>
                             <span class="editorial plan-amount">$0</span>
-                            <span class="plan-cycle">para siempre</span>
+                            <span class="plan-cycle">{t("pr.cycle")}</span>
                         </>
                     ) : (
                         <>
                             <span class="editorial plan-amount" data-countup={String(p.precioMensual)} data-decimals="0">{money0(p.precioMensual)}</span>
-                            <span class="plan-cycle">MXN / mes</span>
+                            <span class="plan-cycle">{t("pr.cycle.m")}</span>
                         </>
                     )}
                 </div>
@@ -51,7 +57,7 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
     </div>
 
     <p class="pr-note reveal">
-        <a href="/precios" class="pr-compare-link">Ver la comparación completa de planes →</a>
+        <a href={l("/precios")} class="pr-compare-link">{t("pr.note")}</a>
     </p>
 </section>
 

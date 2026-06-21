@@ -10,6 +10,9 @@ interface Props {
     ogType?: string;
 }
 
+import Analytics from '@vercel/analytics/astro';
+import { getLangFromUrl, altLangUrls } from '../i18n/utils';
+
 const {
     title,
     description = 'Cord — cotizaciones B2B profesionales. Crea, envía y da seguimiento a tus cotizaciones con precios negociados, términos de crédito y CFDI. Un producto de Flouvia.',
@@ -22,11 +25,15 @@ const SITE      = Astro.site ?? new URL('https://cord.flouvia.com');
 const canonical = new URL(Astro.url.pathname, SITE).href;
 const ogImage   = new URL(image, SITE).href;
 
-import Analytics from '@vercel/analytics/astro';
+const lang = getLangFromUrl(Astro.url);
+const { esUrl, enUrl } = altLangUrls(Astro.url);
+const siteCanonicalEs = new URL(esUrl, SITE).href;
+const siteCanonicalEn = new URL(enUrl, SITE).href;
+const locale = lang === 'es' ? 'es_MX' : 'en_US';
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang={lang}>
     <head>
         <meta charset="UTF-8" />
 
@@ -41,12 +48,15 @@ import Analytics from '@vercel/analytics/astro';
 
         <meta name="description" content={description} />
         <link rel="canonical" href={canonical} />
+        <link rel="alternate" hreflang="es" href={siteCanonicalEs} />
+        <link rel="alternate" hreflang="en" href={siteCanonicalEn} />
+        <link rel="alternate" hreflang="x-default" href={siteCanonicalEs} />
         {noindex && <meta name="robots" content="noindex, nofollow" />}
 
         <!-- Open Graph -->
         <meta property="og:type" content={ogType} />
         <meta property="og:site_name" content="Cord" />
-        <meta property="og:locale" content="es_MX" />
+        <meta property="og:locale" content={locale} />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
