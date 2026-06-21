@@ -251,12 +251,7 @@ export default function CustomOrgSwitcher() {
           top: calc(100% + 0.5rem);
           left: 0;
           width: 280px;
-          /* SÓLIDO opaco: base tema-aware (--surface: blanco claro / navy oscuro) bajo
-             el gradiente, así NUNCA se transparenta el fondo aunque --sb-menu-bg no resuelva. */
-          background-color: var(--surface, #ffffff);
-          background-image: var(--sb-menu-bg);
-          backdrop-filter: blur(44px) saturate(1.9) brightness(1.03);
-          -webkit-backdrop-filter: blur(44px) saturate(1.9) brightness(1.03);
+          background: var(--sb-menu-bg);
           border: 1px solid var(--sb-menu-border);
           border-radius: 16px;
           box-shadow: var(--sb-menu-shadow);

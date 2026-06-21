@@ -416,7 +416,7 @@ const NAV_GROUPS = [
         /* ── Sidebar (espejo de la topbar): vidrio BLANCO en claro, navy en oscuro.
            Todo el contenido de la sidebar lee estas variables, así que cambia de tema
            sin duplicar reglas. Los valores light van aquí; el bloque dark los reescribe. */
-        --sb-bg: linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.64) 100%);
+        --sb-bg: linear-gradient(180deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.6) 100%);
         --sb-border: rgba(255,255,255,0.6);
         --sb-shadow:
             inset 0 1px 1px rgba(255,255,255,0.95),
@@ -467,14 +467,13 @@ const NAV_GROUPS = [
         --surface-2: #1a2230;
 
         /* Sidebar en oscuro → vidrio navy rico (el look anterior, ahora vía variables) */
-        --sb-bg: linear-gradient(180deg, rgba(23,44,78,0.95) 0%, rgba(13,29,53,0.94) 55%, rgba(9,21,40,0.96) 100%);
-        --sb-border: rgba(255,255,255,0.12);
+        --sb-bg: linear-gradient(180deg, rgba(22,30,44,0.85) 0%, rgba(13,19,29,0.72) 100%);
+        --sb-border: rgba(255,255,255,0.1);
         --sb-shadow:
-            inset 0 1px 0 rgba(255,255,255,0.2),
-            inset 0 0 0 0.5px rgba(255,255,255,0.07),
-            inset 0 -10px 24px rgba(0,0,0,0.22),
-            0 18px 50px -14px rgba(0,0,0,0.5),
-            0 3px 10px rgba(0,0,0,0.3);
+            inset 0 1px 0 rgba(255,255,255,0.12),
+            inset 0 0 0 0.5px rgba(255,255,255,0.05),
+            inset 0 -6px 14px rgba(0,0,0,0.2),
+            0 16px 44px -10px rgba(0,0,0,0.55);
         --sb-sheen:
             radial-gradient(135% 55% at 50% -12%, rgba(255,255,255,0.12), transparent 62%),
             radial-gradient(90% 40% at 18% 0%, rgba(120,160,230,0.10), transparent 70%);
@@ -849,8 +848,8 @@ const NAV_GROUPS = [
         /* Pill flotante de VIDRIO — espejo de la topbar: blanca en claro, navy en oscuro.
            Todo via variables --sb-* (definidas en :root y reescritas en data-theme="dark"). */
         background: var(--sb-bg);
-        backdrop-filter: blur(34px) saturate(1.9) brightness(1.03);
-        -webkit-backdrop-filter: blur(34px) saturate(1.9) brightness(1.03);
+        backdrop-filter: blur(34px) saturate(1.9) brightness(1.04);
+        -webkit-backdrop-filter: blur(34px) saturate(1.9) brightness(1.04);
         border: 1px solid var(--sb-border);
         box-shadow: var(--sb-shadow);
         border-radius: 22px;
