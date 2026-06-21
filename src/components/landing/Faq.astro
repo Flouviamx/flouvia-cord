@@ -39,17 +39,17 @@ const faqs = [
             <h2 class="faq-title reveal">Lo que más nos preguntan.</h2>
         </div>
 
-        <div class="faq-list">
-            {faqs.map((f, i) => (
-                <div class="faq-item reveal">
-                    <button class="faq-q" aria-expanded="false" aria-controls={`faq-panel-${i}`}>
+        <div class="pr-faq-list reveal">
+            {faqs.map((f) => (
+                <details class="pr-faq-item">
+                    <summary>
                         <span>{f.q}</span>
-                        <span class="faq-icon" aria-hidden="true"></span>
-                    </button>
-                    <div class="faq-panel" id={`faq-panel-${i}`} role="region">
-                        <p class="faq-a">{f.a}</p>
-                    </div>
-                </div>
+                        <i class="pr-faq-ico" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        </i>
+                    </summary>
+                    <div class="pr-faq-body"><p>{f.a}</p></div>
+                </details>
             ))}
         </div>
     </div>
@@ -62,91 +62,49 @@ const faqs = [
     .faq-eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #888; margin: 0 0 1.2rem; }
     .faq-title { font-size: clamp(1.8rem, 3.2vw, 2.6rem); font-weight: 800; letter-spacing: -1px; color: var(--color-text); margin: 0; }
 
-    .faq-list { display: flex; flex-direction: column; }
-    .faq-item {
-        border-bottom: 1px solid var(--color-border);
-    }
-    .faq-q {
+    /* ── NATIVE DETAILS FAQ (QUIET LUXURY) ── */
+    .pr-faq-list {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1.5rem;
-        width: 100%;
-        padding: 1.5rem 0.2rem;
+        flex-direction: column;
+        max-width: 860px;
+        margin: 0 auto;
+        border-top: 1px solid var(--color-border);
+    }
+    .pr-faq-item {
+        border-bottom: 1px solid var(--color-border);
+        overflow: hidden;
+    }
+    .pr-faq-item summary {
+        list-style: none;
         cursor: pointer;
-        background: none; border: none; text-align: left;
-        font-family: var(--font-sans);
-        font-size: 1.08rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.5rem 0;
+        font-size: 1.1rem;
         font-weight: 600;
         color: var(--color-text);
-        transition: color 0.3s var(--ease-ios);
     }
-    .faq-q:hover { color: var(--color-blue-deep); }
-
-    .faq-icon {
-        position: relative;
-        width: 16px; height: 16px;
+    .pr-faq-item summary::-webkit-details-marker { display: none; }
+    .pr-faq-ico {
         flex-shrink: 0;
-    }
-    .faq-icon::before, .faq-icon::after {
-        content: '';
-        position: absolute;
-        top: 50%; left: 50%;
-        background: var(--color-text-muted);
-        transition: transform 0.4s var(--ease-spring);
-    }
-    .faq-icon::before { width: 14px; height: 2px; transform: translate(-50%, -50%); }
-    .faq-icon::after { width: 2px; height: 14px; transform: translate(-50%, -50%); }
-    .faq-item.open .faq-icon { transform: rotate(90deg); }
-    .faq-item.open .faq-icon::after { transform: translate(-50%, -50%) scaleY(0); }
-    .faq-icon { transition: transform 0.5s var(--ease-spring); }
-    .faq-item.open .faq-q { color: var(--color-blue-deep); }
-
-    /* Panel: grid 0fr → 1fr = animación de altura sin medir con JS */
-    .faq-panel {
-        display: grid;
-        grid-template-rows: 0fr;
-        transition: grid-template-rows 0.55s var(--ease-spring);
-    }
-    .faq-panel > .faq-a { overflow: hidden; min-height: 0; }
-    .faq-item.open .faq-panel { grid-template-rows: 1fr; }
-
-    .faq-a {
-        margin: 0;
-        padding: 0 0.2rem;
-        font-size: 1rem;
-        line-height: 1.7;
         color: var(--color-text-muted);
-        max-width: 90%;
-        opacity: 0;
-        transform: translateY(-6px);
-        transition: opacity 0.45s var(--ease-ios) 0.08s, transform 0.5s var(--ease-spring) 0.08s, padding 0.45s var(--ease-spring);
+        transition: transform 0.4s var(--ease-spring), color 0.3s;
     }
-    .faq-item.open .faq-a { opacity: 1; transform: translateY(0); padding-bottom: 1.6rem; }
-
-    @media (prefers-reduced-motion: reduce) {
-        .faq-panel, .faq-a, .faq-icon { transition: none; }
+    .pr-faq-ico svg { width: 20px; height: 20px; }
+    .pr-faq-item[open] .pr-faq-ico {
+        transform: rotate(135deg);
+        color: var(--color-text);
+    }
+    .pr-faq-body {
+        padding: 0 0 1.5rem;
+    }
+    .pr-faq-body p {
+        margin: 0;
+        font-size: 1rem;
+        line-height: 1.6;
+        color: var(--color-text-muted);
+        max-width: 700px;
     }
 </style>
-
-<script>
-    // Acordeón: un solo abierto a la vez; la animación la hace el CSS (grid 0fr→1fr).
-    document.addEventListener('DOMContentLoaded', () => {
-        const items = Array.from(document.querySelectorAll<HTMLElement>('.faq-item'));
-        items.forEach((item) => {
-            const btn = item.querySelector<HTMLButtonElement>('.faq-q');
-            if (!btn) return;
-            btn.addEventListener('click', () => {
-                const willOpen = !item.classList.contains('open');
-                items.forEach((other) => {
-                    other.classList.remove('open');
-                    other.querySelector('.faq-q')?.setAttribute('aria-expanded', 'false');
-                });
-                if (willOpen) {
-                    item.classList.add('open');
-                    btn.setAttribute('aria-expanded', 'true');
-                }
-            });
-        });
-    });
-</script>
