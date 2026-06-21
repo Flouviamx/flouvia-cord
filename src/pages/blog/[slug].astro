@@ -445,7 +445,7 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
 
     .share-text {
         font-size: 0.8rem; font-weight: 600; white-space: nowrap; padding-right: 16px;
-        opacity: 0; transform: translateX(-10px); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        opacity: 0; transition: opacity 0.3s ease;
     }
     
     .share-btn:hover { 
@@ -455,7 +455,7 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
     }
     
     .share-btn:hover .share-icon svg { transform: scale(1.1); }
-    .share-btn:hover .share-text { opacity: 1; transform: translateX(0); transition-delay: 0.05s; }
+    .share-btn:hover .share-text { opacity: 1; transition-delay: 0.1s; }
 
     /* ==========================================================
        LEFT SIDEBAR: TOC SCROLLSPY (Match Screenshot)
