@@ -4,7 +4,7 @@ excerpt: "Analizamos más de 10,000 transacciones B2B y descubrimos cómo la fri
 category: "Ventas B2B"
 date: "14 Jun 2026"
 readTime: "07 MIN"
-img: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+img: "/images/blog/error-pdf-ventas-b2b.png"
 authorName: "Sofía Reyes"
 authorRole: "Head of Growth"
 ---

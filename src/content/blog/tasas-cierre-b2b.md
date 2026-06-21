@@ -4,7 +4,7 @@ excerpt: "Patrones visuales, psicología de precios e interacción para diseñar
 category: "Ventas B2B"
 date: "20 Abr 2026"
 readTime: "06 MIN"
-img: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+img: "/images/blog/tasas-cierre-b2b.png"
 authorName: "Lorena Silva"
 authorRole: "Sales Engineering"
 ---

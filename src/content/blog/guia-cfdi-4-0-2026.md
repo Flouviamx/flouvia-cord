@@ -4,7 +4,7 @@ excerpt: "Todo lo que necesitas saber sobre complementos de pago (REP), carta po
 category: "Fiscal"
 date: "12 Jun 2026"
 readTime: "09 MIN"
-img: "https://images.unsplash.com/photo-1554224154-26032ffc0d07?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+img: "/images/blog/guia-cfdi-4-0-2026.png"
 authorName: "Diego Fernández"
 authorRole: "Tax Tech Lead"
 ---

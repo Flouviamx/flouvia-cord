@@ -4,7 +4,7 @@ excerpt: "La automatización del seguimiento y la negociación de deuda mediante
 category: "Tecnología"
 date: "28 May 2026"
 readTime: "10 MIN"
-img: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+img: "/images/blog/ia-en-ventas.png"
 authorName: "Alejandro Ruiz"
 authorRole: "Director de AI & Data"
 ---

@@ -4,7 +4,7 @@ excerpt: "Dar crédito es obligatorio en B2B, pero el flujo de caja es el rey. A
 category: "Finanzas"
 date: "05 Jun 2026"
 readTime: "08 MIN"
-img: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+img: "/images/blog/credito-b2b-net30.png"
 authorName: "Roberto Muñoz"
 authorRole: "VP Finance en Cord"
 ---

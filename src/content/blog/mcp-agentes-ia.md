@@ -4,7 +4,7 @@ excerpt: "Así funciona nuestra arquitectura bidireccional de agentes. Cómo el 
 category: "Tecnología"
 date: "02 May 2026"
 readTime: "12 MIN"
-img: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+img: "/images/blog/mcp-agentes-ia.png"
 authorName: "Equipo de Ingeniería"
 authorRole: "Cord Core Team"
 ---

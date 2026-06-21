@@ -4,7 +4,7 @@ excerpt: "Venderle a 200 clientes a 200 precios distintos es una pesadilla opera
 category: "Operaciones"
 date: "15 May 2026"
 readTime: "08 MIN"
-img: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+img: "/images/blog/listas-de-precios-b2b.png"
 authorName: "Carlos Slim Jr."
 authorRole: "Consultor de Operaciones"
 ---

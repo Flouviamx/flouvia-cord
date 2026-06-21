@@ -26,7 +26,7 @@ const CATEGORIES = ['Todos', ...new Set(allPosts.map(p => p.data.category))];
 
 const featuredAuthorName = FEATURED_POST.authorName || 'Equipo Cord';
 const featuredAuthorRole = FEATURED_POST.authorRole || 'Redacción';
-const featuredAuthorAvatar = FEATURED_POST.authorAvatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80';
+const featuredAuthorAvatar = FEATURED_POST.authorAvatar || '/images/blog/cord-author-avatar.png';
 ---
 
 <Layout
@@ -277,10 +277,10 @@ const featuredAuthorAvatar = FEATURED_POST.authorAvatar || 'https://images.unspl
         background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%); /* #3b82f6 */
         animation-delay: -5s;
     }
-    /* Cord Dark Slate */
+    /* Cord Cyan Glow */
     .blob-3 {
         top: 30%; left: 40%; width: 500px; height: 500px;
-        background: radial-gradient(circle, rgba(15,23,42,0.1) 0%, transparent 70%); /* #0f172a */
+        background: radial-gradient(circle, rgba(34,211,238,0.08) 0%, transparent 70%); /* #22d3ee */
         animation-delay: -10s;
     }
     @keyframes float {
