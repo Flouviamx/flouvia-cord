@@ -30,9 +30,10 @@
 <style>
     .support-hero {
         position: relative;
+        z-index: 10;
         text-align: center;
         padding: 11.5rem 5% 6rem;
-        overflow: clip;
+        overflow: visible; /* changed from clip to visible to allow dropdown overflow */
         background: var(--color-bg);
         border-bottom: 1px solid var(--color-border);
     }
