@@ -73,6 +73,44 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
 
 ## Estado actual (jun 2026)
 
+✅ **Mockups de landing pulidos + página "Cobranza con IA" (jun 2026)** — limpieza de
+   animaciones de las subpáginas (`/producto/*`, `/soluciones/*`, `/desarrolladores/*`) +
+   primera página de las integraciones nuevas:
+   • **Animaciones raras ELIMINADAS** (petición de André: "que no se volteen, nada raro"). Se
+     quitó el **"exploded view"** del hero (el mockup que rotaba `rotationX:25/rotationY:-15` y
+     se reensamblaba con el scroll) en las **3** plantillas → ahora el hero usa el **mismo
+     "settle" limpio del index** (lo maneja `PageAnims.astro`: `rotationX:9 → 0` con scrub). Se
+     quitaron también: el **tilt-3D-con-cursor** (efecto ya rechazado antes), el **emisor de
+     partículas** en `mousemove` (creaba `<div.mk-particle>` huérfanos en `<body>` sin CSS), y la
+     **tarjeta flip 180°** de manufactura (la "voltereta") → reemplazada por un mockup de "precio
+     por volumen" con reveal escalonado limpio. El **Kanban** que se arrastraba con el scroll
+     (scrub) pasó a ser un **loop de motion-graphic** auto-reproducido. **Regla a futuro:** en las
+     subpáginas NO reintroducir exploded-view, tilt con cursor, partículas ni flips; los heroes se
+     animan SOLO con el settle de `PageAnims`, y los mockups cuentan su historia con loops
+     `once`/`repeat:-1` (como el index), respetando `prefers-reduced-motion`.
+   • **Heroes de Soluciones ahora son motion graphics** (antes tarjetas estáticas): micro-historia
+     por industria dentro del `.pp-mockup` (en el `<script>` de `soluciones/[slug].astro`):
+     distribuidoras (precios por cliente que se revelan + chips de descuento con *pop*),
+     construcción (materiales + barra de crédito que se llena), manufactura (specs + nota del
+     lote), servicios (pulso del botón "Aprobar" + badge "Vista"). Gated por `!reduced`.
+   • **Página NUEVA `/producto/cobranza-ia`** ("Cobranza con IA") — vende la cobranza autónoma
+     (AR agent) + flujo de caja predictivo, que existían en la app pero no en la landing. Hecha
+     sobre la plantilla de `/producto/[slug]`: entrada nueva en `FEATURES` (`src/lib/producto.ts`),
+     **hero mockup** `.mk-ar` (el agente negocia un plan de 3 cuotas en vivo: burbujas que entran
+     una a una + plan que se revela + "Aprobar" pulsando — JS en el bloque `if(wrap)` de
+     `[slug].astro`, hook `#arThread`), y **3 block mockups** en `BlockMockup.astro`
+     (`bm-ar-m0/m1/m2`: negociación que cierra, barras de flujo a 90 días, tablero de supervisión
+     con estado Negociando→Pagado). Copy fiel a la feature (Scale, hasta 3 cuotas, opt-in, audit
+     log) + FAQPage JSON-LD. Cableada en el **megamenú** (`Nav.astro`) y el **footer**
+     (`Footer.astro`); aparece sola en los cross-links de las demás páginas de producto.
+   • **Pendiente de esta tanda** (mismo patrón, ya probado): páginas de **Multi-divisa FX**,
+     **Fiscal internacional (US/MX)** y **Cord Elements** en `/desarrolladores`; actualizar el copy
+     de la página MCP a **MCP bidireccional + gobernanza de agentes**.
+   • ⚠️ **npm:** el `package.json` RAÍZ (`flouvia-cord`) se publicó por accidente a npm público
+     (no tiene `"private": true` → subió todo el código fuente). Conviene
+     `npm unpublish flouvia-cord@0.0.1` + agregar `"private": true` a la raíz. `@flouviahq/elements`
+     local ya está en **0.2.0** pero npm muestra **0.1.0** → re-publicar desde `packages/elements/`.
+
 ✅ **Sidebar themed + Developers separado + onboarding ampliado (jun 2026)** — iteración de UI a
    petición de André:
    • **Sidebar = espejo de la topbar (vidrio BLANCO en claro, navy en oscuro)** — antes era
@@ -610,6 +648,40 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
    `orgs.country_code` (sin ella `emit.ts`/facturar tronaba). **Regla a futuro:** toda
    columna nueva sobre una tabla existente va como `alter table … add column if not exists`,
    NUNCA editando el `create table`.
+✅ **Gating de API/Webhooks → LÍMITES por plan + CSD multi-tenant + Slack robusto (jun 2026)** —
+   sesión "hazlo funcionar" (André reportó webhooks/integraciones/CSD rotos):
+   • **Dropdown del sidebar 100% opaco:** `--sb-menu-bg` (claro/oscuro) y `.tb-create-menu`
+     pasaron de alpha 0.96–0.98 a SÓLIDO; `CustomOrgSwitcher.org-dropdown` usa
+     `background-color: var(--surface)` + `background-image: var(--sb-menu-bg)` (a prueba de
+     fallos). Bonus: el componente usaba `:global(.sb-collapsed)` (CSS inválido en un `<style>`
+     plano de React → el navegador lo descartaba); corregido a `.sb-collapsed` plano, así el
+     org switcher por fin se ajusta al sidebar colapsado.
+   • **Gating → límites (no bloqueo):** decisión de André — la API y los webhooks YA NO se
+     bloquean por plan; TODOS los planes (incl. `free`) los tienen, LIMITADOS por cantidad.
+     `permissions.ts`: `webhookLimit` (free 1 · starter 3 · pro 10 · scale 25 · developer 100)
+     y `apiKeyLimit` (free 2 · starter 5 · pro 20 · scale 50 · developer 200) + `planLabel`.
+     `/api/webhooks` y `/api/keys` cuentan los existentes vs el límite (403 con mensaje claro);
+     `apikey.ts` ya NO bloquea llaves live por plan (el consumo se mide por uso). UI: `api.astro`
+     y `webhooks.astro` muestran `X/Límite` y deshabilitan el botón al tope (adiós upsell
+     "plan Negocio"); el botón "Vivo" se desbloqueó. `planTieneApi` sigue existiendo
+     (lo usa `portal.astro` para quitar marca).
+   • **Slack robusto:** `/api/org/prefs` antes IGNORABA en silencio una URL de Slack inválida
+     (guardar no hacía nada → parecía roto). Ahora: vacío = desconectar, válida = guardar,
+     inválida = **error 400 claro**.
+   • **CSD REAL multi-tenant (Facturapi Organizations):** la sección CSD de `/app/ajustes/fiscal`
+     estaba 100% deshabilitada (maqueta). Ahora cada org de Cord = una organización en Facturapi
+     con SU CSD, y timbra bajo SU RFC. Nuevo `src/lib/fiscal/facturapi.ts` (gestión vía la llave
+     de CUENTA `FACTURAPI_USER_KEY`: create org → `POST /organizations`, legal → `PUT …/legal`,
+     CSD → `PUT …/certificate` multipart cer/key/password, llave live → **`PUT …/apikeys/live`**
+     que RENUEVA y devuelve el secreto — el GET solo lista enmascarado). Endpoint nuevo
+     `/api/fiscal/csd` (POST multipart / DELETE). `MexicoSatProvider` acepta `providerApiKey`
+     (la llave LIVE de la org); `emit.ts` y el proxy `/cfdi` la usan cuando existe, con fallback
+     a la global. Cols nuevas `orgs.facturapi_org_id`/`facturapi_live_key`. UI de fiscal
+     habilitada (subir/quitar CSD, estado en vivo, badge PAC). ⚠️ **Requiere `FACTURAPI_USER_KEY`
+     en el entorno** (sin ella el endpoint responde 503 honesto y el timbrado cae a la global).
+   • **Scripts:** `scripts/set-plan.mjs` (cambia plan de una org: `--list` / `--plan=… --org=…`
+     / `--all`). Las 2 orgs "Flouvia" de André se subieron a `developer`. ⚠️ `npm run db:migrate`
+     (2 cols nuevas en orgs).
 ✅ **LISTO PARA PRODUCCIÓN (jun 2026)** — operativa verificada: DB de prod migrada; env vars
    en Vercel (`ANTHROPIC_API_KEY`, `RESEND_API_KEY`/`RESEND_FROM`, `CRON_SECRET`, DATABASE_URL,
    Clerk/Stripe live); webhooks de Stripe (`/api/stripe/webhook` + Customer Portal) y Clerk
@@ -751,10 +823,12 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
 # Landing (prerender:true) — CONSTRUIDA
 /                → landing de ventas (un solo index.astro que monta los componentes)
 /producto/[slug] → páginas de producto (jun 2026, estilo Stripe): editor,
-                   link-publico, seguimiento, cfdi, clientes-credito. Contenido en
-                   src/lib/producto.ts; mockup por feature en [slug].astro;
+                   link-publico, seguimiento, cfdi, clientes-credito, cobranza-ia. Contenido en
+                   src/lib/producto.ts; mockup por feature en [slug].astro (hero) +
+                   components/producto/BlockMockup.astro (bloques);
                    animaciones compartidas en components/landing/PageAnims.astro
-                   (masked titles via clase .masked-title, hero .pp-hero)
+                   (masked titles via clase .masked-title, hero .pp-hero). Heroes con "settle"
+                   estilo index — SIN exploded-view/tilt/partículas/flip (ver Estado actual).
 /precios         → página dedicada (jun 2026): toggle mensual/anual (2 meses gratis),
                    comparador completo, calculadora de valor (ROI) y FAQ.
                    Datos en src/lib/precios.ts (FUENTE ÚNICA de planes/comparativa/FAQ).

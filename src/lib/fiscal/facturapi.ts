@@ -76,22 +76,23 @@ export async function uploadCertificate(
   password: string,
 ): Promise<FacturapiResult> {
   const fd = new FormData();
-  fd.append('cer', new Blob([cer.bytes]), cer.name || 'csd.cer');
-  fd.append('key', new Blob([key.bytes]), key.name || 'csd.key');
+  fd.append('cer', new Blob([cer.bytes], { type: 'application/octet-stream' }), cer.name || 'cer.cer');
+  fd.append('key', new Blob([key.bytes], { type: 'application/octet-stream' }), key.name || 'key.key');
   fd.append('password', password);
   return call('PUT', `/organizations/${orgId}/certificate`, fd, true);
 }
 
 /**
- * Obtiene (regenera) la llave LIVE de la organización. Facturapi la devuelve como
- * string plano. Hay que GUARDARLA: cada llamada genera una nueva e invalida la
- * anterior, así que solo la pedimos al cargar/renovar el CSD.
+ * RENUEVA la llave LIVE de la organización y la devuelve (string plano). Ojo: el
+ * GET de /apikeys/live sólo LISTA llaves enmascaradas — el secreto sólo se obtiene
+ * al renovar (PUT). Por eso sólo lo llamamos al cargar el CSD y GUARDAMOS el
+ * resultado; cada renovación invalida la llave anterior.
  */
 export async function getLiveKey(orgId: string): Promise<FacturapiResult<string>> {
   if (!USER_KEY) return { ok: false, error: 'Falta FACTURAPI_USER_KEY.' };
   try {
     const res = await fetch(`${BASE}/organizations/${orgId}/apikeys/live`, {
-      method: 'GET', headers: { Authorization: userAuth() }, signal: AbortSignal.timeout(30000),
+      method: 'PUT', headers: { Authorization: userAuth() }, signal: AbortSignal.timeout(30000),
     });
     const text = (await res.text()).trim();
     if (!res.ok) {
