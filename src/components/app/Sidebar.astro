@@ -54,7 +54,7 @@ const NAV_GROUPS = [
 <!-- ── SIDEBAR ── -->
 <aside class="sidebar">
     <!-- Cuenta — arriba -->
-    <div class="sb-account" style="padding: 0.5rem;">
+    <div class="sb-account">
         <!-- Custom Org Switcher (full custom B2B motor) -->
         <CustomOrgSwitcher client:load />
     </div>
@@ -166,7 +166,10 @@ const NAV_GROUPS = [
         overflow-y: auto; flex: 1;
         mask-image: linear-gradient(to bottom, black calc(100% - 22px), transparent 100%);
         -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 22px), transparent 100%);
+        /* Ocultar barra de scroll para evitar que empuje los elementos y rompa el centrado */
+        scrollbar-width: none;
     }
+    .sb-nav::-webkit-scrollbar { display: none; }
     /* Indicador deslizante (segmented control tipo iOS) — sigue al hover, regresa al activo */
     .sb-indicator {
         position: absolute; left: 0; right: 0; top: 0; height: 0;
@@ -387,7 +390,7 @@ const NAV_GROUPS = [
     :global(.sb-collapsed) .sb-org-caret { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
     :global(.sb-collapsed) .sb-foot-logo { opacity: 0; width: 0; overflow: hidden; }
     :global(.sb-collapsed) .sb-collapse { display: none; }
-    :global(.sb-collapsed) .sb-account { padding-bottom: 0.4rem; }
+    :global(.sb-collapsed) .sb-account { padding: 0; padding-bottom: 0.4rem; margin-bottom: 0.4rem; }
     :global(.sb-collapsed) .sb-account::after { display: none; }
     :global(.sb-collapsed) .sb-org-switch { justify-content: center; padding: 6px; }
     :global(.sb-collapsed) .sb-org-menu { left: 0; right: auto; width: 210px; top: calc(100% + 4px); bottom: auto; }
