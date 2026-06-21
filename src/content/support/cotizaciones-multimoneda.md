@@ -4,25 +4,16 @@ description: "Envía propuestas en USD, EUR o MXN."
 category: "Cotizaciones"
 ---
 
-# Cotizaciones multimoneda
+Cord soporta nativamente la emisión de propuestas comerciales en más de 100 divisas. 
 
-Envía propuestas en USD, EUR o MXN.
+### ¿Cómo crear una cotización en otra moneda?
 
-Cerrar tratos B2B requiere propuestas ágiles y claras. En Cord, la gestión de **Cotizaciones multimoneda** está diseñada para optimizar tus conversiones y evitar fricciones con tu comprador.
+Al momento de redactar la cotización, en la sección de **Configuración Global** (panel derecho), verás un selector de Moneda (Currency).
+1. Cambia de `MXN - Peso Mexicano` a `USD - Dólar Estadounidense` o `EUR - Euro`.
+2. Todos los precios de tus conceptos ingresados se leerán bajo esa nueva divisa.
 
-## Flujo Operativo Comercial
+### Impacto en la Facturación y Pagos
 
-Las cotizaciones en Cord no son documentos estáticos, son enlaces interactivos. 
-1. Crea un nuevo borrador desde **Ventas > Cotizaciones**.
-2. Añade tus partidas (conceptos, cantidades y descuentos).
-3. Configura los **Términos de Crédito** si operas en esquemas PPD (ej. Net 30).
-4. Activa el botón de firma digital o pago de anticipo obligatorio.
-
-**Tip Comercial:**
-Personaliza los colores de tu cotización en los ajustes de apariencia. Las propuestas que mantienen la identidad visual de la marca (White-label) tienen un 15% más de probabilidad de ser aceptadas rápidamente.
-
-## Monitoreo y Seguimiento
-
-Una vez que envíes la propuesta, el sistema se encargará de trackear la apertura. Puedes habilitar notificaciones por correo para que tu equipo de ventas reciba una alerta en el instante en que el cliente abre el enlace. 
-
-Para profundizar en integraciones avanzadas de ventas, visita la sección de [Cord Elements](/soporte/cord-elements).
+- **Para tu cliente:** Recibirá el documento y la liga de pago mostrando dólares (ej. $10,000 USD). Si paga con tarjeta, su banco le hará el cargo en dólares o en su moneda local según su contrato bancario.
+- **Para ti (Factura):** Cord timbrará automáticamente el CFDI ante el SAT indicando `Moneda: USD` e incluirá automáticamente el nodo de `TipoCambio` oficial del Diario Oficial de la Federación (DOF) del día del cobro. Esto asegura que el SAT reciba el valor correcto de los impuestos trasladados convertidos a pesos para tu declaración mensual.
+- **Para ti (Dinero):** Nuestro motor de pagos liquidará la operación en tu cuenta bancaria mexicana **en Pesos (MXN)** usando una tasa cambiaria mayorista competitiva al momento de la captura.

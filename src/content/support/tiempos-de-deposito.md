@@ -5,26 +5,16 @@ category: "Pagos y Depósitos"
 order: 1
 ---
 
-# Tiempos de depósito a cuenta bancaria
+Entender cuándo recibirás los fondos en tu cuenta bancaria es vital para proyectar el flujo de caja operativo. Cord maneja dos rutas principales de liquidación.
 
-Descubre cuánto tarda en reflejarse el dinero en tu cuenta bancaria una vez que el cliente ha pagado.
+### Tiempos de Liquidación Oficiales
 
-El corazón de tu negocio es el flujo de caja. Esta guía detalla cómo opera Cord respecto a **Tiempos de depósito a cuenta bancaria**, para que tengas control absoluto sobre tus finanzas.
+**1. Pagos mediante Transferencia (SPEI)**
+Los pagos que recibes a través de la red SPEI (cuando el cliente deposita a la CLABE virtual que Cord le genera) se acreditan a tu balance de Cord de forma inmediata (en segundos). 
+Las dispersiones hacia tu cuenta bancaria final se envían el mismo día hábil. En la práctica, esto toma de **1 a 3 horas hábiles**.
 
-## Ciclos de Liquidación y Fondos
+**2. Pagos con Tarjeta (Crédito y Débito)**
+Todo cobro exitoso realizado con plásticos (Visa, Mastercard, AMEX) pasa por una cámara de compensación. Por ende, los fondos quedan en estado *En Tránsito* y se liberan a tu balance en **T+1 (al día hábil siguiente)**.
 
-Los fondos cobrados mediante enlaces de Cord pasan por un proceso de liquidación bancaria:
-- **Tarjetas (Visa/Mastercard):** La liquidación estándar toma T+1 (al día siguiente hábil).
-- **SPEI / Transferencias:** Se liquidan de manera casi instantánea en tu balance de Cord.
-
-## Resolución y Gestión
-
-Si enfrentas anomalías o necesitas configurar esta característica:
-1. Entra a **Pagos > Balance**.
-2. Verifica tus transferencias en tránsito y el historial de depósitos.
-3. Si estás investigando un pago rechazado, haz clic en el ID de la transacción para leer el código de declinación emitido por el banco emisor.
-
-**Dato de Conciliación:**
-Cord exporta un reporte detallado (CSV) que tu equipo contable puede utilizar para conciliar los depósitos masivos contra las facturas individuales. [Lee sobre la Conciliación de depósitos](/soporte/conciliacion-depositos).
-
-Mantén siempre actualizada tu cuenta CLABE receptora para evitar retrasos en las dispersiones.
+*Ejemplo práctico:*
+Si un cliente te paga con tarjeta el **Viernes a las 4:00 PM**, el dinero entra a liquidación, cruza el fin de semana, y se deposita automáticamente a tu CLABE empresarial el **Lunes a las 6:00 AM**.

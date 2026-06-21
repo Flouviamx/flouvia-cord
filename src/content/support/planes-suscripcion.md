@@ -5,23 +5,18 @@ category: "Cuenta y Equipo"
 order: 4
 ---
 
-# Cambiar plan de suscripción Cord
+El modelo de ingresos recurrentes requiere automatización de cobros (recurring billing). Cord cuenta con un motor de suscripciones avanzado.
 
-Administra tu plan de facturación de Cord, licencias adicionales y facturación.
+### Crear Planes y Productos
 
-Gestionar el acceso y la configuración de tu empresa es el primer paso para una operación segura. Aquí te explicamos cómo administrar **Cambiar plan de suscripción Cord**.
+1. Ve a **Suscripciones > Productos**.
+2. Crea tu producto principal (ej. "Plataforma SaaS Enterprise").
+3. Crea un **Plan de Cobro** asociado al producto. Puedes definir ciclos Mensuales, Trimestrales o Anuales.
 
-## Configuración del Entorno de Trabajo
+### Modelos de Precios
+Cord soporta esquemas complejos de suscripción SaaS:
+- **Tarifa Fija (Flat Rate):** El clásico $99 USD/mes.
+- **Basado en Asientos (Per Seat):** $15 USD por cada usuario activo que registre el cliente en tu app.
+- **Uso Escalonado (Tiered/Metered):** Cobro dinámico por consumo (ej. Los primeros 1,000 correos son gratis, los siguientes cuestan $0.05c c/u).
 
-Solo los usuarios con el rol de **Administrador** (Owner) pueden realizar modificaciones destructivas o críticas.
-
-### Instrucciones paso a paso
-1. En tu panel principal, haz clic en el ícono de engranaje en la esquina inferior izquierda (**Ajustes**).
-2. Navega hasta la pestaña de tu organización o equipo.
-3. Realiza los ajustes necesarios en el formulario.
-4. Guarda los cambios. El sistema registrará la acción en el Audit Log por seguridad.
-
-**Seguridad Corporativa Importante:**
-Te sugerimos habilitar políticas estrictas para todos los miembros de tu equipo. Si tu plan lo permite, considera forzar el uso de Autenticación de Dos Pasos (2FA) para prevenir accesos no autorizados. [Ver guía de 2FA](/soporte/autenticacion-2fa).
-
-Si tienes problemas para acceder a la cuenta, contacta directamente con el Administrador de tu organización para que revise tus permisos de RBAC.
+El sistema intentará hacer el cargo a la tarjeta del cliente automáticamente al renovarse el ciclo. Si la tarjeta falla, activará un proceso de *Dunning* (Recordatorios de Cobranza), reintentando el cargo los días 3, 5 y 7. Si fracasa finalmente, cancelará la membresía y te enviará un webhook para que cortes el acceso en tu app.

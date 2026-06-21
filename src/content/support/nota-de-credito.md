@@ -4,27 +4,16 @@ description: "Aplica devoluciones y bonificaciones legales."
 category: "Facturación y CFDI"
 ---
 
-# Emitir Nota de Crédito (Egreso)
+Las Notas de Crédito (CFDI tipo Egreso) son el mecanismo fiscal del SAT para aplicar devoluciones, bonificaciones o corregir errores en saldos de facturas.
 
-Aplica devoluciones y bonificaciones legales.
+### Emitir una Nota de Crédito en Cord
 
-El cumplimiento fiscal en México (SAT) requiere precisión absoluta. Cord automatiza la gran mayoría del proceso de **Emitir Nota de Crédito (Egreso)**, pero es vital que configures tus catálogos corporativos correctamente.
+Si necesitas anular el saldo de una factura sin cancelarla por completo (ej. le hiciste un descuento post-venta del 10% al cliente):
 
-## Requisitos Fiscales (SAT)
+1. Localiza la Factura de Ingreso original en **Contabilidad > Facturas**.
+2. En el menú de opciones (tres puntos), selecciona **Generar Nota de Crédito**.
+3. Se abrirá un panel con los conceptos originales de la factura. Cord inyectará automáticamente el tipo de relación **01 (Nota de crédito de los documentos relacionados)** y vinculará el UUID de la factura padre.
+4. Ajusta el monto a devolver/bonificar. Si es una devolución total de un producto específico, deja el precio intacto. Si es una bonificación, ajusta el valor al monto a descontar.
+5. Haz clic en **Timbrar Egreso**.
 
-Para asegurar que los comprobantes (CFDI 4.0) se timbren de manera exitosa:
-- Valida que el Código Postal del cliente coincida exactamente con su Constancia de Situación Fiscal.
-- Asegúrate de que el régimen fiscal del receptor sea compatible con el Uso de CFDI seleccionado.
-
-**Advertencia de Normativa del SAT:**
-Las regulaciones fiscales pueden actualizarse. Asegúrate de siempre tener vigente tu Certificado de Sello Digital (CSD) dentro del portal de Cord para evitar bloqueos en el timbrado. [Ver cómo actualizar el CSD](/soporte/csd-vencido).
-
-## Proceso en Plataforma
-
-Para gestionar esta configuración dentro del sistema:
-1. Dirígete al módulo de **Contabilidad > Facturación** en el panel lateral.
-2. Selecciona la cotización o factura correspondiente.
-3. En el menú contextual (tres puntos), selecciona las opciones fiscales.
-4. Si realizas cambios en catálogos, estos se aplicarán únicamente a las *nuevas* facturas. Las facturas previamente timbradas mantendrán su UUID y estructura original.
-
-Si requieres aplicar notas de crédito por devoluciones, revisa nuestra guía sobre [Notas de Crédito (Egreso)](/soporte/nota-de-credito).
+El sistema enviará automáticamente un correo electrónico al cliente adjuntando el XML y el PDF de la Nota de Crédito para sus efectos de deducción fiscal.

@@ -5,22 +5,13 @@ category: "Seguridad y Privacidad"
 order: 1
 ---
 
-# Cumplimiento PCI-DSS
+El Estándar de Seguridad de Datos para la Industria de Tarjeta de Pago (PCI DSS) es un conjunto de requerimientos para garantizar que todas las empresas que procesan, almacenan o transmiten información de tarjetas de crédito mantengan un entorno seguro.
 
-Cómo Cord protege la información de tarjetas de crédito.
+### Tu responsabilidad al usar Cord
 
-En Flouvia/Cord, la integridad de tus datos y el cumplimiento normativo son nuestra máxima prioridad. Este documento explica nuestra postura y procesos respecto a **Cumplimiento PCI-DSS**.
+Debido a que utilizas la infraestructura de Cord o Cord Elements para cobrar:
+**Tú NO tocas datos sensibles.** 
 
-## Marco Normativo y Cumplimiento
+Cuando el cliente escribe su número de tarjeta de 16 dígitos, esos datos viajan encriptados directamente desde su navegador hasta los servidores de los bancos adquirentes mediante iframes de seguridad. Tu aplicación solo recibe un "Token" criptográfico asimétrico que representa la tarjeta (ej. `tok_123abc`).
 
-Operamos bajo estrictos estándares internacionales de encriptación y manejo de información. Todos los datos sensibles (como PAN de tarjetas de crédito o credenciales de API) están tokenizados y almacenados en bases de datos aisladas.
-
-### Acciones Recomendadas
-- Si eres un administrador de TI, asegúrate de mantener actualizados tus acuerdos de confidencialidad (NDA).
-- Revisa periódicamente los logs de auditoría de tu cuenta para detectar anomalías.
-- Educa a tu equipo sobre prácticas seguras anti-phishing.
-
-**Atención de Vulnerabilidades:**
-Si crees haber encontrado un fallo crítico de seguridad, por favor abstente de publicarlo. Dirígete a nuestro [Programa de Reporte de Vulnerabilidades](/soporte/reportar-vulnerabilidades) y te compensaremos por la divulgación responsable.
-
-Para solicitar copias de nuestras certificaciones SOC2 o documentación de cumplimiento PCI-DSS, los clientes Enterprise pueden abrir un ticket directo con su Account Executive.
+Esto significa que, para efectos legales y de auditoría, tu empresa se beneficia de nuestro cumplimiento Nivel 1. Únicamente necesitas responder un Cuestionario de Autoevaluación (SAQ-A) muy simple que atestigua que has delegado por completo el procesamiento de tarjetas a nosotros.

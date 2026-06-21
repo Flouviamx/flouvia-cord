@@ -4,26 +4,21 @@ description: "Montos máximos transaccionales y cómo solicitar un aumento."
 category: "Pagos y Depósitos"
 ---
 
-# Límites de procesamiento
+Como institución regulada y sujeta a reglas anti lavado de dinero (PLD), los procesadores de pagos integrados en Cord establecen límites de procesamiento de transacciones para cuentas nuevas.
 
-Montos máximos transaccionales y cómo solicitar un aumento.
+### Límites por Transacción con Tarjeta
 
-El corazón de tu negocio es el flujo de caja. Esta guía detalla cómo opera Cord respecto a **Límites de procesamiento**, para que tengas control absoluto sobre tus finanzas.
+Para cuentas de reciente creación (primeros 30 días):
+- **Cobro máximo por transacción:** $50,000 MXN.
+- **Volumen máximo mensual:** $300,000 MXN.
 
-## Ciclos de Liquidación y Fondos
+Si envías una liga de pago a un cliente por $100,000 MXN e intenta pagarla con tarjeta en este periodo inicial, la transacción será declinada por nuestro motor de fraude.
 
-Los fondos cobrados mediante enlaces de Cord pasan por un proceso de liquidación bancaria:
-- **Tarjetas (Visa/Mastercard):** La liquidación estándar toma T+1 (al día siguiente hábil).
-- **SPEI / Transferencias:** Se liquidan de manera casi instantánea en tu balance de Cord.
+### Pagos por Transferencia (SPEI)
+Los pagos recibidos vía transferencia electrónica (SPEI) utilizando las cuentas CLABE dinámicas que Cord genera por cotización **no tienen límite**. Puedes cobrar facturas de millones de pesos por esta vía sin fricciones, ya que el riesgo de fraude/contracargo es nulo.
 
-## Resolución y Gestión
-
-Si enfrentas anomalías o necesitas configurar esta característica:
-1. Entra a **Pagos > Balance**.
-2. Verifica tus transferencias en tránsito y el historial de depósitos.
-3. Si estás investigando un pago rechazado, haz clic en el ID de la transacción para leer el código de declinación emitido por el banco emisor.
-
-**Dato de Conciliación:**
-Cord exporta un reporte detallado (CSV) que tu equipo contable puede utilizar para conciliar los depósitos masivos contra las facturas individuales. [Lee sobre la Conciliación de depósitos](/soporte/conciliacion-depositos).
-
-Mantén siempre actualizada tu cuenta CLABE receptora para evitar retrasos en las dispersiones.
+### Solicitar Aumento de Límites de Tarjeta
+Si tu facturación corporativa requiere procesar cobros de cientos de miles de pesos con tarjeta corporativa (B2B):
+1. Ve a **Ajustes > Verificación de Cuenta**.
+2. Sube tus estados de cuenta bancarios de los últimos 3 meses y tu Declaración Anual.
+3. Nuestro equipo de riesgos elevará tu límite de procesamiento transaccional de forma permanente en menos de 48 horas.

@@ -4,27 +4,18 @@ description: "Pasos para subir tu nuevo Certificado de Sello Digital."
 category: "Facturación y CFDI"
 ---
 
-# Qué hacer si tu CSD caducó
+Para que Cord (o cualquier PAC) pueda emitir facturas legales en tu nombre, requieres cargar tu **Certificado de Sello Digital (CSD)**. ¡Atención! El CSD no es la FIEL (e.firma).
 
-Pasos para subir tu nuevo Certificado de Sello Digital.
+### ¿Por qué mi CSD aparece vencido o revocado?
 
-El cumplimiento fiscal en México (SAT) requiere precisión absoluta. Cord automatiza la gran mayoría del proceso de **Qué hacer si tu CSD caducó**, pero es vital que configures tus catálogos corporativos correctamente.
+Los CSD emitidos por el SAT tienen una vigencia estricta de **4 años**. Si llega a su límite, todas tus facturas y cobranza automática fallarán con un error criptográfico.
+Además, el SAT puede **revocar** tu CSD antes de tiempo como medida precautoria si detecta anomalías severas (ej. no presentar declaración anual o no ser localizado en tu domicilio fiscal).
 
-## Requisitos Fiscales (SAT)
+### Cómo actualizar tu CSD en Cord
 
-Para asegurar que los comprobantes (CFDI 4.0) se timbren de manera exitosa:
-- Valida que el Código Postal del cliente coincida exactamente con su Constancia de Situación Fiscal.
-- Asegúrate de que el régimen fiscal del receptor sea compatible con el Uso de CFDI seleccionado.
+1. Entra a **Ajustes > Fiscal y SAT**.
+2. En la sección *Certificado de Sello Digital*, verás el estado de tu sello actual.
+3. Haz clic en **Reemplazar CSD**.
+4. Sube tu nuevo archivo `.cer`, tu nuevo archivo `.key` y la contraseña correspondiente.
 
-**Advertencia de Normativa del SAT:**
-Las regulaciones fiscales pueden actualizarse. Asegúrate de siempre tener vigente tu Certificado de Sello Digital (CSD) dentro del portal de Cord para evitar bloqueos en el timbrado. [Ver cómo actualizar el CSD](/soporte/csd-vencido).
-
-## Proceso en Plataforma
-
-Para gestionar esta configuración dentro del sistema:
-1. Dirígete al módulo de **Contabilidad > Facturación** en el panel lateral.
-2. Selecciona la cotización o factura correspondiente.
-3. En el menú contextual (tres puntos), selecciona las opciones fiscales.
-4. Si realizas cambios en catálogos, estos se aplicarán únicamente a las *nuevas* facturas. Las facturas previamente timbradas mantendrán su UUID y estructura original.
-
-Si requieres aplicar notas de crédito por devoluciones, revisa nuestra guía sobre [Notas de Crédito (Egreso)](/soporte/nota-de-credito).
+**Tip de Tiempo:** Después de tramitar un nuevo CSD en el portal del SAT (Certifica), tarda **entre 24 y 72 horas** en propagarse por todos los servidores del SAT a nivel nacional (el famoso LCO). Si lo subes a Cord el mismo día que lo sacaste, el timbrado fallará indicando que "El CSD no se encuentra en la lista de sellos válidos". Debes tener paciencia.

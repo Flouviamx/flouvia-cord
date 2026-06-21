@@ -4,26 +4,14 @@ description: "Elige entre depósitos diarios, semanales o mensuales."
 category: "Pagos y Depósitos"
 ---
 
-# Cambiar frecuencia de depósitos
+Por defecto, todas las cuentas de Cord tienen una dispersión de fondos (Payout) **Automática Diaria**. Esto significa que todos los pagos liquidados de tarjetas (T+1) y transferencias se envían juntos a tu CLABE a las 6:00 AM (hora de la CDMX).
 
-Elige entre depósitos diarios, semanales o mensuales.
+### Configurar Dispersiones Manuales
 
-El corazón de tu negocio es el flujo de caja. Esta guía detalla cómo opera Cord respecto a **Cambiar frecuencia de depósitos**, para que tengas control absoluto sobre tus finanzas.
+Si prefieres tener el dinero "guardado" en tu balance de Cord y enviarlo a tu banco manualmente solo cuando lo necesites (para cuadrar caja semanal, por ejemplo):
 
-## Ciclos de Liquidación y Fondos
+1. Ve a **Pagos > Dispersiones**.
+2. Haz clic en el ícono de engranaje (Ajustes de Dispersión).
+3. Cambia la frecuencia de *Automática* a *Manual*.
 
-Los fondos cobrados mediante enlaces de Cord pasan por un proceso de liquidación bancaria:
-- **Tarjetas (Visa/Mastercard):** La liquidación estándar toma T+1 (al día siguiente hábil).
-- **SPEI / Transferencias:** Se liquidan de manera casi instantánea en tu balance de Cord.
-
-## Resolución y Gestión
-
-Si enfrentas anomalías o necesitas configurar esta característica:
-1. Entra a **Pagos > Balance**.
-2. Verifica tus transferencias en tránsito y el historial de depósitos.
-3. Si estás investigando un pago rechazado, haz clic en el ID de la transacción para leer el código de declinación emitido por el banco emisor.
-
-**Dato de Conciliación:**
-Cord exporta un reporte detallado (CSV) que tu equipo contable puede utilizar para conciliar los depósitos masivos contra las facturas individuales. [Lee sobre la Conciliación de depósitos](/soporte/conciliacion-depositos).
-
-Mantén siempre actualizada tu cuenta CLABE receptora para evitar retrasos en las dispersiones.
+A partir de este momento, deberás entrar al panel y hacer clic en el botón **Retirar Fondos** e ingresar la cantidad deseada. Los fondos enviados de forma manual llegarán a tu cuenta CLABE vía SPEI en un lapso de 1 a 3 horas hábiles.

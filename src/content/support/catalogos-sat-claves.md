@@ -5,27 +5,14 @@ category: "Facturación y CFDI"
 order: 2
 ---
 
-# Catálogos SAT y claves de producto
+Cada partida (concepto) que factures necesita contar obligatoriamente con una Clave de Producto/Servicio y una Clave de Unidad, según los catálogos del SAT.
 
-Aprende a mapear tus productos internos con las claves oficiales del SAT para una facturación libre de errores.
+### ¿Cómo configurarlo en Cord?
 
-El cumplimiento fiscal en México (SAT) requiere precisión absoluta. Cord automatiza la gran mayoría del proceso de **Catálogos SAT y claves de producto**, pero es vital que configures tus catálogos corporativos correctamente.
+No necesitas aprenderte los códigos. En la sección de **Productos/Inventario**:
+1. Crea o edita un producto.
+2. Ve al apartado de *Información Fiscal*.
+3. En **Clave SAT**, simplemente escribe lo que vendes (ej. "Software" o "Consultoría"). El buscador predictivo de Cord te mostrará las claves válidas (ej. `43231500` para Software de negocio).
+4. En **Unidad SAT**, busca por descripción (ej. "Servicio", "Pieza"). El sistema asignará el código correcto (ej. `E48` para Unidad de Servicio, o `H87` para Pieza).
 
-## Requisitos Fiscales (SAT)
-
-Para asegurar que los comprobantes (CFDI 4.0) se timbren de manera exitosa:
-- Valida que el Código Postal del cliente coincida exactamente con su Constancia de Situación Fiscal.
-- Asegúrate de que el régimen fiscal del receptor sea compatible con el Uso de CFDI seleccionado.
-
-**Advertencia de Normativa del SAT:**
-Las regulaciones fiscales pueden actualizarse. Asegúrate de siempre tener vigente tu Certificado de Sello Digital (CSD) dentro del portal de Cord para evitar bloqueos en el timbrado. [Ver cómo actualizar el CSD](/soporte/csd-vencido).
-
-## Proceso en Plataforma
-
-Para gestionar esta configuración dentro del sistema:
-1. Dirígete al módulo de **Contabilidad > Facturación** en el panel lateral.
-2. Selecciona la cotización o factura correspondiente.
-3. En el menú contextual (tres puntos), selecciona las opciones fiscales.
-4. Si realizas cambios en catálogos, estos se aplicarán únicamente a las *nuevas* facturas. Las facturas previamente timbradas mantendrán su UUID y estructura original.
-
-Si requieres aplicar notas de crédito por devoluciones, revisa nuestra guía sobre [Notas de Crédito (Egreso)](/soporte/nota-de-credito).
+Una vez configurado en el catálogo de productos de Cord, cualquier vendedor podrá cotizar estos ítems y el sistema fiscal heredará estas claves de manera invisible y automática al timbrar la factura.

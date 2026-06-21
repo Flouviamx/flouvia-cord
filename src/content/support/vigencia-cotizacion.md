@@ -4,25 +4,17 @@ description: "Añade una fecha de expiración automática a tus propuestas."
 category: "Cotizaciones"
 ---
 
-# Configurar vigencia de cotización
+Las condiciones de mercado y los precios de proveeduría cambian constantemente. Nunca envíes una propuesta comercial de vigencia indeterminada.
 
-Añade una fecha de expiración automática a tus propuestas.
+### Configurar Fechas de Expiración
 
-Cerrar tratos B2B requiere propuestas ágiles y claras. En Cord, la gestión de **Configurar vigencia de cotización** está diseñada para optimizar tus conversiones y evitar fricciones con tu comprador.
+Al redactar una cotización en Cord:
+1. En el panel de ajustes (derecha), ubica **Vigencia y Validez**.
+2. Define cuántos días es válida la oferta a partir de la fecha de envío (ej. 15 días) o escoge una fecha de caducidad dura en el calendario (ej. 31 de Diciembre).
 
-## Flujo Operativo Comercial
+**Cierre Automático:**
+Cuando el reloj cruza la fecha límite configurada, la plataforma reacciona de la siguiente manera:
+- El enlace de la cotización pasa a modo de *Solo Lectura* y muestra un banner indicando que la oferta expiró.
+- Los botones de "Aceptar Trato", "Firmar Electrónicamente" y el formulario de "Pago con Tarjeta" quedan inhabilitados en el servidor, protegiéndote de aceptar pagos por servicios que quizá ya subieron de precio.
 
-Las cotizaciones en Cord no son documentos estáticos, son enlaces interactivos. 
-1. Crea un nuevo borrador desde **Ventas > Cotizaciones**.
-2. Añade tus partidas (conceptos, cantidades y descuentos).
-3. Configura los **Términos de Crédito** si operas en esquemas PPD (ej. Net 30).
-4. Activa el botón de firma digital o pago de anticipo obligatorio.
-
-**Tip Comercial:**
-Personaliza los colores de tu cotización en los ajustes de apariencia. Las propuestas que mantienen la identidad visual de la marca (White-label) tienen un 15% más de probabilidad de ser aceptadas rápidamente.
-
-## Monitoreo y Seguimiento
-
-Una vez que envíes la propuesta, el sistema se encargará de trackear la apertura. Puedes habilitar notificaciones por correo para que tu equipo de ventas reciba una alerta en el instante en que el cliente abre el enlace. 
-
-Para profundizar en integraciones avanzadas de ventas, visita la sección de [Cord Elements](/soporte/cord-elements).
+Si el cliente te contacta para revivir el acuerdo, puedes extender manualmente la vigencia desde la configuración del documento.

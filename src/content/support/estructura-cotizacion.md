@@ -5,25 +5,15 @@ category: "Cotizaciones"
 order: 1
 ---
 
-# Estructura de una cotización interactiva
+Una cotización en Cord está diseñada para ser una propuesta comercial legalmente válida y persuasiva.
 
-Conoce los elementos que conforman las cotizaciones web de Cord y cómo personalizarlas.
+### Anatomía de una Cotización
 
-Cerrar tratos B2B requiere propuestas ágiles y claras. En Cord, la gestión de **Estructura de una cotización interactiva** está diseñada para optimizar tus conversiones y evitar fricciones con tu comprador.
+Una propuesta ganadora se compone de cuatro grandes bloques:
 
-## Flujo Operativo Comercial
+1. **Encabezado (Header):** Contiene el logotipo de tu empresa, tu RFC fiscal, la fecha de emisión y el Número de Folio (ej. `COT-2023-085`). También muestra a quién va dirigida la propuesta.
+2. **Partidas (Line Items):** Es la tabla principal donde desglosas tus productos o servicios. Cada partida puede llevar una descripción larga con viñetas, una imagen, precio unitario, cantidad y descuentos.
+3. **Términos Legales y Crédito:** Aquí defines las reglas del juego. Por ejemplo: "Esta propuesta es válida por 15 días. El pago debe realizarse a 30 días naturales (Net 30) tras la aceptación".
+4. **Bloque de Cierre (Firma/Pago):** Es el Call To Action (CTA). Dependiendo de tu configuración, el cliente verá un botón para firmar electrónicamente o un módulo para introducir su tarjeta y pagar el anticipo de inmediato.
 
-Las cotizaciones en Cord no son documentos estáticos, son enlaces interactivos. 
-1. Crea un nuevo borrador desde **Ventas > Cotizaciones**.
-2. Añade tus partidas (conceptos, cantidades y descuentos).
-3. Configura los **Términos de Crédito** si operas en esquemas PPD (ej. Net 30).
-4. Activa el botón de firma digital o pago de anticipo obligatorio.
-
-**Tip Comercial:**
-Personaliza los colores de tu cotización en los ajustes de apariencia. Las propuestas que mantienen la identidad visual de la marca (White-label) tienen un 15% más de probabilidad de ser aceptadas rápidamente.
-
-## Monitoreo y Seguimiento
-
-Una vez que envíes la propuesta, el sistema se encargará de trackear la apertura. Puedes habilitar notificaciones por correo para que tu equipo de ventas reciba una alerta en el instante en que el cliente abre el enlace. 
-
-Para profundizar en integraciones avanzadas de ventas, visita la sección de [Cord Elements](/soporte/cord-elements).
+**Personalización:** Puedes cambiar los colores de los botones y la tipografía desde **Ajustes > Apariencia** para que coincida exactamente con tu manual de marca.

@@ -4,41 +4,48 @@ description: "Instalación y uso de @cord/react en tu frontend."
 category: "Desarrolladores"
 ---
 
-# Cord React SDK
+Si estás construyendo una aplicación Single Page (SPA) con React, Next.js o Vite, puedes integrar componentes de cobro y UI utilizando nuestra librería de front-end, `@flouviamx/cord-react`.
 
-Instalación y uso de @cord/react en tu frontend.
+### Setup del Provider
 
-Como desarrollador, Cord te proporciona las herramientas para integrar esta funcionalidad directamente en tu propia arquitectura. A continuación, exploraremos cómo implementar **Cord React SDK** usando nuestra API REST.
+Envuelve tu aplicación en el Provider inyectando tu Llave Pública (`pk_test_...`). Esto cargará los scripts de seguridad de manera asíncrona.
 
-## Prerrequisitos de Integración
+```jsx
+import { CordProvider } from '@flouviamx/cord-react';
 
-Antes de iniciar la petición, asegúrate de cumplir con lo siguiente:
-- Tener una [Clave de API válida](/soporte/claves-api) (Secreta).
-- Que tu entorno esté configurado para soportar conexiones TLS 1.2 o superior.
-- Enviar el header `Authorization: Bearer sk_...`.
-
-## Implementación Técnica
-
-Dependiendo del entorno (Test o Live), tu petición debe dirigirse al endpoint correspondiente. A continuación un ejemplo de cómo estructurar la petición:
-
-```bash
-# Petición de ejemplo con cURL
-curl -X POST https://api.flouvia.com/v1/resource \
-  -H "Authorization: Bearer sk_test_your_secret_key" \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: req_123456789" \
-  -d '{
-    "environment": "sandbox",
-    "reference_id": "ext_987",
-    "metadata": {
-      "internal_user_id": "u_001"
-    }
-  }'
+function App() {
+  return (
+    <CordProvider publishableKey="pk_test_tu_llave_publica">
+      <TuRouter />
+    </CordProvider>
+  );
+}
 ```
 
-**Nota sobre SDKs:**
-Si estás utilizando un ecosistema en JavaScript, te recomendamos encarecidamente utilizar el [Cord Node.js SDK](/soporte/node-sdk) para manejar la serialización de datos automáticamente.
+### Uso del Componente de Pago (Checkout)
 
-## Manejo de Errores
+En tu vista de caja, puedes montar el formulario seguro para que el usuario inserte su tarjeta. El componente de React maneja el cifrado PCI DSS automáticamente.
 
-Si la API rechaza tu petición, revisa el campo `error.code` en la respuesta JSON. Los errores comunes 40x generalmente indican que un parámetro requerido fue omitido o que tu API Key no tiene los permisos suficientes.
+```jsx
+import { PaymentForm, useCord } from '@flouviamx/cord-react';
+
+function PantallaDeCobro({ clientSecret }) {
+  const cord = useCord();
+
+  const handleSubmit = async () => {
+    // Confirma el pago contra la API de Cord
+    const { error, paymentIntent } = await cord.confirmPayment({
+      clientSecret,
+      return_url: 'https://tuapp.com/exito'
+    });
+    if (error) console.error(error.message);
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <PaymentForm />
+      <button type="submit">Pagar $5,000</button>
+    </form>
+  );
+}
+```

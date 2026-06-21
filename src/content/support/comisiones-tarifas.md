@@ -5,26 +5,16 @@ category: "Pagos y Depósitos"
 order: 2
 ---
 
-# Comisiones y tarifas de procesamiento
+La transparencia es nuestra filosofía. En Cord, no hay cobros ocultos por mantenimiento ni penalizaciones por montos mínimos.
 
-Conoce las tarifas estándar y personalizadas al procesar pagos con tarjetas y SPEI a través de Cord.
+### Tarifas Transaccionales (Procesamiento de Pagos)
 
-El corazón de tu negocio es el flujo de caja. Esta guía detalla cómo opera Cord respecto a **Comisiones y tarifas de procesamiento**, para que tengas control absoluto sobre tus finanzas.
+Solo pagas cuando tus clientes te pagan usando nuestra pasarela integrada:
+- **Tarjetas de Crédito / Débito (Nacional):** 3.6% + $3.00 MXN + IVA por transacción exitosa.
+- **Tarjetas Internacionales:** 4.6% + $3.00 MXN + IVA.
+- **Transferencia SPEI Automatizada:** $10.00 MXN fijos por transacción (sin importar si son mil o un millón de pesos).
 
-## Ciclos de Liquidación y Fondos
+*Las tarifas de procesamiento se descuentan del monto bruto antes de depositar a tu cuenta CLABE.*
 
-Los fondos cobrados mediante enlaces de Cord pasan por un proceso de liquidación bancaria:
-- **Tarjetas (Visa/Mastercard):** La liquidación estándar toma T+1 (al día siguiente hábil).
-- **SPEI / Transferencias:** Se liquidan de manera casi instantánea en tu balance de Cord.
-
-## Resolución y Gestión
-
-Si enfrentas anomalías o necesitas configurar esta característica:
-1. Entra a **Pagos > Balance**.
-2. Verifica tus transferencias en tránsito y el historial de depósitos.
-3. Si estás investigando un pago rechazado, haz clic en el ID de la transacción para leer el código de declinación emitido por el banco emisor.
-
-**Dato de Conciliación:**
-Cord exporta un reporte detallado (CSV) que tu equipo contable puede utilizar para conciliar los depósitos masivos contra las facturas individuales. [Lee sobre la Conciliación de depósitos](/soporte/conciliacion-depositos).
-
-Mantén siempre actualizada tu cuenta CLABE receptora para evitar retrasos en las dispersiones.
+### Emisión de CFDI (Timbrado)
+Todos los planes de suscripción de Cord incluyen una cuota mensual que te permite el acceso a la plataforma. El timbrado de facturas 4.0 está incluido de forma ilimitada y sin costo adicional (Política de Uso Justo: máximo 10,000 folios al mes).

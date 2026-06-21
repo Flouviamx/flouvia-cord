@@ -5,26 +5,15 @@ category: "Pagos y Depósitos"
 order: 3
 ---
 
-# Manejo de disputas y contracargos
+Una disputa (o contracargo) ocurre cuando el titular de una tarjeta contacta a su banco para desconocer un cobro que le realizaste a través de Cord. Esto detona un proceso legal de conciliación entre bancos.
 
-Aprende qué es un contracargo y los pasos que debes seguir para responder o ganar una disputa bancaria.
+### Flujo del Contracargo
 
-El corazón de tu negocio es el flujo de caja. Esta guía detalla cómo opera Cord respecto a **Manejo de disputas y contracargos**, para que tengas control absoluto sobre tus finanzas.
+1. **Retención Preventiva:** En cuanto el banco levanta la disputa, nuestro procesador retiene el monto de la venta + una penalización bancaria ($250 MXN) de tus fondos en Cord.
+2. **Aviso:** Recibirás un correo electrónico automático de nuestro equipo de riesgos alertándote de la disputa.
+3. **Fase de Evidencia:** Tienes **7 días naturales** para enviar evidencia de que el servicio se prestó o el producto se entregó (ej. factura fiscal firmada por el receptor, correos de aceptación, guías de envío de paquetería, o el contrato de prestación de servicios).
 
-## Ciclos de Liquidación y Fondos
-
-Los fondos cobrados mediante enlaces de Cord pasan por un proceso de liquidación bancaria:
-- **Tarjetas (Visa/Mastercard):** La liquidación estándar toma T+1 (al día siguiente hábil).
-- **SPEI / Transferencias:** Se liquidan de manera casi instantánea en tu balance de Cord.
-
-## Resolución y Gestión
-
-Si enfrentas anomalías o necesitas configurar esta característica:
-1. Entra a **Pagos > Balance**.
-2. Verifica tus transferencias en tránsito y el historial de depósitos.
-3. Si estás investigando un pago rechazado, haz clic en el ID de la transacción para leer el código de declinación emitido por el banco emisor.
-
-**Dato de Conciliación:**
-Cord exporta un reporte detallado (CSV) que tu equipo contable puede utilizar para conciliar los depósitos masivos contra las facturas individuales. [Lee sobre la Conciliación de depósitos](/soporte/conciliacion-depositos).
-
-Mantén siempre actualizada tu cuenta CLABE receptora para evitar retrasos en las dispersiones.
+### Resolución
+El banco emisor de tu cliente tiene la última palabra y su revisión puede tomar entre 30 y 60 días.
+- **Si ganas la disputa:** El monto retenido y la comisión de penalización te serán devueltos íntegramente a tu balance de Cord.
+- **Si pierdes la disputa:** El dinero es devuelto a la tarjeta del tarjetahabiente de manera definitiva.

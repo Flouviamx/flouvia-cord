@@ -4,41 +4,31 @@ description: "Endpoint para generar y enviar cotizaciones programáticamente."
 category: "Desarrolladores"
 ---
 
-# API: Crear cotizaciones
+La API de Cotizaciones (Quotes) permite generar propuestas dinámicas programáticamente, ideal para integraciones con CRMs como Salesforce o HubSpot.
 
-Endpoint para generar y enviar cotizaciones programáticamente.
+### Crear una Cotización (Quote)
 
-Como desarrollador, Cord te proporciona las herramientas para integrar esta funcionalidad directamente en tu propia arquitectura. A continuación, exploraremos cómo implementar **API: Crear cotizaciones** usando nuestra API REST.
+Las cotizaciones requieren al menos un `line_item` (partida).
 
-## Prerrequisitos de Integración
+```javascript
+// Ejemplo usando el SDK de Node.js de Cord
+const cord = require('cord-node')('sk_live_...');
 
-Antes de iniciar la petición, asegúrate de cumplir con lo siguiente:
-- Tener una [Clave de API válida](/soporte/claves-api) (Secreta).
-- Que tu entorno esté configurado para soportar conexiones TLS 1.2 o superior.
-- Enviar el header `Authorization: Bearer sk_...`.
-
-## Implementación Técnica
-
-Dependiendo del entorno (Test o Live), tu petición debe dirigirse al endpoint correspondiente. A continuación un ejemplo de cómo estructurar la petición:
-
-```bash
-# Petición de ejemplo con cURL
-curl -X POST https://api.flouvia.com/v1/resource \
-  -H "Authorization: Bearer sk_test_your_secret_key" \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: req_123456789" \
-  -d '{
-    "environment": "sandbox",
-    "reference_id": "ext_987",
-    "metadata": {
-      "internal_user_id": "u_001"
+const quote = await cord.quotes.create({
+  customer_id: 'cus_9a8b7c6d',
+  expiration_date: 1735689600, // Unix timestamp
+  line_items: [
+    {
+      name: 'Licencia Anual ERP',
+      quantity: 1,
+      unit_price: 1500000, // En centavos ($15,000.00 MXN)
+      tax_rate: 'tx_iva_16'
     }
-  }'
+  ],
+  require_signature: true
+});
+
+console.log(quote.hosted_url); // Enlace para enviar al cliente
 ```
 
-**Nota sobre SDKs:**
-Si estás utilizando un ecosistema en JavaScript, te recomendamos encarecidamente utilizar el [Cord Node.js SDK](/soporte/node-sdk) para manejar la serialización de datos automáticamente.
-
-## Manejo de Errores
-
-Si la API rechaza tu petición, revisa el campo `error.code` en la respuesta JSON. Los errores comunes 40x generalmente indican que un parámetro requerido fue omitido o que tu API Key no tiene los permisos suficientes.
+**Lógica de Precios en Centavos:** Absolutamente todos los montos en la API de Cord se manejan en centavos para evitar errores de precisión de punto flotante. Un precio de `1500000` equivale a $15,000.00.

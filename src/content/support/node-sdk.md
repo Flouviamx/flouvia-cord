@@ -4,41 +4,41 @@ description: "Instalación y uso de @cord/node en tu backend."
 category: "Desarrolladores"
 ---
 
-# Cord Node.js SDK
+Para desarrolladores backend que utilizan Node.js o TypeScript, hemos creado una librería oficial que encapsula toda la lógica de autenticación, serialización y manejo de errores de nuestra API.
 
-Instalación y uso de @cord/node en tu backend.
-
-Como desarrollador, Cord te proporciona las herramientas para integrar esta funcionalidad directamente en tu propia arquitectura. A continuación, exploraremos cómo implementar **Cord Node.js SDK** usando nuestra API REST.
-
-## Prerrequisitos de Integración
-
-Antes de iniciar la petición, asegúrate de cumplir con lo siguiente:
-- Tener una [Clave de API válida](/soporte/claves-api) (Secreta).
-- Que tu entorno esté configurado para soportar conexiones TLS 1.2 o superior.
-- Enviar el header `Authorization: Bearer sk_...`.
-
-## Implementación Técnica
-
-Dependiendo del entorno (Test o Live), tu petición debe dirigirse al endpoint correspondiente. A continuación un ejemplo de cómo estructurar la petición:
+### Instalación
 
 ```bash
-# Petición de ejemplo con cURL
-curl -X POST https://api.flouvia.com/v1/resource \
-  -H "Authorization: Bearer sk_test_your_secret_key" \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: req_123456789" \
-  -d '{
-    "environment": "sandbox",
-    "reference_id": "ext_987",
-    "metadata": {
-      "internal_user_id": "u_001"
-    }
-  }'
+npm install @flouviamx/cord-node
+# o con yarn
+yarn add @flouviamx/cord-node
 ```
 
-**Nota sobre SDKs:**
-Si estás utilizando un ecosistema en JavaScript, te recomendamos encarecidamente utilizar el [Cord Node.js SDK](/soporte/node-sdk) para manejar la serialización de datos automáticamente.
+### Uso y Tipado Estricto (TypeScript)
 
-## Manejo de Errores
+El SDK provee autocompletado nativo e inferencia de tipos para todos los payloads de petición y respuesta.
 
-Si la API rechaza tu petición, revisa el campo `error.code` en la respuesta JSON. Los errores comunes 40x generalmente indican que un parámetro requerido fue omitido o que tu API Key no tiene los permisos suficientes.
+```typescript
+import Cord from '@flouviamx/cord-node';
+
+const cord = new Cord(process.env.CORD_SECRET_KEY);
+
+async function crearCotizacion() {
+  try {
+    const quote = await cord.quotes.create({
+      customer_id: 'cus_123',
+      currency: 'mxn',
+      line_items: [
+        { name: 'Horas de Desarrollo', quantity: 10, unit_price: 150000 }
+      ]
+    });
+    console.log(quote.hosted_url);
+  } catch (error) {
+    if (error.type === 'CordInvalidRequestError') {
+      console.error(error.message);
+    }
+  }
+}
+```
+
+El SDK utiliza internamente `keep-alive` TCP y reintentos exponenciales bajo el capó para mitigar errores de red transitorios (502, 503, 504).

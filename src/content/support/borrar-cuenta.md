@@ -4,23 +4,12 @@ description: "Proceso de cierre y exportación final de datos."
 category: "Cuenta y Equipo"
 ---
 
-# Eliminar cuenta de Cord
+Entendemos que los negocios cambian. Si deseas dar de baja tu cuenta en Cord, el proceso debe realizarse con precaución, ya que implica la retención de datos fiscales por ley.
 
-Proceso de cierre y exportación final de datos.
+### Procedimiento de Cierre
 
-Gestionar el acceso y la configuración de tu empresa es el primer paso para una operación segura. Aquí te explicamos cómo administrar **Eliminar cuenta de Cord**.
+1. **Liquida facturas pendientes:** Asegúrate de que no existan facturas en estatus `PPD` pendientes de un Complemento de Pago (REP).
+2. **Descarga tu información:** Exporta tus clientes, cotizaciones y archivos XML. Una vez borrada la cuenta, perderás acceso a la interfaz web.
+3. Envía un correo a `soporte@flouvia.com` desde el correo del Administrador principal solicitando la baja.
 
-## Configuración del Entorno de Trabajo
-
-Solo los usuarios con el rol de **Administrador** (Owner) pueden realizar modificaciones destructivas o críticas.
-
-### Instrucciones paso a paso
-1. En tu panel principal, haz clic en el ícono de engranaje en la esquina inferior izquierda (**Ajustes**).
-2. Navega hasta la pestaña de tu organización o equipo.
-3. Realiza los ajustes necesarios en el formulario.
-4. Guarda los cambios. El sistema registrará la acción en el Audit Log por seguridad.
-
-**Seguridad Corporativa Importante:**
-Te sugerimos habilitar políticas estrictas para todos los miembros de tu equipo. Si tu plan lo permite, considera forzar el uso de Autenticación de Dos Pasos (2FA) para prevenir accesos no autorizados. [Ver guía de 2FA](/soporte/autenticacion-2fa).
-
-Si tienes problemas para acceder a la cuenta, contacta directamente con el Administrador de tu organización para que revise tus permisos de RBAC.
+**Retención de Datos Fiscales:** Por cumplimiento con las leyes de prevención de lavado de dinero e infraestructura fiscal en México (CFF), aunque cerremos tu acceso a la plataforma, Cord está obligado a mantener el historial de tus comprobantes fiscales timbrados durante 5 años. La eliminación no borra el registro de los CFDI emitidos ante el SAT.

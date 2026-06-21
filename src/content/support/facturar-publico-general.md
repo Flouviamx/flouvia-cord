@@ -4,27 +4,18 @@ description: "Emisión de CFDI global diario o mensual."
 category: "Facturación y CFDI"
 ---
 
-# Facturación al Público en General
+Todas las ventas e ingresos que recibas que no sean facturados individualmente a un RFC específico, deben declararse ante el SAT mediante una **Factura Global de Público en General**.
 
-Emisión de CFDI global diario o mensual.
+### ¿Cuándo usar la factura global?
 
-El cumplimiento fiscal en México (SAT) requiere precisión absoluta. Cord automatiza la gran mayoría del proceso de **Facturación al Público en General**, pero es vital que configures tus catálogos corporativos correctamente.
+- Tienes un e-commerce y cobraste 50 pedidos con tarjeta a clientes que no pidieron factura.
+- Hiciste ventas de mostrador en efectivo.
 
-## Requisitos Fiscales (SAT)
+**Reglas del SAT (CFDI 4.0):**
+La factura global debe emitirse usando el RFC genérico **XAXX010101000** y el nombre literal **PUBLICO EN GENERAL** (en mayúsculas y sin acentos). Además, debes indicar la periodicidad (diaria, semanal o mensual) y el año correspondiente.
 
-Para asegurar que los comprobantes (CFDI 4.0) se timbren de manera exitosa:
-- Valida que el Código Postal del cliente coincida exactamente con su Constancia de Situación Fiscal.
-- Asegúrate de que el régimen fiscal del receptor sea compatible con el Uso de CFDI seleccionado.
-
-**Advertencia de Normativa del SAT:**
-Las regulaciones fiscales pueden actualizarse. Asegúrate de siempre tener vigente tu Certificado de Sello Digital (CSD) dentro del portal de Cord para evitar bloqueos en el timbrado. [Ver cómo actualizar el CSD](/soporte/csd-vencido).
-
-## Proceso en Plataforma
-
-Para gestionar esta configuración dentro del sistema:
-1. Dirígete al módulo de **Contabilidad > Facturación** en el panel lateral.
-2. Selecciona la cotización o factura correspondiente.
-3. En el menú contextual (tres puntos), selecciona las opciones fiscales.
-4. Si realizas cambios en catálogos, estos se aplicarán únicamente a las *nuevas* facturas. Las facturas previamente timbradas mantendrán su UUID y estructura original.
-
-Si requieres aplicar notas de crédito por devoluciones, revisa nuestra guía sobre [Notas de Crédito (Egreso)](/soporte/nota-de-credito).
+### Flujo en Cord
+1. Ve a **Contabilidad > Facturas Generales**.
+2. Haz clic en **Generar Factura Global**.
+3. Selecciona el periodo de tiempo.
+4. Cord escaneará automáticamente todas las transacciones cobradas en ese periodo que no tengan un CFDI asociado, y las agrupará en una sola factura con decenas de partidas, tal como lo estipula la ley.

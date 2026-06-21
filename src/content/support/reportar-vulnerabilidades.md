@@ -5,22 +5,22 @@ category: "Seguridad y Privacidad"
 order: 3
 ---
 
-# Reportar vulnerabilidades
+En Cord creemos que la seguridad es un esfuerzo colectivo. Operamos un programa privado de divulgación responsable (Bug Bounty Program) para investigadores de ciberseguridad.
 
-Cómo funciona nuestro programa de Bug Bounty y divulgación responsable.
+### Alcance del Programa
 
-En Flouvia/Cord, la integridad de tus datos y el cumplimiento normativo son nuestra máxima prioridad. Este documento explica nuestra postura y procesos respecto a **Reportar vulnerabilidades**.
+Los siguientes dominios y activos están dentro del alcance para pruebas de penetración:
+- `api.flouvia.com` y `api.cord.flouvia.com`
+- `cord.flouvia.com` (Aplicación Web Principal)
+- La infraestructura de Cord Elements y SDKs.
 
-## Marco Normativo y Cumplimiento
+**Fuera del alcance:** Denegación de Servicio Volumétrica (DDoS), Ingeniería Social contra empleados de Flouvia, y ataques físicos a nuestros servidores en AWS/Vercel.
 
-Operamos bajo estrictos estándares internacionales de encriptación y manejo de información. Todos los datos sensibles (como PAN de tarjetas de crédito o credenciales de API) están tokenizados y almacenados en bases de datos aisladas.
+### Cómo Reportar un Fallo
 
-### Acciones Recomendadas
-- Si eres un administrador de TI, asegúrate de mantener actualizados tus acuerdos de confidencialidad (NDA).
-- Revisa periódicamente los logs de auditoría de tu cuenta para detectar anomalías.
-- Educa a tu equipo sobre prácticas seguras anti-phishing.
+Si has encontrado un fallo de seguridad (ej. Inyección SQL, XSS, Bypass de Autenticación, Elevación de Privilegios):
+1. Detén inmediatamente cualquier prueba que comprometa datos de otros usuarios.
+2. Escribe un reporte detallado con pasos de reproducción precisos y una prueba de concepto (PoC).
+3. Envía un correo encriptado por GPG a `security@flouvia.com`.
 
-**Atención de Vulnerabilidades:**
-Si crees haber encontrado un fallo crítico de seguridad, por favor abstente de publicarlo. Dirígete a nuestro [Programa de Reporte de Vulnerabilidades](/soporte/reportar-vulnerabilidades) y te compensaremos por la divulgación responsable.
-
-Para solicitar copias de nuestras certificaciones SOC2 o documentación de cumplimiento PCI-DSS, los clientes Enterprise pueden abrir un ticket directo con su Account Executive.
+Nuestro equipo interno de DevSecOps te responderá en menos de 24 horas y, dependiendo de la criticidad calculada mediante la calculadora CVSS v3.1, se te ofrecerá una recompensa económica sustancial.

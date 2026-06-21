@@ -4,41 +4,15 @@ description: "Simula pagos, rechazos y facturas sin dinero real."
 category: "Desarrolladores"
 ---
 
-# Entorno de Pruebas (Sandbox)
+Integrar un sistema de pagos y facturación requiere de un entorno seguro para experimentar sin miedo a gastar dinero o meterte en problemas legales con el SAT. Por eso, hemos dotado a cada organización de Cord con un entorno paralelo de Sandbox (Pruebas).
 
-Simula pagos, rechazos y facturas sin dinero real.
+### Activar el Modo de Pruebas
 
-Como desarrollador, Cord te proporciona las herramientas para integrar esta funcionalidad directamente en tu propia arquitectura. A continuación, exploraremos cómo implementar **Entorno de Pruebas (Sandbox)** usando nuestra API REST.
+En tu dashboard principal, ubica el botón o toggle superior llamado **Modo de Pruebas** y actívalo. La interfaz cambiará a color naranja.
 
-## Prerrequisitos de Integración
+En este entorno alternativo:
+- Todos los clientes, cotizaciones y facturas creadas aquí son falsas y no existen en Producción.
+- **Pagos Falsos:** Puedes probar la experiencia de tu cliente utilizando tarjetas de prueba proporcionadas (ej. la famosa tarjeta de prueba Visa terminación `4242`).
+- **Timbrado Simulado:** Al emitir un CFDI en este entorno, la factura se valida mediante un motor que verifica la sintaxis del SAT (que las claves y cálculos coincidan), pero **NO** envía el XML oficial al SAT. De esta manera, tu contador no enloquecerá.
 
-Antes de iniciar la petición, asegúrate de cumplir con lo siguiente:
-- Tener una [Clave de API válida](/soporte/claves-api) (Secreta).
-- Que tu entorno esté configurado para soportar conexiones TLS 1.2 o superior.
-- Enviar el header `Authorization: Bearer sk_...`.
-
-## Implementación Técnica
-
-Dependiendo del entorno (Test o Live), tu petición debe dirigirse al endpoint correspondiente. A continuación un ejemplo de cómo estructurar la petición:
-
-```bash
-# Petición de ejemplo con cURL
-curl -X POST https://api.flouvia.com/v1/resource \
-  -H "Authorization: Bearer sk_test_your_secret_key" \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: req_123456789" \
-  -d '{
-    "environment": "sandbox",
-    "reference_id": "ext_987",
-    "metadata": {
-      "internal_user_id": "u_001"
-    }
-  }'
-```
-
-**Nota sobre SDKs:**
-Si estás utilizando un ecosistema en JavaScript, te recomendamos encarecidamente utilizar el [Cord Node.js SDK](/soporte/node-sdk) para manejar la serialización de datos automáticamente.
-
-## Manejo de Errores
-
-Si la API rechaza tu petición, revisa el campo `error.code` en la respuesta JSON. Los errores comunes 40x generalmente indican que un parámetro requerido fue omitido o que tu API Key no tiene los permisos suficientes.
+Asegúrate de utilizar las Llaves de API de Test (`sk_test_...`) en tu código mientras desarrollas.

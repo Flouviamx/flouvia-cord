@@ -4,26 +4,15 @@ description: "Códigos de error bancarios comunes y cómo solucionarlos."
 category: "Pagos y Depósitos"
 ---
 
-# Razones de pagos rechazados
+Ver un pago fallido es frustrante, pero en el 90% de los casos, la declinación no proviene de la pasarela de Cord, sino del banco emisor de la tarjeta de tu cliente.
 
-Códigos de error bancarios comunes y cómo solucionarlos.
+### Códigos de Declinación Comunes
 
-El corazón de tu negocio es el flujo de caja. Esta guía detalla cómo opera Cord respecto a **Razones de pagos rechazados**, para que tengas control absoluto sobre tus finanzas.
+En tu dashboard, si haces clic en un pago fallido, verás el motivo exacto:
 
-## Ciclos de Liquidación y Fondos
+- **insufficient_funds:** El cliente no tiene saldo suficiente o ha topado su límite de crédito. *Solución:* Pide al cliente usar otra tarjeta o pagar vía Transferencia SPEI.
+- **do_not_honor / generic_decline:** El banco bloqueó la transacción por reglas internas de prevención antifraude. Al ser una transacción de alto valor online, los bancos suelen bloquearlas por protección. *Solución:* El cliente **debe** llamar a la línea de soporte al reverso de su tarjeta y autorizar verbalmente los cargos de "Flouvia/Cord", luego intentar pagar nuevamente.
+- **expired_card:** El plástico caducó.
+- **processing_error:** Error en la red de pagos. Inténtalo de nuevo en 5 minutos.
 
-Los fondos cobrados mediante enlaces de Cord pasan por un proceso de liquidación bancaria:
-- **Tarjetas (Visa/Mastercard):** La liquidación estándar toma T+1 (al día siguiente hábil).
-- **SPEI / Transferencias:** Se liquidan de manera casi instantánea en tu balance de Cord.
-
-## Resolución y Gestión
-
-Si enfrentas anomalías o necesitas configurar esta característica:
-1. Entra a **Pagos > Balance**.
-2. Verifica tus transferencias en tránsito y el historial de depósitos.
-3. Si estás investigando un pago rechazado, haz clic en el ID de la transacción para leer el código de declinación emitido por el banco emisor.
-
-**Dato de Conciliación:**
-Cord exporta un reporte detallado (CSV) que tu equipo contable puede utilizar para conciliar los depósitos masivos contra las facturas individuales. [Lee sobre la Conciliación de depósitos](/soporte/conciliacion-depositos).
-
-Mantén siempre actualizada tu cuenta CLABE receptora para evitar retrasos en las dispersiones.
+Nuestra IA de cobranza automáticamente le enviará un correo amigable al cliente explicándole que su pago falló y sugiriéndole contactar a su banco o cambiar el método de pago.

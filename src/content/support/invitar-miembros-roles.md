@@ -5,23 +5,18 @@ category: "Cuenta y Equipo"
 order: 2
 ---
 
-# Invitar miembros y roles (RBAC)
+Cord soporta esquemas de control de acceso basados en roles (RBAC) para proteger la información confidencial de tu empresa.
 
-Administra el acceso de tu equipo de ventas, contabilidad y administradores.
+### Invitar a tu Equipo
 
-Gestionar el acceso y la configuración de tu empresa es el primer paso para una operación segura. Aquí te explicamos cómo administrar **Invitar miembros y roles (RBAC)**.
+1. En tu panel principal, ve a **Ajustes > Miembros y Roles**.
+2. Haz clic en **Invitar Miembro**.
+3. Ingresa su correo electrónico y asígnale un rol.
+4. La persona recibirá un email para crear su contraseña e ingresar al entorno de trabajo.
 
-## Configuración del Entorno de Trabajo
+### Roles Disponibles
 
-Solo los usuarios con el rol de **Administrador** (Owner) pueden realizar modificaciones destructivas o críticas.
-
-### Instrucciones paso a paso
-1. En tu panel principal, haz clic en el ícono de engranaje en la esquina inferior izquierda (**Ajustes**).
-2. Navega hasta la pestaña de tu organización o equipo.
-3. Realiza los ajustes necesarios en el formulario.
-4. Guarda los cambios. El sistema registrará la acción en el Audit Log por seguridad.
-
-**Seguridad Corporativa Importante:**
-Te sugerimos habilitar políticas estrictas para todos los miembros de tu equipo. Si tu plan lo permite, considera forzar el uso de Autenticación de Dos Pasos (2FA) para prevenir accesos no autorizados. [Ver guía de 2FA](/soporte/autenticacion-2fa).
-
-Si tienes problemas para acceder a la cuenta, contacta directamente con el Administrador de tu organización para que revise tus permisos de RBAC.
+- **Administrador (Owner):** Tiene acceso sin restricciones. Puede ver balances bancarios, transferir dinero (Payouts), editar las llaves de API, cambiar facturación y borrar la organización.
+- **Ventas (Sales):** Solo puede crear, editar y visualizar clientes y cotizaciones. **No** puede ver el saldo total de la cuenta en el dashboard ni exportar reportes de dispersión bancaria.
+- **Desarrollador (Developer):** Tiene acceso total a las llaves de API y configuración de webhooks. Puede emitir facturas y leer logs técnicos, pero no puede añadir administradores nuevos ni ver las cuentas bancarias destino.
+- **Contador (Read-Only Finance):** Ideal para despachos externos. Solo pueden exportar facturas XML/PDF y ver conciliaciones de pago, pero tienen bloqueada la creación de cobros.

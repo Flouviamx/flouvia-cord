@@ -4,41 +4,28 @@ description: "Timbra CFDI 4.0 directamente desde tus sistemas internos."
 category: "Desarrolladores"
 ---
 
-# API: Emitir y descargar facturas
+El endpoint de `Invoices` controla el timbrado de CFDI 4.0 en México. Cuando utilizas este endpoint en modo *Live*, te conectas directamente a nuestro PAC certificado (Facturapi).
 
-Timbra CFDI 4.0 directamente desde tus sistemas internos.
+### Timbrar una Factura Directa
 
-Como desarrollador, Cord te proporciona las herramientas para integrar esta funcionalidad directamente en tu propia arquitectura. A continuación, exploraremos cómo implementar **API: Emitir y descargar facturas** usando nuestra API REST.
-
-## Prerrequisitos de Integración
-
-Antes de iniciar la petición, asegúrate de cumplir con lo siguiente:
-- Tener una [Clave de API válida](/soporte/claves-api) (Secreta).
-- Que tu entorno esté configurado para soportar conexiones TLS 1.2 o superior.
-- Enviar el header `Authorization: Bearer sk_...`.
-
-## Implementación Técnica
-
-Dependiendo del entorno (Test o Live), tu petición debe dirigirse al endpoint correspondiente. A continuación un ejemplo de cómo estructurar la petición:
+Si no deseas pasar por el flujo de una cotización y solo quieres generar un CFDI 4.0 (Ingreso):
 
 ```bash
-# Petición de ejemplo con cURL
-curl -X POST https://api.flouvia.com/v1/resource \
-  -H "Authorization: Bearer sk_test_your_secret_key" \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: req_123456789" \
+curl -X POST https://api.flouvia.com/v1/invoices \
+  -H "Authorization: Bearer sk_live_..." \
   -d '{
-    "environment": "sandbox",
-    "reference_id": "ext_987",
-    "metadata": {
-      "internal_user_id": "u_001"
-    }
+    "customer_id": "cus_12345",
+    "payment_form": "03", // 03 = Transferencia electrónica de fondos
+    "payment_method": "PUE", // Pago en una sola exhibición
+    "use": "G03", // Gastos en general
+    "items": [
+      {
+        "product_key": "43231500", // Clave SAT de Software
+        "description": "Desarrollo a la medida",
+        "price": 5000000
+      }
+    ]
   }'
 ```
 
-**Nota sobre SDKs:**
-Si estás utilizando un ecosistema en JavaScript, te recomendamos encarecidamente utilizar el [Cord Node.js SDK](/soporte/node-sdk) para manejar la serialización de datos automáticamente.
-
-## Manejo de Errores
-
-Si la API rechaza tu petición, revisa el campo `error.code` en la respuesta JSON. Los errores comunes 40x generalmente indican que un parámetro requerido fue omitido o que tu API Key no tiene los permisos suficientes.
+**Generación Asíncrona:** La API responderá con un `status: processing`. El timbrado con el PAC puede demorar entre 1 a 5 segundos. Te recomendamos escuchar el evento webhook `invoice.created` para saber cuándo descargar el PDF y XML.

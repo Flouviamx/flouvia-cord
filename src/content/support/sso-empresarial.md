@@ -4,23 +4,13 @@ description: "Habilita acceso con Google Workspace o Microsoft Entra."
 category: "Cuenta y Equipo"
 ---
 
-# Single Sign-On (SSO)
+Gestionar decenas de contraseñas de empleados es un riesgo de seguridad. Para organizaciones con planes Enterprise, Cord ofrece la integración de Single Sign-On (SSO) mediante SAML o integraciones OIDC directas (Google Workspace, Microsoft Entra ID / Azure AD, Okta).
 
-Habilita acceso con Google Workspace o Microsoft Entra.
+### Configurar SSO (Single Sign-On)
 
-Gestionar el acceso y la configuración de tu empresa es el primer paso para una operación segura. Aquí te explicamos cómo administrar **Single Sign-On (SSO)**.
+1. Ingresa a **Ajustes > Seguridad de la Organización**.
+2. Busca el módulo de **Conexiones SSO** y añade un nuevo proveedor de identidad (IdP).
+3. Deberás mapear la URL de metadatos ACS (Assertion Consumer Service) proporcionada por tu panel de Okta o Azure AD.
+4. Reclama tu dominio corporativo (ej. `@tuempresa.com`). Te pediremos colocar un registro TXT en tus DNS para probar tu propiedad.
 
-## Configuración del Entorno de Trabajo
-
-Solo los usuarios con el rol de **Administrador** (Owner) pueden realizar modificaciones destructivas o críticas.
-
-### Instrucciones paso a paso
-1. En tu panel principal, haz clic en el ícono de engranaje en la esquina inferior izquierda (**Ajustes**).
-2. Navega hasta la pestaña de tu organización o equipo.
-3. Realiza los ajustes necesarios en el formulario.
-4. Guarda los cambios. El sistema registrará la acción en el Audit Log por seguridad.
-
-**Seguridad Corporativa Importante:**
-Te sugerimos habilitar políticas estrictas para todos los miembros de tu equipo. Si tu plan lo permite, considera forzar el uso de Autenticación de Dos Pasos (2FA) para prevenir accesos no autorizados. [Ver guía de 2FA](/soporte/autenticacion-2fa).
-
-Si tienes problemas para acceder a la cuenta, contacta directamente con el Administrador de tu organización para que revise tus permisos de RBAC.
+Una vez activo, cualquier empleado que intente iniciar sesión en Cord utilizando un correo `@tuempresa.com` será redirigido a tu portal corporativo de inicio de sesión. Además, soportamos el aprovisionamiento automático (JIT/SCIM), lo que significa que cuando das de baja a un empleado de tu Active Directory, pierde acceso a Cord instantáneamente.

@@ -4,27 +4,16 @@ description: "Exporta tus facturas del mes en formato ZIP para tu contador."
 category: "Facturación y CFDI"
 ---
 
-# Descarga masiva de XMLs
+Mantener el orden en tu contabilidad es fundamental, especialmente para la conciliación mensual. 
 
-Exporta tus facturas del mes en formato ZIP para tu contador.
+### Descarga Masiva de CFDI
 
-El cumplimiento fiscal en México (SAT) requiere precisión absoluta. Cord automatiza la gran mayoría del proceso de **Descarga masiva de XMLs**, pero es vital que configures tus catálogos corporativos correctamente.
+En lugar de bajar facturas una por una, puedes descargar todas las de un periodo específico en formato `.ZIP` (conteniendo los PDFs y XMLs estructurados).
 
-## Requisitos Fiscales (SAT)
+1. Ve al módulo **Contabilidad > Facturas**.
+2. En la esquina superior derecha, haz clic en el botón de **Exportar**.
+3. Selecciona el rango de fechas (ej. Todo el mes de Octubre).
+4. Elige si quieres exportar solo los XML, solo PDFs, o ambos.
+5. El sistema procesará la solicitud en *background*. Si seleccionaste cientos de facturas, recibirás un correo electrónico en un lapso de 2 a 5 minutos con un enlace seguro de descarga válido por 24 horas.
 
-Para asegurar que los comprobantes (CFDI 4.0) se timbren de manera exitosa:
-- Valida que el Código Postal del cliente coincida exactamente con su Constancia de Situación Fiscal.
-- Asegúrate de que el régimen fiscal del receptor sea compatible con el Uso de CFDI seleccionado.
-
-**Advertencia de Normativa del SAT:**
-Las regulaciones fiscales pueden actualizarse. Asegúrate de siempre tener vigente tu Certificado de Sello Digital (CSD) dentro del portal de Cord para evitar bloqueos en el timbrado. [Ver cómo actualizar el CSD](/soporte/csd-vencido).
-
-## Proceso en Plataforma
-
-Para gestionar esta configuración dentro del sistema:
-1. Dirígete al módulo de **Contabilidad > Facturación** en el panel lateral.
-2. Selecciona la cotización o factura correspondiente.
-3. En el menú contextual (tres puntos), selecciona las opciones fiscales.
-4. Si realizas cambios en catálogos, estos se aplicarán únicamente a las *nuevas* facturas. Las facturas previamente timbradas mantendrán su UUID y estructura original.
-
-Si requieres aplicar notas de crédito por devoluciones, revisa nuestra guía sobre [Notas de Crédito (Egreso)](/soporte/nota-de-credito).
+**Importante para Contadores:** El archivo ZIP contiene carpetas separadas por CFDI de Ingreso, Egreso (Notas de crédito) y Pagos (REP), para que la subida a tu software contable sea lo más limpia y rápida posible.

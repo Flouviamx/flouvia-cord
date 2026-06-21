@@ -5,41 +5,17 @@ category: "Desarrolladores"
 order: 3
 ---
 
-# Cord Elements (Componentes UI embebibles)
+Cord Elements es una librería de componentes UI *drop-in* (listos para usar) que te permite embeber el poder de Cord directamente dentro del sitio web de tu aplicación, sin que el cliente sepa que existimos.
 
-Incrusta botones de pago y formularios interactivos directamente en tu propia aplicación web.
+### Beneficios
 
-Como desarrollador, Cord te proporciona las herramientas para integrar esta funcionalidad directamente en tu propia arquitectura. A continuación, exploraremos cómo implementar **Cord Elements (Componentes UI embebibles)** usando nuestra API REST.
+- **Menos abandono:** El cliente nunca sale de tu dominio (ej. `app.tuempresa.com/checkout`) para pagar o aceptar una cotización.
+- **Cumplimiento PCI:** Los componentes inyectan iframes seguros que recolectan los datos de la tarjeta. La información sensible jamás toca tus servidores, eximiéndote de auditorías PCI pesadas.
 
-## Prerrequisitos de Integración
+### Elementos Disponibles
 
-Antes de iniciar la petición, asegúrate de cumplir con lo siguiente:
-- Tener una [Clave de API válida](/soporte/claves-api) (Secreta).
-- Que tu entorno esté configurado para soportar conexiones TLS 1.2 o superior.
-- Enviar el header `Authorization: Bearer sk_...`.
+1. **Payment Element:** Una caja de pago que soporta tarjetas, transferencias y meses sin intereses dinámicamente.
+2. **Quote Element:** Muestra una cotización B2B interactiva dentro de tu portal de clientes.
+3. **Customer Portal Element:** Permite a tus usuarios descargar sus propias facturas XML/PDF y actualizar sus datos fiscales directamente en tu sitio.
 
-## Implementación Técnica
-
-Dependiendo del entorno (Test o Live), tu petición debe dirigirse al endpoint correspondiente. A continuación un ejemplo de cómo estructurar la petición:
-
-```bash
-# Petición de ejemplo con cURL
-curl -X POST https://api.flouvia.com/v1/resource \
-  -H "Authorization: Bearer sk_test_your_secret_key" \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: req_123456789" \
-  -d '{
-    "environment": "sandbox",
-    "reference_id": "ext_987",
-    "metadata": {
-      "internal_user_id": "u_001"
-    }
-  }'
-```
-
-**Nota sobre SDKs:**
-Si estás utilizando un ecosistema en JavaScript, te recomendamos encarecidamente utilizar el [Cord Node.js SDK](/soporte/node-sdk) para manejar la serialización de datos automáticamente.
-
-## Manejo de Errores
-
-Si la API rechaza tu petición, revisa el campo `error.code` en la respuesta JSON. Los errores comunes 40x generalmente indican que un parámetro requerido fue omitido o que tu API Key no tiene los permisos suficientes.
+Para instalar Elements, simplemente añade la etiqueta de script en tu `<head>` y monta los componentes usando nuestro [SDK de frontend](/soporte/react-sdk).

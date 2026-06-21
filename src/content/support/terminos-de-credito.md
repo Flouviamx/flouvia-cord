@@ -5,25 +5,15 @@ category: "Cotizaciones"
 order: 3
 ---
 
-# Añadir términos de crédito (Net 30/60)
+No todas las transacciones se pagan de contado. En el entorno B2B corporativo, dar facilidades de financiamiento a corto plazo (ej. Pagar a 30 días) es estándar de la industria. Cord automatiza la gestión de estos acuerdos.
 
-Guía para emitir facturas con crédito comercial a clientes recurrentes.
+### Configurar Términos de Pago (Net 30/60/90)
 
-Cerrar tratos B2B requiere propuestas ágiles y claras. En Cord, la gestión de **Añadir términos de crédito (Net 30/60)** está diseñada para optimizar tus conversiones y evitar fricciones con tu comprador.
+Al crear una cotización, en la barra lateral derecha verás la sección de **Condiciones de Pago**.
+1. Cambia el selector de "De Contado (PUE)" a "A Crédito (PPD)".
+2. Introduce la vigencia del crédito (ej. Net 30, lo que significa 30 días naturales a partir de la emisión de la factura).
 
-## Flujo Operativo Comercial
-
-Las cotizaciones en Cord no son documentos estáticos, son enlaces interactivos. 
-1. Crea un nuevo borrador desde **Ventas > Cotizaciones**.
-2. Añade tus partidas (conceptos, cantidades y descuentos).
-3. Configura los **Términos de Crédito** si operas en esquemas PPD (ej. Net 30).
-4. Activa el botón de firma digital o pago de anticipo obligatorio.
-
-**Tip Comercial:**
-Personaliza los colores de tu cotización en los ajustes de apariencia. Las propuestas que mantienen la identidad visual de la marca (White-label) tienen un 15% más de probabilidad de ser aceptadas rápidamente.
-
-## Monitoreo y Seguimiento
-
-Una vez que envíes la propuesta, el sistema se encargará de trackear la apertura. Puedes habilitar notificaciones por correo para que tu equipo de ventas reciba una alerta en el instante en que el cliente abre el enlace. 
-
-Para profundizar en integraciones avanzadas de ventas, visita la sección de [Cord Elements](/soporte/cord-elements).
+**Lo que pasa por debajo del capó:**
+- La cotización indicará claramente al comprador sus fechas límite de pago.
+- Cuando el cliente acepta, se timbra el CFDI con método `PPD` (Pago en Parcialidades).
+- El sistema de cobranza inteligente de Cord programará la fecha de vencimiento y enviará correos de recordatorio de cobro automáticos los días 25, 29 y 31 para asegurar la recolección sin que tu equipo de finanzas mueva un dedo.

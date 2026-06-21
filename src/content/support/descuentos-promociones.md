@@ -4,25 +4,17 @@ description: "Agrega descuentos por línea o totales a tu propuesta."
 category: "Cotizaciones"
 ---
 
-# Aplicar descuentos o promociones
+La flexibilidad en la negociación B2B es vital. Cord te permite aplicar descuentos tanto a nivel de concepto individual como a nivel global en la cotización.
 
-Agrega descuentos por línea o totales a tu propuesta.
+### Tipos de Descuento
 
-Cerrar tratos B2B requiere propuestas ágiles y claras. En Cord, la gestión de **Aplicar descuentos o promociones** está diseñada para optimizar tus conversiones y evitar fricciones con tu comprador.
+**1. Descuento Lineal (Por partida):**
+Ideal si solo quieres hacer un descuento en un servicio particular (ej. 20% off en la consultoría, pero la licencia de software va a precio completo).
+- En el editor de la cotización, haz clic en el ícono de descuento `%` al lado del precio del concepto. Puedes aplicarlo como porcentaje o como monto fijo (ej. -$500 MXN).
 
-## Flujo Operativo Comercial
+**2. Descuento Global:**
+Aplica a la suma total del subtotal.
+- En el panel derecho de configuración, bajo *Finanzas*, añade un descuento global.
 
-Las cotizaciones en Cord no son documentos estáticos, son enlaces interactivos. 
-1. Crea un nuevo borrador desde **Ventas > Cotizaciones**.
-2. Añade tus partidas (conceptos, cantidades y descuentos).
-3. Configura los **Términos de Crédito** si operas en esquemas PPD (ej. Net 30).
-4. Activa el botón de firma digital o pago de anticipo obligatorio.
-
-**Tip Comercial:**
-Personaliza los colores de tu cotización en los ajustes de apariencia. Las propuestas que mantienen la identidad visual de la marca (White-label) tienen un 15% más de probabilidad de ser aceptadas rápidamente.
-
-## Monitoreo y Seguimiento
-
-Una vez que envíes la propuesta, el sistema se encargará de trackear la apertura. Puedes habilitar notificaciones por correo para que tu equipo de ventas reciba una alerta en el instante en que el cliente abre el enlace. 
-
-Para profundizar en integraciones avanzadas de ventas, visita la sección de [Cord Elements](/soporte/cord-elements).
+**¿Cómo lo ve el SAT?**
+Cuando la cotización se convierte en una Factura (CFDI 4.0), Cord mapea los descuentos de manera perfecta al XML fiscal en el nodo de `Descuento`, de modo que el cálculo del IVA trasladado se hace sobre la base gravable correcta, evitando descuadres contables y errores matemáticos ante el SAT.

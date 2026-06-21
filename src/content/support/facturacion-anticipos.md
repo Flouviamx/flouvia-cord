@@ -4,27 +4,18 @@ description: "Emite el CFDI de anticipo y su remanente."
 category: "Facturación y CFDI"
 ---
 
-# Facturar anticipos
+Facturar proyectos grandes donde cobras un porcentaje por adelantado y el resto a la entrega requiere un manejo especial ante el SAT.
 
-Emite el CFDI de anticipo y su remanente.
+### Regla Fiscal para Anticipos
 
-El cumplimiento fiscal en México (SAT) requiere precisión absoluta. Cord automatiza la gran mayoría del proceso de **Facturar anticipos**, pero es vital que configures tus catálogos corporativos correctamente.
+Según la guía de llenado del SAT, un anticipo solo existe cuando **no se conoce o no se ha determinado el bien o servicio, o su precio final**. Si ya enviaste una cotización detallada de $100,000 MXN y pides el 50% de entrada, contablemente **no es un anticipo**, es un pago en parcialidades.
 
-## Requisitos Fiscales (SAT)
+### Cómo cobrar en parcialidades en Cord
 
-Para asegurar que los comprobantes (CFDI 4.0) se timbren de manera exitosa:
-- Valida que el Código Postal del cliente coincida exactamente con su Constancia de Situación Fiscal.
-- Asegúrate de que el régimen fiscal del receptor sea compatible con el Uso de CFDI seleccionado.
+1. Crea tu Cotización por el monto total ($100,000).
+2. En la sección *Pagos y Anticipos*, selecciona **Requerir pago inicial parcial**.
+3. Define el porcentaje (ej. 50%).
+4. Cuando el cliente acepta y paga esos $50,000 con tarjeta, Cord emitirá una Factura por el monto total en método `PPD` (Pago en Parcialidades).
+5. En ese mismo instante, Cord timbrará automáticamente un **Complemento de Recepción de Pagos (REP)** amparando el depósito de los $50,000 iniciales.
 
-**Advertencia de Normativa del SAT:**
-Las regulaciones fiscales pueden actualizarse. Asegúrate de siempre tener vigente tu Certificado de Sello Digital (CSD) dentro del portal de Cord para evitar bloqueos en el timbrado. [Ver cómo actualizar el CSD](/soporte/csd-vencido).
-
-## Proceso en Plataforma
-
-Para gestionar esta configuración dentro del sistema:
-1. Dirígete al módulo de **Contabilidad > Facturación** en el panel lateral.
-2. Selecciona la cotización o factura correspondiente.
-3. En el menú contextual (tres puntos), selecciona las opciones fiscales.
-4. Si realizas cambios en catálogos, estos se aplicarán únicamente a las *nuevas* facturas. Las facturas previamente timbradas mantendrán su UUID y estructura original.
-
-Si requieres aplicar notas de crédito por devoluciones, revisa nuestra guía sobre [Notas de Crédito (Egreso)](/soporte/nota-de-credito).
+Cuando llegue la entrega final, solo tienes que entrar a la factura y generar un link de cobro por el saldo restante. Al pagarse, Cord emitirá el segundo y último REP.

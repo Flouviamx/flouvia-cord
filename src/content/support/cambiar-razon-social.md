@@ -4,23 +4,15 @@ description: "Pasos legales para transferir tu cuenta Cord a otra empresa."
 category: "Cuenta y Equipo"
 ---
 
-# Cambiar Razón Social
+Cambiar la Razón Social y RFC de tu cuenta operativa es un procedimiento crítico, ya que impacta la facturación en vivo y la emisión de comprobantes.
 
-Pasos legales para transferir tu cuenta Cord a otra empresa.
+### Proceso de Migración Fiscal
 
-Gestionar el acceso y la configuración de tu empresa es el primer paso para una operación segura. Aquí te explicamos cómo administrar **Cambiar Razón Social**.
+No existe un botón para "cambiar el RFC" directamente, ya que las facturas pasadas no pueden migrar de emisor. Si tu empresa cambió legalmente de Razón Social:
 
-## Configuración del Entorno de Trabajo
+1. **Crea una nueva organización:** Dentro de Cord, puedes pertenecer a múltiples organizaciones. Haz clic en el nombre de tu empresa arriba a la izquierda y selecciona *Crear nueva organización*.
+2. Registra los nuevos datos (RFC, Razón Social, CSD del SAT).
+3. Contacta a soporte para que transfiramos tu plan de suscripción actual a la nueva cuenta.
+4. Exporta tu catálogo de clientes de la cuenta vieja e impórtalo en la nueva.
 
-Solo los usuarios con el rol de **Administrador** (Owner) pueden realizar modificaciones destructivas o críticas.
-
-### Instrucciones paso a paso
-1. En tu panel principal, haz clic en el ícono de engranaje en la esquina inferior izquierda (**Ajustes**).
-2. Navega hasta la pestaña de tu organización o equipo.
-3. Realiza los ajustes necesarios en el formulario.
-4. Guarda los cambios. El sistema registrará la acción en el Audit Log por seguridad.
-
-**Seguridad Corporativa Importante:**
-Te sugerimos habilitar políticas estrictas para todos los miembros de tu equipo. Si tu plan lo permite, considera forzar el uso de Autenticación de Dos Pasos (2FA) para prevenir accesos no autorizados. [Ver guía de 2FA](/soporte/autenticacion-2fa).
-
-Si tienes problemas para acceder a la cuenta, contacta directamente con el Administrador de tu organización para que revise tus permisos de RBAC.
+Este método garantiza que tu historial contable previo se mantenga intacto e inmutable bajo el RFC anterior para efectos de auditoría del SAT.

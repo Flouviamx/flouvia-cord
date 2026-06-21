@@ -4,27 +4,11 @@ description: "Configuración para empresas de logística o mercancías."
 category: "Facturación y CFDI"
 ---
 
-# Emitir CFDI de Traslado (Carta Porte)
+Actualmente, la plataforma principal de Cord está enfocada en empresas de tecnología, servicios B2B y agencias, por lo que **los CFDI de Traslado (Carta Porte) no están soportados de forma nativa en el dashboard**.
 
-Configuración para empresas de logística o mercancías.
+Nuestro motor de facturación está optimizado para:
+- CFDI de Ingreso (Facturas, Recibos de Honorarios, Recibos de Arrendamiento).
+- CFDI de Egreso (Notas de Crédito).
+- CFDI de Recepción de Pagos (Complementos / REP).
 
-El cumplimiento fiscal en México (SAT) requiere precisión absoluta. Cord automatiza la gran mayoría del proceso de **Emitir CFDI de Traslado (Carta Porte)**, pero es vital que configures tus catálogos corporativos correctamente.
-
-## Requisitos Fiscales (SAT)
-
-Para asegurar que los comprobantes (CFDI 4.0) se timbren de manera exitosa:
-- Valida que el Código Postal del cliente coincida exactamente con su Constancia de Situación Fiscal.
-- Asegúrate de que el régimen fiscal del receptor sea compatible con el Uso de CFDI seleccionado.
-
-**Advertencia de Normativa del SAT:**
-Las regulaciones fiscales pueden actualizarse. Asegúrate de siempre tener vigente tu Certificado de Sello Digital (CSD) dentro del portal de Cord para evitar bloqueos en el timbrado. [Ver cómo actualizar el CSD](/soporte/csd-vencido).
-
-## Proceso en Plataforma
-
-Para gestionar esta configuración dentro del sistema:
-1. Dirígete al módulo de **Contabilidad > Facturación** en el panel lateral.
-2. Selecciona la cotización o factura correspondiente.
-3. En el menú contextual (tres puntos), selecciona las opciones fiscales.
-4. Si realizas cambios en catálogos, estos se aplicarán únicamente a las *nuevas* facturas. Las facturas previamente timbradas mantendrán su UUID y estructura original.
-
-Si requieres aplicar notas de crédito por devoluciones, revisa nuestra guía sobre [Notas de Crédito (Egreso)](/soporte/nota-de-credito).
+Si tu empresa se dedica a la logística o al transporte de mercancías por vías federales y requieres timbrar Complementos Carta Porte versión 3.0, te sugerimos utilizar la API de nuestro proveedor directo de timbrado (Facturapi) conectando tu propio ERP, ya que su llenado requiere decenas de nodos específicos sobre vehículos, operadores y aseguradoras que no gestionamos en Cord.

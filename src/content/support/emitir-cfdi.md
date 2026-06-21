@@ -5,27 +5,19 @@ category: "Facturación y CFDI"
 order: 1
 ---
 
-# Configurar facturación automática (CFDI 4.0)
+La emisión de un Comprobante Fiscal Digital por Internet (CFDI) versión 4.0 está totalmente integrada en tu flujo de ventas.
 
-Aprende cómo habilitar la facturación automática para que tus clientes reciban su CFDI 4.0 en cuanto realicen el pago.
+### De Cotización a Factura en un Clic
 
-El cumplimiento fiscal en México (SAT) requiere precisión absoluta. Cord automatiza la gran mayoría del proceso de **Configurar facturación automática (CFDI 4.0)**, pero es vital que configures tus catálogos corporativos correctamente.
+El flujo ideal y recomendado en Cord es:
+1. El cliente acepta tu cotización online.
+2. Automáticamente, esa cotización ganada te mostrará un botón verde gigante: **Emitir Factura**.
+3. Al hacer clic, todos los conceptos, precios, descuentos e impuestos se copian directamente al borrador de la factura.
+4. Selecciona el **Uso de CFDI** (ej. Gastos en general) y el **Método de Pago** (PUE o PPD).
+5. Haz clic en "Timbrar Factura". En 2 segundos, el XML y PDF estarán disponibles y se enviarán al cliente.
 
-## Requisitos Fiscales (SAT)
-
-Para asegurar que los comprobantes (CFDI 4.0) se timbren de manera exitosa:
-- Valida que el Código Postal del cliente coincida exactamente con su Constancia de Situación Fiscal.
-- Asegúrate de que el régimen fiscal del receptor sea compatible con el Uso de CFDI seleccionado.
-
-**Advertencia de Normativa del SAT:**
-Las regulaciones fiscales pueden actualizarse. Asegúrate de siempre tener vigente tu Certificado de Sello Digital (CSD) dentro del portal de Cord para evitar bloqueos en el timbrado. [Ver cómo actualizar el CSD](/soporte/csd-vencido).
-
-## Proceso en Plataforma
-
-Para gestionar esta configuración dentro del sistema:
-1. Dirígete al módulo de **Contabilidad > Facturación** en el panel lateral.
-2. Selecciona la cotización o factura correspondiente.
-3. En el menú contextual (tres puntos), selecciona las opciones fiscales.
-4. Si realizas cambios en catálogos, estos se aplicarán únicamente a las *nuevas* facturas. Las facturas previamente timbradas mantendrán su UUID y estructura original.
-
-Si requieres aplicar notas de crédito por devoluciones, revisa nuestra guía sobre [Notas de Crédito (Egreso)](/soporte/nota-de-credito).
+### Facturación Directa (Sin Cotización)
+Si solo quieres facturar algo rápidamente sin enviar una propuesta comercial antes:
+1. Ve a **Contabilidad > Facturas**.
+2. Haz clic en **Nueva Factura**.
+3. Selecciona el cliente, añade los conceptos manualmente, y timbra. El resultado legal y operativo es exactamente el mismo.

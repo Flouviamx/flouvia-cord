@@ -4,25 +4,20 @@ description: "Acelera tu proceso clonando propuestas anteriores."
 category: "Cotizaciones"
 ---
 
-# Duplicar o clonar cotizaciones
+Si envías propuestas similares frecuentemente a distintos prospectos (ej. renovaciones de software o paquetes estándar), no es necesario crear cada cotización desde cero.
 
-Acelera tu proceso clonando propuestas anteriores.
+### ¿Cómo clonar una cotización?
 
-Cerrar tratos B2B requiere propuestas ágiles y claras. En Cord, la gestión de **Duplicar o clonar cotizaciones** está diseñada para optimizar tus conversiones y evitar fricciones con tu comprador.
+1. Entra a **Ventas > Cotizaciones**.
+2. Busca la cotización que deseas duplicar (puede estar en estatus de borrador, enviada o incluso rechazada).
+3. Haz clic en el menú contextual de tres puntos a la derecha y selecciona **Duplicar Cotización**.
+4. Se generará un nuevo Borrador exacto.
 
-## Flujo Operativo Comercial
+**Lo que sí se copia:**
+- Todas las partidas, descripciones y precios.
+- Descuentos aplicados e impuestos.
+- Términos legales, garantías y vigencia relativa.
 
-Las cotizaciones en Cord no son documentos estáticos, son enlaces interactivos. 
-1. Crea un nuevo borrador desde **Ventas > Cotizaciones**.
-2. Añade tus partidas (conceptos, cantidades y descuentos).
-3. Configura los **Términos de Crédito** si operas en esquemas PPD (ej. Net 30).
-4. Activa el botón de firma digital o pago de anticipo obligatorio.
-
-**Tip Comercial:**
-Personaliza los colores de tu cotización en los ajustes de apariencia. Las propuestas que mantienen la identidad visual de la marca (White-label) tienen un 15% más de probabilidad de ser aceptadas rápidamente.
-
-## Monitoreo y Seguimiento
-
-Una vez que envíes la propuesta, el sistema se encargará de trackear la apertura. Puedes habilitar notificaciones por correo para que tu equipo de ventas reciba una alerta en el instante en que el cliente abre el enlace. 
-
-Para profundizar en integraciones avanzadas de ventas, visita la sección de [Cord Elements](/soporte/cord-elements).
+**Lo que NO se copia:**
+- El cliente (se te pedirá seleccionar a quién va dirigida esta nueva propuesta).
+- El historial de firmas o pagos. Cada clon es un folio completamente virgen.

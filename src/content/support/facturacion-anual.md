@@ -4,23 +4,19 @@ description: "Cambia a pago anual y ahorra 20% en tu plan Cord."
 category: "Cuenta y Equipo"
 ---
 
-# Suscripción con facturación anual
+Renovar y facturar membresías anuales es un proceso que Cord automatiza por completo mediante su motor de suscripciones.
 
-Cambia a pago anual y ahorra 20% en tu plan Cord.
+### Configurar un Ciclo de Facturación Anual
 
-Gestionar el acceso y la configuración de tu empresa es el primer paso para una operación segura. Aquí te explicamos cómo administrar **Suscripción con facturación anual**.
+Si vendes SaaS o servicios recurrentes:
+1. Ve a **Productos > Suscripciones y Planes**.
+2. Crea un nuevo Plan (ej. "Membresía Premium B2B").
+3. Establece el precio y selecciona el intervalo de cobro a **Anual**.
+4. Si el cliente requiere CFDI, asegúrate de activar la casilla *Emitir factura automáticamente tras el cobro* e ingresa su RFC.
 
-## Configuración del Entorno de Trabajo
+### Prorrateos y Cambios de Plan (Upgrades)
 
-Solo los usuarios con el rol de **Administrador** (Owner) pueden realizar modificaciones destructivas o críticas.
-
-### Instrucciones paso a paso
-1. En tu panel principal, haz clic en el ícono de engranaje en la esquina inferior izquierda (**Ajustes**).
-2. Navega hasta la pestaña de tu organización o equipo.
-3. Realiza los ajustes necesarios en el formulario.
-4. Guarda los cambios. El sistema registrará la acción en el Audit Log por seguridad.
-
-**Seguridad Corporativa Importante:**
-Te sugerimos habilitar políticas estrictas para todos los miembros de tu equipo. Si tu plan lo permite, considera forzar el uso de Autenticación de Dos Pasos (2FA) para prevenir accesos no autorizados. [Ver guía de 2FA](/soporte/autenticacion-2fa).
-
-Si tienes problemas para acceder a la cuenta, contacta directamente con el Administrador de tu organización para que revise tus permisos de RBAC.
+Si tu cliente pagó su plan anual en enero, pero en junio decide hacer un *upgrade* a un plan superior:
+- El sistema calculará el valor de los 6 meses no utilizados.
+- Le cobrará únicamente la diferencia correspondiente al nuevo plan.
+- Se emitirá una factura automática por la cantidad exacta prorrateada (el cobro residual), evitando que tengas que hacer notas de crédito manuales.

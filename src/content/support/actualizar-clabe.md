@@ -5,23 +5,16 @@ category: "Cuenta y Equipo"
 order: 3
 ---
 
-# Actualizar datos bancarios (CLABE)
+Para proteger tus fondos, el cambio de la cuenta CLABE receptora requiere verificación manual por parte de nuestro equipo de compliance.
 
-Cómo cambiar la cuenta bancaria donde recibes los depósitos de tus ventas.
+### Instrucciones para cambiar tu CLABE
 
-Gestionar el acceso y la configuración de tu empresa es el primer paso para una operación segura. Aquí te explicamos cómo administrar **Actualizar datos bancarios (CLABE)**.
+1. Inicia sesión como **Administrador (Propietario)** de la cuenta. Los usuarios con rol de Ventas o Desarrollador no verán esta opción.
+2. Dirígete a **Ajustes > Facturación y Pagos**.
+3. En la sección *Cuenta de Depósito*, haz clic en **Solicitar Cambio**.
+4. Se te pedirá subir una **Carátula Bancaria** no mayor a 3 meses de antigüedad. La carátula debe mostrar claramente:
+   - El logotipo del banco.
+   - El nombre de la Razón Social (debe coincidir con la de tu cuenta Cord).
+   - Los 18 dígitos de la cuenta CLABE.
 
-## Configuración del Entorno de Trabajo
-
-Solo los usuarios con el rol de **Administrador** (Owner) pueden realizar modificaciones destructivas o críticas.
-
-### Instrucciones paso a paso
-1. En tu panel principal, haz clic en el ícono de engranaje en la esquina inferior izquierda (**Ajustes**).
-2. Navega hasta la pestaña de tu organización o equipo.
-3. Realiza los ajustes necesarios en el formulario.
-4. Guarda los cambios. El sistema registrará la acción en el Audit Log por seguridad.
-
-**Seguridad Corporativa Importante:**
-Te sugerimos habilitar políticas estrictas para todos los miembros de tu equipo. Si tu plan lo permite, considera forzar el uso de Autenticación de Dos Pasos (2FA) para prevenir accesos no autorizados. [Ver guía de 2FA](/soporte/autenticacion-2fa).
-
-Si tienes problemas para acceder a la cuenta, contacta directamente con el Administrador de tu organización para que revise tus permisos de RBAC.
+**Tiempo de Resolución:** Nuestro equipo validará el documento en un máximo de **24 horas hábiles**. Durante este tiempo, tus dispersiones automáticas se pausarán. Una vez aprobada, los fondos retenidos se liberarán a la nueva cuenta.

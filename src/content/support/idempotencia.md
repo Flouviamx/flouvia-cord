@@ -4,41 +4,19 @@ description: "Evita cargos duplicados usando llaves de idempotencia."
 category: "Desarrolladores"
 ---
 
-# Claves de Idempotencia
+La idempotencia es una técnica que asegura que una operación en la API ocurra exactamente una vez, sin importar cuántas veces se reintente la misma petición. Es vital para prevenir cobros dobles debido a fallos de red.
 
-Evita cargos duplicados usando llaves de idempotencia.
+### ¿Cómo usar llaves de Idempotencia?
 
-Como desarrollador, Cord te proporciona las herramientas para integrar esta funcionalidad directamente en tu propia arquitectura. A continuación, exploraremos cómo implementar **Claves de Idempotencia** usando nuestra API REST.
-
-## Prerrequisitos de Integración
-
-Antes de iniciar la petición, asegúrate de cumplir con lo siguiente:
-- Tener una [Clave de API válida](/soporte/claves-api) (Secreta).
-- Que tu entorno esté configurado para soportar conexiones TLS 1.2 o superior.
-- Enviar el header `Authorization: Bearer sk_...`.
-
-## Implementación Técnica
-
-Dependiendo del entorno (Test o Live), tu petición debe dirigirse al endpoint correspondiente. A continuación un ejemplo de cómo estructurar la petición:
+Al realizar peticiones `POST` que alteran el estado (ej. crear un cargo, reembolsar, timbrar factura), debes enviar el header HTTP `Idempotency-Key`.
 
 ```bash
-# Petición de ejemplo con cURL
-curl -X POST https://api.flouvia.com/v1/resource \
-  -H "Authorization: Bearer sk_test_your_secret_key" \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: req_123456789" \
-  -d '{
-    "environment": "sandbox",
-    "reference_id": "ext_987",
-    "metadata": {
-      "internal_user_id": "u_001"
-    }
-  }'
+curl -X POST https://api.flouvia.com/v1/charges \
+  -H "Idempotency-Key: cobro_mensual_u102_abril" \
+  -d '{...}'
 ```
 
-**Nota sobre SDKs:**
-Si estás utilizando un ecosistema en JavaScript, te recomendamos encarecidamente utilizar el [Cord Node.js SDK](/soporte/node-sdk) para manejar la serialización de datos automáticamente.
-
-## Manejo de Errores
-
-Si la API rechaza tu petición, revisa el campo `error.code` en la respuesta JSON. Los errores comunes 40x generalmente indican que un parámetro requerido fue omitido o que tu API Key no tiene los permisos suficientes.
+**Reglas del Sistema:**
+- La llave puede ser cualquier string único (ej. un UUID v4 o un ID interno de tu base de datos) de hasta 255 caracteres.
+- Si la conexión se cae y reintentas el `POST` con la misma `Idempotency-Key`, Cord no cobrará de nuevo a la tarjeta. Simplemente te regresará exactamente la misma respuesta JSON que generó la primera vez (el cargo exitoso original).
+- Las llaves de idempotencia caducan y son borradas de nuestra caché a las **24 horas** de haber sido recibidas.

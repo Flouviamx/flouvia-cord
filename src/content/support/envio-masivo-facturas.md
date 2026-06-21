@@ -4,27 +4,15 @@ description: "Reenvía el PDF y XML a múltiples clientes."
 category: "Facturación y CFDI"
 ---
 
-# Envío masivo de facturas por correo
+Si tienes decenas o cientos de facturas recurrentes o generadas mediante la API y quieres asegurarte de que tus clientes las reciban y las paguen rápido, no tienes que enviar correos manuales.
 
-Reenvía el PDF y XML a múltiples clientes.
+### Automatización de Envío
 
-El cumplimiento fiscal en México (SAT) requiere precisión absoluta. Cord automatiza la gran mayoría del proceso de **Envío masivo de facturas por correo**, pero es vital que configures tus catálogos corporativos correctamente.
+Puedes apoyarte en el módulo de Cobranza de Cord:
+1. Ve a **Contabilidad > Facturas**.
+2. Utiliza las casillas de selección izquierda para marcar múltiples facturas (puedes usar el filtro "Con saldo pendiente").
+3. Haz clic en el botón de "Acciones Masivas" y selecciona **Enviar recordatorio de pago**.
 
-## Requisitos Fiscales (SAT)
+El sistema despachará una ráfaga de correos electrónicos a todos los clientes seleccionados. Cada correo estará personalizado con su nombre, el saldo adeudado y un enlace único a su portal de cliente donde pueden descargar su PDF/XML y ver el botón de pago con tarjeta.
 
-Para asegurar que los comprobantes (CFDI 4.0) se timbren de manera exitosa:
-- Valida que el Código Postal del cliente coincida exactamente con su Constancia de Situación Fiscal.
-- Asegúrate de que el régimen fiscal del receptor sea compatible con el Uso de CFDI seleccionado.
-
-**Advertencia de Normativa del SAT:**
-Las regulaciones fiscales pueden actualizarse. Asegúrate de siempre tener vigente tu Certificado de Sello Digital (CSD) dentro del portal de Cord para evitar bloqueos en el timbrado. [Ver cómo actualizar el CSD](/soporte/csd-vencido).
-
-## Proceso en Plataforma
-
-Para gestionar esta configuración dentro del sistema:
-1. Dirígete al módulo de **Contabilidad > Facturación** en el panel lateral.
-2. Selecciona la cotización o factura correspondiente.
-3. En el menú contextual (tres puntos), selecciona las opciones fiscales.
-4. Si realizas cambios en catálogos, estos se aplicarán únicamente a las *nuevas* facturas. Las facturas previamente timbradas mantendrán su UUID y estructura original.
-
-Si requieres aplicar notas de crédito por devoluciones, revisa nuestra guía sobre [Notas de Crédito (Egreso)](/soporte/nota-de-credito).
+Para programar estos envíos automáticamente a final de mes, te sugerimos utilizar la [API de Cobranza Inteligente](/soporte/cord-elements).

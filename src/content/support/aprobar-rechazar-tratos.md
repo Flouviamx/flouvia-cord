@@ -5,25 +5,15 @@ category: "Cotizaciones"
 order: 2
 ---
 
-# Aprobar y rechazar tratos (Flujo de clientes)
+Cord permite configurar un flujo de aprobación interno para evitar que los vendedores envíen cotizaciones con descuentos excesivos sin supervisión.
 
-Cómo funciona la aprobación de cotizaciones desde la perspectiva del cliente final.
+### Configurar Reglas de Aprobación
 
-Cerrar tratos B2B requiere propuestas ágiles y claras. En Cord, la gestión de **Aprobar y rechazar tratos (Flujo de clientes)** está diseñada para optimizar tus conversiones y evitar fricciones con tu comprador.
+1. Ve a **Ajustes > Ventas y Cotizaciones**.
+2. Busca la sección de **Flujos de Aprobación Internos**.
+3. Añade una regla, por ejemplo: *"Si el Descuento Total supera el 15%, requiere aprobación de un Gerente"*.
 
-## Flujo Operativo Comercial
+### Experiencia del Vendedor
+Cuando un vendedor intente enviar una cotización que rompa esta regla, el botón de "Enviar al cliente" cambiará a **"Solicitar Aprobación"**. El administrador o gerente recibirá una notificación (correo y dentro de la app).
 
-Las cotizaciones en Cord no son documentos estáticos, son enlaces interactivos. 
-1. Crea un nuevo borrador desde **Ventas > Cotizaciones**.
-2. Añade tus partidas (conceptos, cantidades y descuentos).
-3. Configura los **Términos de Crédito** si operas en esquemas PPD (ej. Net 30).
-4. Activa el botón de firma digital o pago de anticipo obligatorio.
-
-**Tip Comercial:**
-Personaliza los colores de tu cotización en los ajustes de apariencia. Las propuestas que mantienen la identidad visual de la marca (White-label) tienen un 15% más de probabilidad de ser aceptadas rápidamente.
-
-## Monitoreo y Seguimiento
-
-Una vez que envíes la propuesta, el sistema se encargará de trackear la apertura. Puedes habilitar notificaciones por correo para que tu equipo de ventas reciba una alerta en el instante en que el cliente abre el enlace. 
-
-Para profundizar en integraciones avanzadas de ventas, visita la sección de [Cord Elements](/soporte/cord-elements).
+Una vez que el gerente revisa y hace clic en **Aprobar Trato**, el vendedor recibe luz verde y la URL pública de la cotización se activa. Si es rechazada, la URL arrojará un error 404 al cliente final hasta que se corrijan las condiciones.

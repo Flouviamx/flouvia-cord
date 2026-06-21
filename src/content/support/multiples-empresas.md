@@ -4,23 +4,17 @@ description: "Alterna entre distintas razones sociales desde una sola cuenta."
 category: "Cuenta y Equipo"
 ---
 
-# Manejar múltiples empresas
+Muchos corporativos operan a través de distintas entidades legales (RFCs) según la línea de negocio o el estado geográfico. Cord soporta arquitectura Multi-Tenant de forma nativa.
 
-Alterna entre distintas razones sociales desde una sola cuenta.
+### Gestión Multi-Organización
 
-Gestionar el acceso y la configuración de tu empresa es el primer paso para una operación segura. Aquí te explicamos cómo administrar **Manejar múltiples empresas**.
+Con un solo correo electrónico y contraseña (Single Sign-On de tu cuenta base), puedes ser administrador de múltiples empresas en Cord.
 
-## Configuración del Entorno de Trabajo
+1. En tu panel izquierdo superior, haz clic en el nombre de tu empresa actual.
+2. Selecciona **Añadir nueva Organización**.
+3. Se desplegará un flujo de configuración fiscal virgen.
 
-Solo los usuarios con el rol de **Administrador** (Owner) pueden realizar modificaciones destructivas o críticas.
+**Niveles de Aislamiento:**
+Cada organización es una bóveda de datos 100% aislada. Tienen sus propios clientes, sus propias cotizaciones, sus propias llaves de API (`sk_live_...`), y lo más importante: **su propia facturación independiente de facturapi** y su propia cuenta CLABE de dispersión bancaria.
 
-### Instrucciones paso a paso
-1. En tu panel principal, haz clic en el ícono de engranaje en la esquina inferior izquierda (**Ajustes**).
-2. Navega hasta la pestaña de tu organización o equipo.
-3. Realiza los ajustes necesarios en el formulario.
-4. Guarda los cambios. El sistema registrará la acción en el Audit Log por seguridad.
-
-**Seguridad Corporativa Importante:**
-Te sugerimos habilitar políticas estrictas para todos los miembros de tu equipo. Si tu plan lo permite, considera forzar el uso de Autenticación de Dos Pasos (2FA) para prevenir accesos no autorizados. [Ver guía de 2FA](/soporte/autenticacion-2fa).
-
-Si tienes problemas para acceder a la cuenta, contacta directamente con el Administrador de tu organización para que revise tus permisos de RBAC.
+Para cambiar de contexto, simplemente utiliza el menú desplegable superior. El cambio es instantáneo y no requiere recargar la página.

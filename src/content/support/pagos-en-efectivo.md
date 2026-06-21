@@ -4,26 +4,14 @@ description: "Habilitar cobros en Oxxo y tiendas de conveniencia."
 category: "Pagos y Depósitos"
 ---
 
-# Recepción de pagos en efectivo
+Cord está construido principalmente para flujos B2B digitales (Transferencias SPEI y Tarjetas Corporativas), sin embargo, soportamos la emisión de referencias para pago en efectivo mediante la red OXXO Pay y Tiendas de Conveniencia.
 
-Habilitar cobros en Oxxo y tiendas de conveniencia.
+### Funcionamiento de Pagos en Efectivo
 
-El corazón de tu negocio es el flujo de caja. Esta guía detalla cómo opera Cord respecto a **Recepción de pagos en efectivo**, para que tengas control absoluto sobre tus finanzas.
+Si activas esta opción en los ajustes de tu cuenta:
+1. Al abrir la liga de pago de la cotización, el cliente podrá seleccionar "Pago en Efectivo".
+2. Se le generará un código de barras y una referencia numérica de 14 dígitos.
+3. El cliente tiene 48 horas para presentarse en ventanilla y pagar el monto exacto.
 
-## Ciclos de Liquidación y Fondos
-
-Los fondos cobrados mediante enlaces de Cord pasan por un proceso de liquidación bancaria:
-- **Tarjetas (Visa/Mastercard):** La liquidación estándar toma T+1 (al día siguiente hábil).
-- **SPEI / Transferencias:** Se liquidan de manera casi instantánea en tu balance de Cord.
-
-## Resolución y Gestión
-
-Si enfrentas anomalías o necesitas configurar esta característica:
-1. Entra a **Pagos > Balance**.
-2. Verifica tus transferencias en tránsito y el historial de depósitos.
-3. Si estás investigando un pago rechazado, haz clic en el ID de la transacción para leer el código de declinación emitido por el banco emisor.
-
-**Dato de Conciliación:**
-Cord exporta un reporte detallado (CSV) que tu equipo contable puede utilizar para conciliar los depósitos masivos contra las facturas individuales. [Lee sobre la Conciliación de depósitos](/soporte/conciliacion-depositos).
-
-Mantén siempre actualizada tu cuenta CLABE receptora para evitar retrasos en las dispersiones.
+**Retraso de Liquidación y Notificación:**
+A diferencia de las tarjetas, los pagos en efectivo en tiendas como OXXO pueden tardar hasta 24 horas en ser notificados a nuestros servidores. La cotización permanecerá en estado *Pendiente de Pago*. En cuanto el cajero de la tienda confirme la recepción del efectivo y la red nos lo notifique vía webhook, Cord disparará el recibo, timbrará la factura y pasará la cotización a estatus *Pagado* automáticamente.

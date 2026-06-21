@@ -4,41 +4,30 @@ description: "Significado de HTTP 400, 401, 402, 404 y 500 en Cord."
 category: "Desarrolladores"
 ---
 
-# Manejo de códigos de error API
+Cuando integras la API de Cord, es fundamental saber cómo manejar las respuestas fallidas para brindar una buena experiencia a tus usuarios.
 
-Significado de HTTP 400, 401, 402, 404 y 500 en Cord.
+### Estructura de un Error
 
-Como desarrollador, Cord te proporciona las herramientas para integrar esta funcionalidad directamente en tu propia arquitectura. A continuación, exploraremos cómo implementar **Manejo de códigos de error API** usando nuestra API REST.
+Todas las respuestas fallidas (HTTP 4xx y 5xx) regresan un objeto JSON estandarizado:
 
-## Prerrequisitos de Integración
-
-Antes de iniciar la petición, asegúrate de cumplir con lo siguiente:
-- Tener una [Clave de API válida](/soporte/claves-api) (Secreta).
-- Que tu entorno esté configurado para soportar conexiones TLS 1.2 o superior.
-- Enviar el header `Authorization: Bearer sk_...`.
-
-## Implementación Técnica
-
-Dependiendo del entorno (Test o Live), tu petición debe dirigirse al endpoint correspondiente. A continuación un ejemplo de cómo estructurar la petición:
-
-```bash
-# Petición de ejemplo con cURL
-curl -X POST https://api.flouvia.com/v1/resource \
-  -H "Authorization: Bearer sk_test_your_secret_key" \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: req_123456789" \
-  -d '{
-    "environment": "sandbox",
-    "reference_id": "ext_987",
-    "metadata": {
-      "internal_user_id": "u_001"
-    }
-  }'
+```json
+{
+  "error": {
+    "type": "invalid_request_error",
+    "code": "parameter_missing",
+    "message": "El campo 'amount' es obligatorio para procesar el pago.",
+    "param": "amount",
+    "doc_url": "https://cord.flouvia.com/soporte/errores-api#parameter_missing"
+  }
+}
 ```
 
-**Nota sobre SDKs:**
-Si estás utilizando un ecosistema en JavaScript, te recomendamos encarecidamente utilizar el [Cord Node.js SDK](/soporte/node-sdk) para manejar la serialización de datos automáticamente.
+### Códigos HTTP Comunes
+- **400 Bad Request:** A tu petición le falta un parámetro o tiene un formato incorrecto.
+- **401 Unauthorized:** Tu Clave API es inválida o no enviaste el header de autorización.
+- **402 Payment Required:** El intento de cobro falló (ej. tarjeta declinada o sin fondos).
+- **403 Forbidden:** Tu llave no tiene permisos para acceder a este recurso.
+- **429 Too Many Requests:** Has superado el límite de peticiones (Rate Limit).
+- **500 Internal Server Error:** Error de nuestro lado (es muy raro, pero contacta a soporte si persiste).
 
-## Manejo de Errores
-
-Si la API rechaza tu petición, revisa el campo `error.code` en la respuesta JSON. Los errores comunes 40x generalmente indican que un parámetro requerido fue omitido o que tu API Key no tiene los permisos suficientes.
+Para manejar declinaciones de tarjetas suavemente, lee la propiedad `code` (ej. `card_declined` o `insufficient_funds`) y muéstrale un mensaje amigable a tu cliente.

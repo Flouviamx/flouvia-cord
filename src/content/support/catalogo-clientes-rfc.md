@@ -4,27 +4,13 @@ description: "Gestión y validación de RFCs en la lista de clientes."
 category: "Facturación y CFDI"
 ---
 
-# Catálogo de clientes y RFC
+El manejo de clientes en Cord está pensado para evitar rechazos del SAT al emitir CFDI 4.0.
 
-Gestión y validación de RFCs en la lista de clientes.
+### Validación en tiempo real (CFDI 4.0)
 
-El cumplimiento fiscal en México (SAT) requiere precisión absoluta. Cord automatiza la gran mayoría del proceso de **Catálogo de clientes y RFC**, pero es vital que configures tus catálogos corporativos correctamente.
+En la versión 4.0 del CFDI, el Nombre/Razón Social y el Código Postal deben coincidir letra por letra con la Constancia de Situación Fiscal (CSF) del cliente.
+Cuando añades un cliente en Cord:
+1. El sistema valida el Código Postal contra el listado oficial del SAT.
+2. Si la Razón Social incluye el régimen societario (ej. "ACME S.A. DE C.V."), Cord lo **limpiará automáticamente** a "ACME", ya que el SAT rechaza facturas que incluyen el "SA de CV".
 
-## Requisitos Fiscales (SAT)
-
-Para asegurar que los comprobantes (CFDI 4.0) se timbren de manera exitosa:
-- Valida que el Código Postal del cliente coincida exactamente con su Constancia de Situación Fiscal.
-- Asegúrate de que el régimen fiscal del receptor sea compatible con el Uso de CFDI seleccionado.
-
-**Advertencia de Normativa del SAT:**
-Las regulaciones fiscales pueden actualizarse. Asegúrate de siempre tener vigente tu Certificado de Sello Digital (CSD) dentro del portal de Cord para evitar bloqueos en el timbrado. [Ver cómo actualizar el CSD](/soporte/csd-vencido).
-
-## Proceso en Plataforma
-
-Para gestionar esta configuración dentro del sistema:
-1. Dirígete al módulo de **Contabilidad > Facturación** en el panel lateral.
-2. Selecciona la cotización o factura correspondiente.
-3. En el menú contextual (tres puntos), selecciona las opciones fiscales.
-4. Si realizas cambios en catálogos, estos se aplicarán únicamente a las *nuevas* facturas. Las facturas previamente timbradas mantendrán su UUID y estructura original.
-
-Si requieres aplicar notas de crédito por devoluciones, revisa nuestra guía sobre [Notas de Crédito (Egreso)](/soporte/nota-de-credito).
+**Tip de importación masiva:** Si vienes de otro sistema, usa nuestra herramienta de importación por CSV. Asegúrate de que las columnas de Nombre y Código Postal vengan directamente de la CSF de tus clientes para evitar bloqueos operativos futuros.

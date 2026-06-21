@@ -4,26 +4,18 @@ description: "Exporta reportes para empatar depósitos con tu contabilidad."
 category: "Pagos y Depósitos"
 ---
 
-# Conciliación de depósitos
+La peor pesadilla contable es recibir un depósito agrupado del procesador de pagos y no saber qué facturas está pagando. Cord resuelve esto con conciliación nativa.
 
-Exporta reportes para empatar depósitos con tu contabilidad.
+### El Reporte de Dispersión (Payout Report)
 
-El corazón de tu negocio es el flujo de caja. Esta guía detalla cómo opera Cord respecto a **Conciliación de depósitos**, para que tengas control absoluto sobre tus finanzas.
+Cada vez que Cord envía dinero a tu cuenta bancaria (ej. un depósito de $50,000 MXN), generamos un reporte exacto de lo que compone ese dinero.
 
-## Ciclos de Liquidación y Fondos
+1. Ve a **Pagos > Balance y Dispersiones**.
+2. Haz clic sobre cualquier dispersión completada.
+3. Verás un desglose línea por línea:
+   - "Factura F-102: +$30,000"
+   - "Factura F-103: +$21,000"
+   - "Comisión Cord: -$1,000"
+   - **Neto Depositado: $50,000**
 
-Los fondos cobrados mediante enlaces de Cord pasan por un proceso de liquidación bancaria:
-- **Tarjetas (Visa/Mastercard):** La liquidación estándar toma T+1 (al día siguiente hábil).
-- **SPEI / Transferencias:** Se liquidan de manera casi instantánea en tu balance de Cord.
-
-## Resolución y Gestión
-
-Si enfrentas anomalías o necesitas configurar esta característica:
-1. Entra a **Pagos > Balance**.
-2. Verifica tus transferencias en tránsito y el historial de depósitos.
-3. Si estás investigando un pago rechazado, haz clic en el ID de la transacción para leer el código de declinación emitido por el banco emisor.
-
-**Dato de Conciliación:**
-Cord exporta un reporte detallado (CSV) que tu equipo contable puede utilizar para conciliar los depósitos masivos contra las facturas individuales. [Lee sobre la Conciliación de depósitos](/soporte/conciliacion-depositos).
-
-Mantén siempre actualizada tu cuenta CLABE receptora para evitar retrasos en las dispersiones.
+Puedes exportar este detalle en formato CSV o PDF. Tu departamento de contabilidad solo tiene que tomar este archivo y subirlo a su sistema ERP para matar de un solo golpe las cuentas por cobrar, logrando una conciliación a nivel centavo y sin trabajo manual.

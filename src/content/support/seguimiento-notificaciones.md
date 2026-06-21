@@ -5,25 +5,19 @@ category: "Cotizaciones"
 order: 4
 ---
 
-# Seguimiento y notificaciones de lectura
+El secreto para cerrar más rápido los tratos B2B es actuar en el momento exacto en que tu prospecto está leyendo tu propuesta. Cord te dota de capacidades de rastreo (Tracking) silenciosas.
 
-Entérate exactamente cuándo tu cliente abre y visualiza tus cotizaciones.
+### ¿Qué monitorea el sistema?
 
-Cerrar tratos B2B requiere propuestas ágiles y claras. En Cord, la gestión de **Seguimiento y notificaciones de lectura** está diseñada para optimizar tus conversiones y evitar fricciones con tu comprador.
+Desde el momento en que envías la liga de la cotización por correo o WhatsApp:
+- **Primer Clic (Apertura):** Sabrás el día y la hora exacta en que el prospecto visualizó el documento.
+- **Tiempo de Lectura:** El sistema registra cuánto tiempo permaneció el cliente analizando la cotización en su navegador.
+- **Descargas:** Si el cliente hace clic en "Descargar Cotización en PDF", quedará registrado en el historial (Audit Trail) de esa cotización en particular.
 
-## Flujo Operativo Comercial
+### Configurar Notificaciones Push/Email
 
-Las cotizaciones en Cord no son documentos estáticos, son enlaces interactivos. 
-1. Crea un nuevo borrador desde **Ventas > Cotizaciones**.
-2. Añade tus partidas (conceptos, cantidades y descuentos).
-3. Configura los **Términos de Crédito** si operas en esquemas PPD (ej. Net 30).
-4. Activa el botón de firma digital o pago de anticipo obligatorio.
-
-**Tip Comercial:**
-Personaliza los colores de tu cotización en los ajustes de apariencia. Las propuestas que mantienen la identidad visual de la marca (White-label) tienen un 15% más de probabilidad de ser aceptadas rápidamente.
-
-## Monitoreo y Seguimiento
-
-Una vez que envíes la propuesta, el sistema se encargará de trackear la apertura. Puedes habilitar notificaciones por correo para que tu equipo de ventas reciba una alerta en el instante en que el cliente abre el enlace. 
-
-Para profundizar en integraciones avanzadas de ventas, visita la sección de [Cord Elements](/soporte/cord-elements).
+Para enterarte en tiempo real, ve a **Ajustes > Notificaciones**.
+Puedes habilitar alertas directas a tu correo electrónico para los siguientes eventos:
+- "La cotización COT-045 fue vista por primera vez".
+- "La cotización COT-045 ha sido firmada y aceptada".
+- "El pago del anticipo de la COT-045 fue rechazado por el banco".

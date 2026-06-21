@@ -4,41 +4,42 @@ description: "Implementación criptográfica para validar eventos."
 category: "Desarrolladores"
 ---
 
-# Verificar firmas de Webhooks
+Asegurar la procedencia de los Webhooks es crítico. Un atacante podría enviarte un payload falso diciendo `{"type":"charge.succeeded", "amount": 100000}` para que liberes un producto sin que realmente haya pagado.
 
-Implementación criptográfica para validar eventos.
+### Verificación en Node.js
 
-Como desarrollador, Cord te proporciona las herramientas para integrar esta funcionalidad directamente en tu propia arquitectura. A continuación, exploraremos cómo implementar **Verificar firmas de Webhooks** usando nuestra API REST.
+Cord utiliza HMAC SHA-256 para firmar el cuerpo raw (en bruto) del webhook.
 
-## Prerrequisitos de Integración
+```javascript
+const crypto = require('crypto');
 
-Antes de iniciar la petición, asegúrate de cumplir con lo siguiente:
-- Tener una [Clave de API válida](/soporte/claves-api) (Secreta).
-- Que tu entorno esté configurado para soportar conexiones TLS 1.2 o superior.
-- Enviar el header `Authorization: Bearer sk_...`.
-
-## Implementación Técnica
-
-Dependiendo del entorno (Test o Live), tu petición debe dirigirse al endpoint correspondiente. A continuación un ejemplo de cómo estructurar la petición:
-
-```bash
-# Petición de ejemplo con cURL
-curl -X POST https://api.flouvia.com/v1/resource \
-  -H "Authorization: Bearer sk_test_your_secret_key" \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: req_123456789" \
-  -d '{
-    "environment": "sandbox",
-    "reference_id": "ext_987",
-    "metadata": {
-      "internal_user_id": "u_001"
-    }
-  }'
+// Tu webhook endpoint
+app.post('/webhook/cord', express.raw({type: 'application/json'}), (req, res) => {
+  const signatureHeader = req.headers['cord-signature']; // formato: "t=162345,v1=abcdef..."
+  const secret = process.env.CORD_WEBHOOK_SECRET;
+  
+  // Extraer timestamp y signature
+  const [tStr, v1Str] = signatureHeader.split(',');
+  const timestamp = tStr.split('=')[1];
+  const signature = v1Str.split('=')[1];
+  
+  // Prevenir ataques de repetición (Replay attacks)
+  if (Math.abs(Date.now()/1000 - parseInt(timestamp)) > 300) {
+    return res.status(400).send('Webhook demasiado viejo');
+  }
+  
+  // Firmar el payload localmente
+  const payloadToSign = `${timestamp}.${req.body.toString('utf8')}`;
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(payloadToSign)
+    .digest('hex');
+    
+  if (crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+    // Firma válida, puedes procesar la orden
+    res.status(200).send('Recibido');
+  } else {
+    res.status(401).send('Firma inválida');
+  }
+});
 ```
-
-**Nota sobre SDKs:**
-Si estás utilizando un ecosistema en JavaScript, te recomendamos encarecidamente utilizar el [Cord Node.js SDK](/soporte/node-sdk) para manejar la serialización de datos automáticamente.
-
-## Manejo de Errores
-
-Si la API rechaza tu petición, revisa el campo `error.code` en la respuesta JSON. Los errores comunes 40x generalmente indican que un parámetro requerido fue omitido o que tu API Key no tiene los permisos suficientes.

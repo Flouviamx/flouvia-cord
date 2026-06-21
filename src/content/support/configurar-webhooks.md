@@ -5,41 +5,17 @@ category: "Desarrolladores"
 order: 2
 ---
 
-# Configurar e inspeccionar Webhooks
+Los webhooks son llamadas HTTP (callbacks) que nuestro servidor hace al tuyo cuando ocurre un evento importante de manera asíncrona (ej. un cliente pagó, o una factura se timbró).
 
-Recibe notificaciones en tiempo real en tu servidor cuando ocurran eventos en Cord.
+### Registro de un Endpoint
 
-Como desarrollador, Cord te proporciona las herramientas para integrar esta funcionalidad directamente en tu propia arquitectura. A continuación, exploraremos cómo implementar **Configurar e inspeccionar Webhooks** usando nuestra API REST.
+Para recibir webhooks, primero necesitas exponer una ruta `POST` en tu servidor (ej. `https://api.tuempresa.com/webhooks/cord`).
+1. Ve a **Desarrolladores > Webhooks** en el panel de Cord.
+2. Añade tu URL.
+3. Selecciona a qué eventos deseas suscribirte. Te recomendamos iniciar con `charge.succeeded` y `invoice.created`.
 
-## Prerrequisitos de Integración
+### Verificación de Firmas
 
-Antes de iniciar la petición, asegúrate de cumplir con lo siguiente:
-- Tener una [Clave de API válida](/soporte/claves-api) (Secreta).
-- Que tu entorno esté configurado para soportar conexiones TLS 1.2 o superior.
-- Enviar el header `Authorization: Bearer sk_...`.
+Por seguridad, alguien podría simular ser Cord y enviarte eventos falsos para intentar hackear tu inventario. **Es obligatorio que valides la firma criptográfica** que enviamos en los headers de cada petición.
 
-## Implementación Técnica
-
-Dependiendo del entorno (Test o Live), tu petición debe dirigirse al endpoint correspondiente. A continuación un ejemplo de cómo estructurar la petición:
-
-```bash
-# Petición de ejemplo con cURL
-curl -X POST https://api.flouvia.com/v1/resource \
-  -H "Authorization: Bearer sk_test_your_secret_key" \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: req_123456789" \
-  -d '{
-    "environment": "sandbox",
-    "reference_id": "ext_987",
-    "metadata": {
-      "internal_user_id": "u_001"
-    }
-  }'
-```
-
-**Nota sobre SDKs:**
-Si estás utilizando un ecosistema en JavaScript, te recomendamos encarecidamente utilizar el [Cord Node.js SDK](/soporte/node-sdk) para manejar la serialización de datos automáticamente.
-
-## Manejo de Errores
-
-Si la API rechaza tu petición, revisa el campo `error.code` en la respuesta JSON. Los errores comunes 40x generalmente indican que un parámetro requerido fue omitido o que tu API Key no tiene los permisos suficientes.
+El header se llama `Cord-Signature` e incluye un timestamp y el hash HMAC SHA-256. Utiliza el *Webhook Secret* que te proporcionamos al crear el endpoint para verificarlo. [Ver fragmentos de código de verificación en Node.js y Python](/soporte/firmas-webhooks).

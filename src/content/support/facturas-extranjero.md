@@ -4,27 +4,17 @@ description: "Uso del RFC genérico extranjero y Tax ID."
 category: "Facturación y CFDI"
 ---
 
-# Facturar a clientes en el extranjero
+Vender servicios o licencias de software a clientes fuera de México requiere la emisión de un CFDI de exportación de servicios.
 
-Uso del RFC genérico extranjero y Tax ID.
+### El RFC Extranjero
 
-El cumplimiento fiscal en México (SAT) requiere precisión absoluta. Cord automatiza la gran mayoría del proceso de **Facturar a clientes en el extranjero**, pero es vital que configures tus catálogos corporativos correctamente.
+El SAT dispone de un RFC genérico internacional que debes usar siempre que tu cliente radique en otro país: **XEXX010101000**.
 
-## Requisitos Fiscales (SAT)
+### Configurar la Factura en Cord
 
-Para asegurar que los comprobantes (CFDI 4.0) se timbren de manera exitosa:
-- Valida que el Código Postal del cliente coincida exactamente con su Constancia de Situación Fiscal.
-- Asegúrate de que el régimen fiscal del receptor sea compatible con el Uso de CFDI seleccionado.
+1. Añade a tu cliente extranjero a la base de datos de Cord. En el campo de RFC, introduce `XEXX010101000`.
+2. El sistema detectará que es un RFC foráneo y te permitirá ingresar su Número de Identificación Tributaria (Tax ID / EIN) de su país de origen (opcional pero recomendado).
+3. Al crear la cotización o factura, selecciona el **Uso de CFDI: S01 (Sin efectos fiscales)**, ya que el receptor extranjero no deduce impuestos ante el fisco mexicano.
+4. Configura la **Moneda** de la factura a USD (o la que corresponda) y selecciona la **Tasa de IVA 0%** (por ley, la exportación de servicios de TI gravados en México y aprovechados en el extranjero tiene tasa cero).
 
-**Advertencia de Normativa del SAT:**
-Las regulaciones fiscales pueden actualizarse. Asegúrate de siempre tener vigente tu Certificado de Sello Digital (CSD) dentro del portal de Cord para evitar bloqueos en el timbrado. [Ver cómo actualizar el CSD](/soporte/csd-vencido).
-
-## Proceso en Plataforma
-
-Para gestionar esta configuración dentro del sistema:
-1. Dirígete al módulo de **Contabilidad > Facturación** en el panel lateral.
-2. Selecciona la cotización o factura correspondiente.
-3. En el menú contextual (tres puntos), selecciona las opciones fiscales.
-4. Si realizas cambios en catálogos, estos se aplicarán únicamente a las *nuevas* facturas. Las facturas previamente timbradas mantendrán su UUID y estructura original.
-
-Si requieres aplicar notas de crédito por devoluciones, revisa nuestra guía sobre [Notas de Crédito (Egreso)](/soporte/nota-de-credito).
+Cord timbrará el XML con el nodo de `ResidenciaFiscal` y `NumRegIdTrib` requeridos por la autoridad.

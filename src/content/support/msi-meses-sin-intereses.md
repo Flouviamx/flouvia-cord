@@ -4,26 +4,19 @@ description: "Activa 3, 6, 9 o 12 meses sin intereses para tus clientes."
 category: "Pagos y Depósitos"
 ---
 
-# Ofrecer Meses Sin Intereses (MSI)
+Ofrecer Meses Sin Intereses (MSI) es una de las palancas más fuertes para cerrar contratos corporativos de alto valor.
 
-Activa 3, 6, 9 o 12 meses sin intereses para tus clientes.
+### ¿Cómo funcionan los MSI en Cord?
 
-El corazón de tu negocio es el flujo de caja. Esta guía detalla cómo opera Cord respecto a **Ofrecer Meses Sin Intereses (MSI)**, para que tengas control absoluto sobre tus finanzas.
+Al activar los MSI, tú absorbes el costo del financiamiento para que el cliente pueda diferir su pago en su tarjeta de crédito. Tú (el comercio) **recibes la totalidad del dinero al día siguiente (T+1)** menos la comisión base y la sobretasa del plazo elegido.
 
-## Ciclos de Liquidación y Fondos
+### Sobretasas Oficiales
+Cord soporta todas las tarjetas de crédito emitidas en México (Visa, Mastercard y AMEX).
+- **3 Meses:** 4.5% + comisión base.
+- **6 Meses:** 7.5% + comisión base.
+- **9 Meses:** 10.5% + comisión base.
+- **12 Meses:** 13.5% + comisión base.
+- **18 Meses:** 18.0% + comisión base (sujeto a promociones del banco).
 
-Los fondos cobrados mediante enlaces de Cord pasan por un proceso de liquidación bancaria:
-- **Tarjetas (Visa/Mastercard):** La liquidación estándar toma T+1 (al día siguiente hábil).
-- **SPEI / Transferencias:** Se liquidan de manera casi instantánea en tu balance de Cord.
-
-## Resolución y Gestión
-
-Si enfrentas anomalías o necesitas configurar esta característica:
-1. Entra a **Pagos > Balance**.
-2. Verifica tus transferencias en tránsito y el historial de depósitos.
-3. Si estás investigando un pago rechazado, haz clic en el ID de la transacción para leer el código de declinación emitido por el banco emisor.
-
-**Dato de Conciliación:**
-Cord exporta un reporte detallado (CSV) que tu equipo contable puede utilizar para conciliar los depósitos masivos contra las facturas individuales. [Lee sobre la Conciliación de depósitos](/soporte/conciliacion-depositos).
-
-Mantén siempre actualizada tu cuenta CLABE receptora para evitar retrasos en las dispersiones.
+### Activación por Cotización
+No es necesario activarlo para todas tus ventas. En el editor de una cotización específica, en el panel derecho bajo **Opciones de Cobro**, marca las casillas de los plazos que deseas permitirle a ese prospecto en particular. El portal de pagos calculará automáticamente las mensualidades para el comprador.
