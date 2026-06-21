@@ -4,21 +4,19 @@ description: "Lista de PANs para simular flujos 3D Secure y fallos."
 category: "Desarrolladores"
 ---
 
-Cuando estés integrando flujos de cobro en el entorno **Sandbox**, no uses tarjetas de crédito reales. Utiliza nuestros números mágicos de tarjeta de prueba para simular comportamientos exitosos o de error.
+Cuando estés en la fase de implementación o desarrollando contra la API en el entorno **Sandbox**, no utilices tarjetas de crédito reales. Puedes simular pagos exitosos usando los números de prueba proporcionados por Stripe.
 
-### Tarjetas Mágicas para Pruebas
+### Tarjetas Mágicas (Solo en modo Test)
 
-Para usar estas tarjetas, asegúrate de estar en Modo Pruebas o usando la llave `sk_test_...`. En los campos de expiración pon cualquier fecha futura (ej. `12/28`) y en CVC cualquier número (ej. `123`).
+Asegúrate de tener configurada tu llave `sk_test_...` de Stripe en Cord.
+En el formulario de Stripe Checkout, ingresa cualquier fecha futura de expiración y cualquier CVC de 3 dígitos.
 
-**Flujos Exitosos (Pago Aprobado)**
-- Visa: `4242 4242 4242 4242`
-- Mastercard: `5105 1051 0510 5100`
-- AMEX: `3782 822463 10005` (usa un CVV de 4 dígitos para AMEX).
+**Para simular pagos exitosos:**
+- Usa la tarjeta Visa genérica: `4242 4242 4242 4242`
 
-**Simulación de Errores y Declinaciones Bancarias**
-Si deseas probar tu interfaz para ver cómo reacciona cuando un cliente recibe un rechazo:
-- Tarjeta Reportada Robada: `4000 0000 0000 0002`
-- Fondos Insuficientes: `4000 0000 0000 0004`
-- Tarjeta Caducada: Utiliza la tarjeta de éxito `4242` pero pon una fecha del pasado (ej. `01/22`).
+**Para simular declinaciones bancarias:**
+Stripe provee números específicos para simular errores. Usa cualquiera de estos con cualquier fecha y CVC:
+- Fondos insuficientes: `4000 0000 0000 0004`
+- Tarjeta reportada robada: `4000 0000 0000 0002`
 
-El backend devolverá el objeto JSON simulando a la perfección el comportamiento del procesador real.
+El sistema reaccionará igual que en producción: Cord no aprobará la cotización ni emitirá la factura en el modo de pruebas si el pago falla.

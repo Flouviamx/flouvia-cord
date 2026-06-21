@@ -5,13 +5,15 @@ category: "Seguridad y Privacidad"
 order: 1
 ---
 
-El Estándar de Seguridad de Datos para la Industria de Tarjeta de Pago (PCI DSS) es un conjunto de requerimientos para garantizar que todas las empresas que procesan, almacenan o transmiten información de tarjetas de crédito mantengan un entorno seguro.
+El Estándar de Seguridad de Datos para la Industria de Tarjeta de Pago (PCI DSS) protege la información de tarjetas de crédito.
 
-### Tu responsabilidad al usar Cord
+### Delegación de Riesgo a Stripe
 
-Debido a que utilizas la infraestructura de Cord o Cord Elements para cobrar:
-**Tú NO tocas datos sensibles.** 
+Cord **no toca, ni almacena, ni procesa directamente** los números de tarjeta de crédito de tus clientes.
 
-Cuando el cliente escribe su número de tarjeta de 16 dígitos, esos datos viajan encriptados directamente desde su navegador hasta los servidores de los bancos adquirentes mediante iframes de seguridad. Tu aplicación solo recibe un "Token" criptográfico asimétrico que representa la tarjeta (ej. `tok_123abc`).
+Cuando configuras el cobro en línea en Cord mediante tu `STRIPE_SECRET_KEY`:
+1. Al hacer clic en "Pagar", tu cliente es redirigido a una página segura alojada directamente por Stripe (Stripe Checkout).
+2. El cliente introduce su tarjeta directamente en los servidores de Stripe.
+3. Stripe procesa el cargo y simplemente le avisa a Cord vía webhook que el pago fue exitoso.
 
-Esto significa que, para efectos legales y de auditoría, tu empresa se beneficia de nuestro cumplimiento Nivel 1. Únicamente necesitas responder un Cuestionario de Autoevaluación (SAQ-A) muy simple que atestigua que has delegado por completo el procesamiento de tarjetas a nosotros.
+Por lo tanto, la inmensa carga de cumplimiento PCI-DSS Nivel 1 recae completamente sobre Stripe. Tu empresa y la plataforma Cord quedan eximidos de auditorías complejas.

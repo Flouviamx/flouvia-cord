@@ -7,16 +7,13 @@ order: 3
 
 Cuando emites una factura bajo el método de pago PPD (Pago en Parcialidades o Diferido), el SAT exige que generes un "Complemento de Recepción de Pagos" (REP) cada vez que el cliente te envíe un abono.
 
-### Automatización Mágica en Cord
+### Generación Manual
 
-Si utilizas las facturas y links de pago de Cord en conjunto, **tú no tienes que hacer absolutamente nada**.
-1. Cotizas y facturas en PPD (ej. a 30 días de crédito).
-2. El cliente te paga el día 25 usando el link de la factura.
-3. En el milisegundo en que el banco aprueba la tarjeta o recibimos el SPEI, Cord emite el Complemento de Pago (REP) ante el SAT, lo relaciona con el UUID de la factura PPD, y se lo envía por correo al cliente.
-
-### Complemento Manual (Pago externo)
-Si el cliente te hizo una transferencia a una cuenta de banco externa que no controlamos:
+Dado que los clientes B2B suelen pagar grandes montos vía transferencia SPEI directo a tu banco:
 1. Entra a la Factura en Cord.
 2. Haz clic en **Registrar Pago**.
-3. Indica la fecha, el monto y la cuenta receptora.
+3. Indica la fecha en que cayó el dinero en tu banco, el monto y la cuenta receptora.
 4. Cord timbrará el REP basándose en esos datos y liquidará el balance de la factura.
+
+### Automatización vía Webhooks (Stripe)
+Si el cliente paga la cotización o factura PPD utilizando el botón de pago con tarjeta (Stripe Checkout), Cord escuchará el webhook `checkout.session.completed` de tu cuenta de Stripe. Al recibirlo, Cord marcará la factura como cobrada y emitirá el REP automáticamente ante el SAT sin que tú hagas nada.

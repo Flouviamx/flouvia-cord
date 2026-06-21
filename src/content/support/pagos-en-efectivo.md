@@ -4,14 +4,13 @@ description: "Habilitar cobros en Oxxo y tiendas de conveniencia."
 category: "Pagos y Depósitos"
 ---
 
-Cord está construido principalmente para flujos B2B digitales (Transferencias SPEI y Tarjetas Corporativas), sin embargo, soportamos la emisión de referencias para pago en efectivo mediante la red OXXO Pay y Tiendas de Conveniencia.
+Aunque las transacciones B2B suelen ser por transferencia SPEI, si utilizas Stripe como procesador de pagos en Cord, puedes habilitar métodos de pago alternativos como OXXO.
 
-### Funcionamiento de Pagos en Efectivo
+### Activar OXXO a través de Stripe
 
-Si activas esta opción en los ajustes de tu cuenta:
-1. Al abrir la liga de pago de la cotización, el cliente podrá seleccionar "Pago en Efectivo".
-2. Se le generará un código de barras y una referencia numérica de 14 dígitos.
-3. El cliente tiene 48 horas para presentarse en ventanilla y pagar el monto exacto.
+1. Ve al panel de control de Stripe.
+2. En Métodos de Pago, activa OXXO.
+3. Cuando el cliente abra la cotización en Cord y decida pagar, Stripe Checkout le ofrecerá descargar un voucher (código de barras) para pagar en efectivo en tienda.
 
-**Retraso de Liquidación y Notificación:**
-A diferencia de las tarjetas, los pagos en efectivo en tiendas como OXXO pueden tardar hasta 24 horas en ser notificados a nuestros servidores. La cotización permanecerá en estado *Pendiente de Pago*. En cuanto el cajero de la tienda confirme la recepción del efectivo y la red nos lo notifique vía webhook, Cord disparará el recibo, timbrará la factura y pasará la cotización a estatus *Pagado* automáticamente.
+**Flujo Asíncrono:**
+El cliente tiene días para pagar el voucher. Durante este tiempo, la cotización en Cord seguirá en estatus *Pendiente*. Cuando el cliente finalmente paga en el OXXO, Stripe nos envía un webhook (a veces tarda hasta 24 horas hábiles), y en ese instante Cord pasa la cotización a *Pagada* y emite la factura CFDI automáticamente.

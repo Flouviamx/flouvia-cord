@@ -5,16 +5,12 @@ category: "Pagos y Depósitos"
 order: 1
 ---
 
-Entender cuándo recibirás los fondos en tu cuenta bancaria es vital para proyectar el flujo de caja operativo. Cord maneja dos rutas principales de liquidación.
+Dado que Cord no retiene fondos, los tiempos en los que el dinero llega a tu cuenta de banco dependen enteramente del método de pago que tu cliente eligió.
 
-### Tiempos de Liquidación Oficiales
+### 1. Transferencia Directa (SPEI / Wire)
+Si el cliente te paga manualmente haciendo una transferencia bancaria a la CLABE que pusiste en los Ajustes de Cord, el dinero **entra directo a tu banco de forma inmediata**. Cord no está en medio de esta transacción. Tú debes entrar a Cord y marcar la cotización como pagada.
 
-**1. Pagos mediante Transferencia (SPEI)**
-Los pagos que recibes a través de la red SPEI (cuando el cliente deposita a la CLABE virtual que Cord le genera) se acreditan a tu balance de Cord de forma inmediata (en segundos). 
-Las dispersiones hacia tu cuenta bancaria final se envían el mismo día hábil. En la práctica, esto toma de **1 a 3 horas hábiles**.
-
-**2. Pagos con Tarjeta (Crédito y Débito)**
-Todo cobro exitoso realizado con plásticos (Visa, Mastercard, AMEX) pasa por una cámara de compensación. Por ende, los fondos quedan en estado *En Tránsito* y se liberan a tu balance en **T+1 (al día hábil siguiente)**.
-
-*Ejemplo práctico:*
-Si un cliente te paga con tarjeta el **Viernes a las 4:00 PM**, el dinero entra a liquidación, cruza el fin de semana, y se deposita automáticamente a tu CLABE empresarial el **Lunes a las 6:00 AM**.
+### 2. Tarjetas de Crédito vía Stripe
+Si configuraste Stripe Checkout en Cord y el cliente paga en línea, el dinero entra a tu cuenta de Stripe.
+- En México, el tiempo de dispersión estándar (Payout Schedule) de Stripe suele ser de **T+3** a **T+7** días naturales, dependiendo del giro de tu negocio y la antigüedad de tu cuenta en Stripe.
+- Entra a la configuración de Stripe para visualizar tu calendario exacto de depósitos.

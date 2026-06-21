@@ -4,19 +4,16 @@ description: "Activa 3, 6, 9 o 12 meses sin intereses para tus clientes."
 category: "Pagos y Depósitos"
 ---
 
-Ofrecer Meses Sin Intereses (MSI) es una de las palancas más fuertes para cerrar contratos corporativos de alto valor.
+Ofrecer financiamiento (Meses sin Intereses) a tus clientes corporativos es una estrategia excelente para aumentar la conversión de propuestas de alto valor.
 
-### ¿Cómo funcionan los MSI en Cord?
+### Configuración en Stripe
 
-Al activar los MSI, tú absorbes el costo del financiamiento para que el cliente pueda diferir su pago en su tarjeta de crédito. Tú (el comercio) **recibes la totalidad del dinero al día siguiente (T+1)** menos la comisión base y la sobretasa del plazo elegido.
+Cord redirige a los clientes a Stripe Checkout para el pago. Por lo tanto, la disponibilidad de los Meses sin Intereses depende de la configuración de tu cuenta de Stripe en México.
 
-### Sobretasas Oficiales
-Cord soporta todas las tarjetas de crédito emitidas en México (Visa, Mastercard y AMEX).
-- **3 Meses:** 4.5% + comisión base.
-- **6 Meses:** 7.5% + comisión base.
-- **9 Meses:** 10.5% + comisión base.
-- **12 Meses:** 13.5% + comisión base.
-- **18 Meses:** 18.0% + comisión base (sujeto a promociones del banco).
+1. Inicia sesión en tu cuenta de Stripe.
+2. Ve a **Configuración > Métodos de pago > Meses sin intereses**.
+3. Selecciona qué plazos deseas ofrecer (3, 6, 9, 12 meses) y para qué montos mínimos.
 
-### Activación por Cotización
-No es necesario activarlo para todas tus ventas. En el editor de una cotización específica, en el panel derecho bajo **Opciones de Cobro**, marca las casillas de los plazos que deseas permitirle a ese prospecto en particular. El portal de pagos calculará automáticamente las mensualidades para el comprador.
+### Experiencia del Cliente
+Una vez activos en Stripe, cuando un cliente abra la cotización en Cord y haga clic en pagar, será llevado al Checkout. Si el monto supera tu mínimo configurado, Stripe mostrará automáticamente el selector de plazos al cliente. 
+Tú recibirás tus fondos completos en el tiempo estándar de Stripe, menos la sobretasa bancaria correspondiente que Stripe te cobre.

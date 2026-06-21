@@ -5,15 +5,15 @@ category: "Pagos y Depósitos"
 order: 3
 ---
 
-Una disputa (o contracargo) ocurre cuando el titular de una tarjeta contacta a su banco para desconocer un cobro que le realizaste a través de Cord. Esto detona un proceso legal de conciliación entre bancos.
+Una disputa o contracargo ocurre cuando el titular de una tarjeta desconoce un cobro procesado a través del botón de pago de tus cotizaciones.
 
-### Flujo del Contracargo
+### ¿Dónde se gestionan las disputas?
 
-1. **Retención Preventiva:** En cuanto el banco levanta la disputa, nuestro procesador retiene el monto de la venta + una penalización bancaria ($250 MXN) de tus fondos en Cord.
-2. **Aviso:** Recibirás un correo electrónico automático de nuestro equipo de riesgos alertándote de la disputa.
-3. **Fase de Evidencia:** Tienes **7 días naturales** para enviar evidencia de que el servicio se prestó o el producto se entregó (ej. factura fiscal firmada por el receptor, correos de aceptación, guías de envío de paquetería, o el contrato de prestación de servicios).
+Dado que Cord utiliza tu propia cuenta de Stripe para procesar tarjetas, todo el proceso de resolución de disputas sucede **dentro de tu panel de Stripe**, no en Cord.
 
-### Resolución
-El banco emisor de tu cliente tiene la última palabra y su revisión puede tomar entre 30 y 60 días.
-- **Si ganas la disputa:** El monto retenido y la comisión de penalización te serán devueltos íntegramente a tu balance de Cord.
-- **Si pierdes la disputa:** El dinero es devuelto a la tarjeta del tarjetahabiente de manera definitiva.
+1. Stripe te notificará por correo electrónico sobre la disputa y retendrá los fondos.
+2. Tienes un lapso de tiempo (generalmente 7-15 días) para enviar evidencia a través del Dashboard de Stripe.
+3. **Evidencia desde Cord:** Ve a la cotización disputada en Cord y descarga el **PDF de la cotización** y el historial de eventos (Audit Trail) que muestra la IP y fecha en que el cliente aceptó los términos o firmó digitalmente la propuesta.
+4. Sube este PDF como evidencia a Stripe.
+
+Si ganas la disputa, Stripe te devolverá los fondos. Si la pierdes, deberás emitir una Nota de Crédito en Cord para cuadrar tus impuestos.

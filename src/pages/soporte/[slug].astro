@@ -4,6 +4,8 @@ import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
 import PageAnims from '../../components/landing/PageAnims.astro';
+import SupportSearch from '../../components/support/SupportSearch.astro';
+import FeedbackWidget from '../../components/support/FeedbackWidget.astro';
 
 export const prerender = true;
 
@@ -16,7 +18,10 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { Content } = await render(entry);
+const { Content, headings } = await render(entry);
+
+// Filtrar headings para el TOC (H2 y H3)
+const tocHeadings = headings.filter(h => h.depth === 2 || h.depth === 3);
 
 // Build navigation (Sidebar & Pagination)
 const allSupport = await getCollection('support');
@@ -43,6 +48,11 @@ const catSlug = slugifyCategory(entry.data.category);
 >
     <Nav />
     <main class="article-layout">
+        
+        <div class="support-search-header">
+            <SupportSearch />
+        </div>
+
         <div class="article-container reveal">
             <!-- Left Sidebar -->
             <aside class="article-sidebar">
@@ -69,9 +79,11 @@ const catSlug = slugifyCategory(entry.data.category);
                     <span class="current">{entry.data.title}</span>
                 </nav>
 
-                <article class="markdown-body">
+                <article class="markdown-body" id="markdownContent">
                     <Content />
                 </article>
+
+                <FeedbackWidget />
 
                 <hr class="article-divider" />
 
@@ -92,6 +104,26 @@ const catSlug = slugifyCategory(entry.data.category);
                     ) : <div></div>}
                 </nav>
             </div>
+
+            <!-- Right Sidebar: Table of Contents -->
+            {tocHeadings.length > 0 && (
+                <aside class="article-toc">
+                    <div class="toc-sticky">
+                        <h4>En este artículo</h4>
+                        <nav id="tocNav">
+                            {tocHeadings.map((h) => (
+                                <a 
+                                    href={`#${h.slug}`} 
+                                    class={`toc-link depth-${h.depth}`}
+                                    data-slug={h.slug}
+                                >
+                                    {h.text}
+                                </a>
+                            ))}
+                        </nav>
+                    </div>
+                </aside>
+            )}
         </div>
     </main>
     <Footer ctaTitle="¿Necesitas más ayuda?" ctaSub="Contacta a nuestro equipo especializado." />
@@ -104,11 +136,16 @@ const catSlug = slugifyCategory(entry.data.category);
         background-color: var(--color-bg);
         min-height: 80vh;
     }
+    .support-search-header {
+        max-width: 1200px;
+        margin: 0 auto 3rem;
+        padding: 0 20px;
+    }
     .article-container {
-        max-width: 1100px;
+        max-width: 1300px;
         margin: 0 auto;
         display: grid;
-        grid-template-columns: 260px 1fr;
+        grid-template-columns: 240px minmax(0, 1fr) 220px;
         gap: 60px;
         align-items: start;
     }
@@ -227,6 +264,14 @@ const catSlug = slugifyCategory(entry.data.category);
         color: var(--color-blue-deep);
     }
 
+    @media (max-width: 1100px) {
+        .article-container {
+            grid-template-columns: 240px minmax(0, 1fr);
+        }
+        .article-toc {
+            display: none;
+        }
+    }
     @media (max-width: 900px) {
         .article-container {
             grid-template-columns: 1fr;
@@ -243,6 +288,52 @@ const catSlug = slugifyCategory(entry.data.category);
         .pagination-link.next { text-align: left; }
     }
     
+    /* Table of Contents (Right Sidebar) */
+    .article-toc {
+        position: relative;
+    }
+    .toc-sticky {
+        position: sticky;
+        top: 120px;
+        padding-left: 20px;
+        border-left: 1px solid var(--color-border);
+    }
+    .toc-sticky h4 {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--color-text-muted);
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+    #tocNav {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .toc-link {
+        font-size: 0.9rem;
+        color: var(--color-text-muted);
+        text-decoration: none;
+        line-height: 1.4;
+        transition: color 0.2s;
+        border-left: 2px solid transparent;
+        margin-left: -21px; /* Align with the border */
+        padding-left: 19px;
+    }
+    .toc-link.depth-3 {
+        padding-left: 30px;
+        font-size: 0.85rem;
+    }
+    .toc-link:hover {
+        color: var(--color-text);
+    }
+    .toc-link.active {
+        color: var(--color-blue-deep);
+        font-weight: 500;
+        border-left-color: var(--color-blue-deep);
+    }
+
     /* Estilos básicos para el contenido Markdown */
     .markdown-body {
         color: var(--color-text);
@@ -309,3 +400,60 @@ const catSlug = slugifyCategory(entry.data.category);
         padding: 0;
     }
 </style>
+
+<script>
+    // ScrollSpy Logic for TOC
+    document.addEventListener('DOMContentLoaded', () => {
+        const headings = document.querySelectorAll('#markdownContent h2, #markdownContent h3');
+        const tocLinks = document.querySelectorAll('#tocNav .toc-link');
+        
+        if (headings.length === 0 || tocLinks.length === 0) return;
+
+        // Intersection Observer options
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px 0px -60% 0px', // Trigger when heading is in the top 40% of the viewport
+            threshold: 1.0
+        };
+
+        // Keeps track of the currently active heading ID
+        let activeId = '';
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    activeId = entry.target.id;
+                    updateActiveLink();
+                }
+            });
+        }, observerOptions);
+
+        headings.forEach(h => observer.observe(h));
+
+        // Fallback for scrolling up: if no heading is intersecting, find the one just above the viewport
+        window.addEventListener('scroll', () => {
+            let current = '';
+            headings.forEach(h => {
+                const rect = h.getBoundingClientRect();
+                if (rect.top <= 120) { // 120px offset for the fixed header
+                    current = h.id;
+                }
+            });
+            
+            if (current && current !== activeId) {
+                activeId = current;
+                updateActiveLink();
+            }
+        }, { passive: true });
+
+        function updateActiveLink() {
+            tocLinks.forEach(link => {
+                if (link.getAttribute('data-slug') === activeId) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+        }
+    });
+</script>

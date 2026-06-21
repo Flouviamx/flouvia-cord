@@ -1,0 +1,102 @@
+---
+// src/components/support/FeedbackWidget.astro
+// Un widget súper simple para capturar feedback al final de cada artículo
+---
+<div class="feedback-widget" id="fwContainer">
+    <div class="fw-content" id="fwQuestion">
+        <h4>¿Te fue útil este artículo?</h4>
+        <div class="fw-actions">
+            <button class="fw-btn" data-vote="yes">
+                <span class="fw-icon">👍</span> Sí
+            </button>
+            <button class="fw-btn" data-vote="no">
+                <span class="fw-icon">👎</span> No
+            </button>
+        </div>
+    </div>
+    <div class="fw-content" id="fwThanks" hidden>
+        <h4>¡Gracias por tu retroalimentación!</h4>
+        <p>Nos ayuda a mejorar constantemente el Centro de Ayuda de Cord.</p>
+    </div>
+</div>
+
+<style>
+    .feedback-widget {
+        margin: 4rem 0 2rem;
+        padding: 2rem;
+        background: var(--color-surface, #fff);
+        border: 1px solid var(--color-border);
+        border-radius: 16px;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    }
+    :global(html[data-theme="dark"]) .feedback-widget {
+        background: rgba(10,25,47,0.3);
+    }
+    .fw-content h4 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: var(--color-text);
+    }
+    .fw-content p {
+        font-size: 0.95rem;
+        color: var(--color-text-muted);
+        margin: 0;
+    }
+    .fw-actions {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+    }
+    .fw-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 24px;
+        border: 1px solid var(--color-border);
+        background: transparent;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--color-text);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .fw-btn:hover {
+        background: var(--color-bg-soft);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .fw-icon {
+        filter: grayscale(100%);
+        transition: filter 0.2s, transform 0.2s;
+    }
+    .fw-btn:hover .fw-icon {
+        filter: grayscale(0%);
+        transform: scale(1.1);
+    }
+    .fw-content[hidden] {
+        display: none;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const buttons = document.querySelectorAll('.fw-btn');
+        const questionBox = document.getElementById('fwQuestion');
+        const thanksBox = document.getElementById('fwThanks');
+
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const vote = btn.getAttribute('data-vote');
+                // En un entorno real, aquí harías un POST a tu analítica (ej. Vercel Analytics o BD)
+                console.log(`User voted: ${vote}`);
+                
+                // Animación de UI
+                questionBox.hidden = true;
+                thanksBox.hidden = false;
+            });
+        });
+    });
+</script>

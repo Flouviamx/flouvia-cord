@@ -4,14 +4,14 @@ description: "Elige entre depósitos diarios, semanales o mensuales."
 category: "Pagos y Depósitos"
 ---
 
-Por defecto, todas las cuentas de Cord tienen una dispersión de fondos (Payout) **Automática Diaria**. Esto significa que todos los pagos liquidados de tarjetas (T+1) y transferencias se envían juntos a tu CLABE a las 6:00 AM (hora de la CDMX).
+Dado que Cord se conecta directamente a tu propia cuenta de Stripe para procesar los cobros con tarjeta, Cord no gestiona las dispersiones (Payouts) ni retiene tu dinero.
 
-### Configurar Dispersiones Manuales
+### Modificar Payouts en Stripe
 
-Si prefieres tener el dinero "guardado" en tu balance de Cord y enviarlo a tu banco manualmente solo cuando lo necesites (para cuadrar caja semanal, por ejemplo):
+Todo el dinero cobrado a través de los enlaces de Cord viaja directamente a tu cuenta de Stripe.
+Para cambiar la frecuencia con la que Stripe envía el dinero a tu cuenta bancaria:
+1. Inicia sesión en tu [Dashboard de Stripe](https://dashboard.stripe.com/).
+2. Ve a **Configuración > Cuentas bancarias y calendarios**.
+3. En la sección *Calendario de transferencias*, puedes cambiar la frecuencia de 'Automática diaria' a 'Manual' o 'Semanal'.
 
-1. Ve a **Pagos > Dispersiones**.
-2. Haz clic en el ícono de engranaje (Ajustes de Dispersión).
-3. Cambia la frecuencia de *Automática* a *Manual*.
-
-A partir de este momento, deberás entrar al panel y hacer clic en el botón **Retirar Fondos** e ingresar la cantidad deseada. Los fondos enviados de forma manual llegarán a tu cuenta CLABE vía SPEI en un lapso de 1 a 3 horas hábiles.
+Recuerda que cualquier ajuste en la frecuencia de depósito no afecta el funcionamiento de Cord ni el timbrado de tus facturas.

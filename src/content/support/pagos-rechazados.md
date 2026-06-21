@@ -4,15 +4,14 @@ description: "Códigos de error bancarios comunes y cómo solucionarlos."
 category: "Pagos y Depósitos"
 ---
 
-Ver un pago fallido es frustrante, pero en el 90% de los casos, la declinación no proviene de la pasarela de Cord, sino del banco emisor de la tarjeta de tu cliente.
+Ver un pago fallido es frustrante, pero Cord delega el procesamiento directamente a Stripe, por lo que la declinación proviene de los algoritmos antifraude o del banco emisor de la tarjeta.
 
-### Códigos de Declinación Comunes
+### Identificar el motivo en Stripe
 
-En tu dashboard, si haces clic en un pago fallido, verás el motivo exacto:
+Si un cliente te reporta que su tarjeta no pasa al intentar pagar una cotización:
+1. Entra a tu Dashboard de Stripe y ve a **Pagos**.
+2. Verás los intentos fallidos. Stripe te dirá exactamente por qué rebotó (ej. *insufficient_funds*, *do_not_honor*, *fraudulent*).
+3. Al ser cobros B2B de alto monto (decenas de miles de pesos), es extremadamente común que los bancos bloqueen la tarjeta preventivamente.
 
-- **insufficient_funds:** El cliente no tiene saldo suficiente o ha topado su límite de crédito. *Solución:* Pide al cliente usar otra tarjeta o pagar vía Transferencia SPEI.
-- **do_not_honor / generic_decline:** El banco bloqueó la transacción por reglas internas de prevención antifraude. Al ser una transacción de alto valor online, los bancos suelen bloquearlas por protección. *Solución:* El cliente **debe** llamar a la línea de soporte al reverso de su tarjeta y autorizar verbalmente los cargos de "Flouvia/Cord", luego intentar pagar nuevamente.
-- **expired_card:** El plástico caducó.
-- **processing_error:** Error en la red de pagos. Inténtalo de nuevo en 5 minutos.
-
-Nuestra IA de cobranza automáticamente le enviará un correo amigable al cliente explicándole que su pago falló y sugiriéndole contactar a su banco o cambiar el método de pago.
+**Solución recomendada:**
+Pide al cliente que llame a su banco, confirme que él está intentando hacer un pago fuerte en línea, y luego vuelva a intentar el pago desde la cotización de Cord.

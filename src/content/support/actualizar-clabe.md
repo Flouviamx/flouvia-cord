@@ -5,16 +5,14 @@ category: "Cuenta y Equipo"
 order: 3
 ---
 
-Para proteger tus fondos, el cambio de la cuenta CLABE receptora requiere verificación manual por parte de nuestro equipo de compliance.
+Cord no es un procesador de pagos ni retiene tus fondos. Cuando envías una cotización y el cliente decide pagar por transferencia (SPEI), los datos bancarios que aparecen en la cotización o en el PDF son los tuyos directamente.
 
-### Instrucciones para cambiar tu CLABE
+### Actualizar tus Datos Bancarios en las Cotizaciones
 
-1. Inicia sesión como **Administrador (Propietario)** de la cuenta. Los usuarios con rol de Ventas o Desarrollador no verán esta opción.
-2. Dirígete a **Ajustes > Facturación y Pagos**.
-3. En la sección *Cuenta de Depósito*, haz clic en **Solicitar Cambio**.
-4. Se te pedirá subir una **Carátula Bancaria** no mayor a 3 meses de antigüedad. La carátula debe mostrar claramente:
-   - El logotipo del banco.
-   - El nombre de la Razón Social (debe coincidir con la de tu cuenta Cord).
-   - Los 18 dígitos de la cuenta CLABE.
+Para cambiar la cuenta CLABE que se le muestra a tus clientes:
 
-**Tiempo de Resolución:** Nuestro equipo validará el documento en un máximo de **24 horas hábiles**. Durante este tiempo, tus dispersiones automáticas se pausarán. Una vez aprobada, los fondos retenidos se liberarán a la nueva cuenta.
+1. Ve a **Ajustes > Facturación y Pagos**.
+2. En la sección *Datos de Transferencia*, actualiza el Nombre del Banco, Beneficiario y la cuenta CLABE de 18 dígitos.
+3. Haz clic en Guardar.
+
+A partir de ese momento, todos los enlaces públicos de cotizaciones (incluso las antiguas que sigan pendientes) mostrarán la nueva cuenta CLABE. Cuando el cliente te deposite, deberás entrar a Cord y marcar la cotización como 'Pagada' manualmente para que se libere la factura.
