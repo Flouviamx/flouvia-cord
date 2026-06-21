@@ -44,41 +44,54 @@ const otra = DEV_PAGES.find((p) => p.slug !== page.slug)!;
                     <div class="pp-glow" aria-hidden="true"></div>
                     <div class="pp-mockup">
                         {page.slug === 'api' && (
-                            <div class="dv-term">
-                                <div class="dv-term-bar">
+                            <div class="dv-api">
+                                <div class="dv-api-bar">
                                     <span class="dv-dots"><i></i><i></i><i></i></span>
-                                    <span class="dv-term-title">cord · API v1</span>
-                                    <span class="dv-pill">200 OK</span>
+                                    <span class="dv-method">POST</span>
+                                    <span class="dv-endpoint">/api/v1/cotizaciones</span>
+                                    <span class="dv-api-stat" id="apiStat">enviando…</span>
                                 </div>
-                                <pre class="dv-code"><code><span class="c-prompt">$</span> curl https://cord.flouvia.com/api/v1/cotizaciones \
-  -H <span class="c-str">"Authorization: Bearer sk_live_xxxx"</span>
-
-{`{`}
-  <span class="c-key">"data"</span>: [
-    {`{`} <span class="c-key">"folio"</span>: <span class="c-str">"COT-0149"</span>,
-      <span class="c-key">"cliente"</span>: <span class="c-str">"Distribuidora El Zarco"</span>,
-      <span class="c-key">"status"</span>: <span class="c-str">"sent"</span>,
-      <span class="c-key">"total"</span>: <span class="c-num">196469.2</span> {`}`}
-  ],
-  <span class="c-key">"meta"</span>: {`{`} <span class="c-key">"total"</span>: <span class="c-num">1</span> {`}`}
-{`}`}</code></pre>
+                                <div class="dv-api-body">
+                                    <div class="dv-api-req"><code><span class="c-prompt">$</span> curl -X POST <span class="c-path">/api/v1/cotizaciones</span> \
+  -H <span class="c-str">"Authorization: Bearer </span><span class="dv-keytok">sk_live_8f2a••••</span><span class="c-str">"</span> \
+  -d <span class="c-str">'{`{`} "cliente_id": "c_8f2a", "items": [ … ] {`}`}'</span></code></div>
+                                    <div class="dv-api-divider"><span class="dv-api-sending" id="apiSending">●&nbsp;&nbsp;enviando</span></div>
+                                    <pre class="dv-api-res"><code><span class="dv-line">{`{`}</span>
+<span class="dv-line">  <span class="c-key">"id"</span>: <span class="c-str">"q_19a…"</span>,</span>
+<span class="dv-line">  <span class="c-key">"folio"</span>: <span class="c-str">"COT-0149"</span>,</span>
+<span class="dv-line">  <span class="c-key">"cliente"</span>: <span class="c-str">"Distribuidora El Zarco"</span>,</span>
+<span class="dv-line">  <span class="c-key">"status"</span>: <span class="c-str">"sent"</span>,</span>
+<span class="dv-line">  <span class="c-key">"total"</span>: <span class="c-num">196469.2</span></span>
+<span class="dv-line">{`}`}</span></code></pre>
+                                    <span class="dv-api-latency" id="apiLatency">142 ms · región MX</span>
+                                </div>
                             </div>
                         )}
                         {page.slug === 'mcp' && (
                             <div class="dv-mcp">
                                 <div class="dv-mcp-row">
-                                    <div class="dv-node dv-node-ai">Claude · IA</div>
-                                    <div class="dv-conn"><span class="dv-dot dv-dot-l" id="mcpDotL"></span></div>
+                                    <div class="dv-node dv-node-ai">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><circle cx="12" cy="12" r="3.2"/></svg>
+                                        <span>Claude · IA</span>
+                                    </div>
+                                    <div class="dv-conn dv-conn-1">
+                                        <span class="dv-dot" id="mcpD1"></span>
+                                        <span class="dv-tool-chip" id="mcpChip1">cartera_vencida</span>
+                                    </div>
                                     <div class="dv-node dv-node-cord">
                                         <img src="/imgs/logo-cord-white.png" alt="Cord" />
-                                        <span class="dv-tool-chip" id="mcpTool">listar_cotizaciones</span>
                                     </div>
-                                    <div class="dv-conn"><span class="dv-dot dv-dot-r" id="mcpDotR"></span><i class="dv-check" id="mcpCheck">✓</i></div>
+                                    <div class="dv-conn dv-conn-2">
+                                        <span class="dv-dot dv-dot-r" id="mcpD2"></span>
+                                        <i class="dv-check" id="mcpCheck">✓</i>
+                                    </div>
                                     <div class="dv-node dv-node-ext">Tu CRM / ERP</div>
                                 </div>
-                                <div class="dv-mcp-legend">
-                                    <span><b>Cord como servidor</b> · la IA consulta tus 7 herramientas</span>
-                                    <span><b>Cord como cliente</b> · consulta tus sistemas, con permiso</span>
+                                <div class="dv-mcp-steps" id="mcpSteps">
+                                    <div class="dv-mcp-step"><b>1</b> La IA invoca una de tus 7 herramientas</div>
+                                    <div class="dv-mcp-step"><b>2</b> Cord consulta tu CRM, con permiso</div>
+                                    <div class="dv-mcp-step"><b>3</b> El contexto regresa a la conversación</div>
+                                    <div class="dv-mcp-step"><b>4</b> La IA arma la cotización con ese contexto</div>
                                 </div>
                             </div>
                         )}
@@ -86,7 +99,10 @@ const otra = DEV_PAGES.find((p) => p.slug !== page.slug)!;
                             <div class="dv-embed">
                                 <div class="dv-embed-bar">
                                     <span class="dv-dots"><i></i><i></i><i></i></span>
-                                    <span class="dv-embed-url">🔒 portal.tucliente.com/cotizacion</span>
+                                    <span class="dv-embed-url">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                                        portal.tucliente.com/cotizacion
+                                    </span>
                                 </div>
                                 <div class="dv-embed-site">
                                     <div class="dv-embed-sitehead">
@@ -94,13 +110,21 @@ const otra = DEV_PAGES.find((p) => p.slug !== page.slug)!;
                                         <span class="dv-embed-nav"><i></i><i></i><i></i></span>
                                     </div>
                                     <p class="dv-embed-h">Tu cotización está lista</p>
-                                    <div class="dv-embed-card">
-                                        <div class="dv-embed-cardhead"><span class="dv-embed-brand">MV</span><b>Materiales del Valle</b><span class="dv-embed-badge" id="embedBadge">● Aprobada</span></div>
-                                        <div class="dv-embed-line"><span>Cemento gris 50kg × 120</span><span class="editorial">$21,840.00</span></div>
-                                        <div class="dv-embed-line"><span>Varilla 3/8" × 340</span><span class="editorial">$57,290.00</span></div>
-                                        <div class="dv-embed-total"><span>Total con IVA</span><b class="editorial" id="embedTotal">$196,469.20</b></div>
+                                    <div class="dv-embed-mount">
+                                        <div class="dv-embed-skel" id="embedSkel"><span></span><span></span><span></span></div>
+                                        <div class="dv-embed-card" id="embedCard">
+                                            <div class="dv-embed-cardhead"><span class="dv-embed-brand">MV</span><b>Materiales del Valle</b><span class="dv-embed-badge" id="embedBadge">● Revisar</span></div>
+                                            <div class="dv-embed-line"><span>Cemento gris 50kg × 120</span><span class="editorial">$21,840.00</span></div>
+                                            <div class="dv-embed-line"><span>Varilla 3/8" × 340</span><span class="editorial">$57,290.00</span></div>
+                                            <div class="dv-embed-total"><span>Total con IVA</span><b class="editorial" id="embedTotal">$196,469.20</b></div>
+                                            <div class="dv-embed-approve" id="embedApprove">Aprobar cotización</div>
+                                        </div>
+                                        <div class="dv-embed-cursor" id="embedCursor">
+                                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 2l12 11.2-5.8.5 3.3 7.3-2.25 1-3.2-7.4-4.4 4.7z"/></svg>
+                                        </div>
                                     </div>
                                 </div>
+                                <div class="dv-embed-event" id="embedEvent"><i></i>cord:approved · COT-0148</div>
                             </div>
                         )}
                     </div>
@@ -190,158 +214,292 @@ const otra = DEV_PAGES.find((p) => p.slug !== page.slug)!;
     gsap.registerPlugin(ScrollTrigger);
 
     window.addEventListener('load', () => {
-        // GSAP Animations
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        // Stats count-in (en reduced-motion las revela PageAnims vía .reveal)
         const stats = document.querySelectorAll('.pp-stat');
-        if (stats.length) {
-            gsap.fromTo(stats, 
+        if (stats.length && !reduced) {
+            gsap.fromTo(stats,
                 { opacity: 0, y: 20 },
                 { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out', scrollTrigger: { trigger: '.pp-stats', start: 'top 85%', once: true } }
             );
         }
 
-        // ───────────────────────── HERO MOCKUP ─────────────────────────
-        // El "settle" del mockup del hero lo maneja PageAnims.astro, idéntico al index.
-        // Aquí: micro-historia auto-reproducida dentro del mockup, según la página.
-        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-        // HERO MCP — diagrama bidireccional en loop (IA → Cord → CRM)
-        const mcpHero = document.querySelector('.dv-mcp');
-        if (mcpHero && !reduced) {
-            const dotL = document.getElementById('mcpDotL');
-            const dotR = document.getElementById('mcpDotR');
-            const tool = document.getElementById('mcpTool');
-            const check = document.getElementById('mcpCheck');
-            const tools = ['listar_cotizaciones', 'cartera_vencida', 'crear_cotizacion_borrador'];
-            let ti = 0;
-            const tl = gsap.timeline({ repeat: -1 });
-            tl.call(() => { if (tool) tool.textContent = tools[ti]; ti = (ti + 1) % tools.length; })
-              .set([dotL, dotR], { left: '0%', opacity: 0 })
-              .set([check, tool], { opacity: 0 })
-              .to(dotL, { opacity: 1, duration: 0.2 })
-              .to(dotL, { left: '100%', duration: 0.8, ease: 'power1.inOut' })
-              .to(dotL, { opacity: 0, duration: 0.2 })
-              .to(tool, { opacity: 1, duration: 0.3, ease: 'back.out(1.5)' }, '<')
-              .to(dotR, { opacity: 1, duration: 0.2 }, '+=0.2')
-              .to(dotR, { left: '100%', duration: 0.8, ease: 'power1.inOut' })
-              .to(dotR, { opacity: 0, duration: 0.2 })
-              .to(check, { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(1.6)' }, '<')
-              .to([tool, check], { opacity: 0, duration: 0.4 }, '+=1.4');
+        // ── Entrada limpia de los BlockMockups: fade + rise (igual al index/producto) ──
+        if (!reduced) {
+            document.querySelectorAll('.pp-block-visual').forEach((block) => {
+                const stage = block.querySelector('.dbm-stage');
+                if (!stage) return;
+                const internals = block.querySelectorAll('.dbm-card, .dbm-terminal, .dbm-el-card, .dbm-floating:not(.dbm-story-pill)');
+                const glow = block.querySelector('.dbm-glow');
+                gsap.set(internals, { y: 28, opacity: 0 });
+                if (glow) gsap.set(glow, { opacity: 0, scale: 0.6 });
+                ScrollTrigger.create({ trigger: block, start: 'top 85%', once: true,
+                    onEnter: () => {
+                        gsap.to(internals, { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', stagger: 0.08, clearProps: 'transform' });
+                        if (glow) gsap.to(glow, { opacity: 1, scale: 1, duration: 1.6, ease: 'power3.out' });
+                    } });
+            });
         }
 
-        // HERO ELEMENTS — el badge cicla estado + count-up del total
-        const embedHero = document.querySelector('.dv-embed');
-        if (embedHero && !reduced) {
-            const badge = document.getElementById('embedBadge');
-            const total = document.getElementById('embedTotal');
-            ScrollTrigger.create({ trigger: embedHero, start: 'top 80%', once: true,
+        // En reduced-motion, deja visibles los estados que arrancan ocultos por CSS.
+        if (reduced) {
+            ['embedCard', 'elMini'].forEach((id) => document.getElementById(id)?.style.setProperty('opacity', '1'));
+            ['embedSkel', 'elSkel'].forEach((id) => document.getElementById(id)?.style.setProperty('opacity', '0'));
+            ['apiSyncRow1', 'apiSyncRow2'].forEach((id) => document.getElementById(id)?.style.setProperty('opacity', '1'));
+            document.querySelectorAll('#mcpClientLog > div').forEach((d) => { (d as HTMLElement).style.opacity = '1'; });
+        }
+
+        // HERO API — request → response: la respuesta JSON entra en streaming y el status salta a 200 OK.
+        const apiHero = document.querySelector('.dv-api');
+        if (apiHero && !reduced) {
+            const stat = document.getElementById('apiStat');
+            const sending = document.getElementById('apiSending');
+            const latency = document.getElementById('apiLatency');
+            const lines = apiHero.querySelectorAll('.dv-api-res .dv-line');
+            ScrollTrigger.create({ trigger: apiHero, start: 'top 82%', once: true,
                 onEnter: () => {
-                    if (total) {
-                        const obj = { v: 0 };
-                        gsap.to(obj, { v: 196469.2, duration: 1.2, ease: 'power2.out', onUpdate: () => { total.textContent = '$' + obj.v.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } });
-                    }
-                    if (badge) {
-                        const states = [{ t: '● Enviada', c: '#3b82f6', bg: 'rgba(59,130,246,0.14)' }, { t: '● Vista', c: '#d97706', bg: 'rgba(245,158,11,0.14)' }, { t: '● Aprobada', c: '#10b981', bg: 'rgba(16,185,129,0.12)' }];
-                        let bi = 0;
-                        gsap.timeline({ repeat: -1, repeatDelay: 1.1, delay: 1.2 }).call(() => {
-                            const s = states[bi]; bi = (bi + 1) % states.length;
-                            badge.textContent = s.t; badge.style.color = s.c; badge.style.background = s.bg;
-                        }).to({}, { duration: 1.1 });
-                    }
+                    const tl = gsap.timeline({ repeat: -1, repeatDelay: 2 });
+                    tl.call(() => { if (stat) { stat.textContent = 'enviando…'; stat.classList.remove('dv-api-ok'); } })
+                      .set(lines, { opacity: 0 })
+                      .set(sending, { opacity: 1 })
+                      .set(latency, { opacity: 0, y: 4 })
+                      .to(sending, { opacity: 0.3, duration: 0.4, yoyo: true, repeat: 2, ease: 'sine.inOut' })
+                      .to(lines, { opacity: 1, duration: 0.3, stagger: 0.11, ease: 'power1.out' })
+                      .to(sending, { opacity: 0, duration: 0.25 }, '<')
+                      .call(() => { if (stat) { stat.textContent = '200 OK'; stat.classList.add('dv-api-ok'); } })
+                      .fromTo(stat, { scale: 0.82 }, { scale: 1, duration: 0.4, ease: 'back.out(1.8)' })
+                      .to(latency, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }, '<')
+                      .to({}, { duration: 1.8 });
                 } });
         }
 
-        // ───────────────────────── BLOCK MOCKUPS GSAP ─────────────────────────
-
-        // API M0
-        const apiM0 = document.querySelector('.dbm-api-m0');
-        if (apiM0) {
-            const dot = apiM0.querySelector('.dbm-dot');
-            gsap.to(dot, { left: '100%', ease: 'none', scrollTrigger: { trigger: apiM0, start: 'top 90%', end: 'top 20%', scrub: 1 } });
-        }
-        
-        // API M1 — cursor parpadeante en la terminal (sin tilt con el mouse)
-        const apiM1 = document.querySelector('.dbm-api-m1');
-        if (apiM1) {
-            const cursor = apiM1.querySelector('.dbm-cursor');
-            gsap.to(cursor, { opacity: 0, duration: 0.4, repeat: -1, yoyo: true });
-        }
-
-        // API M2
-        const apiM2 = document.querySelector('.dbm-api-m2');
-        if (apiM2) {
-            const hl = apiM2.querySelector('.dbm-hl-target');
-            gsap.to(hl, { color: '#10b981', textShadow: '0 0 10px rgba(16,185,129,0.5)', ease: 'none', scrollTrigger: { trigger: apiM2, start: 'top 80%', end: 'top 40%', scrub: 1 } });
-        }
-
-        // MCP M0 — lista de las 7 tools entra escalonada
-        const mcpM0 = document.querySelector('.dbm-mcp-m0');
-        if (mcpM0) {
-            const rows = mcpM0.querySelectorAll('.dbm-toolrow');
-            gsap.set(rows, { opacity: 0, x: -10 });
-            ScrollTrigger.create({ trigger: mcpM0, start: 'top 88%', once: true,
-                onEnter: () => gsap.to(rows, { opacity: 1, x: 0, stagger: 0.12, duration: 0.5, ease: 'power2.out' }) });
-        }
-
-        // MCP M1 — Cord consulta el CRM: el dot cruza y el log se enciende (loop)
-        const mcpM1 = document.querySelector('.dbm-mcp-m1');
-        if (mcpM1) {
-            const dot = mcpM1.querySelector('.dbm-dot');
-            const logs = mcpM1.querySelectorAll('.dbm-mcp-log > div');
-            ScrollTrigger.create({ trigger: mcpM1, start: 'top 85%', once: true,
+        // HERO MCP — loop bidireccional: la IA invoca, Cord consulta el CRM y el contexto regresa (4 pasos).
+        const mcpHero = document.querySelector('.dv-mcp');
+        if (mcpHero && !reduced) {
+            const d1 = document.getElementById('mcpD1');
+            const d2 = document.getElementById('mcpD2');
+            const chip = document.getElementById('mcpChip1');
+            const check = document.getElementById('mcpCheck');
+            const cord = mcpHero.querySelector('.dv-node-cord');
+            const steps = mcpHero.querySelectorAll('.dv-mcp-step');
+            const setStep = (k) => steps.forEach((s, i) => s.classList.toggle('dv-step-on', i === k));
+            ScrollTrigger.create({ trigger: mcpHero, start: 'top 80%', once: true,
                 onEnter: () => {
-                    if (reduced) { gsap.set(logs, { opacity: 1 }); return; }
+                    const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.2 });
+                    tl.set([d1, d2], { left: '0%', opacity: 0 })
+                      .set([chip, check], { opacity: 0, scale: 0.6 })
+                      .call(() => { setStep(0); if (cord) cord.classList.remove('dv-node-active'); })
+                      .to(chip, { opacity: 1, scale: 1, duration: 0.3, ease: 'back.out(1.6)' })
+                      .to(d1, { opacity: 1, duration: 0.2 }, '<')
+                      .to(d1, { left: '100%', duration: 0.7, ease: 'power1.inOut' })
+                      .to(d1, { opacity: 0, duration: 0.2 })
+                      .call(() => { if (cord) cord.classList.add('dv-node-active'); setStep(1); })
+                      .to(d2, { opacity: 1, duration: 0.2 }, '+=0.15')
+                      .to(d2, { left: '100%', duration: 0.7, ease: 'power1.inOut' })
+                      .to(d2, { opacity: 0, duration: 0.2 })
+                      .call(() => setStep(2))
+                      .to(check, { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(1.6)' })
+                      .call(() => { setStep(3); if (cord) cord.classList.remove('dv-node-active'); }, undefined, '+=0.4')
+                      .to([chip, check], { opacity: 0, duration: 0.4 }, '+=1')
+                      .call(() => setStep(-1));
+                } });
+        }
+
+        // HERO ELEMENTS — el embed monta (skeleton → tarjeta), el cliente aprueba y dispara cord:approved.
+        const embedHero = document.querySelector('.dv-embed');
+        if (embedHero && !reduced) {
+            const skel = document.getElementById('embedSkel');
+            const card = document.getElementById('embedCard');
+            const badge = document.getElementById('embedBadge');
+            const total = document.getElementById('embedTotal');
+            const approve = document.getElementById('embedApprove');
+            const cursor = document.getElementById('embedCursor');
+            const evt = document.getElementById('embedEvent');
+            if (skel) gsap.to(skel.querySelectorAll('span'), { backgroundPosition: '-200% 0', duration: 1.2, ease: 'none', repeat: -1 });
+            ScrollTrigger.create({ trigger: embedHero, start: 'top 78%', once: true,
+                onEnter: () => {
+                    const obj = { v: 0 };
+                    const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.4 });
+                    tl.set(card, { opacity: 0, y: 10 })
+                      .set(skel, { opacity: 1 })
+                      .set(cursor, { opacity: 0, x: 14, y: 16 })
+                      .set(evt, { opacity: 0, y: 6 })
+                      .call(() => { if (badge) { badge.textContent = '● Revisar'; badge.style.color = ''; badge.style.background = ''; } obj.v = 0; })
+                      .to({}, { duration: 1 })
+                      .to(skel, { opacity: 0, duration: 0.4 })
+                      .to(card, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, '<0.12')
+                      .to(obj, { v: 196469.2, duration: 0.9, ease: 'power2.out', onUpdate: () => { if (total) total.textContent = '$' + obj.v.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } }, '<')
+                      .to(cursor, { opacity: 1, duration: 0.3 }, '+=0.3')
+                      .to(cursor, { x: -34, y: 0, duration: 0.6, ease: 'power2.inOut' })
+                      .to(approve, { scale: 0.96, duration: 0.1, yoyo: true, repeat: 1 })
+                      .call(() => { if (badge) { badge.textContent = '● Aprobada'; badge.style.color = '#10b981'; badge.style.background = 'rgba(16,185,129,0.12)'; } })
+                      .fromTo(approve, { boxShadow: '0 0 0 0 rgba(16,185,129,0.5)' }, { boxShadow: '0 0 0 10px rgba(16,185,129,0)', duration: 0.8 })
+                      .to(cursor, { opacity: 0, duration: 0.3 }, '<')
+                      .fromTo(evt, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }, '-=0.2')
+                      .to({}, { duration: 1.8 });
+                } });
+        }
+
+        // ───────────────────────── BLOCK MOCKUPS (motion graphics en loop) ─────────────────────────
+
+        // API 0 — sync ERP ↔ Cord: el catálogo viaja a la derecha, el estado regresa a la izquierda.
+        const apiB0 = document.querySelector('.dbm-api-m0');
+        if (apiB0 && !reduced) {
+            const dr = document.getElementById('apiSyncR');
+            const dl = document.getElementById('apiSyncL');
+            const row1 = document.getElementById('apiSyncRow1');
+            const row2 = document.getElementById('apiSyncRow2');
+            ScrollTrigger.create({ trigger: apiB0, start: 'top 85%', once: true,
+                onEnter: () => {
+                    const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.6 });
+                    tl.set(dr, { left: '0%', opacity: 0 })
+                      .set(dl, { left: '100%', opacity: 0 })
+                      .set([row1, row2], { opacity: 0, x: -6 })
+                      .to(dr, { opacity: 1, duration: 0.2 })
+                      .to(dr, { left: '100%', duration: 0.7, ease: 'power1.inOut' })
+                      .to(dr, { opacity: 0, duration: 0.2 })
+                      .to(row1, { opacity: 1, x: 0, duration: 0.4, ease: 'power2.out' }, '-=0.2')
+                      .to(dl, { opacity: 1, duration: 0.2 }, '+=0.3')
+                      .to(dl, { left: '0%', duration: 0.7, ease: 'power1.inOut' })
+                      .to(dl, { opacity: 0, duration: 0.2 })
+                      .to(row2, { opacity: 1, x: 0, duration: 0.4, ease: 'power2.out' }, '-=0.2')
+                      .to({}, { duration: 1.4 });
+                } });
+        }
+
+        // API 1 — una llave revocable: 200 OK → "Revocada" → 401 (loop).
+        const apiB1 = document.querySelector('.dbm-api-m1');
+        if (apiB1 && !reduced) {
+            const key = document.getElementById('apiKey');
+            const status = document.getElementById('apiAuthStatus');
+            const revoke = apiB1.querySelector('.dbm-api1-revoke');
+            ScrollTrigger.create({ trigger: apiB1, start: 'top 85%', once: true,
+                onEnter: () => {
+                    const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.4 });
+                    tl.set(revoke, { opacity: 0, scale: 0.6 })
+                      .call(() => { if (key) key.classList.remove('dbm-key-revoked'); if (status) { status.textContent = '200 OK'; status.classList.remove('dbm-status-fail'); } })
+                      .to({}, { duration: 1.4 })
+                      .to(revoke, { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(1.6)' })
+                      .call(() => { if (key) key.classList.add('dbm-key-revoked'); })
+                      .to({}, { duration: 0.3 })
+                      .call(() => { if (status) { status.textContent = '401'; status.classList.add('dbm-status-fail'); } })
+                      .fromTo(status, { scale: 0.85 }, { scale: 1, duration: 0.3, ease: 'back.out(1.8)' })
+                      .to({}, { duration: 1.6 })
+                      .to(revoke, { opacity: 0, duration: 0.3 });
+                } });
+        }
+
+        // API 2 — los endpoints en JSON: el cuerpo y el total cambian por pestaña (loop).
+        const apiB2 = document.querySelector('.dbm-api-m2');
+        if (apiB2 && !reduced) {
+            const tabs = apiB2.querySelectorAll('.dbm-api-tabs span');
+            const pre = document.getElementById('apiJson');
+            const code = pre ? pre.querySelector('code') : null;
+            const totalEl = apiB2.querySelector('.dbm-meta-total');
+            const snaps = [
+                { body: '{\n  <span class="dbm-key">"folio"</span>: <span class="dbm-str">"COT-0149"</span>,\n  <span class="dbm-key">"status"</span>: <span class="dbm-str">"sent"</span>,\n  <span class="dbm-key">"total"</span>: <span class="dbm-num dbm-hl-target">196469.2</span>\n}', total: 'total 412' },
+                { body: '{\n  <span class="dbm-key">"empresa"</span>: <span class="dbm-str">"El Zarco"</span>,\n  <span class="dbm-key">"rfc"</span>: <span class="dbm-str">"DEZ981123QX1"</span>,\n  <span class="dbm-key">"credito"</span>: <span class="dbm-num dbm-hl-target">500000</span>\n}', total: 'total 318' },
+                { body: '{\n  <span class="dbm-key">"sku"</span>: <span class="dbm-str">"CEM-50"</span>,\n  <span class="dbm-key">"nombre"</span>: <span class="dbm-str">"Cemento gris"</span>,\n  <span class="dbm-key">"precio"</span>: <span class="dbm-num dbm-hl-target">182</span>\n}', total: 'total 412' },
+                { body: '{\n  <span class="dbm-key">"vencido"</span>: <span class="dbm-num dbm-hl-target">412300</span>,\n  <span class="dbm-key">"dso"</span>: <span class="dbm-num">47</span>,\n  <span class="dbm-key">"exposicion"</span>: <span class="dbm-str">"alta"</span>\n}', total: 'aging 4' },
+            ];
+            let i = 0;
+            ScrollTrigger.create({ trigger: apiB2, start: 'top 85%', once: true,
+                onEnter: () => {
+                    gsap.timeline({ repeat: -1, repeatDelay: 1 }).call(() => {
+                        tabs.forEach((t, k) => t.classList.toggle('dbm-seg-on', k === i));
+                        if (code) code.innerHTML = snaps[i].body;
+                        if (totalEl) totalEl.textContent = snaps[i].total;
+                        const hl = pre ? pre.querySelector('.dbm-hl-target') : null;
+                        if (hl) gsap.fromTo(hl, { color: '#fcd34d' }, { color: '#34d399', duration: 0.5, yoyo: true, repeat: 1 });
+                        i = (i + 1) % snaps.length;
+                    }).to({}, { duration: 1.3 });
+                } });
+        }
+
+        // MCP 0 — las 7 herramientas entran escalonadas + el transporte (HTTP/SSE) alterna.
+        const mcpB0 = document.querySelector('.dbm-mcp-m0');
+        if (mcpB0 && !reduced) {
+            const rows = mcpB0.querySelectorAll('.dbm-toolrow');
+            const t0 = document.getElementById('mcpT0');
+            const t1 = document.getElementById('mcpT1');
+            gsap.set(rows, { opacity: 0, x: -8 });
+            ScrollTrigger.create({ trigger: mcpB0, start: 'top 88%', once: true,
+                onEnter: () => {
+                    gsap.to(rows, { opacity: 1, x: 0, stagger: 0.09, duration: 0.45, ease: 'power2.out' });
+                    let on = 0;
+                    gsap.timeline({ repeat: -1, repeatDelay: 1.6, delay: 1.6 }).call(() => {
+                        on = on ? 0 : 1;
+                        if (t0) t0.classList.toggle('dbm-seg-on', on === 0);
+                        if (t1) t1.classList.toggle('dbm-seg-on', on === 1);
+                    }).to({}, { duration: 1.6 });
+                } });
+        }
+
+        // MCP 1 — Cord consulta el CRM: el dot cruza y el log se enciende (loop).
+        const mcpB1 = document.querySelector('.dbm-mcp-m1');
+        if (mcpB1 && !reduced) {
+            const dot = document.getElementById('mcpClientDot');
+            const logs = document.querySelectorAll('#mcpClientLog > div');
+            ScrollTrigger.create({ trigger: mcpB1, start: 'top 85%', once: true,
+                onEnter: () => {
                     gsap.timeline({ repeat: -1, repeatDelay: 1.6 })
                         .set(dot, { left: '0%', opacity: 0 })
-                        .set(logs, { opacity: 0, y: 8 })
+                        .set(logs, { opacity: 0, y: 6 })
                         .to(dot, { opacity: 1, duration: 0.2 })
-                        .to(dot, { left: '100%', duration: 0.9, ease: 'power1.inOut' })
+                        .to(dot, { left: '100%', duration: 0.8, ease: 'power1.inOut' })
                         .to(dot, { opacity: 0, duration: 0.2 })
-                        .to(logs, { opacity: 1, y: 0, stagger: 0.3, duration: 0.4, ease: 'power2.out' }, '-=0.6')
+                        .to(logs, { opacity: 1, y: 0, stagger: 0.28, duration: 0.4, ease: 'power2.out' }, '-=0.5')
                         .to({}, { duration: 1.4 });
                 } });
         }
 
-        // MCP M2 — gobernanza: el permiso del CRM pasa a "permitido"
-        const mcpM2 = document.querySelector('.dbm-mcp-m2');
-        if (mcpM2) {
-            const pill = document.getElementById('govPill');
-            ScrollTrigger.create({ trigger: mcpM2, start: 'top 85%', once: true,
+        // MCP 2 — gobernanza: el permiso del CRM externo alterna sin acceso ↔ permitido (loop).
+        const mcpB2 = document.querySelector('.dbm-mcp-m2');
+        if (mcpB2 && !reduced) {
+            const pill = document.getElementById('mcpGovPill');
+            ScrollTrigger.create({ trigger: mcpB2, start: 'top 85%', once: true,
                 onEnter: () => {
                     if (!pill) return;
-                    gsap.timeline({ delay: 0.6 })
-                        .to(pill, { scale: 0.85, duration: 0.15, ease: 'power2.in' })
-                        .call(() => { pill.textContent = 'permitido'; pill.classList.remove('dbm-gov-off'); pill.classList.add('dbm-gov-on'); })
-                        .to(pill, { scale: 1, duration: 0.4, ease: 'back.out(1.8)' });
+                    const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.2 });
+                    tl.call(() => { pill.textContent = 'sin acceso'; pill.classList.remove('dbm-gov-on'); pill.classList.add('dbm-gov-off'); })
+                      .to({}, { duration: 1.2 })
+                      .to(pill, { scale: 0.85, duration: 0.15, ease: 'power2.in' })
+                      .call(() => { pill.textContent = 'permitido'; pill.classList.remove('dbm-gov-off'); pill.classList.add('dbm-gov-on'); })
+                      .to(pill, { scale: 1, duration: 0.4, ease: 'back.out(1.8)' })
+                      .to({}, { duration: 1.6 });
                 } });
         }
 
-        // Elements M0 — skeleton shimmer → tarjeta de cotización
-        const elM0 = document.querySelector('.dbm-el-m0');
-        if (elM0) {
+        // Elements 0 — skeleton shimmer → mini tarjeta (loop).
+        const elB0 = document.querySelector('.dbm-el-m0');
+        if (elB0 && !reduced) {
             const skel = document.getElementById('elSkel');
             const mini = document.getElementById('elMini');
-            ScrollTrigger.create({ trigger: elM0, start: 'top 85%', once: true,
+            if (skel) gsap.to(skel, { backgroundPosition: '-200% 0', duration: 1.2, ease: 'none', repeat: -1 });
+            ScrollTrigger.create({ trigger: elB0, start: 'top 85%', once: true,
                 onEnter: () => {
-                    if (reduced) { gsap.set([skel], { opacity: 0 }); gsap.set([mini], { opacity: 1 }); return; }
-                    gsap.timeline()
-                        .fromTo(skel, { backgroundPosition: '180% 0' }, { backgroundPosition: '-80% 0', duration: 1, ease: 'none', repeat: 1 })
-                        .to(skel, { opacity: 0, duration: 0.3 })
-                        .to(mini, { opacity: 1, duration: 0.4, ease: 'power2.out' }, '<');
+                    const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.6 });
+                    tl.set(skel, { opacity: 1 }).set(mini, { opacity: 0 })
+                      .to({}, { duration: 1.1 })
+                      .to(skel, { opacity: 0, duration: 0.3 })
+                      .to(mini, { opacity: 1, duration: 0.4, ease: 'power2.out' }, '<')
+                      .to({}, { duration: 1.4 });
                 } });
         }
 
-        // Elements M1 — pestañas que rotan + crossfade del snippet (loop)
-        const elM1 = document.querySelector('.dbm-el-m1');
-        if (elM1 && !reduced) {
-            const tabs = elM1.querySelectorAll('.dbm-el-tabs span');
+        // Elements 1 — pestañas que rotan + crossfade del snippet (loop).
+        const elB1 = document.querySelector('.dbm-el-m1');
+        if (elB1 && !reduced) {
+            const tabs = elB1.querySelectorAll('.dbm-el-tabs span');
             const code = document.getElementById('elCode');
             const snippets = [
-                '<span class="dbm-prompt">&lt;script src=</span><span class="dbm-str">"…/embed.js"</span><span class="dbm-prompt">&gt;</span>',
-                '<span class="dbm-prompt">import</span> { CordCotizador } <span class="dbm-prompt">from</span> <span class="dbm-str">\'@flouviahq/elements/react\'</span>',
-                '<span class="dbm-prompt">&lt;cord-cotizador</span> token=<span class="dbm-str">"…"</span><span class="dbm-prompt">&gt;</span>',
+                '<span class="dbm-tag-lt">&lt;script src=</span><span class="dbm-str">"…/embed.js"</span><span class="dbm-tag-lt">&gt;</span>',
+                '<span class="dbm-tag-lt">import</span> { CordCotizador } <span class="dbm-tag-lt">from</span> <span class="dbm-str">\'@flouviahq/elements/react\'</span>',
+                '<span class="dbm-tag-lt">&lt;cord-cotizador</span> token=<span class="dbm-str">"…"</span><span class="dbm-tag-lt">&gt;</span>',
             ];
             let i = 0;
-            ScrollTrigger.create({ trigger: elM1, start: 'top 85%', once: true,
+            ScrollTrigger.create({ trigger: elB1, start: 'top 85%', once: true,
                 onEnter: () => {
                     gsap.timeline({ repeat: -1, repeatDelay: 1.4 }).call(() => {
                         tabs.forEach((t, k) => t.classList.toggle('dbm-seg-on', k === i));
@@ -351,23 +509,27 @@ const otra = DEV_PAGES.find((p) => p.slug !== page.slug)!;
                 } });
         }
 
-        // Elements M2 — el cursor "clickea" Aprobar → estado "Aprobada" (loop)
-        const elM2 = document.querySelector('.dbm-el-m2');
-        if (elM2 && !reduced) {
+        // Elements 2 — el cursor "clickea" Aprobar → "Aprobada" + dispara cord:approved (loop).
+        const elB2 = document.querySelector('.dbm-el-m2');
+        if (elB2 && !reduced) {
             const cursor = document.getElementById('elCursor');
             const approve = document.getElementById('elApprove');
             const badge = document.getElementById('elBadge');
-            ScrollTrigger.create({ trigger: elM2, start: 'top 85%', once: true,
+            const evt = elB2.querySelector('.dbm-el2-event');
+            ScrollTrigger.create({ trigger: elB2, start: 'top 85%', once: true,
                 onEnter: () => {
-                    gsap.timeline({ repeat: -1, repeatDelay: 1.8 })
-                        .set(cursor, { x: 30, y: 20, opacity: 0 })
-                        .call(() => { if (badge) { badge.textContent = 'Revisar'; badge.style.color = '#d97706'; badge.style.background = 'rgba(245,158,11,0.14)'; } })
-                        .to(cursor, { opacity: 1, duration: 0.3 })
-                        .to(cursor, { x: 0, y: 0, duration: 0.7, ease: 'power2.inOut' })
-                        .to(approve, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 })
-                        .call(() => { if (badge) { badge.textContent = 'Aprobada'; badge.style.color = '#10b981'; badge.style.background = 'rgba(16,185,129,0.12)'; } })
-                        .fromTo(approve, { boxShadow: '0 0 0 0 rgba(16,185,129,0.5)' }, { boxShadow: '0 0 0 8px rgba(16,185,129,0)', duration: 0.7 })
-                        .to(cursor, { opacity: 0, duration: 0.3 }, '+=0.4');
+                    const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.8 });
+                    tl.set(cursor, { x: 14, y: 16, opacity: 0 })
+                      .set(evt, { opacity: 0, scale: 0.6 })
+                      .call(() => { if (badge) { badge.textContent = 'Revisar'; badge.style.color = ''; badge.style.background = ''; } })
+                      .to(cursor, { opacity: 1, duration: 0.3 })
+                      .to(cursor, { x: 0, y: 0, duration: 0.6, ease: 'power2.inOut' })
+                      .to(approve, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 })
+                      .call(() => { if (badge) { badge.textContent = 'Aprobada'; badge.style.color = '#10b981'; badge.style.background = 'rgba(16,185,129,0.12)'; } })
+                      .fromTo(approve, { boxShadow: '0 0 0 0 rgba(16,185,129,0.5)' }, { boxShadow: '0 0 0 8px rgba(16,185,129,0)', duration: 0.7 })
+                      .to(cursor, { opacity: 0, duration: 0.3 }, '<')
+                      .to(evt, { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(1.6)' }, '-=0.2')
+                      .to({}, { duration: 1.6 });
                 } });
         }
     });
@@ -413,92 +575,109 @@ const otra = DEV_PAGES.find((p) => p.slug !== page.slug)!;
         color: #fff;
     }
 
-    /* ════════ HERO MOCKUP ════════ */
-    .dv-term {
-        background: rgba(10,25,47,0.85); border-radius: 14px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1);
-        border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-        overflow: hidden; max-width: 520px; width: 100%; margin: 0 auto;
+    /* ════════ HERO API (request → response, motion graphic) ════════ */
+    .dv-api {
+        background: linear-gradient(165deg, #0e2240 0%, #0a192f 58%, #081424 100%);
+        border-radius: 14px; overflow: hidden; max-width: 540px; width: 100%; margin: 0 auto;
+        border: 1px solid rgba(255,255,255,0.07); text-align: left;
+        box-shadow: 0 30px 60px -24px rgba(2,6,12,0.8), inset 0 1px 0 rgba(255,255,255,0.08);
     }
-    .dv-term-bar { display: flex; align-items: center; gap: 12px; padding: 0 0.3rem 1rem; }
-    .dv-dots { display: inline-flex; gap: 5px; }
+    .dv-api-bar { display: flex; align-items: center; gap: 9px; padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .dv-dots { display: inline-flex; gap: 5px; flex-shrink: 0; }
     .dv-dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.14); }
-    .dv-term-title { font-size: 0.76rem; font-weight: 600; color: rgba(255,255,255,0.6); flex: 1; }
-    .dv-pill { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.4px; color: #4ade80; background: rgba(16,185,129,0.16); padding: 4px 9px; border-radius: 100px; }
-    .dv-code { margin: 0; overflow-x: auto; }
-    .dv-code code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.76rem; line-height: 1.7; color: rgba(255,255,255,0.8); white-space: pre; }
+    .dv-method { font-family: ui-monospace, monospace; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.4px; color: #34d399; background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.25); padding: 3px 7px; border-radius: 6px; }
+    .dv-endpoint { font-family: ui-monospace, monospace; font-size: 0.66rem; color: rgba(255,255,255,0.55); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dv-api-stat { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.3px; padding: 4px 9px; border-radius: 100px; white-space: nowrap; color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.06); transition: color 0.3s, background 0.3s; }
+    .dv-api-stat.dv-api-ok { color: #4ade80; background: rgba(16,185,129,0.16); }
+    .dv-api-body { padding: 1.1rem 1.2rem 1.2rem; }
+    .dv-api-req { overflow-x: auto; }
+    .dv-api-req code, .dv-api-res code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; line-height: 1.7; color: rgba(255,255,255,0.82); white-space: pre; }
+    .dv-api-req code { font-size: 0.68rem; }
+    .dv-api-res code { font-size: 0.72rem; }
     .c-prompt { color: #4ade80; font-weight: 700; }
+    .c-path { color: #93c5fd; }
     .c-str { color: #7eb3ff; }
     .c-key { color: #93c5fd; }
     .c-num { color: #fbbf24; }
+    .dv-keytok { color: #fbbf24; }
+    .dv-api-divider { display: flex; align-items: center; gap: 10px; margin: 0.9rem 0; }
+    .dv-api-divider::before, .dv-api-divider::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.08); }
+    .dv-api-sending { font-family: ui-monospace, monospace; font-size: 0.58rem; font-weight: 700; color: #60a5fa; white-space: nowrap; }
+    .dv-api-res { margin: 0; overflow-x: auto; }
+    .dv-api-latency { display: inline-block; margin-top: 0.85rem; font-family: ui-monospace, monospace; font-size: 0.58rem; color: rgba(255,255,255,0.4); }
 
-    /* chat (mcp) */
-    .dv-chat { display: flex; flex-direction: column; gap: 0.8rem; max-width: 500px; margin: 0 auto; padding: 0.3rem 0.2rem; }
-    .dv-msg { font-size: 0.86rem; line-height: 1.55; padding: 12px 15px; border-radius: 15px; max-width: 88%; }
-    .dv-msg b { font-weight: 700; }
-    .dv-msg.editorial, .dv-msg b.editorial { color: #fff; }
-    .dv-user { align-self: flex-end; background: #fff; color: var(--color-blue-deep); border-bottom-right-radius: 5px; font-weight: 500; }
-    .dv-ai { align-self: flex-start; background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.1); border-bottom-left-radius: 5px; }
-    .dv-tool { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; font-size: 0.68rem; font-weight: 600; color: rgba(255,255,255,0.55); padding: 2px 4px; }
-    .dv-tool b { font-family: ui-monospace, 'SF Mono', Menlo, monospace; color: #93c5fd; font-weight: 600; }
-    .dv-tool-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 0 4px rgba(74,222,128,0.16); }
-
-    /* ════════ HERO MCP (diagrama bidireccional) ════════ */
-    .dv-mcp { max-width: 560px; margin: 0 auto; padding: 1.4rem 0.3rem 0.3rem; }
+    /* ════════ HERO MCP (loop bidireccional con pasos) ════════ */
+    .dv-mcp { max-width: 540px; margin: 0.4rem auto 0; padding: 1.6rem 0.4rem 0.4rem; }
     .dv-mcp-row { display: flex; align-items: center; justify-content: center; }
     .dv-node {
-        flex-shrink: 0; padding: 12px 14px; border-radius: 12px;
-        font-size: 0.78rem; font-weight: 600; text-align: center;
+        flex-shrink: 0; padding: 11px 13px; border-radius: 12px;
+        font-size: 0.72rem; font-weight: 600; text-align: center;
         background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #f8fafc;
-        position: relative;
+        position: relative; display: flex; align-items: center; gap: 7px; transition: box-shadow 0.35s;
     }
     .dv-node-ai { color: #93c5fd; }
-    .dv-node-ext { color: #4ade80; }
+    .dv-node-ai svg { width: 14px; height: 14px; }
+    .dv-node-ext { color: #4ade80; border-color: rgba(74,222,128,0.25); }
     .dv-node-cord {
-        background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(37,99,235,0.12));
-        border-color: rgba(59,130,246,0.35); box-shadow: 0 0 26px rgba(59,130,246,0.16);
-        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, rgba(59,130,246,0.22), rgba(37,99,235,0.12));
+        border-color: rgba(59,130,246,0.4); box-shadow: 0 0 28px rgba(59,130,246,0.2);
+        justify-content: center; padding: 12px 16px;
     }
     .dv-node-cord img { height: 15px; width: auto; display: block; }
-    .dv-conn { flex: 1; min-width: 40px; height: 2px; background: rgba(255,255,255,0.12); position: relative; margin: 0 5px; }
+    .dv-node-active { box-shadow: 0 0 0 2px rgba(59,130,246,0.45), 0 0 26px rgba(59,130,246,0.3); }
+    .dv-conn { flex: 1; min-width: 34px; height: 2px; background: rgba(255,255,255,0.12); position: relative; margin: 0 6px; }
     .dv-dot { position: absolute; top: -3px; left: 0; width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; box-shadow: 0 0 10px #3b82f6; opacity: 0; }
     .dv-dot-r { background: #4ade80; box-shadow: 0 0 10px #4ade80; }
     .dv-tool-chip {
-        position: absolute; top: -28px; left: 50%; transform: translateX(-50%);
-        white-space: nowrap; font-family: ui-monospace, monospace; font-size: 0.58rem; font-weight: 600;
-        color: #93c5fd; background: rgba(10,25,47,0.92); border: 1px solid rgba(59,130,246,0.3);
+        position: absolute; top: -26px; left: 50%; transform: translateX(-50%);
+        white-space: nowrap; font-family: ui-monospace, monospace; font-size: 0.56rem; font-weight: 600;
+        color: #93c5fd; background: rgba(10,25,47,0.95); border: 1px solid rgba(59,130,246,0.3);
         padding: 3px 8px; border-radius: 7px; opacity: 0;
     }
     .dv-check {
         position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
         font-style: normal; width: 18px; height: 18px; border-radius: 50%;
         background: #10b981; color: #fff; display: flex; align-items: center; justify-content: center;
-        font-size: 0.62rem; font-weight: 800; opacity: 0;
+        font-size: 0.6rem; font-weight: 800; opacity: 0;
     }
-    .dv-mcp-legend { display: flex; flex-direction: column; gap: 7px; margin-top: 2rem; }
-    .dv-mcp-legend span { font-size: 0.74rem; color: rgba(255,255,255,0.55); }
-    .dv-mcp-legend b { color: #fff; font-weight: 600; }
+    .dv-mcp-steps { display: flex; flex-direction: column; gap: 5px; margin-top: 2.2rem; }
+    .dv-mcp-step { display: flex; align-items: center; gap: 10px; font-size: 0.74rem; color: rgba(255,255,255,0.45); padding: 7px 10px; border-radius: 9px; transition: color 0.3s, background 0.3s; }
+    .dv-mcp-step b { width: 18px; height: 18px; flex-shrink: 0; border-radius: 50%; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6); display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; transition: background 0.3s, color 0.3s; }
+    .dv-mcp-step.dv-step-on { color: #fff; background: rgba(59,130,246,0.1); }
+    .dv-mcp-step.dv-step-on b { background: #3b82f6; color: #fff; }
 
-    /* ════════ HERO ELEMENTS (navegador con cotizador embebido) ════════ */
-    .dv-embed { max-width: 540px; margin: 0 auto; border-radius: 14px; overflow: hidden; box-shadow: 0 24px 50px -12px rgba(2,6,12,0.7); border: 1px solid rgba(255,255,255,0.08); }
-    .dv-embed-bar { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(10,25,47,0.95); border-bottom: 1px solid rgba(255,255,255,0.06); }
-    .dv-embed-url { font-size: 0.68rem; color: rgba(255,255,255,0.55); background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 100px; flex: 1; text-align: center; }
+    /* ════════ HERO ELEMENTS (mount → aprobar → evento) ════════ */
+    .dv-embed { max-width: 520px; margin: 0 auto; border-radius: 14px; overflow: hidden; box-shadow: 0 30px 60px -18px rgba(2,6,12,0.75); border: 1px solid rgba(255,255,255,0.08); position: relative; }
+    .dv-embed-bar { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(10,25,47,0.96); border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .dv-embed-url { display: inline-flex; align-items: center; gap: 6px; justify-content: center; font-size: 0.66rem; color: rgba(255,255,255,0.55); background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 100px; flex: 1; }
+    .dv-embed-url svg { width: 11px; height: 11px; opacity: 0.6; }
     .dv-embed-site { background: #f5f4f1; padding: 1.2rem 1.3rem 1.4rem; }
     .dv-embed-sitehead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.1rem; }
     .dv-embed-logo { font-size: 0.82rem; font-weight: 800; color: #0a192f; letter-spacing: -0.3px; }
     .dv-embed-nav { display: inline-flex; gap: 6px; }
     .dv-embed-nav i { width: 22px; height: 6px; border-radius: 3px; background: rgba(10,25,47,0.12); }
     .dv-embed-h { font-size: 0.95rem; font-weight: 700; color: #0a192f; margin: 0 0 0.9rem; }
-    .dv-embed-card { background: #fff; border-radius: 14px; padding: 1.1rem; box-shadow: 0 12px 32px rgba(10,25,47,0.12); border: 1px solid rgba(10,25,47,0.06); }
+    .dv-embed-mount { position: relative; min-height: 200px; }
+    .dv-embed-skel { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 12px; padding: 1.1rem; border-radius: 14px; background: #fff; box-shadow: 0 12px 32px rgba(10,25,47,0.1); }
+    .dv-embed-skel span { display: block; border-radius: 7px; background: linear-gradient(100deg, rgba(10,25,47,0.06) 30%, rgba(10,25,47,0.13) 50%, rgba(10,25,47,0.06) 70%); background-size: 200% 100%; }
+    .dv-embed-skel span:nth-child(1) { width: 60%; height: 16px; }
+    .dv-embed-skel span:nth-child(2) { width: 100%; height: 70px; }
+    .dv-embed-skel span:nth-child(3) { width: 100%; height: 40px; }
+    .dv-embed-card { position: relative; background: #fff; border-radius: 14px; padding: 1.1rem; box-shadow: 0 12px 32px rgba(10,25,47,0.12); border: 1px solid rgba(10,25,47,0.06); opacity: 0; }
     .dv-embed-cardhead { display: flex; align-items: center; gap: 8px; margin-bottom: 0.9rem; }
     .dv-embed-brand { width: 26px; height: 26px; border-radius: 7px; background: linear-gradient(135deg,#f59e0b,#d97706); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 800; flex-shrink: 0; }
     .dv-embed-cardhead b { font-size: 0.8rem; color: #0a192f; flex: 1; }
-    .dv-embed-badge { font-size: 0.58rem; font-weight: 800; color: #10b981; background: rgba(16,185,129,0.12); padding: 3px 9px; border-radius: 100px; white-space: nowrap; }
+    .dv-embed-badge { font-size: 0.56rem; font-weight: 800; color: #d97706; background: rgba(245,158,11,0.14); padding: 3px 9px; border-radius: 100px; white-space: nowrap; transition: color 0.3s, background 0.3s; }
     .dv-embed-line { display: flex; justify-content: space-between; font-size: 0.74rem; color: #475569; padding: 6px 0; }
     .dv-embed-line .editorial { color: #0a192f; }
-    .dv-embed-total { display: flex; justify-content: space-between; align-items: center; margin-top: 0.6rem; padding-top: 0.8rem; border-top: 1px solid rgba(10,25,47,0.08); }
-    .dv-embed-total span { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; }
+    .dv-embed-total { display: flex; justify-content: space-between; align-items: center; margin: 0.6rem 0 0.9rem; padding-top: 0.8rem; border-top: 1px solid rgba(10,25,47,0.08); }
+    .dv-embed-total span { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; }
     .dv-embed-total b { font-size: 1.2rem; color: #0a192f; }
+    .dv-embed-approve { text-align: center; font-size: 0.78rem; font-weight: 700; color: #fff; background: #0a192f; border-radius: 10px; padding: 11px; }
+    .dv-embed-cursor { position: absolute; right: 34px; bottom: 16px; width: 20px; height: 20px; color: #0a192f; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.35)); opacity: 0; z-index: 5; }
+    .dv-embed-cursor svg { width: 100%; height: 100%; }
+    .dv-embed-event { display: flex; align-items: center; gap: 7px; padding: 9px 14px; background: rgba(10,25,47,0.96); font-family: ui-monospace, monospace; font-size: 0.62rem; color: #4ade80; border-top: 1px solid rgba(255,255,255,0.06); opacity: 0; }
+    .dv-embed-event i { width: 6px; height: 6px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px rgba(52,211,153,0.7); flex-shrink: 0; }
 
     /* ════════ STATS ════════ */
     .pp-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; max-width: 1080px; margin: 0 auto; padding: 5.5rem 5%; border-bottom: 1px solid var(--color-border); }

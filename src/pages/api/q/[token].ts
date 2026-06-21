@@ -67,21 +67,22 @@ export const POST: APIRoute = async ({ params, request }) => {
             ? `Firmado por "${signedBy || 'Anónimo'}" — aprobó ${firmadas.length} de ${allItems.length} líneas (${money(subAceptado)} de ${money(subTotal)}) (IP ${ip})`
             : (signedBy ? `Firmado digitalmente por "${signedBy}" (IP ${ip})` : 'El cliente aprobó la cotización desde el link');
 
-        await sql.begin(async (tx) => {
-            await tx`update cotizaciones set status = 'approved', approved_at = now() where id = ${c.id}`;
-            // Marca el estado de cada línea (solo cambia algo en aprobación parcial).
-            if (isPartial) {
-                for (const it of allItems) {
-                    const ok = accepted!.has(String(it.id));
-                    await tx`update cotizacion_items set aprobado = ${ok} where id = ${it.id} and cotizacion_id = ${c.id}`;
-                }
+        // El driver HTTP de Neon NO soporta sql.begin(callback); usa sql.transaction([...]).
+        const txQueries: any[] = [
+            sql`update cotizaciones set status = 'approved', approved_at = now() where id = ${c.id}`,
+        ];
+        // Marca el estado de cada línea (solo cambia algo en aprobación parcial).
+        if (isPartial) {
+            for (const it of allItems) {
+                const ok = accepted!.has(String(it.id));
+                txQueries.push(sql`update cotizacion_items set aprobado = ${ok} where id = ${it.id} and cotizacion_id = ${c.id}`);
             }
-
-            await tx`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                      values (${c.org_id}, ${c.id}, 'approved', ${detalle})`;
-            await tx`insert into cotizacion_firmas (org_id, cotizacion_id, firmante_nombre, firmante_email, firmante_ip, user_agent, snapshot_hash)
-                      values (${c.org_id}, ${c.id}, ${signedBy || 'Anónimo'}, ${email || null}, ${ip}, ${ua}, ${snapshotHash})`;
-        });
+        }
+        txQueries.push(sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                  values (${c.org_id}, ${c.id}, 'approved', ${detalle})`);
+        txQueries.push(sql`insert into cotizacion_firmas (org_id, cotizacion_id, firmante_nombre, firmante_email, firmante_ip, user_agent, snapshot_hash)
+                  values (${c.org_id}, ${c.id}, ${signedBy || 'Anónimo'}, ${email || null}, ${ip}, ${ua}, ${snapshotHash})`);
+        await (sql as any).transaction(txQueries);
         await dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.approved');
         return json({ ok: true, status: 'approved', hash: snapshotHash, partial: isPartial });
     }

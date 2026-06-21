@@ -1,223 +1,370 @@
 ---
+// DevBlockMockup — mockups de los bloques de /desarrolladores/[slug].
+// Mismo sistema visual "premium solid" que components/producto/BlockMockup.astro
+// (tarjetas navy sólidas, glow ambiental, pills flotantes, cursores falsos), pero
+// con escenas de API / MCP / Elements. Cada escena expone hooks (clases/ids) que
+// el <script> de [slug].astro anima como motion-graphic en loop.
 export interface Props {
     slug: string;
     index: number;
 }
-
 const { slug, index } = Astro.props;
 ---
-<div class="dbm-wrap">
+<div class={`dbm-wrap dbm-${slug}-${index}`}>
   <div class="dbm-mesh" aria-hidden="true"></div>
-  
-  <div class="dbm-stage">
-    {slug === 'api' && index === 0 && (
-      <div class="dbm-api-m0 dbm-card">
-        <div class="dbm-head">Data Flow</div>
-        <div class="dbm-flow-container">
-            <div class="dbm-node">ERP</div>
-            <div class="dbm-path"><div class="dbm-dot"></div></div>
+  <div class="dbm-glow" aria-hidden="true"></div>
+
+  {/* ══════════════════════ API ══════════════════════ */}
+  {slug === 'api' && index === 0 && (
+    <div class="dbm-stage dbm-api-m0">
+      <div class="dbm-floating dbm-float-top-right dbm-api0-pill">
+        <div class="dbm-pill"><i class="dbm-dot dbm-dot-green"></i><span>Sin recapturar</span></div>
+      </div>
+      <div class="dbm-card">
+        <div class="dbm-head"><span>Tu ERP</span><span>Cord</span></div>
+        <div class="dbm-sync">
+          <div class="dbm-sync-side">
+            <div class="dbm-node dbm-node-soft">ERP</div>
+          </div>
+          <div class="dbm-sync-rail">
+            <span class="dbm-rail-dot dbm-rail-r" id="apiSyncR"></span>
+            <span class="dbm-rail-dot dbm-rail-l" id="apiSyncL"></span>
+          </div>
+          <div class="dbm-sync-side">
             <div class="dbm-node dbm-brand">Cord</div>
+          </div>
+        </div>
+        <div class="dbm-sync-rows">
+          <div class="dbm-sync-row dbm-sync-row-in" id="apiSyncRow1"><span class="dbm-ar">→</span> Catálogo · 412 productos</div>
+          <div class="dbm-sync-row dbm-sync-row-out" id="apiSyncRow2"><span class="dbm-al">←</span> COT-0149 · aprobada</div>
         </div>
       </div>
-    )}
-    {slug === 'api' && index === 1 && (
-      <div class="dbm-api-m1 dbm-terminal">
-        <div class="dbm-head">Auth Header</div>
-        <div class="dbm-code">
-            <span class="dbm-prompt">$</span> curl -X GET \
-            <br>&nbsp;&nbsp;-H <span class="dbm-str">"Auth: Bearer sk_live_"</span><span class="dbm-cursor"></span>
-        </div>
+    </div>
+  )}
+
+  {slug === 'api' && index === 1 && (
+    <div class="dbm-stage dbm-api-m1">
+      <div class="dbm-floating dbm-float-bottom-right dbm-api1-revoke dbm-story-pill">
+        <div class="dbm-pill dbm-pill-danger"><i class="dbm-dot dbm-dot-red"></i><span>Revocada</span></div>
       </div>
-    )}
-    {slug === 'api' && index === 2 && (
-      <div class="dbm-api-m2 dbm-terminal">
-        <div class="dbm-head">Respuesta JSON</div>
-        <pre class="dbm-code"><code>{`{`}
+      <div class="dbm-card">
+        <div class="dbm-keychip" id="apiKey">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="3.5"/><path d="M10 13l8-8 3 3M16 7l2 2"/></svg>
+          <span class="dbm-keyval">sk_live_8f2a••••••••</span>
+        </div>
+        <div class="dbm-scopes">
+          <div class="dbm-scope"><i class="dbm-scope-check">✓</i><span>read</span><b>consultar</b></div>
+          <div class="dbm-scope"><i class="dbm-scope-check">✓</i><span>write</span><b>crear</b></div>
+        </div>
+        <div class="dbm-divider"></div>
+        <div class="dbm-reqline"><span>GET /cotizaciones</span><b class="dbm-status" id="apiAuthStatus">200 OK</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'api' && index === 2 && (
+    <div class="dbm-stage dbm-api-m2">
+      <div class="dbm-terminal">
+        <div class="dbm-seg dbm-api-tabs">
+          <span class="dbm-seg-on">cotizaciones</span><span>clientes</span><span>productos</span><span>cobranza</span>
+        </div>
+        <pre class="dbm-code dbm-api-json" id="apiJson"><code>{`{`}
   <span class="dbm-key">"folio"</span>: <span class="dbm-str">"COT-0149"</span>,
+  <span class="dbm-key">"status"</span>: <span class="dbm-str">"sent"</span>,
   <span class="dbm-key">"total"</span>: <span class="dbm-num dbm-hl-target">196469.2</span>
 {`}`}</code></pre>
+        <div class="dbm-meta"><span>limit 50 · offset 0</span><span class="dbm-meta-total">total 412</span></div>
       </div>
-    )}
+    </div>
+  )}
 
-    {slug === 'mcp' && index === 0 && (
-      <div class="dbm-mcp-m0 dbm-card">
+  {/* ══════════════════════ MCP ══════════════════════ */}
+  {slug === 'mcp' && index === 0 && (
+    <div class="dbm-stage dbm-mcp-m0">
+      <div class="dbm-floating dbm-float-top-right">
+        <div class="dbm-pill dbm-pill-brand"><span>JSON-RPC 2.0</span></div>
+      </div>
+      <div class="dbm-card">
         <div class="dbm-head"><span>Cord como servidor</span></div>
-        <div class="dbm-seg">
-            <span class="dbm-seg-on">HTTP · JSON-RPC</span>
-            <span>SSE</span>
+        <div class="dbm-seg dbm-mcp-transports">
+          <span class="dbm-seg-on" id="mcpT0">HTTP</span><span id="mcpT1">SSE</span>
         </div>
         <div class="dbm-toollist">
-            <div class="dbm-toolrow"><i></i>listar_cotizaciones</div>
-            <div class="dbm-toolrow"><i></i>cartera_vencida</div>
-            <div class="dbm-toolrow"><i></i>buscar_cliente</div>
-            <div class="dbm-toolrow"><i></i>crear_cotizacion_borrador</div>
+          <div class="dbm-toolrow"><i></i>listar_cotizaciones</div>
+          <div class="dbm-toolrow"><i></i>cartera_vencida</div>
+          <div class="dbm-toolrow"><i></i>resumen_negocio</div>
+          <div class="dbm-toolrow"><i></i>buscar_cliente</div>
+          <div class="dbm-toolrow"><i></i>listar_productos</div>
+          <div class="dbm-toolrow"><i></i>detalle_cotizacion</div>
+          <div class="dbm-toolrow dbm-toolrow-write"><i></i>crear_cotizacion_borrador<b>write</b></div>
         </div>
       </div>
-    )}
-    {slug === 'mcp' && index === 1 && (
-      <div class="dbm-mcp-m1 dbm-card">
-        <div class="dbm-head"><span>Cord como cliente</span></div>
-        <div class="dbm-flow-container">
-            <div class="dbm-node dbm-brand">Cord</div>
-            <div class="dbm-path"><div class="dbm-dot"></div></div>
-            <div class="dbm-node">CRM</div>
-        </div>
-        <div class="dbm-code dbm-log-lines dbm-mcp-log">
-            <div class="dbm-log-1">conectando…</div>
-            <div class="dbm-log-2">listTools() → 4 tools</div>
-            <div class="dbm-log-3 dbm-success">contexto recibido</div>
-        </div>
-      </div>
-    )}
-    {slug === 'mcp' && index === 2 && (
-      <div class="dbm-mcp-m2 dbm-card">
-        <div class="dbm-head"><span>Gobernanza</span><span>RLS · por org</span></div>
-        <div class="dbm-gov">
-            <div class="dbm-gov-row"><span>Servidor A</span><span class="dbm-gov-pill dbm-gov-on">permitido</span></div>
-            <div class="dbm-gov-row dbm-gov-target"><span>CRM externo</span><span class="dbm-gov-pill dbm-gov-off" id="govPill">sin acceso</span></div>
-            <div class="dbm-gov-row"><span>Servidor C</span><span class="dbm-gov-pill dbm-gov-off">sin acceso</span></div>
-        </div>
-      </div>
-    )}
+    </div>
+  )}
 
-    {slug === 'elements' && index === 0 && (
-      <div class="dbm-el-m0 dbm-terminal">
+  {slug === 'mcp' && index === 1 && (
+    <div class="dbm-stage dbm-mcp-m1">
+      <div class="dbm-floating dbm-float-top-left">
+        <div class="dbm-pill"><i class="dbm-dot dbm-dot-blue"></i><span>max 5 vueltas</span></div>
+      </div>
+      <div class="dbm-card">
+        <div class="dbm-head"><span>Cord como cliente</span></div>
+        <div class="dbm-sync">
+          <div class="dbm-sync-side"><div class="dbm-node dbm-brand">Cord</div></div>
+          <div class="dbm-sync-rail"><span class="dbm-rail-dot dbm-rail-r" id="mcpClientDot"></span></div>
+          <div class="dbm-sync-side"><div class="dbm-node dbm-node-ext">CRM</div></div>
+        </div>
+        <div class="dbm-log" id="mcpClientLog">
+          <div>conectando…</div>
+          <div>listTools() → 4 tools</div>
+          <div class="dbm-success">contexto recibido ✓</div>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'mcp' && index === 2 && (
+    <div class="dbm-stage dbm-mcp-m2">
+      <div class="dbm-floating dbm-float-top-right">
+        <div class="dbm-pill"><i class="dbm-dot dbm-dot-green"></i><span>RLS · por org</span></div>
+      </div>
+      <div class="dbm-card">
+        <div class="dbm-head"><span>Gobernanza</span><span>Asistente Cord</span></div>
+        <div class="dbm-gov">
+          <div class="dbm-gov-row"><span>Servidor A · ventas</span><span class="dbm-gov-pill dbm-gov-on">permitido</span></div>
+          <div class="dbm-gov-row dbm-gov-target"><span>CRM externo</span><span class="dbm-gov-pill dbm-gov-off" id="mcpGovPill">sin acceso</span></div>
+          <div class="dbm-gov-row"><span>Servidor C · finanzas</span><span class="dbm-gov-pill dbm-gov-off">sin acceso</span></div>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* ══════════════════════ ELEMENTS ══════════════════════ */}
+  {slug === 'elements' && index === 0 && (
+    <div class="dbm-stage dbm-el-m0">
+      <div class="dbm-floating dbm-float-top-right">
+        <div class="dbm-pill"><i class="dbm-dot dbm-dot-blue"></i><span>Altura automática</span></div>
+      </div>
+      <div class="dbm-terminal">
         <div class="dbm-head"><span>Una línea de código</span></div>
         <div class="dbm-code">
-            <span class="dbm-prompt">&lt;script</span> src=<span class="dbm-str">"…/embed.js"</span><span class="dbm-prompt">&gt;</span><br/>
-            <span class="dbm-prompt">&lt;div</span> data-cord-cotizador<span class="dbm-prompt">&gt;</span><span class="dbm-cursor"></span>
+          <span class="dbm-tag-lt">&lt;script</span> src=<span class="dbm-str">"…/embed.js"</span><span class="dbm-tag-lt">&gt;</span><br/>
+          <span class="dbm-tag-lt">&lt;div</span> data-cord-cotizador<span class="dbm-tag-lt">&gt;</span><span class="dbm-cursor"></span>
         </div>
         <div class="dbm-el-preview">
-            <div class="dbm-el-skel" id="elSkel"></div>
-            <div class="dbm-el-mini" id="elMini"><span>Cotización</span><b class="editorial">$196k</b></div>
+          <div class="dbm-el-skel" id="elSkel"></div>
+          <div class="dbm-el-mini" id="elMini"><span>Cotización lista</span><b class="editorial">$196k</b></div>
         </div>
       </div>
-    )}
-    {slug === 'elements' && index === 1 && (
-      <div class="dbm-el-m1 dbm-terminal">
+    </div>
+  )}
+
+  {slug === 'elements' && index === 1 && (
+    <div class="dbm-stage dbm-el-m1">
+      <div class="dbm-terminal">
         <div class="dbm-seg dbm-el-tabs">
-            <span class="dbm-seg-on">HTML</span><span>React</span><span>Web Component</span>
+          <span class="dbm-seg-on">HTML</span><span>React</span><span>Web Component</span>
         </div>
         <div class="dbm-code dbm-el-code" id="elCode">
-            <span class="dbm-prompt">&lt;script src=</span><span class="dbm-str">"…/embed.js"</span><span class="dbm-prompt">&gt;</span>
+          <span class="dbm-tag-lt">&lt;script src=</span><span class="dbm-str">"…/embed.js"</span><span class="dbm-tag-lt">&gt;</span>
         </div>
-        <div class="dbm-el-pkg">npm @flouviahq/elements</div>
+        <div class="dbm-el-pkg">npm i @flouviahq/elements</div>
       </div>
-    )}
-    {slug === 'elements' && index === 2 && (
-      <div class="dbm-el-m2">
-        <div class="dbm-el-card">
-            <div class="dbm-el-cardhead"><span class="dbm-el-brand">MV</span><b>Tu cotización</b><span class="dbm-el-badge" id="elBadge">Revisar</span></div>
-            <div class="dbm-el-line"><span>Total con IVA</span><b class="editorial">$196,469.20</b></div>
-            <div class="dbm-el-approve" id="elApprove">Aprobar</div>
-        </div>
-        <div class="dbm-el-csp">frame-ancestors: tudominio.com</div>
-        <div class="dbm-el-cursor" id="elCursor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg></div>
-      </div>
-    )}
+    </div>
+  )}
 
-  </div>
+  {slug === 'elements' && index === 2 && (
+    <div class="dbm-stage dbm-el-m2">
+      <div class="dbm-floating dbm-float-top-right dbm-el2-event dbm-story-pill">
+        <div class="dbm-pill dbm-pill-brand"><span>cord:approved</span></div>
+      </div>
+      <div class="dbm-el-card">
+        <div class="dbm-el-cardhead"><span class="dbm-el-brand">MV</span><b>Tu cotización</b><span class="dbm-el-badge" id="elBadge">Revisar</span></div>
+        <div class="dbm-el-line"><span>Total con IVA</span><b class="editorial">$196,469.20</b></div>
+        <div class="dbm-el-approve" id="elApprove">Aprobar</div>
+      </div>
+      <div class="dbm-el-csp">frame-ancestors: tudominio.com</div>
+      <div class="dbm-fake-cursor" id="elCursor">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 2l12 11.2-5.8.5 3.3 7.3-2.25 1-3.2-7.4-4.4 4.7z"/></svg>
+      </div>
+    </div>
+  )}
 </div>
 
 <style>
+  /* PREMIUM SOLID MOCKUP SYSTEM — espejo de components/producto/BlockMockup.astro */
   .dbm-wrap {
-    position: relative; width: 100%; height: 100%; min-height: 240px;
+    position: relative; width: 100%; height: 100%; min-height: 280px;
     display: flex; align-items: center; justify-content: center;
-    overflow: hidden; padding: 1.5rem; background: transparent;
+    overflow: visible; padding: 2rem 1.5rem; background: transparent;
   }
   .dbm-mesh {
-    position: absolute; inset: -50%;
+    position: absolute; inset: -30%;
     background:
-      radial-gradient(circle at 50% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 40%),
-      radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.12) 0%, transparent 40%);
-    filter: blur(40px); opacity: 0.8;
-    pointer-events: none;
+      radial-gradient(ellipse 55% 50% at 30% 25%, rgba(59,130,246,0.09) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 55% at 75% 70%, rgba(16,185,129,0.06) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 50% at 50% 50%, rgba(10,25,47,0.08) 0%, transparent 50%);
+    filter: blur(30px); pointer-events: none;
   }
+  .dbm-glow {
+    position: absolute; inset: 10% -5%;
+    background: radial-gradient(ellipse at center, rgba(10,25,47,0.12) 0%, transparent 65%);
+    filter: blur(25px); pointer-events: none; z-index: 0;
+  }
+  .dbm-stage { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; max-width: 330px; z-index: 2; }
 
-  .dbm-stage { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; max-width: 260px; z-index: 2; }
+  /* Floating pills */
+  .dbm-floating { position: absolute; z-index: 10; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3)); }
+  .dbm-story-pill { opacity: 0; }
+  .dbm-float-top-right { top: -6px; right: -6px; transform: translate(10%, -45%); }
+  .dbm-float-top-left { top: -6px; left: -6px; transform: translate(-10%, -45%); }
+  .dbm-float-bottom-right { bottom: -6px; right: -6px; transform: translate(10%, 45%); }
+  .dbm-float-bottom-left { bottom: -6px; left: -6px; transform: translate(-10%, 45%); }
 
+  /* Solid dark card / terminal */
   .dbm-card, .dbm-terminal {
-    background: rgba(10, 25, 47, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-    border-radius: 12px; padding: 1rem; width: 100%;
-    color: #f8fafc; font-size: 0.7rem; font-weight: 500;
+    background: linear-gradient(165deg, #0e2240 0%, #0a192f 60%, #081424 100%);
+    border: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1), 0 20px 40px -10px rgba(5,11,20,0.55), inset 0 1px 0 rgba(255,255,255,0.08);
+    border-radius: 14px; padding: 1.1rem; width: 100%; color: #f8fafc;
+    font-size: 0.72rem; font-weight: 500; position: relative;
   }
+  .dbm-terminal { font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+  .editorial { font-family: var(--font-mono, ui-monospace, monospace); letter-spacing: -0.2px; }
+  b { font-weight: 700; color: #fff; }
 
-  .dbm-head {
-    display: flex; justify-content: space-between; font-size: 0.65rem;
-    text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.4);
-    margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;
+  .dbm-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(255,255,255,0.4); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .dbm-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 10px 0; }
+
+  /* Pills */
+  .dbm-pill {
+    background: #0f172a; border: 1px solid rgba(255,255,255,0.08);
+    padding: 6px 12px; border-radius: 100px; display: flex; align-items: center; gap: 6px;
+    font-size: 0.62rem; font-weight: 600; white-space: nowrap; color: #e2e8f0;
   }
+  .dbm-pill-brand { background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; color: #fff; box-shadow: 0 4px 12px rgba(37,99,235,0.3); font-family: ui-monospace, monospace; }
+  .dbm-pill-danger { background: rgba(127,29,29,0.6); border-color: rgba(239,68,68,0.35); color: #fecaca; }
+  .dbm-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .dbm-dot-blue { background: #60a5fa; box-shadow: 0 0 6px rgba(96,165,250,0.6); }
+  .dbm-dot-green { background: #34d399; box-shadow: 0 0 6px rgba(52,211,153,0.6); }
+  .dbm-dot-red { background: #f87171; box-shadow: 0 0 6px rgba(248,113,113,0.6); }
 
-  .dbm-code { font-family: var(--font-mono, monospace); line-height: 1.6; }
-  .dbm-prompt { color: #ec4899; }
+  /* Code / syntax */
+  .dbm-code { line-height: 1.65; font-size: 0.66rem; }
+  .dbm-tag-lt { color: #ec4899; }
   .dbm-str { color: #34d399; }
   .dbm-key { color: #93c5fd; }
   .dbm-num { color: #fcd34d; }
-  .dbm-cursor { display: inline-block; width: 6px; height: 12px; background: #fff; vertical-align: middle; margin-left: 2px; }
-  
-  /* Flows & Chat */
-  .dbm-flow-container { display: flex; align-items: center; justify-content: space-between; }
-  .dbm-node { background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); }
-  .dbm-node.dbm-brand { background: rgba(59,130,246,0.15); border-color: #3b82f6; color: #93c5fd; }
-  .dbm-path { flex: 1; height: 2px; background: rgba(255,255,255,0.1); margin: 0 10px; position: relative; }
-  .dbm-dot { position: absolute; top: -3px; left: 0; width: 8px; height: 8px; background: #3b82f6; border-radius: 50%; box-shadow: 0 0 10px #3b82f6; }
+  .dbm-cursor { display: inline-block; width: 6px; height: 12px; background: #fff; vertical-align: middle; margin-left: 2px; animation: dbm-blink 1s step-end infinite; }
+  @keyframes dbm-blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
 
-  .dbm-pulse-line { stroke-dasharray: 40; stroke-dashoffset: 40; }
-  .dbm-success { color: #34d399; }
-  
-  .dbm-chat-bubble {
-    background: rgba(255,255,255,0.05); padding: 12px; border-radius: 10px 10px 10px 2px;
-    line-height: 1.5; border: 1px solid rgba(255,255,255,0.05);
-  }
-  .dbm-chat-bubble b { color: #fff; }
+  /* Nodes + sync rail (api-0, mcp-1) */
+  .dbm-sync { display: flex; align-items: center; gap: 10px; }
+  .dbm-sync-side { flex-shrink: 0; }
+  .dbm-node { background: rgba(255,255,255,0.05); padding: 7px 13px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.68rem; font-weight: 600; }
+  .dbm-node-soft { color: rgba(255,255,255,0.8); }
+  .dbm-node.dbm-brand { background: rgba(59,130,246,0.15); border-color: #3b82f6; color: #93c5fd; box-shadow: 0 0 18px rgba(59,130,246,0.18); }
+  .dbm-node-ext { color: #34d399; border-color: rgba(52,211,153,0.3); }
+  .dbm-sync-rail { flex: 1; height: 2px; background: rgba(255,255,255,0.1); position: relative; }
+  .dbm-rail-dot { position: absolute; top: -3px; width: 8px; height: 8px; border-radius: 50%; opacity: 0; }
+  .dbm-rail-r { left: 0; background: #3b82f6; box-shadow: 0 0 10px #3b82f6; }
+  .dbm-rail-l { left: 0; background: #34d399; box-shadow: 0 0 10px #34d399; }
 
-  /* ── Segmented control (MCP transports / Elements tabs) ── */
-  .dbm-seg { display: inline-flex; background: rgba(255,255,255,0.04); border-radius: 9px; padding: 3px; gap: 2px; margin-bottom: 12px; }
-  .dbm-seg span { font-size: 0.6rem; font-weight: 600; color: rgba(255,255,255,0.45); padding: 5px 10px; border-radius: 7px; white-space: nowrap; }
+  /* api-0 sync rows */
+  .dbm-sync-rows { margin-top: 12px; display: flex; flex-direction: column; gap: 5px; }
+  .dbm-sync-row { font-size: 0.64rem; padding: 7px 10px; border-radius: 8px; background: rgba(255,255,255,0.025); color: rgba(255,255,255,0.78); opacity: 0; }
+  .dbm-sync-row .dbm-ar { color: #60a5fa; font-weight: 800; }
+  .dbm-sync-row .dbm-al { color: #34d399; font-weight: 800; }
+
+  /* api-1 auth */
+  .dbm-keychip { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 10px; background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.18); margin-bottom: 12px; transition: opacity 0.3s; }
+  .dbm-keychip svg { width: 16px; height: 16px; color: #93c5fd; flex-shrink: 0; }
+  .dbm-keyval { font-family: ui-monospace, monospace; font-size: 0.66rem; color: #cbd5e1; letter-spacing: 0.5px; }
+  .dbm-key-revoked { opacity: 0.4; }
+  .dbm-key-revoked .dbm-keyval { text-decoration: line-through; color: #f87171; }
+  .dbm-scopes { display: flex; gap: 8px; }
+  .dbm-scope { flex: 1; display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 9px; background: rgba(255,255,255,0.025); font-size: 0.62rem; }
+  .dbm-scope span { font-family: ui-monospace, monospace; color: #93c5fd; }
+  .dbm-scope b { color: rgba(255,255,255,0.55); font-weight: 500; font-size: 0.58rem; margin-left: auto; }
+  .dbm-scope-check { width: 14px; height: 14px; border-radius: 50%; background: #10b981; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.5rem; font-style: normal; font-weight: 800; }
+  .dbm-reqline { display: flex; justify-content: space-between; align-items: center; font-family: ui-monospace, monospace; font-size: 0.64rem; color: rgba(255,255,255,0.6); }
+  .dbm-status { font-weight: 700; color: #34d399; }
+  .dbm-status-fail { color: #f87171; }
+
+  /* api-2 json */
+  .dbm-api-json { margin: 0; }
+  .dbm-api-json code { font-family: ui-monospace, monospace; font-size: 0.66rem; line-height: 1.7; color: rgba(255,255,255,0.82); white-space: pre; }
+  .dbm-hl-target { transition: color 0.3s, text-shadow 0.3s; }
+  .dbm-meta { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); font-family: ui-monospace, monospace; font-size: 0.58rem; color: rgba(255,255,255,0.4); }
+  .dbm-meta-total { color: #93c5fd; }
+
+  /* Segmented control (api-2 tabs, mcp transports, el tabs) */
+  .dbm-seg { display: inline-flex; background: rgba(255,255,255,0.04); border-radius: 9px; padding: 3px; gap: 2px; margin-bottom: 12px; flex-wrap: wrap; }
+  .dbm-seg span { font-size: 0.58rem; font-weight: 600; color: rgba(255,255,255,0.45); padding: 5px 9px; border-radius: 7px; white-space: nowrap; transition: color 0.25s, background 0.25s; }
   .dbm-seg .dbm-seg-on { background: rgba(59,130,246,0.2); color: #93c5fd; box-shadow: inset 0 0 0 1px rgba(59,130,246,0.3); }
 
-  /* ── MCP servidor: lista de tools ── */
-  .dbm-toollist { display: flex; flex-direction: column; gap: 5px; }
-  .dbm-toolrow { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono, monospace); font-size: 0.66rem; color: rgba(255,255,255,0.75); padding: 6px 9px; border-radius: 7px; background: rgba(255,255,255,0.025); }
+  /* mcp-0 tool list */
+  .dbm-toollist { display: flex; flex-direction: column; gap: 4px; }
+  .dbm-toolrow { display: flex; align-items: center; gap: 8px; font-family: ui-monospace, monospace; font-size: 0.62rem; color: rgba(255,255,255,0.78); padding: 5px 9px; border-radius: 7px; background: rgba(255,255,255,0.025); }
   .dbm-toolrow i { width: 6px; height: 6px; border-radius: 50%; background: #34d399; box-shadow: 0 0 6px rgba(52,211,153,0.6); flex-shrink: 0; }
+  .dbm-toolrow-write b { margin-left: auto; font-size: 0.5rem; font-weight: 700; color: #fbbf24; background: rgba(245,158,11,0.14); padding: 2px 6px; border-radius: 5px; }
 
-  /* ── MCP cliente: log ── */
-  .dbm-mcp-log { margin-top: 12px; display: flex; flex-direction: column; gap: 3px; }
-  .dbm-mcp-log > div { font-size: 0.62rem; }
+  /* mcp-1 log */
+  .dbm-log { margin-top: 12px; display: flex; flex-direction: column; gap: 3px; font-family: ui-monospace, monospace; }
+  .dbm-log > div { font-size: 0.6rem; color: rgba(255,255,255,0.6); opacity: 0; }
+  .dbm-success { color: #34d399; }
 
-  /* ── MCP gobernanza: tabla de permisos ── */
+  /* mcp-2 governance */
   .dbm-gov { display: flex; flex-direction: column; gap: 5px; }
-  .dbm-gov-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,0.025); font-size: 0.68rem; color: rgba(255,255,255,0.75); }
-  .dbm-gov-target { background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.12); }
-  .dbm-gov-pill { font-size: 0.55rem; font-weight: 700; padding: 3px 9px; border-radius: 100px; }
+  .dbm-gov-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,0.025); font-size: 0.66rem; color: rgba(255,255,255,0.75); }
+  .dbm-gov-target { background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.14); }
+  .dbm-gov-pill { font-size: 0.54rem; font-weight: 700; padding: 3px 9px; border-radius: 100px; white-space: nowrap; }
   .dbm-gov-on { color: #34d399; background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.25); }
   .dbm-gov-off { color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); }
 
-  /* ── Elements M0: preview skeleton → card ── */
+  /* el-0 preview */
   .dbm-el-preview { position: relative; margin-top: 12px; height: 50px; border-radius: 9px; overflow: hidden; }
-  .dbm-el-skel { position: absolute; inset: 0; border-radius: 9px; background: rgba(255,255,255,0.05); background-image: linear-gradient(100deg, transparent 30%, rgba(255,255,255,0.08) 50%, transparent 70%); background-size: 200% 100%; }
+  .dbm-el-skel { position: absolute; inset: 0; border-radius: 9px; background: rgba(255,255,255,0.05); background-image: linear-gradient(100deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%); background-size: 200% 100%; }
   .dbm-el-mini { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; border-radius: 9px; background: #fff; color: #0a192f; opacity: 0; }
-  .dbm-el-mini span { font-size: 0.68rem; color: #64748b; font-weight: 600; }
+  .dbm-el-mini span { font-size: 0.66rem; color: #64748b; font-weight: 600; }
   .dbm-el-mini b { font-size: 0.9rem; color: #0a192f; }
 
-  /* ── Elements M1: tabs + código ── */
-  .dbm-el-code { min-height: 34px; font-size: 0.6rem; }
-  .dbm-el-pkg { margin-top: 12px; font-family: var(--font-mono, monospace); font-size: 0.6rem; color: #93c5fd; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); padding: 5px 10px; border-radius: 7px; display: inline-block; }
+  /* el-1 code */
+  .dbm-el-code { min-height: 34px; font-size: 0.6rem; transition: opacity 0.18s; }
+  .dbm-el-pkg { margin-top: 12px; font-family: ui-monospace, monospace; font-size: 0.6rem; color: #93c5fd; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); padding: 5px 10px; border-radius: 7px; display: inline-block; }
 
-  /* ── Elements M2: cotizador embebido (claro) ── */
+  /* el-2 embedded card (light) */
   .dbm-el-m2 { position: relative; width: 100%; }
-  .dbm-el-card { background: #fff; border-radius: 12px; padding: 0.9rem; box-shadow: 0 14px 34px rgba(2,6,12,0.5); }
+  .dbm-el-card { background: #fff; border-radius: 12px; padding: 0.95rem; box-shadow: 0 14px 34px rgba(2,6,12,0.5); }
   .dbm-el-cardhead { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
   .dbm-el-brand { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg,#f59e0b,#d97706); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.52rem; font-weight: 800; }
   .dbm-el-cardhead b { font-size: 0.72rem; color: #0a192f; flex: 1; }
-  .dbm-el-badge { font-size: 0.52rem; font-weight: 800; padding: 3px 8px; border-radius: 100px; color: #d97706; background: rgba(245,158,11,0.14); white-space: nowrap; }
+  .dbm-el-badge { font-size: 0.52rem; font-weight: 800; padding: 3px 8px; border-radius: 100px; color: #d97706; background: rgba(245,158,11,0.14); white-space: nowrap; transition: background 0.3s, color 0.3s; }
   .dbm-el-line { display: flex; justify-content: space-between; align-items: center; font-size: 0.68rem; color: #475569; padding: 6px 0 10px; }
   .dbm-el-line .editorial { color: #0a192f; font-weight: 600; }
   .dbm-el-approve { text-align: center; font-size: 0.7rem; font-weight: 700; color: #fff; background: #0a192f; border-radius: 8px; padding: 9px; }
-  .dbm-el-csp { margin-top: 10px; font-family: var(--font-mono, monospace); font-size: 0.55rem; color: rgba(52,211,153,0.8); text-align: center; }
-  .dbm-el-cursor { position: absolute; bottom: 38px; right: 26px; width: 18px; height: 18px; color: #0a192f; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); z-index: 5; }
-  .dbm-el-cursor svg { width: 100%; height: 100%; }
+  .dbm-el-csp { margin-top: 10px; font-family: ui-monospace, monospace; font-size: 0.55rem; color: rgba(52,211,153,0.8); text-align: center; }
+
+  /* fake cursor */
+  .dbm-fake-cursor { position: absolute; z-index: 50; bottom: 40px; right: 28px; width: 20px; height: 20px; color: #0a192f; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4)); opacity: 0; pointer-events: none; }
+  .dbm-fake-cursor svg { width: 100%; height: 100%; }
+
+  @media (max-width: 860px) {
+    .dbm-wrap { min-height: 230px; padding: 1.5rem 1rem; }
+    .dbm-stage { max-width: 300px; }
+    .dbm-float-top-right, .dbm-float-bottom-right { right: 0; transform: translate(4%, -38%); }
+    .dbm-float-top-left, .dbm-float-bottom-left { left: 0; transform: translate(-4%, -38%); }
+    .dbm-float-bottom-right, .dbm-float-bottom-left { transform: translate(4%, 38%); }
+  }
+</style>
+
+<!-- Colores de sintaxis para el código que el <script> de [slug].astro inyecta en runtime
+     (innerHTML). El DOM inyectado NO lleva el data-attr de scope de Astro, así que estas
+     reglas DEBEN ser globales o no pintarían. (Ver regla del proyecto sobre DOM inyectado.) -->
+<style is:global>
+  .dbm-tag-lt { color: #ec4899; }
+  .dbm-str { color: #34d399; }
+  .dbm-key { color: #93c5fd; }
+  .dbm-num { color: #fcd34d; }
+  .dbm-hl-target { transition: color 0.3s; }
 </style>
