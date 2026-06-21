@@ -79,6 +79,11 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
 
 ## Estado actual (jun 2026)
 
+✅ **Rediseño Premium B2B del Blog y Microinteracciones (jun 2026)** — Elevando la estética a "Top Top / Quiet Luxury":
+   • **TOC Scrollspy Animado (Left Sidebar):** Rediseño ultra-premium del índice flotante. Se usa un track vertical sutil con una píldora indicadora (`toc-indicator`) que navega dinámicamente con transiciones `cubic-bezier`. Los enlaces del índice presentan un elegante micro-desplazamiento lateral (`translateX(4px)`) en hover/activo. Bug crítico solucionado: se removió un `position: relative` en `.toc-container` que rompía el comportamiento global de `position: sticky`.
+   • **Botones de Redes Expansivos (Right Sidebar):** La barra de compartir (`.share-pill`) se transformó en botones circulares de `44x44px` que se expanden magnéticamente a `140px` al hacer hover. Se utilizó `position: absolute` para garantizar que el texto interior haga un "fade in" impecable sin moverse físicamente en el DOM. Función de portapapeles en JS con estado de éxito ("¡Copiado!").
+   • **Layout Grid Ajustado:** Se forzó un canvas puramente blanco (`#ffffff`) para la vista de artículo, removiendo distracciones. El contenedor principal grid ahora aplica `align-items: flex-start` a las barras laterales para permitirles flotar el 100% de la longitud del contenedor padre (resolviendo colapsos de flex-stretch).
+   
 ✅ **Nuevas páginas de Blog y Planes de Soporte (jun 2026)** — rediseño del landing para mejor conversión B2B:
    • **Blog dedicado (`/blog`):** Se eliminó "Cómo funciona" de la navegación global y se reemplazó por la landing del Blog. Estética ultra-premium con grid de artículos (hero glassmorphism, orbes). Además, **migramos a Astro Content Collections:** los artículos ahora viven como archivos Markdown independientes (`src/content/blog/*.md`) que generan rutas dinámicas (`/blog/[slug]`) con un layout hiper-limpio estilo editorial y un Bento Grid de captura de leads al pie (inspirado en Stripe).
    • **Página de Cómo Funciona Mejorada:** Se reconstruyó `/como-funciona` con un nuevo hero que incluye un mockup flotante interactivo de aprobación de cotizaciones, y un grid de características clave estilo Stripe.

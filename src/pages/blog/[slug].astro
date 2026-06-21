@@ -432,19 +432,21 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
     
     .share-btn {
         width: 44px; height: 44px; border-radius: 22px; border: none;
-        display: flex; align-items: center; justify-content: flex-start;
+        display: block;
         background: transparent; color: #6b7280; cursor: pointer;
         transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); text-decoration: none; position: relative;
         overflow: hidden; padding: 0; box-sizing: border-box;
     }
     
     .share-icon {
-        width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        position: absolute; left: 0; top: 0;
+        width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
     }
     .share-icon svg { width: 18px; height: 18px; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 
     .share-text {
-        font-size: 0.8rem; font-weight: 600; white-space: nowrap; padding-right: 16px;
+        position: absolute; left: 44px; top: 50%; transform: translateY(-50%);
+        font-size: 0.8rem; font-weight: 600; white-space: nowrap;
         opacity: 0; transition: opacity 0.3s ease;
     }
     
