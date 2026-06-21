@@ -48,12 +48,17 @@ const hasArticles = categoryArticles.length > 0;
             
             <div class="cat-content reveal">
                 {hasArticles ? (
-                    <div class="articles-grid">
+                    <div class="articles-list">
                         {categoryArticles.map(article => (
-                            <a href={`/soporte/${article.id}`} class="article-card">
-                                <h3>{article.data.title}</h3>
-                                <p>{article.data.description}</p>
-                                <span class="read-more">Leer artículo →</span>
+                            <a href={`/soporte/${article.id}`} class="article-row">
+                                <div class="row-content">
+                                    <h3>{article.data.title}</h3>
+                                    <p>{article.data.description}</p>
+                                </div>
+                                <svg class="row-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
                             </a>
                         ))}
                     </div>
@@ -166,50 +171,52 @@ const hasArticles = categoryArticles.length > 0;
         line-height: 1.5;
     }
     
-    /* Articles Grid */
-    .articles-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-        gap: 24px;
-        margin-bottom: 6rem;
-    }
-    .article-card {
+    /* Articles List (Minimalist) */
+    .articles-list {
         display: flex;
         flex-direction: column;
-        padding: 2.5rem;
-        background: #ffffff;
-        border: 1px solid var(--color-border);
-        border-radius: 24px;
+        border-top: 1px solid var(--color-border);
+        margin-bottom: 6rem;
+    }
+    .article-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 2rem 0;
+        border-bottom: 1px solid var(--color-border);
         text-decoration: none;
-        transition: all 0.4s var(--ease-spring);
-        position: relative;
-        overflow: hidden;
+        transition: all 0.3s ease;
     }
-    .article-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 20px 40px -10px rgba(10, 25, 47, 0.08);
-        border-color: rgba(10, 25, 47, 0.15);
+    .article-row:hover {
+        background-color: transparent;
     }
-    .article-card h3 {
-        font-size: 1.4rem;
-        font-weight: 700;
-        color: var(--color-blue-deep);
-        margin: 0 0 1rem 0;
-        letter-spacing: -0.02em;
-    }
-    .article-card p {
-        font-size: 1.05rem;
-        color: var(--color-text-muted);
-        margin: 0 0 2rem 0;
-        line-height: 1.6;
-        flex-grow: 1;
-    }
-    .read-more {
+    .row-content h3 {
+        font-size: 1.2rem;
         font-weight: 600;
-        font-size: 0.95rem;
+        color: var(--color-text);
+        margin: 0 0 0.5rem 0;
+        transition: color 0.2s ease;
+    }
+    .row-content p {
+        font-size: 1rem;
+        color: var(--color-text-muted);
+        margin: 0;
+        line-height: 1.5;
+        max-width: 80%;
+    }
+    .article-row:hover .row-content h3 {
         color: var(--color-blue-deep);
-        margin-top: auto;
-        display: inline-block;
+    }
+    .row-arrow {
+        width: 24px;
+        height: 24px;
+        color: var(--color-text-muted);
+        transition: transform 0.3s var(--ease-spring), color 0.2s ease;
+        flex-shrink: 0;
+    }
+    .article-row:hover .row-arrow {
+        transform: translateX(6px);
+        color: var(--color-blue-deep);
     }
     
     /* Premium Empty State */
