@@ -73,6 +73,12 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
 
 ## Estado actual (jun 2026)
 
+✅ **Centro de Ayuda de Clase Mundial (jun 2026)** — rediseño y reescritura masiva de `/soporte`:
+   • **Reescritura Manual de 61 Artículos:** Eliminamos TODAS las plantillas genéricas. Se escribieron 61 archivos JSON (inyectados a Markdown) con contenido profundo, real, y específico para B2B. Aclaración clave de negocio: **Cord NO cobra comisiones por transacción**, todo el procesamiento se delega a la llave conectada de Stripe (Payouts, Disputas, FX), y Cord factura el SaaS (excedentes de CFDI/IA).
+   • **Buscador Instantáneo (Cmd+K):** Endpoint en `/api/support-search.json` (prerendered) expone el índice. Componente `SupportSearch.astro` con Vanilla JS y `fuse.js`-like filtering inyectado en el nav/hero. Filtra por título y descripción instantáneamente sin recargas.
+   • **Tabla de Contenidos Automática (Scrollspy):** `[slug].astro` lee H2/H3 (`headings.filter(...)`). El grid cambió de 2 a 3 columnas. Barra lateral derecha pegajosa con JS (`IntersectionObserver`) que ilumina el título activo al hacer scroll.
+   • **Widget de Feedback:** Botones de pulgar arriba/abajo al final de cada artículo con micro-interacciones.
+
 ✅ **Navbar móvil — menú premium con acordeones (jun 2026)** — reescritura completa del
    overlay de `Nav.astro` a petición de André ("neta, carbona, estéticamente Cord"):
    • **Antes:** 5 links de texto plano (`Producto · Soluciones · Desarrolladores · Recursos · Precios`).
