@@ -159,30 +159,32 @@ const NAV_GROUPS = [
     }
     .sidebar > * { position: relative; z-index: 1; }
 
-    /* ── Nav agrupada (scroll con fade-out solo en la parte inferior) ── */
+    /* ── Nav agrupada (scroll con fade-out en ambos extremos) ── */
     .sb-nav {
         position: relative;
         display: flex; flex-direction: column; gap: 1rem;
         overflow-y: auto; flex: 1;
-        mask-image: linear-gradient(to bottom, black calc(100% - 22px), transparent 100%);
-        -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 22px), transparent 100%);
+        mask-image: linear-gradient(to bottom, transparent 0%, black 18px, black calc(100% - 22px), transparent 100%);
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 18px, black calc(100% - 22px), transparent 100%);
         /* Ocultar barra de scroll para evitar que empuje los elementos y rompa el centrado */
         scrollbar-width: none;
     }
     .sb-nav::-webkit-scrollbar { display: none; }
-    /* Indicador deslizante (segmented control tipo iOS) — sigue al hover, regresa al activo */
+    /* Indicador deslizante (segmented control) — ahora con backdrop-filter vidrio */
     .sb-indicator {
         position: absolute; left: 0; right: 0; top: 0; height: 0;
         border-radius: 12px; opacity: 0; pointer-events: none; z-index: 0;
         background: var(--sb-indicator-bg);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         box-shadow: var(--sb-indicator-shadow);
         transition: top 0.42s var(--ease-spring), height 0.42s var(--ease-spring), opacity 0.3s var(--ease-ios);
         will-change: top, height;
     }
     .sb-group { display: flex; flex-direction: column; gap: 2px; }
     .sb-group-label {
-        font-size: 0.6rem; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase;
-        color: var(--sb-label); padding: 2px 11px 5px;
+        font-size: 0.58rem; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase;
+        color: var(--sb-label); padding: 4px 11px 6px;
         transition: opacity 0.2s var(--ease-ios), color 0.25s var(--ease-ios);
     }
     @keyframes sb-slide-in {
@@ -203,8 +205,8 @@ const NAV_GROUPS = [
     .sb-group:nth-child(3) .sb-item { animation-delay: 0.15s; }
     .sb-group:nth-child(4) .sb-item { animation-delay: 0.2s; }
     
-    .sb-item svg { width: 16px; height: 16px; opacity: var(--sb-icon-op); flex-shrink: 0; transition: opacity 0.22s var(--ease-ios), transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    .sb-item:hover svg { opacity: 1; transform: scale(1.15); }
+    .sb-item svg { width: 16px; height: 16px; opacity: var(--sb-icon-op); flex-shrink: 0; transition: opacity 0.22s var(--ease-ios), transform 0.5s var(--ease-spring); }
+    .sb-item:hover svg { opacity: 1; transform: scale(1.12) translateY(-0.5px); }
     .sb-item:active svg { transform: scale(0.9); }
     .sb-item.active svg { opacity: 1; }
     .sb-item-label {
@@ -237,14 +239,15 @@ const NAV_GROUPS = [
     .sb-badge.danger { color: #fff; background: var(--color-danger); }
     .sb-shortcut {
         font-family: var(--font-mono, monospace);
-        font-size: 0.65rem;
+        font-size: 0.65rem; font-weight: 600;
         color: var(--sb-label);
         background: var(--sb-badge-bg);
-        padding: 2px 5px;
-        border-radius: 4px;
-        transition: opacity 0.2s var(--ease-ios);
+        padding: 2px 6px;
+        border-radius: 5px;
+        box-shadow: var(--sb-indicator-shadow);
+        transition: opacity 0.2s var(--ease-ios), color 0.2s var(--ease-ios), background 0.2s var(--ease-ios);
     }
-    .sb-item:hover .sb-shortcut { color: var(--sb-text-strong); }
+    .sb-item:hover .sb-shortcut { color: var(--sb-text-strong); background: var(--sb-hover-bg); }
 
     /* ── Cuenta — arriba, sin card por defecto ── */
     .sb-account {
@@ -381,6 +384,12 @@ const NAV_GROUPS = [
     :global(.sb-collapsed) .sidebar { padding-left: 0; padding-right: 0; align-items: stretch; }
     :global(.sb-collapsed) .sb-nav { gap: 0.9rem; align-items: center; }
     :global(.sb-collapsed) .sb-group { width: 100%; align-items: center; gap: 5px; }
+    /* Líneas divisorias de grupos en modo colapsado */
+    :global(.sb-collapsed) .sb-group + .sb-group { position: relative; margin-top: 5px; padding-top: 5px; }
+    :global(.sb-collapsed) .sb-group + .sb-group::before {
+        content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 1px;
+        background: var(--sb-divider); opacity: 0.6;
+    }
     /* Fade-out de labels — no display:none para que la transition funcione.
        Los group-labels SÍ colapsan en alto/padding (si no, dejan huecos vacíos). */
     :global(.sb-collapsed) .sb-item-label,
@@ -400,30 +409,38 @@ const NAV_GROUPS = [
     :global(.sb-collapsed) .sb-item.active svg { opacity: 1; }
     /* Indicador de vidrio → cuadrado centrado detrás del ícono activo */
     :global(.sb-collapsed) .sb-indicator { left: 50%; right: auto; width: 36px; margin-left: -18px; border-radius: 10px; }
+    /* Línea vertical izquierda de activo (Notion-style) */
+    :global(.sb-collapsed) .sb-item.active::before {
+        content: ''; position: absolute; left: 0; top: 25%; bottom: 25%; width: 3px;
+        background: var(--color-blue-deep); border-radius: 0 3px 3px 0;
+        box-shadow: 1px 0 8px rgba(59,130,246,0.4);
+    }
     :global(.sb-collapsed) .sb-pin-row { justify-content: center; }
     :global(.sb-collapsed) .sb-pin-row .sb-item { width: 36px; height: 36px; border-radius: 10px; }
-    /* Badge → punto cuando está colapsado (el aro toma el color de la superficie de la sidebar) */
+    /* Badge → punto cuando está colapsado (con resplandor) */
     :global(.sb-collapsed) .sb-badge {
-        position: absolute; top: 6px; right: 9px; min-width: 0; width: 7px; height: 7px;
+        position: absolute; top: 6px; right: 8px; min-width: 0; width: 8px; height: 8px;
         padding: 0; font-size: 0; border: 1.5px solid var(--surface);
     }
+    :global(.sb-collapsed) .sb-badge.danger { box-shadow: 0 0 6px var(--color-danger); }
     :global(.sb-collapsed) .sb-expand { display: inline-flex; }
     :global(.sb-collapsed) .sb-footer { justify-content: center; padding-left: 0; }
-    /* Tooltip al hover en modo colapsado */
+    /* Tooltip Premium al hover en modo colapsado */
     :global(.sb-collapsed) .sb-item::after {
-        content: attr(title); position: absolute; left: calc(100% + 12px); top: 50%; 
-        transform: translate(-10px, -50%);
-        background: #11233f; color: #fff; font-size: 0.76rem; font-weight: 600; white-space: nowrap;
-        padding: 6px 10px; border-radius: 8px; pointer-events: none; opacity: 0; z-index: 70;
-        box-shadow: 0 10px 30px -10px rgba(0,0,0,0.6), inset 0 0 0 0.5px rgba(255,255,255,0.1);
-        /* Transición de salida rápida, sin delay */
+        content: attr(title); position: absolute; left: calc(100% + 14px); top: 50%; 
+        transform: translate(-12px, -50%) scale(0.96);
+        background: rgba(17, 35, 63, 0.85);
+        backdrop-filter: blur(12px) saturate(1.5);
+        -webkit-backdrop-filter: blur(12px) saturate(1.5);
+        color: #fff; font-size: 0.78rem; font-weight: 650; white-space: nowrap;
+        padding: 7px 12px; border-radius: 10px; pointer-events: none; opacity: 0; z-index: 70;
+        box-shadow: 0 12px 34px -8px rgba(0,0,0,0.6), inset 0 0 0 0.5px rgba(255,255,255,0.15);
         transition: opacity 0.15s var(--ease-ios), transform 0.15s var(--ease-ios);
     }
     :global(.sb-collapsed) .sb-item:hover::after { 
         opacity: 1; 
-        transform: translate(0, -50%); 
-        /* Transición de entrada con delay para evitar parpadeos masivos al pasar rápido */
-        transition: opacity 0.2s var(--ease-ios) 0.15s, transform 0.2s var(--ease-ios) 0.15s; 
+        transform: translate(0, -50%) scale(1); 
+        transition: opacity 0.2s var(--ease-ios) 0.15s, transform 0.4s var(--ease-spring) 0.15s; 
     }
     }
 
