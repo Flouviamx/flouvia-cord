@@ -106,15 +106,23 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
             <!-- Derecha: Share Pill -->
             <aside class="article-sidebar article-sidebar-right">
                 <div class="share-pill sticky reveal" style="transition-delay: 500ms">
-                    <button id="btn-copy-link" class="share-btn" aria-label="Copiar enlace" title="Copiar enlace">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-                        <span class="tooltip">¡Copiado!</span>
+                    <button id="btn-copy-link" class="share-btn" aria-label="Copiar enlace">
+                        <div class="share-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                        </div>
+                        <span class="share-text" id="copy-text">Copiar link</span>
                     </button>
-                    <a href={`https://www.linkedin.com/sharing/share-offsite/?url=https://cord.flouvia.com/blog/${entry.id}`} target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en LinkedIn" title="LinkedIn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                    <a href={`https://www.linkedin.com/sharing/share-offsite/?url=https://cord.flouvia.com/blog/${entry.id}`} target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en LinkedIn">
+                        <div class="share-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                        </div>
+                        <span class="share-text">LinkedIn</span>
                     </a>
-                    <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(entry.data.title)}&url=https://cord.flouvia.com/blog/${entry.id}`} target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en X" title="X (Twitter)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l11.733 16h4.267l-11.733 -16z"></path><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path></svg>
+                    <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(entry.data.title)}&url=https://cord.flouvia.com/blog/${entry.id}`} target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en X">
+                        <div class="share-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l11.733 16h4.267l-11.733 -16z"></path><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path></svg>
+                        </div>
+                        <span class="share-text">Compartir</span>
                     </a>
                 </div>
             </aside>
@@ -149,13 +157,23 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
             el.style.transitionDelay = `${(i % 5) * 50}ms`; // Stagger init
         });
 
-        // 4. Copy Link
+        // 2. Share functionality
         const copyBtn = document.getElementById('btn-copy-link');
-        if (copyBtn) {
-            copyBtn.addEventListener('click', () => {
-                navigator.clipboard.writeText(window.location.href);
-                copyBtn.classList.add('copied');
-                setTimeout(() => copyBtn.classList.remove('copied'), 2000);
+        const copyText = document.getElementById('copy-text');
+        if (copyBtn && copyText) {
+            copyBtn.addEventListener('click', async () => {
+                try {
+                    await navigator.clipboard.writeText(window.location.href);
+                    copyBtn.classList.add('copied');
+                    const originalText = copyText.innerText;
+                    copyText.innerText = '¡Copiado!';
+                    setTimeout(() => {
+                        copyBtn.classList.remove('copied');
+                        copyText.innerText = originalText;
+                    }, 2000);
+                } catch (err) {
+                    console.error('Error al copiar', err);
+                }
             });
         }
 
@@ -407,34 +425,37 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
     .share-pill {
         display: flex; flex-direction: column; gap: 0.5rem;
         background: #ffffff;
-        padding: 0.5rem; border-radius: 100px;
+        padding: 0.5rem; border-radius: 24px;
         box-shadow: 0 12px 30px -10px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(0,0,0,0.05);
         transform: translateZ(0);
     }
     
     .share-btn {
-        width: 44px; height: 44px; border-radius: 50%; border: none;
-        display: flex; align-items: center; justify-content: center;
+        width: 44px; height: 44px; border-radius: 22px; border: none;
+        display: flex; align-items: center; justify-content: flex-start;
         background: transparent; color: #6b7280; cursor: pointer;
         transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); text-decoration: none; position: relative;
+        overflow: hidden; padding: 0; box-sizing: border-box;
+    }
+    
+    .share-icon {
+        width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .share-icon svg { width: 18px; height: 18px; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+
+    .share-text {
+        font-size: 0.8rem; font-weight: 600; white-space: nowrap; padding-right: 16px;
+        opacity: 0; transform: translateX(-10px); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
     
     .share-btn:hover { 
+        width: 140px;
         color: #111827; background: #f9fafb;
         box-shadow: 0 4px 12px rgba(0,0,0,0.05), inset 0 0 0 1px rgba(0,0,0,0.05);
-        transform: scale(1.08) translateY(-2px);
     }
-    .share-btn svg { width: 20px; height: 20px; transition: transform 0.3s; }
-    .share-btn:hover svg { transform: scale(1.1); }
-
-    .share-btn .tooltip {
-        position: absolute; left: calc(100% + 14px); top: 50%; transform: translateY(-50%) translateX(-10px);
-        background: #111827; color: #fff; padding: 6px 12px; border-radius: 8px;
-        font-size: 0.75rem; font-weight: 600; opacity: 0; pointer-events: none;
-        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); white-space: nowrap;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-    .share-btn.copied .tooltip { opacity: 1; transform: translateY(-50%) translateX(0); }
+    
+    .share-btn:hover .share-icon svg { transform: scale(1.1); }
+    .share-btn:hover .share-text { opacity: 1; transform: translateX(0); transition-delay: 0.05s; }
 
     /* ==========================================================
        LEFT SIDEBAR: TOC SCROLLSPY (Match Screenshot)
