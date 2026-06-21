@@ -57,9 +57,8 @@ curl -X POST https://api.flouvia.com/v1/resource \\
   }'
 \`\`\`
 
-> [!NOTE]
-> **Uso de SDKs**
-> Si estás utilizando un ecosistema en JavaScript, te recomendamos encarecidamente utilizar el [Cord Node.js SDK](/soporte/node-sdk) para manejar la serialización de datos automáticamente.
+**Nota sobre SDKs:**
+Si estás utilizando un ecosistema en JavaScript, te recomendamos encarecidamente utilizar el [Cord Node.js SDK](/soporte/node-sdk) para manejar la serialización de datos automáticamente.
 
 ## Manejo de Errores
 
@@ -78,9 +77,8 @@ Para asegurar que los comprobantes (CFDI 4.0) se timbren de manera exitosa:
 - Valida que el Código Postal del cliente coincida exactamente con su Constancia de Situación Fiscal.
 - Asegúrate de que el régimen fiscal del receptor sea compatible con el Uso de CFDI seleccionado.
 
-> [!WARNING]
-> **Normativa del SAT**
-> Las regulaciones fiscales pueden actualizarse. Asegúrate de siempre tener vigente tu Certificado de Sello Digital (CSD) dentro del portal de Cord para evitar bloqueos en el timbrado. [Ver cómo actualizar el CSD](/soporte/csd-vencido).
+**Advertencia de Normativa del SAT:**
+Las regulaciones fiscales pueden actualizarse. Asegúrate de siempre tener vigente tu Certificado de Sello Digital (CSD) dentro del portal de Cord para evitar bloqueos en el timbrado. [Ver cómo actualizar el CSD](/soporte/csd-vencido).
 
 ## Proceso en Plataforma
 
@@ -107,9 +105,8 @@ Las cotizaciones en Cord no son documentos estáticos, son enlaces interactivos.
 3. Configura los **Términos de Crédito** si operas en esquemas PPD (ej. Net 30).
 4. Activa el botón de firma digital o pago de anticipo obligatorio.
 
-> [!TIP]
-> **Mejora tus conversiones**
-> Personaliza los colores de tu cotización en los ajustes de apariencia. Las propuestas que mantienen la identidad visual de la marca (White-label) tienen un 15% más de probabilidad de ser aceptadas rápidamente.
+**Tip Comercial:**
+Personaliza los colores de tu cotización en los ajustes de apariencia. Las propuestas que mantienen la identidad visual de la marca (White-label) tienen un 15% más de probabilidad de ser aceptadas rápidamente.
 
 ## Monitoreo y Seguimiento
 
@@ -134,9 +131,8 @@ Solo los usuarios con el rol de **Administrador** (Owner) pueden realizar modifi
 3. Realiza los ajustes necesarios en el formulario.
 4. Guarda los cambios. El sistema registrará la acción en el Audit Log por seguridad.
 
-> [!IMPORTANT]
-> **Seguridad Corporativa**
-> Te sugerimos habilitar políticas estrictas para todos los miembros de tu equipo. Si tu plan lo permite, considera forzar el uso de Autenticación de Dos Pasos (2FA) para prevenir accesos no autorizados. [Ver guía de 2FA](/soporte/autenticacion-2fa).
+**Seguridad Corporativa Importante:**
+Te sugerimos habilitar políticas estrictas para todos los miembros de tu equipo. Si tu plan lo permite, considera forzar el uso de Autenticación de Dos Pasos (2FA) para prevenir accesos no autorizados. [Ver guía de 2FA](/soporte/autenticacion-2fa).
 
 Si tienes problemas para acceder a la cuenta, contacta directamente con el Administrador de tu organización para que revise tus permisos de RBAC.`;
 
@@ -160,9 +156,8 @@ Si enfrentas anomalías o necesitas configurar esta característica:
 2. Verifica tus transferencias en tránsito y el historial de depósitos.
 3. Si estás investigando un pago rechazado, haz clic en el ID de la transacción para leer el código de declinación emitido por el banco emisor.
 
-> [!NOTE]
-> **Conciliación Automatizada**
-> Cord exporta un reporte detallado (CSV) que tu equipo contable puede utilizar para conciliar los depósitos masivos contra las facturas individuales. [Lee sobre la Conciliación de depósitos](/soporte/conciliacion-depositos).
+**Dato de Conciliación:**
+Cord exporta un reporte detallado (CSV) que tu equipo contable puede utilizar para conciliar los depósitos masivos contra las facturas individuales. [Lee sobre la Conciliación de depósitos](/soporte/conciliacion-depositos).
 
 Mantén siempre actualizada tu cuenta CLABE receptora para evitar retrasos en las dispersiones.`;
 
@@ -183,9 +178,8 @@ Operamos bajo estrictos estándares internacionales de encriptación y manejo de
 - Revisa periódicamente los logs de auditoría de tu cuenta para detectar anomalías.
 - Educa a tu equipo sobre prácticas seguras anti-phishing.
 
-> [!IMPORTANT]
-> **Manejo de Vulnerabilidades**
-> Si crees haber encontrado un fallo crítico de seguridad, por favor abstente de publicarlo. Dirígete a nuestro [Programa de Reporte de Vulnerabilidades](/soporte/reportar-vulnerabilidades) y te compensaremos por la divulgación responsable.
+**Atención de Vulnerabilidades:**
+Si crees haber encontrado un fallo crítico de seguridad, por favor abstente de publicarlo. Dirígete a nuestro [Programa de Reporte de Vulnerabilidades](/soporte/reportar-vulnerabilidades) y te compensaremos por la divulgación responsable.
 
 Para solicitar copias de nuestras certificaciones SOC2 o documentación de cumplimiento PCI-DSS, los clientes Enterprise pueden abrir un ticket directo con su Account Executive.`;
     }

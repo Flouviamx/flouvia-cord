@@ -36,9 +36,8 @@ curl -X POST https://api.flouvia.com/v1/resource \
   }'
 ```
 
-> [!NOTE]
-> **Uso de SDKs**
-> Si estás utilizando un ecosistema en JavaScript, te recomendamos encarecidamente utilizar el [Cord Node.js SDK](/soporte/node-sdk) para manejar la serialización de datos automáticamente.
+**Nota sobre SDKs:**
+Si estás utilizando un ecosistema en JavaScript, te recomendamos encarecidamente utilizar el [Cord Node.js SDK](/soporte/node-sdk) para manejar la serialización de datos automáticamente.
 
 ## Manejo de Errores
 

@@ -17,9 +17,8 @@ Para asegurar que los comprobantes (CFDI 4.0) se timbren de manera exitosa:
 - Valida que el Código Postal del cliente coincida exactamente con su Constancia de Situación Fiscal.
 - Asegúrate de que el régimen fiscal del receptor sea compatible con el Uso de CFDI seleccionado.
 
-> [!WARNING]
-> **Normativa del SAT**
-> Las regulaciones fiscales pueden actualizarse. Asegúrate de siempre tener vigente tu Certificado de Sello Digital (CSD) dentro del portal de Cord para evitar bloqueos en el timbrado. [Ver cómo actualizar el CSD](/soporte/csd-vencido).
+**Advertencia de Normativa del SAT:**
+Las regulaciones fiscales pueden actualizarse. Asegúrate de siempre tener vigente tu Certificado de Sello Digital (CSD) dentro del portal de Cord para evitar bloqueos en el timbrado. [Ver cómo actualizar el CSD](/soporte/csd-vencido).
 
 ## Proceso en Plataforma
 

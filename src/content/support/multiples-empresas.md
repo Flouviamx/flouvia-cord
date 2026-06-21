@@ -20,8 +20,7 @@ Solo los usuarios con el rol de **Administrador** (Owner) pueden realizar modifi
 3. Realiza los ajustes necesarios en el formulario.
 4. Guarda los cambios. El sistema registrará la acción en el Audit Log por seguridad.
 
-> [!IMPORTANT]
-> **Seguridad Corporativa**
-> Te sugerimos habilitar políticas estrictas para todos los miembros de tu equipo. Si tu plan lo permite, considera forzar el uso de Autenticación de Dos Pasos (2FA) para prevenir accesos no autorizados. [Ver guía de 2FA](/soporte/autenticacion-2fa).
+**Seguridad Corporativa Importante:**
+Te sugerimos habilitar políticas estrictas para todos los miembros de tu equipo. Si tu plan lo permite, considera forzar el uso de Autenticación de Dos Pasos (2FA) para prevenir accesos no autorizados. [Ver guía de 2FA](/soporte/autenticacion-2fa).
 
 Si tienes problemas para acceder a la cuenta, contacta directamente con el Administrador de tu organización para que revise tus permisos de RBAC.

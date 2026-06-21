@@ -19,9 +19,8 @@ Las cotizaciones en Cord no son documentos estáticos, son enlaces interactivos.
 3. Configura los **Términos de Crédito** si operas en esquemas PPD (ej. Net 30).
 4. Activa el botón de firma digital o pago de anticipo obligatorio.
 
-> [!TIP]
-> **Mejora tus conversiones**
-> Personaliza los colores de tu cotización en los ajustes de apariencia. Las propuestas que mantienen la identidad visual de la marca (White-label) tienen un 15% más de probabilidad de ser aceptadas rápidamente.
+**Tip Comercial:**
+Personaliza los colores de tu cotización en los ajustes de apariencia. Las propuestas que mantienen la identidad visual de la marca (White-label) tienen un 15% más de probabilidad de ser aceptadas rápidamente.
 
 ## Monitoreo y Seguimiento
 

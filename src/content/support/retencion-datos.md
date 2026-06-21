@@ -20,8 +20,7 @@ Operamos bajo estrictos estándares internacionales de encriptación y manejo de
 - Revisa periódicamente los logs de auditoría de tu cuenta para detectar anomalías.
 - Educa a tu equipo sobre prácticas seguras anti-phishing.
 
-> [!IMPORTANT]
-> **Manejo de Vulnerabilidades**
-> Si crees haber encontrado un fallo crítico de seguridad, por favor abstente de publicarlo. Dirígete a nuestro [Programa de Reporte de Vulnerabilidades](/soporte/reportar-vulnerabilidades) y te compensaremos por la divulgación responsable.
+**Atención de Vulnerabilidades:**
+Si crees haber encontrado un fallo crítico de seguridad, por favor abstente de publicarlo. Dirígete a nuestro [Programa de Reporte de Vulnerabilidades](/soporte/reportar-vulnerabilidades) y te compensaremos por la divulgación responsable.
 
 Para solicitar copias de nuestras certificaciones SOC2 o documentación de cumplimiento PCI-DSS, los clientes Enterprise pueden abrir un ticket directo con su Account Executive.

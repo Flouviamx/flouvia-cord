@@ -23,8 +23,7 @@ Si enfrentas anomalías o necesitas configurar esta característica:
 2. Verifica tus transferencias en tránsito y el historial de depósitos.
 3. Si estás investigando un pago rechazado, haz clic en el ID de la transacción para leer el código de declinación emitido por el banco emisor.
 
-> [!NOTE]
-> **Conciliación Automatizada**
-> Cord exporta un reporte detallado (CSV) que tu equipo contable puede utilizar para conciliar los depósitos masivos contra las facturas individuales. [Lee sobre la Conciliación de depósitos](/soporte/conciliacion-depositos).
+**Dato de Conciliación:**
+Cord exporta un reporte detallado (CSV) que tu equipo contable puede utilizar para conciliar los depósitos masivos contra las facturas individuales. [Lee sobre la Conciliación de depósitos](/soporte/conciliacion-depositos).
 
 Mantén siempre actualizada tu cuenta CLABE receptora para evitar retrasos en las dispersiones.
