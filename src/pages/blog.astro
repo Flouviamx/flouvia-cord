@@ -1,5 +1,5 @@
 ---
-// Blog — Aesthetic Cord inspirado en Stripe Hero (Floating Card + Gradient Canvas)
+// Blog — Layout: Stripe Floating Hero + Estética: Cord Quiet Luxury
 export const prerender = true;
 
 import Layout from '../layouts/Layout.astro';
@@ -13,6 +13,7 @@ const FEATURED_POST = {
     excerpt: 'Analizamos más de 10,000 transacciones B2B y descubrimos cómo la fricción de descargar, imprimir y firmar PDFs retrasa las ventas. Las cotizaciones interactivas aumentan la conversión en un 32%.',
     category: 'Ventas B2B',
     date: '18 Jun 2026',
+    readTime: '04 MIN',
     author: {
         name: 'André Valle',
         role: 'Product Manager, Cord',
@@ -28,6 +29,7 @@ const POSTS = [
         excerpt: 'Todo lo que necesitas saber sobre complementos de pago y carta porte.',
         category: 'Fiscal',
         date: '12 Jun 2026',
+        readTime: '07 MIN',
         img: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     },
     {
@@ -36,6 +38,7 @@ const POSTS = [
         excerpt: 'Dar crédito es obligatorio en B2B. Aprende a fijar límites dinámicos.',
         category: 'Finanzas',
         date: '05 Jun 2026',
+        readTime: '05 MIN',
         img: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     },
     {
@@ -44,6 +47,7 @@ const POSTS = [
         excerpt: 'La automatización del seguimiento y la negociación de deuda.',
         category: 'Tecnología',
         date: '28 May 2026',
+        readTime: '06 MIN',
         img: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     },
     {
@@ -52,6 +56,7 @@ const POSTS = [
         excerpt: 'Venderle a 200 clientes a 200 precios distintos es una pesadilla.',
         category: 'Operaciones',
         date: '15 May 2026',
+        readTime: '08 MIN',
         img: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     },
     {
@@ -60,6 +65,7 @@ const POSTS = [
         excerpt: 'Así funciona nuestra arquitectura bidireccional de agentes.',
         category: 'Tecnología',
         date: '02 May 2026',
+        readTime: '10 MIN',
         img: 'https://images.unsplash.com/photo-1518770660439-4636190af475?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     },
     {
@@ -68,6 +74,7 @@ const POSTS = [
         excerpt: 'Patrones visuales y de interacción para conversiones altas.',
         category: 'Ventas B2B',
         date: '20 Abr 2026',
+        readTime: '05 MIN',
         img: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     }
 ];
@@ -81,58 +88,58 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
 >
     <Nav />
     
-    <main class="stripe-blog-main">
+    <!-- Filtro de ruido analógico global -->
+    <div class="analog-noise" aria-hidden="true"></div>
+
+    <main class="cord-blog-main">
         
-        <!-- HERO CANVAS (Gradient + Guide Lines + Floating Card) -->
+        <!-- HERO CANVAS (Gradient Canvas sin líneas) -->
         <section class="hero-canvas">
-            <!-- Background Gradients tipo Cord -->
+            <!-- Background Gradients tipo Cord (Azules y Cian vibrantes) -->
             <div class="hero-canvas-bg" aria-hidden="true">
                 <div class="blob blob-1"></div>
                 <div class="blob blob-2"></div>
                 <div class="blob blob-3"></div>
             </div>
 
-            <!-- Guide Lines -->
-            <div class="hero-guides" aria-hidden="true">
-                <div class="guide-container">
-                    <div class="guide-line"></div>
-                    <div class="guide-line"></div>
-                    <div class="guide-line"></div>
-                    <div class="guide-line"></div>
-                    <div class="guide-line"></div>
-                </div>
-            </div>
-
             <!-- Hero Content -->
             <div class="hero-canvas-content">
-                <!-- Top Links -->
+                <!-- Top Links Minimalistas -->
                 <div class="hero-top-links reveal">
-                    <span class="blog-brand">Blog</span>
-                    <a href="https://linkedin.com/company/cord" target="_blank" class="social-link">
-                        Cord en LinkedIn <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    <span class="blog-brand">
+                        <span class="stagger-mask"><span class="stagger-line" style="animation-delay: 0ms">Blog de Cord</span></span>
+                    </span>
+                    <a href="https://linkedin.com/company/cord" target="_blank" class="social-link stagger-mask">
+                        <span class="stagger-line" style="animation-delay: 100ms">Cord en LinkedIn <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
                     </a>
                 </div>
 
-                <!-- Floating Featured Card -->
+                <!-- Floating Featured Card (Quiet Luxury Hairlines) -->
                 <div class="floating-card-wrapper reveal">
-                    <a href={`/blog/${FEATURED_POST.id}`} class="floating-card">
+                    <a href={`/blog/${FEATURED_POST.id}`} class="floating-card hairline-border">
                         <!-- Left: Text -->
                         <div class="fc-text">
-                            <span class="fc-category">{FEATURED_POST.category}</span>
-                            <h1 class="fc-title">{FEATURED_POST.title}</h1>
-                            
-                            <div class="fc-author">
-                                <img src={FEATURED_POST.author.avatar} alt={FEATURED_POST.author.name} />
-                                <div class="fc-author-info">
-                                    <strong>{FEATURED_POST.author.name}</strong>
-                                    <span>{FEATURED_POST.author.role}</span>
-                                </div>
+                            <div class="fc-meta-top">
+                                <span class="fc-category">{FEATURED_POST.category}</span>
+                                <span class="technical-meta">{FEATURED_POST.date}</span>
                             </div>
+                            
+                            <h1 class="fc-title">{FEATURED_POST.title}</h1>
                             
                             <p class="fc-excerpt">{FEATURED_POST.excerpt}</p>
                             
-                            <div class="fc-readmore">
-                                Leer artículo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                            <div class="fc-footer-flex">
+                                <div class="fc-author">
+                                    <img src={FEATURED_POST.author.avatar} alt={FEATURED_POST.author.name} />
+                                    <div class="fc-author-info">
+                                        <strong>{FEATURED_POST.author.name}</strong>
+                                        <span class="technical-meta">{FEATURED_POST.author.role}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="featured-arrow">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                </div>
                             </div>
                         </div>
                         
@@ -145,7 +152,7 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
             </div>
         </section>
 
-        <!-- Filtros Flotantes (Pill) -->
+        <!-- Filtros Flotantes (Glass Pill) -->
         <div class="blog-sticky-nav reveal">
             <div class="blog-filters-glass" id="blog-filters">
                 {CATEGORIES.map((cat, i) => (
@@ -164,9 +171,14 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
                         <a href={`/blog/${post.id}`} class="blog-card-link">
                             <div class="blog-img-wrap">
                                 <img src={post.img} alt={post.title} loading="lazy" />
+                                <div class="blog-category-badge">{post.category}</div>
                             </div>
                             <div class="blog-content">
-                                <span class="card-category">{post.category}</span>
+                                <div class="blog-meta">
+                                    <span class="technical-meta">{post.date}</span>
+                                    <span class="dot">·</span>
+                                    <span class="technical-meta">{post.readTime}</span>
+                                </div>
                                 <h3 class="blog-title">{post.title}</h3>
                                 <p class="blog-excerpt">{post.excerpt}</p>
                                 <div class="blog-read-more">
@@ -225,30 +237,67 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
 
 <style>
     /* ==========================================================
+       RUIDO ANALÓGICO & TIPOGRAFÍA TÉCNICA (Quiet Luxury)
+       ========================================================== */
+    .analog-noise {
+        position: fixed; inset: 0; z-index: 1000; pointer-events: none;
+        opacity: 0.035; 
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+    :global(html[data-theme="dark"]) .analog-noise { opacity: 0.05; }
+
+    .technical-meta {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-variant-numeric: tabular-nums;
+        font-size: 0.75rem; font-weight: 600;
+        letter-spacing: 0.04em; color: #6b7280;
+        text-transform: uppercase;
+    }
+    :global(html[data-theme="dark"]) .technical-meta { color: #9ca3af; }
+
+    .stagger-mask { display: inline-block; overflow: hidden; vertical-align: top; }
+    .stagger-line {
+        display: inline-block; transform: translateY(110%);
+        animation: slideUpReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes slideUpReveal { to { transform: translateY(0); } }
+
+    /* ==========================================================
+       BORDES HAIRLINE
+       ========================================================== */
+    .hairline-border {
+        border: none !important;
+        box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.08), 0 20px 40px -20px rgba(0,0,0,0.04);
+    }
+    :global(html[data-theme="dark"]) .hairline-border {
+        box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.08), 0 20px 40px -20px rgba(0,0,0,0.5);
+    }
+
+    /* ==========================================================
        RESET Y BASE
        ========================================================== */
-    .stripe-blog-main {
-        background: #fff;
+    .cord-blog-main {
+        background: #fdfdfd;
         color: #111827;
         min-height: 100vh;
         overflow-x: hidden;
         font-family: 'Inter', sans-serif;
     }
-    :global(html[data-theme="dark"]) .stripe-blog-main { background: #000; color: #fff; }
+    :global(html[data-theme="dark"]) .cord-blog-main { background: #050505; color: #fff; }
 
     /* ==========================================================
-       HERO CANVAS (Background gradients & guides)
+       HERO CANVAS (Background gradients)
        ========================================================== */
     .hero-canvas {
         position: relative;
         width: 100%;
-        padding-top: 80px; /* Space for Nav */
+        padding-top: 80px; 
         padding-bottom: 6rem;
         min-height: 800px;
         display: flex;
         flex-direction: column;
         align-items: center;
-        background-color: #f8f9fa; /* Base light gray */
+        background-color: #fdfdfd; 
         overflow: hidden;
     }
     :global(html[data-theme="dark"]) .hero-canvas { background-color: #050505; }
@@ -261,80 +310,65 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
     .blob {
         position: absolute;
         filter: blur(80px);
-        opacity: 0.7;
+        opacity: 0.8;
         border-radius: 50%;
         animation: float 20s infinite ease-in-out alternate;
     }
+    /* Cord Deep Blue */
     .blob-1 {
-        top: 20%; left: -10%; width: 800px; height: 800px;
-        background: radial-gradient(circle, rgba(10,37,218,0.3) 0%, transparent 70%);
+        top: 10%; left: -5%; width: 700px; height: 700px;
+        background: radial-gradient(circle, rgba(10,37,218,0.25) 0%, transparent 70%);
         animation-delay: 0s;
     }
+    /* Cord Light Blue / Cyan */
     .blob-2 {
-        bottom: -20%; right: -10%; width: 900px; height: 900px;
-        background: radial-gradient(circle, rgba(14,165,233,0.25) 0%, transparent 70%);
+        bottom: -20%; right: -10%; width: 800px; height: 800px;
+        background: radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%);
         animation-delay: -5s;
     }
+    /* Subtle accent */
     .blob-3 {
-        top: 40%; left: 40%; width: 600px; height: 600px;
-        background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%);
+        top: 30%; left: 40%; width: 500px; height: 500px;
+        background: radial-gradient(circle, rgba(14,165,233,0.15) 0%, transparent 70%);
         animation-delay: -10s;
     }
     @keyframes float {
         0% { transform: translate(0, 0) scale(1); }
-        100% { transform: translate(50px, 50px) scale(1.1); }
+        100% { transform: translate(40px, 40px) scale(1.1); }
     }
     :global(html[data-theme="dark"]) .blob { opacity: 0.4; filter: blur(100px); }
 
-    /* Guide Lines */
-    .hero-guides {
-        position: absolute; inset: 0; z-index: 1;
-        pointer-events: none;
-        display: flex; justify-content: center;
-    }
-    .guide-container {
-        width: 100%; max-width: 1200px;
-        display: flex; justify-content: space-between;
-        padding: 0 5%;
-    }
-    .guide-line {
-        width: 1px; height: 100%;
-        background: repeating-linear-gradient(to bottom, transparent, transparent 4px, rgba(0,0,0,0.06) 4px, rgba(0,0,0,0.06) 8px);
-    }
-    :global(html[data-theme="dark"]) .guide-line {
-        background: repeating-linear-gradient(to bottom, transparent, transparent 4px, rgba(255,255,255,0.04) 4px, rgba(255,255,255,0.04) 8px);
-    }
-
     .hero-canvas-content {
         position: relative; z-index: 2;
-        width: 100%; max-width: 1200px;
+        width: 100%; max-width: 1280px;
         padding: 0 5%;
         display: flex; flex-direction: column;
         flex-grow: 1;
     }
 
-    /* Top Links (Blog | Stripe on X) */
+    /* Top Links (Blog | Cord en LinkedIn) */
     .hero-top-links {
         display: flex; justify-content: space-between; align-items: center;
         padding: 2rem 0; margin-bottom: 2rem;
     }
     .blog-brand {
-        font-size: 1.25rem; font-weight: 500; color: var(--color-blue-deep);
+        font-size: 1.2rem; font-weight: 600; color: #111827;
         letter-spacing: -0.02em;
     }
-    :global(html[data-theme="dark"]) .blog-brand { color: #60a5fa; }
+    :global(html[data-theme="dark"]) .blog-brand { color: #fff; }
 
     .social-link {
         display: inline-flex; align-items: center; gap: 4px;
-        font-size: 0.95rem; font-weight: 500; color: var(--color-blue-deep);
-        text-decoration: none; transition: opacity 0.2s;
+        font-size: 0.95rem; font-weight: 600; color: #4b5563;
+        text-decoration: none; transition: color 0.2s;
     }
-    :global(html[data-theme="dark"]) .social-link { color: #60a5fa; }
-    .social-link:hover { opacity: 0.7; }
+    :global(html[data-theme="dark"]) .social-link { color: #9ca3af; }
+    .social-link:hover { color: var(--color-blue-deep); }
+    :global(html[data-theme="dark"]) .social-link:hover { color: #60a5fa; }
     .social-link svg { width: 14px; height: 14px; }
 
     /* ==========================================================
-       FLOATING FEATURED CARD (The Stripe Hero)
+       FLOATING FEATURED CARD (Stripe Layout + Cord Aesthetics)
        ========================================================== */
     .floating-card-wrapper {
         width: 100%;
@@ -343,23 +377,24 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
 
     .floating-card {
         display: flex; flex-direction: column;
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 50px 100px -20px rgba(50,50,93,0.15), 0 30px 60px -30px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(0,0,0,0.02);
+        background: linear-gradient(145deg, #ffffff 0%, #f9fafb 100%);
+        border-radius: 24px;
         overflow: hidden; text-decoration: none; color: inherit;
-        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s;
+        /* Combining hairline border and stripe deep shadow */
+        box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.08), 0 50px 100px -20px rgba(50,50,93,0.15), 0 30px 60px -30px rgba(0,0,0,0.1);
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
     :global(html[data-theme="dark"]) .floating-card {
-        background: #0f172a;
-        box-shadow: 0 50px 100px -20px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05);
+        background: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+        box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.08), 0 50px 100px -20px rgba(0,0,0,0.5);
     }
 
     .floating-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 50px 100px -20px rgba(10,37,218,0.2), 0 30px 60px -30px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(0,0,0,0.02);
+        box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.08), 0 50px 100px -20px rgba(10,37,218,0.15), 0 30px 60px -30px rgba(0,0,0,0.1);
     }
     :global(html[data-theme="dark"]) .floating-card:hover {
-        box-shadow: 0 50px 100px -20px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.1);
+        box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.12), 0 50px 100px -20px rgba(0,0,0,0.8);
     }
 
     @media (min-width: 992px) {
@@ -371,46 +406,61 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
         flex: 1; padding: 3rem 2.5rem;
         display: flex; flex-direction: column; justify-content: center;
     }
-    @media (min-width: 992px) { .fc-text { padding: 4rem; } }
+    @media (min-width: 992px) { .fc-text { padding: 4.5rem 3.5rem; } }
 
-    .fc-category {
-        font-size: 0.9rem; font-weight: 600; color: var(--color-blue-deep);
-        margin-bottom: 1.5rem; letter-spacing: -0.01em;
-    }
-    :global(html[data-theme="dark"]) .fc-category { color: #60a5fa; }
-
-    .fc-title {
-        font-size: clamp(2rem, 3vw, 2.75rem); font-weight: 600; line-height: 1.1;
-        letter-spacing: -0.03em; color: #111827; margin: 0 0 2rem;
-    }
-    :global(html[data-theme="dark"]) .fc-title { color: #fff; }
-
-    .fc-author {
+    .fc-meta-top {
         display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;
     }
-    .fc-author img { width: 40px; height: 40px; border-radius: 50%; }
-    .fc-author-info { display: flex; flex-direction: column; }
-    .fc-author-info strong { font-size: 0.95rem; font-weight: 600; color: #111827; }
-    :global(html[data-theme="dark"]) .fc-author-info strong { color: #fff; }
-    .fc-author-info span { font-size: 0.85rem; color: #6b7280; }
+    .fc-category {
+        font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+        color: var(--color-blue-deep);
+        background: rgba(10,37,218,0.06); padding: 6px 14px; border-radius: 100px;
+    }
+    :global(html[data-theme="dark"]) .fc-category { color: #60a5fa; background: rgba(59,130,246,0.15); }
+
+    .fc-title {
+        font-size: clamp(2rem, 3.5vw, 2.8rem); font-weight: 800; line-height: 1.05;
+        letter-spacing: -0.035em; color: #111827; margin: 0 0 1.5rem;
+        transition: color 0.3s;
+    }
+    :global(html[data-theme="dark"]) .fc-title { color: #fff; }
+    .floating-card:hover .fc-title { color: var(--color-blue-deep); }
+    :global(html[data-theme="dark"]) .floating-card:hover .fc-title { color: #60a5fa; }
 
     .fc-excerpt {
-        font-size: 1.1rem; color: #4b5563; line-height: 1.6; margin: 0 0 2.5rem;
+        font-size: 1.15rem; color: #4b5563; line-height: 1.6; margin: 0 0 3rem;
     }
-    :global(html[data-theme="dark"]) .fc-excerpt { color: #9ca3af; }
+    :global(html[data-theme="dark"]) .fc-excerpt { color: #d1d5db; }
 
-    .fc-readmore {
-        display: inline-flex; align-items: center; gap: 6px;
-        font-size: 0.95rem; font-weight: 600; color: var(--color-blue-deep);
-        margin-top: auto; transition: gap 0.3s;
+    .fc-footer-flex {
+        display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto;
     }
-    :global(html[data-theme="dark"]) .fc-readmore { color: #60a5fa; }
-    .fc-readmore svg { width: 16px; height: 16px; transition: transform 0.3s; }
-    .floating-card:hover .fc-readmore { gap: 10px; }
+
+    .fc-author {
+        display: flex; align-items: center; gap: 1rem;
+    }
+    .fc-author img { width: 44px; height: 44px; border-radius: 50%; }
+    .fc-author-info { display: flex; flex-direction: column; gap: 2px; }
+    .fc-author-info strong { font-size: 0.95rem; font-weight: 700; color: #111827; }
+    :global(html[data-theme="dark"]) .fc-author-info strong { color: #fff; }
+
+    .featured-arrow {
+        width: 42px; height: 42px; border-radius: 50%; background: #f1f5f9;
+        display: flex; align-items: center; justify-content: center;
+        color: #111827; transition: background 0.4s, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s;
+    }
+    :global(html[data-theme="dark"]) .featured-arrow { background: rgba(255,255,255,0.08); color: #fff; }
+    .featured-arrow svg { width: 18px; height: 18px; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    
+    .floating-card:hover .featured-arrow {
+        background: var(--color-blue-deep); color: #fff; transform: scale(1.05);
+        box-shadow: 0 8px 20px rgba(10,37,218,0.25);
+    }
+    .floating-card:hover .featured-arrow svg { transform: translateX(3px); }
 
     /* Right Image Side */
     .fc-image {
-        flex: 1; background: #f6f9fc; position: relative; overflow: hidden;
+        flex: 1; background: #f3f4f6; position: relative; overflow: hidden;
         min-height: 300px;
     }
     :global(html[data-theme="dark"]) .fc-image { background: #1e293b; }
@@ -426,57 +476,61 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
     .blog-sticky-nav {
         position: sticky; top: 1.5rem; z-index: 50;
         display: flex; justify-content: center;
-        margin-top: 12rem; /* Pushes it down below the floating card overhang */
+        margin-top: 13rem; /* Push below hero */
         margin-bottom: 4rem; padding: 0 5%;
         pointer-events: none;
     }
     .blog-filters-glass {
-        pointer-events: auto; display: inline-flex; gap: 0.2rem;
-        background: rgba(255, 255, 255, 0.8);
+        pointer-events: auto; display: inline-flex; gap: 0.4rem;
+        background: rgba(255, 255, 255, 0.65);
         backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
         padding: 6px; border-radius: 100px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06), inset 0 0 0 1px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06), inset 0 0 0 0.5px rgba(255,255,255,0.8);
         overflow-x: auto; scrollbar-width: none;
     }
     .blog-filters-glass::-webkit-scrollbar { display: none; }
     :global(html[data-theme="dark"]) .blog-filters-glass {
-        background: rgba(15, 23, 42, 0.6); box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.1);
+        background: rgba(15, 23, 42, 0.5); box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 0 0 0.5px rgba(255,255,255,0.1);
     }
 
     .filter-btn {
         background: transparent; border: none;
-        padding: 8px 16px; border-radius: 100px;
-        font-size: 0.85rem; font-weight: 500; color: #4b5563;
-        cursor: pointer; transition: all 0.2s; white-space: nowrap;
+        padding: 8px 18px; border-radius: 100px;
+        font-size: 0.85rem; font-weight: 600; color: #4b5563;
+        cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); white-space: nowrap;
     }
     :global(html[data-theme="dark"]) .filter-btn { color: #9ca3af; }
     .filter-btn:hover { color: #111827; background: rgba(0,0,0,0.04); }
     :global(html[data-theme="dark"]) .filter-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
-    .filter-btn.active { background: #111827; color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-    :global(html[data-theme="dark"]) .filter-btn.active { background: #fff; color: #000; }
+    .filter-btn.active { background: #111827; color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    :global(html[data-theme="dark"]) .filter-btn.active { background: #fff; color: #000; box-shadow: 0 4px 12px rgba(255,255,255,0.15); }
 
     /* ==========================================================
        GRID DE ARTÍCULOS RECIENTES
        ========================================================== */
-    .blog-grid-section { padding: 0 5% 8rem; max-width: 1200px; margin: 0 auto; }
+    .blog-grid-section { padding: 0 5% 8rem; max-width: 1280px; margin: 0 auto; }
 
     .blog-grid {
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        gap: 3rem 2rem; transition: opacity 0.3s, transform 0.3s;
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 3rem 2rem; transition: opacity 0.3s ease, transform 0.3s ease;
     }
     .blog-grid.filtering { opacity: 0; transform: translateY(10px); }
 
     .blog-card {
-        display: flex; flex-direction: column;
-        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex; flex-direction: column; background: #fff;
+        border-radius: 20px; padding: 1rem;
+        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s;
     }
-    .blog-card:hover { transform: translateY(-4px); }
+    :global(html[data-theme="dark"]) .blog-card { background: rgba(255,255,255,0.02); }
+
+    .blog-card:hover { transform: translateY(-4px); box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.08), 0 20px 40px -20px rgba(10,37,218,0.08); }
+    :global(html[data-theme="dark"]) .blog-card:hover { box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.12), 0 20px 40px -20px rgba(0,0,0,0.4); }
 
     .blog-card-link { text-decoration: none; color: inherit; display: flex; flex-direction: column; height: 100%; }
 
     .blog-img-wrap {
-        width: 100%; aspect-ratio: 16/10;
-        border-radius: 8px; overflow: hidden; margin-bottom: 1.5rem;
+        position: relative; width: 100%; aspect-ratio: 16/10;
+        border-radius: 12px; overflow: hidden; margin-bottom: 1.5rem;
         background: #f3f4f6;
     }
     :global(html[data-theme="dark"]) .blog-img-wrap { background: #1f2937; }
@@ -486,33 +540,48 @@ const CATEGORIES = ['Todos', 'Ventas B2B', 'Finanzas', 'Operaciones', 'Tecnolog�
     }
     .blog-card-link:hover .blog-img-wrap img { transform: scale(1.04); }
 
-    .blog-content { display: flex; flex-direction: column; flex-grow: 1; }
-
-    .card-category {
-        font-size: 0.85rem; font-weight: 500; color: var(--color-blue-deep);
-        margin-bottom: 0.8rem;
+    .blog-category-badge {
+        position: absolute; top: 1rem; left: 1rem;
+        background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
+        color: #111827; font-size: 0.65rem; font-weight: 700;
+        padding: 4px 10px; border-radius: 100px;
+        text-transform: uppercase; letter-spacing: 0.05em;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
-    :global(html[data-theme="dark"]) .card-category { color: #60a5fa; }
+    :global(html[data-theme="dark"]) .blog-category-badge { background: rgba(0,0,0,0.6); color: #fff; }
+
+    .blog-content { display: flex; flex-direction: column; flex-grow: 1; padding: 0 0.5rem; }
+
+    .blog-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 0.8rem; }
 
     .blog-title {
-        font-size: 1.25rem; font-weight: 600; line-height: 1.3; letter-spacing: -0.02em;
-        color: #111827; margin: 0 0 0.8rem; transition: color 0.2s;
+        font-size: 1.35rem; font-weight: 800; line-height: 1.3; letter-spacing: -0.02em;
+        color: #111827; margin: 0 0 0.8rem; transition: color 0.3s;
     }
     :global(html[data-theme="dark"]) .blog-title { color: #fff; }
+    .blog-card-link:hover .blog-title { color: var(--color-blue-deep); }
+    :global(html[data-theme="dark"]) .blog-card-link:hover .blog-title { color: #60a5fa; }
 
     .blog-excerpt {
         font-size: 1rem; color: #4b5563; line-height: 1.6; margin: 0 0 1.5rem;
         display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
     }
-    :global(html[data-theme="dark"]) .blog-excerpt { color: #9ca3af; }
+    :global(html[data-theme="dark"]) .blog-excerpt { color: #cbd5e1; }
 
     .blog-read-more {
-        display: inline-flex; align-items: center; gap: 4px;
-        font-size: 0.95rem; font-weight: 600; color: var(--color-blue-deep);
-        margin-top: auto; transition: gap 0.3s;
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 0.95rem; font-weight: 700; color: #111827; margin-top: auto;
+        transition: gap 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s;
     }
-    :global(html[data-theme="dark"]) .blog-read-more { color: #60a5fa; }
-    .blog-read-more svg { width: 16px; height: 16px; transition: transform 0.3s; }
-    .blog-card-link:hover .blog-read-more { gap: 8px; }
+    :global(html[data-theme="dark"]) .blog-read-more { color: #fff; }
+    .blog-read-more svg { width: 16px; height: 16px; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    .blog-card-link:hover .blog-read-more { gap: 10px; color: var(--color-blue-deep); }
+    :global(html[data-theme="dark"]) .blog-card-link:hover .blog-read-more { color: #60a5fa; }
 
+    @media (max-width: 992px) {
+        .floating-card { grid-template-columns: 1fr; }
+        .fc-image { min-height: 300px; }
+        .fc-text { padding: 3rem 2rem; }
+        .hero-canvas { padding-top: 6rem; }
+    }
 </style>
