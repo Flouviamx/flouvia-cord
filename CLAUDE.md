@@ -1254,3 +1254,15 @@ El Centro de Ayuda (`/soporte`) es un sistema de documentación *Stripe-level* i
   - `src/pages/soporte/categoria/[categoria].astro`: Índice de categoría en formato de lista minimalista (diseño cardless corporativo).
 - **Buscador Client-Side:** El autocompletado en `SupportHero.astro` consulta `/api/support-search.json.ts` y filtra en el cliente para latencia cero.
 - **Diseño sin Emojis:** Todos los íconos de soporte utilizan SVGs estilo Lucide en lugar de emojis de texto. Todo el estilo "tarjeta" pesado fue removido en favor de fondos transparentes, divisores sutiles y estética corporativa.
+
+---
+
+## UI Components & Aesthetics
+
+### Sidebar Navigation (AppLayout)
+El componente `Sidebar.astro` es el menú principal de la app y presenta un diseño "Linear-style" / "macOS Dock".
+- **Acordeones de Grupo:** Las cabeceras de los grupos (ej. "Principal", "Dinero") utilizan `grid-template-rows: 0fr/1fr` para lograr un colapso ultra-fluido impulsado puramente por CSS.
+- **Dock Mode (Collapsed):** El modo colapsado funciona como una "isla flotante" o "Dock de iPad". Los iconos se escalan a cuadrados de 42x42px perfectamente centrados.
+- **Normal Mode (Expanded):** Sigue la misma filosofía limpia que el modo Dock. Utiliza hover elástico sutil (sin físicas excesivas) y textos sólidos. El indicador de ítem activo es un cuadro de cristal líquido (`backdrop-filter`) idéntico en ambos modos, asegurando cohesión visual.
+- **Microinteracciones:** Las tooltips en modo colapsado utilizan `transform-origin: left center` para brotar elásticamente desde el ícono. El indicador de ítem activo es una "pastilla de cristal" calculada matemáticamente en JS mediante `getBoundingClientRect()` para evitar bugs de offsetTop en anidamientos CSS.
+- **Sombra Premium:** `--sb-shadow` iguala de forma idéntica la sombra doble de la `topbar` (`0 12px 36px -8px rgba(10,25,47,0.14)`) para asegurar que la sidebar no luzca plana frente al resto de los paneles, creando un volumen 3D ultra-premium.

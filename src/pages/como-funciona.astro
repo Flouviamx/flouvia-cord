@@ -1,0 +1,75 @@
+---
+// Cómo funciona — Página dedicada al flujo completo de Cord.
+// Mismo lenguaje visual que /soluciones (PageAnims).
+export const prerender = true;
+
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/landing/Nav.astro';
+import Footer from '../components/landing/Footer.astro';
+import PageAnims from '../components/landing/PageAnims.astro';
+import Steps from '../components/landing/Steps.astro';
+---
+
+<Layout
+    title="Cómo funciona — Cord"
+    description="Descubre cómo funciona Cord en tres sencillos pasos. Del primer contacto al CFDI sin fricción."
+>
+    <Nav />
+    <main>
+        <section class="cf-hero">
+            <div class="cf-mesh" aria-hidden="true"></div>
+            <div class="cf-hero-inner">
+                <p class="cf-eyebrow reveal">CÓMO FUNCIONA</p>
+                <h1 class="cf-title masked-title">De la cotización<br/>a la factura, en minutos.</h1>
+                <p class="cf-sub reveal">
+                    Olvídate de los PDFs genéricos, los hilos interminables de correo y la doble captura.
+                    Cord optimiza tu flujo de ventas B2B para que tú te enfoques en cerrar tratos.
+                </p>
+            </div>
+        </section>
+
+        <Steps />
+    </main>
+
+    <Footer
+        ctaTitle="Tu equipo ya cotiza<br />con Cord."
+        ctaSub="Empieza gratis hoy — 5 cotizaciones activas, sin tarjeta."
+    />
+    <PageAnims />
+</Layout>
+
+<style>
+    .cf-hero {
+        position: relative;
+        padding: 11.5rem 5% 4rem;
+        text-align: center;
+        overflow: clip;
+        background: #050b14; /* Matches steps gradient bottom */
+    }
+    .cf-mesh {
+        position: absolute; inset: -20% -10% auto;
+        height: 100%;
+        background:
+            radial-gradient(ellipse 50% 60% at 28% 20%, rgba(10,25,47,0.3) 0%, transparent 60%),
+            radial-gradient(ellipse 44% 54% at 76% 12%, rgba(10,25,47,0.2) 0%, transparent 60%);
+        pointer-events: none;
+    }
+    .cf-hero-inner { position: relative; z-index: 1; max-width: 880px; margin: 0 auto; }
+    .cf-eyebrow {
+        font-size: 0.65rem; font-weight: 800; letter-spacing: 3px;
+        text-transform: uppercase; color: rgba(255,255,255,0.45); margin: 0 0 1.4rem;
+    }
+    .cf-title {
+        font-size: clamp(2.4rem, 5.4vw, 4.2rem);
+        font-weight: 800; line-height: 1.04; letter-spacing: -0.035em;
+        color: #fff; margin: 0 0 1.6rem;
+    }
+    .cf-sub {
+        font-size: 1.12rem; line-height: 1.65; color: rgba(255,255,255,0.6);
+        max-width: 620px; margin: 0 auto 2.4rem;
+    }
+
+    @media (max-width: 860px) {
+        .cf-hero { padding-top: 9.5rem; }
+    }
+</style>
