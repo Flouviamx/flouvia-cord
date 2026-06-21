@@ -52,10 +52,10 @@ const { title, page, heading, crumbs = [] } = Astro.props;
         <style is:inline>
             /* ASTRO OPTIMIZATION BYPASS: Forced CSS injection */
             html.sb-collapsed .sidebar { width: 56px !important; padding-left: 0 !important; padding-right: 0 !important; align-items: stretch !important; }
-            html.sb-collapsed .sb-item { width: 36px !important; height: 36px !important; justify-content: center !important; padding: 0 !important; border-radius: 10px !important; }
-            html.sb-collapsed .sb-item svg { width: 20px !important; height: 20px !important; }
-            html.sb-collapsed .sb-indicator { width: 36px !important; left: 50% !important; margin-left: -18px !important; border-radius: 10px !important; }
-            html.sb-collapsed .org-switcher-btn { width: 36px !important; height: 36px !important; justify-content: center !important; padding: 0 !important; }
+            html.sb-collapsed .sb-item { width: 100% !important; height: 36px !important; justify-content: flex-start !important; padding-left: 18px !important; border-radius: 10px !important; margin: 0 !important; }
+            html.sb-collapsed .sb-item svg { width: 20px !important; height: 20px !important; flex-shrink: 0 !important; }
+            html.sb-collapsed .sb-indicator { width: calc(100% - 16px) !important; left: 8px !important; margin-left: 0 !important; border-radius: 10px !important; }
+            html.sb-collapsed .org-switcher-btn { width: 100% !important; height: 36px !important; justify-content: flex-start !important; padding-left: 18px !important; }
             html.sb-collapsed .sb-account { padding: 0 !important; margin-bottom: 0.4rem !important; }
             .org-dropdown { background-color: var(--sb-menu-solid-bg, #ffffff) !important; background-image: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
             html[data-theme="dark"] .org-dropdown { background-color: #111823 !important; }
