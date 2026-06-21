@@ -1,6 +1,6 @@
 ---
 // Cómo funciona — Página dedicada al flujo completo de Cord.
-// Mismo lenguaje visual que /soluciones (PageAnims).
+// Mejorada con sección de características clave y diseño premium.
 export const prerender = true;
 
 import Layout from '../layouts/Layout.astro';
@@ -11,65 +11,290 @@ import Steps from '../components/landing/Steps.astro';
 ---
 
 <Layout
-    title="Cómo funciona — Cord"
-    description="Descubre cómo funciona Cord en tres sencillos pasos. Del primer contacto al CFDI sin fricción."
+    title="Cómo funciona | Cord"
+    description="Descubre cómo funciona Cord. Del primer contacto al CFDI sin fricción, todo en una sola plataforma diseñada para B2B."
 >
     <Nav />
     <main>
         <section class="cf-hero">
             <div class="cf-mesh" aria-hidden="true"></div>
             <div class="cf-hero-inner">
-                <p class="cf-eyebrow reveal">CÓMO FUNCIONA</p>
-                <h1 class="cf-title masked-title">De la cotización<br/>a la factura, en minutos.</h1>
+                <p class="cf-eyebrow reveal">CÓMO FUNCIONA CORD</p>
+                <h1 class="cf-title masked-title">Vende más rápido.<br/>Cobra a tiempo.</h1>
                 <p class="cf-sub reveal">
-                    Olvídate de los PDFs genéricos, los hilos interminables de correo y la doble captura.
-                    Cord optimiza tu flujo de ventas B2B para que tú te enfoques en cerrar tratos.
+                    Olvídate de los PDFs estáticos, los hilos interminables de correo y la doble captura.
+                    Cord optimiza todo el ciclo de ventas B2B para que tú te enfoques en cerrar tratos.
                 </p>
+                <div class="cf-hero-actions reveal">
+                    <a href="/registro" class="cf-btn-primary">Empieza gratis</a>
+                    <a href="/q/demo" class="cf-btn-secondary">Ver demo interactiva</a>
+                </div>
+            </div>
+            
+            <!-- Mockup flotante en el hero -->
+            <div class="cf-hero-mockup reveal">
+                <div class="cf-mockup-glass">
+                    <div class="cf-mockup-header">
+                        <div class="cf-dots"><span></span><span></span><span></span></div>
+                        <div class="cf-url">cord.flouvia.com/quote/xyz</div>
+                    </div>
+                    <div class="cf-mockup-body">
+                        <div class="cf-skeleton-line title"></div>
+                        <div class="cf-skeleton-line"></div>
+                        <div class="cf-skeleton-line short"></div>
+                        <div class="cf-mockup-btn">Aprobar cotización</div>
+                    </div>
+                </div>
             </div>
         </section>
 
-        <Steps />
+        <!-- Componente existente de pasos -->
+        <div class="cf-steps-wrapper">
+            <Steps />
+        </div>
+
+        <!-- Nueva sección de Características Clave -->
+        <section class="cf-features">
+            <div class="cf-features-inner">
+                <div class="cf-features-head reveal">
+                    <h2 class="cf-h2 masked-title">Todo lo que necesitas, sin la complejidad de un ERP.</h2>
+                    <p class="cf-p">Diseñado para la velocidad de las ventas modernas, con el rigor financiero que exige tu operación.</p>
+                </div>
+
+                <div class="cf-grid">
+                    <article class="cf-card reveal">
+                        <div class="cf-card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        </div>
+                        <h3>Aprobaciones con un clic</h3>
+                        <p>Tu cliente recibe un enlace único. Sin contraseñas ni registros, puede revisar el detalle, aceptar los términos y aprobar la cotización al instante desde su celular.</p>
+                    </article>
+
+                    <article class="cf-card reveal">
+                        <div class="cf-card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                        </div>
+                        <h3>Notificaciones en tiempo real</h3>
+                        <p>Deja de preguntar "¿Ya pudiste revisar mi correo?". Cord te avisa exactamente en el momento en que tu cliente abre la cotización para que llames en el momento perfecto.</p>
+                    </article>
+
+                    <article class="cf-card reveal">
+                        <div class="cf-card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                        </div>
+                        <h3>Catálogo y Precios dinámicos</h3>
+                        <p>Maneja múltiples listas de precios o precios negociados por cliente. Si actualizas un precio base, las reglas se aplican automáticamente para todos.</p>
+                    </article>
+
+                    <article class="cf-card reveal">
+                        <div class="cf-card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        </div>
+                        <h3>Facturación nativa (CFDI 4.0)</h3>
+                        <p>Una vez que el proyecto se entrega o el producto se envía, convierte la cotización aprobada en una factura válida ante el SAT en un par de clics, sin errores de captura.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
     </main>
 
     <Footer
-        ctaTitle="Tu equipo ya cotiza<br />con Cord."
-        ctaSub="Empieza gratis hoy — 5 cotizaciones activas, sin tarjeta."
+        ctaTitle="¿Listo para profesionalizar<br/>tus ventas?"
+        ctaSub="Empieza gratis hoy — 5 cotizaciones activas al mes, sin tarjeta de crédito."
     />
     <PageAnims />
 </Layout>
 
 <style>
+    /* Hero Section */
     .cf-hero {
         position: relative;
-        padding: 11.5rem 5% 4rem;
+        padding: 12rem 5% 8rem;
         text-align: center;
         overflow: clip;
-        background: #050b14; /* Matches steps gradient bottom */
+        background: #050b14; /* Match steps background */
     }
+    :global(html[data-theme="light"]) .cf-hero {
+        background: #f8fafc;
+    }
+
     .cf-mesh {
         position: absolute; inset: -20% -10% auto;
         height: 100%;
         background:
-            radial-gradient(ellipse 50% 60% at 28% 20%, rgba(10,25,47,0.3) 0%, transparent 60%),
-            radial-gradient(ellipse 44% 54% at 76% 12%, rgba(10,25,47,0.2) 0%, transparent 60%);
+            radial-gradient(ellipse 50% 60% at 28% 20%, rgba(10,37,218,0.15) 0%, transparent 60%),
+            radial-gradient(ellipse 44% 54% at 76% 12%, rgba(10,37,218,0.1) 0%, transparent 60%);
         pointer-events: none;
     }
-    .cf-hero-inner { position: relative; z-index: 1; max-width: 880px; margin: 0 auto; }
+    
+    .cf-hero-inner { position: relative; z-index: 2; max-width: 880px; margin: 0 auto; }
+    
     .cf-eyebrow {
-        font-size: 0.65rem; font-weight: 800; letter-spacing: 3px;
-        text-transform: uppercase; color: rgba(255,255,255,0.45); margin: 0 0 1.4rem;
+        font-size: 0.75rem; font-weight: 800; letter-spacing: 2px;
+        text-transform: uppercase; color: var(--color-blue-deep); margin: 0 0 1.4rem;
     }
+    :global(html[data-theme="dark"]) .cf-eyebrow { color: #60a5fa; }
+
     .cf-title {
-        font-size: clamp(2.4rem, 5.4vw, 4.2rem);
-        font-weight: 800; line-height: 1.04; letter-spacing: -0.035em;
-        color: #fff; margin: 0 0 1.6rem;
+        font-size: clamp(2.8rem, 6vw, 4.8rem);
+        font-weight: 800; line-height: 1.05; letter-spacing: -0.035em;
+        color: #fff; margin: 0 0 1.5rem;
     }
+    :global(html[data-theme="light"]) .cf-title { color: #111827; }
+
     .cf-sub {
-        font-size: 1.12rem; line-height: 1.65; color: rgba(255,255,255,0.6);
-        max-width: 620px; margin: 0 auto 2.4rem;
+        font-size: 1.15rem; line-height: 1.6; color: rgba(255,255,255,0.7);
+        max-width: 650px; margin: 0 auto 2.5rem;
     }
+    :global(html[data-theme="light"]) .cf-sub { color: #4b5563; }
+
+    .cf-hero-actions {
+        display: flex; gap: 1rem; justify-content: center;
+        margin-bottom: 4rem;
+    }
+    
+    .cf-btn-primary {
+        background: var(--color-blue-deep); color: #fff;
+        padding: 14px 28px; border-radius: 8px;
+        font-weight: 600; text-decoration: none;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    :global(html[data-theme="dark"]) .cf-btn-primary { background: #3b82f6; }
+    .cf-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(10,37,218,0.3);
+    }
+    
+    .cf-btn-secondary {
+        background: rgba(255,255,255,0.1); color: #fff;
+        padding: 14px 28px; border-radius: 8px;
+        font-weight: 600; text-decoration: none;
+        backdrop-filter: blur(10px);
+        transition: background 0.2s;
+    }
+    :global(html[data-theme="light"]) .cf-btn-secondary {
+        background: rgba(0,0,0,0.05); color: #111827;
+    }
+    .cf-btn-secondary:hover { background: rgba(255,255,255,0.15); }
+    :global(html[data-theme="light"]) .cf-btn-secondary:hover { background: rgba(0,0,0,0.1); }
+
+    /* Floating Mockup */
+    .cf-hero-mockup {
+        position: relative; z-index: 1;
+        max-width: 700px; margin: 0 auto;
+        transform: perspective(1000px) rotateX(8deg);
+        box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+        border-radius: 16px;
+    }
+    :global(html[data-theme="light"]) .cf-hero-mockup { box-shadow: 0 30px 60px rgba(10,37,218,0.15); }
+    
+    .cf-mockup-glass {
+        background: rgba(15, 23, 42, 0.7);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    :global(html[data-theme="light"]) .cf-mockup-glass {
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .cf-mockup-header {
+        display: flex; align-items: center; justify-content: center;
+        padding: 12px 20px; background: rgba(0,0,0,0.2);
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        position: relative;
+    }
+    :global(html[data-theme="light"]) .cf-mockup-header {
+        background: rgba(0,0,0,0.03); border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .cf-dots { position: absolute; left: 20px; display: flex; gap: 6px; }
+    .cf-dots span { width: 10px; height: 10px; border-radius: 50%; background: #4b5563; }
+    .cf-dots span:nth-child(1) { background: #ef4444; }
+    .cf-dots span:nth-child(2) { background: #eab308; }
+    .cf-dots span:nth-child(3) { background: #22c55e; }
+    
+    .cf-url { font-size: 0.75rem; color: rgba(255,255,255,0.5); font-family: monospace; }
+    :global(html[data-theme="light"]) .cf-url { color: rgba(0,0,0,0.5); }
+
+    .cf-mockup-body { padding: 40px; text-align: left; }
+    .cf-skeleton-line { height: 16px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 16px; width: 100%; }
+    .cf-skeleton-line.title { height: 28px; width: 60%; margin-bottom: 24px; }
+    .cf-skeleton-line.short { width: 80%; }
+    :global(html[data-theme="light"]) .cf-skeleton-line { background: rgba(0,0,0,0.05); }
+    
+    .cf-mockup-btn {
+        margin-top: 32px; display: inline-block;
+        background: var(--color-ok, #10b981); color: #fff;
+        padding: 12px 24px; border-radius: 6px;
+        font-weight: 600; font-size: 0.9rem;
+    }
+
+    /* Features Section */
+    .cf-features {
+        padding: 8rem 5%;
+        background: #fff;
+    }
+    :global(html[data-theme="dark"]) .cf-features { background: #050b14; }
+
+    .cf-features-inner { max-width: 1100px; margin: 0 auto; }
+    
+    .cf-features-head { text-align: center; margin-bottom: 5rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+    .cf-h2 {
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 800; line-height: 1.1; letter-spacing: -0.03em;
+        color: #111827; margin: 0 0 1.2rem;
+    }
+    :global(html[data-theme="dark"]) .cf-h2 { color: #fff; }
+    .cf-p { font-size: 1.15rem; color: #4b5563; line-height: 1.6; }
+    :global(html[data-theme="dark"]) .cf-p { color: #9ca3af; }
+
+    .cf-grid {
+        display: grid; grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+    }
+
+    .cf-card {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        padding: 3rem;
+        border-radius: 20px;
+        transition: transform 0.3s var(--ease-spring);
+    }
+    :global(html[data-theme="dark"]) .cf-card {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+    .cf-card:hover { transform: translateY(-4px); }
+
+    .cf-card-icon {
+        width: 54px; height: 54px;
+        background: rgba(10,37,218,0.1);
+        color: var(--color-blue-deep);
+        border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 1.5rem;
+    }
+    :global(html[data-theme="dark"]) .cf-card-icon {
+        background: rgba(59,130,246,0.15); color: #60a5fa;
+    }
+    .cf-card-icon svg { width: 28px; height: 28px; }
+
+    .cf-card h3 {
+        font-size: 1.4rem; font-weight: 700; color: #111827; margin: 0 0 1rem;
+    }
+    :global(html[data-theme="dark"]) .cf-card h3 { color: #fff; }
+    .cf-card p {
+        font-size: 1rem; color: #4b5563; line-height: 1.6; margin: 0;
+    }
+    :global(html[data-theme="dark"]) .cf-card p { color: #9ca3af; }
 
     @media (max-width: 860px) {
         .cf-hero { padding-top: 9.5rem; }
+        .cf-hero-actions { flex-direction: column; }
+        .cf-grid { grid-template-columns: 1fr; }
+        .cf-card { padding: 2rem; }
     }
 </style>
