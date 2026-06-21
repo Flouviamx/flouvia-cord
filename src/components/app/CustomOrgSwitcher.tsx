@@ -177,9 +177,9 @@ export default function CustomOrgSwitcher() {
           justify-content: center;
           gap: 0;
           padding: 0;
-          width: 46px;
-          height: 46px;
-          border-radius: 13px;
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
         }
 
         .org-switcher-btn {
@@ -252,7 +252,10 @@ export default function CustomOrgSwitcher() {
           left: 0;
           width: 280px;
           /* SÓLIDO opaco absoluto. Al remover el backdrop-filter y el gradiente evitamos la mezcla visual. */
-          background: #ffffff;
+          background-color: #ffffff !important;
+          background-image: none !important;
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
           border: 1px solid var(--sb-menu-border);
           border-radius: 16px;
           box-shadow: var(--sb-menu-shadow);
@@ -263,8 +266,9 @@ export default function CustomOrgSwitcher() {
         }
         .sb-collapsed .org-dropdown { width: 250px; }
         
-        html[data-theme="dark"] .org-dropdown {
-          background: #111823;
+        html[data-theme="dark"] .org-dropdown,
+        :global(html[data-theme="dark"]) .org-dropdown {
+          background-color: #111823 !important;
         }
 
         @keyframes dropdownFade {
