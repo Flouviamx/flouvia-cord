@@ -302,7 +302,7 @@ const { title, page, heading, crumbs = [] } = Astro.props;
     
     /* Estado colapsado global: afecta la estructura principal */
     html.sb-collapsed {
-        --sidebar-w: 64px;
+        --sidebar-w: 56px;
         --content-max: 1440px;
 
         /* ── Sidebar (espejo de la topbar): vidrio BLANCO en claro, navy en oscuro.
@@ -334,6 +334,7 @@ const { title, page, heading, crumbs = [] } = Astro.props;
         --sb-toggle-hover-bg: rgba(10,25,47,0.08);
         /* Dropdowns de la sidebar (cuenta, crear) — SÓLIDO opaco (no debe verse el fondo) */
         --sb-menu-bg: linear-gradient(180deg, #ffffff, #fafbfe);
+        --sb-menu-solid-bg: #ffffff;
         --sb-menu-border: rgba(255,255,255,0.7);
         --sb-menu-shadow: inset 0 1px 1px rgba(255,255,255,0.95), inset 0 0 0 0.5px rgba(255,255,255,0.6), 0 24px 60px -18px rgba(10,25,47,0.42), 0 4px 12px rgba(10,25,47,0.1);
         --sb-menu-text: var(--color-text);
@@ -389,6 +390,7 @@ const { title, page, heading, crumbs = [] } = Astro.props;
         --sb-toggle-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.09), inset 0 1px 0 rgba(255,255,255,0.06);
         --sb-toggle-hover-bg: rgba(255,255,255,0.12);
         --sb-menu-bg: linear-gradient(180deg, #1c2535, #111823);
+        --sb-menu-solid-bg: #111823;
         --sb-menu-border: rgba(255,255,255,0.12);
         --sb-menu-shadow: inset 0 1px 0 rgba(255,255,255,0.12), inset 0 0 0 0.5px rgba(255,255,255,0.06), 0 24px 60px -18px rgba(0,0,0,0.75);
         --sb-menu-text: rgba(255,255,255,0.88);

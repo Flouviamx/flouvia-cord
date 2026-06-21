@@ -61,7 +61,7 @@ export default function CustomOrgSwitcher() {
       </button>
 
       {isOpen && (
-        <div className="org-dropdown">
+        <div className="org-dropdown" style={{ backgroundColor: 'var(--sb-menu-solid-bg, #ffffff)', backdropFilter: 'none', WebkitBackdropFilter: 'none', backgroundImage: 'none' }}>
           <div className="dropdown-header">
             <span className="dropdown-title">Tus espacios</span>
           </div>
@@ -167,7 +167,7 @@ export default function CustomOrgSwitcher() {
           padding: 0;
         }
 
-        /* Colapsado: el botón se vuelve un cuadro de 46px centrado, alineado
+        /* Colapsado: el botón se vuelve un cuadro de 36px centrado, alineado
            exactamente con la columna de íconos del nav. */
         .sb-collapsed .custom-org-switcher {
           display: flex;
@@ -177,9 +177,9 @@ export default function CustomOrgSwitcher() {
           justify-content: center;
           gap: 0;
           padding: 0;
-          width: 40px;
-          height: 40px;
-          border-radius: 12px;
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
         }
 
         .org-switcher-btn {
