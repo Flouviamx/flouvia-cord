@@ -81,9 +81,14 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
 
 ✅ **Centro de Ayuda de Clase Mundial (jun 2026)** — rediseño y reescritura masiva de `/soporte`:
    • **Reescritura Manual de 61 Artículos:** Eliminamos TODAS las plantillas genéricas. Se escribieron 61 archivos JSON (inyectados a Markdown) con contenido profundo, real, y específico para B2B. Aclaración clave de negocio: **Cord NO cobra comisiones por transacción**, todo el procesamiento se delega a la llave conectada de Stripe (Payouts, Disputas, FX), y Cord factura el SaaS (excedentes de CFDI/IA).
-   • **Buscador Instantáneo (Cmd+K):** Endpoint en `/api/support-search.json` (prerendered) expone el índice. Componente `SupportSearch.astro` con Vanilla JS y `fuse.js`-like filtering inyectado en el nav/hero. Filtra por título y descripción instantáneamente sin recargas.
-   • **Tabla de Contenidos Automática (Scrollspy):** `[slug].astro` lee H2/H3 (`headings.filter(...)`). El grid cambió de 2 a 3 columnas. Barra lateral derecha pegajosa con JS (`IntersectionObserver`) que ilumina el título activo al hacer scroll.
-   • **Widget de Feedback:** Botones de pulgar arriba/abajo al final de cada artículo con micro-interacciones.
+   • **Buscador Instantáneo (Cmd+K):** Endpoint en `/api/support-search.json` (prerendered) expone el índice. Componente `SupportSearch.astro` con Vanilla JS y `fuse.js`-like filtering inyectado en el nav/hero. Filtra por título y descripción instantáneamente sin recargas. Resolvimos el problema de z-index donde los resultados se ocultaban por debajo usando `:global` scoping.
+   • **Navegación UX:** Tabla de Contenidos Automática (`[slug].astro` lee H2/H3 con Scrollspy). Breadcrumbs inyectados dinámicamente y grid de "Artículos Relacionados" leyendo el tag o la categoría actual.
+   • **Widget de Feedback:** Botones de pulgar arriba/abajo al final de cada artículo con micro-interacciones. Si seleccionas una opción, el color cambia a verde/rojo para afirmar la acción (no se queda en un hover genérico).
+✅ **Estética Quiet Luxury global aplicada (jun 2026)** — limpieza severa de UI a petición de André ("editorial, nada genérico, mucho aire"):
+   • **Adiós a las cards (cajas redondeadas con borde y fondo):** Eliminadas del soporte y de listas genéricas. Se reemplazaron por el estilo **Hairline** (divisores sutiles de 1px) o layouts de columnas planas (Airy Bento).
+   • **"Airy Bento" en Quick Routes:** El grid de soporte ya no tiene bordes entre celdas; usa gaps enormes (`3rem`) y fondos invisibles que revelan su color primario en hover.
+   • **Íconos delgados y estéticos:** Se reemplazaron SVG anchos (stroke 2) por trazos elegantes (stroke 1.2 a 1.5), escalando su tamaño de 24 a 32px para sentirse más técnicos e intencionales.
+   • **Globalización del FAQ Nativo:** El `<details>` nativo con estilo hairline usado en Soporte fue portado al 100% de la web (Landing y Precios), eliminando el código JS pesado y las cajas con sombras.
 
 ✅ **Navbar móvil — menú premium con acordeones (jun 2026)** — reescritura completa del
    overlay de `Nav.astro` a petición de André ("neta, carbona, estéticamente Cord"):
@@ -1154,8 +1159,8 @@ Regla de oro: **misma alma, distinto cuerpo**. Tokens en `src/layouts/Layout.ast
   el estilo **Stripe/Linear de LISTAS**: filas con hairline (`border-bottom`),
   ícono + título + descripción en línea, tablas, secciones con eyebrow + hairline
   y mucho aire. Ejemplo canónico = índice de Ajustes (`/app/ajustes`) e
-  integraciones (filas, NO tarjetas). Las `.card` ya existentes del dashboard/
-  analítica pueden quedarse, pero NO usar card-grids para cosas nuevas.
+  integraciones (filas, NO tarjetas), al igual que **todas las FAQs y la página de Soporte**.
+- **Airy Bento:** Cuando se requiera un layout de cuadrícula para navegación rápida (como las Quick Routes), no se deben poner líneas ni fondos divisorios por defecto. Usar `gap` generoso, fondos transparentes, iconos SVG delgados (stroke 1.2 - 1.5) y aplicar efectos de fondo únicamente durante el `:hover`.
 - **Sidebar Ultra-Compacta (Premium Linear-style)**: El sidebar colapsado ahora tiene 56px de ancho absoluto (bypass de Astro optimizer en `AppLayout.astro`) para mantener el "soul" Linear. Los íconos no se centran, sino que mantienen `padding-left` con microinteracciones táctiles de `scale(0.94)` al click (`:active`). El z-index de la sidebar se elevó globalmente a 800 para prevenir overlapping del contenido principal.
 - **Org Switcher Sólido**: El `<CustomOrgSwitcher />` y la cuenta tienen z-index masivo global (9999) y un background blanco/navy absoluto (inyectado via `<style is:inline>`) con sombras agresivas para separarlo físicamente del efecto Liquid Glass de la sidebar. Esto previene ilusiones de translucidez o superposición del dashboard tanto en modo expandido como colapsado.
 - Secciones de la landing: `padding: 9rem` vertical (mucho aire, estilo Stripe/Linear).
