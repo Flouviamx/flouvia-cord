@@ -120,7 +120,7 @@ const howToSchema = {
         };
 
         const maskTargets = gsap.utils.toArray<HTMLElement>(
-            '.hero-title, .ft-title, .steps-title, .cv-title, .pr-title, .faq-title, .fc-title'
+            '.ft-title, .steps-title, .cv-title, .pr-title, .faq-title, .fc-title'
         );
         const maskedSet = new Set<HTMLElement>(maskTargets);
 
@@ -128,7 +128,6 @@ const howToSchema = {
             const lines = wrapLines(el);
             gsap.set(lines, { yPercent: 115 });
             gsap.set(el, { opacity: 1 }); // el gate ya no lo oculta; lo ocultan las máscaras
-            if (el.classList.contains('hero-title')) return; // el hero lo orquesta su timeline
             ScrollTrigger.create({
                 trigger: el, start: 'top 86%', once: true,
                 onEnter: () => gsap.to(lines, {
@@ -145,7 +144,6 @@ const howToSchema = {
         const heroTl = gsap.timeline({ delay: 0.15, defaults: { ease: 'power2.out' } });
         heroTl
             .to('.hero .hero-pill', { opacity: 1, y: 0, duration: 0.8 }, 0)
-            .to(heroTitleLines, { yPercent: 0, duration: 1.15, ease: 'power3.out', stagger: 0.11 }, 0.08)
             .to('.hero .hero-desc', { opacity: 1, y: 0, duration: 0.9 }, 0.45)
             .to('.hero .hero-points', { opacity: 1, y: 0, duration: 0.9 }, 0.55)
             .to('.hero .hero-actions', { opacity: 1, y: 0, duration: 0.9 }, 0.65)

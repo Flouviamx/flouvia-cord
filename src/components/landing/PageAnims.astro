@@ -36,7 +36,7 @@
             return Array.from(el.querySelectorAll<HTMLElement>('.m-line-in'));
         };
 
-        const maskTargets = gsap.utils.toArray<HTMLElement>('.masked-title');
+        const maskTargets = gsap.utils.toArray<HTMLElement>('.masked-title:not(h1)');
         const maskedSet = new Set<HTMLElement>(maskTargets);
 
         maskTargets.forEach((el) => {

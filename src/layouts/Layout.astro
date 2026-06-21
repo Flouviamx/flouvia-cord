@@ -145,4 +145,17 @@ import Analytics from '@vercel/analytics/astro';
         letter-spacing: -0.03em;
         font-variant-numeric: tabular-nums;
     }
+
+    /* Unificar todos los títulos principales de páginas públicas (Hero style sobrio pero negrita) */
+    h1.masked-title {
+        font-size: clamp(2.4rem, 4.8vw, 4.5rem) !important;
+        line-height: 1.06 !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.04em !important;
+        color: var(--color-blue-deep) !important;
+        margin: 0 auto 3rem !important;
+        max-width: 900px !important;
+        text-wrap: balance !important;
+        text-align: center !important;
+    }
 </style>
