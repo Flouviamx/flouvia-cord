@@ -845,6 +845,19 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 <script>
     import { gsap } from 'gsap';
 
+    // Language switcher scroll preservation
+    const savedScroll = sessionStorage.getItem('langSwapScroll');
+    if (savedScroll) {
+        window.scrollTo({ top: parseInt(savedScroll, 10), behavior: 'instant' });
+        sessionStorage.removeItem('langSwapScroll');
+    }
+
+    document.querySelectorAll('.lang-option, .lang-option-m').forEach(link => {
+        link.addEventListener('click', () => {
+            sessionStorage.setItem('langSwapScroll', window.scrollY.toString());
+        });
+    });
+
     document.addEventListener('DOMContentLoaded', () => {
         const navbar = document.getElementById('navbar');
         const toggle = document.getElementById('menu-toggle');
