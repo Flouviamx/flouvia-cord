@@ -538,13 +538,13 @@ const NAV_GROUPS = [
         :global(.sb-collapsed) .sb-group-label {
             opacity: 1; height: auto; overflow: visible; pointer-events: auto;
         }
-        .app-shell.nav-open .sidebar { transform: translateX(0); }
+        :global(.app-shell.nav-open) .sidebar { transform: translateX(0); }
         .sb-backdrop {
             display: block; position: fixed; inset: 0; z-index: 290;
             background: rgba(10,25,47,0.45); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
             opacity: 0; visibility: hidden; transition: opacity 0.3s var(--ease-ios), visibility 0s 0.3s;
         }
-        .app-shell.nav-open .sb-backdrop { opacity: 1; visibility: visible; transition: opacity 0.3s var(--ease-ios); }
+        :global(.app-shell.nav-open) .sb-backdrop { opacity: 1; visibility: visible; transition: opacity 0.3s var(--ease-ios); }
         /* En el drawer móvil no aplica colapsar (es ancho fijo) */
         .sb-collapse { display: none; }
         /* Acciones del drawer (crear / ayuda / config) — visibles solo en móvil */
