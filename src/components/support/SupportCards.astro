@@ -71,52 +71,37 @@ const faqs = isEn ? [
 <section class="support-content">
     <div class="content-wrapper">
         
-        <!-- ── RUTAS RÁPIDAS (PREMIUM CARDS) ── -->
+        <!-- ── RUTAS RÁPIDAS (SIMPLE HAIRLINE LIST) ── -->
         <h2 class="pr-h2 masked-title">{isEn ? 'Quick links' : 'Rutas rápidas'}</h2>
-        <div class="quick-links-grid reveal">
-            <a href={isEn ? "/en/support/primeros-pasos" : "/soporte/primeros-pasos"} class="ql-card ql-featured">
-                <div class="ql-icon-wrapper">
-                    <svg class="ql-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" /></svg>
-                </div>
-                <div class="ql-content">
+        <div class="ql-simple-list reveal">
+            <a href={isEn ? "/en/support/primeros-pasos" : "/soporte/primeros-pasos"} class="ql-row">
+                <div class="ql-row-info">
                     <h3>{isEn ? 'Cord 101: Getting Started' : 'Cord 101: Primeros Pasos'}</h3>
-                    <p>{isEn ? 'Accelerate your integration with Cord. Set up your corporate account, upload your SAT certificates, and issue your first charge in 5 simple steps.' : 'Acelera tu integración con Cord. Configura tu cuenta empresarial, sube tus certificados del SAT (CSD) y emite tu primer cobro en 5 sencillos pasos.'}</p>
-                    <div class="ql-actions">
-                        <span class="ql-pill">{isEn ? 'Setup Account' : 'Configurar Cuenta'}</span>
-                        <span class="ql-pill">{isEn ? 'Issue Charge' : 'Emitir Cobro'}</span>
-                    </div>
+                    <p>{isEn ? 'Set up your corporate account, upload your SAT certificates, and issue your first charge.' : 'Configura tu cuenta empresarial, sube tus certificados del SAT y emite tu primer cobro.'}</p>
                 </div>
-                <div class="ql-arrow">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                </div>
+                <svg class="ql-row-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
             </a>
-            
-            <div class="ql-sub-grid">
-                <a href={isEn ? "/en/support/glosario-terminos" : "/soporte/glosario-terminos"} class="ql-card">
-                    <div class="ql-icon-wrapper">
-                        <svg class="ql-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path></svg>
-                    </div>
+            <a href={isEn ? "/en/support/glosario-terminos" : "/soporte/glosario-terminos"} class="ql-row">
+                <div class="ql-row-info">
                     <h3>{isEn ? 'B2B Glossary' : 'Glosario B2B'}</h3>
                     <p>{isEn ? 'The translator between engineers and accountants. Understand CFDI PPD vs PUE.' : 'El traductor entre ingenieros y contadores. Entiende qué es un CFDI PPD vs PUE.'}</p>
-                    <span class="ql-cta">{isEn ? 'Read glossary \u2192' : 'Leer glosario \u2192'}</span>
-                </a>
-                <a href={isEn ? "/en/support/migracion-stripe" : "/soporte/migracion-stripe"} class="ql-card">
-                    <div class="ql-icon-wrapper">
-                        <svg class="ql-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg>
-                    </div>
+                </div>
+                <svg class="ql-row-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </a>
+            <a href={isEn ? "/en/support/migracion-stripe" : "/soporte/migracion-stripe"} class="ql-row">
+                <div class="ql-row-info">
                     <h3>{isEn ? 'Migrate from Stripe' : 'Migrar desde Stripe'}</h3>
-                    <p>{isEn ? 'Guide to export your clients and import your card vault (PCI-DSS).' : 'Guía para exportar clientes e importar tu bóveda de tarjetas.'}</p>
-                    <span class="ql-cta">{isEn ? 'View guide \u2192' : 'Ver guía \u2192'}</span>
-                </a>
-                <a href={isEn ? "/en/support/category/desarrolladores" : "/soporte/categoria/desarrolladores"} class="ql-card">
-                    <div class="ql-icon-wrapper">
-                        <svg class="ql-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 8 3 12 7 16"/><polyline points="17 8 21 12 17 16"/><line x1="14" y1="4" x2="10" y2="20"/></svg>
-                    </div>
+                    <p>{isEn ? 'Guide to export your clients and import your card vault (PCI-DSS).' : 'Guía para exportar tus clientes e importar tu bóveda de tarjetas.'}</p>
+                </div>
+                <svg class="ql-row-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </a>
+            <a href={isEn ? "/en/support/category/desarrolladores" : "/soporte/categoria/desarrolladores"} class="ql-row">
+                <div class="ql-row-info">
                     <h3>{isEn ? 'Dev Portal' : 'Portal Devs'}</h3>
                     <p>{isEn ? 'Technical docs for the REST API, Webhooks, and UI components.' : 'Documentación técnica de API REST, Webhooks y componentes.'}</p>
-                    <span class="ql-cta">{isEn ? 'Go to portal \u2192' : 'Ir al portal \u2192'}</span>
-                </a>
-            </div>
+                </div>
+                <svg class="ql-row-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </a>
         </div>
 
         <!-- ── EXPLORAR POR CATEGORÍA (EDITORIAL/HAIRLINES) ── -->
@@ -191,172 +176,50 @@ const faqs = isEn ? [
         margin-top: 6rem;
     }
 
-    /* ── QUICK LINKS PREMIUM CARDS ── */
-    .quick-links-grid {
+    /* ── QUICK LINKS (SIMPLE HAIRLINE LIST) ── */
+    .ql-simple-list {
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
-        margin-bottom: 3rem;
+        border-top: 1px solid var(--color-border);
+        margin-bottom: 4rem;
+        max-width: 860px;
     }
-    .ql-sub-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1.5rem;
-    }
-    .ql-card {
-        background: var(--color-bg);
-        border: 1px solid var(--color-border);
-        border-radius: 16px;
-        padding: 2rem;
+    .ql-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.5rem 0;
+        border-bottom: 1px solid var(--color-border);
         text-decoration: none;
-        display: flex;
-        flex-direction: column;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
-    }
-    .ql-card::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%);
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        z-index: 0;
-    }
-    .ql-card:hover {
-        transform: translateY(-4px);
-        border-color: var(--color-text-muted);
-        box-shadow: 0 12px 24px -8px rgba(0,0,0,0.08);
-    }
-    .ql-card:hover::before {
-        opacity: 1;
-    }
-    .ql-card > * {
-        position: relative;
-        z-index: 1;
-    }
-    .ql-featured {
-        flex-direction: row;
-        align-items: center;
-        gap: 2rem;
-        padding: 2.5rem;
-        background: linear-gradient(to right, var(--color-bg), var(--color-bg-soft));
-    }
-    .ql-icon-wrapper {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        background: var(--color-bg-soft);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 1.5rem;
-        border: 1px solid var(--color-border);
-        transition: all 0.3s ease;
-    }
-    .ql-card:hover .ql-icon-wrapper {
-        background: var(--color-text);
-        border-color: var(--color-text);
-    }
-    .ql-featured .ql-icon-wrapper {
-        width: 64px;
-        height: 64px;
-        margin-bottom: 0;
-        flex-shrink: 0;
-    }
-    .ql-icon {
-        width: 24px;
-        height: 24px;
         color: var(--color-text);
-        transition: color 0.3s ease;
+        transition: padding-left 0.3s ease;
     }
-    .ql-featured .ql-icon {
-        width: 32px;
-        height: 32px;
+    .ql-row:hover {
+        padding-left: 8px;
     }
-    .ql-card:hover .ql-icon {
-        color: var(--color-bg);
-    }
-    .ql-content {
-        flex: 1;
-    }
-    .ql-card h3 {
-        font-size: 1.25rem;
+    .ql-row-info h3 {
+        font-size: 1.15rem;
         font-weight: 700;
+        margin: 0 0 0.25rem 0;
         color: var(--color-text);
-        margin: 0 0 0.75rem 0;
-        letter-spacing: -0.01em;
     }
-    .ql-featured h3 {
-        font-size: 1.6rem;
-        margin-bottom: 0.5rem;
-    }
-    .ql-card p {
+    .ql-row-info p {
         font-size: 0.95rem;
-        line-height: 1.6;
         color: var(--color-text-muted);
-        margin: 0 0 1.5rem 0;
+        line-height: 1.5;
+        margin: 0;
+        max-width: 650px;
     }
-    .ql-featured p {
-        font-size: 1.05rem;
-        margin-bottom: 1.5rem;
-        max-width: 700px;
-    }
-    .ql-actions {
-        display: flex;
-        gap: 12px;
-    }
-    .ql-pill {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--color-text);
-        background: var(--color-bg);
-        padding: 6px 16px;
-        border-radius: 20px;
-        border: 1px solid var(--color-border);
-        transition: all 0.2s ease;
-    }
-    .ql-card:hover .ql-pill {
-        border-color: var(--color-text-muted);
-    }
-    .ql-cta {
-        margin-top: auto;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: var(--color-text);
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        transition: gap 0.2s ease;
-    }
-    .ql-card:hover .ql-cta {
-        gap: 8px;
-    }
-    .ql-arrow {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        background: var(--color-bg-soft);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--color-text);
-        border: 1px solid var(--color-border);
-        transition: all 0.3s ease;
-        flex-shrink: 0;
-    }
-    .ql-arrow svg {
+    .ql-row-arrow {
         width: 20px;
         height: 20px;
-        transition: transform 0.3s ease;
+        color: var(--color-text-muted);
+        flex-shrink: 0;
+        transition: color 0.3s ease, transform 0.3s ease;
     }
-    .ql-card:hover .ql-arrow {
-        background: var(--color-text);
-        color: var(--color-bg);
-        border-color: var(--color-text);
-    }
-    .ql-card:hover .ql-arrow svg {
+    .ql-row:hover .ql-row-arrow {
+        color: var(--color-text);
         transform: translateX(4px);
     }
 
@@ -522,17 +385,6 @@ const faqs = isEn ? [
     }
 
     @media (max-width: 1024px) {
-        .ql-sub-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-        .ql-featured {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 1.5rem;
-        }
-        .ql-featured h3 {
-            font-size: 1.5rem;
-        }
         .editorial-grid {
             grid-template-columns: repeat(2, 1fr);
         }
@@ -547,21 +399,12 @@ const faqs = isEn ? [
         }
     }
     @media (max-width: 768px) {
-        .ql-sub-grid {
-            grid-template-columns: 1fr;
-        }
-        .ql-featured .ql-arrow {
-            display: none;
-        }
         .editorial-grid {
             grid-template-columns: 1fr;
             gap: 3rem;
         }
         .pr-h2 {
             font-size: 2rem;
-        }
-        .ql-actions {
-            flex-wrap: wrap;
         }
     }
 </style>
