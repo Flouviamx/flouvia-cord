@@ -16,9 +16,21 @@ export function useTranslations(lang: keyof typeof ui) {
 // Devuelve {esUrl, enUrl} equivalentes a la ruta actual, conservando el resto
 // del path. Español = sin prefijo (/), inglés = /en/...  (mismo patrón flouvia).
 export function altLangUrls(url: URL) {
-  const pathname = url.pathname;
+  let pathname = url.pathname;
   const lang = getLangFromUrl(url);
-  const esUrl = lang === 'en' ? pathname.replace(/^\/en/, '') || '/' : pathname;
-  const enUrl = lang === 'es' ? '/en' + pathname : pathname;
+  
+  let esUrl = lang === 'en' ? pathname.replace(/^\/en/, '') || '/' : pathname;
+  let enUrl = lang === 'es' ? '/en' + pathname : pathname;
+
+  // Fix support center routes mapping
+  if (esUrl.startsWith('/support')) {
+    esUrl = esUrl.replace('/support', '/soporte');
+    esUrl = esUrl.replace('/category/', '/categoria/');
+  }
+  if (enUrl.includes('/en/soporte')) {
+    enUrl = enUrl.replace('/en/soporte', '/en/support');
+    enUrl = enUrl.replace('/categoria/', '/category/');
+  }
+
   return { esUrl, enUrl, lang };
 }
