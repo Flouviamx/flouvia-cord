@@ -120,7 +120,7 @@ const faqs = isEn ? [
                             </li>
                         ))}
                     </ul>
-                    <a href={isEn ? `/en/support/category/${cat.slug}` : `/soporte/categoria/${cat.slug}`} class="eb-view-all">{isEn ? `View all (${cat.totalCount}) \u2192` : `Ver todos ({cat.totalCount}) \u2192`}</a>
+                    <a href={isEn ? `/en/support/category/${cat.slug}` : `/soporte/categoria/${cat.slug}`} class="eb-view-all">{isEn ? `View all (${cat.totalCount}) \u2192` : `Ver todos (${cat.totalCount}) \u2192`}</a>
                 </div>
             ))}
         </div>
