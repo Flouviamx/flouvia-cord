@@ -515,10 +515,28 @@ const NAV_GROUPS = [
             transform: translateX(-100%); transition: transform 0.34s var(--ease-spring);
             box-shadow: 0 0 60px rgba(0,0,0,0.4);
             margin: 0; border-radius: 0 22px 22px 0;
+            /* El drawer SIEMPRE es ancho fijo, aunque el estado "colapsado" siga
+               persistido desde escritorio. */
+            align-items: stretch;
+            padding-left: 0.7rem; padding-right: 0.7rem;
             /* Respeta el notch arriba y la barra de inicio abajo (iPhone) */
             padding-top: calc(1.2rem + env(safe-area-inset-top));
             padding-bottom: calc(1rem + env(safe-area-inset-bottom));
             overflow-y: auto; -webkit-overflow-scrolling: touch;
+        }
+        /* En móvil el drawer ignora por completo el modo colapsado: restaura ancho,
+           ítems y TODO lo que el colapso esconde (labels, grupos, org, logo). */
+        :global(.sb-collapsed) .sidebar { width: min(284px, 86vw); }
+        :global(.sb-collapsed) .sb-item { width: auto; height: auto; justify-content: flex-start; }
+        :global(.sb-collapsed) .sb-item-label,
+        :global(.sb-collapsed) .sb-shortcut,
+        :global(.sb-collapsed) .sb-org-info,
+        :global(.sb-collapsed) .sb-org-caret,
+        :global(.sb-collapsed) .sb-foot-logo {
+            opacity: 1; width: auto; overflow: visible; pointer-events: auto;
+        }
+        :global(.sb-collapsed) .sb-group-label {
+            opacity: 1; height: auto; overflow: visible; pointer-events: auto;
         }
         .app-shell.nav-open .sidebar { transform: translateX(0); }
         .sb-backdrop {

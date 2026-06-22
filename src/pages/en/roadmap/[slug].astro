@@ -1,0 +1,232 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Nav from '../../../components/landing/Nav.astro';
+import Footer from '../../../components/landing/Footer.astro';
+import PageAnims from '../../../components/landing/PageAnims.astro';
+import { roadmapData } from '../../../lib/roadmap-data';
+import { marked } from 'marked';
+
+export const prerender = true;
+
+export function getStaticPaths() {
+    return roadmapData.map(item => ({
+        params: { slug: item.slug },
+        props: { item }
+    }));
+}
+
+const { item } = Astro.props;
+
+const statusMap = {
+    'live': 'Live',
+    'beta': 'In beta',
+    'next': 'Coming soon'
+};
+
+const htmlContent = marked.parse(item.content.en);
+---
+
+<Layout
+    title={`${item.title.en} — Cord Roadmap`}
+    description={item.shortDesc.en}
+>
+    <Nav />
+    <main class="rd-doc-main">
+        <!-- Main content Document style -->
+        <article class="rd-doc-article">
+            
+            <!-- Header -->
+            <header class="rd-doc-header reveal">
+                <a href="/en/roadmap" class="rd-back-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    Back to Roadmap
+                </a>
+                
+                <div class={`rd-doc-status status-${item.status}`}>
+                    {statusMap[item.status]}
+                </div>
+
+                <h1 class="rd-doc-title masked-title">{item.title.en}</h1>
+                <p class="rd-doc-lead">{item.shortDesc.en}</p>
+            </header>
+
+            <!-- Body -->
+            <div class="rd-doc-body reveal">
+                <div class="rd-doc-prose" set:html={htmlContent} />
+            </div>
+
+            <!-- Footer -->
+            <footer class="rd-doc-footer reveal">
+                <div class="rd-doc-share">
+                    <span>Found this useful?</span>
+                    <a href={`https://twitter.com/intent/tweet?text=Check%20out%20this%20new%20Cord%20feature:%20${item.title.en}&url=https://cord.flouvia.com/en/roadmap/${item.slug}`} target="_blank" rel="noopener noreferrer">Share on Twitter</a>
+                </div>
+                <div class="rd-doc-next">
+                    <a href="/en/roadmap" class="rd-btn-ghost">View all features</a>
+                </div>
+            </footer>
+        </article>
+    </main>
+    <Footer />
+    <PageAnims />
+</Layout>
+
+<style>
+    .rd-doc-main {
+        background: var(--color-bg);
+        min-height: 100vh;
+        padding: 10rem 5% 5rem;
+        display: flex;
+        justify-content: center;
+    }
+
+    .rd-doc-article {
+        max-width: 800px;
+        width: 100%;
+    }
+
+    /* Header */
+    .rd-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--color-text-muted);
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.95rem;
+        margin-bottom: 2.5rem;
+        transition: color 0.3s, transform 0.3s;
+    }
+    .rd-back-link:hover {
+        color: var(--color-text);
+        transform: translateX(-4px);
+    }
+    .rd-back-link svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .rd-doc-status {
+        display: inline-block;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 1.2rem;
+        padding: 4px 12px;
+        border-radius: 100px;
+        background: var(--color-bg-soft);
+    }
+    .status-live { color: #059669; background: rgba(5, 150, 105, 0.1); }
+    .status-beta { color: #d97706; background: rgba(217, 119, 6, 0.1); }
+    .status-next { color: #4f46e5; background: rgba(79, 70, 229, 0.1); }
+
+    .rd-doc-title {
+        font-size: clamp(2.4rem, 4vw, 3.5rem);
+        font-weight: 800;
+        line-height: 1.05;
+        letter-spacing: -0.03em;
+        color: var(--color-text);
+        margin: 0 0 1.5rem;
+    }
+
+    .rd-doc-lead {
+        font-size: 1.2rem;
+        line-height: 1.6;
+        color: var(--color-text-muted);
+        margin: 0 0 3rem;
+        padding-bottom: 3rem;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    /* Body Prose */
+    .rd-doc-prose {
+        font-size: 1.1rem;
+        line-height: 1.7;
+        color: var(--color-text);
+    }
+
+    .rd-doc-prose :global(h2) {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin: 2.5rem 0 1rem;
+        letter-spacing: -0.01em;
+    }
+
+    .rd-doc-prose :global(h3) {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin: 2rem 0 0.8rem;
+    }
+
+    .rd-doc-prose :global(p) {
+        margin: 0 0 1.5rem;
+        color: var(--color-text-muted);
+    }
+
+    .rd-doc-prose :global(ul), .rd-doc-prose :global(ol) {
+        margin: 0 0 1.5rem 1.5rem;
+        color: var(--color-text-muted);
+    }
+
+    .rd-doc-prose :global(li) {
+        margin-bottom: 0.5rem;
+    }
+
+    .rd-doc-prose :global(strong) {
+        color: var(--color-text);
+        font-weight: 600;
+    }
+
+    /* Footer */
+    .rd-doc-footer {
+        margin-top: 5rem;
+        padding-top: 3rem;
+        border-top: 1px solid var(--color-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 2rem;
+    }
+
+    .rd-doc-share {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 0.95rem;
+        color: var(--color-text-muted);
+    }
+    .rd-doc-share a {
+        color: var(--color-blue-deep);
+        text-decoration: none;
+        font-weight: 600;
+        transition: opacity 0.3s;
+    }
+    .rd-doc-share a:hover {
+        opacity: 0.8;
+    }
+
+    .rd-btn-ghost {
+        display: inline-flex;
+        background: none;
+        border: 1px solid var(--color-border);
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+        color: var(--color-text);
+        text-decoration: none;
+        transition: background 0.3s;
+    }
+    .rd-btn-ghost:hover {
+        background: var(--color-bg-soft);
+    }
+
+    /* Dark mode */
+    @media (prefers-color-scheme: dark) {
+        .status-live { color: #34d399; background: rgba(52, 211, 153, 0.1); }
+        .status-beta { color: #fbbf24; background: rgba(251, 191, 36, 0.1); }
+        .status-next { color: #818cf8; background: rgba(129, 140, 248, 0.1); }
+        .rd-doc-prose :global(strong) { color: #fff; }
+    }
+</style>

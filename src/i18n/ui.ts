@@ -67,7 +67,7 @@ export const ui = {
     'nav.mega.rec.2.desc': 'Lo que tu cliente recibe',
     'nav.mega.rec.3.title': 'Centro de ayuda',
     'nav.mega.rec.3.desc': 'Artículos, guías y resolución de problemas',
-    'nav.mega.rec.4.title': 'Roadmap',
+    'nav.mega.rec.4.title': 'Plan de desarrollo',
     'nav.mega.rec.4.desc': 'Lo que estamos construyendo',
     'nav.mega.rec.foot': 'Conoce Flouvia, la casa de Cord',
 

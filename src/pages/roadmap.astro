@@ -6,6 +6,13 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/landing/Nav.astro';
 import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
+import { roadmapData } from '../lib/roadmap-data';
+
+const statusMap = {
+    'live': 'Disponible',
+    'beta': 'En beta',
+    'next': 'Próximamente'
+};
 ---
 
 <Layout
@@ -29,9 +36,9 @@ import PageAnims from '../components/landing/PageAnims.astro';
         <div class="rd-layout">
             <!-- Sidebar: Filters -->
             <aside class="rd-sidebar reveal">
-                <div class="rd-tabs">
-                    <button class="rd-tab is-active">Roadmap</button>
-                    <button class="rd-tab">Lanzados</button>
+                <div class="rd-tabs" role="tablist">
+                    <button class="rd-tab is-active" data-tab-target="all" role="tab">Plan de desarrollo</button>
+                    <button class="rd-tab" data-tab-target="live" role="tab">Lanzados</button>
                 </div>
                 
                 <div class="rd-filters">
@@ -68,146 +75,26 @@ import PageAnims from '../components/landing/PageAnims.astro';
             <!-- Lista de Productos (Rows) -->
             <div class="rd-content">
                 <div class="rd-list" id="roadmap-list">
-                    
-                    <!-- Item 1 -->
-                    <article class="rd-row reveal" data-area="cotizaciones" data-status="live" data-api="true">
-                        <div class="rd-row-status status-live">Disponible</div>
-                        <div class="rd-row-main">
-                            <div class="rd-row-copy">
-                                <h3>Editor de cotizaciones</h3>
-                                <p>Precios negociados línea por línea. Arrastra productos, aplica descuentos por volumen y ajusta márgenes en tiempo real con cálculo de impuestos en vivo.</p>
+                    {roadmapData.map(item => (
+                        <a 
+                            href={`/roadmap/${item.slug}`} 
+                            class="rd-row reveal" 
+                            data-area={item.area} 
+                            data-status={item.status} 
+                            data-api={String(item.api)}
+                        >
+                            <div class={`rd-row-status status-${item.status}`}>{statusMap[item.status]}</div>
+                            <div class="rd-row-main">
+                                <div class="rd-row-copy">
+                                    <h3>{item.title.es}</h3>
+                                    <p>{item.shortDesc.es}</p>
+                                </div>
+                                <div class="rd-row-arrow">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                </div>
                             </div>
-                            <div class="rd-row-arrow">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                            </div>
-                        </div>
-                    </article>
-
-                    <!-- Item 2 -->
-                    <article class="rd-row reveal" data-area="cotizaciones" data-status="live" data-api="false">
-                        <div class="rd-row-status status-live">Disponible</div>
-                        <div class="rd-row-main">
-                            <div class="rd-row-copy">
-                                <h3>Link público interactivo</h3>
-                                <p>Tu cliente aprueba en un clic desde su celular. Olvídate de los PDFs estáticos. Entrega una experiencia de marca profesional y digital.</p>
-                            </div>
-                            <div class="rd-row-arrow">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                            </div>
-                        </div>
-                    </article>
-
-                    <!-- Item 3 -->
-                    <article class="rd-row reveal" data-area="cotizaciones" data-status="live" data-api="true">
-                        <div class="rd-row-status status-live">Disponible</div>
-                        <div class="rd-row-main">
-                            <div class="rd-row-copy">
-                                <h3>Seguimiento en vivo</h3>
-                                <p>Notificaciones push en el momento exacto en que tu cliente abre la cotización. Llama en el momento de mayor interés y cierra más tratos.</p>
-                            </div>
-                            <div class="rd-row-arrow">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                            </div>
-                        </div>
-                    </article>
-
-                    <!-- Item 4 -->
-                    <article class="rd-row reveal" data-area="cotizaciones" data-status="beta" data-api="true">
-                        <div class="rd-row-status status-beta">En beta</div>
-                        <div class="rd-row-main">
-                            <div class="rd-row-copy">
-                                <h3>Cord Elements</h3>
-                                <p>Embebe nuestro motor de cotizaciones directamente en el portal de tu empresa o sitio web B2B. Tus clientes cotizan solos desde tu propio entorno.</p>
-                            </div>
-                            <div class="rd-row-arrow">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                            </div>
-                        </div>
-                    </article>
-
-                    <!-- Item 5 -->
-                    <article class="rd-row reveal" data-area="finanzas" data-status="live" data-api="true">
-                        <div class="rd-row-status status-live">Disponible</div>
-                        <div class="rd-row-main">
-                            <div class="rd-row-copy">
-                                <h3>Clientes y crédito (Net 30/60)</h3>
-                                <p>Asigna límites de crédito y términos de pago por cliente. Cord bloquea nuevas cotizaciones si el cliente excede su límite o tiene facturas vencidas.</p>
-                            </div>
-                            <div class="rd-row-arrow">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                            </div>
-                        </div>
-                    </article>
-
-                    <!-- Item 6 -->
-                    <article class="rd-row reveal" data-area="finanzas" data-status="live" data-api="false">
-                        <div class="rd-row-status status-live">Disponible</div>
-                        <div class="rd-row-main">
-                            <div class="rd-row-copy">
-                                <h3>Multi-divisa y FX</h3>
-                                <p>Cotiza en dólares, cobra en pesos. Tipo de cambio actualizado en tiempo real según el Banco de México (Banxico). Protégete de la volatilidad cambiaria.</p>
-                            </div>
-                            <div class="rd-row-arrow">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                            </div>
-                        </div>
-                    </article>
-
-                    <!-- Item 7 -->
-                    <article class="rd-row reveal" data-area="finanzas" data-status="next" data-api="false">
-                        <div class="rd-row-status status-next">Próximamente</div>
-                        <div class="rd-row-main">
-                            <div class="rd-row-copy">
-                                <h3>Cobranza con IA</h3>
-                                <p>Un agente inteligente que envía recordatorios cordiales de pago por correo y WhatsApp a tu cartera vencida, usando un tono adaptado a la relación con cada cliente.</p>
-                            </div>
-                            <div class="rd-row-arrow">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                            </div>
-                        </div>
-                    </article>
-
-                    <!-- Item 8 -->
-                    <article class="rd-row reveal" data-area="fiscal" data-status="live" data-api="true">
-                        <div class="rd-row-status status-live">Disponible</div>
-                        <div class="rd-row-main">
-                            <div class="rd-row-copy">
-                                <h3>Timbrado CFDI 4.0 automático</h3>
-                                <p>Directo al SAT. Cuando una cotización es aprobada, se convierte en pedido y se timbra la factura PUE o PPD con su respectivo complemento de pago.</p>
-                            </div>
-                            <div class="rd-row-arrow">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                            </div>
-                        </div>
-                    </article>
-
-                    <!-- Item 9 -->
-                    <article class="rd-row reveal" data-area="fiscal" data-status="live" data-api="true">
-                        <div class="rd-row-status status-live">Disponible</div>
-                        <div class="rd-row-main">
-                            <div class="rd-row-copy">
-                                <h3>Validación de Constancia y RFC</h3>
-                                <p>Lectura automática de la Constancia de Situación Fiscal de tus clientes mediante OCR. Evita errores de timbrado por códigos postales o regímenes incorrectos.</p>
-                            </div>
-                            <div class="rd-row-arrow">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                            </div>
-                        </div>
-                    </article>
-
-                    <!-- Item 10 -->
-                    <article class="rd-row reveal" data-area="fiscal" data-status="beta" data-api="true">
-                        <div class="rd-row-status status-beta">En beta</div>
-                        <div class="rd-row-main">
-                            <div class="rd-row-copy">
-                                <h3>Facturación internacional</h3>
-                                <p>Emite facturas de comercio exterior con cumplimiento de regulaciones locales para ventas transfronterizas. Arquitectura fiscal preparada para escala global.</p>
-                            </div>
-                            <div class="rd-row-arrow">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                            </div>
-                        </div>
-                    </article>
+                        </a>
+                    ))}
 
                     <!-- Empty state para filtros -->
                     <div id="rd-empty" class="rd-empty" style="display: none;">
@@ -405,22 +292,34 @@ import PageAnims from '../components/landing/PageAnims.astro';
     .rd-row {
         display: flex;
         flex-direction: column;
-        padding: 2.2rem 0;
+        padding: 2.2rem 1.5rem;
         border-top: 1px solid var(--color-border);
+        border-radius: 12px;
         cursor: pointer;
-        transition: opacity 0.3s, transform 0.3s;
+        text-decoration: none;
+        transition: opacity 0.3s, transform 0.4s var(--ease-spring), background 0.3s, box-shadow 0.3s;
+        margin: -1rem -1.5rem;
     }
-    /* Primer elemento sin borde top para alinear con título de sidebar */
     .rd-row:first-child {
-        border-top: none;
-        padding-top: 0;
+        border-top-color: transparent;
+    }
+
+    .rd-row:hover {
+        background: var(--color-bg-soft);
+        box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+        transform: scale(1.01);
+        z-index: 2;
+        border-top-color: transparent;
+    }
+    .rd-row:hover + .rd-row {
+        border-top-color: transparent;
     }
 
     .rd-row:hover .rd-row-copy h3 {
         color: var(--color-blue-deep);
     }
     .rd-row:hover .rd-row-arrow {
-        transform: translateX(4px);
+        transform: translateX(6px) scale(1.1);
         color: var(--color-blue-deep);
     }
 
@@ -463,7 +362,7 @@ import PageAnims from '../components/landing/PageAnims.astro';
     .rd-row-arrow {
         flex-shrink: 0;
         color: var(--color-text-muted);
-        transition: transform 0.3s var(--ease-spring), color 0.3s;
+        transition: transform 0.4s var(--ease-spring), color 0.3s;
         margin-top: 0.2rem;
     }
     .rd-row-arrow svg { width: 22px; height: 22px; }
@@ -526,6 +425,7 @@ import PageAnims from '../components/landing/PageAnims.astro';
     @media (prefers-color-scheme: dark) {
         .rd-tab.is-active::after { background: #fff; }
         .rd-select { background: rgba(255,255,255,0.03); }
+        .rd-row:hover { background: rgba(255,255,255,0.03); box-shadow: 0 10px 30px -10px rgba(0,0,0,0.3); }
         .rd-row:hover .rd-row-copy h3 { color: #fff; }
         .rd-row:hover .rd-row-arrow { color: #fff; }
         .status-live { color: #34d399; }
@@ -545,6 +445,16 @@ import PageAnims from '../components/landing/PageAnims.astro';
             top: 0;
             z-index: 10;
         }
+        .rd-row {
+            margin: 0;
+            padding: 2rem 0;
+            border-radius: 0;
+        }
+        .rd-row:hover {
+            background: none;
+            transform: none;
+            box-shadow: none;
+        }
     }
 </style>
 
@@ -556,6 +466,9 @@ import PageAnims from '../components/landing/PageAnims.astro';
         const rows = document.querySelectorAll('.rd-row');
         const emptyState = document.getElementById('rd-empty');
         const btnClear = document.getElementById('rd-clear-filters');
+        const tabs = document.querySelectorAll('.rd-tab');
+
+        let currentTabFilter = 'all';
 
         const filterRows = () => {
             const area = selectArea?.value;
@@ -570,12 +483,21 @@ import PageAnims from '../components/landing/PageAnims.astro';
                 const rApi = el.dataset.api === 'true';
 
                 let show = true;
+
+                // Aplicar el filtro de la pestaña principal
+                if (currentTabFilter === 'live' && rStatus !== 'live') show = false;
+                // Si la pestaña actual es 'all' (Roadmap general), mostramos todo
+
+                // Filtros de los selects
                 if (area && area !== 'all' && rArea !== area) show = false;
                 if (status && status !== 'all' && rStatus !== status) show = false;
                 if (needsApi && !rApi) show = false;
 
                 if (show) {
                     el.style.display = 'flex';
+                    // Pequeña animación de entrada
+                    el.style.opacity = '0';
+                    setTimeout(() => el.style.opacity = '1', 50);
                     visibleCount++;
                 } else {
                     el.style.display = 'none';
@@ -587,6 +509,29 @@ import PageAnims from '../components/landing/PageAnims.astro';
             }
         };
 
+        // Escuchar clics en las pestañas grandes
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Quitar active de todas
+                tabs.forEach(t => t.classList.remove('is-active'));
+                // Poner active en la actual
+                tab.classList.add('is-active');
+                
+                const target = (tab as HTMLElement).dataset.tabTarget || 'all';
+                currentTabFilter = target;
+
+                // Si hacemos clic en 'Lanzados', cambiamos el select de estado a 'live'
+                if (target === 'live' && selectStatus) {
+                    selectStatus.value = 'live';
+                    selectStatus.disabled = true; // no permitir cambiarlo si la pestaña fuerza esto
+                } else if (selectStatus) {
+                    selectStatus.disabled = false;
+                }
+
+                filterRows();
+            });
+        });
+
         selectArea?.addEventListener('change', filterRows);
         selectStatus?.addEventListener('change', filterRows);
         toggleApi?.addEventListener('change', filterRows);
@@ -594,7 +539,7 @@ import PageAnims from '../components/landing/PageAnims.astro';
         if (btnClear) {
             btnClear.addEventListener('click', () => {
                 if (selectArea) selectArea.value = 'all';
-                if (selectStatus) selectStatus.value = 'all';
+                if (selectStatus && !selectStatus.disabled) selectStatus.value = 'all';
                 if (toggleApi) toggleApi.checked = false;
                 filterRows();
             });
