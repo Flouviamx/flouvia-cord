@@ -4,7 +4,7 @@
 // Gestionar → /api/billing/portal (Customer Portal).
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg, getPlanUsage, getBillingUsage } from '../../../lib/queries';
-import { PLANES, precioAnualTotal } from '../../../lib/precios';
+import { PLANES, precioAnualTotal, precioAnualMensualizado } from '../../../lib/precios';
 
 const ORG = await getOrg();
 const USAGE = await getPlanUsage();
@@ -51,7 +51,7 @@ const planActual = PLANES.find((p) => p.id === planRaw);
         </div>
         <div class="picker">
             {PAID.map((p) => {
-                const anual = precioAnualTotal(p.precioMensual);
+                const anual = precioAnualMensualizado(p.precioMensual);
                 const actual = p.id === planRaw;
                 return (
                     <div class:list={['pick-row', { destacado: p.destacado, actual }]}>
@@ -61,7 +61,7 @@ const planActual = PLANES.find((p) => p.id === planRaw);
                         </div>
                         <div class="pick-price">
                             <b class="editorial" data-mensual={String(p.precioMensual)} data-anual={String(anual)}>{money(p.precioMensual)}</b>
-                            <span class="pick-cycle-txt">MXN / mes</span>
+                            <span>MXN / mes</span>
                         </div>
                         {actual ? (
                             <span class="pick-current">Plan actual</span>
@@ -141,9 +141,6 @@ const planActual = PLANES.find((p) => p.id === planRaw);
             document.querySelectorAll<HTMLElement>('.pick-price b').forEach((el) => {
                 const v = cycle === 'anual' ? el.dataset.anual : el.dataset.mensual;
                 if (v) el.textContent = fmt(parseInt(v, 10));
-            });
-            document.querySelectorAll<HTMLElement>('.pick-cycle-txt').forEach((el) => {
-                el.textContent = cycle === 'anual' ? 'MXN / año' : 'MXN / mes';
             });
         });
     });

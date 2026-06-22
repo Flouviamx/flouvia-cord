@@ -25,6 +25,8 @@ export interface Plan {
 // Anual = se pagan 10 meses (2 gratis). Cambia aquí si la promo es otra.
 export const MESES_POR_ANIO = 10;
 export const precioAnualTotal = (mensual: number) => mensual * MESES_POR_ANIO;
+export const precioAnualMensualizado = (mensual: number) =>
+    Math.round((mensual * MESES_POR_ANIO) / 12);
 
 export const PLANES: Plan[] = [
     {
