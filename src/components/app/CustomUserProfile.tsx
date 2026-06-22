@@ -121,13 +121,13 @@ export default function CustomUserProfile() {
   return (
     <div className="cup-wrapper">
       
-      {/* TARJETA DE PERFIL */}
-      <div className="cup-card">
-        <div className="cup-card-header">
-          <h3 className="cup-card-title">Perfil</h3>
-          <p className="cup-card-desc">Información básica de tu cuenta.</p>
+      {/* TARJETA DE PERFIL -> SECCIÓN DE PERFIL */}
+      <div className="cup-section">
+        <div className="cup-section-header">
+          <h3 className="cup-section-title">Perfil</h3>
+          <p className="cup-section-desc">Información básica y pública de tu cuenta.</p>
         </div>
-        <div className="cup-card-body">
+        <div className="cup-section-body">
           <div className="cup-avatar-row">
             <img src={user.imageUrl} alt="Avatar" className="cup-avatar" />
             <div className="cup-avatar-info">
@@ -136,7 +136,7 @@ export default function CustomUserProfile() {
             </div>
           </div>
           
-          <form onSubmit={handleUpdateProfile}>
+          <form onSubmit={handleUpdateProfile} className="cup-form-container">
             <div className="cup-form-row">
               <div className="cup-group">
                 <label htmlFor="firstName">Nombre</label>
@@ -160,7 +160,7 @@ export default function CustomUserProfile() {
               </div>
             </div>
             
-            <div className="cup-group" style={{ marginTop: '1rem' }}>
+            <div className="cup-group" style={{ marginTop: '1.25rem' }}>
               <label>Correo electrónico principal</label>
               <input 
                 className="cup-input"
@@ -188,14 +188,14 @@ export default function CustomUserProfile() {
         </div>
       </div>
 
-      {/* TARJETA DE SEGURIDAD */}
-      <div className="cup-card">
-        <div className="cup-card-header">
-          <h3 className="cup-card-title">Seguridad</h3>
-          <p className="cup-card-desc">Actualiza tu contraseña de acceso.</p>
+      {/* SECCIÓN DE SEGURIDAD */}
+      <div className="cup-section">
+        <div className="cup-section-header">
+          <h3 className="cup-section-title">Seguridad</h3>
+          <p className="cup-section-desc">Actualiza tu contraseña de acceso para mantener tu cuenta protegida.</p>
         </div>
-        <div className="cup-card-body">
-          <form onSubmit={handleUpdatePassword}>
+        <div className="cup-section-body">
+          <form onSubmit={handleUpdatePassword} className="cup-form-container">
             <div className="cup-form-row">
               <div className="cup-group">
                 <label htmlFor="currentPassword">Contraseña actual</label>
@@ -243,13 +243,13 @@ export default function CustomUserProfile() {
         </div>
       </div>
 
-      {/* TARJETA DE SESIONES ACTIVAS */}
-      <div className="cup-card">
-        <div className="cup-card-header">
-          <h3 className="cup-card-title">Sesiones Activas</h3>
-          <p className="cup-card-desc">Dispositivos donde tienes una sesión abierta.</p>
+      {/* SECCIÓN DE SESIONES ACTIVAS */}
+      <div className="cup-section">
+        <div className="cup-section-header">
+          <h3 className="cup-section-title">Sesiones Activas</h3>
+          <p className="cup-section-desc">Dispositivos donde tienes una sesión abierta actualmente.</p>
         </div>
-        <div className="cup-card-body">
+        <div className="cup-section-body">
           <div className="cup-session-list">
             {sessions?.map((session: any) => {
               const isCurrent = clerk?.session?.id === session.id;
