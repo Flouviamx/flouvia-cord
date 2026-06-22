@@ -245,7 +245,9 @@ const ROL_LABEL: Record<string, string> = {
 </style>
 
 <script>
-    import { toast } from '../../../components/app/toast';
+    function toast(msg: string, type: 'ok' | 'error' = 'ok') {
+        (window as any).cordToast?.(msg, type);
+    }
 
     // Toggle tabs
     const tabs = document.querySelectorAll('.tm-tab');
