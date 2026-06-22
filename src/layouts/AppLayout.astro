@@ -194,7 +194,7 @@ const { title, page, heading, crumbs = [] } = Astro.props;
                             <div class="ph-title-row">
                                 <h1 class="ph-title">{heading ?? title}</h1>
                                 <button class="ph-pin" id="phPin" type="button" aria-label="Fijar página" title="Fijar en el menú">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M5 17h14l-1.5-4.5a2 2 0 0 1-.1-.6V6a2 2 0 0 1 2-2H6a2 2 0 0 1 2 2v5.9a2 2 0 0 1-.1.6L5 17z"/></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.68V6a3 3 0 1 0-6 0v4.68a2 2 0 0 1-1.11 1.86l-1.78.89A2 2 0 0 0 5 15.24Z"/></svg>
                                 </button>
                             </div>
                             <slot name="page-sub" />
