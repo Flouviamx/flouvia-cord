@@ -1094,9 +1094,9 @@ Page-head: breadcrumbs → `h1.ph-title` + botón pin → ph-actions → ph-tabs
 Clases globales reutilizables: `.card`, `.status-pill`, `.editorial`, `.skeleton`,
 `.skeleton-line`, `.ph-tab`. API JS global: `window.cordToast(msg, type, ms)`.
 `sessionStorage 'cord.flash'` para flash post-navegación. Entradas con CSS `app-fadein`
-escalonado (NO GSAP). Mobile: sidebar → drawer (tab bar inferior ELIMINADA jun 2026).
-En móvil la topbar muestra solo burger + lupa (ícono) + campana. Ayuda, config y el botón
-`+ Crear` viven en la sección `.sb-mobile-actions` dentro del drawer (oculta en desktop).
+escalonado (NO GSAP). Mobile: sidebar → drawer (ocupa 80vw, tab bar inferior ELIMINADA jun 2026).
+En móvil la topbar muestra burger + crear (círculo) + lupa (ícono) + campana. Ayuda y config
+viven en la sección `.sb-mobile-actions` dentro del drawer (oculta en desktop).
 ⚠️ Estilos de contenido inyectado por JS (Cmd+K items, notif panel, toasts, pins)
 DEBEN vivir en `<style is:global>` — Astro scopea por `[data-astro-cid]` y el HTML
 dinámico no lleva ese atributo. NO moverlos al bloque `<style>` scopeado.
