@@ -183,7 +183,12 @@
 .wh-check { display: flex; align-items: center; gap: 9px; cursor: pointer; font-size: 0.82rem; color: var(--color-text); }
 .wh-check input { width: 16px; height: 16px; accent-color: var(--color-blue-deep); }
 .wh-check code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.72rem; background: rgba(10,25,47,0.06); padding: 1px 5px; border-radius: 4px; }
-.wh-dlg-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.4rem; }
+.wh-dlg-actions { display: flex; flex-direction: column-reverse; gap: 0.6rem; margin-top: 1.4rem; }
+.wh-dlg-actions > button { width: 100%; text-align: center; }
+@media (min-width: 480px) {
+    .wh-dlg-actions { flex-direction: row; justify-content: flex-end; }
+    .wh-dlg-actions > button { width: auto; }
+}
 .api-btn-ghost { font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; }
 .api-btn-solid { font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; }
 .api-btn-solid:disabled { opacity: 0.6; cursor: wait; }
@@ -204,7 +209,7 @@
 .kdlg-inner h4 { font-size: 1.15rem; font-weight: 700; margin: 0 0 0.5rem; }
 .kdlg-warn { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.5; margin: 0 0 1rem; }
 .kdlg-warn b { color: var(--color-danger); }
-.kdlg-key { display: flex; align-items: center; gap: 0.5rem; background: var(--color-blue-deep); border-radius: 10px; padding: 12px 14px; margin-bottom: 1.2rem; }
-.kdlg-key code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.8rem; color: #fff; flex: 1; word-break: break-all; }
-.kdlg-copy { font-family: var(--font-sans); font-size: 0.74rem; font-weight: 600; color: var(--color-blue-deep); background: #fff; border: none; border-radius: 7px; padding: 6px 12px; cursor: pointer; white-space: nowrap; }
-.kdlg-done { font-family: var(--font-sans); font-size: 0.86rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 10px; padding: 11px 22px; cursor: pointer; }
+.kdlg-key { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: var(--color-blue-deep); border-radius: 10px; padding: 12px 14px; margin-bottom: 1.2rem; flex-wrap: wrap; }
+.kdlg-key code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.8rem; color: #fff; flex: 1; word-break: break-all; min-width: 0; }
+.kdlg-copy { font-family: var(--font-sans); font-size: 0.74rem; font-weight: 600; color: var(--color-blue-deep); background: #fff; border: none; border-radius: 7px; padding: 6px 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+.kdlg-done { font-family: var(--font-sans); font-size: 0.86rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 10px; padding: 11px 22px; cursor: pointer; width: 100%; }

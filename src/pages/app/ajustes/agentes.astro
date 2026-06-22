@@ -112,7 +112,12 @@ const servers = await listMcpServers(orgId);
     .ag-l { display: flex; flex-direction: column; gap: 5px; font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted); }
     .ag-l input { font-family: var(--font-sans); font-size: 0.88rem; padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 9px; color: var(--color-text); }
     .ag-err { font-size: 0.78rem; color: var(--color-danger); min-height: 1em; margin: 0; }
-    .ag-form-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.4rem; }
+    .ag-form-actions { display: flex; flex-direction: column-reverse; gap: 0.6rem; margin-top: 0.4rem; }
+    .ag-form-actions > button { width: 100%; text-align: center; }
+    @media (min-width: 480px) {
+        .ag-form-actions { flex-direction: row; justify-content: flex-end; }
+        .ag-form-actions > button { width: auto; }
+    }
     .api-btn-solid { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; }
     .api-btn-solid:disabled { opacity: 0.6; cursor: wait; }
     .api-btn-ghost { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; }
