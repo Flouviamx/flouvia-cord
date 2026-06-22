@@ -46,7 +46,7 @@ const htmlContent = marked.parse(item.content.es);
                     {statusMap[item.status]}
                 </div>
 
-                <h1 class="rd-doc-title masked-title">{item.title.es}</h1>
+                <h1 class="rd-doc-title">{item.title.es}</h1>
                 <p class="rd-doc-lead">{item.shortDesc.es}</p>
             </header>
 
@@ -108,54 +108,51 @@ const htmlContent = marked.parse(item.content.es);
 
     .rd-doc-status {
         display: inline-block;
-        font-size: 0.75rem;
-        font-weight: 800;
+        font-size: 0.85rem;
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 1.5px;
-        margin-bottom: 1.2rem;
-        padding: 4px 12px;
-        border-radius: 100px;
-        background: var(--color-bg-soft);
+        letter-spacing: 1px;
+        margin-bottom: 1.5rem;
     }
-    .status-live { color: #059669; background: rgba(5, 150, 105, 0.1); }
-    .status-beta { color: #d97706; background: rgba(217, 119, 6, 0.1); }
-    .status-next { color: #4f46e5; background: rgba(79, 70, 229, 0.1); }
+    .status-live { color: #059669; }
+    .status-beta { color: #d97706; }
+    .status-next { color: #4f46e5; }
 
     .rd-doc-title {
-        font-size: clamp(2.4rem, 4vw, 3.5rem);
-        font-weight: 800;
-        line-height: 1.05;
-        letter-spacing: -0.03em;
+        font-size: clamp(2rem, 4vw, 2.8rem);
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
         color: var(--color-text);
-        margin: 0 0 1.5rem;
+        margin: 0 0 1rem;
     }
 
     .rd-doc-lead {
-        font-size: 1.2rem;
+        font-size: 1.15rem;
         line-height: 1.6;
         color: var(--color-text-muted);
-        margin: 0 0 3rem;
-        padding-bottom: 3rem;
+        margin: 0 0 3.5rem;
+        padding-bottom: 3.5rem;
         border-bottom: 1px solid var(--color-border);
     }
 
-    /* Body Prose (Markdown rendered content) */
+    /* Body Prose */
     .rd-doc-prose {
         font-size: 1.1rem;
-        line-height: 1.7;
+        line-height: 1.8;
         color: var(--color-text);
     }
 
     .rd-doc-prose :global(h2) {
-        font-size: 1.8rem;
-        font-weight: 700;
-        margin: 2.5rem 0 1rem;
+        font-size: 1.6rem;
+        font-weight: 600;
+        margin: 3rem 0 1rem;
         letter-spacing: -0.01em;
     }
 
     .rd-doc-prose :global(h3) {
-        font-size: 1.3rem;
-        font-weight: 700;
+        font-size: 1.25rem;
+        font-weight: 600;
         margin: 2rem 0 0.8rem;
     }
 
@@ -224,8 +221,8 @@ const htmlContent = marked.parse(item.content.es);
 
     /* Dark mode */
     @media (prefers-color-scheme: dark) {
-        .status-live { color: #34d399; background: rgba(52, 211, 153, 0.1); }
-        .status-beta { color: #fbbf24; background: rgba(251, 191, 36, 0.1); }
-        .status-next { color: #818cf8; background: rgba(129, 140, 248, 0.1); }
+        .status-live { color: #34d399; }
+        .status-beta { color: #fbbf24; }
+        .status-next { color: #818cf8; }
     }
 </style>

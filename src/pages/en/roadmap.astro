@@ -173,8 +173,8 @@ const statusMap = {
         border: none;
         padding: 0 0 0.8rem;
         font-family: inherit;
-        font-size: 1.6rem;
-        font-weight: 600;
+        font-size: 1.1rem;
+        font-weight: 500;
         color: var(--color-text-muted);
         cursor: pointer;
         position: relative;
@@ -214,21 +214,22 @@ const statusMap = {
     .rd-select {
         width: 100%;
         appearance: none;
-        background: var(--color-bg);
-        border: 1px solid var(--color-border);
-        border-radius: 8px;
-        padding: 0.85rem 2.5rem 0.85rem 1rem;
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid var(--color-border);
+        border-radius: 0;
+        padding: 0.5rem 2rem 0.5rem 0;
         font-family: inherit;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         font-weight: 500;
         color: var(--color-text);
         cursor: pointer;
-        transition: border-color 0.3s, box-shadow 0.3s;
+        transition: border-color 0.3s;
     }
     .rd-select:focus {
         outline: none;
-        border-color: var(--color-blue-deep);
-        box-shadow: 0 0 0 3px rgba(10,25,47,0.08);
+        border-color: var(--color-text);
+        box-shadow: none;
     }
     .rd-select-ico {
         position: absolute;
@@ -293,27 +294,18 @@ const statusMap = {
     .rd-row {
         display: flex;
         flex-direction: column;
-        padding: 2.2rem 1.5rem;
+        padding: 2.2rem 0;
         border-top: 1px solid var(--color-border);
-        border-radius: 12px;
         cursor: pointer;
         text-decoration: none;
-        transition: opacity 0.3s, transform 0.4s var(--ease-spring), background 0.3s, box-shadow 0.3s;
-        margin: -1rem -1.5rem;
+        transition: opacity 0.3s;
     }
     .rd-row:first-child {
         border-top-color: transparent;
     }
 
     .rd-row:hover {
-        background: var(--color-bg-soft);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-        transform: translateY(-1px);
-        z-index: 2;
-        border-top-color: transparent;
-    }
-    .rd-row:hover + .rd-row {
-        border-top-color: transparent;
+        opacity: 0.8;
     }
 
     .rd-row:hover .rd-row-arrow {
@@ -421,8 +413,6 @@ const statusMap = {
     /* Dark mode support */
     @media (prefers-color-scheme: dark) {
         .rd-tab.is-active::after { background: #fff; }
-        .rd-select { background: rgba(255,255,255,0.03); }
-        .rd-row:hover { background: rgba(255,255,255,0.03); box-shadow: 0 4px 12px rgba(0,0,0,0.2); transform: translateY(-1px); }
         .status-live { color: #34d399; }
         .status-beta { color: #fbbf24; }
         .status-next { color: #818cf8; }
