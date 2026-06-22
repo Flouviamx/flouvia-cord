@@ -1355,3 +1355,11 @@ El blog público (`/blog`) emplea un diseño sin imágenes (image-less) fuerteme
 ### Navbar & Mobile UX
 - **Mobile Navbar Refinements:** Se corrigieron los estilos del language switcher (ES/EN) en la vista móvil (Glassmorphism + dark text en selección). Se ajustó la posición para no saturar la cabecera y se reubicó arriba del footer.
 - **Autenticación (CTAs):** Se invirtieron las acciones primarias en la navegación móvil con sesión activa. Ahora el Dashboard es la acción principal a la izquierda, logrando más fluidez para los usuarios recurrentes.
+
+### Roadmap Aesthetics
+El roadmap público (`/roadmap` y `/en/roadmap`) fue rediseñado para alcanzar un estándar estético ultra sobrio, corporativo y nivel "Cord Premium".
+- **Glassmorphism y Sombras:** Los filtros de navegación en la barra lateral ahora residen dentro de una tarjeta (`.rd-sidebar-card`) con una leve sombra flotante plana y bordes refinados.
+- **Filtros tipo Píldoras:** Los filtros select (`.rd-select`) pasaron de tener diseños web tradicionales a lucir como píldoras suaves semi-transparentes que armonizan con el glassmorphism del proyecto.
+- **Microinteracciones en filas:** Las filas de productos (rows) desecharon el fondo estilo "tarjeta tradicional". Al hacer hover, una leve opacidad de fondo (`var(--color-bg-soft)`) acompañada de un sutil `scale(0.995)` recrea una física de presión profunda, evitando estilos brillantes o saturados.
+- **Toggles "Estilo Apple":** Los interruptores de filtrado utilizan dimensiones, comportamiento y colores fieles a iOS (`#D1D1D6` inactivo en modo claro, `#39393D` en modo oscuro, `#34c759` al encender).
+- **Control Segmentado (Tabs):** Se eliminó el "control de tarjetas anidadas" en favor de etiquetas simples y sobrias con pesos gruesos (`font-weight: 800`), logrando que el layout de lectura prime sobre los adornos excesivos. Las páginas de producto individual (doc) también eliminaron los "badges" estilo píldora a favor de simple texto de color corporativo.
