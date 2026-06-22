@@ -19,15 +19,17 @@ const ROL_LABEL: Record<string, string> = {
 };
 ---
 
-<SettingsShell title="Equipo y roles — Ajustes" tab="equipo"
-    intro="Administra quién tiene acceso a la agencia y define roles de Administrador o Miembro.">
+<SettingsShell title="Equipo y seguridad" tab="equipo"
+    intro="Gestiona el acceso de tu equipo, roles, Single Sign-On (SSO) y métodos de autenticación de dos pasos.">
 
-    <div class="tm-header">
-        <p class="tm-desc">Otros miembros del equipo de {ORG?.nombre} también tienen acceso a esta cuenta.</p>
-        <div class="tm-actions">
-            <a href="#" class="btn-link" style="font-size:0.8rem; font-weight:600;">Ver miembros del equipo &rarr;</a>
-        </div>
+    <div class="stripe-nav">
+        <button class="s-tab active" data-target="view-equipo">Equipo</button>
+        <button class="s-tab" data-target="view-sso">Inicio de sesión único (SSO)</button>
+        <button class="s-tab" data-target="view-2fa">Autenticación en dos pasos</button>
+        <button class="s-tab" data-target="view-history">Historial de seguridad</button>
     </div>
+
+    <div id="view-equipo" class="s-view active">
 
     <div class="tm-controls">
         <div class="tm-tabs" id="teamTabs">
@@ -101,6 +103,85 @@ const ROL_LABEL: Record<string, string> = {
         </div>
     </div>
     <p class="tm-footer-count" id="tmFooterCount">Viendo {members.length} de {members.length} resultados</p>
+    </div> <!-- /view-equipo -->
+
+    <!-- VISTA SSO -->
+    <div id="view-sso" class="s-view" hidden>
+        <div class="sso-hero">
+            <div class="sso-text">
+                <h2>Configura el inicio de sesión único</h2>
+                <p>Conecta tu proveedor de identidad a Cord para que tu equipo pueda iniciar sesión con SSO de forma segura mediante SAML.</p>
+                <div class="sso-actions">
+                    <button class="btn-primary" style="background: #7c3aed; box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3);">Empezar</button>
+                    <button class="btn-secondary">Consulta la documentación</button>
+                </div>
+            </div>
+            
+            <div class="sso-graphic-wrap">
+                <div class="sso-graphic">
+                    <div class="sso-box">
+                        <div class="sso-box-header">
+                            <div class="sso-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            </div>
+                            <span>Proveedor de identidad</span>
+                        </div>
+                        <div class="sso-users">
+                            <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                            <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                            <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                            <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                            <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                        </div>
+                    </div>
+                    
+                    <div class="sso-arrow">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                    </div>
+                    
+                    <div class="sso-box">
+                        <div class="sso-box-header">
+                            <div class="sso-icon cord-blue">
+                                <img src="/imgs/logo-cord-navy.png" alt="Cord" style="height: 12px; margin-top:2px;" />
+                            </div>
+                            <span>Cord</span>
+                        </div>
+                        <div class="sso-users">
+                            <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                            <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                            <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                            <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                            <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> <!-- /view-sso -->
+
+    <!-- VISTA 2FA -->
+    <div id="view-2fa" class="s-view" hidden>
+        <div class="tm-empty-state" style="margin-top: 3rem;">
+            <div class="tm-empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <h4>Autenticación en dos pasos</h4>
+            <p>La configuración de seguridad por aplicación (TOTP) o SMS estará disponible pronto.</p>
+            <button class="btn-secondary" style="margin-top: 1.5rem;">Más información</button>
+        </div>
+    </div>
+    
+    <!-- VISTA HISTORY -->
+    <div id="view-history" class="s-view" hidden>
+        <div class="tm-empty-state" style="margin-top: 3rem;">
+            <div class="tm-empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <h4>Historial de seguridad</h4>
+            <p>El registro de auditoría (audit log) de los inicios de sesión de tu equipo.</p>
+        </div>
+    </div>
+
 </SettingsShell>
 
     <!-- ── MODAL: INVITAR ── -->
@@ -184,6 +265,37 @@ const ROL_LABEL: Record<string, string> = {
     </div>
 
 <style>
+    /* Stripe Nav */
+    .stripe-nav { display: flex; gap: 1.5rem; border-bottom: 1px solid var(--color-border); margin-bottom: 2rem; margin-top: 0.5rem; overflow-x: auto; scrollbar-width: none; }
+    .stripe-nav::-webkit-scrollbar { display: none; }
+    .s-tab { background: transparent; border: none; font-size: 0.88rem; font-weight: 500; color: var(--color-text-muted); padding: 0 0 0.85rem 0; cursor: pointer; transition: all 0.2s; white-space: nowrap; border-bottom: 2px solid transparent; }
+    .s-tab:hover { color: var(--color-text); }
+    .s-tab.active { color: var(--color-blue-deep); font-weight: 600; border-bottom: 2px solid var(--color-blue-deep); }
+    .s-view[hidden] { display: none; }
+
+    /* SSO Hero Section */
+    .sso-hero { display: grid; grid-template-columns: 1fr 1.2fr; gap: 3rem; align-items: center; margin-top: 1rem; }
+    @media (max-width: 900px) { .sso-hero { grid-template-columns: 1fr; } }
+    .sso-text h2 { font-size: 1.8rem; font-weight: 700; color: var(--color-text); margin: 0 0 1rem 0; letter-spacing: -0.5px; line-height: 1.2; }
+    .sso-text p { font-size: 0.95rem; color: #475569; margin: 0 0 2rem 0; line-height: 1.5; }
+    .sso-actions { display: flex; gap: 1rem; align-items: center; }
+    
+    .sso-graphic-wrap { background: linear-gradient(135deg, #e0f2fe 0%, #ede9fe 100%); border-radius: 16px; padding: 2.5rem 2rem; display: flex; justify-content: center; position: relative; overflow: hidden; box-shadow: inset 0 2px 10px rgba(255,255,255,0.5); }
+    .sso-graphic { display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 320px; align-items: center; z-index: 2; }
+    
+    .sso-box { background: #ffffff; width: 100%; border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 1.2rem; border: 1px solid rgba(255,255,255,0.8); }
+    .sso-box-header { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; color: var(--color-text); }
+    .sso-icon { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--color-border); display: flex; align-items: center; justify-content: center; color: #64748b; }
+    .sso-icon.cord-blue { background: #fff; border-color: transparent; }
+    
+    .sso-users { display: flex; gap: 8px; justify-content: space-between; }
+    .sso-u { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--color-border); display: flex; align-items: center; justify-content: center; color: #cbd5e1; background: #fafbfc; }
+    .sso-u svg { width: 16px; height: 16px; }
+    
+    .sso-arrow { color: #64748b; margin: 0.2rem 0; }
+    .sso-arrow svg { width: 24px; height: 24px; }
+
+    /* Team styles */
     .tm-header { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; margin-bottom: 1.5rem; background: var(--color-bg-soft); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--color-border); box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
     .tm-desc { font-size: 0.85rem; color: var(--color-text-muted); margin: 0; }
     
@@ -274,6 +386,21 @@ const ROL_LABEL: Record<string, string> = {
 </style>
 
 <script>
+    // Stripe Tabs Navigation
+    const sTabs = document.querySelectorAll('.s-tab');
+    const sViews = document.querySelectorAll('.s-view');
+
+    sTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            sTabs.forEach(t => t.classList.remove('active'));
+            sViews.forEach(v => v.hidden = true);
+            
+            tab.classList.add('active');
+            const target = document.getElementById(tab.dataset.target!);
+            if (target) target.hidden = false;
+        });
+    });
+
     function toast(msg: string, type: 'ok' | 'error' = 'ok') {
         (window as any).cordToast?.(msg, type);
     }
