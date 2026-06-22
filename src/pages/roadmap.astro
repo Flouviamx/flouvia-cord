@@ -306,8 +306,8 @@ const statusMap = {
 
     .rd-row:hover {
         background: var(--color-bg-soft);
-        box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
-        transform: scale(1.01);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        transform: translateY(-1px);
         z-index: 2;
         border-top-color: transparent;
     }
@@ -315,12 +315,8 @@ const statusMap = {
         border-top-color: transparent;
     }
 
-    .rd-row:hover .rd-row-copy h3 {
-        color: var(--color-blue-deep);
-    }
     .rd-row:hover .rd-row-arrow {
-        transform: translateX(6px) scale(1.1);
-        color: var(--color-blue-deep);
+        transform: translateX(4px);
     }
 
     /* Status Badges */
@@ -425,9 +421,7 @@ const statusMap = {
     @media (prefers-color-scheme: dark) {
         .rd-tab.is-active::after { background: #fff; }
         .rd-select { background: rgba(255,255,255,0.03); }
-        .rd-row:hover { background: rgba(255,255,255,0.03); box-shadow: 0 10px 30px -10px rgba(0,0,0,0.3); }
-        .rd-row:hover .rd-row-copy h3 { color: #fff; }
-        .rd-row:hover .rd-row-arrow { color: #fff; }
+        .rd-row:hover { background: rgba(255,255,255,0.03); box-shadow: 0 4px 12px rgba(0,0,0,0.2); transform: translateY(-1px); }
         .status-live { color: #34d399; }
         .status-beta { color: #fbbf24; }
         .status-next { color: #818cf8; }
