@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useUser, useSessionList } from '@clerk/clerk-react';
+import { useStore } from '@nanostores/react';
+import { $userStore, $sessionListStore, $isLoadedStore, $clerkStore } from '@clerk/astro/client';
 import './CustomUserProfile.css';
 
 export default function CustomUserProfile() {
-  const { isLoaded: userLoaded, user } = useUser();
-  const { isLoaded: sessionsLoaded, sessions } = useSessionList();
+  const userLoaded = useStore($isLoadedStore);
+  const user = useStore($userStore);
+  const sessions = useStore($sessionListStore);
+  const clerk = useStore($clerkStore);
 
   // Profile Form State
   const [firstName, setFirstName] = useState('');
@@ -87,7 +90,7 @@ export default function CustomUserProfile() {
   };
 
   const handleRevokeSession = async (sessionId: string) => {
-    const session = sessions?.find(s => s.id === sessionId);
+    const session = sessions?.find((s: any) => s.id === sessionId);
     if (!session) return;
     
     if (!confirm('¿Estás seguro de que deseas cerrar sesión en este dispositivo?')) return;
@@ -101,15 +104,15 @@ export default function CustomUserProfile() {
     }
   };
 
-  if (!userLoaded || !sessionsLoaded) {
+  if (!userLoaded || user === undefined || sessions === undefined) {
     return (
       <div className="cup-wrapper" style={{ opacity: 0.5, pointerEvents: 'none' }}>
-        <div className="cup-card"><div className="cup-card-body">Cargando...</div></div>
+        <div className="cup-card"><div className="cup-card-body">Cargando perfil...</div></div>
       </div>
     );
   }
 
-  if (!user) {
+  if (user === null) {
     return <div>Debes iniciar sesión.</div>;
   }
 
@@ -248,8 +251,8 @@ export default function CustomUserProfile() {
         </div>
         <div className="cup-card-body">
           <div className="cup-session-list">
-            {sessions?.map((session) => {
-              const isCurrent = session.id === window.Clerk?.session?.id;
+            {sessions?.map((session: any) => {
+              const isCurrent = clerk?.session?.id === session.id;
               const browser = session.latestActivity?.deviceType || 'Dispositivo';
               const location = session.latestActivity?.city ? `${session.latestActivity.city}, ${session.latestActivity.country}` : 'Ubicación desconocida';
               const date = new Date(session.lastActiveAt).toLocaleDateString('es-MX', {
@@ -269,6 +272,7 @@ export default function CustomUserProfile() {
                   </div>
                   {!isCurrent && (
                     <button 
+                      type="button"
                       className="cup-btn-danger"
                       onClick={() => handleRevokeSession(session.id)}
                       title="Cerrar sesión en este dispositivo"
