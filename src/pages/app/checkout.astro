@@ -9,7 +9,7 @@
 export const prerender = false;
 
 import AppLayout from '../../layouts/AppLayout.astro';
-import { PLANES, precioAnualMensualizado } from '../../lib/precios';
+import { PLANES, precioAnualTotal } from '../../lib/precios';
 
 const planId = Astro.url.searchParams.get('plan') ?? '';
 const cycle = Astro.url.searchParams.get('cycle') === 'anual' ? 'anual' : 'mensual';
@@ -19,7 +19,7 @@ const plan = PLANES.find((p) => p.id === planId && p.precioMensual > 0);
 if (!plan) return Astro.redirect('/app/ajustes/plan');
 
 const money = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
-const precio = cycle === 'anual' ? precioAnualMensualizado(plan.precioMensual) : plan.precioMensual;
+const precio = cycle === 'anual' ? precioAnualTotal(plan.precioMensual) : plan.precioMensual;
 ---
 
 <AppLayout
@@ -33,7 +33,7 @@ const precio = cycle === 'anual' ? precioAnualMensualizado(plan.precioMensual) :
             <span class="co-eyebrow">TU PLAN</span>
             <h2 class="co-name">{plan.nombre}</h2>
             <p class="co-price">
-                <span class="editorial">{money(precio)}</span> MXN / mes
+                <span class="editorial">{money(precio)}</span> MXN / {cycle === 'anual' ? 'año' : 'mes'}
             </p>
             <p class="co-cycle">{cycle === 'anual' ? 'Facturación anual (2 meses gratis)' : 'Facturación mensual'} · IVA incluido</p>
             <ul class="co-feats">

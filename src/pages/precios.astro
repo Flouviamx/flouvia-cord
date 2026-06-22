@@ -8,7 +8,7 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/landing/Nav.astro';
 import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
-import { PLANES as PLANES_ES, COMPARATIVA as COMPARATIVA_ES, FAQ_PRECIOS as FAQ_ES, precioAnualMensualizado } from '../lib/precios';
+import { PLANES as PLANES_ES, COMPARATIVA as COMPARATIVA_ES, FAQ_PRECIOS as FAQ_ES, precioAnualTotal } from '../lib/precios';
 import { PLANES_EN, COMPARATIVA_EN, FAQ_PRECIOS_EN } from '../lib/precios.en';
 import { getLangFromUrl } from '../i18n/utils';
 
@@ -50,7 +50,7 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
         <section class="pr-grid-wrap">
             <div class="pr-grid">
                 {PLANES.map((p) => {
-                    const anual = precioAnualMensualizado(p.precioMensual);
+                    const anual = precioAnualTotal(p.precioMensual);
                     return (
                         <article class:list={['plan reveal', { 'plan-featured': p.destacado }]}>
                             {p.ribbon && <span class="plan-ribbon">{p.ribbon}</span>}
@@ -72,7 +72,7 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
                                             data-anual={String(anual)}
                                         >{money0(p.precioMensual)}</span>
                                         <span class="plan-cycle">
-                                            <span>{isEn ? 'USD / month' : 'MXN / mes'}</span>
+                                            <span class="plan-cycle-txt">{isEn ? 'USD / month' : 'MXN / mes'}</span>
                                             <i class="plan-billed" data-billed>{isEn ? 'billed monthly' : 'facturado mensual'}</i>
                                         </span>
                                     </>
@@ -526,6 +526,9 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
                 if (v) el.textContent = fmt(parseInt(v, 10));
             });
             billed.forEach((el) => { el.textContent = cycle === 'anual' ? (isEn ? 'billed annually' : 'facturado anual') : (isEn ? 'billed monthly' : 'facturado mensual'); });
+            document.querySelectorAll<HTMLElement>('.plan-cycle-txt').forEach((el) => {
+                el.textContent = cycle === 'anual' ? (isEn ? 'USD / year' : 'MXN / año') : (isEn ? 'USD / month' : 'MXN / mes');
+            });
             // Arrastra el ciclo elegido al CTA → checkout del plan correcto.
             document.querySelectorAll<HTMLAnchorElement>('[data-cta-plan]').forEach((a) => {
                 const dest = `/app/checkout?plan=${a.dataset.ctaPlan}&cycle=${cycle}`;
