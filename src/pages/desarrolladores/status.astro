@@ -11,7 +11,17 @@ import { getLangFromUrl } from '../../i18n/utils';
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
 
-// Generador de datos "reales" simulados (mock realista) para los últimos 90 días
+// Generador de datos "reales" simulados (mock realista) para los últimos 90 días.
+// 
+// PARA CONECTAR DATOS 100% REALES EN PRODUCCIÓN:
+// Astro permite hacer fetch en tiempo de build o SSR. Si tienes una cuenta en un proveedor
+// de páginas de estado (ej. Instatus, Atlassian Statuspage, BetterStack), puedes hacer esto:
+// 
+// const res = await fetch('https://status.tudominio.com/api/v2/summary.json');
+// const data = await res.json();
+// const services = data.components.map(comp => ({ ... mapear a estructura de UI ... }));
+//
+// Mientras tanto, se usa un mock seed determinista que imita la estructura de un JSON real:
 const today = new Date();
 const daysCount = 90;
 
@@ -393,25 +403,24 @@ const incidents = [
     .st-bars-container {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
     }
     .st-bars {
         display: flex;
-        gap: 4px;
-        height: 60px; /* Barras más grandes y vistosas */
+        gap: 3px;
+        height: 36px;
         width: 100%;
         align-items: stretch;
     }
     .st-bar {
         flex: 1;
-        border-radius: 4px;
+        border-radius: 2px;
         transition: opacity 0.2s, transform 0.2s;
         cursor: pointer;
-        opacity: 0.85;
     }
     .st-bar:hover {
-        opacity: 1;
-        transform: scaleY(1.15);
+        opacity: 0.8;
+        transform: scaleY(1.1);
     }
     .st-bar.ok { background-color: var(--color-ok); }
     .st-bar.warn { background-color: var(--color-warn); }
@@ -496,7 +505,6 @@ const incidents = [
         .st-hero { padding: 6rem 5% 4rem; }
         .st-update { flex-direction: row; gap: 2rem; }
         .st-update-time { min-width: 90px; }
-        .st-bars { gap: 6px; height: 80px; }
-        .st-bar { border-radius: 6px; }
+        .st-bar { gap: 4px; border-radius: 3px; }
     }
 </style>
