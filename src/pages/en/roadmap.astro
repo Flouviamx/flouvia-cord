@@ -36,12 +36,13 @@ const statusMap = {
         <div class="rd-layout">
             <!-- Sidebar: Filters -->
             <aside class="rd-sidebar reveal">
-                <div class="rd-tabs" role="tablist">
-                    <button class="rd-tab is-active" data-tab-target="all" role="tab">Roadmap</button>
-                    <button class="rd-tab" data-tab-target="live" role="tab">Shipped</button>
-                </div>
-                
-                <div class="rd-filters">
+                <div class="rd-sidebar-card">
+                    <div class="rd-tabs" role="tablist">
+                        <button class="rd-tab is-active" data-tab-target="all" role="tab">Roadmap</button>
+                        <button class="rd-tab" data-tab-target="live" role="tab">Shipped</button>
+                    </div>
+                    
+                    <div class="rd-filters">
                     <p class="rd-filters-title">Filter by</p>
                     
                     <div class="rd-filter-group">
@@ -69,6 +70,7 @@ const statusMap = {
                         <span class="rd-toggle-slider"></span>
                         <span class="rd-toggle-label">Show only API integrable</span>
                     </label>
+                </div>
                 </div>
             </aside>
 
@@ -153,11 +155,19 @@ const statusMap = {
         top: 6rem;
     }
     
+    .rd-sidebar-card {
+        background: var(--color-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 4px 24px -8px rgba(0,0,0,0.06);
+    }
+
     .rd-tabs {
         display: flex;
         gap: 1.5rem;
         border-bottom: 1px solid var(--color-border);
-        margin-bottom: 2.5rem;
+        margin-bottom: 2rem;
         padding-bottom: 0px;
     }
     .rd-tab {
@@ -227,7 +237,7 @@ const statusMap = {
     }
     .rd-select-ico {
         position: absolute;
-        right: 1rem;
+        right: 1.2rem;
         top: 50%;
         transform: translateY(-50%);
         pointer-events: none;
