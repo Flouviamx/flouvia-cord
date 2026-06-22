@@ -761,6 +761,27 @@ const { title, page, heading, crumbs = [] } = Astro.props;
     .help-ai-input { font-size: 0.8rem; color: var(--color-text-muted); background: #fff; border: 1px solid var(--color-border); border-radius: 9px; padding: 10px 12px; cursor: not-allowed; user-select: none; }
 
     @media (max-width: 560px) { .help-panel { width: 100%; } }
+
+    /* ──────────────────────────────────────────────────────────────
+       PULIDO MÓVIL GLOBAL (is:global → alcanza inputs de las páginas hijas)
+       ────────────────────────────────────────────────────────────── */
+    @media (max-width: 880px) {
+        /* iOS hace zoom automático al enfocar un campo con font-size < 16px.
+           Forzar 16px en TODOS los controles de la app lo evita (sin tocar desktop). */
+        input, select, textarea,
+        .m-input, .task-input, .task-date {
+            font-size: 16px !important;
+        }
+        /* Áreas táctiles cómodas en los controles tipo píldora/tab. */
+        .chip, .filter-pill, .ph-tab, .vt-btn {
+            min-height: 40px; display: inline-flex; align-items: center; justify-content: center;
+        }
+        /* Que nada provoque scroll horizontal accidental en pantallas chicas. */
+        html, body { overflow-x: hidden; }
+        /* Scroll con inercia y sin resaltado azul al tocar. */
+        body { -webkit-tap-highlight-color: transparent; }
+        * { -webkit-overflow-scrolling: touch; }
+    }
 </style>
 
 <style>
@@ -982,8 +1003,18 @@ const { title, page, heading, crumbs = [] } = Astro.props;
     /* ── MOBILE ── */
     @media (max-width: 880px) {
         .tb-burger { display: inline-flex; }
-        .app-content { padding: 1rem 1rem 2rem; }
-        .topbar { margin: 0.6rem 0.6rem 0; padding: 0.45rem 0.6rem; border-radius: 14px; }
+        .app-content {
+            padding: 1rem 1rem 2rem;
+            padding-left: max(1rem, env(safe-area-inset-left));
+            padding-right: max(1rem, env(safe-area-inset-right));
+            padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+        }
+        /* La pill flotante respeta el notch (se mantiene sticky por debajo de él). */
+        .topbar {
+            margin: calc(0.6rem + env(safe-area-inset-top)) 0.6rem 0;
+            padding: 0.45rem 0.6rem; border-radius: 14px;
+        }
+        .topbar { top: calc(0.6rem + env(safe-area-inset-top)); }
         .page-head { padding: 1.1rem 1rem 0; }
         .ph-title { font-size: 1.35rem; }
         .ph-actions { width: 100%; }

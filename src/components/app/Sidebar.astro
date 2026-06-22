@@ -514,6 +514,10 @@ const NAV_GROUPS = [
             position: fixed; top: 0; left: 0; height: 100dvh; width: min(284px, 86vw); z-index: 300;
             transform: translateX(-100%); transition: transform 0.34s var(--ease-spring);
             box-shadow: 0 0 60px rgba(0,0,0,0.4);
+            /* Respeta el notch arriba y la barra de inicio abajo (iPhone) */
+            padding-top: max(var(--sb-pad-top, 1rem), env(safe-area-inset-top));
+            padding-bottom: max(var(--sb-pad-bottom, 1rem), env(safe-area-inset-bottom));
+            overflow-y: auto; -webkit-overflow-scrolling: touch;
         }
         .app-shell.nav-open .sidebar { transform: translateX(0); }
         .sb-backdrop {

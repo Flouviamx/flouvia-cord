@@ -79,6 +79,12 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
 
 ## Estado actual (jun 2026)
 
+✅ **Internacionalización del Centro de Ayuda (Support Center) (jun 2026)** — Se añadió soporte bilingüe (`/soporte` y `/en/support`).
+   • **Arquitectura y Artículos:** Se crearon wrappers en `src/pages/en/support` que re-utilizan los templates de español pasando la bandera `isEn`. Se clonaron los 66 artículos base a `src/content/support/en/` (prefijados temporalmente con `[EN]`) y se resolvieron las referencias cruzadas y colecciones. El build genera 132 rutas estáticas sin error.
+   • **Componentes Dinámicos:** Los componentes `SupportHero`, `SupportCards`, `SupportSearch` y `FeedbackWidget` ahora tienen copys estáticos en ambos idiomas y renderizan dinámicamente según la ruta.
+   • **Selector de Idioma Transparente:** Se parcheó `utils.ts` para mapear limpiamente `/soporte/categoria/` a `/support/category/`. Además, para resolver la recarga de página al cambiar de idioma en Astro sin romper todos los scripts atados a `DOMContentLoaded` (que ocurriría usando `<ClientRouter />`), se inyectó un parche en `Nav.astro` que utiliza `sessionStorage` para guardar y restaurar la posición exacta del *scroll* al vuelo, logrando una ilusión óptica de cambio instantáneo de idioma sin perder el lugar de lectura.
+
+
 ✅ **Block-mockups de Soluciones reescritos a motion-graphics (jun 2026)** — `SolucionBlockMockup.astro`
    (los 3 mockups por industria que acompañan a los bloques de texto en `/soluciones/[slug]`) estaba muy por
    debajo del nivel de los de producto: cards casi vacías, scrub atado al scroll (deprecado en estas páginas) y
