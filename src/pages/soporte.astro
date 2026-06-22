@@ -9,20 +9,23 @@ import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
 import SupportHero from '../components/support/SupportHero.astro';
 import SupportCards from '../components/support/SupportCards.astro';
+
+const { isEn = false } = Astro.props;
 ---
 
 <Layout
-    title="Centro de Ayuda y Soporte — Cord"
-    description="Encuentra respuestas rápidas, guías y artículos de soporte para dominar Cord. Estamos aquí para ayudarte."
+    title={isEn ? "Help Center & Support — Cord" : "Centro de Ayuda y Soporte — Cord"}
+    description={isEn ? "Find quick answers, guides, and support articles to master Cord. We are here to help." : "Encuentra respuestas rápidas, guías y artículos de soporte para dominar Cord. Estamos aquí para ayudarte."}
 >
     <Nav />
     <main>
-        <SupportHero />
-        <SupportCards />
+        <SupportHero isEn={isEn} />
+        <SupportCards isEn={isEn} />
     </main>
     <Footer 
-        ctaTitle="¿Listo para acelerar tus ventas?"
-        ctaSub="Únete a las empresas que ya cotizan como profesionales con Cord."
+        ctaTitle={isEn ? "Ready to accelerate your sales?" : "¿Listo para acelerar tus ventas?"}
+        ctaSub={isEn ? "Join the companies that already quote like professionals with Cord." : "Únete a las empresas que ya cotizan como profesionales con Cord."}
+        isEn={isEn}
     />
     <PageAnims />
 </Layout>

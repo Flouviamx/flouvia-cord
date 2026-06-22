@@ -2,43 +2,48 @@
 // /src/components/support/SupportCards.astro
 import { getCollection } from 'astro:content';
 
+const { isEn = false } = Astro.props;
 const allSupport = await getCollection('support');
+
+// Only filter current language articles for counts
+const langPrefix = isEn ? 'en/' : 'es/';
+const localSupport = allSupport.filter(a => a.id.startsWith(langPrefix));
 
 const categoryMap = [
     {
-        name: 'Pagos y Depósitos',
+        name: isEn ? 'Payments & Deposits' : 'Pagos y Depósitos',
         slug: 'pagos',
         icon: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>'
     },
     {
-        name: 'Cotizaciones',
+        name: isEn ? 'Quotes' : 'Cotizaciones',
         slug: 'cotizaciones',
         icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline>'
     },
     {
-        name: 'Facturación y CFDI',
+        name: isEn ? 'Billing & CFDI' : 'Facturación y CFDI',
         slug: 'facturacion',
         icon: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path>'
     },
     {
-        name: 'Cuenta y Equipo',
+        name: isEn ? 'Account & Team' : 'Cuenta y Equipo',
         slug: 'cuenta',
         icon: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>'
     },
     {
-        name: 'Desarrolladores',
+        name: isEn ? 'Developers' : 'Desarrolladores',
         slug: 'desarrolladores',
         icon: '<polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>'
     },
     {
-        name: 'Seguridad y Privacidad',
+        name: isEn ? 'Security & Privacy' : 'Seguridad y Privacidad',
         slug: 'seguridad',
         icon: '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>'
     }
 ];
 
 const categoriesWithArticles = categoryMap.map(cat => {
-    const articles = allSupport.filter(a => a.data.category === cat.name);
+    const articles = localSupport.filter(a => a.data.category === cat.name);
     return {
         ...cat,
         articles: articles.slice(0, 4),
@@ -46,7 +51,14 @@ const categoriesWithArticles = categoryMap.map(cat => {
     };
 });
 
-const faqs = [
+const faqs = isEn ? [
+    { q: "When is the money deposited into my account?", a: "Payments processed by card are deposited into your configured bank account within T+3 to T+7 calendar days, depending on the Payout schedule of your connected Stripe account." },
+    { q: "How do I cancel an invoice (CFDI)?", a: "Go to the Billing section in your portal, find the issued invoice, select 'Options' and click 'Generate Expense (Credit Note)'. Cord will automatically link the parent UUID." },
+    { q: "Can I charge in dollars (USD)?", a: "Yes. Cord allows you to issue quotes in USD. Stripe will handle the currency conversion if your destination account is in MXN." },
+    { q: "What happens if a client doesn't pay on time?", a: "Cord will send automatic reminders based on your account settings, and if you configured late fees, it will calculate them on the overdue balance." },
+    { q: "Does Cord charge transaction fees?", a: "No. Cord is a SaaS platform and you only pay your monthly fee. Card charges generate Stripe's standard direct fee, with no intermediaries." },
+    { q: "Where can I find my API Keys?", a: "You can find your keys (Test and Live) in Settings > Developers > API Keys. Production keys require the Scale or Developer plan." }
+] : [
     { q: "¿Cuándo se deposita el dinero en mi cuenta?", a: "Los pagos procesados con tarjeta se depositan en tu cuenta bancaria configurada en un plazo de T+3 a T+7 días naturales, dependiendo del calendario Payout de tu cuenta conectada de Stripe." },
     { q: "¿Cómo cancelo una factura (CFDI)?", a: "Ve a la sección de Facturación en tu portal, busca la factura emitida, selecciona 'Opciones' y haz clic en 'Generar Egreso (Nota de Crédito)'. Cord vinculará automáticamente el UUID padre." },
     { q: "¿Puedo cobrar en dólares (USD)?", a: "Sí. Cord te permite emitir cotizaciones en USD. Stripe se encargará de hacer la conversión cambiaria si tu cuenta destino está en pesos." },
@@ -60,47 +72,47 @@ const faqs = [
     <div class="content-wrapper">
         
         <!-- ── RUTAS RÁPIDAS (AIRY BENTO, SIN LÍNEAS) ── -->
-        <h2 class="pr-h2 masked-title">Rutas rápidas</h2>
+        <h2 class="pr-h2 masked-title">{isEn ? 'Quick links' : 'Rutas rápidas'}</h2>
         <div class="airy-bento reveal">
-            <a href="/soporte/primeros-pasos" class="airy-region bento-hero">
+            <a href={isEn ? "/en/support/primeros-pasos" : "/soporte/primeros-pasos"} class="airy-region bento-hero">
                 <div class="br-header">
                     <svg class="br-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" /></svg>
-                    <h3>Cord 101: Primeros Pasos</h3>
+                    <h3>{isEn ? 'Cord 101: Getting Started' : 'Cord 101: Primeros Pasos'}</h3>
                 </div>
-                <p>Acelera tu integración con Cord. Configura tu cuenta empresarial, sube tus certificados del SAT (CSD) y emite tu primer cobro en 5 sencillos pasos.</p>
+                <p>{isEn ? 'Accelerate your integration with Cord. Set up your corporate account, upload your SAT certificates, and issue your first charge in 5 simple steps.' : 'Acelera tu integración con Cord. Configura tu cuenta empresarial, sube tus certificados del SAT (CSD) y emite tu primer cobro en 5 sencillos pasos.'}</p>
                 <div class="br-links">
-                    <span>Configurar Cuenta</span>
-                    <span>Emitir Cobro</span>
+                    <span>{isEn ? 'Setup Account' : 'Configurar Cuenta'}</span>
+                    <span>{isEn ? 'Issue Charge' : 'Emitir Cobro'}</span>
                 </div>
             </a>
-            <a href="/soporte/glosario-terminos" class="airy-region">
+            <a href={isEn ? "/en/support/glosario-terminos" : "/soporte/glosario-terminos"} class="airy-region">
                 <div class="br-header">
                     <svg class="br-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path></svg>
-                    <h3>Glosario B2B</h3>
+                    <h3>{isEn ? 'B2B Glossary' : 'Glosario B2B'}</h3>
                 </div>
-                <p>El traductor entre ingenieros y contadores. Entiende qué es un CFDI PPD vs PUE, Idempotencia y Complementos REP.</p>
-                <span class="br-cta">Leer glosario &rarr;</span>
+                <p>{isEn ? 'The translator between engineers and accountants. Understand what a CFDI PPD vs PUE is, Idempotency, and REP Supplements.' : 'El traductor entre ingenieros y contadores. Entiende qué es un CFDI PPD vs PUE, Idempotencia y Complementos REP.'}</p>
+                <span class="br-cta">{isEn ? 'Read glossary \u2192' : 'Leer glosario \u2192'}</span>
             </a>
-            <a href="/soporte/migracion-stripe" class="airy-region">
+            <a href={isEn ? "/en/support/migracion-stripe" : "/soporte/migracion-stripe"} class="airy-region">
                 <div class="br-header">
                     <svg class="br-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg>
-                    <h3>Migrar desde Stripe</h3>
+                    <h3>{isEn ? 'Migrate from Stripe' : 'Migrar desde Stripe'}</h3>
                 </div>
-                <p>Guía para exportar tus clientes e importar tu bóveda de tarjetas (PCI-DSS) a la plataforma de Cord.</p>
-                <span class="br-cta">Ver guía de migración &rarr;</span>
+                <p>{isEn ? 'Guide to export your clients and import your card vault (PCI-DSS) into the Cord platform.' : 'Guía para exportar tus clientes e importar tu bóveda de tarjetas (PCI-DSS) a la plataforma de Cord.'}</p>
+                <span class="br-cta">{isEn ? 'View migration guide \u2192' : 'Ver guía de migración \u2192'}</span>
             </a>
-            <a href="/soporte/categoria/desarrolladores" class="airy-region">
+            <a href={isEn ? "/en/support/category/desarrolladores" : "/soporte/categoria/desarrolladores"} class="airy-region">
                 <div class="br-header">
                     <svg class="br-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 8 3 12 7 16"/><polyline points="17 8 21 12 17 16"/><line x1="14" y1="4" x2="10" y2="20"/></svg>
-                    <h3>Portal Devs</h3>
+                    <h3>{isEn ? 'Dev Portal' : 'Portal Devs'}</h3>
                 </div>
-                <p>Documentación técnica de la API REST, Webhooks y componentes nativos UI (Cord Elements).</p>
-                <span class="br-cta">Ir al portal &rarr;</span>
+                <p>{isEn ? 'Technical documentation for the REST API, Webhooks, and native UI components (Cord Elements).' : 'Documentación técnica de la API REST, Webhooks y componentes nativos UI (Cord Elements).'}</p>
+                <span class="br-cta">{isEn ? 'Go to portal \u2192' : 'Ir al portal \u2192'}</span>
             </a>
         </div>
 
         <!-- ── EXPLORAR POR CATEGORÍA (EDITORIAL/HAIRLINES) ── -->
-        <h2 class="pr-h2 masked-title mt-32">Explorar por categoría</h2>
+        <h2 class="pr-h2 masked-title mt-32">{isEn ? 'Explore by category' : 'Explorar por categoría'}</h2>
         <div class="editorial-grid reveal">
             {categoriesWithArticles.map(cat => (
                 <div class="editorial-block">
@@ -111,17 +123,17 @@ const faqs = [
                     <ul class="eb-links">
                         {cat.articles.map((a: any) => (
                             <li>
-                                <a href={`/soporte/${a.id}`}>{a.data.title}</a>
+                                <a href={isEn ? `/en/support/${a.id.replace('en/', '')}` : `/soporte/${a.id.replace('es/', '')}`}>{a.data.title}</a>
                             </li>
                         ))}
                     </ul>
-                    <a href={`/soporte/categoria/${cat.slug}`} class="eb-view-all">Ver todos ({cat.totalCount}) &rarr;</a>
+                    <a href={isEn ? `/en/support/category/${cat.slug}` : `/soporte/categoria/${cat.slug}`} class="eb-view-all">{isEn ? `View all (${cat.totalCount}) \u2192` : `Ver todos ({cat.totalCount}) \u2192`}</a>
                 </div>
             ))}
         </div>
 
         <!-- ── PREGUNTAS FRECUENTES (FAQ) ── -->
-        <h2 class="pr-h2 masked-title mt-32 text-center">Preguntas frecuentes</h2>
+        <h2 class="pr-h2 masked-title mt-32 text-center">{isEn ? 'Frequently asked questions' : 'Preguntas frecuentes'}</h2>
         <div class="pr-faq-list reveal">
             {faqs.map((f) => (
                 <details class="pr-faq-item">
@@ -139,11 +151,11 @@ const faqs = [
         <!-- ── CONTACT CTA PREMIUM (HAIRLINE STYLE) ── -->
         <div class="premium-cta reveal">
             <div class="pcta-content">
-                <h2>¿No encuentras lo que buscas?</h2>
-                <p>El soporte técnico avanzado está incluido en todos los planes. Contáctanos directamente y resolvemos tu duda en menos de 2 horas hábiles.</p>
+                <h2>{isEn ? "Can't find what you're looking for?" : '¿No encuentras lo que buscas?'}</h2>
+                <p>{isEn ? 'Advanced technical support is included in all plans. Contact us directly and we will resolve your issue in less than 2 business hours.' : 'El soporte técnico avanzado está incluido en todos los planes. Contáctanos directamente y resolvemos tu duda en menos de 2 horas hábiles.'}</p>
             </div>
             <a href="mailto:soporte@flouvia.com" class="pcta-button">
-                Hablar con un experto
+                {isEn ? 'Talk to an expert' : 'Hablar con un experto'}
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
             </a>
         </div>

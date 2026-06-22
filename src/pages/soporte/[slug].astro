@@ -9,10 +9,13 @@ import FeedbackWidget from '../../components/support/FeedbackWidget.astro';
 
 export const prerender = true;
 
+import { getLangFromUrl } from '../../i18n/utils';
+
 export async function getStaticPaths() {
   const supportEntries = await getCollection('support');
-  return supportEntries.map(entry => ({
-    params: { slug: entry.id },
+  const esEntries = supportEntries.filter(entry => entry.id.startsWith('es/'));
+  return esEntries.map(entry => ({
+    params: { slug: entry.id.replace('es/', '') },
     props: { entry },
   }));
 }
@@ -20,12 +23,18 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { Content, headings } = await render(entry);
 
+const lang = getLangFromUrl(Astro.url);
+const isEn = Astro.props.isEn || lang === 'en';
+
 // Filtrar headings para el TOC (H2 y H3)
 const tocHeadings = headings.filter(h => h.depth === 2 || h.depth === 3);
 
 // Build navigation (Sidebar & Pagination)
 const allSupport = await getCollection('support');
-const categoryEntries = allSupport
+const langPrefix = isEn ? 'en/' : 'es/';
+const localSupport = allSupport.filter(a => a.id.startsWith(langPrefix));
+
+const categoryEntries = localSupport
     .filter(a => a.data.category === entry.data.category)
     // Optional: Sort by an "order" field if present, otherwise by title
     .sort((a, b) => {
@@ -46,25 +55,25 @@ const catSlug = slugifyCategory(entry.data.category);
 ---
 
 <Layout
-    title={`${entry.data.title} — Centro de Ayuda Cord`}
+    title={`${entry.data.title} — ${isEn ? 'Cord Help Center' : 'Centro de Ayuda Cord'}`}
     description={entry.data.description}
 >
     <Nav />
     <main class="article-layout">
         
         <div class="support-search-header">
-            <SupportSearch />
+            <SupportSearch isEn={isEn} />
         </div>
 
         <div class="article-container reveal">
             <!-- Left Sidebar -->
             <aside class="article-sidebar">
-                <a href="/soporte" class="back-link">← Centro de Ayuda</a>
+                <a href={isEn ? "/en/support" : "/soporte"} class="back-link">{isEn ? '← Help Center' : '← Centro de Ayuda'}</a>
                 <div class="sidebar-category">
                     <h3>{entry.data.category}</h3>
                     <nav class="sidebar-nav">
                         {categoryEntries.map(item => (
-                            <a href={`/soporte/${item.id}`} class={`sidebar-link ${item.id === entry.id ? 'active' : ''}`}>
+                            <a href={isEn ? `/en/support/${item.id.replace('en/', '')}` : `/soporte/${item.id.replace('es/', '')}`} class={`sidebar-link ${item.id === entry.id ? 'active' : ''}`}>
                                 {item.data.title}
                             </a>
                         ))}
@@ -75,9 +84,9 @@ const catSlug = slugifyCategory(entry.data.category);
             <!-- Main Content Area -->
             <div class="article-main">
                 <nav class="breadcrumbs">
-                    <a href="/soporte">Soporte</a>
+                    <a href={isEn ? "/en/support" : "/soporte"}>{isEn ? 'Support' : 'Soporte'}</a>
                     <span class="separator">/</span>
-                    <a href={`/soporte/categoria/${catSlug}`}>{entry.data.category}</a>
+                    <a href={isEn ? `/en/support/category/${catSlug}` : `/soporte/categoria/${catSlug}`}>{entry.data.category}</a>
                     <span class="separator">/</span>
                     <span class="current">{entry.data.title}</span>
                 </nav>
@@ -86,14 +95,14 @@ const catSlug = slugifyCategory(entry.data.category);
                     <Content />
                 </article>
 
-                <FeedbackWidget />
+                <FeedbackWidget isEn={isEn} />
 
                 {relatedArticles.length > 0 && (
                     <div class="related-articles-section reveal">
-                        <h4>Artículos relacionados</h4>
+                        <h4>{isEn ? 'Related articles' : 'Artículos relacionados'}</h4>
                         <div class="related-grid">
                             {relatedArticles.map((rel: any) => (
-                                <a href={`/soporte/${rel.id}`} class="related-card">
+                                <a href={isEn ? `/en/support/${rel.id.replace('en/', '')}` : `/soporte/${rel.id.replace('es/', '')}`} class="related-card">
                                     <span class="rc-title">{rel.data.title}</span>
                                     <span class="rc-desc">{rel.data.description}</span>
                                 </a>
@@ -107,15 +116,15 @@ const catSlug = slugifyCategory(entry.data.category);
                 <!-- Next / Prev Pagination -->
                 <nav class="article-pagination">
                     {prevEntry ? (
-                        <a href={`/soporte/${prevEntry.id}`} class="pagination-link prev">
-                            <span class="pag-label">← Anterior</span>
+                        <a href={isEn ? `/en/support/${prevEntry.id.replace('en/', '')}` : `/soporte/${prevEntry.id.replace('es/', '')}`} class="pagination-link prev">
+                            <span class="pag-label">{isEn ? '← Previous' : '← Anterior'}</span>
                             <span class="pag-title">{prevEntry.data.title}</span>
                         </a>
                     ) : <div></div>}
 
                     {nextEntry ? (
-                        <a href={`/soporte/${nextEntry.id}`} class="pagination-link next">
-                            <span class="pag-label">Siguiente →</span>
+                        <a href={isEn ? `/en/support/${nextEntry.id.replace('en/', '')}` : `/soporte/${nextEntry.id.replace('es/', '')}`} class="pagination-link next">
+                            <span class="pag-label">{isEn ? 'Next →' : 'Siguiente →'}</span>
                             <span class="pag-title">{nextEntry.data.title}</span>
                         </a>
                     ) : <div></div>}
@@ -126,7 +135,7 @@ const catSlug = slugifyCategory(entry.data.category);
             {tocHeadings.length > 0 && (
                 <aside class="article-toc">
                     <div class="toc-sticky">
-                        <h4>En este artículo</h4>
+                        <h4>{isEn ? 'In this article' : 'En este artículo'}</h4>
                         <nav id="tocNav">
                             {tocHeadings.map((h) => (
                                 <a 

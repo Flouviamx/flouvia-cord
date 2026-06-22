@@ -1,10 +1,11 @@
 ---
 // src/components/support/SupportSearch.astro
+const { isEn = false } = Astro.props;
 ---
 <div class="sup-search-wrapper" id="supSearchWrapper">
     <div class="sup-search-input-box">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
-        <input type="text" id="supSearchInput" placeholder="Buscar guías, preguntas o tutoriales... (Cmd+K)" autocomplete="off" />
+        <input type="text" id="supSearchInput" placeholder={isEn ? "Search guides, questions or tutorials... (Cmd+K)" : "Buscar guías, preguntas o tutoriales... (Cmd+K)"} autocomplete="off" />
         <kbd class="shortcut-badge">⌘K</kbd>
     </div>
     <div class="sup-search-dropdown" id="supSearchDropdown" hidden>
@@ -12,10 +13,10 @@
             <!-- Results injected here -->
         </div>
         <div class="sup-search-empty" id="supSearchEmpty" hidden>
-            No se encontraron resultados para "<span id="supSearchTerm"></span>".
+            {isEn ? 'No results found for' : 'No se encontraron resultados para'} "<span id="supSearchTerm"></span>".
         </div>
         <div class="sup-search-footer">
-            Buscando en 61 artículos de soporte
+            {isEn ? 'Searching across 61 support articles' : 'Buscando en 61 artículos de soporte'}
         </div>
     </div>
 </div>

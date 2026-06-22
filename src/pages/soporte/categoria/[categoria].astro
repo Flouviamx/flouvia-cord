@@ -21,22 +21,24 @@ export async function getStaticPaths() {
   }));
 }
 
-const { categoria } = Astro.params;
+const isEn = Astro.props.isEn || false;
+const categoria = Astro.props.categoria || Astro.params.categoria;
 const { name, desc, icon } = Astro.props;
 const allArticles = await getCollection('support');
-// We map and filter to find articles for this category. We'll also just add some dummy placeholders if it's empty to make it look premium.
-const categoryArticles = allArticles.filter(a => a.data.category === name);
+// We map and filter to find articles for this category.
+const langPrefix = isEn ? 'en/' : 'es/';
+const categoryArticles = allArticles.filter(a => a.id.startsWith(langPrefix) && a.data.category === name);
 
 // If there are few articles, we'll populate the UI with 'coming soon' or just show the real ones.
 const hasArticles = categoryArticles.length > 0;
 ---
 
-<Layout title={`${name} - Centro de Ayuda Cord`} description={`Artículos de ayuda sobre ${name}`}>
+<Layout title={`${name} - ${isEn ? 'Cord Help Center' : 'Centro de Ayuda Cord'}`} description={isEn ? `Help articles about ${name}` : `Artículos de ayuda sobre ${name}`}>
     <Nav />
     <main class="cat-page-layout">
         <div class="pr-mesh" aria-hidden="true"></div>
         <div class="cat-container">
-            <a href="/soporte" class="back-link reveal">← Volver al Centro de Ayuda</a>
+            <a href={isEn ? "/en/support" : "/soporte"} class="back-link reveal">{isEn ? '← Back to Help Center' : '← Volver al Centro de Ayuda'}</a>
             
             <div class="cat-header reveal">
                 <div class="cat-icon-wrapper">
@@ -50,7 +52,7 @@ const hasArticles = categoryArticles.length > 0;
                 {hasArticles ? (
                     <div class="articles-list">
                         {categoryArticles.map(article => (
-                            <a href={`/soporte/${article.id}`} class="article-row">
+                            <a href={isEn ? `/en/support/${article.id.replace('en/', '')}` : `/soporte/${article.id.replace('es/', '')}`} class="article-row">
                                 <div class="row-content">
                                     <h3>{article.data.title}</h3>
                                     <p>{article.data.description}</p>
@@ -63,7 +65,7 @@ const hasArticles = categoryArticles.length > 0;
                         ))}
                     </div>
                 ) : (
-                    <div class="premium-empty-state">
+                        <div class="premium-empty-state">
                         <div class="empty-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -73,9 +75,9 @@ const hasArticles = categoryArticles.length > 0;
                                 <polyline points="10 9 9 9 8 9"></polyline>
                             </svg>
                         </div>
-                        <h2>Estamos preparando estas guías</h2>
-                        <p>Nuestro equipo está documentando los mejores procesos para <strong>{name}</strong>. Pronto encontrarás artículos detallados aquí.</p>
-                        <a href="mailto:soporte@flouvia.com" class="empty-cta">Pregúntale a Soporte directamente</a>
+                        <h2>{isEn ? 'We are preparing these guides' : 'Estamos preparando estas guías'}</h2>
+                        <p>{isEn ? `Our team is documenting the best processes for ` : `Nuestro equipo está documentando los mejores procesos para `}<strong>{name}</strong>. {isEn ? 'You will find detailed articles here soon.' : 'Pronto encontrarás artículos detallados aquí.'}</p>
+                        <a href="mailto:soporte@flouvia.com" class="empty-cta">{isEn ? 'Ask Support directly' : 'Pregúntale a Soporte directamente'}</a>
                     </div>
                 )}
             </div>
@@ -83,14 +85,18 @@ const hasArticles = categoryArticles.length > 0;
             <!-- Contact CTA (similar to main page to keep the flow) -->
             <div class="contact-cta reveal">
                 <div class="cta-content">
-                    <h2>¿Aún tienes dudas?</h2>
-                    <p>No te preocupes, nuestro equipo de expertos está a un correo de distancia para resolver cualquier problema.</p>
+                    <h2>{isEn ? 'Still have questions?' : '¿Aún tienes dudas?'}</h2>
+                    <p>{isEn ? 'Don\'t worry, our expert team is an email away to solve any issue.' : 'No te preocupes, nuestro equipo de expertos está a un correo de distancia para resolver cualquier problema.'}</p>
                 </div>
-                <a href="mailto:soporte@flouvia.com" class="cta-button">Escribir a soporte</a>
+                <a href="mailto:soporte@flouvia.com" class="cta-button">{isEn ? 'Write to Support' : 'Escribir a soporte'}</a>
             </div>
         </div>
     </main>
-    <Footer ctaTitle="¿Listo para acelerar tus ventas?" ctaSub="Únete a las empresas que ya cotizan como profesionales con Cord." />
+    <Footer 
+        ctaTitle={isEn ? "Ready to accelerate your sales?" : "¿Listo para acelerar tus ventas?"} 
+        ctaSub={isEn ? "Join the companies that already quote like professionals with Cord." : "Únete a las empresas que ya cotizan como profesionales con Cord."} 
+        isEn={isEn}
+    />
 </Layout>
 
 <style>

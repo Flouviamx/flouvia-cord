@@ -1,28 +1,29 @@
 ---
 // /src/components/support/SupportHero.astro
+const { isEn = false } = Astro.props;
 ---
 
 <section class="support-hero">
     <div class="pr-mesh" aria-hidden="true"></div>
     <div class="hero-content">
-        <p class="pp-eyebrow reveal">CENTRO DE AYUDA</p>
-        <h1 class="pr-h1 masked-title">¿Cómo podemos ayudarte?</h1>
+        <p class="pp-eyebrow reveal">{isEn ? 'HELP CENTER' : 'CENTRO DE AYUDA'}</p>
+        <h1 class="pr-h1 masked-title">{isEn ? 'How can we help you?' : '¿Cómo podemos ayudarte?'}</h1>
         <div class="search-container reveal">
             <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" id="support-search-input" placeholder="Busca guías, solución de problemas y más..." class="search-input" autocomplete="off" />
+            <input type="text" id="support-search-input" placeholder={isEn ? "Search guides, troubleshooting and more..." : "Busca guías, solución de problemas y más..."} class="search-input" autocomplete="off" />
             <div id="search-results-dropdown" class="search-dropdown hidden">
                 <!-- Resultados de búsqueda inyectados vía JS -->
             </div>
         </div>
         <div class="popular-searches reveal">
-            <span class="ps-label">Búsquedas populares:</span>
-            <a href="/soporte/emitir-cfdi" class="ps-tag">Emitir CFDI 4.0</a>
-            <a href="/soporte/cobro-divisas" class="ps-tag">Pagos internacionales</a>
-            <a href="/soporte/cord-elements" class="ps-tag">Cord Elements</a>
-            <a href="/soporte/invitar-miembros-roles" class="ps-tag">Invitar equipo</a>
+            <span class="ps-label">{isEn ? 'Popular searches:' : 'Búsquedas populares:'}</span>
+            <a href={isEn ? "/en/support/emitir-cfdi" : "/soporte/emitir-cfdi"} class="ps-tag">{isEn ? 'Issue CFDI 4.0' : 'Emitir CFDI 4.0'}</a>
+            <a href={isEn ? "/en/support/cobro-divisas" : "/soporte/cobro-divisas"} class="ps-tag">{isEn ? 'International payments' : 'Pagos internacionales'}</a>
+            <a href={isEn ? "/en/support/cord-elements" : "/soporte/cord-elements"} class="ps-tag">Cord Elements</a>
+            <a href={isEn ? "/en/support/invitar-miembros-roles" : "/soporte/invitar-miembros-roles"} class="ps-tag">{isEn ? 'Invite team' : 'Invitar equipo'}</a>
         </div>
     </div>
 </section>

@@ -1,0 +1,18 @@
+---
+import SoporteSlug from '../../soporte/[slug].astro';
+import { getCollection } from 'astro:content';
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const supportEntries = await getCollection('support');
+  const enEntries = supportEntries.filter(entry => entry.id.startsWith('en/'));
+  return enEntries.map(entry => ({
+    params: { slug: entry.id.replace('en/', '') },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+---
+<SoporteSlug entry={entry} isEn={true} />
