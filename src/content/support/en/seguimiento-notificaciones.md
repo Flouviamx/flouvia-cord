@@ -1,23 +1,23 @@
 ---
-title: "[EN] Seguimiento y notificaciones de lectura"
-description: "Entérate exactamente cuándo tu cliente abre y visualiza tus cotizaciones."
+title: "Tracking and read notifications"
+description: "Find out exactly when your client opens and views your quotes."
 category: "Quotes"
 order: 4
 ---
 
-El secreto para cerrar más rápido los tratos B2B es actuar en el momento exacto en que tu prospecto está leyendo tu propuesta. Cord te dota de capacidades de rastreo (Tracking) silenciosas.
+The secret to closing B2B deals faster is acting at the exact moment your prospect is reading your proposal. Cord equips you with silent tracking capabilities.
 
-### ¿Qué monitorea el sistema?
+### What does the system monitor?
 
-Desde el momento en que envías la liga de la cotización por correo o WhatsApp:
-- **Primer Clic (Apertura):** Sabrás el día y la hora exacta en que el prospecto visualizó el documento.
-- **Tiempo de Lectura:** El sistema registra cuánto tiempo permaneció el cliente analizando la cotización en su navegador.
-- **Descargas:** Si el cliente hace clic en "Descargar Cotización en PDF", quedará registrado en el historial (Audit Trail) de esa cotización en particular.
+From the moment you send the quote link via email or WhatsApp:
+- **First Click (Open):** You will know the exact day and time the prospect viewed the document.
+- **Read Time:** The system records how long the client spent analyzing the quote in their browser.
+- **Downloads:** If the client clicks on "Download Quote as PDF," it will be recorded in the Audit Trail of that particular quote.
 
-### Configurar Notificaciones Push/Email
+### Configure Push/Email Notifications
 
-Para enterarte en tiempo real, ve a **Ajustes > Notificaciones**.
-Puedes habilitar alertas directas a tu correo electrónico para los siguientes eventos:
-- "La cotización COT-045 fue vista por primera vez".
-- "La cotización COT-045 ha sido firmada y aceptada".
-- "El pago del anticipo de la COT-045 fue rechazado por el banco".
+To get real-time updates, go to **Settings > Notifications**.
+You can enable direct alerts to your email for the following events:
+- "Quote COT-045 was viewed for the first time."
+- "Quote COT-045 has been signed and accepted."
+- "The advance payment for COT-045 was rejected by the bank."

@@ -1,20 +1,20 @@
 ---
-title: "[EN] Configurar vigencia de cotización"
-description: "Añade una fecha de expiración automática a tus propuestas."
+title: "Configure quote validity"
+description: "Add an automatic expiration date to your proposals."
 category: "Quotes"
 ---
 
-Las condiciones de mercado y los precios de proveeduría cambian constantemente. Nunca envíes una propuesta comercial de vigencia indeterminada.
+Market conditions and supply prices change constantly. Never send a commercial proposal with an undetermined validity.
 
-### Configurar Fechas de Expiración
+### Configure Expiration Dates
 
-Al redactar una cotización en Cord:
-1. En el panel de ajustes (derecha), ubica **Vigencia y Validez**.
-2. Define cuántos días es válida la oferta a partir de la fecha de envío (ej. 15 días) o escoge una fecha de caducidad dura en el calendario (ej. 31 de Diciembre).
+When drafting a quote in Cord:
+1. In the settings panel (right), locate **Validity and Expiration**.
+2. Define how many days the offer is valid from the date it is sent (e.g., 15 days) or choose a hard expiration date on the calendar (e.g., December 31st).
 
-**Cierre Automático:**
-Cuando el reloj cruza la fecha límite configurada, la plataforma reacciona de la siguiente manera:
-- El enlace de la cotización pasa a modo de *Solo Lectura* y muestra un banner indicando que la oferta expiró.
-- Los botones de "Aceptar Trato", "Firmar Electrónicamente" y el formulario de "Pago con Tarjeta" quedan inhabilitados en el servidor, protegiéndote de aceptar pagos por servicios que quizá ya subieron de precio.
+**Automatic Closure:**
+When the clock crosses the configured deadline, the platform reacts as follows:
+- The quote link switches to *Read-Only* mode and displays a banner indicating that the offer has expired.
+- The "Accept Deal," "Sign Electronically," and "Card Payment" form buttons are disabled on the server, protecting you from accepting payments for services that may have already increased in price.
 
-Si el cliente te contacta para revivir el acuerdo, puedes extender manualmente la vigencia desde la configuración del documento.
+If the client contacts you to revive the agreement, you can manually extend the validity from the document's settings.

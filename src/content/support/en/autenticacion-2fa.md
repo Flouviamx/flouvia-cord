@@ -1,22 +1,22 @@
 ---
-title: "[EN] Configurar autenticación en dos pasos (2FA)"
-description: "Protege tu cuenta de Cord y los datos de tu empresa añadiendo una capa de seguridad extra."
+title: "Configure Two-Factor Authentication (2FA)"
+description: "Protect your Cord account and company data by adding an extra layer of security."
 category: "Account & Team"
 order: 1
 ---
 
-La Autenticación de Dos Pasos (2FA) añade una capa extra de seguridad. Recomendamos que todo tu equipo lo habilite, en especial quienes tienen rol de Administrador o Finanzas.
+Two-Factor Authentication (2FA) adds an extra layer of security. We recommend that your entire team enables it, especially those with Administrator or Finance roles.
 
-### Habilitar 2FA en tu Perfil
-1. Haz clic en tu avatar en la esquina superior derecha y selecciona **Mi Perfil**.
-2. Bajo *Seguridad*, activa **Autenticación en dos pasos**.
-3. Se mostrará un código QR. Escanéalo usando una app como Google Authenticator, Authy o 1Password.
-4. Introduce el código de 6 dígitos para confirmar.
+### Enable 2FA on Your Profile
+1. Click on your avatar in the top right corner and select **My Profile**.
+2. Under *Security*, enable **Two-factor authentication**.
+3. A QR code will be displayed. Scan it using an app like Google Authenticator, Authy, or 1Password.
+4. Enter the 6-digit code to confirm.
 
-**Guardado de Códigos de Respaldo:** El sistema te entregará 10 códigos de un solo uso. ¡Guárdalos en un lugar seguro! Si pierdes tu celular, estos códigos son la única manera de recuperar el acceso a tu cuenta de Cord.
+**Saving Backup Codes:** The system will provide you with 10 single-use codes. Keep them in a safe place. If you lose your phone, these codes are the only way to regain access to your Cord account.
 
-### Forzar 2FA para el Equipo (Organizaciones Enterprise)
-Los dueños de cuentas Enterprise pueden forzar a que todos los miembros activen 2FA:
-1. Ve a **Ajustes > Seguridad**.
-2. Activa *Exigir verificación en dos pasos para todos los miembros*.
-Cualquier empleado que no tenga 2FA habilitado será deslogueado y obligado a configurarlo en su próximo inicio de sesión.
+### Enforce 2FA for the Team (Enterprise Organizations)
+Enterprise account owners can force all members to enable 2FA:
+1. Go to **Settings > Security**.
+2. Enable *Require two-step verification for all members*.
+Any employee who does not have 2FA enabled will be logged out and forced to configure it upon their next login.

@@ -1,18 +1,18 @@
 ---
-title: "[EN] Actualizar datos bancarios (CLABE)"
-description: "Cómo cambiar la cuenta bancaria donde recibes los depósitos de tus ventas."
+title: "Update bank details (CLABE)"
+description: "How to change the bank account where you receive deposits from your sales."
 category: "Account & Team"
 order: 3
 ---
 
-Cord no es un procesador de pagos ni retiene tus fondos. Cuando envías una cotización y el cliente decide pagar por transferencia (SPEI), los datos bancarios que aparecen en la cotización o en el PDF son los tuyos directamente.
+Cord is not a payment processor and does not hold your funds. When you send a quote and the customer decides to pay by bank transfer (SPEI), the bank details displayed on the quote or in the PDF are directly yours.
 
-### Actualizar tus Datos Bancarios en las Cotizaciones
+### Update your Bank Details on Quotes
 
-Para cambiar la cuenta CLABE que se le muestra a tus clientes:
+To change the CLABE account displayed to your customers:
 
-1. Ve a **Ajustes > Facturación y Pagos**.
-2. En la sección *Datos de Transferencia*, actualiza el Nombre del Banco, Beneficiario y la cuenta CLABE de 18 dígitos.
-3. Haz clic en Guardar.
+1. Go to **Settings > Billing and Payments**.
+2. In the *Transfer Details* section, update the Bank Name, Beneficiary, and the 18-digit CLABE account.
+3. Click Save.
 
-A partir de ese momento, todos los enlaces públicos de cotizaciones (incluso las antiguas que sigan pendientes) mostrarán la nueva cuenta CLABE. Cuando el cliente te deposite, deberás entrar a Cord y marcar la cotización como 'Pagada' manualmente para que se libere la factura.
+From that moment on, all public quote links (including pending old ones) will show the new CLABE account. When the customer makes a deposit, you must log into Cord and manually mark the quote as 'Paid' to release the invoice.

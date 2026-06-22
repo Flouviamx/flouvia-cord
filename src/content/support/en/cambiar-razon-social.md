@@ -1,18 +1,18 @@
 ---
-title: "[EN] Cambiar Razón Social"
-description: "Pasos legales para transferir tu cuenta Cord a otra empresa."
+title: "Change Business Name"
+description: "Legal steps to transfer your Cord account to another company."
 category: "Account & Team"
 ---
 
-Cambiar la Razón Social y RFC de tu cuenta operativa es un procedimiento crítico, ya que impacta la facturación en vivo y la emisión de comprobantes.
+Changing the Business Name (Razón Social) and RFC of your operational account is a critical procedure, as it impacts live billing and the issuance of tax receipts.
 
-### Proceso de Migración Fiscal
+### Tax Migration Process
 
-No existe un botón para "cambiar el RFC" directamente, ya que las facturas pasadas no pueden migrar de emisor. Si tu empresa cambió legalmente de Razón Social:
+There is no button to "change the RFC" directly, as past invoices cannot be migrated to a new issuer. If your company legally changed its Business Name:
 
-1. **Crea una nueva organización:** Dentro de Cord, puedes pertenecer a múltiples organizaciones. Haz clic en el nombre de tu empresa arriba a la izquierda y selecciona *Crear nueva organización*.
-2. Registra los nuevos datos (RFC, Razón Social, CSD del SAT).
-3. Contacta a soporte para que transfiramos tu plan de suscripción actual a la nueva cuenta.
-4. Exporta tu catálogo de clientes de la cuenta vieja e impórtalo en la nueva.
+1. **Create a new organization:** Within Cord, you can belong to multiple organizations. Click on your company name in the top left and select *Create new organization*.
+2. Register the new details (RFC, Business Name, SAT CSD).
+3. Contact support so we can transfer your current subscription plan to the new account.
+4. Export your client catalog from the old account and import it into the new one.
 
-Este método garantiza que tu historial contable previo se mantenga intacto e inmutable bajo el RFC anterior para efectos de auditoría del SAT.
+This method guarantees that your previous accounting history remains intact and immutable under the previous RFC for SAT audit purposes.

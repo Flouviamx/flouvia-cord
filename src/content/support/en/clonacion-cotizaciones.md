@@ -1,23 +1,23 @@
 ---
-title: "[EN] Duplicar o clonar cotizaciones"
-description: "Acelera tu proceso clonando propuestas anteriores."
+title: "Duplicate or Clone Quotes"
+description: "Speed up your process by cloning previous proposals."
 category: "Quotes"
 ---
 
-Si envías propuestas similares frecuentemente a distintos prospectos (ej. renovaciones de software o paquetes estándar), no es necesario crear cada cotización desde cero.
+If you frequently send similar proposals to different prospects (e.g. software renewals or standard packages), it is not necessary to create each quote from scratch.
 
-### ¿Cómo clonar una cotización?
+### How to clone a quote?
 
-1. Entra a **Ventas > Cotizaciones**.
-2. Busca la cotización que deseas duplicar (puede estar en estatus de borrador, enviada o incluso rechazada).
-3. Haz clic en el menú contextual de tres puntos a la derecha y selecciona **Duplicar Cotización**.
-4. Se generará un nuevo Borrador exacto.
+1. Go to **Sales > Quotes**.
+2. Find the quote you want to duplicate (it can be in draft status, sent, or even rejected).
+3. Click on the three dots context menu on the right and select **Duplicate Quote**.
+4. An exact new Draft will be generated.
 
-**Lo que sí se copia:**
-- Todas las partidas, descripciones y precios.
-- Descuentos aplicados e impuestos.
-- Términos legales, garantías y vigencia relativa.
+**What IS copied:**
+- All line items, descriptions, and prices.
+- Applied discounts and taxes.
+- Legal terms, warranties, and relative validity.
 
-**Lo que NO se copia:**
-- El cliente (se te pedirá seleccionar a quién va dirigida esta nueva propuesta).
-- El historial de firmas o pagos. Cada clon es un folio completamente virgen.
+**What is NOT copied:**
+- The client (you will be asked to select who this new proposal is directed to).
+- The history of signatures or payments. Each clone is a completely clean slate.

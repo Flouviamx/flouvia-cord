@@ -1,17 +1,17 @@
 ---
-title: "[EN] Recibir pagos internacionales"
-description: "Acepta tarjetas emitidas en el extranjero con Cord."
+title: "Receive International Payments"
+description: "Accept cards issued abroad with Cord."
 category: "Payments & Deposits"
 ---
 
-Vender software o servicios a clientes en el extranjero (exportación) es nativo en Cord.
+Selling software or services to customers abroad (export) is native in Cord.
 
-### Cobros y Divisas
-Cord te permite crear la cotización en USD o EUR. Cuando el cliente internacional hace clic en Pagar, tu cuenta de Stripe procesará el cargo en su tarjeta (Visa, Mastercard, AMEX) sin importar de qué país provenga, depositando los fondos a tu banco en México según las reglas de tu cuenta Stripe.
+### Collections and Currencies
+Cord allows you to create the quote in USD or EUR. When the international customer clicks Pay, your Stripe account will process the charge on their card (Visa, Mastercard, AMEX) regardless of which country it comes from, depositing the funds to your bank in Mexico according to the rules of your Stripe account.
 
-### Tratamiento Fiscal (Exportación de Servicios)
-Al cotizarle a un extranjero, debes usar el RFC genérico internacional **XEXX010101000**.
-Para facturar correctamente en Cord:
-1. Selecciona Uso de CFDI: **S01 (Sin efectos fiscales)**.
-2. Selecciona la Tasa de **IVA 0%**. La exportación de servicios desde México está exenta/gravada a tasa cero para efectos de IVA.
-3. Timbra la factura. Cord generará un CFDI perfectamente válido que comprueba tu ingreso internacional.
+### Tax Treatment (Export of Services)
+When quoting a foreigner, you must use the generic international RFC **XEXX010101000**.
+To invoice correctly in Cord:
+1. Select CFDI Use: **S01 (Without tax effects)**.
+2. Select the **0% VAT** Rate. The export of services from Mexico is exempt/taxed at a zero rate for VAT purposes.
+3. Stamp the invoice. Cord will generate a perfectly valid CFDI that proves your international income.

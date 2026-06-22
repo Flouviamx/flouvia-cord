@@ -1,62 +1,62 @@
 ---
-title: "[EN] Glosario FinTech y Contable"
-description: "Diccionario de términos técnicos, financieros y fiscales (SAT) utilizados en la plataforma Cord."
+title: "FinTech and Accounting Glossary"
+description: "Dictionary of technical, financial, and tax (SAT) terms used on the Cord platform."
 category: "Account"
 order: 99
 ---
 
-Cord une a dos mundos que hablan idiomas distintos: **Desarrolladores** y **Contadores**. 
+Cord bridges two worlds that speak different languages: **Developers** and **Accountants**.
 
-Este glosario resuelve las ambigüedades más comunes para que ambos equipos puedan integrar la plataforma sin fricciones.
+This glossary resolves the most common ambiguities so that both teams can integrate the platform without friction.
 
-## Términos de Facturación (SAT)
+## Invoicing Terms (SAT)
 
 ### CFDI (Comprobante Fiscal Digital por Internet)
-Es el archivo XML oficial que representa una factura electrónica en México. Cord emite CFDI versión 4.0 automáticamente.
+It is the official XML file that represents an electronic invoice in Mexico. Cord issues CFDI version 4.0 automatically.
 
 ### PUE (Pago en Una sola Exhibición)
-Se utiliza cuando el cobro de una factura se realiza en el momento exacto de la emisión o antes de emitirla. Si un cliente paga vía Tarjeta de Crédito en un link de Cord, la factura generada será PUE.
+Used when the collection of an invoice is made at the exact moment of issuance or before issuing it. If a customer pays via Credit Card on a Cord link, the generated invoice will be PUE.
 
 ### PPD (Pago en Parcialidades o Diferido)
-Se utiliza cuando se emite la factura pero el pago se recibirá en una fecha futura (crédito). Las facturas PPD **siempre** requieren que se emita un REP posteriormente cuando el dinero llega a la cuenta.
+Used when the invoice is issued but the payment will be received at a future date (credit). PPD invoices **always** require a REP to be issued later when the money arrives in the account.
 
 ### REP (Recibo Electrónico de Pago)
-También conocido como "Complemento de Recepción de Pagos". Es un comprobante secundario que se emite para "saldar" una factura PPD original. Cord puede automatizar la emisión de REPs cuando detecta la conciliación del depósito bancario.
+Also known as "Payment Receipt Supplement". It is a secondary receipt issued to "settle" an original PPD invoice. Cord can automate the issuance of REPs when it detects the reconciliation of the bank deposit.
 
 ### CSD (Certificado de Sello Digital)
-Son los archivos criptográficos (`.cer` y `.key`) emitidos por el SAT que permiten a un software firmar digitalmente las facturas a nombre de una empresa. Es distinto a la FIEL (Firma Electrónica Avanzada). En Cord solo debes subir tu CSD.
+These are the cryptographic files (`.cer` and `.key`) issued by the SAT that allow software to digitally sign invoices on behalf of a company. It is different from the FIEL (Advanced Electronic Signature). In Cord, you only need to upload your CSD.
 
-### Uso de CFDI
-Clave del catálogo del SAT que indica para qué usará el receptor (cliente) la factura (Ej. `G03 - Gastos en general`, `I04 - Equipo de cómputo`).
+### CFDI Usage (Uso de CFDI)
+A key from the SAT catalog that indicates what the recipient (customer) will use the invoice for (e.g., `G03 - General expenses`, `I04 - Computer equipment`).
 
 ---
 
-## Términos Técnicos (Desarrolladores)
+## Technical Terms (Developers)
 
-### Idempotencia
-Es la propiedad de las APIs de Cord que garantiza que una misma operación no se ejecute dos veces, incluso si la petición se envía múltiples veces por un error de red. Para lograrlo, envías un `Idempotency-Key` en los headers de tus requests. [Más información](/soporte/idempotencia).
+### Idempotency
+It is the property of Cord's APIs that guarantees that the same operation is not executed twice, even if the request is sent multiple times due to a network error. To achieve this, you send an `Idempotency-Key` in the headers of your requests. [More information](/en/support/idempotencia).
 
 ### Webhook
-Es un mecanismo mediante el cual Cord avisa proactivamente a tu servidor (vía una petición HTTP POST) que un evento importante ha sucedido (ej. `payment.succeeded`, `invoice.created`). [Más información](/soporte/configurar-webhooks).
+It is a mechanism by which Cord proactively notifies your server (via an HTTP POST request) that an important event has occurred (e.g., `payment.succeeded`, `invoice.created`). [More information](/en/support/configurar-webhooks).
 
 ### Cord Elements
-Es nuestra suite de componentes de interfaz de usuario (UI) pre-construidos que puedes incrustar directamente en tu aplicación (React, Vue o HTML plano) para procesar pagos sin tener que diseñar el flujo de *checkout* desde cero. [Más información](/soporte/cord-elements).
+It is our suite of pre-built user interface (UI) components that you can embed directly into your application (React, Vue, or plain HTML) to process payments without having to design the checkout flow from scratch. [More information](/en/support/cord-elements).
 
-### Sandbox (Entorno de Pruebas)
-Un entorno completamente aislado del mundo real. En Sandbox puedes usar [tarjetas de prueba](/soporte/tarjetas-prueba) y emitir facturas ficticias sin valor fiscal ni movimiento de dinero real. Es fundamental para integrar la API.
+### Sandbox (Testing Environment)
+A completely isolated environment from the real world. In Sandbox, you can use [test cards](/en/support/tarjetas-prueba) and issue fictitious invoices with no tax value or real money movement. It is essential for integrating the API.
 
 ### Endpoint
-Una URL específica de la API de Cord diseñada para ejecutar una acción (Ej. `POST /v1/invoices` para crear una factura).
+A specific URL of the Cord API designed to execute an action (e.g., `POST /v1/invoices` to create an invoice).
 
 ---
 
-## Términos Financieros B2B
+## B2B Financial Terms
 
-### Net-30 / Términos de Crédito
-Significa que el cliente tiene 30 días naturales a partir de la emisión de la factura (o entrega del producto) para liquidar el saldo total.
+### Net-30 / Credit Terms
+It means that the customer has 30 calendar days from the issuance of the invoice (or product delivery) to settle the total balance.
 
-### Disputa (Chargeback)
-Ocurre cuando un cliente final contacta a su banco para rechazar un cargo procesado vía Cord. El banco retiene los fondos temporalmente mientras Cord te ayuda a enviar evidencia para ganar la disputa.
+### Dispute (Chargeback)
+Occurs when an end customer contacts their bank to reject a charge processed via Cord. The bank temporarily holds the funds while Cord helps you submit evidence to win the dispute.
 
-### Conciliación (Reconciliation)
-El proceso de emparejar un movimiento de dinero en la cuenta bancaria corporativa con su respectiva factura o registro contable. Cord automatiza el 95% de la conciliación B2B.
+### Reconciliation
+The process of matching a money movement in the corporate bank account with its respective invoice or accounting record. Cord automates 95% of B2B reconciliation.

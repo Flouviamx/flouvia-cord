@@ -1,22 +1,22 @@
 ---
-title: "[EN] Suscripción con facturación anual"
-description: "Cambia a pago anual y ahorra 20% en tu plan Cord."
+title: "Subscription with annual billing"
+description: "Switch to annual payment and save 20% on your Cord plan."
 category: "Account & Team"
 ---
 
-Renovar y facturar membresías anuales es un proceso que Cord automatiza por completo mediante su motor de suscripciones.
+Renewing and billing annual memberships is a process that Cord fully automates through its subscription engine.
 
-### Configurar un Ciclo de Facturación Anual
+### Set Up an Annual Billing Cycle
 
-Si vendes SaaS o servicios recurrentes:
-1. Ve a **Productos > Suscripciones y Planes**.
-2. Crea un nuevo Plan (ej. "Membresía Premium B2B").
-3. Establece el precio y selecciona el intervalo de cobro a **Anual**.
-4. Si el cliente requiere CFDI, asegúrate de activar la casilla *Emitir factura automáticamente tras el cobro* e ingresa su RFC.
+If you sell SaaS or recurring services:
+1. Go to **Products > Subscriptions and Plans**.
+2. Create a new Plan (e.g., "Premium B2B Membership").
+3. Set the price and select the billing interval to **Annual**.
+4. If the client requires a CFDI, make sure to check the *Automatically issue invoice after charge* box and enter their RFC.
 
-### Prorrateos y Cambios de Plan (Upgrades)
+### Prorations and Plan Changes (Upgrades)
 
-Si tu cliente pagó su plan anual en enero, pero en junio decide hacer un *upgrade* a un plan superior:
-- El sistema calculará el valor de los 6 meses no utilizados.
-- Le cobrará únicamente la diferencia correspondiente al nuevo plan.
-- Se emitirá una factura automática por la cantidad exacta prorrateada (el cobro residual), evitando que tengas que hacer notas de crédito manuales.
+If your client paid their annual plan in January, but in June decides to upgrade to a higher plan:
+- The system will calculate the value of the 6 unused months.
+- It will only charge the difference corresponding to the new plan.
+- An automatic invoice will be issued for the exact prorated amount (the residual charge), saving you from having to make manual credit notes.

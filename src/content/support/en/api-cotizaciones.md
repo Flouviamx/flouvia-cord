@@ -1,17 +1,17 @@
 ---
-title: "[EN] API: Crear cotizaciones"
-description: "Endpoint para generar y enviar cotizaciones programáticamente."
+title: "API: Create Quotes"
+description: "Endpoint to generate and send quotes programmatically."
 category: "Developers"
 ---
 
-La API de Cotizaciones (Quotes) permite generar propuestas dinámicas programáticamente, ideal para integraciones con CRMs como Salesforce o HubSpot.
+The Quotes API allows you to programmatically generate dynamic proposals, ideal for integrations with CRMs like Salesforce or HubSpot.
 
-### Crear una Cotización (Quote)
+### Create a Quote
 
-Las cotizaciones requieren al menos un `line_item` (partida).
+Quotes require at least one `line_item`.
 
 ```javascript
-// Ejemplo usando el SDK de Node.js de Cord
+// Example using the Cord Node.js SDK
 const cord = require('cord-node')('sk_live_...');
 
 const quote = await cord.quotes.create({
@@ -19,16 +19,16 @@ const quote = await cord.quotes.create({
   expiration_date: 1735689600, // Unix timestamp
   line_items: [
     {
-      name: 'Licencia Anual ERP',
+      name: 'Annual ERP License',
       quantity: 1,
-      unit_price: 1500000, // En centavos ($15,000.00 MXN)
+      unit_price: 1500000, // In cents ($15,000.00 MXN)
       tax_rate: 'tx_iva_16'
     }
   ],
   require_signature: true
 });
 
-console.log(quote.hosted_url); // Enlace para enviar al cliente
+console.log(quote.hosted_url); // Link to send to the customer
 ```
 
-**Lógica de Precios en Centavos:** Absolutamente todos los montos en la API de Cord se manejan en centavos para evitar errores de precisión de punto flotante. Un precio de `1500000` equivale a $15,000.00.
+**Cents Pricing Logic:** Absolutely all amounts in the Cord API are handled in cents to avoid floating-point precision errors. A price of `1500000` is equivalent to $15,000.00.

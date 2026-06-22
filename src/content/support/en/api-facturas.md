@@ -1,31 +1,31 @@
 ---
-title: "[EN] API: Emitir y descargar facturas"
-description: "Timbra CFDI 4.0 directamente desde tus sistemas internos."
+title: "API: Issue and Download Invoices"
+description: "Stamp CFDI 4.0 directly from your internal systems."
 category: "Developers"
 ---
 
-El endpoint de `Invoices` controla el timbrado de CFDI 4.0 en México. Cuando utilizas este endpoint en modo *Live*, te conectas directamente a nuestro PAC certificado (Facturapi).
+The `Invoices` endpoint controls CFDI 4.0 stamping in Mexico. When you use this endpoint in *Live* mode, you connect directly to our certified PAC (Facturapi).
 
-### Timbrar una Factura Directa
+### Stamp a Direct Invoice
 
-Si no deseas pasar por el flujo de una cotización y solo quieres generar un CFDI 4.0 (Ingreso):
+If you do not wish to go through a quote flow and only want to generate a CFDI 4.0 (Income):
 
 ```bash
 curl -X POST https://api.flouvia.com/v1/invoices \
   -H "Authorization: Bearer sk_live_..." \
   -d '{
     "customer_id": "cus_12345",
-    "payment_form": "03", // 03 = Transferencia electrónica de fondos
-    "payment_method": "PUE", // Pago en una sola exhibición
-    "use": "G03", // Gastos en general
+    "payment_form": "03", // 03 = Electronic funds transfer
+    "payment_method": "PUE", // Payment in a single installment
+    "use": "G03", // General expenses
     "items": [
       {
-        "product_key": "43231500", // Clave SAT de Software
-        "description": "Desarrollo a la medida",
+        "product_key": "43231500", // SAT Software Key
+        "description": "Custom development",
         "price": 5000000
       }
     ]
   }'
 ```
 
-**Generación Asíncrona:** La API responderá con un `status: processing`. El timbrado con el PAC puede demorar entre 1 a 5 segundos. Te recomendamos escuchar el evento webhook `invoice.created` para saber cuándo descargar el PDF y XML.
+**Asynchronous Generation:** The API will respond with a `status: processing`. Stamping with the PAC can take between 1 to 5 seconds. We recommend listening to the `invoice.created` webhook event to know when to download the PDF and XML.

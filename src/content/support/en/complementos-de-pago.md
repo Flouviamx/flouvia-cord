@@ -1,19 +1,19 @@
 ---
-title: "[EN] Complementos de pago (REP)"
-description: "Guía sobre la generación automática de Recibos Electrónicos de Pago para facturas PPD."
+title: "Payment supplements (REP)"
+description: "Guide on the automatic generation of Electronic Payment Receipts for PPD invoices."
 category: "Billing & CFDI"
 order: 3
 ---
 
-Cuando emites una factura bajo el método de pago PPD (Pago en Parcialidades o Diferido), el SAT exige que generes un "Complemento de Recepción de Pagos" (REP) cada vez que el cliente te envíe un abono.
+When you issue an invoice under the PPD (Payment in Installments or Deferred) payment method, the SAT requires you to generate a "Payment Receipt Supplement" (REP) every time the client sends you a payment.
 
-### Generación Manual
+### Manual Generation
 
-Dado que los clientes B2B suelen pagar grandes montos vía transferencia SPEI directo a tu banco:
-1. Entra a la Factura en Cord.
-2. Haz clic en **Registrar Pago**.
-3. Indica la fecha en que cayó el dinero en tu banco, el monto y la cuenta receptora.
-4. Cord timbrará el REP basándose en esos datos y liquidará el balance de la factura.
+Since B2B clients typically pay large amounts via direct SPEI transfer to your bank:
+1. Go to the Invoice in Cord.
+2. Click on **Register Payment**.
+3. Indicate the date the funds reached your bank account, the amount, and the receiving account.
+4. Cord will stamp the REP based on that data and settle the invoice balance.
 
-### Automatización vía Webhooks (Stripe)
-Si el cliente paga la cotización o factura PPD utilizando el botón de pago con tarjeta (Stripe Checkout), Cord escuchará el webhook `checkout.session.completed` de tu cuenta de Stripe. Al recibirlo, Cord marcará la factura como cobrada y emitirá el REP automáticamente ante el SAT sin que tú hagas nada.
+### Automation via Webhooks (Stripe)
+If the client pays the quote or PPD invoice using the card payment button (Stripe Checkout), Cord will listen to the `checkout.session.completed` webhook from your Stripe account. Upon receiving it, Cord will mark the invoice as paid and automatically issue the REP with the SAT without any action on your part.

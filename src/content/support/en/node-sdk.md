@@ -1,35 +1,35 @@
 ---
-title: "[EN] Cord Node.js SDK"
-description: "Instalación y uso de @cord/node en tu backend."
+title: "Cord Node.js SDK"
+description: "Installation and usage of @cord/node in your backend."
 category: "Developers"
 ---
 
-Para desarrolladores backend que utilizan Node.js o TypeScript, hemos creado una librería oficial que encapsula toda la lógica de autenticación, serialización y manejo de errores de nuestra API.
+For backend developers using Node.js or TypeScript, we have created an official library that encapsulates all the authentication, serialization, and error handling logic of our API.
 
-### Instalación
+### Installation
 
 ```bash
 npm install @flouviamx/cord-node
-# o con yarn
+# or with yarn
 yarn add @flouviamx/cord-node
 ```
 
-### Uso y Tipado Estricto (TypeScript)
+### Strict Typing and Usage (TypeScript)
 
-El SDK provee autocompletado nativo e inferencia de tipos para todos los payloads de petición y respuesta.
+The SDK provides native auto-completion and type inference for all request and response payloads.
 
 ```typescript
 import Cord from '@flouviamx/cord-node';
 
 const cord = new Cord(process.env.CORD_SECRET_KEY);
 
-async function crearCotizacion() {
+async function createQuote() {
   try {
     const quote = await cord.quotes.create({
       customer_id: 'cus_123',
       currency: 'mxn',
       line_items: [
-        { name: 'Horas de Desarrollo', quantity: 10, unit_price: 150000 }
+        { name: 'Development Hours', quantity: 10, unit_price: 150000 }
       ]
     });
     console.log(quote.hosted_url);
@@ -41,4 +41,4 @@ async function crearCotizacion() {
 }
 ```
 
-El SDK utiliza internamente `keep-alive` TCP y reintentos exponenciales bajo el capó para mitigar errores de red transitorios (502, 503, 504).
+The SDK internally uses TCP `keep-alive` and exponential retries under the hood to mitigate transient network errors (502, 503, 504).

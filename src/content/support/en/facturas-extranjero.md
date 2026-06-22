@@ -1,20 +1,20 @@
 ---
-title: "[EN] Facturar a clientes en el extranjero"
-description: "Uso del RFC genérico extranjero y Tax ID."
+title: "Invoicing Foreign Customers"
+description: "Usage of the generic foreign RFC and Tax ID."
 category: "Billing & CFDI"
 ---
 
-Vender servicios o licencias de software a clientes fuera de México requiere la emisión de un CFDI de exportación de servicios.
+Selling services or software licenses to customers outside of Mexico requires the issuance of a service export CFDI.
 
-### El RFC Extranjero
+### The Foreign RFC
 
-El SAT dispone de un RFC genérico internacional que debes usar siempre que tu cliente radique en otro país: **XEXX010101000**.
+The SAT provides a generic international RFC that you must use whenever your customer resides in another country: **XEXX010101000**.
 
-### Configurar la Factura en Cord
+### Configuring the Invoice in Cord
 
-1. Añade a tu cliente extranjero a la base de datos de Cord. En el campo de RFC, introduce `XEXX010101000`.
-2. El sistema detectará que es un RFC foráneo y te permitirá ingresar su Número de Identificación Tributaria (Tax ID / EIN) de su país de origen (opcional pero recomendado).
-3. Al crear la cotización o factura, selecciona el **Uso de CFDI: S01 (Sin efectos fiscales)**, ya que el receptor extranjero no deduce impuestos ante el fisco mexicano.
-4. Configura la **Moneda** de la factura a USD (o la que corresponda) y selecciona la **Tasa de IVA 0%** (por ley, la exportación de servicios de TI gravados en México y aprovechados en el extranjero tiene tasa cero).
+1. Add your foreign customer to the Cord database. In the RFC field, enter `XEXX010101000`.
+2. The system will detect that it is a foreign RFC and will allow you to enter their Tax Identification Number (Tax ID / EIN) from their country of origin (optional but recommended).
+3. When creating the quote or invoice, select **CFDI Usage: S01 (Without tax effects)**, since the foreign recipient does not deduct taxes with the Mexican tax authority.
+4. Configure the invoice **Currency** to USD (or the corresponding one) and select the **0% VAT Rate** (by law, the export of IT services taxed in Mexico and utilized abroad has a zero rate).
 
-Cord timbrará el XML con el nodo de `ResidenciaFiscal` y `NumRegIdTrib` requeridos por la autoridad.
+Cord will stamp the XML with the `ResidenciaFiscal` and `NumRegIdTrib` nodes required by the authority.

@@ -1,18 +1,18 @@
 ---
-title: "[EN] Catálogos SAT y claves de producto"
-description: "Aprende a mapear tus productos internos con las claves oficiales del SAT para una facturación libre de errores."
+title: "SAT Catalogs and Product Keys"
+description: "Learn how to map your internal products with the official SAT keys for error-free billing."
 category: "Billing & CFDI"
 order: 2
 ---
 
-Cada partida (concepto) que factures necesita contar obligatoriamente con una Clave de Producto/Servicio y una Clave de Unidad, según los catálogos del SAT.
+Every item (concept) you invoice must have a Product/Service Key and a Unit Key, according to the SAT catalogs.
 
-### ¿Cómo configurarlo en Cord?
+### How to configure it in Cord?
 
-No necesitas aprenderte los códigos. En la sección de **Productos/Inventario**:
-1. Crea o edita un producto.
-2. Ve al apartado de *Información Fiscal*.
-3. En **Clave SAT**, simplemente escribe lo que vendes (ej. "Software" o "Consultoría"). El buscador predictivo de Cord te mostrará las claves válidas (ej. `43231500` para Software de negocio).
-4. En **Unidad SAT**, busca por descripción (ej. "Servicio", "Pieza"). El sistema asignará el código correcto (ej. `E48` para Unidad de Servicio, o `H87` para Pieza).
+You do not need to memorize the codes. In the **Products/Inventory** section:
+1. Create or edit a product.
+2. Go to the *Tax Information* section.
+3. In **SAT Key**, simply type what you sell (e.g., "Software" or "Consulting"). Cord's predictive search will show you the valid keys (e.g., `43231500` for Business Software).
+4. In **SAT Unit**, search by description (e.g., "Service", "Piece"). The system will assign the correct code (e.g., `E48` for Service Unit, or `H87` for Piece).
 
-Una vez configurado en el catálogo de productos de Cord, cualquier vendedor podrá cotizar estos ítems y el sistema fiscal heredará estas claves de manera invisible y automática al timbrar la factura.
+Once configured in Cord's product catalog, any salesperson will be able to quote these items and the tax system will invisibly and automatically inherit these keys when stamping the invoice.

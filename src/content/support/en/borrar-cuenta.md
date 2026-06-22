@@ -1,15 +1,15 @@
 ---
-title: "[EN] Eliminar cuenta de Cord"
-description: "Proceso de cierre y exportación final de datos."
+title: "Delete Cord Account"
+description: "Process for closing and final data export."
 category: "Account & Team"
 ---
 
-Entendemos que los negocios cambian. Si deseas dar de baja tu cuenta en Cord, el proceso debe realizarse con precaución, ya que implica la retención de datos fiscales por ley.
+We understand that businesses change. If you wish to cancel your Cord account, the process must be handled with caution, as it involves the retention of tax data required by law.
 
-### Procedimiento de Cierre
+### Closure Procedure
 
-1. **Liquida facturas pendientes:** Asegúrate de que no existan facturas en estatus `PPD` pendientes de un Complemento de Pago (REP).
-2. **Descarga tu información:** Exporta tus clientes, cotizaciones y archivos XML. Una vez borrada la cuenta, perderás acceso a la interfaz web.
-3. Envía un correo a `soporte@flouvia.com` desde el correo del Administrador principal solicitando la baja.
+1. **Settle pending invoices:** Ensure there are no invoices in `PPD` status pending a Payment Receipt Supplement (REP).
+2. **Download your information:** Export your clients, quotes, and XML files. Once the account is deleted, you will lose access to the web interface.
+3. Send an email to `support@flouvia.com` from the main Administrator's email requesting the cancellation.
 
-**Retención de Datos Fiscales:** Por cumplimiento con las leyes de prevención de lavado de dinero e infraestructura fiscal en México (CFF), aunque cerremos tu acceso a la plataforma, Cord está obligado a mantener el historial de tus comprobantes fiscales timbrados durante 5 años. La eliminación no borra el registro de los CFDI emitidos ante el SAT.
+**Tax Data Retention:** In compliance with anti-money laundering laws and the tax infrastructure in Mexico (CFF), even if we close your platform access, Cord is required to maintain the history of your stamped tax receipts for 5 years. Deletion does not erase the record of CFDI issued to the SAT.

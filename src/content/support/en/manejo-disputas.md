@@ -1,19 +1,19 @@
 ---
-title: "[EN] Manejo de disputas y contracargos"
-description: "Aprende qué es un contracargo y los pasos que debes seguir para responder o ganar una disputa bancaria."
+title: "Handling disputes and chargebacks"
+description: "Learn what a chargeback is and the steps you must follow to respond to or win a bank dispute."
 category: "Payments & Deposits"
 order: 3
 ---
 
-Una disputa o contracargo ocurre cuando el titular de una tarjeta desconoce un cobro procesado a través del botón de pago de tus cotizaciones.
+A dispute or chargeback occurs when a cardholder does not recognize a charge processed through the payment button on your quotes.
 
-### ¿Dónde se gestionan las disputas?
+### Where are disputes managed?
 
-Dado que Cord utiliza tu propia cuenta de Stripe para procesar tarjetas, todo el proceso de resolución de disputas sucede **dentro de tu panel de Stripe**, no en Cord.
+Since Cord uses your own Stripe account to process cards, the entire dispute resolution process happens **within your Stripe dashboard**, not in Cord.
 
-1. Stripe te notificará por correo electrónico sobre la disputa y retendrá los fondos.
-2. Tienes un lapso de tiempo (generalmente 7-15 días) para enviar evidencia a través del Dashboard de Stripe.
-3. **Evidencia desde Cord:** Ve a la cotización disputada en Cord y descarga el **PDF de la cotización** y el historial de eventos (Audit Trail) que muestra la IP y fecha en que el cliente aceptó los términos o firmó digitalmente la propuesta.
-4. Sube este PDF como evidencia a Stripe.
+1. Stripe will notify you via email about the dispute and withhold the funds.
+2. You have a timeframe (generally 7-15 days) to submit evidence through the Stripe Dashboard.
+3. **Evidence from Cord:** Go to the disputed quote in Cord and download the **Quote PDF** and the event history (Audit Trail) showing the IP and date the customer accepted the terms or digitally signed the proposal.
+4. Upload this PDF as evidence to Stripe.
 
-Si ganas la disputa, Stripe te devolverá los fondos. Si la pierdes, deberás emitir una Nota de Crédito en Cord para cuadrar tus impuestos.
+If you win the dispute, Stripe will return the funds to you. If you lose it, you must issue a Credit Note in Cord to balance your taxes.

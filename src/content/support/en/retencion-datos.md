@@ -1,16 +1,16 @@
 ---
-title: "[EN] Retención de datos y privacidad"
-description: "Nuestras políticas sobre el manejo y eliminación de los datos financieros de tus clientes."
+title: "Data retention and privacy"
+description: "Our policies regarding the handling and deletion of your customers' financial data."
 category: "Security & Privacy"
 order: 2
 ---
 
-Toda la información comercial, personal y financiera que cruza por la plataforma Cord está sujeta a políticas de retención estrictas, diseñadas para proteger la privacidad (ARCO) y cumplir con requerimientos fiscales (SAT).
+All commercial, personal, and financial information that crosses the Cord platform is subject to strict retention policies, designed to protect privacy (ARCO) and comply with tax requirements (SAT).
 
-### Periodos de Retención Legales
+### Legal Retention Periods
 
-- **Documentos Fiscales (XML/PDF):** Por normatividad de la SHCP y el CFF en México, todo comprobante fiscal digital emitido a través de Cord se almacena de forma inmutable durante **5 años** a partir del ejercicio fiscal de su expedición.
-- **Logs de Auditoría de Accesos:** Los registros de sesiones, direcciones IP y acciones destructivas (Audit Trails) de tu equipo de trabajo se conservan en acceso caliente por 1 año para investigaciones forenses.
-- **Datos Bancarios de Tarjetahabientes:** Cord **NUNCA** almacena CVVs ni el track completo de la banda magnética. Los Primary Account Numbers (PAN) tokenizados pueden ser eliminados a solicitud expresa del usuario final ejerciendo sus derechos ARCO enviando un correo a `privacidad@flouvia.com`.
+- **Tax Documents (XML/PDF):** By regulation of the SHCP and the CFF in Mexico, every digital tax receipt issued through Cord is stored immutably for **5 years** starting from the fiscal year of its issuance.
+- **Access Audit Logs:** Session records, IP addresses, and destructive actions (Audit Trails) of your workforce are kept in hot access for 1 year for forensic investigations.
+- **Cardholder Bank Data:** Cord **NEVER** stores CVVs or the complete magnetic stripe track. Tokenized Primary Account Numbers (PAN) can be deleted upon explicit request from the end user exercising their ARCO rights by sending an email to `privacidad@flouvia.com`.
 
-Si decides eliminar tu cuenta corporativa de Cord, destruimos las bases de datos transaccionales no fiscales de tus clientes en un lapso de 30 días naturales.
+If you decide to delete your corporate Cord account, we destroy the non-fiscal transactional databases of your customers within 30 calendar days.

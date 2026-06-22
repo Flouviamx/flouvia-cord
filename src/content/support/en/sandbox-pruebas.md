@@ -1,18 +1,18 @@
 ---
-title: "[EN] Entorno de Pruebas (Sandbox)"
-description: "Simula pagos, rechazos y facturas sin dinero real."
+title: "Test Environment (Sandbox)"
+description: "Simulate payments, declines, and invoices without real money."
 category: "Developers"
 ---
 
-Integrar un sistema de pagos y facturación requiere de un entorno seguro para experimentar sin miedo a gastar dinero o meterte en problemas legales con el SAT. Por eso, hemos dotado a cada organización de Cord con un entorno paralelo de Sandbox (Pruebas).
+Integrating a payment and billing system requires a secure environment to experiment without the fear of spending money or getting into legal trouble with the tax authority (SAT). For this reason, we have provided every Cord organization with a parallel Sandbox (Testing) environment.
 
-### Activar el Modo de Pruebas
+### Activate Test Mode
 
-En tu dashboard principal, ubica el botón o toggle superior llamado **Modo de Pruebas** y actívalo. La interfaz cambiará a color naranja.
+On your main dashboard, locate the top button or toggle called **Test Mode** and activate it. The interface will turn orange.
 
-En este entorno alternativo:
-- Todos los clientes, cotizaciones y facturas creadas aquí son falsas y no existen en Producción.
-- **Pagos Falsos:** Puedes probar la experiencia de tu cliente utilizando tarjetas de prueba proporcionadas (ej. la famosa tarjeta de prueba Visa terminación `4242`).
-- **Timbrado Simulado:** Al emitir un CFDI en este entorno, la factura se valida mediante un motor que verifica la sintaxis del SAT (que las claves y cálculos coincidan), pero **NO** envía el XML oficial al SAT. De esta manera, tu contador no enloquecerá.
+In this alternative environment:
+- All customers, quotes, and invoices created here are fake and do not exist in Production.
+- **Fake Payments:** You can test your customer's experience using provided test cards (e.g., the famous Visa test card ending in `4242`).
+- **Simulated Stamping:** When issuing a CFDI in this environment, the invoice is validated by an engine that checks the SAT syntax (ensuring codes and calculations match), but it **DOES NOT** send the official XML to the SAT. This way, your accountant won't lose their mind.
 
-Asegúrate de utilizar las Llaves de API de Test (`sk_test_...`) en tu código mientras desarrollas.
+Make sure to use the Test API Keys (`sk_test_...`) in your code while developing.

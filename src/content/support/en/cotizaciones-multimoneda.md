@@ -1,19 +1,19 @@
 ---
-title: "[EN] Cotizaciones multimoneda"
-description: "Envía propuestas en USD, EUR o MXN."
+title: "Multi-currency quotes"
+description: "Send proposals in USD, EUR, or MXN."
 category: "Quotes"
 ---
 
-Cord soporta nativamente la emisión de propuestas comerciales en más de 100 divisas. 
+Cord natively supports issuing commercial proposals in over 100 currencies.
 
-### ¿Cómo crear una cotización en otra moneda?
+### How to create a quote in another currency?
 
-Al momento de redactar la cotización, en la sección de **Configuración Global** (panel derecho), verás un selector de Moneda (Currency).
-1. Cambia de `MXN - Peso Mexicano` a `USD - Dólar Estadounidense` o `EUR - Euro`.
-2. Todos los precios de tus conceptos ingresados se leerán bajo esa nueva divisa.
+When drafting the quote, in the **Global Settings** section (right panel), you will see a Currency selector.
+1. Change from `MXN - Peso Mexicano` to `USD - Dólar Estadounidense` or `EUR - Euro`.
+2. All prices for your entered line items will be read under this new currency.
 
-### Impacto en la Facturación y Pagos
+### Impact on Billing and Payments
 
-- **Para tu cliente:** Recibirá el documento y la liga de pago mostrando dólares (ej. $10,000 USD). Si paga con tarjeta, su banco le hará el cargo en dólares o en su moneda local según su contrato bancario.
-- **Para ti (Factura):** Cord timbrará automáticamente el CFDI ante el SAT indicando `Moneda: USD` e incluirá automáticamente el nodo de `TipoCambio` oficial del Diario Oficial de la Federación (DOF) del día del cobro. Esto asegura que el SAT reciba el valor correcto de los impuestos trasladados convertidos a pesos para tu declaración mensual.
-- **Para ti (Dinero):** Nuestro motor de pagos liquidará la operación en tu cuenta bancaria mexicana **en Pesos (MXN)** usando una tasa cambiaria mayorista competitiva al momento de la captura.
+- **For your client:** They will receive the document and the payment link showing dollars (e.g., $10,000 USD). If they pay by credit card, their bank will charge them in dollars or in their local currency according to their banking contract.
+- **For you (Invoice):** Cord will automatically stamp the CFDI with the SAT indicating `Currency: USD` and will automatically include the official `TipoCambio` (Exchange Rate) node from the Official Journal of the Federation (DOF) on the day of collection. This ensures that the SAT receives the correct value of the transferred taxes converted to pesos for your monthly declaration.
+- **For you (Money):** Our payment engine will settle the transaction in your Mexican bank account **in Pesos (MXN)** using a competitive wholesale exchange rate at the time of capture.

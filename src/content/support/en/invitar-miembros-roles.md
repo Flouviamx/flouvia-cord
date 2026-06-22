@@ -1,22 +1,22 @@
 ---
-title: "[EN] Invitar miembros y roles (RBAC)"
-description: "Administra el acceso de tu equipo de ventas, contabilidad y administradores."
+title: "Inviting Members and Roles (RBAC)"
+description: "Manage the access of your sales team, accounting, and administrators."
 category: "Account & Team"
 order: 2
 ---
 
-Cord soporta esquemas de control de acceso basados en roles (RBAC) para proteger la información confidencial de tu empresa.
+Cord supports role-based access control (RBAC) schemes to protect your company's confidential information.
 
-### Invitar a tu Equipo
+### Inviting Your Team
 
-1. En tu panel principal, ve a **Ajustes > Miembros y Roles**.
-2. Haz clic en **Invitar Miembro**.
-3. Ingresa su correo electrónico y asígnale un rol.
-4. La persona recibirá un email para crear su contraseña e ingresar al entorno de trabajo.
+1. In your main dashboard, go to **Settings > Members and Roles**.
+2. Click on **Invite Member**.
+3. Enter their email and assign them a role.
+4. The person will receive an email to create their password and access the workspace.
 
-### Roles Disponibles
+### Available Roles
 
-- **Administrador (Owner):** Tiene acceso sin restricciones. Puede ver balances bancarios, transferir dinero (Payouts), editar las llaves de API, cambiar facturación y borrar la organización.
-- **Ventas (Sales):** Solo puede crear, editar y visualizar clientes y cotizaciones. **No** puede ver el saldo total de la cuenta en el dashboard ni exportar reportes de dispersión bancaria.
-- **Desarrollador (Developer):** Tiene acceso total a las llaves de API y configuración de webhooks. Puede emitir facturas y leer logs técnicos, pero no puede añadir administradores nuevos ni ver las cuentas bancarias destino.
-- **Contador (Read-Only Finance):** Ideal para despachos externos. Solo pueden exportar facturas XML/PDF y ver conciliaciones de pago, pero tienen bloqueada la creación de cobros.
+- **Administrator (Owner):** Has unrestricted access. Can view bank balances, transfer money (Payouts), edit API keys, change billing, and delete the organization.
+- **Sales:** Can only create, edit, and view customers and quotes. **Cannot** view the total account balance on the dashboard or export bank payout reports.
+- **Developer:** Has full access to API keys and webhook configuration. Can issue invoices and read technical logs, but cannot add new administrators or view destination bank accounts.
+- **Accountant (Read-Only Finance):** Ideal for external accounting firms. Can only export XML/PDF invoices and view payment reconciliations, but the creation of charges is blocked.

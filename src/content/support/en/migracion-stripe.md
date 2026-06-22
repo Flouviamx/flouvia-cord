@@ -1,74 +1,74 @@
 ---
-title: "[EN] Guía de Migración: De Stripe a Cord"
-description: "Paso a paso para exportar tus clientes, suscripciones y catálogos desde Stripe e importarlos a la plataforma B2B de Cord."
+title: "Migration Guide: From Stripe to Cord"
+description: "Step-by-step guide to exporting your customers, subscriptions, and catalogs from Stripe and importing them to Cord's B2B platform."
 category: "Developers"
 order: 5
 ---
 
-Si actualmente procesas pagos o suscripciones con Stripe, migrar a Cord te otorgará beneficios adicionales clave para el mercado latinoamericano (como timbrado CFDI 4.0 automático, recepción de transferencias bancarias y emisión de REPs).
+If you currently process payments or subscriptions with Stripe, migrating to Cord will grant you key additional benefits for the Latin American market (such as automatic CFDI 4.0 stamping, receiving bank transfers, and issuing REPs).
 
-La arquitectura de Cord fue diseñada con una filosofía similar a Stripe, por lo que la curva de aprendizaje para tu equipo de ingeniería será mínima.
+Cord's architecture was designed with a philosophy similar to Stripe's, so the learning curve for your engineering team will be minimal.
 
-## Diferencias Conceptuales Clave
+## Key Conceptual Differences
 
-Antes de iniciar la exportación de datos, es importante alinear los conceptos:
+Before starting data export, it is important to align the concepts:
 
-| Objeto en Stripe | Objeto equivalente en Cord | Diferencia |
+| Object in Stripe | Equivalent object in Cord | Difference |
 | :--- | :--- | :--- |
-| `Customer` | `Cliente` | En Cord, un Cliente requiere el `RFC` y `Razón Social` para temas de facturación B2B. |
-| `Product` | `Producto` | En Cord los productos pueden llevar asignadas Claves de Producto/Servicio del SAT. |
-| `Price` | `Precio` | - |
-| `Subscription` | `Suscripción` | Cord puede automatizar la factura PPD mensual para suscripciones pagadas vía SPEI. |
-| `Invoice` | `Cotización` / `Factura` | Una "Invoice" de Stripe se mapea como una Cotización que, al pagarse, genera un CFDI. |
+| `Customer` | `Client` | In Cord, a Client requires the `RFC` and `Legal Name` for B2B invoicing purposes. |
+| `Product` | `Product` | In Cord, products can be assigned SAT Product/Service Keys. |
+| `Price` | `Price` | - |
+| `Subscription` | `Subscription` | Cord can automate the monthly PPD invoice for subscriptions paid via SPEI. |
+| `Invoice` | `Quote` / `Invoice` | A Stripe "Invoice" maps as a Quote that, when paid, generates a CFDI. |
 
-## Paso 1: Exportación segura de Tarjetas (Data Migration)
+## Step 1: Secure Card Export (Data Migration)
 
-Debido al cumplimiento PCI-DSS, tú no puedes exportar los números de tarjeta crudos (`PAN`) desde el dashboard de Stripe.
+Due to PCI-DSS compliance, you cannot export raw card numbers (`PAN`) from the Stripe dashboard.
 
-Para migrar la bóveda de tarjetas de tus clientes hacia Cord sin pedirles que vuelvan a ingresar sus datos, necesitas solicitar una **migración de datos PCI**:
+To migrate your customers' card vault to Cord without asking them to re-enter their details, you need to request a **PCI data migration**:
 
-1. Contacta al soporte de Stripe y solicita una exportación segura de datos de tarjetas hacia un procesador nivel 1 PCI-DSS.
-2. Stripe te pedirá la llave PGP pública de Cord. Contacta a nuestro equipo de soporte (`soporte@flouvia.com`) para proporcionarte este archivo.
-3. Stripe nos enviará directamente la bóveda encriptada. Nosotros la descifraremos e inyectaremos las tarjetas (como `Métodos de Pago` tokenizados) directamente a los perfiles de tus clientes en Cord.
+1. Contact Stripe support and request a secure card data export to a Level 1 PCI-DSS processor.
+2. Stripe will ask for Cord's public PGP key. Contact our support team (`soporte@flouvia.com`) to provide you with this file.
+3. Stripe will send us the encrypted vault directly. We will decrypt it and inject the cards (as tokenized `Payment Methods`) directly into your customers' profiles in Cord.
 
-*Este proceso técnico puede demorar entre 5 y 10 días hábiles por las regulaciones de Stripe.*
+*This technical process may take between 5 and 10 business days due to Stripe's regulations.*
 
-## Paso 2: Importar tu Catálogo de Clientes
+## Step 2: Import your Customer Catalog
 
-Si no vas a migrar tarjetas de crédito (por ejemplo, si tus clientes pagan exclusivamente vía transferencia bancaria), puedes hacerlo en minutos:
+If you are not going to migrate credit cards (for example, if your customers pay exclusively via bank transfer), you can do it in minutes:
 
-1. Ve a tu Dashboard de Stripe > Clientes > **Exportar**.
-2. Obtendrás un archivo `.csv`.
-3. Ve a tu Dashboard de Cord > Clientes > **Importar**.
-4. Selecciona el mapeo de columnas (Asegúrate de mapear `email`, `name`, y si tienes metadata con el `RFC`, asígnalo).
+1. Go to your Stripe Dashboard > Customers > **Export**.
+2. You will get a `.csv` file.
+3. Go to your Cord Dashboard > Customers > **Import**.
+4. Select the column mapping (Make sure to map `email`, `name`, and if you have metadata with the `RFC`, assign it).
 
-## Paso 3: Migración de Suscripciones (Recurrencia)
+## Step 3: Subscription Migration (Recurrence)
 
-Para evitar dobles cobros durante la transición de motor de facturación:
+To avoid double charges during the billing engine transition:
 
-1. Importa tus clientes y catálogo de productos a Cord.
-2. Identifica el próximo ciclo de cobro de tus clientes (Ej. Día 15 del mes).
-3. Escribe un script utilizando nuestra [API de Suscripciones](/desarrolladores/api) que cree las suscripciones en Cord con el parámetro `trial_end` o `billing_cycle_anchor` seteado a la fecha exacta del siguiente cobro.
-4. Pausa o cancela las suscripciones activas en Stripe.
+1. Import your customers and product catalog to Cord.
+2. Identify your customers' next billing cycle (e.g., 15th of the month).
+3. Write a script using our [Subscriptions API](/en/developers/api) that creates the subscriptions in Cord with the parameter `trial_end` or `billing_cycle_anchor` set to the exact date of the next charge.
+4. Pause or cancel active subscriptions in Stripe.
 
-### Ejemplo de creación con ciclo diferido (Node.js)
+### Example of creation with deferred cycle (Node.js)
 
 ```javascript
-const cord = require('cord-node')('sk_test_tu_llave');
+const cord = require('cord-node')('sk_test_your_key');
 
-// Crear la suscripción programada para cobrar en la fecha futura
+// Create the subscription scheduled to charge on the future date
 const subscription = await cord.subscriptions.create({
   customer: 'cus_12345',
   items: [{ price: 'price_98765' }],
-  billing_cycle_anchor: 1718968200 // Unix timestamp del siguiente cobro
+  billing_cycle_anchor: 1718968200 // Unix timestamp of the next charge
 });
 ```
 
-## Paso 4: Cambiar las URLs de los Webhooks
+## Step 4: Change Webhook URLs
 
-Finalmente, deberás apuntar la lógica de negocio de tu backend hacia Cord.
+Finally, you will need to point your backend's business logic to Cord.
 
-1. Ve a **Ajustes > Webhooks** en Cord.
-2. Añade tu URL receptora (Ej. `https://tu-api.com/webhooks/cord`).
-3. Modifica tus controladores. Si antes escuchabas el evento `invoice.paid` de Stripe, ahora escucharás el evento `invoice.payment_succeeded` de Cord.
-4. Haz pruebas enviando eventos desde el **Sandbox** de Cord antes de apagar la integración productiva de Stripe.
+1. Go to **Settings > Webhooks** in Cord.
+2. Add your receiver URL (e.g., `https://your-api.com/webhooks/cord`).
+3. Modify your controllers. If you previously listened to Stripe's `invoice.paid` event, you will now listen to Cord's `invoice.payment_succeeded` event.
+4. Run tests by sending events from the Cord **Sandbox** before turning off the production Stripe integration.

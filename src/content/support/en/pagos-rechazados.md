@@ -1,17 +1,17 @@
 ---
-title: "[EN] Razones de pagos rechazados"
-description: "Códigos de error bancarios comunes y cómo solucionarlos."
+title: "Reasons for Declined Payments"
+description: "Common bank error codes and how to fix them."
 category: "Payments & Deposits"
 ---
 
-Ver un pago fallido es frustrante, pero Cord delega el procesamiento directamente a Stripe, por lo que la declinación proviene de los algoritmos antifraude o del banco emisor de la tarjeta.
+Seeing a failed payment is frustrating, but Cord delegates processing directly to Stripe, so the decline comes from anti-fraud algorithms or the card-issuing bank.
 
-### Identificar el motivo en Stripe
+### Identify the reason in Stripe
 
-Si un cliente te reporta que su tarjeta no pasa al intentar pagar una cotización:
-1. Entra a tu Dashboard de Stripe y ve a **Pagos**.
-2. Verás los intentos fallidos. Stripe te dirá exactamente por qué rebotó (ej. *insufficient_funds*, *do_not_honor*, *fraudulent*).
-3. Al ser cobros B2B de alto monto (decenas de miles de pesos), es extremadamente común que los bancos bloqueen la tarjeta preventivamente.
+If a customer reports that their card does not go through when trying to pay a quote:
+1. Go to your Stripe Dashboard and navigate to **Payments**.
+2. You will see the failed attempts. Stripe will tell you exactly why it bounced (e.g., *insufficient_funds*, *do_not_honor*, *fraudulent*).
+3. Since these are high-amount B2B collections (tens of thousands of pesos), it is extremely common for banks to block the card preventively.
 
-**Solución recomendada:**
-Pide al cliente que llame a su banco, confirme que él está intentando hacer un pago fuerte en línea, y luego vuelva a intentar el pago desde la cotización de Cord.
+**Recommended Solution:**
+Ask the customer to call their bank, confirm that they are trying to make a large online payment, and then try the payment again from the Cord quote.

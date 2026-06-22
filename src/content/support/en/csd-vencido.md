@@ -1,21 +1,21 @@
 ---
-title: "[EN] Qué hacer si tu CSD caducó"
-description: "Pasos para subir tu nuevo Certificado de Sello Digital."
+title: "What to do if your CSD expired"
+description: "Steps to upload your new Digital Seal Certificate."
 category: "Billing & CFDI"
 ---
 
-Para que Cord (o cualquier PAC) pueda emitir facturas legales en tu nombre, requieres cargar tu **Certificado de Sello Digital (CSD)**. ¡Atención! El CSD no es la FIEL (e.firma).
+For Cord (or any PAC) to issue legal invoices on your behalf, you need to upload your **Digital Seal Certificate (CSD)**. Attention! The CSD is not the FIEL (e.firma).
 
-### ¿Por qué mi CSD aparece vencido o revocado?
+### Why does my CSD appear as expired or revoked?
 
-Los CSD emitidos por el SAT tienen una vigencia estricta de **4 años**. Si llega a su límite, todas tus facturas y cobranza automática fallarán con un error criptográfico.
-Además, el SAT puede **revocar** tu CSD antes de tiempo como medida precautoria si detecta anomalías severas (ej. no presentar declaración anual o no ser localizado en tu domicilio fiscal).
+CSDs issued by the SAT have a strict validity of **4 years**. If it reaches its limit, all your invoices and automatic collections will fail with a cryptographic error.
+Additionally, the SAT can **revoke** your CSD prematurely as a precautionary measure if it detects severe anomalies (e.g., failing to file an annual return or not being found at your tax domicile).
 
-### Cómo actualizar tu CSD en Cord
+### How to update your CSD in Cord
 
-1. Entra a **Ajustes > Fiscal y SAT**.
-2. En la sección *Certificado de Sello Digital*, verás el estado de tu sello actual.
-3. Haz clic en **Reemplazar CSD**.
-4. Sube tu nuevo archivo `.cer`, tu nuevo archivo `.key` y la contraseña correspondiente.
+1. Go to **Settings > Fiscal and SAT**.
+2. In the *Digital Seal Certificate* section, you will see the status of your current seal.
+3. Click on **Replace CSD**.
+4. Upload your new `.cer` file, your new `.key` file, and the corresponding password.
 
-**Tip de Tiempo:** Después de tramitar un nuevo CSD en el portal del SAT (Certifica), tarda **entre 24 y 72 horas** en propagarse por todos los servidores del SAT a nivel nacional (el famoso LCO). Si lo subes a Cord el mismo día que lo sacaste, el timbrado fallará indicando que "El CSD no se encuentra en la lista de sellos válidos". Debes tener paciencia.
+**Time Tip:** After processing a new CSD on the SAT portal (Certifica), it takes **between 24 and 72 hours** to propagate through all SAT servers nationwide (the famous LCO). If you upload it to Cord on the same day you obtained it, the stamping will fail indicating that "The CSD is not found in the valid seals list". You must be patient.

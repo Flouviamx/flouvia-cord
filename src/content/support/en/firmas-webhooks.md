@@ -1,34 +1,34 @@
 ---
-title: "[EN] Verificar firmas de Webhooks"
-description: "Implementación criptográfica para validar eventos."
+title: "Verifying Webhook Signatures"
+description: "Cryptographic implementation to validate events."
 category: "Developers"
 ---
 
-Asegurar la procedencia de los Webhooks es crítico. Un atacante podría enviarte un payload falso diciendo `{"type":"charge.succeeded", "amount": 100000}` para que liberes un producto sin que realmente haya pagado.
+Ensuring the origin of Webhooks is critical. An attacker could send you a fake payload saying `{"type":"charge.succeeded", "amount": 100000}` so you release a product without them actually having paid.
 
-### Verificación en Node.js
+### Verification in Node.js
 
-Cord utiliza HMAC SHA-256 para firmar el cuerpo raw (en bruto) del webhook.
+Cord uses HMAC SHA-256 to sign the raw body of the webhook.
 
 ```javascript
 const crypto = require('crypto');
 
-// Tu webhook endpoint
+// Your webhook endpoint
 app.post('/webhook/cord', express.raw({type: 'application/json'}), (req, res) => {
-  const signatureHeader = req.headers['cord-signature']; // formato: "t=162345,v1=abcdef..."
+  const signatureHeader = req.headers['cord-signature']; // format: "t=162345,v1=abcdef..."
   const secret = process.env.CORD_WEBHOOK_SECRET;
   
-  // Extraer timestamp y signature
+  // Extract timestamp and signature
   const [tStr, v1Str] = signatureHeader.split(',');
   const timestamp = tStr.split('=')[1];
   const signature = v1Str.split('=')[1];
   
-  // Prevenir ataques de repetición (Replay attacks)
+  // Prevent replay attacks
   if (Math.abs(Date.now()/1000 - parseInt(timestamp)) > 300) {
-    return res.status(400).send('Webhook demasiado viejo');
+    return res.status(400).send('Webhook too old');
   }
   
-  // Firmar el payload localmente
+  // Sign the payload locally
   const payloadToSign = `${timestamp}.${req.body.toString('utf8')}`;
   const expectedSignature = crypto
     .createHmac('sha256', secret)
@@ -36,10 +36,10 @@ app.post('/webhook/cord', express.raw({type: 'application/json'}), (req, res) =>
     .digest('hex');
     
   if (crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
-    // Firma válida, puedes procesar la orden
-    res.status(200).send('Recibido');
+    // Valid signature, you can process the order
+    res.status(200).send('Received');
   } else {
-    res.status(401).send('Firma inválida');
+    res.status(401).send('Invalid signature');
   }
 });
 ```

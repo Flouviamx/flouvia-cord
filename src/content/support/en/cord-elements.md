@@ -1,21 +1,21 @@
 ---
-title: "[EN] Cord Elements (Componentes UI embebibles)"
-description: "Incrusta botones de pago y formularios interactivos directamente en tu propia aplicación web."
+title: "Cord Elements (Embeddable UI components)"
+description: "Embed payment buttons and interactive forms directly into your own web application."
 category: "Developers"
 order: 3
 ---
 
-Cord Elements es una librería de componentes UI *drop-in* (listos para usar) que te permite embeber el poder de Cord directamente dentro del sitio web de tu aplicación, sin que el cliente sepa que existimos.
+Cord Elements is a library of *drop-in* (ready to use) UI components that allows you to embed the power of Cord directly within your application's website, without the client knowing we exist.
 
-### Beneficios
+### Benefits
 
-- **Menos abandono:** El cliente nunca sale de tu dominio (ej. `app.tuempresa.com/checkout`) para pagar o aceptar una cotización.
-- **Cumplimiento PCI:** Los componentes inyectan iframes seguros que recolectan los datos de la tarjeta. La información sensible jamás toca tus servidores, eximiéndote de auditorías PCI pesadas.
+- **Reduced abandonment:** The client never leaves your domain (e.g., `app.yourcompany.com/checkout`) to pay or accept a quote.
+- **PCI Compliance:** The components inject secure iframes that collect card data. Sensitive information never touches your servers, exempting you from heavy PCI audits.
 
-### Elementos Disponibles
+### Available Elements
 
-1. **Payment Element:** Una caja de pago que soporta tarjetas, transferencias y meses sin intereses dinámicamente.
-2. **Quote Element:** Muestra una cotización B2B interactiva dentro de tu portal de clientes.
-3. **Customer Portal Element:** Permite a tus usuarios descargar sus propias facturas XML/PDF y actualizar sus datos fiscales directamente en tu sitio.
+1. **Payment Element:** A checkout box that dynamically supports cards, transfers, and interest-free months.
+2. **Quote Element:** Displays an interactive B2B quote within your customer portal.
+3. **Customer Portal Element:** Allows your users to download their own XML/PDF invoices and update their tax details directly on your site.
 
-Para instalar Elements, simplemente añade la etiqueta de script en tu `<head>` y monta los componentes usando nuestro [SDK de frontend](/soporte/react-sdk).
+To install Elements, simply add the script tag in your `<head>` and mount the components using our [Frontend SDK](/en/support/react-sdk).

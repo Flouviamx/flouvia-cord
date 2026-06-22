@@ -1,18 +1,18 @@
 ---
-title: "[EN] Envío masivo de facturas por correo"
-description: "Reenvía el PDF y XML a múltiples clientes."
+title: "Mass email delivery of invoices"
+description: "Forward the PDF and XML to multiple clients."
 category: "Billing & CFDI"
 ---
 
-Si tienes decenas o cientos de facturas recurrentes o generadas mediante la API y quieres asegurarte de que tus clientes las reciban y las paguen rápido, no tienes que enviar correos manuales.
+If you have dozens or hundreds of recurring or API-generated invoices and want to ensure your clients receive and pay them quickly, you don't have to send manual emails.
 
-### Automatización de Envío
+### Delivery Automation
 
-Puedes apoyarte en el módulo de Cobranza de Cord:
-1. Ve a **Contabilidad > Facturas**.
-2. Utiliza las casillas de selección izquierda para marcar múltiples facturas (puedes usar el filtro "Con saldo pendiente").
-3. Haz clic en el botón de "Acciones Masivas" y selecciona **Enviar recordatorio de pago**.
+You can rely on Cord's Collections module:
+1. Go to **Accounting > Invoices**.
+2. Use the left checkboxes to select multiple invoices (you can use the "With pending balance" filter).
+3. Click the "Mass Actions" button and select **Send payment reminder**.
 
-El sistema despachará una ráfaga de correos electrónicos a todos los clientes seleccionados. Cada correo estará personalizado con su nombre, el saldo adeudado y un enlace único a su portal de cliente donde pueden descargar su PDF/XML y ver el botón de pago con tarjeta.
+The system will dispatch a burst of emails to all selected clients. Each email will be personalized with their name, the balance due, and a unique link to their client portal where they can download their PDF/XML and see the card payment button.
 
-Para programar estos envíos automáticamente a final de mes, te sugerimos utilizar la [API de Cobranza Inteligente](/soporte/cord-elements).
+To schedule these deliveries automatically at the end of the month, we suggest using the [Smart Collections API](/en/support/cord-elements).

@@ -1,20 +1,20 @@
 ---
-title: "[EN] Manejar múltiples empresas"
-description: "Alterna entre distintas razones sociales desde una sola cuenta."
+title: "Managing multiple companies"
+description: "Switch between different legal entities from a single account."
 category: "Account & Team"
 ---
 
-Muchos corporativos operan a través de distintas entidades legales (RFCs) según la línea de negocio o el estado geográfico. Cord soporta arquitectura Multi-Tenant de forma nativa.
+Many corporations operate through different legal entities (RFCs) depending on the business line or geographic state. Cord supports Multi-Tenant architecture natively.
 
-### Gestión Multi-Organización
+### Multi-Organization Management
 
-Con un solo correo electrónico y contraseña (Single Sign-On de tu cuenta base), puedes ser administrador de múltiples empresas en Cord.
+With a single email and password (Single Sign-On for your base account), you can be an administrator of multiple companies in Cord.
 
-1. En tu panel izquierdo superior, haz clic en el nombre de tu empresa actual.
-2. Selecciona **Añadir nueva Organización**.
-3. Se desplegará un flujo de configuración fiscal virgen.
+1. On your top left panel, click on your current company's name.
+2. Select **Add new Organization**.
+3. A clean fiscal configuration flow will deploy.
 
-**Niveles de Aislamiento:**
-Cada organización es una bóveda de datos 100% aislada. Tienen sus propios clientes, sus propias cotizaciones, sus propias llaves de API (`sk_live_...`), y lo más importante: **su propia facturación independiente de facturapi** y su propia cuenta CLABE de dispersión bancaria.
+**Isolation Levels:**
+Each organization is a 100% isolated data vault. They have their own customers, their own quotes, their own API keys (`sk_live_...`), and most importantly: **their own independent billing from facturapi** and their own CLABE account for bank disbursement.
 
-Para cambiar de contexto, simplemente utiliza el menú desplegable superior. El cambio es instantáneo y no requiere recargar la página.
+To switch contexts, simply use the top dropdown menu. The change is instantaneous and does not require reloading the page.

@@ -1,19 +1,19 @@
 ---
-title: "[EN] Cobro en múltiples divisas"
-description: "Cómo cobrar en USD y liquidar en MXN."
+title: "Multi-currency collections"
+description: "How to charge in USD and settle in MXN."
 category: "Payments & Deposits"
 ---
 
-Cord soporta nativamente la emisión de propuestas comerciales en más de 100 divisas (Multi-moneda).
+Cord natively supports the issuance of commercial proposals in over 100 currencies (Multi-currency).
 
-### Crear una cotización en USD o EUR
+### Create a quote in USD or EUR
 
-Al momento de redactar la cotización, en la sección de **Configuración Global** (panel derecho), verás un selector de Moneda.
-1. Cambia de `MXN` a `USD` o `EUR`.
-2. Los precios de tus conceptos ingresados se leerán bajo esa nueva divisa.
+When drafting the quote, in the **Global Settings** section (right panel), you will see a Currency selector.
+1. Change from `MXN` to `USD` or `EUR`.
+2. The prices of your entered line items will be read under that new currency.
 
-### Pagos vía Stripe
-Si tienes configurado Stripe Checkout en Cord, el cliente pagará en esa divisa. Stripe se encargará de hacer la conversión cambiaria (FX) si tu cuenta bancaria destino está en pesos mexicanos, cobrando su respectiva tarifa de conversión transfronteriza.
+### Payments via Stripe
+If you have Stripe Checkout configured in Cord, the client will pay in that currency. Stripe will handle the foreign exchange (FX) conversion if your destination bank account is in Mexican pesos, charging their respective cross-border conversion fee.
 
-### Facturación y Tipo de Cambio (CFDI 4.0)
-Al facturar esta operación, Cord emitirá el CFDI indicando `Moneda: USD`. El sistema calculará los impuestos en base al requerimiento del SAT, para lo cual es indispensable que, al registrar el pago, se determine el `TipoCambio` correspondiente al día de la liquidación.
+### Invoicing and Exchange Rate (CFDI 4.0)
+When invoicing this operation, Cord will issue the CFDI indicating `Currency: USD`. The system will calculate taxes based on the SAT requirements, for which it is essential that, when registering the payment, the corresponding `ExchangeRate` for the settlement day is determined.

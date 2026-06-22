@@ -1,20 +1,20 @@
 ---
-title: "[EN] Autenticación y Claves API (API Keys)"
-description: "Aprende a generar y autenticar tus peticiones a la API REST de Cord."
+title: "Authentication and API Keys"
+description: "Learn how to generate and authenticate your requests to Cord's REST API."
 category: "Developers"
 order: 1
 ---
 
-Tus Claves de API son la puerta de entrada a tu cuenta. Trátalas con el mismo cuidado que la contraseña de tu base de datos.
+Your API Keys are the gateway to your account. Treat them with the same care as your database password.
 
-### Entornos (Live vs Test)
+### Environments (Live vs Test)
 
-En la sección **Desarrolladores > Claves API** encontrarás dos pares de llaves:
-- **Test Mode (`sk_test_...`):** Úsalas para desarrollar. No generan cargos reales a tarjetas ni timbran facturas reales ante el SAT (las simulan).
-- **Live Mode (`sk_live_...`):** Úsalas en tu entorno de producción. Todo cargo es real y todo CFDI tiene validez legal.
+In the **Developers > API Keys** section you will find two pairs of keys:
+- **Test Mode (`sk_test_...`):** Use them for development. They do not generate real charges to cards nor do they stamp real invoices before the SAT (they simulate them).
+- **Live Mode (`sk_live_...`):** Use them in your production environment. Every charge is real and every CFDI has legal validity.
 
-### Rotación de Llaves
-Si sospechas que tu llave secreta se ha filtrado (ej. se subió por error a GitHub):
-1. Ingresa inmediatamente al panel de Claves API.
-2. Haz clic en el botón de los tres puntos junto a tu llave viva y selecciona **"Rotar Clave (Roll Key)"**.
-3. El sistema te dará una llave nueva al instante y tienes la opción de que la vieja deje de funcionar de inmediato, o darle un periodo de gracia de 24 horas para que actualices tus servidores sin tirar tu aplicación en producción.
+### Key Rotation
+If you suspect that your secret key has been leaked (e.g. mistakenly uploaded to GitHub):
+1. Immediately enter the API Keys panel.
+2. Click on the three dots button next to your live key and select **"Roll Key"**.
+3. The system will give you a new key instantly and you have the option for the old one to stop working immediately, or to give it a 24-hour grace period so you can update your servers without taking down your application in production.

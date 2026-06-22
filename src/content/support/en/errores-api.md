@@ -1,33 +1,33 @@
 ---
-title: "[EN] Manejo de códigos de error API"
-description: "Significado de HTTP 400, 401, 402, 404 y 500 en Cord."
+title: "API error code handling"
+description: "Meaning of HTTP 400, 401, 402, 404 and 500 in Cord."
 category: "Developers"
 ---
 
-Cuando integras la API de Cord, es fundamental saber cómo manejar las respuestas fallidas para brindar una buena experiencia a tus usuarios.
+When integrating the Cord API, it is essential to know how to handle failed responses to provide a good experience to your users.
 
-### Estructura de un Error
+### Error Structure
 
-Todas las respuestas fallidas (HTTP 4xx y 5xx) regresan un objeto JSON estandarizado:
+All failed responses (HTTP 4xx and 5xx) return a standardized JSON object:
 
 ```json
 {
   "error": {
     "type": "invalid_request_error",
     "code": "parameter_missing",
-    "message": "El campo 'amount' es obligatorio para procesar el pago.",
+    "message": "The 'amount' field is required to process the payment.",
     "param": "amount",
-    "doc_url": "https://cord.flouvia.com/soporte/errores-api#parameter_missing"
+    "doc_url": "https://cord.flouvia.com/en/support/errores-api#parameter_missing"
   }
 }
 ```
 
-### Códigos HTTP Comunes
-- **400 Bad Request:** A tu petición le falta un parámetro o tiene un formato incorrecto.
-- **401 Unauthorized:** Tu Clave API es inválida o no enviaste el header de autorización.
-- **402 Payment Required:** El intento de cobro falló (ej. tarjeta declinada o sin fondos).
-- **403 Forbidden:** Tu llave no tiene permisos para acceder a este recurso.
-- **429 Too Many Requests:** Has superado el límite de peticiones (Rate Limit).
-- **500 Internal Server Error:** Error de nuestro lado (es muy raro, pero contacta a soporte si persiste).
+### Common HTTP Codes
+- **400 Bad Request:** Your request is missing a parameter or is incorrectly formatted.
+- **401 Unauthorized:** Your API Key is invalid or you did not send the authorization header.
+- **402 Payment Required:** The charge attempt failed (e.g., declined card or insufficient funds).
+- **403 Forbidden:** Your key does not have permissions to access this resource.
+- **429 Too Many Requests:** You have exceeded the request limit (Rate Limit).
+- **500 Internal Server Error:** Error on our side (very rare, but contact support if it persists).
 
-Para manejar declinaciones de tarjetas suavemente, lee la propiedad `code` (ej. `card_declined` o `insufficient_funds`) y muéstrale un mensaje amigable a tu cliente.
+To handle card declines gracefully, read the `code` property (e.g., `card_declined` or `insufficient_funds`) and show a friendly message to your client.

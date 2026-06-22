@@ -1,18 +1,18 @@
 ---
-title: "[EN] Cancelación con CFDI Relacionado (01)"
-description: "Sustituye facturas con errores correctamente."
+title: "Cancellation with Related CFDI (01)"
+description: "Properly replace invoices with errors."
 category: "Billing & CFDI"
 ---
 
-El SAT es muy estricto cuando intentas cancelar una factura (Ingreso) que ya tiene documentos relacionados, como Notas de Crédito (Egreso) o Complementos de Pago (REP). El SAT arrojará un error 400 indicando que el CFDI no es cancelable.
+The SAT is very strict when you attempt to cancel an invoice (Income) that already has related documents, such as Credit Notes (Expense) or Payment Receipt Supplements (REP). The SAT will throw a 400 error indicating that the CFDI is not cancellable.
 
-### Pasos para desenredar un CFDI relacionado
+### Steps to untangle a related CFDI
 
-Para lograr la cancelación, debes "romper" la cadena de atrás hacia adelante:
+To achieve the cancellation, you must "break" the chain from back to front:
 
-1. Localiza el Complemento de Pago (REP) o Nota de Crédito que está relacionado a la factura principal.
-2. **Cancela primero ese documento secundario.** Utiliza el motivo `02 - Comprobante emitido con errores sin relación`.
-3. Espera 5 minutos a que el SAT procese la cancelación del documento hijo y su estatus pase a *Cancelado*.
-4. Ahora, ve a la factura principal y solicita su cancelación. Si vas a sustituirla, usa el motivo `01 - Comprobante emitido con errores con relación`. De lo contrario, usa el motivo `02`.
+1. Locate the Payment Receipt Supplement (REP) or Credit Note that is related to the main invoice.
+2. **Cancel that secondary document first.** Use the reason `02 - Document issued with errors without relationship`.
+3. Wait 5 minutes for the SAT to process the cancellation of the child document and for its status to change to *Cancelled*.
+4. Now, go to the main invoice and request its cancellation. If you are going to replace it, use the reason `01 - Document issued with errors with relationship`. Otherwise, use the reason `02`.
 
-Cord simplifica esto mostrando un árbol de relaciones en la vista de la factura, indicándote exactamente qué documento bloquea a cuál.
+Cord simplifies this by displaying a relationship tree in the invoice view, indicating exactly which document is blocking which.

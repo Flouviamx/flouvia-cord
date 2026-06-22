@@ -1,17 +1,17 @@
 ---
-title: "[EN] Cambiar frecuencia de depósitos"
-description: "Elige entre depósitos diarios, semanales o mensuales."
+title: "Change Payout Frequency"
+description: "Choose between daily, weekly, or monthly payouts."
 category: "Payments & Deposits"
 ---
 
-Dado que Cord se conecta directamente a tu propia cuenta de Stripe para procesar los cobros con tarjeta, Cord no gestiona las dispersiones (Payouts) ni retiene tu dinero.
+Since Cord connects directly to your own Stripe account to process card payments, Cord does not manage payouts or hold your funds.
 
-### Modificar Payouts en Stripe
+### Modify Payouts in Stripe
 
-Todo el dinero cobrado a través de los enlaces de Cord viaja directamente a tu cuenta de Stripe.
-Para cambiar la frecuencia con la que Stripe envía el dinero a tu cuenta bancaria:
-1. Inicia sesión en tu [Dashboard de Stripe](https://dashboard.stripe.com/).
-2. Ve a **Configuración > Cuentas bancarias y calendarios**.
-3. En la sección *Calendario de transferencias*, puedes cambiar la frecuencia de 'Automática diaria' a 'Manual' o 'Semanal'.
+All money collected through Cord links goes directly to your Stripe account.
+To change the frequency at which Stripe sends funds to your bank account:
+1. Log in to your [Stripe Dashboard](https://dashboard.stripe.com/).
+2. Go to **Settings > Bank accounts and scheduling**.
+3. In the *Payout schedule* section, you can change the frequency from 'Automatic every day' to 'Manual' or 'Weekly'.
 
-Recuerda que cualquier ajuste en la frecuencia de depósito no afecta el funcionamiento de Cord ni el timbrado de tus facturas.
+Remember that any adjustment to the payout frequency does not affect Cord's functionality or the stamping of your invoices.

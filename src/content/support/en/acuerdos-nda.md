@@ -1,17 +1,17 @@
 ---
-title: "[EN] Acuerdos de confidencialidad (NDA)"
-description: "Documentación legal para empresas Enterprise."
+title: "Non-Disclosure Agreements (NDA)"
+description: "Legal documentation for Enterprise companies."
 category: "Security & Privacy"
 order: 4
 ---
 
-Para cuentas Enterprise o transacciones corporativas sensibles, Cord facilita la firma electrónica de Acuerdos de Confidencialidad (NDA) antes de revelar los detalles de la cotización.
+For Enterprise accounts or sensitive corporate transactions, Cord facilitates the electronic signature of Non-Disclosure Agreements (NDAs) before revealing quote details.
 
-### Flujo de NDA previo a la Cotización
+### Pre-Quote NDA Flow
 
-Si habilitas la opción *Forzar NDA* al crear una cotización:
-1. El cliente recibirá un enlace que **no muestra los precios ni las partidas**.
-2. En su lugar, verá una pantalla de firma electrónica legalmente vinculante solicitando su nombre, puesto y firma digital.
-3. Una vez que el cliente firma el documento, el sistema revela instantáneamente la cotización completa.
+If you enable the *Force NDA* option when creating a quote:
+1. The customer will receive a link that **does not show prices or line items**.
+2. Instead, they will see a legally binding electronic signature screen requesting their name, position, and digital signature.
+3. Once the customer signs the document, the system instantly reveals the complete quote.
 
-**Validez Legal:** Las firmas recolectadas a través de este flujo cumplen con la NOM-151 (México) respecto a firmas electrónicas simples y generan una constancia de conservación que puedes descargar en PDF desde la vista de la cotización.
+**Legal Validity:** Signatures collected through this flow comply with NOM-151 (Mexico) regarding simple electronic signatures and generate a conservation certificate that you can download as a PDF from the quote view.

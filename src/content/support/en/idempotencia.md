@@ -1,14 +1,14 @@
 ---
-title: "[EN] Claves de Idempotencia"
-description: "Evita cargos duplicados usando llaves de idempotencia."
+title: "Idempotency Keys"
+description: "Prevent duplicate charges using idempotency keys."
 category: "Developers"
 ---
 
-La idempotencia es una técnica que asegura que una operación en la API ocurra exactamente una vez, sin importar cuántas veces se reintente la misma petición. Es vital para prevenir cobros dobles debido a fallos de red.
+Idempotency is a technique that ensures an API operation occurs exactly once, regardless of how many times the same request is retried. It is vital for preventing double billing due to network failures.
 
-### ¿Cómo usar llaves de Idempotencia?
+### How to use Idempotency keys?
 
-Al realizar peticiones `POST` que alteran el estado (ej. crear un cargo, reembolsar, timbrar factura), debes enviar el header HTTP `Idempotency-Key`.
+When making `POST` requests that alter the state (e.g., creating a charge, refunding, stamping an invoice), you must send the HTTP header `Idempotency-Key`.
 
 ```bash
 curl -X POST https://api.flouvia.com/v1/charges \
@@ -16,7 +16,7 @@ curl -X POST https://api.flouvia.com/v1/charges \
   -d '{...}'
 ```
 
-**Reglas del Sistema:**
-- La llave puede ser cualquier string único (ej. un UUID v4 o un ID interno de tu base de datos) de hasta 255 caracteres.
-- Si la conexión se cae y reintentas el `POST` con la misma `Idempotency-Key`, Cord no cobrará de nuevo a la tarjeta. Simplemente te regresará exactamente la misma respuesta JSON que generó la primera vez (el cargo exitoso original).
-- Las llaves de idempotencia caducan y son borradas de nuestra caché a las **24 horas** de haber sido recibidas.
+**System Rules:**
+- The key can be any unique string (e.g., a v4 UUID or an internal ID from your database) of up to 255 characters.
+- If the connection drops and you retry the `POST` with the same `Idempotency-Key`, Cord will not charge the card again. It will simply return the exact same JSON response that it generated the first time (the original successful charge).
+- Idempotency keys expire and are cleared from our cache **24 hours** after being received.

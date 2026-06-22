@@ -1,21 +1,21 @@
 ---
-title: "[EN] Facturación al Público en General"
-description: "Emisión de CFDI global diario o mensual."
+title: "General Public Invoicing"
+description: "Issuance of daily or monthly global CFDI."
 category: "Billing & CFDI"
 ---
 
-Todas las ventas e ingresos que recibas que no sean facturados individualmente a un RFC específico, deben declararse ante el SAT mediante una **Factura Global de Público en General**.
+All sales and income you receive that are not individually invoiced to a specific RFC must be declared to the SAT through a **General Public Global Invoice**.
 
-### ¿Cuándo usar la factura global?
+### When to use the global invoice?
 
-- Tienes un e-commerce y cobraste 50 pedidos con tarjeta a clientes que no pidieron factura.
-- Hiciste ventas de mostrador en efectivo.
+- You have an e-commerce business and processed 50 card orders from customers who did not request an invoice.
+- You made over-the-counter cash sales.
 
-**Reglas del SAT (CFDI 4.0):**
-La factura global debe emitirse usando el RFC genérico **XAXX010101000** y el nombre literal **PUBLICO EN GENERAL** (en mayúsculas y sin acentos). Además, debes indicar la periodicidad (diaria, semanal o mensual) y el año correspondiente.
+**SAT Rules (CFDI 4.0):**
+The global invoice must be issued using the generic RFC **XAXX010101000** and the literal name **PUBLICO EN GENERAL** (in uppercase and without accents). Additionally, you must indicate the periodicity (daily, weekly, or monthly) and the corresponding year.
 
-### Flujo en Cord
-1. Ve a **Contabilidad > Facturas Generales**.
-2. Haz clic en **Generar Factura Global**.
-3. Selecciona el periodo de tiempo.
-4. Cord escaneará automáticamente todas las transacciones cobradas en ese periodo que no tengan un CFDI asociado, y las agrupará en una sola factura con decenas de partidas, tal como lo estipula la ley.
+### Cord Workflow
+1. Go to **Accounting > General Invoices**.
+2. Click on **Generate Global Invoice**.
+3. Select the time period.
+4. Cord will automatically scan all transactions collected in that period that do not have an associated CFDI, and group them into a single invoice with dozens of items, exactly as stipulated by law.

@@ -1,21 +1,21 @@
 ---
-title: "[EN] Configurar e inspeccionar Webhooks"
-description: "Recibe notificaciones en tiempo real en tu servidor cuando ocurran eventos en Cord."
+title: "Configure and inspect Webhooks"
+description: "Receive real-time notifications on your server when events occur in Cord."
 category: "Developers"
 order: 2
 ---
 
-Los webhooks son llamadas HTTP (callbacks) que nuestro servidor hace al tuyo cuando ocurre un evento importante de manera asíncrona (ej. un cliente pagó, o una factura se timbró).
+Webhooks are HTTP calls (callbacks) that our server makes to yours when an important event occurs asynchronously (e.g., a client paid, or an invoice was stamped).
 
-### Registro de un Endpoint
+### Registering an Endpoint
 
-Para recibir webhooks, primero necesitas exponer una ruta `POST` en tu servidor (ej. `https://api.tuempresa.com/webhooks/cord`).
-1. Ve a **Desarrolladores > Webhooks** en el panel de Cord.
-2. Añade tu URL.
-3. Selecciona a qué eventos deseas suscribirte. Te recomendamos iniciar con `charge.succeeded` y `invoice.created`.
+To receive webhooks, you first need to expose a `POST` route on your server (e.g., `https://api.yourcompany.com/webhooks/cord`).
+1. Go to **Developers > Webhooks** in the Cord dashboard.
+2. Add your URL.
+3. Select which events you want to subscribe to. We recommend starting with `charge.succeeded` and `invoice.created`.
 
-### Verificación de Firmas
+### Signature Verification
 
-Por seguridad, alguien podría simular ser Cord y enviarte eventos falsos para intentar hackear tu inventario. **Es obligatorio que valides la firma criptográfica** que enviamos en los headers de cada petición.
+For security reasons, someone could pretend to be Cord and send you fake events to attempt to hack your inventory. **It is mandatory that you validate the cryptographic signature** we send in the headers of each request.
 
-El header se llama `Cord-Signature` e incluye un timestamp y el hash HMAC SHA-256. Utiliza el *Webhook Secret* que te proporcionamos al crear el endpoint para verificarlo. [Ver fragmentos de código de verificación en Node.js y Python](/soporte/firmas-webhooks).
+The header is called `Cord-Signature` and includes a timestamp and the HMAC SHA-256 hash. Use the *Webhook Secret* we provided when creating the endpoint to verify it. [View verification code snippets in Node.js and Python](/en/support/firmas-webhooks).

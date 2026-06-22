@@ -1,20 +1,20 @@
 ---
-title: "[EN] Aplicar descuentos o promociones"
-description: "Agrega descuentos por línea o totales a tu propuesta."
+title: "Apply discounts or promotions"
+description: "Add line-item or total discounts to your proposal."
 category: "Quotes"
 ---
 
-La flexibilidad en la negociación B2B es vital. Cord te permite aplicar descuentos tanto a nivel de concepto individual como a nivel global en la cotización.
+Flexibility in B2B negotiation is vital. Cord allows you to apply discounts both at the individual line-item level and globally on the quote.
 
-### Tipos de Descuento
+### Types of Discount
 
-**1. Descuento Lineal (Por partida):**
-Ideal si solo quieres hacer un descuento en un servicio particular (ej. 20% off en la consultoría, pero la licencia de software va a precio completo).
-- En el editor de la cotización, haz clic en el ícono de descuento `%` al lado del precio del concepto. Puedes aplicarlo como porcentaje o como monto fijo (ej. -$500 MXN).
+**1. Linear Discount (Per item):**
+Ideal if you only want to discount a particular service (e.g., 20% off consulting, but the software license remains at full price).
+- In the quote editor, click the `%` discount icon next to the item price. You can apply it as a percentage or as a fixed amount (e.g., -$500 MXN).
 
-**2. Descuento Global:**
-Aplica a la suma total del subtotal.
-- En el panel derecho de configuración, bajo *Finanzas*, añade un descuento global.
+**2. Global Discount:**
+Applies to the total sum of the subtotal.
+- In the right configuration panel, under *Finance*, add a global discount.
 
-**¿Cómo lo ve el SAT?**
-Cuando la cotización se convierte en una Factura (CFDI 4.0), Cord mapea los descuentos de manera perfecta al XML fiscal en el nodo de `Descuento`, de modo que el cálculo del IVA trasladado se hace sobre la base gravable correcta, evitando descuadres contables y errores matemáticos ante el SAT.
+**How does the SAT view this?**
+When the quote is converted into an Invoice (CFDI 4.0), Cord perfectly maps the discounts to the tax XML in the `Descuento` (Discount) node, ensuring the transferred VAT calculation is based on the correct taxable base, preventing accounting discrepancies and mathematical errors with the SAT.

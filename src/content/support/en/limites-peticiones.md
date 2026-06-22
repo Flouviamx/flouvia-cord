@@ -1,24 +1,24 @@
 ---
-title: "[EN] Límites de peticiones (Rate limits)"
-description: "Conoce los límites técnicos de la API de Cord y cómo manejar respuestas 429."
+title: "Rate limits"
+description: "Understand Cord's API technical limits and how to handle 429 responses."
 category: "Developers"
 order: 4
 ---
 
-Para asegurar la estabilidad y disponibilidad de nuestros servicios para todos los comercios, la API de Cord impone límites de peticiones (Rate Limits) por IP y por clave de cuenta.
+To ensure the stability and availability of our services for all merchants, the Cord API enforces rate limits by IP and by account key.
 
-### Límites Técnicos (Rate Limits)
+### Technical Limits (Rate Limits)
 
-En entorno de Producción (`Live Mode`), operamos bajo los siguientes umbrales estandarizados:
-- **100 peticiones por segundo (req/s)** para endpoints de lectura (GET).
-- **20 peticiones por segundo (req/s)** para endpoints de mutación y cobro (POST/PUT/DELETE).
-- **5 peticiones por segundo (req/s)** para endpoints de facturación fiscal directa al PAC (invoices).
+In the Production environment (`Live Mode`), we operate under the following standardized thresholds:
+- **100 requests per second (req/s)** for read endpoints (GET).
+- **20 requests per second (req/s)** for mutation and charging endpoints (POST/PUT/DELETE).
+- **5 requests per second (req/s)** for direct tax invoicing endpoints to the PAC (invoices).
 
-### Manejo de Códigos 429
-Si superas la tasa permitida, Cord rechazará la petición con un código HTTP `429 Too Many Requests`.
-Tu aplicación debe estar diseñada para manejar esto utilizando **Backoff Exponencial**:
-1. Si recibes un 429, pausa la ejecución por 1 segundo e intenta de nuevo.
-2. Si falla, pausa por 2 segundos.
-3. Luego por 4, luego 8, etc.
+### Handling 429 Codes
+If you exceed the allowed rate, Cord will reject the request with an HTTP `429 Too Many Requests` code.
+Your application must be designed to handle this using **Exponential Backoff**:
+1. If you receive a 429, pause the execution for 1 second and try again.
+2. If it fails, pause for 2 seconds.
+3. Then for 4, then 8, etc.
 
-**Aumento de Límites:** Si tu modelo de negocio requiere procesar ráfagas masivas (ej. venta de boletos o e-commerce de alto volumen), contacta a tu ejecutivo de cuentas Enterprise para moverte a una infraestructura dedicada.
+**Rate Limit Increases:** If your business model requires processing massive bursts (e.g., ticket sales or high-volume e-commerce), contact your Enterprise account executive to move you to dedicated infrastructure.

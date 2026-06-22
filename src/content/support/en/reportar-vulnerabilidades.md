@@ -1,26 +1,26 @@
 ---
-title: "[EN] Reportar vulnerabilidades"
-description: "Cómo funciona nuestro programa de Bug Bounty y divulgación responsable."
+title: "Report vulnerabilities"
+description: "How our Bug Bounty and responsible disclosure program works."
 category: "Security & Privacy"
 order: 3
 ---
 
-En Cord creemos que la seguridad es un esfuerzo colectivo. Operamos un programa privado de divulgación responsable (Bug Bounty Program) para investigadores de ciberseguridad.
+At Cord, we believe security is a collective effort. We operate a private responsible disclosure program (Bug Bounty Program) for cybersecurity researchers.
 
-### Alcance del Programa
+### Program Scope
 
-Los siguientes dominios y activos están dentro del alcance para pruebas de penetración:
-- `api.flouvia.com` y `api.cord.flouvia.com`
-- `cord.flouvia.com` (Aplicación Web Principal)
-- La infraestructura de Cord Elements y SDKs.
+The following domains and assets are within scope for penetration testing:
+- `api.flouvia.com` and `api.cord.flouvia.com`
+- `cord.flouvia.com` (Main Web Application)
+- The Cord Elements infrastructure and SDKs.
 
-**Fuera del alcance:** Denegación de Servicio Volumétrica (DDoS), Ingeniería Social contra empleados de Flouvia, y ataques físicos a nuestros servidores en AWS/Vercel.
+**Out of scope:** Volumetric Denial of Service (DDoS), Social Engineering against Flouvia employees, and physical attacks on our AWS/Vercel servers.
 
-### Cómo Reportar un Fallo
+### How to Report a Bug
 
-Si has encontrado un fallo de seguridad (ej. Inyección SQL, XSS, Bypass de Autenticación, Elevación de Privilegios):
-1. Detén inmediatamente cualquier prueba que comprometa datos de otros usuarios.
-2. Escribe un reporte detallado con pasos de reproducción precisos y una prueba de concepto (PoC).
-3. Envía un correo encriptado por GPG a `security@flouvia.com`.
+If you have found a security flaw (e.g., SQL Injection, XSS, Authentication Bypass, Privilege Escalation):
+1. Immediately stop any testing that compromises other users' data.
+2. Write a detailed report with precise reproduction steps and a proof of concept (PoC).
+3. Send a GPG-encrypted email to `security@flouvia.com`.
 
-Nuestro equipo interno de DevSecOps te responderá en menos de 24 horas y, dependiendo de la criticidad calculada mediante la calculadora CVSS v3.1, se te ofrecerá una recompensa económica sustancial.
+Our internal DevSecOps team will respond in less than 24 hours and, depending on the criticality calculated using the CVSS v3.1 calculator, you will be offered a substantial financial reward.

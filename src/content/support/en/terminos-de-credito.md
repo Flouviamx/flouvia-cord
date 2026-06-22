@@ -1,19 +1,19 @@
 ---
-title: "[EN] Añadir términos de crédito (Net 30/60)"
-description: "Guía para emitir facturas con crédito comercial a clientes recurrentes."
+title: "Add credit terms (Net 30/60)"
+description: "Guide to issuing invoices with trade credit to recurring clients."
 category: "Quotes"
 order: 3
 ---
 
-No todas las transacciones se pagan de contado. En el entorno B2B corporativo, dar facilidades de financiamiento a corto plazo (ej. Pagar a 30 días) es estándar de la industria. Cord automatiza la gestión de estos acuerdos.
+Not all transactions are paid upfront. In the corporate B2B environment, providing short-term financing facilities (e.g., Net 30 days) is an industry standard. Cord automates the management of these agreements.
 
-### Configurar Términos de Pago (Net 30/60/90)
+### Configure Payment Terms (Net 30/60/90)
 
-Al crear una cotización, en la barra lateral derecha verás la sección de **Condiciones de Pago**.
-1. Cambia el selector de "De Contado (PUE)" a "A Crédito (PPD)".
-2. Introduce la vigencia del crédito (ej. Net 30, lo que significa 30 días naturales a partir de la emisión de la factura).
+When creating a quote, in the right sidebar you will see the **Payment Terms** section.
+1. Change the selector from "Upfront (PUE)" to "On Credit (PPD)".
+2. Enter the credit validity (e.g., Net 30, which means 30 calendar days from the invoice issuance).
 
-**Lo que pasa por debajo del capó:**
-- La cotización indicará claramente al comprador sus fechas límite de pago.
-- Cuando el cliente acepta, se timbra el CFDI con método `PPD` (Pago en Parcialidades).
-- El sistema de cobranza inteligente de Cord programará la fecha de vencimiento y enviará correos de recordatorio de cobro automáticos los días 25, 29 y 31 para asegurar la recolección sin que tu equipo de finanzas mueva un dedo.
+**What happens under the hood:**
+- The quote will clearly indicate to the buyer their payment deadlines.
+- When the client accepts, the CFDI is stamped with the `PPD` (Payment in Installments) method.
+- Cord's intelligent collection system will schedule the due date and send automatic collection reminder emails on days 25, 29, and 31 to ensure collection without your finance team lifting a finger.

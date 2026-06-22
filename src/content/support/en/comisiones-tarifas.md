@@ -1,19 +1,19 @@
 ---
-title: "[EN] Comisiones y tarifas de procesamiento"
-description: "Conoce las tarifas estándar y personalizadas al procesar pagos con tarjetas y SPEI a través de Cord."
+title: "Processing fees and rates"
+description: "Learn about standard and custom rates when processing card and SPEI payments through Cord."
 category: "Payments & Deposits"
 order: 2
 ---
 
-Cord opera bajo un modelo de Software-as-a-Service (SaaS), no cobramos comisiones por transacción.
+Cord operates under a Software-as-a-Service (SaaS) model, we do not charge per-transaction fees.
 
-### Modelo de Suscripción de Cord
-Pagas una cuota mensual por acceder a la plataforma (Planes Free, Starter, Pro, Scale, Developer). 
-Esta cuota incluye:
-- Creación de cotizaciones y CRM.
-- Timbrado de CFDI 4.0 ante el SAT.
-- Llamadas a la API y uso de Inteligencia Artificial.
-*Los excedentes de CFDI o IA se cobran a un costo fijo por folio/uso según tu plan.*
+### Cord Subscription Model
+You pay a monthly fee to access the platform (Free, Starter, Pro, Scale, Developer Plans). 
+This fee includes:
+- Quote creation and CRM.
+- CFDI 4.0 stamping with the SAT.
+- API calls and Artificial Intelligence usage.
+*CFDI or AI overages are charged at a fixed cost per folio/usage depending on your plan.*
 
-### Comisiones de Procesamiento (Stripe)
-Cord utiliza **Stripe** para cobrar las cotizaciones con tarjeta de crédito. Cord NO te cobra ninguna comisión porcentual adicional. Toda transacción que pase por el botón de pago está sujeta **exclusivamente a las tarifas de tu propia cuenta de Stripe** (ej. 3.6% + $3 MXN en México). Ese cobro lo realiza Stripe directamente antes de depositarte, no Cord.
+### Processing Fees (Stripe)
+Cord uses **Stripe** to process credit card payments for quotes. Cord DOES NOT charge you any additional percentage fee. Any transaction that passes through the payment button is **exclusively subject to the rates of your own Stripe account** (e.g., 3.6% + $3 MXN in Mexico). Stripe deducts this fee directly before depositing to you, not Cord.

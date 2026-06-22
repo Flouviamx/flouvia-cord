@@ -1,19 +1,19 @@
 ---
-title: "[EN] Emitir Nota de Crédito (Egreso)"
-description: "Aplica devoluciones y bonificaciones legales."
+title: "Issue Credit Note (Expense)"
+description: "Apply legal refunds and bonuses."
 category: "Billing & CFDI"
 ---
 
-Las Notas de Crédito (CFDI tipo Egreso) son el mecanismo fiscal del SAT para aplicar devoluciones, bonificaciones o corregir errores en saldos de facturas.
+Credit Notes (Expense type CFDI) are the SAT's fiscal mechanism to apply refunds, bonuses, or correct errors in invoice balances.
 
-### Emitir una Nota de Crédito en Cord
+### Issue a Credit Note in Cord
 
-Si necesitas anular el saldo de una factura sin cancelarla por completo (ej. le hiciste un descuento post-venta del 10% al cliente):
+If you need to cancel an invoice balance without canceling it completely (e.g., you gave a 10% post-sale discount to the customer):
 
-1. Localiza la Factura de Ingreso original en **Contabilidad > Facturas**.
-2. En el menú de opciones (tres puntos), selecciona **Generar Nota de Crédito**.
-3. Se abrirá un panel con los conceptos originales de la factura. Cord inyectará automáticamente el tipo de relación **01 (Nota de crédito de los documentos relacionados)** y vinculará el UUID de la factura padre.
-4. Ajusta el monto a devolver/bonificar. Si es una devolución total de un producto específico, deja el precio intacto. Si es una bonificación, ajusta el valor al monto a descontar.
-5. Haz clic en **Timbrar Egreso**.
+1. Locate the original Income Invoice in **Accounting > Invoices**.
+2. In the options menu (three dots), select **Generate Credit Note**.
+3. A panel will open with the original invoice concepts. Cord will automatically inject the relationship type **01 (Credit note of related documents)** and link the parent invoice's UUID.
+4. Adjust the amount to refund/bonus. If it is a full refund of a specific product, leave the price intact. If it is a bonus, adjust the value to the amount to discount.
+5. Click on **Stamp Expense**.
 
-El sistema enviará automáticamente un correo electrónico al cliente adjuntando el XML y el PDF de la Nota de Crédito para sus efectos de deducción fiscal.
+The system will automatically send an email to the customer attaching the XML and PDF of the Credit Note for their fiscal deduction purposes.

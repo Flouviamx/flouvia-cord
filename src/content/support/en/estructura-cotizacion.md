@@ -1,19 +1,19 @@
 ---
-title: "[EN] Estructura de una cotización interactiva"
-description: "Conoce los elementos que conforman las cotizaciones web de Cord y cómo personalizarlas."
+title: "Structure of an interactive quote"
+description: "Learn about the elements that make up Cord web quotes and how to customize them."
 category: "Quotes"
 order: 1
 ---
 
-Una cotización en Cord está diseñada para ser una propuesta comercial legalmente válida y persuasiva.
+A quote in Cord is designed to be a legally valid and persuasive commercial proposal.
 
-### Anatomía de una Cotización
+### Quote Anatomy
 
-Una propuesta ganadora se compone de cuatro grandes bloques:
+A winning proposal consists of four main blocks:
 
-1. **Encabezado (Header):** Contiene el logotipo de tu empresa, tu RFC fiscal, la fecha de emisión y el Número de Folio (ej. `COT-2023-085`). También muestra a quién va dirigida la propuesta.
-2. **Partidas (Line Items):** Es la tabla principal donde desglosas tus productos o servicios. Cada partida puede llevar una descripción larga con viñetas, una imagen, precio unitario, cantidad y descuentos.
-3. **Términos Legales y Crédito:** Aquí defines las reglas del juego. Por ejemplo: "Esta propuesta es válida por 15 días. El pago debe realizarse a 30 días naturales (Net 30) tras la aceptación".
-4. **Bloque de Cierre (Firma/Pago):** Es el Call To Action (CTA). Dependiendo de tu configuración, el cliente verá un botón para firmar electrónicamente o un módulo para introducir su tarjeta y pagar el anticipo de inmediato.
+1. **Header:** Contains your company logo, your tax ID (RFC), the issue date, and the Folio Number (e.g., `COT-2023-085`). It also shows who the proposal is addressed to.
+2. **Line Items:** This is the main table where you break down your products or services. Each item can have a long description with bullet points, an image, unit price, quantity, and discounts.
+3. **Legal and Credit Terms:** Here you define the rules of the game. For example: "This proposal is valid for 15 days. Payment must be made within 30 calendar days (Net 30) after acceptance."
+4. **Closing Block (Signature/Payment):** This is the Call To Action (CTA). Depending on your setup, the client will see a button to electronically sign or a module to enter their card and pay the advance immediately.
 
-**Personalización:** Puedes cambiar los colores de los botones y la tipografía desde **Ajustes > Apariencia** para que coincida exactamente con tu manual de marca.
+**Customization:** You can change the colors of the buttons and typography from **Settings > Appearance** to match your brand manual exactly.

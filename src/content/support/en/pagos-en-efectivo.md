@@ -1,16 +1,16 @@
 ---
-title: "[EN] Recepción de pagos en efectivo"
-description: "Habilitar cobros en Oxxo y tiendas de conveniencia."
+title: "Cash Payment Reception"
+description: "Enable collections at Oxxo and convenience stores."
 category: "Payments & Deposits"
 ---
 
-Aunque las transacciones B2B suelen ser por transferencia SPEI, si utilizas Stripe como procesador de pagos en Cord, puedes habilitar métodos de pago alternativos como OXXO.
+Although B2B transactions are usually via SPEI transfer, if you use Stripe as a payment processor in Cord, you can enable alternative payment methods like OXXO.
 
-### Activar OXXO a través de Stripe
+### Activate OXXO through Stripe
 
-1. Ve al panel de control de Stripe.
-2. En Métodos de Pago, activa OXXO.
-3. Cuando el cliente abra la cotización en Cord y decida pagar, Stripe Checkout le ofrecerá descargar un voucher (código de barras) para pagar en efectivo en tienda.
+1. Go to the Stripe dashboard.
+2. Under Payment Methods, activate OXXO.
+3. When the customer opens the quote in Cord and decides to pay, Stripe Checkout will offer them to download a voucher (barcode) to pay in cash at the store.
 
-**Flujo Asíncrono:**
-El cliente tiene días para pagar el voucher. Durante este tiempo, la cotización en Cord seguirá en estatus *Pendiente*. Cuando el cliente finalmente paga en el OXXO, Stripe nos envía un webhook (a veces tarda hasta 24 horas hábiles), y en ese instante Cord pasa la cotización a *Pagada* y emite la factura CFDI automáticamente.
+**Asynchronous Flow:**
+The customer has days to pay the voucher. During this time, the quote in Cord will remain in *Pending* status. When the customer finally pays at the OXXO, Stripe sends us a webhook (sometimes it takes up to 24 business hours), and at that moment Cord changes the quote to *Paid* and issues the CFDI invoice automatically.

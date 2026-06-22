@@ -1,21 +1,21 @@
 ---
-title: "[EN] Facturar anticipos"
-description: "Emite el CFDI de anticipo y su remanente."
+title: "Invoice advance payments"
+description: "Issue the advance CFDI and its remainder."
 category: "Billing & CFDI"
 ---
 
-Facturar proyectos grandes donde cobras un porcentaje por adelantado y el resto a la entrega requiere un manejo especial ante el SAT.
+Invoicing large projects where you charge a percentage upfront and the rest upon delivery requires special handling with the SAT.
 
-### Regla Fiscal para Anticipos
+### Tax Rule for Advances
 
-Según la guía de llenado del SAT, un anticipo solo existe cuando **no se conoce o no se ha determinado el bien o servicio, o su precio final**. Si ya enviaste una cotización detallada de $100,000 MXN y pides el 50% de entrada, contablemente **no es un anticipo**, es un pago en parcialidades.
+According to the SAT's filling guide, an advance payment only exists when **the good or service, or its final price, is not known or has not been determined**. If you already sent a detailed quote for $100,000 MXN and ask for a 50% deposit, for accounting purposes **it is not an advance**, it is an installment payment.
 
-### Cómo cobrar en parcialidades en Cord
+### How to charge in installments in Cord
 
-1. Crea tu Cotización por el monto total ($100,000).
-2. En la sección *Pagos y Anticipos*, selecciona **Requerir pago inicial parcial**.
-3. Define el porcentaje (ej. 50%).
-4. Cuando el cliente acepta y paga esos $50,000 con tarjeta, Cord emitirá una Factura por el monto total en método `PPD` (Pago en Parcialidades).
-5. En ese mismo instante, Cord timbrará automáticamente un **Complemento de Recepción de Pagos (REP)** amparando el depósito de los $50,000 iniciales.
+1. Create your Quote for the total amount ($100,000).
+2. In the *Payments and Advances* section, select **Require partial initial payment**.
+3. Define the percentage (e.g., 50%).
+4. When the client accepts and pays those $50,000 with a card, Cord will issue an Invoice for the total amount in `PPD` (Payment in Installments) method.
+5. At that very moment, Cord will automatically stamp an **Electronic Payment Receipt (REP) Complement** covering the deposit of the initial $50,000.
 
-Cuando llegue la entrega final, solo tienes que entrar a la factura y generar un link de cobro por el saldo restante. Al pagarse, Cord emitirá el segundo y último REP.
+When the final delivery arrives, you just have to enter the invoice and generate a payment link for the remaining balance. Once paid, Cord will issue the second and final REP.

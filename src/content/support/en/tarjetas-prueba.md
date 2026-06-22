@@ -1,22 +1,22 @@
 ---
-title: "[EN] Números de tarjeta de prueba"
-description: "Lista de PANs para simular flujos 3D Secure y fallos."
+title: "Test card numbers"
+description: "List of PANs to simulate 3D Secure flows and failures."
 category: "Developers"
 ---
 
-Cuando estés en la fase de implementación o desarrollando contra la API en el entorno **Sandbox**, no utilices tarjetas de crédito reales. Puedes simular pagos exitosos usando los números de prueba proporcionados por Stripe.
+When you are in the implementation phase or developing against the API in the **Sandbox** environment, do not use real credit cards. You can simulate successful payments using the test numbers provided by Stripe.
 
-### Tarjetas Mágicas (Solo en modo Test)
+### Magic Cards (Test mode only)
 
-Asegúrate de tener configurada tu llave `sk_test_...` de Stripe en Cord.
-En el formulario de Stripe Checkout, ingresa cualquier fecha futura de expiración y cualquier CVC de 3 dígitos.
+Make sure you have your Stripe `sk_test_...` key configured in Cord.
+In the Stripe Checkout form, enter any future expiration date and any 3-digit CVC.
 
-**Para simular pagos exitosos:**
-- Usa la tarjeta Visa genérica: `4242 4242 4242 4242`
+**To simulate successful payments:**
+- Use the generic Visa card: `4242 4242 4242 4242`
 
-**Para simular declinaciones bancarias:**
-Stripe provee números específicos para simular errores. Usa cualquiera de estos con cualquier fecha y CVC:
-- Fondos insuficientes: `4000 0000 0000 0004`
-- Tarjeta reportada robada: `4000 0000 0000 0002`
+**To simulate bank declines:**
+Stripe provides specific numbers to simulate errors. Use any of these with any date and CVC:
+- Insufficient funds: `4000 0000 0000 0004`
+- Card reported stolen: `4000 0000 0000 0002`
 
-El sistema reaccionará igual que en producción: Cord no aprobará la cotización ni emitirá la factura en el modo de pruebas si el pago falla.
+The system will react the same as in production: Cord will not approve the quote or issue the invoice in test mode if the payment fails.

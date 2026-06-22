@@ -1,14 +1,14 @@
 ---
-title: "[EN] API: Gestionar clientes"
-description: "Sincroniza el catálogo de clientes con tu ERP."
+title: "API: Manage Customers"
+description: "Synchronize your customer catalog with your ERP."
 category: "Developers"
 ---
 
-El objeto `Customer` es fundamental en la arquitectura de Cord, ya que vincula métodos de pago, facturación recurrente e historial crediticio.
+The `Customer` object is fundamental in Cord's architecture, as it links payment methods, recurring billing, and credit history.
 
-### Creación de un Cliente
+### Creating a Customer
 
-Para registrar un nuevo cliente desde tu backend, realiza una petición `POST` a `/v1/customers`:
+To register a new customer from your backend, make a `POST` request to `/v1/customers`:
 
 ```bash
 curl -X POST https://api.flouvia.com/v1/customers \
@@ -16,7 +16,7 @@ curl -X POST https://api.flouvia.com/v1/customers \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Acme Corp",
-    "email": "pagos@acmecorp.com",
+    "email": "payments@acmecorp.com",
     "tax_id": "ACM190203XYZ",
     "metadata": {
       "erp_id": "CUST-8812"
@@ -24,6 +24,6 @@ curl -X POST https://api.flouvia.com/v1/customers \
   }'
 ```
 
-**Campos Clave:**
-- `tax_id`: Si proporcionas un RFC válido en México, el sistema lo utilizará para emitir facturas (CFDI 4.0) automáticamente si así lo configuras.
-- `metadata`: Utiliza este objeto (clave-valor) para guardar el ID de tu cliente en tu propio ERP o base de datos. Cord retornará esta metadata en todos los webhooks relacionados al cliente.
+**Key Fields:**
+- `tax_id`: If you provide a valid RFC in Mexico, the system will use it to automatically issue invoices (CFDI 4.0) if configured to do so.
+- `metadata`: Use this key-value object to store your customer's ID from your own ERP or database. Cord will return this metadata in all customer-related webhooks.

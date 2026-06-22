@@ -1,19 +1,19 @@
 ---
-title: "[EN] Cancelar facturas y notas de crédito"
-description: "Proceso para cancelar un CFDI timbrado y las diferencias con la emisión de Notas de Crédito."
+title: "Cancel Invoices and Credit Notes"
+description: "Process to cancel a stamped CFDI and the differences with issuing Credit Notes."
 category: "Billing & CFDI"
 order: 4
 ---
 
-El proceso de cancelación de un CFDI 4.0 en Cord sigue las normativas dictadas por el SAT.
+The cancellation process for a CFDI 4.0 in Cord follows the regulations dictated by the SAT.
 
-### Motivos de Cancelación (Catálogo SAT)
+### Cancellation Reasons (SAT Catalog)
 
-Al hacer clic en "Cancelar Factura", el sistema te pedirá elegir un motivo obligatorio:
-- **01 (Errores con relación):** Úsalo cuando te equivocaste en el precio o concepto y vas a emitir una factura nueva que reemplaza a esta. *Importante:* Primero debes emitir la nueva factura relacionando la original, y luego cancelar la original apuntando a la nueva.
-- **02 (Errores sin relación):** Úsalo cuando te equivocaste en el RFC del cliente. Cancela y vuelve a hacerla de cero.
-- **03 (No se llevó a cabo la operación):** Úsalo si la venta simplemente se cayó y nunca se pagó.
-- **04 (Operación nominativa relacionada en global):** Exclusivo para público general.
+When clicking on "Cancel Invoice", the system will ask you to choose a mandatory reason:
+- **01 (Errors with relationship):** Use it when you made a mistake in the price or concept and you are going to issue a new invoice that replaces this one. *Important:* You must first issue the new invoice relating the original one, and then cancel the original one pointing to the new one.
+- **02 (Errors without relationship):** Use it when you made a mistake in the client's RFC. Cancel it and do it again from scratch.
+- **03 (The operation was not carried out):** Use it if the sale simply fell through and was never paid.
+- **04 (Nominative operation related in global):** Exclusive for the general public.
 
-### Cancelaciones con Aceptación
-Si el monto supera los $1,000 MXN o han pasado más de 24 horas, el SAT pondrá la cancelación en estado *En Proceso*. Tu cliente recibirá un aviso en su Buzón Tributario y tiene 72 horas para aceptarla o rechazarla. Si no responde en ese plazo, el SAT la cancelará automáticamente (Negativa Ficta).
+### Cancellations with Acceptance
+If the amount exceeds $1,000 MXN or more than 24 hours have passed, the SAT will place the cancellation in *In Process* status. Your client will receive a notice in their Tax Mailbox (Buzón Tributario) and has 72 hours to accept or reject it. If they do not respond within that period, the SAT will cancel it automatically (Fictitious Negative).

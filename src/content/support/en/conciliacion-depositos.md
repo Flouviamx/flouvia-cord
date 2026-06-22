@@ -1,19 +1,19 @@
 ---
-title: "[EN] Conciliación de depósitos"
-description: "Exporta reportes para empatar depósitos con tu contabilidad."
+title: "Deposit reconciliation"
+description: "Export reports to match deposits with your accounting."
 category: "Payments & Deposits"
 ---
 
-Conciliar pagos B2B puede ser complejo, especialmente si recibes múltiples transferencias SPEI o depósitos consolidados de Stripe.
+Reconciling B2B payments can be complex, especially if you receive multiple SPEI transfers or consolidated deposits from Stripe.
 
-### Conciliación de Transferencias (SPEI)
-Cord no tiene visibilidad directa de tu estado de cuenta bancario. Para conciliar transferencias:
-1. Cuando recibas un depósito, busca el Folio de la cotización o el RFC del cliente en Cord.
-2. Abre la cotización y haz clic en **Marcar como Pagado**.
-3. Si la cotización requiere CFDI, esto detonará el timbrado de la Factura (PUE) o del Complemento de Pago (REP) de inmediato.
+### Transfer Reconciliation (SPEI)
+Cord does not have direct visibility into your bank statement. To reconcile transfers:
+1. When you receive a deposit, search for the quote Folio or the client's RFC in Cord.
+2. Open the quote and click on **Mark as Paid**.
+3. If the quote requires a CFDI, this will immediately trigger the stamping of the Invoice (PUE) or the Payment Supplement (REP).
 
-### Conciliación de Stripe
-Si tus clientes pagan con tarjeta vía el checkout integrado:
-1. Cord marca la cotización como 'Pagada' instantáneamente gracias al webhook.
-2. En tu cuenta de Stripe, podrás ver el número de Cotización de Cord (ej. `COT-042`) inyectado en los `metadata` del PaymentIntent.
-3. Usa los reportes de Stripe para ver qué transacciones componen cada dispersión a tu banco.
+### Stripe Reconciliation
+If your clients pay by card via the integrated checkout:
+1. Cord marks the quote as 'Paid' instantly thanks to the webhook.
+2. In your Stripe account, you will be able to see the Cord Quote number (e.g., `COT-042`) injected into the `metadata` of the PaymentIntent.
+3. Use Stripe's reports to see which transactions make up each payout to your bank.

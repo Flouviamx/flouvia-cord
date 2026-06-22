@@ -1,19 +1,19 @@
 ---
-title: "[EN] Aprobar y rechazar tratos (Flujo de clientes)"
-description: "Cómo funciona la aprobación de cotizaciones desde la perspectiva del cliente final."
+title: "Approve and reject deals (Customer flow)"
+description: "How quote approval works from the end customer's perspective."
 category: "Quotes"
 order: 2
 ---
 
-Cord permite configurar un flujo de aprobación interno para evitar que los vendedores envíen cotizaciones con descuentos excesivos sin supervisión.
+Cord allows you to configure an internal approval flow to prevent sales representatives from sending quotes with excessive discounts without supervision.
 
-### Configurar Reglas de Aprobación
+### Configure Approval Rules
 
-1. Ve a **Ajustes > Ventas y Cotizaciones**.
-2. Busca la sección de **Flujos de Aprobación Internos**.
-3. Añade una regla, por ejemplo: *"Si el Descuento Total supera el 15%, requiere aprobación de un Gerente"*.
+1. Go to **Settings > Sales and Quotes**.
+2. Look for the **Internal Approval Flows** section.
+3. Add a rule, for example: *"If the Total Discount exceeds 15%, Manager approval is required"*.
 
-### Experiencia del Vendedor
-Cuando un vendedor intente enviar una cotización que rompa esta regla, el botón de "Enviar al cliente" cambiará a **"Solicitar Aprobación"**. El administrador o gerente recibirá una notificación (correo y dentro de la app).
+### Sales Representative Experience
+When a sales representative attempts to send a quote that breaks this rule, the "Send to customer" button will change to **"Request Approval"**. The administrator or manager will receive a notification (via email and within the app).
 
-Una vez que el gerente revisa y hace clic en **Aprobar Trato**, el vendedor recibe luz verde y la URL pública de la cotización se activa. Si es rechazada, la URL arrojará un error 404 al cliente final hasta que se corrijan las condiciones.
+Once the manager reviews it and clicks **Approve Deal**, the sales representative is given the green light and the public quote URL becomes active. If rejected, the URL will return a 404 error to the end customer until the conditions are corrected.

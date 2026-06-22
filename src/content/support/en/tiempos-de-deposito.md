@@ -1,16 +1,16 @@
 ---
-title: "[EN] Tiempos de depósito a cuenta bancaria"
-description: "Descubre cuánto tarda en reflejarse el dinero en tu cuenta bancaria una vez que el cliente ha pagado."
+title: "Bank account deposit times"
+description: "Find out how long it takes for the money to reflect in your bank account once the client has paid."
 category: "Payments & Deposits"
 order: 1
 ---
 
-Dado que Cord no retiene fondos, los tiempos en los que el dinero llega a tu cuenta de banco dependen enteramente del método de pago que tu cliente eligió.
+Since Cord does not hold funds, the time it takes for the money to reach your bank account depends entirely on the payment method your client chose.
 
-### 1. Transferencia Directa (SPEI / Wire)
-Si el cliente te paga manualmente haciendo una transferencia bancaria a la CLABE que pusiste en los Ajustes de Cord, el dinero **entra directo a tu banco de forma inmediata**. Cord no está en medio de esta transacción. Tú debes entrar a Cord y marcar la cotización como pagada.
+### 1. Direct Transfer (SPEI / Wire)
+If the client pays you manually by making a bank transfer to the CLABE you placed in the Cord Settings, the money **goes directly to your bank immediately**. Cord is not in the middle of this transaction. You must log in to Cord and mark the quote as paid.
 
-### 2. Tarjetas de Crédito vía Stripe
-Si configuraste Stripe Checkout en Cord y el cliente paga en línea, el dinero entra a tu cuenta de Stripe.
-- En México, el tiempo de dispersión estándar (Payout Schedule) de Stripe suele ser de **T+3** a **T+7** días naturales, dependiendo del giro de tu negocio y la antigüedad de tu cuenta en Stripe.
-- Entra a la configuración de Stripe para visualizar tu calendario exacto de depósitos.
+### 2. Credit Cards via Stripe
+If you configured Stripe Checkout in Cord and the client pays online, the money enters your Stripe account.
+- In Mexico, Stripe's standard payout schedule is typically **T+3** to **T+7** calendar days, depending on your line of business and the age of your Stripe account.
+- Go to your Stripe settings to view your exact deposit schedule.

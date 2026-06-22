@@ -1,50 +1,50 @@
 ---
-title: "[EN] Cord 101: Primeros pasos"
-description: "Acelera tu integración. Configura tu cuenta empresarial, emite facturas y recibe pagos en 5 sencillos pasos."
+title: "Cord 101: Getting Started"
+description: "Accelerate your integration. Set up your corporate account, issue invoices, and receive payments in 5 easy steps."
 category: "Account"
 order: 1
 ---
 
-Bienvenido a Cord. Hemos diseñado esta guía para que puedas tener tu cuenta operando, facturando y cobrando en menos de 20 minutos. 
+Welcome to Cord. We have designed this guide so you can have your account operating, invoicing, and collecting payments in less than 20 minutes.
 
-Si es tu primera vez utilizando la plataforma, te recomendamos seguir esta ruta lineal.
+If this is your first time using the platform, we recommend following this linear path.
 
-## Paso 1: Configuración de la Empresa
-El núcleo de Cord es tu perfil fiscal y operativo. Antes de emitir un pago o una factura, necesitas validar tu identidad corporativa.
+## Step 1: Company Setup
+The core of Cord is your tax and operational profile. Before issuing a payment or an invoice, you need to validate your corporate identity.
 
-1. Navega a **Ajustes > Empresa**.
-2. Ingresa tu Razón Social, RFC y Régimen Fiscal.
-3. Sube tu **CSD (Certificado de Sello Digital)**. Este es el archivo `.cer` y `.key` que te proporciona el SAT, junto con tu contraseña. *Sin este paso, no podrás emitir facturas ni complementos de pago (REP).*
+1. Navigate to **Settings > Company**.
+2. Enter your Legal Name, Tax ID (RFC), and Tax Regime.
+3. Upload your **CSD (Digital Seal Certificate)**. This is the `.cer` and `.key` file provided by the SAT (Mexican Tax Authority), along with your password. *Without this step, you will not be able to issue invoices or payment supplements (REP).*
 
-## Paso 2: Conectar tu API (Para Desarrolladores)
-Si vas a utilizar Cord de forma programática (vía nuestra API o SDKs), el siguiente paso es obtener tus credenciales.
+## Step 2: Connect your API (For Developers)
+If you are going to use Cord programmatically (via our API or SDKs), the next step is to obtain your credentials.
 
-- Ve a **Desarrolladores > API Keys**.
-- Verás dos entornos: `Modo Prueba (Sandbox)` y `Modo en Vivo (Producción)`.
-- Copia tu `Secret Key` de prueba. Inyéctala en tu entorno de desarrollo local.
-- Consulta nuestra documentación técnica para realizar tu primera llamada de prueba `/ping`.
+- Go to **Developers > API Keys**.
+- You will see two environments: `Test Mode (Sandbox)` and `Live Mode (Production)`.
+- Copy your test `Secret Key`. Inject it into your local development environment.
+- Consult our technical documentation to make your first `/ping` test call.
 
-## Paso 3: Configurar Métodos de Cobro
-Cord te permite cobrar vía Tarjeta de Crédito, Transferencia (SPEI) y Divisas Internacionales.
+## Step 3: Configure Payment Methods
+Cord allows you to collect payments via Credit Card, Bank Transfer (SPEI), and International Currencies.
 
-1. Ve a **Cobranza > Métodos de Pago**.
-2. Activa las pasarelas que desees utilizar. 
-3. *Nota importante:* Los cobros internacionales (Wire) requieren validación adicional de KYC (Conoce a tu Cliente) que puede tomar hasta 48 horas en activarse.
+1. Go to **Collection > Payment Methods**.
+2. Activate the gateways you wish to use.
+3. *Important note:* International collections (Wire) require additional KYC (Know Your Customer) validation which can take up to 48 hours to activate.
 
-## Paso 4: Crear tu primer Cliente
-Para emitir una cotización o factura, necesitas una contraparte.
+## Step 4: Create your first Customer
+To issue a quote or invoice, you need a counterpart.
 
-1. Ve a **Clientes > Nuevo Cliente**.
-2. Ingresa su Razón Social y RFC.
-3. Asigna términos de crédito (Ej. Net-30). Si el cliente tiene un límite de crédito aprobado, agrégalo en este paso para que Cord monitoree su exposición crediticia automáticamente.
+1. Go to **Customers > New Customer**.
+2. Enter their Legal Name and Tax ID (RFC).
+3. Assign credit terms (e.g., Net-30). If the customer has an approved credit limit, add it in this step so Cord automatically monitors their credit exposure.
 
-## Paso 5: Emitir tu primer cobro
-Estás listo. Ahora puedes crear una **Cotización interactiva** o simplemente enviar un **Link de Pago** público.
+## Step 5: Issue your first collection
+You are ready. Now you can create an **Interactive Quote** or simply send a public **Payment Link**.
 
-- **Para Links Rápidos:** Ve a *Cobranza > Links de Pago* y genera una liga universal.
-- **Para Flujos B2B:** Crea una cotización, añade los ítems, y al enviarla, Cord generará automáticamente un flujo de pago. Cuando el cliente pague, Cord timbrará la factura PUE automáticamente.
+- **For Quick Links:** Go to *Collection > Payment Links* and generate a universal link.
+- **For B2B Flows:** Create a quote, add the items, and upon sending it, Cord will automatically generate a payment flow. When the customer pays, Cord will automatically stamp the PUE invoice.
 
-## ¿Qué sigue?
-- [Configurar Webhooks](/soporte/configurar-webhooks)
-- [Invitar a tu equipo](/soporte/invitar-miembros-roles)
-- [Entender el manejo de disputas](/soporte/manejo-disputas)
+## What's next?
+- [Configure Webhooks](/en/support/configurar-webhooks)
+- [Invite your team](/en/support/invitar-miembros-roles)
+- [Understand dispute management](/en/support/manejo-disputas)

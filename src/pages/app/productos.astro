@@ -368,6 +368,24 @@ const canEdit = memberCan(ME, 'productos');
         .t-muted, .t-state { display: none; }
         .m-row { grid-template-columns: 1fr; }
     }
+
+    /* En móvil el modal se vuelve un "bottom sheet" que sube desde abajo (nativo). */
+    @media (max-width: 560px) {
+        .modal, .modal-lg {
+            width: 100%; max-width: 100%;
+            margin: 0; top: auto; bottom: 0; left: 0; right: 0;
+            border-radius: 20px 20px 0 0;
+            max-height: 92dvh;
+            animation: sheet-up 0.32s var(--ease-spring);
+        }
+        .m-form {
+            padding: 1.3rem 1.2rem;
+            padding-bottom: calc(1.3rem + env(safe-area-inset-bottom));
+            max-height: 92dvh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+        }
+    }
+    @keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) { .modal, .modal-lg { animation: none; } }
 </style>
 
 <script>

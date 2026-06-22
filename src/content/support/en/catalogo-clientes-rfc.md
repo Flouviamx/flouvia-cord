@@ -1,16 +1,16 @@
 ---
-title: "[EN] Catálogo de clientes y RFC"
-description: "Gestión y validación de RFCs en la lista de clientes."
+title: "Client Catalog and RFC"
+description: "Management and validation of RFCs in the client list."
 category: "Billing & CFDI"
 ---
 
-El manejo de clientes en Cord está pensado para evitar rechazos del SAT al emitir CFDI 4.0.
+Client management in Cord is designed to avoid SAT rejections when issuing CFDI 4.0.
 
-### Validación en tiempo real (CFDI 4.0)
+### Real-time Validation (CFDI 4.0)
 
-En la versión 4.0 del CFDI, el Nombre/Razón Social y el Código Postal deben coincidir letra por letra con la Constancia de Situación Fiscal (CSF) del cliente.
-Cuando añades un cliente en Cord:
-1. El sistema valida el Código Postal contra el listado oficial del SAT.
-2. Si la Razón Social incluye el régimen societario (ej. "ACME S.A. DE C.V."), Cord lo **limpiará automáticamente** a "ACME", ya que el SAT rechaza facturas que incluyen el "SA de CV".
+In version 4.0 of the CFDI, the Name/Corporate Name and the Postal Code must match letter by letter with the client's Tax Situation Certificate (CSF).
+When you add a client in Cord:
+1. The system validates the Postal Code against the official SAT list.
+2. If the Corporate Name includes the corporate regime (e.g. "ACME S.A. DE C.V."), Cord will **automatically clean it** to "ACME", since the SAT rejects invoices that include the "SA de CV".
 
-**Tip de importación masiva:** Si vienes de otro sistema, usa nuestra herramienta de importación por CSV. Asegúrate de que las columnas de Nombre y Código Postal vengan directamente de la CSF de tus clientes para evitar bloqueos operativos futuros.
+**Bulk import tip:** If you are coming from another system, use our CSV import tool. Make sure that the Name and Postal Code columns come directly from the CSF of your clients to avoid future operational blockages.
