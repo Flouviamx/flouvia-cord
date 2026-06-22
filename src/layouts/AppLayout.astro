@@ -610,36 +610,75 @@ const { title, page, heading, crumbs = [] } = Astro.props;
     .notif-empty { padding: 2rem 1rem; text-align: center; font-size: 0.82rem; color: var(--color-text-muted); }
 
     /* ════════ "Fijados" en el sidebar (localStorage, inyectado por JS → global) ════════ */
+    .sb-pins { display: flex; flex-direction: column; gap: 2px; }
     .sb-pins[hidden] { display: none; }
-    /* El contenido de los pins se inyecta por JS, así que SUS estilos van aquí (global)
-       — los .sb-item scopeados no aplican al HTML dinámico. */
     .sb-pins .sb-group-label {
         font-size: 0.6rem; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase;
         color: var(--sb-label); padding: 2px 11px 5px;
     }
-    .sb-pin-row { position: relative; display: flex; align-items: center; }
+    @keyframes pin-in { from { opacity: 0; transform: translateY(-4px) scale(0.98); } to { opacity: 1; transform: none; } }
+    .sb-pin-row { position: relative; display: flex; align-items: center; animation: pin-in 0.25s var(--ease-spring); transition: transform 0.2s var(--ease-spring), padding 0.2s var(--ease-spring), opacity 0.2s; }
     .sb-pin-row .sb-item {
         flex: 1; display: flex; align-items: center; gap: 11px;
-        padding: 8px 11px; border-radius: 9px;
+        padding: 8px 11px; border-radius: 12px;
         font-size: 0.86rem; font-weight: 500; color: var(--sb-text); text-decoration: none;
-        transition: color 0.25s, background 0.25s;
+        transition: color 0.25s var(--ease-ios), background 0.25s var(--ease-ios), transform 0.2s var(--ease-ios);
+        position: relative; overflow: hidden;
     }
-    .sb-pin-row .sb-item svg { width: 16px; height: 16px; opacity: var(--sb-icon-op); flex-shrink: 0; }
-    .sb-pin-row .sb-item-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sb-pin-row .sb-item:hover { color: var(--sb-text-strong); background: var(--sb-hover-bg); }
-    .sb-pin-row .sb-item.active { color: var(--sb-text-active); background: var(--sb-active-bg); }
+    .sb-pin-row .sb-item::before {
+        content: ''; position: absolute; inset: 0;
+        background: radial-gradient(70px circle at var(--mx, -100px) var(--my, -100px), rgba(59,130,246,0.15), transparent);
+        opacity: 0; transition: opacity 0.4s var(--ease-ios); z-index: 0; pointer-events: none;
+    }
+    html[data-theme="dark"] .sb-pin-row .sb-item::before {
+        background: radial-gradient(70px circle at var(--mx, -100px) var(--my, -100px), rgba(255,255,255,0.12), transparent);
+    }
+    .sb-pin-row .sb-item:hover::before { opacity: 1; }
+    
+    .sb-pin-row .sb-item svg { width: 16px; height: 16px; opacity: var(--sb-icon-op); flex-shrink: 0; position: relative; z-index: 1; transition: transform 0.4s var(--ease-spring), opacity 0.22s var(--ease-ios), filter 0.25s linear; }
+    .sb-pin-row .sb-item:hover svg { transform: scale(1.12) translateY(-0.5px); opacity: 1; }
+    .sb-pin-row .sb-item:active svg { transform: scale(0.92); transition: transform 0.1s; }
+    .sb-pin-row .sb-item-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; z-index: 1; transition: opacity 0.2s var(--ease-ios); }
+    .sb-pin-row .sb-item:hover { color: var(--sb-text-strong); }
+    
+    .sb-pin-row .sb-item.active { color: var(--sb-text-active); font-weight: 650; }
+    .sb-pin-row .sb-item.active svg { opacity: 1; transform: scale(1.05); }
+
     .sb-collapsed .sb-pins .sb-group-label { display: none; }
-    .sb-collapsed .sb-pin-row .sb-item { justify-content: center; padding: 0; width: 44px; height: 40px; }
+    .sb-collapsed .sb-pin-row .sb-item { justify-content: center; padding: 0; width: 42px; height: 42px; margin: 0 auto; }
     .sb-collapsed .sb-pin-row .sb-item-label { display: none; }
+
     .sb-pin-x {
-        position: absolute; right: 6px; opacity: 0; border: none; background: none; cursor: pointer;
-        color: var(--sb-label); padding: 3px; border-radius: 6px; line-height: 0;
-        transition: opacity 0.15s, color 0.15s, background 0.15s;
+        position: absolute; right: 8px; z-index: 2;
+        width: 22px; height: 22px; border-radius: 6px;
+        display: inline-flex; align-items: center; justify-content: center;
+        border: none; cursor: pointer; line-height: 0;
+        background: rgba(10,25,47,0.04); color: var(--color-text-muted);
+        opacity: 0; transform: translateX(4px);
+        transition: opacity 0.2s var(--ease-ios), transform 0.2s var(--ease-spring), color 0.15s, background 0.15s, box-shadow 0.15s;
     }
+    html[data-theme="dark"] .sb-pin-x { background: rgba(255,255,255,0.06); }
     .sb-pin-x svg { width: 13px; height: 13px; }
-    .sb-pin-row:hover .sb-pin-x { opacity: 1; }
-    .sb-pin-x:hover { color: var(--sb-text-strong); background: var(--sb-active-bg); }
+    
+    .sb-pin-row:hover .sb-pin-x { opacity: 1; transform: translateX(0); }
+    .sb-pin-x:hover { 
+        color: var(--color-danger); 
+        background: rgba(239,68,68,0.12);
+        box-shadow: 0 2px 8px -2px rgba(239,68,68,0.3);
+    }
     .sb-collapsed .sb-pin-x { display: none; }
+
+    .sb-pin-row.dragging { opacity: 0.3; transform: scale(0.96); }
+    .sb-pin-row.drag-over-top { transform: translateY(14px); padding-top: 14px; margin-top: -14px; }
+    .sb-pin-row.drag-over-bottom { transform: translateY(-14px); padding-bottom: 14px; margin-bottom: -14px; }
+    
+    .sb-pin-row.drag-over-top::before, .sb-pin-row.drag-over-bottom::after {
+        content: ''; position: absolute; left: 0; right: 0; height: 2px;
+        background: var(--color-blue-deep); border-radius: 2px; z-index: 10; pointer-events: none;
+        box-shadow: 0 0 8px var(--color-blue-deep);
+    }
+    .sb-pin-row.drag-over-top::before { top: 5px; }
+    .sb-pin-row.drag-over-bottom::after { bottom: 5px; }
 
     /* Botón de fijar en el page-head */
     .ph-title-row { display: flex; align-items: center; gap: 8px; }

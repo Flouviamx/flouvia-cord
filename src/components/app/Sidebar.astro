@@ -692,6 +692,9 @@ const NAV_GROUPS = [
                     mount.querySelectorAll('.sb-pin-row').forEach(r => r.classList.remove('drag-over-top', 'drag-over-bottom'));
                 });
             });
+            if (typeof (window as any).__applySpotlight === 'function') {
+                (window as any).__applySpotlight(mount.querySelectorAll('.sb-item'));
+            }
         };
         const toggle = () => {
             const c = current(); const pins = getPins(); const has = pins.some((p) => p.href === c.href);
@@ -749,10 +752,11 @@ const NAV_GROUPS = [
     }
 
     // ── Spotlight Tracking (sin físicas magnéticas, solo glow) ──
-    function initSpotlight() {
-        const items = document.querySelectorAll('.sb-item, .sb-action-row');
+    function applySpotlight(items: NodeListOf<Element> | Element[]) {
         items.forEach(el => {
             const htmlEl = el as HTMLElement;
+            if ((htmlEl as any)._spotlight) return;
+            (htmlEl as any)._spotlight = true;
             htmlEl.addEventListener('mousemove', (e) => {
                 const rect = htmlEl.getBoundingClientRect();
                 const x = e.clientX - rect.left;
@@ -765,6 +769,11 @@ const NAV_GROUPS = [
                 htmlEl.style.setProperty('--my', `-100px`);
             });
         });
+    }
+
+    function initSpotlight() {
+        applySpotlight(document.querySelectorAll('.sb-item, .sb-action-row'));
+        (window as any).__applySpotlight = applySpotlight;
     }
 
     function initSidebarComponent() {
