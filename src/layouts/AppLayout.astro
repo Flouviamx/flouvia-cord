@@ -1034,7 +1034,11 @@ const { title, page, heading, crumbs = [] } = Astro.props;
         .tb-search-label, .tb-kbd { display: none; }
         /* Topbar móvil = solo lupa + notificaciones. Crear, engrane, ayuda y guía pasan al drawer. */
         .tb-notif-wrap { display: inline-flex; }
-        .tb-gear, .tb-help, .tb-create-wrap, .tb-theme { display: none; }
+        .tb-gear, .tb-help, .tb-theme { display: none; }
+        .tb-create {
+            width: 36px; height: 36px; border-radius: 50%; padding: 0; justify-content: center;
+        }
+        .tb-create span, .tb-create-caret { display: none; }
         .onb-pill { display: none; }
         /* El panel de notificaciones a ancho casi completo */
         .notif-panel { width: min(340px, calc(100vw - 1.5rem)); }
