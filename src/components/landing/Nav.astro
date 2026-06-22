@@ -210,12 +210,6 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 
         <div class="mobile-menu-overlay" id="mobile-menu">
         <div class="mobile-menu-content">
-            <div class="menu-top-row">
-                <div class="lang-switch-mobile">
-                    <a href={esUrl} class="lang-option-m" class:list={[{ active: lang === 'es' }]}>ES</a>
-                    <a href={enUrl} class="lang-option-m" class:list={[{ active: lang === 'en' }]}>EN</a>
-                </div>
-            </div>
             <div class="mm-scroll">
                 <nav class="mobile-acc" id="mobile-acc">
 
@@ -352,9 +346,13 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
                 </div>
                 <div class="mm-meta">
                     <p class="m-eyebrow">COTIZACIONES B2B · POR FLOUVIA</p>
+                    <div class="lang-switch-mobile" style="margin-bottom: 1.2rem;">
+                        <a href={esUrl} class="lang-option-m" class:list={[{ active: lang === 'es' }]}>ES</a>
+                        <a href={enUrl} class="lang-option-m" class:list={[{ active: lang === 'en' }]}>EN</a>
+                    </div>
                     <div class="m-legal">
                         <span>{t("nav.mobile.footer.op")}</span>
-                        <a href="mailto:hola@flouvia.com">hola@flouvia.com</a>
+                        <a href="mailto:cord@flouvia.com">cord@flouvia.com</a>
                     </div>
                 </div>
             </div>
