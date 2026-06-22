@@ -46,10 +46,12 @@ const dotColor = (tipo: string) =>
                 <span class="ap-title">⏳ Pendiente de aprobación</span>
                 <span class="ap-motivo">{q.aprobMotivo}</span>
             </div>
-            <div class="ap-actions">
-                <button class="ap-approve" id="apApprove">Aprobar y enviar</button>
-                <button class="ap-reject" id="apReject">Rechazar</button>
-            </div>
+            {canAprobar && (
+                <div class="ap-actions">
+                    <button class="ap-approve" id="apApprove">Aprobar y enviar</button>
+                    <button class="ap-reject" id="apReject">Rechazar</button>
+                </div>
+            )}
         </div>
     )}
     {q.aprobEstado === 'rechazada' && (

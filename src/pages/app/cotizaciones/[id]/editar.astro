@@ -269,7 +269,7 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
         transition: border-color 0.2s, background-color 0.2s;
     }
     .lr-input:hover { background: var(--color-bg-soft); }
-    .lr-input:focus { outline: none; border-color: var(--color-blue-deep); background: #fff; box-shadow: 0 0 0 2px rgba(10,25,47,0.05); }
+    .lr-input:focus { outline: none; border-color: var(--color-blue-deep); background: var(--surface); box-shadow: 0 0 0 2px rgba(10,25,47,0.05); }
     .lr-desc-input { border-color: var(--color-border); }
     .lr-nego.is-deal { color: #059669; font-weight: 600; }
     .lr-importe { font-size: 0.95rem; color: var(--color-text); text-align: right; font-weight: 500; }
@@ -309,7 +309,7 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
     .sum-total .editorial { font-size: 1.4rem; }
     .btn-send { display: flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font-sans); font-size: 0.88rem; font-weight: 500; background: var(--color-blue-deep); color: #fff; border: none; border-radius: 8px; padding: 10px; cursor: pointer; transition: background 0.2s; margin-top: 0.8rem; }
     .btn-send svg { width: 16px; height: 16px; }
-    .btn-draft { font-family: var(--font-sans); font-size: 0.85rem; font-weight: 500; color: var(--color-text); background: #fff; border: 1px solid var(--color-border); border-radius: 8px; padding: 9px; cursor: pointer; transition: background 0.2s; }
+    .btn-draft { font-family: var(--font-sans); font-size: 0.85rem; font-weight: 500; color: var(--color-text); background: var(--surface); border: 1px solid var(--color-border); border-radius: 8px; padding: 9px; cursor: pointer; transition: background 0.2s; }
     .sum-note { font-size: 0.75rem; color: var(--color-text-muted); margin: 0.4rem 0 0; line-height: 1.4; text-align: center; }
     .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; background: var(--color-text); color: #fff; font-size: 0.85rem; font-weight: 500; padding: 10px 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 200; }
     .toast-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-ok); }

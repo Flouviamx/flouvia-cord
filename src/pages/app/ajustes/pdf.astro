@@ -132,7 +132,7 @@ const tpl = ORG.pdfTemplate || 'clasico';
     .tpl-card input { position: absolute; opacity: 0; pointer-events: none; }
     .tpl-card:has(input:checked) { border-color: var(--color-blue-deep); box-shadow: inset 0 0 0 1px var(--color-blue-deep); }
     .tpl-name { font-size: 0.74rem; font-weight: 600; color: var(--color-text); }
-    .tpl-mini { width: 100%; height: 50px; border-radius: 6px; background: #fff; border: 1px solid var(--color-border); padding: 7px; display: flex; flex-direction: column; gap: 3px; overflow: hidden; }
+    .tpl-mini { width: 100%; height: 50px; border-radius: 6px; background: var(--surface); border: 1px solid var(--color-border); padding: 7px; display: flex; flex-direction: column; gap: 3px; overflow: hidden; }
     .tpl-mini i { display: block; height: 4px; border-radius: 2px; background: rgba(10,25,47,0.12); width: 100%; }
     .tpl-mini i.b { height: 8px; width: 55%; margin-bottom: 2px; }
     .tpl-mini i.t { margin-top: auto; width: 38%; align-self: flex-end; background: rgba(10,25,47,0.28); }
@@ -143,7 +143,7 @@ const tpl = ORG.pdfTemplate || 'clasico';
     /* Subidor de logo */
     .logo-row { display: flex; align-items: center; gap: 1rem; }
     .logo-prev { width: 60px; height: 60px; border-radius: 12px; flex-shrink: 0; overflow: hidden; background: var(--color-blue-deep); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; border: 1px solid var(--color-border); }
-    .logo-prev img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+    .logo-prev img { width: 100%; height: 100%; object-fit: contain; background: var(--surface); }
     .logo-actions { display: flex; flex-direction: column; gap: 0.5rem; }
     .logo-btns { display: flex; gap: 0.5rem; }
     .logo-btn, .logo-remove { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; cursor: pointer; border-radius: 9px; padding: 8px 14px; border: 1px solid var(--color-border); background: var(--color-bg-soft); color: var(--color-text); transition: border-color 0.25s, color 0.25s; }
@@ -157,7 +157,7 @@ const tpl = ORG.pdfTemplate || 'clasico';
     .pdf-pane-tpl { font-size: 0.7rem; font-weight: 700; color: var(--color-blue-deep); }
     .pdf-pane-hint { font-size: 0.66rem; color: #99a2af; text-align: center; }
 
-    .pdf-doc { --accent: #0a192f; background: #fff; border: 1px solid var(--color-border); border-radius: 12px; box-shadow: 0 24px 60px -32px rgba(10,25,47,0.3); padding: 1.3rem 1.4rem; font-size: 0.7rem; color: #0f1729; overflow: hidden; }
+    .pdf-doc { --accent: #0a192f; background: var(--surface); border: 1px solid var(--color-border); border-radius: 12px; box-shadow: 0 24px 60px -32px rgba(10,25,47,0.3); padding: 1.3rem 1.4rem; font-size: 0.7rem; color: #0f1729; overflow: hidden; }
     .pdf-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; padding-bottom: 0.9rem; margin-bottom: 0.9rem; border-bottom: 2.5px solid var(--accent); }
     .pdf-org { display: flex; gap: 9px; align-items: flex-start; min-width: 0; }
     .pdf-mark { width: 30px; height: 30px; border-radius: 7px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.64rem; flex-shrink: 0; }

@@ -1,5 +1,6 @@
 {
   "name": "flouvia-cord",
+  "private": true,
   "type": "module",
   "version": "0.0.1",
   "engines": {

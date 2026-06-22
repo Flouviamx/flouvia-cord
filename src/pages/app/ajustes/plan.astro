@@ -175,7 +175,7 @@ const planActual = PLANES.find((p) => p.id === planRaw);
     .st-past_due { background: rgba(239,68,68,0.14); color: #dc2626; }
     .st-canceled { background: rgba(0,0,0,0.06); color: var(--color-text-muted); }
 
-    .plan-btn { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text); background: #fff; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; }
+    .plan-btn { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text); background: var(--surface); border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; }
     .plan-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 18px -10px rgba(10,25,47,0.3); }
     .plan-btn.solid { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); }
     .plan-btn:disabled { opacity: 0.6; cursor: default; transform: none; box-shadow: none; }

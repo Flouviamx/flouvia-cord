@@ -520,7 +520,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         transition: border-color 0.2s, background-color 0.2s;
     }
     .lr-input:hover { background: var(--color-bg-soft); }
-    .lr-input:focus { outline: none; border-color: var(--color-blue-deep); background: #fff; box-shadow: 0 0 0 2px rgba(10,25,47,0.05); }
+    .lr-input:focus { outline: none; border-color: var(--color-blue-deep); background: var(--surface); box-shadow: 0 0 0 2px rgba(10,25,47,0.05); }
     
     .lr-desc-input { border-color: var(--color-border); }
     
@@ -573,7 +573,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     .ai-actions { display: flex; align-items: center; gap: 1rem; margin-top: 0.7rem; flex-wrap: wrap; }
     .ai-btn {
         font-family: var(--font-sans); font-size: 0.82rem; font-weight: 500; cursor: pointer;
-        background: #fff; color: var(--color-text); border: 1px solid var(--color-border); border-radius: 6px; padding: 6px 14px;
+        background: var(--surface); color: var(--color-text); border: 1px solid var(--color-border); border-radius: 6px; padding: 6px 14px;
         transition: background 0.2s;
     }
     .ai-btn:hover { background: var(--color-bg-soft); }
@@ -700,7 +700,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     .btn-send:hover { background: #334155; }
     .btn-draft {
         font-family: var(--font-sans); font-size: 0.85rem; font-weight: 500;
-        color: var(--color-text); background: #fff;
+        color: var(--color-text); background: var(--surface);
         border: 1px solid var(--color-border); border-radius: 8px;
         padding: 9px; cursor: pointer;
         transition: background 0.2s;

@@ -61,7 +61,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
                 <p><b>Aún no tienes clientes</b><br/>Agrega tu primer cliente o impórtalos en lote desde un CSV.</p>
                 {canEdit && (
                     <div class="t-empty-cta">
-                        <button class="btn-new" id="btnNewEmpty">+ Nuevo cliente</button>
+                        {canEdit && <button class="btn-new" id="btnNewEmpty">+ Nuevo cliente</button>}
                         <button class="btn-import" id="btnImportEmpty">Importar CSV</button>
                     </div>
                 )}
