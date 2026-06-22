@@ -73,7 +73,7 @@ const {
                 </div>
                 <div class="footer-col">
                     <span class="footer-col-title">{t("nav.recursos")}</span>
-                    <a href={l("/soporte")}>{t("footer.link.soporte")}</a>
+                    <a href={lang === 'en' ? '/en/support' : '/soporte'}>{t("footer.link.soporte")}</a>
                     <a href={l("/blog")}>{t("nav.mega.rec.1.title")}</a>
                     <a href={l("/q/demo")}>{t("nav.mega.rec.2.title")}</a>
                     <a href={l("/precios")}>{t("nav.precios")}</a>

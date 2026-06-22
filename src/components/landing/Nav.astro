@@ -141,7 +141,7 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M12 18h.01"/></svg></span>
                                     <span class="mega-copy"><b>{t("nav.mega.rec.2.title")}</b><i>{t("nav.mega.rec.2.desc")}</i></span>
                                 </a>
-                                <a href={l("/soporte")} class="mega-item">
+                                <a href={lang === 'en' ? '/en/support' : '/soporte'} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
                                     <span class="mega-copy"><b>{t("nav.mega.rec.3.title")}</b><i>{t("nav.mega.rec.3.desc")}</i></span>
                                 </a>
@@ -316,7 +316,7 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M12 18h.01"/></svg></span>
                                 <span class="m-sub-copy"><b>{t("nav.mega.rec.2.title")}</b><i>{t("nav.mega.rec.2.desc")}</i></span>
                             </a>
-                            <a href={l("/soporte")} class="m-sub" data-close>
+                            <a href={lang === 'en' ? '/en/support' : '/soporte'} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
                                 <span class="m-sub-copy"><b>{t("nav.mega.rec.3.title")}</b><i>{t("nav.mega.rec.3.desc")}</i></span>
                             </a>
