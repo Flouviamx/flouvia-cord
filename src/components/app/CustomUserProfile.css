@@ -279,3 +279,61 @@
   font-size: 0.82rem;
   color: #64748b;
 }
+
+/* Responsividad Móvil Avanzada */
+@media (max-width: 640px) {
+  .cup-wrapper {
+    gap: 2.5rem;
+  }
+  
+  .cup-section {
+    gap: 1.2rem;
+  }
+
+  .cup-avatar-row {
+    gap: 1rem;
+  }
+
+  .cup-avatar {
+    width: 60px;
+    height: 60px;
+  }
+
+  .cup-avatar-info h4 {
+    font-size: 1.05rem;
+  }
+
+  .cup-avatar-info p {
+    font-size: 0.85rem;
+  }
+
+  .cup-form-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .cup-actions {
+    justify-content: stretch;
+    width: 100%;
+  }
+
+  .cup-btn-primary {
+    width: 100%;
+    text-align: center;
+    padding: 12px;
+    font-size: 0.95rem;
+  }
+
+  .cup-session-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .cup-btn-danger {
+    align-self: flex-start;
+    padding: 8px 0;
+    background: transparent;
+  }
+}
