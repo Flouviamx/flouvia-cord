@@ -1,100 +1,488 @@
 ---
 import SettingsShell from '../../../components/app/SettingsShell.astro';
-import { getMyMembership } from '../../../lib/queries';
+import { getMyMembership, getOrg } from '../../../lib/queries';
 import { memberCan } from '../../../lib/permissions';
 
 const ME = await getMyMembership();
-const canEdit = memberCan(ME, 'equipo');
+const org = await getOrg();
+// Permiso requerido para configurar SSO: 'ajustes' o 'equipo' (o ser owner)
+const canEdit = memberCan(ME, 'ajustes') || memberCan(ME, 'equipo');
+const isManaged = !canEdit;
 ---
 
-<SettingsShell title="SSO — Ajustes" tab="sso"
+<SettingsShell title="SSO Empresarial" tab="sso"
     intro="Conecta tu proveedor de identidad a Cord para que tu equipo pueda iniciar sesión con SSO de forma segura mediante SAML.">
 
-    <div class="sso-hero">
-        <div class="sso-text">
-            <h2>Configura el inicio de sesión único</h2>
-            <p>El Inicio de sesión único (SSO) permite a tus empleados acceder a Cord usando las credenciales de tu empresa (Google Workspace, Microsoft Entra, Okta, etc.), mejorando la seguridad y centralizando el acceso.</p>
-            <div class="sso-actions">
-                <a href="mailto:soporte@flouvia.com?subject=Activar%20SSO%20Empresarial" class="btn-primary" style="text-decoration: none;">Empezar configuración</a>
-                <a href="https://clerk.com/docs/authentication/saml/overview" target="_blank" class="btn-secondary" style="text-decoration: none;">Consulta la documentación</a>
+    <div class="sso-container">
+        <div class="sso-content">
+            <div class="sso-badge-wrap">
+                <span class="sso-badge">Enterprise Security</span>
+            </div>
+            <h2 class="sso-title">Inicio de sesión único (SSO)</h2>
+            <p class="sso-desc">
+                Simplifica el acceso y fortalece la seguridad de tu equipo permitiéndoles usar las credenciales corporativas (Google Workspace, Microsoft Entra ID, Okta, etc.) para entrar a Cord.
+            </p>
+
+            <div class="sso-action-area">
+                {isManaged ? (
+                    <>
+                        <div class="managed-notice">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            <span>Gestionado por <strong>{org.nombre}</strong></span>
+                        </div>
+                        <div class="sso-actions">
+                            <button class="btn-primary disabled" disabled>Empezar configuración</button>
+                        </div>
+                        <p class="sso-hint">Contacta a los administradores de tu organización para modificar la configuración de SSO.</p>
+                    </>
+                ) : (
+                    <div class="sso-actions">
+                        <a href={`mailto:soporte@flouvia.com?subject=Activar%20SSO%20Empresarial%20para%20${encodeURIComponent(org.nombre)}`} class="btn-primary">
+                            <span>Empezar configuración</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </a>
+                        <a href="https://clerk.com/docs/authentication/saml/overview" target="_blank" class="btn-secondary">
+                            Documentación
+                        </a>
+                    </div>
+                )}
+            </div>
+
+            <div class="sso-providers">
+                <p>Soportamos los principales proveedores de identidad:</p>
+                <div class="provider-logos">
+                    <span class="provider">Google Workspace</span>
+                    <span class="provider">Microsoft Entra</span>
+                    <span class="provider">Okta</span>
+                    <span class="provider">SAML 2.0</span>
+                </div>
             </div>
         </div>
         
-        <div class="sso-graphic-wrap">
-            <div class="sso-graphic">
-                <div class="sso-box">
-                    <div class="sso-box-header">
-                        <div class="sso-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <div class="sso-visual">
+            <div class="sso-glass-card">
+                <div class="glass-header">
+                    <div class="glass-dots"><span></span><span></span><span></span></div>
+                    <div class="glass-title">SSO Flow</div>
+                </div>
+                <div class="glass-body">
+                    <div class="entity-box idp-box">
+                        <div class="entity-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                         </div>
-                        <span>Proveedor de identidad</span>
+                        <span class="entity-name">Tu Proveedor</span>
                     </div>
-                    <div class="sso-users">
-                        <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                        <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                        <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                        <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                        <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                    
+                    <div class="flow-connection">
+                        <div class="flow-line"></div>
+                        <div class="flow-badge">SAML 2.0</div>
+                    </div>
+                    
+                    <div class="entity-box cord-box">
+                        <div class="entity-icon cord-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        </div>
+                        <span class="entity-name">Cord Platform</span>
                     </div>
                 </div>
                 
-                <div class="sso-arrow">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
-                </div>
-                
-                <div class="sso-box">
-                    <div class="sso-box-header">
-                        <div class="sso-icon cord-blue">
-                            <img src="/imgs/logo-cord-navy.png" alt="Cord" style="height: 14px; margin-top:2px;" />
-                        </div>
-                        <span>Cord</span>
-                    </div>
-                    <div class="sso-users">
-                        <div class="sso-u cord-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                        <div class="sso-u cord-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                        <div class="sso-u cord-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                        <div class="sso-u cord-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                        <div class="sso-u cord-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                    </div>
+                <div class="glass-users">
+                    <div class="user-avatar u1"></div>
+                    <div class="user-avatar u2"></div>
+                    <div class="user-avatar u3"></div>
+                    <div class="user-label">Acceso seguro y centralizado para tu equipo</div>
                 </div>
             </div>
+            
+            <div class="glow-orb orb-1"></div>
+            <div class="glow-orb orb-2"></div>
         </div>
     </div>
 </SettingsShell>
 
 <style>
-    /* SSO Hero Section */
-    .sso-hero { display: grid; grid-template-columns: 1fr 1.2fr; gap: 4rem; align-items: center; margin-top: 1rem; }
-    @media (max-width: 900px) { .sso-hero { grid-template-columns: 1fr; gap: 2rem; } }
-    .sso-text h2 { font-size: 1.85rem; font-weight: 700; color: var(--color-text); margin: 0 0 1rem 0; letter-spacing: -0.6px; line-height: 1.2; }
-    .sso-text p { font-size: 0.95rem; color: var(--color-text-muted); margin: 0 0 2rem 0; line-height: 1.55; }
-    .sso-actions { display: flex; gap: 1rem; align-items: center; }
-    
-    .sso-graphic-wrap { 
-        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); 
-        border-radius: 20px; padding: 2.5rem; display: flex; justify-content: center; 
-        position: relative; overflow: hidden; 
-        box-shadow: inset 0 2px 10px rgba(255,255,255,0.8); 
+    .sso-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
+        align-items: center;
+        margin-top: 2rem;
+        position: relative;
     }
     
-    .sso-graphic { display: flex; flex-direction: column; gap: 1.2rem; width: 100%; max-width: 340px; align-items: center; z-index: 2; }
-    
-    .sso-box { 
-        background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-        width: 100%; border-radius: 14px; padding: 1.25rem 1.5rem; 
-        display: flex; flex-direction: column; gap: 1.2rem; 
-        border: 1px solid rgba(255,255,255,0.9); 
-        box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+    @media (max-width: 900px) {
+        .sso-container { grid-template-columns: 1fr; gap: 3rem; }
     }
-    .sso-box-header { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 0.9rem; color: var(--color-text); letter-spacing: 0.2px; }
-    .sso-icon { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--color-border); display: flex; align-items: center; justify-content: center; color: var(--color-text-muted); background: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-    .sso-icon.cord-blue { background: #fff; border-color: transparent; box-shadow: 0 4px 12px rgba(10, 25, 47, 0.08); }
+
+    .sso-content {
+        display: flex;
+        flex-direction: column;
+        z-index: 2;
+    }
     
-    .sso-users { display: flex; gap: 8px; justify-content: space-between; }
-    .sso-u { width: 36px; height: 36px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; color: #cbd5e1; background: #f8fafc; transition: all 0.3s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
-    .sso-u.cord-u { border-color: var(--color-border); color: var(--color-blue-deep); background: #ffffff; }
-    .sso-u svg { width: 16px; height: 16px; }
+    .sso-badge-wrap {
+        margin-bottom: 1.25rem;
+    }
     
-    .sso-arrow { color: #94a3b8; margin: 0; }
-    .sso-arrow svg { width: 20px; height: 20px; }
+    .sso-badge {
+        display: inline-block;
+        padding: 0.35rem 0.85rem;
+        background: rgba(14, 165, 233, 0.1);
+        color: #0ea5e9;
+        border: 1px solid rgba(14, 165, 233, 0.2);
+        border-radius: 100px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    .sso-title {
+        font-size: 2.25rem;
+        font-weight: 700;
+        color: var(--color-text);
+        margin: 0 0 1rem 0;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+    }
+
+    .sso-desc {
+        font-size: 1.05rem;
+        color: var(--color-text-muted);
+        line-height: 1.6;
+        margin: 0 0 2.5rem 0;
+    }
+
+    .sso-action-area {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        margin-bottom: 2rem;
+    }
+
+    .managed-notice {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: rgba(245, 158, 11, 0.1);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        color: #d97706;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        margin-bottom: 1.25rem;
+    }
+    
+    .managed-notice svg {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+    }
+    
+    .managed-notice strong {
+        font-weight: 600;
+        color: #b45309;
+    }
+
+    .sso-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .sso-hint {
+        margin: 1rem 0 0 0;
+        font-size: 0.85rem;
+        color: var(--color-text-muted);
+    }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, #0a192f 0%, #112240 100%);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(10, 25, 47, 0.15);
+    }
+    
+    .btn-primary:hover:not(.disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(10, 25, 47, 0.25);
+    }
+    
+    .btn-primary svg {
+        width: 16px;
+        height: 16px;
+        transition: transform 0.2s ease;
+    }
+    
+    .btn-primary:hover:not(.disabled) svg {
+        transform: translateX(3px);
+    }
+    
+    .btn-primary.disabled {
+        background: #e2e8f0;
+        color: #94a3b8;
+        box-shadow: none;
+        cursor: not-allowed;
+    }
+
+    .btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        color: var(--color-text);
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: 1px solid var(--color-border);
+    }
+    
+    .btn-secondary:hover {
+        background: var(--color-surface-hover);
+        border-color: #cbd5e1;
+    }
+
+    .sso-providers p {
+        font-size: 0.85rem;
+        color: var(--color-text-muted);
+        margin: 0 0 1rem 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+
+    .provider-logos {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .provider {
+        font-size: 0.8rem;
+        color: var(--color-text-muted);
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        padding: 0.4rem 0.85rem;
+        border-radius: 6px;
+        font-weight: 500;
+    }
+
+    .sso-visual {
+        position: relative;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        perspective: 1000px;
+    }
+
+    .glow-orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(60px);
+        z-index: 0;
+        opacity: 0.6;
+    }
+
+    .orb-1 {
+        width: 250px;
+        height: 250px;
+        background: linear-gradient(135deg, rgba(14, 165, 233, 0.4), rgba(56, 189, 248, 0.1));
+        top: -20px;
+        right: -20px;
+        animation: float 8s ease-in-out infinite alternate;
+    }
+
+    .orb-2 {
+        width: 200px;
+        height: 200px;
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(167, 139, 250, 0.1));
+        bottom: -30px;
+        left: -10px;
+        animation: float 10s ease-in-out infinite alternate-reverse;
+    }
+
+    .sso-glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        border-radius: 20px;
+        width: 100%;
+        max-width: 380px;
+        padding: 1.5rem;
+        box-shadow: 
+            0 20px 40px rgba(0, 0, 0, 0.05),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+        z-index: 2;
+        transform: rotateY(-5deg) rotateX(5deg);
+        transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    
+    .sso-glass-card:hover {
+        transform: rotateY(0deg) rotateX(0deg) translateY(-5px);
+    }
+
+    .glass-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .glass-dots {
+        display: flex;
+        gap: 6px;
+    }
+
+    .glass-dots span {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #e2e8f0;
+    }
+    .glass-dots span:nth-child(1) { background: #ef4444; }
+    .glass-dots span:nth-child(2) { background: #f59e0b; }
+    .glass-dots span:nth-child(3) { background: #10b981; }
+
+    .glass-title {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .glass-body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .entity-box {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        background: white;
+        padding: 1rem 1.25rem;
+        border-radius: 12px;
+        width: 100%;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(0, 0, 0, 0.04);
+    }
+
+    .entity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8fafc;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .entity-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .cord-icon {
+        background: #0a192f;
+        color: white;
+        border: none;
+    }
+
+    .entity-name {
+        font-weight: 600;
+        color: var(--color-text);
+        font-size: 1.05rem;
+    }
+
+    .flow-connection {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 40px;
+        position: relative;
+        justify-content: center;
+    }
+
+    .flow-line {
+        width: 2px;
+        height: 100%;
+        background: linear-gradient(to bottom, #cbd5e1, #94a3b8);
+        border-radius: 2px;
+    }
+
+    .flow-badge {
+        position: absolute;
+        background: white;
+        border: 1px solid #e2e8f0;
+        padding: 0.25rem 0.75rem;
+        border-radius: 100px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #0ea5e9;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .glass-users {
+        margin-top: 2rem;
+        background: rgba(248, 250, 252, 0.6);
+        border-radius: 12px;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #e2e8f0;
+        border: 2px solid white;
+        margin-right: -12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        background-size: cover;
+    }
+    
+    .u1 { background-image: url('https://api.dicebear.com/7.x/notionists/svg?seed=Felix&backgroundColor=e0f2fe'); }
+    .u2 { background-image: url('https://api.dicebear.com/7.x/notionists/svg?seed=Aneka&backgroundColor=dbeafe'); }
+    .u3 { background-image: url('https://api.dicebear.com/7.x/notionists/svg?seed=Jude&backgroundColor=f3e8ff'); margin-right: 0;}
+
+    .user-label {
+        font-size: 0.8rem;
+        color: #64748b;
+        font-weight: 500;
+        line-height: 1.3;
+        padding-left: 0.5rem;
+    }
+
+    @keyframes float {
+        0% { transform: translateY(0) scale(1); }
+        100% { transform: translateY(-20px) scale(1.05); }
+    }
 </style>
