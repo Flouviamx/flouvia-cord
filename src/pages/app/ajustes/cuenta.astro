@@ -1,38 +1,16 @@
 ---
 // Ajustes › Tu cuenta — perfil, sesiones, seguridad (2FA, passkeys), cuentas
-// conectadas. Montamos el <UserProfile> de Clerk (maneja todo eso nativamente).
+// conectadas. Montamos una UI 100% custom en React (CustomUserProfile).
 import SettingsShell from '../../../components/app/SettingsShell.astro';
-import { UserProfile } from '@clerk/astro/components';
-
-const appearance = {
-    variables: {
-        colorPrimary: '#0a192f',
-        colorText: '#0f1729',
-        colorTextSecondary: '#5b6472',
-        borderRadius: '10px',
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif",
-    },
-    elements: {
-        rootBox: { width: '100%' },
-        cardBox: { width: '100%', boxShadow: 'none', border: '1px solid rgba(10,25,47,0.08)' },
-    },
-};
+import CustomUserProfile from '../../../components/app/CustomUserProfile.tsx';
 ---
 
 <SettingsShell title="Tu cuenta — Ajustes" tab="cuenta"
-    intro="Tu perfil personal, sesiones activas, seguridad (2FA, passkeys) y cuentas conectadas. Esto es de TU usuario — distinto de los datos del negocio.">
+    intro="Tu perfil personal, sesiones activas y seguridad. Esto es de TU usuario — distinto de los datos del negocio.">
     <div class="cuenta-mount">
-        <UserProfile appearance={appearance} routing="hash" />
+        <CustomUserProfile client:load />
     </div>
 </SettingsShell>
-
-<!-- Clerk inyecta su DOM en runtime (sin scope de Astro) → estilos globales -->
-<style is:global>
-    .cuenta-mount .cl-rootBox { width: 100%; }
-    .cuenta-mount .cl-cardBox,
-    .cuenta-mount .cl-card { box-shadow: none !important; border: 1px solid var(--color-border); border-radius: 14px; }
-    .cuenta-mount .cl-navbar { background: var(--color-bg-soft); }
-</style>
 
 <style>
     .cuenta-mount { margin-top: -0.6rem; }
