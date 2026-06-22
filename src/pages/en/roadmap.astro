@@ -104,15 +104,7 @@ const statusMap = {
                     </div>
 
                 </div>
-            </div>
         </div>
-
-        <section class="rd-cta reveal">
-            <h2>Ready to modernize your B2B sales?</h2>
-            <p>Start using Cord today. No credit cards, no commitments.</p>
-            <a href="/en/registro" class="rd-btn">Start for free</a>
-        </section>
-
     </main>
     <Footer />
     <PageAnims />
@@ -214,22 +206,24 @@ const statusMap = {
     .rd-select {
         width: 100%;
         appearance: none;
-        background: transparent;
-        border: none;
-        border-bottom: 1px solid var(--color-border);
-        border-radius: 0;
-        padding: 0.5rem 2rem 0.5rem 0;
+        background: var(--color-bg-soft);
+        border: 1px solid transparent;
+        border-radius: 20px;
+        padding: 0.7rem 2.5rem 0.7rem 1.2rem;
         font-family: inherit;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         font-weight: 500;
         color: var(--color-text);
         cursor: pointer;
-        transition: border-color 0.3s;
+        transition: all 0.3s ease;
+    }
+    .rd-select:hover {
+        background: var(--color-border);
     }
     .rd-select:focus {
         outline: none;
         border-color: var(--color-text);
-        box-shadow: none;
+        background: transparent;
     }
     .rd-select-ico {
         position: absolute;
@@ -294,22 +288,30 @@ const statusMap = {
     .rd-row {
         display: flex;
         flex-direction: column;
-        padding: 2.2rem 0;
+        padding: 2rem 1.5rem;
+        margin: -1rem -1.5rem;
         border-top: 1px solid var(--color-border);
         cursor: pointer;
         text-decoration: none;
-        transition: opacity 0.3s;
+        border-radius: 12px;
+        transition: all 0.4s var(--ease-spring);
     }
     .rd-row:first-child {
         border-top-color: transparent;
     }
 
     .rd-row:hover {
-        opacity: 0.8;
+        background: var(--color-bg-soft);
+        transform: scale(0.995);
+        border-top-color: transparent;
+    }
+    .rd-row:hover + .rd-row {
+        border-top-color: transparent;
     }
 
     .rd-row:hover .rd-row-arrow {
         transform: translateX(4px);
+        color: var(--color-text);
     }
 
     /* Status Badges */
@@ -376,39 +378,6 @@ const statusMap = {
         background: var(--color-bg-soft);
     }
 
-    /* CTA Bottom */
-    .rd-cta {
-        text-align: center;
-        padding: 6rem 5%;
-        background: radial-gradient(ellipse at 50% 0%, rgba(10,37,64,0.03) 0%, transparent 70%);
-        margin-top: 4rem;
-        border-top: 1px solid var(--color-border);
-    }
-    .rd-cta h2 {
-        font-size: 2.2rem;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-        margin: 0 0 1rem;
-    }
-    .rd-cta p {
-        font-size: 1.1rem;
-        color: var(--color-text-muted);
-        margin: 0 0 2rem;
-    }
-    .rd-btn {
-        display: inline-flex;
-        background: var(--color-blue-deep);
-        color: #fff;
-        text-decoration: none;
-        font-weight: 600;
-        padding: 14px 28px;
-        border-radius: 12px;
-        transition: transform 0.3s var(--ease-spring), box-shadow 0.3s;
-    }
-    .rd-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 24px -10px rgba(0,0,0,0.3);
-    }
 
     /* Dark mode support */
     @media (prefers-color-scheme: dark) {
