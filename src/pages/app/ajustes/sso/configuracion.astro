@@ -38,8 +38,8 @@ if (!canEdit) {
                     <div class="rc-inner">
                         <div class="rc-visual">
                             <div class="rc-mockup">
-                                <div class="rc-icon" style="background:#4f46e5;color:#fff;">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                                <div class="rc-icon" style="background:#fff;border:1px solid #e2e8f0;box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                                    <img src="/imgs/logo-cord-navy.png" alt="Cord" style="height:14px;" />
                                 </div>
                                 <div class="rc-mock-title">Dashboard de Cord</div>
                                 <div class="rc-users">
@@ -245,7 +245,7 @@ if (!canEdit) {
         display: inline-block;
         margin-top: 0.5rem;
         font-size: 0.9rem;
-        color: #4f46e5;
+        color: var(--color-blue-deep, #0a192f);
         text-decoration: none;
         font-weight: 500;
     }
@@ -276,11 +276,11 @@ if (!canEdit) {
         flex-direction: column;
     }
     .role-card input:checked + .rc-inner {
-        border-color: #4f46e5;
-        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        border-color: #0a192f;
+        box-shadow: 0 0 0 4px rgba(10, 25, 47, 0.1);
     }
     .role-card input:checked + .rc-inner .rc-content h3 {
-        color: #4f46e5;
+        color: #0a192f;
     }
 
     .rc-visual {
@@ -390,8 +390,8 @@ if (!canEdit) {
         transition: border-color 0.2s, box-shadow 0.2s;
     }
     .input-with-prefix:focus-within {
-        border-color: #4f46e5;
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        border-color: #0a192f;
+        box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.1);
     }
     .input-with-prefix .prefix {
         padding: 0.75rem 1rem;
@@ -490,19 +490,19 @@ if (!canEdit) {
         color: var(--color-text-muted);
     }
     .wizard-help a {
-        color: #4f46e5; text-decoration: none; font-weight: 500;
+        color: var(--color-blue-deep, #0a192f); text-decoration: none; font-weight: 500;
     }
     .wizard-help a:hover { text-decoration: underline; }
 
     .btn-primary {
         display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-        background: #4f46e5; color: white;
+        background: linear-gradient(135deg, #0a192f 0%, #112240 100%); color: white;
         padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 500; font-size: 0.95rem;
-        border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
-        transition: all 0.2s;
+        border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(10, 25, 47, 0.15);
+        transition: all 0.2s ease;
     }
     .btn-primary:hover {
-        background: #4338ca; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        transform: translateY(-1px); box-shadow: 0 6px 16px rgba(10, 25, 47, 0.25);
     }
     
     .btn-secondary {

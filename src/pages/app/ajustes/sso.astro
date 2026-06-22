@@ -105,13 +105,13 @@ const isManaged = !canEdit;
     
     .btn-primary {
         display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-        background: #4f46e5; color: white;
+        background: linear-gradient(135deg, #0a192f 0%, #112240 100%); color: white;
         padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 500; font-size: 0.95rem;
-        border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+        border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(10, 25, 47, 0.15);
         transition: all 0.2s ease;
     }
     .btn-primary:hover:not(.disabled) {
-        transform: translateY(-1px); background: #4338ca; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        transform: translateY(-1px); box-shadow: 0 6px 16px rgba(10, 25, 47, 0.25);
     }
     .btn-primary.disabled {
         background: #e2e8f0; color: #94a3b8; box-shadow: none; cursor: not-allowed;
