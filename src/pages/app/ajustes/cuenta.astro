@@ -8,7 +8,7 @@ import CustomUserProfile from '../../../components/app/CustomUserProfile.tsx';
 <SettingsShell title="Tu cuenta — Ajustes" tab="cuenta"
     intro="Tu perfil personal, sesiones activas y seguridad. Esto es de TU usuario — distinto de los datos del negocio.">
     <div class="cuenta-mount">
-        <CustomUserProfile client:load />
+        <CustomUserProfile client:only="react" />
     </div>
 </SettingsShell>
 
