@@ -339,13 +339,13 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
                 <div class="mm-cta">
                     <a href={l("/sign-in")} class="mm-btn ghost" data-close
                        data-auth-swap data-out-href={l("/sign-in")} data-out-label={t("nav.entrar")}
-                       data-in-href={l("/precios")} data-in-label={t("nav.mobile.plans")}>
+                       data-in-href={l("/app")} data-in-label={t("nav.dashboard")}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                         <span data-auth-label>{t("nav.entrar")}</span>
                     </a>
                     <a href={l("/registro")} class="mm-btn solid" data-close
                        data-auth-swap data-out-href={l("/registro")} data-out-label={t("nav.empezar")}
-                       data-in-href={l("/app")} data-in-label={t("nav.dashboard")}>
+                       data-in-href={l("/precios")} data-in-label={t("nav.mobile.plans")}>
                         <span data-auth-label>{t("nav.empezar")}</span>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/></svg>
                     </a>
@@ -718,6 +718,20 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
             display: flex; flex-direction: column; height: 100%; width: 100%;
             padding: calc(env(safe-area-inset-top) + 92px) 7% calc(env(safe-area-inset-bottom) + 26px);
         }
+
+        .menu-top-row { display: flex; justify-content: flex-end; margin-bottom: 1rem; margin-right: 8px; }
+        .lang-switch-mobile {
+            display: inline-flex; align-items: center;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; padding: 3px;
+        }
+        .lang-option-m {
+            padding: 5px 12px; font-size: 10px; font-weight: 800; letter-spacing: 1px;
+            color: rgba(255,255,255,0.45); text-decoration: none; border-radius: 100px;
+            transition: color 0.4s var(--ease-spring), background 0.4s var(--ease-spring);
+        }
+        .lang-option-m.active { color: var(--nb-dark); background: #fff; }
+        .lang-option-m:not(.active):hover { color: rgba(255,255,255,0.7); }
 
         /* ── Área scrolleable de navegación ── */
         .mm-scroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; margin: 0 -8px; padding: 0 8px; scrollbar-width: none; }
