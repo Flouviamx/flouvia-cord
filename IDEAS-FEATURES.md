@@ -1,4 +1,4 @@
-# Cord — Análisis de nuevos features
+3# Cord — Análisis de nuevos features
 
 Documento de exploración (jun 2026). NO es plan de implementación, es análisis
 estratégico para decidir hacia dónde crece el producto. Ordenado por impacto/esfuerzo.

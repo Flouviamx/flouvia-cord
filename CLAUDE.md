@@ -79,6 +79,37 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
 
 ## Estado actual (jun 2026)
 
+✅ **Block-mockups de Soluciones reescritos a motion-graphics (jun 2026)** — `SolucionBlockMockup.astro`
+   (los 3 mockups por industria que acompañan a los bloques de texto en `/soluciones/[slug]`) estaba muy por
+   debajo del nivel de los de producto: cards casi vacías, scrub atado al scroll (deprecado en estas páginas) y
+   hasta un emoji `👆` (prohibido). Se reescribió COMPLETO al lenguaje de los mockups de producto/index:
+   • **Componente** = base CSS compartida (cards navy con gradiente, floating pills, push notifications estilo
+     iOS, cursor falso SVG —NUNCA emoji—, badges, `.editorial` monospace) + 12 mockups con clases prefijadas
+     `sbm-<ind>-mN` (`dist`/`const`/`manu`/`serv`). Cada uno cuenta una micro-historia que EXPLICA su copy:
+     distribuidoras (cursor negocia precio por línea con count-up y chip −12% · búsqueda de catálogo que teclea
+     y agrega SKU · términos Net 30 + barra de crédito + push de pago), construcción (cursor edita cantidad y
+     subtotal/IVA/total recalculan con flash verde · barra de crédito que avisa al rebasar límite · push
+     "aprobó desde la obra" → timeline → sello CFDI 4.0), manufactura (línea libre que despliega la spec del
+     lote · historial del cliente con count-up por corrida · sello de evidencia + CFDI sin recapturar),
+     servicios (header que se reviste del color de marca + adiós "Powered by Cord" · push de apertura +
+     contador de vistas + estado que avanza · cursor que aprueba → anillo de éxito → anticipo pagado Stripe).
+   • **Animación** en el `<script>` de `soluciones/[slug].astro` (reemplazó el bloque de scrub viejo): reveal
+     de entrada genérico (`.sbm-card` sube con fade) + 12 timelines GSAP que cuentan la historia con loops
+     `repeat:-1` y/o `ScrollTrigger {once:true}` (NUNCA scrub-on-drag), todo bajo guard `!reduced`. El HTML por
+     defecto queda en estado FINAL → con `prefers-reduced-motion` se ve completo y correcto.
+   • **Regla a futuro:** todo loop-starter usa `ScrollTrigger {once:true}` para no apilar timelines al re-entrar
+     en viewport; para teñir una barra con `background: gradient` se anima `background` (gradiente), NO
+     `backgroundColor` (el gradiente opaco lo taparía); los overlays transitorios (push/pago) van con
+     `opacity:0` por defecto en CSS para que el estado estático de reduced-motion sea limpio.
+   El hero mockup de cada industria (inline en `[slug].astro`) NO se tocó (ya animaba con el "settle" de PageAnims).
+   • **Paridad estética con producto (follow-up):** tras una revisión se identificaron 4 diferencias CSS vs
+     `BlockMockup.astro`: (1) sombra de card — ahora 3 capas (`0 2px 4px` + `0 28px 56px -14px` + `inset 0 1px 0`);
+     (2) floating pills — `filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4))` + offsets `top/right: -18px/-14px`
+     (se usa offset en vez de `transform: translate()` para que las animaciones GSAP de `y`/`scale` no pisen el
+     transform); (3) dots de color — `box-shadow: 0 0 7px rgba(color,0.7)` para glow visible; (4) pills — fondo
+     sólido `#0f172a` (no semi-transparente). El glow ambiental (`.sbm-glow`) pasó a núcleo azul
+     `rgba(59,130,246,0.12)` + navy para dar profundidad. Resultado: idénticos a los de producto a nivel CSS.
+
 ✅ **Rediseño Premium B2B del Blog y Microinteracciones (jun 2026)** — Elevando la estética a "Top Top / Quiet Luxury":
    • **TOC Scrollspy Animado (Left Sidebar):** Rediseño ultra-premium del índice flotante. Se usa un track vertical sutil con una píldora indicadora (`toc-indicator`) que navega dinámicamente con transiciones `cubic-bezier`. Los enlaces del índice presentan un elegante micro-desplazamiento lateral (`translateX(4px)`) en hover/activo. Bug crítico solucionado: se removió un `position: relative` en `.toc-container` que rompía el comportamiento global de `position: sticky`.
    • **Botones de Redes Expansivos (Right Sidebar):** La barra de compartir (`.share-pill`) se transformó en botones circulares de `44x44px` que se expanden magnéticamente a `140px` al hacer hover. Se utilizó `position: absolute` para garantizar que el texto interior haga un "fade in" impecable sin moverse físicamente en el DOM. Función de portapapeles en JS con estado de éxito ("¡Copiado!").
@@ -248,6 +279,20 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
 ✅ **App funcional (jun 2026)** — CRUD de clientes/productos (modales), ajustes que guardan,
    acciones de cotización (enviar/aprobar/rechazar/pago/facturar), aprobar/rechazar REAL
    en `/q/[token]`, PDF imprimible personalizado por cuenta (`/app/cotizaciones/[id]/imprimir`)
+✅ **Tabla comparativa exhaustiva + precios en USD (jun 2026)** — La tabla de comparación de
+   planes (`COMPARATIVA` / `COMPARATIVA_EN`) se expandió de ~20 filas a ~60 features en
+   **13 grupos** cubriendo TODAS las funcionalidades de la app: límites del sistema, consumo
+   mensual, cotizaciones y editor, experiencia del cliente (link público), inteligencia
+   artificial, fiscal y multi-divisa, CRM/analítica, riesgo y tesorería, identidad y marca,
+   notificaciones e integraciones, equipo/roles/seguridad, desarrolladores e infraestructura,
+   excedentes. La versión en inglés (`src/lib/precios.en.ts`) ahora muestra precios en **USD**
+   (Starter $12, Pro $30, Scale $70, Developer $150; excedentes en USD también), y todos los
+   labels de moneda en la landing inglesa (`precios.astro`, `ui.ts`) dicen "USD" en lugar de
+   "MXN". La calculadora ROI en inglés usa valores y constante PRO en USD. ⚠️ Se eliminó un
+   **bloque duplicado** que existía en `precios.astro` (líneas 518-1014: segunda copia
+   ES-only pegada por error que hacía que `/precios` renderizara todo dos veces). Ahora hay
+   un solo `<Layout>` con `isEn` para las dos variantes. Fuentes: `src/lib/precios.ts` (ES),
+   `src/lib/precios.en.ts` (EN), `src/i18n/ui.ts` (labels `pr.cycle.m` / `pr.sub`).
 ✅ **Landing v2 (jun 2026)** — `/precios` dedicada (toggle anual + comparador + ROI + FAQ),
    `/soluciones/[slug]` por industria (espejo de `/producto/[slug]`), home con DEMO
    INTERACTIVO en el hero (control de 5 pasos), bug del navbar arreglado (el megamenú
@@ -782,10 +827,12 @@ cobra por uso** vía Stripe Billing Meters (de Pro en adelante; Free/Starter =
 topes duros). Código de plan en `orgs.plan`: `free|starter|pro|scale|developer`.
 Cuotas incluidas y mapping de price_id/meter en **`src/lib/billing.ts`**.
 
-> ⚠️ Precios son placeholders comerciales — André los puede ajustar. Si cambian,
-> actualizar **`src/lib/precios.ts`** (FUENTE ÚNICA desde jun 2026): la consumen
-> tanto la sección del home (`Pricing.astro`) como la página `/precios`. Ahí también
-> viven la comparativa (`COMPARATIVA`) y el FAQ de precios (`FAQ_PRECIOS`).
+> ⚠️ Precios son placeholders comerciales — André los puede ajustar. Si cambian:
+> - **ES (MXN):** `src/lib/precios.ts` — consumido por `Pricing.astro` (home) y `/precios`.
+>   Ahí viven `PLANES`, `COMPARATIVA` (~60 features en 13 grupos) y `FAQ_PRECIOS`.
+> - **EN (USD):** `src/lib/precios.en.ts` — misma estructura, precios en USD
+>   (Starter $12 · Pro $30 · Scale $70 · Developer $150). Labels "USD" en `src/i18n/ui.ts`
+>   (`pr.sub`, `pr.cycle.m`) y en `precios.astro` (meta, lead, tarjeta, ROI).
 
 Moneda v1 = MXN con IVA 16% configurable. Landing + app en el MISMO subdominio
 (estilo linear.app: marketing en `/`, app en `/app`).

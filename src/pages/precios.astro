@@ -22,7 +22,7 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
 
 <Layout
     title={isEn ? "Pricing — Cord" : "Precios — Cord"}
-    description={isEn ? "Cord plans in MXN, tax included. Start for free up to 5 active quotes; upgrade to Pro or Business when you close. No contracts." : "Planes de Cord en pesos, IVA incluido. Empieza gratis hasta 5 cotizaciones activas; crece a Profesional o Negocio cuando cierres. Sin contratos."}
+    description={isEn ? "Cord plans in USD. Start for free up to 5 active quotes; upgrade to Pro or Business when you close. No contracts." : "Planes de Cord en pesos, IVA incluido. Empieza gratis hasta 5 cotizaciones activas; crece a Profesional o Negocio cuando cierres. Sin contratos."}
 >
     <Nav />
     <main>
@@ -33,7 +33,7 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
                 <p class="pp-eyebrow reveal">{isEn ? 'PRICING' : 'PRECIOS'}</p>
                 <h1 class="pr-h1 masked-title" set:html={isEn ? 'Start for free.<br/>Grow when you close.' : 'Empieza gratis.<br/>Crece cuando cierres.'} />
                 <p class="pr-lead reveal">
-                    {isEn ? <Fragment>No contracts. Cancel anytime. Prices in MXN, tax included.<br/>Pay annually and get <b>2 months free</b>.</Fragment> : <Fragment>Sin contratos. Cancela cuando quieras. Precios en pesos, IVA incluido.<br/>Paga al año y te llevas <b>2 meses gratis</b>.</Fragment>}
+                    {isEn ? <Fragment>No contracts. Cancel anytime. Prices in USD.<br/>Pay annually and get <b>2 months free</b>.</Fragment> : <Fragment>Sin contratos. Cancela cuando quieras. Precios en pesos, IVA incluido.<br/>Paga al año y te llevas <b>2 meses gratis</b>.</Fragment>}
                 </p>
 
                 <div class="pr-toggle reveal" role="tablist" aria-label={isEn ? "Billing cycle" : "Ciclo de facturación"}>
@@ -72,7 +72,7 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
                                             data-anual={String(anual)}
                                         >{money0(p.precioMensual)}</span>
                                         <span class="plan-cycle">
-                                            <span>{isEn ? 'MXN / month' : 'MXN / mes'}</span>
+                                            <span>{isEn ? 'USD / month' : 'MXN / mes'}</span>
                                             <i class="plan-billed" data-billed>{isEn ? 'billed monthly' : 'facturado mensual'}</i>
                                         </span>
                                     </>
@@ -115,25 +115,25 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
                             <input type="number" id="roi-qty" min="1" max="999" value="20" />
                         </label>
                         <label>
-                            <span>{isEn ? 'Average ticket (MXN)' : 'Ticket promedio (MXN)'}</span>
-                            <input type="number" id="roi-ticket" min="0" step="500" value="35000" />
+                            <span>{isEn ? 'Average ticket (USD)' : 'Ticket promedio (MXN)'}</span>
+                            <input type="number" id="roi-ticket" min="0" step={isEn ? '50' : '500'} value={isEn ? '1800' : '35000'} />
                         </label>
                     </div>
                 </div>
                 <div class="pr-roi-card reveal-mockup">
                     <span class="pr-roi-label">{isEn ? 'Monthly pipeline' : 'Mueves al mes'}</span>
-                    <span class="editorial pr-roi-big" id="roi-pipeline">$700,000</span>
+                    <span class="editorial pr-roi-big" id="roi-pipeline">{isEn ? '$36,000' : '$700,000'}</span>
                     <div class="pr-roi-split">
                         <div>
                             <span>{isEn ? 'Professional Plan' : 'Plan Profesional'}</span>
-                            <b class="editorial">$590<i>{isEn ? '/mo' : '/mes'}</i></b>
+                            <b class="editorial">{isEn ? '$30' : '$590'}<i>{isEn ? '/mo' : '/mes'}</i></b>
                         </div>
                         <div>
                             <span>{isEn ? 'Which is' : 'Es el'}</span>
                             <b class="editorial" id="roi-pct">0.08%</b>
                         </div>
                     </div>
-                    <p class="pr-roi-foot" id="roi-foot">{isEn ? 'A single extra quote per month pays for the plan ~59 times.' : 'Una sola cotización extra al mes paga el plan ~59 veces.'}</p>
+                    <p class="pr-roi-foot" id="roi-foot">{isEn ? 'A single extra quote per month pays for the plan ~60 times.' : 'Una sola cotización extra al mes paga el plan ~59 veces.'}</p>
                 </div>
             </div>
         </section>
@@ -494,7 +494,7 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
         const pipeline = document.getElementById('roi-pipeline');
         const pct = document.getElementById('roi-pct');
         const foot = document.getElementById('roi-foot');
-        const PRO = 590;
+        const PRO = isEn ? 30 : 590;
         const calc = () => {
             const q = Math.max(0, parseFloat(qty?.value || '0') || 0);
             const t = Math.max(0, parseFloat(ticket?.value || '0') || 0);
@@ -507,504 +507,6 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
                 foot.textContent = t > 0
                     ? (isEn ? `A single extra quote per month pays for the plan ~${veces} times.` : `Una sola cotización extra al mes paga el plan ~${veces} veces.`)
                     : (isEn ? 'Enter your average ticket to see the math.' : 'Ingresa tu ticket promedio para ver la cuenta.');
-            }
-        };
-        qty?.addEventListener('input', calc);
-        ticket?.addEventListener('input', calc);
-        calc();
-    });
-</script>
- + new Intl.NumberFormat('es-MX').format(n);
----
-
-<Layout
-    title="Precios — Cord"
-    description="Planes de Cord en pesos, IVA incluido. Empieza gratis hasta 5 cotizaciones activas; crece a Profesional o Negocio cuando cierres. Sin contratos."
->
-    <Nav />
-    <main>
-        <!-- ── HERO ── -->
-        <section class="pp-hero pr-hero">
-            <div class="pr-mesh" aria-hidden="true"></div>
-            <div class="pr-hero-inner">
-                <p class="pp-eyebrow reveal">PRECIOS</p>
-                <h1 class="pr-h1 masked-title">Empieza gratis.<br/>Crece cuando cierres.</h1>
-                <p class="pr-lead reveal">
-                    Sin contratos. Cancela cuando quieras. Precios en pesos, IVA incluido.
-                    Paga al año y te llevas <b>2 meses gratis</b>.
-                </p>
-
-                <div class="pr-toggle reveal" role="tablist" aria-label="Ciclo de facturación">
-                    <span class="pr-toggle-pill" id="toggle-pill" aria-hidden="true"></span>
-                    <button class="pr-toggle-btn is-active" data-cycle="mensual" role="tab" aria-selected="true">Mensual</button>
-                    <button class="pr-toggle-btn" data-cycle="anual" role="tab" aria-selected="false">
-                        Anual <span class="pr-toggle-save">−17%</span>
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- ── TARJETAS DE PLAN ── -->
-        <section class="pr-grid-wrap">
-            <div class="pr-grid">
-                {PLANES.map((p) => {
-                    const anual = precioAnualMensualizado(p.precioMensual);
-                    return (
-                        <article class:list={['plan reveal', { 'plan-featured': p.destacado }]}>
-                            {p.ribbon && <span class="plan-ribbon">{p.ribbon}</span>}
-                            <div class="plan-head">
-                                <h3 class="plan-name">{p.nombre}</h3>
-                                <p class="plan-tagline">{p.tagline}</p>
-                            </div>
-                            <div class="plan-price">
-                                {p.precioMensual === 0 ? (
-                                    <>
-                                        <span class="editorial plan-amount">$0</span>
-                                        <span class="plan-cycle">para siempre</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span
-                                            class="editorial plan-amount"
-                                            data-mensual={String(p.precioMensual)}
-                                            data-anual={String(anual)}
-                                        >{money0(p.precioMensual)}</span>
-                                        <span class="plan-cycle">
-                                            <span>MXN / mes</span>
-                                            <i class="plan-billed" data-billed>facturado mensual</i>
-                                        </span>
-                                    </>
-                                )}
-                            </div>
-                            <a
-                                href={p.precioMensual === 0
-                                    ? p.ctaHref
-                                    : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}&cycle=mensual`)}`}
-                                data-cta-plan={p.precioMensual === 0 ? undefined : p.id}
-                                class:list={['plan-cta', p.destacado ? 'plan-cta-solid' : 'plan-cta-ghost']}
-                            >{p.ctaLabel}</a>
-                            <ul class="plan-feats">
-                                {p.feats.map((f) => (
-                                    <li><span class="pf-check">✓</span> {f}</li>
-                                ))}
-                            </ul>
-                        </article>
-                    );
-                })}
-            </div>
-            <p class="pr-note reveal">
-                ¿Necesitas algo a medida o integración con tu ERP?
-                <a href="mailto:hola@flouvia.com">Habla con Flouvia →</a>
-            </p>
-        </section>
-
-        <!-- ── CALCULADORA DE VALOR ── -->
-        <section class="pr-roi">
-            <div class="pr-roi-inner">
-                <div class="pr-roi-copy">
-                    <p class="pp-eyebrow reveal">LA CUENTA QUE IMPORTA</p>
-                    <h2 class="pr-h2 masked-title">Cord se paga<br/>con un solo trato.</h2>
-                    <p class="pr-roi-sub reveal">
-                        Mueve los números a tu realidad. Si el seguimiento en vivo te ayuda a
-                        cerrar una sola cotización más al mes, el plan ya quedó pagado.
-                    </p>
-                    <div class="pr-roi-fields reveal">
-                        <label>
-                            <span>Cotizaciones que mandas al mes</span>
-                            <input type="number" id="roi-qty" min="1" max="999" value="20" />
-                        </label>
-                        <label>
-                            <span>Ticket promedio (MXN)</span>
-                            <input type="number" id="roi-ticket" min="0" step="500" value="35000" />
-                        </label>
-                    </div>
-                </div>
-                <div class="pr-roi-card reveal-mockup">
-                    <span class="pr-roi-label">Mueves al mes</span>
-                    <span class="editorial pr-roi-big" id="roi-pipeline">$700,000</span>
-                    <div class="pr-roi-split">
-                        <div>
-                            <span>Plan Profesional</span>
-                            <b class="editorial">$590<i>/mes</i></b>
-                        </div>
-                        <div>
-                            <span>Es el</span>
-                            <b class="editorial" id="roi-pct">0.08%</b>
-                        </div>
-                    </div>
-                    <p class="pr-roi-foot" id="roi-foot">Una sola cotización extra al mes paga el plan ~59 veces.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- ── COMPARADOR ── -->
-        <section class="pr-compare">
-            <div class="pr-compare-head">
-                <p class="pp-eyebrow reveal">COMPARA LOS PLANES</p>
-                <h2 class="pr-h2 masked-title">Todo lo que incluye<br/>cada plan.</h2>
-            </div>
-
-            <div class="pr-table-scroll reveal">
-                <table class="pr-table">
-                    <thead>
-                        <tr>
-                            <th class="pr-th-feat"></th>
-                            {PLANES.map((p) => (
-                                <th class:list={['pr-th-plan', { 'is-featured': p.destacado }]}>
-                                    <b>{p.nombre}</b>
-                                    <span>{p.precioMensual === 0 ? 'Gratis' : `${money0(p.precioMensual)}/mes`}</span>
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {COMPARATIVA.map((g) => (
-                            <>
-                                <tr class="pr-group-row">
-                                    <td colspan="6">{g.titulo}</td>
-                                </tr>
-                                {g.rows.map((r) => (
-                                    <tr>
-                                        <td class="pr-cell-feat">{r.label}</td>
-                                        {([r.free, r.starter, r.pro, r.scale, r.developer] as const).map((v, idx) => (
-                                            <td class:list={['pr-cell-val', { 'is-featured': idx === 2 }]}>
-                                                {v === true ? (
-                                                    <span class="pr-yes" aria-label="Incluido"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-                                                ) : v === false ? (
-                                                    <span class="pr-no" aria-label="No incluido">—</span>
-                                                ) : (
-                                                    <span class="pr-txt">{v}</span>
-                                                )}
-                                            </td>
-                                        ))}
-                                    </tr>
-                                ))}
-                            </>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- ── FAQ ── -->
-        <section class="pr-faq">
-            <div class="pr-faq-head">
-                <p class="pp-eyebrow reveal">PREGUNTAS FRECUENTES</p>
-                <h2 class="pr-h2 masked-title">Lo que se pregunta<br/>antes de pagar.</h2>
-            </div>
-            <div class="pr-faq-list">
-                {FAQ_PRECIOS.map((f) => (
-                    <details class="pr-faq-item reveal">
-                        <summary>
-                            <span>{f.q}</span>
-                            <i class="pr-faq-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></i>
-                        </summary>
-                        <div class="pr-faq-body"><p>{f.a}</p></div>
-                    </details>
-                ))}
-            </div>
-        </section>
-    </main>
-
-    <Footer
-        ctaTitle="Tu primer trato<br />empieza gratis."
-        ctaSub="5 cotizaciones activas, sin tarjeta. Crece cuando cierres."
-    />
-    <PageAnims />
-</Layout>
-
-<style>
-    /* ════════ HERO ════════ */
-    .pr-hero {
-        position: relative; text-align: center;
-        padding: 11.5rem 5% 3rem; overflow: clip; background: var(--color-bg);
-    }
-    .pr-mesh {
-        position: absolute; inset: -20% -10% auto; height: 80%;
-        background:
-            radial-gradient(ellipse 50% 60% at 28% 20%, rgba(10,25,47,0.05) 0%, transparent 60%),
-            radial-gradient(ellipse 44% 54% at 76% 12%, rgba(10,25,47,0.04) 0%, transparent 60%);
-        pointer-events: none;
-    }
-    .pr-hero-inner { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; }
-    .pp-eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #888; margin: 0 0 1.4rem; }
-    .pr-h1 {
-        font-size: clamp(2.4rem, 5.4vw, 4.2rem);
-        font-weight: 800; line-height: 1.04; letter-spacing: -0.035em;
-        color: var(--color-text); margin: 0 0 1.4rem;
-    }
-    .pr-lead { font-size: 1.1rem; line-height: 1.6; color: var(--color-text-muted); max-width: 560px; margin: 0 auto 2.2rem; }
-    .pr-lead b { color: var(--color-text); font-weight: 700; }
-
-    /* Toggle mensual/anual (segmented glass) */
-    .pr-toggle {
-        position: relative; display: inline-flex; gap: 2px;
-        padding: 4px; border-radius: 100px;
-        background: var(--color-bg-soft); border: 1px solid var(--color-border);
-    }
-    .pr-toggle-pill {
-        position: absolute; top: 4px; left: 4px; bottom: 4px; width: calc(50% - 4px);
-        background: var(--color-blue-deep); border-radius: 100px;
-        box-shadow: 0 8px 20px -8px rgba(10,25,47,0.5);
-        transition: transform 0.5s var(--ease-spring);
-    }
-    .pr-toggle[data-cycle="anual"] .pr-toggle-pill { transform: translateX(100%); }
-    .pr-toggle-btn {
-        position: relative; z-index: 1; border: none; background: none; cursor: pointer;
-        font-family: inherit; font-size: 0.86rem; font-weight: 600;
-        color: var(--color-text-muted);
-        padding: 9px 22px; border-radius: 100px;
-        display: inline-flex; align-items: center; gap: 8px;
-        transition: color 0.4s var(--ease-spring);
-    }
-    .pr-toggle-btn.is-active { color: #fff; }
-    .pr-toggle-save {
-        font-size: 0.62rem; font-weight: 800; letter-spacing: 0.4px;
-        padding: 2px 7px; border-radius: 100px;
-        background: rgba(16,185,129,0.16); color: #059669;
-        transition: background 0.4s, color 0.4s;
-    }
-    .pr-toggle-btn.is-active .pr-toggle-save { background: rgba(255,255,255,0.18); color: #6ee7b7; }
-
-    /* ════════ TARJETAS ════════ */
-    .pr-grid-wrap { max-width: 1320px; margin: 0 auto; padding: 3rem 5% 1rem; }
-    .pr-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.85rem; align-items: stretch; }
-    .plan {
-        position: relative; background: var(--color-bg-soft);
-        border: 1px solid var(--color-border); border-radius: 22px;
-        padding: 1.9rem 1.4rem; display: flex; flex-direction: column; gap: 1.2rem;
-        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
-    }
-    .plan:hover { transform: translateY(-4px); box-shadow: 0 30px 70px -30px rgba(10,25,47,0.16); }
-    .plan-featured {
-        position: relative; z-index: 2;
-        background: radial-gradient(ellipse at 50% 0%, #112240 0%, #0a192f 80%);
-        border: none; color: #fff;
-        box-shadow: 0 40px 90px -34px rgba(10,25,47,0.5); transform: scale(1.05);
-    }
-    .plan-featured:hover { transform: scale(1.05) translateY(-4px); }
-    .plan-ribbon {
-        position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
-        background: var(--color-ok); color: #fff;
-        font-size: 0.58rem; font-weight: 800; letter-spacing: 1px;
-        padding: 5px 13px; border-radius: 100px; white-space: nowrap;
-    }
-    .plan-head { display: flex; flex-direction: column; gap: 0.35rem; min-height: 64px; }
-    .plan-name { font-size: 1.15rem; font-weight: 700; margin: 0; letter-spacing: -0.4px; }
-    .plan-tagline { font-size: 0.8rem; margin: 0; color: var(--color-text-muted); line-height: 1.35; }
-    .plan-featured .plan-tagline { color: #8892b0; }
-    .plan-price { display: flex; align-items: baseline; gap: 8px; min-height: 46px; }
-    .plan-amount { font-size: 2.3rem; line-height: 1; color: var(--color-blue-deep); }
-    .plan-featured .plan-amount { color: #fff; }
-    .plan-cycle { display: flex; flex-direction: column; font-size: 0.82rem; color: var(--color-text-muted); font-weight: 500; }
-    .plan-cycle .plan-billed { font-style: normal; font-size: 0.7rem; color: #99a2af; }
-    .plan-featured .plan-cycle { color: #8892b0; }
-    .plan-cta {
-        text-align: center; text-decoration: none; font-size: 0.92rem; font-weight: 600;
-        padding: 13px; border-radius: 12px;
-        transition: transform 0.5s var(--ease-spring), background 0.4s, box-shadow 0.4s;
-    }
-    .plan-cta-ghost { color: var(--color-blue-deep); border: 1px solid var(--color-border); background: #fff; }
-    .plan-cta-ghost:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -12px rgba(10,25,47,0.2); }
-    .plan-cta-solid { background: #fff; color: var(--color-blue-deep); box-shadow: 0 12px 28px -10px rgba(0,0,0,0.3); }
-    .plan-cta-solid:hover { transform: translateY(-2px); }
-    .plan-feats { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.7rem; }
-    .plan-feats li { display: flex; align-items: flex-start; gap: 9px; font-size: 0.82rem; line-height: 1.35; color: var(--color-text); }
-    .plan-featured .plan-feats li { color: #cdd5e0; }
-    .pf-check {
-        width: 19px; height: 19px; flex-shrink: 0;
-        background: rgba(16,185,129,0.14); color: #059669; border-radius: 50%;
-        display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700;
-    }
-    .plan-featured .pf-check { background: rgba(16,185,129,0.2); color: #34d399; }
-    .pr-note { text-align: center; margin: 2.6rem 0 0; font-size: 0.98rem; color: var(--color-text-muted); }
-    .pr-note a { color: var(--color-blue-deep); font-weight: 600; text-decoration: none; }
-    .pr-note a:hover { text-decoration: underline; }
-
-    /* ════════ COMÚN H2 ════════ */
-    .pr-h2 { font-size: clamp(1.7rem, 3vw, 2.4rem); font-weight: 800; line-height: 1.12; letter-spacing: -0.03em; color: var(--color-text); margin: 0 0 1rem; }
-
-    /* ════════ CALCULADORA DE VALOR ════════ */
-    .pr-roi { padding: 7rem 5%; }
-    .pr-roi-inner {
-        max-width: 1080px; margin: 0 auto;
-        display: grid; grid-template-columns: 1fr 0.95fr; gap: 4rem; align-items: center;
-    }
-    .pr-roi-sub { font-size: 1.02rem; line-height: 1.65; color: var(--color-text-muted); margin: 0 0 2rem; }
-    .pr-roi-fields { display: flex; flex-direction: column; gap: 1.1rem; max-width: 380px; }
-    .pr-roi-fields label { display: flex; flex-direction: column; gap: 0.5rem; }
-    .pr-roi-fields span { font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted); }
-    .pr-roi-fields input {
-        font-family: inherit; font-size: 1.1rem; font-weight: 600;
-        color: var(--color-text); background: var(--color-bg);
-        border: 1px solid var(--color-border); border-radius: 12px;
-        padding: 12px 14px; width: 100%;
-        font-variant-numeric: tabular-nums;
-        transition: border-color 0.3s, box-shadow 0.3s;
-    }
-    .pr-roi-fields input:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
-
-    .pr-roi-card {
-        background: radial-gradient(ellipse at 50% 0%, #112240 0%, #0a192f 80%);
-        border-radius: 24px; padding: 2.6rem 2.4rem; color: #fff;
-        box-shadow: 0 50px 100px -40px rgba(5,11,20,0.7), inset 0 0 0 0.5px rgba(255,255,255,0.08);
-        text-align: center;
-    }
-    .pr-roi-label { font-size: 0.68rem; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase; color: rgba(255,255,255,0.45); }
-    .pr-roi-big { display: block; font-size: clamp(2.6rem, 6vw, 3.6rem); margin: 0.5rem 0 1.6rem; line-height: 1; }
-    .pr-roi-split {
-        display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
-        padding: 1.3rem 0; border-top: 1px solid rgba(255,255,255,0.1);
-    }
-    .pr-roi-split span { display: block; font-size: 0.72rem; color: rgba(255,255,255,0.45); margin-bottom: 5px; }
-    .pr-roi-split b { font-size: 1.5rem; font-weight: 600; }
-    .pr-roi-split b i { font-style: normal; font-size: 0.8rem; color: rgba(255,255,255,0.5); }
-    .pr-roi-foot { font-size: 0.84rem; color: rgba(255,255,255,0.6); margin: 1.2rem 0 0; line-height: 1.5; }
-
-    /* ════════ COMPARADOR ════════ */
-    .pr-compare { max-width: 1080px; margin: 0 auto; padding: 4rem 5%; }
-    .pr-compare-head { text-align: center; margin-bottom: 3rem; }
-    .pr-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 18px; }
-    .pr-table { width: 100%; border-collapse: collapse; min-width: 920px; }
-    .pr-table thead th { position: sticky; top: 0; }
-    .pr-th-feat { width: 28%; }
-    .pr-th-plan {
-        padding: 1rem 0.7rem; text-align: center; vertical-align: bottom;
-        border-bottom: 2px solid var(--color-border);
-    }
-    .pr-th-plan b { display: block; font-size: 1rem; font-weight: 700; color: var(--color-text); }
-    .pr-th-plan span { display: block; font-size: 0.76rem; color: var(--color-text-muted); margin-top: 2px; }
-    .pr-th-plan.is-featured { background: var(--color-bg-soft); border-radius: 14px 14px 0 0; border-bottom-color: var(--color-blue-deep); }
-    .pr-th-plan.is-featured b { color: var(--color-blue-deep); }
-
-    .pr-group-row td {
-        padding: 1.4rem 1rem 0.6rem;
-        font-size: 0.66rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
-        color: #99a2af;
-    }
-    .pr-cell-feat { padding: 0.85rem 1rem; font-size: 0.88rem; color: var(--color-text); border-bottom: 1px solid var(--color-border); }
-    .pr-cell-val {
-        padding: 0.85rem 0.7rem; text-align: center; border-bottom: 1px solid var(--color-border);
-        font-size: 0.82rem; color: var(--color-text); font-weight: 600;
-    }
-    .pr-cell-val.is-featured { background: var(--color-bg-soft); }
-    .pr-yes {
-        display: inline-flex; width: 22px; height: 22px; border-radius: 50%;
-        background: rgba(16,185,129,0.14); color: #059669;
-        align-items: center; justify-content: center;
-    }
-    .pr-yes svg { width: 12px; height: 12px; }
-    .pr-no { color: #c2c8d0; }
-    .pr-txt { font-size: 0.82rem; }
-
-    /* ════════ FAQ (HAIRLINE STYLE) ════════ */
-    .pr-faq { max-width: 860px; margin: 0 auto; padding: 4rem 5% 8rem; }
-    .pr-faq-head { text-align: center; margin-bottom: 2.6rem; }
-    .pr-faq-list {
-        display: flex;
-        flex-direction: column;
-        border-top: 1px solid var(--color-border);
-    }
-    .pr-faq-item {
-        border-bottom: 1px solid var(--color-border);
-        overflow: hidden;
-    }
-    .pr-faq-item summary {
-        list-style: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 1.5rem 0;
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--color-text);
-    }
-    .pr-faq-item summary::-webkit-details-marker { display: none; }
-    .pr-faq-ico {
-        flex-shrink: 0;
-        color: var(--color-text-muted);
-        transition: transform 0.4s var(--ease-spring), color 0.3s;
-    }
-    .pr-faq-ico svg { width: 20px; height: 20px; }
-    .pr-faq-item[open] .pr-faq-ico {
-        transform: rotate(135deg);
-        color: var(--color-text);
-    }
-    .pr-faq-body {
-        padding: 0 0 1.5rem;
-    }
-    .pr-faq-body p {
-        margin: 0;
-        font-size: 1rem;
-        line-height: 1.6;
-        color: var(--color-text-muted);
-        max-width: 700px;
-    }
-
-    /* 5 → 3 columnas en laptops angostas (Pro sigue al centro y destacado) */
-    @media (max-width: 1180px) {
-        .pr-grid { grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-        .plan-featured { transform: none; }
-        .plan-featured:hover { transform: translateY(-4px); }
-    }
-    @media (max-width: 860px) {
-        .pr-hero { padding-top: 9.5rem; }
-        .pr-grid { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
-        .pr-roi-inner { grid-template-columns: 1fr; gap: 2.4rem; }
-        .pr-roi-fields { max-width: none; }
-    }
-</style>
-
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // ── Toggle mensual/anual ──
-        const toggle = document.querySelector<HTMLElement>('.pr-toggle');
-        const btns = Array.from(document.querySelectorAll<HTMLButtonElement>('.pr-toggle-btn'));
-        const amounts = Array.from(document.querySelectorAll<HTMLElement>('.plan-amount[data-mensual]'));
-        const billed = Array.from(document.querySelectorAll<HTMLElement>('[data-billed]'));
-        const fmt = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
-
-        const setCycle = (cycle: string) => {
-            if (toggle) toggle.dataset.cycle = cycle;
-            btns.forEach((b) => {
-                const on = b.dataset.cycle === cycle;
-                b.classList.toggle('is-active', on);
-                b.setAttribute('aria-selected', on ? 'true' : 'false');
-            });
-            amounts.forEach((el) => {
-                const v = cycle === 'anual' ? el.dataset.anual : el.dataset.mensual;
-                if (v) el.textContent = fmt(parseInt(v, 10));
-            });
-            billed.forEach((el) => { el.textContent = cycle === 'anual' ? 'facturado anual' : 'facturado mensual'; });
-            // Arrastra el ciclo elegido al CTA → checkout del plan correcto.
-            document.querySelectorAll<HTMLAnchorElement>('[data-cta-plan]').forEach((a) => {
-                const dest = `/app/checkout?plan=${a.dataset.ctaPlan}&cycle=${cycle}`;
-                a.href = `/registro?redirect_url=${encodeURIComponent(dest)}`;
-            });
-        };
-        btns.forEach((b) => b.addEventListener('click', () => setCycle(b.dataset.cycle || 'mensual')));
-
-        // ── Calculadora de valor ──
-        const qty = document.getElementById('roi-qty') as HTMLInputElement | null;
-        const ticket = document.getElementById('roi-ticket') as HTMLInputElement | null;
-        const pipeline = document.getElementById('roi-pipeline');
-        const pct = document.getElementById('roi-pct');
-        const foot = document.getElementById('roi-foot');
-        const PRO = 590;
-        const calc = () => {
-            const q = Math.max(0, parseFloat(qty?.value || '0') || 0);
-            const t = Math.max(0, parseFloat(ticket?.value || '0') || 0);
-            const total = q * t;
-            if (pipeline) pipeline.textContent = '$' + new Intl.NumberFormat('es-MX').format(Math.round(total));
-            const p = total > 0 ? (PRO / total) * 100 : 0;
-            if (pct) pct.textContent = total > 0 ? p.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%' : '—';
-            if (foot) {
-                const veces = t > 0 ? Math.max(1, Math.round(t / PRO)) : 0;
-                foot.textContent = t > 0
-                    ? `Una sola cotización extra al mes paga el plan ~${veces} veces.`
-                    : 'Ingresa tu ticket promedio para ver la cuenta.';
             }
         };
         qty?.addEventListener('input', calc);
