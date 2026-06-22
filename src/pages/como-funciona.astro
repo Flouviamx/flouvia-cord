@@ -123,13 +123,16 @@ const description = isEn
 </Layout>
 
 <style>
-    /* Hero Section */
+    /* Hero Section - Mobile First */
     .cf-hero {
         position: relative;
-        padding: 12rem 5% 8rem;
+        padding: 8rem 5% 4rem;
         text-align: center;
         overflow: clip;
         background: #050b14; /* Match steps background */
+    }
+    @media (min-width: 860px) {
+        .cf-hero { padding: 12rem 5% 8rem; }
     }
     :global(html[data-theme="light"]) .cf-hero {
         background: #f8fafc;
@@ -148,26 +151,39 @@ const description = isEn
     
     .cf-eyebrow {
         font-size: 0.75rem; font-weight: 800; letter-spacing: 2px;
-        text-transform: uppercase; color: var(--color-blue-deep); margin: 0 0 1.4rem;
+        text-transform: uppercase; color: var(--color-blue-deep); margin: 0 0 1rem;
+    }
+    @media (min-width: 860px) {
+        .cf-eyebrow { margin: 0 0 1.4rem; }
     }
     :global(html[data-theme="dark"]) .cf-eyebrow { color: #60a5fa; }
 
     .cf-title {
-        font-size: clamp(2.8rem, 6vw, 4.8rem);
+        font-size: clamp(2.4rem, 8vw, 4.8rem);
         font-weight: 800; line-height: 1.05; letter-spacing: -0.035em;
-        color: #fff; margin: 0 0 1.5rem;
+        color: #fff; margin: 0 0 1.2rem;
+    }
+    @media (min-width: 860px) {
+        .cf-title { margin: 0 0 1.5rem; }
     }
     :global(html[data-theme="light"]) .cf-title { color: #111827; }
 
     .cf-sub {
-        font-size: 1.15rem; line-height: 1.6; color: rgba(255,255,255,0.7);
-        max-width: 650px; margin: 0 auto 2.5rem;
+        font-size: clamp(1rem, 4vw, 1.15rem);
+        line-height: 1.6; color: rgba(255,255,255,0.7);
+        max-width: 650px; margin: 0 auto 2rem;
+    }
+    @media (min-width: 860px) {
+        .cf-sub { margin: 0 auto 2.5rem; }
     }
     :global(html[data-theme="light"]) .cf-sub { color: #4b5563; }
 
     .cf-hero-actions {
-        display: flex; gap: 1rem; justify-content: center;
-        margin-bottom: 4rem;
+        display: flex; gap: 1rem; flex-direction: column; justify-content: center;
+        margin-bottom: 3.5rem;
+    }
+    @media (min-width: 600px) {
+        .cf-hero-actions { flex-direction: row; margin-bottom: 4rem; }
     }
     
     .cf-btn-primary {
@@ -200,17 +216,26 @@ const description = isEn
         position: relative; z-index: 1;
         max-width: 700px; margin: 0 auto;
         transform: perspective(1000px) rotateX(8deg);
-        box-shadow: 0 30px 60px rgba(0,0,0,0.4);
-        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        border-radius: 12px;
     }
-    :global(html[data-theme="light"]) .cf-hero-mockup { box-shadow: 0 30px 60px rgba(10,37,218,0.15); }
+    @media (min-width: 860px) {
+        .cf-hero-mockup { border-radius: 16px; box-shadow: 0 30px 60px rgba(0,0,0,0.4); }
+    }
+    :global(html[data-theme="light"]) .cf-hero-mockup { box-shadow: 0 20px 40px rgba(10,37,218,0.15); }
+    @media (min-width: 860px) {
+        :global(html[data-theme="light"]) .cf-hero-mockup { box-shadow: 0 30px 60px rgba(10,37,218,0.15); }
+    }
     
     .cf-mockup-glass {
         background: rgba(15, 23, 42, 0.7);
         backdrop-filter: blur(20px);
         border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 16px;
+        border-radius: 12px;
         overflow: hidden;
+    }
+    @media (min-width: 860px) {
+        .cf-mockup-glass { border-radius: 16px; }
     }
     :global(html[data-theme="light"]) .cf-mockup-glass {
         background: rgba(255, 255, 255, 0.8);
@@ -219,66 +244,94 @@ const description = isEn
 
     .cf-mockup-header {
         display: flex; align-items: center; justify-content: center;
-        padding: 12px 20px; background: rgba(0,0,0,0.2);
+        padding: 10px 16px; background: rgba(0,0,0,0.2);
         border-bottom: 1px solid rgba(255,255,255,0.05);
         position: relative;
+    }
+    @media (min-width: 860px) {
+        .cf-mockup-header { padding: 12px 20px; }
     }
     :global(html[data-theme="light"]) .cf-mockup-header {
         background: rgba(0,0,0,0.03); border-bottom: 1px solid rgba(0,0,0,0.05);
     }
     
-    .cf-dots { position: absolute; left: 20px; display: flex; gap: 6px; }
-    .cf-dots span { width: 10px; height: 10px; border-radius: 50%; background: #4b5563; }
+    .cf-dots { position: absolute; left: 16px; display: flex; gap: 5px; }
+    @media (min-width: 860px) { .cf-dots { left: 20px; gap: 6px; } }
+    .cf-dots span { width: 8px; height: 8px; border-radius: 50%; background: #4b5563; }
+    @media (min-width: 860px) { .cf-dots span { width: 10px; height: 10px; } }
     .cf-dots span:nth-child(1) { background: #ef4444; }
     .cf-dots span:nth-child(2) { background: #eab308; }
     .cf-dots span:nth-child(3) { background: #22c55e; }
     
-    .cf-url { font-size: 0.75rem; color: rgba(255,255,255,0.5); font-family: monospace; }
+    .cf-url { font-size: 0.65rem; color: rgba(255,255,255,0.5); font-family: monospace; }
+    @media (min-width: 860px) { .cf-url { font-size: 0.75rem; } }
     :global(html[data-theme="light"]) .cf-url { color: rgba(0,0,0,0.5); }
 
-    .cf-mockup-body { padding: 40px; text-align: left; }
-    .cf-skeleton-line { height: 16px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 16px; width: 100%; }
-    .cf-skeleton-line.title { height: 28px; width: 60%; margin-bottom: 24px; }
+    .cf-mockup-body { padding: 24px; text-align: left; }
+    @media (min-width: 860px) { .cf-mockup-body { padding: 40px; } }
+    
+    .cf-skeleton-line { height: 12px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 12px; width: 100%; }
+    .cf-skeleton-line.title { height: 20px; width: 60%; margin-bottom: 18px; }
     .cf-skeleton-line.short { width: 80%; }
+    @media (min-width: 860px) {
+        .cf-skeleton-line { height: 16px; margin-bottom: 16px; }
+        .cf-skeleton-line.title { height: 28px; margin-bottom: 24px; }
+    }
     :global(html[data-theme="light"]) .cf-skeleton-line { background: rgba(0,0,0,0.05); }
     
     .cf-mockup-btn {
-        margin-top: 32px; display: inline-block;
+        margin-top: 24px; display: inline-block;
         background: var(--color-ok, #10b981); color: #fff;
-        padding: 12px 24px; border-radius: 6px;
-        font-weight: 600; font-size: 0.9rem;
+        padding: 10px 20px; border-radius: 6px;
+        font-weight: 600; font-size: 0.85rem;
+    }
+    @media (min-width: 860px) {
+        .cf-mockup-btn { margin-top: 32px; padding: 12px 24px; font-size: 0.9rem; }
     }
 
-    /* Features Section */
+    /* Features Section - Mobile First */
     .cf-features {
-        padding: 8rem 5%;
+        padding: 5rem 5%;
         background: #fff;
+    }
+    @media (min-width: 860px) {
+        .cf-features { padding: 8rem 5%; }
     }
     :global(html[data-theme="dark"]) .cf-features { background: #050b14; }
 
     .cf-features-inner { max-width: 1100px; margin: 0 auto; }
     
-    .cf-features-head { text-align: center; margin-bottom: 5rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+    .cf-features-head { text-align: center; margin-bottom: 3.5rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+    @media (min-width: 860px) { .cf-features-head { margin-bottom: 5rem; } }
+    
     .cf-h2 {
-        font-size: clamp(2rem, 4vw, 3rem);
+        font-size: clamp(2rem, 6vw, 3rem);
         font-weight: 800; line-height: 1.1; letter-spacing: -0.03em;
-        color: #111827; margin: 0 0 1.2rem;
+        color: #111827; margin: 0 0 1rem;
     }
+    @media (min-width: 860px) { .cf-h2 { margin: 0 0 1.2rem; } }
     :global(html[data-theme="dark"]) .cf-h2 { color: #fff; }
-    .cf-p { font-size: 1.15rem; color: #4b5563; line-height: 1.6; }
+    
+    .cf-p { font-size: clamp(1rem, 4vw, 1.15rem); color: #4b5563; line-height: 1.6; }
     :global(html[data-theme="dark"]) .cf-p { color: #9ca3af; }
 
     .cf-grid {
-        display: grid; grid-template-columns: repeat(2, 1fr);
-        gap: 2rem;
+        display: grid; grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    @media (min-width: 768px) {
+        .cf-grid { grid-template-columns: repeat(2, 1fr); gap: 2rem; }
     }
 
     .cf-card {
         background: #f8fafc;
         border: 1px solid #e5e7eb;
-        padding: 3rem;
-        border-radius: 20px;
+        padding: 2rem;
+        border-radius: 16px;
         transition: transform 0.3s var(--ease-spring);
+    }
+    @media (min-width: 860px) {
+        .cf-card { padding: 3rem; border-radius: 20px; }
     }
     :global(html[data-theme="dark"]) .cf-card {
         background: rgba(255,255,255,0.02);
@@ -287,31 +340,35 @@ const description = isEn
     .cf-card:hover { transform: translateY(-4px); }
 
     .cf-card-icon {
-        width: 54px; height: 54px;
+        width: 48px; height: 48px;
         background: rgba(10,37,218,0.1);
         color: var(--color-blue-deep);
-        border-radius: 14px;
+        border-radius: 12px;
         display: flex; align-items: center; justify-content: center;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.2rem;
+    }
+    @media (min-width: 860px) {
+        .cf-card-icon { width: 54px; height: 54px; border-radius: 14px; margin-bottom: 1.5rem; }
     }
     :global(html[data-theme="dark"]) .cf-card-icon {
         background: rgba(59,130,246,0.15); color: #60a5fa;
     }
-    .cf-card-icon svg { width: 28px; height: 28px; }
+    .cf-card-icon svg { width: 24px; height: 24px; }
+    @media (min-width: 860px) { .cf-card-icon svg { width: 28px; height: 28px; } }
 
     .cf-card h3 {
-        font-size: 1.4rem; font-weight: 700; color: #111827; margin: 0 0 1rem;
+        font-size: 1.25rem; font-weight: 700; color: #111827; margin: 0 0 0.8rem;
+    }
+    @media (min-width: 860px) {
+        .cf-card h3 { font-size: 1.4rem; margin: 0 0 1rem; }
     }
     :global(html[data-theme="dark"]) .cf-card h3 { color: #fff; }
+    
     .cf-card p {
-        font-size: 1rem; color: #4b5563; line-height: 1.6; margin: 0;
+        font-size: 0.95rem; color: #4b5563; line-height: 1.6; margin: 0;
+    }
+    @media (min-width: 860px) {
+        .cf-card p { font-size: 1rem; }
     }
     :global(html[data-theme="dark"]) .cf-card p { color: #9ca3af; }
-
-    @media (max-width: 860px) {
-        .cf-hero { padding-top: 9.5rem; }
-        .cf-hero-actions { flex-direction: column; }
-        .cf-grid { grid-template-columns: 1fr; }
-        .cf-card { padding: 2rem; }
-    }
 </style>

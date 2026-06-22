@@ -179,11 +179,15 @@ const SOLUCIONES = isEn ? SOLUCIONES_EN : SOLUCIONES_ES;
 </Layout>
 
 <style>
+    /* ════════ HERO (Mobile First) ════════ */
     .sol-hero {
         position: relative;
-        padding: 11.5rem 5% 6rem;
+        padding: 8rem 5% 4rem;
         text-align: center;
         overflow: clip;
+    }
+    @media (min-width: 860px) {
+        .sol-hero { padding: 11.5rem 5% 6rem; }
     }
     .sol-mesh {
         position: absolute; inset: -20% -10% auto;
@@ -196,17 +200,20 @@ const SOLUCIONES = isEn ? SOLUCIONES_EN : SOLUCIONES_ES;
     .sol-hero-inner { position: relative; z-index: 1; max-width: 880px; margin: 0 auto; }
     .sol-eyebrow {
         font-size: 0.65rem; font-weight: 800; letter-spacing: 3px;
-        text-transform: uppercase; color: #888; margin: 0 0 1.4rem;
+        text-transform: uppercase; color: #888; margin: 0 0 1rem;
     }
+    @media (min-width: 860px) { .sol-eyebrow { margin: 0 0 1.4rem; } }
     .sol-title {
-        font-size: clamp(2.4rem, 5.4vw, 4.2rem);
+        font-size: clamp(2.4rem, 8vw, 4.2rem);
         font-weight: 800; line-height: 1.04; letter-spacing: -0.035em;
-        color: var(--color-text); margin: 0 0 1.6rem;
+        color: var(--color-text); margin: 0 0 1.2rem;
     }
+    @media (min-width: 860px) { .sol-title { margin: 0 0 1.6rem; } }
     .sol-sub {
-        font-size: 1.12rem; line-height: 1.65; color: var(--color-text-muted);
-        max-width: 620px; margin: 0 auto 2.4rem;
+        font-size: clamp(1rem, 4vw, 1.12rem); line-height: 1.65; color: var(--color-text-muted);
+        max-width: 620px; margin: 0 auto 2rem;
     }
+    @media (min-width: 860px) { .sol-sub { margin: 0 auto 2.4rem; } }
     .sol-jump { display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap; }
     .sol-jump a {
         font-size: 0.78rem; font-weight: 600; color: var(--color-text);
@@ -221,25 +228,33 @@ const SOLUCIONES = isEn ? SOLUCIONES_EN : SOLUCIONES_ES;
         background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep);
     }
 
+    /* ════════ BLOQUES (Mobile First) ════════ */
     .sol-blocks {
         max-width: 1080px; margin: 0 auto;
-        padding: 3rem 5% 8rem;
-        display: flex; flex-direction: column; gap: 7rem;
+        padding: 3rem 5% 5rem;
+        display: flex; flex-direction: column; gap: 4.5rem;
+    }
+    @media (min-width: 860px) {
+        .sol-blocks { padding: 3rem 5% 8rem; gap: 7rem; }
     }
     .sol-block {
-        display: grid; grid-template-columns: 1.1fr 0.9fr;
-        gap: 4.5rem; align-items: center;
+        display: grid; grid-template-columns: 1fr;
+        gap: 2rem; align-items: center;
         scroll-margin-top: 130px;
     }
-    .sol-flip .sol-text { order: 2; }
-    .sol-flip .sol-visual { order: 1; }
+    @media (min-width: 860px) {
+        .sol-block { grid-template-columns: 1.1fr 0.9fr; gap: 4.5rem; }
+        .sol-flip .sol-text { order: 2; }
+        .sol-flip .sol-visual { order: 1; }
+    }
 
     .sol-h2 {
-        font-size: clamp(1.7rem, 3vw, 2.4rem);
+        font-size: clamp(1.7rem, 6vw, 2.4rem);
         font-weight: 800; line-height: 1.12; letter-spacing: -0.03em;
-        color: var(--color-text); margin: 0 0 1.1rem;
+        color: var(--color-text); margin: 0 0 1rem;
     }
-    .sol-copy { font-size: 1.02rem; line-height: 1.7; color: var(--color-text-muted); margin: 0 0 1.6rem; }
+    @media (min-width: 860px) { .sol-h2 { margin: 0 0 1.1rem; } }
+    .sol-copy { font-size: clamp(0.95rem, 4vw, 1.02rem); line-height: 1.7; color: var(--color-text-muted); margin: 0 0 1.6rem; }
     .sol-bullets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.8rem; }
     .sol-bullets li { display: flex; align-items: flex-start; gap: 11px; font-size: 0.95rem; color: var(--color-text); font-weight: 500; }
     .sol-bullets svg { width: 16px; height: 16px; color: var(--color-ok); flex-shrink: 0; margin-top: 3px; }
@@ -253,40 +268,38 @@ const SOLUCIONES = isEn ? SOLUCIONES_EN : SOLUCIONES_ES;
     .sol-link svg { width: 15px; height: 15px; transition: transform 0.4s var(--ease-spring); }
     .sol-link:hover { gap: 12px; }
     .sol-link:hover svg { transform: translateX(3px); }
+    
     .sol-visual-cta {
-        position: absolute; bottom: 1.4rem; left: 0; right: 0; text-align: center;
+        position: absolute; bottom: 1rem; left: 0; right: 0; text-align: center;
         font-size: 0.74rem; font-weight: 700; letter-spacing: 0.4px;
         color: rgba(255,255,255,0.55);
         opacity: 0; transform: translateY(6px);
         transition: opacity 0.4s var(--ease-spring), transform 0.4s var(--ease-spring), color 0.3s;
     }
+    @media (min-width: 860px) { .sol-visual-cta { bottom: 1.4rem; } }
     .sol-visual:hover .sol-visual-cta { opacity: 1; transform: translateY(0); color: rgba(255,255,255,0.85); }
 
     .sol-visual {
         position: relative;
-        min-height: 250px;
-        border-radius: 24px;
+        min-height: 180px;
+        border-radius: 20px;
         background: linear-gradient(165deg, #0e2240 0%, #0a192f 55%, #081424 100%);
         box-shadow:
-            0 40px 90px -36px rgba(5,11,20,0.6),
+            0 30px 60px -20px rgba(5,11,20,0.6),
             inset 0 0 0 0.5px rgba(255,255,255,0.08);
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        gap: 0.8rem; padding: 2rem 2rem 2.6rem; text-align: center; text-decoration: none;
+        gap: 0.6rem; padding: 2rem; text-align: center; text-decoration: none;
         transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
     }
+    @media (min-width: 860px) {
+        .sol-visual { min-height: 250px; border-radius: 24px; gap: 0.8rem; padding: 2rem 2rem 2.6rem; box-shadow: 0 40px 90px -36px rgba(5,11,20,0.6), inset 0 0 0 0.5px rgba(255,255,255,0.08); }
+    }
     .sol-visual:hover { transform: translateY(-4px); box-shadow: 0 40px 90px -36px rgba(5,11,20,0.7), inset 0 0 0 0.5px rgba(255,255,255,0.12); }
+    
     .sol-kpi {
-        font-size: clamp(2.6rem, 5vw, 3.6rem);
+        font-size: clamp(2.4rem, 10vw, 3.6rem);
         color: #fff; line-height: 1;
     }
-    .sol-kpi-label { font-size: 0.85rem; color: rgba(255,255,255,0.5); max-width: 240px; line-height: 1.5; }
-
-    @media (max-width: 860px) {
-        .sol-hero { padding-top: 9.5rem; }
-        .sol-blocks { gap: 4.5rem; }
-        .sol-block { grid-template-columns: 1fr; gap: 1.8rem; }
-        .sol-flip .sol-text { order: 1; }
-        .sol-flip .sol-visual { order: 2; }
-        .sol-visual { min-height: 180px; }
-    }
+    .sol-kpi-label { font-size: 0.8rem; color: rgba(255,255,255,0.5); max-width: 240px; line-height: 1.5; }
+    @media (min-width: 860px) { .sol-kpi-label { font-size: 0.85rem; } }
 </style>

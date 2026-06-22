@@ -114,83 +114,107 @@ const statusMap = {
 </Layout>
 
 <style>
-    /* Estilos base */
+    /* Estilos base (Mobile First) */
     .rd-main {
         background: var(--color-bg);
         min-height: 100vh;
-        padding-top: 10rem;
+        padding-top: 8rem;
+    }
+    @media (min-width: 900px) {
+        .rd-main { padding-top: 10rem; }
     }
 
-    .pp-eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #888; margin: 0 0 1.4rem; }
+    .pp-eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #888; margin: 0 0 1rem; }
+    @media (min-width: 900px) { .pp-eyebrow { margin: 0 0 1.4rem; } }
     
     /* Hero */
     .rd-hero {
         text-align: center;
-        padding: 0 5% 4rem;
+        padding: 0 5% 3rem;
         max-width: 800px;
         margin: 0 auto;
     }
-    .rd-h1 {
-        font-size: clamp(2.6rem, 5.5vw, 4.2rem);
-        font-weight: 800; line-height: 1.05; letter-spacing: -0.035em;
-        color: var(--color-text); margin: 0 0 1.4rem;
+    @media (min-width: 900px) {
+        .rd-hero { padding: 0 5% 4rem; }
     }
+    .rd-h1 {
+        font-size: clamp(2.4rem, 8vw, 4.2rem);
+        font-weight: 800; line-height: 1.05; letter-spacing: -0.035em;
+        color: var(--color-text); margin: 0 0 1.2rem;
+    }
+    @media (min-width: 900px) { .rd-h1 { margin: 0 0 1.4rem; } }
     .rd-lead {
-        font-size: 1.15rem; line-height: 1.6; color: var(--color-text-muted);
+        font-size: clamp(1rem, 4vw, 1.15rem); line-height: 1.6; color: var(--color-text-muted);
     }
 
     /* Layout principal */
     .rd-layout {
         display: grid;
-        grid-template-columns: 280px 1fr;
-        gap: 5rem;
+        grid-template-columns: 1fr;
+        gap: 3rem;
         max-width: 1200px;
         margin: 0 auto;
-        padding: 0 5% 5rem;
+        padding: 0 5% 4rem;
         align-items: start;
+    }
+    @media (min-width: 900px) {
+        .rd-layout { grid-template-columns: 280px 1fr; gap: 5rem; padding: 0 5% 5rem; }
     }
 
     /* Sidebar & Filters */
     .rd-sidebar {
-        position: sticky;
-        top: 6rem;
+        position: relative;
+        top: 0;
+        z-index: 10;
+    }
+    @media (min-width: 900px) {
+        .rd-sidebar { position: sticky; top: 6rem; z-index: 1; }
     }
     
     .rd-sidebar-card {
         background: var(--color-bg);
         border: 1px solid var(--color-border);
-        border-radius: 24px;
-        padding: 2.2rem;
+        border-radius: 20px;
+        padding: 1.6rem;
         box-shadow: 0 4px 20px rgba(0,0,0,0.03);
         position: relative;
     }
-    .rd-sidebar-card::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0;
-        height: 100%;
-        border-radius: 24px;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
-        pointer-events: none;
+    @media (min-width: 900px) {
+        .rd-sidebar-card { border-radius: 24px; padding: 2.2rem; }
+        .rd-sidebar-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 100%;
+            border-radius: 24px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+            pointer-events: none;
+        }
     }
 
     .rd-tabs {
         display: flex;
-        gap: 2rem;
-        margin-bottom: 2rem;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
         border-bottom: 1px solid var(--color-border);
+    }
+    @media (min-width: 900px) {
+        .rd-tabs { gap: 2rem; margin-bottom: 2rem; }
     }
     .rd-tab {
         background: none;
         border: none;
-        padding: 0 0 1rem;
+        padding: 0 0 0.8rem;
         font-family: inherit;
-        font-size: 1.15rem;
+        font-size: 1.05rem;
         font-weight: 800;
         color: var(--color-text-muted);
         cursor: pointer;
         position: relative;
         transition: color 0.3s;
+    }
+    @media (min-width: 900px) {
+        .rd-tab { padding: 0 0 1rem; font-size: 1.15rem; }
     }
     .rd-tab:hover {
         color: var(--color-text);
@@ -228,7 +252,7 @@ const statusMap = {
         appearance: none;
         background: var(--color-bg-soft);
         border: 1px solid transparent;
-        border-radius: 20px;
+        border-radius: 16px;
         padding: 0.7rem 2.5rem 0.7rem 1.2rem;
         font-family: inherit;
         font-size: 0.85rem;
@@ -236,6 +260,9 @@ const statusMap = {
         color: var(--color-text);
         cursor: pointer;
         transition: all 0.3s ease;
+    }
+    @media (min-width: 900px) {
+        .rd-select { border-radius: 20px; }
     }
     .rd-select:hover {
         background: var(--color-border);
@@ -308,30 +335,22 @@ const statusMap = {
     .rd-row {
         display: flex;
         flex-direction: column;
-        padding: 2rem 1.5rem;
-        margin: -1rem -1.5rem;
+        padding: 2rem 0;
+        margin: 0;
         border-top: 1px solid var(--color-border);
         cursor: pointer;
         text-decoration: none;
-        border-radius: 12px;
+        border-radius: 0;
         transition: all 0.4s var(--ease-spring);
+    }
+    @media (min-width: 900px) {
+        .rd-row { padding: 2rem 1.5rem; margin: -1rem -1.5rem; border-radius: 12px; }
+        .rd-row:hover { background: var(--color-bg-soft); transform: scale(0.995); border-top-color: transparent; }
+        .rd-row:hover + .rd-row { border-top-color: transparent; }
+        .rd-row:hover .rd-row-arrow { transform: translateX(4px); color: var(--color-text); }
     }
     .rd-row:first-child {
         border-top-color: transparent;
-    }
-
-    .rd-row:hover {
-        background: var(--color-bg-soft);
-        transform: scale(0.995);
-        border-top-color: transparent;
-    }
-    .rd-row:hover + .rd-row {
-        border-top-color: transparent;
-    }
-
-    .rd-row:hover .rd-row-arrow {
-        transform: translateX(4px);
-        color: var(--color-text);
     }
 
     /* Status Badges */
@@ -351,24 +370,28 @@ const statusMap = {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
-        gap: 2rem;
+        gap: 1.5rem;
     }
+    @media (min-width: 900px) { .rd-row-main { gap: 2rem; } }
 
     .rd-row-copy h3 {
-        font-size: 1.3rem;
+        font-size: 1.2rem;
         font-weight: 700;
         margin: 0 0 0.5rem;
         letter-spacing: -0.01em;
         color: var(--color-text);
         transition: color 0.3s;
     }
+    @media (min-width: 900px) { .rd-row-copy h3 { font-size: 1.3rem; } }
+    
     .rd-row-copy p {
-        font-size: 1rem;
+        font-size: 0.95rem;
         line-height: 1.6;
         color: var(--color-text-muted);
         margin: 0;
         max-width: 650px;
     }
+    @media (min-width: 900px) { .rd-row-copy p { font-size: 1rem; } }
 
     .rd-row-arrow {
         flex-shrink: 0;
@@ -376,13 +399,15 @@ const statusMap = {
         transition: transform 0.4s var(--ease-spring), color 0.3s;
         margin-top: 0.2rem;
     }
-    .rd-row-arrow svg { width: 22px; height: 22px; }
+    .rd-row-arrow svg { width: 20px; height: 20px; }
+    @media (min-width: 900px) { .rd-row-arrow svg { width: 22px; height: 22px; } }
 
     .rd-empty {
         text-align: center;
-        padding: 4rem 0;
+        padding: 3rem 0;
         color: var(--color-text-muted);
     }
+    @media (min-width: 900px) { .rd-empty { padding: 4rem 0; } }
     .rd-empty p { margin-bottom: 1rem; }
     .rd-btn-ghost {
         background: none;
@@ -398,43 +423,21 @@ const statusMap = {
         background: var(--color-bg-soft);
     }
 
-
     /* Dark mode support */
     @media (prefers-color-scheme: dark) {
         .rd-sidebar-card {
             background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
-        .rd-sidebar-card::before {
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+        @media (min-width: 900px) {
+            .rd-sidebar-card::before {
+                box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+            }
         }
         .status-live { color: #34d399; }
         .status-beta { color: #fbbf24; }
         .status-next { color: #818cf8; }
         .rd-toggle-slider { background: #39393D; }
-    }
-
-    /* Responsive */
-    @media (max-width: 900px) {
-        .rd-layout {
-            grid-template-columns: 1fr;
-            gap: 3rem;
-        }
-        .rd-sidebar {
-            position: relative;
-            top: 0;
-            z-index: 10;
-        }
-        .rd-row {
-            margin: 0;
-            padding: 2rem 0;
-            border-radius: 0;
-        }
-        .rd-row:hover {
-            background: none;
-            transform: none;
-            box-shadow: none;
-        }
     }
 </style>
 

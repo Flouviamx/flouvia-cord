@@ -215,10 +215,13 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
 </Layout>
 
 <style>
-    /* ════════ HERO ════════ */
+    /* ════════ HERO (Mobile First) ════════ */
     .pr-hero {
         position: relative; text-align: center;
-        padding: 11.5rem 5% 3rem; overflow: clip; background: var(--color-bg);
+        padding: 8rem 5% 3rem; overflow: clip; background: var(--color-bg);
+    }
+    @media (min-width: 860px) {
+        .pr-hero { padding: 11.5rem 5% 3rem; }
     }
     .pr-mesh {
         position: absolute; inset: -20% -10% auto; height: 80%;
@@ -228,13 +231,18 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
         pointer-events: none;
     }
     .pr-hero-inner { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; }
-    .pp-eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #888; margin: 0 0 1.4rem; }
+    .pp-eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #888; margin: 0 0 1rem; }
+    @media (min-width: 860px) { .pp-eyebrow { margin: 0 0 1.4rem; } }
+    
     .pr-h1 {
-        font-size: clamp(2.4rem, 5.4vw, 4.2rem);
+        font-size: clamp(2.4rem, 8vw, 4.2rem);
         font-weight: 800; line-height: 1.04; letter-spacing: -0.035em;
-        color: var(--color-text); margin: 0 0 1.4rem;
+        color: var(--color-text); margin: 0 0 1.2rem;
     }
-    .pr-lead { font-size: 1.1rem; line-height: 1.6; color: var(--color-text-muted); max-width: 560px; margin: 0 auto 2.2rem; }
+    @media (min-width: 860px) { .pr-h1 { margin: 0 0 1.4rem; } }
+    
+    .pr-lead { font-size: clamp(1rem, 4vw, 1.1rem); line-height: 1.6; color: var(--color-text-muted); max-width: 560px; margin: 0 auto 2rem; }
+    @media (min-width: 860px) { .pr-lead { margin: 0 auto 2.2rem; } }
     .pr-lead b { color: var(--color-text); font-weight: 700; }
 
     /* Toggle mensual/anual (segmented glass) */
@@ -268,29 +276,54 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
     .pr-toggle-btn.is-active .pr-toggle-save { background: rgba(255,255,255,0.18); color: #6ee7b7; }
 
     /* ════════ TARJETAS ════════ */
-    .pr-grid-wrap { max-width: 1320px; margin: 0 auto; padding: 3rem 5% 1rem; }
-    .pr-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.85rem; align-items: stretch; }
+    .pr-grid-wrap { max-width: 1320px; margin: 0 auto; padding: 2rem 5% 1rem; }
+    @media (min-width: 860px) { .pr-grid-wrap { padding: 3rem 5% 1rem; } }
+    
+    .pr-grid { 
+        display: grid; grid-template-columns: 1fr; gap: 1rem; 
+        max-width: 420px; margin: 0 auto; align-items: stretch; 
+    }
+    @media (min-width: 860px) {
+        .pr-grid { grid-template-columns: repeat(3, 1fr); max-width: 100%; gap: 1rem; }
+    }
+    @media (min-width: 1180px) {
+        .pr-grid { grid-template-columns: repeat(5, 1fr); gap: 0.85rem; }
+    }
+
     .plan {
         position: relative; background: var(--color-bg-soft);
-        border: 1px solid var(--color-border); border-radius: 22px;
-        padding: 1.9rem 1.4rem; display: flex; flex-direction: column; gap: 1.2rem;
+        border: 1px solid var(--color-border); border-radius: 20px;
+        padding: 1.6rem 1.4rem; display: flex; flex-direction: column; gap: 1.2rem;
         transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
     }
+    @media (min-width: 860px) {
+        .plan { padding: 1.9rem 1.4rem; border-radius: 22px; }
+    }
     .plan:hover { transform: translateY(-4px); box-shadow: 0 30px 70px -30px rgba(10,25,47,0.16); }
+    
     .plan-featured {
         position: relative; z-index: 2;
         background: radial-gradient(ellipse at 50% 0%, #112240 0%, #0a192f 80%);
-        border: none; color: #fff;
-        box-shadow: 0 40px 90px -34px rgba(10,25,47,0.5); transform: scale(1.05);
+        border: none; color: #fff; transform: none;
     }
-    .plan-featured:hover { transform: scale(1.05) translateY(-4px); }
+    @media (min-width: 1180px) {
+        .plan-featured {
+            box-shadow: 0 40px 90px -34px rgba(10,25,47,0.5); transform: scale(1.05);
+        }
+    }
+    .plan-featured:hover { transform: translateY(-4px); }
+    @media (min-width: 1180px) {
+        .plan-featured:hover { transform: scale(1.05) translateY(-4px); }
+    }
+
     .plan-ribbon {
         position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
         background: var(--color-ok); color: #fff;
         font-size: 0.58rem; font-weight: 800; letter-spacing: 1px;
         padding: 5px 13px; border-radius: 100px; white-space: nowrap;
     }
-    .plan-head { display: flex; flex-direction: column; gap: 0.35rem; min-height: 64px; }
+    .plan-head { display: flex; flex-direction: column; gap: 0.35rem; min-height: 50px; }
+    @media (min-width: 860px) { .plan-head { min-height: 64px; } }
     .plan-name { font-size: 1.15rem; font-weight: 700; margin: 0; letter-spacing: -0.4px; }
     .plan-tagline { font-size: 0.8rem; margin: 0; color: var(--color-text-muted); line-height: 1.35; }
     .plan-featured .plan-tagline { color: #8892b0; }
@@ -318,21 +351,28 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
         display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700;
     }
     .plan-featured .pf-check { background: rgba(16,185,129,0.2); color: #34d399; }
-    .pr-note { text-align: center; margin: 2.6rem 0 0; font-size: 0.98rem; color: var(--color-text-muted); }
+    .pr-note { text-align: center; margin: 2rem 0 0; font-size: 0.98rem; color: var(--color-text-muted); }
+    @media (min-width: 860px) { .pr-note { margin: 2.6rem 0 0; } }
     .pr-note a { color: var(--color-blue-deep); font-weight: 600; text-decoration: none; }
     .pr-note a:hover { text-decoration: underline; }
 
     /* ════════ COMÚN H2 ════════ */
-    .pr-h2 { font-size: clamp(1.7rem, 3vw, 2.4rem); font-weight: 800; line-height: 1.12; letter-spacing: -0.03em; color: var(--color-text); margin: 0 0 1rem; }
+    .pr-h2 { font-size: clamp(1.7rem, 6vw, 2.4rem); font-weight: 800; line-height: 1.12; letter-spacing: -0.03em; color: var(--color-text); margin: 0 0 1rem; }
 
     /* ════════ CALCULADORA DE VALOR ════════ */
-    .pr-roi { padding: 7rem 5%; }
+    .pr-roi { padding: 4rem 5%; }
+    @media (min-width: 860px) { .pr-roi { padding: 7rem 5%; } }
+    
     .pr-roi-inner {
         max-width: 1080px; margin: 0 auto;
-        display: grid; grid-template-columns: 1fr 0.95fr; gap: 4rem; align-items: center;
+        display: grid; grid-template-columns: 1fr; gap: 2.4rem; align-items: center;
     }
-    .pr-roi-sub { font-size: 1.02rem; line-height: 1.65; color: var(--color-text-muted); margin: 0 0 2rem; }
-    .pr-roi-fields { display: flex; flex-direction: column; gap: 1.1rem; max-width: 380px; }
+    @media (min-width: 860px) {
+        .pr-roi-inner { grid-template-columns: 1fr 0.95fr; gap: 4rem; }
+    }
+    .pr-roi-sub { font-size: clamp(1rem, 4vw, 1.02rem); line-height: 1.65; color: var(--color-text-muted); margin: 0 0 2rem; }
+    .pr-roi-fields { display: flex; flex-direction: column; gap: 1.1rem; width: 100%; }
+    @media (min-width: 860px) { .pr-roi-fields { max-width: 380px; } }
     .pr-roi-fields label { display: flex; flex-direction: column; gap: 0.5rem; }
     .pr-roi-fields span { font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted); }
     .pr-roi-fields input {
@@ -347,25 +387,38 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
 
     .pr-roi-card {
         background: radial-gradient(ellipse at 50% 0%, #112240 0%, #0a192f 80%);
-        border-radius: 24px; padding: 2.6rem 2.4rem; color: #fff;
-        box-shadow: 0 50px 100px -40px rgba(5,11,20,0.7), inset 0 0 0 0.5px rgba(255,255,255,0.08);
+        border-radius: 20px; padding: 2rem 1.5rem; color: #fff;
+        box-shadow: 0 30px 60px -20px rgba(5,11,20,0.5), inset 0 0 0 0.5px rgba(255,255,255,0.08);
         text-align: center;
     }
+    @media (min-width: 860px) {
+        .pr-roi-card { border-radius: 24px; padding: 2.6rem 2.4rem; box-shadow: 0 50px 100px -40px rgba(5,11,20,0.7), inset 0 0 0 0.5px rgba(255,255,255,0.08); }
+    }
     .pr-roi-label { font-size: 0.68rem; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase; color: rgba(255,255,255,0.45); }
-    .pr-roi-big { display: block; font-size: clamp(2.6rem, 6vw, 3.6rem); margin: 0.5rem 0 1.6rem; line-height: 1; }
+    .pr-roi-big { display: block; font-size: clamp(2.4rem, 10vw, 3.6rem); margin: 0.5rem 0 1.6rem; line-height: 1; }
     .pr-roi-split {
         display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
         padding: 1.3rem 0; border-top: 1px solid rgba(255,255,255,0.1);
     }
     .pr-roi-split span { display: block; font-size: 0.72rem; color: rgba(255,255,255,0.45); margin-bottom: 5px; }
-    .pr-roi-split b { font-size: 1.5rem; font-weight: 600; }
+    .pr-roi-split b { font-size: 1.3rem; font-weight: 600; }
+    @media (min-width: 860px) { .pr-roi-split b { font-size: 1.5rem; } }
     .pr-roi-split b i { font-style: normal; font-size: 0.8rem; color: rgba(255,255,255,0.5); }
     .pr-roi-foot { font-size: 0.84rem; color: rgba(255,255,255,0.6); margin: 1.2rem 0 0; line-height: 1.5; }
 
     /* ════════ COMPARADOR ════════ */
-    .pr-compare { max-width: 1080px; margin: 0 auto; padding: 4rem 5%; }
-    .pr-compare-head { text-align: center; margin-bottom: 3rem; }
-    .pr-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 18px; }
+    .pr-compare { max-width: 1080px; margin: 0 auto; padding: 3rem 5%; }
+    @media (min-width: 860px) { .pr-compare { padding: 4rem 5%; } }
+    .pr-compare-head { text-align: center; margin-bottom: 2rem; }
+    @media (min-width: 860px) { .pr-compare-head { margin-bottom: 3rem; } }
+    
+    .pr-table-scroll { 
+        overflow-x: auto; -webkit-overflow-scrolling: touch; 
+        border-radius: 12px; padding-bottom: 1rem;
+        box-shadow: inset -15px 0 15px -15px rgba(0,0,0,0.05); /* Ayuda visual para scroll horizontal */
+    }
+    @media (min-width: 860px) { .pr-table-scroll { border-radius: 18px; padding-bottom: 0; box-shadow: none; } }
+    
     .pr-table { width: 100%; border-collapse: collapse; min-width: 920px; }
     .pr-table thead th { position: sticky; top: 0; }
     .pr-th-feat { width: 28%; }
@@ -399,8 +452,10 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
     .pr-txt { font-size: 0.82rem; }
 
     /* ════════ FAQ (HAIRLINE STYLE) ════════ */
-    .pr-faq { max-width: 860px; margin: 0 auto; padding: 4rem 5% 8rem; }
-    .pr-faq-head { text-align: center; margin-bottom: 2.6rem; }
+    .pr-faq { max-width: 860px; margin: 0 auto; padding: 2rem 5% 5rem; }
+    @media (min-width: 860px) { .pr-faq { padding: 4rem 5% 8rem; } }
+    .pr-faq-head { text-align: center; margin-bottom: 2rem; }
+    @media (min-width: 860px) { .pr-faq-head { margin-bottom: 2.6rem; } }
     .pr-faq-list {
         display: flex;
         flex-direction: column;
@@ -417,45 +472,36 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
         align-items: center;
         justify-content: space-between;
         gap: 1rem;
-        padding: 1.5rem 0;
-        font-size: 1.1rem;
+        padding: 1.2rem 0;
+        font-size: 1.05rem;
         font-weight: 600;
         color: var(--color-text);
     }
+    @media (min-width: 860px) { .pr-faq-item summary { padding: 1.5rem 0; font-size: 1.1rem; } }
     .pr-faq-item summary::-webkit-details-marker { display: none; }
     .pr-faq-ico {
         flex-shrink: 0;
         color: var(--color-text-muted);
         transition: transform 0.4s var(--ease-spring), color 0.3s;
     }
-    .pr-faq-ico svg { width: 20px; height: 20px; }
+    .pr-faq-ico svg { width: 18px; height: 18px; }
+    @media (min-width: 860px) { .pr-faq-ico svg { width: 20px; height: 20px; } }
     .pr-faq-item[open] .pr-faq-ico {
         transform: rotate(135deg);
         color: var(--color-text);
     }
     .pr-faq-body {
-        padding: 0 0 1.5rem;
+        padding: 0 0 1.2rem;
     }
+    @media (min-width: 860px) { .pr-faq-body { padding: 0 0 1.5rem; } }
     .pr-faq-body p {
         margin: 0;
-        font-size: 1rem;
+        font-size: 0.95rem;
         line-height: 1.6;
         color: var(--color-text-muted);
         max-width: 700px;
     }
-
-    /* 5 → 3 columnas en laptops angostas (Pro sigue al centro y destacado) */
-    @media (max-width: 1180px) {
-        .pr-grid { grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-        .plan-featured { transform: none; }
-        .plan-featured:hover { transform: translateY(-4px); }
-    }
-    @media (max-width: 860px) {
-        .pr-hero { padding-top: 9.5rem; }
-        .pr-grid { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
-        .pr-roi-inner { grid-template-columns: 1fr; gap: 2.4rem; }
-        .pr-roi-fields { max-width: none; }
-    }
+    @media (min-width: 860px) { .pr-faq-body p { font-size: 1rem; } }
 </style>
 
 <script>
