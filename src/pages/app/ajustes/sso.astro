@@ -15,12 +15,13 @@ const canEdit = memberCan(ME, 'equipo');
             <h2>Configura el inicio de sesión único</h2>
             <p>El Inicio de sesión único (SSO) permite a tus empleados acceder a Cord usando las credenciales de tu empresa (Google Workspace, Microsoft Entra, Okta, etc.), mejorando la seguridad y centralizando el acceso.</p>
             <div class="sso-actions">
-                <button class="btn-primary" style="background: #7c3aed; box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3);">Empezar configuración</button>
-                <button class="btn-secondary">Consulta la documentación</button>
+                <button class="btn-primary" style="padding: 10px 20px; font-size:0.9rem;">Empezar configuración</button>
+                <button class="btn-secondary" style="padding: 10px 20px; font-size:0.9rem;">Documentación</button>
             </div>
         </div>
         
         <div class="sso-graphic-wrap">
+            <div class="sso-glow"></div>
             <div class="sso-graphic">
                 <div class="sso-box">
                     <div class="sso-box-header">
@@ -45,16 +46,16 @@ const canEdit = memberCan(ME, 'equipo');
                 <div class="sso-box">
                     <div class="sso-box-header">
                         <div class="sso-icon cord-blue">
-                            <img src="/imgs/logo-cord-navy.png" alt="Cord" style="height: 12px; margin-top:2px;" />
+                            <img src="/imgs/logo-cord-navy.png" alt="Cord" style="height: 14px;" />
                         </div>
                         <span>Cord</span>
                     </div>
                     <div class="sso-users">
-                        <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                        <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                        <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                        <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                        <div class="sso-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                        <div class="sso-u cord-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                        <div class="sso-u cord-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                        <div class="sso-u cord-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                        <div class="sso-u cord-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                        <div class="sso-u cord-u"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
                     </div>
                 </div>
             </div>
@@ -64,24 +65,42 @@ const canEdit = memberCan(ME, 'equipo');
 
 <style>
     /* SSO Hero Section */
-    .sso-hero { display: grid; grid-template-columns: 1fr 1.2fr; gap: 3rem; align-items: center; margin-top: 1rem; }
-    @media (max-width: 900px) { .sso-hero { grid-template-columns: 1fr; } }
-    .sso-text h2 { font-size: 1.8rem; font-weight: 700; color: var(--color-text); margin: 0 0 1rem 0; letter-spacing: -0.5px; line-height: 1.2; }
-    .sso-text p { font-size: 0.95rem; color: #475569; margin: 0 0 2rem 0; line-height: 1.5; }
+    .sso-hero { display: grid; grid-template-columns: 1fr 1.2fr; gap: 4rem; align-items: center; margin-top: 1rem; }
+    @media (max-width: 900px) { .sso-hero { grid-template-columns: 1fr; gap: 2rem; } }
+    .sso-text h2 { font-size: 1.85rem; font-weight: 700; color: var(--color-text); margin: 0 0 1rem 0; letter-spacing: -0.6px; line-height: 1.2; }
+    .sso-text p { font-size: 0.95rem; color: var(--color-text-muted); margin: 0 0 2rem 0; line-height: 1.55; }
     .sso-actions { display: flex; gap: 1rem; align-items: center; }
     
-    .sso-graphic-wrap { background: linear-gradient(135deg, #e0f2fe 0%, #ede9fe 100%); border-radius: 16px; padding: 2.5rem 2rem; display: flex; justify-content: center; position: relative; overflow: hidden; box-shadow: inset 0 2px 10px rgba(255,255,255,0.5); }
-    .sso-graphic { display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 320px; align-items: center; z-index: 2; }
+    .sso-graphic-wrap { 
+        background: linear-gradient(135deg, #0a192f 0%, #17325c 100%); 
+        border-radius: 20px; padding: 2.5rem; display: flex; justify-content: center; 
+        position: relative; overflow: hidden; 
+        box-shadow: 0 20px 40px rgba(10, 25, 47, 0.15), inset 0 1px 0 rgba(255,255,255,0.1); 
+    }
+    .sso-glow {
+        position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+        background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        pointer-events: none;
+    }
     
-    .sso-box { background: #ffffff; width: 100%; border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 1.2rem; border: 1px solid rgba(255,255,255,0.8); }
-    .sso-box-header { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; color: var(--color-text); }
-    .sso-icon { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--color-border); display: flex; align-items: center; justify-content: center; color: #64748b; }
-    .sso-icon.cord-blue { background: #fff; border-color: transparent; }
+    .sso-graphic { display: flex; flex-direction: column; gap: 1.2rem; width: 100%; max-width: 340px; align-items: center; z-index: 2; }
+    
+    .sso-box { 
+        background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        width: 100%; border-radius: 14px; padding: 1.25rem 1.5rem; 
+        display: flex; flex-direction: column; gap: 1.2rem; 
+        border: 1px solid rgba(255,255,255,0.08); 
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    .sso-box-header { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 0.9rem; color: #fff; letter-spacing: 0.2px; }
+    .sso-icon { width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; color: #cbd5e1; background: rgba(0,0,0,0.2); box-shadow: inset 0 1px 0 rgba(255,255,255,0.1); }
+    .sso-icon.cord-blue { background: #fff; color: var(--color-blue-deep); border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
     
     .sso-users { display: flex; gap: 8px; justify-content: space-between; }
-    .sso-u { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--color-border); display: flex; align-items: center; justify-content: center; color: #cbd5e1; background: #fafbfc; }
+    .sso-u { width: 36px; height: 36px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.3); background: rgba(0,0,0,0.2); transition: all 0.3s ease; }
+    .sso-u.cord-u { border-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.05); }
     .sso-u svg { width: 16px; height: 16px; }
     
-    .sso-arrow { color: #64748b; margin: 0.2rem 0; }
-    .sso-arrow svg { width: 24px; height: 24px; }
+    .sso-arrow { color: rgba(255,255,255,0.4); margin: 0; }
+    .sso-arrow svg { width: 20px; height: 20px; }
 </style>
