@@ -1,0 +1,59 @@
+---
+import SettingsShell from '../../../../components/app/SettingsShell.astro';
+import { getMyMembership } from '../../../../lib/queries';
+import { memberCan } from '../../../../lib/permissions';
+
+const ME = await getMyMembership();
+const canEdit = memberCan(ME, 'ajustes') || memberCan(ME, 'equipo');
+
+if (!canEdit) {
+    return Astro.redirect('/app/ajustes/sso');
+}
+---
+
+<SettingsShell title="Configuración SSO — Ajustes" tab="sso"
+    intro="Sigue los pasos a continuación para conectar tu Proveedor de Identidad (IdP).">
+    
+    <div class="setup-container">
+        <div class="tm-empty-state" style="margin-top: 2rem;">
+            <div class="tm-empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h4>SSO Empresarial (SAML)</h4>
+            <p style="margin-bottom: 2rem;">Para configurar el Inicio de sesión único, por favor contacta a tu ejecutivo de cuenta o a soporte técnico. Te guiaremos paso a paso para establecer la conexión con Google Workspace, Microsoft Entra u Okta de forma segura.</p>
+            
+            <a href="mailto:soporte@flouvia.com?subject=Solicitud%20de%20configuracion%20SSO" class="btn-primary" style="text-decoration: none;">
+                Contactar a soporte
+            </a>
+            
+            <div style="margin-top: 1rem;">
+                <a href="/app/ajustes/sso" style="color: var(--color-text-muted); font-size: 0.9rem; text-decoration: none;">Volver atrás</a>
+            </div>
+        </div>
+    </div>
+
+</SettingsShell>
+
+<style>
+    .btn-primary {
+        display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+        background: linear-gradient(135deg, #0a192f 0%, #112240 100%); color: white;
+        padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 500; font-size: 0.95rem;
+        border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(10, 25, 47, 0.15);
+    }
+    
+    .tm-empty-state { 
+        display: flex; flex-direction: column; align-items: center; justify-content: center; 
+        padding: 5rem 2rem; text-align: center; background: linear-gradient(to bottom, #fff, rgba(248, 250, 252, 0.5));
+        border-radius: 16px; border: 1px solid var(--color-border);
+    }
+    .tm-empty-icon { 
+        width: 64px; height: 64px; border-radius: 16px; background: #fff; 
+        border: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; 
+        justify-content: center; color: var(--color-blue-deep); margin-bottom: 1.5rem; 
+        box-shadow: 0 8px 24px rgba(0,0,0,0.04); 
+    }
+    .tm-empty-icon svg { width: 32px; height: 32px; opacity: 0.8; }
+    .tm-empty-state h4 { font-size: 1.2rem; font-weight: 600; color: var(--color-text); margin: 0 0 0.5rem 0; letter-spacing: -0.02em; }
+    .tm-empty-state p { font-size: 0.95rem; color: var(--color-text-muted); margin: 0; max-width: 480px; line-height: 1.5; }
+</style>
