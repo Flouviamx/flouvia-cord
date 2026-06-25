@@ -1,33 +1,32 @@
 ---
 title: "Manejo de códigos de error API"
-description: "Significado de HTTP 400, 401, 402, 404 y 500 en Cord."
+description: "Significado de HTTP 400, 401, 403, 404, 429 y 500 en la API de Cord."
 category: "Desarrolladores"
 ---
 
-Cuando integras la API de Cord, es fundamental saber cómo manejar las respuestas fallidas para brindar una buena experiencia a tus usuarios.
+Cuando integras la API de Cord, conviene manejar bien las respuestas fallidas para dar una buena experiencia.
 
-### Estructura de un Error
+### Estructura de un error
 
-Todas las respuestas fallidas (HTTP 4xx y 5xx) regresan un objeto JSON estandarizado:
+Las respuestas fallidas regresan un objeto JSON plano con dos campos:
 
 ```json
 {
-  "error": {
-    "type": "invalid_request_error",
-    "code": "parameter_missing",
-    "message": "El campo 'amount' es obligatorio para procesar el pago.",
-    "param": "amount",
-    "doc_url": "https://cord.flouvia.com/soporte/errores-api#parameter_missing"
-  }
+  "error": "El nombre de la empresa es obligatorio",
+  "code": "invalid_request"
 }
 ```
 
-### Códigos HTTP Comunes
-- **400 Bad Request:** A tu petición le falta un parámetro o tiene un formato incorrecto.
-- **401 Unauthorized:** Tu Clave API es inválida o no enviaste el header de autorización.
-- **402 Payment Required:** El intento de cobro falló (ej. tarjeta declinada o sin fondos).
-- **403 Forbidden:** Tu llave no tiene permisos para acceder a este recurso.
-- **429 Too Many Requests:** Has superado el límite de peticiones (Rate Limit).
-- **500 Internal Server Error:** Error de nuestro lado (es muy raro, pero contacta a soporte si persiste).
+- `error`: mensaje legible que puedes mostrar o registrar.
+- `code`: identificador estable para ramificar en tu código (ej. `invalid_json`, `invalid_request`).
 
-Para manejar declinaciones de tarjetas suavemente, lee la propiedad `code` (ej. `card_declined` o `insufficient_funds`) y muéstrale un mensaje amigable a tu cliente.
+### Códigos HTTP comunes
+
+- **400 Bad Request:** falta un parámetro o el JSON está mal formado.
+- **401 Unauthorized:** tu Clave API es inválida, está revocada o no enviaste el header `Authorization`.
+- **403 Forbidden:** tu llave no tiene el alcance necesario (ej. usas una llave de solo lectura para un `POST`).
+- **404 Not Found:** el recurso no existe o no pertenece a tu organización.
+- **429 Too Many Requests:** superaste el límite de peticiones. Ver [Límites de peticiones](/soporte/limites-peticiones).
+- **500 Internal Server Error:** error de nuestro lado (raro; contacta a soporte si persiste).
+
+> Nota: la API v1 no procesa cobros con tarjeta directamente (eso ocurre en el link público vía Stripe), así que no verás errores de tarjeta declinada en estas respuestas.

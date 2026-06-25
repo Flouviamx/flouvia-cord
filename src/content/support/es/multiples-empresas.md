@@ -15,6 +15,6 @@ Con un solo correo electrónico y contraseña (Single Sign-On de tu cuenta base)
 3. Se desplegará un flujo de configuración fiscal virgen.
 
 **Niveles de Aislamiento:**
-Cada organización es una bóveda de datos 100% aislada. Tienen sus propios clientes, sus propias cotizaciones, sus propias llaves de API (`sk_live_...`), y lo más importante: **su propia facturación independiente de facturapi** y su propia cuenta CLABE de dispersión bancaria.
+Cada organización es una bóveda de datos 100% aislada. Tienen sus propios clientes, sus propias cotizaciones, sus propias llaves de API (`sk_live_...`), su propia configuración fiscal y **su propio CSD para timbrar bajo su RFC** (cada org es una organización independiente en Facturapi). Los cobros con tarjeta de cada org pasan por su propia cuenta de Stripe; Cord no dispersa fondos.
 
 Para cambiar de contexto, simplemente utiliza el menú desplegable superior. El cambio es instantáneo y no requiere recargar la página.

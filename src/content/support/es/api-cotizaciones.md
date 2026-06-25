@@ -1,34 +1,57 @@
 ---
 title: "API: Crear cotizaciones"
-description: "Endpoint para generar y enviar cotizaciones programáticamente."
+description: "Genera y envía cotizaciones programáticamente con la API REST de Cord."
 category: "Desarrolladores"
 ---
 
-La API de Cotizaciones (Quotes) permite generar propuestas dinámicas programáticamente, ideal para integraciones con CRMs como Salesforce o HubSpot.
+El recurso `cotizaciones` te permite generar propuestas dinámicas desde tu backend, ideal para integraciones con tu CRM o ERP.
 
-### Crear una Cotización (Quote)
+### Crear una cotización
 
-Las cotizaciones requieren al menos un `line_item` (partida).
+Haz un `POST` a `/api/v1/cotizaciones` con al menos un ítem (requiere alcance de **escritura**):
 
-```javascript
-// Ejemplo usando el SDK de Node.js de Cord
-const cord = require('cord-node')('sk_live_...');
-
-const quote = await cord.quotes.create({
-  customer_id: 'cus_9a8b7c6d',
-  expiration_date: 1735689600, // Unix timestamp
-  line_items: [
-    {
-      name: 'Licencia Anual ERP',
-      quantity: 1,
-      unit_price: 1500000, // En centavos ($15,000.00 MXN)
-      tax_rate: 'tx_iva_16'
-    }
-  ],
-  require_signature: true
-});
-
-console.log(quote.hosted_url); // Enlace para enviar al cliente
+```bash
+curl -X POST https://cord.flouvia.com/api/v1/cotizaciones \
+  -H "Authorization: Bearer sk_live_tu_llave" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cliente_id": "id-del-cliente",
+    "terminos": "net30",
+    "vigencia_dias": 15,
+    "send": true,
+    "items": [
+      {
+        "descripcion": "Licencia anual ERP",
+        "cantidad": 1,
+        "precio_unitario": 15000
+      }
+    ]
+  }'
 ```
 
-**Lógica de Precios en Centavos:** Absolutamente todos los montos en la API de Cord se manejan en centavos para evitar errores de precisión de punto flotante. Un precio de `1500000` equivale a $15,000.00.
+Respuesta:
+
+```json
+{ "data": { "id": "...", "folio": "COT-0149", "status": "sent", "link_publico": "/q/abc123" } }
+```
+
+**Campos del cuerpo:**
+- `items` (obligatorio): arreglo de partidas. Cada una con `descripcion`, `cantidad`, `precio_unitario` y, opcionalmente, `producto_id` y `precio_negociado`.
+- `cliente_id` (opcional): id de un cliente existente (créalo con [API: Gestionar clientes](/soporte/api-clientes)).
+- `terminos`: `contado`, `net30` o `net60`.
+- `vigencia_dias`: días que la cotización permanece válida.
+- `send`: si es `true`, Cord envía el link público al correo del cliente al crearla.
+
+**Importante:**
+- Todos los montos van en **pesos** (`15000` = $15,000.00 MXN), no en centavos.
+- El IVA y los totales se calculan en el servidor según la configuración de tu organización.
+- `link_publico` es la ruta del link que ve tu cliente (`/q/{token}`); antepón `https://cord.flouvia.com`.
+
+### Listar cotizaciones
+
+```bash
+curl "https://cord.flouvia.com/api/v1/cotizaciones?status=sent&limit=50" \
+  -H "Authorization: Bearer sk_live_tu_llave"
+```
+
+Devuelve `{ "data": [ ... ], "meta": { "limit": 50, "offset": 0, "total": 87 } }`. El detalle de una cotización (con ítems y eventos) está en `GET /api/v1/cotizaciones/{id}`.

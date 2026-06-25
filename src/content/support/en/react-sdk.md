@@ -1,51 +1,39 @@
 ---
-title: "Cord React SDK"
-description: "Installation and usage of @cord/react in your frontend."
+title: "Cord Elements for React"
+description: "Embed Cord's quoter in your React app with @flouviahq/elements."
 category: "Developers"
 ---
 
-If you are building a Single Page Application (SPA) with React, Next.js, or Vite, you can integrate payment components and UI using our front-end library, `@flouviamx/cord-react`.
+On the frontend, Cord does not expose a "payment form" SDK: card processing is handled by **your own Stripe account** through the quote's public link. What we do publish is **Cord Elements**, the embeddable quoter, available as a Web Component and with a React wrapper.
 
-### Provider Setup
+### Installation
 
-Wrap your application in the Provider by injecting your Public Key (`pk_test_...`). This will load the security scripts asynchronously.
+```bash
+npm install @flouviahq/elements
+```
+
+### Usage in React / Next.js
+
+Import the component from `@flouviahq/elements/react` and pass it a quote's public `token`. The component mounts the quoter (the same one at `/q`) inside a secure auto-height iframe.
 
 ```jsx
-import { CordProvider } from '@flouviamx/cord-react';
+import { CordCotizador } from '@flouviahq/elements/react';
 
-function App() {
+function MyPortal() {
   return (
-    <CordProvider publishableKey="pk_test_your_public_key">
-      <YourRouter />
-    </CordProvider>
+    <CordCotizador
+      token="public_quote_token"
+      onApproved={(e) => console.log('Approved', e)}
+      onPay={(e) => console.log('Payment started', e)}
+    />
   );
 }
 ```
 
-### Using the Checkout Component
+### Available events
 
-In your checkout view, you can mount the secure form for the user to insert their card. The React component handles PCI DSS encryption automatically.
+The component emits the quoter's events: `onApproved`, `onRejected`, `onMessage`, and `onPay`. Use them to react in your app (redirect, show a thank-you, log analytics, etc.).
 
-```jsx
-import { PaymentForm, useCord } from '@flouviamx/cord-react';
+### Other frameworks
 
-function CheckoutScreen({ clientSecret }) {
-  const cord = useCord();
-
-  const handleSubmit = async () => {
-    // Confirm the payment against the Cord API
-    const { error, paymentIntent } = await cord.confirmPayment({
-      clientSecret,
-      return_url: 'https://yourapp.com/success'
-    });
-    if (error) console.error(error.message);
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <PaymentForm />
-      <button type="submit">Pay $5,000</button>
-    </form>
-  );
-}
-```
+The same package ships the `<cord-cotizador>` Web Component (Astro, Vue, Svelte, HTML) and wrappers for Vue and Framer. For no-build sites (WordPress, Webflow) use the one-line `embed.js` loader. See the [Cord Elements](/elements) page for all snippets.

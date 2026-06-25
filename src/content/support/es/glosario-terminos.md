@@ -1,7 +1,7 @@
 ---
 title: "Glosario FinTech y Contable"
 description: "Diccionario de términos técnicos, financieros y fiscales (SAT) utilizados en la plataforma Cord."
-category: "Cuenta"
+category: "Cuenta y Equipo"
 order: 99
 ---
 
@@ -37,16 +37,16 @@ Clave del catálogo del SAT que indica para qué usará el receptor (cliente) la
 Es la propiedad de las APIs de Cord que garantiza que una misma operación no se ejecute dos veces, incluso si la petición se envía múltiples veces por un error de red. Para lograrlo, envías un `Idempotency-Key` en los headers de tus requests. [Más información](/soporte/idempotencia).
 
 ### Webhook
-Es un mecanismo mediante el cual Cord avisa proactivamente a tu servidor (vía una petición HTTP POST) que un evento importante ha sucedido (ej. `payment.succeeded`, `invoice.created`). [Más información](/soporte/configurar-webhooks).
+Es un mecanismo mediante el cual Cord avisa proactivamente a tu servidor (vía una petición HTTP POST) que un evento importante ha sucedido (ej. `quote.paid`, `quote.invoiced`). [Más información](/soporte/configurar-webhooks).
 
 ### Cord Elements
 Es nuestra suite de componentes de interfaz de usuario (UI) pre-construidos que puedes incrustar directamente en tu aplicación (React, Vue o HTML plano) para procesar pagos sin tener que diseñar el flujo de *checkout* desde cero. [Más información](/soporte/cord-elements).
 
-### Sandbox (Entorno de Pruebas)
-Un entorno completamente aislado del mundo real. En Sandbox puedes usar [tarjetas de prueba](/soporte/tarjetas-prueba) y emitir facturas ficticias sin valor fiscal ni movimiento de dinero real. Es fundamental para integrar la API.
+### Modo de prueba (Test)
+Las llaves `sk_test_` no consumen tu medidor de uso ni cuentan para tu facturación, así que sirven para integrar la API sin afectar tu plan. Nota: operan sobre los mismos datos de tu organización (no hay un sandbox 100% aislado todavía), y que el timbrado sea real o simulado depende de tu configuración de Facturapi.
 
 ### Endpoint
-Una URL específica de la API de Cord diseñada para ejecutar una acción (Ej. `POST /v1/invoices` para crear una factura).
+Una URL específica de la API de Cord diseñada para ejecutar una acción (Ej. `POST /api/v1/cotizaciones` para crear una cotización).
 
 ---
 

@@ -5,17 +5,33 @@ category: "Developers"
 order: 2
 ---
 
-Webhooks are HTTP calls (callbacks) that our server makes to yours when an important event occurs asynchronously (e.g., a client paid, or an invoice was stamped).
+Webhooks are HTTP calls (callbacks) that our server makes to yours when an important event occurs asynchronously (e.g., a quote was approved or paid).
 
-### Registering an Endpoint
+### Registering an endpoint
 
-To receive webhooks, you first need to expose a `POST` route on your server (e.g., `https://api.yourcompany.com/webhooks/cord`).
-1. Go to **Developers > Webhooks** in the Cord dashboard.
-2. Add your URL.
-3. Select which events you want to subscribe to. We recommend starting with `charge.succeeded` and `invoice.created`.
+To receive webhooks, expose a `POST` route on your server (e.g., `https://api.yourcompany.com/webhooks/cord`).
 
-### Signature Verification
+1. Go to **Settings > Developers > Webhooks** in the Cord dashboard.
+2. Add your URL and save. The **signing secret** is shown only once: store it.
+3. Select which events to subscribe to.
 
-For security reasons, someone could pretend to be Cord and send you fake events to attempt to hack your inventory. **It is mandatory that you validate the cryptographic signature** we send in the headers of each request.
+### Available events
 
-The header is called `Cord-Signature` and includes a timestamp and the HMAC SHA-256 hash. Use the *Webhook Secret* we provided when creating the endpoint to verify it. [View verification code snippets in Node.js and Python](/en/support/firmas-webhooks).
+Cord emits these quote lifecycle events:
+
+- `quote.sent` — sent to the customer.
+- `quote.viewed` — the customer opened it.
+- `quote.approved` — the customer approved it.
+- `quote.rejected` — the customer rejected it.
+- `quote.paid` — it was paid.
+- `quote.invoiced` — the CFDI was stamped.
+
+The body is JSON: `{ "event": "quote.paid", "created_at": "...", "data": { "id", "folio", "status", "total", "cliente", "link_publico" } }`.
+
+### Signature verification
+
+Always validate the signature to ensure the event comes from Cord. Each request includes two headers: `X-Cord-Event` (the event name) and `X-Cord-Signature` in the format `sha256=<hash>`, where the hash is the HMAC-SHA256 of the **raw body** using your signing secret. [See the verification code](/en/support/firmas-webhooks).
+
+### Retries and inspection
+
+Each endpoint keeps a **delivery log** (status, latency, and response for every attempt). If a delivery fails, you can **redeliver** it from the dashboard, and use the **Test** button to send a test event.

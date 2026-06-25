@@ -1,34 +1,57 @@
 ---
 title: "API: Create Quotes"
-description: "Endpoint to generate and send quotes programmatically."
+description: "Generate and send quotes programmatically with Cord's REST API."
 category: "Developers"
 ---
 
-The Quotes API allows you to programmatically generate dynamic proposals, ideal for integrations with CRMs like Salesforce or HubSpot.
+The `cotizaciones` (quotes) resource lets you generate dynamic proposals from your backend, ideal for integrations with your CRM or ERP.
 
-### Create a Quote
+### Create a quote
 
-Quotes require at least one `line_item`.
+Make a `POST` to `/api/v1/cotizaciones` with at least one item (requires **write** scope):
 
-```javascript
-// Example using the Cord Node.js SDK
-const cord = require('cord-node')('sk_live_...');
-
-const quote = await cord.quotes.create({
-  customer_id: 'cus_9a8b7c6d',
-  expiration_date: 1735689600, // Unix timestamp
-  line_items: [
-    {
-      name: 'Annual ERP License',
-      quantity: 1,
-      unit_price: 1500000, // In cents ($15,000.00 MXN)
-      tax_rate: 'tx_iva_16'
-    }
-  ],
-  require_signature: true
-});
-
-console.log(quote.hosted_url); // Link to send to the customer
+```bash
+curl -X POST https://cord.flouvia.com/api/v1/cotizaciones \
+  -H "Authorization: Bearer sk_live_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cliente_id": "customer-id",
+    "terminos": "net30",
+    "vigencia_dias": 15,
+    "send": true,
+    "items": [
+      {
+        "descripcion": "Annual ERP license",
+        "cantidad": 1,
+        "precio_unitario": 15000
+      }
+    ]
+  }'
 ```
 
-**Cents Pricing Logic:** Absolutely all amounts in the Cord API are handled in cents to avoid floating-point precision errors. A price of `1500000` is equivalent to $15,000.00.
+Response:
+
+```json
+{ "data": { "id": "...", "folio": "COT-0149", "status": "sent", "link_publico": "/q/abc123" } }
+```
+
+**Body fields:**
+- `items` (required): array of line items. Each with `descripcion`, `cantidad`, `precio_unitario` and, optionally, `producto_id` and `precio_negociado`.
+- `cliente_id` (optional): id of an existing customer (create one with [API: Manage Customers](/en/support/api-clientes)).
+- `terminos`: `contado` (cash), `net30`, or `net60`.
+- `vigencia_dias`: days the quote stays valid.
+- `send`: if `true`, Cord emails the public link to the customer on creation.
+
+**Important:**
+- All amounts are in **pesos** (`15000` = $15,000.00 MXN), not cents.
+- Tax (IVA) and totals are computed server-side based on your organization's settings.
+- `link_publico` is the path of the link your customer sees (`/q/{token}`); prefix it with `https://cord.flouvia.com`.
+
+### List quotes
+
+```bash
+curl "https://cord.flouvia.com/api/v1/cotizaciones?status=sent&limit=50" \
+  -H "Authorization: Bearer sk_live_your_key"
+```
+
+Returns `{ "data": [ ... ], "meta": { "limit": 50, "offset": 0, "total": 87 } }`. A quote's detail (with items and events) is at `GET /api/v1/cotizaciones/{id}`.

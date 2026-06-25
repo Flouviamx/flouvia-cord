@@ -1,44 +1,53 @@
 ---
-title: "Cord Node.js SDK"
-description: "Installation and usage of @cord/node in your backend."
+title: "Using the Cord API from Node.js"
+description: "How to call Cord's REST API from your Node.js or TypeScript backend."
 category: "Developers"
 ---
 
-For backend developers using Node.js or TypeScript, we have created an official library that encapsulates all the authentication, serialization, and error handling logic of our API.
+> There is no official Node SDK yet. Cord's API is standard REST, so you call it directly with `fetch` (built into Node 18+) or your favorite HTTP client. If we publish an official package, we'll announce it here.
 
-### Installation
+### A minimal wrapper
 
-```bash
-npm install @flouviamx/cord-node
-# or with yarn
-yarn add @flouviamx/cord-node
-```
-
-### Strict Typing and Usage (TypeScript)
-
-The SDK provides native auto-completion and type inference for all request and response payloads.
+Centralize the base URL, key, and error handling in one helper:
 
 ```typescript
-import Cord from '@flouviamx/cord-node';
+const BASE = 'https://cord.flouvia.com/api/v1';
 
-const cord = new Cord(process.env.CORD_SECRET_KEY);
-
-async function createQuote() {
-  try {
-    const quote = await cord.quotes.create({
-      customer_id: 'cus_123',
-      currency: 'mxn',
-      line_items: [
-        { name: 'Development Hours', quantity: 10, unit_price: 150000 }
-      ]
-    });
-    console.log(quote.hosted_url);
-  } catch (error) {
-    if (error.type === 'CordInvalidRequestError') {
-      console.error(error.message);
-    }
-  }
+async function cord(path: string, init: RequestInit = {}) {
+  const res = await fetch(`${BASE}${path}`, {
+    ...init,
+    headers: {
+      'Authorization': `Bearer ${process.env.CORD_SECRET_KEY}`,
+      'Content-Type': 'application/json',
+      ...init.headers,
+    },
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error ?? `Cord API ${res.status}`);
+  return body;
 }
 ```
 
-The SDK internally uses TCP `keep-alive` and exponential retries under the hood to mitigate transient network errors (502, 503, 504).
+### Create a quote
+
+```typescript
+const { data } = await cord('/cotizaciones', {
+  method: 'POST',
+  body: JSON.stringify({
+    cliente_id: 'customer-id',      // optional
+    terminos: 'net30',
+    vigencia_dias: 15,
+    send: true,                     // emails the link to the customer
+    items: [
+      { descripcion: 'Development hours', cantidad: 10, precio_unitario: 1500 }
+    ],
+  }),
+});
+
+console.log(data.folio, data.link_publico); // e.g. COT-0149  /q/abc123
+```
+
+**Remember:**
+- Amounts are in **pesos** (`1500` = $1,500.00), not cents.
+- `link_publico` is the path of the link your customer sees (`/q/{token}`); prefix it with `https://cord.flouvia.com`.
+- Creating quotes requires a key with **write** scope.

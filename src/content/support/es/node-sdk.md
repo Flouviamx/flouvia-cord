@@ -1,44 +1,53 @@
 ---
-title: "Cord Node.js SDK"
-description: "Instalación y uso de @cord/node en tu backend."
+title: "Usar la API de Cord desde Node.js"
+description: "Cómo llamar la API REST de Cord desde tu backend de Node.js o TypeScript."
 category: "Desarrolladores"
 ---
 
-Para desarrolladores backend que utilizan Node.js o TypeScript, hemos creado una librería oficial que encapsula toda la lógica de autenticación, serialización y manejo de errores de nuestra API.
+> No hay un SDK oficial de Node todavía. La API de Cord es REST estándar, así que la llamas directamente con `fetch` (incluido en Node 18+) o tu cliente HTTP favorito. Si publicamos un paquete oficial, lo anunciaremos aquí.
 
-### Instalación
+### Un wrapper mínimo
 
-```bash
-npm install @flouviamx/cord-node
-# o con yarn
-yarn add @flouviamx/cord-node
-```
-
-### Uso y Tipado Estricto (TypeScript)
-
-El SDK provee autocompletado nativo e inferencia de tipos para todos los payloads de petición y respuesta.
+Centraliza la URL base, la llave y el manejo de errores en una función:
 
 ```typescript
-import Cord from '@flouviamx/cord-node';
+const BASE = 'https://cord.flouvia.com/api/v1';
 
-const cord = new Cord(process.env.CORD_SECRET_KEY);
-
-async function crearCotizacion() {
-  try {
-    const quote = await cord.quotes.create({
-      customer_id: 'cus_123',
-      currency: 'mxn',
-      line_items: [
-        { name: 'Horas de Desarrollo', quantity: 10, unit_price: 150000 }
-      ]
-    });
-    console.log(quote.hosted_url);
-  } catch (error) {
-    if (error.type === 'CordInvalidRequestError') {
-      console.error(error.message);
-    }
-  }
+async function cord(path: string, init: RequestInit = {}) {
+  const res = await fetch(`${BASE}${path}`, {
+    ...init,
+    headers: {
+      'Authorization': `Bearer ${process.env.CORD_SECRET_KEY}`,
+      'Content-Type': 'application/json',
+      ...init.headers,
+    },
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error ?? `Cord API ${res.status}`);
+  return body;
 }
 ```
 
-El SDK utiliza internamente `keep-alive` TCP y reintentos exponenciales bajo el capó para mitigar errores de red transitorios (502, 503, 504).
+### Crear una cotización
+
+```typescript
+const { data } = await cord('/cotizaciones', {
+  method: 'POST',
+  body: JSON.stringify({
+    cliente_id: 'id-del-cliente',   // opcional
+    terminos: 'net30',
+    vigencia_dias: 15,
+    send: true,                     // envía el link al correo del cliente
+    items: [
+      { descripcion: 'Horas de desarrollo', cantidad: 10, precio_unitario: 1500 }
+    ],
+  }),
+});
+
+console.log(data.folio, data.link_publico); // ej. COT-0149  /q/abc123
+```
+
+**Recuerda:**
+- Los montos van en **pesos** (`1500` = $1,500.00), no en centavos.
+- `link_publico` es la ruta del link que ve tu cliente (`/q/{token}`); antepón `https://cord.flouvia.com`.
+- Crear cotizaciones requiere una llave con alcance de **escritura**.

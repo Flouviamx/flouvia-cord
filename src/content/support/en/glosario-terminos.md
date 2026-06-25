@@ -1,7 +1,7 @@
 ---
 title: "FinTech and Accounting Glossary"
 description: "Dictionary of technical, financial, and tax (SAT) terms used on the Cord platform."
-category: "Account"
+category: "Account & Team"
 order: 99
 ---
 
@@ -37,16 +37,16 @@ A key from the SAT catalog that indicates what the recipient (customer) will use
 It is the property of Cord's APIs that guarantees that the same operation is not executed twice, even if the request is sent multiple times due to a network error. To achieve this, you send an `Idempotency-Key` in the headers of your requests. [More information](/en/support/idempotencia).
 
 ### Webhook
-It is a mechanism by which Cord proactively notifies your server (via an HTTP POST request) that an important event has occurred (e.g., `payment.succeeded`, `invoice.created`). [More information](/en/support/configurar-webhooks).
+It is a mechanism by which Cord proactively notifies your server (via an HTTP POST request) that an important event has occurred (e.g., `quote.paid`, `quote.invoiced`). [More information](/en/support/configurar-webhooks).
 
 ### Cord Elements
 It is our suite of pre-built user interface (UI) components that you can embed directly into your application (React, Vue, or plain HTML) to process payments without having to design the checkout flow from scratch. [More information](/en/support/cord-elements).
 
-### Sandbox (Testing Environment)
-A completely isolated environment from the real world. In Sandbox, you can use [test cards](/en/support/tarjetas-prueba) and issue fictitious invoices with no tax value or real money movement. It is essential for integrating the API.
+### Test mode
+`sk_test_` keys don't consume your usage meter or count toward billing, so they're useful for integrating the API without affecting your plan. Note: they operate on the same organization data (there's no 100% isolated sandbox yet), and whether stamping is real or simulated depends on your Facturapi configuration.
 
 ### Endpoint
-A specific URL of the Cord API designed to execute an action (e.g., `POST /v1/invoices` to create an invoice).
+A specific URL of the Cord API designed to execute an action (e.g., `POST /api/v1/cotizaciones` to create a quote).
 
 ---
 

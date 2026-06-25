@@ -29,7 +29,8 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
       o.facturapi_live_key,
       c.subtotal, c.iva, c.total, c.fiscal_currency,
       cl.empresa as cliente_empresa, cl.rfc as cliente_rfc,
-      cl.email as cliente_email, cl.contacto as cliente_contacto
+      cl.email as cliente_email, cl.contacto as cliente_contacto,
+      cl.regimen_fiscal as cliente_regimen, cl.uso_cfdi as cliente_uso, cl.cp_fiscal as cliente_cp
     from cotizaciones c
     join orgs o on o.id = c.org_id
     left join clientes cl on cl.id = c.cliente_id
@@ -75,11 +76,12 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
         tax_id: head.cliente_rfc,
         email: head.cliente_email,
         contacto: head.cliente_contacto,
-        // Cord aún no captura régimen/CP fiscal POR CLIENTE → usamos defaults y el
-        // CP del emisor como placeholder. Para CFDI real a un RFC específico hay que
-        // capturar el domicilio fiscal y régimen del receptor (gap del modelo).
-        zip: head.org_cp || undefined,
-        cfdi_use: head.org_uso || undefined,
+        // Datos fiscales del receptor capturados POR CLIENTE (CFDI nominativo).
+        // Si el cliente no los tiene, caemos a los del emisor como placeholder
+        // (el provider degrada a "público en general" cuando el RFC es genérico).
+        tax_system: head.cliente_regimen || undefined,
+        zip: head.cliente_cp || head.org_cp || undefined,
+        cfdi_use: head.cliente_uso || head.org_uso || undefined,
       },
       items: items.map((it: any) => ({
         description: it.descripcion,

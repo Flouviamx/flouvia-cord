@@ -1,22 +1,32 @@
 ---
-title: "Cambiar plan de suscripción Cord"
-description: "Administra tu plan de facturación de Cord, licencias adicionales y facturación."
+title: "Cambiar tu plan de Cord"
+description: "Administra tu suscripción de Cord: planes, uso del mes y método de pago."
 category: "Cuenta y Equipo"
 order: 4
 ---
 
-El modelo de ingresos recurrentes requiere automatización de cobros (recurring billing). Cord cuenta con un motor de suscripciones avanzado.
+Cord es un SaaS con modelo freemium: pagas una cuota mensual por usar la plataforma. **No cobramos comisión por transacción** — los cobros con tarjeta los procesa tu propia cuenta de Stripe.
 
-### Crear Planes y Productos
+### Los planes
 
-1. Ve a **Suscripciones > Productos**.
-2. Crea tu producto principal (ej. "Plataforma SaaS Enterprise").
-3. Crea un **Plan de Cobro** asociado al producto. Puedes definir ciclos Mensuales, Trimestrales o Anuales.
+| Plan | Precio (MXN/mes) | Para quién |
+| :--- | :--- | :--- |
+| **Gratis** | $0 | Probar: 5 cotizaciones, 50 productos/clientes, 3 armados con IA al mes, "Powered by Cord". |
+| **Starter** | $240 | El que vende solo: 50 cotizaciones, 500 productos/clientes, 20 IA + 3 CFDI al mes, tu marca, CSV. |
+| **Profesional** | $590 | Equipos: cotizaciones ilimitadas, 5 usuarios, 50 IA + 20 CFDI, seguimiento en vivo, analítica, audit log. |
+| **Scale** | $1,390 | Operaciones: 15 usuarios, 500 IA + 100 CFDI, aprobaciones, cobranza, SMTP propio. |
+| **Developer** | $2,990 | Integrar: usuarios/IA ilimitados, 1,000 CFDI + 50,000 API al mes, excedentes más baratos. |
 
-### Modelos de Precios
-Cord soporta esquemas complejos de suscripción SaaS:
-- **Tarifa Fija (Flat Rate):** El clásico $99 USD/mes.
-- **Basado en Asientos (Per Seat):** $15 USD por cada usuario activo que registre el cliente en tu app.
-- **Uso Escalonado (Tiered/Metered):** Cobro dinámico por consumo (ej. Los primeros 1,000 correos son gratis, los siguientes cuestan $0.05c c/u).
+Todos los precios incluyen IVA. El pago **anual** te da 2 meses gratis (pagas 10).
 
-El sistema intentará hacer el cargo a la tarjeta del cliente automáticamente al renovarse el ciclo. Si la tarjeta falla, activará un proceso de *Dunning* (Recordatorios de Cobranza), reintentando el cargo los días 3, 5 y 7. Si fracasa finalmente, cancelará la membresía y te enviará un webhook para que cortes el acceso en tu app.
+### Cambiar de plan
+
+1. Ve a **Ajustes > Planes y cobranza > Suscripción** (`/app/ajustes/plan`).
+2. Elige el plan y el ciclo (mensual o anual). Se abre el checkout seguro de Stripe.
+3. El cambio aplica de inmediato; tu cuota incluida se ajusta al nuevo plan.
+
+Para cambiar tu tarjeta, ver recibos o cancelar, usa el botón **Gestionar facturación**, que abre el Portal de Cliente de Stripe.
+
+### Excedentes (consumo por uso)
+
+Cada plan de pago incluye una cuota mensual de IA, CFDI, API y usuarios. Si la rebasas, del plan Profesional en adelante el **excedente se cobra por uso** (ej. CFDI extra por folio, IA extra por uso) al cierre del periodo. Los planes Gratis y Starter tienen topes duros en lugar de excedente. Ves tu consumo del mes en la misma pantalla de Suscripción.

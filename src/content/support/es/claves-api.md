@@ -7,14 +7,40 @@ order: 1
 
 Tus Claves de API son la puerta de entrada a tu cuenta. Trátalas con el mismo cuidado que la contraseña de tu base de datos.
 
+### Dónde se generan
+
+Entra a **Ajustes > Developers > API** (`/app/ajustes/api`). Ahí creas llaves nuevas, eliges su alcance (lectura o escritura) y las revocas. La llave secreta se muestra **una sola vez** al crearla; guárdala en un gestor de secretos, nunca en el código fuente.
+
+### Autenticación
+
+La API es REST sobre HTTPS. Cada petición lleva tu llave en el header `Authorization`:
+
+```bash
+curl https://cord.flouvia.com/api/v1/me \
+  -H "Authorization: Bearer sk_live_tu_llave"
+```
+
+Respuesta:
+
+```json
+{ "org": { "id": "...", "nombre": "Tu Negocio", "plan": "pro" }, "scope": "write", "mode": "live" }
+```
+
 ### Entornos (Live vs Test)
 
-En la sección **Desarrolladores > Claves API** encontrarás dos pares de llaves:
-- **Test Mode (`sk_test_...`):** Úsalas para desarrollar. No generan cargos reales a tarjetas ni timbran facturas reales ante el SAT (las simulan).
-- **Live Mode (`sk_live_...`):** Úsalas en tu entorno de producción. Todo cargo es real y todo CFDI tiene validez legal.
+Al crear una llave eliges su modo:
+- **Test (`sk_test_...`):** no consume tu medidor de uso de API ni cuenta para tu facturación. Útil para probar integraciones. **Importante:** opera sobre los mismos datos de tu organización — no hay un sandbox aislado todavía. Que el timbrado CFDI sea real o simulado depende de tu configuración de Facturapi (CSD / llave), no del modo de la llave.
+- **Live (`sk_live_...`):** úsala en producción. Cada llamada cuenta para el consumo de tu plan.
+
+### Alcances (Scopes)
+
+- **Lectura (`read`):** consulta cotizaciones, clientes, productos y cartera.
+- **Escritura (`write`):** además puede crear cotizaciones, clientes y productos.
 
 ### Rotación de Llaves
-Si sospechas que tu llave secreta se ha filtrado (ej. se subió por error a GitHub):
-1. Ingresa inmediatamente al panel de Claves API.
-2. Haz clic en el botón de los tres puntos junto a tu llave viva y selecciona **"Rotar Clave (Roll Key)"**.
-3. El sistema te dará una llave nueva al instante y tienes la opción de que la vieja deje de funcionar de inmediato, o darle un periodo de gracia de 24 horas para que actualices tus servidores sin tirar tu aplicación en producción.
+
+No hay rotación "en sitio" con periodo de gracia. Si una llave se filtró (ej. se subió por error a GitHub):
+
+1. Entra a **Ajustes > Developers > API**.
+2. Crea una llave nueva y actualiza tus servidores con ella.
+3. **Revoca** la llave comprometida. La revocación es inmediata: cualquier petición con esa llave responderá `401`.

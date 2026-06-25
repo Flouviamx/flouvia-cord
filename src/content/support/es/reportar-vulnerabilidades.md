@@ -10,9 +10,8 @@ En Cord creemos que la seguridad es un esfuerzo colectivo. Operamos un programa 
 ### Alcance del Programa
 
 Los siguientes dominios y activos están dentro del alcance para pruebas de penetración:
-- `api.flouvia.com` y `api.cord.flouvia.com`
-- `cord.flouvia.com` (Aplicación Web Principal)
-- La infraestructura de Cord Elements y SDKs.
+- `cord.flouvia.com` (aplicación web principal y la API en `cord.flouvia.com/api`)
+- El cotizador embebible (Cord Elements: `/embed`, `/q` y el paquete `@flouviahq/elements`).
 
 **Fuera del alcance:** Denegación de Servicio Volumétrica (DDoS), Ingeniería Social contra empleados de Flouvia, y ataques físicos a nuestros servidores en AWS/Vercel.
 

@@ -1,22 +1,23 @@
 ---
-title: "Subscription with annual billing"
-description: "Switch to annual payment and save 20% on your Cord plan."
+title: "Annual billing for your Cord plan"
+description: "Switch your Cord subscription to annual billing and get 2 months free."
 category: "Account & Team"
 ---
 
-Renewing and billing annual memberships is a process that Cord fully automates through its subscription engine.
+If you already use Cord on a monthly plan, you can switch to **annual billing** and save: the annual cycle charges you for 10 months instead of 12 — that is, **2 months free**.
 
-### Set Up an Annual Billing Cycle
+### How to switch to annual
 
-If you sell SaaS or recurring services:
-1. Go to **Products > Subscriptions and Plans**.
-2. Create a new Plan (e.g., "Premium B2B Membership").
-3. Set the price and select the billing interval to **Annual**.
-4. If the client requires a CFDI, make sure to check the *Automatically issue invoice after charge* box and enter their RFC.
+1. Go to **Settings > Plans & billing > Subscription** (`/app/ajustes/plan`).
+2. Toggle **Annual** in the plan selector.
+3. Confirm in Stripe's checkout. The annual charge is made upfront and your subscription renews every 12 months.
 
-### Prorations and Plan Changes (Upgrades)
+### Mid-year plan changes
 
-If your client paid their annual plan in January, but in June decides to upgrade to a higher plan:
-- The system will calculate the value of the 6 unused months.
-- It will only charge the difference corresponding to the new plan.
-- An automatic invoice will be issued for the exact prorated amount (the residual charge), saving you from having to make manual credit notes.
+If you paid annually and then upgrade (for example from Professional to Scale), Stripe automatically **prorates**: it charges only the difference for the remaining time in the period, with no manual math or credit notes on your side.
+
+### Need your invoice (CFDI) for the charge?
+
+Your subscription charge is made by Stripe. If you need a CFDI for what you pay Cord, request it from our team at `soporte@flouvia.com` with your tax details and we'll issue it.
+
+> Don't confuse this with charging *your* clients: Cord invoices B2B quotes (CFDI 4.0 stamping), it does not run recurring subscription plans for your business's customers.

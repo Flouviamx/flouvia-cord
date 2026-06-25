@@ -3,6 +3,7 @@
 import AppLayout from '../../layouts/AppLayout.astro';
 import { getClientes, getCotizaciones, getMyMembership, money } from '../../lib/queries';
 import { memberCan } from '../../lib/permissions';
+import { REGIMENES_FISCALES, USOS_CFDI } from '../../lib/sat';
 
 const [CLIENTES, COTIZACIONES, ME] = await Promise.all([getClientes(), getCotizaciones(), getMyMembership()]);
 const canEdit = memberCan(ME, 'clientes');
@@ -41,6 +42,9 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
                 data-limite={c.limite > 0 ? String(c.limite) : ''}
                 data-nivel={c.nivel}
                 data-descuento={c.descuentoPct > 0 ? String(c.descuentoPct) : ''}
+                data-regimen={c.regimenFiscal}
+                data-uso={c.usoCfdi}
+                data-cp={c.cpFiscal}
             >
                 <span class="t-client">
                     <span class="t-avatar">{c.inicial}</span>{c.empresa}
@@ -130,6 +134,31 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
                     <button type="button" class="chip" data-v="net60">Net 60</button>
                 </div>
             </div>
+
+            <details class="m-fiscal">
+                <summary>Datos fiscales para CFDI (opcional)</summary>
+                <p class="m-hint" style="margin: 0 0 0.75rem 0;">Si los capturas, al facturar timbramos el CFDI 4.0 a nombre de este cliente. Si los dejas vacíos, usamos "público en general".</p>
+                <div class="m-row">
+                    <div class="m-field">
+                        <label for="fRegimen">Régimen fiscal</label>
+                        <select class="m-input" id="fRegimen">
+                            <option value="">— Sin especificar —</option>
+                            {REGIMENES_FISCALES.map((r) => <option value={r.codigo}>{r.nombre}</option>)}
+                        </select>
+                    </div>
+                    <div class="m-field">
+                        <label for="fCp">Código postal (domicilio fiscal)</label>
+                        <input class="m-input" id="fCp" inputmode="numeric" maxlength="5" placeholder="06600" />
+                    </div>
+                </div>
+                <div class="m-field">
+                    <label for="fUso">Uso del CFDI</label>
+                    <select class="m-input" id="fUso">
+                        <option value="">— Sin especificar (G03) —</option>
+                        {USOS_CFDI.map((u) => <option value={u.codigo}>{u.nombre}</option>)}
+                    </select>
+                </div>
+            </details>
 
             <p class="m-error" id="mError"></p>
 
@@ -320,6 +349,11 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
         font-size: 0.8rem; color: var(--color-text-muted);
     }
     .m-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.95rem; }
+    .m-fiscal { border-top: 1px solid var(--color-border); padding-top: 0.95rem; display: flex; flex-direction: column; gap: 0.95rem; }
+    .m-fiscal > summary { cursor: pointer; font-size: 0.78rem; font-weight: 700; color: var(--color-text); list-style: none; user-select: none; }
+    .m-fiscal > summary::-webkit-details-marker { display: none; }
+    .m-fiscal > summary::before { content: '+ '; color: var(--color-text-muted); font-weight: 700; }
+    .m-fiscal[open] > summary::before { content: '− '; }
     .m-field { display: flex; flex-direction: column; gap: 0.4rem; }
     .m-field label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
     .m-input {
@@ -462,6 +496,9 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
             input('fRfc').value = data?.rfc ?? '';
             input('fLimite').value = data?.limite ?? '';
             input('fDescuento').value = data?.descuento ?? '';
+            input('fRegimen').value = data?.regimen ?? '';
+            input('fUso').value = data?.uso ?? '';
+            input('fCp').value = data?.cp ?? '';
             setNivel(data?.nivel ?? 'estandar', false);
             setTerm(data?.terminos ?? 'contado');
             modal.showModal();
@@ -494,6 +531,9 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
                 limite: input('fLimite').value,
                 nivel: input('fNivel').value,
                 descuento_pct: input('fDescuento').value,
+                regimen_fiscal: input('fRegimen').value,
+                uso_cfdi: input('fUso').value,
+                cp_fiscal: input('fCp').value,
             };
             try {
                 const res = await fetch('/api/clientes', {

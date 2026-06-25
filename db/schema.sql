@@ -180,6 +180,13 @@ create index if not exists idx_tareas_org on tareas(org_id, done, due_date);
 alter table clientes add column if not exists nivel text not null default 'estandar'; -- estandar | plata | oro | distribuidor
 alter table clientes add column if not exists descuento_pct numeric not null default 0; -- % de descuento automático del nivel
 
+-- Datos fiscales del RECEPTOR (por cliente) para CFDI 4.0 nominativo. Sin ellos
+-- emit.ts cae a defaults (público en general / CP y uso del emisor). Capturarlos
+-- permite timbrar a un RFC específico. Catálogos SAT en src/lib/sat.ts.
+alter table clientes add column if not exists regimen_fiscal text; -- c_RegimenFiscal (ej. 601, 626)
+alter table clientes add column if not exists uso_cfdi text;       -- c_UsoCFDI (ej. G03)
+alter table clientes add column if not exists cp_fiscal text;      -- código postal del domicilio fiscal del receptor
+
 -- 2) Flujos de aprobación: umbrales por org + estado de aprobación por cotización.
 alter table orgs add column if not exists aprob_descuento_max numeric not null default 0; -- % de descuento que dispara aprobación (0 = sin tope)
 alter table orgs add column if not exists aprob_monto_max numeric not null default 0;     -- total que dispara aprobación (0 = sin tope)

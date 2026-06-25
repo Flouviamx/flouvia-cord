@@ -117,7 +117,7 @@ export async function getCashFlowPrediction(orgId: string): Promise<{
 
     try {
       const response = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: process.env.AI_MODEL || 'claude-haiku-4-5-20251001',
         max_tokens: 300,
         system: "Eres el CFO (Director Financiero) AI de la empresa. Analiza la proyección de flujo de caja y da 2-3 oraciones clave. Sé muy directo y profesional.",
         messages: [{

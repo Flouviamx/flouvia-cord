@@ -1,24 +1,22 @@
 ---
 title: "Rate limits"
-description: "Understand Cord's API technical limits and how to handle 429 responses."
+description: "Understand Cord's API limits and how to handle 429 responses."
 category: "Developers"
 order: 4
 ---
 
-To ensure the stability and availability of our services for all merchants, the Cord API enforces rate limits by IP and by account key.
+To keep the service stable for everyone, Cord applies a request limit **per IP**.
 
-### Technical Limits (Rate Limits)
+### The limit
 
-In the Production environment (`Live Mode`), we operate under the following standardized thresholds:
-- **100 requests per second (req/s)** for read endpoints (GET).
-- **20 requests per second (req/s)** for mutation and charging endpoints (POST/PUT/DELETE).
-- **5 requests per second (req/s)** for direct tax invoicing endpoints to the PAC (invoices).
+There is a global floor of roughly **500 requests per minute per IP** across all routes. It is a per-**minute** limit (a rolling 60-second window), not per second. For normal B2B integrations (syncing catalogs, creating quotes, reading receivables) this is plenty of headroom.
 
-### Handling 429 Codes
-If you exceed the allowed rate, Cord will reject the request with an HTTP `429 Too Many Requests` code.
-Your application must be designed to handle this using **Exponential Backoff**:
-1. If you receive a 429, pause the execution for 1 second and try again.
-2. If it fails, pause for 2 seconds.
-3. Then for 4, then 8, etc.
+### Handling 429
 
-**Rate Limit Increases:** If your business model requires processing massive bursts (e.g., ticket sales or high-volume e-commerce), contact your Enterprise account executive to move you to dedicated infrastructure.
+If you exceed the limit, Cord responds with `429 Too Many Requests` and a `Retry-After: 60` (seconds) header. Your app should handle it with **exponential backoff**:
+
+1. On a 429, wait and retry (respect `Retry-After` if present).
+2. If it fails again, double the wait: 1s, 2s, 4s, 8s…
+3. Cap the number of retries so you don't loop forever.
+
+**Best practices:** batch reads with pagination (`limit`/`offset`) instead of many small calls, and avoid aggressive polling — to learn about changes use [Webhooks](/en/support/configurar-webhooks) rather than polling in a loop.

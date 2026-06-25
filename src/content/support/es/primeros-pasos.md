@@ -1,50 +1,43 @@
 ---
 title: "Cord 101: Primeros pasos"
-description: "Acelera tu integración. Configura tu cuenta empresarial, emite facturas y recibe pagos en 5 sencillos pasos."
-category: "Cuenta"
+description: "Configura tu cuenta, crea tu primer cliente y envía tu primera cotización en minutos."
+category: "Cuenta y Equipo"
 order: 1
 ---
 
-Bienvenido a Cord. Hemos diseñado esta guía para que puedas tener tu cuenta operando, facturando y cobrando en menos de 20 minutos. 
+Bienvenido a Cord. Esta guía te deja operando —cotizando, cobrando y facturando— en menos de 20 minutos. Si es tu primera vez, sigue esta ruta lineal.
 
-Si es tu primera vez utilizando la plataforma, te recomendamos seguir esta ruta lineal.
+## Paso 1: Configura tu empresa
+El núcleo de Cord es tu perfil fiscal y de marca.
 
-## Paso 1: Configuración de la Empresa
-El núcleo de Cord es tu perfil fiscal y operativo. Antes de emitir un pago o una factura, necesitas validar tu identidad corporativa.
+1. Ve a **Ajustes > General** y captura tu razón social, contacto y datos básicos.
+2. En **Ajustes > Facturación y CFDI** ingresa tu RFC y régimen fiscal, y sube tu **CSD (Certificado de Sello Digital)**: los archivos `.cer` y `.key` que te da el SAT, con su contraseña. *Sin el CSD podrás cotizar, pero no timbrar CFDI.*
 
-1. Navega a **Ajustes > Empresa**.
-2. Ingresa tu Razón Social, RFC y Régimen Fiscal.
-3. Sube tu **CSD (Certificado de Sello Digital)**. Este es el archivo `.cer` y `.key` que te proporciona el SAT, junto con tu contraseña. *Sin este paso, no podrás emitir facturas ni complementos de pago (REP).*
+## Paso 2: (Opcional) Conecta tu Stripe
+Para cobrar con tarjeta en línea, Cord usa **tu propia cuenta de Stripe** (no cobramos comisión por transacción). Conéctala en Ajustes para habilitar el botón de pago del link público. Si tus clientes pagan por transferencia (SPEI), no necesitas este paso: ellos transfieren a la CLABE de tu negocio y tú marcas la cotización como pagada.
 
-## Paso 2: Conectar tu API (Para Desarrolladores)
-Si vas a utilizar Cord de forma programática (vía nuestra API o SDKs), el siguiente paso es obtener tus credenciales.
+## Paso 3: Crea tu primer cliente
+1. Ve a **Clientes > Nuevo cliente**.
+2. Captura su razón social y RFC.
+3. Asigna términos de crédito (ej. Net-30) y, si aplica, su límite de crédito para que Cord monitoree su exposición.
+4. Para CFDI nominativo, agrega su régimen fiscal, código postal y uso de CFDI en la sección de datos fiscales.
 
-- Ve a **Desarrolladores > API Keys**.
-- Verás dos entornos: `Modo Prueba (Sandbox)` y `Modo en Vivo (Producción)`.
-- Copia tu `Secret Key` de prueba. Inyéctala en tu entorno de desarrollo local.
-- Consulta nuestra documentación técnica para realizar tu primera llamada de prueba `/ping`.
+## Paso 4: Envía tu primera cotización
+1. Ve a **Cotizaciones > Nueva**.
+2. Elige el cliente, agrega líneas (de tu catálogo o líneas libres) y revisa el total.
+3. Al enviarla, Cord genera un **link público** y, si configuraste correo, lo manda al cliente. El cliente lo abre, revisa, aprueba y —si conectaste Stripe— paga en línea.
 
-## Paso 3: Configurar Métodos de Cobro
-Cord te permite cobrar vía Tarjeta de Crédito, Transferencia (SPEI) y Divisas Internacionales.
+## Paso 5: (Para devs) Conecta la API
+Si vas a usar Cord programáticamente:
 
-1. Ve a **Cobranza > Métodos de Pago**.
-2. Activa las pasarelas que desees utilizar. 
-3. *Nota importante:* Los cobros internacionales (Wire) requieren validación adicional de KYC (Conoce a tu Cliente) que puede tomar hasta 48 horas en activarse.
+- Ve a **Ajustes > Developers > API** y crea una llave (`sk_test_...` o `sk_live_...`).
+- Verifica que funciona con la llamada más simple:
 
-## Paso 4: Crear tu primer Cliente
-Para emitir una cotización o factura, necesitas una contraparte.
-
-1. Ve a **Clientes > Nuevo Cliente**.
-2. Ingresa su Razón Social y RFC.
-3. Asigna términos de crédito (Ej. Net-30). Si el cliente tiene un límite de crédito aprobado, agrégalo en este paso para que Cord monitoree su exposición crediticia automáticamente.
-
-## Paso 5: Emitir tu primer cobro
-Estás listo. Ahora puedes crear una **Cotización interactiva** o simplemente enviar un **Link de Pago** público.
-
-- **Para Links Rápidos:** Ve a *Cobranza > Links de Pago* y genera una liga universal.
-- **Para Flujos B2B:** Crea una cotización, añade los ítems, y al enviarla, Cord generará automáticamente un flujo de pago. Cuando el cliente pague, Cord timbrará la factura PUE automáticamente.
+```bash
+curl https://cord.flouvia.com/api/v1/me -H "Authorization: Bearer sk_test_tu_llave"
+```
 
 ## ¿Qué sigue?
 - [Configurar Webhooks](/soporte/configurar-webhooks)
 - [Invitar a tu equipo](/soporte/invitar-miembros-roles)
-- [Entender el manejo de disputas](/soporte/manejo-disputas)
+- [Manejo de disputas](/soporte/manejo-disputas)

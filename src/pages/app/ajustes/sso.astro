@@ -21,23 +21,16 @@ const isManaged = !canEdit;
             <h2>Configura el inicio de sesión único</h2>
             <p>El Inicio de sesión único (SSO) permite a tus empleados acceder a Cord usando las credenciales de tu empresa (Google Workspace, Microsoft Entra, Okta, etc.), mejorando la seguridad y centralizando el acceso.</p>
             
-            {isManaged ? (
-                <>
-                    <div class="managed-notice">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                        <span>Gestionado por <strong>{org.nombre}</strong></span>
-                    </div>
-                    <div class="sso-actions">
-                        <button class="btn-primary disabled" disabled>Empezar configuración</button>
-                    </div>
-                    <p class="sso-hint">Contacta a los administradores de tu organización para modificar la configuración de SSO.</p>
-                </>
-            ) : (
-                <div class="sso-actions">
-                    <a href="/app/ajustes/sso/configuracion" class="btn-primary" style="text-decoration: none;">Empezar configuración</a>
-                    <a href="/soporte/sso-empresarial" target="_blank" class="btn-secondary" style="text-decoration: none;">Documentación</a>
+            {isManaged && (
+                <div class="managed-notice">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    <span>Gestionado por <strong>{org.nombre}</strong></span>
                 </div>
             )}
+            <div class="sso-soon">
+                <span class="sso-soon-badge">Próximamente</span>
+                <p class="sso-hint">Estamos terminando la integración de SSO empresarial (SAML/OIDC). Si necesitas activarlo para tu equipo, escríbenos y lo configuramos contigo.</p>
+            </div>
         </div>
         
         <div class="sso-graphic-wrap">
@@ -102,6 +95,20 @@ const isManaged = !canEdit;
     
     .sso-actions { display: flex; gap: 1rem; align-items: center; }
     .sso-hint { margin: 1rem 0 0 0; font-size: 0.85rem; color: var(--color-text-muted); }
+
+    .sso-soon { display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+    .sso-soon-badge {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: linear-gradient(135deg, rgba(10,25,47,0.06), rgba(14,165,233,0.08));
+        border: 1px solid var(--color-border); border-radius: 100px;
+        font-size: 0.82rem; font-weight: 600; color: var(--color-text);
+        letter-spacing: 0.2px;
+    }
+    .sso-soon-badge::before {
+        content: ''; width: 7px; height: 7px; border-radius: 50%;
+        background: #0ea5e9; box-shadow: 0 0 8px rgba(14,165,233,0.7);
+    }
     
     .btn-primary {
         display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;

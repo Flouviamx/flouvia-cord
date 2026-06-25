@@ -1,31 +1,24 @@
 ---
-title: "API: Emitir y descargar facturas"
-description: "Timbra CFDI 4.0 directamente desde tus sistemas internos."
+title: "Facturación (CFDI) y la API"
+description: "Cómo se emiten los CFDI 4.0 en Cord y qué expone la API pública."
 category: "Desarrolladores"
 ---
 
-El endpoint de `Invoices` controla el timbrado de CFDI 4.0 en México. Cuando utilizas este endpoint en modo *Live*, te conectas directamente a nuestro PAC certificado (Facturapi).
+A diferencia de otros recursos, **el timbrado de CFDI 4.0 no se expone como un endpoint público de la API v1 todavía**. La facturación ocurre dentro del flujo de la cotización, no como una llamada directa "crear factura".
 
-### Timbrar una Factura Directa
+### Cómo se factura en Cord
 
-Si no deseas pasar por el flujo de una cotización y solo quieres generar un CFDI 4.0 (Ingreso):
+1. Creas o recibes una cotización (puedes hacerlo por la API: ver [API: Crear cotizaciones](/soporte/api-cotizaciones)).
+2. El cliente la aprueba (o tú la marcas como aprobada).
+3. Marcas la cotización como **facturada** desde la app. En ese momento Cord arma el CFDI 4.0 con los datos de la cotización (productos, cantidades, precios, RFC y datos fiscales del cliente) y lo timbra ante el SAT a través de nuestro PAC, **Facturapi**.
+4. El XML y el PDF quedan ligados a la cotización y disponibles para ti y para tu cliente.
 
-```bash
-curl -X POST https://api.flouvia.com/v1/invoices \
-  -H "Authorization: Bearer sk_live_..." \
-  -d '{
-    "customer_id": "cus_12345",
-    "payment_form": "03", // 03 = Transferencia electrónica de fondos
-    "payment_method": "PUE", // Pago en una sola exhibición
-    "use": "G03", // Gastos en general
-    "items": [
-      {
-        "product_key": "43231500", // Clave SAT de Software
-        "description": "Desarrollo a la medida",
-        "price": 5000000
-      }
-    ]
-  }'
-```
+Para que el CFDI salga a nombre de un RFC específico, captura el **régimen fiscal, código postal y uso de CFDI** del cliente en su ficha. Sin esos datos, el comprobante se emite como "público en general".
 
-**Generación Asíncrona:** La API responderá con un `status: processing`. El timbrado con el PAC puede demorar entre 1 a 5 segundos. Te recomendamos escuchar el evento webhook `invoice.created` para saber cuándo descargar el PDF y XML.
+### Qué SÍ puedes hacer por la API
+
+- **Crear y consultar cotizaciones** (`/api/v1/cotizaciones`), que son el origen de cada factura.
+- **Consultar tu cartera** (`/api/v1/cobranza`) para saber qué está pagado o vencido.
+- **Recibir webhooks** del evento `quote.invoiced` cuando una cotización se factura, para reaccionar desde tu sistema.
+
+> Un endpoint de timbrado directo (sin pasar por una cotización) está en nuestro roadmap. Mientras tanto, el origen siempre es una cotización.

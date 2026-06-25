@@ -7,14 +7,40 @@ order: 1
 
 Your API Keys are the gateway to your account. Treat them with the same care as your database password.
 
+### Where to generate them
+
+Go to **Settings > Developers > API** (`/app/ajustes/api`). There you create new keys, pick their scope (read or write), and revoke them. The secret key is shown **only once** when created; store it in a secrets manager, never in source code.
+
+### Authentication
+
+The API is REST over HTTPS. Every request carries your key in the `Authorization` header:
+
+```bash
+curl https://cord.flouvia.com/api/v1/me \
+  -H "Authorization: Bearer sk_live_your_key"
+```
+
+Response:
+
+```json
+{ "org": { "id": "...", "nombre": "Your Business", "plan": "pro" }, "scope": "write", "mode": "live" }
+```
+
 ### Environments (Live vs Test)
 
-In the **Developers > API Keys** section you will find two pairs of keys:
-- **Test Mode (`sk_test_...`):** Use them for development. They do not generate real charges to cards nor do they stamp real invoices before the SAT (they simulate them).
-- **Live Mode (`sk_live_...`):** Use them in your production environment. Every charge is real and every CFDI has legal validity.
+When you create a key you choose its mode:
+- **Test (`sk_test_...`):** does not consume your API usage meter or count toward billing. Useful for testing integrations. **Important:** it operates on the same organization data — there is no isolated sandbox yet. Whether CFDI stamping is real or simulated depends on your Facturapi configuration (CSD / key), not on the key's mode.
+- **Live (`sk_live_...`):** use it in production. Every call counts toward your plan usage.
+
+### Scopes
+
+- **Read (`read`):** query quotes, clients, products, and receivables.
+- **Write (`write`):** can also create quotes, clients, and products.
 
 ### Key Rotation
-If you suspect that your secret key has been leaked (e.g. mistakenly uploaded to GitHub):
-1. Immediately enter the API Keys panel.
-2. Click on the three dots button next to your live key and select **"Roll Key"**.
-3. The system will give you a new key instantly and you have the option for the old one to stop working immediately, or to give it a 24-hour grace period so you can update your servers without taking down your application in production.
+
+There is no in-place rotation with a grace period. If a key leaks (e.g. accidentally pushed to GitHub):
+
+1. Go to **Settings > Developers > API**.
+2. Create a new key and update your servers with it.
+3. **Revoke** the compromised key. Revocation is immediate: any request with that key returns `401`.

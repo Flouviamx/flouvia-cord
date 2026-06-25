@@ -1,22 +1,17 @@
 ---
-title: "Idempotency Keys"
-description: "Prevent duplicate charges using idempotency keys."
+title: "Avoiding duplicate operations"
+description: "How to prevent duplicate quotes or records when integrating the API."
 category: "Developers"
 ---
 
-Idempotency is a technique that ensures an API operation occurs exactly once, regardless of how many times the same request is retried. It is vital for preventing double billing due to network failures.
+Idempotency is a technique that ensures an operation occurs exactly once, no matter how many times the same request is retried. It's useful for preventing duplicates when a connection drops mid-`POST`.
 
-### How to use Idempotency keys?
+> **Current status:** Cord's v1 API **does not expose an `Idempotency-Key` header yet**. While we add it, use the following strategies to avoid duplicates from your integration.
 
-When making `POST` requests that alter the state (e.g., creating a charge, refunding, stamping an invoice), you must send the HTTP header `Idempotency-Key`.
+### Recommended strategies
 
-```bash
-curl -X POST https://api.flouvia.com/v1/charges \
-  -H "Idempotency-Key: cobro_mensual_u102_abril" \
-  -d '{...}'
-```
+- **Store the response `id`.** When you create a quote (`POST /api/v1/cotizaciones`), the response includes `data.id` and `data.folio`. Persist them in your system and don't retry if you already have an id for that logical operation.
+- **Check before retrying.** If a `POST` fails on timeout, first run a `GET` (for example the recent quotes list) to see whether the creation actually happened before sending it again.
+- **Lean on the importer's dedupe.** **Client** import deduplicates by RFC or name, and **product** import by SKU. If you sync catalogs, re-importing won't create duplicates.
 
-**System Rules:**
-- The key can be any unique string (e.g., a v4 UUID or an internal ID from your database) of up to 255 characters.
-- If the connection drops and you retry the `POST` with the same `Idempotency-Key`, Cord will not charge the card again. It will simply return the exact same JSON response that it generated the first time (the original successful charge).
-- Idempotency keys expire and are cleared from our cache **24 hours** after being received.
+When we ship official `Idempotency-Key` support, we'll update this guide with the header and its rules.

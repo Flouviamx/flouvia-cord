@@ -1,33 +1,32 @@
 ---
 title: "API error code handling"
-description: "Meaning of HTTP 400, 401, 402, 404 and 500 in Cord."
+description: "Meaning of HTTP 400, 401, 403, 404, 429 and 500 in Cord's API."
 category: "Developers"
 ---
 
-When integrating the Cord API, it is essential to know how to handle failed responses to provide a good experience to your users.
+When integrating Cord's API, it's worth handling failed responses well to give a good experience.
 
-### Error Structure
+### Error structure
 
-All failed responses (HTTP 4xx and 5xx) return a standardized JSON object:
+Failed responses return a flat JSON object with two fields:
 
 ```json
 {
-  "error": {
-    "type": "invalid_request_error",
-    "code": "parameter_missing",
-    "message": "The 'amount' field is required to process the payment.",
-    "param": "amount",
-    "doc_url": "https://cord.flouvia.com/en/support/errores-api#parameter_missing"
-  }
+  "error": "Company name is required",
+  "code": "invalid_request"
 }
 ```
 
-### Common HTTP Codes
-- **400 Bad Request:** Your request is missing a parameter or is incorrectly formatted.
-- **401 Unauthorized:** Your API Key is invalid or you did not send the authorization header.
-- **402 Payment Required:** The charge attempt failed (e.g., declined card or insufficient funds).
-- **403 Forbidden:** Your key does not have permissions to access this resource.
-- **429 Too Many Requests:** You have exceeded the request limit (Rate Limit).
-- **500 Internal Server Error:** Error on our side (very rare, but contact support if it persists).
+- `error`: a human-readable message you can show or log.
+- `code`: a stable identifier to branch on in your code (e.g. `invalid_json`, `invalid_request`).
 
-To handle card declines gracefully, read the `code` property (e.g., `card_declined` or `insufficient_funds`) and show a friendly message to your client.
+### Common HTTP codes
+
+- **400 Bad Request:** a parameter is missing or the JSON is malformed.
+- **401 Unauthorized:** your API key is invalid, revoked, or you didn't send the `Authorization` header.
+- **403 Forbidden:** your key lacks the required scope (e.g. using a read-only key for a `POST`).
+- **404 Not Found:** the resource doesn't exist or doesn't belong to your organization.
+- **429 Too Many Requests:** you exceeded the request limit. See [Rate limits](/en/support/limites-peticiones).
+- **500 Internal Server Error:** an error on our side (rare; contact support if it persists).
+
+> Note: the v1 API does not process card charges directly (that happens on the public link via Stripe), so you won't see card-declined errors in these responses.

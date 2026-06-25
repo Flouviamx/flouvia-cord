@@ -10,9 +10,9 @@ El secreto para cerrar más rápido los tratos B2B es actuar en el momento exact
 ### ¿Qué monitorea el sistema?
 
 Desde el momento en que envías la liga de la cotización por correo o WhatsApp:
-- **Primer Clic (Apertura):** Sabrás el día y la hora exacta en que el prospecto visualizó el documento.
-- **Tiempo de Lectura:** El sistema registra cuánto tiempo permaneció el cliente analizando la cotización en su navegador.
-- **Descargas:** Si el cliente hace clic en "Descargar Cotización en PDF", quedará registrado en el historial (Audit Trail) de esa cotización en particular.
+- **Apertura:** Sabrás el día y la hora exacta en que el prospecto abrió la cotización (evento "vista" en el timeline).
+- **Viendo ahora:** Mientras el cliente tiene la cotización abierta, lo ves en vivo en el detalle con el indicador "Viendo ahora" (según tu plan).
+- **Decisión:** Cada aprobación, rechazo, contraoferta o comentario del cliente queda registrado en el timeline de esa cotización.
 
 ### Configurar Notificaciones Push/Email
 
@@ -20,4 +20,4 @@ Para enterarte en tiempo real, ve a **Ajustes > Notificaciones**.
 Puedes habilitar alertas directas a tu correo electrónico para los siguientes eventos:
 - "La cotización COT-045 fue vista por primera vez".
 - "La cotización COT-045 ha sido firmada y aceptada".
-- "El pago del anticipo de la COT-045 fue rechazado por el banco".
+- "El pago de la COT-045 fue recibido".

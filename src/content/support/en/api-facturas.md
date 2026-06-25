@@ -1,31 +1,24 @@
 ---
-title: "API: Issue and Download Invoices"
-description: "Stamp CFDI 4.0 directly from your internal systems."
+title: "Invoicing (CFDI) and the API"
+description: "How CFDI 4.0 invoices are issued in Cord and what the public API exposes."
 category: "Developers"
 ---
 
-The `Invoices` endpoint controls CFDI 4.0 stamping in Mexico. When you use this endpoint in *Live* mode, you connect directly to our certified PAC (Facturapi).
+Unlike other resources, **CFDI 4.0 stamping is not exposed as a public v1 API endpoint yet**. Invoicing happens within the quote flow, not as a direct "create invoice" call.
 
-### Stamp a Direct Invoice
+### How invoicing works in Cord
 
-If you do not wish to go through a quote flow and only want to generate a CFDI 4.0 (Income):
+1. You create or receive a quote (you can do this via the API: see [API: Create quotes](/en/support/api-cotizaciones)).
+2. The customer approves it (or you mark it approved).
+3. You mark the quote as **invoiced** from the app. At that point Cord builds the CFDI 4.0 from the quote data (products, quantities, prices, RFC and the customer's tax details) and stamps it with the SAT through our PAC, **Facturapi**.
+4. The XML and PDF stay linked to the quote and available to you and your customer.
 
-```bash
-curl -X POST https://api.flouvia.com/v1/invoices \
-  -H "Authorization: Bearer sk_live_..." \
-  -d '{
-    "customer_id": "cus_12345",
-    "payment_form": "03", // 03 = Electronic funds transfer
-    "payment_method": "PUE", // Payment in a single installment
-    "use": "G03", // General expenses
-    "items": [
-      {
-        "product_key": "43231500", // SAT Software Key
-        "description": "Custom development",
-        "price": 5000000
-      }
-    ]
-  }'
-```
+To issue the CFDI to a specific RFC, capture the customer's **tax regime, zip code, and CFDI use** in their record. Without that data, the receipt is issued as "general public".
 
-**Asynchronous Generation:** The API will respond with a `status: processing`. Stamping with the PAC can take between 1 to 5 seconds. We recommend listening to the `invoice.created` webhook event to know when to download the PDF and XML.
+### What you CAN do via the API
+
+- **Create and query quotes** (`/api/v1/cotizaciones`), which are the source of every invoice.
+- **Query your receivables** (`/api/v1/cobranza`) to know what is paid or overdue.
+- **Receive webhooks** for the `quote.invoiced` event when a quote is invoiced, to react from your system.
+
+> A direct stamping endpoint (without going through a quote) is on our roadmap. For now, the source is always a quote.

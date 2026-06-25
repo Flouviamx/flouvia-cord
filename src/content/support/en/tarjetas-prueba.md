@@ -4,7 +4,7 @@ description: "List of PANs to simulate 3D Secure flows and failures."
 category: "Developers"
 ---
 
-When you are in the implementation phase or developing against the API in the **Sandbox** environment, do not use real credit cards. You can simulate successful payments using the test numbers provided by Stripe.
+When you are testing collection with your **Stripe account in test mode**, do not use real credit cards. You can simulate successful payments using the test numbers provided by Stripe.
 
 ### Magic Cards (Test mode only)
 
@@ -19,4 +19,4 @@ Stripe provides specific numbers to simulate errors. Use any of these with any d
 - Insufficient funds: `4000 0000 0000 0004`
 - Card reported stolen: `4000 0000 0000 0002`
 
-The system will react the same as in production: Cord will not approve the quote or issue the invoice in test mode if the payment fails.
+The flow reacts the same as in production: if the payment fails in Stripe's checkout, the quote does not move to *Paid*.

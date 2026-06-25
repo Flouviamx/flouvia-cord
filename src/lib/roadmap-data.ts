@@ -228,7 +228,7 @@ Chasing overdue invoices is awkward for sales teams and consumes valuable time f
 - **Direct payment links:** Messages include a direct link to settle the invoice via bank transfer or card, reducing friction so you get paid faster.`
         },
         area: 'finanzas',
-        status: 'next',
+        status: 'beta',
         api: false
     },
     {
@@ -248,14 +248,14 @@ La facturación electrónica en México (CFDI 4.0) puede ser un dolor de cabeza 
 
 ### Beneficios clave:
 - **Cero recaptura:** Todo lo que se negoció en la cotización (clave de producto SAT, unidades, impuestos) se transfiere directamente a la factura.
-- **PUE y PPD automáticos:** Si el trato fue de contado, se emite un CFDI de Ingreso PUE. Si fue a crédito (Net 30), se emite un PPD y posteriormente Cord genera automáticamente el Complemento de Recepción de Pagos (REP) cuando el cliente deposita.
+- **Timbrado PUE automático:** Si el trato fue de contado, al aprobarse la cotización se emite un CFDI de Ingreso PUE sin recapturar nada. Para ventas a crédito (Net 30) marcamos la cotización como PPD; el Complemento de Recepción de Pagos (REP) automático está en nuestro roadmap.
 - **Almacenamiento seguro XML/PDF:** Todos tus comprobantes fiscales se resguardan en la nube, accesibles tanto para ti como para tu cliente desde su portal.`,
             en: `## Invisible B2B invoicing
 Electronic invoicing in Mexico (CFDI 4.0) can be an administrative headache. In Cord, we have integrated stamping directly into the sales flow so it happens magically in the background.
 
 ### Key benefits:
 - **Zero retyping:** Everything negotiated on the quote (SAT product code, units, taxes) transfers directly to the invoice.
-- **Automatic PUE and PPD:** If the deal was cash, a PUE income CFDI is issued. If it was on credit (Net 30), a PPD is issued and later Cord automatically generates the Payment Receipt Complement (REP) when the client deposits.
+- **Automatic PUE stamping:** If the deal was cash, an income PUE CFDI is issued when the quote is approved, with zero retyping. Credit sales (Net 30) are marked as PPD; automatic Payment Receipt Complement (REP) generation is on our roadmap.
 - **Secure XML/PDF storage:** All your tax receipts are safely stored in the cloud, accessible to both you and your client from their portal.`
         },
         area: 'fiscal',
@@ -290,7 +290,7 @@ With CFDI 4.0, the SAT requires the receiver's Name, Zip Code, and Tax Regime to
 - **Bulk updates:** Ask your entire client portfolio to update their data with a single click through a secure portal.`
         },
         area: 'fiscal',
-        status: 'live',
+        status: 'next',
         api: true
     },
     {
@@ -321,7 +321,7 @@ Selling to other countries from Mexico requires highly specific tax processes, s
 - **Logistics integration:** Connect the value of the merchandise with the waybill (Carta Porte) for delay-free customs clearance.`
         },
         area: 'fiscal',
-        status: 'beta',
+        status: 'next',
         api: true
     }
 ];

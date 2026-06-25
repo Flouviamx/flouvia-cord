@@ -326,6 +326,9 @@ export async function getClientes() {
         inicial: initials(c.empresa),
         nivel: (c.nivel as string) || 'estandar',
         descuentoPct: num(c.descuento_pct),
+        regimenFiscal: (c.regimen_fiscal as string) ?? '',
+        usoCfdi: (c.uso_cfdi as string) ?? '',
+        cpFiscal: (c.cp_fiscal as string) ?? '',
     }));
 }
 

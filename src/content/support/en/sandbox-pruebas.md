@@ -1,18 +1,22 @@
 ---
-title: "Test Environment (Sandbox)"
-description: "Simulate payments, declines, and invoices without real money."
+title: "Testing Cord without affecting production"
+description: "How to experiment with payments and stamping without spending money or stamping for real."
 category: "Developers"
 ---
 
-Integrating a payment and billing system requires a secure environment to experiment without the fear of spending money or getting into legal trouble with the tax authority (SAT). For this reason, we have provided every Cord organization with a parallel Sandbox (Testing) environment.
+Before going live you'll want to test the flow (send a quote, collect, stamp) risk-free. Cord does not yet have an **isolated sandbox** with separate data; instead, use these pieces to test safely.
 
-### Activate Test Mode
+### Test-mode API keys
 
-On your main dashboard, locate the top button or toggle called **Test Mode** and activate it. The interface will turn orange.
+Create an `sk_test_...` key in **Settings > Developers > API**. Test keys **don't consume your usage meter or count toward billing**, so you can iterate your integration at no cost. Note they operate on the **same data** as your organization (there's no parallel environment); label or delete any test records you create.
 
-In this alternative environment:
-- All customers, quotes, and invoices created here are fake and do not exist in Production.
-- **Fake Payments:** You can test your customer's experience using provided test cards (e.g., the famous Visa test card ending in `4242`).
-- **Simulated Stamping:** When issuing a CFDI in this environment, the invoice is validated by an engine that checks the SAT syntax (ensuring codes and calculations match), but it **DOES NOT** send the official XML to the SAT. This way, your accountant won't lose their mind.
+### Testing card payments
 
-Make sure to use the Test API Keys (`sk_test_...`) in your code while developing.
+Payments go through **your Stripe account**. Put your Stripe account in **test mode** and use [Stripe's test cards](/en/support/tarjetas-prueba) (e.g. the Visa `4242 4242 4242 4242`) in the public link's checkout. No charge is real while Stripe is in test mode.
+
+### Testing stamping (CFDI)
+
+Stamping depends on your Facturapi configuration:
+- **No CSD / no Facturapi key:** Cord returns a **simulated** stamp (marked as such), sending nothing to the SAT. Ideal to test the flow without affecting your accountant.
+- **With a Facturapi test key:** syntax is validated without issuing a tax-valid CFDI.
+- **With a CSD and live key:** it stamps for real with the SAT.

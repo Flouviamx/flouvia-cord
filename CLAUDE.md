@@ -823,13 +823,46 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
    • **Paso 2 (Verificación de Dominio):** Input validado con prefijo `@` para establecer el enrutamiento de usuarios B2B.
    • **Paso 3 (Registro DNS TXT):** Instrucciones claras con caja de copia en un clic para mostrar el código de verificación `flouvia-verification`.
    • Además, se unificó la estética premium de los botones primarios a lo largo de las páginas de Ajustes (`equipo.astro` y `sso.astro`), devolviéndolos al gradiente oficial "Cord Navy" en un rediseño coherente "Quiet Luxury".
-⬜ Pendiente (no bloquea lanzamiento): capturar datos fiscales del receptor por cliente
-   (régimen/CP/uso CFDI) para CFDI nominativo; `FACTURAPI_API_KEY` live en prod;
+✅ **Datos fiscales del receptor POR CLIENTE (jun 2026)** — CFDI nominativo cableado de
+   punta a punta. Columnas nuevas en `clientes`: `regimen_fiscal` (c_RegimenFiscal),
+   `uso_cfdi` (c_UsoCFDI) y `cp_fiscal` (CP del domicilio fiscal del receptor). El alta/edición
+   de clientes (`/app/ajustes` → modal de `/app/clientes`) tiene una sección colapsable "Datos
+   fiscales para CFDI (opcional)" con selects de los catálogos SAT (`src/lib/sat.ts`). `getClientes`
+   devuelve `regimenFiscal/usoCfdi/cpFiscal`; `/api/clientes` los persiste (POST/PATCH). **`emit.ts`
+   ya los usa**: pasa `tax_system`/`zip`/`cfdi_use` del cliente al `MexicoSatProvider` (que ya los
+   aceptaba), con fallback al CP/uso del emisor; si el RFC es genérico degrada a público en general.
+   ⚠️ Correr `npm run db:migrate` (3 columnas nuevas en `clientes`).
+✅ **Toda la IA usa Haiku (jun 2026)** — decisión de André: TODO lo de IA corre con
+   `claude-haiku-4-5-20251001` (configurable con `AI_MODEL`). Cableado: `ai-draft` (armar
+   cotización), `ar-agent.ts` (cobranza autónoma) y `cashflow.ts` (AI CFO Insight de Tesorería).
+   Antes `ar-agent` usaba opus y `cashflow` tenía hardcodeado `claude-3-5-sonnet-20241022` (modelo
+   viejo, bug) — ambos corregidos. Regla a futuro: nada de IA hardcodea modelo; usar
+   `process.env.AI_MODEL || 'claude-haiku-4-5-20251001'`.
+✅ **SSO marcado "Próximamente" (jun 2026)** — el SSO empresarial (SAML/OIDC) NO está conectado
+   (sería config de Clerk de plan pagado). La pestaña `/app/ajustes/sso` conserva su estética
+   premium (gráfico de flujo, badge Enterprise) pero se QUITARON los botones de acción
+   ("Empezar configuración"/"Documentación"): ahora muestra un badge "Próximamente" + nota de
+   contacto. El wizard `/app/ajustes/sso/configuracion.astro` sigue en el repo pero queda sin
+   enlace de entrada (es 100% cosmético: no persiste nada). NO re-exponer botones hasta conectar SAML real.
+✅ **Limpieza de código muerto de Clerk (jun 2026)** — se borró el clúster del re-trabajo de
+   auth abandonado (0 imports): `src/components/auth/{SignInForm,SignUpForm,VerifyEmailForm,
+   ForgotPasswordForm}.tsx` + `AuthForms.css`; toda la carpeta `src/components/b2b/`
+   (`CreateWorkspaceForm`, `WorkspaceSwitcher`, `MembersManager`, `AcceptInvitationFlow`,
+   `InvitationsManager`, `B2B.css`); las páginas huérfanas `src/pages/app/ajustes/invitaciones.astro`
+   y `src/pages/accept-invitation.astro` (el flujo real de invitación es `/unirse/[token]`);
+   `src/components/developers/DeveloperUI.css`; y el onboarding muerto `src/lib/onboarding.ts` +
+   `/api/onboarding/seed` (el real es `getSetupProgress()` en queries.ts). El flujo de auth ACTIVO
+   es 100% custom: `src/components/auth/{CustomSignIn,CustomSignUp,ForgotPassword,VerifyEmail}.tsx`
+   + `CustomUserProfile`/`CustomOrgSwitcher`. (Ignorar las entradas viejas que digan "componentes
+   nativos de Clerk `<SignIn/>`/`<UserProfile/>`": el approach final es Custom*.)
+⬜ Pendiente (no bloquea lanzamiento): `FACTURAPI_API_KEY` live en prod;
    `USInvoiceProvider` real (US); publicar `@flouviahq/elements` v0.2.0 (`npm login && npm
-   publish`); "tiempo real" full vía SSE/WebSocket. Deuda menor: el "Entorno de prueba" es
-   cosmético (solo cambia el prefijo de API key mostrado), y 5 vulnerabilidades de `npm audit`
-   de bajo riesgo (esbuild dev-Windows / path-to-regexp build-time) cuyo fix exige downgrade
-   breaking de `@astrojs/vercel`.
+   publish`); "tiempo real" full vía SSE/WebSocket (hoy es polling). Deuda menor: el "Entorno de
+   prueba" es cosmético (solo cambia el prefijo de API key mostrado); `/api/*` aún no migra a
+   `withOrgTx` (pendiente para activar `FORCE ROW LEVEL SECURITY`); rate-limit del middleware es
+   in-memory por instancia (para escala multi-réplica usar Upstash Redis); y 5 vulnerabilidades de
+   `npm audit` de bajo riesgo (esbuild dev-Windows / path-to-regexp build-time) cuyo fix exige
+   downgrade breaking de `@astrojs/vercel`.
 
 ---
 
@@ -1307,7 +1340,7 @@ CRON_SECRET=                                                    # protege /api/c
 FACTURAPI_API_KEY=                                              # CFDI 4.0 vía Facturapi (sk_test_/sk_live_); sin ella el timbrado es SIMULADO
 # FACTURAPI_URL=                                                # opcional (default https://www.facturapi.io/v2)
 ANTHROPIC_API_KEY=                                              # IA "armar cotización desde texto" + cobranza/MCP
-AI_MODEL=                                                       # opcional (default claude-opus-4-8)
+AI_MODEL=                                                       # opcional (default claude-haiku-4-5-20251001 — TODA la IA usa Haiku)
 ```
 
 Neon se recomienda provisionar vía **Vercel Marketplace → Neon** desde el proyecto

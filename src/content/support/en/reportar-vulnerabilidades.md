@@ -10,9 +10,8 @@ At Cord, we believe security is a collective effort. We operate a private respon
 ### Program Scope
 
 The following domains and assets are within scope for penetration testing:
-- `api.flouvia.com` and `api.cord.flouvia.com`
-- `cord.flouvia.com` (Main Web Application)
-- The Cord Elements infrastructure and SDKs.
+- `cord.flouvia.com` (main web application and the API at `cord.flouvia.com/api`)
+- The embeddable quoter (Cord Elements: `/embed`, `/q`, and the `@flouviahq/elements` package).
 
 **Out of scope:** Volumetric Denial of Service (DDoS), Social Engineering against Flouvia employees, and physical attacks on our AWS/Vercel servers.
 

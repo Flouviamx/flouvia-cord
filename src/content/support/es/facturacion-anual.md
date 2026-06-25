@@ -1,22 +1,23 @@
 ---
-title: "Suscripción con facturación anual"
-description: "Cambia a pago anual y ahorra 20% en tu plan Cord."
+title: "Pago anual de tu plan Cord"
+description: "Cambia tu suscripción de Cord a pago anual y obtén 2 meses gratis."
 category: "Cuenta y Equipo"
 ---
 
-Renovar y facturar membresías anuales es un proceso que Cord automatiza por completo mediante su motor de suscripciones.
+Si ya usas Cord en plan mensual, puedes cambiar a **pago anual** y ahorrar: el ciclo anual te cobra 10 meses en lugar de 12, es decir, **2 meses gratis**.
 
-### Configurar un Ciclo de Facturación Anual
+### Cómo cambiar a anual
 
-Si vendes SaaS o servicios recurrentes:
-1. Ve a **Productos > Suscripciones y Planes**.
-2. Crea un nuevo Plan (ej. "Membresía Premium B2B").
-3. Establece el precio y selecciona el intervalo de cobro a **Anual**.
-4. Si el cliente requiere CFDI, asegúrate de activar la casilla *Emitir factura automáticamente tras el cobro* e ingresa su RFC.
+1. Ve a **Ajustes > Planes y cobranza > Suscripción** (`/app/ajustes/plan`).
+2. Activa el interruptor **Anual** en la selección de plan.
+3. Confirma en el checkout de Stripe. El cobro anual se hace por adelantado y tu suscripción queda renovando cada 12 meses.
 
-### Prorrateos y Cambios de Plan (Upgrades)
+### Cambios de plan a mitad del año
 
-Si tu cliente pagó su plan anual en enero, pero en junio decide hacer un *upgrade* a un plan superior:
-- El sistema calculará el valor de los 6 meses no utilizados.
-- Le cobrará únicamente la diferencia correspondiente al nuevo plan.
-- Se emitirá una factura automática por la cantidad exacta prorrateada (el cobro residual), evitando que tengas que hacer notas de crédito manuales.
+Si pagaste anual y luego subes de plan (por ejemplo de Profesional a Scale), Stripe **prorratea** automáticamente: te cobra solo la diferencia por el tiempo que resta del periodo, sin que tengas que hacer cálculos ni notas de crédito manuales.
+
+### ¿Necesitas tu factura (CFDI) del cobro?
+
+El cargo de tu suscripción lo hace Stripe. Si requieres CFDI por lo que le pagas a Cord, solicítalo a nuestro equipo en `soporte@flouvia.com` con tus datos fiscales y te lo emitimos.
+
+> No confundas esto con cobrar a *tus* clientes: Cord factura cotizaciones B2B (timbrado CFDI 4.0), no opera planes de suscripción recurrente para los clientes de tu negocio.

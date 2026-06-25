@@ -13,4 +13,4 @@ Aunque las transacciones B2B suelen ser por transferencia SPEI, si utilizas Stri
 3. Cuando el cliente abra la cotización en Cord y decida pagar, Stripe Checkout le ofrecerá descargar un voucher (código de barras) para pagar en efectivo en tienda.
 
 **Flujo Asíncrono:**
-El cliente tiene días para pagar el voucher. Durante este tiempo, la cotización en Cord seguirá en estatus *Pendiente*. Cuando el cliente finalmente paga en el OXXO, Stripe nos envía un webhook (a veces tarda hasta 24 horas hábiles), y en ese instante Cord pasa la cotización a *Pagada* y emite la factura CFDI automáticamente.
+El cliente tiene días para pagar el voucher. Durante este tiempo, la cotización en Cord seguirá en estatus *Pendiente*. Cuando el cliente finalmente paga en el OXXO, Stripe nos envía un webhook (a veces tarda hasta 24 horas hábiles), y en ese instante Cord pasa la cotización a *Pagada*. Desde ahí puedes timbrar el CFDI con un clic.
