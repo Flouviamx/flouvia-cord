@@ -11,6 +11,12 @@ const hasAccess = memberCan(ME, 'ajustes');
 // Anillo SVG: circunferencia = 2πr (r=26) ≈ 163.36
 const R = 26, C = 2 * Math.PI * R;
 const dash = C * (SETUP.pct / 100);
+
+// Esenciales vs Avanzado: lo que todos tocan arriba; lo técnico/poco frecuente,
+// plegado abajo. (Developers vive en Avanzado y además está gateado por el toggle.)
+const ADVANCED = new Set(['equipo', 'developers', 'avanzado']);
+const esenciales = SETTINGS_CATEGORIES.filter((c) => !ADVANCED.has(c.id));
+const avanzados = SETTINGS_CATEGORIES.filter((c) => ADVANCED.has(c.id));
 ---
 
 <AppLayout title="Configuración — Cord" page="ajustes" heading="Ajustes">
@@ -44,8 +50,23 @@ const dash = C * (SETUP.pct / 100);
             </a>
         )}
 
-        <div class="idx-rows" id="idxRows">
-            {SETTINGS_CATEGORIES.map((c) => (
+        <h3 class="idx-section-label">Esenciales</h3>
+        <div class="idx-rows">
+            {esenciales.map((c) => (
+                <a href={c.tabs[0].href} class="idx-row" data-cat={c.id}>
+                    <svg class="idx-row-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={c.icon} />
+                    <span class="idx-row-body">
+                        <span class="idx-row-title">{c.label}</span>
+                        <span class="idx-row-desc">{c.desc}</span>
+                    </span>
+                    <svg class="idx-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </a>
+            ))}
+        </div>
+
+        <h3 class="idx-section-label idx-section-adv">Avanzado</h3>
+        <div class="idx-rows" id="idxRowsAdv">
+            {avanzados.map((c) => (
                 <a href={c.tabs[0].href} class="idx-row" data-cat={c.id}>
                     <svg class="idx-row-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={c.icon} />
                     <span class="idx-row-body">
@@ -73,7 +94,7 @@ const dash = C * (SETUP.pct / 100);
     // vendedor típico sin bloquear el acceso directo por URL.
     (function () {
         const KEY = 'cord.devmode';
-        const rows = document.getElementById('idxRows');
+        const rows = document.getElementById('idxRowsAdv');
         const toggle = document.getElementById('devModeToggle');
         if (!rows || !toggle) return;
         const apply = (on: boolean) => {
@@ -116,6 +137,9 @@ const dash = C * (SETUP.pct / 100);
     .idx-health-desc { font-size: 0.8rem; color: rgba(255,255,255,0.6); line-height: 1.45; }
     .idx-health-cta { font-size: 0.82rem; font-weight: 600; color: #fff; white-space: nowrap; opacity: 0.9; }
 
+    .idx-section-label { font-size: 0.66rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+        color: var(--color-text-muted); margin: 0 0 0.7rem; }
+    .idx-section-adv { margin-top: 2.2rem; }
     .idx-rows { display: flex; flex-direction: column; }
     .idx-row {
         display: flex; align-items: center; gap: 1rem;

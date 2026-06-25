@@ -99,6 +99,20 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
      (API·Webhooks·MCP·Agentes·Embebible) queda **oculta por defecto** (CSS, sin flash) y se revela
      con un toggle que persiste en `localStorage cord.devmode` — esconde el ruido técnico al vendedor
      típico sin bloquear el acceso directo por URL (misma filosofía que SSO).
+   • **Ajustes "Esenciales vs Avanzado"** (`/app/ajustes/index.astro`): el índice de categorías se
+     parte en dos bloques con eyebrow — Esenciales (General·Branding·Cotizaciones·Facturación·Planes·
+     Notificaciones·Tu cuenta) arriba, y Avanzado (Equipo·Developers·Avanzado) plegado abajo. La
+     partición es local al índice (`ADVANCED = Set(['equipo','developers','avanzado'])`, no toca el
+     tipo de `settings.ts`); Developers vive en Avanzado y sigue gateado por el toggle (el devmode
+     ahora togglea `dm-on` sobre `#idxRowsAdv`).
+   • **Pulido mobile:** `.ph-tabs-row` (las barras de tabs de sección) ahora scrollean horizontal en
+     pantallas chicas (`overflow-x:auto`, scrollbar oculta, `.ph-tab{flex-shrink:0}`) → nunca se rompen
+     en celular. El drawer móvil ya usa `NAV_GROUPS`, así que hereda el reagrupamiento automáticamente.
+   ⚠️ **iCloud sigue rompiendo el repo:** el `.git` tenía copias de conflicto de iCloud (`index 2..8`,
+     `refs/heads/main 2`, `refs/remotes/origin/main 2`) que corrompían las refs (3er incidente de iCloud
+     tras el binario de esbuild). Se limpiaron y `git fsck` quedó verde. El push muere con SIGBUS en
+     `pack-objects` bajo el sandbox del entorno → se empuja con el sandbox desactivado. **Acción
+     recomendada: mover el repo fuera de `~/Desktop` (iCloud) a `~/dev/flouvia-cord`.**
    • **FIX latente:** `/app/tesoreria/flujo` y `/app/tesoreria/cobranza` leían el org con
      `getMyMembership()?.org_id` — pero `Membership` NO tiene `org_id`, así que `orgId` era siempre
      `undefined` y **ambas páginas salían SIEMPRE vacías**. Corregido a `getActiveOrgId()` (de `db.ts`);
