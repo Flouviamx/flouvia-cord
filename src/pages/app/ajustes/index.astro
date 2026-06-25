@@ -44,9 +44,9 @@ const dash = C * (SETUP.pct / 100);
             </a>
         )}
 
-        <div class="idx-rows">
+        <div class="idx-rows" id="idxRows">
             {SETTINGS_CATEGORIES.map((c) => (
-                <a href={c.tabs[0].href} class="idx-row">
+                <a href={c.tabs[0].href} class="idx-row" data-cat={c.id}>
                     <svg class="idx-row-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={c.icon} />
                     <span class="idx-row-body">
                         <span class="idx-row-title">{c.label}</span>
@@ -56,8 +56,39 @@ const dash = C * (SETUP.pct / 100);
                 </a>
             ))}
         </div>
+
+        <div class="idx-devmode">
+            <span class="idx-dm-body">
+                <span class="idx-dm-title">Modo desarrollador</span>
+                <span class="idx-dm-desc">Muestra las opciones técnicas (API, webhooks, MCP, agentes IA y cotizador embebible). Actívalo solo si vas a integrar Cord con tu sistema.</span>
+            </span>
+            <button type="button" class="idx-switch" id="devModeToggle" role="switch" aria-checked="false" aria-label="Activar modo desarrollador"><span class="idx-switch-dot"></span></button>
+        </div>
     </div>}
 </AppLayout>
+
+<script>
+    // Modo desarrollador: oculta la categoría "Developers" del índice salvo que el
+    // usuario lo active (persistido en localStorage). Esconde el ruido técnico al
+    // vendedor típico sin bloquear el acceso directo por URL.
+    (function () {
+        const KEY = 'cord.devmode';
+        const rows = document.getElementById('idxRows');
+        const toggle = document.getElementById('devModeToggle');
+        if (!rows || !toggle) return;
+        const apply = (on: boolean) => {
+            rows.classList.toggle('dm-on', on);
+            toggle.classList.toggle('on', on);
+            toggle.setAttribute('aria-checked', on ? 'true' : 'false');
+        };
+        apply(localStorage.getItem(KEY) === '1');
+        toggle.addEventListener('click', () => {
+            const on = localStorage.getItem(KEY) !== '1';
+            localStorage.setItem(KEY, on ? '1' : '0');
+            apply(on);
+        });
+    })();
+</script>
 
 <style>
     .access-denied-idx { display: flex; flex-direction: column; gap: 0.6rem; padding: 2rem 0; }
@@ -101,4 +132,19 @@ const dash = C * (SETUP.pct / 100);
     @media (min-width: 561px) { .idx-row-desc { display: block; } }
     .idx-row-arrow { width: 16px; height: 16px; color: #c4cad3; flex-shrink: 0; opacity: 0; transform: translateX(-4px); transition: opacity 0.25s, transform 0.25s var(--ease-spring); }
     .idx-row:hover .idx-row-arrow { opacity: 1; transform: translateX(0); color: var(--color-blue-deep); }
+
+    /* Modo desarrollador: la categoría "Developers" queda oculta salvo que se active
+       (default off, sin flash porque se oculta vía CSS desde el render). */
+    .idx-rows:not(.dm-on) [data-cat="developers"] { display: none; }
+
+    .idx-devmode { display: flex; align-items: center; gap: 1rem; max-width: 720px; padding: 1.3rem 0.4rem 0; margin-top: 0.4rem; }
+    .idx-dm-body { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+    .idx-dm-title { font-size: 0.9rem; font-weight: 600; color: var(--color-text); }
+    .idx-dm-desc { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.45; }
+    .idx-switch { flex-shrink: 0; width: 44px; height: 26px; border-radius: 100px; border: none; cursor: pointer; padding: 0;
+        background: var(--color-border); position: relative; transition: background 0.25s var(--ease-spring); }
+    .idx-switch.on { background: var(--color-blue-deep); }
+    .idx-switch-dot { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: transform 0.25s var(--ease-spring); }
+    .idx-switch.on .idx-switch-dot { transform: translateX(18px); }
 </style>

@@ -1120,9 +1120,9 @@ const { title, page, heading, crumbs = [] } = Astro.props;
             external: '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>',
         };
         const NAV: any[] = [
-            ['Dashboard', '/app', I.dashboard, 'Resumen y actividad'], ['Cotizaciones', '/app/cotizaciones', I.doc, 'Lista y pipeline'], ['Cobranza', '/app/cobranza', I.card, 'Cuentas por cobrar'],
-            ['CFO Dashboard', '/app/cfo', I.chart, 'Proyección de flujo de caja'], ['Analítica', '/app/analitica', I.chart, 'Métricas y forecast'],
-            ['Flujo predictivo', '/app/tesoreria/flujo', I.chart, 'Tesorería IA'], ['Agentes de cobranza', '/app/tesoreria/cobranza', I.users, 'Tesorería IA'],
+            ['Inicio', '/app', I.dashboard, 'Resumen y actividad'], ['Cotizaciones', '/app/cotizaciones', I.doc, 'Lista y pipeline'], ['Cobranza', '/app/cobranza', I.card, 'Cuentas por cobrar'],
+            ['Finanzas', '/app/cfo', I.chart, 'Proyección de flujo de caja (CFO)'], ['Analítica', '/app/analitica', I.chart, 'Métricas y forecast'],
+            ['Flujo de caja', '/app/tesoreria/flujo', I.chart, 'Flujo predictivo (tesorería)'], ['Cobranza con IA', '/app/tesoreria/cobranza', I.users, 'Agentes de cobranza (tesorería)'],
             ['Clientes', '/app/clientes', I.users, 'Directorio de clientes'], ['Productos', '/app/productos', I.box, 'Catálogo'], ['Ajustes', '/app/ajustes', I.gear, 'Marca, fiscal, PDF…'],
         ].map(([title, href, icon, hint]) => ({ group: 'Ir a', title, href, icon, hint }));
         const ACTIONS: any[] = [
