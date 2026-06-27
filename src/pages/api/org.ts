@@ -6,7 +6,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm } from '../../lib/queries';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -24,7 +24,7 @@ export const PATCH: APIRoute = async ({ request }) => {
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
 
     const orgId = await getActiveOrgId();
-    const [actual] = await sql`select * from orgs where id = ${orgId}`;
+    const [[actual]] = await withOrgTx(orgId, sql`select * from orgs where id = ${orgId}`);
 
     // Cada campo: si viene en el body lo tomamos (saneado), si no, conservamos.
     const nombre = body.nombre !== undefined ? String(body.nombre).trim() : actual.nombre;
@@ -112,7 +112,7 @@ export const PATCH: APIRoute = async ({ request }) => {
     const emailIntro = body.email_intro !== undefined ? str(body.email_intro, 500) : actual.email_intro;
     const emailFirma = body.email_firma !== undefined ? str(body.email_firma, 300) : actual.email_firma;
 
-    await sql`
+    await withOrgTx(orgId, sql`
         update orgs set
             nombre = ${nombre}, rfc = ${rfc}, razon_social = ${razon},
             color_marca = ${color}, quote_prefix = ${prefix}, iva_pct = ${iva},
@@ -130,7 +130,7 @@ export const PATCH: APIRoute = async ({ request }) => {
             embed_domains = ${embedDomains},
             portal_banner = ${portalBanner}, portal_mostrar_chat = ${portalChat}, portal_powered = ${portalPowered},
             email_from_name = ${emailFromName}, email_reply_to = ${emailReplyTo}, email_intro = ${emailIntro}, email_firma = ${emailFirma}
-        where id = ${orgId}`;
+        where id = ${orgId}`);
     await logAudit(orgId, { accion: 'org.actualizada', entidad: 'org', entidad_id: orgId, detalle: 'Se actualizaron los ajustes del negocio', ip: reqIp(request) });
     return json({ ok: true });
 };

@@ -312,6 +312,47 @@ const faqSchema = {
                             </div>
                         )}
 
+                        {feature.slug === 'negociacion' && (
+                            <div class="mk-window mk-nego" id="negoHero" style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; box-shadow:0 10px 25px -5px rgba(0,0,0,0.1);">
+                                <div class="mk-bar">
+                                    <span class="mk-dots"><i></i><i></i><i></i></span>
+                                    <span class="mk-bar-title">COT-0152 · {isEn ? 'Negotiation' : 'Negociación'}</span>
+                                    <span class="mk-badge mk-badge-draft" style="background:#f59e0b20;color:#d97706;border:1px solid #f59e0b40;">● {isEn ? 'Counteroffer' : 'Contraoferta'}</span>
+                                </div>
+                                <div class="mk-nego-body" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <b style="font-size: 15px; color:#0f172a;">{isEn ? 'Version History' : 'Historial de versiones'}</b>
+                                        <span style="font-size: 11px; color: #64748b; font-family: monospace; background:#f1f5f9; padding:4px 8px; border-radius:4px;">SHA-256: 8f2a...9b1c</span>
+                                    </div>
+                                    <div class="mk-nego-versions" style="display: flex; flex-direction: column; gap: 12px;">
+                                        <div style="padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; justify-content: space-between; align-items:center; background: #f8fafc; opacity:0.7;">
+                                            <div>
+                                                <div style="font-size: 14px; font-weight: 500; color:#334155;">v1 · {isEn ? 'Original' : 'Original'}</div>
+                                                <div style="font-size: 12px; color: #64748b;">{isEn ? 'Sent by you' : 'Enviada por ti'}</div>
+                                            </div>
+                                            <div style="text-align:right;">
+                                                <b class="editorial" style="font-size: 14px; color:#64748b; text-decoration: line-through;">$196,469.20</b>
+                                            </div>
+                                        </div>
+                                        <div style="padding: 16px; border: 1px solid #3b82f640; border-radius: 8px; display: flex; justify-content: space-between; align-items:center; background: #eff6ff; box-shadow:0 4px 12px -4px rgba(59,130,246,0.2);">
+                                            <div>
+                                                <div style="font-size: 14px; font-weight: 600; color: #1d4ed8;">v2 · {isEn ? 'Counteroffer' : 'Contraoferta'}</div>
+                                                <div style="font-size: 12px; color: #3b82f6;">{isEn ? 'By the client' : 'Por el cliente'}</div>
+                                            </div>
+                                            <div style="text-align:right;">
+                                                <b class="editorial" style="font-size: 16px; color: #1d4ed8;">$190,000.00</b>
+                                                <div style="font-size: 11px; color: #2563eb; margin-top:2px;">-3.2%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">
+                                        <span style="padding: 8px 16px; border-radius: 6px; border:1px solid #e2e8f0; color: #475569; font-size: 13px; font-weight:500;">{isEn ? 'Reject' : 'Rechazar'}</span>
+                                        <span style="padding: 8px 16px; border-radius: 6px; background: #0f172a; color: white; font-size: 13px; font-weight:500; box-shadow:0 2px 4px rgba(0,0,0,0.1);">{isEn ? 'Accept terms' : 'Aceptar'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                     </div>
                 </div>
             </div>

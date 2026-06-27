@@ -5,7 +5,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm } from '../../lib/queries';
 
 function clean(body: any) {
@@ -27,10 +27,10 @@ export const POST: APIRoute = async ({ request }) => {
     if (!p.nombre) return json({ error: 'El nombre del producto es obligatorio' }, 400);
 
     const orgId = await getActiveOrgId();
-    const [row] = await sql`
+    const [[row]] = await withOrgTx(orgId, sql`
         insert into productos (org_id, sku, nombre, unidad, precio_lista, costo, activo)
         values (${orgId}, ${p.sku}, ${p.nombre}, ${p.unidad}, ${p.precio}, ${p.costo}, ${p.activo})
-        returning id`;
+        returning id`);
     await logAudit(orgId, { accion: 'producto.creado', entidad: 'producto', entidad_id: row.id as string, detalle: p.nombre, ip: reqIp(request) });
     return json({ id: row.id });
 };
@@ -44,12 +44,12 @@ export const PATCH: APIRoute = async ({ request }) => {
     if (!p.nombre) return json({ error: 'El nombre del producto es obligatorio' }, 400);
 
     const orgId = await getActiveOrgId();
-    const rows = await sql`
+    const [rows] = await withOrgTx(orgId, sql`
         update productos set
             sku = ${p.sku}, nombre = ${p.nombre}, unidad = ${p.unidad},
             precio_lista = ${p.precio}, costo = ${p.costo}, activo = ${p.activo}
         where id = ${body.id} and org_id = ${orgId}
-        returning id`;
+        returning id`);
     if (!rows.length) return json({ error: 'Producto no encontrado' }, 404);
     return json({ ok: true });
 };
@@ -61,7 +61,7 @@ export const DELETE: APIRoute = async ({ request }) => {
     if (!body.id) return json({ error: 'Falta id' }, 400);
 
     const orgId = await getActiveOrgId();
-    const rows = await sql`delete from productos where id = ${body.id} and org_id = ${orgId} returning id, nombre`;
+    const [rows] = await withOrgTx(orgId, sql`delete from productos where id = ${body.id} and org_id = ${orgId} returning id, nombre`);
     if (!rows.length) return json({ error: 'Producto no encontrado' }, 404);
     await logAudit(orgId, { accion: 'producto.eliminado', entidad: 'producto', entidad_id: body.id, detalle: rows[0].nombre as string, ip: reqIp(request) });
     return json({ ok: true });

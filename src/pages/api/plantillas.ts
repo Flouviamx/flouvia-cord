@@ -5,7 +5,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm } from '../../lib/queries';
 
 const CANALES = new Set(['whatsapp', 'email', 'nota']);
@@ -27,8 +27,8 @@ export const POST: APIRoute = async ({ request }) => {
     const orgId = await getActiveOrgId();
     let row: any;
     try {
-        [row] = await sql`insert into plantillas_mensaje (org_id, nombre, canal, cuerpo)
-                          values (${orgId}, ${nombre}, ${canal}, ${cuerpo}) returning id`;
+        [[row]] = await withOrgTx(orgId, sql`insert into plantillas_mensaje (org_id, nombre, canal, cuerpo)
+                          values (${orgId}, ${nombre}, ${canal}, ${cuerpo}) returning id`);
     } catch { return json({ error: 'No se pudo crear. ¿Corriste la migración (npm run db:migrate)?' }, 500); }
 
     await logAudit(orgId, { accion: 'plantilla.creada', entidad: 'plantilla', entidad_id: row.id as string, detalle: nombre, ip: reqIp(request) });
@@ -45,15 +45,15 @@ export const PATCH: APIRoute = async ({ request }) => {
     if (!id) return json({ error: 'Falta el id' }, 400);
 
     const orgId = await getActiveOrgId();
-    const [actual] = await sql`select * from plantillas_mensaje where id = ${id} and org_id = ${orgId}`;
+    const [[actual]] = await withOrgTx(orgId, sql`select * from plantillas_mensaje where id = ${id} and org_id = ${orgId}`);
     if (!actual) return json({ error: 'Plantilla no encontrada' }, 404);
 
     const nombre = body.nombre !== undefined ? (String(body.nombre).trim().slice(0, 80) || actual.nombre) : actual.nombre;
     const canal = body.canal !== undefined ? (CANALES.has(String(body.canal)) ? String(body.canal) : actual.canal) : actual.canal;
     const cuerpo = body.cuerpo !== undefined ? (String(body.cuerpo).trim().slice(0, 2000) || actual.cuerpo) : actual.cuerpo;
 
-    await sql`update plantillas_mensaje set nombre = ${nombre}, canal = ${canal}, cuerpo = ${cuerpo}, updated_at = now()
-              where id = ${id} and org_id = ${orgId}`;
+    await withOrgTx(orgId, sql`update plantillas_mensaje set nombre = ${nombre}, canal = ${canal}, cuerpo = ${cuerpo}, updated_at = now()
+              where id = ${id} and org_id = ${orgId}`);
     await logAudit(orgId, { accion: 'plantilla.actualizada', entidad: 'plantilla', entidad_id: id, detalle: nombre, ip: reqIp(request) });
     return json({ ok: true });
 };
@@ -68,7 +68,7 @@ export const DELETE: APIRoute = async ({ request }) => {
     if (!id) return json({ error: 'Falta el id' }, 400);
 
     const orgId = await getActiveOrgId();
-    await sql`delete from plantillas_mensaje where id = ${id} and org_id = ${orgId}`;
+    await withOrgTx(orgId, sql`delete from plantillas_mensaje where id = ${id} and org_id = ${orgId}`);
     await logAudit(orgId, { accion: 'plantilla.eliminada', entidad: 'plantilla', entidad_id: id, ip: reqIp(request) });
     return json({ ok: true });
 };

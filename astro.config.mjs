@@ -29,6 +29,9 @@ export default defineConfig({
   adapter: vercel(),
 
   vite: {
+    resolve: {
+      preserveSymlinks: true,
+    },
     // El SDK de MCP (@modelcontextprotocol/sdk) y sus deps (hono, zod compat)
     // mezclan CJS/ESM y rompen el SSR de Vite con "reading 'call'" si se dejan
     // como external. Forzar el bundle (noExternal) hace que Vite resuelva el

@@ -5,7 +5,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm } from '../../lib/queries';
 
 const TERMINOS = ['contado', 'net30', 'net60'];
@@ -37,10 +37,10 @@ export const POST: APIRoute = async ({ request }) => {
     if (!c.empresa) return json({ error: 'El nombre de la empresa es obligatorio' }, 400);
 
     const orgId = await getActiveOrgId();
-    const [row] = await sql`
+    const [[row]] = await withOrgTx(orgId, sql`
         insert into clientes (org_id, empresa, contacto, email, telefono, rfc, terminos_default, limite_credito, nivel, descuento_pct, regimen_fiscal, uso_cfdi, cp_fiscal)
         values (${orgId}, ${c.empresa}, ${c.contacto}, ${c.email}, ${c.telefono}, ${c.rfc}, ${c.terminos}, ${c.limite}, ${c.nivel}, ${c.descuento}, ${c.regimen_fiscal}, ${c.uso_cfdi}, ${c.cp_fiscal})
-        returning id`;
+        returning id`);
     await logAudit(orgId, { accion: 'cliente.creado', entidad: 'cliente', entidad_id: row.id as string, detalle: c.empresa, ip: reqIp(request) });
     return json({ id: row.id });
 };
@@ -54,7 +54,7 @@ export const PATCH: APIRoute = async ({ request }) => {
     if (!c.empresa) return json({ error: 'El nombre de la empresa es obligatorio' }, 400);
 
     const orgId = await getActiveOrgId();
-    const rows = await sql`
+    const [rows] = await withOrgTx(orgId, sql`
         update clientes set
             empresa = ${c.empresa}, contacto = ${c.contacto}, email = ${c.email},
             telefono = ${c.telefono}, rfc = ${c.rfc},
@@ -62,7 +62,7 @@ export const PATCH: APIRoute = async ({ request }) => {
             nivel = ${c.nivel}, descuento_pct = ${c.descuento},
             regimen_fiscal = ${c.regimen_fiscal}, uso_cfdi = ${c.uso_cfdi}, cp_fiscal = ${c.cp_fiscal}
         where id = ${body.id} and org_id = ${orgId}
-        returning id`;
+        returning id`);
     if (!rows.length) return json({ error: 'Cliente no encontrado' }, 404);
     return json({ ok: true });
 };
@@ -74,7 +74,7 @@ export const DELETE: APIRoute = async ({ request }) => {
     if (!body.id) return json({ error: 'Falta id' }, 400);
 
     const orgId = await getActiveOrgId();
-    const rows = await sql`delete from clientes where id = ${body.id} and org_id = ${orgId} returning id, empresa`;
+    const [rows] = await withOrgTx(orgId, sql`delete from clientes where id = ${body.id} and org_id = ${orgId} returning id, empresa`);
     if (!rows.length) return json({ error: 'Cliente no encontrado' }, 404);
     await logAudit(orgId, { accion: 'cliente.eliminado', entidad: 'cliente', entidad_id: body.id, detalle: rows[0].empresa as string, ip: reqIp(request) });
     return json({ ok: true });

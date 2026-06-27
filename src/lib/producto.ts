@@ -531,6 +531,254 @@ export const FEATURES: Feature[] = [
         ],
         cta: { titulo: 'Vende sin frontera. Factura sin sorpresas.', sub: 'Cotiza en dólares con la tasa blindada y timbra tu CFDI 4.0 en pesos. Empieza gratis.' },
     },
+    {
+        slug: 'finanzas',
+        nav: 'Finanzas y CFO',
+        eyebrow: 'TU CFO CON IA',
+        titulo: 'Flujo de caja predictivo<br/>a 90 días.',
+        sub: 'Cruza tu pipeline con el historial real de pago de cada cliente. Sabes cuánto cobrarás antes de cobrarlo y detectas riesgos de impago antes de que sucedan.',
+        metaTitle: 'Flujo de caja predictivo y CFO con IA para B2B — Cord by Flouvia',
+        metaDescription: 'Cord usa IA para proyectar tu flujo de caja a 90 días cruzando tu pipeline con el historial de pago real de tus clientes.',
+        plan: 'Plan Scale en adelante',
+        stats: [
+            { valor: '90', countup: 90, suffix: ' días', label: 'de proyección predictiva' },
+            { valor: '100', countup: 100, suffix: '%', label: 'basado en el historial real de tu cartera' },
+            { valor: '1', countup: 1, suffix: ' clic', label: 'para ver el semáforo de riesgo por cliente' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'PREDICCIÓN REAL',
+                titulo: 'No más adivinanzas en Excel.',
+                copy: 'Cord no asume que un cliente a Net 30 paga al día 30. Analiza su historial real y si suele pagar al día 45, proyecta tu flujo con ese retraso (DSO).',
+                bullets: [
+                    'DSO (Days Sales Outstanding) calculado por cliente',
+                    'Ajuste automático a la realidad de cobranza',
+                    'Reporte visual sin armar fórmulas',
+                ],
+            },
+            {
+                eyebrow: 'RIESGO ACTIVO',
+                titulo: 'El semáforo que cuida<br/>tu cartera.',
+                copy: 'El AI CFO revisa la concentración de riesgo. Si un cliente que representa el 40% de tu cartera se empieza a atrasar, te lo advierte para que cierres la llave.',
+                bullets: [
+                    'Alertas tempranas de riesgo de impago',
+                    'Concentración de cartera visualizada',
+                    'Recomendaciones de acción con un clic',
+                ],
+            },
+            {
+                eyebrow: 'REPORTE GERENCIAL',
+                titulo: 'La junta de finanzas,<br/>lista en segundos.',
+                copy: 'Exporta la proyección o da acceso a tu equipo directivo a un tablero en vivo donde los números siempre están actualizados.',
+                bullets: [
+                    'Dashboard en vivo para el CFO',
+                    'Exportación a CSV o PDF',
+                    'Cero tiempo de conciliación mensual',
+                ],
+            },
+        ],
+        faqs: [
+            {
+                q: '¿Cómo proyecta Cord el flujo de caja?',
+                a: 'Cord cruza las cotizaciones aprobadas (pipeline) con el comportamiento histórico de pago de cada cliente para predecir cuándo entrará el dinero realmente, no cuándo vence la factura teóricamente.',
+            },
+            {
+                q: '¿Qué es el DSO y por qué es importante?',
+                a: 'El DSO (Days Sales Outstanding) mide cuántos días tarda en pagar un cliente. Cord lo calcula automáticamente y lo usa para alertar sobre riesgos si un cliente empieza a aumentar su tiempo de pago.',
+            },
+            {
+                q: '¿Quién tiene acceso a esta información?',
+                a: 'En los planes avanzados, puedes definir roles. Solo los usuarios con permisos gerenciales o de CFO pueden ver las proyecciones y la concentración de riesgo total de la empresa.',
+            },
+        ],
+        cta: { titulo: 'Anticípate a los baches de flujo.', sub: 'Tu CFO impulsado por IA está disponible en el plan Scale.' },
+    },
+    {
+        slug: 'aprobaciones',
+        nav: 'Control de márgenes',
+        eyebrow: 'CONTROL DE MÁRGENES Y APROBACIONES',
+        titulo: 'Vende rápido,<br/>pero con el margen correcto.',
+        sub: 'Define umbrales de descuento por rol. Si un vendedor da un descuento mayor al permitido, la cotización se pausa y pide aprobación gerencial. Tú cuidas el margen, ellos cierran la venta.',
+        metaTitle: 'Control de márgenes y flujo de aprobaciones para ventas B2B — Cord by Flouvia',
+        metaDescription: 'Configura umbrales de descuento y flujos de aprobación gerencial para asegurar la rentabilidad de cada cotización en tu equipo de ventas.',
+        plan: 'Plan Profesional en adelante',
+        stats: [
+            { valor: '100', countup: 100, suffix: '%', label: 'de cotizaciones pasan por validación de margen' },
+            { valor: '1', countup: 1, suffix: ' clic', label: 'para aprobar o rechazar desde el celular' },
+            { valor: '0', countup: 0, label: 'sorpresas a fin de mes por descuentos excesivos' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'UMBRALES AUTOMÁTICOS',
+                titulo: 'Reglas claras para todo el equipo.',
+                copy: 'Establece que los vendedores pueden dar hasta un 10% de descuento. Todo lo que esté por debajo de eso sale directo al cliente; lo que lo supere, requiere un clic tuyo.',
+                bullets: [
+                    'Umbrales de descuento configurables por rol',
+                    'Validación silenciosa en tiempo real',
+                    'Bloqueo automático de envíos no autorizados',
+                ],
+            },
+            {
+                eyebrow: 'FLUJO GERENCIAL',
+                titulo: 'Auditor silencioso.',
+                copy: 'Cuando una cotización requiere aprobación, recibes una notificación al instante. Puedes ver qué tanto cedió el vendedor y aprobar o pedir ajustes desde cualquier lugar.',
+                bullets: [
+                    'Notificaciones push o por correo',
+                    'Aprobación con un clic en el móvil',
+                    'Chat interno en la cotización para ajustes',
+                ],
+            },
+            {
+                eyebrow: 'LOG INMUTABLE',
+                titulo: 'Todo queda registrado.',
+                copy: 'El timeline de la cotización guarda quién pidió la aprobación, quién la otorgó y a qué hora. Cero dudas sobre por qué un precio salió más bajo de lo normal.',
+                bullets: [
+                    'Historial completo de aprobaciones',
+                    'Auditoría de márgenes',
+                    'Responsabilidad clara por cada descuento',
+                ],
+            },
+        ],
+        faqs: [
+            {
+                q: '¿Puedo tener diferentes umbrales por vendedor?',
+                a: 'Sí. Puedes definir reglas generales o ajustar los umbrales de descuento permitidos según la jerarquía (ej. Vendedor Junior 5%, Vendedor Senior 15%).',
+            },
+            {
+                q: '¿Cómo apruebo una cotización que excedió el margen?',
+                a: 'Recibes una notificación instantánea. Al abrirla, ves el resumen de la rentabilidad y dos botones: Aprobar o Rechazar. Si la apruebas, el vendedor ya puede enviarla.',
+            },
+            {
+                q: '¿El cliente se entera del proceso de aprobación?',
+                a: 'No. El flujo es completamente interno. Para el cliente, la cotización simplemente llega una vez que el equipo comercial la ha liberado.',
+            },
+        ],
+        cta: { titulo: 'Deja de perder margen por error.', sub: 'Protege tu rentabilidad en cada cotización con el plan Profesional.' },
+    },
+    {
+        slug: 'equipo',
+        nav: 'Roles y equipo',
+        eyebrow: 'EQUIPO, ROLES Y MULTI-EMPRESA',
+        titulo: 'Todo tu equipo,<br/>trabajando en sincronía.',
+        sub: 'Invita a tus vendedores, administradores y contadores con permisos granulares. Gestiona múltiples razones sociales o marcas desde una misma cuenta maestra.',
+        metaTitle: 'Gestión de equipo, roles y multi-empresa para B2B — Cord by Flouvia',
+        metaDescription: 'Administra tu equipo de ventas con permisos granulares y gestiona múltiples empresas o razones sociales desde una sola cuenta de Cord.',
+        plan: 'Disponible desde el plan Starter (Multi-empresa requiere Profesional)',
+        stats: [
+            { valor: '5', countup: 5, label: 'niveles de permisos granulares' },
+            { valor: '100', countup: 100, suffix: '%', label: 'de las acciones quedan en la bitácora de auditoría' },
+            { valor: 'SSO', label: 'inicio de sesión seguro corporativo' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'PERMISOS B2B',
+                titulo: 'Cada quien ve solo lo que le toca.',
+                copy: 'El vendedor solo ve sus propios clientes y cotizaciones. El gerente de ventas ve el pipeline de todos. El contador entra solo a descargar los CFDI. Seguridad total por diseño.',
+                bullets: [
+                    'Roles predefinidos (Admin, Gerente, Vendedor, Contador)',
+                    'Privacidad total entre carteras de vendedores',
+                    'Bloqueo de exportación o borrado',
+                ],
+            },
+            {
+                eyebrow: 'MULTI-EMPRESA',
+                titulo: 'Varias razones sociales,<br/>un solo panel.',
+                copy: 'Si tu corporativo opera con varias marcas o razones sociales fiscales, no necesitas cuentas separadas. Cambia de empresa con un clic, comparte el catálogo si quieres y mantén la cobranza organizada.',
+                bullets: [
+                    'Cambio rápido de empresa (Org switching)',
+                    'Logo, colores y sellos fiscales aislados',
+                    'Reportes consolidados o individuales',
+                ],
+            },
+            {
+                eyebrow: 'SSO Y SEGURIDAD',
+                titulo: 'Accesos de grado empresarial.',
+                copy: 'Tu equipo inicia sesión con las credenciales de Google o Microsoft de tu dominio. Si alguien deja la empresa, le cortas el correo y pierde acceso a Cord de inmediato.',
+                bullets: [
+                    'Single Sign-On (SSO) con proveedores estándar',
+                    'Autenticación robusta respaldada por Clerk',
+                    'Bitácora de sesión y auditoría de accesos',
+                ],
+            },
+        ],
+        faqs: [
+            {
+                q: '¿Puede un vendedor ver los clientes de otro vendedor?',
+                a: 'Por defecto no. El rol de "Vendedor" restringe la vista únicamente a su propia cartera y sus propias cotizaciones. Solo los gerentes y administradores tienen visión global.',
+            },
+            {
+                q: '¿Cómo funciona la característica multi-empresa?',
+                a: 'Puedes crear múltiples Organizaciones bajo tu misma cuenta de usuario. Cada organización tiene su propio RFC, logotipo, certificado de sellos y clientes. Puedes invitar usuarios a una empresa sí y a otra no.',
+            },
+            {
+                q: '¿Qué es SSO y por qué es más seguro?',
+                a: 'Single Sign-On (SSO) permite a tus empleados iniciar sesión usando el sistema de identidades de tu empresa (ej. Google Workspace). Así no tienen que recordar contraseñas nuevas y centralizas el control de acceso.',
+            },
+        ],
+        cta: { titulo: 'Trae a tu equipo a bordo.', sub: 'Empieza a colaborar y a estandarizar tu proceso hoy mismo.' },
+    },
+    {
+        slug: 'negociacion',
+        nav: 'Negociación B2B',
+        eyebrow: 'NEGOCIACIÓN Y APROBACIONES',
+        titulo: 'Acuerdos blindados,<br/>línea por línea.',
+        sub: 'Tus clientes pueden revisar, ajustar cantidades o proponer un nuevo precio en productos específicos. Cada cambio genera una versión inmutable firmada criptográficamente — adiós a los malentendidos.',
+        metaTitle: 'Negociación de cotizaciones B2B en México — Cord by Flouvia',
+        metaDescription: 'Permite a tus clientes aprobar o contraofertar línea por línea. Cada versión es inmutable y se firma con SHA-256 para total transparencia.',
+        plan: 'Disponible desde el plan Pro',
+        stats: [
+            { valor: '100', countup: 100, suffix: '%', label: 'trazabilidad en cada versión' },
+            { valor: '0', countup: 0, label: 'malentendidos sobre el precio final' },
+            { valor: 'SHA-256', label: 'firma criptográfica por documento' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'APROBACIÓN POR LÍNEA',
+                titulo: 'Negociación quirúrgica.',
+                copy: 'El cliente no rechaza toda la cotización si un solo precio no le cuadra. Puede aprobar 9 artículos y hacer una contraoferta solo en 1. Tú decides si aceptas, rechazas o haces una contrapropuesta, manteniendo la venta viva.',
+                bullets: [
+                    'Aprobación y contraoferta a nivel de línea',
+                    'Ajuste de cantidades sugerido por el cliente',
+                    'Flujo de chat integrado para discutir el acuerdo',
+                ],
+            },
+            {
+                eyebrow: 'VERSIONES INMUTABLES',
+                titulo: 'El historial que no miente.',
+                copy: 'Cada vez que la cotización cambia de estado (enviada, contraoferta, aprobada), Cord genera un snapshot inmutable. Si el cliente dice "yo aprobé otra cosa", tienes el registro exacto de quién, cuándo y qué aprobó.',
+                bullets: [
+                    'Historial visual de versiones (v1, v2, v3...)',
+                    'Comparativa rápida de cambios entre versiones',
+                    'Restauración a una versión anterior con un clic',
+                ],
+            },
+            {
+                eyebrow: 'FIRMA CRIPTOGRÁFICA',
+                titulo: 'Seguridad de grado bancario.',
+                copy: 'La versión final aprobada se sella con un hash SHA-256. Esto garantiza que ni una sola coma del documento puede ser alterada después de la aprobación sin romper la firma matemática.',
+                bullets: [
+                    'Firma SHA-256 inyectada en el PDF final',
+                    'Auditoría matemática independiente',
+                    'Certeza jurídica en el acuerdo comercial',
+                ],
+            },
+        ],
+        faqs: [
+            {
+                q: '¿Qué significa que la cotización tiene versiones inmutables?',
+                a: 'Significa que cada que hay una negociación, en lugar de sobreescribir el documento original, se crea una nueva versión. Todas las versiones anteriores quedan guardadas permanentemente y no pueden ser modificadas, sirviendo como evidencia del proceso de venta.',
+            },
+            {
+                q: '¿Cómo funciona la firma SHA-256?',
+                a: 'Es un algoritmo criptográfico que toma el contenido exacto de la cotización aprobada y genera un código único. Si alguien intentara cambiar un precio o cantidad después de aprobado, el código cambiaría por completo, evidenciando la manipulación.',
+            },
+            {
+                q: '¿El cliente necesita una cuenta para negociar?',
+                a: 'No. El cliente accede a través del link público seguro, verifica su identidad con un código OTP enviado a su correo (opcional), y puede comentar, aprobar o contraofertar directamente desde su navegador.',
+            },
+        ],
+        cta: { titulo: 'Cierra acuerdos con total transparencia.', sub: 'Evita los "yo te dije" y formaliza tus ventas.' },
+    },
 ];
 
 export const findFeature = (slug: string) => FEATURES.find(f => f.slug === slug);

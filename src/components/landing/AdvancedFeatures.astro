@@ -1,0 +1,681 @@
+---
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<section class="cord-notion-section" id="avanzado">
+    <div class="cn-container reveal">
+        
+        <!-- Lado Izquierdo: Headers y Tabs Verticales -->
+        <div class="cn-left">
+            <div class="cn-header">
+                <span class="cn-eyebrow">{t("adv.eyebrow")}</span>
+                <h2 class="cn-title" set:html={t("adv.title").replace('<br/>', ' ').replace('<br />', ' ')} />
+                <div class="cn-action-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </div>
+            </div>
+
+            <div class="cn-tabs" role="tablist">
+                
+                <!-- Tab 1: IA -->
+                <button class="cn-tab active" data-target="cn-pane-1" role="tab" aria-selected="true">
+                    <div class="cn-tab-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                    </div>
+                    <div class="cn-tab-texts">
+                        <h3>{t("adv.c1.tag")}</h3>
+                        <div class="cn-tab-desc">{t("adv.c1.p")}</div>
+                    </div>
+                </button>
+                <div class="cn-tab-sep"></div>
+
+                <!-- Tab 2: Cobranza -->
+                <button class="cn-tab" data-target="cn-pane-2" role="tab" aria-selected="false">
+                    <div class="cn-tab-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                    </div>
+                    <div class="cn-tab-texts">
+                        <h3>{t("adv.c2.tag")}</h3>
+                        <div class="cn-tab-desc">{t("adv.c2.p")}</div>
+                    </div>
+                </button>
+                <div class="cn-tab-sep"></div>
+
+                <!-- Tab 3: CFO -->
+                <button class="cn-tab" data-target="cn-pane-3" role="tab" aria-selected="false">
+                    <div class="cn-tab-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    </div>
+                    <div class="cn-tab-texts">
+                        <h3>{t("adv.c3.tag")}</h3>
+                        <div class="cn-tab-desc">{t("adv.c3.p")}</div>
+                    </div>
+                </button>
+                <div class="cn-tab-sep"></div>
+
+                <!-- Tab 4: Multi-divisa -->
+                <button class="cn-tab" data-target="cn-pane-4" role="tab" aria-selected="false">
+                    <div class="cn-tab-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    </div>
+                    <div class="cn-tab-texts">
+                        <h3>{t("adv.c4.tag")}</h3>
+                        <div class="cn-tab-desc">{t("adv.c4.p")}</div>
+                    </div>
+                </button>
+
+            </div>
+        </div>
+
+        <!-- Lado Derecho: Gran Canvas -->
+        <div class="cn-right">
+            
+            <!-- Pane 1: IA -->
+            <div class="cn-pane active" id="cn-pane-1">
+                <div class="cn-pane-bg bg-ia"></div>
+                <div class="cn-pane-content full-canvas">
+                    
+                    <div class="ia-full-ui">
+                        <div class="ia-search anim-fade-down" style="--delay: 0.2s">
+                            <div class="ia-icon-sparkle">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/></svg>
+                            </div>
+                            <div class="type-wrap">
+                                <span class="type-text"></span><span class="type-cursor"></span>
+                            </div>
+                            <div class="ia-submit">
+                                ↵ Enter
+                            </div>
+                        </div>
+                        
+                        <div class="ia-quote-card anim-reveal-up" style="--delay: 2.8s">
+                            <div class="qc-header">
+                                <div class="qc-badge">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/></svg>
+                                    Borrador de IA
+                                </div>
+                                <div class="qc-title">Cotización #4092</div>
+                            </div>
+                            <div class="qc-body">
+                                <div class="qc-row"><span>Varilla 3/8" (2 tons)</span> <strong>$32,000.00</strong></div>
+                                <div class="qc-row"><span>Cemento Gris (100 sacos)</span> <strong>$28,500.00</strong></div>
+                                <div class="qc-row"><span>Logística y Envío</span> <strong>$1,950.00</strong></div>
+                            </div>
+                            <div class="qc-footer">
+                                <div class="qc-total-lbl">Total estimado</div>
+                                <div class="qc-total-val">$62,450.00</div>
+                            </div>
+                            <div class="qc-actions">
+                                <div class="qc-btn outline">Descartar</div>
+                                <div class="qc-btn primary">Aprobar y Enviar</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cn-float-box anim-float-in" style="--delay: 3.8s;">
+                        <div class="cn-avatar bg-slate text-white">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <div class="cn-float-content">
+                            <div class="cn-float-name">Agente Copilot</div>
+                            <div class="cn-float-msg">Cotización estructurada basándose en tu inventario actual.</div>
+                            <div class="cn-float-meta">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="spin-icon text-blue"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                                <span class="text-blue">Precios actualizados</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Pane 2: Cobranza -->
+            <div class="cn-pane" id="cn-pane-2">
+                <div class="cn-pane-bg bg-cob"></div>
+                <div class="cn-pane-content full-canvas">
+                    
+                    <div class="chat-full-ui">
+                        <div class="chat-header anim-fade-down" style="--delay: 0.1s">
+                            <div class="ch-avatar">CV</div>
+                            <div class="ch-info">
+                                <div class="ch-name">Constructora del Valle</div>
+                                <div class="ch-status"><span class="ch-dot"></span> Seguimiento IA Activo</div>
+                            </div>
+                        </div>
+
+                        <div class="chat-b ai anim-bubble-ai" style="--delay: 0.6s">
+                            Hola, la factura <strong>#F-3092</strong> por $145,000 MXN venció ayer. ¿Te apoyo estructurando un plan de pagos?
+                        </div>
+                        <div class="chat-typing-wrapper anim-typing-wrap" style="--delay: 1.8s">
+                            <div class="chat-typing">
+                                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                            </div>
+                        </div>
+                        <div class="chat-b client anim-bubble-client" style="--delay: 3.4s">
+                            ¿Me puedes dar 3 pagos semanales?
+                        </div>
+                        <div class="chat-b ai anim-bubble-ai" style="--delay: 4.4s">
+                            ¡Por supuesto! Plan activado. Tu primer pago por <strong>$48,333 MXN</strong> queda para este viernes.
+                            
+                            <div class="chat-pay-widget">
+                                <div class="cp-left">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                                </div>
+                                <div class="cp-mid">
+                                    <div class="cp-title">Pagar Parcialidad 1/3</div>
+                                    <div class="cp-desc">Tarjeta o SPEI disponible</div>
+                                </div>
+                                <div class="cp-right">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cn-float-box anim-float-in" style="--delay: 5.6s;">
+                        <div class="cn-avatar bg-slate text-white">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                        </div>
+                        <div class="cn-float-content">
+                            <div class="cn-float-name">Agente Cobranza</div>
+                            <div class="cn-float-msg">Acuerdo cerrado y link de pago generado automáticamente.</div>
+                            <div class="cn-float-meta success">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span>Riesgo de cartera mitigado</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Pane 3: CFO Dashboard -->
+            <div class="cn-pane" id="cn-pane-3">
+                <div class="cn-pane-bg bg-cfo"></div>
+                <div class="cfo-grid-full">
+                    <div class="g-line"></div><div class="g-line"></div><div class="g-line"></div><div class="g-line"></div>
+                </div>
+                <div class="cn-pane-content full-canvas">
+                    
+                    <div class="cfo-full-ui">
+                        <!-- Dashboard Header -->
+                        <div class="cfo-header anim-fade-down" style="--delay: 0.1s">
+                            <div class="cfo-metric">
+                                <span class="cfo-m-lbl">Liquidez Neta</span>
+                                <span class="cfo-m-val">$1,254,000</span>
+                                <span class="cfo-m-trend positive">↑ 12% vs mes ant.</span>
+                            </div>
+                            <div class="cfo-metric">
+                                <span class="cfo-m-lbl">Runway Estimado</span>
+                                <span class="cfo-m-val">14 Meses</span>
+                                <span class="cfo-m-trend neutral">Estable</span>
+                            </div>
+                        </div>
+
+                        <!-- Chart Area -->
+                        <div class="cfo-chart-area">
+                            <div class="cfo-target-line anim-draw-line-h" style="--delay: 1.0s">
+                                <span class="anim-fade-in" style="--delay: 1.6s">Meta de Reserva Operativa</span>
+                            </div>
+                            
+                            <div class="cfo-bars">
+                                <!-- Col 1 -->
+                                <div class="bar-col">
+                                    <div class="c-bars-group">
+                                        <div class="c-bar in anim-rise" style="--h: 50%; --delay: 0.3s;"></div>
+                                        <div class="c-bar out anim-rise" style="--h: 30%; --delay: 0.4s;"></div>
+                                    </div>
+                                    <span class="b-lbl">Ago</span>
+                                </div>
+                                <!-- Col 2 -->
+                                <div class="bar-col">
+                                    <div class="c-bars-group">
+                                        <div class="c-bar in anim-rise" style="--h: 65%; --delay: 0.4s;"></div>
+                                        <div class="c-bar out anim-rise" style="--h: 40%; --delay: 0.5s;"></div>
+                                    </div>
+                                    <span class="b-lbl">Sep</span>
+                                </div>
+                                <!-- Col 3 -->
+                                <div class="bar-col">
+                                    <!-- Hover Tooltip interactivo -->
+                                    <div class="cfo-tooltip anim-float-in" style="--delay: 1.8s">
+                                        <div class="tt-title">Octubre (Actual)</div>
+                                        <div class="tt-row"><span class="dot in"></span> Ingresos: <strong>$840k</strong></div>
+                                        <div class="tt-row"><span class="dot out"></span> Egresos: <strong>$320k</strong></div>
+                                    </div>
+                                    
+                                    <div class="c-bars-group">
+                                        <div class="c-bar in anim-rise" style="--h: 90%; --delay: 0.5s;"></div>
+                                        <div class="c-bar out anim-rise" style="--h: 35%; --delay: 0.6s;"></div>
+                                    </div>
+                                    <span class="b-lbl">Oct</span>
+                                </div>
+                                <!-- Col 4 Proyección -->
+                                <div class="bar-col proj">
+                                    <div class="c-bars-group">
+                                        <div class="c-bar in proj anim-rise" style="--h: 75%; --delay: 0.6s;"></div>
+                                        <div class="c-bar out proj anim-rise" style="--h: 50%; --delay: 0.7s;"></div>
+                                    </div>
+                                    <span class="b-lbl">Nov (Proj)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cn-float-box anim-float-in" style="--delay: 2.8s;">
+                        <div class="cn-avatar bg-blue text-white">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                        </div>
+                        <div class="cn-float-content">
+                            <div class="cn-float-name">CFO Insight</div>
+                            <div class="cn-float-msg">Pronóstico de liquidez excelente, cubriendo la meta operativa con superávit.</div>
+                            <div class="cn-float-meta">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="text-blue"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span class="text-blue">Predicción de IA Financiera</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Pane 4: Divisa -->
+            <div class="cn-pane" id="cn-pane-4">
+                <div class="cn-pane-bg bg-div"></div>
+                <div class="cn-pane-content full-canvas">
+                    
+                    <div class="fx-full-ui">
+                        <div class="div-card anim-slide-down" style="--delay: 0.2s">
+                            <div class="d-top"><span class="d-badge usd">USD</span><span class="d-lbl">Envías a proveedor</span></div>
+                            <div class="d-val">$12,500.00</div>
+                        </div>
+                        
+                        <div class="div-conn">
+                            <div class="conn-line anim-draw-line" style="--delay: 0.6s"></div>
+                            <div class="conn-lock anim-snap-lock" style="--delay: 0.9s">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            </div>
+                            <div class="conn-line anim-draw-line" style="--delay: 1.3s"></div>
+                        </div>
+
+                        <div class="div-card anim-slide-up" style="--delay: 1.6s">
+                            <div class="d-top"><span class="d-badge mxn">MXN</span><span class="d-lbl">Tasa Protegida (18.42)</span></div>
+                            <div class="d-val highlight">$230,250.00</div>
+                        </div>
+                    </div>
+
+                    <div class="cn-float-box anim-float-in" style="--delay: 2.4s;">
+                        <div class="cn-avatar bg-slate text-white">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        </div>
+                        <div class="cn-float-content">
+                            <div class="cn-float-name">Tasa Asegurada</div>
+                            <div class="cn-float-msg">Tipo de cambio fijo a $18.42 contra volatilidad.</div>
+                            <div class="cn-float-meta">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-blue"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                <span class="text-blue">Válido por 30 días</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const tabs = document.querySelectorAll('.cn-tab');
+        const panes = document.querySelectorAll('.cn-pane');
+        const seps = document.querySelectorAll('.cn-tab-sep');
+        let autoPlayInterval;
+        let currentIndex = 0;
+        let isUserInteracted = false;
+
+        function updateSeparators(activeIndex) {
+            seps.forEach(s => s.style.opacity = '1');
+            if (activeIndex > 0 && seps[activeIndex - 1]) seps[activeIndex - 1].style.opacity = '0';
+            if (activeIndex < seps.length && seps[activeIndex]) seps[activeIndex].style.opacity = '0';
+        }
+
+        function activateTab(index) {
+            tabs.forEach(t => {
+                t.classList.remove('active');
+                t.setAttribute('aria-selected', 'false');
+            });
+            
+            panes.forEach(p => p.classList.remove('active'));
+            
+            setTimeout(() => {
+                tabs[index].classList.add('active');
+                tabs[index].setAttribute('aria-selected', 'true');
+                
+                const targetId = tabs[index].getAttribute('data-target');
+                document.getElementById(targetId)?.classList.add('active');
+                
+                updateSeparators(index);
+            }, 30);
+        }
+
+        tabs.forEach((tab, index) => {
+            tab.addEventListener('click', () => {
+                isUserInteracted = true;
+                clearInterval(autoPlayInterval);
+                currentIndex = index;
+                activateTab(index);
+            });
+        });
+
+        autoPlayInterval = setInterval(() => {
+            if(!isUserInteracted) {
+                currentIndex = (currentIndex + 1) % tabs.length;
+                activateTab(currentIndex);
+            }
+        }, 9000); 
+
+        updateSeparators(0);
+    });
+</script>
+
+<style>
+    /* ── BASE & VARIABLES CORD ── */
+    :root {
+        --c-blue: var(--color-blue-deep, #2563eb);
+        --c-slate: #0f172a;
+    }
+    
+    .cord-notion-section {
+        padding: 6rem 5% 10rem; width: 100%; max-width: 1200px; margin: 0 auto;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .cn-container { display: flex; gap: 60px; align-items: stretch; }
+
+    /* ── LADO IZQUIERDO ── */
+    .cn-left { flex: 0 0 380px; display: flex; flex-direction: column; }
+    
+    .cn-header { margin-bottom: 2rem; }
+    .cn-eyebrow { display: block; font-size: 14px; font-weight: 600; color: var(--c-blue); margin-bottom: 8px; }
+    .cn-title { font-size: 32px; font-weight: 800; line-height: 1.2; letter-spacing: -0.5px; color: var(--c-slate); margin: 0 0 16px 0; }
+    
+    .cn-action-btn {
+        width: 32px; height: 32px; background: var(--c-slate); color: #fff;
+        border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: transform 0.2s, background 0.2s;
+    }
+    .cn-action-btn:hover { transform: translateX(6px); background: var(--c-blue); }
+    .cn-action-btn svg { width: 16px; height: 16px; }
+
+    /* Tabs */
+    .cn-tabs { display: flex; flex-direction: column; }
+    .cn-tab {
+        display: flex; align-items: flex-start; padding: 18px 20px;
+        border: 1px solid transparent; background: transparent;
+        cursor: pointer; text-align: left; border-radius: 12px;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .cn-tab:not(.active):hover { background: #f8fafc; }
+    
+    .cn-tab.active { background: #fff; border-color: var(--c-blue); box-shadow: 0 10px 25px -5px rgba(37,99,235,0.08), 0 4px 10px -5px rgba(0,0,0,0.04); }
+    .cn-tab-sep { height: 1px; background: #e2e8f0; margin: 0 20px; transition: opacity 0.2s ease; }
+
+    .cn-tab-icon {
+        width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0; margin-right: 16px; background: #f1f5f9; color: #64748b; transition: all 0.3s ease;
+    }
+    .cn-tab-icon svg { width: 18px; height: 18px; }
+    .cn-tab.active .cn-tab-icon { background: var(--c-blue); color: #fff; box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+    
+    .cn-tab-texts { display: flex; flex-direction: column; justify-content: center; min-height: 34px; }
+    .cn-tab h3 { font-size: 16px; font-weight: 700; color: var(--c-slate); margin: 0; line-height: 34px; transition: line-height 0.3s; }
+    .cn-tab.active h3 { line-height: 1.4; margin-bottom: 4px; color: var(--c-blue); }
+    .cn-tab-desc { font-size: 14px; color: #475569; line-height: 1.5; max-height: 0; opacity: 0; overflow: hidden; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    .cn-tab.active .cn-tab-desc { max-height: 120px; opacity: 1; margin-top: 2px; }
+
+
+    /* ── LADO DERECHO (El Lienzo Completo) ── */
+    .cn-right {
+        flex: 1; border-radius: 24px; min-height: 600px;
+        position: relative; overflow: hidden;
+        background: #f8fafc; border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);
+    }
+    .cn-pane { position: absolute; inset: 0; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.5s ease, visibility 0.5s; }
+    .cn-pane.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+    .cn-pane-bg { position: absolute; inset: 0; z-index: 0; opacity: 0.8; }
+    .bg-ia { background: radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.05) 0%, transparent 70%); }
+    .bg-cob { background: radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.04) 0%, transparent 70%); }
+    .bg-cfo { background: radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.04) 0%, transparent 70%); }
+    .bg-div { background: radial-gradient(circle at 50% 50%, rgba(71, 85, 105, 0.05) 0%, transparent 70%); }
+
+    .full-canvas {
+        position: relative; z-index: 1;
+        width: 100%; height: 100%;
+        padding: 40px 30px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    
+    /* ── CAJA FLOTANTE ── */
+    .cn-float-box {
+        position: absolute; bottom: 30px; right: 30px;
+        background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.6); border-radius: 16px;
+        box-shadow: 0 20px 40px -10px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03);
+        padding: 18px; display: flex; align-items: flex-start; gap: 14px;
+        z-index: 20; width: 340px;
+        transform: scale(0.9) translateY(20px); opacity: 0;
+    }
+    .cn-pane.active .anim-float-in { animation: springFloat 0.8s var(--delay) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    @keyframes springFloat { 0% { transform: scale(0.9) translateY(20px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+
+    .cn-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .cn-avatar svg { width: 18px; height: 18px; }
+    .cn-float-content { display: flex; flex-direction: column; gap: 4px; }
+    .cn-float-name { font-size: 15px; font-weight: 700; color: var(--c-slate); }
+    .cn-float-msg { font-size: 14px; color: #475569; line-height: 1.45; }
+    .cn-float-meta { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 13px; font-weight: 600; }
+    .cn-float-meta svg { width: 14px; height: 14px; }
+
+    /* Utils */
+    .bg-slate { background: var(--c-slate) !important; } .text-white { color: #fff !important; }
+    .bg-blue { background: var(--c-blue) !important; } .text-blue { color: var(--c-blue) !important; }
+    .success { color: #10b981 !important; }
+
+
+    /* ── PANE 1: IA FULL APP MOCKUP ── */
+    .ia-full-ui { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 20px; margin-bottom: 60px; }
+    .ia-search { 
+        display: flex; align-items: center; gap: 14px; padding: 16px 20px;
+        background: #ffffff; border-radius: 16px;
+        box-shadow: 0 10px 35px rgba(0,0,0,0.06), 0 0 0 1px rgba(37, 99, 235, 0.15);
+        opacity: 0; transform: translateY(-10px);
+    }
+    .ia-icon-sparkle { color: var(--c-blue); display: flex; align-items: center; }
+    .ia-icon-sparkle svg { width: 22px; height: 22px; }
+    .type-wrap { flex: 1; display: flex; align-items: center; overflow: hidden; }
+    .type-cursor { width: 2px; height: 18px; background: var(--c-blue); animation: blink 0.8s infinite; }
+    .cn-pane.active .type-text::before {
+        content: '"Cotízame 2 tons de varilla y 100 sacos de cemento para obra"';
+        display: inline-block; white-space: nowrap; overflow: hidden;
+        animation: typeWords 2s 0.4s steps(60, end) forwards; width: 0; color: #1e293b; font-size: 14.5px; font-weight: 500;
+    }
+    .ia-submit { background: #f1f5f9; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; color: #64748b; }
+    .ia-quote-card {
+        background: #ffffff; border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.02);
+        overflow: hidden; opacity: 0; transform: translateY(15px); display: flex; flex-direction: column;
+    }
+    .qc-header { padding: 18px 24px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
+    .qc-badge { background: #dbeafe; color: var(--c-blue); font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 6px; }
+    .qc-title { font-size: 15px; font-weight: 700; color: var(--c-slate); }
+    .qc-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+    .qc-row { display: flex; justify-content: space-between; font-size: 15px; color: #475569; }
+    .qc-row strong { color: var(--c-slate); font-weight: 600; }
+    .qc-footer { padding: 18px 24px; border-top: 1px dashed #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
+    .qc-total-lbl { font-size: 15px; font-weight: 600; color: #64748b; }
+    .qc-total-val { font-size: 22px; font-weight: 800; color: var(--c-slate); }
+    .qc-actions { padding: 16px 24px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; }
+    .qc-btn { padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .qc-btn.outline { background: #fff; border: 1px solid #cbd5e1; color: #475569; }
+    .qc-btn.primary { background: var(--c-blue); color: #fff; border: none; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25); }
+    
+
+    /* ── PANE 2: Cobranza Chat Avanzado ── */
+    .chat-full-ui { width: 100%; max-width: 480px; display: flex; flex-direction: column; margin-bottom: 80px; }
+    .chat-header {
+        display: flex; align-items: center; gap: 12px; padding-bottom: 16px; margin-bottom: 16px;
+        border-bottom: 1px solid rgba(0,0,0,0.06); opacity: 0; transform: translateY(-10px);
+    }
+    .ch-avatar { width: 44px; height: 44px; background: #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #475569; font-size: 16px; }
+    .ch-name { font-size: 16px; font-weight: 700; color: var(--c-slate); margin-bottom: 2px; }
+    .ch-status { font-size: 12px; font-weight: 600; color: #10b981; display: flex; align-items: center; gap: 6px; }
+    .ch-dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; animation: pulseStatus 2s infinite; }
+    .chat-b { padding: 16px 20px; border-radius: 18px; font-size: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.04); max-width: 88%; opacity: 0; line-height: 1.5; margin-bottom: 16px; }
+    .chat-b.ai { background: #fff; color: #334155; border-bottom-left-radius: 4px; align-self: flex-start; transform-origin: bottom left; }
+    .chat-b.ai strong { color: var(--c-slate); }
+    .chat-b.client { background: var(--c-blue); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; transform-origin: bottom right; }
+    .chat-pay-widget {
+        margin-top: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;
+        padding: 12px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s;
+    }
+    .chat-pay-widget:hover { border-color: var(--c-blue); background: #fff; box-shadow: 0 4px 12px rgba(37,99,235,0.08); }
+    .cp-left { width: 36px; height: 36px; background: #dbeafe; color: var(--c-blue); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+    .cp-left svg { width: 18px; height: 18px; }
+    .cp-mid { flex: 1; margin: 0 12px; }
+    .cp-title { font-size: 14px; font-weight: 700; color: var(--c-slate); }
+    .cp-desc { font-size: 12px; color: #64748b; margin-top: 2px; }
+    .cp-right { color: #94a3b8; }
+    .cp-right svg { width: 18px; height: 18px; }
+    .chat-typing-wrapper { display: flex; justify-content: flex-end; max-height: 0; opacity: 0; overflow: hidden; align-self: flex-end; }
+    .chat-typing { background: var(--c-blue); padding: 16px 20px; border-radius: 18px; border-bottom-right-radius: 4px; box-shadow: 0 8px 25px rgba(0,0,0,0.04); display: inline-flex; gap: 4px; align-items: center; }
+    .chat-typing .dot { width: 6px; height: 6px; background: rgba(255,255,255,0.7); border-radius: 50%; animation: typeDot 1.4s infinite ease-in-out both; }
+    .chat-typing .dot:nth-child(1) { animation-delay: -0.32s; } .chat-typing .dot:nth-child(2) { animation-delay: -0.16s; }
+
+
+    /* ── PANE 3: CFO Dashboard Pro ── */
+    .cfo-grid-full { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 70px; z-index: 0; }
+    .g-line { height: 1px; background: rgba(148, 163, 184, 0.2); width: 100%; margin-bottom: 50px; }
+    
+    .cfo-full-ui { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 30px; margin-bottom: 50px; }
+    
+    /* Header de Finanzas */
+    .cfo-header { display: flex; gap: 40px; border-bottom: 1px solid rgba(0,0,0,0.06); padding-bottom: 20px; opacity: 0; transform: translateY(-10px); }
+    .cfo-metric { display: flex; flex-direction: column; gap: 4px; }
+    .cfo-m-lbl { font-size: 13px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .cfo-m-val { font-size: 28px; font-weight: 800; color: var(--c-slate); }
+    .cfo-m-trend { font-size: 13px; font-weight: 600; }
+    .cfo-m-trend.positive { color: #10b981; }
+    .cfo-m-trend.neutral { color: #94a3b8; }
+
+    /* Área de Gráficas */
+    .cfo-chart-area { position: relative; height: 220px; display: flex; align-items: flex-end; width: 100%; }
+    
+    /* Línea SVG de Meta */
+    .cfo-target-line { position: absolute; top: 40%; left: 0; right: 0; height: 1px; border-top: 2px dashed #93c5fd; z-index: 0; width: 0; }
+    .cfo-target-line span { position: absolute; right: 0; top: -22px; font-size: 11px; font-weight: 700; color: var(--c-blue); background: #dbeafe; padding: 4px 8px; border-radius: 6px; opacity: 0; }
+    
+    /* Barras Dobles (Ingreso/Egreso) */
+    .cfo-bars { display: flex; align-items: flex-end; justify-content: space-around; width: 100%; height: 100%; position: relative; z-index: 1; }
+    .bar-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 12px; position: relative; }
+    .c-bars-group { display: flex; align-items: flex-end; gap: 4px; height: 100%; }
+    .c-bar { width: 24px; border-radius: 6px 6px 0 0; transform-origin: bottom; opacity: 0; }
+    .c-bar.in { background: var(--c-blue); box-shadow: 0 10px 20px rgba(37,99,235,0.25); }
+    .c-bar.out { background: #cbd5e1; }
+    .c-bar.proj { background: #e2e8f0; border: 1px dashed #94a3b8; box-shadow: none; border-bottom: none; }
+    .b-lbl { font-size: 13px; font-weight: 600; color: #64748b; }
+
+    /* Tooltip Interactivo */
+    .cfo-tooltip {
+        position: absolute; bottom: 100%; left: 50%; margin-bottom: 12px; margin-left: -75px; width: 150px;
+        background: #fff; border-radius: 12px; padding: 12px 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05);
+        opacity: 0; z-index: 10; transform: translateY(10px) scale(0.95);
+    }
+    .cfo-tooltip::after { content: ''; position: absolute; bottom: -6px; left: 50%; margin-left: -6px; width: 12px; height: 12px; background: #fff; transform: rotate(45deg); border-bottom: 1px solid rgba(0,0,0,0.05); border-right: 1px solid rgba(0,0,0,0.05); }
+    .tt-title { font-size: 12px; font-weight: 700; color: var(--c-slate); margin-bottom: 8px; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; }
+    .tt-row { display: flex; align-items: center; font-size: 12px; color: #475569; margin-bottom: 6px; }
+    .tt-row strong { margin-left: auto; color: var(--c-slate); }
+    .dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+    .dot.in { background: var(--c-blue); }
+    .dot.out { background: #cbd5e1; }
+
+
+    /* ── PANE 4: Divisas Full ── */
+    .fx-full-ui { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 0px; margin-bottom: 60px; }
+    .div-card { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 12px 35px rgba(0,0,0,0.05); opacity: 0; position: relative; z-index: 5; }
+    .div-card .d-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .d-badge { font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 6px; }
+    .d-badge.usd { background: #dbeafe; color: #1e40af; }
+    .d-badge.mxn { background: #dcfce7; color: #166534; }
+    .d-lbl { font-size: 15px; color: #64748b; font-weight: 500; }
+    .d-val { font-size: 32px; font-weight: 800; color: var(--c-slate); }
+    .d-val.highlight { color: var(--c-blue); }
+
+    .div-conn { height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 1; }
+    .conn-line { width: 2px; height: 0; background: #cbd5e1; }
+    .conn-lock {
+        position: absolute; top: 50%; left: 50%; margin-top: -22px; margin-left: -22px;
+        width: 44px; height: 44px; border-radius: 50%; background: var(--c-blue); color: #fff; 
+        display: flex; align-items: center; justify-content: center;
+        opacity: 0; transform: scale(2) rotate(45deg); box-shadow: 0 8px 20px rgba(37,99,235,0.3);
+    }
+    .conn-lock svg { width: 20px; height: 20px; }
+
+
+    /* Animaciones Generales */
+    .cn-pane.active .anim-slide-down { animation: slideD 0.5s var(--delay) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .cn-pane.active .anim-slide-up { animation: slideU 0.5s var(--delay) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .cn-pane.active .anim-draw-line { animation: drawL 0.3s var(--delay) ease-out forwards; }
+    .cn-pane.active .anim-snap-lock { animation: snapL 0.6s var(--delay) cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    .cn-pane.active .c-bar { animation: barRise 0.8s var(--delay) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .cn-pane.active .anim-fade-down { animation: fadeDown 0.6s var(--delay) ease-out forwards; }
+    .cn-pane.active .anim-fade-in { animation: fadeIn 0.4s var(--delay) ease-out forwards; }
+    .cn-pane.active .anim-reveal-up { animation: revealUp 0.6s var(--delay) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .cn-pane.active .anim-bubble-ai, .cn-pane.active .anim-bubble-client { animation: springBubble 0.6s var(--delay) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .cn-pane.active .anim-typing-wrap { animation: typingWrap 1.6s var(--delay) forwards; }
+    .cn-pane.active .anim-draw-line-h { animation: drawLH 0.8s var(--delay) ease-out forwards; }
+
+    @keyframes fadeIn { to { opacity: 1; } }
+    @keyframes drawLH { 0% { width: 0; opacity: 0; } 100% { width: 100%; opacity: 1; } }
+    @keyframes pulseStatus { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    @keyframes typeWords { to { width: 100%; } }
+    @keyframes fadeDown { to { opacity: 1; transform: translateY(0); } }
+    @keyframes revealUp { to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideD { 0% { transform: translateY(-30px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+    @keyframes slideU { 0% { transform: translateY(30px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+    @keyframes drawL { 0% { height: 0; opacity: 0; } 100% { height: 100%; opacity: 1; } }
+    @keyframes snapL { 0% { transform: scale(2) rotate(45deg); opacity: 0; } 60% { transform: scale(0.9) rotate(-10deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+    @keyframes barRise { 0% { height: 0; opacity: 0; } 100% { height: var(--h); opacity: 1; } }
+    @keyframes typeDot { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+    @keyframes springBubble { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    @keyframes typingWrap { 
+        0% { max-height: 0; opacity: 0; margin-bottom: 0; } 
+        10% { max-height: 60px; opacity: 1; margin-bottom: 16px; } 
+        90% { max-height: 60px; opacity: 1; margin-bottom: 16px; } 
+        100% { max-height: 0; opacity: 0; margin-bottom: 0; } 
+    }
+    @keyframes spinGlow { 0% { transform: rotate(0deg); filter: brightness(1); } 50% { transform: rotate(180deg) scale(1.2); filter: brightness(1.2); } 100% { transform: rotate(360deg); filter: brightness(1); } }
+    .cn-pane.active .spin-icon { animation: spinGlow 2s infinite linear; }
+
+
+    /* ── Responsive Seguro ── */
+    @media (max-width: 1024px) {
+        .cn-container { flex-direction: column; gap: 40px; }
+        .cn-left { flex: none; width: 100%; }
+        .cn-right { min-height: 600px; width: 100%; }
+    }
+    @media (max-width: 768px) {
+        .cord-notion-section { padding: 4rem 5% 6rem; }
+        .full-canvas { padding: 40px 20px; justify-content: flex-start; }
+        .cn-float-box { right: 20px; left: 20px; width: auto; max-width: none; bottom: 20px; transform: scale(0.9) translateY(0); }
+        .cfo-full-ui { height: auto; padding: 0 10px; margin-top: auto; }
+        .chat-full-ui { margin-top: auto; }
+        .ia-full-ui { margin-top: 10px; }
+        .cfo-header { flex-direction: column; gap: 16px; }
+        .cfo-chart-area { height: 200px; margin-top: 20px; }
+    }
+</style>

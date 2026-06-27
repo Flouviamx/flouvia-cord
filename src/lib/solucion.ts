@@ -99,6 +99,26 @@ export const SOLUCIONES: Solution[] = [
                     'Historial completo de cada cuenta en un solo lugar',
                 ],
             },
+            {
+                eyebrow: 'APROBACIONES B2B',
+                titulo: 'Negociación sin fricción.',
+                copy: 'Tus clientes mayoristas no siempre aceptan la primera oferta. Ahora pueden contraofertar línea por línea. Cada cambio genera una versión inmutable y la versión final se sella con firma criptográfica.',
+                bullets: [
+                    'Aprobación y ajuste de cantidades por línea',
+                    'Versiones inmutables para evitar el "yo no pedí eso"',
+                    'Firma SHA-256 para total seguridad jurídica',
+                ],
+            },
+            {
+                eyebrow: 'FINANZAS Y COBRANZA',
+                titulo: 'Visibilidad total del flujo.',
+                copy: 'Conecta tu cuenta bancaria y automatiza la conciliación. Cord cruza los pagos recibidos con las facturas emitidas, manteniendo tu cartera al día sin intervención manual.',
+                bullets: [
+                    'Conciliación bancaria automatizada',
+                    'Reportes de antigüedad de saldos en tiempo real',
+                    'Integración nativa con tu ERP actual',
+                ],
+            },
         ],
         resultado: {
             cliente: 'Distribuidora El Zarco · La Central de Abastos, CDMX',

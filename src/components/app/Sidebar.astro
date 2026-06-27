@@ -529,7 +529,16 @@ const NAV_GROUPS = [
         /* En el drawer móvil no aplica colapsar (es ancho fijo) */
         .sb-collapse { display: none; }
         /* Acciones del drawer (crear / ayuda / config) — visibles solo en móvil */
-        .sb-mobile-actions { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
+        .sb-mobile-actions { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.5rem; }
+        .sb-action-row { padding: 14px 14px; font-size: 0.95rem; gap: 14px; border-radius: 14px; }
+        .sb-action-row svg { width: 20px; height: 20px; }
+        
+        /* Native app tap-targets & spacing */
+        .sb-item { padding: 12px 14px; font-size: 0.95rem; gap: 14px; border-radius: 14px; }
+        .sb-item svg { width: 20px; height: 20px; }
+        :global(.sb-collapsed) .sb-item { padding: 12px 14px !important; }
+        .sb-group-label { padding: 16px 11px 10px; font-size: 0.65rem; }
+        .sb-nav { gap: 1.5rem; }
     }
 </style>
 

@@ -68,6 +68,38 @@ const { slug, index } = Astro.props;
         </div>
       </div>
     )}
+    {slug === 'distribuidoras' && index === 3 && (
+      <div class="sbm-dist-m3">
+        <div class="sbm-card">
+          <div class="bm-head"><span>Versión 3</span><span class="bm-badge bm-badge-orange">Contraoferta</span></div>
+          <div class="bm-row"><div class="sbm-dist-line"><b>Cemento gris 50kg</b><i class="sbm-dist-sku">Aprobado</i></div><b class="editorial">$21,840</b></div>
+          <div class="bm-row bm-active">
+            <div class="sbm-dist-line"><b>Varilla 3/8"</b><i class="sbm-dist-sku">El cliente propone nuevo precio</i></div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end;">
+              <b class="editorial" style="text-decoration:line-through; color:rgba(255,255,255,0.4); font-size:10px;">$57,290</b>
+              <b class="editorial" style="color:#fbbf24;">$55,000</b>
+            </div>
+          </div>
+        </div>
+        <div class="sbm-floating sbm-float-br"><div class="sbm-pill"><span class="sbm-dot sbm-dot-red"></span>Requiere tu revisión</div></div>
+      </div>
+    )}
+    {slug === 'distribuidoras' && index === 4 && (
+      <div class="sbm-dist-m4">
+        <div class="sbm-card">
+          <div class="bm-head"><span>Flujo de Efectivo</span><span>Banamex **2841</span></div>
+          <div class="bm-chart">
+            <div class="bm-chart-col"><div class="bm-chart-col-fill" style="height:30%"></div></div>
+            <div class="bm-chart-col"><div class="bm-chart-col-fill" style="height:50%"></div></div>
+            <div class="bm-chart-col bm-chart-active"><div class="bm-chart-col-fill" style="height:85%"></div></div>
+            <div class="bm-chart-col"><div class="bm-chart-col-fill" style="height:45%"></div></div>
+            <div class="bm-chart-col"><div class="bm-chart-col-fill" style="height:60%"></div></div>
+          </div>
+          <div class="bm-row"><span>Ingresos semana</span><b class="editorial bm-green">$412,500</b></div>
+        </div>
+        <div class="sbm-floating sbm-float-tl"><div class="sbm-pill"><span class="sbm-dot sbm-dot-green"></span>Conciliación automática</div></div>
+      </div>
+    )}
 
     {/* ══════════════════ CONSTRUCCIÓN ══════════════════ */}
     {slug === 'construccion' && index === 0 && (

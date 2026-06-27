@@ -188,6 +188,43 @@ const { slug, index } = Astro.props;
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 2l12 11.2-5.8.5 3.3 7.3-2.25 1-3.2-7.4-4.4 4.7z"/></svg>
       </div>
     </div>
+  {/* ══════════════════════ FX ══════════════════════ */}
+  {slug === 'fx' && index === 0 && (
+    <div class="dbm-stage dbm-api-m0">
+      <div class="dbm-floating dbm-float-top-right">
+        <div class="dbm-pill"><i class="dbm-dot dbm-dot-green"></i><span>Banxico FIX</span></div>
+      </div>
+      <div class="dbm-card">
+        <div class="dbm-head"><span>USD</span><span>MXN</span></div>
+        <div class="dbm-sync">
+          <div class="dbm-sync-side">
+            <div class="dbm-node dbm-node-soft" style="font-size:12px;">$1.00</div>
+          </div>
+          <div class="dbm-sync-rail">
+            <span class="dbm-rail-dot dbm-rail-r" style="animation-duration: 2s;"></span>
+          </div>
+          <div class="dbm-sync-side">
+            <div class="dbm-node dbm-brand" style="font-size:12px; font-weight:bold;">$18.45</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* ══════════════════════ FISCAL ══════════════════════ */}
+  {slug === 'fiscal' && index === 0 && (
+    <div class="dbm-stage dbm-api-m2">
+      <div class="dbm-floating dbm-float-top-right">
+        <div class="dbm-pill dbm-pill-brand"><span>Tax Compliance</span></div>
+      </div>
+      <div class="dbm-terminal">
+        <pre class="dbm-code dbm-api-json"><code>{`{`}
+  <span class="dbm-key">"region"</span>: <span class="dbm-str">"MX-NLE"</span>,
+  <span class="dbm-key">"tax_rate"</span>: <span class="dbm-num">0.16</span>,
+  <span class="dbm-key">"tax_name"</span>: <span class="dbm-str">"IVA"</span>
+{`}`}</code></pre>
+      </div>
+    </div>
   )}
 </div>
 

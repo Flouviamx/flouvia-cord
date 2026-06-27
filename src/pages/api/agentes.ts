@@ -9,7 +9,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm } from '../../lib/queries';
 import { runARAgent } from '../../lib/agents/ar-agent';
 import { sendEmail } from '../../lib/email';
@@ -22,22 +22,22 @@ const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
 // Ejecuta el agente de cobranza sobre las cotizaciones vencidas de UNA org
 // (versión manual del cron, gated por el opt-in ai_cobranza_activa).
 async function runCobranzaForOrg(orgId: string): Promise<number> {
-  const [org] = await sql`select ai_cobranza_activa from orgs where id = ${orgId}`;
+  const [[org]] = await withOrgTx(orgId, sql`select ai_cobranza_activa from orgs where id = ${orgId}`);
   if (!org?.ai_cobranza_activa) return 0;
 
-  const overdue = await sql`
+  const [overdue] = await withOrgTx(orgId, sql`
     SELECT c.id as cotizacion_id, c.total as monto_adeudado,
            cl.empresa as cliente_nombre, cl.email as cliente_email,
            DATE_PART('day', NOW() - c.vigencia) as dias_vencido
     FROM cotizaciones c
     JOIN clientes cl ON c.cliente_id = cl.id
-    WHERE c.org_id = ${orgId} AND c.status = 'invoiced' AND c.paid_at IS NULL AND c.vigencia < NOW()`;
+    WHERE c.org_id = ${orgId} AND c.status = 'invoiced' AND c.paid_at IS NULL AND c.vigencia < NOW()`);
 
   let n = 0;
   for (const q of overdue) {
-    const historial = await sql`
+    const [historial] = await withOrgTx(orgId, sql`
       SELECT autor_tipo, mensaje FROM cobranza_conversaciones
-      WHERE cotizacion_id = ${q.cotizacion_id} ORDER BY created_at ASC`;
+      WHERE cotizacion_id = ${q.cotizacion_id} ORDER BY created_at ASC`);
     const mapped = historial.map((h: any) => ({ rol: h.autor_tipo === 'agente_ia' ? 'user' : 'user', contenido: h.mensaje }));
     const msg = await runARAgent({
       cotizacionId: q.cotizacion_id, orgId,
@@ -65,7 +65,7 @@ export const GET: APIRoute = async () => {
   const denied = await requirePerm('ajustes');
   if (denied) return denied;
   const orgId = await getActiveOrgId();
-  const [org] = await sql`select ai_cobranza_activa from orgs where id = ${orgId}`;
+  const [[org]] = await withOrgTx(orgId, sql`select ai_cobranza_activa from orgs where id = ${orgId}`);
   const servers = await listMcpServers(orgId);
   return json({ servers, aiCobranza: !!org?.ai_cobranza_activa });
 };
@@ -107,7 +107,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
     case 'cobranza': {
       const value = Boolean(body.value);
-      await sql`update orgs set ai_cobranza_activa = ${value} where id = ${orgId}`;
+      await withOrgTx(orgId, sql`update orgs set ai_cobranza_activa = ${value} where id = ${orgId}`);
       await logAudit(orgId, { accion: 'agente.cobranza_autonoma', entidad: 'org', entidad_id: orgId, detalle: value ? 'activada' : 'desactivada', ip });
       return json({ ok: true });
     }

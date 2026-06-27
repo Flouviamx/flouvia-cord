@@ -84,7 +84,7 @@ export const DEV_PAGES_EN: DevPage[] = [
     },
     {
         slug: 'mcp',
-        nav: 'MCP for AI',
+        nav: 'Bidirectional MCP + agent governance',
         eyebrow: 'BIDIRECTIONAL MCP · AGENT GOVERNANCE',
         titulo: 'Your business talks to AI.<br/>And AI talks to your systems.',
         sub: 'Cord\'s MCP is no longer a one-way street. Cord is a server: an AI like Claude queries your AR and builds quotes using 7 tools. And Cord is a client: it connects to your CRM or ERP\'s MCP servers, under permissions you sign off on. You decide who touches what.',
@@ -220,6 +220,76 @@ export function Cotizacion({ token }) {
             { titulo: 'React to the client', copy: 'Listen to cord:approved, cord:pay, and other events on your own page to trigger your analytics, redirect, or sync your CRM in real time.' },
         ],
         cta: { titulo: 'Bring your quoter to where your clients are.', sub: 'Create your free account and embed your first quoter today — one line of code.' },
+    },
+    {
+        slug: 'fx',
+        nav: 'Multi-currency FX',
+        eyebrow: 'MULTI-CURRENCY FX API',
+        titulo: 'Quote in USD,<br/>charge in MXN.',
+        sub: 'Connect to our real-time exchange rate API (Banxico/FIX or interbank) to keep your price lists stable in dollars, but always quote and charge in exact local currency.',
+        plan: 'Free on all plans. Banxico FIX at no extra cost; live interbank rates on the Pro plan.',
+        stats: [
+            { valor: '3', countup: 3, label: 'FX sources (Banxico, FIX, real-time Interbank)' },
+            { valor: '0', countup: 0, suffix: '%', label: 'margin of error in currency fluctuations' },
+            { valor: '24/7', label: 'availability of the exchange API' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'LIVE EXCHANGE RATES',
+                titulo: 'Protect your margin.',
+                copy: 'Don\'t lose money due to an outdated exchange rate. Our API allows you to freeze the exchange rate at the time of quoting, with a specific validity (e.g., 24 hours).',
+                bullets: [
+                    'Official exchange rates updated daily',
+                    'Validity per quote with FX freezing',
+                    'Native support in the Web Component',
+                ],
+                code: {
+                    label: 'FX Request',
+                    body: `// Get today's exchange rate\nconst fx = await cord.fx.getRate({ from: 'USD', to: 'MXN' });\nconsole.log('USD/MXN:', fx.rate);`,
+                }
+            },
+        ],
+        steps: [
+            { titulo: 'Define your base currency', copy: 'Your products can be in USD and quoted in MXN.' },
+            { titulo: 'Apply the FX', copy: 'The quoter queries the API and shows the exact MXN equivalent.' },
+            { titulo: 'Charge exact', copy: 'The client pays the exact MXN amount calculated at that moment.' },
+        ],
+        cta: { titulo: 'Keep your profitability shielded.', sub: 'Integrate live exchange rates today.' },
+    },
+    {
+        slug: 'fiscal',
+        nav: 'US/MX Tax',
+        eyebrow: 'INTERNATIONAL TAX',
+        titulo: 'Cross-border commerce,<br/>without friction.',
+        sub: 'Sell from US to MX or vice versa without breaking local rules. Support for Sales Tax, withheld IVA, IEPS, and dual invoicing.',
+        plan: 'Enterprise Plan',
+        stats: [
+            { valor: '100', countup: 100, suffix: '%', label: 'SAT and IRS regulatory compliance' },
+            { valor: '2', countup: 2, label: 'tax regimes supported simultaneously' },
+            { valor: '1', countup: 1, label: 'unified API for both countries' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'TAX COMPLIANCE',
+                titulo: 'Local taxes, globally.',
+                copy: 'Automatically apply the correct taxes based on the destination. If the buyer is in Texas, you charge Sales Tax; if they are in Monterrey, you charge 16% IVA (or 8% at the border).',
+                bullets: [
+                    'RFC (Mexico) and EIN (US) validation',
+                    'Dynamic calculation of tax rates (Sales Tax vs IVA)',
+                    'Support for customs declarations (pedimentos) and withholdings',
+                ],
+                code: {
+                    label: 'Tax Calculation',
+                    body: `// Determine taxes by region\nconst taxes = await cord.tax.calculate({ \n  amount: 1500, \n  buyer_region: 'MX-NLE',\n  seller_region: 'US-TX'\n});`,
+                }
+            },
+        ],
+        steps: [
+            { titulo: 'Configure your entities', copy: 'Add your LLC and your S.A. de C.V. under the same account.' },
+            { titulo: 'Map your products', copy: 'Assign SAT codes and their US equivalents.' },
+            { titulo: 'Quote without thinking', copy: 'The API automatically applies the corresponding tax rules.' },
+        ],
+        cta: { titulo: 'Expand your market without the tax headache.', sub: 'Join the companies operating binationally.' },
     },
 ];
 

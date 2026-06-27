@@ -3,7 +3,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../lib/db';
+import { sql, getActiveOrgId, withOrgTx } from '../../lib/db';
 
 export const GET: APIRoute = async ({ url }) => {
     const q = (url.searchParams.get('q') || '').trim();
@@ -12,7 +12,7 @@ export const GET: APIRoute = async ({ url }) => {
     const orgId = await getActiveOrgId();
     const like = `%${q}%`;
 
-    const [cots, clis, prods] = await Promise.all([
+    const [cots, clis, prods] = await withOrgTx(orgId,
         sql`select c.id, c.folio, c.status, coalesce(cl.empresa, 'Sin cliente') as cliente
             from cotizaciones c left join clientes cl on cl.id = c.cliente_id
             where c.org_id = ${orgId} and (c.folio ilike ${like} or cl.empresa ilike ${like})
@@ -22,8 +22,8 @@ export const GET: APIRoute = async ({ url }) => {
             order by empresa limit 6`,
         sql`select id, nombre, sku from productos
             where org_id = ${orgId} and (nombre ilike ${like} or sku ilike ${like})
-            order by nombre limit 6`,
-    ]);
+            order by nombre limit 6`
+    );
 
     return json({
         cotizaciones: cots.map((c) => ({ id: c.id, folio: c.folio, cliente: c.cliente, status: c.status })),

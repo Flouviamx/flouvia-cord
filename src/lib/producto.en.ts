@@ -494,6 +494,254 @@ export const FEATURES_EN: Feature[] = [
         ],
         cta: { titulo: 'Sell without borders. Invoice without surprises.', sub: 'Quote in dollars with a shielded rate and stamp your CFDI 4.0 in pesos. Start for free.' },
     },
+    {
+        slug: 'finanzas',
+        nav: 'Finance & CFO',
+        eyebrow: 'YOUR AI CFO',
+        titulo: 'Predictive cash flow<br/>at 90 days.',
+        sub: 'Cross-reference your pipeline with each client\'s real payment history. Know what you will collect before you collect it and spot non-payment risks before they happen.',
+        metaTitle: 'Predictive cash flow and AI CFO for B2B — Cord by Flouvia',
+        metaDescription: 'Cord uses AI to project your cash flow up to 90 days by crossing your pipeline with the actual payment history of your clients.',
+        plan: 'Scale plan and above',
+        stats: [
+            { valor: '90', countup: 90, suffix: ' days', label: 'of predictive projection' },
+            { valor: '100', countup: 100, suffix: '%', label: 'based on your portfolio\'s real history' },
+            { valor: '1', countup: 1, suffix: ' click', label: 'to see the risk indicator per client' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'REAL PREDICTION',
+                titulo: 'No more guessing in Excel.',
+                copy: 'Cord doesn\'t assume a Net 30 client pays on day 30. It analyzes their real history and if they usually pay on day 45, it projects your flow with that delay (DSO).',
+                bullets: [
+                    'DSO (Days Sales Outstanding) calculated per client',
+                    'Automatic adjustment to collection reality',
+                    'Visual report without building formulas',
+                ],
+            },
+            {
+                eyebrow: 'ACTIVE RISK',
+                titulo: 'The traffic light that protects<br/>your portfolio.',
+                copy: 'The AI CFO reviews risk concentration. If a client representing 40% of your receivables starts to fall behind, it warns you so you can tighten credit.',
+                bullets: [
+                    'Early warnings of non-payment risk',
+                    'Visualized portfolio concentration',
+                    'Actionable recommendations with one click',
+                ],
+            },
+            {
+                eyebrow: 'MANAGEMENT REPORT',
+                titulo: 'The finance meeting,<br/>ready in seconds.',
+                copy: 'Export the projection or grant your executive team access to a live dashboard where the numbers are always up to date.',
+                bullets: [
+                    'Live dashboard for the CFO',
+                    'Export to CSV or PDF',
+                    'Zero monthly reconciliation time',
+                ],
+            },
+        ],
+        faqs: [
+            {
+                q: 'How does Cord project cash flow?',
+                a: 'Cord crosses approved quotes (pipeline) with the historical payment behavior of each client to predict when the money will actually come in, not when the invoice theoretically expires.',
+            },
+            {
+                q: 'What is DSO and why is it important?',
+                a: 'DSO (Days Sales Outstanding) measures how many days it takes a client to pay. Cord calculates it automatically and uses it to warn about risks if a client starts increasing their payment time.',
+            },
+            {
+                q: 'Who has access to this information?',
+                a: 'On advanced plans, you can define roles. Only users with management or CFO permissions can view the projections and total risk concentration of the company.',
+            },
+        ],
+        cta: { titulo: 'Anticipate cash flow bumps.', sub: 'Your AI-powered CFO is available on the Scale plan.' },
+    },
+    {
+        slug: 'aprobaciones',
+        nav: 'Margin control',
+        eyebrow: 'MARGIN CONTROL AND APPROVALS',
+        titulo: 'Sell fast,<br/>but with the right margin.',
+        sub: 'Define discount thresholds by role. If a sales rep gives a discount greater than allowed, the quote is paused and requests management approval. You protect the margin, they close the deal.',
+        metaTitle: 'Margin control and approval workflows for B2B sales — Cord by Flouvia',
+        metaDescription: 'Set up discount thresholds and management approval workflows to ensure the profitability of every quote in your sales team.',
+        plan: 'Professional plan and above',
+        stats: [
+            { valor: '100', countup: 100, suffix: '%', label: 'of quotes pass margin validation' },
+            { valor: '1', countup: 1, suffix: ' click', label: 'to approve or reject from your phone' },
+            { valor: '0', countup: 0, label: 'month-end surprises due to excessive discounts' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'AUTOMATIC THRESHOLDS',
+                titulo: 'Clear rules for the whole team.',
+                copy: 'Set a rule that reps can give up to a 10% discount. Anything below that goes straight to the client; anything above requires your click.',
+                bullets: [
+                    'Configurable discount thresholds by role',
+                    'Silent real-time validation',
+                    'Automatic blocking of unauthorized sends',
+                ],
+            },
+            {
+                eyebrow: 'MANAGEMENT FLOW',
+                titulo: 'Silent auditor.',
+                copy: 'When a quote requires approval, you get an instant notification. You can see how much the rep conceded and approve or request adjustments from anywhere.',
+                bullets: [
+                    'Push or email notifications',
+                    'One-click approval on mobile',
+                    'Internal chat on the quote for adjustments',
+                ],
+            },
+            {
+                eyebrow: 'IMMUTABLE LOG',
+                titulo: 'Everything is recorded.',
+                copy: 'The quote\'s timeline saves who requested the approval, who granted it, and at what time. Zero doubts about why a price went out lower than normal.',
+                bullets: [
+                    'Complete approval history',
+                    'Margin auditing',
+                    'Clear accountability for every discount',
+                ],
+            },
+        ],
+        faqs: [
+            {
+                q: 'Can I have different thresholds per sales rep?',
+                a: 'Yes. You can define general rules or adjust the allowed discount thresholds based on hierarchy (e.g., Junior Rep 5%, Senior Rep 15%).',
+            },
+            {
+                q: 'How do I approve a quote that exceeded the margin?',
+                a: 'You receive an instant notification. Upon opening it, you see the profitability summary and two buttons: Approve or Reject. If you approve it, the rep can then send it.',
+            },
+            {
+                q: 'Does the client know about the approval process?',
+                a: 'No. The flow is completely internal. For the client, the quote simply arrives once the commercial team has released it.',
+            },
+        ],
+        cta: { titulo: 'Stop losing margin by mistake.', sub: 'Protect your profitability on every quote with the Professional plan.' },
+    },
+    {
+        slug: 'equipo',
+        nav: 'Roles & team',
+        eyebrow: 'TEAM, ROLES AND MULTI-ENTITY',
+        titulo: 'Your whole team,<br/>working in sync.',
+        sub: 'Invite your sales reps, admins, and accountants with granular permissions. Manage multiple entities or brands from a single master account.',
+        metaTitle: 'Team management, roles and multi-entity for B2B — Cord by Flouvia',
+        metaDescription: 'Manage your sales team with granular permissions and handle multiple companies or entities from a single Cord account.',
+        plan: 'Available from the Starter plan (Multi-entity requires Professional)',
+        stats: [
+            { valor: '5', countup: 5, label: 'levels of granular permissions' },
+            { valor: '100', countup: 100, suffix: '%', label: 'of actions are left in the audit log' },
+            { valor: 'SSO', label: 'secure corporate login' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'B2B PERMISSIONS',
+                titulo: 'Everyone sees only what they should.',
+                copy: 'A sales rep only sees their own clients and quotes. The sales manager sees everyone\'s pipeline. The accountant logs in just to download the CFDIs. Total security by design.',
+                bullets: [
+                    'Predefined roles (Admin, Manager, Rep, Accountant)',
+                    'Total privacy between rep portfolios',
+                    'Export or deletion blocks',
+                ],
+            },
+            {
+                eyebrow: 'MULTI-ENTITY',
+                titulo: 'Several entities,<br/>one single dashboard.',
+                copy: 'If your corporate group operates with several brands or tax entities, you don\'t need separate accounts. Switch companies with one click, share the catalog if you want, and keep collections organized.',
+                bullets: [
+                    'Quick company switching (Org switching)',
+                    'Isolated logo, colors, and tax seals',
+                    'Consolidated or individual reports',
+                ],
+            },
+            {
+                eyebrow: 'SSO AND SECURITY',
+                titulo: 'Enterprise-grade access.',
+                copy: 'Your team logs in with your domain\'s Google or Microsoft credentials. If someone leaves the company, you cut their email and they instantly lose access to Cord.',
+                bullets: [
+                    'Single Sign-On (SSO) with standard providers',
+                    'Robust authentication backed by Clerk',
+                    'Session log and access auditing',
+                ],
+            },
+        ],
+        faqs: [
+            {
+                q: 'Can a sales rep see another rep\'s clients?',
+                a: 'By default, no. The "Rep" role restricts the view solely to their own portfolio and their own quotes. Only managers and admins have a global view.',
+            },
+            {
+                q: 'How does the multi-entity feature work?',
+                a: 'You can create multiple Organizations under your same user account. Each organization has its own RFC, logo, seal certificate, and clients. You can invite users to one company and not another.',
+            },
+            {
+                q: 'What is SSO and why is it more secure?',
+                a: 'Single Sign-On (SSO) allows your employees to log in using your company\'s identity system (e.g., Google Workspace). This way they don\'t have to remember new passwords and you centralize access control.',
+            },
+        ],
+        cta: { titulo: 'Bring your team on board.', sub: 'Start collaborating and standardizing your process today.' },
+    },
+    {
+        slug: 'negociacion',
+        nav: 'B2B Negotiation',
+        eyebrow: 'NEGOTIATION & APPROVALS',
+        titulo: 'Bulletproof agreements,<br/>line by line.',
+        sub: 'Your clients can review, adjust quantities, or counteroffer on specific products. Every change generates an immutable, cryptographically signed version — goodbye misunderstandings.',
+        metaTitle: 'B2B Quote Negotiation — Cord by Flouvia',
+        metaDescription: 'Allow clients to approve or counteroffer line by line. Every version is immutable and SHA-256 signed for full transparency.',
+        plan: 'Available on the Pro plan',
+        stats: [
+            { valor: '100', countup: 100, suffix: '%', label: 'traceability on every version' },
+            { valor: '0', countup: 0, label: 'misunderstandings about the final price' },
+            { valor: 'SHA-256', label: 'cryptographic signature per document' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'LINE-BY-LINE APPROVAL',
+                titulo: 'Surgical negotiation.',
+                copy: 'The client doesn\'t reject the whole quote if one price doesn\'t fit. They can approve 9 items and counteroffer on just 1. You decide to accept, reject, or counter, keeping the deal alive.',
+                bullets: [
+                    'Line-level approval and counteroffers',
+                    'Quantity adjustments suggested by client',
+                    'Integrated chat flow to discuss terms',
+                ],
+            },
+            {
+                eyebrow: 'IMMUTABLE VERSIONS',
+                titulo: 'A history that doesn\'t lie.',
+                copy: 'Every time a quote changes state (sent, counteroffer, approved), Cord generates an immutable snapshot. If a client says "I approved something else", you have the exact record of who, when, and what.',
+                bullets: [
+                    'Visual version history (v1, v2, v3...)',
+                    'Quick diff comparison between versions',
+                    'One-click restore to a previous version',
+                ],
+            },
+            {
+                eyebrow: 'CRYPTOGRAPHIC SIGNATURE',
+                titulo: 'Bank-grade security.',
+                copy: 'The final approved version is sealed with a SHA-256 hash. This guarantees not a single comma can be altered after approval without breaking the mathematical signature.',
+                bullets: [
+                    'SHA-256 signature injected in the final PDF',
+                    'Independent mathematical audit',
+                    'Legal certainty in the commercial agreement',
+                ],
+            },
+        ],
+        faqs: [
+            {
+                q: 'What does it mean for a quote to have immutable versions?',
+                a: 'It means that every time there is a negotiation, instead of overwriting the original document, a new version is created. All previous versions are permanently saved and cannot be modified, serving as evidence of the sales process.',
+            },
+            {
+                q: 'How does the SHA-256 signature work?',
+                a: 'It is a cryptographic algorithm that takes the exact content of the approved quote and generates a unique code. If someone tried to change a price or quantity after approval, the code would change entirely, exposing the manipulation.',
+            },
+            {
+                q: 'Does the client need an account to negotiate?',
+                a: 'No. The client accesses via the secure public link, verifies their identity with an OTP code sent to their email (optional), and can comment, approve, or counteroffer directly from their browser.',
+            },
+        ],
+        cta: { titulo: 'Close deals with full transparency.', sub: 'Prevent misunderstandings and formalize your sales.' },
+    },
 ];
 
 export const findFeatureEn = (slug: string) => FEATURES_EN.find(f => f.slug === slug);

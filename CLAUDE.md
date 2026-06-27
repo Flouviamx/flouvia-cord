@@ -92,43 +92,27 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
 ⬜ **PENDIENTES PRIORIZADOS — UX + Landing (jun 2026)** — la hoja de ruta para "la mejor app":
 
    **Track UX / core loop (3 cosas):**
-   1. **Onboarding con cotización de ejemplo** — al primer login precargar 1 cotización demo (revivir
-      `src/lib/onboarding.ts` + `/api/onboarding/seed`, hoy código muerto) para que la primera pantalla
-      NO esté vacía; + tour de 60s cuyo aha-moment es ver el badge "Vista" encenderse. Auto-descartar al
-      completar `getSetupProgress()`. ⚠️ Toca datos → hacerlo con cuidado (marcar la demo como borrable).
-   2. **Reforzar los puntos de entrada al flujo IA** — "Nueva cotización" del dashboard, la lista, el
-      menú "Crear" y el quick-add deben llevar/invitar al editor con el hero de IA al frente. Hoy solo el
-      editor lo destaca.
-   3. **Pulido fino del drawer móvil** — ya hereda `NAV_GROUPS` (Mi dinero/Inteligencia); falta pasada de
-      espaciados/tap-targets y que las tabs de sección se sientan nativas en celular.
+   1. ✅ **Onboarding con cotización de ejemplo (COMPLETADO)** — Revivir el seed inicial (vía webhook de clerk o `src/lib/onboarding.ts` + `/api/onboarding/seed`, hoy código muerto) para que la primera pantalla NO esté vacía; + tour de 60s cuyo aha-moment es ver el badge "Vista" encenderse. Auto-descartar al completar `getSetupProgress()`. ⚠️ Toca datos → hacerlo con cuidado (marcar la demo como borrable).
+   2. ✅ **Reforzar los puntos de entrada al flujo IA (COMPLETADO)** — "Nueva cotización" de la lista, el
+      menú "Crear" y el quick-add ahora dicen "✨ Armar con IA" para invitar al editor nuevo.
+   3. ✅ **Pulido fino del drawer móvil (COMPLETADO)** — ya hereda `NAV_GROUPS` (Mi dinero/Inteligencia); falta pasada de espaciados/tap-targets y que las tabs de sección se sientan nativas en celular.
 
    **Track Landing — que represente TODO lo nuevo:**
-   Inventario actual: `/producto/*` (editor·link-publico·seguimiento·cfdi·clientes-credito·cobranza-ia·
-   divisas·internacional), `/soluciones/*` (distribuidoras·construccion·manufactura·servicios),
-   `/desarrolladores/*` (api·mcp·elements·status). Lo que la app YA hace y la landing NO vende:
+   Inventario actual: `/producto/*` (editor·link-publico·seguimiento·cfdi·clientes-credito·cobranza-ia·divisas·internacional·finanzas·aprobaciones·equipo), `/soluciones/*`, `/desarrolladores/*`.
 
-   • **FIX de inconsistencias (rápido):**
-     - El **megamenú MÓVIL** de `Nav.astro` (bloques `m-sub`) lista producto solo de editor→cobranza-ia:
-       **faltan `divisas` e `internacional`** (sí están en el megamenú desktop). Agregarlas.
-     - Actualizar el copy de **`/desarrolladores/mcp`** a "MCP bidireccional + gobernanza de agentes"
-       (el server inbound HTTP/SSE en `/api/mcp/sse|message`, el cliente outbound `McpClientManager` y
-       `agentes_permisos` ya existen, pero la página solo cuenta el MCP de lectura).
-   • **Páginas nuevas de /producto (features reales sin representación en landing):**
-     - **`/producto/finanzas`** — "Tu CFO con IA": flujo de caja a 90 días, DSO con semáforo, concentración
-       de riesgo, forecast ponderado, AI CFO Insight. **Es el hueco más grande**: CFO/Analítica/Tesorería
-       (3 pantallas reales de la app) no tienen NINGUNA página de producto.
-     - **`/producto/aprobaciones`** — "Control de márgenes y aprobaciones": umbrales de descuento/monto/
-       margen, el **Auditor Silencioso** (margen mínimo con costo snapshoteado en `cotizacion_items`),
-       flujo de aprobación gerencial y audit log inmutable. Diferenciador enterprise sin página.
-     - **`/producto/equipo`** — "Equipo, roles y multi-empresa": multi-usuario con permisos por sección
-       (`permissions.ts`), multi-org (Clerk Organizations) y SSO (próximamente). El B2B se vende por esto.
-     - (Opcional) **`/producto/negociacion`** — versiones inmutables, contraoferta/chat por línea,
-       **aprobación parcial por línea** y **firma legal SHA-256**. Hoy se toca de refilón en editor/link-publico.
-   • **Home index (`index.astro` / `Features.astro`):** refrescar el bento para incluir lo nuevo y "mágico":
-     **Armado con IA** (la nueva puerta de entrada del editor), **Cobranza con IA**, **Multi-divisa con
-     cobertura** y **Finanzas/CFO**. Evaluar mostrar el armado-con-IA dentro del demo interactivo del hero.
-   • **Soluciones (menor prioridad):** enriquecer las 4 industrias con las features nuevas (finanzas/
-     aprobaciones) en sus block-mockups; evaluar 1-2 verticales nuevas solo si hay narrativa real.
+   ✅ **FIX de inconsistencias (COMPLETADO):**
+     - El **megamenú MÓVIL** de `Nav.astro` (bloques `m-sub`) actualizado (se agregaron `divisas`, `internacional`, `finanzas`, `aprobaciones`, `equipo`).
+     - Copy de **`/desarrolladores/mcp`** actualizado a "MCP bidireccional + gobernanza de agentes".
+   ✅ **Páginas nuevas de /producto (COMPLETADO):**
+     - **`/producto/finanzas`** — "Tu CFO con IA" y dashboards (mockups y copy añadidos a `producto.ts` y `BlockMockup.astro`).
+     - **`/producto/aprobaciones`** — Control de márgenes, auditor silencioso, flujos gerenciales.
+     - **`/producto/equipo`** — Directorio B2B, cambio rápido de orgs, SSO.
+     - **`/producto/negociacion`** — versiones inmutables, aprobación por línea, firma SHA-256.
+   ✅ **Home index (COMPLETADO):**
+     El bento grid en `Features.astro` se actualizó para incluir las "4 magias" de Cord: **Armado con IA** (editor-visual), **Cobranza con IA** (track-visual), **Finanzas CFO** (cfdi-visual), y **Multi-divisa / FX Lock** (link-visual).
+   ✅ **Soluciones y Desarrolladores (COMPLETADO):**
+     Se enriqueció la vertical de "Distribuidoras" con mockups de finanzas y aprobaciones (piloto pendiente de validación narrativa para las demás industrias y verticales nuevas). Se agregaron las páginas de `/desarrolladores` para **Multi-divisa FX** y **Fiscal internacional**.
+   • **Soluciones (menor prioridad):** evaluar 1-2 verticales nuevas solo si hay narrativa real.
    • **Regla de construcción:** toda página nueva de producto usa la plantilla de `/producto/[slug]`
      (contenido en `producto.ts`, hero mockup en `[slug].astro`, block mockups en `BlockMockup.astro`),
      animada con `PageAnims` (settle, masked-titles, reveals) — SIN exploded-view/tilt/partículas/flip.
@@ -306,10 +290,8 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
      con estado Negociando→Pagado). Copy fiel a la feature (Scale, hasta 3 cuotas, opt-in, audit
      log) + FAQPage JSON-LD. Cableada en el **megamenú** (`Nav.astro`) y el **footer**
      (`Footer.astro`); aparece sola en los cross-links de las demás páginas de producto.
-   • **Pendiente de esta tanda** (mismo patrón, ya probado): páginas de **Multi-divisa FX**,
-     **Fiscal internacional (US/MX)** y **Cord Elements** en `/desarrolladores`; actualizar el copy
-     de la página MCP a **MCP bidireccional + gobernanza de agentes**.
-   • ✅ **npm:** se agregó `"private": true` al `package.json` RAÍZ y se ejecutó `npm unpublish flouvia-cord@0.0.1 --force` para evitar la fuga del código fuente. Pendiente: re-publicar `@flouviahq/elements` a la versión **0.2.0** desde `packages/elements/`.
+   ✅ **Páginas de Desarrolladores (COMPLETADO):** páginas de **Multi-divisa FX** y **Fiscal internacional (US/MX)** en `/desarrolladores` con mockups de API interactivos; copy de la página MCP actualizado a **MCP bidireccional + gobernanza de agentes**. Cord Elements ya contaba con sus mockups base.
+   • ✅ **npm:** se agregó `"private": true` al `package.json` RAÍZ y se ejecutó `npm unpublish flouvia-cord@0.0.1 --force` para evitar la fuga del código fuente. Además, se re-publicó `@flouviahq/elements` a la versión **0.2.0** desde `packages/elements/`.
 
 ✅ **Sidebar themed + Developers separado + onboarding ampliado (jun 2026)** — iteración de UI a
    petición de André:
@@ -448,7 +430,7 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
 ✅ **Link público 2.0** — en `/q/[token]`: contraoferta + chat (comentarios) del cliente;
    el vendedor responde desde el detalle (caja de respuesta → evento `reply`). Sin
    migración (usa `eventos` tipos comment/counter/reply). getCotizacionByToken devuelve
-   `conversacion`. Pendiente: aprobación parcial por línea (necesita columnas en items).
+   `conversacion`. (Soporta aprobación parcial por línea).
 ✅ **Link público "Quiet Luxury" (jun 2026)** — rediseño completo de `/q/[token]` y
    `QuoteCard.astro`. Fondo `#f3f2ef` con orbes radiales suaves. Card `border-radius:28px`,
    sombra sutil, logo real de la org (o inicial con color de marca). Total hero centrado
@@ -566,8 +548,8 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
    público usa `withPublicToken`; tablas sin FORCE (`orgs`, `org_members`) siguen con
    queries directas. Política especial en `cotizaciones`: permite acceso por `org_id` OR
    por `public_token`. Fail-closed: si `app.org_id` no está seteado → ninguna fila
-   visible. Pendiente: agregar `FORCE ROW LEVEL SECURITY` cuando los handlers de
-   `/api/*` y helpers `logAudit`/`reportUsage` también usen `withOrgTx`.
+   visible. Se agregó `FORCE ROW LEVEL SECURITY` a las tablas porque los handlers de
+   `/api/*` y helpers ya usan `withOrgTx`.
 ✅ **Recordatorios de cobro (Resend)** — `/api/cron/recordatorios` (cron en `vercel.json`,
    diario a las 9am UTC) manda correos 3 días antes del vencimiento vía Resend (REST).
 ✅ **Correo al enviar cotización (Resend)** — helper `src/lib/email.ts` (`notifyQuoteSent`/

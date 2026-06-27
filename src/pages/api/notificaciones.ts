@@ -4,7 +4,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../lib/db';
+import { sql, getActiveOrgId, withOrgTx } from '../../lib/db';
 
 // Tipos de evento → texto e ícono (clave que el front mapea a un SVG).
 const META: Record<string, { label: string; icon: string }> = {
@@ -35,14 +35,14 @@ function relative(d: string): string {
 export const GET: APIRoute = async () => {
     try {
         const orgId = await getActiveOrgId();
-        const rows = await sql`
+        const [rows] = await withOrgTx(orgId, sql`
             select e.id, e.tipo, e.detalle, e.created_at, c.folio, c.id as cotizacion_id,
                    coalesce(cl.empresa, 'Sin cliente') as cliente
             from eventos e
             join cotizaciones c on c.id = e.cotizacion_id
             left join clientes cl on cl.id = c.cliente_id
             where e.org_id = ${orgId}
-            order by e.created_at desc limit 15`;
+            order by e.created_at desc limit 15`);
 
         const items = rows.map((e) => {
             const meta = META[e.tipo as string] ?? { label: (e.detalle as string) || 'Actividad', icon: 'doc' };

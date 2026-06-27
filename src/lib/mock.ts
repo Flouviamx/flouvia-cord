@@ -68,7 +68,7 @@ export const money = (n: number, dec = 2) =>
     '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(n);
 
 export const lineTotal = (it: MockItem) => (it.precioNegociado ?? it.precioLista) * it.cantidad;
-export const quoteSubtotal = (q: MockQuote) => q.items.reduce((s, it) => s + lineTotal(it), 0);
+export const quoteSubtotal = (q: MockQuote) => q.items.filter(it => it.aprobado !== false).reduce((s, it) => s + lineTotal(it), 0);
 export const quoteIva = (q: MockQuote) => quoteSubtotal(q) * IVA;
 export const quoteTotal = (q: MockQuote) => quoteSubtotal(q) * (1 + IVA);
 

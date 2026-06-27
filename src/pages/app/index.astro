@@ -29,6 +29,11 @@ const dotColor = (tipo: string) =>
     : '#cbd5e1';
 ---
 
+// ── Onboarding / Aha-moment Tour ──
+const isDemo = COTIZACIONES.length === 1 && String(COTIZACIONES[0].notas || '').includes('"is_demo": true');
+const demoToken = isDemo ? COTIZACIONES[0].token : null;
+const showTour = isDemo && COTIZACIONES[0].status === 'sent';
+
 <AppLayout title="Dashboard — Cord" page="dashboard" heading="Dashboard">
     <!-- KPIs -->
     <section class="kpis">
@@ -249,6 +254,46 @@ const dotColor = (tipo: string) =>
             <p class="task-empty" id="taskEmpty" hidden={TAREAS.length > 0}>Sin pendientes. Agrega un recordatorio arriba.</p>
         </div>
     </section>
+
+    {showTour && (
+        <div id="demoTour" class="demo-tour-popover">
+            <div class="demo-tour-inner">
+                <span class="demo-tour-ico">✨</span>
+                <div class="demo-tour-text">
+                    <strong>¡Tu primera cotización está viva!</strong>
+                    <p id="demoTourMsg">El cliente está por abrir el link que le enviaste...</p>
+                </div>
+            </div>
+        </div>
+        <script define:vars={{ demoToken }}>
+            setTimeout(() => {
+                const msg = document.getElementById('demoTourMsg');
+                if (msg) msg.textContent = '¡Magia! El cliente acaba de abrirla.';
+                
+                // Simula al cliente abriendo el link público para disparar 'viewed'
+                fetch('/q/' + demoToken).then(() => {
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                });
+            }, 3500);
+        </script>
+        <style>
+            .demo-tour-popover {
+                position: fixed; bottom: 2rem; right: 2rem; z-index: 999;
+                background: var(--color-bg); border: 1px solid var(--color-border);
+                border-radius: 12px; padding: 16px 20px;
+                box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+                animation: slideInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                max-width: 320px;
+            }
+            .demo-tour-inner { display: flex; gap: 14px; align-items: flex-start; }
+            .demo-tour-ico { font-size: 1.5rem; line-height: 1; }
+            .demo-tour-text strong { display: block; font-size: 0.95rem; font-weight: 600; color: var(--color-text); margin-bottom: 4px; }
+            .demo-tour-text p { font-size: 0.85rem; color: var(--color-text-muted); margin: 0; line-height: 1.4; }
+            @keyframes slideInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        </style>
+    )}
 </AppLayout>
 
 <style>

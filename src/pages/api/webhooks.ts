@@ -10,7 +10,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { randomBytes } from 'node:crypto';
-import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm, getWebhookDeliveries } from '../../lib/queries';
 import { webhookLimit, planLabel } from '../../lib/permissions';
 import { WEBHOOK_EVENT_IDS, sendTestEvent, redeliver } from '../../lib/webhooks';
@@ -63,9 +63,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     const orgId = await getActiveOrgId();
     // Límite por plan (free también tiene, pero poquito). Contamos los existentes.
-    const [{ plan }] = await sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`;
+    const [[[planResult]]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`);
+    const plan = planResult?.plan;
     let usados = 0;
-    try { const [c] = await sql`select count(*)::int as n from webhooks where org_id = ${orgId}`; usados = (c?.n as number) ?? 0; }
+    try { const [[[c]]] = await withOrgTx(orgId, sql`select count(*)::int as n from webhooks where org_id = ${orgId}`); usados = (c?.n as number) ?? 0; }
     catch { return json({ error: 'No se pudo crear. ¿Corriste la migración (npm run db:migrate)?' }, 500); }
     const limite = webhookLimit(plan as string);
     if (usados >= limite) {
@@ -77,10 +78,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     let row: any;
     try {
-        [row] = await sql`
+        [[row]] = await withOrgTx(orgId, sql`
             insert into webhooks (org_id, url, eventos, secret)
             values (${orgId}, ${url}, ${JSON.stringify(eventos)}::jsonb, ${secret})
-            returning id`;
+            returning id`);
     } catch {
         return json({ error: 'No se pudo crear. ¿Corriste la migración (npm run db:migrate)?' }, 500);
     }
@@ -97,14 +98,14 @@ export const PATCH: APIRoute = async ({ request }) => {
 
     const orgId = await getActiveOrgId();
     if (typeof body.activo === 'boolean') {
-        await sql`update webhooks set activo = ${body.activo} where id = ${id} and org_id = ${orgId}`;
+        await withOrgTx(orgId, sql`update webhooks set activo = ${body.activo} where id = ${id} and org_id = ${orgId}`);
     }
     if (Array.isArray(body.eventos)) {
-        await sql`update webhooks set eventos = ${JSON.stringify(cleanEventos(body.eventos))}::jsonb where id = ${id} and org_id = ${orgId}`;
+        await withOrgTx(orgId, sql`update webhooks set eventos = ${JSON.stringify(cleanEventos(body.eventos))}::jsonb where id = ${id} and org_id = ${orgId}`);
     }
     if (typeof body.url === 'string') {
         if (!validUrl(body.url)) return json({ error: 'La URL no es válida' }, 400);
-        await sql`update webhooks set url = ${body.url.trim()} where id = ${id} and org_id = ${orgId}`;
+        await withOrgTx(orgId, sql`update webhooks set url = ${body.url.trim()} where id = ${id} and org_id = ${orgId}`);
     }
     return json({ ok: true });
 };
@@ -117,7 +118,7 @@ export const DELETE: APIRoute = async ({ request }) => {
     if (!id) return json({ error: 'Falta id' }, 400);
 
     const orgId = await getActiveOrgId();
-    const rows = await sql`delete from webhooks where id = ${id} and org_id = ${orgId} returning url`;
+    const [rows] = await withOrgTx(orgId, sql`delete from webhooks where id = ${id} and org_id = ${orgId} returning url`);
     if (!rows.length) return json({ error: 'Webhook no encontrado' }, 404);
     await logAudit(orgId, { accion: 'webhook.eliminado', entidad: 'webhook', entidad_id: id, detalle: rows[0].url as string, ip: reqIp(request) });
     return json({ ok: true });

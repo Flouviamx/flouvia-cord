@@ -49,7 +49,7 @@ const pendingCount = countFor('approval');
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
         <h3>Aún no tienes cotizaciones</h3>
         <p>Arma tu primera cotización, mándala por link y mira en vivo cuándo la abre tu cliente.</p>
-        {canCotizar && <a href="/app/cotizaciones/nueva" class="cot-empty-cta">+ Nueva cotización</a>}
+        {canCotizar && <a href="/app/cotizaciones/nueva" class="cot-empty-cta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;margin-right:6px;vertical-align:-2px"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>Armar con IA</a>}
     </div>
     ) : (
     <Fragment>

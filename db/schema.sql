@@ -773,3 +773,31 @@ alter table cotizaciones add column if not exists fx_rate         numeric     no
 alter table cotizaciones add column if not exists fx_rate_source  text        not null default 'spot';
 alter table cotizaciones add column if not exists fx_locked_until timestamptz;
 alter table orgs         add column if not exists country_code    text        not null default 'MX';
+
+
+-- Agregado: FORCE ROW LEVEL SECURITY
+alter table productos force row level security;
+alter table clientes force row level security;
+alter table cotizaciones force row level security;
+alter table cotizacion_items force row level security;
+alter table eventos force row level security;
+alter table facturas_cfdi force row level security;
+alter table documentos_fiscales force row level security;
+alter table tareas force row level security;
+alter table audit_log force row level security;
+alter table api_keys force row level security;
+alter table webhooks force row level security;
+alter table webhook_deliveries force row level security;
+alter table api_requests force row level security;
+alter table plantillas_mensaje force row level security;
+alter table impuestos force row level security;
+alter table uso_periodo force row level security;
+alter table intereses_moratorios force row level security;
+alter table cotizacion_versiones force row level security;
+alter table mcp_servers force row level security;
+alter table agentes_ia force row level security;
+alter table agentes_permisos force row level security;
+alter table cotizacion_comentarios force row level security;
+alter table cotizacion_firmas force row level security;
+alter table cobranza_conversaciones force row level security;
+alter table planes_pago_negociados force row level security;

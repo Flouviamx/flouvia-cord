@@ -6,7 +6,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { createHash, randomBytes } from 'node:crypto';
-import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm } from '../../lib/queries';
 import { apiKeyLimit, planLabel } from '../../lib/permissions';
 
@@ -28,9 +28,10 @@ export const POST: APIRoute = async ({ request }) => {
     // Límite por plan de claves ACTIVAS (no revocadas). Todos los planes (incluido
     // free) pueden generar claves de prueba Y en vivo, pero la cantidad está
     // limitada — free = prueba real (poquito); el consumo se mide por uso aparte.
-    const [{ plan }] = await sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`;
+    const [[[planResult]]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`);
+    const plan = planResult?.plan;
     let activas = 0;
-    try { const [c] = await sql`select count(*)::int as n from api_keys where org_id = ${orgId} and revoked_at is null`; activas = (c?.n as number) ?? 0; }
+    try { const [[[c]]] = await withOrgTx(orgId, sql`select count(*)::int as n from api_keys where org_id = ${orgId} and revoked_at is null`); activas = (c?.n as number) ?? 0; }
     catch { return json({ error: 'No se pudo crear la llave. ¿Corriste la migración (npm run db:migrate)?' }, 500); }
     const limite = apiKeyLimit(plan as string);
     if (activas >= limite) {
@@ -46,10 +47,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     let row: any;
     try {
-        [row] = await sql`
+        [[row]] = await withOrgTx(orgId, sql`
             insert into api_keys (org_id, nombre, prefix, last4, hash, scope, mode, created_by)
             values (${orgId}, ${nombre}, ${prefix}, ${last4}, ${hash}, ${scope}, ${mode}, ${reqIp(request)})
-            returning id`;
+            returning id`);
     } catch (e: any) {
         return json({ error: 'No se pudo crear la llave. ¿Corriste la migración (npm run db:migrate)?' }, 500);
     }
@@ -68,7 +69,7 @@ export const DELETE: APIRoute = async ({ request }) => {
     if (!id) return json({ error: 'Falta el id de la llave' }, 400);
 
     const orgId = await getActiveOrgId();
-    await sql`update api_keys set revoked_at = now() where id = ${id} and org_id = ${orgId} and revoked_at is null`;
+    await withOrgTx(orgId, sql`update api_keys set revoked_at = now() where id = ${id} and org_id = ${orgId} and revoked_at is null`);
     await logAudit(orgId, { accion: 'apikey.revocada', entidad: 'api_key', entidad_id: id, detalle: 'Revocó una API key', ip: reqIp(request) });
     return json({ ok: true });
 };

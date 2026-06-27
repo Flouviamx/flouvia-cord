@@ -132,6 +132,40 @@ const otra = (isEn ? DEV_PAGES_EN : DEV_PAGES).find((p) => p.slug !== page.slug)
                                 <div class="dv-embed-event" id="embedEvent"><i></i>cord:approved · COT-0148</div>
                             </div>
                         )}
+                        {page.slug === 'fx' && (
+                            <div class="dv-api" style="border-color:#10b98140;">
+                                <div class="dv-api-bar" style="background:#064e3b; border-bottom:1px solid #10b98140;">
+                                    <span class="dv-dots"><i></i><i></i><i></i></span>
+                                    <span class="dv-method" style="color:#34d399;">GET</span>
+                                    <span class="dv-endpoint" style="color:#a7f3d0;">/api/v1/fx/rates?base=USD&target=MXN</span>
+                                </div>
+                                <div class="dv-api-body" style="background:#022c22;">
+                                    <pre class="dv-api-res" style="color:#d1fae5;"><code><span class="dv-line">{`{`}</span>
+<span class="dv-line">  <span class="c-key" style="color:#6ee7b7;">"source"</span>: <span class="c-str" style="color:#a7f3d0;">"banxico_fix"</span>,</span>
+<span class="dv-line">  <span class="c-key" style="color:#6ee7b7;">"rate"</span>: <span class="c-num" style="color:#fcd34d;">18.4520</span>,</span>
+<span class="dv-line">  <span class="c-key" style="color:#6ee7b7;">"timestamp"</span>: <span class="c-str" style="color:#a7f3d0;">"2026-06-26T12:00:00Z"</span></span>
+<span class="dv-line">{`}`}</span></code></pre>
+                                </div>
+                            </div>
+                        )}
+                        {page.slug === 'fiscal' && (
+                            <div class="dv-api" style="border-color:#6366f140;">
+                                <div class="dv-api-bar" style="background:#312e81; border-bottom:1px solid #6366f140;">
+                                    <span class="dv-dots"><i></i><i></i><i></i></span>
+                                    <span class="dv-method" style="color:#818cf8;">POST</span>
+                                    <span class="dv-endpoint" style="color:#c7d2fe;">/api/v1/tax/calculate</span>
+                                </div>
+                                <div class="dv-api-body" style="background:#1e1b4b;">
+                                    <pre class="dv-api-res" style="color:#e0e7ff;"><code><span class="dv-line">{`{`}</span>
+<span class="dv-line">  <span class="c-key" style="color:#a5b4fc;">"subtotal"</span>: <span class="c-num" style="color:#fcd34d;">1500.00</span>,</span>
+<span class="dv-line">  <span class="c-key" style="color:#a5b4fc;">"taxes"</span>: [</span>
+<span class="dv-line">    {`{`} <span class="c-key" style="color:#a5b4fc;">"type"</span>: <span class="c-str" style="color:#c7d2fe;">"IVA"</span>, <span class="c-key" style="color:#a5b4fc;">"rate"</span>: <span class="c-num" style="color:#fcd34d;">0.16</span>, <span class="c-key" style="color:#a5b4fc;">"amount"</span>: <span class="c-num" style="color:#fcd34d;">240.00</span> {`}`}</span>
+<span class="dv-line">  ],</span>
+<span class="dv-line">  <span class="c-key" style="color:#a5b4fc;">"total"</span>: <span class="c-num" style="color:#fcd34d;">1740.00</span></span>
+<span class="dv-line">{`}`}</span></code></pre>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

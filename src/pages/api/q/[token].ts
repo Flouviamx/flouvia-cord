@@ -68,9 +68,16 @@ export const POST: APIRoute = async ({ params, request }) => {
             : (signedBy ? `Firmado digitalmente por "${signedBy}" (IP ${ip})` : 'El cliente aprobó la cotización desde el link');
 
         // El driver HTTP de Neon NO soporta sql.begin(callback); usa sql.transaction([...]).
-        const txQueries: any[] = [
-            sql`update cotizaciones set status = 'approved', approved_at = now() where id = ${c.id}`,
-        ];
+        const txQueries: any[] = [];
+        if (isPartial) {
+            const orgInfo = await sql`select iva_pct from orgs where id = ${c.org_id}`;
+            const ivaPct = Number(orgInfo[0]?.iva_pct ?? 16) / 100;
+            const newIva = subAceptado * ivaPct;
+            const newTotal = subAceptado + newIva;
+            txQueries.push(sql`update cotizaciones set status = 'approved', approved_at = now(), subtotal = ${subAceptado}, iva = ${newIva}, total = ${newTotal} where id = ${c.id}`);
+        } else {
+            txQueries.push(sql`update cotizaciones set status = 'approved', approved_at = now() where id = ${c.id}`);
+        }
         // Marca el estado de cada línea (solo cambia algo en aprobación parcial).
         if (isPartial) {
             for (const it of allItems) {

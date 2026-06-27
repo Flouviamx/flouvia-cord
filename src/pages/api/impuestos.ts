@@ -8,7 +8,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm } from '../../lib/queries';
 
 const TIPOS = new Set(['iva', 'ieps', 'ret_iva', 'ret_isr', 'exento']);
@@ -23,7 +23,7 @@ const COL_BY_TIPO: Record<string, string> = {
 async function syncOrg(orgId: string, tipo: string) {
     const col = COL_BY_TIPO[tipo];
     if (!col) return; // ieps/exento no tienen columna global
-    const [d] = await sql`select tasa from impuestos where org_id = ${orgId} and tipo = ${tipo} and es_default = true and activo = true limit 1`;
+    const [[d]] = await withOrgTx(orgId, sql`select tasa from impuestos where org_id = ${orgId} and tipo = ${tipo} and es_default = true and activo = true limit 1`);
     const tasa = d ? Number(d.tasa) : 0;
     // col viene de un mapa fijo (no del usuario) → seguro interpolar el identificador.
     await sql.query(`update orgs set ${col} = $1 where id = $2`, [tasa, orgId]);
@@ -43,11 +43,11 @@ export const POST: APIRoute = async ({ request }) => {
     const orgId = await getActiveOrgId();
     let row: any;
     try {
-        if (esDefault) await sql`update impuestos set es_default = false where org_id = ${orgId} and tipo = ${tipo}`;
-        [row] = await sql`
+        if (esDefault) await withOrgTx(orgId, sql`update impuestos set es_default = false where org_id = ${orgId} and tipo = ${tipo}`);
+        [[row]] = await withOrgTx(orgId, sql`
             insert into impuestos (org_id, nombre, tipo, tasa, es_default)
             values (${orgId}, ${nombre}, ${tipo}, ${tasa}, ${esDefault})
-            returning id`;
+            returning id`);
     } catch {
         return json({ error: 'No se pudo crear. ¿Corriste la migración (npm run db:migrate)?' }, 500);
     }
@@ -64,25 +64,25 @@ export const PATCH: APIRoute = async ({ request }) => {
     if (!id) return json({ error: 'Falta id' }, 400);
 
     const orgId = await getActiveOrgId();
-    const [actual] = await sql`select * from impuestos where id = ${id} and org_id = ${orgId}`;
+    const [[actual]] = await withOrgTx(orgId, sql`select * from impuestos where id = ${id} and org_id = ${orgId}`);
     if (!actual) return json({ error: 'Impuesto no encontrado' }, 404);
     const tipo = actual.tipo as string;
 
     if (body.nombre !== undefined) {
         const nombre = String(body.nombre).trim().slice(0, 60) || (actual.nombre as string);
-        await sql`update impuestos set nombre = ${nombre} where id = ${id} and org_id = ${orgId}`;
+        await withOrgTx(orgId, sql`update impuestos set nombre = ${nombre} where id = ${id} and org_id = ${orgId}`);
     }
     if (body.tasa !== undefined) {
-        await sql`update impuestos set tasa = ${clampTasa(body.tasa)} where id = ${id} and org_id = ${orgId}`;
+        await withOrgTx(orgId, sql`update impuestos set tasa = ${clampTasa(body.tasa)} where id = ${id} and org_id = ${orgId}`);
     }
     if (typeof body.activo === 'boolean') {
-        await sql`update impuestos set activo = ${body.activo} where id = ${id} and org_id = ${orgId}`;
+        await withOrgTx(orgId, sql`update impuestos set activo = ${body.activo} where id = ${id} and org_id = ${orgId}`);
     }
     if (body.es_default === true) {
-        await sql`update impuestos set es_default = false where org_id = ${orgId} and tipo = ${tipo}`;
-        await sql`update impuestos set es_default = true where id = ${id} and org_id = ${orgId}`;
+        await withOrgTx(orgId, sql`update impuestos set es_default = false where org_id = ${orgId} and tipo = ${tipo}`);
+        await withOrgTx(orgId, sql`update impuestos set es_default = true where id = ${id} and org_id = ${orgId}`);
     } else if (body.es_default === false) {
-        await sql`update impuestos set es_default = false where id = ${id} and org_id = ${orgId}`;
+        await withOrgTx(orgId, sql`update impuestos set es_default = false where id = ${id} and org_id = ${orgId}`);
     }
     await syncOrg(orgId, tipo);
     return json({ ok: true });
@@ -96,7 +96,7 @@ export const DELETE: APIRoute = async ({ request }) => {
     if (!id) return json({ error: 'Falta id' }, 400);
 
     const orgId = await getActiveOrgId();
-    const rows = await sql`delete from impuestos where id = ${id} and org_id = ${orgId} returning tipo, nombre`;
+    const [rows] = await withOrgTx(orgId, sql`delete from impuestos where id = ${id} and org_id = ${orgId} returning tipo, nombre`);
     if (!rows.length) return json({ error: 'No encontrado' }, 404);
     await syncOrg(orgId, rows[0].tipo as string);
     await logAudit(orgId, { accion: 'impuesto.eliminado', entidad: 'impuesto', entidad_id: id, detalle: rows[0].nombre as string, ip: reqIp(request) });

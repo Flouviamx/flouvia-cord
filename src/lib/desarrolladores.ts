@@ -118,7 +118,7 @@ export const DEV_PAGES: DevPage[] = [
     },
     {
         slug: 'mcp',
-        nav: 'MCP para IA',
+        nav: 'MCP bidireccional + gobernanza de agentes',
         eyebrow: 'MCP BIDIRECCIONAL · GOBERNANZA DE AGENTES',
         titulo: 'Tu negocio habla con la IA.<br/>Y la IA habla con tus sistemas.',
         sub: 'El MCP de Cord ya no va en un solo sentido. Cord es servidor: una IA como Claude consulta tu cartera y arma cotizaciones con 7 herramientas. Y Cord es cliente: se conecta a los servidores MCP de tu CRM o ERP, bajo permisos que tú firmas. Tú decides quién toca qué.',
@@ -254,6 +254,76 @@ export function Cotizacion({ token }) {
             { titulo: 'Reacciona al cliente', copy: 'Escucha cord:approved, cord:pay y los demás eventos en tu propia página para disparar tu analítica, redirigir o sincronizar tu CRM en tiempo real.' },
         ],
         cta: { titulo: 'Lleva tu cotizador a donde están tus clientes.', sub: 'Crea tu cuenta gratis y embebe tu primer cotizador hoy mismo — una línea de código.' },
+    },
+    {
+        slug: 'fx',
+        nav: 'Multi-divisa FX',
+        eyebrow: 'API MULTI-DIVISA FX',
+        titulo: 'Cotiza en USD,<br/>cobra en MXN.',
+        sub: 'Conéctate a nuestra API de tipos de cambio en tiempo real (Banxico/FIX o interbancario) para mantener tus listas de precios estables en dólares, pero cotizar y cobrar siempre en moneda local exacta.',
+        plan: 'Gratis en todos los planes. Fix de Banxico sin costo extra; tipos interbancarios en vivo en plan Pro.',
+        stats: [
+            { valor: '3', countup: 3, label: 'fuentes de FX (Banxico, FIX, Interbancario real-time)' },
+            { valor: '0', countup: 0, suffix: '%', label: 'margen de error en fluctuaciones cambiarias' },
+            { valor: '24/7', label: 'disponibilidad de la API cambiaria' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'TIPOS DE CAMBIO EN VIVO',
+                titulo: 'Protege tu margen.',
+                copy: 'No pierdas dinero por un tipo de cambio desactualizado. Nuestra API te permite congelar el tipo de cambio al momento de cotizar, con una vigencia específica (ej. 24 horas).',
+                bullets: [
+                    'Tipos de cambio oficiales actualizados al día',
+                    'Vigencia por cotización con congelamiento de FX',
+                    'Soporte nativo en el Web Component',
+                ],
+                code: {
+                    label: 'Petición FX',
+                    body: `// Obtener tipo de cambio del día\nconst fx = await cord.fx.getRate({ from: 'USD', to: 'MXN' });\nconsole.log('USD/MXN:', fx.rate);`,
+                }
+            },
+        ],
+        steps: [
+            { titulo: 'Define tu moneda base', copy: 'Tus productos pueden estar en USD y cotizarse en MXN.' },
+            { titulo: 'Aplica el FX', copy: 'El cotizador consulta la API y muestra el equivalente en MXN exacto.' },
+            { titulo: 'Cobra exacto', copy: 'El cliente paga la cantidad en MXN calculada en ese instante.' },
+        ],
+        cta: { titulo: 'Mantén tu rentabilidad blindada.', sub: 'Integra tipos de cambio en vivo hoy mismo.' },
+    },
+    {
+        slug: 'fiscal',
+        nav: 'Fiscal US/MX',
+        eyebrow: 'FISCAL INTERNACIONAL',
+        titulo: 'Cross-border commerce,<br/>sin fricción.',
+        sub: 'Vende desde US a MX o viceversa sin romper las reglas locales. Soporte para Sales Tax, IVA retenido, IEPS y facturación dual.',
+        plan: 'Plan Enterprise',
+        stats: [
+            { valor: '100', countup: 100, suffix: '%', label: 'cumplimiento normativo SAT e IRS' },
+            { valor: '2', countup: 2, label: 'regímenes fiscales soportados simultáneamente' },
+            { valor: '1', countup: 1, label: 'API unificada para ambos países' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'TAX COMPLIANCE',
+                titulo: 'Impuestos locales, globales.',
+                copy: 'Aplica automáticamente los impuestos correctos según el destino. Si el comprador está en Texas, cobras Sales Tax; si está en Monterrey, cobras IVA del 16% (u 8% en frontera).',
+                bullets: [
+                    'Validación de RFC (México) y EIN (US)',
+                    'Cálculo dinámico de tasas de impuestos (Sales Tax vs IVA)',
+                    'Soporte para pedimentos y retenciones',
+                ],
+                code: {
+                    label: 'Cálculo de Tax',
+                    body: `// Determinar los impuestos por región\nconst taxes = await cord.tax.calculate({ \n  amount: 1500, \n  buyer_region: 'MX-NLE',\n  seller_region: 'US-TX'\n});`,
+                }
+            },
+        ],
+        steps: [
+            { titulo: 'Configura tus entidades', copy: 'Agrega tu LLC y tu S.A. de C.V. bajo la misma cuenta.' },
+            { titulo: 'Mapea tus productos', copy: 'Asigna los códigos del SAT y los equivalentes en US.' },
+            { titulo: 'Cotiza sin pensar', copy: 'La API aplica las reglas fiscales correspondientes automáticamente.' },
+        ],
+        cta: { titulo: 'Expande tu mercado sin el dolor de cabeza fiscal.', sub: 'Únete a las empresas que operan binacionalmente.' },
     },
 ];
 

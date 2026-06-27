@@ -434,8 +434,166 @@ const { slug, index } = Astro.props;
       </div>
     </div>
   )}
-</div>
+  {/* ────────────────── FINANZAS ────────────────── */}
+  {slug === 'finanzas' && index === 0 && (
+    <div class="bm-stage bm-fin-m0">
+      <div class="bm-floating bm-float-top-right">
+        <div class="bm-pill bm-pill-brand"><span>AI CFO</span></div>
+      </div>
+      <div class="bm-card">
+        <div class="bm-head"><span>Flujo de caja 90 días</span></div>
+        <div class="bm-chart">
+          <div class="bm-chart-col"><div class="bm-chart-col-fill" style="height:40%"></div></div>
+          <div class="bm-chart-col"><div class="bm-chart-col-fill" style="height:60%"></div></div>
+          <div class="bm-chart-col"><div class="bm-chart-col-fill" style="height:80%"></div></div>
+          <div class="bm-chart-col bm-chart-active"><div class="bm-chart-col-fill" style="height:100%"></div></div>
+          <div class="bm-chart-col"><div class="bm-chart-col-fill" style="height:50%"></div></div>
+        </div>
+        <div class="bm-row"><span>Proyección ajustada (DSO)</span><b class="bm-green">$2.4M</b></div>
+      </div>
+    </div>
+  )}
 
+  {slug === 'finanzas' && index === 1 && (
+    <div class="bm-stage bm-fin-m1">
+      <div class="bm-floating bm-float-bottom-left">
+        <div class="bm-pill">
+           <i class="bm-dot bm-dot-orange"></i>
+           <span>Alerta temprana</span>
+        </div>
+      </div>
+      <div class="bm-card">
+        <div class="bm-head"><span>Riesgo de concentración</span></div>
+        <div class="bm-row"><span>Grupo Constructor A</span><b class="bm-orange">42% de cartera</b></div>
+        <div class="bm-row"><span>DSO promedio histórico</span><b>+18 días</b></div>
+        <div class="bm-divider"></div>
+        <div class="bm-row"><span>Recomendación AI</span><b>Limitar crédito</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'finanzas' && index === 2 && (
+    <div class="bm-stage bm-fin-m2">
+      <div class="bm-floating bm-float-top-left">
+        <div class="bm-pill bm-pill-dark">
+          <i class="bm-icon-check">✓</i>
+          <span>Reporte actualizado</span>
+        </div>
+      </div>
+      <div class="bm-card">
+        <div class="bm-head"><span>Panel Gerencial</span></div>
+        <div class="bm-row"><span>Efectivo disponible</span><b>$840k</b></div>
+        <div class="bm-row"><span>Por cobrar (30 días)</span><b class="bm-green">$1.1M</b></div>
+        <div class="bm-row"><span>Riesgo impago estimado</span><b class="bm-orange">1.2%</b></div>
+      </div>
+    </div>
+  )}
+
+  {/* ────────────────── APROBACIONES ────────────────── */}
+  {slug === 'aprobaciones' && index === 0 && (
+    <div class="bm-stage bm-appr-m0">
+      <div class="bm-floating bm-float-top-left">
+        <div class="bm-pill">
+          <i class="bm-dot bm-dot-blue"></i>
+          <span>Reglas de margen</span>
+        </div>
+      </div>
+      <div class="bm-card">
+        <div class="bm-head"><span>Umbrales de descuento</span></div>
+        <div class="bm-row"><span>Vendedor Junior</span><b>Max 5%</b></div>
+        <div class="bm-row"><span>Vendedor Senior</span><b>Max 15%</b></div>
+        <div class="bm-row bm-row-target"><span>Excepción</span><b class="bm-orange">Requiere Gerencia</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'aprobaciones' && index === 1 && (
+    <div class="bm-stage bm-appr-m1">
+      <div class="bm-push-notif">
+         <div class="bm-push-icon"><img src="/imgs/logo-cord-white.png" alt="" /></div>
+         <div class="bm-push-body">
+            <b>Aprobación requerida</b>
+            <span>COT-0294 con 18% descuento ($240k).</span>
+         </div>
+      </div>
+      <div class="bm-card bm-dim">
+        <div class="bm-row"><span>Autorizado por</span><b>Pendiente</b></div>
+        <div class="bm-btn bm-btn-outline" style="margin-top: 8px;">Revisar margen</div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'aprobaciones' && index === 2 && (
+    <div class="bm-stage bm-appr-m2">
+      <div class="bm-floating bm-float-bottom-right">
+        <div class="bm-pill bm-pill-brand">
+          <i class="bm-icon-check" style="background: rgba(255,255,255,0.2); box-shadow: none;">✓</i>
+          <span>Aprobado por Gerencia</span>
+        </div>
+      </div>
+      <div class="bm-timeline-card">
+         <div class="bm-tl-line">
+            <div class="bm-tl-fill" style="height: 100%;"></div>
+         </div>
+         <div class="bm-tl-nodes">
+            <div class="bm-tl-node"><i class="bm-icon-check">✓</i><span>Solicitud enviada (10:15)</span></div>
+            <div class="bm-tl-node"><i class="bm-icon-check">✓</i><span>Margen revisado (10:22)</span></div>
+            <div class="bm-tl-node"><i class="bm-icon-check">✓</i><span>Aprobación liberada (10:24)</span></div>
+         </div>
+      </div>
+    </div>
+  )}
+
+  {/* ────────────────── EQUIPO ────────────────── */}
+  {slug === 'equipo' && index === 0 && (
+    <div class="bm-stage bm-eq-m0">
+      <div class="bm-floating bm-float-top-right">
+         <div class="bm-pill bm-pill-dark"><span>Permisos B2B</span></div>
+      </div>
+      <div class="bm-card">
+        <div class="bm-head"><span>Directorio de usuarios</span></div>
+        <div class="bm-row"><span>Laura G.</span><span class="bm-tag bm-tag-blue">Vendedor</span></div>
+        <div class="bm-row"><span>Carlos M.</span><span class="bm-tag bm-tag-warn">Gerente</span></div>
+        <div class="bm-row"><span>Ana P.</span><span class="bm-tag bm-tag-mxn">Admin</span></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'equipo' && index === 1 && (
+    <div class="bm-stage bm-eq-m1">
+      <div class="bm-floating bm-float-top-left">
+        <div class="bm-pill bm-pill-brand"><span>Org switching</span></div>
+      </div>
+      <div class="bm-card bm-brand-card">
+        <div class="bm-brand-head">
+          <div class="bm-brand-logo" style="border-radius: 50%;"></div>
+          <div><b>Acero Monterrey</b><i>RFC: ACM981...</i></div>
+        </div>
+        <div class="bm-divider"></div>
+        <div class="bm-brand-head" style="opacity: 0.5;">
+          <div class="bm-brand-logo" style="border-radius: 4px;"></div>
+          <div><b>Ferretería Central</b><i>RFC: FEC882...</i></div>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'equipo' && index === 2 && (
+    <div class="bm-stage bm-eq-m2">
+      <div class="bm-floating bm-float-bottom-right">
+        <div class="bm-pill">
+           <i class="bm-dot bm-dot-green"></i>
+           <span>Sesión activa</span>
+        </div>
+      </div>
+      <div class="bm-card bm-chat" style="align-items: center; padding: 20px;">
+         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 32px; height: 32px; color: #fff; margin-bottom: 8px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+         <b style="font-size: 0.9rem;">Single Sign-On</b>
+         <span style="color: rgba(255,255,255,0.6); text-align: center; margin-top: 4px;">Autenticado vía Google Workspace<br/>@tu-empresa.com</span>
+      </div>
+    </div>
+  )}
+</div>
 <style>
   /* 
    * PREMIUM SOLID MOCKUP SYSTEM
@@ -697,6 +855,79 @@ const { slug, index } = Astro.props;
   .bm-chart-col { flex: 1; height: 100%; display: flex; align-items: flex-end; }
   .bm-chart-col-fill { width: 100%; background: rgba(255,255,255,0.08); border-radius: 4px 4px 0 0; height: 0%; transition: height 0.3s; }
   .bm-chart-active .bm-chart-col-fill { background: linear-gradient(180deg, #3b82f6, #2563eb); }
+
+  {/* ────────────────── NEGOCIACIÓN ────────────────── */}
+  {slug === 'negociacion' && index === 0 && (
+    <div class="bm-stage bm-nego-m0">
+      <div class="bm-floating bm-float-bottom-right">
+        <div class="bm-pill"><i class="bm-dot bm-dot-red"></i><span>Contraoferta recibida</span></div>
+      </div>
+      <div class="bm-card">
+        <div class="bm-row"><span>Cemento gris 50kg</span><span class="bm-badge bm-badge-gray">Aprobado</span><b class="editorial">$21,840</b></div>
+        <div class="bm-row bm-active">
+          <span>Varilla 3/8"</span><span class="bm-badge bm-badge-orange">Ajuste de precio</span>
+          <div style="display:flex; flex-direction:column; align-items:flex-end;">
+            <b class="editorial" style="text-decoration:line-through; color:rgba(255,255,255,0.4); font-size:10px;">$57,290</b>
+            <b class="editorial" style="color:#fbbf24;">$55,000</b>
+          </div>
+        </div>
+        <div class="bm-row"><span>Block hueco</span><span class="bm-badge bm-badge-gray">Aprobado</span><b class="editorial">$34,080</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'negociacion' && index === 1 && (
+    <div class="bm-stage bm-nego-m1">
+      <div class="bm-floating bm-float-top-left">
+        <div class="bm-pill bm-pill-brand"><span>Historial inmutable</span></div>
+      </div>
+      <div class="bm-card">
+        <div class="bm-tl">
+          <div class="bm-tl-row">
+            <div class="bm-tl-line"></div>
+            <div class="bm-tl-node"><i>✓</i></div>
+            <div class="bm-tl-content">
+              <b>v1. Original</b><span>Enviada por ti</span>
+            </div>
+          </div>
+          <div class="bm-tl-row">
+            <div class="bm-tl-line"></div>
+            <div class="bm-tl-node" style="background:#fbbf24; box-shadow: 0 0 0 4px #0a192f, 0 2px 8px rgba(245,158,11,0.3);"></div>
+            <div class="bm-tl-content">
+              <b>v2. Contraoferta</b><span>Revisada por cliente</span>
+            </div>
+          </div>
+          <div class="bm-tl-row bm-active">
+            <div class="bm-tl-line"></div>
+            <div class="bm-tl-node"><i>✓</i></div>
+            <div class="bm-tl-content">
+              <b>v3. Aprobada</b><span>Fijada hoy</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'negociacion' && index === 2 && (
+    <div class="bm-stage bm-nego-m2">
+      <div class="bm-floating bm-float-bottom-right">
+        <div class="bm-pill"><i class="bm-dot bm-dot-green"></i><span>Firma validada</span></div>
+      </div>
+      <div class="bm-card bm-cfdi-card">
+        <div class="bm-fake-xml" style="opacity: 0.8; font-family: monospace; font-size: 8px; color: #34d399; line-height: 1.2;">
+          e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855...<br/>
+          d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592...<br/>
+          31d6cfe0d16ae931b73c59d7e0c089c0ce02d84c04a43b749d8e6a2b8e5c4a5...
+        </div>
+        <div style="position:relative; z-index:1; background:rgba(10,25,47,0.85); padding: 12px; border-radius: 8px; display:flex; flex-direction:column; gap:4px; align-items:center; text-align:center; border: 1px solid rgba(52,211,153,0.2);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" style="width:24px; height:24px; margin-bottom:4px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+          <b style="color:#fff; font-size:12px;">Acuerdo cerrado</b>
+          <span style="color:rgba(255,255,255,0.6); font-size:10px;">Hash SHA-256 inyectado</span>
+        </div>
+      </div>
+    </div>
+  )}
 
   /* ── Responsive ── */
   @media (max-width: 860px) {

@@ -19,6 +19,7 @@ import type { APIRoute } from 'astro';
 import { sql } from '../../../lib/db';
 import { reportUsage } from '../../../lib/billing';
 import { allPerms, PRESETS } from '../../../lib/permissions';
+import { seedDemoData } from '../../../lib/onboarding';
 
 // Mapea el rol coarse de Clerk (org:admin | org:member) a nuestro rol/preset.
 // El owner se marca por separado (created_by de organization.created) y NUNCA se
@@ -124,6 +125,9 @@ export const POST: APIRoute = async ({ request }) => {
                 values (${orgId}, ${data.created_by}, 'owner', '{}'::jsonb, 'activo', now())
                 on conflict (org_id, clerk_user_id) where clerk_user_id is not null
                 do update set rol = 'owner', estado = 'activo'`;
+            
+            // Sembrar datos de demostración (Onboarding con cotización de ejemplo)
+            await seedDemoData(orgId, data.created_by);
         }
     }
 

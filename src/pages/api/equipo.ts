@@ -7,7 +7,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { clerkClient } from '@clerk/astro/server';
-import { sql, getActiveOrgId, logAudit, reqIp } from '../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { currentUserId } from '../../lib/context';
 import { requirePerm } from '../../lib/queries';
 import { PRESETS, ALL_PERM_KEYS, planTieneEquipo, type PermMap } from '../../lib/permissions';
@@ -33,7 +33,7 @@ export const POST: APIRoute = async (context) => {
     if (denied) return denied;
 
     const orgId = await getActiveOrgId();
-    const [org] = await sql`select coalesce(plan,'free') as plan, invite_domains, clerk_org_id from orgs where id = ${orgId}`;
+    const [[org]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan, invite_domains, clerk_org_id from orgs where id = ${orgId}`);
     if (!planTieneEquipo(org.plan as string)) {
         return json({ error: 'Invitar a tu equipo requiere el plan Negocio.' }, 402);
     }
@@ -86,10 +86,10 @@ export const POST: APIRoute = async (context) => {
     const rol = PRESETS[preset] ? preset : 'miembro';
     const token = crypto.randomUUID().replace(/-/g, '');
 
-    const [row] = await sql`
+    const [[row]] = await withOrgTx(orgId, sql`
         insert into org_members (org_id, email, nombre, rol, permisos, estado, token, invited_by)
         values (${orgId}, ${email}, ${nombre}, ${rol}, ${JSON.stringify(permisos)}::jsonb, 'invitado', ${token}, ${currentUserId()})
-        returning id`;
+        returning id`);
 
     await logAudit(orgId, { accion: 'equipo.invitado', entidad: 'miembro', entidad_id: row.id, detalle: email ?? 'invitación por link', ip: reqIp(request) });
     const link = `${new URL(request.url).origin}/unirse/${token}`;
@@ -106,7 +106,7 @@ export const PATCH: APIRoute = async ({ request }) => {
     const id = String(body.id ?? '');
     if (!id) return json({ error: 'Falta el miembro' }, 400);
 
-    const rows = await sql`select rol from org_members where id = ${id} and org_id = ${orgId}`;
+    const [rows] = await withOrgTx(orgId, sql`select rol from org_members where id = ${id} and org_id = ${orgId}`);
     if (!rows.length) return json({ error: 'Miembro no encontrado' }, 404);
     if (rows[0].rol === 'owner') return json({ error: 'No puedes cambiar los permisos del dueño.' }, 409);
 
@@ -116,12 +116,12 @@ export const PATCH: APIRoute = async ({ request }) => {
         : null;
 
     if (permisos && rol) {
-        await sql`update org_members set permisos = ${JSON.stringify(permisos)}::jsonb, rol = ${rol} where id = ${id} and org_id = ${orgId}`;
+        await withOrgTx(orgId, sql`update org_members set permisos = ${JSON.stringify(permisos)}::jsonb, rol = ${rol} where id = ${id} and org_id = ${orgId}`);
     } else if (permisos) {
-        await sql`update org_members set permisos = ${JSON.stringify(permisos)}::jsonb, rol = 'miembro' where id = ${id} and org_id = ${orgId}`;
+        await withOrgTx(orgId, sql`update org_members set permisos = ${JSON.stringify(permisos)}::jsonb, rol = 'miembro' where id = ${id} and org_id = ${orgId}`);
     } else if (rol) {
         const p = cleanPermisos(PRESETS[rol]?.permisos);
-        await sql`update org_members set rol = ${rol}, permisos = ${JSON.stringify(p)}::jsonb where id = ${id} and org_id = ${orgId}`;
+        await withOrgTx(orgId, sql`update org_members set rol = ${rol}, permisos = ${JSON.stringify(p)}::jsonb where id = ${id} and org_id = ${orgId}`);
     } else {
         return json({ error: 'Nada que actualizar' }, 400);
     }
@@ -141,9 +141,9 @@ export const DELETE: APIRoute = async (context) => {
     const id = String(body.id ?? '');
     if (!id) return json({ error: 'Falta el miembro' }, 400);
 
-    const rows = await sql`select m.rol, m.clerk_user_id, o.clerk_org_id
+    const [rows] = await withOrgTx(orgId, sql`select m.rol, m.clerk_user_id, o.clerk_org_id
                            from org_members m join orgs o on o.id = m.org_id
-                           where m.id = ${id} and m.org_id = ${orgId}`;
+                           where m.id = ${id} and m.org_id = ${orgId}`);
     if (!rows.length) return json({ error: 'Miembro no encontrado' }, 404);
     if (rows[0].rol === 'owner') return json({ error: 'No puedes quitar al dueño de la organización.' }, 409);
 
@@ -161,7 +161,7 @@ export const DELETE: APIRoute = async (context) => {
         }
     }
 
-    await sql`update org_members set estado = 'revocado', clerk_user_id = null where id = ${id} and org_id = ${orgId}`;
+    await withOrgTx(orgId, sql`update org_members set estado = 'revocado', clerk_user_id = null where id = ${id} and org_id = ${orgId}`);
     await logAudit(orgId, { accion: 'equipo.revocado', entidad: 'miembro', entidad_id: id, ip: reqIp(request) });
     return json({ ok: true });
 };
