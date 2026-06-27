@@ -44,31 +44,78 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     <Nav />
     <main class="stripe-main">
         
-        <!-- ── HERO (Stripe Slanted Background) ── -->
+        <!-- ── HERO (Cord Grid Layout) ── -->
         <header class="stripe-hero">
             <div class="stripe-hero-bg">
                 <div class="stripe-hero-grid"></div>
                 <div class="stripe-hero-gradient"></div>
             </div>
             
-            <div class="stripe-hero-content">
-                <div class="stripe-hero-tag reveal">
-                    {solucion.eyebrow}
+            <div class="cord-marquee reveal">
+                <div class="cord-marquee-inner">
+                    <span class="cm-item"><span class="cm-tag">Novedades</span> Las empresas en Cord generaron $2.4 billones en volumen B2B <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                    <span class="cm-item"><span class="cm-tag">Historias</span> Distribuidora El Zarco consolida en Cord ingresos internacionales <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                    <span class="cm-item"><span class="cm-tag">Informe</span> Cord, nombrada «plataforma líder» en automatización de ventas B2B <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
                 </div>
-                
-                <h1 class="stripe-title masked-title" set:html={solucion.titulo} />
-                
-                <p class="stripe-sub reveal">{solucion.sub}</p>
-                
-                <div class="stripe-actions reveal">
-                    <a href="/contacto" class="stripe-btn-primary">
-                        {isEn ? 'Contact sales' : 'Contactar a ventas'}
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                    </a>
-                    <a href="/registro" class="stripe-btn-ghost">
-                        {isEn ? 'Start now' : 'Empezar ahora'}
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                    </a>
+            </div>
+            
+            <div class="cord-hero-layout stripe-container">
+                <div class="cord-hero-text">
+                    <div class="stripe-hero-tag reveal">
+                        {solucion.eyebrow}
+                    </div>
+                    
+                    <h1 class="stripe-title masked-title" set:html={solucion.titulo} />
+                    
+                    <p class="stripe-sub reveal">{solucion.sub}</p>
+                    
+                    <div class="stripe-actions reveal">
+                        <a href="/contacto" class="stripe-btn-primary">
+                            {isEn ? 'Contact sales' : 'Contactar a ventas'}
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </a>
+                        <a href="/registro" class="stripe-btn-ghost">
+                            {isEn ? 'Start now' : 'Empezar ahora'}
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="cord-hero-graphics reveal">
+                    <div class="chg-card chg-back">
+                        <div class="chg-head">
+                            <div class="chg-title">Volumen B2B (MXN)</div>
+                        </div>
+                        <div class="chg-chart">
+                            <div class="chg-bar" style="height: 40%"></div>
+                            <div class="chg-bar" style="height: 55%"></div>
+                            <div class="chg-bar" style="height: 45%"></div>
+                            <div class="chg-bar" style="height: 80%"></div>
+                            <div class="chg-bar" style="height: 100%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="chg-card chg-mid">
+                        <div class="chg-head">
+                            <div class="chg-title">Aprobaciones Recientes</div>
+                        </div>
+                        <div class="chg-list">
+                            <div class="chg-item">
+                                <div class="chg-item-info"><span>Gama Industrias</span><b class="editorial">$142,450</b></div>
+                                <span class="chg-status ok">Pagado</span>
+                            </div>
+                            <div class="chg-item">
+                                <div class="chg-item-info"><span>Distribuidora Norte</span><b class="editorial">$58,900</b></div>
+                                <span class="chg-status warn">Net 30</span>
+                            </div>
+                        </div>
+                        <div class="chg-link">Ver todas las transacciones <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+                    </div>
+                    
+                    <div class="chg-card chg-front">
+                        <h3 class="chg-main-title">Pagos en la plataforma</h3>
+                        <a href="/producto/cfdi" class="chg-explore">Explorar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></a>
+                    </div>
                 </div>
             </div>
         </header>
@@ -267,10 +314,11 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     ════════════════════════════════════════════════════════════════ */
     .stripe-hero {
         position: relative;
-        padding: 160px 20px 80px;
+        padding: 120px 0 80px;
         min-height: 85vh;
         display: flex;
-        align-items: center;
+        flex-direction: column;
+        justify-content: center;
         overflow: hidden;
     }
     
@@ -303,11 +351,18 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         filter: blur(80px);
     }
     
-    .stripe-hero-content {
+    .cord-hero-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+        align-items: center;
         position: relative;
         z-index: 10;
-        max-width: 800px;
-        margin: 0 auto;
+        margin-top: 4rem;
+    }
+    
+    .cord-hero-text {
+        max-width: 600px;
     }
     
     .stripe-hero-tag {
@@ -403,10 +458,236 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     .stripe-btn-ghost:hover svg {
         transform: translateX(3px);
     }
-
+    
     /* ════════════════════════════════════════════════════════════════
-       LOGO CLOUD
+       CORD HERO GRAPHICS (Overlapping Cards)
     ════════════════════════════════════════════════════════════════ */
+    .cord-hero-graphics {
+        position: relative;
+        height: 500px;
+        width: 100%;
+        perspective: 1200px;
+    }
+    
+    .chg-card {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(10, 25, 47, 0.08);
+        border-radius: 16px;
+        box-shadow: 0 30px 60px -20px rgba(10, 25, 47, 0.15);
+        overflow: hidden;
+        transition: transform 0.4s ease;
+    }
+    
+    /* Back Card (Chart) */
+    .chg-back {
+        top: 0;
+        right: 0;
+        width: 320px;
+        height: 280px;
+        transform: translateZ(-100px) rotateY(-5deg) rotateX(5deg);
+        z-index: 1;
+        opacity: 0.9;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .chg-chart {
+        flex: 1;
+        display: flex;
+        align-items: flex-end;
+        gap: 12px;
+        margin-top: 1rem;
+    }
+    
+    .chg-bar {
+        flex: 1;
+        background: linear-gradient(to top, rgba(59, 130, 246, 0.8), rgba(16, 185, 129, 0.8));
+        border-radius: 4px 4px 0 0;
+    }
+    
+    /* Middle Card (Approvals) */
+    .chg-mid {
+        top: 140px;
+        right: 120px;
+        width: 340px;
+        padding: 1.5rem;
+        transform: translateZ(0) rotateY(-2deg);
+        z-index: 2;
+    }
+    
+    .chg-head {
+        border-bottom: 1px solid var(--stripe-border);
+        padding-bottom: 0.8rem;
+        margin-bottom: 0.8rem;
+    }
+    
+    .chg-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--stripe-text);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .chg-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .chg-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .chg-item-info {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .chg-item-info span {
+        font-size: 0.75rem;
+        color: var(--stripe-muted);
+    }
+    
+    .chg-item-info b {
+        font-size: 1rem;
+        color: var(--stripe-text);
+    }
+    
+    .chg-status {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 100px;
+        text-transform: uppercase;
+    }
+    
+    .chg-status.ok { background: rgba(16, 185, 129, 0.15); color: #059669; }
+    .chg-status.warn { background: rgba(245, 158, 11, 0.15); color: #b45309; }
+    
+    .chg-link {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--stripe-cyan);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+    }
+    
+    .chg-link svg { width: 14px; height: 14px; }
+    
+    /* Front Card (Pagos) */
+    .chg-front {
+        bottom: 20px;
+        right: 40px;
+        padding: 2rem;
+        width: 300px;
+        transform: translateZ(50px) rotateY(2deg);
+        z-index: 3;
+    }
+    
+    .chg-main-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--stripe-text);
+        line-height: 1.2;
+        margin-bottom: 1.5rem;
+    }
+    
+    .chg-explore {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        background: rgba(10, 25, 47, 0.05);
+        color: var(--stripe-text);
+        border-radius: 50%;
+        text-decoration: none;
+        transition: background 0.2s;
+        font-size: 0; /* Hide text, just show icon */
+    }
+    
+    .chg-explore:hover {
+        background: rgba(10, 25, 47, 0.1);
+    }
+    
+    .chg-explore svg {
+        width: 18px;
+        height: 18px;
+    }
+    
+    /* Hover Interactions */
+    .cord-hero-graphics:hover .chg-back { transform: translateZ(-80px) rotateY(0deg) rotateX(0deg) translateY(-10px) translateX(-20px); }
+    .cord-hero-graphics:hover .chg-mid { transform: translateZ(20px) rotateY(0deg) translateY(-5px) translateX(-10px); }
+    .cord-hero-graphics:hover .chg-front { transform: translateZ(80px) rotateY(0deg) translateY(5px) translateX(10px); }
+    
+    /* ════════════════════════════════════════════════════════════════
+       CORD MARQUEE
+    ════════════════════════════════════════════════════════════════ */
+    .cord-marquee {
+        position: absolute;
+        top: 90px; /* Below the nav */
+        left: 0;
+        width: 100%;
+        overflow: hidden;
+        border-bottom: 1px solid rgba(10, 25, 47, 0.05);
+        padding: 12px 0;
+        z-index: 10;
+        background: rgba(255,255,255,0.4);
+        backdrop-filter: blur(10px);
+    }
+    
+    .cord-marquee-inner {
+        display: flex;
+        gap: 3rem;
+        width: max-content;
+        animation: marqueeScroll 25s linear infinite;
+    }
+    
+    .cm-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.85rem;
+        color: var(--stripe-text);
+        font-weight: 500;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    
+    .cm-item:hover {
+        color: var(--stripe-cyan);
+    }
+    
+    .cm-tag {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--stripe-cyan);
+        background: rgba(59, 130, 246, 0.1);
+        padding: 2px 8px;
+        border-radius: 100px;
+        text-transform: uppercase;
+    }
+    
+    .cm-item svg {
+        width: 14px;
+        height: 14px;
+        opacity: 0.5;
+    }
+    
+    @keyframes marqueeScroll {
+        0% { transform: translateX(10%); }
+        100% { transform: translateX(-100%); }
+    }
     .stripe-clients {
         padding: 4rem 0;
         position: relative;
@@ -776,6 +1057,42 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
        RESPONSIVE
     ════════════════════════════════════════════════════════════════ */
     @media (max-width: 992px) {
+        .cord-hero-layout {
+            grid-template-columns: 1fr;
+            text-align: center;
+            margin-top: 6rem;
+        }
+        
+        .cord-hero-text {
+            margin: 0 auto;
+        }
+        
+        .stripe-actions {
+            justify-content: center;
+        }
+        
+        .cord-hero-graphics {
+            height: 400px;
+            margin-top: 2rem;
+            transform: scale(0.85);
+            transform-origin: top center;
+        }
+        
+        .chg-mid {
+            right: 50%;
+            transform: translateX(50%) translateZ(0) rotateY(-2deg);
+        }
+        
+        .chg-back {
+            right: 50%;
+            transform: translateX(30%) translateY(-30px) translateZ(-100px) rotateY(-5deg) rotateX(5deg);
+        }
+        
+        .chg-front {
+            right: 50%;
+            transform: translateX(60%) translateY(40px) translateZ(50px) rotateY(2deg);
+        }
+        
         .stripe-bento-grid {
             grid-template-columns: 1fr;
         }
