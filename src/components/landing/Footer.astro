@@ -1,6 +1,7 @@
 ---
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
 const lang = getLangFromUrl(Astro.url);
+const isEn = lang === 'en';
 const t = useTranslations(lang);
 const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 
@@ -57,10 +58,8 @@ const {
                 </div>
                 <div class="footer-col">
                     <span class="footer-col-title">{t("nav.soluciones")}</span>
-                    <a href={l("/soluciones/distribuidoras")}>{t("nav.mega.sol.1.title").split(" ")[0]}</a>
-                    <a href={l("/soluciones/construccion")}>{t("nav.mega.sol.2.title").split(" ")[0]}</a>
-                    <a href={l("/soluciones/manufactura")}>{t("nav.mega.sol.3.title")}</a>
-                    <a href={l("/soluciones/servicios")}>{t("nav.mega.sol.4.title").split(" ")[0]}</a>
+                    <a href={l("/soluciones/empresas")}>{isEn ? 'Enterprise' : 'Empresas'}</a>
+                    <a href={l("/soluciones/startups")}>{isEn ? 'Startups' : 'Startups'}</a>
                     <a href={l("/soluciones")}>{t("footer.link.todas")}</a>
                 </div>
                 <div class="footer-col">

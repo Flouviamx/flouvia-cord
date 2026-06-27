@@ -4,6 +4,7 @@
 // que se transforma en píldora al hacer scroll. Wordmark "cord" en texto (no SVG).
 import { altLangUrls, useTranslations } from '../../i18n/utils';
 const { esUrl, enUrl, lang } = altLangUrls(Astro.url);
+const isEn = lang === 'en';
 const t = useTranslations(lang);
 const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 ---
@@ -96,21 +97,17 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
                     <div class="pill-mega" data-panel="soluciones" aria-hidden="true">
                         <div class="mega-inner">
                             <div class="mega-grid">
-                                <a href={l("/soluciones/distribuidoras")} class="mega-item">
-                                    <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8Z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>
-                                    <span class="mega-copy"><b>{t("nav.mega.sol.1.title")}</b><i>{t("nav.mega.sol.1.desc")}</i></span>
+                                <a href={l("/soluciones/empresas")} class="mega-item">
+                                    <span class="mega-ico">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                                    </span>
+                                    <span class="mega-copy"><b>{isEn ? 'Enterprise' : 'Empresas'}</b><i>{isEn ? 'Scalable B2B quoting' : 'Cotizaciones B2B escalables'}</i></span>
                                 </a>
-                                <a href={l("/soluciones/construccion")} class="mega-item">
-                                    <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M5 20V8l7-5 7 5v12"/><path d="M9 20v-6h6v6"/></svg></span>
-                                    <span class="mega-copy"><b>{t("nav.mega.sol.2.title")}</b><i>{t("nav.mega.sol.2.desc")}</i></span>
-                                </a>
-                                <a href={l("/soluciones/manufactura")} class="mega-item">
-                                    <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M4 20V10l5 3V10l5 3V8l6 4v8"/></svg></span>
-                                    <span class="mega-copy"><b>{t("nav.mega.sol.3.title")}</b><i>{t("nav.mega.sol.3.desc")}</i></span>
-                                </a>
-                                <a href={l("/soluciones/servicios")} class="mega-item">
-                                    <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
-                                    <span class="mega-copy"><b>{t("nav.mega.sol.4.title")}</b><i>{t("nav.mega.sol.4.desc")}</i></span>
+                                <a href={l("/soluciones/startups")} class="mega-item">
+                                    <span class="mega-ico">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                                    </span>
+                                    <span class="mega-copy"><b>{t("nav.startups") || 'Startups'}</b><i>{isEn ? 'Fast closing and billing' : 'Cierre rápido y facturación'}</i></span>
                                 </a>
                             </div>
                             <a href={l("/soluciones")} class="mega-foot">
@@ -291,21 +288,13 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
                             <span class="m-acc-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
                         </button>
                         <div class="m-acc-body"><div class="m-acc-inner"><div class="m-acc-stack">
-                            <a href={l("/soluciones/distribuidoras")} class="m-sub" data-close>
-                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8Z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>
-                                <span class="m-sub-copy"><b>{t("nav.mega.sol.1.title")}</b><i>{t("nav.mega.sol.1.desc")}</i></span>
+                            <a href={l("/soluciones/empresas")} class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span>
+                                <span class="m-sub-copy"><b>{isEn ? 'Enterprise' : 'Empresas'}</b><i>{isEn ? 'Scalable B2B quoting' : 'Cotizaciones B2B escalables'}</i></span>
                             </a>
-                            <a href={l("/soluciones/construccion")} class="m-sub" data-close>
-                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M5 20V8l7-5 7 5v12"/><path d="M9 20v-6h6v6"/></svg></span>
-                                <span class="m-sub-copy"><b>{t("nav.mega.sol.2.title")}</b><i>{t("nav.mega.sol.2.desc")}</i></span>
-                            </a>
-                            <a href={l("/soluciones/manufactura")} class="m-sub" data-close>
-                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M4 20V10l5 3V10l5 3V8l6 4v8"/></svg></span>
-                                <span class="m-sub-copy"><b>{t("nav.mega.sol.3.title")}</b><i>{t("nav.mega.sol.3.desc")}</i></span>
-                            </a>
-                            <a href={l("/soluciones/servicios")} class="m-sub" data-close>
-                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
-                                <span class="m-sub-copy"><b>{t("nav.mega.sol.4.title")}</b><i>{t("nav.mega.sol.4.desc")}</i></span>
+                            <a href={l("/soluciones/startups")} class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></span>
+                                <span class="m-sub-copy"><b>{t("nav.startups") || 'Startups'}</b><i>{isEn ? 'Fast closing and billing' : 'Cierre rápido y facturación'}</i></span>
                             </a>
                         </div></div></div>
                     </div>

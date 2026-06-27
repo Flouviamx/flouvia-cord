@@ -1,7 +1,6 @@
 ---
-// Página de solución — una por industria (mismo lenguaje que /producto/[slug]:
-// hero + mockup que vende, stats, bloques alternados, cross-links y CTA).
-// Animaciones compartidas via PageAnims.astro.
+// Página de solución (Empresas, Startups).
+// Diseño alineado al estilo Cord.
 export const prerender = true;
 
 import Layout from '../../layouts/Layout.astro';
@@ -23,7 +22,6 @@ const currentSol = Astro.props.solucion || Astro.props.solucion;
 const solucion = isEn && currentSol ? SOLUCIONES_EN.find((s) => s.slug === currentSol.slug) || currentSol : currentSol;
 const otras = (isEn ? SOLUCIONES_EN : SOLUCIONES).filter((s) => s.slug !== solucion.slug);
 
-// ── Datos estructurados (JSON-LD) — FAQPage: lo que extraen los AI Overviews.
 const faqSchema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -33,1171 +31,796 @@ const faqSchema = {
         acceptedAnswer: { '@type': 'Answer', text: f.a },
     })),
 };
+
+// Array estático de logos (Stripe-style logo cloud)
+const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS'];
 ---
 
 <Layout
     title={solucion.metaTitle ?? `${solucion.nav} — Cord`}
     description={solucion.metaDescription ?? solucion.sub}
 >
-    <script
-        slot="head"
-        type="application/ld+json"
-        is:inline
-        set:html={JSON.stringify(faqSchema)}
-    />
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
     <Nav />
-    <main>
-        <!-- ── HERO ── -->
-        <section class="pp-hero">
-            <div class="pp-hero-mesh" aria-hidden="true"></div>
-            <div class="pp-hero-inner">
-                <p class="pp-eyebrow reveal">{solucion.eyebrow}</p>
-                <h1 class="pp-title masked-title" set:html={solucion.titulo} />
-                <p class="pp-sub reveal">{solucion.sub}</p>
-                <div class="pp-actions reveal">
-                    <a href="/registro" class="pp-btn-primary">
-                        <span>{isEn ? 'Start for free' : 'Empezar gratis'}</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    <main class="stripe-main">
+        
+        <!-- ── HERO (Stripe Slanted Background) ── -->
+        <header class="stripe-hero">
+            <div class="stripe-hero-bg">
+                <div class="stripe-hero-grid"></div>
+                <div class="stripe-hero-gradient"></div>
+            </div>
+            
+            <div class="stripe-hero-content">
+                <div class="stripe-hero-tag reveal">
+                    {solucion.eyebrow}
+                </div>
+                
+                <h1 class="stripe-title masked-title" set:html={solucion.titulo} />
+                
+                <p class="stripe-sub reveal">{solucion.sub}</p>
+                
+                <div class="stripe-actions reveal">
+                    <a href="/contacto" class="stripe-btn-primary">
+                        {isEn ? 'Contact sales' : 'Contactar a ventas'}
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                     </a>
-                    <a href="/q/demo" class="pp-btn-ghost">{isEn ? 'See a real quote' : 'Ver una cotización real'}</a>
+                    <a href="/registro" class="stripe-btn-ghost">
+                        {isEn ? 'Start now' : 'Empezar ahora'}
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </a>
                 </div>
-                <h3 class="pp-dolor reveal"><span>{isEn ? 'The pain point:' : 'El dolor:'}</span> {solucion.dolor}</h3>
+            </div>
+        </header>
 
-                <!-- Mockup específico de la industria -->
-                <div class="pp-mockup-wrap reveal-mockup">
-                    <div class="pp-glow" aria-hidden="true"></div>
-                    <div class="pp-mockup">
-
-                        {solucion.slug === 'distribuidoras' && (
-                            <div class="mk-window">
-                                <div class="mk-bar">
-                                    <span class="mk-dots"><i></i><i></i><i></i></span>
-                                    <span class="mk-bar-title">{isEn ? 'Price per client' : 'Precio por cliente'} · {isEn ? 'Grey cement 50kg' : 'Cemento gris 50kg'}</span>
-                                    <span class="mk-badge mk-badge-ok">● {isEn ? 'Active list' : 'Lista activa'}</span>
-                                </div>
-                                <div class="mk-rows mk-rows-4">
-                                    <div class="mk-row mk-row-head"><span>{isEn ? 'Client' : 'Cliente'}</span><span>{isEn ? 'Terms' : 'Términos'}</span><span>{isEn ? 'Your price' : 'Tu precio'}</span><span>{isEn ? 'vs list' : 'vs lista'}</span></div>
-                                    <div class="mk-row"><span>{isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}</span><span>Net 30</span><span class="editorial mk-green">$168.50</span><span class="editorial"><i class="mk-chip">−12%</i></span></div>
-                                    <div class="mk-row"><span>{isEn ? 'GAMA Construction' : 'Constructora GAMA'}</span><span>Net 60</span><span class="editorial mk-green">$172.00</span><span class="editorial"><i class="mk-chip">−10%</i></span></div>
-                                    <div class="mk-row"><span>{isEn ? 'Ferrex Group' : 'Grupo Ferrex'}</span><span>{isEn ? 'Cash' : 'Contado'}</span><span class="editorial">$182.00</span><span class="editorial mk-muted">{isEn ? 'List' : 'Lista'}</span></div>
-                                </div>
-                                <div class="mk-totals">
-                                    <span>{isEn ? 'List price' : 'Precio de lista'} <b class="editorial">$191.48</b></span>
-                                    <span class="mk-total-final">{isEn ? 'Margin' : 'Margen'} <b class="editorial">{isEn ? 'protected' : 'protegido'}</b></span>
-                                </div>
-                            </div>
-                        )}
-
-                        {solucion.slug === 'construccion' && (
-                            <div class="mk-window">
-                                <div class="mk-bar">
-                                    <span class="mk-dots"><i></i><i></i><i></i></span>
-                                    <span class="mk-bar-title">COT-0148 · {isEn ? 'GAMA Construction' : 'Constructora GAMA'} · {isEn ? 'Polanco Project' : 'Obra Polanco'}</span>
-                                    <span class="mk-badge mk-badge-sent">● Net 60</span>
-                                </div>
-                                <div class="mk-rows mk-rows-con">
-                                    <div class="mk-row mk-row-head"><span>{isEn ? 'Material' : 'Material'}</span><span>{isEn ? 'Qty' : 'Cant.'}</span><span>{isEn ? 'Price' : 'Precio'}</span><span>{isEn ? 'Amount' : 'Importe'}</span></div>
-                                    <div class="mk-row"><span>{isEn ? 'Grey cement 50kg' : 'Cemento gris 50kg'}</span><span>120 {isEn ? 'bags' : 'sacos'}</span><span class="editorial">$182.00</span><span class="editorial">$21,840.00</span></div>
-                                    <div class="mk-row"><span>{isEn ? 'Rebar 3/8" × 12m' : 'Varilla 3/8" × 12m'}</span><span>340 {isEn ? 'pieces' : 'tramos'}</span><span class="editorial">$168.50</span><span class="editorial">$57,290.00</span></div>
-                                    <div class="mk-row"><span>{isEn ? 'River sand' : 'Arena de río'}</span><span>45 m³</span><span class="editorial">$420.00</span><span class="editorial">$18,900.00</span></div>
-                                    <div class="mk-row"><span>{isEn ? 'Hollow block 15×20×40' : 'Block hueco 15×20×40'}</span><span>2,400 {isEn ? 'pcs' : 'pza'}</span><span class="editorial">$14.20</span><span class="editorial">$34,080.00</span></div>
-                                </div>
-                                <div class="mk-totals">
-                                    <span>{isEn ? 'Subtotal' : 'Subtotal'} <b class="editorial">$169,370.00</b></span>
-                                    <span>{isEn ? 'Tax (16%)' : 'IVA 16%'} <b class="editorial">$27,099.20</b></span>
-                                    <span class="mk-total-final">{isEn ? 'Total' : 'Total'} <b class="editorial">$196,469.20</b></span>
-                                </div>
-                                <div class="mk-credit-bar">
-                                    <span>{isEn ? 'GAMA Credit' : 'Crédito de GAMA'}</span>
-                                    <div class="mk-credit"><i style="width:72%"></i></div>
-                                    <b class="editorial">$612k / $850k</b>
-                                </div>
-                            </div>
-                        )}
-
-                        {solucion.slug === 'manufactura' && (
-                            <div class="mk-window">
-                                <div class="mk-bar">
-                                    <span class="mk-dots"><i></i><i></i><i></i></span>
-                                    <span class="mk-bar-title">COT-0204 · {isEn ? 'Northern Assemblies' : 'Ensambles del Norte'}</span>
-                                    <span class="mk-badge mk-badge-draft">● {isEn ? 'Draft' : 'Borrador'}</span>
-                                </div>
-                                <div class="mk-spec">
-                                    <div class="mk-spec-line">
-                                        <div><b>{isEn ? 'A36 steel plate · laser cut' : 'Placa de acero A36 · corte láser'}</b><i>{isEn ? '6mm thickness · polished finish · tolerance ±0.2mm' : 'Espesor 6mm · acabado pulido · tolerancia ±0.2mm'}</i></div>
-                                        <span class="editorial">$1,240.00</span>
-                                    </div>
-                                    <div class="mk-spec-line">
-                                        <div><b>{isEn ? 'CNC Machining · part 4F-22' : 'Maquinado CNC · pieza 4F-22'}</b><i>{isEn ? 'MOQ 500 pcs · 12 business days delivery' : 'Lote mínimo 500 pza · entrega 12 días hábiles'}</i></div>
-                                        <span class="editorial">$86.50</span>
-                                    </div>
-                                </div>
-                                <div class="mk-note">
-                                    <span class="mk-note-label">{isEn ? 'BATCH NOTE' : 'NOTA DEL LOTE'}</span>
-                                    <p>{isEn ? 'MOQ 500 pcs · 12 days delivery after 50% deposit · price subject to final R3 blueprint.' : 'MOQ 500 pza · entrega 12 días tras anticipo del 50% · precio sujeto a plano final R3.'}</p>
-                                </div>
-                                <div class="mk-totals">
-                                    <span class="mk-total-final">{isEn ? 'Batch total' : 'Total del lote'} <b class="editorial">$44,490.00</b></span>
-                                </div>
-                            </div>
-                        )}
-
-                        {solucion.slug === 'servicios' && (
-                            <div class="mk-public">
-                                <div class="mk-public-head">
-                                    <span class="mk-avatar">DV</span>
-                                    <div>
-                                        <b>{isEn ? 'Vertice Agency' : 'Despacho Vértice'}</b>
-                                        <i>{isEn ? 'sent you a proposal' : 'te envió una propuesta'}</i>
-                                    </div>
-                                    <span class="mk-badge mk-badge-sent">● Vista</span>
-                                </div>
-                                <div class="mk-public-total">
-                                    <span>{isEn ? 'Fees' : 'Honorarios'} del proyecto</span>
-                                    <b class="editorial">$84,000.00</b>
-                                    <i>50% anticipo · vigente al 30 jun 2026</i>
-                                </div>
-                                <div class="mk-public-actions">
-                                    <span class="mk-approve">Aprobar propuesta</span>
-                                    <span class="mk-reject">Tengo una duda</span>
-                                </div>
-                                <span class="mk-via">vía <b>cord</b></span>
-                            </div>
-                        )}
-
-                    </div>
+        <!-- ── LOGO CLOUD (Stripe Style) ── -->
+        <section class="stripe-clients reveal">
+            <div class="stripe-container">
+                <p class="stripe-clients-title">
+                    {isEn ? 'Over 100 industry leaders trust Cord to scale their operations' : 'Más de 100 empresas líderes en su sector confían en Cord para escalar su operación'}
+                </p>
+                <div class="stripe-logo-grid">
+                    {clientLogos.map(logo => (
+                        <div class="stripe-logo">{logo}</div>
+                    ))}
                 </div>
             </div>
         </section>
 
-        <!-- ── PARA QUIÉN (audiencia objetivo — extractable para AI) ── -->
-        <section class="pp-audience">
-            <p class="pp-eyebrow reveal">PARA QUIÉN ES</p>
-            <h2 class="pp-audience-title masked-title" set:html={`Para quién es Cord ${solucion.nav.toLowerCase()}.`} />
-            <p class="pp-audience-copy reveal">{solucion.paraQuien}</p>
-        </section>
+        <!-- ── BENTO GRID FEATURES ── -->
+        <section class="stripe-bento-section">
+            <div class="stripe-container">
+                <div class="stripe-section-header reveal">
+                    <h2 class="stripe-h2">{isEn ? 'A complete ecosystem for your commercial process' : 'Un ecosistema completo para tu proceso comercial'}</h2>
+                    <p class="stripe-p">{solucion.paraQuien}</p>
+                </div>
 
-        <!-- ── STATS ── -->
-        <section class="pp-stats">
-            <div class="pp-stats-inner">
-                {solucion.stats.map((s) => (
-                    <div class="pp-stat reveal">
-                        <span class="pp-stat-label">{s.label}</span>
-                        <span class="pp-stat-dots"></span>
-                        <span
-                            class="pp-stat-num editorial"
-                            data-countup={s.countup !== undefined ? String(s.countup) : undefined}
-                            data-decimals={s.decimals !== undefined ? String(s.decimals) : undefined}
-                            data-prefix={s.prefix}
-                            data-suffix={s.suffix}
-                        >{s.prefix ?? ''}{s.valor}{s.suffix ?? ''}</span>
-                    </div>
-                ))}
+                <div class="stripe-bento-grid">
+                    {solucion.blocks.map((block, idx) => (
+                        <div class={`stripe-bento-card reveal ${idx === 0 || idx === 3 ? 'span-2' : ''}`}>
+                            <div class="stripe-bento-inner">
+                                <div class="stripe-bento-graphic">
+                                    <SolucionBlockMockup slug={solucion.slug} index={idx} />
+                                </div>
+                                <div class="stripe-bento-text">
+                                    <span class="stripe-bento-eyebrow">{block.eyebrow}</span>
+                                    <h3 class="stripe-bento-title">{block.titulo}</h3>
+                                    <p class="stripe-bento-desc">{block.copy}</p>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         </section>
 
-        <!-- ── BLOQUES DE DETALLE ── -->
-        <section class="pp-blocks">
-            {solucion.blocks.map((b, i) => (
-                <article class:list={['pp-block', { 'pp-block-flip': i % 2 === 1 }]}>
-                    <div class="pp-block-text">
-                        <p class="pp-eyebrow reveal">{b.eyebrow}</p>
-                        <h2 class="pp-h2 masked-title" set:html={b.titulo} />
-                        <p class="pp-copy reveal">{b.copy}</p>
-                        <ul class="pp-bullets">
-                            {b.bullets.map((bl) => (
-                                <li class="reveal">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                    <span>{bl}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                    <div class="pp-block-visual" style="align-items: center; justify-content: center; padding: 0;">
-                        <SolucionBlockMockup slug={solucion.slug} index={i} />
-                    </div>
-                </article>
-            ))}
+        <!-- ── STATS (Stripe Metric Cards) ── -->
+        <section class="stripe-stats-section reveal">
+            <div class="stripe-container">
+                <div class="stripe-stats-grid">
+                    {solucion.stats.map(st => (
+                        <div class="stripe-stat-card">
+                            <div class="stripe-stat-line"></div>
+                            <div class="stripe-stat-val editorial">
+                                {st.prefix}
+                                {st.countup ? (
+                                    <span class="count-up" data-val={st.countup} data-dec={st.decimals || 0}>{st.countup}</span>
+                                ) : (
+                                    st.valor
+                                )}
+                                {st.suffix}
+                            </div>
+                            <div class="stripe-stat-label">{st.label}</div>
+                        </div>
+                    ))}
+                </div>
+            </div>
         </section>
 
+        <!-- ── TESTIMONIAL ── -->
         {solucion.resultado && (
-            <!-- ── RESULTADO REAL (caso de uso con métricas — AI-SEO) ── -->
-            <section class="pp-result">
-                <div class="pp-result-inner">
-                    <p class="pp-eyebrow reveal">RESULTADO REAL</p>
-                    <p class="pp-result-client reveal">{solucion.resultado.cliente}</p>
-                    <div class="pp-result-grid">
-                        {solucion.resultado.metricas.map((m) => (
-                            <div class="pp-result-stat reveal">
-                                <span class="pp-result-num editorial">{m.valor}</span>
-                                <span class="pp-result-label">{m.label}</span>
+            <section class="stripe-testimonial-section reveal">
+                <div class="stripe-container">
+                    <div class="stripe-testimonial-card">
+                        <div class="stripe-quote-mark">“</div>
+                        <h2 class="stripe-testimonial-text">{solucion.resultado.nota}</h2>
+                        <div class="stripe-testimonial-author">
+                            <div class="stripe-author-avatar"></div>
+                            <div class="stripe-author-info">
+                                <b>{solucion.resultado.cliente}</b>
+                                <span>{isEn ? 'Verified Customer' : 'Cliente Verificado'}</span>
                             </div>
-                        ))}
+                        </div>
+                        <div class="stripe-testimonial-metrics">
+                            {solucion.resultado.metricas.map(m => (
+                                <div>
+                                    <b class="editorial">{m.valor}</b>
+                                    <span>{m.label}</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                    <p class="pp-result-note reveal">{solucion.resultado.nota}</p>
                 </div>
             </section>
         )}
 
-        <!-- ── INTERLINK A FEATURE (grafo de entidades) ── -->
-        <section class="pp-interlink reveal">
-            <a href={solucion.interlink.href}>
-                Conoce a fondo {solucion.interlink.label}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </a>
-        </section>
-
         <!-- ── FAQ ── -->
-        <section class="pp-faq">
-            <div class="pp-faq-head">
-                <p class="pp-eyebrow reveal">PREGUNTAS FRECUENTES</p>
-                <h2 class="pp-h2 masked-title">{isEn ? 'Most common questions about' : 'Lo que más nos preguntan sobre'} {solucion.nav.toLowerCase()}.</h2>
-            </div>
-            <div class="pp-faq-list">
-                {solucion.faqs.map((f, i) => (
-                    <div class="pp-faq-item reveal">
-                        <button class="pp-faq-q" aria-expanded="false" aria-controls={`pp-faq-panel-${i}`}>
-                            <span>{f.q}</span>
-                            <span class="pp-faq-icon" aria-hidden="true"></span>
-                        </button>
-                        <div class="pp-faq-panel" id={`pp-faq-panel-${i}`} role="region">
-                            <p class="pp-faq-a">{f.a}</p>
-                        </div>
-                    </div>
-                ))}
+        <section class="stripe-faq-section reveal">
+            <div class="stripe-container">
+                <h2 class="stripe-h2">{isEn ? 'Frequently asked questions' : 'Preguntas frecuentes'}</h2>
+                <div class="stripe-faq-list">
+                    {solucion.faqs.map(f => (
+                        <details class="stripe-faq-item">
+                            <summary>
+                                <h3>{f.q}</h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                            </summary>
+                            <div class="stripe-faq-a"><p>{f.a}</p></div>
+                        </details>
+                    ))}
+                </div>
             </div>
         </section>
 
-        <!-- ── CROSS-LINKS ── -->
-        <section class="pp-more">
-            <div class="pp-more-head">
-                <p class="pp-eyebrow reveal">OTRAS INDUSTRIAS</p>
-                <h2 class="pp-h2 masked-title">Cord funciona en tu sector también.</h2>
-            </div>
-            <div class="pp-more-grid">
-                {otras.map((s) => (
-                    <a href={`/soluciones/${s.slug}`} class="pp-more-card reveal">
-                        <b>{s.nav}</b>
-                        <span>{s.sub.split('.')[0]}.</span>
-                        <i class="pp-more-arrow">
+        <!-- ── CTA ── -->
+        <section class="stripe-cta-section reveal">
+            <div class="stripe-container">
+                <div class="stripe-cta-card">
+                    <h2 class="stripe-h2">{solucion.cta.titulo}</h2>
+                    <p class="stripe-p">{solucion.cta.sub}</p>
+                    <div class="stripe-actions">
+                        <a href="/registro" class="stripe-btn-primary">
+                            {isEn ? 'Start now' : 'Empezar ahora'}
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                        </i>
-                    </a>
-                ))}
+                        </a>
+                        <a href="/contacto" class="stripe-btn-ghost">
+                            {isEn ? 'Contact sales' : 'Contactar a ventas'}
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </a>
+                    </div>
+                </div>
             </div>
         </section>
+        
+        <Footer />
     </main>
 
-    <Footer ctaTitle={solucion.cta.titulo} ctaSub={solucion.cta.sub} />
     <PageAnims />
+    
+    <script>
+        import { gsap } from 'gsap';
+        
+        // Efecto hover interactivo para las tarjetas Bento tipo Stripe
+        const cards = document.querySelectorAll('.stripe-bento-card');
+        
+        cards.forEach(card => {
+            card.addEventListener('mousemove', (e: Event) => {
+                const mouseEvent = e as MouseEvent;
+                const rect = card.getBoundingClientRect();
+                const x = mouseEvent.clientX - rect.left;
+                const y = mouseEvent.clientY - rect.top;
+                
+                (card as HTMLElement).style.setProperty('--mouse-x', `${x}px`);
+                (card as HTMLElement).style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
+    </script>
 </Layout>
 
 <style>
-    /* ════════ HERO ════════ */
-    .pp-hero {
-        position: relative;
-        padding: 11.5rem 5% 5rem;
-        text-align: center;
-        overflow: clip;
-        background: var(--color-bg);
+    /* ════════════════════════════════════════════════════════════════
+       VARIABLES & TOKENS GLOBALES (ESTILO CORD)
+    ════════════════════════════════════════════════════════════════ */
+    :root {
+        --stripe-bg: #0a192f; /* Navy profundo de Cord */
+        --stripe-text: #ffffff;
+        --stripe-muted: #8a93a5;
+        --stripe-accent: #10b981; /* Verde Cord */
+        --stripe-accent-light: #34d399;
+        --stripe-cyan: #3b82f6; /* Azul Cord */
+        --stripe-border: rgba(255, 255, 255, 0.08);
+        --stripe-card-bg: rgba(255, 255, 255, 0.03);
+        --stripe-font-sans: var(--font-sans, "Inter", system-ui, sans-serif);
     }
-    .pp-hero-mesh {
-        position: absolute; inset: -20% -10% auto;
-        height: 80%;
-        background:
-            radial-gradient(ellipse 50% 60% at 28% 20%, rgba(10,25,47,0.05) 0%, transparent 60%),
-            radial-gradient(ellipse 44% 54% at 76% 12%, rgba(10,25,47,0.04) 0%, transparent 60%);
-        pointer-events: none;
+    
+    .stripe-main {
+        background-color: var(--stripe-bg);
+        color: var(--stripe-text);
+        font-family: var(--stripe-font-sans);
+        overflow-x: hidden;
     }
-    .pp-hero-inner { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; }
+    
+    .stripe-container {
+        max-width: 1140px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+    
+    .editorial {
+        font-family: var(--font-mono, ui-monospace, monospace);
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.02em;
+    }
 
-    .pp-eyebrow {
-        font-size: 0.65rem; font-weight: 800; letter-spacing: 3px;
-        text-transform: uppercase; color: #888; margin: 0 0 1.4rem;
+    /* ════════════════════════════════════════════════════════════════
+       CORD HERO (Grid & Gradients)
+    ════════════════════════════════════════════════════════════════ */
+    .stripe-hero {
+        position: relative;
+        padding: 160px 20px 80px;
+        min-height: 85vh;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
     }
-    .pp-title {
-        font-size: clamp(2.4rem, 5.4vw, 4.4rem);
-        font-weight: 800; line-height: 1.04; letter-spacing: -0.035em;
-        color: var(--color-text); margin: 0 0 1.6rem;
+    
+    .stripe-hero-bg {
+        position: absolute;
+        inset: -20%;
+        z-index: 0;
+        background: var(--stripe-bg);
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        overflow: hidden;
     }
-    .pp-sub {
-        font-size: 1.12rem; line-height: 1.65; color: var(--color-text-muted);
-        max-width: 660px; margin: 0 auto 2.2rem;
+    
+    .stripe-hero-grid {
+        position: absolute;
+        inset: 0;
+        background-image: 
+            linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+        background-size: 80px 80px;
+        opacity: 0.5;
     }
-    .pp-actions { display: flex; gap: 0.9rem; justify-content: center; align-items: center; flex-wrap: wrap; }
-    .pp-btn-primary {
-        display: inline-flex; align-items: center; gap: 10px;
-        background: var(--color-blue-deep); color: #fff;
-        text-decoration: none; font-size: 0.98rem; font-weight: 600;
-        padding: 14px 28px; border-radius: 13px;
-        box-shadow: 0 18px 44px -16px rgba(10,25,47,0.55);
-        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
+    
+    .stripe-hero-gradient {
+        position: absolute;
+        top: -30%;
+        right: -10%;
+        width: 80%;
+        height: 150%;
+        background: radial-gradient(ellipse at center, rgba(16, 185, 129, 0.15) 0%, rgba(59, 130, 246, 0.1) 40%, transparent 70%);
+        filter: blur(80px);
     }
-    .pp-btn-primary svg { width: 15px; height: 15px; transition: transform 0.5s var(--ease-spring); }
-    .pp-btn-primary:hover { transform: translateY(-3px); box-shadow: 0 26px 56px -16px rgba(10,25,47,0.6); }
-    .pp-btn-primary:hover svg { transform: translateX(4px); }
-    .pp-btn-ghost {
-        color: var(--color-text); text-decoration: none; font-weight: 600; font-size: 0.98rem;
-        padding: 14px 10px;
-        transition: color 0.3s;
+    
+    .stripe-hero-content {
+        position: relative;
+        z-index: 10;
+        max-width: 800px;
+        margin: 0 auto;
     }
-    .pp-btn-ghost:hover { color: var(--color-blue-deep); }
-    .pp-dolor {
-        font-size: 0.85rem; font-weight: 400; color: var(--color-text-muted); margin: 1.4rem auto 0; max-width: 540px;
+    
+    .stripe-hero-tag {
+        display: inline-block;
+        color: var(--stripe-cyan);
+        font-weight: 600;
+        font-size: 0.9rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stripe-title {
+        font-size: clamp(3rem, 6vw, 5rem);
+        line-height: 1.05;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+        margin-bottom: 1.5rem;
+        color: #fff;
+    }
+    
+    .stripe-sub {
+        font-size: clamp(1.1rem, 2vw, 1.4rem);
+        line-height: 1.5;
+        color: var(--stripe-muted);
+        max-width: 650px;
+        margin-bottom: 3rem;
+        font-weight: 400;
+    }
+    
+    .stripe-actions {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .stripe-btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--stripe-accent);
+        color: #fff;
+        padding: 12px 24px;
+        border-radius: 999px;
+        font-size: 1rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39);
+    }
+    
+    .stripe-btn-primary:hover {
+        background: var(--stripe-accent-light);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    }
+    
+    .stripe-btn-primary svg {
+        width: 16px;
+        height: 16px;
+        transition: transform 0.2s;
+    }
+    
+    .stripe-btn-primary:hover svg {
+        transform: translateX(3px);
+    }
+    
+    .stripe-btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        border-radius: 999px;
+        color: #fff;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        background: rgba(255,255,255,0.1);
+        transition: background 0.2s;
+    }
+    
+    .stripe-btn-ghost:hover {
+        background: rgba(255,255,255,0.15);
+    }
+    
+    .stripe-btn-ghost svg {
+        width: 16px;
+        height: 16px;
+        transition: transform 0.2s;
+    }
+    
+    .stripe-btn-ghost:hover svg {
+        transform: translateX(3px);
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       LOGO CLOUD
+    ════════════════════════════════════════════════════════════════ */
+    .stripe-clients {
+        padding: 4rem 0;
+        position: relative;
+        z-index: 10;
+    }
+    
+    .stripe-clients-title {
+        text-align: center;
+        color: var(--stripe-muted);
+        font-size: 0.95rem;
+        font-weight: 500;
+        margin-bottom: 2rem;
+    }
+    
+    .stripe-logo-grid {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 2rem;
+        opacity: 0.6;
+    }
+    
+    .stripe-logo {
+        font-family: var(--font-mono);
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #fff;
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       BENTO GRID
+    ════════════════════════════════════════════════════════════════ */
+    .stripe-bento-section {
+        padding: 6rem 0;
+        position: relative;
+        z-index: 10;
+    }
+    
+    .stripe-section-header {
+        margin-bottom: 4rem;
+        max-width: 600px;
+    }
+    
+    .stripe-h2 {
+        font-size: clamp(2rem, 4vw, 2.75rem);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stripe-p {
+        font-size: 1.25rem;
+        color: var(--stripe-muted);
         line-height: 1.5;
     }
-    .pp-dolor span { font-weight: 700; color: var(--color-danger); letter-spacing: 0.2px; }
-
-    /* ── Mockup del hero ── */
-    .pp-mockup-wrap { position: relative; max-width: 760px; margin: 4.5rem auto 0; }
-    .pp-glow {
-        position: absolute; inset: 12% -8% -18%;
-        background: radial-gradient(ellipse at center, rgba(10,25,47,0.16) 0%, transparent 65%);
-        filter: blur(30px);
+    
+    .stripe-bento-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+    }
+    
+    .stripe-bento-card {
+        position: relative;
+        background: var(--stripe-card-bg);
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid var(--stripe-border);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+    
+    .stripe-bento-card.span-2 {
+        grid-column: span 2;
+    }
+    
+    /* Interactive Hover Glow (Stripe signature) */
+    .stripe-bento-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(
+            800px circle at var(--mouse-x, 0) var(--mouse-y, 0),
+            rgba(255, 255, 255, 0.06),
+            transparent 40%
+        );
+        z-index: 0;
+        opacity: 0;
+        transition: opacity 0.3s;
         pointer-events: none;
     }
-    .pp-mockup {
+    
+    .stripe-bento-card:hover::before {
+        opacity: 1;
+    }
+    
+    .stripe-bento-inner {
         position: relative;
-        background: linear-gradient(165deg, #0e2240 0%, #0a192f 55%, #081424 100%);
-        border-radius: 22px;
-        padding: 1.6rem;
-        text-align: left;
-        box-shadow:
-            0 50px 100px -36px rgba(5,11,20,0.75),
-            inset 0 0 0 0.5px rgba(255,255,255,0.08);
-        color: #fff;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 2.5rem;
     }
-
-    /* badges + avatar compartidos */
-    .mk-badge {
-        font-size: 0.62rem; font-weight: 700; letter-spacing: 0.4px;
-        padding: 4px 10px; border-radius: 100px; white-space: nowrap;
+    
+    .span-2 .stripe-bento-inner {
+        flex-direction: row;
+        align-items: center;
+        gap: 4rem;
     }
-    .mk-badge-draft { color: #aab4c4; background: rgba(255,255,255,0.08); }
-    .mk-badge-sent  { color: #7eb3ff; background: rgba(59,130,246,0.16); }
-    .mk-badge-ok    { color: #4ade80; background: rgba(16,185,129,0.16); }
-    .mk-avatar {
-        width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
-        background: rgba(255,255,255,0.1); color: #fff;
-        display: inline-flex; align-items: center; justify-content: center;
-        font-size: 0.78rem; font-weight: 800;
+    
+    .stripe-bento-graphic {
+        flex: 1;
+        min-height: 250px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
     }
-
-    /* ventana (distribuidoras + construccion) */
-    .mk-bar { display: flex; align-items: center; gap: 12px; padding-bottom: 1rem; }
-    .mk-dots { display: inline-flex; gap: 5px; }
-    .mk-dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.14); }
-    .mk-bar-title { font-size: 0.76rem; font-weight: 600; color: rgba(255,255,255,0.75); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mk-rows { display: flex; flex-direction: column; gap: 4px; }
-    .mk-row {
-        display: grid; gap: 8px; align-items: center;
-        font-size: 0.78rem; color: rgba(255,255,255,0.82);
-        padding: 8px 10px; border-radius: 9px;
-        background: rgba(255,255,255,0.03);
+    
+    .stripe-bento-text {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
-    .mk-rows-4 .mk-row { grid-template-columns: 1.7fr 0.8fr 0.9fr 0.8fr; }
-    .mk-rows-con .mk-row { grid-template-columns: 1.7fr 0.9fr 0.8fr 1fr; }
-    .mk-row span:nth-child(n+2) { text-align: right; }
-    .mk-row-head { background: none; font-size: 0.6rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.35); }
-    .mk-green { color: #4ade80; }
-    .mk-muted { color: rgba(255,255,255,0.4); }
-    .mk-chip {
-        font-style: normal; font-size: 0.6rem; font-weight: 800;
-        color: #052e1f; background: #4ade80;
-        padding: 1px 6px; border-radius: 6px;
-        vertical-align: 1px;
-    }
-    .mk-totals {
-        display: flex; justify-content: flex-end; gap: 1.6rem; flex-wrap: wrap;
-        margin-top: 1rem; padding: 0.9rem 10px 0;
-        border-top: 1px solid rgba(255,255,255,0.09);
-        font-size: 0.74rem; color: rgba(255,255,255,0.55);
-    }
-    .mk-totals b { margin-left: 7px; color: #fff; font-weight: 600; }
-    .mk-total-final { font-weight: 700; color: rgba(255,255,255,0.85); }
-    .mk-total-final b { font-size: 1.05rem; }
-
-    /* barra de crédito (construccion) */
-    .mk-credit-bar {
-        display: flex; align-items: center; gap: 12px;
-        margin-top: 0.9rem; padding: 11px 12px; border-radius: 11px;
-        background: rgba(255,255,255,0.035);
-        font-size: 0.72rem; color: rgba(255,255,255,0.55);
-    }
-    .mk-credit { flex: 1; }
-    .mk-credit i { display: block; height: 6px; border-radius: 100px; background: linear-gradient(90deg, #fbbf24, #f59e0b); }
-    .mk-credit-bar b { color: #fff; font-weight: 600; white-space: nowrap; }
-
-    /* especificación (manufactura) */
-    .mk-spec { display: flex; flex-direction: column; gap: 6px; }
-    .mk-spec-line {
-        display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
-        padding: 11px 13px; border-radius: 11px; background: rgba(255,255,255,0.035);
-    }
-    .mk-spec-line b { display: block; font-size: 0.82rem; font-weight: 600; }
-    .mk-spec-line i { display: block; font-style: normal; font-size: 0.7rem; color: rgba(255,255,255,0.45); margin-top: 3px; line-height: 1.4; }
-    .mk-spec-line > span { white-space: nowrap; color: #fff; }
-    .mk-note {
-        margin-top: 0.8rem; padding: 11px 13px; border-radius: 11px;
-        background: rgba(251,191,36,0.08); box-shadow: inset 0 0 0 0.5px rgba(251,191,36,0.18);
-    }
-    .mk-note-label { font-size: 0.58rem; font-weight: 800; letter-spacing: 1.4px; color: #fbbf24; }
-    .mk-note p { margin: 4px 0 0; font-size: 0.74rem; color: rgba(255,255,255,0.7); line-height: 1.5; }
-
-    /* propuesta pública (servicios) */
-    .mk-public { position: relative; max-width: 440px; margin: 0 auto; perspective: 1000px; }
-    .mk-public-card { 
-        display: flex; flex-direction: column; gap: 1.25rem; padding: 1.5rem;
-        background: linear-gradient(145deg, rgba(10,25,47,0.85), rgba(15,23,42,0.95));
-        border-radius: 18px; box-shadow: 0 24px 48px -12px rgba(2,6,12,0.8), inset 0 1px 1px rgba(255,255,255,0.1);
-        backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08);
-    }
-    .mk-public-head { display: flex; align-items: center; gap: 12px; }
-    .mk-public-head b { display: block; font-size: 0.92rem; }
-    .mk-public-head i { display: block; font-style: normal; font-size: 0.74rem; color: rgba(255,255,255,0.5); }
-    .mk-public-head .mk-badge { margin-left: auto; }
-    .mk-public-total {
-        text-align: center; padding: 1.4rem 1rem;
-        background: rgba(255,255,255,0.04); border-radius: 16px;
-        box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.07);
-    }
-    .mk-public-total span { display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 6px; }
-    .mk-public-total b { display: block; font-size: 2rem; font-weight: 600; letter-spacing: -0.03em; }
-    .mk-public-total i { display: block; font-style: normal; font-size: 0.74rem; color: rgba(255,255,255,0.45); margin-top: 6px; }
-    .mk-public-actions { display: flex; gap: 0.7rem; }
-    .mk-approve {
-        flex: 1; text-align: center;
-        background: #fff; color: var(--color-blue-deep);
-        font-size: 0.88rem; font-weight: 700;
-        padding: 13px; border-radius: 12px;
-    }
-    .mk-reject {
-        text-align: center; color: rgba(255,255,255,0.6);
-        font-size: 0.88rem; font-weight: 600;
-        padding: 13px 20px; border-radius: 12px;
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14);
-    }
-    .mk-via { text-align: center; font-size: 0.68rem; color: rgba(255,255,255,0.35); }
-    .mk-via b { color: rgba(255,255,255,0.6); }
-
-    /* ── EDITOR APP SIMULATION ── */
-    .mk-window {
-        background: #0a192f;
-        border-radius: 14px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1);
-        border: 1px solid rgba(255,255,255,0.06);
-        position: relative; overflow: hidden;
-    }
-
-    /* ════════ STATS ════════ */
-    .pp-stats {
-        padding: 5.5rem 5%;
-    }
-    .pp-stats-inner {
-        max-width: 800px; margin: 0 auto;
-        display: flex; flex-direction: column;
-    }
-    .pp-stat { 
-        display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
-        padding: 1.6rem 0;
-        border-bottom: 1px solid var(--color-border);
-    }
-    .pp-stat:first-child { border-top: 1px solid var(--color-border); }
-    .pp-stat-label { font-size: 1.1rem; color: var(--color-text-muted); font-weight: 500; }
-    .pp-stat-label::first-letter { text-transform: uppercase; }
-    .pp-stat-dots {
-        flex: 1; border-bottom: 1px dotted var(--color-border);
-        opacity: 0.6; position: relative; top: -5px;
-    }
-    .pp-stat-num {
-        font-size: 1.4rem; color: var(--color-text); font-weight: 600; letter-spacing: -0.02em;
-    }
-
-    /* ════════ BLOQUES ════════ */
-    .pp-blocks {
-        max-width: 1080px; margin: 0 auto;
-        padding: 8rem 5% 6rem;
-        display: flex; flex-direction: column; gap: 14rem;
-    }
-    .pp-block {
-        display: grid; grid-template-columns: 1.1fr 0.9fr;
-        gap: 4.5rem; align-items: center;
-    }
-    .pp-block-text, .pp-block-visual { min-width: 0; }
-    .pp-block-flip .pp-block-text { order: 2; }
-    .pp-block-flip .pp-block-visual { order: 1; }
-
-    .pp-h2 {
-        font-size: clamp(1.7rem, 3vw, 2.4rem);
-        font-weight: 800; line-height: 1.12; letter-spacing: -0.03em;
-        color: var(--color-text); margin: 0 0 1.1rem;
-    }
-    .pp-copy { font-size: 1.02rem; line-height: 1.7; color: var(--color-text-muted); margin: 0 0 1.6rem; }
-    .pp-bullets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.8rem; }
-    .pp-bullets li { display: flex; align-items: flex-start; gap: 11px; font-size: 0.95rem; color: var(--color-text); font-weight: 500; }
-    .pp-bullets svg { width: 16px; height: 16px; color: var(--color-ok); flex-shrink: 0; margin-top: 3px; }
-
-    .pp-block-visual {
-        position: relative;
-        min-height: 260px;
-        border-radius: 24px;
-        background: transparent;
-        border: none;
-        display: flex; align-items: center; justify-content: center;
-        padding: 1.6rem;
-    }
-    .pp-card-num {
-        font-size: 5rem; line-height: 0.9;
-        color: rgba(10,25,47,0.08);
+    
+    .stripe-bento-eyebrow {
+        color: var(--stripe-cyan);
         font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1rem;
+    }
+    
+    .stripe-bento-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #fff;
+        line-height: 1.2;
+        margin-bottom: 1rem;
+        letter-spacing: -0.02em;
+    }
+    
+    .stripe-bento-desc {
+        color: var(--stripe-muted);
+        line-height: 1.5;
+        font-size: 1.1rem;
     }
 
-    /* ════════ CROSS-LINKS ════════ */
-    .pp-more {
-        max-width: 1080px; margin: 0 auto;
-        padding: 6rem 5% 8rem;
-    }
-    .pp-more-head { text-align: center; margin-bottom: 3.2rem; }
-    .pp-more-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.1rem; }
-    .pp-more-card {
+    /* ════════════════════════════════════════════════════════════════
+       STATS
+    ════════════════════════════════════════════════════════════════ */
+    .stripe-stats-section {
+        padding: 4rem 0;
         position: relative;
-        display: flex; flex-direction: column; gap: 0.5rem;
-        background: var(--color-bg-soft);
-        border: 1px solid var(--color-border);
-        border-radius: 20px;
-        padding: 1.7rem 1.8rem;
-        text-decoration: none;
-        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring), border-color 0.4s;
+        z-index: 10;
     }
-    .pp-more-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 30px 70px -30px rgba(10,25,47,0.18);
-        border-color: rgba(10,25,47,0.12);
+    
+    .stripe-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        border-top: 1px solid var(--stripe-border);
+        padding-top: 4rem;
     }
-    .pp-more-card b { font-size: 1.02rem; font-weight: 700; letter-spacing: -0.3px; color: var(--color-text); }
-    .pp-more-card span { font-size: 0.86rem; line-height: 1.55; color: var(--color-text-muted); padding-right: 2.4rem; }
-    .pp-more-arrow {
-        position: absolute; right: 1.5rem; top: 1.6rem;
-        width: 30px; height: 30px; border-radius: 50%;
-        background: rgba(10,25,47,0.05); color: var(--color-blue-deep);
-        display: flex; align-items: center; justify-content: center;
-        transition: background 0.35s, color 0.35s, transform 0.5s var(--ease-spring);
+    
+    .stripe-stat-card {
+        display: flex;
+        flex-direction: column;
     }
-    .pp-more-arrow svg { width: 13px; height: 13px; }
-    .pp-more-card:hover .pp-more-arrow { background: var(--color-blue-deep); color: #fff; transform: translateX(3px); }
-
-    /* ════════ PARA QUIÉN ════════ */
-    .pp-audience {
-        max-width: 820px; margin: 0 auto;
-        padding: 5.5rem 5% 0; text-align: center;
+    
+    .stripe-stat-line {
+        width: 30px;
+        height: 2px;
+        background: var(--stripe-accent);
+        margin-bottom: 1.5rem;
     }
-    .pp-audience-title {
-        font-size: clamp(1.6rem, 2.8vw, 2.2rem);
-        font-weight: 800; line-height: 1.12; letter-spacing: -0.03em;
-        color: var(--color-text); margin: 0 0 1.2rem;
-    }
-    .pp-audience-copy {
-        font-size: 1.08rem; line-height: 1.75; color: var(--color-text-muted);
-        max-width: 680px; margin: 0 auto;
-    }
-
-    /* ════════ RESULTADO REAL ════════ */
-    .pp-result {
-        padding: 5rem 5%;
-        background:
-            radial-gradient(ellipse at 20% 50%, #112240 0%, #0a192f 65%, #050b14 100%);
+    
+    .stripe-stat-val {
+        font-size: 3rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.75rem;
         color: #fff;
     }
-    .pp-result-inner { max-width: 980px; margin: 0 auto; text-align: center; }
-    .pp-result .pp-eyebrow { color: rgba(255,255,255,0.5); }
-    .pp-result-client {
-        font-size: 1.05rem; font-weight: 600; color: rgba(255,255,255,0.85);
-        margin: 0 0 2.6rem; letter-spacing: -0.2px;
-    }
-    .pp-result-grid {
-        display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.4rem;
-        margin-bottom: 2.4rem;
-    }
-    .pp-result-stat { display: flex; flex-direction: column; gap: 0.6rem; }
-    .pp-result-num {
-        font-size: clamp(2.6rem, 5vw, 3.8rem); line-height: 1; color: #fff;
-    }
-    .pp-result-label {
-        font-size: 0.88rem; line-height: 1.5; color: rgba(255,255,255,0.6);
-        max-width: 220px; margin: 0 auto;
-    }
-    .pp-result-note {
-        font-size: 0.92rem; line-height: 1.65; color: rgba(255,255,255,0.55);
-        max-width: 660px; margin: 0 auto;
+    
+    .stripe-stat-label {
+        font-size: 1rem;
+        color: var(--stripe-muted);
+        line-height: 1.4;
     }
 
-    /* ════════ INTERLINK ════════ */
-    .pp-interlink { text-align: center; padding: 4.5rem 5% 0; }
-    .pp-interlink a {
-        display: inline-flex; align-items: center; gap: 9px;
-        font-size: 1rem; font-weight: 600; color: var(--color-blue-deep);
-        text-decoration: none;
-        transition: gap 0.4s var(--ease-spring);
+    /* ════════════════════════════════════════════════════════════════
+       TESTIMONIAL
+    ════════════════════════════════════════════════════════════════ */
+    .stripe-testimonial-section {
+        padding: 6rem 0;
+        position: relative;
+        z-index: 10;
     }
-    .pp-interlink a:hover { gap: 14px; }
-    .pp-interlink svg { width: 16px; height: 16px; }
+    
+    .stripe-testimonial-card {
+        background: var(--stripe-card-bg);
+        border: 1px solid var(--stripe-border);
+        border-radius: 24px;
+        padding: 4rem;
+        position: relative;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+    
+    .stripe-quote-mark {
+        font-size: 6rem;
+        color: var(--stripe-accent);
+        line-height: 0;
+        margin-bottom: 2rem;
+        font-family: serif;
+    }
+    
+    .stripe-testimonial-text {
+        font-size: clamp(1.5rem, 3vw, 2.5rem);
+        font-weight: 500;
+        line-height: 1.3;
+        margin-bottom: 3rem;
+        letter-spacing: -0.02em;
+    }
+    
+    .stripe-testimonial-author {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 3rem;
+    }
+    
+    .stripe-author-avatar {
+        width: 48px;
+        height: 48px;
+        background: #fff;
+        border-radius: 50%;
+        opacity: 0.9;
+    }
+    
+    .stripe-author-info b {
+        display: block;
+        font-size: 1.1rem;
+        color: #fff;
+    }
+    
+    .stripe-author-info span {
+        font-size: 0.9rem;
+        color: var(--stripe-muted);
+    }
+    
+    .stripe-testimonial-metrics {
+        display: flex;
+        gap: 3rem;
+        border-top: 1px solid var(--stripe-border);
+        padding-top: 2rem;
+    }
+    
+    .stripe-testimonial-metrics b {
+        display: block;
+        font-size: 2rem;
+        color: #fff;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stripe-testimonial-metrics span {
+        font-size: 0.9rem;
+        color: var(--stripe-muted);
+    }
 
-    /* ════════ FAQ ════════ */
-    .pp-faq {
-        max-width: 760px; margin: 0 auto;
-        padding: 5rem 5% 2rem;
+    /* ════════════════════════════════════════════════════════════════
+       FAQ
+    ════════════════════════════════════════════════════════════════ */
+    .stripe-faq-section {
+        padding: 6rem 0;
+        position: relative;
+        z-index: 10;
     }
-    .pp-faq-head { text-align: center; margin-bottom: 2.6rem; }
-    .pp-faq-head .pp-h2 { margin: 0; }
-    .pp-faq-list { display: flex; flex-direction: column; }
-    .pp-faq-item { border-bottom: 1px solid var(--color-border); }
-    .pp-faq-q {
-        display: flex; justify-content: space-between; align-items: center; gap: 1.5rem;
-        width: 100%; padding: 1.5rem 0.2rem;
-        cursor: pointer; background: none; border: none; text-align: left;
-        font-family: var(--font-sans); font-size: 1.08rem; font-weight: 600;
-        color: var(--color-text); transition: color 0.3s var(--ease-ios);
+    
+    .stripe-faq-list {
+        max-width: 800px;
+        margin-top: 3rem;
     }
-    .pp-faq-q:hover, .pp-faq-item.open .pp-faq-q { color: var(--color-blue-deep); }
-    .pp-faq-icon { position: relative; width: 16px; height: 16px; flex-shrink: 0; transition: transform 0.5s var(--ease-spring); }
-    .pp-faq-icon::before, .pp-faq-icon::after {
-        content: ''; position: absolute; top: 50%; left: 50%;
-        background: var(--color-text-muted);
-        transition: transform 0.4s var(--ease-spring);
+    
+    .stripe-faq-item {
+        border-bottom: 1px solid var(--stripe-border);
     }
-    .pp-faq-icon::before { width: 14px; height: 2px; transform: translate(-50%, -50%); }
-    .pp-faq-icon::after { width: 2px; height: 14px; transform: translate(-50%, -50%); }
-    .pp-faq-item.open .pp-faq-icon { transform: rotate(90deg); }
-    .pp-faq-item.open .pp-faq-icon::after { transform: translate(-50%, -50%) scaleY(0); }
-    .pp-faq-panel {
-        display: grid; grid-template-rows: 0fr;
-        transition: grid-template-rows 0.55s var(--ease-spring);
+    
+    .stripe-faq-item summary {
+        padding: 1.5rem 0;
+        cursor: pointer;
+        list-style: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
-    .pp-faq-panel > .pp-faq-a { overflow: hidden; min-height: 0; }
-    .pp-faq-item.open .pp-faq-panel { grid-template-rows: 1fr; }
-    .pp-faq-a {
-        margin: 0; padding: 0 0.2rem;
-        font-size: 1rem; line-height: 1.7; color: var(--color-text-muted); max-width: 92%;
-        opacity: 0; transform: translateY(-6px);
-        transition: opacity 0.45s var(--ease-ios) 0.08s, transform 0.5s var(--ease-spring) 0.08s, padding 0.45s var(--ease-spring);
+    
+    .stripe-faq-item summary::-webkit-details-marker {
+        display: none;
     }
-    .pp-faq-item.open .pp-faq-a { opacity: 1; transform: translateY(0); padding-bottom: 1.6rem; }
-    @media (prefers-reduced-motion: reduce) {
-        .pp-faq-panel, .pp-faq-a, .pp-faq-icon { transition: none; }
+    
+    .stripe-faq-item summary h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+        color: #fff;
+    }
+    
+    .stripe-faq-item summary svg {
+        width: 20px;
+        height: 20px;
+        color: var(--stripe-muted);
+        transition: transform 0.2s ease;
+    }
+    
+    .stripe-faq-item[open] summary svg {
+        transform: rotate(180deg);
+    }
+    
+    .stripe-faq-a {
+        padding-bottom: 1.5rem;
+        color: var(--stripe-muted);
+        line-height: 1.6;
     }
 
-    /* ════════ RESPONSIVE ════════ */
-    @media (max-width: 860px) {
-        .pp-hero { padding-top: 9.5rem; }
-        .pp-audience { padding-top: 4rem; }
-        .pp-result-grid { grid-template-columns: 1fr; gap: 2.2rem; }
-        .pp-stats { padding: 4rem 8%; }
-        .pp-stat { flex-direction: column; align-items: flex-start; gap: 0.4rem; padding: 1.2rem 0; }
-        .pp-stat-dots { display: none; }
-        .pp-stat-num { font-size: 1.6rem; color: var(--color-blue-deep); }
-        .pp-stat-label { font-size: 0.95rem; line-height: 1.4; }
-        .pp-blocks { gap: 4.5rem; }
-        .pp-block { grid-template-columns: 1fr; gap: 1.8rem; }
-        .pp-block-flip .pp-block-text { order: 1; }
-        .pp-block-flip .pp-block-visual { order: 2; }
-        .pp-block-visual { min-height: 170px; }
-        .pp-more-grid { grid-template-columns: 1fr; }
-        .mk-rows-4 .mk-row { grid-template-columns: 1.5fr 0.8fr 0.9fr; }
-        .mk-rows-4 .mk-row span:nth-child(4) { display: none; }
-        .mk-rows-con .mk-row { grid-template-columns: 1.5fr 0.9fr 1fr; }
-        .mk-rows-con .mk-row span:nth-child(3) { display: none; }
+    /* ════════════════════════════════════════════════════════════════
+       CTA
+    ════════════════════════════════════════════════════════════════ */
+    .stripe-cta-section {
+        padding: 6rem 0 10rem;
+        position: relative;
+        z-index: 10;
+    }
+    
+    .stripe-cta-card {
+        background: radial-gradient(circle at top, rgba(16, 185, 129, 0.1), transparent 50%), var(--stripe-card-bg);
+        border: 1px solid var(--stripe-border);
+        border-radius: 24px;
+        padding: 5rem 2rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .stripe-cta-card .stripe-p {
+        max-width: 600px;
+        margin-bottom: 3rem;
+    }
+    
+    .stripe-cta-card .stripe-actions {
+        justify-content: center;
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       RESPONSIVE
+    ════════════════════════════════════════════════════════════════ */
+    @media (max-width: 992px) {
+        .stripe-bento-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .stripe-bento-card.span-2 {
+            grid-column: 1;
+        }
+        
+        .span-2 .stripe-bento-inner {
+            flex-direction: column-reverse;
+            gap: 2rem;
+        }
+        
+        .stripe-stats-grid {
+            grid-template-columns: 1fr;
+            gap: 3rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .stripe-hero {
+            padding: 120px 20px 60px;
+        }
+        
+        .stripe-title {
+            font-size: 2.5rem;
+        }
+        
+        .stripe-actions {
+            flex-direction: column;
+            width: 100%;
+        }
+        
+        .stripe-btn-primary, .stripe-btn-ghost {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .stripe-testimonial-card {
+            padding: 2rem;
+        }
+        
+        .stripe-testimonial-metrics {
+            flex-direction: column;
+            gap: 2rem;
+        }
     }
 </style>
-
-<script>
-    // FAQ: acordeón (un solo abierto a la vez); la animación la hace el CSS (grid 0fr→1fr).
-    document.addEventListener('DOMContentLoaded', () => {
-        const items = Array.from(document.querySelectorAll<HTMLElement>('.pp-faq-item'));
-        items.forEach((item) => {
-            const btn = item.querySelector<HTMLButtonElement>('.pp-faq-q');
-            if (!btn) return;
-            btn.addEventListener('click', () => {
-                const willOpen = !item.classList.contains('open');
-                items.forEach((other) => {
-                    other.classList.remove('open');
-                    other.querySelector('.pp-faq-q')?.setAttribute('aria-expanded', 'false');
-                });
-                if (willOpen) {
-                    item.classList.add('open');
-                    btn.setAttribute('aria-expanded', 'true');
-                }
-            });
-        });
-
-        // Solo ejecutar GSAP si está disponible (cargado por PageAnims o globalmente)
-        if (typeof window !== 'undefined' && (window as any).gsap && (window as any).ScrollTrigger) {
-            const gsap = (window as any).gsap;
-            const ScrollTrigger = (window as any).ScrollTrigger;
-
-            // ───────────────────────── HERO MOCKUP ─────────────────────────
-            // El "settle" del mockup del hero (perspectiva → plano con el scroll) lo
-            // maneja PageAnims.astro, idéntico al index. Sin exploded-view ni partículas.
-            // Aquí: una micro-historia que se auto-reproduce DENTRO del mockup según la industria.
-            const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            const heroMk = document.querySelector('.pp-hero .pp-mockup');
-            if (heroMk && !reduced) {
-                // Distribuidoras — revelar precios por cliente + pop de los chips de descuento
-                const distRows = heroMk.querySelectorAll('.mk-rows-4 .mk-row:not(.mk-row-head)');
-                if (distRows.length) {
-                    const chips = heroMk.querySelectorAll('.mk-rows-4 .mk-chip');
-                    gsap.set(distRows, { opacity: 0, x: -12 });
-                    gsap.set(chips, { scale: 0, opacity: 0 });
-                    ScrollTrigger.create({
-                        trigger: heroMk, start: 'top 78%', once: true,
-                        onEnter: () => gsap.timeline({ delay: 0.5 })
-                            .to(distRows, { opacity: 1, x: 0, duration: 0.6, stagger: 0.14, ease: 'power2.out' })
-                            .to(chips, { scale: 1, opacity: 1, duration: 0.45, stagger: 0.12, ease: 'back.out(1.6)' }, '-=0.3'),
-                    });
-                }
-                // Construcción — revelar materiales + llenar la barra de crédito de GAMA
-                const conRows = heroMk.querySelectorAll('.mk-rows-con .mk-row:not(.mk-row-head)');
-                if (conRows.length) {
-                    const creditFill = heroMk.querySelector('.mk-credit i');
-                    const w = creditFill ? (creditFill.style.width || '72%') : '0%';
-                    gsap.set(conRows, { opacity: 0, x: -12 });
-                    if (creditFill) gsap.set(creditFill, { width: '0%' });
-                    ScrollTrigger.create({
-                        trigger: heroMk, start: 'top 78%', once: true,
-                        onEnter: () => {
-                            gsap.to(conRows, { opacity: 1, x: 0, duration: 0.6, stagger: 0.12, ease: 'power2.out', delay: 0.5 });
-                            if (creditFill) gsap.to(creditFill, { width: w, duration: 1.2, ease: 'power2.out', delay: 1.1 });
-                        },
-                    });
-                }
-                // Manufactura — revelar las especificaciones técnicas y la nota del lote
-                const specLines = heroMk.querySelectorAll('.mk-spec-line');
-                if (specLines.length) {
-                    const note = heroMk.querySelector('.mk-note');
-                    gsap.set(specLines, { opacity: 0, y: 12 });
-                    if (note) gsap.set(note, { opacity: 0, y: 12 });
-                    ScrollTrigger.create({
-                        trigger: heroMk, start: 'top 78%', once: true,
-                        onEnter: () => {
-                            const tl = gsap.timeline({ delay: 0.5 });
-                            tl.to(specLines, { opacity: 1, y: 0, duration: 0.6, stagger: 0.18, ease: 'power2.out' });
-                            if (note) tl.to(note, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, '-=0.1');
-                        },
-                    });
-                }
-                // Servicios — pulso de "Vista" + glow del botón Aprobar en loop
-                const servApprove = heroMk.querySelector('.mk-public .mk-approve');
-                if (servApprove) {
-                    const badge = heroMk.querySelector('.mk-public .mk-badge');
-                    ScrollTrigger.create({
-                        trigger: heroMk, start: 'top 78%', once: true,
-                        onEnter: () => {
-                            gsap.timeline({ repeat: -1, repeatDelay: 1.4, delay: 0.6 })
-                                .to(servApprove, { boxShadow: '0 0 0 6px rgba(255,255,255,0.12), 0 14px 30px rgba(0,0,0,0.3)', duration: 0.75, ease: 'power2.out' })
-                                .to(servApprove, { boxShadow: '0 0 0 0 rgba(255,255,255,0)', duration: 0.75, ease: 'power2.in' });
-                            if (badge) gsap.fromTo(badge, { opacity: 0.5 }, { opacity: 1, duration: 1, repeat: -1, yoyo: true, ease: 'sine.inOut' });
-                        },
-                    });
-                }
-            }
-
-            // ───────────────────────── BLOCK MOCKUPS (motion graphics) ─────────────────────────
-            // Cada mockup cuenta su historia con loops auto-reproducidos (repeat:-1) o
-            // un timeline disparado al entrar (once:true) — NUNCA scrub-on-drag. El HTML
-            // por defecto queda en estado FINAL, así que con reduced-motion se ve completo.
-            if (!reduced) {
-                // Entrada limpia: cada card sube con fade (igual al index/producto).
-                document.querySelectorAll('.pp-block-visual').forEach((block) => {
-                    const card = block.querySelector('.sbm-card');
-                    const glow = block.querySelector('.sbm-glow');
-                    if (!card) return;
-                    gsap.set(card, { y: 28, opacity: 0 });
-                    if (glow) gsap.set(glow, { opacity: 0, scale: 0.6 });
-                    ScrollTrigger.create({
-                        trigger: block, start: 'top 85%', once: true,
-                        onEnter: () => {
-                            gsap.to(card, { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', clearProps: 'transform' });
-                            if (glow) gsap.to(glow, { opacity: 1, scale: 1, duration: 1.6, ease: 'power3.out' });
-                        },
-                    });
-                });
-
-                // ───────── DISTRIBUIDORAS ─────────
-                {   // m0 · el cursor negocia el precio por línea y baja el monto con flash verde
-                    const el = document.querySelector('.sbm-dist-m0');
-                    if (el) {
-                        const cursor = el.querySelector('.sbm-cursor');
-                        const price = el.querySelector('.sbm-dist-price');
-                        const chip = el.querySelector('.sbm-dist-chip');
-                        const row = el.querySelector('.bm-row');
-                        const pill = el.querySelector('.sbm-floating');
-                        const fmt = (n) => '$' + n.toFixed(2) + ' ';
-                        ScrollTrigger.create({
-                            trigger: el, start: 'top 85%', once: true,
-                            onEnter: () => {
-                                const obj = { v: 191.48 };
-                                const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.4 });
-                                tl.set(cursor, { x: 60, y: 130, opacity: 0 })
-                                  .set(chip, { opacity: 0, scale: 0.4 })
-                                  .set(pill, { opacity: 0, y: 10, scale: 0.9 })
-                                  .set(obj, { v: 191.48 })
-                                  .call(() => { price.firstChild.textContent = fmt(191.48); })
-                                  .to(cursor, { opacity: 1, duration: 0.4 })
-                                  .to(cursor, { x: 250, y: 42, duration: 1, ease: 'power3.inOut' })
-                                  .to(cursor, { scale: 0.82, duration: 0.1, yoyo: true, repeat: 1 })
-                                  .to(row, { backgroundColor: 'rgba(16,185,129,0.16)', duration: 0.3 })
-                                  .to(chip, { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(1.6)' }, '<')
-                                  .to(obj, { v: 168.50, duration: 0.8, ease: 'power2.out', onUpdate: () => { price.firstChild.textContent = fmt(obj.v); } }, '<')
-                                  .to(row, { backgroundColor: 'rgba(255,255,255,0.03)', duration: 0.5 }, '+=0.1')
-                                  .to(pill, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.5)' }, '-=0.3')
-                                  .to(cursor, { x: 80, y: 200, opacity: 0, duration: 0.8, ease: 'power2.inOut' }, '+=0.4')
-                                  .to(pill, { opacity: 0, y: 8, duration: 0.5 }, '+=1.6');
-                            }
-                        });
-                    }
-                }
-                {   // m1 · búsqueda instantánea del catálogo: teclea, revela resultados, agrega
-                    const el = document.querySelector('.sbm-dist-m1');
-                    if (el) {
-                        const cursor = el.querySelector('.sbm-cursor');
-                        const type = el.querySelector('.sbm-dist-type');
-                        const caret = el.querySelector('.sbm-dist-caret');
-                        const res1 = el.querySelector('.sbm-dist-res-1');
-                        const res2 = el.querySelector('.sbm-dist-res-2');
-                        const price1 = res1.querySelector('.editorial');
-                        const word = 'cement';
-                        gsap.set([res1, res2], { opacity: 0, y: 10 });
-                        gsap.to(caret, { opacity: 0.2, duration: 0.5, repeat: -1, yoyo: true, ease: 'power1.inOut' });
-                        ScrollTrigger.create({
-                            trigger: el, start: 'top 85%', once: true,
-                            onEnter: () => {
-                                const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.6 });
-                                tl.call(() => { type.textContent = ''; })
-                                  .set([res1, res2], { opacity: 0, y: 10 })
-                                  .set(res1, { backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'transparent' })
-                                  .call(() => { price1.textContent = '$182.00'; })
-                                  .set(cursor, { x: 60, y: 150, opacity: 0 });
-                                word.split('').forEach((ch) => {
-                                    tl.call(() => { type.textContent += ch; }, null, '+=0.11');
-                                });
-                                tl.to([res1, res2], { opacity: 1, y: 0, duration: 0.45, stagger: 0.14, ease: 'power2.out' }, '+=0.25')
-                                  .to(cursor, { opacity: 1, duration: 0.3 }, '+=0.3')
-                                  .to(cursor, { x: 200, y: 72, duration: 0.9, ease: 'power3.inOut' })
-                                  .to(cursor, { scale: 0.82, duration: 0.1, yoyo: true, repeat: 1 })
-                                  .to(res1, { backgroundColor: 'rgba(16,185,129,0.1)', borderColor: 'rgba(52,211,153,0.3)', duration: 0.35 }, '<')
-                                  .call(() => { price1.innerHTML = '<span style="color:#34d399;font-size:0.6rem;font-weight:800;">+ Agregado</span>'; })
-                                  .to(cursor, { x: 90, y: 200, opacity: 0, duration: 0.8, ease: 'power2.inOut' }, '+=0.5');
-                            }
-                        });
-                    }
-                }
-                {   // m2 · términos Net 30 que se aplican solos, crédito que sube y pago que entra
-                    const el = document.querySelector('.sbm-dist-m2');
-                    if (el) {
-                        const terms = el.querySelector('.sbm-dist-terms');
-                        const fill = el.querySelector('.sbm-dist-fill');
-                        const used = el.querySelector('.sbm-dist-used');
-                        const avail = el.querySelector('.sbm-dist-avail');
-                        const push = el.querySelector('.sbm-dist-push');
-                        ScrollTrigger.create({
-                            trigger: el, start: 'top 85%', once: true,
-                            onEnter: () => {
-                                const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.8 });
-                                const u = { v: 0 };
-                                tl.set(terms, { opacity: 0, scale: 0.5 })
-                                  .set(fill, { width: '0%', clearProps: 'background' })
-                                  .call(() => { used.textContent = '0'; avail.textContent = '$500k'; })
-                                  .set(avail, { clearProps: 'color' })
-                                  .set(push, { opacity: 0, y: -20, scale: 0.95 })
-                                  .to(terms, { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(1.6)' }, '+=0.3')
-                                  .to(fill, { width: '68%', duration: 1.1, ease: 'power2.out' }, '+=0.1')
-                                  .to(u, { v: 342, duration: 1.1, ease: 'power2.out', onUpdate: () => { used.textContent = Math.round(u.v); } }, '<')
-                                  .call(() => { avail.textContent = '$158k'; }, null, '<+=1.1')
-                                  .to(push, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.5)' }, '+=0.7')
-                                  .to(push, { x: -3, duration: 0.05, yoyo: true, repeat: 3 }, '+=0.1')
-                                  .to(fill, { width: '50%', background: 'linear-gradient(90deg,#10b981,#34d399)', duration: 0.7, ease: 'power2.out' }, '+=0.3')
-                                  .call(() => { used.textContent = '252'; avail.textContent = '$248k'; })
-                                  .to(avail, { color: '#34d399', duration: 0.3 }, '<')
-                                  .to(push, { opacity: 0, y: -12, duration: 0.5 }, '+=2');
-                            }
-                        });
-                    }
-                }
-
-                // ───────── CONSTRUCCIÓN ─────────
-                {   // m0 · el cursor edita la cantidad y subtotal/IVA/total recalculan con flash
-                    const el = document.querySelector('.sbm-const-m0');
-                    if (el) {
-                        const cursor = el.querySelector('.sbm-const-cur0');
-                        const ton = el.querySelector('.sbm-const-ton');
-                        const sub = el.querySelector('.sbm-const-sub');
-                        const iva = el.querySelector('.sbm-const-iva');
-                        const tot = el.querySelector('.sbm-const-tot');
-                        const tonRow = ton.closest('.sbm-const-line');
-                        const trow = el.querySelector('.sbm-const-trow');
-                        const fmt = (n) => '$' + Math.round(n).toLocaleString('es-MX');
-                        const calc = (tons) => { const s = tons * 3180 + 360 * 248 + 18 * 9400; return { s, iva: s * 0.16, t: s * 1.16 }; };
-                        ScrollTrigger.create({
-                            trigger: el, start: 'top 85%', once: true,
-                            onEnter: () => {
-                                const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.6 });
-                                const s0 = { tons: 42 };
-                                tl.set(cursor, { x: 150, y: 150, opacity: 0 })
-                                  .set([ton, sub, iva, tot], { clearProps: 'color' })
-                                  .call(() => { ton.textContent = '42'; const r = calc(42); sub.textContent = fmt(r.s); iva.textContent = fmt(r.iva); tot.textContent = fmt(r.t); s0.tons = 42; })
-                                  .to(cursor, { opacity: 1, duration: 0.4 })
-                                  .to(cursor, { x: 232, y: 70, duration: 1.1, ease: 'power3.inOut' })
-                                  .to(cursor, { scale: 0.82, duration: 0.1, yoyo: true, repeat: 1 })
-                                  .to(tonRow, { backgroundColor: 'rgba(59,130,246,0.14)', duration: 0.3 })
-                                  .to(s0, { tons: 58, duration: 0.9, ease: 'power2.out', onUpdate: () => { const v = Math.round(s0.tons); ton.textContent = v; const r = calc(v); sub.textContent = fmt(r.s); iva.textContent = fmt(r.iva); tot.textContent = fmt(r.t); } }, '-=0.1')
-                                  .to([sub, iva, tot], { color: '#34d399', duration: 0.2 }, '<')
-                                  .to(trow, { boxShadow: '0 0 0 4px rgba(52,211,153,0.18)', duration: 0.4, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<')
-                                  .to(tonRow, { backgroundColor: 'rgba(255,255,255,0.03)', duration: 0.4 }, '-=0.4')
-                                  .to([sub, iva, tot], { color: '#fff', duration: 0.5 }, '-=0.3')
-                                  .to(cursor, { x: 120, y: 240, opacity: 0, duration: 0.9, ease: 'power2.inOut' }, '+=0.4');
-                            }
-                        });
-                    }
-                }
-                {   // m1 · la barra de crédito se llena y avisa cuando el trato rebasaría el límite
-                    const el = document.querySelector('.sbm-const-m1');
-                    if (el) {
-                        const fill = el.querySelector('.sbm-const-bar-fill');
-                        const used = el.querySelector('.sbm-const-used');
-                        const disp = el.querySelector('.sbm-const-dispval');
-                        const toast = el.querySelector('.sbm-const-toast1');
-                        const newrow = el.querySelector('.sbm-const-newrow');
-                        const fmt = (n) => Math.round(n).toLocaleString('es-MX');
-                        ScrollTrigger.create({
-                            trigger: el, start: 'top 88%', once: true,
-                            onEnter: () => {
-                                const o = { used: 0 };
-                                const tl = gsap.timeline({ delay: 0.3 });
-                                gsap.set(fill, { width: '0%' });
-                                gsap.set(toast, { opacity: 0, y: 8, scale: 0.92 });
-                                gsap.set(newrow, { opacity: 0, x: -8 });
-                                gsap.set(disp, { color: '#34d399' });
-                                tl.to(fill, { width: '84%', duration: 1.4, ease: 'power2.out' }, 0)
-                                  .to(o, { used: 420000, duration: 1.4, ease: 'power2.out', onUpdate: () => { used.textContent = fmt(o.used); disp.textContent = '$' + fmt(500000 - o.used); } }, 0)
-                                  .to(newrow, { opacity: 1, x: 0, duration: 0.5, ease: 'power2.out' }, '+=0.3')
-                                  .to(fill, { background: 'linear-gradient(90deg,#f59e0b,#fbbf24)', duration: 0.4 }, '+=0.1')
-                                  .to(disp, { color: '#fbbf24', duration: 0.3 }, '<')
-                                  .to(toast, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.5)' }, '<0.1')
-                                  .to(toast, { x: -3, duration: 0.05, yoyo: true, repeat: 3 }, '+=0.1');
-                            }
-                        });
-                    }
-                }
-                {   // m2 · push de aprobación desde la obra → timeline → sello CFDI 4.0
-                    const el = document.querySelector('.sbm-const-m2');
-                    if (el) {
-                        const push = el.querySelector('.sbm-const-push');
-                        const fill = el.querySelector('.sbm-const-tl-fill');
-                        const finalNode = el.querySelector('.sbm-const-node-final');
-                        const cfdi = el.querySelector('.sbm-const-cfdi');
-                        const stamp = el.querySelector('.sbm-const-cfdi-stamp');
-                        ScrollTrigger.create({
-                            trigger: el, start: 'top 86%', once: true,
-                            onEnter: () => {
-                                const tl = gsap.timeline({ delay: 0.3 });
-                                gsap.set(push, { opacity: 0, y: -20, scale: 0.95 });
-                                gsap.set(fill, { height: '0%' });
-                                gsap.set(finalNode, { opacity: 0.35 });
-                                gsap.set(cfdi, { opacity: 0, y: 10 });
-                                gsap.set(stamp, { scale: 0, rotation: -45 });
-                                tl.to(push, { opacity: 1, y: 0, scale: 1, duration: 0.55, ease: 'back.out(1.5)' })
-                                  .to(push, { x: -3, duration: 0.05, yoyo: true, repeat: 3 }, '+=0.15')
-                                  .to(fill, { height: '100%', duration: 1.4, ease: 'power2.inOut' }, '+=0.2')
-                                  .to(finalNode, { opacity: 1, duration: 0.4 }, '-=0.4')
-                                  .to(cfdi, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, '+=0.1')
-                                  .to(stamp, { scale: 1, rotation: 0, duration: 0.6, ease: 'back.out(2)' }, '<0.1');
-                            }
-                        });
-                    }
-                }
-
-                // ───────── MANUFACTURA ─────────
-                {   // m0 · el cursor agrega una línea libre y se despliega la especificación del lote
-                    const el = document.querySelector('.sbm-manu-m0');
-                    if (el) {
-                        const cursor = el.querySelector('.sbm-cursor');
-                        const free = el.querySelector('.sbm-manu-m0-free');
-                        const spec = el.querySelector('.sbm-manu-m0-spec');
-                        const specRows = el.querySelectorAll('.sbm-manu-m0-spec-row');
-                        const pill = el.querySelector('.sbm-manu-m0-pill');
-                        const total = el.querySelector('.sbm-manu-m0-total b');
-                        const specH = spec.scrollHeight;
-                        ScrollTrigger.create({
-                            trigger: el, start: 'top 85%', once: true,
-                            onEnter: () => {
-                                const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.4 });
-                                tl.set(cursor, { x: 80, y: 150, opacity: 0 })
-                                  .set(free, { opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0, marginBottom: 0, overflow: 'hidden' })
-                                  .set(spec, { height: 0, opacity: 0 })
-                                  .set(specRows, { opacity: 0, y: 6 })
-                                  .set(pill, { opacity: 0, scale: 0.6, y: -6 })
-                                  .to(cursor, { opacity: 1, duration: 0.4 })
-                                  .to(cursor, { x: 150, y: 56, duration: 0.9, ease: 'power3.inOut' })
-                                  .to(cursor, { scale: 0.85, duration: 0.1, yoyo: true, repeat: 1 })
-                                  .to(free, { opacity: 1, height: 'auto', paddingTop: 7, paddingBottom: 7, marginBottom: 4, duration: 0.5, ease: 'power2.out' }, '<')
-                                  .to(pill, { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.6)' }, '-=0.2')
-                                  .to(spec, { height: specH, opacity: 1, duration: 0.5, ease: 'power2.out' }, '+=0.15')
-                                  .to(specRows, { opacity: 1, y: 0, duration: 0.4, stagger: 0.1, ease: 'power2.out' }, '-=0.3')
-                                  .fromTo(total, { color: '#34d399' }, { color: '#fff', duration: 0.6 }, '+=0.2')
-                                  .to(cursor, { opacity: 0, y: '+=24', duration: 0.5 }, '<')
-                                  .to([free, spec, pill], { opacity: 0, duration: 0.5 }, '+=2');
-                            }
-                        });
-                    }
-                }
-                {   // m1 · el historial del cliente entra como timeline con count-up por lote
-                    const el = document.querySelector('.sbm-manu-m1');
-                    if (el) {
-                        const fill = el.querySelector('.sbm-manu-m1-fill');
-                        const items = el.querySelectorAll('.sbm-manu-m1-item');
-                        const nodes = el.querySelectorAll('.sbm-manu-m1-node');
-                        const vals = el.querySelectorAll('.sbm-manu-m1-v');
-                        const pill = el.querySelector('.sbm-manu-m1-pill');
-                        ScrollTrigger.create({
-                            trigger: el, start: 'top 85%', once: true,
-                            onEnter: () => {
-                                gsap.set(items, { opacity: 0, x: -12 });
-                                gsap.set(nodes, { scale: 0 });
-                                gsap.set(fill, { scaleY: 0, transformOrigin: 'top' });
-                                gsap.set(pill, { opacity: 0, scale: 0.6, y: 6 });
-                                const tl = gsap.timeline({ delay: 0.3 });
-                                tl.to(fill, { scaleY: 1, duration: 1.1, ease: 'power2.inOut' }, 0)
-                                  .to(items, { opacity: 1, x: 0, duration: 0.5, stagger: 0.22, ease: 'power2.out' }, 0.15)
-                                  .to(nodes, { scale: 1, duration: 0.4, stagger: 0.22, ease: 'back.out(2)' }, 0.2);
-                                vals.forEach((v, i) => {
-                                    const to = parseFloat(v.dataset.to);
-                                    const o = { n: 0 };
-                                    tl.to(o, { n: to, duration: 0.6, ease: 'power2.out', onUpdate: () => { v.textContent = o.n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } }, 0.25 + i * 0.22);
-                                });
-                                tl.to(pill, { opacity: 1, scale: 1, y: 0, duration: 0.45, ease: 'back.out(1.6)' }, '+=0.1');
-                            }
-                        });
-                    }
-                }
-                {   // m2 · sello de evidencia + CFDI que se arma solo (sin recapturar)
-                    const el = document.querySelector('.sbm-manu-m2');
-                    if (el) {
-                        const check = el.querySelector('.sbm-manu-m2-check');
-                        const stampTxt = el.querySelector('.sbm-manu-m2-stamp-txt');
-                        const badge = el.querySelector('.sbm-manu-m2-badge');
-                        const doc = el.querySelector('.sbm-manu-m2-doc');
-                        const files = el.querySelectorAll('.sbm-manu-m2-file');
-                        const pill = el.querySelector('.sbm-manu-m2-pill');
-                        ScrollTrigger.create({
-                            trigger: el, start: 'top 85%', once: true,
-                            onEnter: () => {
-                                const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.6 });
-                                tl.set(check, { scale: 0 })
-                                  .set(stampTxt, { opacity: 0, x: -6 })
-                                  .set(badge, { opacity: 0, scale: 0.5 })
-                                  .set(doc, { opacity: 0, y: 8 })
-                                  .set(files, { opacity: 0, y: 8 })
-                                  .set(pill, { opacity: 0, scale: 0.6, y: -6 })
-                                  .to(check, { scale: 1, duration: 0.55, ease: 'back.out(2)' })
-                                  .to(stampTxt, { opacity: 1, x: 0, duration: 0.4, ease: 'power2.out' }, '-=0.25')
-                                  .to(badge, { opacity: 1, scale: 1, duration: 0.45, ease: 'back.out(1.6)' }, '+=0.3')
-                                  .to(doc, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }, '-=0.1')
-                                  .to(files, { opacity: 1, y: 0, duration: 0.4, stagger: 0.12, ease: 'power2.out' }, '-=0.15')
-                                  .to(pill, { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.6)' }, '-=0.2')
-                                  .to([badge, doc, files, pill], { opacity: 0, duration: 0.5 }, '+=2.2');
-                            }
-                        });
-                    }
-                }
-
-                // ───────── SERVICIOS ─────────
-                {   // m0 · el header de la propuesta se reviste del color de marca; adiós "Powered by Cord"
-                    const el = document.querySelector('.sbm-serv-m0');
-                    if (el) {
-                        const head = el.querySelector('.sbm-serv-doc-head');
-                        const logo = el.querySelector('.sbm-serv-logo');
-                        const badge = el.querySelector('.sbm-serv-foot-badge');
-                        const pill = el.querySelector('.sbm-floating');
-                        gsap.set(pill, { opacity: 0, scale: 0.6, y: -6 });
-                        ScrollTrigger.create({
-                            trigger: el, start: 'top 85%', once: true,
-                            onEnter: () => {
-                                const tl = gsap.timeline({ delay: 0.4 });
-                                tl.to(head, { backgroundColor: 'rgba(59,130,246,0.14)', duration: 0.7, ease: 'power2.out' })
-                                  .to(logo, { background: 'linear-gradient(135deg,#60a5fa,#2563eb)', boxShadow: '0 6px 18px rgba(37,99,235,0.55)', duration: 0.6, ease: 'power2.out' }, '<')
-                                  .to(pill, { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: 'back.out(1.6)' }, '-=0.3')
-                                  .to(badge, { color: '#4ade80', backgroundColor: 'rgba(16,185,129,0.16)', onStart: () => { badge.textContent = 'Tu marca · sin Cord'; }, duration: 0.5, ease: 'power2.out' }, '+=0.2');
-                            }
-                        });
-                    }
-                }
-                {   // m1 · push "abrió tu propuesta" + contador de aperturas + estado que avanza solo
-                    const el = document.querySelector('.sbm-serv-m1');
-                    if (el) {
-                        const push = el.querySelector('.sbm-serv-push');
-                        const count = el.querySelector('.sbm-serv-opencount');
-                        const state = el.querySelector('.sbm-serv-state');
-                        const stepNow = el.querySelector('.sbm-serv-step-now i');
-                        gsap.set(push, { opacity: 0, y: -26, scale: 0.95 });
-                        ScrollTrigger.create({
-                            trigger: el, start: 'top 85%', once: true,
-                            onEnter: () => {
-                                const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.8 });
-                                const obj = { v: 1 };
-                                tl.set(push, { opacity: 0, y: -26, scale: 0.95 })
-                                  .call(() => { count.textContent = '1'; })
-                                  .call(() => { state.textContent = 'Enviada'; })
-                                  .set(state, { color: '#7eb3ff', backgroundColor: 'rgba(59,130,246,0.16)' })
-                                  .to(push, { opacity: 1, y: 0, scale: 1, duration: 0.55, ease: 'back.out(1.5)' }, '+=0.3')
-                                  .to(push, { x: -3, duration: 0.05, yoyo: true, repeat: 3 }, '+=0.15')
-                                  .to(state, { color: '#fbbf24', backgroundColor: 'rgba(251,191,36,0.14)', duration: 0.3, onStart: () => { state.textContent = 'Vista'; } }, '+=0.2')
-                                  .fromTo(stepNow, { boxShadow: '0 0 0 3px #0a192f, 0 0 0 rgba(251,191,36,0)' }, { boxShadow: '0 0 0 3px #0a192f, 0 0 12px rgba(251,191,36,0.8)', duration: 0.4, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<')
-                                  .to(obj, { v: 3, duration: 1, ease: 'power2.out', onUpdate: () => { count.textContent = Math.round(obj.v).toString(); } }, '+=0.3')
-                                  .to(push, { opacity: 0, y: -14, duration: 0.45, ease: 'power2.in' }, '+=2.2');
-                            }
-                        });
-                    }
-                }
-                {   // m2 · el cursor aprueba con un clic → anillo de éxito → anticipo pagado vía Stripe
-                    const el = document.querySelector('.sbm-serv-m2');
-                    if (el) {
-                        const cursor = el.querySelector('.sbm-serv-cursor');
-                        const cta = el.querySelector('.sbm-serv-cta');
-                        const glow = el.querySelector('.sbm-serv-cta-glow');
-                        const success = el.querySelector('.sbm-serv-success');
-                        const ring = el.querySelector('.sbm-serv-ring');
-                        const check = el.querySelector('.sbm-serv-check');
-                        const paid = el.querySelector('.sbm-serv-paid');
-                        gsap.set(paid, { opacity: 0, scale: 0.6, y: 10 });
-                        ScrollTrigger.create({
-                            trigger: el, start: 'top 85%', once: true,
-                            onEnter: () => {
-                                const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.6 });
-                                tl.set(cursor, { opacity: 0, x: 80, y: 70 })
-                                  .set(success, { opacity: 0 })
-                                  .set(check, { scale: 0, rotation: -30 })
-                                  .set(ring, { scale: 0.5, opacity: 0 })
-                                  .set(cta, { opacity: 1, scale: 1 })
-                                  .set(paid, { opacity: 0, scale: 0.6, y: 10 })
-                                  .set(glow, { boxShadow: '0 0 0 0 rgba(52,211,153,0)' })
-                                  .to(cursor, { opacity: 1, duration: 0.4 })
-                                  .to(cursor, { x: 0, y: 0, duration: 1, ease: 'power3.inOut' })
-                                  .to(glow, { boxShadow: '0 0 0 6px rgba(52,211,153,0.25)', duration: 0.4, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<0.3')
-                                  .to(cursor, { scale: 0.82, duration: 0.1, yoyo: true, repeat: 1 })
-                                  .to(cta, { scale: 0.96, duration: 0.1 }, '<')
-                                  .to(cta, { scale: 1, duration: 0.1 })
-                                  .to(cursor, { opacity: 0, duration: 0.3 }, '+=0.1')
-                                  .to(cta, { scale: 0.95, opacity: 0, duration: 0.35, ease: 'power2.in' })
-                                  .to(success, { opacity: 1, duration: 0.25 }, '<0.1')
-                                  .fromTo(ring, { scale: 0.5, opacity: 1 }, { scale: 1.5, opacity: 0, duration: 0.8, ease: 'power2.out' }, '<')
-                                  .fromTo(check, { scale: 0, rotation: -30 }, { scale: 1, rotation: 0, duration: 0.55, ease: 'back.out(2)' }, '<0.1')
-                                  .to(paid, { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: 'back.out(1.6)' }, '+=0.3')
-                                  .to([success, paid], { opacity: 0, duration: 0.5 }, '+=2')
-                                  .to(cta, { opacity: 1, scale: 1, duration: 0.4 }, '<');
-                            }
-                        });
-                    }
-                }
-            }
-        }
-    });
-</script>

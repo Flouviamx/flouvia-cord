@@ -1,591 +1,161 @@
 ---
 // Block-mockups motion-graphic por industria (/soluciones/[slug]).
-// Calidad y lenguaje = los mockups de producto: cards navy, floating pills,
-// toasts, push notifications, charts, count-ups, fake-cursor que clickea.
-// CADA mockup explica su bloque de texto con una micro-historia que se
-// auto-reproduce (loop / once) — NUNCA scrub-on-drag, NUNCA emojis (SVG only).
-// La animación vive en el <script> de src/pages/soluciones/[slug].astro.
+// Rediseñados para integrarse nativamente en el Bento Grid de estilo Stripe Enterprise.
+// Gráficos vectoriales abstractos con líneas neón y brillos sutiles.
 export interface Props {
     slug: string;
     index: number;
 }
 const { slug, index } = Astro.props;
+
+// Helper param para internacionalización visual si se requiere en un futuro
+const lang = 'es'; // o inyectarlo por props
 ---
-<div class="sbm-wrap">
-  <div class="sbm-mesh" aria-hidden="true"></div>
-  <div class="sbm-glow" aria-hidden="true"></div>
 
-  <div class="sbm-stage">
+<div class="stripe-mockup-wrapper">
+    <!-- Efecto de brillo de fondo detrás de los gráficos -->
+    <div class="stripe-mockup-glow"></div>
+    
+    <!-- Renderizado condicional del gráfico SVG según la industria y el índice del bento -->
+    <div class="stripe-mockup-svg">
+        {slug === 'empresas' && index === 0 && (
+            <svg viewBox="0 0 400 300" class="smk-svg">
+                <!-- Nodos conectados (Aprobaciones) -->
+                <circle cx="200" cy="150" r="40" fill="var(--stripe-card-bg)" stroke="var(--stripe-accent)" stroke-width="2"/>
+                <circle cx="200" cy="150" r="20" fill="var(--stripe-accent)"/>
+                
+                <path d="M100,80 L165,130" stroke="var(--stripe-cyan)" stroke-width="2" stroke-dasharray="4"/>
+                <circle cx="100" cy="80" r="15" fill="var(--stripe-card-bg)" stroke="var(--stripe-cyan)" stroke-width="2"/>
+                
+                <path d="M100,220 L165,170" stroke="var(--stripe-cyan)" stroke-width="2" stroke-dasharray="4"/>
+                <circle cx="100" cy="220" r="15" fill="var(--stripe-card-bg)" stroke="var(--stripe-cyan)" stroke-width="2"/>
+                
+                <path d="M300,150 L240,150" stroke="var(--stripe-accent-light)" stroke-width="3"/>
+                <circle cx="300" cy="150" r="15" fill="var(--stripe-accent-light)"/>
+                <circle cx="300" cy="150" r="30" fill="none" stroke="var(--stripe-accent-light)" stroke-width="1" opacity="0.5"/>
+                
+                <!-- Animación pulsante del SVG principal -->
+                <style>
+                    .smk-svg circle:nth-child(2) { animation: pulse 2s infinite alternate; }
+                    @keyframes pulse { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 20px var(--stripe-accent); } }
+                </style>
+            </svg>
+        )}
+        
+        {slug === 'empresas' && index === 1 && (
+            <svg viewBox="0 0 400 300" class="smk-svg">
+                <!-- Gráfico de barras ascendente (Volumen) -->
+                <line x1="50" y1="250" x2="350" y2="250" stroke="var(--stripe-border)" stroke-width="2"/>
+                
+                <rect x="80" y="180" width="40" height="70" fill="rgba(16, 185, 129, 0.2)" stroke="var(--stripe-accent)" stroke-width="1" rx="4"/>
+                <rect x="150" y="130" width="40" height="120" fill="rgba(16, 185, 129, 0.4)" stroke="var(--stripe-accent)" stroke-width="1" rx="4"/>
+                <rect x="220" y="90" width="40" height="160" fill="rgba(16, 185, 129, 0.7)" stroke="var(--stripe-accent)" stroke-width="1" rx="4"/>
+                <rect x="290" y="40" width="40" height="210" fill="var(--stripe-cyan)" rx="4"/>
+                
+                <path d="M100,160 L170,110 L240,70 L310,20" stroke="#fff" stroke-width="3" fill="none" />
+                <circle cx="310" cy="20" r="6" fill="#fff"/>
+            </svg>
+        )}
 
-    {/* ══════════════════ DISTRIBUIDORAS ══════════════════ */}
-    {slug === 'distribuidoras' && index === 0 && (
-      <div class="sbm-dist-m0">
-        <div class="sbm-cursor"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg></div>
-        <div class="sbm-card">
-          <div class="bm-head"><span>Aceros del Bajío</span><span>COT-0184</span></div>
-          <div class="bm-row"><div class="sbm-dist-line"><b>Varilla 3/8" × 12m</b><i class="sbm-dist-sku">75 pzas · $191.48 lista</i></div><b class="editorial bm-green sbm-dist-price">$168.50 <i class="sbm-dist-chip">−12%</i></b></div>
-          <div class="bm-row"><div class="sbm-dist-line"><b>Alambrón 1/4"</b><i class="sbm-dist-sku">40 rollos · estándar</i></div><b class="editorial">$24.90</b></div>
-          <div class="bm-row sbm-dist-free"><div class="sbm-dist-line"><b>Flete a obra</b><i class="sbm-dist-sku">línea libre</i></div><b class="editorial bm-blue">$1,200.00</b></div>
-          <div class="bm-divider"></div>
-          <div class="bm-row sbm-dist-total"><span class="bm-bold">Total cotizado</span><b class="editorial sbm-dist-big">$14,847.50</b></div>
-        </div>
-        <div class="sbm-floating sbm-float-tr"><div class="sbm-pill"><span class="sbm-dot sbm-dot-green"></span>Le descontaste <b class="editorial" style="color:#34d399;margin-left:2px;">−$1,724</b></div></div>
-      </div>
-    )}
-    {slug === 'distribuidoras' && index === 1 && (
-      <div class="sbm-dist-m1">
-        <div class="sbm-cursor"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg></div>
-        <div class="sbm-card">
-          <div class="bm-head"><span>Catálogo central</span><span>Buscar</span></div>
-          <div class="sbm-dist-searchbar">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <span class="sbm-dist-type">cement</span><span class="sbm-dist-caret">_</span>
-          </div>
-          <div class="sbm-dist-results">
-            <div class="sbm-dist-res sbm-dist-res-1"><div class="sbm-dist-resinfo"><b>Cemento gris 50kg</b><i>SKU CEM-50 · saco</i></div><b class="editorial">$182.00</b></div>
-            <div class="sbm-dist-res sbm-dist-res-2"><div class="sbm-dist-resinfo"><b>Cemento blanco 25kg</b><i>SKU CEMB-25 · saco</i></div><b class="editorial">$268.00</b></div>
-          </div>
-        </div>
-        <div class="sbm-floating sbm-float-bl"><div class="sbm-pill"><span class="sbm-dot sbm-dot-blue"></span>1,248 SKU activos</div></div>
-      </div>
-    )}
-    {slug === 'distribuidoras' && index === 2 && (
-      <div class="sbm-dist-m2">
-        <div class="sbm-card">
-          <div class="sbm-dist-acct">
-            <div class="sbm-dist-avatar">EZ</div>
-            <div class="sbm-dist-acctinfo"><b>Distribuidora El Zarco</b><i>RFC DEZ180423 · Cuenta activa</i></div>
-            <span class="sbm-badge sbm-badge-warn sbm-dist-terms">Net 30</span>
-          </div>
-          <div class="bm-divider"></div>
-          <div class="sbm-dist-creditlabel"><span>Crédito usado</span><b class="editorial">$<span class="sbm-dist-used">342</span>k / $500k</b></div>
-          <div class="sbm-dist-bar"><div class="sbm-dist-fill"></div></div>
-          <div class="bm-row" style="margin-top:8px;"><span>Disponible</span><b class="editorial bm-green sbm-dist-avail">$158k</b></div>
-        </div>
-        <div class="sbm-dist-push">
-          <div class="sbm-dist-pushicon"><img src="/imgs/logo-cord-white.png" alt=""/></div>
-          <div class="sbm-dist-pushbody"><b>Cord</b><span>Pago recibido de El Zarco · <b class="editorial" style="color:#34d399;">$90,000</b></span></div>
-        </div>
-      </div>
-    )}
-    {slug === 'distribuidoras' && index === 3 && (
-      <div class="sbm-dist-m3">
-        <div class="sbm-card">
-          <div class="bm-head"><span>Versión 3</span><span class="bm-badge bm-badge-orange">Contraoferta</span></div>
-          <div class="bm-row"><div class="sbm-dist-line"><b>Cemento gris 50kg</b><i class="sbm-dist-sku">Aprobado</i></div><b class="editorial">$21,840</b></div>
-          <div class="bm-row bm-active">
-            <div class="sbm-dist-line"><b>Varilla 3/8"</b><i class="sbm-dist-sku">El cliente propone nuevo precio</i></div>
-            <div style="display:flex; flex-direction:column; align-items:flex-end;">
-              <b class="editorial" style="text-decoration:line-through; color:rgba(255,255,255,0.4); font-size:10px;">$57,290</b>
-              <b class="editorial" style="color:#fbbf24;">$55,000</b>
-            </div>
-          </div>
-        </div>
-        <div class="sbm-floating sbm-float-br"><div class="sbm-pill"><span class="sbm-dot sbm-dot-red"></span>Requiere tu revisión</div></div>
-      </div>
-    )}
-    {slug === 'distribuidoras' && index === 4 && (
-      <div class="sbm-dist-m4">
-        <div class="sbm-card">
-          <div class="bm-head"><span>Flujo de Efectivo</span><span>Banamex **2841</span></div>
-          <div class="bm-chart">
-            <div class="bm-chart-col"><div class="bm-chart-col-fill" style="height:30%"></div></div>
-            <div class="bm-chart-col"><div class="bm-chart-col-fill" style="height:50%"></div></div>
-            <div class="bm-chart-col bm-chart-active"><div class="bm-chart-col-fill" style="height:85%"></div></div>
-            <div class="bm-chart-col"><div class="bm-chart-col-fill" style="height:45%"></div></div>
-            <div class="bm-chart-col"><div class="bm-chart-col-fill" style="height:60%"></div></div>
-          </div>
-          <div class="bm-row"><span>Ingresos semana</span><b class="editorial bm-green">$412,500</b></div>
-        </div>
-        <div class="sbm-floating sbm-float-tl"><div class="sbm-pill"><span class="sbm-dot sbm-dot-green"></span>Conciliación automática</div></div>
-      </div>
-    )}
+        {slug === 'empresas' && index > 1 && (
+            <svg viewBox="0 0 400 300" class="smk-svg">
+                <!-- Capas de seguridad (Compliance) -->
+                <path d="M200,60 L320,120 L200,180 L80,120 Z" fill="rgba(59, 130, 246, 0.1)" stroke="var(--stripe-cyan)" stroke-width="2"/>
+                <path d="M200,110 L320,170 L200,230 L80,170 Z" fill="rgba(16, 185, 129, 0.1)" stroke="var(--stripe-accent)" stroke-width="2"/>
+                <path d="M200,160 L320,220 L200,280 L80,220 Z" fill="none" stroke="var(--stripe-border)" stroke-width="2" stroke-dasharray="5"/>
+                
+                <line x1="200" y1="60" x2="200" y2="280" stroke="var(--stripe-border)" stroke-width="1" stroke-dasharray="4"/>
+            </svg>
+        )}
 
-    {/* ══════════════════ CONSTRUCCIÓN ══════════════════ */}
-    {slug === 'construccion' && index === 0 && (
-      <div class="sbm-card sbm-const-m0">
-        <div class="sbm-floating sbm-float-tr"><div class="sbm-pill"><span class="sbm-dot sbm-dot-blue"></span><span>Folio COT-0149</span></div></div>
-        <div class="sbm-cursor sbm-const-cur0"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg></div>
-        <div class="bm-head"><span>Concepto</span><span>Cant · Unidad</span></div>
-        <div class="sbm-const-line"><span class="sbm-const-name">Cemento gris CPC 30R</span><span class="sbm-const-qty"><b class="sbm-const-ton">42</b> ton</span><b class="editorial">$3,180</b></div>
-        <div class="sbm-const-line"><span class="sbm-const-name">Varilla 3/8" corrugada</span><span class="sbm-const-qty"><b>360</b> tramos</span><b class="editorial">$248</b></div>
-        <div class="sbm-const-line"><span class="sbm-const-name">Block hueco 15×20×40</span><span class="sbm-const-qty"><b>18</b> millar</span><b class="editorial">$9,400</b></div>
-        <div class="bm-divider"></div>
-        <div class="bm-row sbm-const-srow"><span>Subtotal</span><b class="editorial sbm-const-sub">$392,040</b></div>
-        <div class="bm-row sbm-const-srow"><span>IVA 16%</span><b class="editorial sbm-const-iva">$62,726</b></div>
-        <div class="bm-row sbm-const-trow"><span class="bm-bold">Total</span><b class="editorial sbm-const-tot">$454,766</b></div>
-      </div>
-    )}
-    {slug === 'construccion' && index === 1 && (
-      <div class="sbm-card sbm-const-m1">
-        <div class="sbm-floating sbm-float-br sbm-const-toast1"><div class="sbm-pill sbm-const-pill-warn"><span class="sbm-dot sbm-dot-orange"></span><span>Disponible: $80,000</span></div></div>
-        <div class="sbm-const-cli">
-          <div class="sbm-const-avatar">CR</div>
-          <div class="sbm-const-cli-info"><b>Constructora del Río</b><i>RFC: CRI180924H21</i></div>
-          <span class="sbm-badge sbm-badge-warn">Net 60</span>
-        </div>
-        <div class="bm-divider"></div>
-        <div class="sbm-const-credline"><span>Crédito usado</span><b class="editorial">$<span class="sbm-const-used">420,000</span> / $500,000</b></div>
-        <div class="sbm-const-bar"><div class="sbm-const-bar-fill"></div></div>
-        <div class="sbm-const-disp"><span>Disponible</span><b class="editorial sbm-const-dispval bm-green">$80,000</b></div>
-        <div class="bm-divider"></div>
-        <div class="bm-row sbm-const-newrow"><span>Nueva cotización</span><b class="editorial">$196,400</b></div>
-      </div>
-    )}
-    {slug === 'construccion' && index === 2 && (
-      <div class="sbm-card sbm-const-m2">
-        <div class="sbm-const-push">
-          <div class="sbm-const-push-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg></div>
-          <div class="sbm-const-push-body"><b>Cord B2B</b><span>El Zarco aprobó COT-0148 desde la obra · $196,400</span></div>
-        </div>
-        <div class="sbm-const-tl">
-          <div class="sbm-const-tl-line"><div class="sbm-const-tl-fill"></div></div>
-          <div class="sbm-const-tl-nodes">
-            <div class="sbm-const-node"><i class="sbm-const-ok"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></i><span>Enviada</span></div>
-            <div class="sbm-const-node"><i class="sbm-const-ok"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></i><span>Abierta en celular</span></div>
-            <div class="sbm-const-node sbm-const-node-final"><i class="sbm-const-ok"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></i><span>Aprobada</span></div>
-          </div>
-        </div>
-        <div class="bm-divider"></div>
-        <div class="sbm-const-cfdi">
-          <div class="sbm-const-cfdi-stamp"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg></div>
-          <div class="sbm-const-cfdi-txt"><b>CFDI 4.0 timbrado</b><i class="editorial">UUID a1b2c3d4-9f01…</i></div>
-          <span class="sbm-badge sbm-badge-ok">SAT</span>
-        </div>
-      </div>
-    )}
+        {slug === 'startups' && index === 0 && (
+            <svg viewBox="0 0 400 300" class="smk-svg">
+                <!-- Interfaz editor UI abstracta -->
+                <rect x="50" y="50" width="300" height="200" rx="12" fill="var(--stripe-card-bg)" stroke="var(--stripe-border)" stroke-width="2"/>
+                <rect x="70" y="70" width="80" height="12" rx="6" fill="var(--stripe-accent)"/>
+                <rect x="70" y="100" width="160" height="8" rx="4" fill="var(--stripe-muted)" opacity="0.5"/>
+                <rect x="70" y="120" width="120" height="8" rx="4" fill="var(--stripe-muted)" opacity="0.3"/>
+                
+                <rect x="70" y="150" width="260" height="60" rx="8" fill="rgba(255,255,255,0.05)" stroke="var(--stripe-border)"/>
+                <rect x="90" y="170" width="30" height="20" rx="4" fill="var(--stripe-cyan)"/>
+                <rect x="130" y="176" width="100" height="8" rx="4" fill="var(--stripe-text)"/>
+                
+                <circle cx="310" cy="180" r="10" fill="var(--stripe-border)"/>
+            </svg>
+        )}
 
-    {/* ══════════════════ MANUFACTURA ══════════════════ */}
-    {slug === 'manufactura' && index === 0 && (
-      <div class="sbm-card sbm-manu-m0">
-        <div class="bm-head"><span>Concepto</span><span>Importe</span></div>
-        <div class="bm-row"><span>Placa ASTM A36 1/4"</span><b class="editorial">$48,200</b></div>
-        <div class="bm-row sbm-manu-m0-free">
-          <span><i class="sbm-manu-m0-tag">LIBRE</i> Brida acero inox 304</span>
-          <b class="editorial bm-green">$31,750</b>
-        </div>
-        <div class="sbm-manu-m0-spec">
-          <div class="sbm-manu-m0-spec-row"><span>Material</span><b>Acero inox 304</b></div>
-          <div class="sbm-manu-m0-spec-row"><span>Acabado</span><b>Pulido espejo #8</b></div>
-          <div class="sbm-manu-m0-spec-row"><span>Tolerancia</span><b class="editorial">±0.05 mm</b></div>
-          <div class="sbm-manu-m0-spec-row"><span>MOQ</span><b class="editorial">50 pzas</b></div>
-        </div>
-        <div class="bm-divider"></div>
-        <div class="bm-row sbm-manu-m0-total"><span class="bm-bold">Total lote</span><b class="editorial bm-large">$79,950</b></div>
-        <div class="sbm-floating sbm-float-tr sbm-manu-m0-pill">
-          <div class="sbm-pill"><span class="sbm-dot sbm-dot-green"></span>Línea libre</div>
-        </div>
-        <div class="sbm-cursor"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg></div>
-      </div>
-    )}
-    {slug === 'manufactura' && index === 1 && (
-      <div class="sbm-card sbm-manu-m1">
-        <div class="bm-head"><span>Inducom de Occidente</span><span>IOC910514QF2</span></div>
-        <div class="sbm-manu-m1-tl">
-          <div class="sbm-manu-m1-track"><div class="sbm-manu-m1-fill"></div></div>
-          <div class="sbm-manu-m1-item">
-            <span class="sbm-manu-m1-node"></span>
-            <div class="sbm-manu-m1-body">
-              <div class="sbm-manu-m1-line"><b>Engrane helicoidal Z32</b><b class="editorial bm-green">$<span class="sbm-manu-m1-v" data-to="142.50">142.50</span></b></div>
-              <div class="sbm-manu-m1-meta"><span>Lote 1,200 pzas · Mar 2026</span><span class="sbm-manu-m1-by">Aprob. R. Tovar</span></div>
-            </div>
-          </div>
-          <div class="sbm-manu-m1-item">
-            <span class="sbm-manu-m1-node"></span>
-            <div class="sbm-manu-m1-body">
-              <div class="sbm-manu-m1-line"><b>Flecha maquinada 1045</b><b class="editorial">$<span class="sbm-manu-m1-v" data-to="318.00">318.00</span></b></div>
-              <div class="sbm-manu-m1-meta"><span>Lote 400 pzas · Ene 2026</span><span class="sbm-manu-m1-by">Aprob. L. Mena</span></div>
-            </div>
-          </div>
-          <div class="sbm-manu-m1-item">
-            <span class="sbm-manu-m1-node"></span>
-            <div class="sbm-manu-m1-body">
-              <div class="sbm-manu-m1-line"><b>Polea fundición gris</b><b class="editorial">$<span class="sbm-manu-m1-v" data-to="96.40">96.40</span></b></div>
-              <div class="sbm-manu-m1-meta"><span>Lote 2,000 pzas · Nov 2025</span><span class="sbm-manu-m1-by">Aprob. R. Tovar</span></div>
-            </div>
-          </div>
-        </div>
-        <div class="sbm-floating sbm-float-br sbm-manu-m1-pill">
-          <div class="sbm-pill"><span class="sbm-dot sbm-dot-green"></span>Último cierre $142.50</div>
-        </div>
-      </div>
-    )}
-    {slug === 'manufactura' && index === 2 && (
-      <div class="sbm-card sbm-manu-m2">
-        <div class="sbm-manu-m2-stamp">
-          <div class="sbm-manu-m2-check">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-          </div>
-          <div class="sbm-manu-m2-stamp-txt">
-            <b>Aprobada · evidencia registrada</b>
-            <span>Por J. Espinoza · 14 jun 2026, 11:42 · IP 187.190.x.x</span>
-          </div>
-        </div>
-        <div class="sbm-manu-m2-cfdi">
-          <div class="sbm-manu-m2-cfdi-head"><span>CFDI 4.0</span><span class="sbm-badge sbm-badge-ok sbm-manu-m2-badge">Timbrado</span></div>
-          <div class="bm-row sbm-manu-m2-doc"><span>UUID</span><b class="editorial">A1B2C3D4-90F1…</b></div>
-          <div class="sbm-manu-m2-files">
-            <div class="sbm-manu-m2-file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span>XML</span></div>
-            <div class="sbm-manu-m2-file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span>PDF</span></div>
-          </div>
-        </div>
-        <div class="sbm-floating sbm-float-tr sbm-manu-m2-pill">
-          <div class="sbm-pill"><span class="sbm-dot sbm-dot-green"></span>Sin recapturar</div>
-        </div>
-      </div>
-    )}
+        {slug === 'startups' && index === 1 && (
+            <svg viewBox="0 0 400 300" class="smk-svg">
+                <!-- Notificaciones / Velocidad -->
+                <rect x="100" y="60" width="240" height="50" rx="25" fill="var(--stripe-card-bg)" stroke="var(--stripe-border)" stroke-width="1"/>
+                <circle cx="125" cy="85" r="12" fill="var(--stripe-accent)"/>
+                <rect x="150" y="80" width="120" height="10" rx="5" fill="var(--stripe-text)"/>
+                
+                <rect x="80" y="130" width="240" height="50" rx="25" fill="var(--stripe-card-bg)" stroke="var(--stripe-border)" stroke-width="1"/>
+                <circle cx="105" cy="155" r="12" fill="var(--stripe-cyan)"/>
+                <rect x="130" y="150" width="150" height="10" rx="5" fill="var(--stripe-text)"/>
+                
+                <rect x="120" y="200" width="240" height="50" rx="25" fill="var(--stripe-accent-light)"/>
+                <circle cx="145" cy="225" r="12" fill="#fff"/>
+                <rect x="170" y="220" width="100" height="10" rx="5" fill="#fff"/>
+            </svg>
+        )}
 
-    {/* ══════════════════ SERVICIOS ══════════════════ */}
-    {slug === 'servicios' && index === 0 && (
-      <div class="sbm-serv-m0">
-        <div class="sbm-card sbm-serv-doc">
-          <div class="sbm-serv-doc-head">
-            <div class="sbm-serv-brandmark">
-              <span class="sbm-serv-logo">RC</span>
-              <div class="sbm-serv-brandtxt">
-                <b>Robles &amp; Cano</b>
-                <i>Consultoría legal · RFC ROC230418H2A</i>
-              </div>
-            </div>
-            <span class="sbm-serv-prop">PROPUESTA · P-0241</span>
-          </div>
-          <div class="sbm-serv-doc-body">
-            <div class="bm-head"><span>Alcance</span><span>Honorarios</span></div>
-            <div class="bm-row"><span>Dictamen corporativo</span><b class="editorial">$48,000.00</b></div>
-            <div class="bm-row"><span>Due diligence legal</span><b class="editorial">$36,500.00</b></div>
-            <div class="bm-divider"></div>
-            <div class="bm-row sbm-serv-totalrow"><span class="bm-bold">Total propuesta</span><b class="editorial sbm-serv-total">$84,500.00</b></div>
-            <div class="sbm-serv-terms">
-              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Vigencia 15 días</span>
-              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h10"/></svg>50% anticipo</span>
-            </div>
-          </div>
-          <div class="sbm-serv-foot">
-            <span class="sbm-serv-foot-badge">Tu marca</span>
-          </div>
-        </div>
-        <div class="sbm-floating sbm-float-tr">
-          <div class="sbm-pill"><span class="sbm-dot sbm-dot-blue"></span>Color de marca</div>
-        </div>
-      </div>
-    )}
-    {slug === 'servicios' && index === 1 && (
-      <div class="sbm-serv-m1">
-        <div class="sbm-card sbm-serv-track">
-          <div class="bm-head"><span>P-0241 · Robles &amp; Cano</span><span class="sbm-badge sbm-badge-warn sbm-serv-state">Vista</span></div>
-          <div class="sbm-serv-stagebar">
-            <div class="sbm-serv-step sbm-serv-step-done"><i></i><span>Enviada</span></div>
-            <div class="sbm-serv-conn sbm-serv-conn-on"></div>
-            <div class="sbm-serv-step sbm-serv-step-now"><i></i><span>Vista</span></div>
-            <div class="sbm-serv-conn"></div>
-            <div class="sbm-serv-step"><i></i><span>Aprobada</span></div>
-          </div>
-          <div class="bm-divider"></div>
-          <div class="sbm-serv-opens">
-            <div class="sbm-serv-opens-l">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
-              <span>Aperturas</span>
-            </div>
-            <b class="editorial sbm-serv-opencount">3</b>
-          </div>
-          <div class="sbm-serv-hint">La revisó 3 veces · está decidiendo</div>
-        </div>
-        <div class="sbm-serv-push">
-          <div class="sbm-serv-push-icon"><img src="/imgs/logo-cord-white.png" alt="" /></div>
-          <div class="sbm-serv-push-body">
-            <b>Cord</b>
-            <span>Robles &amp; Cano abrió tu propuesta P-0241.</span>
-          </div>
-          <span class="sbm-serv-push-now">ahora</span>
-        </div>
-      </div>
-    )}
-    {slug === 'servicios' && index === 2 && (
-      <div class="sbm-serv-m2">
-        <div class="sbm-card sbm-serv-approve">
-          <div class="sbm-serv-src">
-            <span class="sbm-serv-srcchip"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.8 4.9-1.3A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 1 1 12 20z"/></svg>Vía WhatsApp</span>
-            <span class="sbm-serv-noacct">sin crear cuenta</span>
-          </div>
-          <div class="bm-row sbm-serv-scope"><span>Propuesta P-0241</span><b class="editorial">$84,500.00</b></div>
-          <div class="bm-row sbm-serv-scope"><span>Anticipo (50%)</span><b class="editorial bm-green">$42,250.00</b></div>
-          <button class="sbm-serv-cta">
-            <span class="sbm-serv-cta-glow"></span>
-            Aprobar propuesta
-          </button>
-          <div class="sbm-serv-success">
-            <span class="sbm-serv-ring"></span>
-            <span class="sbm-serv-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
-          </div>
-        </div>
-        <div class="sbm-cursor sbm-serv-cursor"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg></div>
-        <div class="sbm-floating sbm-float-br sbm-serv-paid">
-          <div class="sbm-pill"><span class="sbm-dot sbm-dot-green"></span>Anticipo pagado · Stripe</div>
-        </div>
-      </div>
-    )}
-
-  </div>
+        {slug === 'startups' && index > 1 && (
+            <svg viewBox="0 0 400 300" class="smk-svg">
+                <!-- Pagos / Checkout (Stripe style) -->
+                <rect x="120" y="50" width="160" height="200" rx="16" fill="var(--stripe-card-bg)" stroke="var(--stripe-border)" stroke-width="2"/>
+                <rect x="140" y="80" width="120" height="20" rx="4" fill="var(--stripe-accent)" opacity="0.2"/>
+                
+                <rect x="140" y="120" width="120" height="30" rx="6" fill="rgba(255,255,255,0.05)" stroke="var(--stripe-border)"/>
+                <circle cx="155" cy="135" r="5" fill="var(--stripe-cyan)"/>
+                
+                <rect x="140" y="160" width="120" height="30" rx="6" fill="rgba(255,255,255,0.05)" stroke="var(--stripe-border)"/>
+                <circle cx="155" cy="175" r="5" fill="var(--stripe-muted)"/>
+                
+                <rect x="140" y="210" width="120" height="24" rx="12" fill="var(--stripe-accent)"/>
+            </svg>
+        )}
+    </div>
 </div>
 
 <style>
-  /* ════════════════ WRAPPER + AMBIENTE ════════════════ */
-  .sbm-wrap {
-    position: relative; width: 100%; height: 100%;
-    min-height: 300px;
-    display: flex; align-items: center; justify-content: center;
-    overflow: visible; padding: 2rem 1.5rem; background: transparent;
-  }
-  .sbm-mesh {
-    position: absolute; inset: -25%;
-    background:
-      radial-gradient(ellipse 60% 50% at 38% 28%, rgba(59,130,246,0.10) 0%, transparent 58%),
-      radial-gradient(ellipse 52% 58% at 74% 70%, rgba(16,185,129,0.07) 0%, transparent 55%),
-      radial-gradient(ellipse 46% 46% at 24% 66%, rgba(139,92,246,0.06) 0%, transparent 50%);
-    filter: blur(46px); opacity: 0.9; pointer-events: none;
-    animation: sbm-breathe 6s ease-in-out infinite alternate;
-  }
-  @keyframes sbm-breathe {
-    0%   { opacity: 0.7; transform: scale(1); }
-    100% { opacity: 1;   transform: scale(1.04); }
-  }
-  .sbm-glow {
-    position: absolute; inset: 10% -4% 2%;
-    background: radial-gradient(ellipse at center, rgba(59,130,246,0.12) 0%, rgba(10,25,47,0.22) 42%, transparent 70%);
-    filter: blur(30px); pointer-events: none; z-index: 0;
-  }
+    .stripe-mockup-wrapper {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-  /* ════════════════ STAGE + normalización del root de cada mockup ════════════════ */
-  .sbm-stage {
-    position: relative; display: flex; align-items: center; justify-content: center;
-    width: 100%; max-width: 360px; z-index: 2;
-  }
-  /* el outermost de cada mockup es contexto de posicionamiento full-width */
-  .sbm-stage > div { position: relative; width: 100%; }
+    .stripe-mockup-glow {
+        position: absolute;
+        width: 60%;
+        height: 60%;
+        background: radial-gradient(circle at center, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
+        filter: blur(40px);
+        z-index: 0;
+        animation: float 6s ease-in-out infinite;
+    }
 
-  /* ════════════════ CARD BASE navy ════════════════ */
-  .sbm-card {
-    background: linear-gradient(165deg,#0e2240 0%,#0a192f 60%,#081424 100%);
-    border: 1px solid rgba(255,255,255,0.07);
-    box-shadow:
-      0 2px 4px rgba(0,0,0,0.1),
-      0 28px 56px -14px rgba(5,11,20,0.65),
-      inset 0 1px 0 rgba(255,255,255,0.09);
-    border-radius: 14px; padding: 1.15rem 1.25rem; width: 100%;
-    color: #f8fafc; font-size: 0.72rem; font-weight: 500; position: relative;
-    transition: transform .5s cubic-bezier(.22,1,.36,1), box-shadow .5s cubic-bezier(.22,1,.36,1);
-  }
-  .sbm-card:hover {
-    transform: translateY(-2px);
-    box-shadow:
-      0 4px 8px rgba(0,0,0,0.12),
-      0 34px 64px -14px rgba(5,11,20,0.7),
-      inset 0 1px 0 rgba(255,255,255,0.12);
-  }
+    .stripe-mockup-svg {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 400px;
+        height: auto;
+    }
 
-  /* ════════════════ UTILIDADES COMPARTIDAS ════════════════ */
-  .bm-head { display: flex; justify-content: space-between; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700; color: rgba(255,255,255,0.4); margin-bottom: 10px; padding: 0 4px; }
-  .bm-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; border-radius: 8px; margin-bottom: 4px; background: rgba(255,255,255,0.03); transition: background .3s ease; }
-  .bm-row span { color: rgba(255,255,255,0.7); }
-  .bm-row b, .bm-bold { font-weight: 700; color: #fff; }
-  .bm-large { font-size: 1.05rem; }
-  .bm-green { color: #34d399; }
-  .bm-orange { color: #fbbf24; }
-  .bm-blue { color: #60a5fa; }
-  .editorial { font-family: var(--font-mono, ui-monospace, monospace); letter-spacing: -0.2px; font-variant-numeric: tabular-nums; }
-  .bm-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 8px 0; }
+    .smk-svg {
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+    }
 
-  /* badges */
-  .sbm-badge { font-size: 0.55rem; font-weight: 800; letter-spacing: 0.4px; padding: 2px 7px; border-radius: 6px; white-space: nowrap; }
-  .sbm-badge-sent { color: #7eb3ff; background: rgba(59,130,246,0.16); }
-  .sbm-badge-ok   { color: #4ade80; background: rgba(16,185,129,0.16); }
-  .sbm-badge-warn { color: #fbbf24; background: rgba(251,191,36,0.14); }
-
-  /* floating elements — sobresalen de la esquina con drop-shadow (offsets por top/right,
-     NO transform: el JS anima estas pills con y/scale y GSAP pisaría el translate) */
-  .sbm-floating { position: absolute; z-index: 30; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4)); }
-  .sbm-float-tr { top: -18px; right: -14px; }
-  .sbm-float-tl { top: -18px; left: -14px; }
-  .sbm-float-br { bottom: -18px; right: -14px; }
-  .sbm-float-bl { bottom: -18px; left: -14px; }
-  .sbm-pill { display: inline-flex; align-items: center; gap: 7px; background: #0f172a; border: 1px solid rgba(255,255,255,0.09); box-shadow: inset 0 1px 0 rgba(255,255,255,0.07); border-radius: 100px; padding: 6px 12px; font-size: 0.62rem; font-weight: 700; color: #e6edf6; white-space: nowrap; }
-  .sbm-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-  .sbm-dot-blue { background: #60a5fa; box-shadow: 0 0 7px rgba(96,165,250,0.7); }
-  .sbm-dot-green { background: #34d399; box-shadow: 0 0 7px rgba(52,211,153,0.7); }
-  .sbm-dot-orange { background: #fbbf24; box-shadow: 0 0 7px rgba(251,191,36,0.7); }
-
-  /* fake cursor (SVG — nunca emoji) */
-  .sbm-cursor { position: absolute; z-index: 50; width: 22px; height: 22px; color: #fff; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); opacity: 0; pointer-events: none; top: 0; left: 0; }
-  .sbm-cursor svg { width: 100%; height: 100%; }
-
-  /* ════════════════ DISTRIBUIDORAS ════════════════ */
-  .sbm-dist-line { display: flex; flex-direction: column; gap: 2px; }
-  .sbm-dist-sku { font-style: normal; font-size: 0.56rem; color: rgba(255,255,255,0.4); }
-  .sbm-dist-line b { color: #fff; font-weight: 700; }
-  .sbm-dist-chip { display: inline-block; background: rgba(16,185,129,0.18); color: #34d399; padding: 1px 6px; border-radius: 5px; font-size: 0.52rem; font-style: normal; font-weight: 800; margin-left: 5px; border: 1px solid rgba(52,211,153,0.25); vertical-align: middle; }
-  .sbm-dist-free { background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.14); }
-  .sbm-dist-total { padding: 9px 10px; }
-  .sbm-dist-big { font-size: 1.05rem; }
-  .sbm-dist-searchbar { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.04); padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 10px; }
-  .sbm-dist-searchbar svg { width: 14px; height: 14px; opacity: 0.4; flex-shrink: 0; }
-  .sbm-dist-type { color: #fff; font-family: var(--font-mono, monospace); font-size: 0.68rem; font-weight: 600; }
-  .sbm-dist-caret { color: rgba(255,255,255,0.6); font-family: var(--font-mono, monospace); margin-left: -4px; }
-  .sbm-dist-results { display: flex; flex-direction: column; gap: 5px; }
-  .sbm-dist-res { display: flex; justify-content: space-between; align-items: center; padding: 9px 11px; border-radius: 9px; background: rgba(255,255,255,0.03); border: 1px solid transparent; transition: border-color .3s, background .3s; }
-  .sbm-dist-resinfo { display: flex; flex-direction: column; gap: 2px; }
-  .sbm-dist-resinfo b { color: #fff; font-weight: 700; font-size: 0.68rem; }
-  .sbm-dist-resinfo i { font-style: normal; font-size: 0.55rem; color: rgba(255,255,255,0.42); }
-  .sbm-dist-acct { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-  .sbm-dist-avatar { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg,#3b82f6,#2563eb); display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 800; color: #fff; flex-shrink: 0; box-shadow: 0 2px 8px rgba(37,99,235,0.3); }
-  .sbm-dist-acctinfo { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-  .sbm-dist-acctinfo b { color: #fff; font-weight: 700; font-size: 0.72rem; }
-  .sbm-dist-acctinfo i { font-style: normal; font-size: 0.54rem; color: rgba(255,255,255,0.42); }
-  .sbm-dist-creditlabel { display: flex; justify-content: space-between; align-items: center; font-size: 0.62rem; color: rgba(255,255,255,0.7); margin-bottom: 7px; }
-  .sbm-dist-bar { height: 7px; background: rgba(255,255,255,0.08); border-radius: 100px; overflow: hidden; }
-  .sbm-dist-fill { height: 100%; width: 68%; background: linear-gradient(90deg,#3b82f6,#60a5fa); border-radius: 100px; }
-  .sbm-dist-push { position: absolute; left: 50%; top: -4px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; background: linear-gradient(165deg,#0e2240 0%,#0a192f 60%,#081424 100%); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 10px 13px; box-shadow: 0 16px 32px -8px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08); width: 88%; z-index: 40; opacity: 0; }
-  .sbm-dist-pushicon img { width: 24px; height: 24px; border-radius: 6px; }
-  .sbm-dist-pushbody { display: flex; flex-direction: column; gap: 2px; }
-  .sbm-dist-pushbody > b { font-size: 0.66rem; color: #fff; }
-  .sbm-dist-pushbody span { font-size: 0.6rem; color: rgba(255,255,255,0.65); }
-
-  /* ════════════════ CONSTRUCCIÓN ════════════════ */
-  .sbm-const-m0 .sbm-const-line { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px; margin-bottom: 4px; background: rgba(255,255,255,0.03); }
-  .sbm-const-m0 .sbm-const-name { color: rgba(255,255,255,0.78); font-weight: 600; font-size: 0.68rem; }
-  .sbm-const-m0 .sbm-const-qty { color: rgba(255,255,255,0.5); font-size: 0.62rem; text-align: right; white-space: nowrap; }
-  .sbm-const-m0 .sbm-const-qty b { color: #fff; font-weight: 700; }
-  .sbm-const-m0 .sbm-const-line .editorial { color: #fff; font-weight: 700; text-align: right; }
-  .sbm-const-m0 .sbm-const-srow { padding: 5px 10px; }
-  .sbm-const-m0 .sbm-const-srow span { font-size: 0.66rem; }
-  .sbm-const-m0 .sbm-const-trow { padding: 8px 10px; background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.18); border-radius: 8px; }
-  .sbm-const-m0 .sbm-const-trow .editorial { font-size: 0.98rem; }
-  .sbm-const-m0 .sbm-const-trow .bm-bold { font-size: 0.72rem; }
-  .sbm-const-m1 .sbm-const-cli { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-  .sbm-const-m1 .sbm-const-avatar { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg,#3b82f6,#2563eb); display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 800; color: #fff; flex-shrink: 0; box-shadow: 0 2px 8px rgba(37,99,235,0.3); }
-  .sbm-const-m1 .sbm-const-cli-info { flex: 1; min-width: 0; }
-  .sbm-const-m1 .sbm-const-cli-info b { font-size: 0.74rem; display: block; color: #fff; }
-  .sbm-const-m1 .sbm-const-cli-info i { font-style: normal; font-size: 0.58rem; color: rgba(255,255,255,0.42); font-family: var(--font-mono, monospace); }
-  .sbm-const-m1 .sbm-const-credline { display: flex; justify-content: space-between; align-items: center; font-size: 0.66rem; color: rgba(255,255,255,0.6); margin-bottom: 8px; }
-  .sbm-const-m1 .sbm-const-credline b { color: #fff; }
-  .sbm-const-m1 .sbm-const-bar { height: 8px; background: rgba(255,255,255,0.08); border-radius: 100px; overflow: hidden; margin-bottom: 9px; }
-  .sbm-const-m1 .sbm-const-bar-fill { height: 100%; width: 84%; background: linear-gradient(90deg,#3b82f6,#60a5fa); border-radius: 100px; }
-  .sbm-const-m1 .sbm-const-disp { display: flex; justify-content: space-between; align-items: center; font-size: 0.66rem; color: rgba(255,255,255,0.6); }
-  .sbm-const-m1 .sbm-const-newrow { background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.16); }
-  .sbm-const-m1 .sbm-const-newrow .editorial { color: #fbbf24; font-weight: 700; }
-  .sbm-const-m1 .sbm-const-pill-warn { background: rgba(45,32,8,0.95); border-color: rgba(251,191,36,0.3); color: #fbbf24; }
-  .sbm-const-m2 .sbm-const-push { display: flex; gap: 11px; align-items: flex-start; background: linear-gradient(165deg,#11294b,#0c1d36); border: 1px solid rgba(255,255,255,0.09); border-radius: 13px; padding: 10px 12px; margin-bottom: 14px; box-shadow: 0 14px 28px -10px rgba(0,0,0,0.5); }
-  .sbm-const-m2 .sbm-const-push-icon { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg,#10b981,#059669); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 10px rgba(16,185,129,0.4); }
-  .sbm-const-m2 .sbm-const-push-icon svg { width: 15px; height: 15px; }
-  .sbm-const-m2 .sbm-const-push-body { display: flex; flex-direction: column; gap: 2px; }
-  .sbm-const-m2 .sbm-const-push-body b { font-size: 0.7rem; color: #fff; }
-  .sbm-const-m2 .sbm-const-push-body span { font-size: 0.62rem; color: rgba(255,255,255,0.62); line-height: 1.35; }
-  .sbm-const-m2 .sbm-const-tl { position: relative; padding-left: 2px; }
-  .sbm-const-m2 .sbm-const-tl-line { position: absolute; left: 9px; top: 11px; bottom: 11px; width: 2px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
-  .sbm-const-m2 .sbm-const-tl-fill { width: 100%; height: 100%; background: linear-gradient(180deg,#3b82f6,#34d399); box-shadow: 0 0 8px rgba(52,211,153,0.4); border-radius: 2px; }
-  .sbm-const-m2 .sbm-const-tl-nodes { display: flex; flex-direction: column; gap: 13px; position: relative; }
-  .sbm-const-m2 .sbm-const-node { display: flex; align-items: center; gap: 11px; }
-  .sbm-const-m2 .sbm-const-node span { font-size: 0.67rem; color: rgba(255,255,255,0.72); font-weight: 500; }
-  .sbm-const-m2 .sbm-const-ok { width: 20px; height: 20px; border-radius: 50%; background: #2563eb; display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 2; box-shadow: 0 0 0 4px #0a192f; }
-  .sbm-const-m2 .sbm-const-ok svg { width: 11px; height: 11px; }
-  .sbm-const-m2 .sbm-const-node-final .sbm-const-ok { background: #10b981; box-shadow: 0 0 0 4px #0a192f, 0 0 12px rgba(16,185,129,0.5); }
-  .sbm-const-m2 .sbm-const-node-final span { color: #fff; font-weight: 700; }
-  .sbm-const-m2 .sbm-const-cfdi { display: flex; align-items: center; gap: 11px; padding: 9px 11px; background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.18); border-radius: 10px; }
-  .sbm-const-m2 .sbm-const-cfdi-stamp { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg,#10b981,#059669); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 3px 10px rgba(16,185,129,0.4); }
-  .sbm-const-m2 .sbm-const-cfdi-stamp svg { width: 15px; height: 15px; }
-  .sbm-const-m2 .sbm-const-cfdi-txt { flex: 1; min-width: 0; }
-  .sbm-const-m2 .sbm-const-cfdi-txt b { font-size: 0.7rem; color: #fff; display: block; }
-  .sbm-const-m2 .sbm-const-cfdi-txt i { font-style: normal; font-size: 0.56rem; color: rgba(255,255,255,0.5); }
-
-  /* ════════════════ MANUFACTURA ════════════════ */
-  .sbm-manu-m0-free { background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.14); }
-  .sbm-manu-m0-tag { font-style: normal; font-size: 0.5rem; font-weight: 800; letter-spacing: 0.5px; color: #34d399; background: rgba(16,185,129,0.18); border: 1px solid rgba(52,211,153,0.25); padding: 1px 5px; border-radius: 4px; margin-right: 5px; vertical-align: middle; }
-  .sbm-manu-m0-spec { overflow: hidden; padding: 4px 10px 2px; }
-  .sbm-manu-m0-spec-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.06); font-size: 0.64rem; }
-  .sbm-manu-m0-spec-row:last-child { border-bottom: none; }
-  .sbm-manu-m0-spec-row span { color: rgba(255,255,255,0.5); }
-  .sbm-manu-m0-spec-row b { color: #fff; font-weight: 700; }
-  .sbm-manu-m0-total { padding: 9px 10px; }
-  .sbm-manu-m1-tl { position: relative; padding-left: 18px; display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
-  .sbm-manu-m1-track { position: absolute; left: 4px; top: 7px; bottom: 7px; width: 2px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
-  .sbm-manu-m1-fill { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg,#60a5fa,#3b82f6); box-shadow: 0 0 8px rgba(59,130,246,0.5); border-radius: 2px; }
-  .sbm-manu-m1-item { position: relative; }
-  .sbm-manu-m1-node { position: absolute; left: -18px; top: 5px; width: 9px; height: 9px; border-radius: 50%; background: #3b82f6; box-shadow: 0 0 0 3px #0a192f, 0 0 8px rgba(59,130,246,0.6); }
-  .sbm-manu-m1-body { background: rgba(255,255,255,0.03); border-radius: 8px; padding: 7px 10px; }
-  .sbm-manu-m1-line { display: flex; justify-content: space-between; align-items: center; }
-  .sbm-manu-m1-line b:first-child { color: #fff; font-weight: 600; font-size: 0.68rem; }
-  .sbm-manu-m1-meta { display: flex; justify-content: space-between; margin-top: 3px; font-size: 0.56rem; }
-  .sbm-manu-m1-meta span { color: rgba(255,255,255,0.4); }
-  .sbm-manu-m1-by { color: rgba(96,165,250,0.85) !important; font-weight: 600; }
-  .sbm-manu-m2-stamp { display: flex; align-items: center; gap: 10px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.18); border-radius: 10px; padding: 9px 11px; margin-bottom: 10px; }
-  .sbm-manu-m2-check { width: 26px; height: 26px; border-radius: 50%; background: #10b981; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px rgba(16,185,129,0.4); }
-  .sbm-manu-m2-check svg { width: 15px; height: 15px; color: #fff; }
-  .sbm-manu-m2-stamp-txt { display: flex; flex-direction: column; line-height: 1.3; }
-  .sbm-manu-m2-stamp-txt b { font-size: 0.66rem; color: #fff; font-weight: 700; }
-  .sbm-manu-m2-stamp-txt span { font-size: 0.55rem; color: rgba(255,255,255,0.5); margin-top: 1px; }
-  .sbm-manu-m2-cfdi { position: relative; }
-  .sbm-manu-m2-cfdi-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700; color: rgba(255,255,255,0.4); margin-bottom: 8px; padding: 0 4px; }
-  .sbm-manu-m2-doc b { color: #fff; }
-  .sbm-manu-m2-files { display: flex; gap: 8px; margin-top: 6px; }
-  .sbm-manu-m2-file { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 0; border-radius: 8px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); font-size: 0.62rem; font-weight: 700; color: #93c5fd; }
-  .sbm-manu-m2-file svg { width: 13px; height: 13px; }
-
-  /* ════════════════ SERVICIOS ════════════════ */
-  .sbm-serv-doc { display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; }
-  .sbm-serv-doc-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 1rem 1.1rem 0.85rem; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.06); transition: background .6s cubic-bezier(.22,1,.36,1); position: relative; }
-  .sbm-serv-brandmark { display: flex; align-items: center; gap: 9px; }
-  .sbm-serv-logo { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.3px; color: #fff; background: linear-gradient(135deg,#3b82f6,#2563eb); box-shadow: 0 4px 12px rgba(37,99,235,0.35); flex-shrink: 0; transition: background .6s cubic-bezier(.22,1,.36,1), box-shadow .6s cubic-bezier(.22,1,.36,1); }
-  .sbm-serv-brandtxt b { display: block; font-size: 0.72rem; color: #fff; font-weight: 700; line-height: 1.1; }
-  .sbm-serv-brandtxt i { display: block; font-style: normal; font-size: 0.54rem; color: rgba(255,255,255,0.42); margin-top: 2px; }
-  .sbm-serv-prop { font-size: 0.5rem; font-weight: 800; letter-spacing: 0.6px; color: rgba(255,255,255,0.4); white-space: nowrap; }
-  .sbm-serv-doc-body { padding: 0.85rem 1.1rem 0.7rem; }
-  .sbm-serv-totalrow { padding: 9px 10px; background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.14); }
-  .sbm-serv-total { font-size: 1rem; }
-  .sbm-serv-terms { display: flex; gap: 14px; margin-top: 11px; padding: 0 4px; }
-  .sbm-serv-terms span { display: inline-flex; align-items: center; gap: 5px; font-size: 0.56rem; font-weight: 600; color: rgba(255,255,255,0.5); }
-  .sbm-serv-terms svg { width: 12px; height: 12px; opacity: 0.8; }
-  .sbm-serv-foot { padding: 0.6rem 1.1rem 0.85rem; border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: flex-end; }
-  .sbm-serv-foot-badge { font-size: 0.5rem; font-weight: 800; letter-spacing: 0.5px; padding: 3px 9px; border-radius: 6px; color: #7eb3ff; background: rgba(59,130,246,0.16); transition: color .5s ease, background .5s ease; }
-  .sbm-serv-track { display: flex; flex-direction: column; }
-  .sbm-serv-stagebar { display: flex; align-items: center; margin: 6px 0 4px; padding: 0 2px; }
-  .sbm-serv-step { display: flex; flex-direction: column; align-items: center; gap: 5px; flex-shrink: 0; }
-  .sbm-serv-step i { width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18); box-shadow: 0 0 0 3px #0a192f; }
-  .sbm-serv-step span { font-size: 0.5rem; font-weight: 700; color: rgba(255,255,255,0.4); letter-spacing: 0.2px; }
-  .sbm-serv-step-done i { background: #3b82f6; border-color: #3b82f6; }
-  .sbm-serv-step-done span { color: rgba(255,255,255,0.6); }
-  .sbm-serv-step-now i { background: #fbbf24; border-color: #fbbf24; box-shadow: 0 0 0 3px #0a192f, 0 0 10px rgba(251,191,36,0.6); }
-  .sbm-serv-step-now span { color: #fbbf24; }
-  .sbm-serv-conn { flex: 1; height: 2px; background: rgba(255,255,255,0.1); margin: 0 4px 18px; border-radius: 1px; position: relative; overflow: hidden; }
-  .sbm-serv-conn-on { background: #3b82f6; box-shadow: 0 0 6px rgba(59,130,246,0.4); }
-  .sbm-serv-opens { display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; border-radius: 8px; background: rgba(255,255,255,0.03); }
-  .sbm-serv-opens-l { display: inline-flex; align-items: center; gap: 7px; color: rgba(255,255,255,0.7); font-weight: 600; }
-  .sbm-serv-opens-l svg { width: 14px; height: 14px; color: #60a5fa; }
-  .sbm-serv-opencount { font-size: 1.05rem; color: #fff; font-weight: 700; }
-  .sbm-serv-hint { font-size: 0.56rem; color: rgba(255,255,255,0.45); margin-top: 8px; padding: 0 4px; }
-  .sbm-serv-push { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); z-index: 30; width: calc(100% - 8px); max-width: 330px; background: linear-gradient(165deg,#102a4d,#0a192f); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 9px 11px; display: flex; align-items: center; gap: 10px; box-shadow: 0 18px 36px -8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); opacity: 0; }
-  .sbm-serv-push-icon { width: 26px; height: 26px; border-radius: 7px; background: #0a192f; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.08); }
-  .sbm-serv-push-icon img { width: 18px; height: 18px; object-fit: contain; }
-  .sbm-serv-push-body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-  .sbm-serv-push-body b { font-size: 0.62rem; color: #fff; font-weight: 700; }
-  .sbm-serv-push-body span { font-size: 0.58rem; color: rgba(255,255,255,0.66); line-height: 1.3; }
-  .sbm-serv-push-now { font-size: 0.5rem; color: rgba(255,255,255,0.4); align-self: flex-start; white-space: nowrap; }
-  .sbm-serv-approve { display: flex; flex-direction: column; gap: 7px; position: relative; }
-  .sbm-serv-src { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
-  .sbm-serv-srcchip { display: inline-flex; align-items: center; gap: 5px; font-size: 0.56rem; font-weight: 700; color: #4ade80; background: rgba(16,185,129,0.12); padding: 3px 8px; border-radius: 6px; }
-  .sbm-serv-srcchip svg { width: 11px; height: 11px; }
-  .sbm-serv-noacct { font-size: 0.52rem; font-weight: 600; color: rgba(255,255,255,0.4); }
-  .sbm-serv-scope span { color: rgba(255,255,255,0.66); }
-  .sbm-serv-cta { position: relative; margin-top: 5px; width: 100%; padding: 11px; border: none; border-radius: 10px; background: linear-gradient(135deg,#10b981,#059669); color: #fff; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.2px; cursor: default; overflow: hidden; box-shadow: 0 8px 22px -6px rgba(16,185,129,0.5); }
-  .sbm-serv-cta-glow { position: absolute; inset: 0; border-radius: 10px; box-shadow: 0 0 0 0 rgba(52,211,153,0); }
-  .sbm-serv-success { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; }
-  .sbm-serv-ring { position: absolute; width: 54px; height: 54px; border-radius: 50%; border: 2px solid #34d399; opacity: 0; }
-  .sbm-serv-check { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg,#10b981,#059669); display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 8px 22px -4px rgba(16,185,129,0.6); transform: scale(0); }
-  .sbm-serv-check svg { width: 24px; height: 24px; }
-  .sbm-serv-cursor { top: 60%; left: 62%; }
-  .sbm-serv-paid { opacity: 0; }
-
-  /* ════════════════ REDUCED MOTION ════════════════ */
-  @media (prefers-reduced-motion: reduce) {
-    .sbm-mesh { animation: none; }
-    .sbm-card { transition: none; }
-  }
+    @keyframes float {
+        0% { transform: translateY(0px) scale(1); }
+        50% { transform: translateY(-10px) scale(1.05); }
+        100% { transform: translateY(0px) scale(1); }
+    }
 </style>
