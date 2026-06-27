@@ -229,17 +229,17 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
 
 <style>
     /* ════════════════════════════════════════════════════════════════
-       VARIABLES & TOKENS GLOBALES (ESTILO CORD)
+       VARIABLES & TOKENS GLOBALES (ESTILO CORD LIGHT)
     ════════════════════════════════════════════════════════════════ */
     :root {
-        --stripe-bg: #0a192f; /* Navy profundo de Cord */
-        --stripe-text: #ffffff;
-        --stripe-muted: #8a93a5;
-        --stripe-accent: #10b981; /* Verde Cord */
+        --stripe-bg: #ffffff;
+        --stripe-text: #0a192f;
+        --stripe-muted: #555c68;
+        --stripe-accent: #10b981;
         --stripe-accent-light: #34d399;
-        --stripe-cyan: #3b82f6; /* Azul Cord */
-        --stripe-border: rgba(255, 255, 255, 0.08);
-        --stripe-card-bg: rgba(255, 255, 255, 0.03);
+        --stripe-cyan: #3b82f6;
+        --stripe-border: rgba(10, 25, 47, 0.08);
+        --stripe-card-bg: rgba(255, 255, 255, 0.8);
         --stripe-font-sans: var(--font-sans, "Inter", system-ui, sans-serif);
     }
     
@@ -279,7 +279,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         inset: -20%;
         z-index: 0;
         background: var(--stripe-bg);
-        border-bottom: 1px solid rgba(255,255,255,0.05);
+        border-bottom: 1px solid rgba(10,25,47,0.05);
         overflow: hidden;
     }
     
@@ -287,8 +287,8 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         position: absolute;
         inset: 0;
         background-image: 
-            linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            linear-gradient(rgba(10,25,47,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(10,25,47,0.03) 1px, transparent 1px);
         background-size: 80px 80px;
         opacity: 0.5;
     }
@@ -326,7 +326,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         font-weight: 700;
         letter-spacing: -0.04em;
         margin-bottom: 1.5rem;
-        color: #fff;
+        color: var(--stripe-text);
     }
     
     .stripe-sub {
@@ -382,16 +382,16 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         gap: 8px;
         padding: 12px 24px;
         border-radius: 999px;
-        color: #fff;
+        color: var(--stripe-text);
         font-weight: 600;
         font-size: 1rem;
         text-decoration: none;
-        background: rgba(255,255,255,0.1);
+        background: rgba(10,25,47,0.05);
         transition: background 0.2s;
     }
     
     .stripe-btn-ghost:hover {
-        background: rgba(255,255,255,0.15);
+        background: rgba(10,25,47,0.08);
     }
     
     .stripe-btn-ghost svg {
@@ -435,7 +435,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         font-size: 1.5rem;
         font-weight: 700;
         letter-spacing: -0.02em;
-        color: #fff;
+        color: var(--stripe-text);
     }
 
     /* ════════════════════════════════════════════════════════════════
@@ -497,7 +497,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         bottom: 0;
         background: radial-gradient(
             800px circle at var(--mouse-x, 0) var(--mouse-y, 0),
-            rgba(255, 255, 255, 0.06),
+            rgba(10, 25, 47, 0.04),
             transparent 40%
         );
         z-index: 0;
@@ -553,7 +553,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     .stripe-bento-title {
         font-size: 1.75rem;
         font-weight: 700;
-        color: #fff;
+        color: var(--stripe-text);
         line-height: 1.2;
         margin-bottom: 1rem;
         letter-spacing: -0.02em;
@@ -599,7 +599,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         font-weight: 700;
         line-height: 1;
         margin-bottom: 0.75rem;
-        color: #fff;
+        color: var(--stripe-text);
     }
     
     .stripe-stat-label {
@@ -661,7 +661,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     .stripe-author-info b {
         display: block;
         font-size: 1.1rem;
-        color: #fff;
+        color: var(--stripe-text);
     }
     
     .stripe-author-info span {
@@ -679,7 +679,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     .stripe-testimonial-metrics b {
         display: block;
         font-size: 2rem;
-        color: #fff;
+        color: var(--stripe-text);
         margin-bottom: 0.25rem;
     }
     
@@ -723,7 +723,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         font-size: 1.1rem;
         font-weight: 600;
         margin: 0;
-        color: #fff;
+        color: var(--stripe-text);
     }
     
     .stripe-faq-item summary svg {
