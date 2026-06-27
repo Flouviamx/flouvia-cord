@@ -173,16 +173,19 @@ const otra = (isEn ? DEV_PAGES_EN : DEV_PAGES).find((p) => p.slug !== page.slug)
 
         <!-- ── STATS ── -->
         <section class="pp-stats">
-            {page.stats.map((s) => (
-                <div class="pp-stat reveal">
-                    <span class="pp-stat-num editorial"
-                        data-countup={s.countup !== undefined ? String(s.countup) : undefined}
-                        data-decimals={s.decimals !== undefined ? String(s.decimals) : undefined}
-                        data-prefix={s.prefix} data-suffix={s.suffix}
-                    >{s.prefix ?? ''}{s.valor}{s.suffix ?? ''}</span>
-                    <span class="pp-stat-label">{s.label}</span>
-                </div>
-            ))}
+            <div class="pp-stats-inner">
+                {page.stats.map((s) => (
+                    <div class="pp-stat reveal">
+                        <span class="pp-stat-label">{s.label}</span>
+                        <span class="pp-stat-dots"></span>
+                        <span class="pp-stat-num editorial"
+                            data-countup={s.countup !== undefined ? String(s.countup) : undefined}
+                            data-decimals={s.decimals !== undefined ? String(s.decimals) : undefined}
+                            data-prefix={s.prefix} data-suffix={s.suffix}
+                        >{s.prefix ?? ''}{s.valor}{s.suffix ?? ''}</span>
+                    </div>
+                ))}
+            </div>
         </section>
 
         <!-- ── BLOQUES ── -->
@@ -720,10 +723,14 @@ const otra = (isEn ? DEV_PAGES_EN : DEV_PAGES).find((p) => p.slug !== page.slug)
     .dv-embed-event i { width: 6px; height: 6px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px rgba(52,211,153,0.7); flex-shrink: 0; }
 
     /* ════════ STATS ════════ */
-    .pp-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; max-width: 1080px; margin: 0 auto; padding: 5.5rem 5%; border-bottom: 1px solid var(--color-border); }
-    .pp-stat { text-align: center; display: flex; flex-direction: column; gap: 0.6rem; }
-    .pp-stat-num { font-size: clamp(2.4rem, 4.6vw, 3.6rem); color: var(--color-blue-deep); line-height: 1; }
-    .pp-stat-label { font-size: 0.88rem; color: var(--color-text-muted); max-width: 240px; margin: 0 auto; line-height: 1.5; }
+    .pp-stats { padding: 5.5rem 5%; }
+    .pp-stats-inner { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; }
+    .pp-stat { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 1.6rem 0; border-bottom: 1px solid var(--color-border); }
+    .pp-stat:first-child { border-top: 1px solid var(--color-border); }
+    .pp-stat-label { font-size: 1.1rem; color: var(--color-text-muted); font-weight: 500; }
+    .pp-stat-label::first-letter { text-transform: uppercase; }
+    .pp-stat-dots { flex: 1; border-bottom: 1px dotted var(--color-border); opacity: 0.6; position: relative; top: -5px; }
+    .pp-stat-num { font-size: 1.4rem; color: var(--color-text); font-weight: 600; letter-spacing: -0.02em; }
 
     /* ════════ BLOQUES ════════ */
     .pp-blocks {
@@ -800,7 +807,11 @@ const otra = (isEn ? DEV_PAGES_EN : DEV_PAGES).find((p) => p.slug !== page.slug)
     /* ════════ RESPONSIVE ════════ */
     @media (max-width: 860px) {
         .pp-hero { padding-top: 9.5rem; }
-        .pp-stats { grid-template-columns: 1fr; gap: 2.4rem; padding: 4rem 8%; }
+        .pp-stats { padding: 4rem 8%; }
+        .pp-stat { flex-direction: column; align-items: flex-start; gap: 0.4rem; padding: 1.2rem 0; }
+        .pp-stat-dots { display: none; }
+        .pp-stat-num { font-size: 1.6rem; color: var(--color-blue-deep); }
+        .pp-stat-label { font-size: 0.95rem; line-height: 1.4; }
         .pp-blocks { gap: 4.5rem; }
         .pp-block { grid-template-columns: 1fr; gap: 1.8rem; }
         .pp-block-flip .pp-block-text { order: 1; }
