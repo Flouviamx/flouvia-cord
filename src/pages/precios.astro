@@ -31,9 +31,9 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
             <div class="pr-mesh" aria-hidden="true"></div>
             <div class="pr-hero-inner">
                 <p class="pp-eyebrow reveal">{isEn ? 'PRICING' : 'PRECIOS'}</p>
-                <h1 class="pr-h1 masked-title" set:html={isEn ? 'Start for free.<br/>Grow when you close.' : 'Empieza gratis.<br/>Crece cuando cierres.'} />
+                <h1 class="pr-h1 masked-title" set:html={isEn ? 'Start for free. Grow when you close.' : 'Empieza gratis. Crece cuando cierres.'} />
                 <p class="pr-lead reveal">
-                    {isEn ? <Fragment>No contracts. Cancel anytime. Prices in USD.<br/>Pay annually and get <b>2 months free</b>.</Fragment> : <Fragment>Sin contratos. Cancela cuando quieras. Precios en pesos, IVA incluido.<br/>Paga al año y te llevas <b>2 meses gratis</b>.</Fragment>}
+                    {isEn ? <Fragment>No contracts. Cancel anytime. Prices in USD. Pay annually and get <b>2 months free</b>.</Fragment> : <Fragment>Sin contratos. Cancela cuando quieras. Precios en pesos, IVA incluido. Paga al año y te llevas <b>2 meses gratis</b>.</Fragment>}
                 </p>
 
                 <div class="pr-toggle reveal" role="tablist" aria-label={isEn ? "Billing cycle" : "Ciclo de facturación"}>
@@ -105,7 +105,7 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
             <div class="pr-roi-inner">
                 <div class="pr-roi-copy">
                     <p class="pp-eyebrow reveal">{isEn ? 'THE MATH THAT MATTERS' : 'LA CUENTA QUE IMPORTA'}</p>
-                    <h2 class="pr-h2 masked-title" set:html={isEn ? 'Cord pays for itself<br/>with a single deal.' : 'Cord se paga<br/>con un solo trato.'} />
+                    <h2 class="pr-h2 masked-title" set:html={isEn ? 'Cord pays for itself with a single deal.' : 'Cord se paga con un solo trato.'} />
                     <p class="pr-roi-sub reveal">
                         {isEn ? 'Adjust the numbers to your reality. If live tracking helps you close just one extra quote a month, the plan is paid for.' : 'Mueve los números a tu realidad. Si el seguimiento en vivo te ayuda a cerrar una sola cotización más al mes, el plan ya quedó pagado.'}
                     </p>
@@ -142,7 +142,7 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
         <section class="pr-compare">
             <div class="pr-compare-head">
                 <p class="pp-eyebrow reveal">{isEn ? 'COMPARE PLANS' : 'COMPARA LOS PLANES'}</p>
-                <h2 class="pr-h2 masked-title" set:html={isEn ? 'Everything included<br/>in each plan.' : 'Todo lo que incluye<br/>cada plan.'} />
+                <h2 class="pr-h2 masked-title" set:html={isEn ? 'Everything included in each plan.' : 'Todo lo que incluye cada plan.'} />
             </div>
 
             <div class="pr-table-scroll reveal">
@@ -191,7 +191,7 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
         <section class="pr-faq">
             <div class="pr-faq-head">
                 <p class="pp-eyebrow reveal">{isEn ? 'FREQUENTLY ASKED QUESTIONS' : 'PREGUNTAS FRECUENTES'}</p>
-                <h2 class="pr-h2 masked-title" set:html={isEn ? 'What people ask<br/>before paying.' : 'Lo que se pregunta<br/>antes de pagar.'} />
+                <h2 class="pr-h2 masked-title" set:html={isEn ? 'What people ask before paying.' : 'Lo que se pregunta antes de pagar.'} />
             </div>
             <div class="pr-faq-list">
                 {FAQ_PRECIOS.map((f) => (

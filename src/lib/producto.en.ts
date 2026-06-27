@@ -6,7 +6,7 @@ export const FEATURES_EN: Feature[] = [
         slug: 'editor',
         nav: 'Quote editor',
         eyebrow: 'QUOTE EDITOR',
-        titulo: 'The perfect quote,<br/>in minutes.',
+        titulo: 'The perfect quote, in minutes.',
         sub: 'Drag products from your catalog, negotiate prices line by line, and watch the total recalculate with tax live. What used to take an hour in Excel now takes minutes.',
         metaTitle: 'How to make B2B quotes with negotiated prices in Mexico — Cord by Flouvia',
         metaDescription: 'Cord\'s quote editor lets you negotiate the price of each product separately, apply Net 30/60 terms, calculate tax in real time, and generate an approval link with your brand.',
@@ -19,7 +19,7 @@ export const FEATURES_EN: Feature[] = [
         blocks: [
             {
                 eyebrow: 'NEGOTIATED PRICES',
-                titulo: 'Every client has their price.<br/>Respect it without thinking.',
+                titulo: 'Every client has their price. Respect it without thinking.',
                 copy: 'In B2B, the list price is just the starting point. In Cord, you adjust the price of each line and the system shows you the applied discount instantly — you decide how far to go, the system makes sure the numbers add up.',
                 bullets: [
                     'Negotiated price per line, with the discount % visible',
@@ -39,7 +39,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'LIVE TOTALS',
-                titulo: 'Tax and totals,<br/>always correct.',
+                titulo: 'Tax and totals, always correct.',
                 copy: 'Every change recalculates subtotal, tax, and total instantly, with correct rounding and fintech-style tabular numbers. Define the validity and credit terms, and the quote is ready to send.',
                 bullets: [
                     'Configurable 16% tax per business',
@@ -68,7 +68,7 @@ export const FEATURES_EN: Feature[] = [
         slug: 'link-publico',
         nav: 'Public link',
         eyebrow: 'PUBLIC LINK',
-        titulo: 'Your client approves<br/>in one click.',
+        titulo: 'Your client approves in one click.',
         sub: 'Every quote generates an elegant link with your brand. Your client opens it from their phone, reviews the prices, and approves — no account creation, no downloads, no friction.',
         metaTitle: 'B2B quote approval via link without registration — Cord by Flouvia',
         plan: 'Available on all plans',
@@ -80,7 +80,7 @@ export const FEATURES_EN: Feature[] = [
         blocks: [
             {
                 eyebrow: 'ZERO FRICTION',
-                titulo: 'No registration, no lost PDF<br/>in the email.',
+                titulo: 'No registration, no lost PDF in the email.',
                 copy: 'The attached PDF dies in the inbox. Cord\'s link lives: your client opens it anywhere, sees the latest version, and acts right there. Approving or rejecting is a button, not a phone call.',
                 bullets: [
                     'Works on WhatsApp, email, or wherever you share it',
@@ -90,7 +90,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'YOUR BRAND',
-                titulo: 'The page is signed by your business,<br/>not ours.',
+                titulo: 'The page is signed by your business, not ours.',
                 copy: 'Your logo, your name, and your colors preside over the quote. On paid plans, the "Powered by Cord" disappears and the experience is 100% yours — your client sees a serious company with serious systems.',
                 bullets: [
                     'Configurable logo and brand color in Settings',
@@ -100,7 +100,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'FROM YES TO ORDER',
-                titulo: 'Once approved,<br/>the deal begins.',
+                titulo: 'Once approved, the deal begins.',
                 copy: 'When your client approves, you get an instant notification and the quote changes status automatically. If online payment is enabled, they can pay right there; if they use credit, it\'s recorded under their Net 30/60 terms.',
                 bullets: [
                     'Immediate approval notification',
@@ -129,7 +129,7 @@ export const FEATURES_EN: Feature[] = [
         slug: 'seguimiento',
         nav: 'Live tracking',
         eyebrow: 'LIVE TRACKING',
-        titulo: 'You know the exact moment<br/>they view it.',
+        titulo: 'You know the exact moment they view it.',
         sub: 'No more asking "did you review it yet?". Cord notifies you the moment your client opens the quote, how many times they\'ve seen it, and what they did next — so you call at the perfect time.',
         metaTitle: 'Know when your client opened the quote — live tracking | Cord by Flouvia',
         plan: 'Available on all plans',
@@ -141,7 +141,7 @@ export const FEATURES_EN: Feature[] = [
         blocks: [
             {
                 eyebrow: 'THE SIGNAL THAT MATTERS',
-                titulo: 'Interest cools fast.<br/>Catch it hot.',
+                titulo: 'Interest cools fast. Catch it hot.',
                 copy: 'A quote viewed 5 minutes ago is a live sale; one viewed 2 weeks ago is a dead chore. Cord turns the link opening into an actionable signal: you find out instantly and can respond when you\'re top-of-mind for your client.',
                 bullets: [
                     '"Viewed" event with exact date and time',
@@ -151,7 +151,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'TIMELINE',
-                titulo: 'The whole story,<br/>in a single thread.',
+                titulo: 'The whole story, in a single thread.',
                 copy: 'Created, sent, viewed, approved, paid, invoiced — every quote carries its full history. Anyone on your team can open the details and understand in seconds where the deal stands, without asking in the WhatsApp group.',
                 bullets: [
                     'Complete chronology per quote',
@@ -161,7 +161,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'PIPELINE',
-                titulo: 'Your real pipeline,<br/>not the one in the notebook.',
+                titulo: 'Your real pipeline, not the one in the notebook.',
                 copy: 'The dashboard groups your quotes by status and tells you how much money is about to close, how much you closed in the month, and your close rate. Decisions with numbers, not hunches.',
                 bullets: [
                     'Live KPIs: to close, closed this month, close rate',
@@ -190,7 +190,7 @@ export const FEATURES_EN: Feature[] = [
         slug: 'cfdi',
         nav: 'E-invoicing (CFDI)',
         eyebrow: 'CFDI 4.0 E-INVOICING',
-        titulo: 'From approved quote<br/>to stamped invoice.',
+        titulo: 'From approved quote to stamped invoice.',
         sub: 'When the deal closes, the invoice comes out on its own: real CFDI 4.0, stamped with the SAT, right from the quote. No retyping in another portal, no transcription errors.',
         metaTitle: 'Automated CFDI 4.0 from the approved quote — Cord by Flouvia',
         plan: 'Available from the Starter plan',
@@ -202,7 +202,7 @@ export const FEATURES_EN: Feature[] = [
         blocks: [
             {
                 eyebrow: 'NO RETYPING',
-                titulo: 'The data is already there.<br/>Use it.',
+                titulo: 'The data is already there. Use it.',
                 copy: 'The quote already has the products, quantities, negotiated prices, and the client\'s RFC. Stamping is one click: Cord builds the CFDI 4.0 with that exact data and sends it to the PAC. Zero transcription, zero typos.',
                 bullets: [
                     'CFDI 4.0 with the exact quote data',
@@ -212,7 +212,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'YOUR CSD, SECURE',
-                titulo: 'Connect your seal once<br/>and forget it.',
+                titulo: 'Connect your seal once and forget it.',
                 copy: 'You upload your Digital Seal Certificate (CSD) just once, protected and isolated in your account. From then on, every stamp uses your seal without you ever touching .cer and .key files again.',
                 bullets: [
                     'Encrypted and isolated CSD per business',
@@ -222,7 +222,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'FULL CYCLE',
-                titulo: 'The quote, the payment,<br/>and the invoice: one thread.',
+                titulo: 'The quote, the payment, and the invoice: one thread.',
                 copy: 'The invoice doesn\'t live in another system: it stays linked to its quote, with its event on the timeline. When accounting asks, everything is in the same place — who approved, when they paid, and what UUID they got.',
                 bullets: [
                     'Invoice linked to its quote and timeline',
@@ -251,7 +251,7 @@ export const FEATURES_EN: Feature[] = [
         slug: 'clientes-credito',
         nav: 'Clients and credit',
         eyebrow: 'CLIENTS AND CREDIT',
-        titulo: 'Credit is your advantage.<br/>Control it.',
+        titulo: 'Credit is your advantage. Control it.',
         sub: 'In B2B, selling on credit is selling more — if you control it. Cord saves each client\'s terms (Cash, Net 30, Net 60) and their credit limit, and applies them automatically to each quote.',
         metaTitle: 'B2B credit management: Net 30, Net 60, and credit limit per client — Cord by Flouvia',
         plan: 'Professional plan and above',
@@ -263,7 +263,7 @@ export const FEATURES_EN: Feature[] = [
         blocks: [
             {
                 eyebrow: 'DIRECTORY',
-                titulo: 'Each client, a profile<br/>that says it all.',
+                titulo: 'Each client, a profile that says it all.',
                 copy: 'Company, contact, email, RFC, payment terms, and credit limit — the client profile gathers everything your team needs to quote them right. And since it lives in the system, everyone quotes with the same rules.',
                 bullets: [
                     'Tax data ready for the CFDI',
@@ -273,7 +273,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'CREDIT LIMIT',
-                titulo: 'Say yes with confidence<br/>(and no, on time).',
+                titulo: 'Say yes with confidence (and no, on time).',
                 copy: 'Assign a credit limit per client and let the system monitor it. Before sending a quote on credit, you know how much room the client has left — the "we slipped up" ceases to exist.',
                 bullets: [
                     'Credit limit in MXN per client',
@@ -283,7 +283,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'RELATIONSHIP',
-                titulo: 'Good clients<br/>show in the data.',
+                titulo: 'Good clients show in the data.',
                 copy: 'Who approves fast, who pays on time, who asks and never closes. With the concentrated history, you decide who gets better prices and who needs an advance — with evidence, not memory.',
                 bullets: [
                     'Quotes, approvals, and payments per client',
@@ -312,7 +312,7 @@ export const FEATURES_EN: Feature[] = [
         slug: 'cobranza-ia',
         nav: 'AI Collections',
         eyebrow: 'AUTONOMOUS AI COLLECTIONS',
-        titulo: 'Your collections work alone,<br/>even at night.',
+        titulo: 'Your collections work alone, even at night.',
         sub: 'An artificial intelligence agent follows up on every overdue invoice for you: it emails the client, negotiates an installment plan, and only alerts you when it needs your approval. You approve, the AI chases — without your AR going cold.',
         metaTitle: 'Automated AI collections for B2B companies in Mexico — Cord by Flouvia',
         metaDescription: 'Cord\'s AI collections agent follows up on overdue invoices, negotiates payment plans of up to 3 monthly installments, and projects your cash flow 90 days out.',
@@ -325,7 +325,7 @@ export const FEATURES_EN: Feature[] = [
         blocks: [
             {
                 eyebrow: 'AUTONOMOUS AGENT',
-                titulo: 'It\'s not a reminder.<br/>It\'s a collector that negotiates.',
+                titulo: 'It\'s not a reminder. It\'s a collector that negotiates.',
                 copy: 'You activate autonomous collections per client and the agent takes the overdue AR: it contacts via email, reads the response, and proposes a payment plan of up to three monthly installments. If the client accepts within the limits you defined, it closes the deal; if they ask for something out of range, it escalates it to you. Works nights and weekends.',
                 bullets: [
                     'Contacts via email and understands the client\'s response',
@@ -335,7 +335,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'PREDICTIVE CASH FLOW',
-                titulo: 'You know how much you\'ll collect<br/>before you collect it.',
+                titulo: 'You know how much you\'ll collect before you collect it.',
                 copy: 'Cord crosses each client\'s actual average payment delay with your weighted pipeline to project your revenue week by week, up to 90 days. Instead of guessing, you see the expected flow with probability scenarios and an "AI CFO Insight" that tells you where the risk is and what to collect first.',
                 bullets: [
                     '90-day projection based on your actual payment history',
@@ -345,7 +345,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'YOU ARE IN CHARGE',
-                titulo: 'The AI proposes.<br/>You approve.',
+                titulo: 'The AI proposes. You approve.',
                 copy: 'Autonomous collections is opt-in and controlled by you: you turn on the agent per client, define how far it can negotiate, and review each plan from an oversight dashboard. Everything the agent does is left in the immutable audit log — every email, every agreement, every installment. It\'s never a black box.',
                 bullets: [
                     'Opt-in per client: you decide who the AI chases',
@@ -374,7 +374,7 @@ export const FEATURES_EN: Feature[] = [
         slug: 'divisas',
         nav: 'Multi-currency & FX',
         eyebrow: 'MULTI-CURRENCY AND FX HEDGING',
-        titulo: 'Quote in dollars.<br/>Invoice in pesos.<br/>Protect your margin.',
+        titulo: 'Quote in dollars. Invoice in pesos. Protect your margin.',
         sub: 'Your client sees the price in their currency; you invoice in pesos. Cord locks the daily exchange rate for 30 days and adds a hedging buffer, so the margin you closed is the margin you collect.',
         metaTitle: 'Quotes in dollars and euros with FX hedging for companies in Mexico — Cord by Flouvia',
         metaDescription: 'Quote in USD or EUR and invoice in MXN. Cord takes the spot rate from the ECB, applies a hedging buffer to protect your margin, and locks the FX rate for 30 days.',
@@ -387,7 +387,7 @@ export const FEATURES_EN: Feature[] = [
         blocks: [
             {
                 eyebrow: 'TWO CURRENCIES, ONE DEAL',
-                titulo: 'The client sees dollars.<br/>The SAT sees pesos.',
+                titulo: 'The client sees dollars. The SAT sees pesos.',
                 copy: 'In Cord, the presentation currency and the tax currency are two different things. Your client reviews and approves the quote in dollars or euros; you invoice in pesos, as you live in Mexico. Cord saves both currencies and the rate it locked them at within the same quote, without you tracking the conversion by hand.',
                 bullets: [
                     'Present in USD, EUR, or MXN; always invoice in pesos',
@@ -397,7 +397,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'REAL EXCHANGE RATE',
-                titulo: 'Today\'s rate,<br/>not the old Excel\'s.',
+                titulo: 'Today\'s rate, not the old Excel\'s.',
                 copy: 'Cord fetches the live spot exchange rate from the European Central Bank data, without you typing anything or depending on an outdated sheet. If the external service fails, Cord uses a backup rate so your quote never gets stuck. You see it in the editor before saving.',
                 bullets: [
                     'Live spot rate (ECB data), without typing anything',
@@ -407,7 +407,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'HEDGING AND FX LOCK',
-                titulo: 'The margin you close<br/>is the one you collect.',
+                titulo: 'The margin you close is the one you collect.',
                 copy: 'Between the client approving in dollars and you invoicing weeks later in pesos, the exchange rate moves and eats your profit. Cord adds a hedging buffer to the spot rate (2% by default, you adjust it) and locks that number for 30 days. It\'s not a bank forward: it\'s a safety margin Cord calculates and freezes.',
                 bullets: [
                     'Configurable hedging buffer over the spot rate',
@@ -436,7 +436,7 @@ export const FEATURES_EN: Feature[] = [
         slug: 'internacional',
         nav: 'International Invoicing',
         eyebrow: 'INTERNATIONAL INVOICING (US/MX)',
-        titulo: 'Quote in dollars.<br/>Invoice the right way.',
+        titulo: 'Quote in dollars. Invoice the right way.',
         sub: 'Sell to clients in the US without losing margin to the exchange rate: quote in USD, shield the rate for 30 days, and invoice in MXN with real CFDI 4.0. A single platform for the business that no longer fits within one border.',
         metaTitle: 'US/MX international invoicing: quote in dollars, invoice CFDI 4.0 in pesos — Cord by Flouvia',
         metaDescription: 'Cord quotes in USD with FX hedging (rate locked for 30 days) and invoices in MXN with CFDI 4.0 stamped with the SAT via Facturapi. Multi-country architecture ready to grow.',
@@ -449,7 +449,7 @@ export const FEATURES_EN: Feature[] = [
         blocks: [
             {
                 eyebrow: 'FX HEDGING',
-                titulo: 'The dollar moves.<br/>Your margin doesn\'t.',
+                titulo: 'The dollar moves. Your margin doesn\'t.',
                 copy: 'Between your client approving in dollars and you invoicing weeks later, the exchange rate can eat your profit. Cord takes the real spot rate from the European Central Bank, adds the hedging buffer you define, and freezes that exchange rate for 30 days. The margin you promised is the margin you collect.',
                 bullets: [
                     'Live spot rate (USD to MXN, EUR to MXN) from ECB source',
@@ -459,7 +459,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'TWO CURRENCIES, ONE DEAL',
-                titulo: 'You quote in the currency<br/>your client understands.',
+                titulo: 'You quote in the currency your client understands.',
                 copy: 'In the editor, you choose the presentation currency —what your client abroad sees— and the tax currency you\'ll invoice with. Cord saves both in the quote along with the frozen rate, so the document the client approves and the CFDI that enters your accounting never contradict each other.',
                 bullets: [
                     'Presentation currency (USD) separated from tax currency (MXN)',
@@ -469,7 +469,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'REAL CFDI + GLOBAL ARCHITECTURE',
-                titulo: 'Mexico stamps for real.<br/>The rest is already wired.',
+                titulo: 'Mexico stamps for real. The rest is already wired.',
                 copy: 'When a deal closes in Mexico, Cord issues a real CFDI 4.0 with the SAT through Facturapi: UUID, XML, and stamped PDF. Underneath, a tax provider pattern routes each issuance according to the business\'s country and centralizes it in a single record: the foundation ready to add more countries as you grow.',
                 bullets: [
                     'Real CFDI 4.0 stamped with the SAT (Mexico) via Facturapi',
@@ -498,7 +498,7 @@ export const FEATURES_EN: Feature[] = [
         slug: 'finanzas',
         nav: 'Finance & CFO',
         eyebrow: 'YOUR AI CFO',
-        titulo: 'Predictive cash flow<br/>at 90 days.',
+        titulo: 'Predictive cash flow at 90 days.',
         sub: 'Cross-reference your pipeline with each client\'s real payment history. Know what you will collect before you collect it and spot non-payment risks before they happen.',
         metaTitle: 'Predictive cash flow and AI CFO for B2B — Cord by Flouvia',
         metaDescription: 'Cord uses AI to project your cash flow up to 90 days by crossing your pipeline with the actual payment history of your clients.',
@@ -521,7 +521,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'ACTIVE RISK',
-                titulo: 'The traffic light that protects<br/>your portfolio.',
+                titulo: 'The traffic light that protects your portfolio.',
                 copy: 'The AI CFO reviews risk concentration. If a client representing 40% of your receivables starts to fall behind, it warns you so you can tighten credit.',
                 bullets: [
                     'Early warnings of non-payment risk',
@@ -531,7 +531,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'MANAGEMENT REPORT',
-                titulo: 'The finance meeting,<br/>ready in seconds.',
+                titulo: 'The finance meeting, ready in seconds.',
                 copy: 'Export the projection or grant your executive team access to a live dashboard where the numbers are always up to date.',
                 bullets: [
                     'Live dashboard for the CFO',
@@ -560,7 +560,7 @@ export const FEATURES_EN: Feature[] = [
         slug: 'aprobaciones',
         nav: 'Margin control',
         eyebrow: 'MARGIN CONTROL AND APPROVALS',
-        titulo: 'Sell fast,<br/>but with the right margin.',
+        titulo: 'Sell fast, but with the right margin.',
         sub: 'Define discount thresholds by role. If a sales rep gives a discount greater than allowed, the quote is paused and requests management approval. You protect the margin, they close the deal.',
         metaTitle: 'Margin control and approval workflows for B2B sales — Cord by Flouvia',
         metaDescription: 'Set up discount thresholds and management approval workflows to ensure the profitability of every quote in your sales team.',
@@ -622,7 +622,7 @@ export const FEATURES_EN: Feature[] = [
         slug: 'equipo',
         nav: 'Roles & team',
         eyebrow: 'TEAM, ROLES AND MULTI-ENTITY',
-        titulo: 'Your whole team,<br/>working in sync.',
+        titulo: 'Your whole team, working in sync.',
         sub: 'Invite your sales reps, admins, and accountants with granular permissions. Manage multiple entities or brands from a single master account.',
         metaTitle: 'Team management, roles and multi-entity for B2B — Cord by Flouvia',
         metaDescription: 'Manage your sales team with granular permissions and handle multiple companies or entities from a single Cord account.',
@@ -645,7 +645,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'MULTI-ENTITY',
-                titulo: 'Several entities,<br/>one single dashboard.',
+                titulo: 'Several entities, one single dashboard.',
                 copy: 'If your corporate group operates with several brands or tax entities, you don\'t need separate accounts. Switch companies with one click, share the catalog if you want, and keep collections organized.',
                 bullets: [
                     'Quick company switching (Org switching)',
@@ -684,7 +684,7 @@ export const FEATURES_EN: Feature[] = [
         slug: 'negociacion',
         nav: 'B2B Negotiation',
         eyebrow: 'NEGOTIATION & APPROVALS',
-        titulo: 'Bulletproof agreements,<br/>line by line.',
+        titulo: 'Bulletproof agreements, line by line.',
         sub: 'Your clients can review, adjust quantities, or counteroffer on specific products. Every change generates an immutable, cryptographically signed version — goodbye misunderstandings.',
         metaTitle: 'B2B Quote Negotiation — Cord by Flouvia',
         metaDescription: 'Allow clients to approve or counteroffer line by line. Every version is immutable and SHA-256 signed for full transparency.',

@@ -169,13 +169,7 @@ const faqSchema = {
                         {feature.slug === 'cfdi' && (
                             <div class="mk-cfdi">
                                 <div class="mk-cfdi-bg-code">
-                                    &lt;cfdi:Comprobante Version="4.0" Serie="A" Folio="1048" Fecha="2026-06-24T12:00:00"&gt;<br/>
-                                    &nbsp;&nbsp;&lt;cfdi:Emisor Rfc="MVA240611AB3" Nombre="{isEn ? 'Valle Materials' : 'Materiales del Valle'}" RegimenFiscal="601"/&gt;<br/>
-                                    &nbsp;&nbsp;&lt;cfdi:Receptor Rfc="DEZ981123QX1" Nombre="{isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}" UsoCFDI="G03"/&gt;<br/>
-                                    &nbsp;&nbsp;&lt;cfdi:Conceptos&gt;<br/>
-                                    &nbsp;&nbsp;&nbsp;&nbsp;&lt;cfdi:Concepto ClaveProdServ="30111500" Cantidad="120" ClaveUnidad="H87" Descripcion="{isEn ? 'Grey cement 50kg' : 'Cemento gris 50kg'}"/&gt;<br/>
-                                    &nbsp;&nbsp;&lt;/cfdi:Conceptos&gt;<br/>
-                                    &lt;/cfdi:Comprobante&gt;
+                                    &lt;cfdi:Comprobante Version="4.0" Serie="A" Folio="1048" Fecha="2026-06-24T12:00:00"&gt;                                     &nbsp;&nbsp;&lt;cfdi:Emisor Rfc="MVA240611AB3" Nombre="{isEn ? 'Valle Materials' : 'Materiales del Valle'}" RegimenFiscal="601"/&gt;                                     &nbsp;&nbsp;&lt;cfdi:Receptor Rfc="DEZ981123QX1" Nombre="{isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}" UsoCFDI="G03"/&gt;                                     &nbsp;&nbsp;&lt;cfdi:Conceptos&gt;                                     &nbsp;&nbsp;&nbsp;&nbsp;&lt;cfdi:Concepto ClaveProdServ="30111500" Cantidad="120" ClaveUnidad="H87" Descripcion="{isEn ? 'Grey cement 50kg' : 'Cemento gris 50kg'}"/&gt;                                     &nbsp;&nbsp;&lt;/cfdi:Conceptos&gt;                                     &lt;/cfdi:Comprobante&gt;
                                 </div>
                                 <div class="mk-cfdi-front">
                                     <div class="mk-cfdi-head">
@@ -402,7 +396,7 @@ const faqSchema = {
         <section class="pp-faq">
             <div class="pp-faq-head">
                 <p class="pp-eyebrow reveal">PREGUNTAS FRECUENTES</p>
-                <h2 class="pp-h2 masked-title">{isEn ? 'Most common questions<br/>about' : 'Lo que más nos preguntan<br/>sobre'} {feature.nav.toLowerCase()}.</h2>
+                <h2 class="pp-h2 masked-title">{isEn ? 'Most common questions about' : 'Lo que más nos preguntan sobre'} {feature.nav.toLowerCase()}.</h2>
             </div>
             <div class="pp-faq-list">
                 {feature.faqs.map((f, i) => (
@@ -423,7 +417,7 @@ const faqSchema = {
         <section class="pp-more">
             <div class="pp-more-head">
                 <p class="pp-eyebrow reveal">MÁS DE CORD</p>
-                <h2 class="pp-h2 masked-title">{isEn ? 'Explore the rest<br/>of the product.' : 'Explora el resto<br/>del producto.'}</h2>
+                <h2 class="pp-h2 masked-title">{isEn ? 'Explore the rest of the product.' : 'Explora el resto del producto.'}</h2>
             </div>
             <div class="pp-more-grid">
                 {otros.map((f) => (

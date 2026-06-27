@@ -498,7 +498,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
             const stamp = document.getElementById('qSignedStamp');
             if (stamp && signedBy) {
                 const now = new Date().toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' });
-                stamp.innerHTML = `<strong>Firmante:</strong> ${signedBy}<br/><strong>Sello:</strong> <span class="ql-hash">${res.hash}</span><br/><strong>Fecha:</strong> ${now}`;
+                stamp.innerHTML = `<strong>Firmante:</strong> ${signedBy} <strong>Sello:</strong> <span class="ql-hash">${res.hash}</span> <strong>Fecha:</strong> ${now}`;
             }
             showStep('stepApproved');
             emit('cord:approved', { signed_by: signedBy, hash: res.hash });

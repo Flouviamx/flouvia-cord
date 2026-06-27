@@ -14,8 +14,7 @@ export interface SolStat {
 
 export interface SolBlock {
     eyebrow: string;
-    titulo: string;       // admite <br/>
-    copy: string;
+    titulo: string;       // admite     copy: string;
     bullets: string[];
 }
 
@@ -34,8 +33,7 @@ export interface Solution {
     slug: string;
     nav: string;              // nombre corto (megamenú, hub, cross-links)
     eyebrow: string;
-    titulo: string;          // H1, admite <br/>
-    sub: string;
+    titulo: string;          // H1, admite     sub: string;
     metaTitle?: string;      // <title>/OG — keyword-rich de industria (cae a `${nav} — Cord`)
     metaDescription?: string;// meta description (cae a `sub`)
     paraQuien: string;       // "Para quién es Cord [industria]" — extractable (audiencia objetivo)
@@ -57,7 +55,7 @@ export const SOLUCIONES: Solution[] = [
         slug: 'distribuidoras',
         nav: 'Distribuidoras y mayoristas',
         eyebrow: 'DISTRIBUIDORAS Y MAYORISTAS',
-        titulo: 'Cada cliente,<br/>su propio precio.',
+        titulo: 'Cada cliente, su propio precio.',
         sub: 'Vendes lo mismo a 200 clientes a 200 precios distintos. Cord guarda el precio negociado y los términos de cada cliente y los aplica solos — para que cualquiera de tu equipo cotice rápido sin regalar margen ni romper acuerdos.',
         metaTitle: 'Software de cotizaciones para distribuidoras y mayoristas en México — Cord by Flouvia',
         metaDescription: 'Cord permite a distribuidoras y mayoristas en México gestionar listas de precios por cliente, términos Net 30/60, límites de crédito y CFDI automático — en una sola plataforma. Sin Excel, sin hojas sueltas, sin acuerdos que se pierden.',
@@ -71,7 +69,7 @@ export const SOLUCIONES: Solution[] = [
         blocks: [
             {
                 eyebrow: 'PRECIO POR CLIENTE',
-                titulo: 'El precio correcto<br/>sale solo.',
+                titulo: 'El precio correcto sale solo.',
                 copy: 'En distribución el precio de lista es solo el punto de partida: cada cliente tiene el suyo según volumen y relación. Cord registra el precio negociado de cada línea y te muestra el descuento aplicado, para que tu equipo cotice las mismas condiciones sin tener que preguntar.',
                 bullets: [
                     'Precio negociado por línea, con el % de descuento visible',
@@ -81,7 +79,7 @@ export const SOLUCIONES: Solution[] = [
             },
             {
                 eyebrow: 'CATÁLOGO CENTRAL',
-                titulo: 'Una sola fuente<br/>de la verdad.',
+                titulo: 'Una sola fuente de la verdad.',
                 copy: 'Carga tu catálogo una vez —con SKU, unidad y precio de lista— y agrégalo a cualquier cotización con un clic. Se acabaron las listas de precios en cinco versiones distintas circulando por WhatsApp.',
                 bullets: [
                     'Búsqueda instantánea por nombre o SKU',
@@ -91,7 +89,7 @@ export const SOLUCIONES: Solution[] = [
             },
             {
                 eyebrow: 'TÉRMINOS Y CRÉDITO',
-                titulo: 'Cada cliente,<br/>sus condiciones.',
+                titulo: 'Cada cliente, sus condiciones.',
                 copy: 'Guarda los términos default de cada cliente (Contado, Net 30, Net 60) y su límite de crédito. Al cotizarle, las condiciones se aplican solas y sabes cuánto espacio de crédito le queda antes de aprobar.',
                 bullets: [
                     'Términos de pago default por cliente',
@@ -154,7 +152,7 @@ export const SOLUCIONES: Solution[] = [
         slug: 'construccion',
         nav: 'Construcción y materiales',
         eyebrow: 'CONSTRUCCIÓN Y MATERIALES',
-        titulo: 'Volumen, obra<br/>y crédito, bajo control.',
+        titulo: 'Volumen, obra y crédito, bajo control.',
         sub: 'Cotizaciones de cientos de miles de pesos, entregas en obra y clientes que piden Net 60: el día a día del materialista. Cord le pone folio, vigencia y límite de crédito a cada trato — y te avisa en el momento en que lo aprueban.',
         metaTitle: 'Cotizaciones de materiales de construcción con CFDI y crédito — Cord by Flouvia',
         metaDescription: 'Cord permite a ferreterías, materialistas y proveedores de construcción cotizar volúmenes grandes sin errores, controlar crédito Net 60 por obra y timbrar el CFDI 4.0 automáticamente al cierre. Hecho para México.',
@@ -168,7 +166,7 @@ export const SOLUCIONES: Solution[] = [
         blocks: [
             {
                 eyebrow: 'COTIZACIONES GRANDES',
-                titulo: 'Cientos de líneas,<br/>cero errores de dedo.',
+                titulo: 'Cientos de líneas, cero errores de dedo.',
                 copy: 'Cemento por tonelada, varilla por tramo, block por millar, arena por m³. Arma cotizaciones de cualquier tamaño con unidades reales y mira el subtotal, el IVA y el total recalcularse al instante, con redondeo correcto y números tabulares.',
                 bullets: [
                     'Unidades reales: sacos, m³, tramos, rollos, toneladas',
@@ -178,7 +176,7 @@ export const SOLUCIONES: Solution[] = [
             },
             {
                 eyebrow: 'CRÉDITO EN OBRA',
-                titulo: 'Di que sí con confianza<br/>(y que no, a tiempo).',
+                titulo: 'Di que sí con confianza (y que no, a tiempo).',
                 copy: 'En materiales el crédito es la herramienta de venta. Asigna un límite por cliente y deja que el sistema lo vigile: antes de mandar una cotización a Net 60 sabes cuánto le queda disponible. El "se nos pasó" deja de existir.',
                 bullets: [
                     'Límite de crédito en pesos por cliente',
@@ -188,7 +186,7 @@ export const SOLUCIONES: Solution[] = [
             },
             {
                 eyebrow: 'DEL SÍ AL CFDI',
-                titulo: 'Aprobada en obra,<br/>facturada al instante.',
+                titulo: 'Aprobada en obra, facturada al instante.',
                 copy: 'El cliente abre el link desde la obra, aprueba desde el celular y tú te enteras al momento. Cuando se cierra, la factura CFDI 4.0 sale con los mismos datos —sin recapturar en otro portal— y queda ligada a su cotización.',
                 bullets: [
                     'Link público que se aprueba desde cualquier celular',
@@ -216,13 +214,13 @@ export const SOLUCIONES: Solution[] = [
             },
         ],
         interlink: { href: '/producto/cfdi', label: 'facturación CFDI 4.0' },
-        cta: { titulo: 'Cotiza la obra completa<br/>en minutos.', sub: 'Empieza gratis y carga tu catálogo de materiales hoy.' },
+        cta: { titulo: 'Cotiza la obra completa en minutos.', sub: 'Empieza gratis y carga tu catálogo de materiales hoy.' },
     },
     {
         slug: 'manufactura',
         nav: 'Manufactura',
         eyebrow: 'MANUFACTURA',
-        titulo: 'Cotiza especificación,<br/>lote y entrega.',
+        titulo: 'Cotiza especificación, lote y entrega.',
         sub: 'En manufactura cada cotización es un pequeño proyecto: especificaciones, cantidades mínimas, tiempos de entrega. Con líneas libres y notas por cotización, Cord documenta el acuerdo completo — y el timeline guarda quién aprobó qué y cuándo.',
         metaTitle: 'Cotizaciones de manufactura con especificación técnica y CFDI en México — Cord by Flouvia',
         metaDescription: 'Cord permite a empresas de manufactura en México cotizar lotes con especificación técnica, MOQ, tiempos de entrega y notas de condición. El cliente aprueba por link y el CFDI 4.0 se timbra automáticamente. Historial completo por cliente.',
@@ -236,7 +234,7 @@ export const SOLUCIONES: Solution[] = [
         blocks: [
             {
                 eyebrow: 'ESPECIFICACIÓN',
-                titulo: 'El detalle técnico,<br/>parte de la cotización.',
+                titulo: 'El detalle técnico, parte de la cotización.',
                 copy: 'No todo cabe en un catálogo. Las líneas libres te dejan cotizar conceptos a la medida —material, acabado, tolerancia, cantidad mínima— con su precio y su descripción completa, para que el cliente apruebe exactamente lo que acordaron.',
                 bullets: [
                     'Líneas libres para conceptos fuera de catálogo',
@@ -246,7 +244,7 @@ export const SOLUCIONES: Solution[] = [
             },
             {
                 eyebrow: 'HISTORIAL',
-                titulo: 'A qué precio cerraste<br/>el lote pasado.',
+                titulo: 'A qué precio cerraste el lote pasado.',
                 copy: 'Cada cliente acumula su historial: qué pidió, a qué precio, cuándo y quién lo aprobó. La próxima vez que te pida una corrida, tienes la referencia exacta a la mano — sin escarbar en el correo de hace seis meses.',
                 bullets: [
                     'Historial de cotizaciones por cliente',
@@ -256,7 +254,7 @@ export const SOLUCIONES: Solution[] = [
             },
             {
                 eyebrow: 'CIERRE FORMAL',
-                titulo: 'Aprobación con evidencia,<br/>factura sin recapturar.',
+                titulo: 'Aprobación con evidencia, factura sin recapturar.',
                 copy: 'El cliente aprueba en el link y queda registrado quién y cuándo — evidencia del acuerdo. Al cerrar, el CFDI 4.0 se arma con los datos de la cotización: las cantidades, los precios y el RFC ya están, timbrar es un clic.',
                 bullets: [
                     'Aprobación registrada en el timeline como evidencia',
@@ -284,13 +282,13 @@ export const SOLUCIONES: Solution[] = [
             },
         ],
         interlink: { href: '/producto/seguimiento', label: 'seguimiento en vivo' },
-        cta: { titulo: 'Documenta el acuerdo,<br/>no lo persigas.', sub: 'Empieza gratis — tu primera cotización a la medida hoy.' },
+        cta: { titulo: 'Documenta el acuerdo, no lo persigas.', sub: 'Empieza gratis — tu primera cotización a la medida hoy.' },
     },
     {
         slug: 'servicios',
         nav: 'Servicios profesionales',
         eyebrow: 'SERVICIOS PROFESIONALES',
-        titulo: 'Propuestas tan serias<br/>como tu trabajo.',
+        titulo: 'Propuestas tan serias como tu trabajo.',
         sub: 'Una propuesta en PDF genérico compite mal contra una página elegante con tu marca, montos claros y un botón de aprobar. Manda un link que cierra por ti — y entérate en el momento exacto en que tu prospecto lo abre.',
         metaTitle: 'Propuestas B2B con aprobación por link para servicios profesionales en México — Cord by Flouvia',
         metaDescription: 'Cord permite a despachos, consultorías y agencias en México enviar propuestas con su marca, saber el momento exacto en que el prospecto las abre, recibir la aprobación con un botón y cobrar el anticipo en línea. CFDI 4.0 automático.',
@@ -304,7 +302,7 @@ export const SOLUCIONES: Solution[] = [
         blocks: [
             {
                 eyebrow: 'TU MARCA',
-                titulo: 'La propuesta la firma<br/>tu despacho.',
+                titulo: 'La propuesta la firma tu despacho.',
                 copy: 'Tu logo, tu nombre y tu color presiden la propuesta. En los planes de pago desaparece el "Powered by Cord" y la experiencia es 100% tuya: tu prospecto ve una firma seria, con procesos serios, antes de leer el primer número.',
                 bullets: [
                     'Logo y color de marca configurables',
@@ -314,7 +312,7 @@ export const SOLUCIONES: Solution[] = [
             },
             {
                 eyebrow: 'LA SEÑAL QUE IMPORTA',
-                titulo: 'Sabes el momento<br/>en que la leen.',
+                titulo: 'Sabes el momento en que la leen.',
                 copy: 'El interés se enfría rápido. Cord te avisa en cuanto tu prospecto abre la propuesta y cuántas veces la ha visto — para que llames cuando te tiene en la cabeza, no dos semanas después.',
                 bullets: [
                     'Aviso al instante cuando abren tu propuesta',
@@ -324,7 +322,7 @@ export const SOLUCIONES: Solution[] = [
             },
             {
                 eyebrow: 'CERO FRICCIÓN',
-                titulo: 'Aprobar es un botón,<br/>no una llamada.',
+                titulo: 'Aprobar es un botón, no una llamada.',
                 copy: 'Tu prospecto abre el link donde sea, revisa el alcance y aprueba ahí mismo —sin crear cuenta, sin descargar nada. Si manejas pago en línea, puede pagar el anticipo en el momento; si no, queda registrado bajo sus términos.',
                 bullets: [
                     'Aprobación en un clic, sin registro ni fricción',
@@ -352,7 +350,7 @@ export const SOLUCIONES: Solution[] = [
             },
         ],
         interlink: { href: '/producto/link-publico', label: 'el link público de aprobación' },
-        cta: { titulo: 'La próxima propuesta que mandes<br/>va a tener un botón de aprobar.', sub: 'Mira una propuesta de ejemplo o crea la tuya gratis.' },
+        cta: { titulo: 'La próxima propuesta que mandes va a tener un botón de aprobar.', sub: 'Mira una propuesta de ejemplo o crea la tuya gratis.' },
     },
 ];
 

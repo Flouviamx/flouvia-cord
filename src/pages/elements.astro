@@ -104,7 +104,7 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
             <div class="el-hero-grid">
                 <div class="el-hero-text">
                     <p class="el-eyebrow reveal">CORD ELEMENTS</p>
-                    <h1 class="el-title masked-title" set:html={isEn ? 'Your quote builder,<br/>embedded anywhere.' : 'Tu cotizador,<br/>en cualquier sitio.'} />
+                    <h1 class="el-title masked-title" set:html={isEn ? 'Your quote builder, embedded anywhere.' : 'Tu cotizador, en cualquier sitio.'} />
                     <p class="el-sub reveal">
                         {isEn ? <Fragment>Bring Cord's quote builder to your clients' portal with <b>one line of code</b>. Your brand, your catalog, approval and online payment — all inside their ecosystem, without leaving their site.</Fragment> : <Fragment>Lleva el cotizador de Cord al portal de tus clientes con <b>una línea de código</b>. Tu marca, tu catálogo, aprobación y pago en línea — todo dentro de su ecosistema, sin que salgan de su web.</Fragment>}
                     </p>
@@ -166,7 +166,7 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
         <section class="el-install" id="instalar">
             <div class="el-install-head">
                 <p class="el-eyebrow reveal">{isEn ? 'ONE LINE OF CODE' : 'UNA LÍNEA DE CÓDIGO'}</p>
-                <h2 class="el-h2 masked-title" set:html={isEn ? 'Paste. Done.<br/>No backend.' : 'Pegar. Listo.<br/>Sin backend.'} />
+                <h2 class="el-h2 masked-title" set:html={isEn ? 'Paste. Done. No backend.' : 'Pegar. Listo. Sin backend.'} />
                 <p class="el-copy reveal">{isEn ? <Fragment>A script and a <code>&lt;div&gt;</code>. The quote builder appears with your brand, auto-adjusts its height, and inherits the host page's style.</Fragment> : <Fragment>Un script y un <code>&lt;div&gt;</code>. El cotizador aparece con tu marca, se ajusta solo a la altura del contenido y hereda el estilo de la página anfitriona.</Fragment>}</p>
             </div>
             <div class="el-code el-tabs reveal-mockup" data-el-tabs>
@@ -206,7 +206,7 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
         <section class="el-features">
             <div class="el-feat-head">
                 <p class="el-eyebrow reveal">{isEn ? 'WHY ELEMENTS' : 'POR QUÉ ELEMENTS'}</p>
-                <h2 class="el-h2 masked-title" set:html={isEn ? 'The complete quote builder,<br/>not a toy widget.' : 'El cotizador completo,<br/>no un widget de juguete.'} />
+                <h2 class="el-h2 masked-title" set:html={isEn ? 'The complete quote builder, not a toy widget.' : 'El cotizador completo, no un widget de juguete.'} />
             </div>
             <div class="el-feat-list">
                 <div class="el-feat reveal">
@@ -240,7 +240,7 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
         <section class="el-dev">
             <div class="el-dev-text">
                 <p class="el-eyebrow reveal">{isEn ? 'FOR DEVELOPERS' : 'PARA DESARROLLADORES'}</p>
-                <h2 class="el-h2 masked-title" set:html={isEn ? 'React to every<br/>client action.' : 'Reacciona a cada<br/>acción del cliente.'} />
+                <h2 class="el-h2 masked-title" set:html={isEn ? 'React to every client action.' : 'Reacciona a cada acción del cliente.'} />
                 <p class="el-copy reveal">{isEn ? <Fragment>The container emits <code>CustomEvents</code> on your own <code>&lt;div&gt;</code>. Connect them to your analytics, redirect after approval, or sync your CRM — you keep control on your page.</Fragment> : <Fragment>El contenedor emite <code>CustomEvents</code> sobre tu propio <code>&lt;div&gt;</code>. Conéctalos a tu analítica, redirige tras la aprobación o sincroniza tu CRM — el control queda en tu página.</Fragment>}</p>
                 <ul class="el-events-list">
                     <li class="reveal"><code>cord:ready</code><span>{isEn ? 'the quote builder loaded' : 'el cotizador cargó'}</span></li>
@@ -258,7 +258,7 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
 
         <!-- ════════ CTA secundario ════════ -->
         <section class="el-mid">
-            <h2 class="el-mid-title masked-title" set:html={isEn ? 'Prefer not to embed?<br/>Share the link.' : '¿Prefieres no embeber?<br/>Comparte el link.'} />
+            <h2 class="el-mid-title masked-title" set:html={isEn ? 'Prefer not to embed? Share the link.' : '¿Prefieres no embeber? Comparte el link.'} />
             <p class="el-mid-sub reveal">{isEn ? <Fragment>Each quote also lives on its own public page <code>/q/{'{'}token{'}'}</code> — the exact same builder, zero code. Embedding is for when you want it to live <i>inside</i> your site.</Fragment> : <Fragment>Cada cotización vive también en su propia página pública <code>/q/{'{'}token{'}'}</code> — el mismo cotizador, sin tocar código. El embed es para cuando quieres que viva <i>dentro</i> de tu sitio.</Fragment>}</p>
             <a href={l("/q/demo")} class="el-btn-ghost reveal" target="_blank" rel="noopener">{isEn ? 'View a real quote ↗' : 'Ver una cotización real ↗'}</a>
         </section>

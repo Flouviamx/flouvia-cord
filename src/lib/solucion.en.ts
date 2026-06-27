@@ -6,7 +6,7 @@ export const SOLUCIONES_EN: Solution[] = [
         slug: 'distribuidoras',
         nav: 'Distributors & Wholesalers',
         eyebrow: 'DISTRIBUTORS AND WHOLESALERS',
-        titulo: 'Every client,<br/>their own price.',
+        titulo: 'Every client, their own price.',
         sub: 'You sell the same thing to 200 clients at 200 different prices. Cord saves the negotiated price and terms for each client and applies them automatically — so anyone on your team can quote fast without giving away margin or breaking agreements.',
         metaTitle: 'Quoting software for distributors and wholesalers in Mexico — Cord by Flouvia',
         metaDescription: 'Cord allows distributors and wholesalers in Mexico to manage price lists per client, Net 30/60 terms, credit limits, and automatic CFDI — all in one platform.',
@@ -20,7 +20,7 @@ export const SOLUCIONES_EN: Solution[] = [
         blocks: [
             {
                 eyebrow: 'PRICE PER CLIENT',
-                titulo: 'The right price<br/>comes out on its own.',
+                titulo: 'The right price comes out on its own.',
                 copy: 'In distribution, the list price is just the starting point: every client has their own based on volume and relationship. Cord records the negotiated price of each line and shows you the discount applied, so your team quotes the same conditions without having to ask.',
                 bullets: [
                     'Negotiated price per line, with the discount % visible',
@@ -30,7 +30,7 @@ export const SOLUCIONES_EN: Solution[] = [
             },
             {
                 eyebrow: 'CENTRAL CATALOG',
-                titulo: 'A single source<br/>of truth.',
+                titulo: 'A single source of truth.',
                 copy: 'Load your catalog once — with SKU, unit, and list price — and add it to any quote with one click. No more price lists in five different versions circulating on WhatsApp.',
                 bullets: [
                     'Instant search by name or SKU',
@@ -40,7 +40,7 @@ export const SOLUCIONES_EN: Solution[] = [
             },
             {
                 eyebrow: 'TERMS AND CREDIT',
-                titulo: 'Every client,<br/>their conditions.',
+                titulo: 'Every client, their conditions.',
                 copy: 'Save the default terms for each client (Cash, Net 30, Net 60) and their credit limit. When quoting them, the conditions apply themselves and you know how much credit room they have left before approving.',
                 bullets: [
                     'Default payment terms per client',
@@ -83,7 +83,7 @@ export const SOLUCIONES_EN: Solution[] = [
         slug: 'construccion',
         nav: 'Construction & Materials',
         eyebrow: 'CONSTRUCTION AND MATERIALS',
-        titulo: 'Volume, site<br/>and credit, under control.',
+        titulo: 'Volume, site and credit, under control.',
         sub: 'Quotes for hundreds of thousands of pesos, site deliveries, and clients asking for Net 60: the daily life of a materials supplier. Cord puts a folio, validity, and credit limit to each deal — and notifies you the moment they approve it.',
         metaTitle: 'Construction materials quotes with CFDI and credit — Cord by Flouvia',
         metaDescription: 'Cord allows hardware stores, materials suppliers, and construction providers to quote large volumes without errors, control Net 60 credit per site, and stamp CFDI 4.0 automatically at closing.',
@@ -97,7 +97,7 @@ export const SOLUCIONES_EN: Solution[] = [
         blocks: [
             {
                 eyebrow: 'LARGE QUOTES',
-                titulo: 'Hundreds of lines,<br/>zero typos.',
+                titulo: 'Hundreds of lines, zero typos.',
                 copy: 'Cement by the ton, rebar by the piece, block by the thousand, sand by m³. Build quotes of any size with real units and watch the subtotal, tax, and total recalculate instantly, with correct rounding and tabular numbers.',
                 bullets: [
                     'Real units: bags, m³, pieces, rolls, tons',
@@ -107,7 +107,7 @@ export const SOLUCIONES_EN: Solution[] = [
             },
             {
                 eyebrow: 'SITE CREDIT',
-                titulo: 'Say yes with confidence<br/>(and no, on time).',
+                titulo: 'Say yes with confidence (and no, on time).',
                 copy: 'In materials, credit is the sales tool. Assign a limit per client and let the system monitor it: before sending a Net 60 quote you know how much is available. The "we slipped up" ceases to exist.',
                 bullets: [
                     'Credit limit in MXN per client',
@@ -117,7 +117,7 @@ export const SOLUCIONES_EN: Solution[] = [
             },
             {
                 eyebrow: 'FROM YES TO CFDI',
-                titulo: 'Approved on site,<br/>invoiced instantly.',
+                titulo: 'Approved on site, invoiced instantly.',
                 copy: 'The client opens the link from the construction site, approves from their phone, and you find out right away. When it closes, the CFDI 4.0 invoice comes out with the same data — no retyping in another portal — and stays linked to its quote.',
                 bullets: [
                     'Public link that gets approved from any mobile',
@@ -145,13 +145,13 @@ export const SOLUCIONES_EN: Solution[] = [
             },
         ],
         interlink: { href: '/producto/cfdi', label: 'CFDI 4.0 e-invoicing' },
-        cta: { titulo: 'Quote the whole site<br/>in minutes.', sub: 'Start for free and upload your materials catalog today.' },
+        cta: { titulo: 'Quote the whole site in minutes.', sub: 'Start for free and upload your materials catalog today.' },
     },
     {
         slug: 'manufactura',
         nav: 'Manufacturing',
         eyebrow: 'MANUFACTURING',
-        titulo: 'Quote spec,<br/>batch, and delivery.',
+        titulo: 'Quote spec, batch, and delivery.',
         sub: 'In manufacturing, every quote is a small project: specifications, minimum quantities, delivery times. With free lines and quote notes, Cord documents the entire agreement — and the timeline saves who approved what and when.',
         metaTitle: 'Manufacturing quotes with technical specification and CFDI in Mexico — Cord by Flouvia',
         metaDescription: 'Cord allows manufacturing companies in Mexico to quote batches with technical specs, MOQ, delivery times, and condition notes. The client approves via link and CFDI 4.0 is stamped automatically.',
@@ -165,7 +165,7 @@ export const SOLUCIONES_EN: Solution[] = [
         blocks: [
             {
                 eyebrow: 'SPECIFICATION',
-                titulo: 'The technical detail,<br/>part of the quote.',
+                titulo: 'The technical detail, part of the quote.',
                 copy: 'Not everything fits in a catalog. Free lines let you quote custom concepts — material, finish, tolerance, minimum quantity — with their price and full description, so the client approves exactly what was agreed.',
                 bullets: [
                     'Free lines for concepts outside the catalog',
@@ -175,7 +175,7 @@ export const SOLUCIONES_EN: Solution[] = [
             },
             {
                 eyebrow: 'HISTORY',
-                titulo: 'At what price did you close<br/>the last batch.',
+                titulo: 'At what price did you close the last batch.',
                 copy: 'Each client accumulates their history: what they asked for, at what price, when, and who approved it. The next time they ask for a run, you have the exact reference at hand — without digging through emails from six months ago.',
                 bullets: [
                     'Quote history per client',
@@ -185,7 +185,7 @@ export const SOLUCIONES_EN: Solution[] = [
             },
             {
                 eyebrow: 'FORMAL CLOSING',
-                titulo: 'Approval with evidence,<br/>invoice without retyping.',
+                titulo: 'Approval with evidence, invoice without retyping.',
                 copy: 'The client approves on the link and it\'s recorded who and when — evidence of the agreement. When closing, the CFDI 4.0 is built with the quote data: quantities, prices, and RFC are already there, stamping is one click.',
                 bullets: [
                     'Approval recorded on the timeline as evidence',
@@ -213,13 +213,13 @@ export const SOLUCIONES_EN: Solution[] = [
             },
         ],
         interlink: { href: '/producto/seguimiento', label: 'live tracking' },
-        cta: { titulo: 'Document the agreement,<br/>don\'t chase it.', sub: 'Start for free — your first custom quote today.' },
+        cta: { titulo: 'Document the agreement, don\'t chase it.', sub: 'Start for free — your first custom quote today.' },
     },
     {
         slug: 'servicios',
         nav: 'Professional Services',
         eyebrow: 'PROFESSIONAL SERVICES',
-        titulo: 'Proposals as serious<br/>as your work.',
+        titulo: 'Proposals as serious as your work.',
         sub: 'A generic PDF proposal competes poorly against an elegant page with your brand, clear amounts, and an approve button. Send a link that closes for you — and find out the exact moment your prospect opens it.',
         metaTitle: 'B2B proposals with link approval for professional services in Mexico — Cord by Flouvia',
         metaDescription: 'Cord allows firms, consultancies, and agencies in Mexico to send proposals with their brand, know the exact moment the prospect opens them, receive approval with a button, and collect the advance online.',
@@ -233,7 +233,7 @@ export const SOLUCIONES_EN: Solution[] = [
         blocks: [
             {
                 eyebrow: 'YOUR BRAND',
-                titulo: 'The proposal is signed by<br/>your firm.',
+                titulo: 'The proposal is signed by your firm.',
                 copy: 'Your logo, your name, and your color preside over the proposal. On paid plans, the "Powered by Cord" disappears and the experience is 100% yours: your prospect sees a serious firm, with serious processes, before reading the first number.',
                 bullets: [
                     'Configurable brand logo and color',
@@ -243,7 +243,7 @@ export const SOLUCIONES_EN: Solution[] = [
             },
             {
                 eyebrow: 'THE SIGNAL THAT MATTERS',
-                titulo: 'You know the moment<br/>they read it.',
+                titulo: 'You know the moment they read it.',
                 copy: 'Interest cools quickly. Cord alerts you as soon as your prospect opens the proposal and how many times they\'ve seen it — so you call when you\'re top-of-mind, not two weeks later.',
                 bullets: [
                     'Instant alert when they open your proposal',
@@ -253,7 +253,7 @@ export const SOLUCIONES_EN: Solution[] = [
             },
             {
                 eyebrow: 'ZERO FRICTION',
-                titulo: 'Approving is a button,<br/>not a phone call.',
+                titulo: 'Approving is a button, not a phone call.',
                 copy: 'Your prospect opens the link anywhere, reviews the scope, and approves right there — no creating an account, no downloading anything. If you handle online payments, they can pay the advance at that moment; if not, it\'s recorded under their terms.',
                 bullets: [
                     'One-click approval, no registration or friction',
@@ -281,7 +281,7 @@ export const SOLUCIONES_EN: Solution[] = [
             },
         ],
         interlink: { href: '/producto/link-publico', label: 'the public approval link' },
-        cta: { titulo: 'The next proposal you send<br/>will have an approve button.', sub: 'See a sample proposal or create your own for free.' },
+        cta: { titulo: 'The next proposal you send will have an approve button.', sub: 'See a sample proposal or create your own for free.' },
     },
 ];
 

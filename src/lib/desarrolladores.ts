@@ -14,8 +14,7 @@ export interface DevStat {
 
 export interface DevBlock {
     eyebrow: string;
-    titulo: string;       // admite <br/>
-    copy: string;
+    titulo: string;       // admite     copy: string;
     bullets: string[];
     code?: { label: string; body: string };   // snippet opcional como visual del bloque
 }
@@ -26,8 +25,7 @@ export interface DevPage {
     slug: string;
     nav: string;
     eyebrow: string;
-    titulo: string;       // H1, admite <br/>
-    sub: string;
+    titulo: string;       // H1, admite     sub: string;
     plan: string;
     stats: DevStat[];
     blocks: DevBlock[];
@@ -40,7 +38,7 @@ export const DEV_PAGES: DevPage[] = [
         slug: 'api',
         nav: 'API REST',
         eyebrow: 'API REST',
-        titulo: 'Tu motor de cotizaciones,<br/>conectado a todo.',
+        titulo: 'Tu motor de cotizaciones, conectado a todo.',
         sub: 'Cord deja de ser solo una pantalla para humanos y se convierte en un sistema con el que tus otros sistemas pueden hablar. Lee y crea cotizaciones, clientes y productos desde tu ERP, tu CRM o un script — con una sola llave.',
         plan: 'Plan Negocio · llaves de prueba gratis para integrar antes de pagar',
         stats: [
@@ -51,7 +49,7 @@ export const DEV_PAGES: DevPage[] = [
         blocks: [
             {
                 eyebrow: '¿PARA QUÉ SIRVE?',
-                titulo: 'Tus clientes grandes ya tienen<br/>su sistema. Habla con él.',
+                titulo: 'Tus clientes grandes ya tienen su sistema. Habla con él.',
                 copy: 'Imagina un cliente atado a un ERP lento que sus empleados odian. Con la API, sus programadores conectan ese ERP con Cord: tu equipo cotiza en el motor rápido de Cord y los datos regresan al ERP del cliente en el fondo. Nadie cambia de herramienta, todos ganan.',
                 bullets: [
                     'Importa tu catálogo y clientes desde tu sistema, sin recapturar',
@@ -61,7 +59,7 @@ export const DEV_PAGES: DevPage[] = [
             },
             {
                 eyebrow: 'AUTENTICACIÓN',
-                titulo: 'Una llave. Dos permisos.<br/>Revocable al instante.',
+                titulo: 'Una llave. Dos permisos. Revocable al instante.',
                 copy: 'Genera una API key en Ajustes y mándala en el header de cada petición. Las llaves de solo lectura pueden consultar; las de escritura también crean. ¿Se filtró una? La revocas y deja de funcionar al momento. En la base solo guardamos su hash — nunca la llave en claro.',
                 bullets: [
                     'Header estándar: Authorization: Bearer sk_live_…',
@@ -84,7 +82,7 @@ export const DEV_PAGES: DevPage[] = [
             },
             {
                 eyebrow: 'ENDPOINTS',
-                titulo: 'Todo lo que ves en la app,<br/>también por API.',
+                titulo: 'Todo lo que ves en la app, también por API.',
                 copy: 'Cotizaciones, clientes, productos y cobranza — los mismos datos de tu panel, en JSON. Pagina con limit y offset, filtra por estado, y construye lo que necesites encima.',
                 bullets: [
                     'GET/POST /cotizaciones · GET /cotizaciones/:id',
@@ -120,7 +118,7 @@ export const DEV_PAGES: DevPage[] = [
         slug: 'mcp',
         nav: 'MCP bidireccional + gobernanza de agentes',
         eyebrow: 'MCP BIDIRECCIONAL · GOBERNANZA DE AGENTES',
-        titulo: 'Tu negocio habla con la IA.<br/>Y la IA habla con tus sistemas.',
+        titulo: 'Tu negocio habla con la IA. Y la IA habla con tus sistemas.',
         sub: 'El MCP de Cord ya no va en un solo sentido. Cord es servidor: una IA como Claude consulta tu cartera y arma cotizaciones con 7 herramientas. Y Cord es cliente: se conecta a los servidores MCP de tu CRM o ERP, bajo permisos que tú firmas. Tú decides quién toca qué.',
         plan: 'Disponible en todos los planes · usa la misma API key (más llaves activas conforme subes de plan; el consumo en vivo se mide por uso)',
         stats: [
@@ -131,7 +129,7 @@ export const DEV_PAGES: DevPage[] = [
         blocks: [
             {
                 eyebrow: 'CORD COMO SERVIDOR',
-                titulo: '7 herramientas.<br/>Dos formas de conectarse.',
+                titulo: '7 herramientas. Dos formas de conectarse.',
                 copy: 'Conectas Cord a un asistente como Claude y la IA trabaja con tus datos reales: revisa el pipeline, encuentra lo vencido, busca un cliente o arma un borrador. Hay dos puertas de entrada: JSON-RPC 2.0 sobre HTTP sin estado en /api/mcp, donde viven las 7 herramientas; y un canal HTTP/SSE con sesión en /api/mcp/sse + /api/mcp/message. Ambas se autentican con tu API key y respetan el scope de cada herramienta.',
                 bullets: [
                     'Las 7 tools corren dentro de tu org — la IA consulta, no inventa',
@@ -148,7 +146,7 @@ crear_cotizacion_borrador`,
             },
             {
                 eyebrow: 'CORD COMO CLIENTE',
-                titulo: 'Cord también consulta<br/>los sistemas de tu cliente.',
+                titulo: 'Cord también consulta los sistemas de tu cliente.',
                 copy: 'Da la vuelta a la flecha. Registras la URL de los servidores MCP de tu CRM o ERP y Cord se conecta a ellos como cliente. Cuando armas una cotización con IA, el agent loop de /api/cotizaciones/ai-draft pregunta primero a esos sistemas remotos —saldo de un cliente, último pedido, condiciones pactadas— y luego arma las líneas con ese contexto. Hasta 5 vueltas como tope, y al terminar cierra cada conexión.',
                 bullets: [
                     'Conecta por SSE inyectando el token de autorización de cada servidor remoto',
@@ -167,7 +165,7 @@ await mcpManager.disconnectAll();`,
             },
             {
                 eyebrow: 'GOBERNANZA DE AGENTES',
-                titulo: 'Cada agente toca<br/>solo lo que le firmas.',
+                titulo: 'Cada agente toca solo lo que le firmas.',
                 copy: 'Nada de accesos abiertos. Cada org tiene un agente por defecto, el Asistente Cord, y una tabla de permisos que dicta a qué servidores externos puede conectarse. Si un servidor no está en su allowlist, el agente ni lo ve. Todo vive con Row Level Security en la base: cada consulta filtra por tu org_id y nadie cruza datos entre negocios.',
                 bullets: [
                     'Registras y activas/desactivas servidores MCP en Ajustes › Developers',
@@ -187,7 +185,7 @@ await mcpManager.disconnectAll();`,
         slug: 'elements',
         nav: 'Cord Elements',
         eyebrow: 'CORD ELEMENTS · COTIZADOR EMBEBIBLE',
-        titulo: 'Tu cotizador,<br/>dentro de su web.',
+        titulo: 'Tu cotizador, dentro de su web.',
         sub: 'Lleva el cotizador de Cord al portal de tus clientes con una línea de código. Tu marca, aprobación, contraoferta y pago en línea — todo dentro de su ecosistema, sin que salgan de su sitio.',
         plan: 'Signup gratis. En el plan Gratis el link público lleva el discreto "vía Cord"; lo quitas y dejas solo tu marca desde Ajustes › Developers, donde también defines la allowlist de dominios autorizados para embeber.',
         stats: [
@@ -198,7 +196,7 @@ await mcpManager.disconnectAll();`,
         blocks: [
             {
                 eyebrow: 'UNA LÍNEA DE CÓDIGO',
-                titulo: 'Pegar. Listo.<br/>Sin backend.',
+                titulo: 'Pegar. Listo. Sin backend.',
                 copy: 'Un script y un <div>. El cotizador aparece como un <iframe> servido por Cord, muestra un skeleton mientras carga y se ajusta solo a la altura del contenido vía postMessage. No hay servidor que mantener ni datos que sincronizar: el token público de la cotización es todo lo que necesitas.',
                 bullets: [
                     'Funciona en cualquier stack: WordPress, HTML plano, lo que sea',
@@ -214,7 +212,7 @@ await mcpManager.disconnectAll();`,
             },
             {
                 eyebrow: 'NATIVO EN TU FRAMEWORK',
-                titulo: 'Un paquete de npm.<br/>React o Web Component.',
+                titulo: 'Un paquete de npm. React o Web Component.',
                 copy: 'Instala @flouviahq/elements y úsalo como un componente más. En React importas <CordCotizador> con callbacks tipados; en Vue, Astro o HTML usas el Web Component <cord-cotizador>, que re-emite los eventos como CustomEvents nativos sin prefijo. Mismo iframe por debajo, la integración que prefiera tu equipo.',
                 bullets: [
                     'import { CordCotizador } from \'@flouviahq/elements/react\'',
@@ -239,7 +237,7 @@ export function Cotizacion({ token }) {
             },
             {
                 eyebrow: 'TU MARCA · SEGURO POR DISEÑO',
-                titulo: 'El cotizador completo,<br/>no un widget de juguete.',
+                titulo: 'El cotizador completo, no un widget de juguete.',
                 copy: 'Dentro del embed va el mismo cotizador de tu cuenta: tu color, tu logo y tus datos. El cliente aprueba, rechaza, negocia el precio o paga con Stripe sin salir de su portal, y tú decides en qué dominios puede embeberse con una allowlist por cuenta (CSP frame-ancestors) que blinda contra clickjacking.',
                 bullets: [
                     'Tu marca, no la nuestra — color, logo y datos de tu cuenta de Cord',
@@ -259,7 +257,7 @@ export function Cotizacion({ token }) {
         slug: 'fx',
         nav: 'Multi-divisa FX',
         eyebrow: 'API MULTI-DIVISA FX',
-        titulo: 'Cotiza en USD,<br/>cobra en MXN.',
+        titulo: 'Cotiza en USD, cobra en MXN.',
         sub: 'Conéctate a nuestra API de tipos de cambio en tiempo real (Banxico/FIX o interbancario) para mantener tus listas de precios estables en dólares, pero cotizar y cobrar siempre en moneda local exacta.',
         plan: 'Gratis en todos los planes. Fix de Banxico sin costo extra; tipos interbancarios en vivo en plan Pro.',
         stats: [
@@ -294,7 +292,7 @@ export function Cotizacion({ token }) {
         slug: 'fiscal',
         nav: 'Fiscal US/MX',
         eyebrow: 'FISCAL INTERNACIONAL',
-        titulo: 'Cross-border commerce,<br/>sin fricción.',
+        titulo: 'Cross-border commerce, sin fricción.',
         sub: 'Vende desde US a MX o viceversa sin romper las reglas locales. Soporte para Sales Tax, IVA retenido, IEPS y facturación dual.',
         plan: 'Plan Enterprise',
         stats: [

@@ -6,7 +6,7 @@ export const DEV_PAGES_EN: DevPage[] = [
         slug: 'api',
         nav: 'REST API',
         eyebrow: 'REST API',
-        titulo: 'Your quoting engine,<br/>connected to everything.',
+        titulo: 'Your quoting engine, connected to everything.',
         sub: 'Cord stops being just a screen for humans and becomes a system your other systems can talk to. Read and create quotes, clients, and products from your ERP, CRM, or a script — with a single key.',
         plan: 'Business Plan · free test keys to integrate before paying',
         stats: [
@@ -17,7 +17,7 @@ export const DEV_PAGES_EN: DevPage[] = [
         blocks: [
             {
                 eyebrow: 'WHAT IS IT FOR?',
-                titulo: 'Your big clients already have<br/>their system. Talk to it.',
+                titulo: 'Your big clients already have their system. Talk to it.',
                 copy: 'Imagine a client tied to a slow ERP their employees hate. With the API, their developers connect that ERP to Cord: your team quotes in Cord\'s fast engine and the data returns to the client\'s ERP in the background. No one changes tools, everyone wins.',
                 bullets: [
                     'Import your catalog and clients from your system, without retyping',
@@ -27,7 +27,7 @@ export const DEV_PAGES_EN: DevPage[] = [
             },
             {
                 eyebrow: 'AUTHENTICATION',
-                titulo: 'One key. Two scopes.<br/>Revocable instantly.',
+                titulo: 'One key. Two scopes. Revocable instantly.',
                 copy: 'Generate an API key in Settings and send it in the header of every request. Read-only keys can query; write keys can also create. Did one leak? Revoke it and it stops working instantly. We only store its hash in the database — never the plaintext key.',
                 bullets: [
                     'Standard header: Authorization: Bearer sk_live_…',
@@ -50,7 +50,7 @@ export const DEV_PAGES_EN: DevPage[] = [
             },
             {
                 eyebrow: 'ENDPOINTS',
-                titulo: 'Everything you see in the app,<br/>also via API.',
+                titulo: 'Everything you see in the app, also via API.',
                 copy: 'Quotes, clients, products, and collections — the same data from your dashboard, in JSON. Paginate with limit and offset, filter by status, and build whatever you need on top.',
                 bullets: [
                     'GET/POST /cotizaciones · GET /cotizaciones/:id',
@@ -86,7 +86,7 @@ export const DEV_PAGES_EN: DevPage[] = [
         slug: 'mcp',
         nav: 'Bidirectional MCP + agent governance',
         eyebrow: 'BIDIRECTIONAL MCP · AGENT GOVERNANCE',
-        titulo: 'Your business talks to AI.<br/>And AI talks to your systems.',
+        titulo: 'Your business talks to AI. And AI talks to your systems.',
         sub: 'Cord\'s MCP is no longer a one-way street. Cord is a server: an AI like Claude queries your AR and builds quotes using 7 tools. And Cord is a client: it connects to your CRM or ERP\'s MCP servers, under permissions you sign off on. You decide who touches what.',
         plan: 'Available on all plans · uses the same API key (more active keys as you upgrade; live consumption is metered by use)',
         stats: [
@@ -97,7 +97,7 @@ export const DEV_PAGES_EN: DevPage[] = [
         blocks: [
             {
                 eyebrow: 'CORD AS A SERVER',
-                titulo: '7 tools.<br/>Two ways to connect.',
+                titulo: '7 tools. Two ways to connect.',
                 copy: 'Connect Cord to an assistant like Claude and the AI works with your real data: checks the pipeline, finds overdue accounts, looks up a client, or drafts a quote. There are two entry doors: JSON-RPC 2.0 over stateless HTTP at /api/mcp, where the 7 tools live; and an HTTP/SSE channel with session at /api/mcp/sse + /api/mcp/message. Both authenticate with your API key and respect each tool\'s scope.',
                 bullets: [
                     'The 7 tools run inside your org — the AI queries, it doesn\'t make things up',
@@ -114,7 +114,7 @@ crear_cotizacion_borrador`,
             },
             {
                 eyebrow: 'CORD AS A CLIENT',
-                titulo: 'Cord also queries<br/>your client\'s systems.',
+                titulo: 'Cord also queries your client\'s systems.',
                 copy: 'Flip the arrow. You register the URL of your CRM or ERP\'s MCP servers and Cord connects to them as a client. When you build a quote with AI, the agent loop at /api/cotizaciones/ai-draft first asks those remote systems —a client\'s balance, last order, agreed conditions— and then builds the lines with that context. Up to 5 loops max, and it closes every connection when done.',
                 bullets: [
                     'Connects via SSE injecting each remote server\'s authorization token',
@@ -133,7 +133,7 @@ await mcpManager.disconnectAll();`,
             },
             {
                 eyebrow: 'AGENT GOVERNANCE',
-                titulo: 'Each agent touches<br/>only what you sign off on.',
+                titulo: 'Each agent touches only what you sign off on.',
                 copy: 'No open access. Each org has a default agent, the Cord Assistant, and a permissions table dictating which external servers it can connect to. If a server isn\'t on its allowlist, the agent doesn\'t even see it. Everything lives with Row Level Security in the database: every query filters by your org_id and no one crosses data between businesses.',
                 bullets: [
                     'Register and toggle MCP servers in Settings › Developers',
@@ -153,7 +153,7 @@ await mcpManager.disconnectAll();`,
         slug: 'elements',
         nav: 'Cord Elements',
         eyebrow: 'CORD ELEMENTS · EMBEDDABLE QUOTER',
-        titulo: 'Your quoter,<br/>inside their site.',
+        titulo: 'Your quoter, inside their site.',
         sub: 'Bring Cord\'s quoter to your clients\' portal with one line of code. Your brand, approval, counteroffer, and online payment — all within their ecosystem, without them ever leaving their site.',
         plan: 'Free signup. On the Free plan, the public link carries a discreet "via Cord"; you can remove it and leave only your brand from Settings › Developers, where you also define the allowlist of domains authorized to embed.',
         stats: [
@@ -164,7 +164,7 @@ await mcpManager.disconnectAll();`,
         blocks: [
             {
                 eyebrow: 'ONE LINE OF CODE',
-                titulo: 'Paste. Done.<br/>No backend.',
+                titulo: 'Paste. Done. No backend.',
                 copy: 'A script and a <div>. The quoter appears as an <iframe> served by Cord, shows a skeleton while loading, and automatically adjusts its height to the content via postMessage. There\'s no server to maintain or data to sync: the quote\'s public token is all you need.',
                 bullets: [
                     'Works on any stack: WordPress, plain HTML, whatever',
@@ -180,7 +180,7 @@ await mcpManager.disconnectAll();`,
             },
             {
                 eyebrow: 'NATIVE IN YOUR FRAMEWORK',
-                titulo: 'An npm package.<br/>React or Web Component.',
+                titulo: 'An npm package. React or Web Component.',
                 copy: 'Install @flouviahq/elements and use it like any other component. In React you import <CordCotizador> with typed callbacks; in Vue, Astro, or HTML you use the <cord-cotizador> Web Component, which re-emits events as native, un-prefixed CustomEvents. Same iframe underneath, the integration your team prefers.',
                 bullets: [
                     'import { CordCotizador } from \'@flouviahq/elements/react\'',
@@ -205,7 +205,7 @@ export function Cotizacion({ token }) {
             },
             {
                 eyebrow: 'YOUR BRAND · SECURE BY DESIGN',
-                titulo: 'The full quoter,<br/>not a toy widget.',
+                titulo: 'The full quoter, not a toy widget.',
                 copy: 'Inside the embed is the exact same quoter from your account: your color, your logo, and your details. The client approves, rejects, negotiates the price, or pays with Stripe without leaving their portal, and you decide which domains can embed it with a per-account allowlist (CSP frame-ancestors) that shields against clickjacking.',
                 bullets: [
                     'Your brand, not ours — color, logo, and details from your Cord account',
@@ -225,7 +225,7 @@ export function Cotizacion({ token }) {
         slug: 'fx',
         nav: 'Multi-currency FX',
         eyebrow: 'MULTI-CURRENCY FX API',
-        titulo: 'Quote in USD,<br/>charge in MXN.',
+        titulo: 'Quote in USD, charge in MXN.',
         sub: 'Connect to our real-time exchange rate API (Banxico/FIX or interbank) to keep your price lists stable in dollars, but always quote and charge in exact local currency.',
         plan: 'Free on all plans. Banxico FIX at no extra cost; live interbank rates on the Pro plan.',
         stats: [
@@ -260,7 +260,7 @@ export function Cotizacion({ token }) {
         slug: 'fiscal',
         nav: 'US/MX Tax',
         eyebrow: 'INTERNATIONAL TAX',
-        titulo: 'Cross-border commerce,<br/>without friction.',
+        titulo: 'Cross-border commerce, without friction.',
         sub: 'Sell from US to MX or vice versa without breaking local rules. Support for Sales Tax, withheld IVA, IEPS, and dual invoicing.',
         plan: 'Enterprise Plan',
         stats: [

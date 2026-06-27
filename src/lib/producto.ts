@@ -13,8 +13,7 @@ export interface FeatureStat {
 
 export interface FeatureBlock {
     eyebrow: string;
-    titulo: string;      // admite <br/>
-    copy: string;
+    titulo: string;      // admite     copy: string;
     bullets: string[];
 }
 
@@ -27,8 +26,7 @@ export interface Feature {
     slug: string;
     nav: string;             // nombre corto (cross-links, megamenú)
     eyebrow: string;
-    titulo: string;          // H1, admite <br/>
-    sub: string;
+    titulo: string;          // H1, admite     sub: string;
     metaTitle?: string;      // <title>/OG — keyword-rich (cae a `${nav} — Cord`)
     metaDescription?: string;// meta description (cae a `sub`)
     plan: string;            // en qué plan vive
@@ -43,7 +41,7 @@ export const FEATURES: Feature[] = [
         slug: 'editor',
         nav: 'Editor de cotizaciones',
         eyebrow: 'EDITOR DE COTIZACIONES',
-        titulo: 'La cotización perfecta,<br/>en minutos.',
+        titulo: 'La cotización perfecta, en minutos.',
         sub: 'Arrastra productos de tu catálogo, negocia el precio línea por línea y mira el total recalcularse con IVA en vivo. Lo que antes era una hora en Excel, ahora son minutos.',
         metaTitle: 'Cómo hacer cotizaciones B2B con precios negociados en México — Cord by Flouvia',
         metaDescription: 'El editor de cotizaciones de Cord permite negociar el precio de cada producto por separado, aplicar términos Net 30/60, calcular IVA en tiempo real y generar un link de aprobación con tu marca. Para distribuidores y mayoristas en México.',
@@ -56,7 +54,7 @@ export const FEATURES: Feature[] = [
         blocks: [
             {
                 eyebrow: 'PRECIOS NEGOCIADOS',
-                titulo: 'Cada cliente tiene su precio.<br/>Respétalo sin pensarlo.',
+                titulo: 'Cada cliente tiene su precio. Respétalo sin pensarlo.',
                 copy: 'En B2B el precio de lista es solo el punto de partida. En Cord ajustas el precio de cada línea y el sistema te muestra el descuento aplicado al instante — tú decides hasta dónde llegar, el sistema se encarga de que los números cuadren.',
                 bullets: [
                     'Precio negociado por línea, con el % de descuento visible',
@@ -76,7 +74,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'TOTALES EN VIVO',
-                titulo: 'El IVA y los totales,<br/>siempre correctos.',
+                titulo: 'El IVA y los totales, siempre correctos.',
                 copy: 'Cada cambio recalcula subtotal, IVA y total al instante, con redondeo correcto y números tabulares estilo fintech. Define la vigencia y los términos de crédito y la cotización queda lista para enviarse.',
                 bullets: [
                     'IVA 16% configurable por negocio',
@@ -105,7 +103,7 @@ export const FEATURES: Feature[] = [
         slug: 'link-publico',
         nav: 'Link público',
         eyebrow: 'LINK PÚBLICO',
-        titulo: 'Tu cliente aprueba<br/>en un clic.',
+        titulo: 'Tu cliente aprueba en un clic.',
         sub: 'Cada cotización genera un link elegante con tu marca. Tu cliente lo abre desde el celular, revisa los precios y aprueba — sin crear cuenta, sin descargar nada, sin fricción.',
         metaTitle: 'Aprobación de cotizaciones B2B por link sin registro — Cord by Flouvia',
         plan: 'Disponible en todos los planes',
@@ -117,7 +115,7 @@ export const FEATURES: Feature[] = [
         blocks: [
             {
                 eyebrow: 'CERO FRICCIÓN',
-                titulo: 'Sin registro, sin PDF perdido<br/>en el correo.',
+                titulo: 'Sin registro, sin PDF perdido en el correo.',
                 copy: 'El PDF adjunto muere en la bandeja de entrada. El link de Cord vive: tu cliente lo abre donde sea, ve la versión más reciente y actúa ahí mismo. Aprobar o rechazar es un botón, no una llamada.',
                 bullets: [
                     'Funciona en WhatsApp, correo o donde lo compartas',
@@ -127,7 +125,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'TU MARCA',
-                titulo: 'La página la firma tu negocio,<br/>no el nuestro.',
+                titulo: 'La página la firma tu negocio, no el nuestro.',
                 copy: 'Tu logo, tu nombre y tus colores presiden la cotización. En los planes de pago desaparece el "Powered by Cord" y la experiencia es 100% tuya — tu cliente ve una empresa seria con sistemas serios.',
                 bullets: [
                     'Logo y color de marca configurables en Ajustes',
@@ -137,7 +135,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'DEL SÍ AL PEDIDO',
-                titulo: 'Aprobada la cotización,<br/>empieza el trato.',
+                titulo: 'Aprobada la cotización, empieza el trato.',
                 copy: 'Cuando tu cliente aprueba, tú recibes el aviso al instante y la cotización cambia de estado sola. Si tiene pago en línea habilitado, puede pagar ahí mismo; si maneja crédito, queda registrado bajo sus términos Net 30/60.',
                 bullets: [
                     'Notificación inmediata de aprobación',
@@ -166,7 +164,7 @@ export const FEATURES: Feature[] = [
         slug: 'seguimiento',
         nav: 'Seguimiento en vivo',
         eyebrow: 'SEGUIMIENTO EN VIVO',
-        titulo: 'Sabes el momento exacto<br/>en que la ven.',
+        titulo: 'Sabes el momento exacto en que la ven.',
         sub: 'Se acabó el "¿ya la revisaste?". Cord te avisa en cuanto tu cliente abre la cotización, cuántas veces la ha visto y qué hizo después — para que llames en el momento justo.',
         metaTitle: 'Saber cuándo tu cliente abrió la cotización — seguimiento en vivo | Cord by Flouvia',
         plan: 'Disponible en todos los planes',
@@ -178,7 +176,7 @@ export const FEATURES: Feature[] = [
         blocks: [
             {
                 eyebrow: 'LA SEÑAL QUE IMPORTA',
-                titulo: 'El interés se enfría rápido.<br/>Atrápalo caliente.',
+                titulo: 'El interés se enfría rápido. Atrápalo caliente.',
                 copy: 'Una cotización vista hace 5 minutos es una venta viva; una vista hace 2 semanas, un pendiente muerto. Cord convierte la apertura del link en una señal accionable: te enteras al momento y puedes responder cuando tu cliente te tiene en la cabeza.',
                 bullets: [
                     'Evento "vista" con fecha y hora exactas',
@@ -188,7 +186,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'TIMELINE',
-                titulo: 'Toda la historia,<br/>en un solo hilo.',
+                titulo: 'Toda la historia, en un solo hilo.',
                 copy: 'Creada, enviada, vista, aprobada, pagada, facturada — cada cotización lleva su historia completa. Cualquiera de tu equipo abre el detalle y entiende en segundos en qué va el trato, sin preguntar en el grupo de WhatsApp.',
                 bullets: [
                     'Cronología completa por cotización',
@@ -198,7 +196,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'PIPELINE',
-                titulo: 'Tu pipeline real,<br/>no el de la libreta.',
+                titulo: 'Tu pipeline real, no el de la libreta.',
                 copy: 'El dashboard agrupa tus cotizaciones por estado y te dice cuánto dinero está por cerrar, cuánto cerraste en el mes y tu tasa de cierre. Decisiones con números, no con corazonadas.',
                 bullets: [
                     'KPIs en vivo: por cerrar, cerrado del mes, tasa de cierre',
@@ -227,7 +225,7 @@ export const FEATURES: Feature[] = [
         slug: 'cfdi',
         nav: 'CFDI 4.0',
         eyebrow: 'FACTURACIÓN CFDI 4.0',
-        titulo: 'De cotización aprobada<br/>a factura timbrada.',
+        titulo: 'De cotización aprobada a factura timbrada.',
         sub: 'Cuando el trato se cierra, la factura sale sola: CFDI 4.0 real, timbrado ante el SAT, directo desde la cotización. Sin recapturar en otro portal, sin errores de transcripción.',
         metaTitle: 'CFDI 4.0 automático desde la cotización aprobada — Cord by Flouvia',
         plan: 'Disponible desde el plan Starter',
@@ -239,7 +237,7 @@ export const FEATURES: Feature[] = [
         blocks: [
             {
                 eyebrow: 'SIN RECAPTURAR',
-                titulo: 'Los datos ya están.<br/>Úsalos.',
+                titulo: 'Los datos ya están. Úsalos.',
                 copy: 'La cotización ya tiene los productos, las cantidades, los precios negociados y el RFC del cliente. Timbrar es un clic: Cord arma el CFDI 4.0 con esos mismos datos y lo manda al PAC. Cero transcripción, cero errores de dedo.',
                 bullets: [
                     'CFDI 4.0 con los datos exactos de la cotización',
@@ -249,7 +247,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'TU CSD, SEGURO',
-                titulo: 'Conecta tu sello una vez<br/>y olvídate.',
+                titulo: 'Conecta tu sello una vez y olvídate.',
                 copy: 'Subes tu Certificado de Sello Digital (CSD) una sola vez, protegido y aislado en tu cuenta. A partir de ahí, cada timbrado usa tu sello sin que vuelvas a tocar archivos .cer y .key.',
                 bullets: [
                     'CSD cifrado y aislado por negocio',
@@ -259,7 +257,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'CICLO COMPLETO',
-                titulo: 'La cotización, el pago<br/>y la factura: un solo hilo.',
+                titulo: 'La cotización, el pago y la factura: un solo hilo.',
                 copy: 'La factura no vive en otro sistema: queda ligada a su cotización, con su evento en el timeline. Cuando contabilidad pregunte, todo está en el mismo lugar — quién aprobó, cuándo pagó y qué UUID le tocó.',
                 bullets: [
                     'Factura ligada a su cotización y su timeline',
@@ -288,7 +286,7 @@ export const FEATURES: Feature[] = [
         slug: 'clientes-credito',
         nav: 'Clientes y crédito',
         eyebrow: 'CLIENTES Y CRÉDITO',
-        titulo: 'El crédito es tu ventaja.<br/>Contrólalo.',
+        titulo: 'El crédito es tu ventaja. Contrólalo.',
         sub: 'En B2B vender a crédito es vender más — si lo controlas. Cord guarda los términos de cada cliente (Contado, Net 30, Net 60) y su límite de crédito, y los aplica solos en cada cotización.',
         metaTitle: 'Gestión de crédito B2B: Net 30, Net 60 y límite por cliente — Cord by Flouvia',
         plan: 'Plan Profesional en adelante',
@@ -300,7 +298,7 @@ export const FEATURES: Feature[] = [
         blocks: [
             {
                 eyebrow: 'DIRECTORIO',
-                titulo: 'Cada cliente, una ficha<br/>que lo dice todo.',
+                titulo: 'Cada cliente, una ficha que lo dice todo.',
                 copy: 'Empresa, contacto, correo, RFC, términos de pago y límite de crédito — la ficha del cliente concentra lo que tu equipo necesita para cotizarle bien. Y como vive en el sistema, todos cotizan con las mismas reglas.',
                 bullets: [
                     'Datos fiscales listos para el CFDI',
@@ -310,7 +308,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'LÍMITE DE CRÉDITO',
-                titulo: 'Di que sí con confianza<br/>(y que no, a tiempo).',
+                titulo: 'Di que sí con confianza (y que no, a tiempo).',
                 copy: 'Asigna un límite de crédito por cliente y deja que el sistema lo vigile. Antes de mandar una cotización a crédito sabes cuánto espacio le queda al cliente — el "se nos pasó" deja de existir.',
                 bullets: [
                     'Límite en pesos por cliente',
@@ -320,7 +318,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'RELACIÓN',
-                titulo: 'Los buenos clientes<br/>se notan en los datos.',
+                titulo: 'Los buenos clientes se notan en los datos.',
                 copy: 'Quién aprueba rápido, quién paga a tiempo, quién pide y nunca cierra. Con el historial concentrado, decides a quién darle mejores precios y a quién pedirle anticipo — con evidencia, no con memoria.',
                 bullets: [
                     'Cotizaciones, aprobaciones y pagos por cliente',
@@ -349,7 +347,7 @@ export const FEATURES: Feature[] = [
         slug: 'cobranza-ia',
         nav: 'Cobranza con IA',
         eyebrow: 'COBRANZA AUTÓNOMA CON IA',
-        titulo: 'Tu cobranza trabaja sola,<br/>hasta de noche.',
+        titulo: 'Tu cobranza trabaja sola, hasta de noche.',
         sub: 'Un agente de inteligencia artificial da seguimiento a cada factura vencida por ti: le escribe al cliente, negocia un plan de pagos en cuotas y te avisa solo cuando necesita tu visto bueno. Tú apruebas, la IA persigue — sin que se te enfríe la cartera.',
         metaTitle: 'Cobranza automática con IA para empresas B2B en México — Cord by Flouvia',
         metaDescription: 'El agente de cobranza con IA de Cord da seguimiento a las facturas vencidas, negocia planes de pago de hasta 3 cuotas mensuales y proyecta tu flujo de caja a 90 días. Tú apruebas cada acuerdo; queda todo en bitácora. Para negocios B2B en México.',
@@ -362,7 +360,7 @@ export const FEATURES: Feature[] = [
         blocks: [
             {
                 eyebrow: 'AGENTE AUTÓNOMO',
-                titulo: 'No es un recordatorio.<br/>Es un cobrador que negocia.',
+                titulo: 'No es un recordatorio. Es un cobrador que negocia.',
                 copy: 'Activas la cobranza autónoma por cliente y el agente toma la cartera vencida: contacta por correo, lee la respuesta y propone un plan de pagos de hasta tres cuotas mensuales. Si el cliente acepta dentro de los límites que tú definiste, cierra el acuerdo; si pide algo fuera de rango, te lo escala. Trabaja de noche y en fin de semana — la cartera no se enfría esperando a que alguien marque.',
                 bullets: [
                     'Contacta por correo y entiende la respuesta del cliente',
@@ -372,7 +370,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'FLUJO DE CAJA PREDICTIVO',
-                titulo: 'Sabes cuánto vas a cobrar<br/>antes de cobrarlo.',
+                titulo: 'Sabes cuánto vas a cobrar antes de cobrarlo.',
                 copy: 'Cord cruza el retraso de pago promedio real de cada cliente con tu pipeline ponderado para proyectar tus ingresos semana a semana, hasta 90 días. En vez de adivinar, ves el flujo esperado con escenarios de probabilidad y un "AI CFO Insight" que te dice dónde está el riesgo y qué cobrar primero.',
                 bullets: [
                     'Proyección a 90 días basada en tu historial real de pago',
@@ -382,7 +380,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'TÚ MANDAS',
-                titulo: 'La IA propone.<br/>Tú apruebas.',
+                titulo: 'La IA propone. Tú apruebas.',
                 copy: 'La cobranza autónoma es opt-in y la controlas tú: enciendes el agente por cliente, defines hasta dónde puede negociar y revisas cada plan desde un tablero de supervisión. Todo lo que el agente hace queda en la bitácora de auditoría — cada correo, cada acuerdo, cada cuota. Nunca es una caja negra.',
                 bullets: [
                     'Opt-in por cliente: tú decides a quién persigue la IA',
@@ -411,7 +409,7 @@ export const FEATURES: Feature[] = [
         slug: 'divisas',
         nav: 'Multi-divisa y FX',
         eyebrow: 'MULTI-DIVISA Y COBERTURA CAMBIARIA',
-        titulo: 'Cotiza en dólares.<br/>Factura en pesos.<br/>Cuida tu margen.',
+        titulo: 'Cotiza en dólares. Factura en pesos. Cuida tu margen.',
         sub: 'Tu cliente ve el precio en su moneda; tú facturas en pesos. Cord congela el tipo de cambio del día por 30 días y le suma una cobertura, para que el margen que cerraste sea el margen que cobras.',
         metaTitle: 'Cotizaciones en dólares y euros con cobertura cambiaria para empresas en México — Cord by Flouvia',
         metaDescription: 'Cotiza en USD o EUR y factura en pesos. Cord toma la tasa spot del Banco Central Europeo, le aplica un buffer de cobertura para proteger tu margen y congela el tipo de cambio 30 días (FX lock). Para negocios B2B en México que venden con divisas.',
@@ -424,7 +422,7 @@ export const FEATURES: Feature[] = [
         blocks: [
             {
                 eyebrow: 'DOS MONEDAS, UN TRATO',
-                titulo: 'El cliente ve dólares.<br/>El SAT ve pesos.',
+                titulo: 'El cliente ve dólares. El SAT ve pesos.',
                 copy: 'En Cord la moneda de presentación y la moneda fiscal son dos cosas distintas. Tu cliente revisa y aprueba la cotización en dólares o euros, como espera; tú facturas en pesos, como vives en México. Cord guarda ambas monedas y la tasa con la que las amarró dentro de la misma cotización, sin que tengas que llevar la conversión a mano.',
                 bullets: [
                     'Presenta en USD, EUR o MXN; factura siempre en pesos',
@@ -434,7 +432,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'TIPO DE CAMBIO REAL',
-                titulo: 'La tasa del día,<br/>no la del Excel viejo.',
+                titulo: 'La tasa del día, no la del Excel viejo.',
                 copy: 'Cord trae el tipo de cambio spot en vivo desde los datos del Banco Central Europeo, sin que captures nada ni dependas de una hoja desactualizada. Si por alguna razón el servicio externo no responde, Cord usa una tasa de respaldo para que tu cotización nunca se quede a medias. Lo ves en el editor antes de guardar.',
                 bullets: [
                     'Tasa spot en vivo (datos del BCE), sin capturar nada',
@@ -444,7 +442,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'COBERTURA Y FX LOCK',
-                titulo: 'El margen que cierras<br/>es el que cobras.',
+                titulo: 'El margen que cierras es el que cobras.',
                 copy: 'Entre que el cliente aprueba en dólares y tú facturas semanas después en pesos, el tipo de cambio se mueve y se come tu utilidad. Cord le suma un buffer de cobertura a la tasa spot (2% por defecto, tú lo ajustas) y congela ese número 30 días. No es un forward de banco: es un margen de seguridad que Cord calcula y deja fijo para que apruebes hoy o factures en tres semanas con el mismo número.',
                 bullets: [
                     'Buffer de cobertura configurable sobre la tasa spot',
@@ -473,7 +471,7 @@ export const FEATURES: Feature[] = [
         slug: 'internacional',
         nav: 'Facturación internacional',
         eyebrow: 'FACTURACIÓN INTERNACIONAL (US/MX)',
-        titulo: 'Cotiza en dólares.<br/>Factura como debe ser.',
+        titulo: 'Cotiza en dólares. Factura como debe ser.',
         sub: 'Vende a clientes en Estados Unidos sin perder el margen al tipo de cambio: cotiza en USD, blinda la tasa por 30 días y factura en MXN con CFDI 4.0 real. Una sola plataforma para el negocio que ya no cabe en una frontera.',
         metaTitle: 'Facturación internacional US/MX: cotiza en dólares, factura CFDI 4.0 en pesos — Cord by Flouvia',
         metaDescription: 'Cord cotiza en USD con cobertura cambiaria (tasa congelada 30 días) y factura en MXN con CFDI 4.0 timbrado ante el SAT vía Facturapi. Arquitectura multi-país lista para crecer. Para empresas B2B mexicanas que exportan o venden en dólares.',
@@ -486,7 +484,7 @@ export const FEATURES: Feature[] = [
         blocks: [
             {
                 eyebrow: 'COBERTURA CAMBIARIA',
-                titulo: 'El dólar se mueve.<br/>Tu margen no.',
+                titulo: 'El dólar se mueve. Tu margen no.',
                 copy: 'Entre que tu cliente aprueba en dólares y tú facturas semanas después, el tipo de cambio puede comerse tu utilidad. Cord toma la tasa spot real del Banco Central Europeo, le suma el buffer de cobertura que tú definas y congela ese tipo de cambio por 30 días. El margen que prometiste es el margen que cobras.',
                 bullets: [
                     'Tasa spot en vivo (USD a MXN, EUR a MXN) desde fuente del BCE',
@@ -496,7 +494,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'DOS DIVISAS, UN TRATO',
-                titulo: 'Cotizas en la divisa<br/>que tu cliente entiende.',
+                titulo: 'Cotizas en la divisa que tu cliente entiende.',
                 copy: 'En el editor eliges la divisa de presentación —la que ve tu cliente en el extranjero— y la divisa fiscal con la que vas a facturar. Cord guarda ambas en la cotización junto con la tasa congelada, así el documento que aprueba el cliente y el CFDI que entra a tu contabilidad nunca se contradicen.',
                 bullets: [
                     'Divisa de presentación (USD) separada de la divisa fiscal (MXN)',
@@ -506,7 +504,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'CFDI REAL + ARQUITECTURA GLOBAL',
-                titulo: 'México timbra de verdad.<br/>El resto, ya está cableado.',
+                titulo: 'México timbra de verdad. El resto, ya está cableado.',
                 copy: 'Cuando el trato se cierra en México, Cord emite CFDI 4.0 real ante el SAT a través de Facturapi: UUID, XML y PDF timbrados. Por dentro, un patrón de proveedores fiscales enruta cada emisión según el país del negocio y la centraliza en un solo registro: la base lista para sumar más países conforme crezcas.',
                 bullets: [
                     'CFDI 4.0 real timbrado ante el SAT (México) vía Facturapi',
@@ -535,7 +533,7 @@ export const FEATURES: Feature[] = [
         slug: 'finanzas',
         nav: 'Finanzas y CFO',
         eyebrow: 'TU CFO CON IA',
-        titulo: 'Flujo de caja predictivo<br/>a 90 días.',
+        titulo: 'Flujo de caja predictivo a 90 días.',
         sub: 'Cruza tu pipeline con el historial real de pago de cada cliente. Sabes cuánto cobrarás antes de cobrarlo y detectas riesgos de impago antes de que sucedan.',
         metaTitle: 'Flujo de caja predictivo y CFO con IA para B2B — Cord by Flouvia',
         metaDescription: 'Cord usa IA para proyectar tu flujo de caja a 90 días cruzando tu pipeline con el historial de pago real de tus clientes.',
@@ -558,7 +556,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'RIESGO ACTIVO',
-                titulo: 'El semáforo que cuida<br/>tu cartera.',
+                titulo: 'El semáforo que cuida tu cartera.',
                 copy: 'El AI CFO revisa la concentración de riesgo. Si un cliente que representa el 40% de tu cartera se empieza a atrasar, te lo advierte para que cierres la llave.',
                 bullets: [
                     'Alertas tempranas de riesgo de impago',
@@ -568,7 +566,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'REPORTE GERENCIAL',
-                titulo: 'La junta de finanzas,<br/>lista en segundos.',
+                titulo: 'La junta de finanzas, lista en segundos.',
                 copy: 'Exporta la proyección o da acceso a tu equipo directivo a un tablero en vivo donde los números siempre están actualizados.',
                 bullets: [
                     'Dashboard en vivo para el CFO',
@@ -597,7 +595,7 @@ export const FEATURES: Feature[] = [
         slug: 'aprobaciones',
         nav: 'Control de márgenes',
         eyebrow: 'CONTROL DE MÁRGENES Y APROBACIONES',
-        titulo: 'Vende rápido,<br/>pero con el margen correcto.',
+        titulo: 'Vende rápido, pero con el margen correcto.',
         sub: 'Define umbrales de descuento por rol. Si un vendedor da un descuento mayor al permitido, la cotización se pausa y pide aprobación gerencial. Tú cuidas el margen, ellos cierran la venta.',
         metaTitle: 'Control de márgenes y flujo de aprobaciones para ventas B2B — Cord by Flouvia',
         metaDescription: 'Configura umbrales de descuento y flujos de aprobación gerencial para asegurar la rentabilidad de cada cotización en tu equipo de ventas.',
@@ -659,7 +657,7 @@ export const FEATURES: Feature[] = [
         slug: 'equipo',
         nav: 'Roles y equipo',
         eyebrow: 'EQUIPO, ROLES Y MULTI-EMPRESA',
-        titulo: 'Todo tu equipo,<br/>trabajando en sincronía.',
+        titulo: 'Todo tu equipo, trabajando en sincronía.',
         sub: 'Invita a tus vendedores, administradores y contadores con permisos granulares. Gestiona múltiples razones sociales o marcas desde una misma cuenta maestra.',
         metaTitle: 'Gestión de equipo, roles y multi-empresa para B2B — Cord by Flouvia',
         metaDescription: 'Administra tu equipo de ventas con permisos granulares y gestiona múltiples empresas o razones sociales desde una sola cuenta de Cord.',
@@ -682,7 +680,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'MULTI-EMPRESA',
-                titulo: 'Varias razones sociales,<br/>un solo panel.',
+                titulo: 'Varias razones sociales, un solo panel.',
                 copy: 'Si tu corporativo opera con varias marcas o razones sociales fiscales, no necesitas cuentas separadas. Cambia de empresa con un clic, comparte el catálogo si quieres y mantén la cobranza organizada.',
                 bullets: [
                     'Cambio rápido de empresa (Org switching)',
@@ -721,7 +719,7 @@ export const FEATURES: Feature[] = [
         slug: 'negociacion',
         nav: 'Negociación B2B',
         eyebrow: 'NEGOCIACIÓN Y APROBACIONES',
-        titulo: 'Acuerdos blindados,<br/>línea por línea.',
+        titulo: 'Acuerdos blindados, línea por línea.',
         sub: 'Tus clientes pueden revisar, ajustar cantidades o proponer un nuevo precio en productos específicos. Cada cambio genera una versión inmutable firmada criptográficamente — adiós a los malentendidos.',
         metaTitle: 'Negociación de cotizaciones B2B en México — Cord by Flouvia',
         metaDescription: 'Permite a tus clientes aprobar o contraofertar línea por línea. Cada versión es inmutable y se firma con SHA-256 para total transparencia.',

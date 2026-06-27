@@ -173,7 +173,7 @@ const faqSchema = {
         <!-- ── PARA QUIÉN (audiencia objetivo — extractable para AI) ── -->
         <section class="pp-audience">
             <p class="pp-eyebrow reveal">PARA QUIÉN ES</p>
-            <h2 class="pp-audience-title masked-title" set:html={`Para quién es Cord<br/>${solucion.nav.toLowerCase()}.`} />
+            <h2 class="pp-audience-title masked-title" set:html={`Para quién es Cord ${solucion.nav.toLowerCase()}.`} />
             <p class="pp-audience-copy reveal">{solucion.paraQuien}</p>
         </section>
 
@@ -248,7 +248,7 @@ const faqSchema = {
         <section class="pp-faq">
             <div class="pp-faq-head">
                 <p class="pp-eyebrow reveal">PREGUNTAS FRECUENTES</p>
-                <h2 class="pp-h2 masked-title">{isEn ? 'Most common questions<br/>about' : 'Lo que más nos preguntan<br/>sobre'} {solucion.nav.toLowerCase()}.</h2>
+                <h2 class="pp-h2 masked-title">{isEn ? 'Most common questions about' : 'Lo que más nos preguntan sobre'} {solucion.nav.toLowerCase()}.</h2>
             </div>
             <div class="pp-faq-list">
                 {solucion.faqs.map((f, i) => (
@@ -269,7 +269,7 @@ const faqSchema = {
         <section class="pp-more">
             <div class="pp-more-head">
                 <p class="pp-eyebrow reveal">OTRAS INDUSTRIAS</p>
-                <h2 class="pp-h2 masked-title">Cord funciona<br/>en tu sector también.</h2>
+                <h2 class="pp-h2 masked-title">Cord funciona en tu sector también.</h2>
             </div>
             <div class="pp-more-grid">
                 {otras.map((s) => (

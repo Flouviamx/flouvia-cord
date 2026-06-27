@@ -197,9 +197,7 @@ const { slug, index } = Astro.props;
       </div>
       <div class="bm-card bm-cfdi-card">
         <div class="bm-fake-xml bm-matrix-text">
-          &lt;cfdi:Comprobante Version="4.0"&gt;<br/>
-          &lt;cfdi:Emisor Rfc="MVA24..."/&gt;<br/>
-          &lt;cfdi:Conceptos&gt;...&lt;/cfdi&gt;
+          &lt;cfdi:Comprobante Version="4.0"&gt;           &lt;cfdi:Emisor Rfc="MVA24..."/&gt;           &lt;cfdi:Conceptos&gt;...&lt;/cfdi&gt;
         </div>
         <div class="bm-row"><span>Status</span><b class="bm-green">Generado</b></div>
         <div class="bm-row"><span>UUID</span><b>a1b2c3d4-9f01...</b></div>
@@ -428,7 +426,7 @@ const { slug, index } = Astro.props;
         <div class="bm-pill bm-pill-dark"><span>EE.UU. · en desarrollo</span></div>
       </div>
       <div class="bm-card bm-cfdi-card">
-        <div class="bm-fake-xml">&lt;cfdi:Comprobante Version="4.0"&gt;<br/>&lt;cfdi:Emisor Rfc="MVA24..."/&gt;<br/>&lt;/cfdi:Comprobante&gt;</div>
+        <div class="bm-fake-xml">&lt;cfdi:Comprobante Version="4.0"&gt; &lt;cfdi:Emisor Rfc="MVA24..."/&gt; &lt;/cfdi:Comprobante&gt;</div>
         <div class="bm-row"><span>Status</span><b class="bm-green bm-intl-status">Timbrado</b></div>
         <div class="bm-row"><span>UUID</span><b>a1b2c3d4-9f01...</b></div>
       </div>
@@ -589,7 +587,7 @@ const { slug, index } = Astro.props;
       <div class="bm-card bm-chat" style="align-items: center; padding: 20px;">
          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 32px; height: 32px; color: #fff; margin-bottom: 8px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
          <b style="font-size: 0.9rem;">Single Sign-On</b>
-         <span style="color: rgba(255,255,255,0.6); text-align: center; margin-top: 4px;">Autenticado vía Google Workspace<br/>@tu-empresa.com</span>
+         <span style="color: rgba(255,255,255,0.6); text-align: center; margin-top: 4px;">Autenticado vía Google Workspace @tu-empresa.com</span>
       </div>
     </div>
   )}
@@ -916,9 +914,7 @@ const { slug, index } = Astro.props;
       </div>
       <div class="bm-card bm-cfdi-card">
         <div class="bm-fake-xml" style="opacity: 0.8; font-family: monospace; font-size: 8px; color: #34d399; line-height: 1.2;">
-          e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855...<br/>
-          d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592...<br/>
-          31d6cfe0d16ae931b73c59d7e0c089c0ce02d84c04a43b749d8e6a2b8e5c4a5...
+          e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855...           d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592...           31d6cfe0d16ae931b73c59d7e0c089c0ce02d84c04a43b749d8e6a2b8e5c4a5...
         </div>
         <div style="position:relative; z-index:1; background:rgba(10,25,47,0.85); padding: 12px; border-radius: 8px; display:flex; flex-direction:column; gap:4px; align-items:center; text-align:center; border: 1px solid rgba(52,211,153,0.2);">
           <svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" style="width:24px; height:24px; margin-bottom:4px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>

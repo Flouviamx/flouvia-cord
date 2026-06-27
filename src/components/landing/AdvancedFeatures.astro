@@ -11,7 +11,7 @@ const t = useTranslations(lang);
         <div class="cn-left">
             <div class="cn-header">
                 <span class="cn-eyebrow">{t("adv.eyebrow")}</span>
-                <h2 class="cn-title" set:html={t("adv.title").replace('<br/>', ' ').replace('<br />', ' ')} />
+                <h2 class="cn-title" set:html={t("adv.title").replace(' ', ' ').replace('<br />', ' ')} />
                 <div class="cn-action-btn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </div>
