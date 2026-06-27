@@ -70,26 +70,37 @@ import MockupCFDI from './MockupCFDI.astro';
     .cord-pillar-card {
         display: flex;
         flex-direction: column;
+        background: #ffffff;
+        border-radius: 20px;
+        border: 1px solid rgba(10,25,47,0.06);
+        box-shadow: 0 12px 30px -10px rgba(10,25,47,0.05), 0 4px 6px -4px rgba(10,25,47,0.03);
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .cord-pillar-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 40px -10px rgba(10,25,47,0.08), 0 8px 12px -4px rgba(10,25,47,0.04);
     }
     
     .cp-graphic {
-        background: transparent;
-        height: 420px;
-        margin-bottom: 2rem;
+        background: #f8fafc;
+        height: 380px;
         position: relative;
-        overflow: visible;
+        overflow: hidden;
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: center;
+        padding-top: 3rem;
+        border-bottom: 1px solid rgba(10,25,47,0.03);
     }
     
-    /* Subtle radial gradient background for graphics */
-    .cp-graphic::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(circle at center, rgba(59, 130, 246, 0.03) 0%, transparent 70%);
-        z-index: 0;
+    .cp-content {
+        padding: 2.5rem 2rem;
+        background: #ffffff;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
     }
     
     .cp-content h3 {
