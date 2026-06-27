@@ -9,564 +9,157 @@ import MockupCFDI from './MockupCFDI.astro';
         
         <!-- Pillar 1: Cotizaciones -->
         <div class="cord-pillar-card">
-            <div class="cp-graphic">
-                <MockupCotizacion />
-            </div>
             <div class="cp-content">
                 <h3>Cotizaciones interactivas</h3>
                 <p>Las empresas líderes optimizan sus ventas B2B con un portal interactivo donde sus clientes pueden revisar inventario, precios negociados y aprobar compras en un solo clic.</p>
-                <div class="cp-link-wrapper">
-                    <a href="/producto/editor" class="cp-link-text">Explorar</a>
-                    <a href="/producto/editor" class="cp-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></a>
-                </div>
+                <a href="/producto/editor" class="cp-link-text">Explorar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></a>
+            </div>
+            <div class="cp-graphic">
+                <MockupCotizacion />
             </div>
         </div>
 
         <!-- Pillar 2: Pagos -->
         <div class="cord-pillar-card">
-            <div class="cp-graphic">
-                <MockupPagos />
-            </div>
             <div class="cp-content">
                 <h3>Gestión de pagos B2B</h3>
                 <p>Cualquier empresa puede usar Cord para monitorear el estado de su cobranza, gestionar líneas de crédito comerciales y conciliar transferencias bancarias automáticamente.</p>
-                <div class="cp-link-wrapper">
-                    <a href="/producto/cobranza" class="cp-link-text">Explorar</a>
-                    <a href="/producto/cobranza" class="cp-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></a>
-                </div>
+                <a href="/producto/cobranza" class="cp-link-text">Explorar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></a>
+            </div>
+            <div class="cp-graphic">
+                <MockupPagos />
             </div>
         </div>
 
         <!-- Pillar 3: Automatización CFDI -->
         <div class="cord-pillar-card">
-            <div class="cp-graphic">
-                <MockupCFDI />
-            </div>
             <div class="cp-content">
                 <h3>Automatización de finanzas</h3>
                 <p>Empresas consolidadas usan Cord para automatizar su timbrado de CFDI 4.0 al confirmar pagos, reduciendo la carga operativa y mejorando la eficiencia de su ERP actual.</p>
-                <div class="cp-link-wrapper">
-                    <a href="/producto/cfdi" class="cp-link-text">Explorar</a>
-                    <a href="/producto/cfdi" class="cp-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></a>
-                </div>
+                <a href="/producto/cfdi" class="cp-link-text">Explorar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></a>
+            </div>
+            <div class="cp-graphic">
+                <MockupCFDI />
             </div>
         </div>
-
+        
     </div>
 </section>
 
 <style>
     .cord-pillars-section {
         padding: 6rem 0;
-        background: #ffffff;
     }
     
     .cord-pillars-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 2.5rem;
+        gap: 2rem;
     }
     
     .cord-pillar-card {
+        background: #f8fafc;
+        border-radius: 24px;
+        box-shadow: inset 0 0 0 1px rgba(10,25,47,0.04), 0 10px 30px -10px rgba(10,25,47,0.03);
         display: flex;
         flex-direction: column;
+        overflow: hidden;
+        position: relative;
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        min-height: 580px;
     }
     
-    .cp-graphic {
-        background: transparent;
-        height: 380px;
-        position: relative;
-        overflow: visible;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    .cord-pillar-card:hover {
+        transform: translateY(-4px);
+        box-shadow: inset 0 0 0 1px rgba(10,25,47,0.06), 0 20px 40px -12px rgba(10,25,47,0.08);
     }
     
     .cp-content {
-        padding: 2rem 0;
-        background: transparent;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
+        padding: 2.5rem 2.5rem 1.5rem 2.5rem;
+        z-index: 2;
     }
     
     .cp-content h3 {
-        font-size: 1.6rem;
+        font-size: 1.25rem;
         font-weight: 700;
         color: #0a192f;
-        margin-bottom: 1rem;
-        letter-spacing: -0.02em;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.01em;
     }
     
     .cp-content p {
-        font-size: 1.05rem;
-        color: #555c68;
+        font-size: 0.95rem;
+        color: #64748b;
         line-height: 1.6;
         margin-bottom: 1.5rem;
     }
-    
-    .cp-link-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    
+
     .cp-link-text {
-        font-size: 1rem;
+        font-size: 0.9rem;
         font-weight: 600;
         color: #3b82f6;
-        text-decoration: none;
-    }
-    
-    .cp-link-icon {
         display: inline-flex;
         align-items: center;
+        gap: 0.25rem;
+        text-decoration: none;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    
+    .cp-link-text svg {
+        width: 16px;
+        height: 16px;
+        transform: rotate(-90deg);
+        transition: transform 0.2s ease;
+    }
+    
+    .cp-link-text:hover {
+        opacity: 0.8;
+    }
+    
+    .cp-link-text:hover svg {
+        transform: rotate(-90deg) translateX(2px);
+    }
+    
+    .cp-graphic {
+        padding: 0 2rem;
+        margin-top: auto;
+        display: flex;
         justify-content: center;
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        background: rgba(59, 130, 246, 0.1);
-        color: #3b82f6;
-        transition: background 0.2s, transform 0.2s;
+        transform: translateY(1.5rem);
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
     
-    .cp-link-icon svg {
-        width: 14px;
-        height: 14px;
-    }
-    
-    .cp-link-wrapper:hover .cp-link-icon {
-        background: rgba(59, 130, 246, 0.2);
-        transform: translateY(1px);
-    }
-    
-    /* ════════════════════════════════════════════════════════════════
-       MOCKUP UIs (General Styles)
-    ════════════════════════════════════════════════════════════════ */
-    .mock-ui {
-        position: relative;
-        z-index: 1;
-        background: #ffffff;
-        border-radius: 12px;
-        border: 1px solid rgba(10,25,47,0.08);
-        box-shadow: 0 16px 40px -12px rgba(10,25,47,0.12), 0 4px 10px -4px rgba(10,25,47,0.06);
-        width: 85%;
-        overflow: hidden;
-        font-family: var(--font-sans, system-ui, sans-serif);
-    }
-    
-    .mock-trend.positive {
-        color: #10b981;
-        background: rgba(16, 185, 129, 0.1);
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 0.7rem;
-        font-weight: 700;
+    .cord-pillar-card:hover .cp-graphic {
+        transform: translateY(1rem);
     }
 
-    /* ════════════════════════════════════════════════════════════════
-       MOCKUP 1: Cotizaciones
-    ════════════════════════════════════════════════════════════════ */
-    .mock-ui-1 .mock-header {
-        background: #f8fafc;
-        padding: 12px 16px;
-        border-bottom: 1px solid rgba(10,25,47,0.05);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-    
-    .mock-dots {
-        display: flex;
-        gap: 6px;
-    }
-    
-    .mock-dots span {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: #e2e8f0;
-    }
-    
-    .mock-dots span:nth-child(1) { background: #ef4444; }
-    .mock-dots span:nth-child(2) { background: #f59e0b; }
-    .mock-dots span:nth-child(3) { background: #10b981; }
-    
-    .mock-title {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #0a192f;
-    }
-    
-    .mock-ui-1 .mock-body {
-        padding: 16px;
-    }
-    
-    .mock-table {
-        display: flex;
-        flex-direction: column;
-        border: 1px solid rgba(10,25,47,0.06);
-        border-radius: 8px;
-        overflow: hidden;
-        margin-bottom: 16px;
-    }
-    
-    .mock-row {
-        display: grid;
-        grid-template-columns: 2fr 1fr 1fr;
-        padding: 10px 12px;
-        border-bottom: 1px solid rgba(10,25,47,0.04);
-        font-size: 0.75rem;
-        align-items: center;
-    }
-    
-    .mock-row:last-child {
-        border-bottom: none;
-    }
-    
-    .mock-th {
-        background: #f8fafc;
-        color: #64748b;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        font-size: 0.65rem;
-    }
-    
-    .mock-item-name {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-weight: 500;
-        color: #0a192f;
-    }
-    
-    .mock-icon {
-        width: 24px;
-        height: 24px;
-        border-radius: 6px;
-    }
-    
-    .mock-icon.cement { background: #e2e8f0; }
-    .mock-icon.steel { background: #94a3b8; }
-    
-    .mock-summary {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 16px;
-    }
-    
-    .mock-total {
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .mock-total span {
-        font-size: 0.7rem;
-        color: #64748b;
-    }
-    
-    .mock-total b {
-        font-size: 1.25rem;
-        color: #0a192f;
-    }
-    
-    .mock-badge {
-        font-size: 0.65rem;
-        font-weight: 700;
-        padding: 4px 8px;
-        border-radius: 100px;
-        text-transform: uppercase;
-    }
-    
-    .mock-badge.net30 {
-        background: rgba(245, 158, 11, 0.15);
-        color: #b45309;
-    }
-    
-    .mock-btn {
-        background: #0a192f;
-        color: #ffffff;
-        font-size: 0.85rem;
-        font-weight: 600;
-        text-align: center;
-        padding: 10px;
-        border-radius: 8px;
-        cursor: pointer;
-    }
-
-    /* ════════════════════════════════════════════════════════════════
-       MOCKUP 2: Pagos
-    ════════════════════════════════════════════════════════════════ */
-    .mock-ui-2 {
-        background: transparent;
-        border: none;
-        box-shadow: none;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-    }
-    
-    .mock-balance-card, .mock-tx-list {
-        background: #ffffff;
-        border-radius: 12px;
-        border: 1px solid rgba(10,25,47,0.08);
-        box-shadow: 0 12px 30px -10px rgba(10,25,47,0.1);
-        padding: 16px;
-    }
-    
-    .mock-balance-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 4px;
-    }
-    
-    .mock-balance-top > span:first-child {
-        font-size: 0.8rem;
-        color: #64748b;
-        font-weight: 500;
-    }
-    
-    .mock-balance-card > b {
-        display: block;
-        font-size: 1.8rem;
-        color: #0a192f;
-        margin-bottom: 12px;
-        line-height: 1;
-    }
-    
-    .mock-progress {
-        height: 6px;
-        background: #e2e8f0;
-        border-radius: 100px;
-        overflow: hidden;
-        margin-bottom: 8px;
-    }
-    
-    .mock-progress-bar {
-        height: 100%;
-        background: linear-gradient(90deg, #3b82f6, #10b981);
-        border-radius: 100px;
-    }
-    
-    .mock-balance-sub {
-        font-size: 0.7rem;
-        color: #94a3b8;
-    }
-    
-    .mock-tx-header {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #64748b;
-        text-transform: uppercase;
-        margin-bottom: 12px;
-        letter-spacing: 0.05em;
-    }
-    
-    .mock-tx {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 0;
-        border-bottom: 1px solid rgba(10,25,47,0.04);
-    }
-    
-    .mock-tx:last-child {
-        border-bottom: none;
-        padding-bottom: 0;
-    }
-    
-    .mock-tx-left {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-    
-    .mock-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: #ffffff;
-    }
-    
-    .mock-avatar.ac { background: #3b82f6; }
-    .mock-avatar.fx { background: #f59e0b; }
-    
-    .mock-tx-info {
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .mock-tx-info b {
-        font-size: 0.85rem;
-        color: #0a192f;
-    }
-    
-    .mock-tx-info span {
-        font-size: 0.7rem;
-        color: #94a3b8;
-    }
-    
-    .mock-tx-right {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 4px;
-    }
-    
-    .mock-tx-right b {
-        font-size: 0.85rem;
-        color: #0a192f;
-    }
-    
-    .mock-status {
-        font-size: 0.6rem;
-        font-weight: 700;
-        padding: 2px 6px;
-        border-radius: 100px;
-        text-transform: uppercase;
-    }
-    
-    .mock-status.ok { background: rgba(16, 185, 129, 0.15); color: #059669; }
-    .mock-status.warn { background: rgba(245, 158, 11, 0.15); color: #b45309; }
-
-    /* ════════════════════════════════════════════════════════════════
-       MOCKUP 3: Automatización CFDI
-    ════════════════════════════════════════════════════════════════ */
-    .mock-ui-3 {
-        background: #ffffff;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .mock-chart-container {
-        padding: 16px;
-        border-bottom: 1px solid rgba(10,25,47,0.06);
-    }
-    
-    .mock-chart-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 16px;
-    }
-    
-    .mock-metric {
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .mock-metric > span {
-        font-size: 0.75rem;
-        color: #64748b;
-        font-weight: 500;
-        margin-bottom: 4px;
-    }
-    
-    .mock-metric b {
-        font-size: 1.5rem;
-        color: #0a192f;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    
-    .mock-badge.sat {
-        background: rgba(16, 185, 129, 0.1);
-        color: #10b981;
-        border: 1px solid rgba(16, 185, 129, 0.2);
-    }
-    
-    .mock-bars {
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-        height: 80px;
-        gap: 8px;
-    }
-    
-    .mock-bar-col {
-        flex: 1;
-        height: 100%;
-        background: rgba(10,25,47,0.03);
-        border-radius: 4px 4px 0 0;
-        position: relative;
-        display: flex;
-        align-items: flex-end;
-    }
-    
-    .mock-bar-fill {
-        width: 100%;
-        background: linear-gradient(to top, rgba(59, 130, 246, 0.8), rgba(16, 185, 129, 0.8));
-        border-radius: 4px 4px 0 0;
-    }
-    
-    .mock-chart-footer {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 8px;
-    }
-    
-    .mock-chart-footer span {
-        flex: 1;
-        text-align: center;
-        font-size: 0.6rem;
-        color: #94a3b8;
-    }
-    
-    .mock-log-container {
-        background: #0a192f;
-        padding: 16px;
-        flex: 1;
-    }
-    
-    .mock-log-header {
-        font-size: 0.7rem;
-        font-weight: 600;
-        color: #94a3b8;
-        text-transform: uppercase;
-        margin-bottom: 12px;
-        letter-spacing: 0.05em;
-    }
-    
-    .mock-log {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-    
-    .mock-log-line {
-        font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-        font-size: 0.7rem;
-        color: #e2e8f0;
-    }
-    
-    .log-time { color: #64748b; margin-right: 6px; }
-    .log-hook { color: #f59e0b; margin-right: 6px; }
-    .log-sys { color: #10b981; margin-right: 6px; }
-    .log-mail { color: #3b82f6; margin-right: 6px; }
-
-    /* ════════════════════════════════════════════════════════════════
-       RESPONSIVE
-    ════════════════════════════════════════════════════════════════ */
     @media (max-width: 992px) {
         .cord-pillars-grid {
             grid-template-columns: 1fr;
         }
-        
+        .cord-pillar-card {
+            min-height: auto;
+        }
         .cp-graphic {
-            height: 350px;
+            transform: translateY(1rem);
+            padding-bottom: 2rem;
         }
-        
-        .cord-pillars-section {
-            padding: 3rem 0;
-        }
+    }
+</style>
+
+<style is:global>
+    .cord-pillar-card .mock-ui {
+        box-shadow: 0 12px 24px -8px rgba(10,25,47,0.1), 0 0 0 1px rgba(10,25,47,0.05) !important;
+        border: none !important;
+        border-radius: 12px 12px 0 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    
+    .cord-pillar-card .mock-balance-card, 
+    .cord-pillar-card .mock-tx-list {
+        box-shadow: 0 4px 12px -4px rgba(10,25,47,0.05) !important;
+        background: #ffffff !important;
+        border: 1px solid rgba(10,25,47,0.03) !important;
     }
 </style>
