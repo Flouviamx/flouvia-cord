@@ -8,6 +8,7 @@ import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
 import PageAnims from '../../components/landing/PageAnims.astro';
 import SolucionBlockMockup from '../../components/soluciones/SolucionBlockMockup.astro';
+import ProFeatures from '../../components/soluciones/ProFeatures.astro';
 import { SOLUCIONES } from '../../lib/solucion';
 import { SOLUCIONES_EN } from '../../lib/solucion.en';
 import { getLangFromUrl } from '../../i18n/utils';
@@ -133,6 +134,9 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                 </div>
             </div>
         </section>
+
+        <!-- ── PREMIUM PILLARS (Pro Features) ── -->
+        <ProFeatures />
 
         <!-- ── BENTO GRID FEATURES ── -->
         <section class="stripe-bento-section">
@@ -314,8 +318,8 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     ════════════════════════════════════════════════════════════════ */
     .stripe-hero {
         position: relative;
-        padding: 120px 0 80px;
-        min-height: 85vh;
+        padding: 90px 0 60px;
+        min-height: 75vh;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -635,7 +639,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     ════════════════════════════════════════════════════════════════ */
     .cord-marquee {
         position: absolute;
-        top: 90px; /* Below the nav */
+        top: 64px; /* Right below the nav */
         left: 0;
         width: 100%;
         overflow: hidden;
