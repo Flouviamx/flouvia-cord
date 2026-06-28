@@ -51,6 +51,13 @@ export interface SolWorkflowStep {
     desc: string;
 }
 
+export interface SolUseCase {
+    title: string;
+    desc: string;
+    link: string;
+    logos: string[];
+}
+
 export interface Solution {
     slug: string;
     nav: string;              // nombre corto (megamenú, hub, cross-links)
@@ -69,6 +76,7 @@ export interface Solution {
     security?: SolSecurity;
     workflow?: SolWorkflowStep[];
     pillars?: { titulo: string; desc: string; link: string }[];
+    useCases?: SolUseCase[];
 
     resultado?: {            // caso de uso real con métricas (AI-SEO)
         cliente: string;
@@ -221,6 +229,33 @@ export const SOLUCIONES: Solution[] = [
             { name: 'Zapier' },
             { name: 'HubSpot' },
             { name: 'Make' }
+        ],
+
+        useCases: [
+            {
+                title: 'Agencias y Consultoras',
+                desc: 'Envía propuestas de servicios profesionales al instante, con firmas electrónicas vinculantes y automatiza el cobro de igualas mensuales recurrentes sin fricción.',
+                link: '/producto/pagos',
+                logos: ['IDEAL', 'Ogilvy', 'Accenture']
+            },
+            {
+                title: 'SaaS B2B',
+                desc: 'Gestiona suscripciones, contratos personalizados y planes Enterprise. Integra pagos recurrentes y emite facturas CFDI en automático sin tocar el portal del SAT.',
+                link: '/producto/facturacion',
+                logos: ['Linear', 'Stripe', 'Vercel']
+            },
+            {
+                title: 'Comercializadoras B2B',
+                desc: 'Cotiza volumen, aplica descuentos por tiers dinámicos, maneja catálogos extensos y automatiza la facturación de grandes pedidos al confirmar el pago.',
+                link: '/producto/cotizaciones',
+                logos: ['GAMA', 'ACEROS', 'VERTICE']
+            },
+            {
+                title: 'Software Factory',
+                desc: 'Envía presupuestos de desarrollo a la medida, divide los pagos por hitos de entrega y recibe notificaciones en tiempo real cuando el cliente aprueba la propuesta.',
+                link: '/producto/aprobaciones',
+                logos: ['Cursor', 'OpenAI', 'GitLab']
+            }
         ],
 
         security: {
