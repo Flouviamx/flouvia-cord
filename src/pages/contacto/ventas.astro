@@ -28,9 +28,6 @@ const description = isEn
     </header>
 
     <main class="minimal-contact-page">
-        <!-- Grid Background -->
-        <div class="bg-grid"></div>
-
         <section class="card-section">
             <div class="stepper-card reveal-mockup">
                 <!-- Stepper Header -->
@@ -149,19 +146,6 @@ const description = isEn
         justify-content: center;
         overflow: hidden;
     }
-
-    /* Grid Background */
-    .bg-grid {
-        position: absolute;
-        inset: 0;
-        background-image: 
-            linear-gradient(to right, rgba(0,0,0,0.035) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(0,0,0,0.035) 1px, transparent 1px);
-        background-size: 80px 80px;
-        background-position: center center;
-        z-index: 0;
-        pointer-events: none;
-    }
     
     /* Bottom Right Gradient Splash */
     .bottom-gradient-splash {
@@ -187,13 +171,23 @@ const description = isEn
 
     .stepper-card {
         background: #ffffff;
-        border-radius: 12px;
+        border-radius: 16px;
         box-shadow: 
-            0 2px 5px rgba(0,0,0,0.02),
-            0 15px 35px rgba(10, 25, 47, 0.05),
-            0 40px 80px rgba(10, 25, 47, 0.04),
+            0 4px 12px rgba(0,0,0,0.02),
+            0 24px 48px rgba(10, 25, 47, 0.06),
+            0 60px 100px rgba(10, 25, 47, 0.05),
             0 0 0 1px rgba(10, 25, 47, 0.04);
-        padding: 40px 48px;
+        padding: 44px 52px;
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    
+    .stepper-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 
+            0 6px 16px rgba(0,0,0,0.02),
+            0 32px 64px rgba(10, 25, 47, 0.07),
+            0 70px 120px rgba(10, 25, 47, 0.06),
+            0 0 0 1px rgba(10, 25, 47, 0.04);
     }
 
     /* Stepper Header */
@@ -300,19 +294,41 @@ const description = isEn
         background-color: #f6f9fc;
         border: 1px solid transparent;
         border-radius: 6px;
-        transition: all 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         outline: none;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
     }
 
     .minimal-form input::placeholder {
         color: #8792a2;
+        transition: opacity 0.2s ease;
+    }
+
+    .minimal-form input:focus::placeholder {
+        opacity: 0.4;
+    }
+
+    .minimal-form input:hover,
+    .minimal-form select:hover {
+        background-color: #ffffff;
+        box-shadow: 0 4px 12px rgba(10, 25, 47, 0.04), inset 0 1px 2px rgba(0,0,0,0.01);
     }
 
     .minimal-form input:focus,
     .minimal-form select:focus {
         background-color: #ffffff;
-        border-color: rgba(10, 25, 47, 0.3);
-        box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08); 
+        border-color: rgba(10, 25, 47, 0.4);
+        box-shadow: 0 0 0 4px rgba(10, 25, 47, 0.08), 0 4px 12px rgba(10, 25, 47, 0.06); 
+    }
+
+    /* Transición suave para los labels cuando el input está enfocado */
+    .form-row-horizontal:focus-within label {
+        color: var(--color-blue-deep, #0a192f);
+        transform: translateX(2px);
+    }
+    
+    .form-row-horizontal label {
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease;
     }
 
     .select-wrapper {
@@ -334,42 +350,56 @@ const description = isEn
         height: 14px;
         color: var(--color-text-muted, #555556);
         pointer-events: none;
+        transition: transform 0.3s ease;
+    }
+    
+    .select-wrapper:hover .select-arrow {
+        transform: translateY(-50%) scale(1.1);
+        color: var(--color-blue-deep, #0a192f);
     }
 
     .form-actions {
         display: flex;
         justify-content: flex-end;
-        margin-top: 16px;
+        margin-top: 24px;
     }
 
     .continue-btn {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         background-color: var(--color-blue-deep, #0a192f);
         color: #ffffff;
         font-family: var(--font-sans);
-        font-size: 0.9rem;
+        font-size: 0.95rem;
         font-weight: 600;
         border: none;
         border-radius: 20px;
-        padding: 10px 20px;
+        padding: 10px 24px;
         cursor: pointer;
-        transition: background-color 0.2s ease, transform 0.1s ease;
-        box-shadow: 0 2px 6px rgba(10, 25, 47, 0.15);
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 4px 12px rgba(10, 25, 47, 0.2);
     }
 
     .continue-btn:hover {
         background-color: #050d1a;
+        box-shadow: 0 6px 16px rgba(10, 25, 47, 0.25);
+        transform: translateY(-1px);
     }
 
     .continue-btn:active {
-        transform: scale(0.98);
+        transform: translateY(1px);
+        box-shadow: 0 2px 8px rgba(10, 25, 47, 0.2);
     }
 
     .continue-btn svg {
-        width: 14px;
-        height: 14px;
+        width: 16px;
+        height: 16px;
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .continue-btn:hover svg {
+        transform: translateX(4px);
     }
 
     /* RESPONSIVE */
