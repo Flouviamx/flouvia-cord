@@ -57,21 +57,18 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                 </div>
                 
                 <div class="startup-hero-content stripe-container">
-                    <div class="startup-badge">
-                        <span class="badge-dot"></span>
-                        <span>{isEn ? 'Built for speed' : 'Hecho para escalar'}</span>
-                    </div>
                     <h1 class="startup-title reveal" set:html={solucion.titulo} />
                     
                     <p class="startup-sub">{solucion.sub}</p>
                     
                     <div class="startup-actions">
-                        <a href={isEn ? '/en/registro' : '/registro'} class="btn-startup-primary">
+                        <a href={isEn ? '/en/registro' : '/registro'} class="btn-luxe">
                             <span>{isEn ? 'Start building' : 'Empezar ahora'}</span>
-                        </a>
-                        <a href="/contacto/ventas" class="btn-startup-secondary">
-                            <span>{isEn ? 'Book a demo' : 'Contactar a ventas'}</span>
                             <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            <div class="btn-shimmer"></div>
+                        </a>
+                        <a href="/contacto/ventas" class="btn-ghost">
+                            <span>{isEn ? 'Book a demo' : 'Contactar a ventas'}</span>
                         </a>
                     </div>
                 </div>
@@ -1977,26 +1974,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         padding-top: 2rem;
     }
 
-    .startup-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        background: rgba(99, 102, 241, 0.1);
-        color: #4f46e5;
-        border-radius: 9999px;
-        padding: 6px 16px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin-bottom: 2rem;
-    }
-    
-    .badge-dot {
-        width: 6px;
-        height: 6px;
-        background: #4f46e5;
-        border-radius: 50%;
-    }
-
     .startup-title {
         font-size: clamp(3rem, 5vw, 5.5rem);
         line-height: 1.05;
@@ -2024,48 +2001,15 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         flex-wrap: wrap;
     }
 
-    .btn-startup-primary {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        background: #0a2540;
-        color: #fff;
-        padding: 0.8rem 1.8rem;
-        border-radius: 9999px;
-        font-weight: 600;
-        font-size: 1rem;
-        text-decoration: none;
-        transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    /* Override for btn-ghost on light background */
+    .startup-hero .btn-ghost {
+        color: #0a2540;
+        border: 1px solid rgba(10, 37, 64, 0.15);
+        background: rgba(10, 37, 64, 0.03);
     }
     
-    .btn-startup-primary:hover {
-        background: #111;
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(10, 37, 64, 0.2);
-    }
-
-    .btn-startup-secondary {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        color: #0a2540;
-        font-weight: 600;
-        font-size: 1rem;
-        text-decoration: none;
-        transition: color 0.2s;
-    }
-
-    .btn-startup-secondary svg {
-        width: 18px;
-        height: 18px;
-        transition: transform 0.2s;
-    }
-
-    .btn-startup-secondary:hover {
-        color: #4f46e5;
-    }
-
-    .btn-startup-secondary:hover svg {
-        transform: translateX(4px);
+    .startup-hero .btn-ghost:hover {
+        background: rgba(10, 37, 64, 0.08);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.05);
     }
 </style>

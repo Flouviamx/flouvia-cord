@@ -1522,3 +1522,5 @@ El roadmap público (`/roadmap` y `/en/roadmap`) fue rediseñado para alcanzar u
    • **Simplificación de Copy:** Se eliminó la sección de métricas e hitos promocionales estáticos, testimoniales en bloque, y un CTA intermedio redundante. Todo el flujo se simplificó dejando un funnel directo hacia el footer.
    • **Nueva sección "Herramientas Avanzadas":** Se duplicó la estructura de bloque asimétrico (grid) para incorporar mockups detallando el Motor de Reglas de Negocio, Reportes en Tiempo Real (Métricas Core) y Multi-Entidad/Divisas.
    • **Centrado de layout:** El bloque nativo de "Preguntas Frecuentes" fue centrado de forma consistente con el resto del ecosistema de Cord.
+
+- No usar 'badges' o etiquetas tipo pill flotantes encima de los títulos del hero, el usuario prefiere un diseño más limpio sin badges.
