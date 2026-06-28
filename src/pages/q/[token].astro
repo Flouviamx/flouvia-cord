@@ -32,7 +32,10 @@ if (token === 'demo') {
                 portalMostrarChat: true,
                 portalPowered: true
             },
-            conversacion: []
+            conversacion: [
+                { tipo: 'vendedor', detalle: '¡Hola! Te dejo la cotización con el precio especial que acordamos por volumen.', cuando: 'hace 2 horas', mine: false },
+                { tipo: 'cliente', detalle: 'Gracias, la reviso y te aviso.', cuando: 'hace 1 hora', mine: true }
+            ]
         };
     }
 } else {

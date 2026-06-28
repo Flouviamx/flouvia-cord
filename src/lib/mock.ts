@@ -93,18 +93,19 @@ export const CLIENTES = [
 export const COTIZACIONES: MockQuote[] = [
     {
         id: 'q-0148', folio: 'COT-0148', cliente: 'Distribuidora El Zarco', clienteInicial: 'EZ',
-        status: 'approved', terminos: 'Net 30', vigencia: '24 jun 2026', creada: '10 jun 2026', token: 'demo',
+        status: 'viewed', terminos: 'Net 30', vigencia: '24 jun 2026', creada: '10 jun 2026', token: 'demo',
         items: [
             { descripcion: 'Cemento gris 50kg',        cantidad: 120,  unidad: 'saco',  precioLista: 198.0, precioNegociado: 182.0 },
-            { descripcion: 'Varilla 3/8" × 12m',       cantidad: 340,  unidad: 'pieza', precioLista: 189.0, precioNegociado: 168.5 },
+            { descripcion: 'Varilla 3/8" × 12m',       cantidad: 340,  unidad: 'pieza', precioLista: 189.0, precioNegociado: 168.5,
+              comentarios: [{ autor: 'Raúl Mendoza', tipo: 'cliente', contenido: '¿Me puedes mejorar el precio de la varilla si pido 500 piezas?', cuando: 'hace 10 min' }]
+            },
             { descripcion: 'Block hueco 15×20×40',     cantidad: 2400, unidad: 'pieza', precioLista: 16.5,  precioNegociado: 14.2 },
             { descripcion: 'Malla electrosoldada 6×6', cantidad: 180,  unidad: 'rollo', precioLista: 332.0, precioNegociado: 312.0 },
         ],
         eventos: [
-            { tipo: 'approved', detalle: 'El Zarco aprobó la cotización',   cuando: 'hoy, 12:36' },
-            { tipo: 'viewed',   detalle: 'Raúl Mendoza abrió el link',      cuando: 'hoy, 12:31' },
-            { tipo: 'sent',     detalle: 'Enviada por correo y WhatsApp',   cuando: 'hoy, 11:02' },
-            { tipo: 'created',  detalle: 'Borrador creado',                 cuando: 'hoy, 10:41' },
+            { tipo: 'viewed',   detalle: 'Raúl Mendoza abrió el link',      cuando: 'hace 15 min' },
+            { tipo: 'sent',     detalle: 'Enviada por correo y WhatsApp',   cuando: 'hace 1 hora' },
+            { tipo: 'created',  detalle: 'Borrador creado',                 cuando: 'hace 2 horas' },
         ],
         notas: 'Precio especial por volumen — entrega en obra Tlalnepantla.',
     },
