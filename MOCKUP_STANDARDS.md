@@ -1,160 +1,153 @@
-# 💎 The Cord "Quiet Luxury" Mockup Standard (SOP)
+# The Cord Mockup Standard (SOP)
 
 **NIVEL DE EXIGENCIA: MASTERCLASS (STRIPE / LINEAR / APPLE / NOTION)**
 
-Este documento es la **Constitución de Diseño** para la Inteligencia Artificial (Antigravity, Claude, etc.). Cada vez que se te pida crear un mockup UI en código (HTML/CSS/Tailwind) para la landing page, **DEBES** seguir estas reglas con precisión milimétrica. El objetivo no es "que se vea bien", el objetivo es que parezca diseñado por el equipo core de Stripe, Vercel o Linear.
+Esta es la **Constitución de Diseño** para crear mockups de UI en la landing. El objetivo
+no es "que se vea bien": el objetivo es que **parezca un screenshot real de un producto
+pulido** — como si fuera la app de Stripe, Linear o la propia app de Cord. Cuando alguien
+vea la página debe pensar "wow, esto es un SaaS serio".
+
+> **Regla de oro:** un mockup excelente es una **calca creíble de una pantalla real** que
+> **demuestra visualmente lo que dice el texto de al lado**. Densidad y realismo ganan;
+> los adornos (cursores, toasts) son condimento, no el plato.
 
 ---
 
-## 🏛️ 1. FILOSOFÍA DE DISEÑO: "QUIET LUXURY"
+## 0. STACK — ⚠️ LEE ESTO PRIMERO
 
-Los mockups de clase mundial no gritan. Susurran. Se basan en:
-1.  **Espacio Negativo (Aire):** Multiplica por 2 los paddings que usarías normalmente. Deja que los elementos y la tipografía respiren.
-2.  **Contraste Tipográfico Quirúrgico:** Títulos masivos con tracking negativo (`tracking-tighter`, `letter-spacing: -0.04em`), subtítulos extremadamente sutiles en gris (`text-gray-500` o `text-gray-400`).
-3.  **Profundidad Multicapa:** Nunca uses una sola sombra de Tailwind. Un elemento flotante premium tiene sombra de base, sombra de ambiente y un borde interior (*rim light*) que simula que la luz rebota en el cristal.
-4.  **Cero Emojis, Cero Bordes Duros:** Prohibido usar emojis (❌ 🚀 👆). Usa SVGs finos con `stroke-width="1.5"`. Prohibido el `#000000` puro para bordes, usa `#0a192f` u opacidades suaves (ej. `border-black/5`).
+**Este proyecto NO usa Tailwind.** Todos los mockups son **CSS vanilla con clases
+prefijadas** dentro de un `<style>` del `.astro` (`bm-*` en `producto/BlockMockup.astro`,
+`sbm-*` en `soluciones/SolucionBlockMockup.astro`, `int-*`/`mock-ui` en las páginas de
+soluciones). **NUNCA escribas `class="bg-white/70 backdrop-blur-3xl rounded-[2rem]"`** —
+no hace nada.
+
+- **Reutiliza la base existente.** El componente canónico es
+  [`src/components/producto/BlockMockup.astro`](src/components/producto/BlockMockup.astro):
+  ya trae card, floating pills, push-notif, dots, avatares, cursor SVG, `.editorial`. Extiéndelo,
+  no reinventes.
+- **Prefija tus clases** (`bm-<feature>-mN`, `sbm-<industria>-mN`) para no colisionar.
+- **Animación:** GSAP solo en landing; loops `repeat:-1` y/o `ScrollTrigger {once:true}`
+  (NUNCA scrub-on-drag). El HTML por defecto debe ser el **estado final** para que con
+  `prefers-reduced-motion` se vea completo y correcto.
 
 ---
 
-## 🏗️ 2. ANATOMÍA DEL CONTENEDOR (El "Macbook Glassmorphism")
+## 1. FILOSOFÍA: "CALCA REALISTA, QUIET LUXURY"
 
-Todo mockup debe vivir dentro de un contenedor "Ventana". El usuario NUNCA debe ver un mockup pegado directamente al fondo de la web. Cópia exactamente esta estructura base:
+1. **Realismo > minimalismo vacío.** Mira las referencias de Stripe: muestran tablas reales
+   con encabezados de columna, 5–8 filas de datos plausibles, tabs, pills de estado, sidebars.
+   Eso es lo que se ve profesional. **Skeletons (barras grises) SOLO** para contenido
+   verdaderamente periférico o cortado por el borde (filas que se desvanecen abajo), nunca
+   para reemplazar el contenido principal que cuenta la historia.
+2. **El mockup PRUEBA el copy.** Un mockup = una afirmación, visualizada literal. Si el texto
+   dice "controla el margen", el mockup enseña un número de margen con su umbral. Si dice
+   "cobra con un clic", enseña el botón de pago y el estado "Pagado". No mockups genéricos.
+3. **Aire.** Paddings generosos, jerarquía tipográfica clara, deja respirar.
+4. **Profundidad por capas, no por glow.** El "wow" de Stripe es una tarjeta flotante que se
+   **encima** sobre el panel principal (ej. el card de saldo sobre el dashboard). Logra
+   profundidad con superposición + sombras compuestas, no con halos saturados.
+5. **Cero emojis. Cero cajas encajonadas.** SVGs finos (`stroke-width: 1.5–2`). Divisores
+   hairline o `gap`, nunca bordes gruesos por todos lados. Negros para borde: `#0a192f` u
+   opacidades suaves, nunca `#000` puro.
 
-### El Contenedor Supremo (Código Tailwind Exacto)
-```html
-<div class="relative w-full max-w-5xl mx-auto group perspective-1000">
-  <!-- Glow Ambiental de fondo (Opcional, detrás del mockup para dar profundidad) -->
-  <div class="absolute -inset-10 bg-gradient-to-r from-blue-500/20 to-purple-500/20 blur-[100px] rounded-[3rem] opacity-50 group-hover:opacity-70 transition-opacity duration-700"></div>
+---
 
-  <!-- Ventana Principal -->
-  <div class="relative overflow-hidden rounded-[2rem] bg-white/70 backdrop-blur-3xl 
-              border border-white/60 shadow-[0_2px_10px_rgba(0,0,0,0.02),_0_30px_60px_-15px_rgba(0,0,0,0.12)] 
-              ring-1 ring-black/[0.03] transform transition-transform duration-700 ease-out">
-    
-    <!-- Efecto "Rim Light" (Reflejo de luz superior en el borde del cristal) -->
-    <div class="absolute inset-0 rounded-[2rem] shadow-[inset_0_1px_1px_rgba(255,255,255,1)] pointer-events-none z-10"></div>
+## 2. SUPERFICIE Y CONTENEDOR
 
-    <!-- Topbar estilo macOS (Sutil, monocromático, sin los colores fuertes del semáforo) -->
-    <div class="flex items-center px-5 py-4 border-b border-gray-900/5 bg-white/40">
-      <div class="flex space-x-2">
-        <div class="w-2.5 h-2.5 rounded-full bg-gray-300"></div>
-        <div class="w-2.5 h-2.5 rounded-full bg-gray-300"></div>
-        <div class="w-2.5 h-2.5 rounded-full bg-gray-300"></div>
-      </div>
-      <!-- Searchbar Falso / Breadcrumb sutil -->
-      <div class="mx-auto w-1/3 h-6 bg-gray-900/5 rounded-md flex items-center justify-center">
-         <span class="text-[10px] text-gray-400 font-medium font-mono">cord.flouvia.com/app</span>
-      </div>
-    </div>
+### Modo de superficie (elige uno; **Light es el default**)
+- **Light "calca de la app" (PREFERIDO):** espeja el modo claro real de Cord. Canvas
+  `#f5f5f7`, tarjetas **blancas sólidas `#ffffff`** (NO translúcidas), texto navy `#0a192f`,
+  números `.editorial`. Es el que más se parece a las referencias de Stripe. Úsalo para
+  dashboards, tablas, checkout, listas, charts.
+- **Dark "brand hero" (navy):** el gradiente navy de `BlockMockup.astro`
+  (`linear-gradient(165deg,#0e2240,#0a192f,#081424)`). Resérvalo para piezas hero de marca o
+  cuando el bloque vive sobre una sección oscura. Las MISMAS reglas de realismo aplican.
 
-    <!-- Contenido de la UI (El Mockup real) -->
-    <div class="p-8 md:p-12 relative bg-gray-50/30">
-      <!-- ... -->
-    </div>
-  </div>
-</div>
+> El **glassmorphism (blur + translúcido) SOLO** para tarjetas flotantes que se superponen
+> (overlays/toasts), nunca para la ventana/panel principal. Una superficie principal turbia
+> se ve barata.
+
+### Chrome contextual (no siempre lleva ventana)
+- **App / dashboard** → frame de navegador mínimo: 3 puntos gris (`#d1d1d6`, monocromáticos,
+  sin semáforo de colores) + pill de URL limpia (`dashboard.cord.flouvia.com`). O un sidebar
+  de app real.
+- **Checkout / teléfono / componente suelto** → tarjeta flotante **sin** frame de navegador.
+- **Stat callout / chart** → tarjeta suelta, sin frame.
+
+### Sombras (compuestas — NUNCA `shadow-lg` genérico)
+```css
+/* Tarjeta light flotante (estilo Stripe) */
+box-shadow:
+  0 2px 4px rgba(10,25,47,0.04),
+  0 28px 56px -14px rgba(10,25,47,0.12),
+  inset 0 1px 0 rgba(255,255,255,0.6);
+border-radius: 16px;            /* squircle; cards grandes hasta 24px */
+border: 1px solid rgba(10,25,47,0.06);
 ```
+Glow ambiental: **muy sutil y desaturado** (núcleo navy/azul a baja opacidad), p.ej.
+`radial-gradient(ellipse at center, rgba(10,25,47,0.10) 0%, transparent 65%)` con `blur`.
+Nada de `from-blue-500/20 to-purple-500/20`.
 
 ---
 
-## 🎨 3. TRADUCCIÓN DE CÓDIGO REAL A "CALCA PREMIUM" (La Abstracción)
+## 3. CONTENIDO: DATOS EXQUISITOS Y DENSOS
 
-Cuando extraigas código de la app de Cord, **DESTROZA LA LÓGICA**. El mockup es puramente teatro visual.
-
-### A. Datos Falsos Exquisitos
-- **Nombres B2B reales y sobrios:** `Acme Corp.`, `Global Logistics Ltd.`, `Constructora Apex`.
-- **Números que impacten:** `$12,450.00 MXN`, `$1.2M USD` (Asegúrate de añadir la clase `tabular-nums` o `.editorial` de Cord a todos los números para que se alineen perfecto).
-- **Badges de Estado Perfectos:** Usa píldoras (`rounded-full`) con fondos translucidos (`bg-emerald-50`) y textos contrastantes (`text-emerald-700`).
-
-### B. "Skeleton Loaders" para evitar el ruido cognitivo
-Si la interfaz real es muy compleja (ej. una tabla de 10 columnas y 20 filas), el mockup debe ser una obra de arte minimalista:
-1. **Reduce drásticamente:** Muestra solo 2 o 3 filas clave y máximo 4 columnas.
-2. **Usa Skeletons Elegantes:** En lugar de textos descriptivos largos que nadie leerá, inyecta barras grises estéticas:
-```html
-<!-- Texto falso convertido a diseño abstracto -->
-<div class="space-y-2.5">
-  <div class="h-2 w-3/4 bg-gray-200/60 rounded-full"></div>
-  <div class="h-2 w-1/2 bg-gray-200/60 rounded-full"></div>
-</div>
-```
-
-### C. Estilos Premium en Componentes Base
-- **Inputs Falsos:** `bg-[#f5f5f7] border-0 rounded-xl px-4 py-3 text-sm text-gray-900 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]`.
-- **Botones Primarios (CTAs):** Deben ser magnéticos. `rounded-full bg-[#050505] text-white px-6 py-2.5 text-sm font-medium shadow-[0_4px_14px_rgba(0,0,0,0.15)] transform transition-transform hover:scale-105 active:scale-95`.
+- **Nombres B2B reales y sobrios:** `Aceros del Norte`, `Constructora Apex`, `Grupo Modelo`,
+  `Distribuidora del Bajío`. Nada de "Lorem" ni "Empresa 1".
+- **Números con peso y formato:** `$1,248,500.00 MXN`, `42 ms`, `+14.2%`. Todos los números
+  con clase `.editorial` (Inter 600, `tabular-nums`) para alineación perfecta.
+- **Tablas como las de Stripe:** encabezados de columna reales, 5–8 filas con datos
+  plausibles, columna de **estado con pills** (`Pagado` verde, `Vencido` ámbar, `Disputado`
+  gris). Deja que la última fila se corte/desvanezca en el borde para sensación de "hay más".
+- **Pills de estado:** `border-radius: 999px`, fondo translúcido + texto contrastante:
+  verde `bg rgba(16,185,129,.12)/text #047857`, ámbar, navy. Coherentes con `STATUS_META`.
+- **Logos de marca reales** (integraciones/clientes/herramientas) → **Google Favicon V2**,
+  NUNCA emojis ni SVGs estáticos pesados:
+  ```html
+  <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://stripe.com&size=128"
+       alt="Stripe" width="24" height="24" loading="lazy" style="border-radius:6px" />
+  ```
+- **Scroll oculto:** si un bloque hace `overflow:auto`, oculta la barra nativa
+  (`&::-webkit-scrollbar { display:none }`).
 
 ---
 
-## 🪄 4. MICRO-INTERACCIONES Y ELEMENTOS FLOTANTES (El "Wow Factor")
+## 4. MICRO-INTERACCIONES (OPCIONALES — condimento, no regla)
 
-Un mockup estático está muerto. Todo mockup generado por la IA **DEBE INCLUIR** capas superpuestas narrativas (`position: absolute; z-index: 50`) que cuenten una historia de uso real.
+Las referencias de Stripe que perseguimos **no llevan cursor ni toast**: se ven como
+screenshots calmados. Úsalos con criterio, máximo uno por mockup, y solo si refuerzan el copy:
 
-### Capa Mágica 1: El Cursor Fantasma (Notion style)
-Coloca un cursor de ratón falso que flota sobre la interfaz, a punto de hacer clic en el CTA más importante.
-```html
-<div class="absolute top-[40%] right-[30%] z-50 animate-[float_4s_ease-in-out_infinite]">
-  <!-- Cursor SVG (Sólido negro con drop-shadow) -->
-  <svg class="w-6 h-6 text-black drop-shadow-md transform -rotate-12" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M7 2l12 11.2-5.8.5 3.3 7.3-2.2.9-3.2-7.4-4.4 4.7z"/>
-  </svg>
-  
-  <!-- Tooltip narrativo pegado al cursor -->
-  <div class="absolute top-6 left-4 bg-black/95 text-white text-[11px] font-medium px-3 py-1.5 rounded-lg shadow-2xl backdrop-blur-md whitespace-nowrap border border-white/10">
-    Aprobar Cotización
-  </div>
-</div>
-```
+- **Count-up** de un número clave al entrar en viewport.
+- **Un solo cambio de estado** en loop suave (ej. el badge pasa a "Pagado", flash verde).
+- **Tarjeta flotante que se superpone** (la pieza de profundidad más valiosa — preferirla
+  sobre cursores/toasts).
+- **Cursor fantasma / push-notif:** permitido pero **dosificado**. Si lo usas, que sea un SVG
+  sólido con drop-shadow (NUNCA emoji) y que vaya hacia el CTA que menciona el texto.
 
-### Capa Mágica 2: La Notificación "Pop" Flotante (Apple/Linear style)
-Un "Toast" o notificación superpuesta que valida lo que hace tu aplicación, desbordándose sutilmente del contenedor principal (`-right-10`).
-```html
-<div class="absolute -right-8 bottom-12 z-40 bg-white/90 p-4 rounded-2xl 
-            shadow-[0_20px_50px_-10px_rgba(0,0,0,0.15)] border border-white/60 
-            flex items-center space-x-4 backdrop-blur-2xl
-            animate-[float_5s_ease-in-out_infinite_reverse]">
-  <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center ring-4 ring-blue-50/50">
-    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-  </div>
-  <div>
-    <p class="text-sm font-semibold text-gray-900 tracking-tight">Análisis Completado</p>
-    <p class="text-[11px] text-gray-500 font-medium">Margen optimizado en un +14%</p>
-  </div>
-</div>
-```
+Todo respeta `prefers-reduced-motion` (estado final visible y correcto sin JS).
 
 ---
 
-## 🚫 5. LO QUE LA IA NUNCA DEBE HACER (Reglas de Sangre)
+## 5. PROHIBIDO (reglas de sangre)
 
-1. **PROHIBIDO COMPONENTES REALES:** Nunca importes `<form>`, `useState`, hooks, llamadas a BD, ni nada interactivo real en el mockup de la landing. Rompes el build y asfixias el performance.
-2. **PROHIBIDO EL `shadow-lg` NATIVO:** Es barato. Las sombras deben ser compuestas, largas y suaves (usa las fórmulas escritas arriba).
-3. **PROHIBIDAS LAS CAJAS ENCAJONADAS:** Huye de los Bento grids de bordes duros (`border-gray-200` grueso por todos lados). Usa divisores *hairline* finísimos o separa mediante `gap` y aire.
-4. **PROHIBIDO OVERFLOW SUCIO:** Si creas un bloque con `overflow-y-auto`, ES OBLIGATORIO ocultar la asquerosa barra de scroll nativa usando `[&::-webkit-scrollbar]:hidden`.
-
----
-
-## 🏢 6. LOGOS DE MARCAS E INTEGRACIONES (El estándar de alta resolución)
-
-Nunca uses emojis para representar marcas (❌ "Stripe 💳", "WhatsApp 💬"). Nunca uses PNGs feos o SVGs estáticos que engorden el bundle. Cuando necesites mostrar un logotipo real de una marca (ej. integraciones, logos de clientes, herramientas de software), **DEBES** utilizar el truco de la API no documentada de Google Favicon V2 para obtener logos de alta calidad dinámicamente usando solo el dominio.
-
-### El Snippet Obligatorio:
-```html
-<img 
-  src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://DOMINIO_DE_LA_MARCA.com&size=128" 
-  alt="Nombre de la Marca" 
-  class="w-6 h-6 rounded-md shadow-sm" 
-  loading="lazy" 
-/>
-```
-*Sustituye `DOMINIO_DE_LA_MARCA.com` por el dominio real (ej. `stripe.com`, `zapier.com`, `hubspot.com`).* Este método garantiza iconos nítidos (128x128px) en un formato premium.
+1. **Tailwind** (`bg-white/70`, `rounded-[2rem]`, `max-w-5xl`…) — no existe en este repo.
+2. **Componentes reales** (`<form>`, hooks, `useState`, llamadas a BD). El mockup es teatro
+   visual estático; nada que rompa el build o el performance.
+3. **`box-shadow` plano/genérico.** Siempre compuesto (ver §2).
+4. **Skeletons como relleno principal.** Solo para periferia/cortes de borde.
+5. **Cursor/toast obligatorios.** Son opcionales; el realismo manda.
+6. **Cajas Bento de bordes duros, emojis, glass en la superficie principal, glow saturado.**
 
 ---
 
-## 🤖 INSTRUCCIÓN DE EJECUCIÓN DIRECTA PARA LA IA (Tú)
+## 6. CHECKLIST ANTES DE ENTREGAR
 
-Cuando el humano te pase el prompt pidiendo el mockup, tu flujo de pensamiento y código debe ser:
-1. Extraer el alma del componente fuente.
-2. Escribir un archivo estático (.astro o .tsx sin dependencias raras).
-3. Escribir el **Contenedor Supremo** con *glassmorphism* y *rim lights*.
-4. Redibujar la UI internamente, con datos exquisitos y *skeletons* para lo secundario.
-5. Engancharle **capas mágicas flotantes** (Cursores o Popups con GSAP o CSS Keyframes puros).
-6. Entregar un código que, al guardarlo, haga que el usuario se caiga de la silla por el nivel estético de la implementación.
+- [ ] ¿Está en CSS vanilla con clases prefijadas (no Tailwind)?
+- [ ] ¿Reutiliza/extiende la base `bm-*` de `BlockMockup.astro`?
+- [ ] ¿Parece un screenshot real (tabla densa, encabezados, datos plausibles, pills)?
+- [ ] ¿Demuestra literalmente lo que dice el copy de al lado?
+- [ ] ¿Superficie blanca sólida (light) o navy hero — sin glass turbio de fondo?
+- [ ] ¿Sombras compuestas + alguna pieza de profundidad por superposición?
+- [ ] ¿Números con `.editorial`, marcas con Favicon V2, cero emojis?
+- [ ] ¿Animación con estado final por defecto y `prefers-reduced-motion` cubierto?
+- [ ] ¿Scroll nativo oculto donde aplique?
