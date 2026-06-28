@@ -147,6 +147,8 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
      - Copy de **`/desarrolladores/mcp`** actualizado a "MCP bidireccional + gobernanza de agentes".
    ✅ **Rediseño del Megamenú y Footer (COMPLETADO):**
      - Se subdividió el menú de "Productos" (tanto en Nav.astro desktop/móvil como en Footer.astro) en 3 categorías claras: *Flujo de Ventas*, *Pagos y Finanzas* y *Facturación y Operación*.
+     - Se subdividió el menú de "Desarrolladores" (*Herramientas y Plataforma*) y de "Recursos" (*Ayuda y Contacto*) en `Nav.astro` y `Footer.astro` para mantener la misma jerarquía.
+     - Se añadió el enlace **Contacto a ventas** dentro de la sección Recursos/Ayuda en la navegación y footer.
      - Se actualizaron los iconos SVG de "Casos de Uso" a un nivel premium (duotone line + fill opacity 0.1) para mejorar la estética visual y alinearse al diseño SaaS moderno.
    ✅ **Páginas nuevas de /producto (COMPLETADO):**
      - **`/producto/finanzas`** — "Tu CFO con IA" y dashboards (mockups y copy añadidos a `producto.ts` y `BlockMockup.astro`).
