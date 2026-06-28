@@ -15,51 +15,62 @@ const metaDesc = "Envía propuestas hermosas, obtén firmas vinculantes y automa
 ---
 
 <Layout title={metaTitle} description={metaDesc}>
-    <Nav darkHero={true} />
+    <Nav />
     
     <main class="use-case-main">
-        <!-- HERO (Dark, Premium Stripe Style) -->
+        <!-- HERO (Stripe 2-column style, Light) -->
         <header class="uc-hero">
-            <div class="uc-hero-bg">
-                <div class="uc-hero-aurora"></div>
-                <div class="uc-hero-grid"></div>
-            </div>
-            
-            <div class="uc-hero-content">
-                <div class="uc-eyebrow">CORD PARA AGENCIAS Y CONSULTORAS</div>
-                <h1 class="uc-title reveal">Propuestas magnéticas que cierran tratos</h1>
-                <p class="uc-sub reveal">
-                    Deja de perder horas armando PDFs en Word. Envía propuestas interactivas en minutos, obtén firmas electrónicas al instante y automatiza el cobro de tus igualas.
-                </p>
-                <div class="uc-actions reveal">
-                    <a href="/registro" class="btn-luxe">
-                        <span>Empezar ahora</span>
-                        <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                        <div class="btn-shimmer"></div>
-                    </a>
-                    <a href="/contacto/ventas" class="btn-ghost-dark">Agendar demo</a>
-                </div>
-            </div>
-
-            <!-- MOCKUP ABSTRACTION -->
-            <div class="uc-hero-mockup reveal-mockup">
-                <div class="uc-mockup-window">
-                    <div class="uc-mockup-top">
-                        <div class="uc-dots"><span></span><span></span><span></span></div>
+            <div class="uc-container uc-hero-grid">
+                <div class="uc-hero-content">
+                    <div class="uc-eyebrow" style="color: #635bff;">Stripe para Agencias</div>
+                    <h1 class="uc-title reveal">Propuestas magnéticas que cierran tratos</h1>
+                    <p class="uc-sub reveal">
+                        Deja de perder horas armando PDFs en Word. Envía propuestas interactivas en minutos, obtén firmas electrónicas al instante y automatiza el cobro de tus igualas.
+                    </p>
+                    <div class="uc-actions reveal">
+                        <a href="/registro" class="btn-luxe">
+                            <span>Empezar ahora</span>
+                            <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            <div class="btn-shimmer"></div>
+                        </a>
+                        <a href="/contacto/ventas" class="btn-ghost">Contactar a ventas <span class="arrow-right">→</span></a>
                     </div>
-                    <div class="uc-mockup-body">
-                        <div class="mock-plan">
-                            <span class="mp-title">Campaña de Rebranding + Retainer Anual</span>
-                            <span class="mp-price">$85,000 <small>MXN</small></span>
+                </div>
+
+                <div class="uc-hero-visual reveal-mockup">
+                    <div class="uc-visual-glow" style="background: radial-gradient(circle at 50% 50%, rgba(99,91,255,0.2) 0%, transparent 60%);"></div>
+                    <div class="uc-mockup-window">
+                        <div class="uc-mockup-top">
+                            <div class="uc-dots"><span></span><span></span><span></span></div>
                         </div>
-                        <div class="mock-status">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#8b5cf6" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            Firmada por el cliente · Anticipo cobrado
+                        <div class="uc-mockup-body">
+                            <div class="mock-plan">
+                                <span class="mp-title">Campaña de Rebranding + Retainer Anual</span>
+                                <span class="mp-price">$85,000 <small>MXN</small></span>
+                            </div>
+                            <div class="mock-status">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#635bff" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                Firmada por el cliente · Anticipo cobrado
+                            </div>
+                            <div class="mock-cfdi">
+                                <span class="cfdi-badge" style="background: rgba(99,91,255,0.1); color: #635bff;">Retainer</span> Cobro programado mes a mes
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </header>
+
+        <!-- LOGOS / TRUST -->
+        <section class="uc-trust reveal">
+            <p>Agencias líderes usan Cord para profesionalizar su proceso de ventas</p>
+            <div class="uc-logos">
+                <span class="trust-logo">Ogilvy</span>
+                <span class="trust-logo">Accenture</span>
+                <span class="trust-logo">IDEO</span>
+                <span class="trust-logo">Pentagram</span>
+            </div>
+        </section>
 
         <!-- FEATURES GRID -->
         <section class="uc-features">
@@ -71,17 +82,17 @@ const metaDesc = "Envía propuestas hermosas, obtén firmas vinculantes y automa
 
                 <div class="uc-bento-grid">
                     <div class="uc-bento-card reveal">
-                        <div class="uc-bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></div>
+                        <div class="uc-bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#635bff" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></div>
                         <h3>Firmas Vinculantes</h3>
                         <p>Cada propuesta aprobada incluye una firma electrónica con validez legal. Sin necesidad de usar herramientas de terceros caras.</p>
                     </div>
                     <div class="uc-bento-card reveal">
-                        <div class="uc-bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div>
+                        <div class="uc-bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#635bff" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div>
                         <h3>Cobro de Retainers (Igualas)</h3>
                         <p>Convierte a tus clientes de proyecto a iguala mensual fácilmente. Cord se encarga del cargo recurrente a tarjeta y de enviar la factura CFDI mes a mes.</p>
                     </div>
                     <div class="uc-bento-card reveal">
-                        <div class="uc-bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg></div>
+                        <div class="uc-bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#635bff" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg></div>
                         <h3>Plantillas Premium</h3>
                         <p>Destaca desde el primer contacto. Nuestras plantillas de propuestas gritan profesionalismo, haciendo que tu agencia parezca el doble de grande.</p>
                     </div>
@@ -93,9 +104,9 @@ const metaDesc = "Envía propuestas hermosas, obtén firmas vinculantes y automa
         <section class="uc-cta-section">
             <div class="uc-container">
                 <div class="uc-cta-box reveal">
-                    <h2>Cierra más proyectos, más rápido.</h2>
+                    <h2>¿Listo para agilizar tus ventas?</h2>
                     <p>Agencias líderes usan Cord para profesionalizar su proceso de ventas.</p>
-                    <a href="/registro" class="btn-luxe">Comenzar gratis</a>
+                    <a href="/registro" class="btn-luxe" style="background: #635bff;">Comenzar gratis</a>
                 </div>
             </div>
         </section>
@@ -107,183 +118,213 @@ const metaDesc = "Envía propuestas hermosas, obtén firmas vinculantes y automa
 <style>
     /* VARIABLES Y UTILIDADES GLOBALES PARA USE CASES */
     .use-case-main {
-        --uc-dark: #1e1b4b; /* Deep purple dark */
-        --uc-darker: #0f172a;
-        --uc-accent: #8b5cf6; /* Purple */
-        background: #f8fafc;
+        background: #fff;
         padding-top: 0;
         overflow-x: hidden;
+        color: #425466; /* Texto Stripe */
     }
 
     .uc-container {
-        max-width: 1140px;
+        max-width: 1080px;
         margin: 0 auto;
         padding: 0 5%;
     }
 
-    /* ── HERO SECTION ── */
+    /* ── HERO SECTION (2-Column Light) ── */
     .uc-hero {
         position: relative;
-        background: var(--uc-darker);
-        color: #fff;
-        padding: 10rem 5% 4rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
+        padding: 8rem 0 4rem;
+        background: #f6f9fc; /* Fondo ultra ligero Stripe */
         overflow: hidden;
+        border-bottom: 1px solid #e6ebf1;
     }
-
-    .uc-hero-bg {
+    
+    /* Diagonal background cut (Stripe style) */
+    .uc-hero::before {
+        content: '';
         position: absolute;
-        inset: 0;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: #fff;
+        transform: skewY(-4deg);
+        transform-origin: top left;
         z-index: 0;
-    }
-
-    .uc-hero-aurora {
-        position: absolute;
-        top: -20%; left: 50%; width: 140vw; height: 120vh;
-        transform: translateX(-50%);
-        background: radial-gradient(ellipse at 50% 20%, rgba(139,92,246,0.2), transparent 50%);
-        filter: blur(60px);
+        pointer-events: none;
     }
 
     .uc-hero-grid {
-        position: absolute;
-        inset: 0;
-        background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-                          linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-        background-size: 40px 40px;
-        mask-image: radial-gradient(ellipse at 50% 0%, black, transparent 70%);
-        -webkit-mask-image: radial-gradient(ellipse at 50% 0%, black, transparent 70%);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+        align-items: center;
+        position: relative;
+        z-index: 1;
     }
 
     .uc-hero-content {
-        position: relative;
-        z-index: 2;
-        max-width: 860px;
+        padding-right: 2rem;
     }
 
     .uc-eyebrow {
-        font-size: 0.75rem;
+        font-size: 0.85rem;
         font-weight: 700;
-        letter-spacing: 2px;
+        letter-spacing: 0.5px;
         text-transform: uppercase;
-        color: var(--uc-accent);
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
     }
 
     .uc-title {
-        font-size: clamp(2.5rem, 5vw, 4.2rem);
+        font-size: clamp(2.2rem, 4vw, 3.8rem);
         font-weight: 800;
-        line-height: 1.05;
+        color: #0a2540;
+        line-height: 1.1;
         letter-spacing: -0.04em;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.2rem;
         text-wrap: balance;
     }
 
     .uc-sub {
         font-size: 1.15rem;
-        color: rgba(255,255,255,0.65);
-        max-width: 650px;
-        margin: 0 auto 2.5rem;
+        color: #425466;
         line-height: 1.6;
+        margin-bottom: 2rem;
+        max-width: 90%;
     }
 
     .uc-actions {
         display: flex;
         gap: 1rem;
-        justify-content: center;
-        margin-bottom: 4rem;
+        align-items: center;
     }
 
-    /* ── BUTTONS ── */
+    /* ── BUTTONS (Light Theme) ── */
     .btn-luxe {
         position: relative;
         display: inline-flex; align-items: center; justify-content: center;
-        background: #fff; color: var(--uc-darker);
-        padding: 16px 32px; border-radius: 100px;
-        font-size: 0.95rem; font-weight: 700; text-decoration: none;
-        overflow: hidden; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s;
-        box-shadow: 0 8px 24px rgba(255,255,255,0.15);
+        background: #0a2540; color: #fff;
+        padding: 14px 28px; border-radius: 100px;
+        font-size: 0.95rem; font-weight: 600; text-decoration: none;
+        overflow: hidden; transition: transform 0.3s, box-shadow 0.3s, background 0.3s;
+        box-shadow: 0 4px 14px rgba(10,37,64,0.15);
     }
     .btn-luxe span { position: relative; z-index: 2; }
-    .btn-arrow { width: 16px; height: 16px; margin-left: 6px; position: relative; z-index: 2; transition: transform 0.4s; }
+    .btn-arrow { width: 16px; height: 16px; margin-left: 6px; position: relative; z-index: 2; transition: transform 0.3s; }
     .btn-luxe:hover .btn-arrow { transform: translateX(4px); }
-    .btn-luxe:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,255,255,0.25); }
+    .btn-luxe:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(10,37,64,0.25); background: #061b31; }
 
-    .btn-ghost-dark {
-        display: inline-flex; align-items: center; justify-content: center;
-        color: #fff; padding: 16px 32px; border-radius: 100px;
-        font-size: 0.95rem; font-weight: 600; text-decoration: none;
-        background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-        transition: background 0.3s, transform 0.3s;
+    .btn-ghost {
+        display: inline-flex; align-items: center;
+        color: #0a2540; font-size: 0.95rem; font-weight: 600; text-decoration: none;
+        transition: color 0.2s;
     }
-    .btn-ghost-dark:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+    .btn-ghost .arrow-right { transition: transform 0.2s; display: inline-block; margin-left: 4px; }
+    .btn-ghost:hover { color: #635bff; }
+    .btn-ghost:hover .arrow-right { transform: translateX(4px); }
 
-    /* ── MOCKUP ── */
-    .uc-hero-mockup {
+    /* ── MOCKUP (Right Side) ── */
+    .uc-hero-visual {
         position: relative;
-        z-index: 2;
-        width: 100%;
-        max-width: 800px;
-        perspective: 1200px;
-        margin-bottom: -100px;
+        perspective: 1000px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .uc-visual-glow {
+        position: absolute;
+        width: 120%; height: 120%;
+        top: -10%; left: -10%;
+        filter: blur(50px);
+        z-index: 0;
+        opacity: 0.7;
     }
 
     .uc-mockup-window {
-        background: var(--uc-darker);
+        position: relative;
+        z-index: 1;
+        background: #fff;
         border-radius: 12px;
-        border: 1px solid rgba(255,255,255,0.1);
-        box-shadow: 0 30px 60px rgba(0,0,0,0.5);
-        overflow: hidden;
-        transform: rotateX(8deg);
-        transform-origin: top center;
+        box-shadow: 0 20px 40px rgba(10,37,64,0.1), 0 0 0 1px rgba(10,37,64,0.05);
+        width: 100%;
+        max-width: 450px;
+        transform: rotateY(-10deg) rotateX(5deg);
         transition: transform 0.5s ease-out;
     }
-    .uc-mockup-window:hover { transform: rotateX(0deg); }
+    .uc-hero-visual:hover .uc-mockup-window {
+        transform: rotateY(0deg) rotateX(0deg);
+    }
 
     .uc-mockup-top {
-        background: rgba(0,0,0,0.4);
+        background: #f6f9fc;
         padding: 12px 16px;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
+        border-bottom: 1px solid rgba(10,37,64,0.05);
+        border-radius: 12px 12px 0 0;
     }
     .uc-dots { display: flex; gap: 6px; }
-    .uc-dots span { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.2); }
+    .uc-dots span { width: 10px; height: 10px; border-radius: 50%; background: #d3dae6; }
+    .uc-dots span:nth-child(1) { background: #ff5f56; }
+    .uc-dots span:nth-child(2) { background: #ffbd2e; }
+    .uc-dots span:nth-child(3) { background: #27c93f; }
 
     .uc-mockup-body {
-        padding: 40px;
-        background: var(--uc-darker);
-        text-align: left;
+        padding: 30px;
     }
+    
     .mock-plan {
-        background: rgba(255,255,255,0.03);
-        padding: 24px;
+        background: #f6f9fc;
+        padding: 20px;
         border-radius: 8px;
-        border: 1px solid rgba(255,255,255,0.05);
-        display: flex; justify-content: space-between; align-items: center;
+        border: 1px solid rgba(10,37,64,0.05);
+        display: flex; flex-direction: column; gap: 8px;
         margin-bottom: 20px;
     }
-    .mp-title { font-size: 1.2rem; font-weight: 600; color: #fff; }
-    .mp-price { font-size: 1.5rem; font-weight: 800; color: #fff; }
-    .mp-price small { font-size: 0.9rem; color: rgba(255,255,255,0.5); font-weight: 500; }
+    .mp-title { font-size: 1.05rem; font-weight: 600; color: #0a2540; }
+    .mp-price { font-size: 1.8rem; font-weight: 800; color: #0a2540; }
+    .mp-price small { font-size: 1rem; color: #687385; font-weight: 500; }
     
     .mock-status {
         display: flex; align-items: center; gap: 8px;
-        font-size: 0.9rem; color: rgba(255,255,255,0.6);
+        font-size: 0.85rem; color: #425466; font-weight: 500;
+        margin-bottom: 12px;
+    }
+    .mock-cfdi {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 0.85rem; color: #425466; font-weight: 500;
+        padding-top: 12px;
+        border-top: 1px dashed rgba(10,37,64,0.1);
+    }
+    .cfdi-badge {
+        background: rgba(16,185,129,0.1); color: #059669;
+        font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+    }
+
+    /* ── TRUST LOGOS ── */
+    .uc-trust {
+        text-align: center;
+        padding: 3rem 5%;
+        background: #fff;
+    }
+    .uc-trust p {
+        font-size: 0.9rem; font-weight: 600; color: #687385; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1.5rem;
+    }
+    .uc-logos {
+        display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; align-items: center;
+    }
+    .trust-logo {
+        font-size: 1.4rem; font-weight: 800; color: #c1c9d2; letter-spacing: -0.5px;
     }
 
     /* ── FEATURES ── */
     .uc-features {
-        padding: 12rem 0 6rem;
+        padding: 6rem 0 6rem;
+        background: #fff;
     }
     .uc-features-header {
         text-align: center;
         max-width: 600px;
         margin: 0 auto 4rem;
     }
-    .uc-features-header h2 { font-size: 2.2rem; font-weight: 800; color: #0a192f; margin-bottom: 1rem; }
-    .uc-features-header p { font-size: 1.1rem; color: #64748b; line-height: 1.6; }
+    .uc-features-header h2 { font-size: 2.2rem; font-weight: 800; color: #0a2540; margin-bottom: 1rem; }
+    .uc-features-header p { font-size: 1.1rem; color: #425466; line-height: 1.6; }
 
     .uc-bento-grid {
         display: grid;
@@ -293,55 +334,58 @@ const metaDesc = "Envía propuestas hermosas, obtén firmas vinculantes y automa
     .uc-bento-card {
         background: #fff;
         padding: 2.5rem;
-        border-radius: 20px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+        border-radius: 16px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 0 0 1px rgba(10,37,64,0.05);
         transition: transform 0.3s, box-shadow 0.3s;
     }
     .uc-bento-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 0 0 1px rgba(10,37,64,0.05);
     }
     .uc-bento-icon {
         width: 48px; height: 48px;
-        background: #f1f5f9;
+        background: #f6f9fc;
         border-radius: 12px;
         display: flex; align-items: center; justify-content: center;
-        color: var(--uc-accent);
         margin-bottom: 1.5rem;
     }
-    .uc-bento-icon svg { width: 24px; height: 24px; }
-    .uc-bento-card h3 { font-size: 1.2rem; font-weight: 700; color: #0a192f; margin-bottom: 0.8rem; }
-    .uc-bento-card p { font-size: 0.95rem; color: #64748b; line-height: 1.6; }
+    .uc-bento-card h3 { font-size: 1.2rem; font-weight: 700; color: #0a2540; margin-bottom: 0.8rem; }
+    .uc-bento-card p { font-size: 0.95rem; color: #425466; line-height: 1.6; }
 
     /* ── CTA SECTION ── */
     .uc-cta-section {
         padding: 4rem 0 8rem;
+        background: #fff;
     }
     .uc-cta-box {
-        background: var(--uc-darker);
-        border-radius: 24px;
+        background: #0a2540;
+        border-radius: 20px;
         padding: 4rem 2rem;
         text-align: center;
         color: #fff;
         position: relative;
         overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(10,37,64,0.25);
     }
     .uc-cta-box::before {
         content: '';
         position: absolute;
         top: 0; left: 0; right: 0; bottom: 0;
-        background: radial-gradient(circle at center, rgba(139,92,246,0.2), transparent 60%);
+        background: radial-gradient(circle at center top, rgba(99,91,255,0.15), transparent 70%);
         pointer-events: none;
     }
     .uc-cta-box h2 { font-size: 2.2rem; font-weight: 800; margin-bottom: 1rem; position: relative; z-index: 1; }
-    .uc-cta-box p { font-size: 1.1rem; color: rgba(255,255,255,0.7); margin-bottom: 2rem; position: relative; z-index: 1; }
+    .uc-cta-box p { font-size: 1.1rem; color: #aab7c4; margin-bottom: 2rem; position: relative; z-index: 1; }
+    .uc-cta-box .btn-luxe { background: #635bff; color: #fff; box-shadow: 0 4px 14px rgba(99,91,255,0.3); }
+    .uc-cta-box .btn-luxe:hover { background: #5247ed; box-shadow: 0 6px 20px rgba(99,91,255,0.4); }
 
     @media (max-width: 900px) {
+        .uc-hero-grid { grid-template-columns: 1fr; gap: 4rem; }
+        .uc-hero-content { padding-right: 0; text-align: center; }
+        .uc-actions { justify-content: center; }
         .uc-title { font-size: 2.5rem; }
         .uc-bento-grid { grid-template-columns: 1fr; }
-        .uc-hero { padding-top: 8rem; }
-        .uc-actions { flex-direction: column; }
+        .uc-hero::before { transform: skewY(-2deg); }
     }
 </style>
 
@@ -361,8 +405,8 @@ const metaDesc = "Envía propuestas hermosas, obtén firmas vinculantes y automa
             });
         });
         
-        gsap.fromTo('.reveal-mockup', { opacity: 0, y: 40 }, {
-            opacity: 1, y: 0, duration: 1.2, ease: 'power3.out', delay: 0.2,
+        gsap.fromTo('.reveal-mockup', { opacity: 0, x: 30, rotationY: -15 }, {
+            opacity: 1, x: 0, rotationY: -10, duration: 1.2, ease: 'power3.out', delay: 0.2,
             scrollTrigger: { trigger: '.reveal-mockup', start: 'top 90%' }
         });
     });
