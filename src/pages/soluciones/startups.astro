@@ -260,13 +260,26 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                             </div>
                             <div class="int-card-graphic">
                                 <div class="mock-ui">
-                                    <div class="int-mini-card" style="width: 85%; padding: 16px; background: #0f172a; border-color: #1e293b;">
-                                        <div style="font-family: 'SF Mono', Consolas, monospace; font-size: 11px; line-height: 1.6; color: #e2e8f0;">
-                                            <div style="color: #10b981; font-weight: 600; margin-bottom: 8px;">POST /webhook 200 OK</div>
-                                            <div style="color: #64748b;">&#123;</div>
-                                            <div style="margin-left: 12px;"><span style="color: #38bdf8;">"type"</span>: <span style="color: #a3e635;">"payment.paid"</span>,</div>
-                                            <div style="margin-left: 12px;"><span style="color: #38bdf8;">"amount"</span>: <span style="color: #fb923c;">990.00</span></div>
-                                            <div style="color: #64748b;">&#125;</div>
+                                    <div class="int-mini-card" style="width: 85%; padding: 0; overflow: hidden; background: #fff;">
+                                        <div style="background: #f8fafc; padding: 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+                                            <div style="font-size: 11px; font-weight: 600; color: #0f172a;">Eventos Recientes</div>
+                                            <div style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);"></div>
+                                        </div>
+                                        <div style="padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9;">
+                                                <div>
+                                                    <div style="font-size: 10px; font-weight: 600; color: #0ea5e9;">payment.succeeded</div>
+                                                    <div style="font-size: 9px; color: #94a3b8; font-family: monospace;">evt_Xy89Za</div>
+                                                </div>
+                                                <div style="font-size: 9px; font-weight: 600; color: #10b981; background: #d1fae5; padding: 2px 6px; border-radius: 4px;">200 OK</div>
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                <div>
+                                                    <div style="font-size: 10px; font-weight: 600; color: #0ea5e9;">invoice.created</div>
+                                                    <div style="font-size: 9px; color: #94a3b8; font-family: monospace;">evt_Bv32Wm</div>
+                                                </div>
+                                                <div style="font-size: 9px; font-weight: 600; color: #10b981; background: #d1fae5; padding: 2px 6px; border-radius: 4px;">200 OK</div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -282,12 +295,27 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                             </div>
                             <div class="int-card-graphic">
                                 <div class="mock-ui">
-                                    <div class="int-mini-card" style="width: 85%; padding: 16px; background: #0f172a; border-color: #1e293b;">
-                                        <div style="font-family: 'SF Mono', Consolas, monospace; font-size: 11px; line-height: 1.6; color: #e2e8f0;">
-                                            <div><span style="color: #fb923c;">curl</span> -X POST https://api.cord.mx \</div>
-                                            <div style="margin-left: 12px;">-H <span style="color: #a3e635;">"Auth: Bearer sk_..."</span> \</div>
-                                            <div style="margin-left: 12px;">-d <span style="color: #a3e635;">'&#123;"amount": 990&#125;'</span></div>
+                                    <div class="int-mini-card" style="width: 85%; padding: 16px; background: #fff;">
+                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <div style="width: 24px; height: 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #0f172a;">API</div>
+                                                <div style="font-size: 11px; font-weight: 600; color: #0f172a;">Rendimiento</div>
+                                            </div>
+                                            <div style="font-size: 10px; color: #64748b;">Últimos 30 min</div>
                                         </div>
+                                        <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                                            <div>
+                                                <div style="font-size: 9px; color: #64748b; font-weight: 500; margin-bottom: 2px;">Éxito (200 OK)</div>
+                                                <div style="font-size: 16px; font-weight: 700; color: #10b981;">99.99%</div>
+                                            </div>
+                                            <div>
+                                                <div style="font-size: 9px; color: #64748b; font-weight: 500; margin-bottom: 2px;">Latencia (p95)</div>
+                                                <div style="font-size: 16px; font-weight: 700; color: #0f172a;">42ms</div>
+                                            </div>
+                                        </div>
+                                        <svg viewBox="0 0 100 20" style="width: 100%; height: 20px; overflow: visible;">
+                                            <path d="M0,15 Q10,5 20,10 T40,12 T60,5 T80,10 T100,2" fill="none" stroke="#0ea5e9" stroke-width="2" />
+                                        </svg>
                                     </div>
                                 </div>
                             </div>
@@ -300,14 +328,23 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                             </div>
                             <div class="int-card-graphic">
                                 <div class="mock-ui">
-                                    <div class="int-mini-card" style="width: 85%; padding: 16px; background: #0f172a; border-color: #1e293b;">
-                                        <div style="font-family: 'SF Mono', Consolas, monospace; font-size: 11px; line-height: 1.6; color: #e2e8f0;">
-                                            <div><span style="color: #c586c0;">import</span> cord</div>
-                                            <div style="margin-top: 8px;">cord = Cord(<span style="color: #a3e635;">'sk_test...'</span>)</div>
-                                            <div>quote = cord.quotes.create(</div>
-                                            <div style="margin-left: 12px; color: #9cdcfe;">customer=<span style="color: #a3e635;">'cus_01'</span></div>
-                                            <div>)</div>
+                                    <div class="int-mini-card" style="width: 80%; padding: 16px; background: #fff; display: flex; flex-direction: column; align-items: center; gap: 16px;">
+                                        <div style="font-size: 11px; font-weight: 600; color: #0f172a;">Librerías Oficiales</div>
+                                        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                                            <div style="padding: 6px 10px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 6px; background: #f8fafc;">
+                                                <div style="width: 10px; height: 10px; border-radius: 3px; background: #3776AB;"></div>
+                                                <div style="font-size: 10px; font-weight: 600; color: #0f172a;">Python</div>
+                                            </div>
+                                            <div style="padding: 6px 10px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 6px; background: #f8fafc;">
+                                                <div style="width: 10px; height: 10px; border-radius: 3px; background: #F7DF1E;"></div>
+                                                <div style="font-size: 10px; font-weight: 600; color: #0f172a;">Node.js</div>
+                                            </div>
+                                            <div style="padding: 6px 10px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 6px; background: #f8fafc;">
+                                                <div style="width: 10px; height: 10px; border-radius: 3px; background: #777BB4;"></div>
+                                                <div style="font-size: 10px; font-weight: 600; color: #0f172a;">PHP</div>
+                                            </div>
                                         </div>
+                                        <div style="font-size: 10px; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 4px 12px; border-radius: 12px;">Instalación en 1 minuto</div>
                                     </div>
                                 </div>
                             </div>
