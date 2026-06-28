@@ -74,13 +74,13 @@ export const GET: APIRoute = async ({ request }) => {
       // si falta RESEND_API_KEY devuelve { sent:false, skipped } sin lanzar.
       let emailResult: { sent: boolean; skipped?: string; error?: string } = { sent: false, skipped: 'sin email' };
       if (quote.cliente_email) {
-        const bodyHtml = `<div style="background-color:#F9FAFB;padding:40px 20px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;">
-        <div style="max-width:560px;margin:0 auto;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);border:1px solid #E5E7EB;">
-            <div style="padding:40px;">
-                <div style="font-size:16px;line-height:1.6;color:#374151;white-space:pre-wrap;">${escapeHtml(agentResponse)}</div>
+        const bodyHtml = `<div style="background-color:#FAFAFA;padding:48px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';">
+        <div style="max-width:540px;margin:0 auto;background-color:#ffffff;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;">
+            <div style="padding:48px;">
+                <div style="font-size:16px;line-height:1.6;color:#111827;white-space:pre-wrap;font-weight:400;">${escapeHtml(agentResponse)}</div>
             </div>
-            <div style="background-color:#F9FAFB;padding:24px 40px;border-top:1px solid #E5E7EB;text-align:center;">
-                <p style="font-size:13px;color:#9CA3AF;margin:0;">Enviado vía Cord</p>
+            <div style="background-color:#FAFAFA;padding:24px 48px;border-top:1px solid #E5E7EB;">
+                <p style="font-size:12px;color:#9CA3AF;margin:0;line-height:1.5;text-align:center;">Enviado vía Cord</p>
             </div>
         </div>
     </div>`;
