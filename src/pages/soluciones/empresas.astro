@@ -1,5 +1,5 @@
 ---
-// Página de solución (Empresas, Startups).
+// Página de solución (Empresas).
 // Diseño alineado al estilo Cord.
 export const prerender = true;
 
@@ -16,14 +16,10 @@ import { SOLUCIONES } from '../../lib/solucion';
 import { SOLUCIONES_EN } from '../../lib/solucion.en';
 import { getLangFromUrl } from '../../i18n/utils';
 
-export function getStaticPaths() {
-    return SOLUCIONES.map((s) => ({ params: { slug: s.slug }, props: { solucion: s } }));
-}
-
 const lang = getLangFromUrl(Astro.url);
 const isEn = Astro.props.isEn || lang === 'en';
-const currentSol = Astro.props.solucion || Astro.props.solucion;
-const solucion = isEn && currentSol ? SOLUCIONES_EN.find((s) => s.slug === currentSol.slug) || currentSol : currentSol;
+const baseSolucion = isEn ? SOLUCIONES_EN.find((s) => s.slug === 'empresas') : SOLUCIONES.find((s) => s.slug === 'empresas');
+const solucion = baseSolucion!;
 const otras = (isEn ? SOLUCIONES_EN : SOLUCIONES).filter((s) => s.slug !== solucion.slug);
 
 const faqSchema = {

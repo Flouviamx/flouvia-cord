@@ -1,0 +1,3551 @@
+---
+// Página de solución (Startups).
+// Diseño alineado al estilo Cord.
+export const prerender = true;
+
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../../components/landing/Nav.astro';
+import Footer from '../../components/landing/Footer.astro';
+import PageAnims from '../../components/landing/PageAnims.astro';
+import SolucionBlockMockup from '../../components/soluciones/SolucionBlockMockup.astro';
+import ProFeatures from '../../components/soluciones/ProFeatures.astro';
+import MockupCotizacion from '../../components/soluciones/MockupCotizacion.astro';
+import MockupPagos from '../../components/soluciones/MockupPagos.astro';
+import MockupCFDI from '../../components/soluciones/MockupCFDI.astro';
+import { SOLUCIONES } from '../../lib/solucion';
+import { SOLUCIONES_EN } from '../../lib/solucion.en';
+import { getLangFromUrl } from '../../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const isEn = Astro.props.isEn || lang === 'en';
+const baseSolucion = isEn ? SOLUCIONES_EN.find((s) => s.slug === 'startups') : SOLUCIONES.find((s) => s.slug === 'startups');
+const solucion = baseSolucion!;
+const otras = (isEn ? SOLUCIONES_EN : SOLUCIONES).filter((s) => s.slug !== solucion.slug);
+
+const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: solucion.faqs.map((f) => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+};
+
+// Array estático de logos (Stripe-style logo cloud)
+const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS'];
+---
+
+<Layout
+    title={solucion.metaTitle ?? `${solucion.nav} — Cord`}
+    description={solucion.metaDescription ?? solucion.sub}
+>
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
+    <Nav darkHero={solucion.slug === 'empresas'} />
+    <main class="stripe-main">
+        
+        {solucion.slug === 'startups' ? (
+            <!-- ── HERO (Stripe Startups Style) ── -->
+            <header class="startup-hero">
+                <div class="startup-hero-bg">
+                    <div class="startup-hero-blob-1"></div>
+                    <div class="startup-hero-blob-2"></div>
+                </div>
+                
+                <div class="startup-hero-content stripe-container">
+                    <h1 class="startup-title reveal" set:html={solucion.titulo} />
+                    
+                    <p class="startup-sub">{solucion.sub}</p>
+                    
+                    <div class="startup-actions">
+                        <a href={isEn ? '/en/registro' : '/registro'} class="btn-luxe">
+                            <span>{isEn ? 'Start building' : 'Empezar ahora'}</span>
+                            <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            <div class="btn-shimmer"></div>
+                        </a>
+                        <a href="/contacto/ventas" class="btn-ghost">
+                            <span>{isEn ? 'Book a demo' : 'Contactar a ventas'}</span>
+                        </a>
+                    </div>
+                </div>
+            </header>
+        ) : (
+            <!-- ── HERO (Stripe Enterprise) ── -->
+            <header class="stripe-hero">
+                <div class="stripe-hero-bg">
+                    <div class="stripe-hero-aurora"></div>
+                    <div class="stripe-hero-sweep"></div>
+                </div>
+                
+                <div class="stripe-hero-content stripe-container">
+                    <h1 class="stripe-title reveal" set:html={solucion.titulo} />
+                    
+                    <p class="stripe-sub">{solucion.sub}</p>
+                    
+                    <div class="stripe-actions">
+                        <a href={isEn ? '/en/registro' : '/registro'} class="btn-luxe">
+                            <span>{isEn ? 'Start now' : 'Empezar ahora'}</span>
+                            <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            <div class="btn-shimmer"></div>
+                        </a>
+                        <a href="/contacto/ventas" class="btn-ghost">
+                            <span>{isEn ? 'Contact sales' : 'Contactar a ventas'}</span>
+                        </a>
+                    </div>
+                </div>
+            </header>
+        )}
+
+        <!-- ── STARTUP USE CASES ── -->
+        {solucion.useCases && (
+            <section class="startup-use-cases-section reveal">
+                <div class="stripe-container">
+                    <div class="startup-section-header">
+                        <div class="startup-section-titles">
+                            <h2 class="startup-section-title">{isEn ? 'Ideal for every business model' : 'Ideal para todo tipo de empresas'}</h2>
+                            <p class="startup-section-sub">{isEn ? 'Thousands of successful companies automate their sales flow with Cord.' : 'Miles de empresas exitosas ya automatizan su proceso comercial con Cord.'}</p>
+                        </div>
+                        <div class="startup-carousel-controls">
+                            <button id="startup-prev" class="carousel-btn" aria-label="Previous">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                            </button>
+                            <button id="startup-next" class="carousel-btn" aria-label="Next">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div> <!-- End stripe-container to allow full-bleed grid -->
+                
+                <div class="startup-use-cases-grid">
+                        {solucion.useCases.map(uc => (
+                            <div class="startup-use-case-card">
+                                <div class="uc-content">
+                                    <h3 class="uc-title">{uc.title}</h3>
+                                    <p class="uc-desc">{uc.desc}</p>
+                                    <a href={uc.link} class="uc-link">
+                                        <span>{isEn ? 'Learn more' : 'Más información'}</span>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                    </a>
+                                </div>
+                                <div class="uc-logos">
+                                    {uc.logos.map(l => (
+                                        <div class="uc-logo-item">
+                                            <img src={`https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${l.domain}&size=128`} alt={l.name} class="uc-logo-img" loading="lazy" />
+                                            <span class="uc-logo-name">{l.name}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+            </section>
+        )}
+
+        <!-- ── STARTUP INTEGRATION TABS (Apple Style) ── -->
+        {solucion.slug === 'startups' && (
+            <section class="integration-tabs-section reveal">
+                <div class="stripe-container">
+                    <div class="integration-header">
+                        <h2 class="integration-title">{isEn ? 'Integrate Cord your way' : 'Integra Cord a tu medida'}</h2>
+                        <p class="integration-sub">{isEn ? 'Stripe offers a wide range of options to accept payments, from no-code and low-code options to powerful APIs.' : 'Cord ofrece una amplia gama de opciones para automatizar tus ventas, desde configuraciones visuales sin código hasta potentes API REST.'}</p>
+                    </div>
+
+                    <div class="stripe-tabs-container">
+                        <div class="stripe-progress-track">
+                            <div class="stripe-progress-fill" id="stripe-progress-fill"></div>
+                        </div>
+                        <div class="stripe-tabs-buttons" role="tablist">
+                            <button class="stripe-tab active" role="tab" aria-selected="true" data-target="tab-nocode">
+                                <span class="tab-label">Sin código</span>
+                                <span class="tab-sub">Más rápido</span>
+                            </button>
+                            <button class="stripe-tab" role="tab" aria-selected="false" data-target="tab-lowcode">
+                                <span class="tab-label">Bajo código</span>
+                                <span class="tab-sub">Optimizado</span>
+                            </button>
+                            <button class="stripe-tab" role="tab" aria-selected="false" data-target="tab-api">
+                                <span class="tab-label">API REST</span>
+                                <span class="tab-sub">Control total</span>
+                            </button>
+                        </div>
+                    </div>
+                </div> <!-- Close stripe-container so track can bleed full width -->
+
+                    <div class="integration-scroll-track" id="integration-scroll">
+                        <!-- NO CODE -->
+                        <div class="int-card" data-tab-group="tab-nocode">
+                            <div class="int-card-text">
+                                <h3 class="int-card-title">Cotizador Visual</h3>
+                                <p class="int-card-desc">Crea cotizaciones interactivas arrastrando y soltando elementos de tu catálogo en segundos.</p>
+                                <a href="/producto/cotizaciones" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                            </div>
+                            <div class="int-card-graphic">
+                                <div class="mock-ui mock-ui-blue">
+                                    <div class="graphic-widget">
+                                        <div class="graphic-widget-line short"></div>
+                                        <div class="graphic-widget-line"></div>
+                                        <div class="graphic-widget-line"></div>
+                                        <div class="graphic-widget-btn"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="int-card" data-tab-group="tab-nocode">
+                            <div class="int-card-text">
+                                <h3 class="int-card-title">Ligas de Pago</h3>
+                                <p class="int-card-desc">Genera links de cobro al instante y compártelos por WhatsApp sin escribir una línea de código.</p>
+                                <a href="/producto/pagos" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                            </div>
+                            <div class="int-card-graphic">
+                                <div class="mock-ui mock-ui-blue">
+                                    <div class="graphic-widget" style="transform: perspective(800px) rotateY(15deg) rotateX(10deg);">
+                                        <div class="graphic-widget-line"></div>
+                                        <div class="graphic-widget-line short"></div>
+                                        <div class="graphic-widget-line"></div>
+                                        <div class="graphic-widget-btn" style="background: #27c93f;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LOW CODE -->
+                        <div class="int-card" data-tab-group="tab-lowcode">
+                            <div class="int-card-text">
+                                <h3 class="int-card-title">Zapier & Make</h3>
+                                <p class="int-card-desc">Automatiza flujos de trabajo complejos conectando Cord con más de 5,000 aplicaciones.</p>
+                                <a href="/desarrolladores/integraciones" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                            </div>
+                            <div class="int-card-graphic">
+                                <div class="mock-ui mock-ui-purple">
+                                    <div class="graphic-nodes">
+                                        <div class="graphic-node"><div class="graphic-node-dot"></div></div>
+                                        <div class="graphic-connection"></div>
+                                        <div class="graphic-node"><div class="graphic-node-dot"></div></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="int-card" data-tab-group="tab-lowcode">
+                            <div class="int-card-text">
+                                <h3 class="int-card-title">Webhooks</h3>
+                                <p class="int-card-desc">Conecta Cord con tu ERP o CRM actual usando webhooks que disparan acciones en tiempo real.</p>
+                                <a href="/desarrolladores/webhooks" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                            </div>
+                            <div class="int-card-graphic">
+                                <div class="mock-ui mock-ui-purple">
+                                    <div class="graphic-nodes">
+                                        <div class="graphic-node"><div class="graphic-node-dot"></div></div>
+                                        <div class="graphic-connection"></div>
+                                        <div class="graphic-node"><div class="graphic-node-dot"></div></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- API -->
+                        <div class="int-card" data-tab-group="tab-api">
+                            <div class="int-card-text">
+                                <h3 class="int-card-title">API RESTful</h3>
+                                <p class="int-card-desc">Integra la facturación CFDI 4.0 directamente en tu propio software con nuestra API moderna.</p>
+                                <a href="/desarrolladores/api" class="int-link">Ver documentación <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                            </div>
+                            <div class="int-card-graphic">
+                                <div class="mock-ui mock-ui-orange">
+                                    <div class="graphic-code">
+                                        <div class="graphic-code-line"></div>
+                                        <div class="graphic-code-line"></div>
+                                        <div class="graphic-code-line"></div>
+                                        <div class="graphic-code-line"></div>
+                                        <div class="graphic-code-line"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="int-card" data-tab-group="tab-api">
+                            <div class="int-card-text">
+                                <h3 class="int-card-title">SDKs Nativos</h3>
+                                <p class="int-card-desc">Librerías oficiales para Node.js, Python y PHP que aceleran el desarrollo de tu equipo.</p>
+                                <a href="/desarrolladores/sdks" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                            </div>
+                            <div class="int-card-graphic">
+                                <div class="mock-ui mock-ui-orange">
+                                    <div class="graphic-code">
+                                        <div class="graphic-code-line" style="width: 40%; background: #0071e3;"></div>
+                                        <div class="graphic-code-line" style="width: 50%; background: #27c93f;"></div>
+                                        <div class="graphic-code-line" style="width: 30%; background: rgba(255,255,255,0.4);"></div>
+                                        <div class="graphic-code-line" style="width: 60%; background: #ffbd2e;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </section>
+        )}
+
+        <!-- ── AIRY BENTO PILLARS ── -->
+        {solucion.pillars && (
+            <section class="stripe-pillars-section">
+                <div class="stripe-container">
+                    <div class="stripe-pillars-grid">
+                        {solucion.pillars.map((p, i) => (
+                            <div class="stripe-pillar-card reveal">
+                                <div class="stripe-pillar-graphic">
+                                    {i === 0 && (
+                                        <div class="pillar-mock pillar-mock-magic">
+                                            <div class="magic-doc">
+                                                <div class="magic-doc-header"></div>
+                                                <div class="magic-doc-line"></div>
+                                                <div class="magic-doc-line short"></div>
+                                                <div class="magic-doc-btn">
+                                                    <div class="magic-cursor">
+                                                        <svg viewBox="0 0 24 24" fill="white" stroke="#000" stroke-width="1"><path d="M5.5 3.21V20.8c0 .45.54.67.85.35l4.86-4.86a.5.5 0 0 1 .35-.15h6.42c.45 0 .67-.54.35-.85L5.5 3.21z"/></svg>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {i === 1 && (
+                                        <div class="pillar-mock pillar-mock-premium">
+                                            <div class="premium-ui">
+                                                <div class="p-ui-nav">
+                                                    <div class="p-ui-dot"></div><div class="p-ui-dot"></div><div class="p-ui-dot"></div>
+                                                </div>
+                                                <div class="p-ui-body">
+                                                    <div class="p-ui-chart">
+                                                        <div class="p-ui-bar" style="height: 40%"></div>
+                                                        <div class="p-ui-bar" style="height: 70%"></div>
+                                                        <div class="p-ui-bar" style="height: 100%"></div>
+                                                        <div class="p-ui-bar" style="height: 60%"></div>
+                                                    </div>
+                                                </div>
+                                                <div class="premium-glow"></div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {i === 2 && (
+                                        <div class="pillar-mock pillar-mock-invoice">
+                                            <div class="invoice-doc">
+                                                <div class="inv-head">
+                                                    <div class="inv-logo"></div>
+                                                    <div class="inv-amount"></div>
+                                                </div>
+                                                <div class="inv-body">
+                                                    <div class="inv-row"></div>
+                                                    <div class="inv-row"></div>
+                                                </div>
+                                                <div class="inv-stamp">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                <div class="stripe-pillar-content">
+                                    <h3 class="stripe-pillar-title">{p.titulo}</h3>
+                                    <p class="stripe-pillar-desc">{p.desc}</p>
+                                    <a href="#" class="stripe-pillar-link">
+                                        {p.link}
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                                            <polyline points="19 12 12 19 5 12"></polyline>
+                                        </svg>
+                                    </a>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+        )}
+
+        <!-- ── FEATURE GRID (ASYMMETRIC) ── -->
+        <section class="stripe-feature-grid-section">
+            <div class="stripe-container">
+                <div class="stripe-section-header reveal">
+                    <span class="stripe-section-eyebrow">CAPACIDADES CORE</span>
+                    <h2 class="stripe-h2">{isEn ? 'A complete ecosystem for your commercial process' : 'Un ecosistema completo para tu proceso comercial'}</h2>
+                    <p class="stripe-p">{solucion.paraQuien}</p>
+                </div>
+
+                <div class="stripe-fg-layout">
+                    <!-- Left Column: Main Features -->
+                    <div class="stripe-fg-main">
+                        {solucion.blocks.map((block, idx) => (
+                            <div class="stripe-fg-card reveal">
+                                <div class="stripe-fg-card-content">
+                                    <h3 class="stripe-fg-title">{block.titulo}</h3>
+                                    <p class="stripe-fg-desc">{block.copy}</p>
+                                    <div class="stripe-fg-tags">
+                                        {block.bullets.map((b, bulletIdx) => {
+                                            const slugs = ['aprobaciones', 'finanzas', 'cfdi', 'editor', 'equipo'];
+                                            const targetSlug = slugs[(idx + bulletIdx) % slugs.length];
+                                            return (
+                                                <a href={`/producto/${targetSlug}`} class="stripe-fg-tag">{b}</a>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                                <div class="stripe-fg-card-visual">
+                                <div class="stripe-fg-card-visual">
+                                    {idx === 0 && (
+                                        <div class="pro-ui-card real-ui">
+                                            <div class="rui-topbar">
+                                                <div style="font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4z"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-9H5a2 2 0 0 0-2 2z"></path></svg>
+                                                    Reconocimiento de ingresos
+                                                </div>
+                                                <div class="rui-dropdown-header" style="margin-top: 0;"><span>Junio 2026</span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+                                            </div>
+                                            <div style="padding: 24px;">
+                                                <div class="rui-header-flex">
+                                                    <div>
+                                                        <div class="rui-value">MXN 5,839,417.15</div>
+                                                        <div class="rui-label text-green">+14.2% vs mes anterior</div>
+                                                    </div>
+                                                    <div class="rui-tabs-small">
+                                                        <span class="active">Abierto</span>
+                                                        <span>Cerrado</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="rui-chart-container">
+                                                    <div class="rui-chart-bar" style="height: 40%"></div>
+                                                    <div class="rui-chart-bar" style="height: 60%"></div>
+                                                    <div class="rui-chart-bar" style="height: 50%"></div>
+                                                    <div class="rui-chart-bar" style="height: 80%"></div>
+                                                    <div class="rui-chart-bar bar-active" style="height: 90%"></div>
+                                                    <div class="rui-chart-bar" style="height: 70%"></div>
+                                                    <div class="rui-chart-bar" style="height: 100%"></div>
+                                                </div>
+                                                <div class="rui-chart-labels">
+                                                    <span>Ene</span><span>Feb</span><span>Mar</span><span>Abr</span><span>May</span><span>Jun</span><span>Jul</span>
+                                                </div>
+
+                                                <div class="rui-divider"></div>
+                                                
+                                                <div class="rui-dropdown-header">
+                                                    <span>Resumen de Junio de 2026</span>
+                                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                                </div>
+                                                <div class="rui-table-mini">
+                                                    <div class="rt-row"><span class="rt-label">Ingresos reconocidos previamente</span><span class="rt-val">MXN 1,215,752.67</span></div>
+                                                    <div class="rt-row"><span class="rt-label">Ingresos por servicios no facturados</span><span class="rt-val">MXN 4,244,870.34</span></div>
+                                                    <div class="rt-row"><span class="rt-label">Menos reembolsos</span><span class="rt-val text-red">MXN 22.38</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {idx === 1 && (
+                                        <div class="pro-ui-card real-ui" style="padding: 0;">
+                                            <div class="rui-sidebar-layout">
+                                                <div class="rui-sidebar">
+                                                    <div class="rs-brand"><img src="/imgs/logo-cord-navy.png" width="18" alt="Cord" /></div>
+                                                    <div class="rs-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M3 9h18M9 21V9"></path></svg></div>
+                                                    <div class="rs-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg></div>
+                                                    <div class="rs-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
+                                                    <div class="rs-avatar rbac-grad-1 mt-auto mb-4">AG</div>
+                                                </div>
+                                                <div class="rui-main">
+                                                    <div class="rui-topbar" style="border-bottom: 1px solid #e2e8f0; background: transparent;">
+                                                        <span style="font-size: 13px; font-weight: 700; color: #0f172a;">Flujo de Datos ERP</span>
+                                                        <span class="badge-blue">Sincronizando</span>
+                                                    </div>
+                                                    <div style="padding: 16px; background: #f8fafc;">
+                                                        <div class="rui-pipeline-visual">
+                                                            <div class="rp-node"><img src="/imgs/logo-cord-navy.png" width="20" alt="Cord"/></div>
+                                                            <div class="rp-line"><div class="rp-dot"></div><div class="rp-dot delay-1"></div></div>
+                                                            <div class="rp-node"><svg viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" width="20"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="rui-terminal">
+                                                        <div class="rui-term-header">
+                                                            <div style="display: flex; gap: 8px; align-items: center; font-weight: 600;">
+                                                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                                                                <span>Terminal - Conexión Activa</span>
+                                                            </div>
+                                                        </div>
+                                                        <div><span class="term-green">➜</span> <span class="term-blue">cord</span> sync --target=sap --watch</div>
+                                                        <div style="margin-top: 4px;">[14:32:01] <span class="term-blue">INFO</span> Conectando con SAP NetWeaver...</div>
+                                                        <div>[14:32:02] <span class="term-green">SUCCESS</span> Conexión establecida (3ms)</div>
+                                                        <div>[14:32:03] <span class="term-blue">INFO</span> Sincronizando 45 nuevas facturas...</div>
+                                                        <div>[14:32:04] <span class="term-purple">POST</span> /api/v1/erp/invoices (2.4kb)</div>
+                                                        <div>[14:32:05] <span class="term-green">SUCCESS</span> Payload insertado correctamente.</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {idx === 2 && (
+                                        <div class="pro-ui-card real-ui">
+                                            <div class="rui-topbar">
+                                                <div style="font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                                    Seguridad y Accesos
+                                                </div>
+                                                <button class="rui-btn-save">Guardar</button>
+                                            </div>
+                                            <div style="padding: 16px;">
+                                                <div class="rui-setting-group">
+                                                    <div class="rui-setting-row">
+                                                        <div class="rs-info">
+                                                            <span class="rs-title">Autenticación de 2 Factores (2FA)</span>
+                                                            <span class="rs-desc">Requerido para todos los admins.</span>
+                                                        </div>
+                                                        <div class="rui-toggle active"><div class="rt-knob"></div></div>
+                                                    </div>
+                                                    <div class="rui-setting-row">
+                                                        <div class="rs-info">
+                                                            <span class="rs-title">Cifrado End-to-End</span>
+                                                            <span class="rs-desc">AES-256 GCM en tránsito y reposo.</span>
+                                                        </div>
+                                                        <div class="rui-toggle active"><div class="rt-knob"></div></div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div style="margin-top: 24px; margin-bottom: 8px; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Políticas de Acceso (RBAC)</div>
+                                                <div class="rui-rbac-list">
+                                                    <div class="rbac-row">
+                                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                                            <div class="rbac-avatar rbac-grad-1">AG</div>
+                                                            <div class="rs-info">
+                                                                <span class="rs-title">Ana García</span>
+                                                                <span class="rs-desc">ana@empresa.com</span>
+                                                            </div>
+                                                        </div>
+                                                        <span class="rbac-badge badge-admin">Admin</span>
+                                                    </div>
+                                                    <div class="rbac-row">
+                                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                                            <div class="rbac-avatar rbac-grad-2">CR</div>
+                                                            <div class="rs-info">
+                                                                <span class="rs-title">Carlos Ruiz</span>
+                                                                <span class="rs-desc">carlos@empresa.com</span>
+                                                            </div>
+                                                        </div>
+                                                        <span class="rbac-badge badge-gray">
+                                                            Finanzas
+                                                            <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <!-- Right Column: Resources Sidebar -->
+                    <div class="stripe-fg-sidebar">
+                        <div class="stripe-resource-card reveal">
+                            <div class="stripe-resource-visual stripe-bg-purple">
+                                <svg width="100%" height="100%" viewBox="0 0 400 200" fill="none">
+                                    <path d="M0,100 Q100,50 200,100 T400,100" stroke="rgba(255,255,255,0.2)" stroke-width="2" fill="none"/>
+                                    <path d="M0,120 Q100,70 200,120 T400,120" stroke="rgba(255,255,255,0.2)" stroke-width="2" fill="none"/>
+                                    <circle cx="300" cy="80" r="40" stroke="rgba(255,255,255,0.2)" stroke-width="2" fill="none"/>
+                                    <circle cx="300" cy="80" r="20" stroke="rgba(255,255,255,0.2)" stroke-width="2" fill="none"/>
+                                    <rect x="50" y="50" width="100" height="100" stroke="rgba(255,255,255,0.2)" stroke-width="2" fill="none"/>
+                                </svg>
+                            </div>
+                            <div class="stripe-resource-content">
+                                <span class="stripe-resource-eyebrow">Blog</span>
+                                <h4 class="stripe-resource-title">Últimas tendencias B2B y estrategias de automatización</h4>
+                                <a href="/blog" class="stripe-pillar-link">
+                                    Explorar artículos
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M9 18l6-6-6-6"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="stripe-resource-card reveal">
+                            <div class="stripe-resource-visual stripe-bg-gray">
+                                <img src="/imgs/logo-cord-navy.png" alt="Cord" style="width:120px; opacity:0.8;" />
+                            </div>
+                            <div class="stripe-resource-content">
+                                <span class="stripe-resource-eyebrow">Soporte</span>
+                                <h4 class="stripe-resource-title">Centro de ayuda y guías detalladas paso a paso</h4>
+                                <a href="/soporte" class="stripe-pillar-link">
+                                    Buscar respuestas
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M9 18l6-6-6-6"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── FEATURE GRID 2 (ADVANCED TOOLS) ── -->
+        <section class="stripe-feature-grid-section" style="padding-top: 0;">
+            <div class="stripe-container">
+                <div class="stripe-section-header reveal">
+                    <span class="stripe-section-eyebrow">HERRAMIENTAS AVANZADAS</span>
+                    <h2 class="stripe-h2">{isEn ? 'Built for enterprise-grade operations' : 'Construido para operaciones de grado empresarial'}</h2>
+                    <p class="stripe-p">{isEn ? 'Unleash the power of automation and global reach.' : 'Desata el poder de la automatización y el alcance global.'}</p>
+                </div>
+
+                <div class="stripe-fg-layout">
+                    <!-- Left Column: Main Features -->
+                    <div class="stripe-fg-main">
+                        <!-- Block 1 -->
+                        <div class="stripe-fg-card reveal">
+                            <div class="stripe-fg-card-content">
+                                <h3 class="stripe-fg-title">Motor de Reglas de Negocio</h3>
+                                <p class="stripe-fg-desc">Automatiza decisiones de riesgo, establece límites de crédito dinámicos y aplica descuentos basándote en cientos de variables configurables en tiempo real.</p>
+                                <div class="stripe-fg-tags">
+                                    <a href="#" class="stripe-fg-tag">Automatización</a>
+                                    <a href="#" class="stripe-fg-tag">Lógica custom</a>
+                                </div>
+                            </div>
+                            <div class="stripe-fg-card-visual">
+                                <div class="pro-ui-card real-ui">
+                                    <div class="rui-topbar">
+                                        <div style="font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                                            Constructor de Reglas
+                                        </div>
+                                        <div class="rui-toggle active"><div class="rt-knob"></div></div>
+                                    </div>
+                                    <div style="padding: 20px; background: #fafbfc; height: 100%;">
+                                        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 12px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                                            <span style="color: #64748b; font-weight: 600;">SI</span> <span class="badge-blue">Monto Cotización</span> <span style="font-weight: bold;">></span> <span>$500,000</span>
+                                        </div>
+                                        <div style="width: 2px; height: 16px; background: #cbd5e1; margin: 0 auto;"></div>
+                                        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 12px; margin-top: 12px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                                            <span style="color: #64748b; font-weight: 600;">Y</span> <span class="badge-blue">Riesgo Crediticio</span> <span style="font-weight: bold;">=</span> <span class="badge-admin">Alto</span>
+                                        </div>
+                                        <div style="width: 2px; height: 16px; background: #cbd5e1; margin: 0 auto;"></div>
+                                        <div style="background: #fff; border: 1px solid #10b981; border-radius: 8px; padding: 12px; font-size: 12px; margin-top: 12px; box-shadow: 0 4px 6px rgba(16,185,129,0.1);">
+                                            <span style="color: #10b981; font-weight: 800;">ENTONCES</span> <span style="font-weight: 600;">Requerir firma de VP</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Block 2 -->
+                        <div class="stripe-fg-card reveal">
+                            <div class="stripe-fg-card-content">
+                                <h3 class="stripe-fg-title">Reportes en Tiempo Real</h3>
+                                <p class="stripe-fg-desc">Audita absolutamente todo lo que ocurre. Tableros de Business Intelligence integrados para que nunca pierdas visibilidad de tu operación.</p>
+                                <div class="stripe-fg-tags">
+                                    <a href="#" class="stripe-fg-tag">Analytics</a>
+                                    <a href="#" class="stripe-fg-tag">Exportación API</a>
+                                </div>
+                            </div>
+                            <div class="stripe-fg-card-visual">
+                                <div class="pro-ui-card real-ui" style="padding: 0;">
+                                    <div class="rui-topbar">
+                                        <div style="font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                                            Métricas Core
+                                        </div>
+                                        <div class="rui-dropdown-header" style="margin-top:0;"><span>Hoy</span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+                                    </div>
+                                    <div style="padding: 24px;">
+                                        <div style="display: flex; gap: 16px; margin-bottom: 24px;">
+                                            <div style="flex: 1; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                                <div style="font-size: 10px; color: #64748b; font-weight: 700; text-transform: uppercase;">API Calls</div>
+                                                <div style="font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 4px;">1.2M</div>
+                                            </div>
+                                            <div style="flex: 1; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                                <div style="font-size: 10px; color: #64748b; font-weight: 700; text-transform: uppercase;">Latencia</div>
+                                                <div style="font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 4px;">14ms</div>
+                                            </div>
+                                        </div>
+                                        <div style="height: 60px; display: flex; align-items: flex-end; gap: 8px;">
+                                            <div style="flex: 1; background: #3b82f6; height: 30%; border-radius: 2px;"></div>
+                                            <div style="flex: 1; background: #3b82f6; height: 50%; border-radius: 2px;"></div>
+                                            <div style="flex: 1; background: #3b82f6; height: 40%; border-radius: 2px;"></div>
+                                            <div style="flex: 1; background: #3b82f6; height: 80%; border-radius: 2px;"></div>
+                                            <div style="flex: 1; background: #3b82f6; height: 60%; border-radius: 2px;"></div>
+                                            <div style="flex: 1; background: #3b82f6; height: 90%; border-radius: 2px;"></div>
+                                            <div style="flex: 1; background: #0ea5e9; height: 100%; border-radius: 2px; box-shadow: 0 0 10px rgba(14,165,233,0.5);"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Block 3 -->
+                        <div class="stripe-fg-card reveal">
+                            <div class="stripe-fg-card-content">
+                                <h3 class="stripe-fg-title">Multi-Entidad y Divisas</h3>
+                                <p class="stripe-fg-desc">Opera globalmente. Consolida subsidiarias, convierte divisas automáticamente y mantén la contabilidad segmentada en una única plataforma.</p>
+                                <div class="stripe-fg-tags">
+                                    <a href="#" class="stripe-fg-tag">Globalización</a>
+                                    <a href="#" class="stripe-fg-tag">Consolidación</a>
+                                </div>
+                            </div>
+                            <div class="stripe-fg-card-visual">
+                                <div class="pro-ui-card real-ui">
+                                    <div class="rui-topbar" style="background: #0f172a; color: #fff; border-bottom: 1px solid #1e293b;">
+                                        <div style="font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                                            Entidad Activa
+                                        </div>
+                                        <div style="background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 6px; font-size: 11px; display: flex; align-items: center; gap: 6px;">
+                                            <img src="https://flagcdn.com/w20/mx.png" width="16" style="border-radius:2px;" /> Cord México
+                                        </div>
+                                    </div>
+                                    <div style="padding: 16px;">
+                                        <div class="rui-table-mini">
+                                            <div class="rt-row" style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px; align-items: center;">
+                                                <div style="display: flex; align-items: center; gap: 8px;">
+                                                    <img src="https://flagcdn.com/w20/us.png" width="20" style="border-radius:2px;" />
+                                                    <span style="font-weight: 700; color: #1e293b;">Cord USA Inc.</span>
+                                                </div>
+                                                <span class="badge-blue">USD 14M</span>
+                                            </div>
+                                            <div class="rt-row" style="padding: 12px; border: 2px solid #3b82f6; border-radius: 8px; margin-bottom: 8px; align-items: center; background: #eff6ff;">
+                                                <div style="display: flex; align-items: center; gap: 8px;">
+                                                    <img src="https://flagcdn.com/w20/mx.png" width="20" style="border-radius:2px;" />
+                                                    <span style="font-weight: 700; color: #1e293b;">Cord México S.A.</span>
+                                                </div>
+                                                <span class="badge-blue" style="background: #3b82f6; color: #fff;">MXN 280M</span>
+                                            </div>
+                                            <div class="rt-row" style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; align-items: center;">
+                                                <div style="display: flex; align-items: center; gap: 8px;">
+                                                    <img src="https://flagcdn.com/w20/co.png" width="20" style="border-radius:2px;" />
+                                                    <span style="font-weight: 700; color: #1e293b;">Cord Colombia</span>
+                                                </div>
+                                                <span class="badge-blue">COP 3.2B</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Resources Sidebar (Duplicated with different info) -->
+                    <div class="stripe-fg-sidebar">
+                        <div class="stripe-resource-card reveal">
+                            <div class="stripe-resource-visual stripe-bg-gray" style="background: #0f172a;">
+                                <svg width="100%" height="100%" viewBox="0 0 200 100" fill="none">
+                                    <rect x="20" y="20" width="160" height="60" rx="8" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+                                    <path d="M40 50 l 20 0 M70 50 l 40 0" stroke="var(--stripe-cyan)" stroke-width="4" stroke-linecap="round" />
+                                </svg>
+                            </div>
+                            <div class="stripe-resource-content">
+                                <span class="stripe-resource-eyebrow">Documentación</span>
+                                <h4 class="stripe-resource-title">API Reference y SDKs para desarrolladores</h4>
+                                <a href="/docs" class="stripe-pillar-link">
+                                    Ver documentación
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M9 18l6-6-6-6"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="stripe-resource-card reveal">
+                            <div class="stripe-resource-visual stripe-bg-gray">
+                                <img src="/imgs/logo-cord-navy.png" alt="Cord" style="width:120px; opacity:0.8;" />
+                            </div>
+                            <div class="stripe-resource-content">
+                                <span class="stripe-resource-eyebrow">Comunidad</span>
+                                <h4 class="stripe-resource-title">Únete a la red de partners y expertos</h4>
+                                <a href="/comunidad" class="stripe-pillar-link">
+                                    Ver comunidad
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M9 18l6-6-6-6"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- ── CORD APPS MARQUEE ── -->
+        <section class="cord-apps-section reveal">
+            <div class="stripe-container">
+                <div class="cord-apps-header">
+                    <h2 class="cord-apps-title">{isEn ? 'Bring all your tools together with Cord Apps' : 'Reúne todas tus herramientas en un solo lugar con Cord Apps'}</h2>
+                    <p class="cord-apps-desc">{isEn ? 'Connect the tools that manage your business, like Hubspot, Salesforce, and SAP, to Cord. Add apps from our Marketplace or build custom integrations.' : 'Conecta las herramientas que gestionan tu empresa, como Hubspot, Salesforce y SAP, a Cord. Agrega aplicaciones desde nuestro Marketplace o crea integraciones personalizadas.'}</p>
+                    <a href="/desarrolladores/integraciones" class="cord-apps-link">{isEn ? 'Build a Cord App' : 'Desarrolla una aplicación en Cord'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                </div>
+            </div>
+            
+            <div class="cord-apps-marquee">
+                <div class="marquee-track">
+                    <!-- First Set -->
+                    <div class="app-icon cord-navy"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/webflow')"></div></div>
+                    <div class="app-icon cord-blue"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/contentful')"></div></div>
+                    <div class="app-icon cord-indigo"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/zapier')"></div></div>
+                    <div class="app-icon cord-slate"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/intercom')"></div></div>
+                    <div class="app-icon cord-green"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/quickbooks')"></div></div>
+                    <div class="app-icon cord-cyan"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/xero')"></div></div>
+                    <div class="app-icon cord-blue"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/stripe')"></div></div>
+                    <div class="app-icon cord-dark"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/notion')"></div></div>
+                    <div class="app-icon cord-navy"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/salesforce')"></div></div>
+                    <!-- Second Set (Duplicate for smooth infinite scroll) -->
+                    <div class="app-icon cord-navy"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/webflow')"></div></div>
+                    <div class="app-icon cord-blue"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/contentful')"></div></div>
+                    <div class="app-icon cord-indigo"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/zapier')"></div></div>
+                    <div class="app-icon cord-slate"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/intercom')"></div></div>
+                    <div class="app-icon cord-green"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/quickbooks')"></div></div>
+                    <div class="app-icon cord-cyan"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/xero')"></div></div>
+                    <div class="app-icon cord-blue"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/stripe')"></div></div>
+                    <div class="app-icon cord-dark"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/notion')"></div></div>
+                    <div class="app-icon cord-navy"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/salesforce')"></div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── CORD DASHBOARD MOCKUP ── -->
+        <section class="cord-dashboard-section reveal">
+            <div class="stripe-container">
+                <div class="cord-dashboard-header">
+                    <h2 class="cord-dashboard-title">{isEn ? 'Manage your entire revenue lifecycle from one Dashboard' : 'Gestiona todo tu ciclo de ventas desde un solo Dashboard'}</h2>
+                    <p class="cord-dashboard-desc">{isEn ? 'Execute financial operations, collect insights, and track performance in a highly customizable interface.' : 'Centraliza tus propuestas, contratos, facturas y cobranza. Analiza el rendimiento de tu equipo comercial en una interfaz diseñada para la velocidad.'}</p>
+                </div>
+                
+                <div class="cord-dash-mockup animated-dashboard">
+                    <div class="mac-window-header">
+                        <div class="mac-dots">
+                            <span class="dot red"></span>
+                            <span class="dot yellow"></span>
+                            <span class="dot green"></span>
+                        </div>
+                        <div class="mac-title">
+                            <img src="/imgs/logo-cord-navy.png" alt="Cord" class="mac-logo" />
+                        </div>
+                        <div class="mac-spacer"></div>
+                    </div>
+                    
+                    <div class="dashboard-app-frame">
+                        <!-- Cursor Animado -->
+                        <div class="mockup-cursor">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="M13 13l6 6"/></svg>
+                        </div>
+                        
+                        <!-- Sidebar -->
+                        <aside class="dash-sidebar">
+                            <div class="dash-logo">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                                <span class="dash-logo-text">Cord</span>
+                            </div>
+                        <nav class="dash-nav-links">
+                            <a href="#" class="dash-link">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                                Inicio
+                            </a>
+                            <a href="#" class="dash-link active">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM14 3.5L18.5 8H14V3.5z"/></svg>
+                                Cotizaciones
+                            </a>
+                            <a href="#" class="dash-link">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                                Clientes
+                            </a>
+                            <a href="#" class="dash-link">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-4V5l-2-2h-4L8 5v2H4c-1.1 0-2 .9-2 2v5c0 .75.4 1.38 1 1.73V19c0 1.11.89 2 2 2h14c1.11 0 2-.89 2-2v-3.28c.59-.35 1-.99 1-1.72V9c0-1.1-.9-2-2-2zM10 5h4v2h-4V5z"/></svg>
+                                Productos
+                            </a>
+                            <a href="#" class="dash-link">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+                                Cobranza
+                            </a>
+                        </nav>
+                        <div class="dash-user">
+                            <div class="dash-avatar">AV</div>
+                            <div class="dash-user-info">
+                                <strong>Andre Valle</strong>
+                                <span>Administrador</span>
+                            </div>
+                            <svg class="dash-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </div>
+                    </aside>
+
+                    <!-- Main Content -->
+                    <main class="dash-main">
+                        <header class="dash-header">
+                            <div class="dash-search">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                <div class="anim-search"></div>
+                            </div>
+                            <div class="dash-header-actions">
+                                <button class="dash-btn-primary anim-btn">Nueva cotización</button>
+                            </div>
+                        </header>
+
+                        <div class="dash-content-body">
+                            <!-- KPI Widgets -->
+                            <div class="dash-kpi-grid">
+                                <div class="dash-kpi">
+                                    <span class="kpi-label">POR CERRAR</span>
+                                    <strong class="kpi-value">$430,000 MXN</strong>
+                                    <span class="kpi-trend positive"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg> 24 cotizaciones activas</span>
+                                </div>
+                                <div class="dash-kpi">
+                                    <span class="kpi-label">CERRADO ESTE MES</span>
+                                    <strong class="kpi-value">$1,250,000 MXN</strong>
+                                    <span class="kpi-trend positive"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg> 12 aprobadas · 8 pagadas</span>
+                                </div>
+                                <div class="dash-kpi">
+                                    <span class="kpi-label">TASA DE CIERRE</span>
+                                    <strong class="kpi-value">82.4%</strong>
+                                    <span class="kpi-trend"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> últimos 90 días</span>
+                                </div>
+                            </div>
+
+                            <!-- TABLA DE PROPUESTAS -->
+                            <div class="dash-table-header">
+                                <h3 class="dash-view-title">Cotizaciones recientes</h3>
+                                <div class="dash-subtabs">
+                                    <span class="subtab">Todas</span>
+                                    <span class="subtab active">Aceptadas</span>
+                                    <span class="subtab">Enviadas</span>
+                                    <span class="subtab">Borradores</span>
+                                </div>
+                            </div>
+                            
+                            <div class="dash-table-container">
+                                <table class="dash-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Cliente</th>
+                                            <th>Proyecto</th>
+                                            <th>Monto</th>
+                                            <th>Estado</th>
+                                            <th>Fecha</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Novatech Global</strong><br/><span class="td-sub">novatech.io</span></td>
+                                            <td>Implementación ERP</td>
+                                            <td class="td-mono">$120,000 MXN</td>
+                                            <td><span class="badge badge-green">Aceptada</span></td>
+                                            <td class="td-light">Hoy, 10:42 AM</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Synergy Partners</strong><br/><span class="td-sub">synergy.com</span></td>
+                                            <td>Consultoría B2B</td>
+                                            <td class="td-mono">$850,000 MXN</td>
+                                            <td><span class="badge badge-green">Aceptada</span></td>
+                                            <td class="td-light">Ayer, 4:15 PM</td>
+                                        </tr>
+                                        <tr class="anim-row">
+                                            <td><strong>Quantum Logistics</strong><br/><span class="td-sub">quantum.net</span></td>
+                                            <td>Optimización Fase 1</td>
+                                            <td class="td-mono">$250,000 MXN</td>
+                                            <td><span class="badge anim-badge"></span></td>
+                                            <td class="td-light">26 Jun 2026</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Stellar Health</strong><br/><span class="td-sub">stellar.org</span></td>
+                                            <td>Auditoría Anual</td>
+                                            <td class="td-mono">$30,000 MXN</td>
+                                            <td><span class="badge badge-yellow">Visto</span></td>
+                                            <td class="td-light">25 Jun 2026</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </main>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── SECURITY / TRUST CENTER ── -->
+        {solucion.security && (
+            <section class="stripe-security-section">
+                <div class="stripe-security-bg"></div>
+                <div class="stripe-container" style="position:relative; z-index:10;">
+                    <div class="stripe-security-header reveal">
+                        <span class="stripe-section-eyebrow stripe-eyebrow-light">{solucion.security.eyebrow}</span>
+                        <h2 class="stripe-h2 text-white">{solucion.security.titulo}</h2>
+                        <p class="stripe-p text-white-muted">{solucion.security.copy}</p>
+                    </div>
+
+                    <div class="stripe-security-grid">
+                        {solucion.security.features.map(f => (
+                            <div class="stripe-security-card reveal">
+                                <div class="stripe-sec-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M8 11l3 3 5-5"/></svg>
+                                </div>
+                                <h4 class="stripe-sec-title">{f.title}</h4>
+                                <p class="stripe-sec-desc">{f.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+        )}
+
+
+        <!-- ── FAQ ── -->
+        <section class="stripe-faq-section reveal">
+            <div class="stripe-container">
+                <h2 class="stripe-h2" style="text-align: center;">{isEn ? 'Frequently asked questions' : 'Preguntas frecuentes'}</h2>
+                <div class="stripe-faq-list" style="margin-left: auto; margin-right: auto;">
+                    {solucion.faqs.map(f => (
+                        <details class="stripe-faq-item">
+                            <summary>
+                                <h3>{f.q}</h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                            </summary>
+                            <div class="stripe-faq-a"><p>{f.a}</p></div>
+                        </details>
+                    ))}
+                </div>
+            </div>
+        </section>
+
+
+        <Footer />
+    </main>
+
+    <PageAnims />
+    
+    <script>
+        import { gsap } from 'gsap';
+        
+        // Efecto hover interactivo para las tarjetas Bento tipo Stripe
+        const cards = document.querySelectorAll('.stripe-bento-card');
+        
+        cards.forEach(card => {
+            card.addEventListener('mousemove', (e: Event) => {
+                const mouseEvent = e as MouseEvent;
+                const rect = card.getBoundingClientRect();
+                const x = mouseEvent.clientX - rect.left;
+                const y = mouseEvent.clientY - rect.top;
+                
+                (card as HTMLElement).style.setProperty('--mouse-x', `${x}px`);
+                (card as HTMLElement).style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
+    </script>
+</Layout>
+
+<style>
+    /* ════════════════════════════════════════════════════════════════
+       VARIABLES & TOKENS GLOBALES (ESTILO CORD LIGHT)
+    ════════════════════════════════════════════════════════════════ */
+    :root {
+        --stripe-bg: #ffffff;
+        --stripe-text: #0a192f;
+        --stripe-muted: #555c68;
+        --stripe-accent: #0a192f;
+        --stripe-accent-light: #1e3a8a;
+        --stripe-cyan: #3b82f6;
+        --stripe-border: rgba(10, 25, 47, 0.08);
+        --stripe-card-bg: rgba(255, 255, 255, 0.8);
+        --stripe-font-sans: var(--font-sans, "Inter", system-ui, sans-serif);
+    }
+    
+    .stripe-main {
+        background-color: var(--stripe-bg);
+        color: var(--stripe-text);
+        font-family: var(--stripe-font-sans);
+        overflow-x: clip;
+    }
+    
+    .stripe-container {
+        max-width: 1140px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+    
+    .editorial {
+        font-family: var(--font-mono, ui-monospace, monospace);
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.02em;
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       HERO (Stripe Enterprise)
+    ════════════════════════════════════════════════════════════════ */
+    .stripe-hero {
+        position: relative;
+        padding: 0 0;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+    
+    .stripe-hero-bg {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        background: #0a192f;
+        overflow: hidden;
+    }
+
+    /* Aurora mesh — Stripe's signature gradient sweep */
+    .stripe-hero-aurora {
+        position: absolute;
+        inset: 0;
+        background: 
+            radial-gradient(ellipse 80% 60% at 20% 80%, rgba(99, 102, 241, 0.5) 0%, transparent 60%),
+            radial-gradient(ellipse 60% 80% at 80% 20%, rgba(16, 185, 129, 0.3) 0%, transparent 50%),
+            radial-gradient(ellipse 100% 100% at 50% 0%, rgba(10, 25, 47, 0.9) 0%, transparent 80%);
+        opacity: 0.9;
+    }
+
+    /* Gold/amber sweep — Stripe Enterprise's diagonal light band */
+    .stripe-hero-sweep {
+        position: absolute;
+        top: -20%;
+        left: -20%;
+        width: 140%;
+        height: 140%;
+        background: conic-gradient(from 200deg at 40% 60%, transparent 0deg, rgba(251, 191, 36, 0.15) 40deg, rgba(245, 158, 11, 0.12) 80deg, transparent 120deg);
+        filter: blur(60px);
+        animation: sweep-drift 20s ease-in-out infinite alternate;
+    }
+
+    @keyframes sweep-drift {
+        0% { transform: rotate(0deg) scale(1); }
+        100% { transform: rotate(8deg) scale(1.05); }
+    }
+    
+    .stripe-hero-content {
+        position: relative;
+        z-index: 10;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        max-width: 1140px;
+        width: 100%;
+        margin: 0 auto;
+    }
+    
+    .stripe-title {
+        font-size: clamp(2.4rem, 4.8vw, 4.5rem);
+        line-height: 1.05;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        margin: 0 0 1.5rem;
+        color: #ffffff;
+        background: linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.75) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 4px 16px rgba(0,0,0,0.3));
+        text-wrap: balance;
+        max-width: 900px;
+    }
+    
+    .stripe-sub {
+        font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+        line-height: 1.6;
+        color: rgba(255, 255, 255, 0.85);
+        max-width: 650px;
+        margin: 0 0 2.5rem 0;
+        font-weight: 400;
+    }
+    
+    .stripe-actions {
+        display: flex;
+        gap: 0.8rem;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+
+    /* ── btn-luxe (copiado exacto de Hero.astro) ── */
+    .btn-luxe {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        color: #0a192f;
+        padding: 18px 38px;
+        border-radius: 100px;
+        text-decoration: none;
+        font-size: 0.95rem;
+        font-weight: 600;
+        overflow: hidden;
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+    .btn-luxe span { position: relative; z-index: 2; }
+    .btn-luxe svg.btn-arrow {
+        position: relative; z-index: 2; display: inline-block;
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        width: 16px; height: 16px; margin-left: 6px;
+    }
+    .btn-luxe:hover svg.btn-arrow { transform: translate(4px); }
+    .btn-shimmer {
+        position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(10, 25, 47, 0.06), transparent);
+        transform: skew(-20deg); transition: 0s; z-index: 1;
+    }
+    .btn-luxe:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+    }
+    .btn-luxe:active {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .btn-luxe:hover .btn-shimmer {
+        left: 150%;
+        transition: left 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* ── btn-ghost (adaptado para fondo oscuro) ── */
+    .btn-ghost {
+        display: inline-flex; align-items: center; gap: 9px;
+        color: #fff; text-decoration: none;
+        font-size: 1rem; font-weight: 600;
+        padding: 15px 26px; border-radius: 100px;
+        border: 1px solid rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.05);
+        transition: background 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+    }
+    .btn-ghost svg { width: 14px; height: 14px; opacity: 0.7; }
+    .btn-ghost:hover {
+        background: rgba(255,255,255,0.12);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+    }
+    
+    /* ════════════════════════════════════════════════════════════════
+       CORD MARQUEE
+    ════════════════════════════════════════════════════════════════ */
+    .cord-marquee {
+        position: absolute;
+        top: 64px; /* Right below the nav */
+        left: 0;
+        width: 100%;
+        overflow: hidden;
+        border-bottom: 1px solid rgba(10, 25, 47, 0.05);
+        padding: 12px 0;
+        z-index: 10;
+        background: rgba(255,255,255,0.4);
+        backdrop-filter: blur(10px);
+    }
+    
+    .cord-marquee-inner {
+        display: flex;
+        gap: 3rem;
+        width: max-content;
+        animation: marqueeScroll 25s linear infinite;
+    }
+    
+    .cm-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.85rem;
+        color: var(--stripe-text);
+        font-weight: 500;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    
+    .cm-item:hover {
+        color: var(--stripe-cyan);
+    }
+    
+    .cm-tag {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--stripe-cyan);
+        background: rgba(59, 130, 246, 0.1);
+        padding: 2px 8px;
+        border-radius: 100px;
+        text-transform: uppercase;
+    }
+    
+    .cm-item svg {
+        width: 14px;
+        height: 14px;
+        opacity: 0.5;
+    }
+    
+    @keyframes marqueeScroll {
+        0% { transform: translateX(10%); }
+        100% { transform: translateX(-100%); }
+    }
+    .stripe-feature-grid-section {
+        padding: 6rem 0;
+        position: relative;
+        z-index: 10;
+    }
+    
+    .stripe-clients {
+        padding: 4rem 0;
+        position: relative;
+        z-index: 10;
+    }
+    
+    .stripe-clients-title {
+        text-align: center;
+        color: var(--stripe-muted);
+        font-size: 0.95rem;
+        font-weight: 500;
+        margin-bottom: 2rem;
+    }
+    
+    .stripe-logo-grid {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 2rem;
+        opacity: 0.6;
+    }
+    
+    .stripe-logo {
+        font-family: var(--font-mono);
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--stripe-text);
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       BENTO GRID
+    ════════════════════════════════════════════════════════════════ */
+    .stripe-bento-section {
+        padding: 6rem 0;
+        position: relative;
+        z-index: 10;
+    }
+    
+    .stripe-section-header {
+        margin-bottom: 4rem;
+        max-width: 600px;
+    }
+    
+    .stripe-h2 {
+        font-size: clamp(2rem, 4vw, 2.75rem);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stripe-p {
+        font-size: 1.25rem;
+        color: var(--stripe-muted);
+        line-height: 1.5;
+    }
+
+    .stripe-fg-layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2.5rem;
+        align-items: start;
+    }
+    
+    .stripe-fg-main {
+        display: flex;
+        flex-direction: column;
+        gap: 2.5rem;
+    }
+    
+    .stripe-fg-card {
+        background: #fff;
+        border-radius: 24px;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        overflow: hidden;
+    }
+    
+    .stripe-fg-card-content {
+        padding: 3rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    
+    .stripe-fg-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: var(--stripe-text);
+        margin-bottom: 1rem;
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+    }
+    
+    .stripe-fg-desc {
+        font-size: 1.05rem;
+        color: var(--stripe-muted);
+        line-height: 1.6;
+        margin-bottom: 2rem;
+    }
+    
+    .stripe-fg-tags {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+    
+    .stripe-fg-tag {
+        background: rgba(59, 130, 246, 0.08);
+        color: var(--stripe-cyan);
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+    
+    .stripe-fg-tag:hover {
+        background: rgba(59, 130, 246, 0.15);
+    }
+    
+    .stripe-fg-card-visual {
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        min-height: 400px;
+        overflow: visible;
+    }
+
+    /* UI Mockup Base (Photorealistic) */
+    .real-ui {
+        width: 360px;
+        border-radius: 16px;
+        border: 1px solid rgba(0,0,0,0.06);
+        box-shadow: 0 40px 80px -20px rgba(50,50,93,0.15), 0 20px 40px -20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,1);
+        background: #fff;
+        font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+        color: #0f172a;
+        overflow: hidden;
+        transform: translateY(0);
+        transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        text-align: left;
+    }
+    .stripe-fg-card:hover .real-ui {
+        transform: translateY(-8px);
+    }
+    
+    /* Global RUI */
+    .rui-topbar { padding: 14px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; background: #fafbfc; }
+    .mac-dots { display: flex; gap: 6px; }
+    .mac-dots .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot.red { background: #ff5f56; } .dot.yellow { background: #ffbd2e; } .dot.green { background: #27c93f; }
+    .dot.gray { background: #475569; opacity: 0.5; }
+    .rui-topbar-title { font-size: 12px; font-weight: 600; color: #475569; }
+    
+    /* Mockup 0 (Chart) */
+    .rui-header-flex { display: flex; justify-content: space-between; align-items: flex-start; }
+    .rui-value { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px; color: #0f172a; }
+    .rui-label { font-size: 13px; font-weight: 600; }
+    .text-green { color: #10b981; }
+    .text-red { color: #ef4444; }
+    .rui-tabs-small { display: flex; background: #f1f5f9; padding: 2px; border-radius: 6px; }
+    .rui-tabs-small span { font-size: 11px; padding: 4px 10px; font-weight: 600; color: #64748b; border-radius: 4px; }
+    .rui-tabs-small span.active { background: #fff; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    
+    .rui-chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 110px; gap: 8px; margin-top: 24px; }
+    .rui-chart-bar { flex: 1; background: #e2e8f0; border-radius: 4px 4px 0 0; position: relative; transition: all 0.3s; width: 100%; }
+    .bar-active { background: linear-gradient(180deg, #8b5cf6 0%, #6366f1 100%); }
+    .rui-chart-labels { display: flex; justify-content: space-between; margin-top: 12px; }
+    .rui-chart-labels span { font-size: 11px; font-weight: 600; color: #94a3b8; width: 14%; text-align: center; }
+    
+    .rui-divider { height: 1px; background: #f1f5f9; margin: 20px 0; }
+    .rui-dropdown-header { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; color: #334155; }
+    .rui-table-mini { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+    .rt-row { display: flex; justify-content: space-between; font-size: 12px; font-weight: 500; }
+    .rt-label { color: #64748b; } .rt-val { color: #0f172a; font-weight: 600; }
+    
+    /* Mockup 1 (Terminal) */
+    .rui-sidebar-layout { display: flex; height: 350px; }
+    .rui-sidebar { width: 56px; background: #f8fafc; border-right: 1px solid #f1f5f9; display: flex; flex-direction: column; align-items: center; padding: 16px 0; gap: 20px; }
+    .rs-item { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #94a3b8; }
+    .rs-item.active { background: #e0e7ff; color: #4f46e5; }
+    .rs-item svg { width: 20px; height: 20px; }
+    .rui-main { flex: 1; display: flex; flex-direction: column; }
+    .badge-blue { background: #dbeafe; color: #2563eb; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 12px; }
+    
+    .rui-pipeline-visual { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+    .rp-node { width: 40px; height: 40px; border-radius: 10px; background: #f8fafc; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; }
+    .rp-line { flex: 1; height: 2px; background: #e2e8f0; margin: 0 16px; position: relative; overflow: hidden; }
+    .rp-dot { position: absolute; width: 6px; height: 6px; background: #0ea5e9; border-radius: 50%; top: -2px; left: 0; animation: slideRight 2s infinite linear; }
+    .delay-1 { animation-delay: 1s; }
+    
+    .rui-terminal { background: #0f172a; color: #cbd5e1; font-family: 'SF Mono', 'JetBrains Mono', monospace; font-size: 11px; padding: 16px; flex: 1; line-height: 1.7; border-top: 1px solid #1e293b; }
+    .rui-term-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: #64748b; font-size: 10px; }
+    .term-green { color: #4ade80; font-weight: 600; } .term-blue { color: #60a5fa; font-weight: 600; } .term-purple { color: #c084fc; font-weight: 600; }
+    
+    /* Mockup 2 (Security) */
+    .rui-btn-save { background: #2563eb; color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; }
+    .rui-setting-group { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+    .rui-setting-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #f1f5f9; }
+    .rui-setting-row:last-child { border-bottom: none; }
+    .rs-info { display: flex; flex-direction: column; gap: 4px; }
+    .rs-title { font-size: 13px; font-weight: 600; color: #1e293b; }
+    .rs-desc { font-size: 12px; color: #64748b; }
+    
+    .rui-toggle { width: 44px; height: 24px; background: #e2e8f0; border-radius: 24px; position: relative; transition: 0.3s; cursor: pointer; }
+    .rui-toggle.active { background: #34d399; }
+    .rt-knob { width: 20px; height: 20px; background: #fff; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .rui-toggle.active .rt-knob { left: 22px; }
+    
+    .rui-rbac-list { border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; overflow: hidden; }
+    .rbac-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #f1f5f9; }
+    .rbac-row:last-child { border-bottom: none; }
+    .rbac-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; }
+    .rbac-grad-1 { background: linear-gradient(135deg, #60a5fa, #3b82f6); }
+    .rbac-grad-2 { background: linear-gradient(135deg, #34d399, #059669); }
+    .rbac-badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
+    .badge-admin { background: #f3e8ff; color: #7e22ce; }
+    .badge-gray { background: #f1f5f9; color: #475569; display: flex; align-items: center; gap: 4px; border: 1px solid #e2e8f0; }
+
+    @keyframes slideRight { 100% { left: 100%; } }
+    
+    .stripe-fg-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        position: sticky;
+        top: 120px;
+    }
+    
+    .stripe-resource-card {
+        background: #fff;
+        border-radius: 16px;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .stripe-resource-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+    }
+    
+    .stripe-resource-visual {
+        height: 160px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .stripe-bg-purple {
+        background: var(--stripe-cyan);
+    }
+    
+    .stripe-bg-gray {
+        background: #f7f9fc;
+        border-bottom: 1px solid rgba(0,0,0,0.04);
+    }
+    
+    .stripe-resource-content {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+    
+    .stripe-resource-eyebrow {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--stripe-muted);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .stripe-resource-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--stripe-text);
+        margin-bottom: 1.5rem;
+        line-height: 1.4;
+    }
+    
+    .stripe-bento-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+    }
+    
+    .stripe-bento-card {
+        position: relative;
+        background: var(--stripe-card-bg);
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid var(--stripe-border);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+    
+    .stripe-bento-card.span-2 {
+        grid-column: span 2;
+    }
+    
+    /* Interactive Hover Glow (Stripe signature) */
+    .stripe-bento-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(
+            800px circle at var(--mouse-x, 0) var(--mouse-y, 0),
+            rgba(10, 25, 47, 0.04),
+            transparent 40%
+        );
+        z-index: 0;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+    }
+    
+    .stripe-bento-card:hover::before {
+        opacity: 1;
+    }
+    
+    .stripe-bento-inner {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 2.5rem;
+    }
+    
+    .span-2 .stripe-bento-inner {
+        flex-direction: row;
+        align-items: center;
+        gap: 4rem;
+    }
+    
+    .stripe-bento-graphic {
+        flex: 1;
+        min-height: 250px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+    }
+    
+    .stripe-bento-text {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    
+    .stripe-bento-eyebrow {
+        color: var(--stripe-cyan);
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1rem;
+    }
+    
+    .stripe-bento-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--stripe-text);
+        line-height: 1.2;
+        margin-bottom: 1rem;
+        letter-spacing: -0.02em;
+    }
+    
+    .stripe-bento-desc {
+        color: var(--stripe-muted);
+        line-height: 1.5;
+        font-size: 1.1rem;
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       STATS
+    ════════════════════════════════════════════════════════════════ */
+    .stripe-stats-section {
+        padding: 4rem 0;
+        position: relative;
+        z-index: 10;
+    }
+    
+    .stripe-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        border-top: 1px solid var(--stripe-border);
+        padding-top: 4rem;
+    }
+    
+    .stripe-stat-card {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .stripe-stat-line {
+        width: 30px;
+        height: 2px;
+        background: var(--stripe-accent);
+        margin-bottom: 1.5rem;
+    }
+    
+    .stripe-stat-val {
+        font-size: 3rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.75rem;
+        color: var(--stripe-text);
+    }
+    
+    .stripe-stat-label {
+        font-size: 1rem;
+        color: var(--stripe-muted);
+        line-height: 1.4;
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       TESTIMONIAL
+    ════════════════════════════════════════════════════════════════ */
+    .stripe-testimonial-section {
+        padding: 6rem 0;
+        position: relative;
+        z-index: 10;
+    }
+    
+    .stripe-testimonial-card {
+        background: var(--stripe-card-bg);
+        border: 1px solid var(--stripe-border);
+        border-radius: 24px;
+        padding: 4rem;
+        position: relative;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+    
+    .stripe-quote-mark {
+        font-size: 6rem;
+        color: var(--stripe-accent);
+        line-height: 0;
+        margin-bottom: 2rem;
+        font-family: serif;
+    }
+    
+    .stripe-testimonial-text {
+        font-size: clamp(1.5rem, 3vw, 2.5rem);
+        font-weight: 500;
+        line-height: 1.3;
+        margin-bottom: 3rem;
+        letter-spacing: -0.02em;
+    }
+    
+    .stripe-testimonial-author {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 3rem;
+    }
+    
+    .stripe-author-avatar {
+        width: 48px;
+        height: 48px;
+        background: #fff;
+        border-radius: 50%;
+        opacity: 0.9;
+    }
+    
+    .stripe-author-info b {
+        display: block;
+        font-size: 1.1rem;
+        color: var(--stripe-text);
+    }
+    
+    .stripe-author-info span {
+        font-size: 0.9rem;
+        color: var(--stripe-muted);
+    }
+    
+    .stripe-testimonial-metrics {
+        display: flex;
+        gap: 3rem;
+        border-top: 1px solid var(--stripe-border);
+        padding-top: 2rem;
+    }
+    
+    .stripe-testimonial-metrics b {
+        display: block;
+        font-size: 2rem;
+        color: var(--stripe-text);
+        margin-bottom: 0.25rem;
+    }
+    
+    .stripe-testimonial-metrics span {
+        font-size: 0.9rem;
+        color: var(--stripe-muted);
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       FAQ
+    ════════════════════════════════════════════════════════════════ */
+    .stripe-faq-section {
+        padding: 6rem 0;
+        position: relative;
+        z-index: 10;
+    }
+    
+    .stripe-faq-list {
+        max-width: 800px;
+        margin-top: 3rem;
+    }
+    
+    .stripe-faq-item {
+        border-bottom: 1px solid var(--stripe-border);
+    }
+    
+    .stripe-faq-item summary {
+        padding: 1.5rem 0;
+        cursor: pointer;
+        list-style: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .stripe-faq-item summary::-webkit-details-marker {
+        display: none;
+    }
+    
+    .stripe-faq-item summary h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--stripe-text);
+    }
+    
+    .stripe-faq-item summary svg {
+        width: 20px;
+        height: 20px;
+        color: var(--stripe-muted);
+        transition: transform 0.2s ease;
+    }
+    
+    .stripe-faq-item[open] summary svg {
+        transform: rotate(180deg);
+    }
+    
+    .stripe-faq-a {
+        padding-bottom: 1.5rem;
+        color: var(--stripe-muted);
+        line-height: 1.6;
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       CTA
+    ════════════════════════════════════════════════════════════════ */
+    .stripe-cta-section {
+        padding: 6rem 0 10rem;
+        position: relative;
+        z-index: 10;
+    }
+    
+    .stripe-cta-card {
+        background: radial-gradient(circle at top, rgba(10, 25, 47, 0.1), transparent 50%), var(--stripe-card-bg);
+        border: 1px solid var(--stripe-border);
+        border-radius: 24px;
+        padding: 5rem 2rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .stripe-cta-card .stripe-p {
+        max-width: 600px;
+        margin-bottom: 3rem;
+    }
+    
+    .stripe-cta-card .stripe-actions {
+        justify-content: center;
+    }
+
+    /* Overrides para botones en fondo claro (CTA) */
+    .stripe-cta-card .btn-luxe {
+        background: #0a192f;
+        color: #fff;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 8px 24px rgba(10,25,47,0.18);
+    }
+    .stripe-cta-card .btn-luxe:hover {
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 12px 32px rgba(10,25,47,0.24);
+    }
+    .stripe-cta-card .btn-luxe .btn-shimmer {
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+    }
+    .stripe-cta-card .btn-ghost {
+        color: #0a192f;
+        border-color: rgba(10,25,47,0.08);
+        background: rgba(255,255,255,0.6);
+    }
+    .stripe-cta-card .btn-ghost:hover {
+        background: #fff;
+        box-shadow: 0 6px 16px rgba(10,25,47,0.06);
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       RESPONSIVE
+    ════════════════════════════════════════════════════════════════ */
+    @media (max-width: 992px) {
+        .stripe-hero {
+            padding: 140px 0 80px;
+            min-height: 70vh;
+        }
+        
+        .stripe-bento-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .stripe-bento-card.span-2 {
+            grid-column: 1;
+        }
+        
+        .span-2 .stripe-bento-inner {
+            flex-direction: column-reverse;
+            gap: 2rem;
+        }
+        
+        .stripe-stats-grid {
+            grid-template-columns: 1fr;
+            gap: 3rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .stripe-hero {
+            padding: 120px 20px 60px;
+        }
+        
+        .stripe-title {
+            font-size: 2.5rem;
+        }
+        
+        .stripe-actions {
+            flex-direction: column;
+            width: 100%;
+        }
+        
+        .btn-luxe, .btn-ghost {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .stripe-testimonial-card {
+            padding: 2rem;
+        }
+        
+        .stripe-testimonial-metrics {
+            flex-direction: column;
+            gap: 2rem;
+        }
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       NUEVAS SECCIONES STRIPE ENTERPRISE
+    ════════════════════════════════════════════════════════════════ */
+    
+    .stripe-hero-eyebrow {
+        color: var(--stripe-cyan);
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+        background: rgba(59, 130, 246, 0.15);
+        padding: 4px 12px;
+        border-radius: 100px;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        display: inline-block;
+    }
+
+    .stripe-section-eyebrow {
+        color: var(--stripe-cyan);
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+        display: block;
+    }
+    
+    .stripe-eyebrow-light {
+        color: #60a5fa; /* Light Blue */
+    }
+
+    .text-white { color: #fff !important; }
+    .text-white-muted { color: rgba(255,255,255,0.7) !important; }
+
+    /* ── INTEGRATIONS TICKER ── */
+    .stripe-integrations-ticker {
+        position: relative;
+        z-index: 20;
+        margin-top: -60px;
+        margin-bottom: 4rem;
+        background: rgba(255,255,255,0.8);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 1px solid var(--stripe-border);
+        border-bottom: 1px solid var(--stripe-border);
+        padding: 24px 0;
+        overflow: hidden;
+    }
+    
+    .stripe-ticker-track {
+        display: flex;
+        width: max-content;
+        animation: marquee 30s linear infinite;
+    }
+    
+    .stripe-ticker-tape {
+        display: flex;
+        align-items: center;
+        gap: 60px;
+        padding-right: 60px;
+    }
+    
+    .stripe-ticker-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        opacity: 0.6;
+        transition: opacity 0.3s;
+    }
+    
+    .stripe-ticker-item:hover {
+        opacity: 1;
+    }
+    
+    .stripe-ticker-icon {
+        color: var(--stripe-accent);
+        width: 24px; height: 24px;
+    }
+    
+    .stripe-ticker-name {
+        font-weight: 600;
+        font-size: 1.1rem;
+        letter-spacing: -0.02em;
+        color: var(--stripe-text);
+    }
+    
+    @keyframes marquee {
+        to { transform: translateX(-50%); }
+    }
+
+    /* ── AIRY BENTO PILLARS ── */
+    .stripe-pillars-section {
+        padding: 4rem 0 6rem;
+        background: var(--stripe-bg);
+        position: relative;
+        z-index: 10;
+    }
+    
+    .stripe-pillars-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+    }
+    
+    .stripe-pillar-card {
+        background: #fff;
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.02);
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        border: 1px solid rgba(0,0,0,0.04);
+    }
+    
+    .stripe-pillar-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 24px 48px rgba(0,0,0,0.06), 0 8px 16px rgba(0,0,0,0.03);
+    }
+    
+    .stripe-pillar-graphic {
+        background: linear-gradient(180deg, #0a2540 0%, #041221 100%); /* Premium Gradient */
+        height: 240px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        overflow: hidden;
+    }
+    
+    .stripe-pillar-graphic::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+        background-size: 20px 20px;
+        opacity: 0.5;
+        mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+        -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+    }
+    
+    .pillar-mock {
+        width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        position: relative;
+    }
+
+    /* 1. Magic Link (Cierre Instantáneo) */
+    .pillar-mock-magic {
+        background: radial-gradient(circle at center, rgba(0,201,255,0.15) 0%, transparent 60%);
+    }
+    .magic-doc {
+        width: 140px; height: 160px;
+        background: white; border-radius: 12px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        padding: 16px; display: flex; flex-direction: column; gap: 12px;
+        transform: translateY(10px) scale(0.95);
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+    }
+    .stripe-pillar-card:hover .magic-doc {
+        transform: translateY(-5px) scale(1.05);
+    }
+    .magic-doc-header { height: 30px; border-radius: 6px; background: #f0f0f0; margin-bottom: 8px; }
+    .magic-doc-line { height: 8px; border-radius: 4px; background: #e2e8f0; }
+    .magic-doc-line.short { width: 60%; }
+    .magic-doc-btn { 
+        margin-top: auto; height: 32px; border-radius: 6px; 
+        background: #00C9FF; 
+        box-shadow: 0 4px 12px rgba(0,201,255,0.4);
+        position: relative;
+        transition: background 0.3s;
+    }
+    .stripe-pillar-card:hover .magic-doc-btn { background: #0071e3; }
+    .magic-cursor {
+        position: absolute; right: -15px; bottom: -25px;
+        width: 24px; height: 24px;
+        transform: translate(20px, 20px);
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+    }
+    .stripe-pillar-card:hover .magic-cursor {
+        transform: translate(0, 0);
+    }
+
+    /* 2. Premium UI (Presentación premium) */
+    .pillar-mock-premium {
+        background: radial-gradient(circle at center, rgba(0,113,227,0.2) 0%, transparent 60%);
+    }
+    .premium-ui {
+        width: 200px; height: 140px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        display: flex; overflow: hidden;
+        backdrop-filter: blur(10px);
+        transform: perspective(800px) rotateY(-15deg) rotateX(10deg);
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .stripe-pillar-card:hover .premium-ui {
+        transform: perspective(800px) rotateY(0deg) rotateX(0deg) scale(1.1);
+    }
+    .premium-sidebar { width: 40px; background: rgba(0,0,0,0.2); height: 100%; border-right: 1px solid rgba(255,255,255,0.05); }
+    .premium-content { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .premium-hero { height: 40px; border-radius: 6px; background: linear-gradient(135deg, #00C9FF, #0071e3); opacity: 0.8; }
+    .premium-grid { display: flex; gap: 8px; flex: 1; }
+    .premium-box { flex: 1; border-radius: 6px; background: rgba(255,255,255,0.1); }
+
+    /* 3. CFDI 4.0 (Facturación automática) */
+    .pillar-mock-cfdi {
+        background: radial-gradient(circle at center, rgba(16,185,129,0.15) 0%, transparent 60%);
+    }
+    .cfdi-receipt {
+        width: 130px; height: 170px;
+        background: #061626; border-radius: 8px;
+        border: 1px dashed rgba(0,201,255,0.4);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 0 20px rgba(0,201,255,0.1);
+        padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 12px;
+        transform: translateY(20px);
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s;
+    }
+    .stripe-pillar-card:hover .cfdi-receipt {
+        transform: translateY(0);
+        border-color: #10b981; /* Green success */
+    }
+    .cfdi-header { font-family: monospace; font-size: 10px; color: #00C9FF; letter-spacing: 1px; font-weight: bold; }
+    .cfdi-code { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+    .cfdi-line { height: 4px; border-radius: 2px; background: rgba(255,255,255,0.15); }
+    .cfdi-line.short { width: 70%; }
+    .cfdi-stamp {
+        margin-top: auto; width: 40px; height: 40px;
+        border-radius: 50%; border: 2px solid #00C9FF;
+        display: flex; align-items: center; justify-content: center;
+        color: #00C9FF;
+        transition: color 0.3s, border-color 0.3s, transform 0.4s;
+    }
+    .cfdi-stamp svg { width: 20px; height: 20px; }
+    .stripe-pillar-card:hover .cfdi-stamp {
+        border-color: #10b981; color: #10b981;
+        transform: scale(1.1) rotate(-10deg);
+    }
+    
+    .stripe-pillar-content {
+        padding: 2.5rem;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+    
+    .stripe-pillar-title {
+        font-size: 1.35rem;
+        font-weight: 600;
+        color: #0a192f;
+        margin-bottom: 1rem;
+        line-height: 1.3;
+    }
+    
+    .stripe-pillar-desc {
+        font-size: 1rem;
+        color: #555556;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+        flex: 1;
+    }
+    
+    .stripe-pillar-link {
+        color: var(--stripe-cyan);
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        transition: color 0.2s;
+        margin-top: auto;
+    }
+    
+    .stripe-pillar-link svg {
+        width: 16px;
+        height: 16px;
+        transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    
+    .stripe-pillar-link:hover {
+        color: var(--stripe-accent-light);
+    }
+    
+    .stripe-pillar-card:hover .stripe-pillar-link svg {
+        transform: translateY(2px);
+    }
+
+    /* ── SECURITY ── */
+    .stripe-security-section {
+        position: relative;
+        padding: 8rem 0;
+        margin: 4rem 0;
+        overflow: hidden;
+    }
+    
+    .stripe-security-bg {
+        position: absolute;
+        inset: 0;
+        background: #0a192f;
+        transform: skewY(-4deg);
+        transform-origin: top left;
+        z-index: 0;
+    }
+    
+    .stripe-security-bg::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 80% 20%, rgba(99, 102, 241, 0.2) 0%, transparent 60%);
+    }
+    
+    .stripe-security-header {
+        margin-bottom: 4rem;
+        max-width: 600px;
+    }
+    
+    .stripe-security-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+    }
+    
+    .stripe-security-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px;
+        padding: 2rem;
+        backdrop-filter: blur(10px);
+    }
+    
+    .stripe-sec-icon {
+        color: var(--stripe-cyan);
+        width: 32px; height: 32px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stripe-sec-title {
+        color: #fff;
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+    }
+    
+    .stripe-sec-desc {
+        color: rgba(255,255,255,0.7);
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+    
+    @media (max-width: 992px) {
+        .stripe-pillars-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+        .stripe-security-grid { grid-template-columns: 1fr; }
+        .stripe-fg-layout { grid-template-columns: 1fr; }
+        .stripe-fg-card { grid-template-columns: 1fr; }
+        .stripe-fg-sidebar { position: static; }
+        .stripe-fg-card-visual { min-height: 300px; }
+    }
+    
+    /* ==========================================================
+       HERO (Startup - Vercel/Linear style)
+       ========================================================== */
+    .startup-hero {
+        position: relative;
+        padding: 0 0;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        background: #f6f9fc; /* Stripe light bg */
+    }
+    
+    .startup-hero-bg {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        background: #f6f9fc;
+        overflow: hidden;
+        /* Sutil patrón de puntos */
+        background-image: radial-gradient(rgba(10, 37, 64, 0.05) 1px, transparent 1px);
+        background-size: 24px 24px;
+    }
+
+    /* Manchas de color vibrante desenfocadas (Stripe style) - Tonos Azul y Verde */
+    .startup-hero-blob-1 {
+        position: absolute;
+        top: -10%; right: 10%;
+        width: 60vw; height: 60vw;
+        background: radial-gradient(circle, rgba(14, 165, 233, 0.2) 0%, rgba(59, 130, 246, 0.15) 50%, transparent 70%); /* Sky Blue and Blue */
+        border-radius: 50%;
+        filter: blur(60px);
+        animation: stripe-blob 15s infinite alternate ease-in-out;
+        margin-left: calc(var(--mouse-x, 0px) * 2);
+        margin-top: calc(var(--mouse-y, 0px) * 2);
+        transition: margin 0.3s ease-out;
+    }
+
+    .startup-hero-blob-2 {
+        position: absolute;
+        bottom: -20%; left: 0%;
+        width: 50vw; height: 50vw;
+        background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.12) 50%, transparent 70%); /* Emerald and Cyan */
+        border-radius: 50%;
+        filter: blur(60px);
+        animation: stripe-blob-reverse 20s infinite alternate ease-in-out;
+        margin-left: calc(var(--mouse-x, 0px) * -1.5);
+        margin-top: calc(var(--mouse-y, 0px) * -1.5);
+        transition: margin 0.3s ease-out;
+    }
+
+    @keyframes stripe-blob {
+        0% { transform: translate(0, 0) scale(1); }
+        100% { transform: translate(-5%, 10%) scale(1.1); }
+    }
+    @keyframes stripe-blob-reverse {
+        0% { transform: translate(0, 0) scale(1); }
+        100% { transform: translate(10%, -10%) scale(1.05); }
+    }
+
+    .startup-hero-content {
+        position: relative;
+        z-index: 10;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        max-width: 1140px;
+        width: 100%;
+        margin: 0 auto;
+        padding-top: 2rem;
+    }
+
+    .startup-title {
+        font-size: clamp(3rem, 5vw, 5.5rem);
+        line-height: 1.05;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        margin: 0 0 1.5rem;
+        color: #0a2540;
+        text-wrap: balance;
+        max-width: 900px;
+    }
+    
+    .startup-sub {
+        font-size: clamp(1.1rem, 1.8vw, 1.3rem);
+        line-height: 1.6;
+        color: #425466;
+        max-width: 650px;
+        margin: 0 0 2.5rem 0;
+        font-weight: 400;
+    }
+
+    .startup-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    /* Override for btn-ghost on light background */
+    .startup-hero .btn-ghost {
+        color: #0a2540;
+        border: 1px solid rgba(10, 37, 64, 0.15);
+        background: rgba(10, 37, 64, 0.03);
+    }
+    
+    .startup-hero .btn-ghost:hover {
+        background: rgba(10, 37, 64, 0.08);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+    }
+
+    /* ==========================================================
+       STARTUP USE CASES (Stripe Horizontal Layout)
+       ========================================================== */
+    .startup-use-cases-section {
+        padding: 6rem 0;
+        background: #f5f5f7; /* Apple light gray */
+    }
+    .startup-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 3rem;
+    }
+    .startup-section-titles {
+        max-width: 600px;
+    }
+    .startup-section-title {
+        font-size: clamp(2rem, 4vw, 2.8rem);
+        font-weight: 700;
+        color: #1d1d1f; /* Apple dark gray */
+        margin: 0 0 1rem;
+        letter-spacing: -0.03em;
+    }
+    .startup-section-sub {
+        font-size: 1.1rem;
+        color: #86868b; /* Apple medium gray */
+        margin: 0;
+        line-height: 1.6;
+    }
+    .startup-carousel-controls {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 1rem;
+    }
+    .carousel-btn {
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        border: 1px solid rgba(0,0,0,0.05);
+        background: rgba(255,255,255,0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        display: flex; align-items: center; justify-content: center;
+        color: #1d1d1f;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .carousel-btn:hover {
+        background: #ffffff;
+        transform: scale(1.05);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+    .carousel-btn svg {
+        width: 20px; height: 20px;
+        opacity: 0.8;
+    }
+    
+    @media (max-width: 768px) {
+        .startup-section-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1.5rem;
+        }
+    }
+
+    .startup-use-cases-grid {
+        display: flex;
+        gap: 24px;
+        overflow-x: auto;
+        padding-bottom: 3rem; /* Extra padding for scale hover */
+        padding-left: max(20px, calc(50vw - 550px));
+        padding-right: max(20px, calc(50vw - 550px));
+        scroll-padding-left: max(20px, calc(50vw - 550px));
+        scroll-padding-right: max(20px, calc(50vw - 550px));
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        scroll-behavior: smooth;
+    }
+    .startup-use-cases-grid::-webkit-scrollbar {
+        display: none;
+    }
+    .startup-use-case-card {
+        flex: 0 0 420px;
+        background: #ffffff;
+        border-radius: 28px; /* Apple rounded corners */
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+        display: flex;
+        flex-direction: column;
+        scroll-snap-align: start;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @media (max-width: 600px) {
+        .startup-use-case-card {
+            flex: 0 0 85vw;
+        }
+    }
+    .startup-use-case-card:hover {
+        transform: scale(1.02);
+        box-shadow: 0 16px 40px rgba(0,0,0,0.08);
+    }
+    .uc-content {
+        padding: 3rem 2.5rem 2rem 2.5rem;
+
+        flex: 1;
+    }
+    .uc-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #1d1d1f;
+        margin: 0 0 1rem;
+        letter-spacing: -0.02em;
+    }
+    .uc-desc {
+        font-size: 1.05rem;
+        line-height: 1.6;
+        color: #515154;
+        margin: 0 0 2.5rem;
+    }
+    .uc-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #2997ff; /* Apple Blue */
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .uc-link:hover {
+        color: #0071e3;
+    }
+    .uc-link svg {
+        width: 16px; height: 16px;
+        transition: transform 0.2s;
+    }
+    .uc-link:hover svg {
+        transform: translateX(4px);
+    }
+    .uc-logos {
+        padding: 1.5rem 2.5rem 2rem 2.5rem;
+        border-top: 1px solid rgba(0,0,0,0.04);
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        opacity: 0.6;
+        filter: grayscale(100%);
+        transition: filter 0.3s, opacity 0.3s;
+    }
+    .startup-use-case-card:hover .uc-logos {
+        filter: grayscale(0%);
+        opacity: 0.9;
+    }
+    .uc-logo-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .uc-logo-img {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+        border-radius: 4px;
+    }
+    .uc-logo-name {
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: #0a2540;
+        letter-spacing: -0.01em;
+    }
+    /* ==========================================================
+       STARTUP INTEGRATION TABS (Apple Style)
+       ========================================================== */
+    .integration-tabs-section {
+        padding: 6rem 0;
+        background: #fbfbfd; /* Apple's subtle off-white */
+    }
+    .integration-header {
+        text-align: left;
+        margin-bottom: 3rem;
+        max-width: 700px;
+    }
+    .integration-title {
+        font-size: clamp(2.2rem, 4vw, 3.2rem);
+        font-weight: 700;
+        color: #1d1d1f;
+        margin: 0 0 1rem;
+        letter-spacing: -0.03em;
+    }
+    .integration-sub {
+        font-size: 1.15rem;
+        color: #515154;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    /* Stripe Progress Bar Tabs */
+    .stripe-tabs-container {
+        margin-bottom: 3rem;
+        position: relative;
+    }
+    .stripe-progress-track {
+        width: 100%;
+        height: 3px;
+        background: #e6e6e6; /* light gray background */
+        border-radius: 3px;
+        overflow: hidden;
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    .stripe-progress-fill {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 33.33%; /* updated via JS */
+        /* Vibrant cyan to purple gradient */
+        background: linear-gradient(90deg, #00C9FF 0%, #0071e3 50%, #8e43e7 100%);
+        transition: width 0.1s ease-out; /* smooth follow */
+    }
+    .stripe-tabs-buttons {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+    .stripe-tab {
+        background: none;
+        border: none;
+        padding: 0;
+        text-align: center;
+        flex: 1;
+        cursor: pointer;
+        position: relative;
+        color: #6b7280;
+        transition: color 0.3s ease;
+    }
+    .stripe-tab.active {
+        color: #111827; /* dark text for active */
+    }
+    .stripe-tab .tab-label {
+        display: block;
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin-bottom: 0.3rem;
+        color: inherit;
+    }
+    .stripe-tab .tab-sub {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #9ca3af;
+        transition: color 0.3s ease;
+    }
+    .stripe-tab.active .tab-sub {
+        color: #6b7280;
+    }
+
+    /* Content Carousel */
+    .integration-scroll-track {
+        display: flex;
+        gap: 24px;
+        overflow-x: auto;
+        padding-bottom: 3rem;
+        padding-left: max(20px, calc(50vw - 550px));
+        padding-right: max(20px, calc(50vw - 550px));
+        scroll-padding-left: max(20px, calc(50vw - 550px));
+        scroll-padding-right: max(20px, calc(50vw - 550px));
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        scroll-behavior: smooth;
+    }
+    .integration-scroll-track::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .int-card {
+        flex: 0 0 440px;
+        scroll-snap-align: start;
+        background: #ffffff;
+        border-radius: 32px;
+        border: none;
+        box-shadow: 0 20px 40px -10px rgba(0,0,0,0.06), inset 0 0 0 1px rgba(0,0,0,0.04);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @media (max-width: 600px) {
+        .int-card {
+            flex: 0 0 85vw;
+        }
+    }
+    .int-card:hover {
+        transform: scale(1.01) translateY(-4px);
+        box-shadow: 0 30px 60px -15px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(0,0,0,0.04);
+    }
+    .int-card-text {
+        padding: 3rem 2.5rem 0 2.5rem;
+    }
+
+    .int-card-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #1d1d1f;
+        margin: 0 0 0.8rem;
+    }
+    .int-card-desc {
+        font-size: 1.05rem;
+        line-height: 1.5;
+        color: #86868b;
+        margin: 0 0 1.5rem;
+    }
+    .int-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: #0071e3;
+        font-weight: 600;
+        font-size: 1.05rem;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .int-link:hover { color: #005bb5; }
+    .int-link svg { width: 18px; height: 18px; transition: transform 0.2s; }
+    .int-link:hover svg { transform: translateX(4px); }
+
+    .int-card-graphic {
+        padding: 2.5rem;
+        margin-top: auto;
+        display: flex;
+        justify-content: center;
+    }
+    .mock-ui {
+        width: 100%;
+        height: 220px;
+        border-radius: 16px;
+        background: #0a2540; /* Cord Navy */
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(255,255,255,0.1);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Blue - No Code (UI Widgets) */
+    .mock-ui-blue {
+        background: radial-gradient(circle at 80% 20%, rgba(0,201,255,0.15) 0%, transparent 60%), radial-gradient(circle at 20% 80%, rgba(0,113,227,0.2) 0%, transparent 60%), #0a2540;
+    }
+    .graphic-widget {
+        width: 150px;
+        height: 110px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 12px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.2);
+        display: flex;
+        flex-direction: column;
+        padding: 16px;
+        gap: 12px;
+        transform: perspective(1000px) rotateY(-20deg) rotateX(15deg) translateZ(0);
+        transform-style: preserve-3d;
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .int-card:hover .graphic-widget {
+        transform: perspective(1000px) rotateY(0deg) rotateX(0deg) scale(1.1) translateZ(30px) !important;
+    }
+    .graphic-widget-line { height: 8px; border-radius: 4px; background: #e2e8f0; transform: translateZ(10px); }
+    .graphic-widget-line.short { width: 40%; background: #00C9FF; box-shadow: 0 0 10px rgba(0,201,255,0.4); }
+    .graphic-widget-btn { margin-top: auto; height: 28px; border-radius: 6px; background: linear-gradient(135deg, #00C9FF, #0071e3); transform: translateZ(20px); box-shadow: 0 4px 12px rgba(0,113,227,0.3); }
+
+    /* Purple -> Cyan/Blue - Low Code (Nodes/Webhooks) */
+    .mock-ui-purple {
+        background: radial-gradient(circle at 50% 50%, rgba(0,113,227,0.2) 0%, transparent 70%), #0a2540;
+    }
+    .graphic-nodes {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        transform: scale(0.9);
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .int-card:hover .graphic-nodes { transform: scale(1.1); }
+    .graphic-node {
+        width: 64px; height: 64px;
+        border-radius: 20px;
+        background: rgba(10,37,64,0.8);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(0,201,255,0.3);
+        display: flex; align-items: center; justify-content: center;
+        position: relative;
+    }
+    .graphic-node-dot { width: 24px; height: 24px; border-radius: 50%; background: #00C9FF; box-shadow: 0 0 20px rgba(0,201,255,0.8); }
+    .graphic-connection {
+        width: 60px; height: 3px;
+        background: repeating-linear-gradient(90deg, #00C9FF 0, #00C9FF 8px, transparent 8px, transparent 16px);
+        animation: march 0.8s linear infinite;
+        opacity: 0.8;
+        filter: drop-shadow(0 0 8px rgba(0,201,255,0.6));
+    }
+    @keyframes march { to { background-position: 16px 0; } }
+
+    /* Orange -> Dark Navy - API (Code Window) */
+    .mock-ui-orange {
+        background: #061626; /* Deeper navy for contrast */
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.05);
+    }
+    .graphic-code {
+        width: 75%;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        transform: scale(0.95);
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        padding: 20px;
+        background: rgba(255,255,255,0.02);
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+    .int-card:hover .graphic-code { transform: scale(1.08); background: rgba(255,255,255,0.04); }
+    .graphic-code-line { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.1); }
+    .graphic-code-line:nth-child(1) { width: 35%; background: #00C9FF; box-shadow: 0 0 10px rgba(0,201,255,0.3); }
+    .graphic-code-line:nth-child(2) { width: 65%; background: #27c93f; margin-left: 20px; }
+    .graphic-code-line:nth-child(3) { width: 55%; background: #27c93f; margin-left: 20px; }
+    .graphic-code-line:nth-child(4) { width: 45%; background: #ffbd2e; margin-left: 20px; }
+    .graphic-code-line:nth-child(5) { width: 25%; background: rgba(255,255,255,0.3); }
+
+    /* ── CORD APPS MARQUEE ── */
+    .cord-apps-section {
+        padding: 8rem 0;
+        background: #ffffff;
+        overflow: hidden;
+    }
+    .cord-apps-header {
+        max-width: 650px;
+        margin: 0 auto 5rem auto;
+        text-align: center;
+    }
+    .cord-apps-title {
+        font-size: clamp(2rem, 4vw, 3.2rem);
+        font-weight: 700;
+        color: #0a2540;
+        margin-bottom: 1.5rem;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+    }
+    .cord-apps-desc {
+        font-size: 1.15rem;
+        color: #425466;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+    }
+    .cord-apps-link {
+        color: #0071e3;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 1.05rem;
+        transition: color 0.2s;
+    }
+    .cord-apps-link:hover { color: #005bb5; }
+    .cord-apps-link svg { width: 16px; height: 16px; transition: transform 0.2s; }
+    .cord-apps-link:hover svg { transform: translateX(4px); }
+
+    .cord-apps-marquee {
+        width: 100vw;
+        position: relative;
+        left: 50%;
+        transform: translateX(-50%);
+        overflow: hidden;
+        padding: 2rem 0; /* Room for shadow */
+    }
+    .marquee-track {
+        display: flex;
+        gap: 32px;
+        width: max-content;
+        animation: marquee 35s linear infinite;
+    }
+    .marquee-track:hover {
+        animation-play-state: paused;
+    }
+    @keyframes marquee {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(calc(-50% - 16px)); } /* 50% + half gap */
+    }
+    .app-icon {
+        width: 160px;
+        height: 160px;
+        border-radius: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        /* Outer soft drop shadow + Double Inner Shadow for 3D Gummy Effect */
+        box-shadow: 
+            0 24px 48px -12px rgba(0,0,0,0.15),
+            inset 0 8px 16px rgba(255,255,255,0.4),
+            inset 0 -8px 16px rgba(0,0,0,0.15);
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s;
+        will-change: transform;
+        user-select: none;
+    }
+    .app-icon:hover {
+        transform: translateY(-8px) scale(1.02);
+        filter: brightness(1.05);
+    }
+    .app-mask {
+        width: 80px;
+        height: 80px;
+        background-color: currentColor;
+        -webkit-mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-size: contain;
+        mask-repeat: no-repeat;
+        mask-position: center;
+        filter: drop-shadow(1px 1px 0px rgba(255,255,255,0.2)) drop-shadow(-1px -1px 0px rgba(0,0,0,0.15));
+    }
+    .app-icon.cord-cyan .app-mask { width: 100px; height: 100px; } /* xero logo is wide */
+
+    /* Cord-curated Gradients */
+    .app-icon.cord-navy { background: linear-gradient(135deg, #2a4365, #0a2540); color: rgba(0,0,0,0.4); }
+    .app-icon.cord-blue { background: linear-gradient(135deg, #00C9FF, #0071e3); color: rgba(0,0,0,0.25); }
+    .app-icon.cord-indigo { background: linear-gradient(135deg, #818cf8, #4f46e5); color: rgba(0,0,0,0.25); }
+    .app-icon.cord-slate { background: linear-gradient(135deg, #64748b, #334155); color: rgba(0,0,0,0.3); }
+    .app-icon.cord-green { background: linear-gradient(135deg, #34d399, #059669); color: rgba(0,0,0,0.25); }
+    .app-icon.cord-cyan { background: linear-gradient(135deg, #67e8f9, #0891b2); color: rgba(0,0,0,0.25); }
+    .app-icon.cord-dark { background: linear-gradient(135deg, #1e293b, #0f172a); color: rgba(0,0,0,0.4); }
+
+    /* ── CORD DASHBOARD SECTION ── */
+    .cord-dashboard-section {
+        padding: 6rem 0 4rem 0;
+        background: #f8fafc;
+        position: relative;
+        overflow: hidden;
+    }
+    .cord-dashboard-header {
+        max-width: 680px;
+        margin-bottom: 4rem;
+    }
+    .cord-dashboard-title {
+        font-size: clamp(2.5rem, 4vw, 3.5rem);
+        font-weight: 700;
+        color: #0a2540;
+        letter-spacing: -0.04em;
+        line-height: 1.1;
+        margin-bottom: 1.5rem;
+    }
+    .cord-dashboard-desc {
+        font-size: 1.15rem;
+        color: #425466;
+        line-height: 1.6;
+    }
+    
+    /* ── DASHBOARD MOCKUP ANIMATED ── */
+    .cord-dash-mockup {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 40px 80px rgba(0,0,0,0.15), 0 10px 30px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,0.06);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 640px;
+        transform: perspective(1200px) rotateX(2deg);
+        transform-origin: bottom;
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s;
+        margin-bottom: 2rem;
+        position: relative;
+    }
+    .cord-dash-mockup:hover {
+        transform: perspective(1200px) rotateX(0deg);
+        box-shadow: 0 50px 100px rgba(0,0,0,0.18), 0 15px 35px rgba(0,0,0,0.08);
+    }
+    
+    /* MAC WINDOW HEADER */
+    .mac-window-header {
+        height: 44px;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        padding: 0 1rem;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        flex-shrink: 0;
+    }
+    .mac-dots {
+        display: flex;
+        gap: 8px;
+        flex: 1;
+    }
+    .mac-dots .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+    .mac-dots .red { background: #ff5f56; }
+    .mac-dots .yellow { background: #ffbd2e; }
+    .mac-dots .green { background: #27c93f; }
+    
+    .mac-title {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+    }
+    .mac-logo {
+        height: 16px;
+        opacity: 0.8;
+    }
+    .mac-spacer {
+        flex: 1;
+    }
+
+    /* INNER FRAME */
+    .dashboard-app-frame {
+        display: flex;
+        flex-direction: row;
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    /* ANIMATIONS */
+    .mockup-cursor {
+        position: absolute;
+        z-index: 100;
+        color: #0a2540;
+        filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2));
+        width: 24px; height: 24px;
+        pointer-events: none;
+        animation: cursorAnim 10s infinite;
+    }
+    .mockup-cursor svg {
+        fill: white;
+    }
+    
+    @keyframes cursorAnim {
+        0% { top: 80%; left: 80%; transform: scale(1); } /* Start bottom right */
+        10% { top: 22px; left: calc(100% - 150px); transform: scale(1); } /* Move to button */
+        12% { transform: scale(0.9); } /* Click btn */
+        14% { transform: scale(1); }
+        35% { top: 460px; left: 450px; transform: scale(1); } /* Move to row 3 */
+        42% { top: 460px; left: calc(100% - 250px); transform: scale(1); } /* Move to badge */
+        44% { transform: scale(0.9); } /* Click badge */
+        46% { transform: scale(1); }
+        65% { top: 22px; left: 350px; transform: scale(1); } /* Move to search */
+        67% { transform: scale(0.9); } /* Click search */
+        69% { transform: scale(1); }
+        100% { top: 80%; left: 80%; transform: scale(1); }
+    }
+
+    .anim-btn {
+        animation: btnAnim 10s infinite;
+    }
+    @keyframes btnAnim {
+        0%, 10% { transform: translateY(0); box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2); }
+        12%, 14% { transform: translateY(1px); box-shadow: 0 2px 6px rgba(0, 113, 227, 0.4); background: #005bb5; }
+        16%, 100% { transform: translateY(0); box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2); background: #0071e3; }
+    }
+
+    .anim-row {
+        animation: rowHoverAnim 10s infinite;
+    }
+    @keyframes rowHoverAnim {
+        0%, 32% { background: transparent; }
+        35%, 48% { background: #f1f5f9; }
+        50%, 100% { background: transparent; }
+    }
+
+    .anim-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        animation: badgeAnim 10s infinite;
+    }
+    .anim-badge::after {
+        content: "Enviada";
+        animation: badgeTextAnim 10s infinite;
+    }
+    @keyframes badgeAnim {
+        0%, 43% { background: #dbeafe; color: #2563eb; }
+        44%, 100% { background: #d1fae5; color: #059669; }
+    }
+    @keyframes badgeTextAnim {
+        0%, 43% { content: "Enviada"; }
+        44%, 100% { content: "Aceptada"; }
+    }
+
+    .anim-search {
+        font-size: 0.95rem;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+    }
+    .anim-search::after {
+        content: "Buscar cotizaciones o clientes...";
+        animation: typingAnim 10s infinite;
+    }
+    @keyframes typingAnim {
+        0%, 68% { content: "Buscar cotizaciones o clientes..."; color: #94a3b8; }
+        70% { content: "Q|"; color: #0a2540; }
+        72% { content: "Quan|"; color: #0a2540; }
+        74% { content: "Quantu|"; color: #0a2540; }
+        76%, 92% { content: "Quantum Logistics|"; color: #0a2540; }
+        95%, 100% { content: "Buscar cotizaciones o clientes..."; color: #94a3b8; }
+    }
+    
+    /* SIDEBAR */
+    .dash-sidebar {
+        width: 240px;
+        background: #0a2540;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid rgba(255,255,255,0.05);
+        padding-top: 1.5rem;
+    }
+    .dash-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 1.5rem 2rem 1.5rem;
+        color: white;
+    }
+    .dash-logo-text {
+        font-size: 1.25rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+    .dash-nav-links {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        gap: 4px;
+        padding: 0 1rem;
+    }
+    .dash-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        color: #94a3b8;
+        text-decoration: none;
+        font-size: 0.95rem;
+        font-weight: 500;
+        border-radius: 8px;
+        transition: background 0.2s, color 0.2s;
+    }
+    .dash-link:hover {
+        background: rgba(255,255,255,0.05);
+        color: white;
+    }
+    .dash-link.active {
+        background: rgba(0, 201, 255, 0.1);
+        color: #00C9FF;
+    }
+    .dash-user {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 1.5rem;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .dash-user:hover {
+        background: rgba(255,255,255,0.05);
+    }
+    .dash-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #00C9FF, #0071e3);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .dash-user-info {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+    .dash-user-info strong {
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .dash-user-info span {
+        font-size: 0.75rem;
+        color: #94a3b8;
+    }
+    .dash-chevron {
+        color: #64748b;
+    }
+
+    /* MAIN AREA */
+    .dash-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .dash-header {
+        height: 72px;
+        background: white;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 2rem;
+    }
+    .dash-search {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #f1f5f9;
+        padding: 8px 16px;
+        border-radius: 8px;
+        width: 320px;
+    }
+    .dash-search input {
+        border: none;
+        background: transparent;
+        outline: none;
+        font-size: 0.95rem;
+        width: 100%;
+        color: #0a2540;
+    }
+    .dash-btn-primary {
+        background: #0071e3;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .dash-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 113, 227, 0.3);
+    }
+    
+    .dash-content-body {
+        padding: 2.5rem 2rem;
+        flex: 1;
+        overflow-y: auto;
+        background: #f8fafc; /* match section background so it looks like soft app inner bg */
+    }
+    
+    /* KPI WIDGETS */
+    .dash-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        margin-bottom: 2.5rem;
+    }
+    .dash-kpi {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .kpi-label {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #64748b;
+    }
+    .kpi-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #0a2540;
+        margin-top: 4px;
+    }
+    .kpi-trend {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 6px;
+    }
+    .kpi-trend.positive {
+        color: #059669;
+    }
+    .kpi-trend svg {
+        margin-right: 2px;
+    }
+
+    /* TABLE */
+    .dash-table-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+    }
+    .dash-view-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #0a2540;
+        margin: 0;
+    }
+    .dash-subtabs {
+        display: flex;
+        gap: 1.5rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .subtab {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #64748b;
+        padding-bottom: 8px;
+        position: relative;
+        cursor: pointer;
+    }
+    .subtab.active {
+        color: #0071e3;
+        font-weight: 600;
+    }
+    .subtab.active::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: #0071e3;
+    }
+    .dash-table-container {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        overflow: hidden;
+    }
+    .dash-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    .dash-table th {
+        background: #f8fafc;
+        padding: 12px 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .dash-table td {
+        padding: 16px 20px;
+        font-size: 0.95rem;
+        color: #0a2540;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .dash-table tr:last-child td { border-bottom: none; }
+    .dash-table tr:hover td { background: #f8fafc; }
+    .td-sub { font-size: 0.8rem; color: #94a3b8; }
+    .td-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 500; }
+    .td-light { color: #64748b; font-size: 0.9rem; }
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .badge-green { background: #d1fae5; color: #059669; }
+    .badge-blue { background: #dbeafe; color: #2563eb; }
+    .badge-yellow { background: #fef3c7; color: #d97706; }
+
+    @media (max-width: 768px) {
+        .cord-dash-mockup { flex-direction: column; height: auto; margin-bottom: 0; }
+        .dash-sidebar { width: 100%; height: auto; padding: 1rem; }
+        .dash-nav-links { display: none; }
+        .dash-user { border-top: none; padding: 1rem 0 0 0; }
+        .dash-kpi-grid { grid-template-columns: 1fr; }
+        .dash-table-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+        .dash-subtabs { overflow-x: auto; padding-bottom: 8px; width: 100%; }
+        .dash-header { padding: 1rem; flex-direction: column; height: auto; gap: 1rem; }
+        .dash-search { width: 100%; }
+        .dash-table-container { overflow-x: auto; }
+    }
+</style>
+
+<script>
+    // Reactive Parallax Effect for Startups Hero Blobs
+    document.addEventListener('DOMContentLoaded', () => {
+        const hero = document.querySelector('.startup-hero');
+        if (!hero) return;
+        
+        hero.addEventListener('mousemove', (e) => {
+            // Calculate mouse position relative to center of screen
+            // Values range from roughly -20px to +20px
+            const x = (e.clientX / window.innerWidth - 0.5) * 40; 
+            const y = (e.clientY / window.innerHeight - 0.5) * 40;
+            
+            // Set CSS variables on the hero container
+            hero.style.setProperty('--mouse-x', `${x}px`);
+            hero.style.setProperty('--mouse-y', `${y}px`);
+        });
+        
+        // Reset when mouse leaves the hero
+        hero.addEventListener('mouseleave', () => {
+            hero.style.setProperty('--mouse-x', `0px`);
+            hero.style.setProperty('--mouse-y', `0px`);
+        });
+        
+        // Carousel logic for Startups Use Cases
+        const grid = document.querySelector('.startup-use-cases-grid');
+        const prevBtn = document.getElementById('startup-prev');
+        const nextBtn = document.getElementById('startup-next');
+
+        if (grid && prevBtn && nextBtn) {
+            const getScrollAmount = () => {
+                const card = grid.querySelector('.startup-use-case-card');
+                return card ? (card.clientWidth + 24) : 424; // 24 is gap
+            };
+
+            prevBtn.addEventListener('click', () => {
+                grid.scrollBy({ left: -getScrollAmount(), behavior: 'smooth' });
+            });
+            nextBtn.addEventListener('click', () => {
+                grid.scrollBy({ left: getScrollAmount(), behavior: 'smooth' });
+            });
+        }
+        
+        // Integration ScrollSpy Carousel with Progress Bar
+        const stripeTabs = document.querySelectorAll('.stripe-tab');
+        const progressFill = document.getElementById('stripe-progress-fill');
+        const intScrollTrack = document.getElementById('integration-scroll');
+        const intCards = document.querySelectorAll('.int-card');
+
+        if (stripeTabs.length > 0 && intScrollTrack && progressFill) {
+            
+            // Calculate and set progress based on scroll
+            const updateProgress = () => {
+                const maxScroll = intScrollTrack.scrollWidth - intScrollTrack.clientWidth;
+                if (maxScroll <= 0) {
+                    progressFill.style.width = '100%';
+                    return;
+                }
+                const scrollLeft = intScrollTrack.scrollLeft;
+                
+                const numTabs = stripeTabs.length;
+                const baseWidth = 100 / numTabs;
+                const percentage = (scrollLeft / maxScroll);
+                const width = baseWidth + (percentage * (100 - baseWidth));
+                
+                progressFill.style.width = `${width}%`;
+            };
+
+            intScrollTrack.addEventListener('scroll', () => {
+                requestAnimationFrame(updateProgress);
+            });
+            updateProgress(); // init
+
+            // Click to scroll
+            stripeTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetId = tab.getAttribute('data-target');
+                    const firstCard = intScrollTrack.querySelector(`[data-tab-group="${targetId}"]`);
+                    if (firstCard) {
+                        const paddingLeft = parseInt(window.getComputedStyle(intScrollTrack).paddingLeft) || 0;
+                        intScrollTrack.scrollTo({
+                            left: firstCard.offsetLeft - paddingLeft,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+
+            // Intersection Observer to highlight active text
+            const observerOptions = {
+                root: intScrollTrack,
+                rootMargin: '0px',
+                threshold: 0.6 // Trigger when 60% of card is visible
+            };
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const groupId = entry.target.getAttribute('data-tab-group');
+                        const correspondingTab = document.querySelector(`.stripe-tab[data-target="${groupId}"]`);
+                        if (correspondingTab && !correspondingTab.classList.contains('active')) {
+                            stripeTabs.forEach(t => t.classList.remove('active'));
+                            correspondingTab.classList.add('active');
+                        }
+                    }
+                });
+            }, observerOptions);
+
+            intCards.forEach(card => observer.observe(card));
+        }
+    });
+</script>
