@@ -172,88 +172,76 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                         </div>
                     </div>
 
-                    <div class="apple-tab-content-wrapper">
-                        <!-- Tab 1: Sin Código -->
-                        <div class="apple-tab-pane active" id="tab-nocode" role="tabpanel">
-                            <div class="integration-cards-grid">
-                                <div class="int-card">
-                                    <div class="int-card-text">
-                                        <span class="int-badge badge-blue">Sin código</span>
-                                        <h3 class="int-card-title">Cotizador Visual</h3>
-                                        <p class="int-card-desc">Crea cotizaciones interactivas arrastrando y soltando elementos de tu catálogo en segundos.</p>
-                                        <a href="/producto/cotizaciones" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-                                    </div>
-                                    <div class="int-card-graphic">
-                                        <div class="mock-ui mock-ui-blue"></div>
-                                    </div>
-                                </div>
-                                <div class="int-card">
-                                    <div class="int-card-text">
-                                        <span class="int-badge badge-blue">Sin código</span>
-                                        <h3 class="int-card-title">Ligas de Pago</h3>
-                                        <p class="int-card-desc">Genera links de cobro al instante y compártelos por WhatsApp sin escribir una línea de código.</p>
-                                        <a href="/producto/pagos" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-                                    </div>
-                                    <div class="int-card-graphic">
-                                        <div class="mock-ui mock-ui-blue"></div>
-                                    </div>
-                                </div>
+                    <div class="integration-scroll-track" id="integration-scroll">
+                        <!-- NO CODE -->
+                        <div class="int-card" data-tab-group="tab-nocode">
+                            <div class="int-card-text">
+                                <span class="int-badge badge-blue">Sin código</span>
+                                <h3 class="int-card-title">Cotizador Visual</h3>
+                                <p class="int-card-desc">Crea cotizaciones interactivas arrastrando y soltando elementos de tu catálogo en segundos.</p>
+                                <a href="/producto/cotizaciones" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                            </div>
+                            <div class="int-card-graphic">
+                                <div class="mock-ui mock-ui-blue"></div>
+                            </div>
+                        </div>
+                        <div class="int-card" data-tab-group="tab-nocode">
+                            <div class="int-card-text">
+                                <span class="int-badge badge-blue">Sin código</span>
+                                <h3 class="int-card-title">Ligas de Pago</h3>
+                                <p class="int-card-desc">Genera links de cobro al instante y compártelos por WhatsApp sin escribir una línea de código.</p>
+                                <a href="/producto/pagos" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                            </div>
+                            <div class="int-card-graphic">
+                                <div class="mock-ui mock-ui-blue"></div>
                             </div>
                         </div>
 
-                        <!-- Tab 2: Bajo Código -->
-                        <div class="apple-tab-pane" id="tab-lowcode" role="tabpanel">
-                            <div class="integration-cards-grid">
-                                <div class="int-card">
-                                    <div class="int-card-text">
-                                        <span class="int-badge badge-purple">Bajo código</span>
-                                        <h3 class="int-card-title">Zapier & Make</h3>
-                                        <p class="int-card-desc">Automatiza flujos de trabajo complejos conectando Cord con más de 5,000 aplicaciones.</p>
-                                        <a href="/integraciones" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-                                    </div>
-                                    <div class="int-card-graphic">
-                                        <div class="mock-ui mock-ui-purple"></div>
-                                    </div>
-                                </div>
-                                <div class="int-card">
-                                    <div class="int-card-text">
-                                        <span class="int-badge badge-purple">Bajo código</span>
-                                        <h3 class="int-card-title">Webhooks</h3>
-                                        <p class="int-card-desc">Conecta Cord con tu ERP o CRM actual usando webhooks que disparan acciones en tiempo real.</p>
-                                        <a href="/desarrolladores" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-                                    </div>
-                                    <div class="int-card-graphic">
-                                        <div class="mock-ui mock-ui-purple"></div>
-                                    </div>
-                                </div>
+                        <!-- LOW CODE -->
+                        <div class="int-card" data-tab-group="tab-lowcode">
+                            <div class="int-card-text">
+                                <span class="int-badge badge-purple">Bajo código</span>
+                                <h3 class="int-card-title">Zapier & Make</h3>
+                                <p class="int-card-desc">Automatiza flujos de trabajo complejos conectando Cord con más de 5,000 aplicaciones.</p>
+                                <a href="/integraciones" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                            </div>
+                            <div class="int-card-graphic">
+                                <div class="mock-ui mock-ui-purple"></div>
+                            </div>
+                        </div>
+                        <div class="int-card" data-tab-group="tab-lowcode">
+                            <div class="int-card-text">
+                                <span class="int-badge badge-purple">Bajo código</span>
+                                <h3 class="int-card-title">Webhooks</h3>
+                                <p class="int-card-desc">Conecta Cord con tu ERP o CRM actual usando webhooks que disparan acciones en tiempo real.</p>
+                                <a href="/desarrolladores" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                            </div>
+                            <div class="int-card-graphic">
+                                <div class="mock-ui mock-ui-purple"></div>
                             </div>
                         </div>
 
-                        <!-- Tab 3: API -->
-                        <div class="apple-tab-pane" id="tab-api" role="tabpanel">
-                            <div class="integration-cards-grid">
-                                <div class="int-card">
-                                    <div class="int-card-text">
-                                        <span class="int-badge badge-orange">API</span>
-                                        <h3 class="int-card-title">API RESTful</h3>
-                                        <p class="int-card-desc">Integra la facturación CFDI 4.0 directamente en tu propio software con nuestra API moderna.</p>
-                                        <a href="/docs/api" class="int-link">Ver documentación <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-                                    </div>
-                                    <div class="int-card-graphic">
-                                        <div class="mock-ui mock-ui-orange"></div>
-                                    </div>
-                                </div>
-                                <div class="int-card">
-                                    <div class="int-card-text">
-                                        <span class="int-badge badge-orange">API</span>
-                                        <h3 class="int-card-title">SDKs Nativos</h3>
-                                        <p class="int-card-desc">Librerías oficiales para Node.js, Python y PHP que aceleran el desarrollo de tu equipo.</p>
-                                        <a href="/docs/sdks" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-                                    </div>
-                                    <div class="int-card-graphic">
-                                        <div class="mock-ui mock-ui-orange"></div>
-                                    </div>
-                                </div>
+                        <!-- API -->
+                        <div class="int-card" data-tab-group="tab-api">
+                            <div class="int-card-text">
+                                <span class="int-badge badge-orange">API</span>
+                                <h3 class="int-card-title">API RESTful</h3>
+                                <p class="int-card-desc">Integra la facturación CFDI 4.0 directamente en tu propio software con nuestra API moderna.</p>
+                                <a href="/docs/api" class="int-link">Ver documentación <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                            </div>
+                            <div class="int-card-graphic">
+                                <div class="mock-ui mock-ui-orange"></div>
+                            </div>
+                        </div>
+                        <div class="int-card" data-tab-group="tab-api">
+                            <div class="int-card-text">
+                                <span class="int-badge badge-orange">API</span>
+                                <h3 class="int-card-title">SDKs Nativos</h3>
+                                <p class="int-card-desc">Librerías oficiales para Node.js, Python y PHP que aceleran el desarrollo de tu equipo.</p>
+                                <a href="/docs/sdks" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                            </div>
+                            <div class="int-card-graphic">
+                                <div class="mock-ui mock-ui-orange"></div>
                             </div>
                         </div>
                     </div>
@@ -2422,30 +2410,26 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         z-index: 3;
     }
 
-    /* Content Panes */
-    .apple-tab-content-wrapper {
-        position: relative;
-        min-height: 400px;
-    }
-    .apple-tab-pane {
-        display: none;
-        animation: fadeIn 0.4s ease forwards;
-    }
-    .apple-tab-pane.active {
-        display: block;
-    }
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Cards Grid */
-    .integration-cards-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    /* Content Carousel */
+    .integration-scroll-track {
+        display: flex;
         gap: 24px;
+        overflow-x: auto;
+        padding-bottom: 3rem;
+        padding-left: max(20px, calc(50vw - 550px));
+        padding-right: max(20px, calc(50vw - 550px));
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        scroll-behavior: smooth;
     }
+    .integration-scroll-track::-webkit-scrollbar {
+        display: none;
+    }
+    
     .int-card {
+        flex: 0 0 420px;
+        scroll-snap-align: start;
         background: #ffffff;
         border-radius: 24px;
         border: 1px solid rgba(0,0,0,0.06);
@@ -2454,6 +2438,11 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         flex-direction: column;
         overflow: hidden;
         transition: transform 0.3s, box-shadow 0.3s;
+    }
+    @media (max-width: 600px) {
+        .int-card {
+            flex: 0 0 85vw;
+        }
     }
     .int-card:hover {
         transform: translateY(-4px);
@@ -2562,46 +2551,65 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
             });
         }
         
-        // Integration Tabs Logic (Apple Style Segmented Control)
-        const tabs = document.querySelectorAll('.apple-tab');
-        const panes = document.querySelectorAll('.apple-tab-pane');
-        const indicator = document.querySelector('.apple-tab-indicator');
+        // Integration ScrollSpy Carousel
+        const intTabs = document.querySelectorAll('.apple-tab');
+        const intIndicator = document.querySelector('.apple-tab-indicator');
+        const intScrollTrack = document.getElementById('integration-scroll');
+        const intCards = document.querySelectorAll('.int-card');
 
-        function updateIndicator(activeTab) {
-            if (!activeTab || !indicator) return;
+        function updateIntIndicator(activeTab) {
+            if (!activeTab || !intIndicator) return;
             const left = activeTab.offsetLeft;
             const width = activeTab.offsetWidth;
-            indicator.style.left = `${left}px`;
-            indicator.style.width = `${width}px`;
+            intIndicator.style.left = `${left}px`;
+            intIndicator.style.width = `${width}px`;
         }
 
-        if (tabs.length > 0) {
-            // Initial position (slight delay to ensure layout is ready)
+        if (intTabs.length > 0 && intScrollTrack) {
             setTimeout(() => {
-                updateIndicator(document.querySelector('.apple-tab.active'));
+                updateIntIndicator(document.querySelector('.apple-tab.active'));
             }, 100);
 
-            tabs.forEach(tab => {
+            // Click to scroll
+            intTabs.forEach(tab => {
                 tab.addEventListener('click', () => {
-                    // Remove active from all
-                    tabs.forEach(t => t.classList.remove('active'));
-                    panes.forEach(p => p.classList.remove('active'));
-                    
-                    // Add active to clicked
-                    tab.classList.add('active');
                     const targetId = tab.getAttribute('data-target');
-                    if (targetId) {
-                        const targetPane = document.getElementById(targetId);
-                        if (targetPane) targetPane.classList.add('active');
+                    const firstCard = intScrollTrack.querySelector(`[data-tab-group="${targetId}"]`);
+                    if (firstCard) {
+                        const paddingLeft = parseInt(window.getComputedStyle(intScrollTrack).paddingLeft) || 0;
+                        intScrollTrack.scrollTo({
+                            left: firstCard.offsetLeft - paddingLeft,
+                            behavior: 'smooth'
+                        });
                     }
-
-                    updateIndicator(tab);
                 });
             });
+
+            // Scroll to update tab
+            const observerOptions = {
+                root: intScrollTrack,
+                rootMargin: '0px',
+                threshold: 0.6 // Trigger when 60% of card is visible
+            };
             
-            // Update on resize
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const groupId = entry.target.getAttribute('data-tab-group');
+                        const correspondingTab = document.querySelector(`.apple-tab[data-target="${groupId}"]`);
+                        if (correspondingTab && !correspondingTab.classList.contains('active')) {
+                            intTabs.forEach(t => t.classList.remove('active'));
+                            correspondingTab.classList.add('active');
+                            updateIntIndicator(correspondingTab);
+                        }
+                    }
+                });
+            }, observerOptions);
+
+            intCards.forEach(card => observer.observe(card));
+            
             window.addEventListener('resize', () => {
-                updateIndicator(document.querySelector('.apple-tab.active'));
+                updateIntIndicator(document.querySelector('.apple-tab.active'));
             });
         }
     });
