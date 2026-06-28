@@ -292,63 +292,59 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                 <div class="stripe-pillar-graphic">
                                     {i === 0 && (
                                         <div class="pillar-mock pillar-mock-magic">
-                                            <div class="stripe-mock-window magic-window">
-                                                <div class="mock-topbar"><div class="mock-dots"><span></span></div><span>Propuesta #1042</span></div>
-                                                <div class="magic-body">
-                                                    <div class="mock-invoice-item">
-                                                        <span class="mock-item-name">Suscripción Anual</span>
-                                                        <span class="mock-item-price">$120,000 MXN</span>
-                                                    </div>
-                                                    <button class="mock-btn-primary">
-                                                        Aceptar y Pagar
-                                                        <div class="mock-cursor">
-                                                            <svg viewBox="0 0 24 24" fill="white" stroke="#000" stroke-width="1.5"><path d="M5.5 3.21V20.8c0 .45.54.67.85.35l4.86-4.86a.5.5 0 0 1 .35-.15h6.42c.45 0 .67-.54.35-.85L5.5 3.21z"/></svg>
-                                                        </div>
-                                                    </button>
+                                            <div class="integrated-magic">
+                                                <div class="int-invoice-item">
+                                                    <span class="int-item-name">Suscripción Anual</span>
+                                                    <span class="int-item-price">$120,000 MXN</span>
                                                 </div>
+                                                <button class="int-btn-primary">
+                                                    Aceptar y Pagar
+                                                    <div class="int-cursor">
+                                                        <svg viewBox="0 0 24 24" fill="white" stroke="#000" stroke-width="1.5"><path d="M5.5 3.21V20.8c0 .45.54.67.85.35l4.86-4.86a.5.5 0 0 1 .35-.15h6.42c.45 0 .67-.54.35-.85L5.5 3.21z"/></svg>
+                                                    </div>
+                                                </button>
                                             </div>
                                         </div>
                                     )}
                                     {i === 1 && (
                                         <div class="pillar-mock pillar-mock-premium">
-                                            <div class="stripe-mock-window premium-window">
-                                                <div class="mock-sidebar">
-                                                    <div class="mock-nav-item"></div>
-                                                    <div class="mock-nav-item active"></div>
-                                                    <div class="mock-nav-item"></div>
+                                            <div class="integrated-premium">
+                                                <div class="int-kpi-row">
+                                                    <div class="int-kpi"><span>Ingresos Mensuales</span><strong>$450,000 MXN</strong></div>
+                                                    <div class="int-kpi"><span>Crecimiento</span><strong class="text-green">+12.5%</strong></div>
                                                 </div>
-                                                <div class="mock-main">
-                                                    <div class="mock-kpi-row">
-                                                        <div class="mock-kpi"><span>Ingresos</span><strong>$45k</strong></div>
-                                                        <div class="mock-kpi"><span>Crecimiento</span><strong class="text-green">+12%</strong></div>
-                                                    </div>
-                                                    <div class="mock-chart-area">
-                                                        <svg class="mock-chart-line" viewBox="0 0 100 40" preserveAspectRatio="none">
-                                                            <path d="M0,40 L0,30 C20,30 30,10 50,20 C70,30 80,5 100,10 L100,40 Z" fill="rgba(14,165,233,0.1)"></path>
-                                                            <path d="M0,30 C20,30 30,10 50,20 C70,30 80,5 100,10" fill="none" stroke="#0ea5e9" stroke-width="2"></path>
-                                                        </svg>
-                                                    </div>
+                                                <div class="int-chart-area">
+                                                    <svg class="int-chart-line" viewBox="0 0 100 40" preserveAspectRatio="none">
+                                                        <defs>
+                                                            <linearGradient id="premiumGrad" x1="0" y1="0" x2="0" y2="1">
+                                                                <stop offset="0%" stop-color="rgba(0,201,255,0.4)" />
+                                                                <stop offset="100%" stop-color="rgba(0,201,255,0)" />
+                                                            </linearGradient>
+                                                        </defs>
+                                                        <path d="M0,40 L0,30 C20,30 30,10 50,20 C70,30 80,5 100,10 L100,40 Z" fill="url(#premiumGrad)"></path>
+                                                        <path d="M0,30 C20,30 30,10 50,20 C70,30 80,5 100,10" fill="none" stroke="#00C9FF" stroke-width="1.5"></path>
+                                                    </svg>
                                                 </div>
                                             </div>
                                         </div>
                                     )}
                                     {i === 2 && (
                                         <div class="pillar-mock pillar-mock-cfdi">
-                                            <div class="stripe-mock-window cfdi-window">
-                                                <div class="mock-topbar"><div class="mock-dots"><span></span></div><span>cfdi_v4.xml</span></div>
-                                                <div class="mock-code-lines">
-                                                    <div>&lt;<span class="mock-code-tag">cfdi:Comprobante</span> <span class="mock-code-attr">Version</span>=<span class="mock-code-string">"4.0"</span>&gt;</div>
-                                                    <div style="padding-left:8px;">&lt;<span class="mock-code-tag">cfdi:Emisor</span> <span class="mock-code-attr">Rfc</span>=<span class="mock-code-string">"CORD99..."</span>/&gt;</div>
-                                                    <div style="padding-left:8px;">&lt;<span class="mock-code-tag">cfdi:Receptor</span> <span class="mock-code-attr">Rfc</span>=<span class="mock-code-string">"GUS8..."</span>/&gt;</div>
-                                                    <div>&lt;/<span class="mock-code-tag">cfdi:Comprobante</span>&gt;</div>
+                                            <div class="integrated-cfdi">
+                                                <div class="int-code-lines">
+                                                    <div>&lt;<span class="int-code-tag">cfdi:Comprobante</span> <span class="int-code-attr">Version</span>=<span class="int-code-string">"4.0"</span>&gt;</div>
+                                                    <div style="padding-left:12px;">&lt;<span class="int-code-tag">cfdi:Emisor</span> <span class="int-code-attr">Rfc</span>=<span class="int-code-string">"CORD991201..."</span>/&gt;</div>
+                                                    <div style="padding-left:12px;">&lt;<span class="int-code-tag">cfdi:Receptor</span> <span class="int-code-attr">Rfc</span>=<span class="int-code-string">"GUS810214..."</span>/&gt;</div>
+                                                    <div>&lt;/<span class="int-code-tag">cfdi:Comprobante</span>&gt;</div>
                                                 </div>
-                                                <div class="mock-status-badge">
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                                    Timbrado SAT
+                                                <div class="int-status-badge">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                    Timbrado por el SAT
                                                 </div>
                                             </div>
                                         </div>
                                     )}
+
                                 </div>
                                 <div class="stripe-pillar-content">
                                     <h3 class="stripe-pillar-title">{p.titulo}</h3>
@@ -2117,98 +2113,76 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         position: relative;
     }
 
-    /* --- NEW HIGH-FIDELITY MOCKUPS --- */
-    .stripe-mock-window {
-        background: #ffffff;
-        border-radius: 10px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.05);
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
-        color: #0f172a;
-        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s;
-    }
-    .stripe-pillar-card:hover .stripe-mock-window {
-        transform: translateY(-5px) scale(1.03);
-        box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,0,0,0.05);
-    }
-    
-    .mock-topbar {
-        background: #f8fafc;
-        border-bottom: 1px solid #f1f5f9;
-        padding: 8px 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 10px;
-        font-weight: 600;
-        color: #64748b;
-    }
-    .mock-dots { display: flex; gap: 4px; }
-    .mock-dots::before, .mock-dots::after, .mock-dots span {
-        content: ''; width: 8px; height: 8px; border-radius: 50%; background: #e2e8f0;
-    }
-    .mock-dots::before { background: #ff5f56; }
-    .mock-dots span { background: #ffbd2e; }
-    .mock-dots::after { background: #27c93f; }
-
+    /* --- INTEGRATED HIGH-FIDELITY MOCKUPS --- */
     /* 1. Magic Link (Cierre Instantáneo) */
     .pillar-mock-magic {
-        background: radial-gradient(circle at center, rgba(0,201,255,0.15) 0%, transparent 60%);
+        background: radial-gradient(circle at center, rgba(0,201,255,0.2) 0%, transparent 70%);
     }
-    .magic-window { width: 180px; }
-    .magic-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-    .mock-invoice-item { display: flex; justify-content: space-between; font-size: 11px; padding-bottom: 12px; border-bottom: 1px dashed #e2e8f0; }
-    .mock-item-name { color: #475569; }
-    .mock-item-price { font-weight: 700; color: #0f172a; }
-    .mock-btn-primary {
-        background: #0ea5e9; color: white; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: 600;
-        position: relative; cursor: pointer; transition: background 0.3s;
+    .integrated-magic {
+        display: flex; flex-direction: column; gap: 24px;
+        align-items: center; justify-content: center; width: 100%;
+        transform: translateY(10px); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .stripe-pillar-card:hover .mock-btn-primary { background: #0284c7; }
-    .mock-cursor {
-        position: absolute; right: -10px; bottom: -15px; width: 20px; height: 20px;
-        transform: translate(15px, 15px); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        color: #0f172a; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+    .stripe-pillar-card:hover .integrated-magic { transform: translateY(-5px); }
+    .int-invoice-item {
+        display: flex; flex-direction: column; align-items: center; gap: 6px;
     }
-    .stripe-pillar-card:hover .mock-cursor { transform: translate(0, 0); }
+    .int-item-name { color: #94a3b8; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; }
+    .int-item-price { color: #ffffff; font-size: 28px; font-weight: 700; font-family: "Inter", sans-serif; }
+    .int-btn-primary {
+        background: #0ea5e9; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600;
+        position: relative; cursor: pointer; transition: background 0.3s, box-shadow 0.3s;
+        box-shadow: 0 10px 20px rgba(14,165,233,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    .stripe-pillar-card:hover .int-btn-primary { background: #0284c7; box-shadow: 0 15px 30px rgba(14,165,233,0.5), inset 0 1px 0 rgba(255,255,255,0.2); }
+    .int-cursor {
+        position: absolute; right: -15px; bottom: -20px; width: 24px; height: 24px;
+        transform: translate(25px, 25px); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        color: #0f172a; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+    }
+    .stripe-pillar-card:hover .int-cursor { transform: translate(0, 0); }
 
     /* 2. Premium UI (Presentación premium) */
     .pillar-mock-premium {
-        background: radial-gradient(circle at center, rgba(0,113,227,0.2) 0%, transparent 60%);
+        background: radial-gradient(circle at center, rgba(0,113,227,0.25) 0%, transparent 70%);
     }
-    .premium-window { width: 220px; flex-direction: row; height: 140px; }
-    .mock-sidebar { width: 40px; background: #f8fafc; border-right: 1px solid #f1f5f9; display: flex; flex-direction: column; align-items: center; padding-top: 12px; gap: 8px; }
-    .mock-nav-item { width: 20px; height: 20px; border-radius: 4px; background: #e2e8f0; }
-    .mock-nav-item.active { background: #0ea5e9; }
-    .mock-main { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
-    .mock-kpi-row { display: flex; gap: 8px; }
-    .mock-kpi { flex: 1; border: 1px solid #f1f5f9; border-radius: 6px; padding: 6px; display: flex; flex-direction: column; }
-    .mock-kpi span { font-size: 8px; color: #64748b; }
-    .mock-kpi strong { font-size: 12px; color: #0f172a; }
-    .mock-kpi strong.text-green { color: #10b981; }
-    .mock-chart-area { flex: 1; background: #f8fafc; border-radius: 6px; position: relative; overflow: hidden; }
-    .mock-chart-line { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; }
+    .integrated-premium {
+        width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-end;
+        position: relative; padding: 24px;
+    }
+    .int-kpi-row { display: flex; gap: 16px; position: relative; z-index: 2; margin-bottom: 20px; transform: translateY(10px); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+    .stripe-pillar-card:hover .int-kpi-row { transform: translateY(0); }
+    .int-kpi { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .int-kpi span { font-size: 11px; color: #94a3b8; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    .int-kpi strong { font-size: 20px; color: #ffffff; font-family: "Inter", sans-serif; font-weight: 600; }
+    .int-kpi strong.text-green { color: #10b981; }
+    .int-chart-area { position: absolute; bottom: 0; left: 0; width: 100%; height: 60%; opacity: 0.8; transition: opacity 0.6s, transform 0.6s; transform: scaleY(0.9); transform-origin: bottom; }
+    .stripe-pillar-card:hover .int-chart-area { opacity: 1; transform: scaleY(1); }
+    .int-chart-line { width: 100%; height: 100%; }
 
     /* 3. CFDI 4.0 (Facturación automática) */
     .pillar-mock-cfdi {
-        background: radial-gradient(circle at center, rgba(16,185,129,0.15) 0%, transparent 60%);
+        background: radial-gradient(circle at center, rgba(16,185,129,0.15) 0%, transparent 70%);
     }
-    .cfdi-window { width: 220px; background: #0f172a; color: #cbd5e1; border: 1px solid #1e293b; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    .cfdi-window .mock-topbar { background: #1e293b; border-bottom: 1px solid #334155; color: #94a3b8; }
-    .cfdi-window .mock-dots::before, .cfdi-window .mock-dots::after, .cfdi-window .mock-dots span { opacity: 0.5; }
-    .mock-code-lines { padding: 12px; font-family: 'SF Mono', monospace; font-size: 9px; display: flex; flex-direction: column; gap: 4px; }
-    .mock-code-tag { color: #38bdf8; }
-    .mock-code-attr { color: #a78bfa; }
-    .mock-code-string { color: #a3e635; }
-    .mock-status-badge {
-        margin: auto auto 12px auto; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2);
-        color: #10b981; padding: 4px 10px; border-radius: 12px; font-size: 9px; font-weight: 600;
-        display: flex; align-items: center; gap: 4px;
-        transform: scale(0.95); transition: transform 0.3s, background 0.3s;
+    .integrated-cfdi {
+        width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;
     }
-    .stripe-pillar-card:hover .mock-status-badge { transform: scale(1.05); background: rgba(16, 185, 129, 0.2); }
+    .int-code-lines { 
+        font-family: 'SF Mono', Consolas, monospace; font-size: 12px; display: flex; flex-direction: column; gap: 8px;
+        color: #94a3b8; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);
+        transform: translateY(10px); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s;
+    }
+    .stripe-pillar-card:hover .int-code-lines { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.5); border-color: rgba(16,185,129,0.2); }
+    .int-code-tag { color: #38bdf8; }
+    .int-code-attr { color: #a78bfa; }
+    .int-code-string { color: #a3e635; }
+    .int-status-badge {
+        background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3);
+        color: #10b981; padding: 6px 16px; border-radius: 20px; font-size: 11px; font-weight: 600;
+        display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(16,185,129,0.2);
+        transform: scale(0.95) translateY(10px); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s;
+    }
+    .stripe-pillar-card:hover .int-status-badge { transform: scale(1) translateY(0); background: rgba(16, 185, 129, 0.25); box-shadow: 0 8px 20px rgba(16,185,129,0.3); }
     
     .stripe-pillar-content {
         padding: 2.5rem;
