@@ -58,9 +58,9 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
             <div class="stripe-hero-content stripe-container">
                 <h1 class="stripe-title" set:html={solucion.titulo} />
                 
-                <p class="stripe-sub reveal">{solucion.sub}</p>
+                <p class="stripe-sub">{solucion.sub}</p>
                 
-                <div class="stripe-actions reveal">
+                <div class="stripe-actions">
                     <a href={isEn ? '/en/registro' : '/registro'} class="btn-luxe">
                         <span>{isEn ? 'Start now' : 'Empezar ahora'}</span>
                         <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -332,16 +332,20 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         letter-spacing: -0.04em;
         margin: 0 0 2rem;
         color: #ffffff;
+        background: linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.75) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 4px 16px rgba(0,0,0,0.3));
         text-wrap: balance;
     }
     
     .stripe-sub {
-        font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+        font-size: clamp(1.05rem, 1.8vw, 1.35rem);
         line-height: 1.65;
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(255, 255, 255, 0.85);
         max-width: 680px;
         margin: 0 auto 3rem;
-        font-weight: 400;
+        font-weight: 500;
     }
     
     .stripe-actions {
