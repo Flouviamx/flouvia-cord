@@ -7,6 +7,11 @@ const { esUrl, enUrl, lang } = altLangUrls(Astro.url);
 const isEn = lang === 'en';
 const t = useTranslations(lang);
 const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
+
+export interface Props {
+    darkHero?: boolean;
+}
+const { darkHero = false } = Astro.props;
 ---
 
 <header class="navbar-wrapper" id="navbar">
@@ -175,7 +180,7 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 
             <div class="nav-center desktop-nav">
                 <a href={l("/")} class="main-logo" id="main-logo">
-                    <img src="/imgs/logo-cord-navy.png" alt="Cord" class="main-logo-img" />
+                    <img src={darkHero ? "/imgs/logo-cord-white.png" : "/imgs/logo-cord-navy.png"} alt="Cord" class="main-logo-img" />
                 </a>
             </div>
 

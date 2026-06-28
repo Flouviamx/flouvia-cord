@@ -45,7 +45,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     description={solucion.metaDescription ?? solucion.sub}
 >
     <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
-    <Nav />
+    <Nav darkHero={solucion.slug === 'empresas'} />
     <main class="stripe-main">
         
         <!-- ── HERO (Stripe Enterprise) ── -->
