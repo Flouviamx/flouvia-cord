@@ -13,6 +13,47 @@ export const SOLUCIONES_EN: Solution[] = [
         metaDescription: 'Enterprise platform to scale quoting processes, control volume pricing lists, and manage credit approvals with security and compliance.',
         paraQuien: 'Cord for Enterprise is designed for corporations, large-scale distributors, and consolidated B2B companies handling large proposal volumes, requiring strict control over pricing and margins, and needing total visibility over their sales pipeline.',
         dolor: 'Decentralized commercial processes cause margin leaks and loss of visibility in closing.',
+        integrations: [
+            { name: 'SAP' },
+            { name: 'Salesforce' },
+            { name: 'Oracle NetSuite' },
+            { name: 'HubSpot' },
+            { name: 'Microsoft Dynamics' }
+        ],
+        security: {
+            eyebrow: 'TRUST CENTER',
+            titulo: 'Bank-Grade Security & Compliance',
+            copy: 'Large enterprises cannot afford risks in their financial flows. Cord is built from the ground up under the highest standards of operational security and cloud infrastructure.',
+            features: [
+                { title: 'SSO & SAML', desc: 'Connect Cord with Okta, Azure AD, or Google Workspace for unified access control.' },
+                { title: 'SHA-256 Signatures', desc: 'Every approved quote generates an immutable cryptographic hash on our servers.' },
+                { title: 'Advanced RBAC', desc: 'Granular roles and permissions. Define who can see what and who can approve discounts.' },
+                { title: 'Data Residency', desc: 'Your data encrypted at rest (AES-256) and in transit (TLS 1.3).' }
+            ]
+        },
+        workflow: [
+            { step: '01', titulo: 'Controlled Quoting', desc: 'The sales rep builds the proposal using locked price lists and pre-approved margins.' },
+            { step: '02', titulo: 'Approval Routing', desc: 'If the discount exceeds the threshold, Cord automatically routes the alert to Finance or the Regional Manager.' },
+            { step: '03', titulo: 'Cryptographic Closing', desc: 'The client signs digitally. Cord seals the final PDF guaranteeing its legal immutability.' },
+            { step: '04', titulo: 'ERP Sync', desc: 'Upon approval, Cord updates Salesforce and sends the payload to SAP/Oracle to trigger billing.' }
+        ],
+        pillars: [
+            {
+                titulo: 'Centralized Control',
+                desc: 'Define complex business rules and control margin in real-time through approval levels.',
+                link: 'Explore'
+            },
+            {
+                titulo: 'ERP Synchronization',
+                desc: 'Connect with SAP, Oracle NetSuite, or Microsoft Dynamics to trigger billing automatically.',
+                link: 'Explore'
+            },
+            {
+                titulo: 'Enterprise Security',
+                desc: 'Immutable cryptographic signatures and Role-Based Access Control (RBAC) to protect your pipeline.',
+                link: 'Explore'
+            }
+        ],
         stats: [
             { valor: '99.9', countup: 99.9, decimals: 1, suffix: '%', label: 'historical uptime on our infrastructure' },
             { valor: '10x', label: 'faster internal approvals' },
@@ -90,6 +131,48 @@ export const SOLUCIONES_EN: Solution[] = [
         metaDescription: 'Cord helps startups and fast-growing agencies send proposals, close clients with one click, and automate billing. Scale without bureaucracy.',
         paraQuien: 'Cord for Startups is designed for tech companies, digital agencies, and fast-growing businesses that need extreme speed to propose, iterate, and close clients without traditional administrative overhead.',
         dolor: 'You waste hours putting together proposals in PDFs that do not convert and billing by hand.',
+        useCases: [
+            {
+                title: 'Agencies & Consultancies',
+                desc: 'Send professional services proposals instantly, with binding electronic signatures, and automate recurring monthly retainer collection without friction.',
+                link: '/producto/pagos',
+                logos: [
+                    { name: 'Ogilvy', domain: 'ogilvy.com' },
+                    { name: 'Accenture', domain: 'accenture.com' },
+                    { name: 'IDEO', domain: 'ideo.com' }
+                ]
+            },
+            {
+                title: 'B2B SaaS',
+                desc: 'Manage subscriptions, custom contracts, and Enterprise plans. Integrate recurring payments and issue automated CFDI invoices without touching the SAT portal.',
+                link: '/producto/facturacion',
+                logos: [
+                    { name: 'Linear', domain: 'linear.app' },
+                    { name: 'Stripe', domain: 'stripe.com' },
+                    { name: 'Vercel', domain: 'vercel.com' }
+                ]
+            },
+            {
+                title: 'B2B Wholesale',
+                desc: 'Quote in volume, apply discounts through dynamic tiers, handle extensive catalogs, and automate large order billing upon payment confirmation.',
+                link: '/producto/cotizaciones',
+                logos: [
+                    { name: 'Grainger', domain: 'grainger.com' },
+                    { name: 'Uline', domain: 'uline.com' },
+                    { name: 'Fastenal', domain: 'fastenal.com' }
+                ]
+            },
+            {
+                title: 'Software Factories',
+                desc: 'Send custom development budgets, split payments by delivery milestones, and receive real-time notifications when the client approves the proposal.',
+                link: '/producto/aprobaciones',
+                logos: [
+                    { name: 'Cursor', domain: 'cursor.com' },
+                    { name: 'GitHub', domain: 'github.com' },
+                    { name: 'GitLab', domain: 'gitlab.com' }
+                ]
+            }
+        ],
         stats: [
             { valor: '2', countup: 2, suffix: ' min', label: 'to send a polished proposal' },
             { valor: '1', countup: 1, suffix: ' click', label: 'for your client to approve and pay' },
