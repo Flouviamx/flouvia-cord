@@ -154,18 +154,20 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                         <p class="integration-sub">{isEn ? 'Stripe offers a wide range of options to accept payments, from no-code and low-code options to powerful APIs.' : 'Cord ofrece una amplia gama de opciones para automatizar tus ventas, desde configuraciones visuales sin código hasta potentes API REST.'}</p>
                     </div>
 
-                    <div class="apple-tabs-container">
-                        <div class="apple-tabs-track" role="tablist">
-                            <div class="apple-tab-indicator"></div>
-                            <button class="apple-tab active" role="tab" aria-selected="true" data-target="tab-nocode">
+                    <div class="stripe-tabs-container">
+                        <div class="stripe-progress-track">
+                            <div class="stripe-progress-fill" id="stripe-progress-fill"></div>
+                        </div>
+                        <div class="stripe-tabs-buttons" role="tablist">
+                            <button class="stripe-tab active" role="tab" aria-selected="true" data-target="tab-nocode">
                                 <span class="tab-label">Sin código</span>
                                 <span class="tab-sub">Más rápido</span>
                             </button>
-                            <button class="apple-tab" role="tab" aria-selected="false" data-target="tab-lowcode">
+                            <button class="stripe-tab" role="tab" aria-selected="false" data-target="tab-lowcode">
                                 <span class="tab-label">Bajo código</span>
                                 <span class="tab-sub">Optimizado</span>
                             </button>
-                            <button class="apple-tab" role="tab" aria-selected="false" data-target="tab-api">
+                            <button class="stripe-tab" role="tab" aria-selected="false" data-target="tab-api">
                                 <span class="tab-label">API REST</span>
                                 <span class="tab-sub">Control total</span>
                             </button>
@@ -2361,53 +2363,65 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         line-height: 1.5;
     }
 
-    /* Apple Segmented Control / Tab Bar */
-    .apple-tabs-container {
+    /* Stripe Progress Bar Tabs */
+    .stripe-tabs-container {
         margin-bottom: 3rem;
-        border-bottom: 1px solid rgba(0,0,0,0.08); /* Clean thin line like Stripe */
-    }
-    .apple-tabs-track {
-        display: flex;
-        gap: 2rem;
         position: relative;
     }
-    .apple-tab {
+    .stripe-progress-track {
+        width: 100%;
+        height: 3px;
+        background: #e6e6e6; /* light gray background */
+        border-radius: 3px;
+        overflow: hidden;
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    .stripe-progress-fill {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 33.33%; /* updated via JS */
+        /* Vibrant cyan to purple gradient */
+        background: linear-gradient(90deg, #00C9FF 0%, #0071e3 50%, #8e43e7 100%);
+        transition: width 0.1s ease-out; /* smooth follow */
+    }
+    .stripe-tabs-buttons {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+    .stripe-tab {
         background: none;
         border: none;
-        padding: 1rem 0;
-        text-align: left;
+        padding: 0;
+        text-align: center;
+        flex: 1;
         cursor: pointer;
         position: relative;
-        z-index: 2;
-        color: #86868b;
+        color: #6b7280;
         transition: color 0.3s ease;
     }
-    .apple-tab.active {
-        color: #1d1d1f;
+    .stripe-tab.active {
+        color: #111827; /* dark text for active */
     }
-    .tab-label {
+    .stripe-tab .tab-label {
         display: block;
-        font-size: 1rem;
+        font-size: 1.05rem;
         font-weight: 700;
-        margin-bottom: 0.2rem;
+        margin-bottom: 0.3rem;
+        color: inherit;
     }
-    .tab-sub {
+    .stripe-tab .tab-sub {
         display: block;
         font-size: 0.85rem;
         font-weight: 500;
-        opacity: 0.8;
+        color: #9ca3af;
+        transition: color 0.3s ease;
     }
-    
-    /* The moving underline */
-    .apple-tab-indicator {
-        position: absolute;
-        bottom: -1px;
-        left: 0;
-        height: 2px;
-        background: #0071e3; /* Apple active blue */
-        transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-        border-radius: 2px 2px 0 0;
-        z-index: 3;
+    .stripe-tab.active .tab-sub {
+        color: #6b7280;
     }
 
     /* Content Carousel */
@@ -2551,27 +2565,38 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
             });
         }
         
-        // Integration ScrollSpy Carousel
-        const intTabs = document.querySelectorAll('.apple-tab');
-        const intIndicator = document.querySelector('.apple-tab-indicator');
+        // Integration ScrollSpy Carousel with Progress Bar
+        const stripeTabs = document.querySelectorAll('.stripe-tab');
+        const progressFill = document.getElementById('stripe-progress-fill');
         const intScrollTrack = document.getElementById('integration-scroll');
         const intCards = document.querySelectorAll('.int-card');
 
-        function updateIntIndicator(activeTab) {
-            if (!activeTab || !intIndicator) return;
-            const left = activeTab.offsetLeft;
-            const width = activeTab.offsetWidth;
-            intIndicator.style.left = `${left}px`;
-            intIndicator.style.width = `${width}px`;
-        }
+        if (stripeTabs.length > 0 && intScrollTrack && progressFill) {
+            
+            // Calculate and set progress based on scroll
+            const updateProgress = () => {
+                const maxScroll = intScrollTrack.scrollWidth - intScrollTrack.clientWidth;
+                if (maxScroll <= 0) {
+                    progressFill.style.width = '100%';
+                    return;
+                }
+                const scrollLeft = intScrollTrack.scrollLeft;
+                
+                const numTabs = stripeTabs.length;
+                const baseWidth = 100 / numTabs;
+                const percentage = (scrollLeft / maxScroll);
+                const width = baseWidth + (percentage * (100 - baseWidth));
+                
+                progressFill.style.width = `${width}%`;
+            };
 
-        if (intTabs.length > 0 && intScrollTrack) {
-            setTimeout(() => {
-                updateIntIndicator(document.querySelector('.apple-tab.active'));
-            }, 100);
+            intScrollTrack.addEventListener('scroll', () => {
+                requestAnimationFrame(updateProgress);
+            });
+            updateProgress(); // init
 
             // Click to scroll
-            intTabs.forEach(tab => {
+            stripeTabs.forEach(tab => {
                 tab.addEventListener('click', () => {
                     const targetId = tab.getAttribute('data-target');
                     const firstCard = intScrollTrack.querySelector(`[data-tab-group="${targetId}"]`);
@@ -2585,7 +2610,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                 });
             });
 
-            // Scroll to update tab
+            // Intersection Observer to highlight active text
             const observerOptions = {
                 root: intScrollTrack,
                 rootMargin: '0px',
@@ -2596,21 +2621,16 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         const groupId = entry.target.getAttribute('data-tab-group');
-                        const correspondingTab = document.querySelector(`.apple-tab[data-target="${groupId}"]`);
+                        const correspondingTab = document.querySelector(`.stripe-tab[data-target="${groupId}"]`);
                         if (correspondingTab && !correspondingTab.classList.contains('active')) {
-                            intTabs.forEach(t => t.classList.remove('active'));
+                            stripeTabs.forEach(t => t.classList.remove('active'));
                             correspondingTab.classList.add('active');
-                            updateIntIndicator(correspondingTab);
                         }
                     }
                 });
             }, observerOptions);
 
             intCards.forEach(card => observer.observe(card));
-            
-            window.addEventListener('resize', () => {
-                updateIntIndicator(document.querySelector('.apple-tab.active'));
-            });
         }
     });
 </script>
