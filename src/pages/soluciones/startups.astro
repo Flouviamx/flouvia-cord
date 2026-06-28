@@ -181,11 +181,18 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                             </div>
                             <div class="int-card-graphic">
                                 <div class="mock-ui">
-                                    <div class="graphic-widget">
-                                        <div class="graphic-widget-line short"></div>
-                                        <div class="graphic-widget-line"></div>
-                                        <div class="graphic-widget-line"></div>
-                                        <div class="graphic-widget-btn"></div>
+                                    <div class="int-mini-card" style="width: 75%; padding: 14px;">
+                                        <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 12px; text-transform: uppercase;">Catálogo</div>
+                                        <div style="display: flex; gap: 10px; margin-bottom: 12px; align-items: center;">
+                                            <div style="width: 28px; height: 28px; background: #e2e8f0; border-radius: 6px;"></div>
+                                            <div style="flex: 1;">
+                                                <div style="font-size: 12px; color: #0f172a; font-weight: 600; line-height: 1.2;">Licencia Anual</div>
+                                                <div style="font-size: 11px; color: #64748b;">$990.00 / mes</div>
+                                            </div>
+                                        </div>
+                                        <div style="border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px; text-align: center; color: #94a3b8; font-size: 11px; font-weight: 500; background: #f8fafc;">
+                                            + Arrastrar producto
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -197,12 +204,28 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                 <a href="/producto/pagos" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
                             </div>
                             <div class="int-card-graphic">
-                                <div class="mock-ui">
-                                    <div class="graphic-widget">
-                                        <div class="graphic-widget-line"></div>
-                                        <div class="graphic-widget-line short"></div>
-                                        <div class="graphic-widget-line"></div>
-                                        <div class="graphic-widget-btn" style="background: #10b981;"></div>
+                                <div class="mock-ui" style="flex-direction: row; gap: 16px; padding: 0 20px;">
+                                    <div class="int-mini-card" style="flex: 1; padding: 12px; align-self: flex-start; margin-top: 20px;">
+                                        <div style="background: #f1f5f9; padding: 10px; border-radius: 12px 12px 12px 0; font-size: 10px; color: #475569; margin-bottom: 8px; max-width: 90%;">
+                                            Hola, necesito renovar.
+                                        </div>
+                                        <div style="background: #0ea5e9; padding: 10px; border-radius: 12px 12px 0 12px; font-size: 10px; color: #fff; margin-left: auto; max-width: 95%;">
+                                            ¡Claro! Aquí tienes: <br/><strong>cord.mx/pay/123</strong>
+                                        </div>
+                                    </div>
+                                    <div class="int-mini-card" style="width: 80px; padding: 12px; text-align: center; align-self: flex-end; margin-bottom: 20px;">
+                                        <div style="font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">$990</div>
+                                        <div style="width: 50px; height: 50px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;">
+                                            <div style="background: #0f172a; border-radius: 2px;"></div>
+                                            <div style="background: #0f172a; border-radius: 2px;"></div>
+                                            <div style="background: #0ea5e9; border-radius: 2px;"></div>
+                                            <div style="background: transparent;"></div>
+                                            <div style="background: #0f172a; border-radius: 2px;"></div>
+                                            <div style="background: transparent;"></div>
+                                            <div style="background: #0ea5e9; border-radius: 2px;"></div>
+                                            <div style="background: transparent;"></div>
+                                            <div style="background: #0f172a; border-radius: 2px;"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -217,10 +240,14 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                             </div>
                             <div class="int-card-graphic">
                                 <div class="mock-ui">
-                                    <div class="graphic-nodes">
-                                        <div class="graphic-node"><div class="graphic-node-dot"></div></div>
-                                        <div class="graphic-connection"></div>
-                                        <div class="graphic-node"><div class="graphic-node-dot"></div></div>
+                                    <div style="display: flex; align-items: center; gap: 16px;">
+                                        <div class="int-mini-card" style="width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: #0f172a; color: #fff;">
+                                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                        </div>
+                                        <svg width="40" height="20" style="color: #94a3b8;"><path d="M0 10h40" stroke="currentColor" stroke-width="3" stroke-dasharray="6 6" fill="none"/></svg>
+                                        <div class="int-mini-card" style="width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: #ff4a00; color: #fff; font-weight: 900; font-size: 24px; border:none;">
+                                            Z
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -233,10 +260,14 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                             </div>
                             <div class="int-card-graphic">
                                 <div class="mock-ui">
-                                    <div class="graphic-nodes">
-                                        <div class="graphic-node"><div class="graphic-node-dot"></div></div>
-                                        <div class="graphic-connection"></div>
-                                        <div class="graphic-node"><div class="graphic-node-dot"></div></div>
+                                    <div class="int-mini-card" style="width: 85%; padding: 16px; background: #0f172a; border-color: #1e293b;">
+                                        <div style="font-family: 'SF Mono', Consolas, monospace; font-size: 11px; line-height: 1.6; color: #e2e8f0;">
+                                            <div style="color: #10b981; font-weight: 600; margin-bottom: 8px;">POST /webhook 200 OK</div>
+                                            <div style="color: #64748b;">{</div>
+                                            <div style="margin-left: 12px;"><span style="color: #38bdf8;">"type"</span>: <span style="color: #a3e635;">"payment.paid"</span>,</div>
+                                            <div style="margin-left: 12px;"><span style="color: #38bdf8;">"amount"</span>: <span style="color: #fb923c;">990.00</span></div>
+                                            <div style="color: #64748b;">}</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -251,12 +282,12 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                             </div>
                             <div class="int-card-graphic">
                                 <div class="mock-ui">
-                                    <div class="graphic-code">
-                                        <div class="graphic-code-line"></div>
-                                        <div class="graphic-code-line"></div>
-                                        <div class="graphic-code-line"></div>
-                                        <div class="graphic-code-line"></div>
-                                        <div class="graphic-code-line"></div>
+                                    <div class="int-mini-card" style="width: 85%; padding: 16px; background: #0f172a; border-color: #1e293b;">
+                                        <div style="font-family: 'SF Mono', Consolas, monospace; font-size: 11px; line-height: 1.6; color: #e2e8f0;">
+                                            <div><span style="color: #fb923c;">curl</span> -X POST https://api.cord.mx \</div>
+                                            <div style="margin-left: 12px;">-H <span style="color: #a3e635;">"Auth: Bearer sk_..."</span> \</div>
+                                            <div style="margin-left: 12px;">-d <span style="color: #a3e635;">'{"amount": 990}'</span></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -269,11 +300,14 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                             </div>
                             <div class="int-card-graphic">
                                 <div class="mock-ui">
-                                    <div class="graphic-code">
-                                        <div class="graphic-code-line" style="width: 40%; background: #0ea5e9;"></div>
-                                        <div class="graphic-code-line" style="width: 50%; background: #10b981; margin-left: 16px;"></div>
-                                        <div class="graphic-code-line" style="width: 30%; background: #6366f1; margin-left: 16px;"></div>
-                                        <div class="graphic-code-line" style="width: 60%; background: #94a3b8;"></div>
+                                    <div class="int-mini-card" style="width: 85%; padding: 16px; background: #0f172a; border-color: #1e293b;">
+                                        <div style="font-family: 'SF Mono', Consolas, monospace; font-size: 11px; line-height: 1.6; color: #e2e8f0;">
+                                            <div><span style="color: #c586c0;">import</span> cord</div>
+                                            <div style="margin-top: 8px;">cord = Cord(<span style="color: #a3e635;">'sk_test...'</span>)</div>
+                                            <div>quote = cord.quotes.create(</div>
+                                            <div style="margin-left: 12px; color: #9cdcfe;">customer=<span style="color: #a3e635;">'cus_01'</span></div>
+                                            <div>)</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -2710,78 +2744,18 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         justify-content: center;
     }
     
-    /* Blue - No Code (UI Widgets) */
-    .graphic-widget {
-        width: 180px;
+    .int-mini-card {
         background: #ffffff;
         border-radius: 12px;
         box-shadow: 0 12px 24px rgba(0,0,0,0.06), 0 4px 8px rgba(0,0,0,0.03);
         border: 1px solid rgba(0,0,0,0.04);
-        padding: 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        transform: translateY(10px);
-        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s;
+        font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
     }
-    .int-card:hover .graphic-widget {
-        transform: translateY(0);
+    .int-card:hover .int-mini-card {
+        transform: translateY(-4px) scale(1.02) !important;
+        box-shadow: 0 16px 32px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
     }
-    .graphic-widget-line { height: 8px; border-radius: 4px; background: #f1f5f9; }
-    .graphic-widget-line.short { width: 50%; background: #0ea5e9; }
-    .graphic-widget-btn { height: 28px; border-radius: 6px; background: #0ea5e9; margin-top: 8px; }
-
-    /* Purple -> Cyan/Blue - Low Code (Nodes/Webhooks) */
-    .graphic-nodes {
-        display: flex;
-        align-items: center;
-        gap: 24px;
-        transform: scale(0.95);
-        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .int-card:hover .graphic-nodes { transform: scale(1.05); }
-    .graphic-node {
-        width: 56px; height: 56px;
-        border-radius: 14px;
-        background: #ffffff;
-        box-shadow: 0 8px 16px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.03);
-        border: 1px solid rgba(0,0,0,0.04);
-        display: flex; align-items: center; justify-content: center;
-        position: relative;
-        z-index: 2;
-    }
-    .graphic-node-dot { width: 24px; height: 24px; border-radius: 6px; background: #6366f1; }
-    .graphic-connection {
-        width: 60px; height: 3px;
-        background: repeating-linear-gradient(90deg, #cbd5e1 0, #cbd5e1 8px, transparent 8px, transparent 16px);
-        animation: march 0.8s linear infinite;
-        opacity: 0.8;
-        z-index: 1;
-        margin: 0 -15px;
-    }
-    @keyframes march { to { background-position: 16px 0; } }
-
-    /* Orange -> Dark Navy - API (Code Window) */
-    .graphic-code {
-        width: 75%;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        transform: translateY(10px);
-        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-        padding: 20px;
-        background: #ffffff;
-        border-radius: 12px;
-        box-shadow: 0 12px 24px rgba(0,0,0,0.06), 0 4px 8px rgba(0,0,0,0.03);
-        border: 1px solid rgba(0,0,0,0.04);
-    }
-    .int-card:hover .graphic-code { transform: translateY(0); }
-    .graphic-code-line { height: 8px; border-radius: 4px; background: #f1f5f9; }
-    .graphic-code-line:nth-child(1) { width: 35%; background: #0ea5e9; }
-    .graphic-code-line:nth-child(2) { width: 65%; background: #10b981; margin-left: 16px; }
-    .graphic-code-line:nth-child(3) { width: 55%; background: #10b981; margin-left: 16px; }
-    .graphic-code-line:nth-child(4) { width: 45%; background: #6366f1; margin-left: 16px; }
-    .graphic-code-line:nth-child(5) { width: 25%; background: #94a3b8; }
 
     /* ── CORD APPS MARQUEE ── */
     .cord-apps-section {
