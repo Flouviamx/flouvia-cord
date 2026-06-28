@@ -1,0 +1,162 @@
+---
+export const prerender = true;
+---
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mockups de Correos - Cord</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 40px;
+            color: #334155;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #0f172a;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .mockup-container {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        }
+        .mockup-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #0f172a;
+        }
+        .email-wrapper {
+            background-color: #F9FAFB;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <h1>Mockups de Correos Transaccionales</h1>
+    <div class="grid">
+        
+        <!-- 1. Cotización -->
+        <div class="mockup-container">
+            <h2 class="mockup-title">1. Envío de Cotización (Cliente)</h2>
+            <div class="email-wrapper">
+                <div style="background-color:#F9FAFB;padding:40px 20px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;">
+                    <div style="max-width:560px;margin:0 auto;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);border:1px solid #E5E7EB;">
+                        <div style="padding:40px;">
+                            <p style="font-size:16px;color:#1F2937;margin-top:0;">Estimado equipo de <b>Acme Corp</b>,</p>
+                            <p style="font-size:16px;line-height:1.6;color:#4B5563;margin-bottom:32px;">Flouvia le comparte la cotización <b>COT-2026-001</b> por <b>$54,300.00</b>. Puede revisarla, dejar comentarios y aprobarla en línea:</p>
+                            
+                            <div style="text-align:center;margin:32px 0;">
+                                <a href="#" style="display:inline-block;background-color:#0a192f;color:#ffffff;text-decoration:none;font-weight:600;font-size:16px;padding:14px 28px;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,0.05);">Ver cotización COT-2026-001</a>
+                            </div>
+                            
+                            <p style="font-size:14px;color:#6B7280;line-height:1.5;word-break:break-all;">O copie este enlace en su navegador:<br><a href="#" style="color:#0a192f;text-decoration:underline;">https://cord.flouvia.com/q/mock-token-123</a></p>
+                            
+                            <div style="margin-top:32px;padding-top:24px;border-top:1px solid #F3F4F6;"><p style="font-size:15px;color:#4B5563;line-height:1.6;margin:0;">Gracias por su preferencia, quedamos a su disposición para cualquier duda.</p></div>
+                            <div style="margin-top:24px;"><p style="font-size:15px;color:#4B5563;line-height:1.6;margin:0;">Atentamente,<br>Equipo de Ventas</p></div>
+                        </div>
+                        <div style="background-color:#F9FAFB;padding:24px 40px;border-top:1px solid #E5E7EB;text-align:center;">
+                            <p style="font-size:13px;color:#9CA3AF;margin:0;">Flouvia · enviado con Cord</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Ventas Interno -->
+        <div class="mockup-container">
+            <h2 class="mockup-title">2. Aviso de Contacto (Interno a Ventas)</h2>
+            <div class="email-wrapper">
+                <div style="background-color:#F9FAFB;padding:40px 20px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;">
+                    <div style="max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);border:1px solid #E5E7EB;">
+                        <div style="background-color:#0a192f;padding:24px 40px;">
+                            <p style="font-size:14px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin:0;">Nuevo prospecto B2B</p>
+                        </div>
+                        <div style="padding:40px;">
+                            <p style="font-size:18px;color:#1F2937;margin-top:0;line-height:1.5;"><b>Juan Pérez</b> de <b>Industrias Globales</b> ha solicitado contactar a ventas.</p>
+                            
+                            <table style="width:100%;margin-top:32px;border-collapse:collapse;font-size:15px;line-height:1.6;text-align:left;">
+                                <tr style="border-bottom:1px solid #F3F4F6;"><td style="width:150px;color:#6B7280;padding:12px 0;">Nombre</td><td style="color:#1F2937;font-weight:500;">Juan Pérez</td></tr>
+                                <tr style="border-bottom:1px solid #F3F4F6;"><td style="color:#6B7280;padding:12px 0;">Correo</td><td><a href="mailto:juan@ejemplo.com" style="color:#2563eb;text-decoration:none;">juan@ejemplo.com</a></td></tr>
+                                <tr style="border-bottom:1px solid #F3F4F6;"><td style="color:#6B7280;padding:12px 0;">Cargo</td><td style="color:#1F2937;">Director de Compras</td></tr>
+                                <tr style="border-bottom:1px solid #F3F4F6;"><td style="color:#6B7280;padding:12px 0;">Empresa</td><td style="color:#1F2937;">Industrias Globales</td></tr>
+                                <tr style="border-bottom:1px solid #F3F4F6;"><td style="color:#6B7280;padding:12px 0;">ERP actual</td><td style="color:#1F2937;">SAP Business One</td></tr>
+                                <tr><td style="color:#6B7280;padding:12px 0;">Volumen B2B</td><td style="color:#1F2937;font-weight:500;">$10M - $50M MXN</td></tr>
+                            </table>
+                            
+                            <div style="margin-top:32px;background-color:#F8FAFC;padding:24px;border-radius:12px;border:1px solid #E2E8F0;"><p style="color:#64748B;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin:0 0 12px;">Retos principales</p><p style="font-size:15px;line-height:1.6;color:#334155;margin:0;white-space:pre-wrap;">Tenemos problemas gestionando nuestras cotizaciones porque el equipo comercial tarda demasiado en generarlas manualmente en PDF. Necesitamos algo más rápido.</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Ventas Ack -->
+        <div class="mockup-container">
+            <h2 class="mockup-title">3. Confirmación de Contacto (Prospecto)</h2>
+            <div class="email-wrapper">
+                <div style="background-color:#F9FAFB;padding:40px 20px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;">
+                    <div style="max-width:560px;margin:0 auto;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);border:1px solid #E5E7EB;">
+                        <div style="padding:40px;">
+                            <p style="font-size:18px;color:#1F2937;margin-top:0;font-weight:600;">Cord</p>
+                            <p style="font-size:16px;color:#1F2937;margin-top:24px;">Hola Juan,</p>
+                            <p style="font-size:16px;line-height:1.6;color:#4B5563;">Gracias por contactar al equipo de <b>Cord</b>. Recibimos tu información y un especialista se pondrá en contacto contigo muy pronto para entender cómo podemos ayudar a Industrias Globales a digitalizar sus cotizaciones y pedidos B2B.</p>
+                            
+                            <div style="margin-top:32px;padding-top:32px;border-top:1px solid #F3F4F6;">
+                                <p style="font-size:15px;line-height:1.6;color:#4B5563;margin:0;">Mientras tanto, puedes explorar la plataforma en nuestro sitio:<br><a href="https://cord.flouvia.com" style="color:#2563eb;text-decoration:none;font-weight:500;">cord.flouvia.com</a></p>
+                            </div>
+                        </div>
+                        <div style="background-color:#F9FAFB;padding:24px 40px;border-top:1px solid #E5E7EB;text-align:center;">
+                            <p style="font-size:13px;color:#9CA3AF;margin:0;">Equipo Cord · Flouvia · Hecho en México</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Cobranza IA -->
+        <div class="mockup-container">
+            <h2 class="mockup-title">4. Recordatorio de Cobranza (Agente IA)</h2>
+            <div class="email-wrapper">
+                <div style="background-color:#F9FAFB;padding:40px 20px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;">
+                    <div style="max-width:560px;margin:0 auto;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);border:1px solid #E5E7EB;">
+                        <div style="padding:40px;">
+                            <div style="font-size:16px;line-height:1.6;color:#374151;white-space:pre-wrap;">Hola María,
+
+Espero que te encuentres muy bien.
+
+Te escribo para recordarte amablemente que la factura F-4589 por un monto de $12,500.00 MXN venció hace 3 días. Entendemos que a veces hay retrasos administrativos, ¿podrías apoyarnos revisando el estatus de este pago?
+
+Si tienes alguna duda o necesitas que te reenviemos la factura, no dudes en decirnos.
+
+¡Que tengas excelente día!</div>
+                        </div>
+                        <div style="background-color:#F9FAFB;padding:24px 40px;border-top:1px solid #E5E7EB;text-align:center;">
+                            <p style="font-size:13px;color:#9CA3AF;margin:0;">Enviado vía Cord</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
