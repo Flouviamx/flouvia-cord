@@ -56,6 +56,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
             </div>
             
             <div class="stripe-hero-content stripe-container">
+                <span class="stripe-hero-eyebrow reveal">{solucion.eyebrow}</span>
                 <h1 class="stripe-title" set:html={solucion.titulo} />
                 
                 <p class="stripe-sub">{solucion.sub}</p>
@@ -73,27 +74,61 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
             </div>
         </header>
 
-        <!-- ── LOGO CLOUD (Stripe Style) ── -->
-        <section class="stripe-clients reveal">
-            <div class="stripe-container">
-                <p class="stripe-clients-title">
-                    {isEn ? 'Over 100 industry leaders trust Cord to scale their operations' : 'Más de 100 empresas líderes en su sector confían en Cord para escalar su operación'}
-                </p>
-                <div class="stripe-logo-grid">
-                    {clientLogos.map(logo => (
-                        <div class="stripe-logo">{logo}</div>
+        <!-- ── INTEGRATIONS MARQUEE (Stripe Style) ── -->
+        {solucion.integrations && (
+            <div class="stripe-integrations-ticker reveal">
+                <div class="stripe-ticker-track">
+                    {[1, 2].map(() => (
+                        <div class="stripe-ticker-tape">
+                            {solucion.integrations.map(int => (
+                                <div class="stripe-ticker-item">
+                                    <div class="stripe-ticker-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="4"/><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
+                                    </div>
+                                    <span class="stripe-ticker-name">{int.name}</span>
+                                </div>
+                            ))}
+                        </div>
                     ))}
                 </div>
             </div>
-        </section>
+        )}
 
-        <!-- ── PREMIUM PILLARS (Pro Features) ── -->
-        <ProFeatures />
+        <!-- ── WORKFLOW / ARCHITECTURE ── -->
+        {solucion.workflow && (
+            <section class="stripe-workflow-section">
+                <div class="stripe-container">
+                    <div class="stripe-workflow-header reveal">
+                        <span class="stripe-section-eyebrow">ARQUITECTURA</span>
+                        <h2 class="stripe-h2">Un flujo de extremo a extremo</h2>
+                        <p class="stripe-p">Desde el primer clic hasta la conciliación contable, automatizado.</p>
+                    </div>
+
+                    <div class="stripe-workflow-grid">
+                        {solucion.workflow.map((w, i) => (
+                            <div class="stripe-workflow-card reveal">
+                                <div class="stripe-workflow-step">{w.step}</div>
+                                <div class="stripe-workflow-content">
+                                    <h3>{w.titulo}</h3>
+                                    <p>{w.desc}</p>
+                                </div>
+                                {i < solucion.workflow.length - 1 && (
+                                    <div class="stripe-workflow-connector">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"><path d="M5 12h14m-4-4l4 4-4 4"/></svg>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+        )}
 
         <!-- ── BENTO GRID FEATURES ── -->
         <section class="stripe-bento-section">
             <div class="stripe-container">
                 <div class="stripe-section-header reveal">
+                    <span class="stripe-section-eyebrow">CAPACIDADES CORE</span>
                     <h2 class="stripe-h2">{isEn ? 'A complete ecosystem for your commercial process' : 'Un ecosistema completo para tu proceso comercial'}</h2>
                     <p class="stripe-p">{solucion.paraQuien}</p>
                 </div>
@@ -116,6 +151,32 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                 </div>
             </div>
         </section>
+
+        <!-- ── SECURITY / TRUST CENTER ── -->
+        {solucion.security && (
+            <section class="stripe-security-section">
+                <div class="stripe-security-bg"></div>
+                <div class="stripe-container" style="position:relative; z-index:10;">
+                    <div class="stripe-security-header reveal">
+                        <span class="stripe-section-eyebrow stripe-eyebrow-light">{solucion.security.eyebrow}</span>
+                        <h2 class="stripe-h2 text-white">{solucion.security.titulo}</h2>
+                        <p class="stripe-p text-white-muted">{solucion.security.copy}</p>
+                    </div>
+
+                    <div class="stripe-security-grid">
+                        {solucion.security.features.map(f => (
+                            <div class="stripe-security-card reveal">
+                                <div class="stripe-sec-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M8 11l3 3 5-5"/></svg>
+                                </div>
+                                <h4 class="stripe-sec-title">{f.title}</h4>
+                                <p class="stripe-sec-desc">{f.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+        )}
 
         <!-- ── STATS (Stripe Metric Cards) ── -->
         <section class="stripe-stats-section reveal">
@@ -918,5 +979,234 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
             flex-direction: column;
             gap: 2rem;
         }
+    /* ════════════════════════════════════════════════════════════════
+       NUEVAS SECCIONES STRIPE ENTERPRISE
+    ════════════════════════════════════════════════════════════════ */
+    
+    .stripe-hero-eyebrow {
+        color: var(--stripe-cyan);
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+        background: rgba(59, 130, 246, 0.15);
+        padding: 4px 12px;
+        border-radius: 100px;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        display: inline-block;
+    }
+
+    .stripe-section-eyebrow {
+        color: var(--stripe-cyan);
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+        display: block;
+    }
+    
+    .stripe-eyebrow-light {
+        color: #818cf8; /* Indigo light */
+    }
+
+    .text-white { color: #fff !important; }
+    .text-white-muted { color: rgba(255,255,255,0.7) !important; }
+
+    /* ── INTEGRATIONS TICKER ── */
+    .stripe-integrations-ticker {
+        position: relative;
+        z-index: 20;
+        margin-top: -60px;
+        margin-bottom: 4rem;
+        background: rgba(255,255,255,0.8);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 1px solid var(--stripe-border);
+        border-bottom: 1px solid var(--stripe-border);
+        padding: 24px 0;
+        overflow: hidden;
+    }
+    
+    .stripe-ticker-track {
+        display: flex;
+        width: max-content;
+        animation: marquee 30s linear infinite;
+    }
+    
+    .stripe-ticker-tape {
+        display: flex;
+        align-items: center;
+        gap: 60px;
+        padding-right: 60px;
+    }
+    
+    .stripe-ticker-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        opacity: 0.6;
+        transition: opacity 0.3s;
+    }
+    
+    .stripe-ticker-item:hover {
+        opacity: 1;
+    }
+    
+    .stripe-ticker-icon {
+        color: var(--stripe-accent);
+        width: 24px; height: 24px;
+    }
+    
+    .stripe-ticker-name {
+        font-weight: 600;
+        font-size: 1.1rem;
+        letter-spacing: -0.02em;
+        color: var(--stripe-text);
+    }
+    
+    @keyframes marquee {
+        to { transform: translateX(-50%); }
+    }
+
+    /* ── WORKFLOW ── */
+    .stripe-workflow-section {
+        padding: 6rem 0;
+        position: relative;
+        z-index: 10;
+        background: linear-gradient(180deg, var(--stripe-bg) 0%, #f8fafc 100%);
+    }
+    
+    .stripe-workflow-header {
+        margin-bottom: 4rem;
+        text-align: center;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .stripe-workflow-grid {
+        display: flex;
+        gap: 24px;
+        justify-content: space-between;
+        position: relative;
+    }
+    
+    .stripe-workflow-card {
+        flex: 1;
+        background: var(--stripe-card-bg);
+        border: 1px solid var(--stripe-border);
+        border-radius: 16px;
+        padding: 2rem;
+        position: relative;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .stripe-workflow-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+    }
+    
+    .stripe-workflow-step {
+        font-family: var(--font-mono, monospace);
+        color: var(--stripe-cyan);
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        background: rgba(59, 130, 246, 0.1);
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 6px;
+    }
+    
+    .stripe-workflow-content h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        color: var(--stripe-text);
+    }
+    
+    .stripe-workflow-content p {
+        font-size: 0.95rem;
+        color: var(--stripe-muted);
+        line-height: 1.5;
+    }
+    
+    .stripe-workflow-connector {
+        position: absolute;
+        top: 50%;
+        right: -32px;
+        width: 40px;
+        transform: translateY(-50%);
+        color: rgba(10, 25, 47, 0.15);
+        z-index: -1;
+    }
+
+    /* ── SECURITY ── */
+    .stripe-security-section {
+        position: relative;
+        padding: 8rem 0;
+        margin: 4rem 0;
+        overflow: hidden;
+    }
+    
+    .stripe-security-bg {
+        position: absolute;
+        inset: 0;
+        background: #0a192f;
+        transform: skewY(-4deg);
+        transform-origin: top left;
+        z-index: 0;
+    }
+    
+    .stripe-security-bg::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 80% 20%, rgba(99, 102, 241, 0.2) 0%, transparent 60%);
+    }
+    
+    .stripe-security-header {
+        margin-bottom: 4rem;
+        max-width: 600px;
+    }
+    
+    .stripe-security-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+    }
+    
+    .stripe-security-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px;
+        padding: 2rem;
+        backdrop-filter: blur(10px);
+    }
+    
+    .stripe-sec-icon {
+        color: #818cf8;
+        width: 32px; height: 32px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stripe-sec-title {
+        color: #fff;
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+    }
+    
+    .stripe-sec-desc {
+        color: rgba(255,255,255,0.7);
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+    
+    @media (max-width: 992px) {
+        .stripe-workflow-grid { flex-direction: column; }
+        .stripe-workflow-connector { display: none; }
+        .stripe-security-grid { grid-template-columns: 1fr; }
     }
 </style>

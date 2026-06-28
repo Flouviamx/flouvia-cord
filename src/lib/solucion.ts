@@ -29,6 +29,28 @@ export interface SolLink {
     label: string;       // ancla del link
 }
 
+export interface SolIntegration {
+    name: string;
+}
+
+export interface SolSecurityFeature {
+    title: string;
+    desc: string;
+}
+
+export interface SolSecurity {
+    eyebrow: string;
+    titulo: string;
+    copy: string;
+    features: SolSecurityFeature[];
+}
+
+export interface SolWorkflowStep {
+    step: string;
+    titulo: string;
+    desc: string;
+}
+
 export interface Solution {
     slug: string;
     nav: string;              // nombre corto (megamenú, hub, cross-links)
@@ -41,6 +63,12 @@ export interface Solution {
     dolor: string;           // el dolor principal
     stats: SolStat[];
     blocks: SolBlock[];
+    
+    // Novedades para el rediseño Stripe Enterprise:
+    integrations?: SolIntegration[];
+    security?: SolSecurity;
+    workflow?: SolWorkflowStep[];
+
     resultado?: {            // caso de uso real con métricas (AI-SEO)
         cliente: string;
         metricas: { valor: string; label: string }[];
@@ -62,6 +90,34 @@ export const SOLUCIONES: Solution[] = [
         metaDescription: 'Plataforma empresarial para escalar procesos de cotización, controlar listas de precios por volumen y gestionar aprobaciones de crédito con seguridad y cumplimiento.',
         paraQuien: 'Cord para Empresas está diseñado para corporativos, distribuidores a gran escala y empresas B2B consolidadas que manejan grandes volúmenes de propuestas, requieren control estricto sobre precios y márgenes, y necesitan visibilidad total sobre el pipeline de ventas.',
         dolor: 'Los procesos comerciales descentralizados causan fugas de margen y pérdida de visibilidad en el cierre.',
+        
+        integrations: [
+            { name: 'SAP' },
+            { name: 'Salesforce' },
+            { name: 'Oracle NetSuite' },
+            { name: 'HubSpot' },
+            { name: 'Microsoft Dynamics' }
+        ],
+
+        security: {
+            eyebrow: 'TRUST CENTER',
+            titulo: 'Seguridad y Compliance de Grado Bancario',
+            copy: 'Las grandes empresas no pueden permitirse riesgos en sus flujos financieros. Cord está construido desde sus cimientos bajo los más altos estándares de seguridad operativa e infraestructura cloud.',
+            features: [
+                { title: 'SSO & SAML', desc: 'Conecta Cord con Okta, Azure AD o Google Workspace para control de acceso unificado.' },
+                { title: 'Firmas SHA-256', desc: 'Cada cotización aprobada genera un hash criptográfico inmutable en nuestros servidores.' },
+                { title: 'RBAC Avanzado', desc: 'Roles y permisos granulares. Define quién puede ver qué y quién puede aprobar descuentos.' },
+                { title: 'Data Residency', desc: 'Tus datos encriptados en reposo (AES-256) y en tránsito (TLS 1.3).' }
+            ]
+        },
+
+        workflow: [
+            { step: '01', titulo: 'Cotización Controlada', desc: 'El vendedor arma la propuesta usando listas de precios bloqueadas y márgenes preaprobados.' },
+            { step: '02', titulo: 'Routing de Aprobación', desc: 'Si el descuento excede el umbral, Cord enruta la alerta a Finanzas o al Gerente Regional automáticamente.' },
+            { step: '03', titulo: 'Cierre Criptográfico', desc: 'El cliente firma digitalmente. Cord sella el PDF final garantizando su inmutabilidad legal.' },
+            { step: '04', titulo: 'Sincronización ERP', desc: 'Al aprobarse, Cord actualiza Salesforce y manda el payload a SAP/Oracle para disparar la facturación.' }
+        ],
+
         stats: [
             { valor: '99.9', countup: 99.9, decimals: 1, suffix: '%', label: 'de uptime histórico en nuestra infraestructura' },
             { valor: '10x', label: 'más velocidad en aprobaciones internas' },
@@ -139,6 +195,34 @@ export const SOLUCIONES: Solution[] = [
         metaDescription: 'Cord ayuda a startups y agencias de crecimiento rápido a enviar propuestas, cerrar clientes con un clic y automatizar la facturación. Escala sin burocracia.',
         paraQuien: 'Cord para Startups está diseñado para empresas de tecnología, agencias digitales y negocios de rápido crecimiento que necesitan velocidad extrema para proponer, iterar y cerrar clientes sin la sobrecarga administrativa tradicional.',
         dolor: 'Pierdes horas armando propuestas en PDFs que no convierten y facturando a mano.',
+        
+        integrations: [
+            { name: 'Stripe' },
+            { name: 'Slack' },
+            { name: 'Zapier' },
+            { name: 'HubSpot' },
+            { name: 'Make' }
+        ],
+
+        security: {
+            eyebrow: 'CONFIANZA',
+            titulo: 'Protección de Datos Garantizada',
+            copy: 'Construimos Cord pensando en la velocidad sin comprometer tu información ni la de tus clientes.',
+            features: [
+                { title: 'Encriptación', desc: 'Tus datos viajan cifrados bajo los estándares más modernos de TLS.' },
+                { title: 'Backups Diarios', desc: 'Respaldos automatizados para que nunca pierdas una propuesta.' },
+                { title: 'Autenticación Segura', desc: 'Manejo de sesiones y tokens seguros en cada inicio de sesión.' },
+                { title: 'Timbrado CFDI Oficial', desc: 'Facturación directa con el SAT, sin intermediarios riesgosos.' }
+            ]
+        },
+
+        workflow: [
+            { step: '01', titulo: 'Propuesta Mágica', desc: 'Clonas una plantilla prearmada y ajustas precios en segundos.' },
+            { step: '02', titulo: 'Envío sin Fricción', desc: 'El cliente recibe un link web, revisa el plan y acepta con un solo clic.' },
+            { step: '03', titulo: 'Checkout', desc: 'Opcionalmente cobras al instante conectando tu cuenta de Stripe.' },
+            { step: '04', titulo: 'CFDI 4.0 Automático', desc: 'Emitimos la factura y se la mandamos al cliente. Cero burocracia.' }
+        ],
+
         stats: [
             { valor: '2', countup: 2, suffix: ' min', label: 'para enviar una propuesta pulida' },
             { valor: '1', countup: 1, suffix: ' clic', label: 'para que tu cliente apruebe y pague' },
