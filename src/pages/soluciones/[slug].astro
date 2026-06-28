@@ -295,16 +295,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                             <div class="stripe-pillar-card reveal">
                                 <div class="stripe-pillar-graphic">
                                     {i === 0 && (
-                                        <svg class="abstract-svg abstract-pulse" viewBox="0 0 200 150">
-                                            <defs>
-                                                <radialGradient id="glow0" cx="50%" cy="50%" r="50%">
-                                                    <stop offset="0%" stop-color="var(--stripe-cyan)" stop-opacity="0.3" />
-                                                    <stop offset="100%" stop-color="var(--stripe-cyan)" stop-opacity="0" />
-                                                </radialGradient>
-                                                <linearGradient id="line0" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                    <stop offset="0%" stop-color="var(--stripe-cyan)" />
-                                                    <stop offset="100%" stop-color="var(--stripe-accent)" />
-                                                </linearGradient>
                                         <div class="pillar-mock pillar-mock-magic">
                                             <div class="magic-doc">
                                                 <div class="magic-doc-header"></div>
@@ -319,45 +309,39 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                         </div>
                                     )}
                                     {i === 1 && (
-                                                    <stop offset="0%" stop-color="var(--stripe-accent)" stop-opacity="0.2" />
-                                                    <stop offset="100%" stop-color="var(--stripe-accent)" stop-opacity="0" />
-                                                </radialGradient>
-                                                <linearGradient id="path1" x1="0" y1="0" x2="1" y2="0">
-                                                    <stop offset="0%" stop-color="rgba(59, 130, 246, 0.1)" />
-                                                    <stop offset="50%" stop-color="var(--stripe-cyan)" />
-                                                    <stop offset="100%" stop-color="rgba(59, 130, 246, 0.1)" />
-                                                </linearGradient>
-                                            </defs>
-                                            <circle cx="50" cy="75" r="40" fill="url(#glow1)" />
-                                            <circle cx="150" cy="75" r="40" fill="url(#glow1)" />
-                                            <path d="M 50 75 Q 100 20 150 75" fill="none" stroke="url(#path1)" stroke-width="1.5" />
-                                            <path d="M 50 75 Q 100 130 150 75" fill="none" stroke="url(#path1)" stroke-width="1.5" stroke-dasharray="4 4" class="abstract-dash-reverse" />
-                                            <circle cx="50" cy="75" r="12" fill="#fff" stroke="var(--stripe-cyan)" stroke-width="2" />
-                                            <circle cx="50" cy="75" r="4" fill="var(--stripe-cyan)" />
-                                            <circle cx="150" cy="75" r="12" fill="#fff" stroke="var(--stripe-accent)" stroke-width="2" />
-                                            <circle cx="150" cy="75" r="4" fill="var(--stripe-accent)" />
-                                            <circle cx="100" cy="47.5" r="3" fill="var(--stripe-cyan)" class="abstract-orbit" />
-                                        </svg>
+                                        <div class="pillar-mock pillar-mock-premium">
+                                            <div class="premium-ui">
+                                                <div class="p-ui-nav">
+                                                    <div class="p-ui-dot"></div><div class="p-ui-dot"></div><div class="p-ui-dot"></div>
+                                                </div>
+                                                <div class="p-ui-body">
+                                                    <div class="p-ui-chart">
+                                                        <div class="p-ui-bar" style="height: 40%"></div>
+                                                        <div class="p-ui-bar" style="height: 70%"></div>
+                                                        <div class="p-ui-bar" style="height: 100%"></div>
+                                                        <div class="p-ui-bar" style="height: 60%"></div>
+                                                    </div>
+                                                </div>
+                                                <div class="premium-glow"></div>
+                                            </div>
+                                        </div>
                                     )}
                                     {i === 2 && (
-                                        <svg class="abstract-svg abstract-pulse-slow" viewBox="0 0 200 150">
-                                            <defs>
-                                                <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                    <stop offset="0%" stop-color="var(--stripe-cyan)" />
-                                                    <stop offset="100%" stop-color="#10b981" />
-                                                </linearGradient>
-                                                <radialGradient id="glow2" cx="50%" cy="50%" r="50%">
-                                                    <stop offset="0%" stop-color="#10b981" stop-opacity="0.15" />
-                                                    <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
-                                                </radialGradient>
-                                            </defs>
-                                            <circle cx="100" cy="75" r="60" fill="url(#glow2)" />
-                                            <polygon points="100,25 143,50 143,100 100,125 57,100 57,50" fill="none" stroke="rgba(16, 185, 129, 0.2)" stroke-width="1" />
-                                            <polygon points="100,40 130,58 130,92 100,110 70,92 70,58" fill="none" stroke="rgba(16, 185, 129, 0.4)" stroke-width="1" />
-                                            <path d="M 90 65 L 110 65 C 115 65 115 75 110 75 L 90 75 C 85 75 85 65 90 65 Z" fill="url(#shieldGrad)" />
-                                            <path d="M 95 65 V 55 C 95 50 105 50 105 55 V 65" fill="none" stroke="url(#shieldGrad)" stroke-width="2" />
-                                            <circle cx="100" cy="70" r="1.5" fill="#fff" />
-                                        </svg>
+                                        <div class="pillar-mock pillar-mock-invoice">
+                                            <div class="invoice-doc">
+                                                <div class="inv-head">
+                                                    <div class="inv-logo"></div>
+                                                    <div class="inv-amount"></div>
+                                                </div>
+                                                <div class="inv-body">
+                                                    <div class="inv-row"></div>
+                                                    <div class="inv-row"></div>
+                                                </div>
+                                                <div class="inv-stamp">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                </div>
+                                            </div>
+                                        </div>
                                     )}
                                 </div>
                                 <div class="stripe-pillar-content">
@@ -2100,14 +2084,25 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     }
     
     .stripe-pillar-graphic {
-        background: #0a2540; /* Cord Navy */
+        background: linear-gradient(180deg, #0a2540 0%, #041221 100%); /* Premium Gradient */
         height: 240px;
         position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
+        border-bottom: 1px solid rgba(255,255,255,0.08);
         overflow: hidden;
+    }
+    
+    .stripe-pillar-graphic::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+        background-size: 20px 20px;
+        opacity: 0.5;
+        mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+        -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
     }
     
     .pillar-mock {
