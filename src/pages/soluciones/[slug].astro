@@ -213,131 +213,140 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                 <div class="stripe-fg-card-visual">
                                 <div class="stripe-fg-card-visual">
                                     {idx === 0 && (
-                                        <div class="pro-ui-card">
-                                            <div class="ui-header">
-                                                <div class="ui-title">Aprobación de Cotización</div>
-                                                <div class="ui-badge ui-badge-warning">Pendiente</div>
+                                        <div class="pro-ui-card real-ui">
+                                            <div class="rui-topbar">
+                                                <div class="mac-dots"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+                                                <div class="rui-topbar-title">Reconocimiento de ingresos</div>
+                                                <div class="mac-dots" style="opacity: 0"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
                                             </div>
-                                            <div class="ui-body">
-                                                <div class="ui-amount">MXN 125,400.00</div>
-                                                <div class="ui-subtitle">Cliente: Industrias Apex S.A.</div>
+                                            <div style="padding: 24px;">
+                                                <div class="rui-header-flex">
+                                                    <div>
+                                                        <div class="rui-value">MXN 5,839,417.15</div>
+                                                        <div class="rui-label text-green">+14.2% vs mes anterior</div>
+                                                    </div>
+                                                    <div class="rui-tabs-small">
+                                                        <span class="active">Abierto</span>
+                                                        <span>Cerrado</span>
+                                                    </div>
+                                                </div>
                                                 
-                                                <div class="ui-stats-row">
-                                                    <div class="ui-stat">
-                                                        <span>Margen</span>
-                                                        <strong>42.5%</strong>
-                                                    </div>
-                                                    <div class="ui-stat">
-                                                        <span>Descuento</span>
-                                                        <strong>15%</strong>
-                                                    </div>
+                                                <div class="rui-chart-container">
+                                                    <div class="rui-chart-bar" style="height: 40%"></div>
+                                                    <div class="rui-chart-bar" style="height: 60%"></div>
+                                                    <div class="rui-chart-bar" style="height: 50%"></div>
+                                                    <div class="rui-chart-bar" style="height: 80%"></div>
+                                                    <div class="rui-chart-bar bar-active" style="height: 90%"></div>
+                                                    <div class="rui-chart-bar" style="height: 70%"></div>
+                                                    <div class="rui-chart-bar" style="height: 100%"></div>
+                                                </div>
+                                                <div class="rui-chart-labels">
+                                                    <span>Ene</span><span>Feb</span><span>Mar</span><span>Abr</span><span>May</span><span>Jun</span><span>Jul</span>
                                                 </div>
 
-                                                <div class="ui-divider"></div>
-                                                <div class="ui-list">
-                                                    <div class="ui-list-item">
-                                                        <div class="ui-item-info">
-                                                            <span class="ui-item-title">Licencias Enterprise (x50)</span>
-                                                            <span class="ui-item-desc">Suscripción anual</span>
-                                                        </div>
-                                                        <div class="ui-item-value">MXN 90,000.00</div>
-                                                    </div>
-                                                    <div class="ui-list-item">
-                                                        <div class="ui-item-info">
-                                                            <span class="ui-item-title">Implementación Core</span>
-                                                            <span class="ui-item-desc">One-time fee</span>
-                                                        </div>
-                                                        <div class="ui-item-value">MXN 35,400.00</div>
-                                                    </div>
+                                                <div class="rui-divider"></div>
+                                                
+                                                <div class="rui-dropdown-header">
+                                                    <span>Resumen de Junio de 2026</span>
+                                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                                 </div>
-
-                                                <button class="ui-btn-primary">Aprobar cotización</button>
+                                                <div class="rui-table-mini">
+                                                    <div class="rt-row"><span class="rt-label">Ingresos reconocidos previamente</span><span class="rt-val">MXN 1,215,752.67</span></div>
+                                                    <div class="rt-row"><span class="rt-label">Ingresos por servicios no facturados</span><span class="rt-val">MXN 4,244,870.34</span></div>
+                                                    <div class="rt-row"><span class="rt-label">Menos reembolsos</span><span class="rt-val text-red">MXN 22.38</span></div>
+                                                </div>
                                             </div>
                                         </div>
                                     )}
                                     {idx === 1 && (
-                                        <div class="pro-ui-card">
-                                            <div class="ui-header">
-                                                <div class="ui-title">Sincronización en Tiempo Real</div>
-                                                <div class="ui-badge ui-badge-success">En línea</div>
-                                            </div>
-                                            <div class="ui-body">
-                                                <div class="ui-sync-flow">
-                                                    <div class="ui-sync-node"><img src="/imgs/logo-cord-navy.png" width="24" alt="Cord" /> Cord</div>
-                                                    <div class="ui-sync-line"><div class="ui-sync-dot"></div></div>
-                                                    <div class="ui-sync-node"><svg viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" width="24"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg> ERP Core</div>
+                                        <div class="pro-ui-card real-ui" style="padding: 0;">
+                                            <div class="rui-sidebar-layout">
+                                                <div class="rui-sidebar">
+                                                    <div class="rs-brand"><img src="/imgs/logo-cord-navy.png" width="18" alt="Cord" /></div>
+                                                    <div class="rs-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M3 9h18M9 21V9"></path></svg></div>
+                                                    <div class="rs-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg></div>
+                                                    <div class="rs-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
+                                                    <div class="rs-avatar rbac-grad-1 mt-auto mb-4">AG</div>
                                                 </div>
-
-                                                <div class="ui-divider"></div>
-                                                <div class="ui-list">
-                                                    <div class="ui-list-item">
-                                                        <div class="ui-item-icon success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
-                                                        <div class="ui-item-info">
-                                                            <span class="ui-item-title">Factura FAC-8901</span>
-                                                            <span class="ui-item-desc">Sincronizado hoy 14:32</span>
-                                                        </div>
-                                                        <div class="ui-item-value">MXN 45k</div>
+                                                <div class="rui-main">
+                                                    <div class="rui-topbar" style="border-bottom: 1px solid #e2e8f0; background: transparent;">
+                                                        <span style="font-size: 13px; font-weight: 700; color: #0f172a;">Flujo de Datos ERP</span>
+                                                        <span class="badge-blue">Sincronizando</span>
                                                     </div>
-                                                    <div class="ui-list-item">
-                                                        <div class="ui-item-icon success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
-                                                        <div class="ui-item-info">
-                                                            <span class="ui-item-title">Cliente CLI-092</span>
-                                                            <span class="ui-item-desc">Sincronizado hoy 13:15</span>
+                                                    <div style="padding: 16px; background: #f8fafc;">
+                                                        <div class="rui-pipeline-visual">
+                                                            <div class="rp-node"><img src="/imgs/logo-cord-navy.png" width="20" alt="Cord"/></div>
+                                                            <div class="rp-line"><div class="rp-dot"></div><div class="rp-dot delay-1"></div></div>
+                                                            <div class="rp-node"><svg viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" width="20"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg></div>
                                                         </div>
-                                                        <div class="ui-item-value">Success</div>
                                                     </div>
-                                                    <div class="ui-list-item">
-                                                        <div class="ui-item-icon sync"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.13 15.57a9 9 0 0 0 16.14 1.34l3.23-3.23M2.5 22v-6h6M21.87 8.43a9 9 0 0 0-16.14-1.34L2.5 10.32"></path></svg></div>
-                                                        <div class="ui-item-info">
-                                                            <span class="ui-item-title">Pago PAG-441</span>
-                                                            <span class="ui-item-desc">Procesando...</span>
+                                                    <div class="rui-terminal">
+                                                        <div class="rui-term-header">
+                                                            <span>terminal ~ zsh</span>
+                                                            <div class="mac-dots"><div class="dot gray"></div><div class="dot gray"></div><div class="dot gray"></div></div>
                                                         </div>
-                                                        <div class="ui-item-value" style="color:#94a3b8">Pending</div>
+                                                        <div><span class="term-green">➜</span> <span class="term-blue">cord</span> sync --target=sap --watch</div>
+                                                        <div style="margin-top: 4px;">[14:32:01] <span class="term-blue">INFO</span> Conectando con SAP NetWeaver...</div>
+                                                        <div>[14:32:02] <span class="term-green">SUCCESS</span> Conexión establecida (3ms)</div>
+                                                        <div>[14:32:03] <span class="term-blue">INFO</span> Sincronizando 45 nuevas facturas...</div>
+                                                        <div>[14:32:04] <span class="term-purple">POST</span> /api/v1/erp/invoices (2.4kb)</div>
+                                                        <div>[14:32:05] <span class="term-green">SUCCESS</span> Payload insertado correctamente.</div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     )}
                                     {idx === 2 && (
-                                        <div class="pro-ui-card">
-                                            <div class="ui-header">
-                                                <div class="ui-title">Control de Accesos (RBAC)</div>
-                                                <div class="ui-badge ui-badge-gray">SOC 2 / ISO 27001</div>
+                                        <div class="pro-ui-card real-ui">
+                                            <div class="rui-topbar">
+                                                <div style="font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                                    Seguridad y Accesos
+                                                </div>
+                                                <button class="rui-btn-save">Guardar</button>
                                             </div>
-                                            <div class="ui-body">
-                                                <div class="ui-security-overview">
-                                                    <div class="ui-sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></div>
-                                                    <div>
-                                                        <div class="ui-sec-title">Cifrado E2E Activo</div>
-                                                        <div class="ui-sec-desc">Todas las transacciones están firmadas criptográficamente.</div>
+                                            <div style="padding: 16px;">
+                                                <div class="rui-setting-group">
+                                                    <div class="rui-setting-row">
+                                                        <div class="rs-info">
+                                                            <span class="rs-title">Autenticación de 2 Factores (2FA)</span>
+                                                            <span class="rs-desc">Requerido para todos los admins.</span>
+                                                        </div>
+                                                        <div class="rui-toggle active"><div class="rt-knob"></div></div>
+                                                    </div>
+                                                    <div class="rui-setting-row">
+                                                        <div class="rs-info">
+                                                            <span class="rs-title">Cifrado End-to-End</span>
+                                                            <span class="rs-desc">AES-256 GCM en tránsito y reposo.</span>
+                                                        </div>
+                                                        <div class="rui-toggle active"><div class="rt-knob"></div></div>
                                                     </div>
                                                 </div>
-
-                                                <div class="ui-divider"></div>
-                                                <div class="ui-list">
-                                                    <div class="ui-list-item">
-                                                        <div class="ui-avatar">AG</div>
-                                                        <div class="ui-item-info">
-                                                            <span class="ui-item-title">Ana García</span>
-                                                            <span class="ui-item-desc">ana@empresa.com</span>
+                                                
+                                                <div style="margin-top: 24px; margin-bottom: 8px; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Políticas de Acceso (RBAC)</div>
+                                                <div class="rui-rbac-list">
+                                                    <div class="rbac-row">
+                                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                                            <div class="rbac-avatar rbac-grad-1">AG</div>
+                                                            <div class="rs-info">
+                                                                <span class="rs-title">Ana García</span>
+                                                                <span class="rs-desc">ana@empresa.com</span>
+                                                            </div>
                                                         </div>
-                                                        <div class="ui-badge ui-badge-admin">Admin</div>
+                                                        <span class="rbac-badge badge-admin">Admin</span>
                                                     </div>
-                                                    <div class="ui-list-item">
-                                                        <div class="ui-avatar bg-blue">LM</div>
-                                                        <div class="ui-item-info">
-                                                            <span class="ui-item-title">Luis Mendoza</span>
-                                                            <span class="ui-item-desc">luis@empresa.com</span>
+                                                    <div class="rbac-row">
+                                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                                            <div class="rbac-avatar rbac-grad-2">CR</div>
+                                                            <div class="rs-info">
+                                                                <span class="rs-title">Carlos Ruiz</span>
+                                                                <span class="rs-desc">carlos@empresa.com</span>
+                                                            </div>
                                                         </div>
-                                                        <div class="ui-badge ui-badge-gray">Ventas</div>
-                                                    </div>
-                                                    <div class="ui-list-item">
-                                                        <div class="ui-avatar bg-green">CR</div>
-                                                        <div class="ui-item-info">
-                                                            <span class="ui-item-title">Carlos Ruiz</span>
-                                                            <span class="ui-item-desc">carlos@empresa.com</span>
-                                                        </div>
-                                                        <div class="ui-badge ui-badge-gray">Finanzas</div>
+                                                        <span class="rbac-badge badge-gray">
+                                                            Finanzas
+                                                            <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -921,219 +930,97 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         overflow: visible;
     }
 
-    /* UI Mockup Base */
-    .pro-ui-card {
+    /* UI Mockup Base (Photorealistic) */
+    .real-ui {
+        width: 360px;
+        border-radius: 16px;
+        border: 1px solid rgba(0,0,0,0.06);
+        box-shadow: 0 40px 80px -20px rgba(50,50,93,0.15), 0 20px 40px -20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,1);
         background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 50px 100px -20px rgba(50,50,93,0.1), 0 30px 60px -30px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(10,20,30,0.05);
-        width: 320px;
-        font-family: 'Inter', system-ui, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+        color: #0f172a;
         overflow: hidden;
         transform: translateY(0);
         transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-        color: #334155;
         text-align: left;
     }
-    .stripe-fg-card:hover .pro-ui-card {
+    .stripe-fg-card:hover .real-ui {
         transform: translateY(-8px);
     }
-    .ui-header {
-        padding: 16px 20px;
-        border-bottom: 1px solid #f1f5f9;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: #fafbfc;
-    }
-    .ui-title {
-        font-size: 0.85rem;
-        font-weight: 700;
-        color: #475569;
-    }
-    .ui-badge {
-        font-size: 0.65rem;
-        font-weight: 700;
-        padding: 4px 8px;
-        border-radius: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .ui-badge-warning { background: #fef3c7; color: #d97706; }
-    .ui-badge-success { background: #d1fae5; color: #059669; }
-    .ui-badge-gray { background: #f1f5f9; color: #64748b; }
-    .ui-badge-admin { background: #ede9fe; color: #7c3aed; }
-    .ui-body {
-        padding: 20px;
-    }
-    .ui-amount {
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: #0f172a;
-        letter-spacing: -0.5px;
-        margin-bottom: 4px;
-    }
-    .ui-subtitle {
-        font-size: 0.8rem;
-        color: #64748b;
-        margin-bottom: 20px;
-    }
-    .ui-stats-row {
-        display: flex;
-        gap: 24px;
-        margin-bottom: 20px;
-    }
-    .ui-stat {
-        display: flex;
-        flex-direction: column;
-    }
-    .ui-stat span {
-        font-size: 0.7rem;
-        color: #94a3b8;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 2px;
-    }
-    .ui-stat strong {
-        font-size: 1rem;
-        color: #334155;
-    }
-    .ui-divider {
-        height: 1px;
-        background: #f1f5f9;
-        margin: 16px -20px;
-    }
-    .ui-list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-    .ui-list-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    .ui-item-info {
-        display: flex;
-        flex-direction: column;
-        flex-grow: 1;
-    }
-    .ui-item-title {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #334155;
-    }
-    .ui-item-desc {
-        font-size: 0.7rem;
-        color: #94a3b8;
-    }
-    .ui-item-value {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #0f172a;
-    }
-    .ui-item-icon {
-        width: 24px; height: 24px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 12px;
-    }
-    .ui-item-icon svg { width: 14px; height: 14px; }
-    .ui-item-icon.success { background: #d1fae5; color: #059669; }
-    .ui-item-icon.sync { background: #dbeafe; color: #2563eb; animation: spin 2s linear infinite; }
-    .ui-btn-primary {
-        width: 100%;
-        background: var(--stripe-cyan);
-        color: #fff;
-        border: none;
-        padding: 10px;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin-top: 20px;
-        cursor: pointer;
-        box-shadow: 0 4px 6px -1px rgba(59,130,246,0.2);
-    }
-    .ui-sync-flow {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 20px;
-    }
-    .ui-sync-node {
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: #0f172a;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        padding: 8px 12px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    }
-    .ui-sync-line {
-        flex-grow: 1;
-        height: 2px;
-        background: #e2e8f0;
-        margin: 0 12px;
-        position: relative;
-        overflow: hidden;
-    }
-    .ui-sync-dot {
-        position: absolute;
-        top: -2px; left: 0;
-        width: 6px; height: 6px;
-        background: var(--stripe-cyan);
-        border-radius: 50%;
-        animation: slideRight 2s infinite linear;
-    }
-    .ui-security-overview {
-        display: flex;
-        gap: 12px;
-        margin-bottom: 20px;
-    }
-    .ui-sec-icon {
-        width: 32px; height: 32px;
-        background: #f1f5f9;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #3b82f6;
-        flex-shrink: 0;
-    }
-    .ui-sec-icon svg { width: 18px; height: 18px; }
-    .ui-sec-title {
-        font-size: 0.85rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin-bottom: 4px;
-    }
-    .ui-sec-desc {
-        font-size: 0.75rem;
-        color: #64748b;
-        line-height: 1.4;
-    }
-    .ui-avatar {
-        width: 28px; height: 28px;
-        border-radius: 50%;
-        background: #f1f5f9;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.7rem;
-        font-weight: 700;
-        color: #475569;
-        margin-right: 12px;
-    }
-    .bg-blue { background: #dbeafe; color: #1d4ed8; }
-    .bg-green { background: #d1fae5; color: #047857; }
+    
+    /* Global RUI */
+    .rui-topbar { padding: 14px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; background: #fafbfc; }
+    .mac-dots { display: flex; gap: 6px; }
+    .mac-dots .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot.red { background: #ff5f56; } .dot.yellow { background: #ffbd2e; } .dot.green { background: #27c93f; }
+    .dot.gray { background: #475569; opacity: 0.5; }
+    .rui-topbar-title { font-size: 12px; font-weight: 600; color: #475569; }
+    
+    /* Mockup 0 (Chart) */
+    .rui-header-flex { display: flex; justify-content: space-between; align-items: flex-start; }
+    .rui-value { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px; color: #0f172a; }
+    .rui-label { font-size: 13px; font-weight: 600; }
+    .text-green { color: #10b981; }
+    .text-red { color: #ef4444; }
+    .rui-tabs-small { display: flex; background: #f1f5f9; padding: 2px; border-radius: 6px; }
+    .rui-tabs-small span { font-size: 11px; padding: 4px 10px; font-weight: 600; color: #64748b; border-radius: 4px; }
+    .rui-tabs-small span.active { background: #fff; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    
+    .rui-chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 110px; gap: 8px; margin-top: 24px; }
+    .rui-chart-bar { flex: 1; background: #e2e8f0; border-radius: 4px 4px 0 0; position: relative; transition: all 0.3s; width: 100%; }
+    .bar-active { background: linear-gradient(180deg, #8b5cf6 0%, #6366f1 100%); }
+    .rui-chart-labels { display: flex; justify-content: space-between; margin-top: 12px; }
+    .rui-chart-labels span { font-size: 11px; font-weight: 600; color: #94a3b8; width: 14%; text-align: center; }
+    
+    .rui-divider { height: 1px; background: #f1f5f9; margin: 20px 0; }
+    .rui-dropdown-header { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; color: #334155; }
+    .rui-table-mini { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+    .rt-row { display: flex; justify-content: space-between; font-size: 12px; font-weight: 500; }
+    .rt-label { color: #64748b; } .rt-val { color: #0f172a; font-weight: 600; }
+    
+    /* Mockup 1 (Terminal) */
+    .rui-sidebar-layout { display: flex; height: 350px; }
+    .rui-sidebar { width: 56px; background: #f8fafc; border-right: 1px solid #f1f5f9; display: flex; flex-direction: column; align-items: center; padding: 16px 0; gap: 20px; }
+    .rs-item { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #94a3b8; }
+    .rs-item.active { background: #e0e7ff; color: #4f46e5; }
+    .rs-item svg { width: 20px; height: 20px; }
+    .rui-main { flex: 1; display: flex; flex-direction: column; }
+    .badge-blue { background: #dbeafe; color: #2563eb; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 12px; }
+    
+    .rui-pipeline-visual { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+    .rp-node { width: 40px; height: 40px; border-radius: 10px; background: #f8fafc; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; }
+    .rp-line { flex: 1; height: 2px; background: #e2e8f0; margin: 0 16px; position: relative; overflow: hidden; }
+    .rp-dot { position: absolute; width: 6px; height: 6px; background: #0ea5e9; border-radius: 50%; top: -2px; left: 0; animation: slideRight 2s infinite linear; }
+    .delay-1 { animation-delay: 1s; }
+    
+    .rui-terminal { background: #0f172a; color: #cbd5e1; font-family: 'SF Mono', 'JetBrains Mono', monospace; font-size: 11px; padding: 16px; flex: 1; line-height: 1.7; border-top: 1px solid #1e293b; }
+    .rui-term-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: #64748b; font-size: 10px; }
+    .term-green { color: #4ade80; font-weight: 600; } .term-blue { color: #60a5fa; font-weight: 600; } .term-purple { color: #c084fc; font-weight: 600; }
+    
+    /* Mockup 2 (Security) */
+    .rui-btn-save { background: #2563eb; color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; }
+    .rui-setting-group { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+    .rui-setting-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #f1f5f9; }
+    .rui-setting-row:last-child { border-bottom: none; }
+    .rs-info { display: flex; flex-direction: column; gap: 4px; }
+    .rs-title { font-size: 13px; font-weight: 600; color: #1e293b; }
+    .rs-desc { font-size: 12px; color: #64748b; }
+    
+    .rui-toggle { width: 44px; height: 24px; background: #e2e8f0; border-radius: 24px; position: relative; transition: 0.3s; cursor: pointer; }
+    .rui-toggle.active { background: #34d399; }
+    .rt-knob { width: 20px; height: 20px; background: #fff; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .rui-toggle.active .rt-knob { left: 22px; }
+    
+    .rui-rbac-list { border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; overflow: hidden; }
+    .rbac-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #f1f5f9; }
+    .rbac-row:last-child { border-bottom: none; }
+    .rbac-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; }
+    .rbac-grad-1 { background: linear-gradient(135deg, #60a5fa, #3b82f6); }
+    .rbac-grad-2 { background: linear-gradient(135deg, #34d399, #059669); }
+    .rbac-badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
+    .badge-admin { background: #f3e8ff; color: #7e22ce; }
+    .badge-gray { background: #f1f5f9; color: #475569; display: flex; align-items: center; gap: 4px; border: 1px solid #e2e8f0; }
 
-    @keyframes spin { 100% { transform: rotate(360deg); } }
     @keyframes slideRight { 100% { left: 100%; } }
     
     .stripe-fg-sidebar {
