@@ -164,9 +164,13 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                     <h3 class="stripe-fg-title">{block.titulo}</h3>
                                     <p class="stripe-fg-desc">{block.copy}</p>
                                     <div class="stripe-fg-tags">
-                                        {block.bullets.map(b => (
-                                            <a href="/producto" class="stripe-fg-tag">{b}</a>
-                                        ))}
+                                        {block.bullets.map((b, bulletIdx) => {
+                                            const slugs = ['aprobaciones', 'finanzas', 'cfdi', 'editor', 'equipo'];
+                                            const targetSlug = slugs[(idx + bulletIdx) % slugs.length];
+                                            return (
+                                                <a href={`/producto/${targetSlug}`} class="stripe-fg-tag">{b}</a>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                                 <div class="stripe-fg-card-visual">
@@ -205,10 +209,10 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                 <img src="/imgs/logo-cord.png" alt="Cord" style="width:120px; opacity:0.8;" />
                             </div>
                             <div class="stripe-resource-content">
-                                <span class="stripe-resource-eyebrow">Desarrolladores</span>
-                                <h4 class="stripe-resource-title">Referencia de API, webhooks y guías de integración</h4>
-                                <a href="/desarrolladores" class="stripe-pillar-link">
-                                    Ver documentación
+                                <span class="stripe-resource-eyebrow">Soporte</span>
+                                <h4 class="stripe-resource-title">Centro de ayuda y guías detalladas paso a paso</h4>
+                                <a href="/soporte" class="stripe-pillar-link">
+                                    Buscar respuestas
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M9 18l6-6-6-6"/>
                                     </svg>
