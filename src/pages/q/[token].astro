@@ -9,35 +9,74 @@ const { token } = Astro.params;
 let result;
 
 if (token === 'demo') {
-    const mockQuote = findQuoteByToken('demo');
-    if (mockQuote) {
-        result = {
-            quote: {
-                ...mockQuote,
-                // Simulamos que faltan 7 días para que no diga "vencida"
-                diasVigencia: 7
-            },
-            org: {
-                ...mockOrg,
-                colorMarca: '#0a192f',
-                logoUrl: '',
-                pdfMensaje: '',
-                ivaPct: 16,
-                embedDomains: '',
-                emailContacto: mockOrg.email,
-                telefono: '',
-                whatsapp: '',
-                portalBanner: '',
-                portalBienvenida: '',
-                portalMostrarChat: true,
-                portalPowered: true
-            },
-            conversacion: [
-                { tipo: 'vendedor', detalle: '¡Hola! Te dejo la cotización con el precio especial que acordamos por volumen.', cuando: 'hace 2 horas', mine: false },
-                { tipo: 'cliente', detalle: 'Gracias, la reviso y te aviso.', cuando: 'hace 1 hora', mine: true }
-            ]
-        };
-    }
+    result = {
+        quote: {
+            id: 'q-demo-123',
+            folio: 'COT-0004',
+            cliente: 'Desarrollos Inmobiliarios Polanco',
+            clienteInicial: 'DP',
+            status: 'viewed',
+            terminos: 'Contado',
+            vigencia: '28 jul 2026',
+            creada: '10 jul 2026',
+            token: 'demo',
+            diasVigencia: 30,
+            items: [
+                {
+                    id: 'b5a98cbe',
+                    descripcion: 'Arena Fina (Metro Cúbico)',
+                    cantidad: 11,
+                    unidad: 'm³',
+                    precioLista: 445.0,
+                    precioNegociado: 445.0,
+                    aprobado: true
+                },
+                {
+                    id: '6611006c',
+                    descripcion: 'Bomba de Agua Periférica 1/2 HP',
+                    cantidad: 17,
+                    unidad: 'pieza',
+                    precioLista: 848.0,
+                    precioNegociado: 848.0,
+                    aprobado: true
+                },
+                {
+                    id: '02cb2884',
+                    descripcion: 'Cable THW calibre 12',
+                    cantidad: 12,
+                    unidad: 'rollo',
+                    precioLista: 850.0,
+                    precioNegociado: 850.0,
+                    aprobado: true
+                }
+            ],
+            eventos: [
+                { tipo: 'viewed', detalle: 'Alejandro (Desarrollos Inmobiliarios Polanco) abrió el link', cuando: 'hace 5 min' },
+                { tipo: 'sent', detalle: 'Enviada por correo a compras@dipolanco.mx', cuando: 'hace 1 hora' }
+            ],
+            notas: 'Precios sujetos a cambio sin previo aviso. Tiempo de entrega: 2 días hábiles tras confirmación de pago.'
+        },
+        org: {
+            nombre: 'Mi negocio',
+            inicial: 'MN',
+            rfc: 'MNEG890101XYZ',
+            colorMarca: '#0a192f',
+            logoUrl: '',
+            pdfMensaje: '',
+            ivaPct: 16,
+            embedDomains: '',
+            emailContacto: 'ventas@minegocio.mx',
+            telefono: '',
+            whatsapp: '',
+            portalBanner: '',
+            portalBienvenida: '',
+            portalMostrarChat: true,
+            portalPowered: true
+        },
+        conversacion: [
+            { tipo: 'vendedor', detalle: '¡Hola Alejandro! Te comparto la cotización de los materiales para la obra en Polanco. Cualquier duda sigo a tus órdenes.', cuando: 'hace 1 hora', mine: false }
+        ]
+    };
 } else {
     result = await getCotizacionByToken(token ?? '');
 }
