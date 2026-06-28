@@ -76,30 +76,26 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, origi
         : `${esc(r.org_nombre)} le comparte la cotización <b>${esc(r.folio)}</b> por <b>${money(r.total)}</b>. Puede revisarla, dejar comentarios y aprobarla en línea:`;
     const firma = (r.email_firma && r.email_firma.trim()) ? fill(r.email_firma) : '';
     const poweredLine = r.portal_powered === false ? esc(r.org_nombre) : `${esc(r.org_nombre)} · enviado con Cord`;
-    const html = `<div style="background-color:#F9FAFB;padding:60px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-        <div style="max-width:520px;margin:0 auto;">
-            <div style="text-align:center;margin-bottom:32px;">
-                <img src="https://cord.flouvia.com/favicon-96x96.png" width="48" height="48" alt="Cord Logo" style="border-radius:12px;display:inline-block;box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+    const html = `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+        <div style="max-width:540px;margin:0 auto;">
+            <div style="margin-bottom:32px;">
+                <img src="https://cord.flouvia.com/imgs/logo-cord-navy.png" width="90" height="auto" alt="Cord Logo" style="display:block;">
             </div>
-    
-            <div style="background-color:#ffffff;border:1px solid #E5E7EB;border-radius:16px;padding:40px;box-shadow:0 1px 2px rgba(0, 0, 0, 0.05);">
-                <h1 style="font-size:20px;color:#111827;margin-top:0;margin-bottom:8px;font-weight:600;letter-spacing:-0.5px;">${esc(r.org_nombre)}</h1>
-                <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;margin-top:0;">Le ha compartido la cotización <strong>${esc(r.folio)}</strong> por <strong>${money(r.total)}</strong>.</p>
-                
-                <a href="${link}" style="display:block;width:100%;text-align:center;background-color:${color};color:#ffffff;text-decoration:none;font-weight:500;font-size:15px;padding:14px 0;border-radius:10px;margin-bottom:32px;box-shadow:0 2px 4px rgba(10,25,47,0.15);">Revisar Cotización</a>
-                
-                <div style="border-top:1px solid #F3F4F6;padding-top:32px;">
-                    ${r.mensaje ? `<p style="font-size:14px;color:#6B7280;line-height:1.6;margin:0 0 16px 0;"><strong>Mensaje adjunto:</strong><br>${esc(r.mensaje)}</p>` : ''}
-                    <p style="font-size:14px;color:#6B7280;line-height:1.6;margin:0;word-break:break-all;">O copie el enlace en su navegador: <a href="${link}" style="color:#2563EB;">${link}</a></p>
-                    ${firma ? `<p style="font-size:14px;color:#6B7280;line-height:1.6;margin:16px 0 0 0;">Atentamente,<br>${firma}</p>` : ''}
-                </div>
+            
+            <p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">Estimado equipo de ${esc(r.empresa || 'cliente')},</p>
+            <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;">${intro}</p>
+            
+            <div style="margin:40px 0;">
+                <a href="${link}" style="display:inline-block;background-color:${color};color:#ffffff;text-decoration:none;font-weight:500;font-size:15px;padding:12px 24px;border-radius:8px;">Ver cotización ${esc(r.folio)}</a>
             </div>
-    
-            <div style="text-align:center;margin-top:32px;">
-                <p style="font-size:13px;color:#6B7280;line-height:1.5;margin:0;font-weight:500;">
-                    Enviado con <a href="https://cord.flouvia.com" style="color:#0a192f;text-decoration:none;">Cord</a>
-                </p>
-                <p style="font-size:12px;color:#9CA3AF;line-height:1.5;margin-top:4px;">El sistema operativo B2B de Flouvia.</p>
+            
+            <p style="font-size:14px;color:#6B7280;line-height:1.5;word-break:break-all;">O copie este enlace en su navegador:<br><a href="${link}" style="color:#2563EB;text-decoration:none;">${link}</a></p>
+            
+            ${r.mensaje ? `<div style="margin-top:40px;padding-top:32px;border-top:1px solid #F3F4F6;"><p style="font-size:15px;color:#374151;line-height:1.6;margin:0;">${esc(r.mensaje)}</p></div>` : ''}
+            ${firma ? `<div style="margin-top:32px;"><p style="font-size:15px;color:#374151;line-height:1.6;margin:0;">Atentamente,<br>${firma}</p></div>` : ''}
+
+            <div style="margin-top:48px;padding-top:24px;border-top:1px solid #E5E7EB;">
+                <p style="font-size:12px;color:#9CA3AF;margin:0;line-height:1.5;">${poweredLine}</p>
             </div>
         </div>
     </div>`;

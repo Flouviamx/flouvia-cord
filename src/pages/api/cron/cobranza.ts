@@ -74,19 +74,16 @@ export const GET: APIRoute = async ({ request }) => {
       // si falta RESEND_API_KEY devuelve { sent:false, skipped } sin lanzar.
       let emailResult: { sent: boolean; skipped?: string; error?: string } = { sent: false, skipped: 'sin email' };
       if (quote.cliente_email) {
-        const bodyHtml = `<div style="background-color:#F9FAFB;padding:60px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-        <div style="max-width:520px;margin:0 auto;">
-            <div style="text-align:center;margin-bottom:32px;">
-                <img src="https://cord.flouvia.com/favicon-96x96.png" width="48" height="48" alt="Cord Logo" style="border-radius:12px;display:inline-block;box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+        const bodyHtml = `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+        <div style="max-width:540px;margin:0 auto;">
+            <div style="margin-bottom:32px;">
+                <img src="https://cord.flouvia.com/imgs/logo-cord-navy.png" width="90" height="auto" alt="Cord Logo" style="display:block;">
             </div>
-    
-            <div style="background-color:#ffffff;border:1px solid #E5E7EB;border-radius:16px;padding:40px;box-shadow:0 1px 2px rgba(0, 0, 0, 0.05);">
-                <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:0;font-weight:400;margin-top:0;white-space:pre-wrap;">${escapeHtml(agentResponse)}</p>
-            </div>
-    
-            <div style="text-align:center;margin-top:32px;">
-                <p style="font-size:13px;color:#6B7280;line-height:1.5;margin:0;font-weight:500;">Agente de Cobranza Inteligente</p>
-                <p style="font-size:12px;color:#9CA3AF;line-height:1.5;margin-top:4px;">Cord by Flouvia</p>
+            
+            <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:0;font-weight:400;margin-top:0;white-space:pre-wrap;">${escapeHtml(agentResponse)}</p>
+
+            <div style="margin-top:48px;padding-top:24px;border-top:1px solid #E5E7EB;">
+                <p style="font-size:12px;color:#9CA3AF;margin:0;line-height:1.5;">Agente de Cobranza Inteligente · Cord by Flouvia</p>
             </div>
         </div>
     </div>`;
