@@ -49,11 +49,15 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     <main class="stripe-main">
         
         {solucion.slug === 'startups' ? (
-            <!-- ── HERO (Startup Vercel/Linear style) ── -->
+            <!-- ── HERO (Startup Flow) ── -->
             <header class="startup-hero">
                 <div class="startup-hero-bg">
-                    <div class="startup-grid"></div>
-                    <div class="startup-glow"></div>
+                    <div class="startup-flow-orb-1"></div>
+                    <div class="startup-flow-orb-2"></div>
+                    <div class="startup-flow-orb-3"></div>
+                    <div class="startup-glass-doc doc-1"></div>
+                    <div class="startup-glass-doc doc-2"></div>
+                    <div class="startup-glass-doc doc-3"></div>
                 </div>
                 
                 <div class="startup-hero-content stripe-container">
@@ -103,25 +107,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
             </header>
         )}
 
-        <!-- ── INTEGRATIONS MARQUEE (Stripe Style) ── -->
-        {solucion.integrations && (
-            <div class="stripe-integrations-ticker reveal">
-                <div class="stripe-ticker-track">
-                    {[1, 2].map(() => (
-                        <div class="stripe-ticker-tape">
-                            {solucion.integrations.map(int => (
-                                <div class="stripe-ticker-item">
-                                    <div class="stripe-ticker-icon">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="4"/><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
-                                    </div>
-                                    <span class="stripe-ticker-name">{int.name}</span>
-                                </div>
-                            ))}
-                        </div>
-                    ))}
-                </div>
-            </div>
-        )}
+
 
         <!-- ── AIRY BENTO PILLARS ── -->
         {solucion.pillars && (
@@ -1938,42 +1924,97 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         justify-content: center;
         align-items: center;
         overflow: hidden;
-        background: #000;
+        background: #0a192f;
     }
     
     .startup-hero-bg {
         position: absolute;
         inset: 0;
         z-index: 0;
-        background: radial-gradient(circle at 50% -20%, rgba(120, 119, 198, 0.15) 0%, transparent 60%), #000;
+        background: #0a192f;
+        overflow: hidden;
     }
 
-    .startup-grid {
+    /* Tres orbes de luz fluidos que rotan para dar sensación de velocidad y fluidez */
+    .startup-flow-orb-1 {
         position: absolute;
-        inset: 0;
-        background-size: 40px 40px;
-        background-image: linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-                          linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-        mask-image: radial-gradient(ellipse at 50% 50%, black 40%, transparent 80%);
-        -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 40%, transparent 80%);
-        opacity: 0.5;
-        animation: grid-fade 2s ease-out forwards;
+        top: -20%; left: -10%;
+        width: 70vw; height: 70vw;
+        background: radial-gradient(circle, rgba(14,165,233,0.15) 0%, transparent 60%);
+        border-radius: 50%;
+        filter: blur(80px);
+        animation: float-orb 15s infinite alternate ease-in-out;
     }
 
-    @keyframes grid-fade {
-        0% { opacity: 0; }
-        100% { opacity: 0.5; }
-    }
-
-    .startup-glow {
+    .startup-flow-orb-2 {
         position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 150vw;
-        height: 150vw;
-        transform: translate(-50%, -50%);
-        background: radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
-        pointer-events: none;
+        bottom: -20%; right: -10%;
+        width: 60vw; height: 60vw;
+        background: radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 60%);
+        border-radius: 50%;
+        filter: blur(80px);
+        animation: float-orb-reverse 18s infinite alternate ease-in-out;
+    }
+
+    .startup-flow-orb-3 {
+        position: absolute;
+        top: 30%; left: 40%;
+        width: 50vw; height: 50vw;
+        background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 60%);
+        border-radius: 50%;
+        filter: blur(80px);
+        animation: float-orb 20s infinite alternate-reverse ease-in-out;
+    }
+
+    @keyframes float-orb {
+        0% { transform: translate(0, 0) scale(1); }
+        100% { transform: translate(10%, 15%) scale(1.1); }
+    }
+    @keyframes float-orb-reverse {
+        0% { transform: translate(0, 0) scale(1); }
+        100% { transform: translate(-10%, -15%) scale(1.1); }
+    }
+
+    /* Documentos / Cotizaciones de cristal flotantes */
+    .startup-glass-doc {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        transform: rotate(-15deg);
+        z-index: 1;
+        /* Lineas falsas adentro para simular una cotizacion */
+        background-image: 
+            linear-gradient(rgba(255,255,255,0.1) 2px, transparent 2px),
+            linear-gradient(rgba(255,255,255,0.05) 2px, transparent 2px);
+        background-size: 40% 2px, 80% 2px;
+        background-position: 10% 20%, 10% 40%;
+        background-repeat: no-repeat;
+    }
+
+    .doc-1 {
+        width: 300px; height: 400px;
+        top: 20%; left: 5%;
+        animation: float-doc 25s infinite linear;
+    }
+    .doc-2 {
+        width: 250px; height: 350px;
+        top: 50%; right: 10%;
+        animation: float-doc 30s infinite linear reverse;
+    }
+    .doc-3 {
+        width: 350px; height: 450px;
+        bottom: -20%; left: 30%;
+        animation: float-doc 35s infinite linear;
+    }
+
+    @keyframes float-doc {
+        0% { transform: translateY(0) rotate(-15deg); }
+        50% { transform: translateY(-30px) rotate(-10deg); }
+        100% { transform: translateY(0) rotate(-15deg); }
     }
 
     .startup-hero-content {
