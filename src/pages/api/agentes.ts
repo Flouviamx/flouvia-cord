@@ -49,7 +49,16 @@ async function runCobranzaForOrg(orgId: string): Promise<number> {
       await sendEmail({
         to: q.cliente_email,
         subject: `Recordatorio de pago — factura vencida (${Math.floor(q.dias_vencido)} días)`,
-        html: `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.6;color:#0a192f;white-space:pre-wrap">${escapeHtml(msg)}</div>`,
+        html: `<div style="background-color:#F9FAFB;padding:40px 20px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;">
+        <div style="max-width:560px;margin:0 auto;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);border:1px solid #E5E7EB;">
+            <div style="padding:40px;">
+                <div style="font-size:16px;line-height:1.6;color:#374151;white-space:pre-wrap;">${escapeHtml(msg)}</div>
+            </div>
+            <div style="background-color:#F9FAFB;padding:24px 40px;border-top:1px solid #E5E7EB;text-align:center;">
+                <p style="font-size:13px;color:#9CA3AF;margin:0;">Enviado vía Cord</p>
+            </div>
+        </div>
+    </div>`,
       });
     }
     n++;

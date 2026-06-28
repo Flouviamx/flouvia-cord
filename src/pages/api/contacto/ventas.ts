@@ -52,17 +52,26 @@ export const POST: APIRoute = async ({ request }) => {
 
     // (1) Correo interno al equipo de ventas — con reply-to al prospecto para
     // responderle directo desde el cliente de correo.
-    const internalHtml = `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#0f1729;max-width:560px;margin:0 auto">
-        <p style="font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#9aa1ad;margin:0 0 4px">Nuevo lead de ventas · Cord</p>
-        <h2 style="font-size:20px;margin:0 0 16px;color:#0a192f">${esc(fullName)} — ${esc(company)}</h2>
-        <table style="font-size:14px;line-height:1.6;border-collapse:collapse;width:100%">
-            <tr><td style="color:#5b6472;padding:4px 12px 4px 0;white-space:nowrap">Correo</td><td><a href="mailto:${esc(email)}" style="color:#0a192f">${esc(email)}</a></td></tr>
-            <tr><td style="color:#5b6472;padding:4px 12px 4px 0">Cargo</td><td>${esc(role) || '—'}</td></tr>
-            <tr><td style="color:#5b6472;padding:4px 12px 4px 0">Empresa</td><td>${esc(company)}</td></tr>
-            <tr><td style="color:#5b6472;padding:4px 12px 4px 0">ERP actual</td><td>${esc(erp) || '—'}</td></tr>
-            <tr><td style="color:#5b6472;padding:4px 12px 4px 0">Volumen B2B mensual</td><td>${esc(volumeLabel)}</td></tr>
-        </table>
-        ${message ? `<div style="margin-top:16px;border-top:1px solid #eee;padding-top:14px"><p style="color:#5b6472;font-size:13px;margin:0 0 6px">Retos principales</p><p style="font-size:14px;line-height:1.6;margin:0;white-space:pre-wrap">${esc(message)}</p></div>` : ''}
+    const internalHtml = `<div style="background-color:#F9FAFB;padding:40px 20px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;">
+        <div style="max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);border:1px solid #E5E7EB;">
+            <div style="background-color:#0a192f;padding:24px 40px;">
+                <p style="font-size:14px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin:0;">Nuevo prospecto B2B</p>
+            </div>
+            <div style="padding:40px;">
+                <p style="font-size:18px;color:#1F2937;margin-top:0;line-height:1.5;"><b>${esc(fullName)}</b> de <b>${esc(company)}</b> ha solicitado contactar a ventas.</p>
+                
+                <table style="width:100%;margin-top:32px;border-collapse:collapse;font-size:15px;line-height:1.6;text-align:left;">
+                    <tr style="border-bottom:1px solid #F3F4F6;"><td style="width:150px;color:#6B7280;padding:12px 0;">Nombre</td><td style="color:#1F2937;font-weight:500;">${esc(fullName)}</td></tr>
+                    <tr style="border-bottom:1px solid #F3F4F6;"><td style="color:#6B7280;padding:12px 0;">Correo</td><td><a href="mailto:${email}" style="color:#2563eb;text-decoration:none;">${email}</a></td></tr>
+                    <tr style="border-bottom:1px solid #F3F4F6;"><td style="color:#6B7280;padding:12px 0;">Cargo</td><td style="color:#1F2937;">${esc(role) || '—'}</td></tr>
+                    <tr style="border-bottom:1px solid #F3F4F6;"><td style="color:#6B7280;padding:12px 0;">Empresa</td><td style="color:#1F2937;">${esc(company)}</td></tr>
+                    <tr style="border-bottom:1px solid #F3F4F6;"><td style="color:#6B7280;padding:12px 0;">ERP actual</td><td style="color:#1F2937;">${esc(erp) || '—'}</td></tr>
+                    <tr><td style="color:#6B7280;padding:12px 0;">Volumen B2B</td><td style="color:#1F2937;font-weight:500;">${esc(volumeLabel)}</td></tr>
+                </table>
+                
+                ${message ? `<div style="margin-top:32px;background-color:#F8FAFC;padding:24px;border-radius:12px;border:1px solid #E2E8F0;"><p style="color:#64748B;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin:0 0 12px;">Retos principales</p><p style="font-size:15px;line-height:1.6;color:#334155;margin:0;white-space:pre-wrap;">${esc(message)}</p></div>` : ''}
+            </div>
+        </div>
     </div>`;
 
     const internal = await sendEmail({
@@ -74,11 +83,21 @@ export const POST: APIRoute = async ({ request }) => {
     });
 
     // (2) Auto-respuesta al prospecto.
-    const ackHtml = `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#0f1729;max-width:480px;margin:0 auto">
-        <p style="font-size:15px">Hola ${esc(firstName)},</p>
-        <p style="font-size:15px;line-height:1.6">Gracias por contactar al equipo de <b>Cord</b>. Recibimos tu información y un especialista se pondrá en contacto contigo muy pronto para entender cómo podemos ayudar a ${esc(company)} a digitalizar sus cotizaciones y pedidos B2B.</p>
-        <p style="font-size:15px;line-height:1.6">Mientras tanto, puedes explorar la plataforma en <a href="https://cord.flouvia.com" style="color:#0a192f">cord.flouvia.com</a>.</p>
-        <p style="font-size:13px;color:#9aa1ad;margin-top:24px">Equipo Cord · Flouvia · Hecho en México</p>
+    const ackHtml = `<div style="background-color:#F9FAFB;padding:40px 20px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;">
+        <div style="max-width:560px;margin:0 auto;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);border:1px solid #E5E7EB;">
+            <div style="padding:40px;">
+                <p style="font-size:18px;color:#1F2937;margin-top:0;font-weight:600;">Cord</p>
+                <p style="font-size:16px;color:#1F2937;margin-top:24px;">Hola ${esc(firstName)},</p>
+                <p style="font-size:16px;line-height:1.6;color:#4B5563;">Gracias por contactar al equipo de <b>Cord</b>. Recibimos tu información y un especialista se pondrá en contacto contigo muy pronto para entender cómo podemos ayudar a ${esc(company)} a digitalizar sus cotizaciones y pedidos B2B.</p>
+                
+                <div style="margin-top:32px;padding-top:32px;border-top:1px solid #F3F4F6;">
+                    <p style="font-size:15px;line-height:1.6;color:#4B5563;margin:0;">Mientras tanto, puedes explorar la plataforma en nuestro sitio:<br><a href="https://cord.flouvia.com" style="color:#2563eb;text-decoration:none;font-weight:500;">cord.flouvia.com</a></p>
+                </div>
+            </div>
+            <div style="background-color:#F9FAFB;padding:24px 40px;border-top:1px solid #E5E7EB;text-align:center;">
+                <p style="font-size:13px;color:#9CA3AF;margin:0;">Equipo Cord · Flouvia · Hecho en México</p>
+            </div>
+        </div>
     </div>`;
 
     // El ack es best-effort: no bloquea la respuesta si falla.

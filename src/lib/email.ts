@@ -76,16 +76,25 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, origi
         : `${esc(r.org_nombre)} le comparte la cotización <b>${esc(r.folio)}</b> por <b>${money(r.total)}</b>. Puede revisarla, dejar comentarios y aprobarla en línea:`;
     const firma = (r.email_firma && r.email_firma.trim()) ? fill(r.email_firma) : '';
     const poweredLine = r.portal_powered === false ? esc(r.org_nombre) : `${esc(r.org_nombre)} · enviado con Cord`;
-    const html = `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#0f1729;max-width:480px;margin:0 auto">
-        <p style="font-size:15px">Estimado equipo de <b>${esc(r.empresa || 'cliente')}</b>,</p>
-        <p style="font-size:15px;line-height:1.5">${intro}</p>
-        <p style="margin:24px 0">
-            <a href="${link}" style="display:inline-block;background:${color};color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 24px;border-radius:10px">Ver cotización ${esc(r.folio)}</a>
-        </p>
-        <p style="font-size:13px;color:#5b6472">O copie este enlace: <br><a href="${link}" style="color:${color}">${link}</a></p>
-        ${r.mensaje ? `<p style="font-size:13px;color:#5b6472;border-top:1px solid #eee;padding-top:12px;margin-top:20px">${esc(r.mensaje)}</p>` : ''}
-        ${firma ? `<p style="font-size:13px;color:#5b6472;line-height:1.5;margin-top:18px">${firma}</p>` : ''}
-        <p style="font-size:13px;color:#9aa1ad;margin-top:20px">${poweredLine}</p>
+    const html = `<div style="background-color:#F9FAFB;padding:40px 20px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;">
+        <div style="max-width:560px;margin:0 auto;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);border:1px solid #E5E7EB;">
+            <div style="padding:40px;">
+                <p style="font-size:16px;color:#1F2937;margin-top:0;">Estimado equipo de <b>${esc(r.empresa || 'cliente')}</b>,</p>
+                <p style="font-size:16px;line-height:1.6;color:#4B5563;margin-bottom:32px;">${intro}</p>
+                
+                <div style="text-align:center;margin:32px 0;">
+                    <a href="${link}" style="display:inline-block;background-color:${color};color:#ffffff;text-decoration:none;font-weight:600;font-size:16px;padding:14px 28px;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,0.05);">Ver cotización ${esc(r.folio)}</a>
+                </div>
+                
+                <p style="font-size:14px;color:#6B7280;line-height:1.5;word-break:break-all;">O copie este enlace en su navegador:<br><a href="${link}" style="color:${color};text-decoration:underline;">${link}</a></p>
+                
+                ${r.mensaje ? `<div style="margin-top:32px;padding-top:24px;border-top:1px solid #F3F4F6;"><p style="font-size:15px;color:#4B5563;line-height:1.6;margin:0;">${esc(r.mensaje)}</p></div>` : ''}
+                ${firma ? `<div style="margin-top:24px;"><p style="font-size:15px;color:#4B5563;line-height:1.6;margin:0;">${firma}</p></div>` : ''}
+            </div>
+            <div style="background-color:#F9FAFB;padding:24px 40px;border-top:1px solid #E5E7EB;text-align:center;">
+                <p style="font-size:13px;color:#9CA3AF;margin:0;">${poweredLine}</p>
+            </div>
+        </div>
     </div>`;
     return sendEmail({
         to: r.email,
