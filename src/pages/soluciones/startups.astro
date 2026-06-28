@@ -316,13 +316,13 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                                 <div class="int-chart-area">
                                                     <svg class="int-chart-line" viewBox="0 0 100 40" preserveAspectRatio="none">
                                                         <defs>
-                                                            <linearGradient id="premiumGrad" x1="0" y1="0" x2="0" y2="1">
-                                                                <stop offset="0%" stop-color="rgba(0,201,255,0.4)" />
-                                                                <stop offset="100%" stop-color="rgba(0,201,255,0)" />
+                                                            <linearGradient id="carbonGrad" x1="0" y1="0" x2="0" y2="1">
+                                                                <stop offset="0%" stop-color="rgba(255,255,255,0.15)" />
+                                                                <stop offset="100%" stop-color="rgba(255,255,255,0)" />
                                                             </linearGradient>
                                                         </defs>
-                                                        <path d="M0,40 L0,30 C20,30 30,10 50,20 C70,30 80,5 100,10 L100,40 Z" fill="url(#premiumGrad)"></path>
-                                                        <path d="M0,30 C20,30 30,10 50,20 C70,30 80,5 100,10" fill="none" stroke="#00C9FF" stroke-width="1.5"></path>
+                                                        <path d="M0,40 L0,30 C20,30 30,10 50,20 C70,30 80,5 100,10 L100,40 Z" fill="url(#carbonGrad)"></path>
+                                                        <path d="M0,30 C20,30 30,10 50,20 C70,30 80,5 100,10" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"></path>
                                                     </svg>
                                                 </div>
                                             </div>
@@ -2115,8 +2115,8 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
 
     /* --- INTEGRATED HIGH-FIDELITY MOCKUPS --- */
     /* 1. Magic Link (Cierre Instantáneo) */
-    .pillar-mock-magic {
-        background: radial-gradient(circle at center, rgba(0,201,255,0.2) 0%, transparent 70%);
+    .pillar-mock-magic, .pillar-mock-premium, .pillar-mock-cfdi {
+        background: none;
     }
     .integrated-magic {
         display: flex; flex-direction: column; gap: 24px;
@@ -2127,25 +2127,22 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     .int-invoice-item {
         display: flex; flex-direction: column; align-items: center; gap: 6px;
     }
-    .int-item-name { color: #94a3b8; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; }
-    .int-item-price { color: #ffffff; font-size: 28px; font-weight: 700; font-family: "Inter", sans-serif; }
+    .int-item-name { color: #888; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; }
+    .int-item-price { color: #ffffff; font-size: 28px; font-weight: 700; font-family: "Inter", sans-serif; letter-spacing: -0.5px; }
     .int-btn-primary {
-        background: #0ea5e9; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600;
+        background: #ffffff; color: #000000; border: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600;
         position: relative; cursor: pointer; transition: background 0.3s, box-shadow 0.3s;
-        box-shadow: 0 10px 20px rgba(14,165,233,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+        box-shadow: 0 4px 14px rgba(255,255,255,0.1);
     }
-    .stripe-pillar-card:hover .int-btn-primary { background: #0284c7; box-shadow: 0 15px 30px rgba(14,165,233,0.5), inset 0 1px 0 rgba(255,255,255,0.2); }
+    .stripe-pillar-card:hover .int-btn-primary { background: #e5e5e5; box-shadow: 0 6px 20px rgba(255,255,255,0.15); }
     .int-cursor {
         position: absolute; right: -15px; bottom: -20px; width: 24px; height: 24px;
         transform: translate(25px, 25px); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        color: #0f172a; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+        color: #ffffff; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
     }
     .stripe-pillar-card:hover .int-cursor { transform: translate(0, 0); }
 
     /* 2. Premium UI (Presentación premium) */
-    .pillar-mock-premium {
-        background: radial-gradient(circle at center, rgba(0,113,227,0.25) 0%, transparent 70%);
-    }
     .integrated-premium {
         width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-end;
         position: relative; padding: 24px;
@@ -2153,36 +2150,33 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     .int-kpi-row { display: flex; gap: 16px; position: relative; z-index: 2; margin-bottom: 20px; transform: translateY(10px); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
     .stripe-pillar-card:hover .int-kpi-row { transform: translateY(0); }
     .int-kpi { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-    .int-kpi span { font-size: 11px; color: #94a3b8; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    .int-kpi span { font-size: 11px; color: #888; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
     .int-kpi strong { font-size: 20px; color: #ffffff; font-family: "Inter", sans-serif; font-weight: 600; }
-    .int-kpi strong.text-green { color: #10b981; }
+    .int-kpi strong.text-green { color: #d4d4d4; }
     .int-chart-area { position: absolute; bottom: 0; left: 0; width: 100%; height: 60%; opacity: 0.8; transition: opacity 0.6s, transform 0.6s; transform: scaleY(0.9); transform-origin: bottom; }
     .stripe-pillar-card:hover .int-chart-area { opacity: 1; transform: scaleY(1); }
     .int-chart-line { width: 100%; height: 100%; }
 
     /* 3. CFDI 4.0 (Facturación automática) */
-    .pillar-mock-cfdi {
-        background: radial-gradient(circle at center, rgba(16,185,129,0.15) 0%, transparent 70%);
-    }
     .integrated-cfdi {
         width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;
     }
     .int-code-lines { 
         font-family: 'SF Mono', Consolas, monospace; font-size: 12px; display: flex; flex-direction: column; gap: 8px;
-        color: #94a3b8; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);
-        transform: translateY(10px); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s;
+        color: #737373; background: #000000; padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);
+        transform: translateY(10px); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s, border-color 0.6s;
     }
-    .stripe-pillar-card:hover .int-code-lines { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.5); border-color: rgba(16,185,129,0.2); }
-    .int-code-tag { color: #38bdf8; }
-    .int-code-attr { color: #a78bfa; }
-    .int-code-string { color: #a3e635; }
+    .stripe-pillar-card:hover .int-code-lines { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.8); border-color: rgba(255,255,255,0.15); }
+    .int-code-tag { color: #888; }
+    .int-code-attr { color: #a3a3a3; }
+    .int-code-string { color: #e5e5e5; }
     .int-status-badge {
-        background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3);
-        color: #10b981; padding: 6px 16px; border-radius: 20px; font-size: 11px; font-weight: 600;
-        display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(16,185,129,0.2);
-        transform: scale(0.95) translateY(10px); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s;
+        background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #a3a3a3; padding: 6px 16px; border-radius: 20px; font-size: 11px; font-weight: 500;
+        display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        transform: scale(0.95) translateY(10px); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s, color 0.3s;
     }
-    .stripe-pillar-card:hover .int-status-badge { transform: scale(1) translateY(0); background: rgba(16, 185, 129, 0.25); box-shadow: 0 8px 20px rgba(16,185,129,0.3); }
+    .stripe-pillar-card:hover .int-status-badge { transform: scale(1) translateY(0); background: rgba(255, 255, 255, 0.08); color: #fff; }
     
     .stripe-pillar-content {
         padding: 2.5rem;
