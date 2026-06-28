@@ -591,6 +591,76 @@ const { slug, index } = Astro.props;
       </div>
     </div>
   )}
+  {/* ────────────────── NEGOCIACIÓN ────────────────── */}
+  {slug === 'negociacion' && index === 0 && (
+    <div class="bm-stage bm-nego-m0">
+      <div class="bm-floating bm-float-bottom-right">
+        <div class="bm-pill"><i class="bm-dot bm-dot-red"></i><span>Contraoferta recibida</span></div>
+      </div>
+      <div class="bm-card">
+        <div class="bm-row"><span>Cemento gris 50kg</span><span class="bm-badge bm-badge-gray">Aprobado</span><b class="editorial">$21,840</b></div>
+        <div class="bm-row bm-active">
+          <span>Varilla 3/8"</span><span class="bm-badge bm-badge-orange">Ajuste de precio</span>
+          <div style="display:flex; flex-direction:column; align-items:flex-end;">
+            <b class="editorial" style="text-decoration:line-through; color:rgba(255,255,255,0.4); font-size:10px;">$57,290</b>
+            <b class="editorial" style="color:#fbbf24;">$55,000</b>
+          </div>
+        </div>
+        <div class="bm-row"><span>Block hueco</span><span class="bm-badge bm-badge-gray">Aprobado</span><b class="editorial">$34,080</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'negociacion' && index === 1 && (
+    <div class="bm-stage bm-nego-m1">
+      <div class="bm-floating bm-float-top-left">
+        <div class="bm-pill bm-pill-brand"><span>Historial inmutable</span></div>
+      </div>
+      <div class="bm-card">
+        <div class="bm-tl">
+          <div class="bm-tl-row">
+            <div class="bm-tl-line"></div>
+            <div class="bm-tl-node"><i>✓</i></div>
+            <div class="bm-tl-content">
+              <b>v1. Original</b><span>Enviada por ti</span>
+            </div>
+          </div>
+          <div class="bm-tl-row">
+            <div class="bm-tl-line"></div>
+            <div class="bm-tl-node" style="background:#fbbf24; box-shadow: 0 0 0 4px #0a192f, 0 2px 8px rgba(245,158,11,0.3);"></div>
+            <div class="bm-tl-content">
+              <b>v2. Contraoferta</b><span>Revisada por cliente</span>
+            </div>
+          </div>
+          <div class="bm-tl-row bm-active">
+            <div class="bm-tl-line"></div>
+            <div class="bm-tl-node"><i>✓</i></div>
+            <div class="bm-tl-content">
+              <b>v3. Aprobada</b><span>Fijada hoy</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'negociacion' && index === 2 && (
+    <div class="bm-stage bm-nego-m2">
+      <div class="bm-floating bm-float-bottom-right">
+        <div class="bm-pill"><i class="bm-dot bm-dot-green"></i><span>Firma validada</span></div>
+      </div>
+      <div class="bm-card bm-cfdi-card">
+        <div class="bm-fake-xml" style="opacity: 0.8; font-family: monospace; font-size: 8px; color: #34d399; line-height: 1.2;">
+          e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855...           d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592...           31d6cfe0d16ae931b73c59d7e0c089c0ce02d84c04a43b749d8e6a2b8e5c4a5...
+        </div>
+        <div style="position:relative; z-index:1; background:rgba(10,25,47,0.85); padding: 12px; border-radius: 8px; display:flex; flex-direction:column; gap:4px; align-items:center; text-align:center; border: 1px solid rgba(52,211,153,0.2);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" style="width:24px; height:24px; margin-bottom:4px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+          <b style="color:#fff; font-size:12px;">Acuerdo cerrado</b>
+          <span style="color:rgba(255,255,255,0.6); font-size:10px;">Hash SHA-256 inyectado</span>
+        </div>
+      </div>
+    </div>
+  )}
 </div>
 <style>
   /* 
@@ -853,78 +923,6 @@ const { slug, index } = Astro.props;
   .bm-chart-col { flex: 1; height: 100%; display: flex; align-items: flex-end; }
   .bm-chart-col-fill { width: 100%; background: rgba(255,255,255,0.08); border-radius: 4px 4px 0 0; height: 0%; transition: height 0.3s; }
   .bm-chart-active .bm-chart-col-fill { background: linear-gradient(180deg, #3b82f6, #2563eb); }
-
-  {/* ────────────────── NEGOCIACIÓN ────────────────── */}
-  {slug === 'negociacion' && index === 0 && (
-    <div class="bm-stage bm-nego-m0">
-      <div class="bm-floating bm-float-bottom-right">
-        <div class="bm-pill"><i class="bm-dot bm-dot-red"></i><span>Contraoferta recibida</span></div>
-      </div>
-      <div class="bm-card">
-        <div class="bm-row"><span>Cemento gris 50kg</span><span class="bm-badge bm-badge-gray">Aprobado</span><b class="editorial">$21,840</b></div>
-        <div class="bm-row bm-active">
-          <span>Varilla 3/8"</span><span class="bm-badge bm-badge-orange">Ajuste de precio</span>
-          <div style="display:flex; flex-direction:column; align-items:flex-end;">
-            <b class="editorial" style="text-decoration:line-through; color:rgba(255,255,255,0.4); font-size:10px;">$57,290</b>
-            <b class="editorial" style="color:#fbbf24;">$55,000</b>
-          </div>
-        </div>
-        <div class="bm-row"><span>Block hueco</span><span class="bm-badge bm-badge-gray">Aprobado</span><b class="editorial">$34,080</b></div>
-      </div>
-    </div>
-  )}
-
-  {slug === 'negociacion' && index === 1 && (
-    <div class="bm-stage bm-nego-m1">
-      <div class="bm-floating bm-float-top-left">
-        <div class="bm-pill bm-pill-brand"><span>Historial inmutable</span></div>
-      </div>
-      <div class="bm-card">
-        <div class="bm-tl">
-          <div class="bm-tl-row">
-            <div class="bm-tl-line"></div>
-            <div class="bm-tl-node"><i>✓</i></div>
-            <div class="bm-tl-content">
-              <b>v1. Original</b><span>Enviada por ti</span>
-            </div>
-          </div>
-          <div class="bm-tl-row">
-            <div class="bm-tl-line"></div>
-            <div class="bm-tl-node" style="background:#fbbf24; box-shadow: 0 0 0 4px #0a192f, 0 2px 8px rgba(245,158,11,0.3);"></div>
-            <div class="bm-tl-content">
-              <b>v2. Contraoferta</b><span>Revisada por cliente</span>
-            </div>
-          </div>
-          <div class="bm-tl-row bm-active">
-            <div class="bm-tl-line"></div>
-            <div class="bm-tl-node"><i>✓</i></div>
-            <div class="bm-tl-content">
-              <b>v3. Aprobada</b><span>Fijada hoy</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )}
-
-  {slug === 'negociacion' && index === 2 && (
-    <div class="bm-stage bm-nego-m2">
-      <div class="bm-floating bm-float-bottom-right">
-        <div class="bm-pill"><i class="bm-dot bm-dot-green"></i><span>Firma validada</span></div>
-      </div>
-      <div class="bm-card bm-cfdi-card">
-        <div class="bm-fake-xml" style="opacity: 0.8; font-family: monospace; font-size: 8px; color: #34d399; line-height: 1.2;">
-          e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855...           d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592...           31d6cfe0d16ae931b73c59d7e0c089c0ce02d84c04a43b749d8e6a2b8e5c4a5...
-        </div>
-        <div style="position:relative; z-index:1; background:rgba(10,25,47,0.85); padding: 12px; border-radius: 8px; display:flex; flex-direction:column; gap:4px; align-items:center; text-align:center; border: 1px solid rgba(52,211,153,0.2);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" style="width:24px; height:24px; margin-bottom:4px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-          <b style="color:#fff; font-size:12px;">Acuerdo cerrado</b>
-          <span style="color:rgba(255,255,255,0.6); font-size:10px;">Hash SHA-256 inyectado</span>
-        </div>
-      </div>
-    </div>
-  )}
-
   /* ── Responsive ── */
   @media (max-width: 860px) {
     .bm-wrap { min-height: 220px; padding: 1.5rem 1rem; }
