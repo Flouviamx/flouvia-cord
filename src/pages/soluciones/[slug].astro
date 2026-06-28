@@ -820,6 +820,91 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
             </div>
         </section>
 
+        <!-- ── CORD DASHBOARD MOCKUP ── -->
+        <section class="cord-dashboard-section reveal">
+            <div class="stripe-container">
+                <div class="cord-dashboard-header">
+                    <h2 class="cord-dashboard-title">{isEn ? 'Manage your entire revenue lifecycle from one Dashboard' : 'Gestiona todo tu ciclo de ventas desde un solo Dashboard'}</h2>
+                    <p class="cord-dashboard-desc">{isEn ? 'Execute financial operations, collect insights, and track performance in a highly customizable interface.' : 'Centraliza tus propuestas, contratos, facturas y cobranza. Analiza el rendimiento de tu equipo comercial en una interfaz diseñada para la velocidad.'}</p>
+                </div>
+                
+                <div class="cord-dash-mockup">
+                    <div class="cord-dash-nav">
+                        <div class="cord-dash-tabs">
+                            <span class="dash-tab active">Facturación</span>
+                            <span class="dash-tab">Propuestas</span>
+                            <span class="dash-tab">Clientes</span>
+                            <span class="dash-tab">Productos</span>
+                            <span class="dash-tab">Reportes</span>
+                        </div>
+                        <div class="cord-dash-actions">
+                            <span class="dash-pill">Modo de prueba <div class="dash-toggle"></div></span>
+                        </div>
+                    </div>
+                    
+                    <div class="cord-dash-subnav">
+                        <h3 class="dash-view-title">Facturación</h3>
+                        <div class="dash-subtabs">
+                            <span class="subtab active">Resumen</span>
+                            <span class="subtab">Facturas</span>
+                            <span class="subtab">Suscripciones</span>
+                            <span class="subtab">Automatizaciones</span>
+                        </div>
+                    </div>
+                    
+                    <div class="cord-dash-body">
+                        <div class="dash-grid">
+                            <div class="dash-chart-card">
+                                <h4 class="chart-title">Crecimiento (MRR)</h4>
+                                <div class="chart-value">$3,528,198.72 <span class="chart-badge">+46.7%</span></div>
+                                <div class="chart-graphic">
+                                    <svg viewBox="0 0 400 100" preserveAspectRatio="none">
+                                        <path d="M0,80 L50,85 L100,70 L150,75 L200,80 L250,50 L300,55 L350,20 L400,25" fill="none" stroke="#00C9FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M0,80 L50,85 L100,70 L150,75 L200,80 L250,50 L300,55 L350,20 L400,25 L400,100 L0,100 Z" fill="url(#chartGrad1)" opacity="0.2" />
+                                        <defs>
+                                            <linearGradient id="chartGrad1" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stop-color="#00C9FF"/>
+                                                <stop offset="100%" stop-color="transparent"/>
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
+                                    <div class="chart-grid-lines">
+                                        <div class="c-line"></div>
+                                        <div class="c-line"></div>
+                                        <div class="c-line"></div>
+                                        <div class="c-line"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="dash-chart-card">
+                                <h4 class="chart-title">Suscriptores activos</h4>
+                                <div class="chart-value">4,567</div>
+                                <div class="chart-graphic">
+                                    <svg viewBox="0 0 400 100" preserveAspectRatio="none">
+                                        <path d="M0,50 L50,45 L100,60 L150,75 L200,30 L250,20 L300,45 L350,30 L400,35" fill="none" stroke="#4f46e5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M0,50 L50,45 L100,60 L150,75 L200,30 L250,20 L300,45 L350,30 L400,35 L400,100 L0,100 Z" fill="url(#chartGrad2)" opacity="0.2" />
+                                        <defs>
+                                            <linearGradient id="chartGrad2" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stop-color="#4f46e5"/>
+                                                <stop offset="100%" stop-color="transparent"/>
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
+                                    <div class="chart-grid-lines">
+                                        <div class="c-line"></div>
+                                        <div class="c-line"></div>
+                                        <div class="c-line"></div>
+                                        <div class="c-line"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- ── SECURITY / TRUST CENTER ── -->
         {solucion.security && (
             <section class="stripe-security-section">
@@ -2819,6 +2904,212 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     .app-icon.cord-green { background: linear-gradient(135deg, #34d399, #059669); color: rgba(0,0,0,0.25); }
     .app-icon.cord-cyan { background: linear-gradient(135deg, #67e8f9, #0891b2); color: rgba(0,0,0,0.25); }
     .app-icon.cord-dark { background: linear-gradient(135deg, #1e293b, #0f172a); color: rgba(0,0,0,0.4); }
+
+    /* ── CORD DASHBOARD SECTION ── */
+    .cord-dashboard-section {
+        padding: 6rem 0 0 0;
+        background: #f8fafc;
+        position: relative;
+        overflow: hidden;
+    }
+    .cord-dashboard-header {
+        max-width: 680px;
+        margin-bottom: 4rem;
+    }
+    .cord-dashboard-title {
+        font-size: clamp(2.5rem, 4vw, 3.5rem);
+        font-weight: 700;
+        color: #0a2540;
+        letter-spacing: -0.04em;
+        line-height: 1.1;
+        margin-bottom: 1.5rem;
+    }
+    .cord-dashboard-desc {
+        font-size: 1.15rem;
+        color: #425466;
+        line-height: 1.6;
+    }
+    
+    /* ── MOCKUP UI ── */
+    .cord-dash-mockup {
+        background: #ffffff;
+        border-radius: 12px 12px 0 0;
+        box-shadow: 0 30px 60px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.03);
+        border: 1px solid rgba(0,0,0,0.05);
+        border-bottom: none;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transform: perspective(1200px) rotateX(2deg);
+        transform-origin: bottom;
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s;
+        margin-bottom: -10px; /* Hide bottom edge */
+    }
+    .cord-dash-mockup:hover {
+        transform: perspective(1200px) rotateX(0deg);
+        box-shadow: 0 40px 80px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.04);
+    }
+    .cord-dash-nav {
+        display: flex;
+        justify-content: space-between;
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .cord-dash-tabs {
+        display: flex;
+        gap: 1rem;
+    }
+    .dash-tab {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        padding: 6px 12px;
+        border-radius: 20px;
+        transition: background 0.2s, color 0.2s;
+    }
+    .dash-tab.active {
+        background: #0071e3;
+        color: #ffffff;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(0,113,227,0.3);
+    }
+    .cord-dash-actions {
+        display: flex;
+        align-items: center;
+    }
+    .dash-pill {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+    .dash-toggle {
+        width: 32px;
+        height: 18px;
+        background: #cbd5e1;
+        border-radius: 10px;
+        position: relative;
+    }
+    .dash-toggle::after {
+        content: '';
+        position: absolute;
+        top: 2px; left: 2px;
+        width: 14px; height: 14px;
+        background: white;
+        border-radius: 50%;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    
+    .cord-dash-subnav {
+        padding: 2.5rem 2rem 0 2rem;
+    }
+    .dash-view-title {
+        font-size: 1.85rem;
+        font-weight: 700;
+        color: #0a2540;
+        margin-bottom: 1.5rem;
+    }
+    .dash-subtabs {
+        display: flex;
+        gap: 2rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .subtab {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #64748b;
+        padding-bottom: 12px;
+        position: relative;
+        cursor: pointer;
+    }
+    .subtab.active {
+        color: #0071e3;
+        font-weight: 600;
+    }
+    .subtab.active::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: #0071e3;
+    }
+    
+    .cord-dash-body {
+        padding: 2rem;
+        background: #fdfdfd;
+        min-height: 400px;
+    }
+    .dash-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+    .dash-chart-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    }
+    .chart-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 0.5rem;
+    }
+    .chart-value {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #0a2540;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 2.5rem;
+    }
+    .chart-badge {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #059669;
+        background: #d1fae5;
+        padding: 4px 10px;
+        border-radius: 12px;
+    }
+    
+    .chart-graphic {
+        position: relative;
+        height: 140px;
+        width: 100%;
+    }
+    .chart-graphic svg {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        z-index: 2;
+    }
+    .chart-grid-lines {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        z-index: 1;
+    }
+    .c-line {
+        width: 100%;
+        height: 1px;
+        background: #f1f5f9;
+    }
+
+    @media (max-width: 768px) {
+        .dash-grid { grid-template-columns: 1fr; }
+        .cord-dash-tabs, .dash-subtabs { overflow-x: auto; padding-bottom: 8px; }
+        .cord-dash-nav { flex-direction: column; gap: 1rem; }
+    }
 </style>
 
 <script>
