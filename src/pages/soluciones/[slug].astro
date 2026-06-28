@@ -165,7 +165,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                     <p class="stripe-fg-desc">{block.copy}</p>
                                     <div class="stripe-fg-tags">
                                         {block.bullets.map(b => (
-                                            <a href="/contacto" class="stripe-fg-tag">{b}</a>
+                                            <a href="/producto" class="stripe-fg-tag">{b}</a>
                                         ))}
                                     </div>
                                 </div>
@@ -189,10 +189,10 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                 </svg>
                             </div>
                             <div class="stripe-resource-content">
-                                <span class="stripe-resource-eyebrow">Guía</span>
-                                <h4 class="stripe-resource-title">Mejores prácticas para controlar márgenes B2B</h4>
-                                <a href="/contacto" class="stripe-pillar-link">
-                                    Más información
+                                <span class="stripe-resource-eyebrow">Blog</span>
+                                <h4 class="stripe-resource-title">Últimas tendencias B2B y estrategias de automatización</h4>
+                                <a href="/blog" class="stripe-pillar-link">
+                                    Explorar artículos
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M9 18l6-6-6-6"/>
                                     </svg>
@@ -205,10 +205,10 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                 <img src="/imgs/logo-cord.png" alt="Cord" style="width:120px; opacity:0.8;" />
                             </div>
                             <div class="stripe-resource-content">
-                                <span class="stripe-resource-eyebrow">Documentación</span>
-                                <h4 class="stripe-resource-title">Referencia de API y Webhooks para ERPs</h4>
-                                <a href="/contacto" class="stripe-pillar-link">
-                                    Más información
+                                <span class="stripe-resource-eyebrow">Desarrolladores</span>
+                                <h4 class="stripe-resource-title">Referencia de API, webhooks y guías de integración</h4>
+                                <a href="/desarrolladores" class="stripe-pillar-link">
+                                    Ver documentación
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M9 18l6-6-6-6"/>
                                     </svg>
@@ -379,7 +379,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         background-color: var(--stripe-bg);
         color: var(--stripe-text);
         font-family: var(--stripe-font-sans);
-        overflow-x: hidden;
+        overflow-x: clip;
     }
     
     .stripe-container {
