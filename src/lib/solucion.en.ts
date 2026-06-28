@@ -25,7 +25,7 @@ export const SOLUCIONES_EN: Solution[] = [
             titulo: 'Bank-Grade Security & Compliance',
             copy: 'Large enterprises cannot afford risks in their financial flows. Cord is built from the ground up under the highest standards of operational security and cloud infrastructure.',
             features: [
-                { title: 'SSO & SAML', desc: 'Connect Cord with Okta, Azure AD, or Google Workspace for unified access control.' },
+                { title: 'Audit Log', desc: 'Every action is recorded with user, IP, and timestamp in an immutable, read-only log.' },
                 { title: 'SHA-256 Signatures', desc: 'Every approved quote generates an immutable cryptographic hash on our servers.' },
                 { title: 'Advanced RBAC', desc: 'Granular roles and permissions. Define who can see what and who can approve discounts.' },
                 { title: 'Data Residency', desc: 'Your data encrypted at rest (AES-256) and in transit (TLS 1.3).' }
@@ -35,23 +35,26 @@ export const SOLUCIONES_EN: Solution[] = [
             { step: '01', titulo: 'Controlled Quoting', desc: 'The sales rep builds the proposal using locked price lists and pre-approved margins.' },
             { step: '02', titulo: 'Approval Routing', desc: 'If the discount exceeds the threshold, Cord automatically routes the alert to Finance or the Regional Manager.' },
             { step: '03', titulo: 'Cryptographic Closing', desc: 'The client signs digitally. Cord seals the final PDF guaranteeing its legal immutability.' },
-            { step: '04', titulo: 'ERP Sync', desc: 'Upon approval, Cord updates Salesforce and sends the payload to SAP/Oracle to trigger billing.' }
+            { step: '04', titulo: 'Integrate your ERP', desc: 'Upon approval, Cord fires a webhook with the payload so your ERP or CRM can trigger billing.' }
         ],
         pillars: [
             {
                 titulo: 'Centralized Control',
                 desc: 'Define complex business rules and control margin in real-time through approval levels.',
-                link: 'Explore'
+                link: 'Explore',
+                href: '/producto/aprobaciones'
             },
             {
-                titulo: 'ERP Synchronization',
-                desc: 'Connect with SAP, Oracle NetSuite, or Microsoft Dynamics to trigger billing automatically.',
-                link: 'Explore'
+                titulo: 'Integrate your ERP',
+                desc: 'Connect your ERP or CRM through our REST API and webhooks to trigger actions automatically.',
+                link: 'Explore',
+                href: '/desarrolladores/api'
             },
             {
                 titulo: 'Enterprise Security',
                 desc: 'Immutable cryptographic signatures and Role-Based Access Control (RBAC) to protect your pipeline.',
-                link: 'Explore'
+                link: 'Explore',
+                href: '/producto/negociacion'
             }
         ],
         stats: [
@@ -75,7 +78,7 @@ export const SOLUCIONES_EN: Solution[] = [
                 titulo: 'Connected to your operational ecosystem.',
                 copy: 'Cord is not a silo. Through our robust APIs and Webhooks, you can sync catalogs, update CRMs (Salesforce, HubSpot), and trigger billing in your ERP the millisecond a client approves.',
                 bullets: [
-                    'Two-way sync with your ERP',
+                    'REST API to connect your ERP or CRM',
                     'Real-time webhooks for business events',
                     'Massive catalogs managed via API',
                 ],
@@ -107,7 +110,7 @@ export const SOLUCIONES_EN: Solution[] = [
             },
             {
                 q: 'How does Cord integrate with our current ERP?',
-                a: 'Our REST API and Webhooks system allow two-way sync of clients, inventory, and pricing lists. We also generate a standard payload to trigger billing in SAP, Oracle, or your ERP of choice upon quote approval.',
+                a: 'Our REST API and Webhooks let you read and write clients, inventory, and pricing lists from your own software. Every event (such as a quote approval) fires a webhook with the payload so your ERP or CRM —SAP, Oracle, HubSpot, or any other— can consume it and trigger billing.',
             },
             {
                 q: 'Can we migrate our catalog of thousands of SKUs?',
@@ -118,7 +121,7 @@ export const SOLUCIONES_EN: Solution[] = [
                 a: 'All data is encrypted at rest and in transit. Closed quotes generate an SHA-256 hash signature ensuring immutability. We offer Enterprise SLAs for availability and direct technical support.',
             },
         ],
-        interlink: { href: '/producto/api', label: 'API & Webhooks for integrations' },
+        interlink: { href: '/desarrolladores/api', label: 'API & Webhooks for integrations' },
         cta: { titulo: 'Scale your commercial operation with confidence.', sub: 'Schedule a technical session with our solutions team.' },
     },
     {
@@ -135,7 +138,7 @@ export const SOLUCIONES_EN: Solution[] = [
             {
                 title: 'Agencies & Consultancies',
                 desc: 'Send professional services proposals instantly, with binding electronic signatures, and automate recurring monthly retainer collection without friction.',
-                link: '/producto/pagos',
+                link: '/casos-de-uso/agencias',
                 logos: [
                     { name: 'Ogilvy', domain: 'ogilvy.com' },
                     { name: 'Accenture', domain: 'accenture.com' },
@@ -145,7 +148,7 @@ export const SOLUCIONES_EN: Solution[] = [
             {
                 title: 'B2B SaaS',
                 desc: 'Manage subscriptions, custom contracts, and Enterprise plans. Integrate recurring payments and issue automated CFDI invoices without touching the SAT portal.',
-                link: '/producto/facturacion',
+                link: '/casos-de-uso/saas',
                 logos: [
                     { name: 'Linear', domain: 'linear.app' },
                     { name: 'Stripe', domain: 'stripe.com' },
@@ -155,7 +158,7 @@ export const SOLUCIONES_EN: Solution[] = [
             {
                 title: 'B2B Wholesale',
                 desc: 'Quote in volume, apply discounts through dynamic tiers, handle extensive catalogs, and automate large order billing upon payment confirmation.',
-                link: '/producto/cotizaciones',
+                link: '/casos-de-uso/comercializadoras',
                 logos: [
                     { name: 'Grainger', domain: 'grainger.com' },
                     { name: 'Uline', domain: 'uline.com' },
@@ -165,7 +168,7 @@ export const SOLUCIONES_EN: Solution[] = [
             {
                 title: 'Software Factories',
                 desc: 'Send custom development budgets, split payments by delivery milestones, and receive real-time notifications when the client approves the proposal.',
-                link: '/producto/aprobaciones',
+                link: '/casos-de-uso/software-factory',
                 logos: [
                     { name: 'Cursor', domain: 'cursor.com' },
                     { name: 'GitHub', domain: 'github.com' },

@@ -75,7 +75,7 @@ export interface Solution {
     integrations?: SolIntegration[];
     security?: SolSecurity;
     workflow?: SolWorkflowStep[];
-    pillars?: { titulo: string; desc: string; link: string }[];
+    pillars?: { titulo: string; desc: string; link: string; href?: string }[];
     useCases?: SolUseCase[];
 
     resultado?: {            // caso de uso real con métricas (AI-SEO)
@@ -113,7 +113,7 @@ export const SOLUCIONES: Solution[] = [
             titulo: 'Seguridad y Compliance de Grado Bancario',
             copy: 'Las grandes empresas no pueden permitirse riesgos en sus flujos financieros. Cord está construido desde sus cimientos bajo los más altos estándares de seguridad operativa e infraestructura cloud.',
             features: [
-                { title: 'SSO & SAML', desc: 'Conecta Cord con Okta, Azure AD o Google Workspace para control de acceso unificado.' },
+                { title: 'Registro de auditoría', desc: 'Cada acción queda registrada con usuario, IP y fecha en un log inmutable de solo lectura.' },
                 { title: 'Firmas SHA-256', desc: 'Cada cotización aprobada genera un hash criptográfico inmutable en nuestros servidores.' },
                 { title: 'RBAC Avanzado', desc: 'Roles y permisos granulares. Define quién puede ver qué y quién puede aprobar descuentos.' },
                 { title: 'Data Residency', desc: 'Tus datos encriptados en reposo (AES-256) y en tránsito (TLS 1.3).' }
@@ -124,24 +124,27 @@ export const SOLUCIONES: Solution[] = [
             { step: '01', titulo: 'Cotización Controlada', desc: 'El vendedor arma la propuesta usando listas de precios bloqueadas y márgenes preaprobados.' },
             { step: '02', titulo: 'Routing de Aprobación', desc: 'Si el descuento excede el umbral, Cord enruta la alerta a Finanzas o al Gerente Regional automáticamente.' },
             { step: '03', titulo: 'Cierre Criptográfico', desc: 'El cliente firma digitalmente. Cord sella el PDF final garantizando su inmutabilidad legal.' },
-            { step: '04', titulo: 'Sincronización ERP', desc: 'Al aprobarse, Cord actualiza Salesforce y manda el payload a SAP/Oracle para disparar la facturación.' }
+            { step: '04', titulo: 'Integra tu ERP', desc: 'Al aprobarse, Cord dispara un webhook con el payload para que tu ERP o CRM actualice la facturación.' }
         ],
 
         pillars: [
             {
                 titulo: 'Control centralizado',
                 desc: 'Define reglas de negocio complejas y controla el margen en tiempo real mediante niveles de aprobación.',
-                link: 'Explorar'
+                link: 'Explorar',
+                href: '/producto/aprobaciones'
             },
             {
-                titulo: 'Sincronización ERP',
-                desc: 'Conecta con SAP, Oracle NetSuite o Microsoft Dynamics para disparar la facturación automáticamente.',
-                link: 'Explorar'
+                titulo: 'Integra tu ERP',
+                desc: 'Conéctate con tu ERP o CRM mediante nuestra API REST y webhooks para disparar acciones automáticamente.',
+                link: 'Explorar',
+                href: '/desarrolladores/api'
             },
             {
                 titulo: 'Seguridad corporativa',
                 desc: 'Firmas criptográficas inmutables y control de acceso basado en roles (RBAC) para proteger tu pipeline.',
-                link: 'Explorar'
+                link: 'Explorar',
+                href: '/producto/negociacion'
             }
         ],
 
@@ -166,7 +169,7 @@ export const SOLUCIONES: Solution[] = [
                 titulo: 'Conectado a tu ecosistema operativo.',
                 copy: 'Cord no es un silo. A través de nuestras APIs y Webhooks robustos, puedes sincronizar catálogos, actualizar CRMs (Salesforce, HubSpot) y disparar facturación en tu ERP en el milisegundo en que un cliente aprueba.',
                 bullets: [
-                    'Sincronización bidireccional con tu ERP',
+                    'API REST para conectar tu ERP o CRM',
                     'Webhooks en tiempo real para eventos de negocio',
                     'Catálogos gigantes gestionados vía API',
                 ],
@@ -198,7 +201,7 @@ export const SOLUCIONES: Solution[] = [
             },
             {
                 q: '¿Cómo se integra Cord con nuestro ERP actual?',
-                a: 'Nuestra API REST y el sistema de Webhooks permiten sincronizar clientes, inventarios y listas de precios bidireccionalmente. También generamos un payload estándar para disparar la facturación en SAP, Oracle o el ERP de tu elección al aprobarse una cotización.',
+                a: 'Nuestra API REST y el sistema de Webhooks te permiten leer y escribir clientes, inventarios y listas de precios desde tu propio software. Cada evento (como la aprobación de una cotización) dispara un webhook con el payload para que tu ERP o CRM —SAP, Oracle, HubSpot u otro— lo consuma y dispare la facturación.',
             },
             {
                 q: '¿Podemos migrar nuestro catálogo de miles de SKUs?',
@@ -209,7 +212,7 @@ export const SOLUCIONES: Solution[] = [
                 a: 'Todos los datos están encriptados en reposo y en tránsito. Las cotizaciones cerradas generan una firma hash SHA-256 que garantiza su inmutabilidad. Ofrecemos SLAs empresariales para disponibilidad y soporte técnico directo.',
             },
         ],
-        interlink: { href: '/producto/api', label: 'API y Webhooks para integraciones' },
+        interlink: { href: '/desarrolladores/api', label: 'API y Webhooks para integraciones' },
         cta: { titulo: 'Escala tu operación comercial con confianza.', sub: 'Agenda una sesión técnica con nuestro equipo de soluciones.' },
     },
     {
@@ -297,17 +300,20 @@ export const SOLUCIONES: Solution[] = [
             {
                 titulo: 'Cierre instantáneo',
                 desc: 'Links mágicos de aprobación inmediata que permiten a tus clientes aceptar propuestas en un clic.',
-                link: 'Explorar'
+                link: 'Explorar',
+                href: '/producto/link-publico'
             },
             {
                 titulo: 'Presentación premium',
                 desc: 'Luce como una empresa pública desde el primer día con plantillas de diseño impecable.',
-                link: 'Explorar'
+                link: 'Explorar',
+                href: '/producto/editor'
             },
             {
                 titulo: 'Facturación automática',
                 desc: 'Genera el CFDI automáticamente al aceptar la propuesta, sin tocar el portal del SAT.',
-                link: 'Explorar'
+                link: 'Explorar',
+                href: '/producto/cfdi'
             }
         ],
 

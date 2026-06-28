@@ -51,6 +51,8 @@ const description = isEn
                 </div>
 
                     <form id="contactWizard" class="minimal-form" novalidate>
+                    <!-- Honeypot anti-spam: oculto para humanos, los bots lo rellenan -->
+                    <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
                     <!-- STEP 1: Email & ERP -->
                     <div class="step-content" id="step-1">
                         <h1 class="step-title">{isEn ? "We'll get you to the right place" : "Te llevamos al lugar correcto"}</h1>
@@ -691,6 +693,7 @@ const description = isEn
     import { gsap } from 'gsap';
     
     document.addEventListener('DOMContentLoaded', () => {
+        const isEnPage = location.pathname.startsWith('/en');
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (reduced) {
             gsap.set('.reveal-mockup', { opacity: 1, y: 0 });
@@ -811,11 +814,47 @@ const description = isEn
             });
         });
         
-        // Handle Submit
+        // Handle Submit — envío REAL a /api/contacto/ventas (correo a ventas + ack).
         if(form) {
-            form.addEventListener('submit', (e) => {
+            form.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                // Simular envío de datos
+
+                // Valida el paso actual (volumen + mensaje) antes de enviar.
+                const fields = steps[currentStep]?.querySelectorAll('input, select, textarea');
+                let isValid = true;
+                fields?.forEach((el) => {
+                    const field = el as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+                    if (!field.checkValidity()) {
+                        field.classList.add('has-error');
+                        field.reportValidity();
+                        isValid = false;
+                    }
+                });
+                if (!isValid) return;
+
+                const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement | null;
+                if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = '0.6'; }
+
+                const fd = new FormData(form);
+                const payload = Object.fromEntries(fd.entries());
+
+                try {
+                    const res = await fetch('/api/contacto/ventas', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    if (!res.ok) throw new Error('bad status');
+                } catch (err) {
+                    // Si el envío falla, reactiva el botón y avisa (sin perder el lead capturado).
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = '1'; }
+                    alert(isEnPage
+                        ? 'We could not send your message. Please try again or email hola@flouvia.com.'
+                        : 'No pudimos enviar tu mensaje. Intenta de nuevo o escríbenos a hola@flouvia.com.');
+                    return;
+                }
+
+                // Éxito → pantalla de confirmación.
                 if(updateUI(currentStep, 3)) {
                     currentStep = 3;
                 }

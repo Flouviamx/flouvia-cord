@@ -90,6 +90,37 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
 
 ## Estado actual (jun 2026)
 
+✅ **Auditoría de páginas Soluciones (Empresas/Startups) + form de Contacto real (jun 2026)** —
+   André pidió revisar las páginas nuevas `/soluciones/empresas` y `/soluciones/startups` (ES+EN),
+   verificar links y que TODO el copy sea verdad ("no inventes nada"). Hallazgos y arreglos:
+   • **Form de Contacto de ventas CABLEADO (era cosmético):** `/contacto/ventas` solo simulaba el
+     envío (`// Simular envío de datos`) → cada lead se PERDÍA. Ahora postea a **`/api/contacto/ventas.ts`**
+     (nuevo, `prerender=false`) que manda 2 correos vía el helper `sendEmail` de `src/lib/email.ts`:
+     (1) el lead completo al equipo de ventas (reply-to = prospecto), (2) auto-ack al prospecto.
+     Honeypot anti-spam (`website`). Nueva env opcional **`SALES_EMAIL`** (default `hola@flouvia.com`);
+     gated por `RESEND_API_KEY` (sin ella responde ok igual, `emailed:false`). El submit en
+     `ventas.astro` ahora hace fetch real + valida + deshabilita botón + avisa si falla.
+   • **Claims FALSOS corregidos a la realidad** (en ambas páginas + `src/lib/solucion.ts`/`.en.ts`):
+     "Librerías oficiales Node/Python/PHP" (no hay SDKs) → **Cord Elements** (Web Component+React+Vue);
+     "+5,000 aplicaciones / Zapier nativo" → "webhooks que conectas a Zapier/Make/n8n"; eventos de
+     webhook `payment.succeeded`/`invoice.created` (estilo Stripe, falsos) → **`quote.paid`/`quote.approved`**
+     reales; terminal "SAP NetWeaver + `/api/v1/erp/invoices`" (conector ERP inexistente) → flujo de
+     **webhooks reales** (`cord webhooks listen` → `POST https://tu-erp.com/webhooks/cord`); "Cifrado
+     End-to-End" → "cifrado en reposo (AES-256) y tránsito (TLS)"; "CFDI directamente con la API" →
+     "crea cotizaciones/clientes/cobranza con la API REST"; y en los datos: **"SSO & SAML con Okta/Azure"**
+     (SSO está "Próximamente", no conectado) → **"Registro de auditoría"** (sí existe), y la
+     "Sincronización ERP nativa con Salesforce/SAP" de steps/pillars/bullets/FAQs → reframe a API/webhooks.
+   • **Links rotos (404) arreglados:** navbar `/soluciones` (no hay índice) → `/soluciones/empresas`;
+     `/producto/cotizaciones`→`editor`, `/producto/pagos`→`link-publico`, `/producto/cobranza`→`cobranza-ia`;
+     `/desarrolladores/{sdks,webhooks,integraciones}`→`/desarrolladores/api` o `/elements`;
+     `/docs`→`/desarrolladores/api`; `/comunidad`→`/soporte`. Los `href="#"` de los **pillars** ahora
+     usan un campo nuevo **`href`** en el modelo `Solution.pillars` (apuntan a páginas reales). Los 4
+     `useCases` del EN apuntaban a `/producto/*` rotos → corregidos a `/casos-de-uso/*` (como el ES);
+     `interlink` `/producto/api` → `/desarrolladores/api`. ⚠️ **Regla:** las páginas de soluciones
+     son standalone (`empresas.astro`/`startups.astro` + wrappers `/en/...` que pasan `isEn`); NO hay
+     `/soluciones` index ni `[slug].astro`. Validar links data-driven (`uc.link`, `p.href`, interlink),
+     no solo los `href="..."` literales. Los `href="#"` restantes son chrome de mockups (no navegación).
+
 ✅ **Core loop: la IA como puerta de entrada del editor (jun 2026)** — track de "core loop mágico".
    En `/app/cotizaciones/nueva` el bloque "Armar con IA" (que ya iba primero pero se veía secundario:
    caja de borde punteado) se elevó a un **hero navy premium** (gradiente `#0d2038→#0a192f` + glow azul,
@@ -1462,7 +1493,8 @@ de los de flouvia.com:
 DATABASE_URL=                                                   # Neon (PostgreSQL)
 PUBLIC_CLERK_PUBLISHABLE_KEY=  CLERK_SECRET_KEY=                # signup ABIERTO
 STRIPE_SECRET_KEY=  STRIPE_WEBHOOK_SECRET=  PUBLIC_STRIPE_PUBLISHABLE_KEY=
-RESEND_API_KEY=  RESEND_FROM=                                   # recordatorios de cobro
+RESEND_API_KEY=  RESEND_FROM=                                   # recordatorios de cobro + form de contacto
+SALES_EMAIL=                                                    # destino de leads de /contacto/ventas (default hola@flouvia.com)
 CRON_SECRET=                                                    # protege /api/cron/recordatorios
 FACTURAPI_API_KEY=                                              # CFDI 4.0 vía Facturapi (sk_test_/sk_live_); sin ella el timbrado es SIMULADO
 # FACTURAPI_URL=                                                # opcional (default https://www.facturapi.io/v2)
