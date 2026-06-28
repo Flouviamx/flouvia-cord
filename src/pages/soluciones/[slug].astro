@@ -48,29 +48,28 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     <Nav />
     <main class="stripe-main">
         
-        <!-- ── HERO (Cord Grid Layout) ── -->
+        <!-- ── HERO (Stripe Enterprise Style) ── -->
         <header class="stripe-hero">
             <div class="stripe-hero-bg">
-                <div class="stripe-hero-grid"></div>
                 <div class="stripe-hero-gradient"></div>
             </div>
             
-
             <div class="cord-hero-layout stripe-container">
                 <div class="cord-hero-text">
+                    <div class="sol-eyebrow reveal">{solucion.eyebrow}</div>
 
                     <h1 class="stripe-title masked-title" set:html={solucion.titulo} />
                     
                     <p class="stripe-sub reveal">{solucion.sub}</p>
                     
                     <div class="stripe-actions reveal">
-                        <a href="/contacto" class="stripe-btn-primary">
-                            {isEn ? 'Contact sales' : 'Contactar a ventas'}
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        <a href={isEn ? '/en/registro' : '/registro'} class="btn-luxe">
+                            <span>{isEn ? 'Start now' : 'Empezar ahora'}</span>
+                            <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            <div class="btn-shimmer"></div>
                         </a>
-                        <a href="/registro" class="stripe-btn-ghost">
-                            {isEn ? 'Start now' : 'Empezar ahora'}
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        <a href="/contacto" class="btn-ghost">
+                            <span>{isEn ? 'Contact sales' : 'Contactar a ventas'}</span>
                         </a>
                     </div>
                 </div>
@@ -209,14 +208,14 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                 <div class="stripe-cta-card">
                     <h2 class="stripe-h2">{solucion.cta.titulo}</h2>
                     <p class="stripe-p">{solucion.cta.sub}</p>
-                    <div class="stripe-actions">
-                        <a href="/registro" class="stripe-btn-primary">
-                            {isEn ? 'Start now' : 'Empezar ahora'}
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    <div class="stripe-actions" style="justify-content:center;">
+                        <a href={isEn ? '/en/registro' : '/registro'} class="btn-luxe">
+                            <span>{isEn ? 'Start now' : 'Empezar ahora'}</span>
+                            <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            <div class="btn-shimmer"></div>
                         </a>
-                        <a href="/contacto" class="stripe-btn-ghost">
-                            {isEn ? 'Contact sales' : 'Contactar a ventas'}
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        <a href="/contacto" class="btn-ghost">
+                            <span>{isEn ? 'Contact sales' : 'Contactar a ventas'}</span>
                         </a>
                     </div>
                 </div>
@@ -284,7 +283,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     }
 
     /* ════════════════════════════════════════════════════════════════
-       CORD HERO (Grid & Gradients)
+       CORD HERO (Stripe Enterprise Style)
     ════════════════════════════════════════════════════════════════ */
     .stripe-hero {
         position: relative;
@@ -303,16 +302,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         background: var(--stripe-bg);
         border-bottom: 1px solid rgba(10,25,47,0.05);
         overflow: hidden;
-    }
-    
-    .stripe-hero-grid {
-        position: absolute;
-        inset: 0;
-        background-image: 
-            linear-gradient(rgba(10,25,47,0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(10,25,47,0.03) 1px, transparent 1px);
-        background-size: 80px 80px;
-        opacity: 0.5;
     }
     
     .stripe-hero-gradient {
@@ -337,100 +326,107 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     
     .cord-hero-text {
         max-width: 600px;
+        text-align: left;
     }
-    
-    .stripe-hero-tag {
+
+    .sol-eyebrow {
         display: inline-block;
-        color: var(--stripe-cyan);
-        font-weight: 600;
-        font-size: 0.9rem;
-        letter-spacing: 0.05em;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
-        margin-bottom: 1.5rem;
+        color: #0a192f;
+        background: rgba(10, 25, 47, 0.05);
+        padding: 5px 14px;
+        border-radius: 100px;
+        margin-bottom: 1.8rem;
     }
     
     .stripe-title {
-        font-size: clamp(3rem, 6vw, 5rem);
-        line-height: 1.05;
-        font-weight: 700;
+        font-size: clamp(2.4rem, 4.8vw, 4.5rem);
+        line-height: 1.06;
+        font-weight: 800;
         letter-spacing: -0.04em;
         margin-bottom: 1.5rem;
-        color: var(--stripe-text);
+        color: #0a192f;
+        text-align: left;
+        text-wrap: balance;
     }
     
     .stripe-sub {
-        font-size: clamp(1.1rem, 2vw, 1.4rem);
-        line-height: 1.5;
-        color: var(--stripe-muted);
-        max-width: 650px;
-        margin-bottom: 3rem;
+        font-size: 1.15rem;
+        line-height: 1.6;
+        color: #555c68;
+        max-width: 550px;
+        margin-bottom: 2.5rem;
         font-weight: 400;
+        text-align: left;
     }
     
     .stripe-actions {
         display: flex;
-        gap: 16px;
+        gap: 0.8rem;
         align-items: center;
         flex-wrap: wrap;
     }
-    
-    .stripe-btn-primary {
+
+    /* ── btn-luxe (copiado exacto de Hero.astro) ── */
+    .btn-luxe {
+        position: relative;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        background: var(--stripe-accent);
+        justify-content: center;
+        background: #0a192f;
         color: #fff;
-        padding: 12px 24px;
-        border-radius: 999px;
-        font-size: 1rem;
-        font-weight: 600;
+        padding: 18px 38px;
+        border-radius: 100px;
         text-decoration: none;
-        transition: all 0.2s ease;
-        box-shadow: 0 4px 14px 0 rgba(10, 25, 47, 0.39);
+        font-size: 0.95rem;
+        font-weight: 600;
+        overflow: hidden;
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 8px 24px rgba(10,25,47,0.18);
     }
-    
-    .stripe-btn-primary:hover {
-        background: var(--stripe-accent-light);
+    .btn-luxe span { position: relative; z-index: 2; }
+    .btn-luxe svg.btn-arrow {
+        position: relative; z-index: 2; display: inline-block;
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        width: 16px; height: 16px; margin-left: 6px;
+    }
+    .btn-luxe:hover svg.btn-arrow { transform: translate(4px); }
+    .btn-shimmer {
+        position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+        transform: skew(-20deg); transition: 0s; z-index: 1;
+    }
+    .btn-luxe:hover {
+        transform: translateY(-2px);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 12px 32px rgba(10,25,47,0.24);
+    }
+    .btn-luxe:active {
         transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(10, 25, 47, 0.4);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
     }
-    
-    .stripe-btn-primary svg {
-        width: 16px;
-        height: 16px;
-        transition: transform 0.2s;
+    .btn-luxe:hover .btn-shimmer {
+        left: 150%;
+        transition: left 0.9s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    
-    .stripe-btn-primary:hover svg {
-        transform: translateX(3px);
+
+    /* ── btn-ghost (copiado exacto de Hero.astro) ── */
+    .btn-ghost {
+        display: inline-flex; align-items: center; gap: 9px;
+        color: #0a192f; text-decoration: none;
+        font-size: 1rem; font-weight: 600;
+        padding: 15px 26px; border-radius: 100px;
+        border: 1px solid rgba(10,25,47,0.08);
+        background: rgba(255,255,255,0.6);
+        transition: background 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
     }
-    
-    .stripe-btn-ghost {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 12px 24px;
-        border-radius: 999px;
-        color: var(--stripe-text);
-        font-weight: 600;
-        font-size: 1rem;
-        text-decoration: none;
-        background: rgba(10,25,47,0.05);
-        transition: background 0.2s;
-    }
-    
-    .stripe-btn-ghost:hover {
-        background: rgba(10,25,47,0.08);
-    }
-    
-    .stripe-btn-ghost svg {
-        width: 16px;
-        height: 16px;
-        transition: transform 0.2s;
-    }
-    
-    .stripe-btn-ghost:hover svg {
-        transform: translateX(3px);
+    .btn-ghost svg { width: 14px; height: 14px; opacity: 0.7; }
+    .btn-ghost:hover {
+        background: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(10,25,47,0.06);
     }
     
     /* ════════════════════════════════════════════════════════════════
@@ -1033,13 +1029,17 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     @media (max-width: 992px) {
         .cord-hero-layout {
             grid-template-columns: 1fr;
-            text-align: center;
             margin-top: 6rem;
         }
         
         .cord-hero-text {
+            text-align: center;
             margin: 0 auto;
         }
+
+        .stripe-title { text-align: center; }
+        .stripe-sub { text-align: center; margin-left: auto; margin-right: auto; }
+        .sol-eyebrow { margin-left: auto; margin-right: auto; }
         
         .stripe-actions {
             justify-content: center;
@@ -1100,7 +1100,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
             width: 100%;
         }
         
-        .stripe-btn-primary, .stripe-btn-ghost {
+        .btn-luxe, .btn-ghost {
             width: 100%;
             justify-content: center;
         }
