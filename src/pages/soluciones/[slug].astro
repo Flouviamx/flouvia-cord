@@ -120,8 +120,9 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                             </button>
                         </div>
                     </div>
-                    
-                    <div class="startup-use-cases-grid">
+                </div> <!-- End stripe-container to allow full-bleed grid -->
+                
+                <div class="startup-use-cases-grid">
                         {solucion.useCases.map(uc => (
                             <div class="startup-use-case-card">
                                 <div class="uc-content">
@@ -143,7 +144,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                             </div>
                         ))}
                     </div>
-                </div>
             </section>
         )}
 
@@ -2134,6 +2134,8 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         gap: 24px;
         overflow-x: auto;
         padding-bottom: 3rem; /* Extra padding for scale hover */
+        padding-left: max(20px, calc((100vw - 1140px) / 2));
+        padding-right: max(20px, calc((100vw - 1140px) / 2));
         scroll-snap-type: x mandatory;
         scrollbar-width: none;
         -ms-overflow-style: none;
