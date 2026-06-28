@@ -45,43 +45,120 @@ const description = isEn
                         <span class="step-label">{isEn ? "Let's talk" : "Hablemos"}</span>
                     </div>
                 </div>
+                <!-- Stepper Progress & Form -->
                 <div class="stepper-progress">
-                    <div class="progress-bar" style="width: 33.33%;"></div>
+                    <div class="progress-bar" id="progressBar" style="width: 33.33%;"></div>
                 </div>
 
-                <!-- Step Content -->
-                <div class="step-content">
-                    <h1 class="step-title">{isEn ? "We'll get you to the right place" : "Te llevamos al lugar correcto"}</h1>
-                    <p class="step-subtitle">{isEn ? "We just need a few details." : "Solo necesitamos algunos datos."}</p>
+                <form id="contactWizard" class="minimal-form" novalidate>
+                    <!-- STEP 1: Email & Country -->
+                    <div class="step-content" id="step-1">
+                        <h1 class="step-title">{isEn ? "We'll get you to the right place" : "Te llevamos al lugar correcto"}</h1>
+                        <p class="step-subtitle">{isEn ? "We just need a few details." : "Solo necesitamos algunos datos."}</p>
 
-                    <form class="minimal-form" onsubmit="event.preventDefault(); alert('Formulario demo enviado');">
-                        <div class="form-row-horizontal">
-                            <label for="email">{isEn ? "Work email" : "Correo electrónico del trabajo"}</label>
-                            <input type="email" id="email" name="email" placeholder="elena@ejemplo.com" required />
-                        </div>
-                        <div class="form-row-horizontal">
-                            <label for="country">{isEn ? "Country/Region" : "País/región"}</label>
-                            <div class="select-wrapper">
-                                <select id="country" name="country">
-                                    <option value="MX" selected>México</option>
-                                    <option value="US">Estados Unidos</option>
-                                    <option value="CO">Colombia</option>
-                                    <option value="AR">Argentina</option>
-                                    <option value="CL">Chile</option>
-                                    <option value="ES">España</option>
-                                    <option value="OTHER">{isEn ? "Other" : "Otro"}</option>
-                                </select>
-                                <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                        <div class="form-fields">
+                            <div class="form-row-horizontal">
+                                <label for="email">{isEn ? "Work email" : "Correo electrónico del trabajo"}</label>
+                                <input type="email" id="email" name="email" placeholder="elena@ejemplo.com" required />
+                            </div>
+                            <div class="form-row-horizontal">
+                                <label for="country">{isEn ? "Country/Region" : "País/región"}</label>
+                                <div class="select-wrapper">
+                                    <select id="country" name="country">
+                                        <option value="MX" selected>México</option>
+                                        <option value="US">Estados Unidos</option>
+                                        <option value="CO">Colombia</option>
+                                        <option value="AR">Argentina</option>
+                                        <option value="CL">Chile</option>
+                                        <option value="ES">España</option>
+                                        <option value="OTHER">{isEn ? "Other" : "Otro"}</option>
+                                    </select>
+                                    <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                </div>
                             </div>
                         </div>
 
                         <div class="form-actions">
-                            <button type="submit" class="continue-btn">
+                            <button type="button" class="continue-btn js-next">
                                 {isEn ? "Continue" : "Continuar"} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                             </button>
                         </div>
-                    </form>
-                </div>
+                    </div>
+
+                    <!-- STEP 2: Personal Info -->
+                    <div class="step-content" id="step-2" style="display: none;">
+                        <h1 class="step-title">{isEn ? "Tell us about yourself" : "Cuéntanos sobre ti"}</h1>
+                        <p class="step-subtitle">{isEn ? "Basic info to personalize your experience." : "Datos básicos para personalizar tu experiencia."}</p>
+                        
+                        <div class="form-fields">
+                            <div class="form-row-horizontal">
+                                <label for="firstName">{isEn ? "First Name" : "Nombre"}</label>
+                                <input type="text" id="firstName" name="firstName" placeholder="Elena" required />
+                            </div>
+                            <div class="form-row-horizontal">
+                                <label for="lastName">{isEn ? "Last Name" : "Apellidos"}</label>
+                                <input type="text" id="lastName" name="lastName" placeholder="García" required />
+                            </div>
+                            <div class="form-row-horizontal">
+                                <label for="company">{isEn ? "Company" : "Empresa"}</label>
+                                <input type="text" id="company" name="company" placeholder="Ejemplo S.A. de C.V." required />
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="continue-btn btn-back js-prev">
+                                {isEn ? "Back" : "Atrás"}
+                            </button>
+                            <button type="button" class="continue-btn js-next">
+                                {isEn ? "Continue" : "Continuar"} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: Let's talk -->
+                    <div class="step-content" id="step-3" style="display: none;">
+                        <h1 class="step-title">{isEn ? "How can we help?" : "¿En qué te podemos ayudar?"}</h1>
+                        <p class="step-subtitle">{isEn ? "Give us a bit of context." : "Danos un poco de contexto."}</p>
+                        
+                        <div class="form-fields">
+                            <div class="form-row-horizontal">
+                                <label for="volume">{isEn ? "Annual Volume" : "Volumen Anual"}</label>
+                                <div class="select-wrapper">
+                                    <select id="volume" name="volume" required>
+                                        <option value="" disabled selected>{isEn ? "Select..." : "Selecciona..."}</option>
+                                        <option value="under_1m">{isEn ? "Under $1M" : "Menos de $1M MXN"}</option>
+                                        <option value="1m_10m">$1M - $10M MXN</option>
+                                        <option value="10m_50m">$10M - $50M MXN</option>
+                                        <option value="over_50m">{isEn ? "Over $50M" : "Más de $50M MXN"}</option>
+                                    </select>
+                                    <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                </div>
+                            </div>
+                            <div class="form-row-horizontal" style="align-items: flex-start;">
+                                <label for="message" style="margin-top: 10px;">{isEn ? "Message" : "Mensaje"}</label>
+                                <textarea id="message" name="message" rows="3" placeholder={isEn ? "Tell us about your sales flow..." : "Cuéntanos de tu proceso de cotización actual..."}></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="continue-btn btn-back js-prev">
+                                {isEn ? "Back" : "Atrás"}
+                            </button>
+                            <button type="submit" class="continue-btn">
+                                {isEn ? "Submit" : "Enviar"} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- SUCCESS MESSAGE -->
+                    <div class="step-content" id="step-success" style="display: none; text-align: center; padding: 40px 0;">
+                        <div class="success-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        </div>
+                        <h1 class="step-title">{isEn ? "Thanks for reaching out!" : "¡Gracias por contactarnos!"}</h1>
+                        <p class="step-subtitle" style="margin-bottom: 0;">{isEn ? "A Cord expert will be in touch shortly." : "Un experto de Cord se pondrá en contacto contigo muy pronto."}</p>
+                    </div>
+                </form>
             </div>
         </section>
         
@@ -285,7 +362,8 @@ const description = isEn
     }
 
     .minimal-form input,
-    .minimal-form select {
+    .minimal-form select,
+    .minimal-form textarea {
         width: 100%;
         padding: 10px 14px;
         font-family: var(--font-sans);
@@ -298,8 +376,14 @@ const description = isEn
         outline: none;
         box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
     }
+    
+    .minimal-form textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
 
-    .minimal-form input::placeholder {
+    .minimal-form input::placeholder,
+    .minimal-form textarea::placeholder {
         color: #8792a2;
         transition: opacity 0.2s ease;
     }
@@ -309,16 +393,26 @@ const description = isEn
     }
 
     .minimal-form input:hover,
-    .minimal-form select:hover {
+    .minimal-form select:hover,
+    .minimal-form textarea:hover {
         background-color: #ffffff;
         box-shadow: 0 4px 12px rgba(10, 25, 47, 0.04), inset 0 1px 2px rgba(0,0,0,0.01);
     }
 
     .minimal-form input:focus,
-    .minimal-form select:focus {
+    .minimal-form select:focus,
+    .minimal-form textarea:focus {
         background-color: #ffffff;
         border-color: rgba(10, 25, 47, 0.4);
         box-shadow: 0 0 0 4px rgba(10, 25, 47, 0.08), 0 4px 12px rgba(10, 25, 47, 0.06); 
+    }
+    
+    /* Mostrar error visual de HTML5 validación custom */
+    .minimal-form input:invalid.has-error,
+    .minimal-form select:invalid.has-error {
+        border-color: #ef4444;
+        background-color: #fef2f2;
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
     }
 
     /* Transición suave para los labels cuando el input está enfocado */
@@ -361,7 +455,20 @@ const description = isEn
     .form-actions {
         display: flex;
         justify-content: flex-end;
+        gap: 12px;
         margin-top: 24px;
+    }
+    
+    .btn-back {
+        background-color: transparent !important;
+        color: var(--color-blue-deep, #0a192f) !important;
+        box-shadow: none !important;
+        border: 1px solid rgba(10, 25, 47, 0.1) !important;
+    }
+    
+    .btn-back:hover {
+        background-color: rgba(10, 25, 47, 0.04) !important;
+        transform: none !important;
     }
 
     .continue-btn {
@@ -400,6 +507,23 @@ const description = isEn
 
     .continue-btn:hover svg {
         transform: translateX(4px);
+    }
+    
+    .success-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 24px;
+        border-radius: 50%;
+        background: rgba(10, 25, 47, 0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-blue-deep, #0a192f);
+    }
+    
+    .success-icon svg {
+        width: 32px;
+        height: 32px;
     }
 
     /* RESPONSIVE */
@@ -441,6 +565,108 @@ const description = isEn
             gsap.set(card, { y: 20, scale: 0.98, opacity: 0 });
             gsap.to(card, { 
                 opacity: 1, y: 0, scale: 1, duration: 1.0, ease: 'power3.out', delay: 0.1 
+            });
+        }
+        
+        // --- WIZARD LOGIC ---
+        const form = document.getElementById('contactWizard') as HTMLFormElement;
+        const nextBtns = document.querySelectorAll('.js-next');
+        const prevBtns = document.querySelectorAll('.js-prev');
+        const steps = [
+            document.getElementById('step-1'),
+            document.getElementById('step-2'),
+            document.getElementById('step-3'),
+            document.getElementById('step-success')
+        ];
+        const stepIndicators = document.querySelectorAll('.step');
+        const progressBar = document.getElementById('progressBar');
+        
+        let currentStep = 0;
+        
+        const updateUI = (oldStep: number, newStep: number) => {
+            // Validate before moving forward
+            if (newStep > oldStep && form) {
+                const fields = steps[oldStep]?.querySelectorAll('input, select, textarea');
+                let isValid = true;
+                fields?.forEach((el) => {
+                    const field = el as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+                    if (!field.checkValidity()) {
+                        field.classList.add('has-error');
+                        isValid = false;
+                        field.reportValidity();
+                    } else {
+                        field.classList.remove('has-error');
+                    }
+                });
+                if (!isValid) return false;
+            }
+        
+            // Animate transition
+            const outgoing = steps[oldStep];
+            const incoming = steps[newStep];
+            
+            if (outgoing && incoming) {
+                gsap.to(outgoing, {
+                    opacity: 0, y: -10, duration: 0.3, ease: 'power2.in',
+                    onComplete: () => {
+                        outgoing.style.display = 'none';
+                        incoming.style.display = 'block';
+                        gsap.fromTo(incoming, 
+                            { opacity: 0, y: 10 },
+                            { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }
+                        );
+                    }
+                });
+            }
+            
+            // Update Stepper Progress
+            if (newStep < 3) {
+                stepIndicators.forEach((el, index) => {
+                    if (index <= newStep) el.classList.add('active');
+                    else el.classList.remove('active');
+                });
+                
+                if (progressBar) {
+                    progressBar.style.width = `${((newStep + 1) / 3) * 100}%`;
+                }
+            } else {
+                // If success step, maybe hide the stepper header
+                const header = document.querySelector('.stepper-header') as HTMLElement;
+                const prog = document.querySelector('.stepper-progress') as HTMLElement;
+                if(header) gsap.to(header, {opacity: 0, duration: 0.3, onComplete: () => header.style.display = 'none'});
+                if(prog) gsap.to(prog, {opacity: 0, duration: 0.3, onComplete: () => prog.style.display = 'none'});
+            }
+            
+            return true;
+        };
+        
+        nextBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (currentStep < 2) {
+                    if(updateUI(currentStep, currentStep + 1)) {
+                        currentStep++;
+                    }
+                }
+            });
+        });
+        
+        prevBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (currentStep > 0) {
+                    updateUI(currentStep, currentStep - 1);
+                    currentStep--;
+                }
+            });
+        });
+        
+        // Handle Submit
+        if(form) {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                // Simular envío de datos
+                if(updateUI(currentStep, 3)) {
+                    currentStep = 3;
+                }
             });
         }
     });
