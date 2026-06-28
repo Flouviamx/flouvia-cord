@@ -30,22 +30,21 @@ const description = isEn
     <main class="minimal-contact-page">
         <section class="card-section">
             <div class="stepper-card reveal-mockup">
-                <div class="stepper-form-column">
-                    <!-- Stepper Header -->
-                    <div class="stepper-header">
-                        <div class="step active">
-                            <span class="step-indicator"></span>
-                            <span class="step-label">{isEn ? "Your email" : "Tu correo"}</span>
-                        </div>
-                        <div class="step">
-                            <span class="step-indicator"></span>
-                            <span class="step-label">{isEn ? "Your info" : "Tu información"}</span>
-                        </div>
-                        <div class="step">
-                            <span class="step-indicator"></span>
-                            <span class="step-label">{isEn ? "Let's talk" : "Hablemos"}</span>
-                        </div>
+                <!-- Stepper Header -->
+                <div class="stepper-header">
+                    <div class="step active">
+                        <span class="step-indicator"></span>
+                        <span class="step-label">{isEn ? "Your email" : "Tu correo"}</span>
                     </div>
+                    <div class="step">
+                        <span class="step-indicator"></span>
+                        <span class="step-label">{isEn ? "Your info" : "Tu información"}</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-indicator"></span>
+                        <span class="step-label">{isEn ? "Let's talk" : "Hablemos"}</span>
+                    </div>
+                </div>
                 <!-- Stepper Progress & Form -->
                 <div class="stepper-progress">
                     <div class="progress-bar" id="progressBar" style="width: 33.33%;"></div>
@@ -181,38 +180,6 @@ const description = isEn
                         <p class="step-subtitle" style="margin-bottom: 0;">{isEn ? "A Cord expert will be in touch shortly." : "Un experto de Cord se pondrá en contacto contigo muy pronto."}</p>
                     </div>
                 </form>
-                </div>
-                
-                <!-- Right Column: Trust Panel -->
-                <div class="trust-panel">
-                    <div class="trust-content">
-                        <h3 class="trust-title">{isEn ? "Enterprise Grade" : "Seguridad Enterprise"}</h3>
-                        <p class="trust-text">{isEn ? "Cord is built for scale, ensuring top-tier security and reliability for your B2B operations." : "Cord está diseñado para escalar, garantizando seguridad y fiabilidad de primer nivel para tus operaciones B2B."}</p>
-                        
-                        <div class="trust-badges">
-                            <div class="badge">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                <span>{isEn ? "SOC 2 Type II Certified" : "Certificación SOC 2 Tipo II"}</span>
-                            </div>
-                            <div class="badge">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                                <span>{isEn ? "Bank-grade Encryption" : "Cifrado de Grado Bancario"}</span>
-                            </div>
-                            <div class="badge">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                                <span>{isEn ? "99.99% Uptime SLA" : "99.99% Uptime SLA"}</span>
-                            </div>
-                        </div>
-
-                        <div class="trust-quote">
-                            <p>"{isEn ? "Cord transformed the way we sell B2B. Their APIs and dashboard are incredibly robust." : "Cord transformó nuestra forma de vender B2B. Sus APIs y su panel son increíblemente robustos."}"</p>
-                            <div class="quote-author">
-                                <strong>{isEn ? "— Operations Director" : "— Director de Operaciones"}</strong>
-                                <span>{isEn ? "Fortune 500 Company" : "Empresa Fortune 500"}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </section>
         
@@ -296,7 +263,7 @@ const description = isEn
         position: relative;
         z-index: 10;
         width: 100%;
-        max-width: 1080px;
+        max-width: 800px;
         padding: 0 20px;
     }
 
@@ -308,15 +275,8 @@ const description = isEn
             0 24px 48px rgba(10, 25, 47, 0.04),
             0 80px 140px rgba(10, 25, 47, 0.06),
             0 0 0 1px rgba(10, 25, 47, 0.04);
-        display: grid;
-        grid-template-columns: 1fr 340px;
-        overflow: hidden;
+        padding: 64px 80px;
         transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    
-    .stepper-form-column {
-        padding: 64px 72px;
-        background: #ffffff;
     }
     
     .stepper-card:hover {
@@ -669,82 +629,6 @@ const description = isEn
     .success-icon svg {
         width: 32px;
         height: 32px;
-    }
-    
-    /* Trust Panel */
-    .trust-panel {
-        background: var(--color-blue-deep, #0a192f);
-        color: #ffffff;
-        padding: 64px 48px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    
-    .trust-title {
-        font-size: 1.2rem;
-        font-weight: 700;
-        margin: 0 0 16px;
-        color: #ffffff;
-    }
-    
-    .trust-text {
-        font-size: 0.95rem;
-        line-height: 1.6;
-        color: rgba(255, 255, 255, 0.7);
-        margin: 0 0 40px;
-    }
-    
-    .trust-badges {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        margin-bottom: 48px;
-    }
-    
-    .badge {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-size: 0.9rem;
-        font-weight: 500;
-        color: rgba(255, 255, 255, 0.9);
-    }
-    
-    .badge svg {
-        width: 20px;
-        height: 20px;
-        color: #5cebdf; /* Cord secondary light blue */
-    }
-    
-    .trust-quote {
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        padding-top: 32px;
-    }
-    
-    .trust-quote p {
-        font-size: 0.95rem;
-        font-style: italic;
-        line-height: 1.5;
-        color: rgba(255, 255, 255, 0.9);
-        margin: 0 0 16px;
-    }
-    
-    .quote-author {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
-    
-    .quote-author strong {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #ffffff;
-    }
-    
-    .quote-author span {
-        font-size: 0.8rem;
-        color: rgba(255, 255, 255, 0.6);
     }
 
     /* RESPONSIVE */
