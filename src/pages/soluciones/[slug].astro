@@ -211,7 +211,40 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                     </div>
                                 </div>
                                 <div class="stripe-fg-card-visual">
-                                    <SolucionBlockMockup slug={solucion.slug} index={idx} />
+                                    {idx === 0 && (
+                                        <div class="fg-mockup fg-mockup-0">
+                                            <div class="floating-pill pill-1">
+                                                <div class="pill-icon stripe-bg-cyan"></div>
+                                                <span>Aprobación VIP</span>
+                                            </div>
+                                            <div class="floating-pill pill-2">
+                                                <div class="pill-icon stripe-bg-green"></div>
+                                                <span>Margen 42%</span>
+                                            </div>
+                                            <div class="floating-pill pill-3">
+                                                <div class="pill-icon stripe-bg-purple"></div>
+                                                <span>Cotización $12k</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {idx === 1 && (
+                                        <div class="fg-mockup fg-mockup-1">
+                                            <div class="floating-logo logo-1">SAP</div>
+                                            <div class="floating-logo logo-2">Oracle</div>
+                                            <div class="floating-logo logo-3">Dynamics</div>
+                                            <div class="floating-logo logo-4">Salesforce</div>
+                                            <div class="floating-logo logo-5">HubSpot</div>
+                                        </div>
+                                    )}
+                                    {idx === 2 && (
+                                        <div class="fg-mockup fg-mockup-2">
+                                            <div class="floating-badge badge-1">SOC 2 Type II</div>
+                                            <div class="floating-badge badge-2">ISO 27001</div>
+                                            <div class="floating-badge badge-3">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -780,12 +813,112 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     }
     
     .stripe-fg-card-visual {
-        background: #f7f9fc;
+        background: radial-gradient(circle at right center, rgba(247, 249, 252, 1) 0%, rgba(255, 255, 255, 0) 100%);
         display: flex;
         align-items: center;
         justify-content: center;
         position: relative;
         min-height: 400px;
+        overflow: hidden;
+    }
+
+    .fg-mockup {
+        width: 100%;
+        height: 100%;
+        position: relative;
+    }
+
+    /* Graphic 0 */
+    .fg-mockup-0 .floating-pill {
+        position: absolute;
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        border-radius: 20px;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--stripe-text);
+        animation: floatY 6s infinite ease-in-out;
+    }
+    .fg-mockup-0 .pill-1 { top: 20%; left: 10%; animation-delay: 0s; }
+    .fg-mockup-0 .pill-2 { top: 45%; left: 35%; animation-delay: -2s; z-index: 2; transform: scale(1.1); box-shadow: 0 20px 40px rgba(0,0,0,0.12); }
+    .fg-mockup-0 .pill-3 { top: 70%; left: 15%; animation-delay: -4s; }
+    .pill-icon { width: 12px; height: 12px; border-radius: 50%; }
+    .stripe-bg-cyan { background: var(--stripe-cyan); }
+    .stripe-bg-green { background: #10b981; }
+    .stripe-bg-purple { background: #8b5cf6; }
+
+    /* Graphic 1 */
+    .fg-mockup-1 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+        gap: 20px;
+        padding: 40px;
+        align-items: center;
+        justify-items: center;
+    }
+    .floating-logo {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+        border-radius: 16px;
+        padding: 20px;
+        font-weight: 700;
+        color: #334155;
+        font-size: 1rem;
+        width: 110px;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s, box-shadow 0.3s;
+        animation: floatY 5s infinite ease-in-out;
+    }
+    .logo-1 { grid-column: 1; grid-row: 1; animation-delay: 0s; color: #0ea5e9; }
+    .logo-2 { grid-column: 2; grid-row: 1; animation-delay: -1s; color: #ef4444; margin-top: 40px; }
+    .logo-3 { grid-column: 3; grid-row: 1; animation-delay: -2s; color: #3b82f6; }
+    .logo-4 { grid-column: 1; grid-row: 2; animation-delay: -3s; color: #0284c7; margin-left: 40px; }
+    .logo-5 { grid-column: 3; grid-row: 2; animation-delay: -4s; color: #f97316; margin-right: 40px; }
+    .floating-logo:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+    }
+
+    /* Graphic 2 */
+    .fg-mockup-2 .floating-badge {
+        position: absolute;
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 12px 40px rgba(59, 130, 246, 0.15);
+        border-radius: 24px;
+        padding: 16px 28px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--stripe-text);
+        animation: floatY 7s infinite ease-in-out;
+    }
+    .fg-mockup-2 .badge-1 { top: 25%; left: 15%; animation-delay: 0s; }
+    .fg-mockup-2 .badge-2 { top: 60%; left: 30%; animation-delay: -3s; }
+    .fg-mockup-2 .badge-3 { 
+        top: 35%; left: 60%; 
+        width: 80px; height: 80px; 
+        border-radius: 50%; 
+        display: flex; align-items: center; justify-content: center;
+        background: var(--stripe-cyan);
+        color: white;
+        padding: 0;
+        animation-delay: -1.5s;
+    }
+    .badge-3 svg { width: 32px; height: 32px; }
+
+    @keyframes floatY {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
     }
     
     .stripe-fg-sidebar {
