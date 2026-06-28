@@ -828,7 +828,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                     <p class="cord-dashboard-desc">{isEn ? 'Execute financial operations, collect insights, and track performance in a highly customizable interface.' : 'Centraliza tus propuestas, contratos, facturas y cobranza. Analiza el rendimiento de tu equipo comercial en una interfaz diseñada para la velocidad.'}</p>
                 </div>
                 
-                <div class="cord-dash-mockup video-mockup">
+                <div class="cord-dash-mockup animated-dashboard">
                     <div class="mac-window-header">
                         <div class="mac-dots">
                             <span class="dot red"></span>
@@ -840,20 +840,139 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                         </div>
                         <div class="mac-spacer"></div>
                     </div>
-                    <div class="mac-window-body">
-                        <!-- El usuario deberá colocar su video en public/videos/cord-demo.mp4 -->
-                        <video 
-                            src="/videos/cord-demo.mp4" 
-                            autoplay 
-                            loop 
-                            muted 
-                            playsinline 
-                            class="cord-demo-video"
-                        ></video>
-                        <div class="video-placeholder">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                            <span>Sube tu video a <strong>public/videos/cord-demo.mp4</strong></span>
+                    
+                    <div class="dashboard-app-frame">
+                        <!-- Cursor Animado -->
+                        <div class="mockup-cursor">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="M13 13l6 6"/></svg>
                         </div>
+                        
+                        <!-- Sidebar -->
+                        <aside class="dash-sidebar">
+                            <div class="dash-logo">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                                <span class="dash-logo-text">Cord</span>
+                            </div>
+                        <nav class="dash-nav-links">
+                            <a href="#" class="dash-link">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                                Dashboard
+                            </a>
+                            <a href="#" class="dash-link active">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                Propuestas
+                            </a>
+                            <a href="#" class="dash-link">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                                Productos
+                            </a>
+                            <a href="#" class="dash-link">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                Directorio
+                            </a>
+                            <a href="#" class="dash-link">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                                Pagos
+                            </a>
+                        </nav>
+                        <div class="dash-user">
+                            <div class="dash-avatar">AV</div>
+                            <div class="dash-user-info">
+                                <strong>Andre Valle</strong>
+                                <span>Administrador</span>
+                            </div>
+                            <svg class="dash-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </div>
+                    </aside>
+
+                    <!-- Main Content -->
+                    <main class="dash-main">
+                        <header class="dash-header">
+                            <div class="dash-search">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                <div class="anim-search"></div>
+                            </div>
+                            <div class="dash-header-actions">
+                                <button class="dash-btn-primary anim-btn">Nueva Propuesta</button>
+                            </div>
+                        </header>
+
+                        <div class="dash-content-body">
+                            <!-- KPI Widgets -->
+                            <div class="dash-kpi-grid">
+                                <div class="dash-kpi">
+                                    <span class="kpi-label">Ingresos esperados (Mes)</span>
+                                    <strong class="kpi-value">$430,000 MXN</strong>
+                                    <span class="kpi-trend positive"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg> +12% vs mes pasado</span>
+                                </div>
+                                <div class="dash-kpi">
+                                    <span class="kpi-label">Tasa de cierre</span>
+                                    <strong class="kpi-value">82.4%</strong>
+                                    <span class="kpi-trend positive"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg> +5.2% histórico</span>
+                                </div>
+                                <div class="dash-kpi">
+                                    <span class="kpi-label">Tiempo promedio firma</span>
+                                    <strong class="kpi-value">1.2 días</strong>
+                                    <span class="kpi-trend"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Óptimo</span>
+                                </div>
+                            </div>
+
+                            <!-- TABLA DE PROPUESTAS -->
+                            <div class="dash-table-header">
+                                <h3 class="dash-view-title">Propuestas recientes</h3>
+                                <div class="dash-subtabs">
+                                    <span class="subtab">Todas</span>
+                                    <span class="subtab active">Aceptadas</span>
+                                    <span class="subtab">Enviadas</span>
+                                    <span class="subtab">Borradores</span>
+                                </div>
+                            </div>
+                            
+                            <div class="dash-table-container">
+                                <table class="dash-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Cliente</th>
+                                            <th>Proyecto</th>
+                                            <th>Monto</th>
+                                            <th>Estado</th>
+                                            <th>Fecha</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Acme Corp</strong><br/><span class="td-sub">acme.com</span></td>
+                                            <td>Rediseño Web 2026</td>
+                                            <td class="td-mono">$120,000 MXN</td>
+                                            <td><span class="badge badge-green">Aceptada</span></td>
+                                            <td class="td-light">Hoy, 10:42 AM</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Stark Industries</strong><br/><span class="td-sub">stark.com</span></td>
+                                            <td>Consultoría IA</td>
+                                            <td class="td-mono">$850,000 MXN</td>
+                                            <td><span class="badge badge-green">Aceptada</span></td>
+                                            <td class="td-light">Ayer, 4:15 PM</td>
+                                        </tr>
+                                        <tr class="anim-row">
+                                            <td><strong>Wayne Ent.</strong><br/><span class="td-sub">wayne.com</span></td>
+                                            <td>Campaña B2B</td>
+                                            <td class="td-mono">$250,000 MXN</td>
+                                            <td><span class="badge anim-badge"></span></td>
+                                            <td class="td-light">26 Jun 2026</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Los Pollos Hnos</strong><br/><span class="td-sub">lph.com</span></td>
+                                            <td>Auditoría Anual</td>
+                                            <td class="td-mono">$30,000 MXN</td>
+                                            <td><span class="badge badge-yellow">Visto</span></td>
+                                            <td class="td-light">25 Jun 2026</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </main>
                     </div>
                 </div>
             </div>
@@ -2861,7 +2980,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
 
     /* ── CORD DASHBOARD SECTION ── */
     .cord-dashboard-section {
-        padding: 6rem 0 4rem 0; /* Extra padding at bottom so full dashboard shows */
+        padding: 6rem 0 4rem 0;
         background: #f8fafc;
         position: relative;
         overflow: hidden;
@@ -2884,7 +3003,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         line-height: 1.6;
     }
     
-    /* ── DASHBOARD MOCKUP VIDEO ── */
+    /* ── DASHBOARD MOCKUP ANIMATED ── */
     .cord-dash-mockup {
         background: #ffffff;
         border-radius: 12px;
@@ -2893,20 +3012,19 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        transform: perspective(1200px) rotateX(3deg);
+        height: 640px;
+        transform: perspective(1200px) rotateX(2deg);
         transform-origin: bottom;
         transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s;
         margin-bottom: 2rem;
-        aspect-ratio: 16 / 9;
-        max-height: 700px;
-        width: 100%;
         position: relative;
     }
     .cord-dash-mockup:hover {
         transform: perspective(1200px) rotateX(0deg);
-        box-shadow: 0 50px 100px rgba(0,0,0,0.2), 0 15px 35px rgba(0,0,0,0.1);
+        box-shadow: 0 50px 100px rgba(0,0,0,0.18), 0 15px 35px rgba(0,0,0,0.08);
     }
     
+    /* MAC WINDOW HEADER */
     .mac-window-header {
         height: 44px;
         background: #f1f5f9;
@@ -2914,6 +3032,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         align-items: center;
         padding: 0 1rem;
         border-bottom: 1px solid rgba(0,0,0,0.05);
+        flex-shrink: 0;
     }
     .mac-dots {
         display: flex;
@@ -2941,42 +3060,390 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     .mac-spacer {
         flex: 1;
     }
-    
-    .mac-window-body {
-        flex: 1;
-        background: #000;
-        position: relative;
-        overflow: hidden;
-    }
-    .cord-demo-video {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-        position: relative;
-        z-index: 2;
-    }
-    /* Fallback placeholder underneath video in case it fails to load */
-    .video-placeholder {
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
+
+    /* INNER FRAME */
+    .dashboard-app-frame {
         display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background: #f8fafc;
-        color: #64748b;
-        font-size: 1.1rem;
-        z-index: 1;
-        gap: 12px;
-        text-align: center;
+        flex-direction: row;
+        flex: 1;
+        overflow: hidden;
+        position: relative;
     }
-    .video-placeholder svg {
-        color: #94a3b8;
+    
+    /* ANIMATIONS */
+    .mockup-cursor {
+        position: absolute;
+        z-index: 100;
+        color: #0a2540;
+        filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2));
+        width: 24px; height: 24px;
+        pointer-events: none;
+        animation: cursorAnim 10s infinite;
+    }
+    .mockup-cursor svg {
+        fill: white;
+    }
+    
+    @keyframes cursorAnim {
+        0% { top: 80%; left: 80%; transform: scale(1); } /* Start bottom right */
+        10% { top: 22px; left: calc(100% - 150px); transform: scale(1); } /* Move to button */
+        12% { transform: scale(0.9); } /* Click btn */
+        14% { transform: scale(1); }
+        35% { top: 460px; left: 450px; transform: scale(1); } /* Move to row 3 */
+        42% { top: 460px; left: calc(100% - 250px); transform: scale(1); } /* Move to badge */
+        44% { transform: scale(0.9); } /* Click badge */
+        46% { transform: scale(1); }
+        65% { top: 22px; left: 350px; transform: scale(1); } /* Move to search */
+        67% { transform: scale(0.9); } /* Click search */
+        69% { transform: scale(1); }
+        100% { top: 80%; left: 80%; transform: scale(1); }
     }
 
+    .anim-btn {
+        animation: btnAnim 10s infinite;
+    }
+    @keyframes btnAnim {
+        0%, 10% { transform: translateY(0); box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2); }
+        12%, 14% { transform: translateY(1px); box-shadow: 0 2px 6px rgba(0, 113, 227, 0.4); background: #005bb5; }
+        16%, 100% { transform: translateY(0); box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2); background: #0071e3; }
+    }
+
+    .anim-row {
+        animation: rowHoverAnim 10s infinite;
+    }
+    @keyframes rowHoverAnim {
+        0%, 32% { background: transparent; }
+        35%, 48% { background: #f1f5f9; }
+        50%, 100% { background: transparent; }
+    }
+
+    .anim-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        animation: badgeAnim 10s infinite;
+    }
+    .anim-badge::after {
+        content: "Enviada";
+        animation: badgeTextAnim 10s infinite;
+    }
+    @keyframes badgeAnim {
+        0%, 43% { background: #dbeafe; color: #2563eb; }
+        44%, 100% { background: #d1fae5; color: #059669; }
+    }
+    @keyframes badgeTextAnim {
+        0%, 43% { content: "Enviada"; }
+        44%, 100% { content: "Aceptada"; }
+    }
+
+    .anim-search {
+        font-size: 0.95rem;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+    }
+    .anim-search::after {
+        content: "Buscar propuestas o clientes...";
+        animation: typingAnim 10s infinite;
+    }
+    @keyframes typingAnim {
+        0%, 68% { content: "Buscar propuestas o clientes..."; color: #94a3b8; }
+        70% { content: "W|"; color: #0a2540; }
+        72% { content: "Way|"; color: #0a2540; }
+        74% { content: "Wayne|"; color: #0a2540; }
+        76%, 92% { content: "Wayne Ent.|"; color: #0a2540; }
+        95%, 100% { content: "Buscar propuestas o clientes..."; color: #94a3b8; }
+    }
+    
+    /* SIDEBAR */
+    .dash-sidebar {
+        width: 240px;
+        background: #0a2540;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid rgba(255,255,255,0.05);
+        padding-top: 1.5rem;
+    }
+    .dash-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 1.5rem 2rem 1.5rem;
+        color: white;
+    }
+    .dash-logo-text {
+        font-size: 1.25rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+    .dash-nav-links {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        gap: 4px;
+        padding: 0 1rem;
+    }
+    .dash-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        color: #94a3b8;
+        text-decoration: none;
+        font-size: 0.95rem;
+        font-weight: 500;
+        border-radius: 8px;
+        transition: background 0.2s, color 0.2s;
+    }
+    .dash-link:hover {
+        background: rgba(255,255,255,0.05);
+        color: white;
+    }
+    .dash-link.active {
+        background: rgba(0, 201, 255, 0.1);
+        color: #00C9FF;
+    }
+    .dash-user {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 1.5rem;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .dash-user:hover {
+        background: rgba(255,255,255,0.05);
+    }
+    .dash-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #00C9FF, #0071e3);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .dash-user-info {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+    .dash-user-info strong {
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .dash-user-info span {
+        font-size: 0.75rem;
+        color: #94a3b8;
+    }
+    .dash-chevron {
+        color: #64748b;
+    }
+
+    /* MAIN AREA */
+    .dash-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .dash-header {
+        height: 72px;
+        background: white;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 2rem;
+    }
+    .dash-search {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #f1f5f9;
+        padding: 8px 16px;
+        border-radius: 8px;
+        width: 320px;
+    }
+    .dash-search input {
+        border: none;
+        background: transparent;
+        outline: none;
+        font-size: 0.95rem;
+        width: 100%;
+        color: #0a2540;
+    }
+    .dash-btn-primary {
+        background: #0071e3;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .dash-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 113, 227, 0.3);
+    }
+    
+    .dash-content-body {
+        padding: 2.5rem 2rem;
+        flex: 1;
+        overflow-y: auto;
+        background: #f8fafc; /* match section background so it looks like soft app inner bg */
+    }
+    
+    /* KPI WIDGETS */
+    .dash-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        margin-bottom: 2.5rem;
+    }
+    .dash-kpi {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .kpi-label {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #64748b;
+    }
+    .kpi-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #0a2540;
+        margin-top: 4px;
+    }
+    .kpi-trend {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 6px;
+    }
+    .kpi-trend.positive {
+        color: #059669;
+    }
+    .kpi-trend svg {
+        margin-right: 2px;
+    }
+
+    /* TABLE */
+    .dash-table-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+    }
+    .dash-view-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #0a2540;
+        margin: 0;
+    }
+    .dash-subtabs {
+        display: flex;
+        gap: 1.5rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .subtab {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #64748b;
+        padding-bottom: 8px;
+        position: relative;
+        cursor: pointer;
+    }
+    .subtab.active {
+        color: #0071e3;
+        font-weight: 600;
+    }
+    .subtab.active::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: #0071e3;
+    }
+    .dash-table-container {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        overflow: hidden;
+    }
+    .dash-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    .dash-table th {
+        background: #f8fafc;
+        padding: 12px 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .dash-table td {
+        padding: 16px 20px;
+        font-size: 0.95rem;
+        color: #0a2540;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .dash-table tr:last-child td { border-bottom: none; }
+    .dash-table tr:hover td { background: #f8fafc; }
+    .td-sub { font-size: 0.8rem; color: #94a3b8; }
+    .td-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 500; }
+    .td-light { color: #64748b; font-size: 0.9rem; }
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .badge-green { background: #d1fae5; color: #059669; }
+    .badge-blue { background: #dbeafe; color: #2563eb; }
+    .badge-yellow { background: #fef3c7; color: #d97706; }
+
     @media (max-width: 768px) {
-        .cord-dash-mockup { transform: none !important; border-radius: 8px; margin-bottom: 0; }
+        .cord-dash-mockup { flex-direction: column; height: auto; margin-bottom: 0; }
+        .dash-sidebar { width: 100%; height: auto; padding: 1rem; }
+        .dash-nav-links { display: none; }
+        .dash-user { border-top: none; padding: 1rem 0 0 0; }
+        .dash-kpi-grid { grid-template-columns: 1fr; }
+        .dash-table-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+        .dash-subtabs { overflow-x: auto; padding-bottom: 8px; width: 100%; }
+        .dash-header { padding: 1rem; flex-direction: column; height: auto; gap: 1rem; }
+        .dash-search { width: 100%; }
+        .dash-table-container { overflow-x: auto; }
     }
 </style>
 
