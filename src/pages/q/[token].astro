@@ -17,19 +17,23 @@ if (token === 'demo') {
             clienteInicial: 'DP',
             status: 'viewed',
             terminos: 'Contado',
-            vigencia: '28 jul 2026',
+            vigencia: '12 jul 2026',
             creada: '10 jul 2026',
             token: 'demo',
-            diasVigencia: 30,
+            diasVigencia: 2,
             items: [
                 {
                     id: 'b5a98cbe',
                     descripcion: 'Arena Fina (Metro Cúbico)',
                     cantidad: 11,
-                    unidad: 'm³',
+                    unidad: 'pieza',
                     precioLista: 445.0,
                     precioNegociado: 445.0,
-                    aprobado: true
+                    aprobado: true,
+                    comentarios: [
+                        { tipo: 'cliente', contenido: '¿Me puedes confirmar si la arena viene en costales o a granel?', cuando: 'hace 30 min' },
+                        { tipo: 'vendedor', contenido: 'Viene en costales de 50kg para facilitar la maniobra en la obra.', cuando: 'hace 10 min' }
+                    ]
                 },
                 {
                     id: '6611006c',
@@ -42,9 +46,9 @@ if (token === 'demo') {
                 },
                 {
                     id: '02cb2884',
-                    descripcion: 'Cable THW calibre 12',
+                    descripcion: 'Bomba de Agua Periférica 1/2 HP',
                     cantidad: 12,
-                    unidad: 'rollo',
+                    unidad: 'pieza',
                     precioLista: 850.0,
                     precioNegociado: 850.0,
                     aprobado: true
@@ -54,7 +58,7 @@ if (token === 'demo') {
                 { tipo: 'viewed', detalle: 'Alejandro (Desarrollos Inmobiliarios Polanco) abrió el link', cuando: 'hace 5 min' },
                 { tipo: 'sent', detalle: 'Enviada por correo a compras@dipolanco.mx', cuando: 'hace 1 hora' }
             ],
-            notas: 'Precios sujetos a cambio sin previo aviso. Tiempo de entrega: 2 días hábiles tras confirmación de pago.'
+            notas: 'Precios sujetos a cambio sin previo aviso. Tiempo de entrega: 2 días hábiles tras confirmación de pago. La descarga de material corre por cuenta del cliente.'
         },
         org: {
             nombre: 'Mi negocio',
@@ -66,15 +70,17 @@ if (token === 'demo') {
             ivaPct: 16,
             embedDomains: '',
             emailContacto: 'ventas@minegocio.mx',
-            telefono: '',
-            whatsapp: '',
+            telefono: '55 1234 5678',
+            whatsapp: '525512345678',
             portalBanner: '',
             portalBienvenida: '',
             portalMostrarChat: true,
             portalPowered: true
         },
         conversacion: [
-            { tipo: 'vendedor', detalle: '¡Hola Alejandro! Te comparto la cotización de los materiales para la obra en Polanco. Cualquier duda sigo a tus órdenes.', cuando: 'hace 1 hora', mine: false }
+            { tipo: 'vendedor', detalle: '¡Hola Alejandro! Te comparto la cotización de los materiales para la obra. Cualquier duda sigo a tus órdenes por aquí o por WhatsApp.', cuando: 'hace 1 hora', mine: false },
+            { tipo: 'cliente', detalle: 'Gracias. Veo que las bombas de agua tienen distinto precio, ¿es por la marca?', cuando: 'hace 20 min', mine: true },
+            { tipo: 'vendedor', detalle: 'Es correcto, unas son Truper y las otras son pretul. Te separé las partidas para que decidas cuáles te convienen más.', cuando: 'hace 15 min', mine: false }
         ]
     };
 } else {
