@@ -27,12 +27,12 @@ const dotColor = (tipo: string) =>
     : tipo === 'sent' ? '#3b82f6'
     : tipo === 'rejected' ? '#ef4444'
     : '#cbd5e1';
----
 
 // ── Onboarding / Aha-moment Tour ──
 const isDemo = COTIZACIONES.length === 1 && String(COTIZACIONES[0].notas || '').includes('"is_demo": true');
 const demoToken = isDemo ? COTIZACIONES[0].token : null;
 const showTour = isDemo && COTIZACIONES[0].status === 'sent';
+---
 
 <AppLayout title="Dashboard — Cord" page="dashboard" heading="Dashboard">
     <!-- KPIs -->
