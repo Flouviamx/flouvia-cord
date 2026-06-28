@@ -178,7 +178,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                         <!-- NO CODE -->
                         <div class="int-card" data-tab-group="tab-nocode">
                             <div class="int-card-text">
-                                <span class="int-badge badge-blue">Sin código</span>
                                 <h3 class="int-card-title">Cotizador Visual</h3>
                                 <p class="int-card-desc">Crea cotizaciones interactivas arrastrando y soltando elementos de tu catálogo en segundos.</p>
                                 <a href="/producto/cotizaciones" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
@@ -189,7 +188,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                         </div>
                         <div class="int-card" data-tab-group="tab-nocode">
                             <div class="int-card-text">
-                                <span class="int-badge badge-blue">Sin código</span>
                                 <h3 class="int-card-title">Ligas de Pago</h3>
                                 <p class="int-card-desc">Genera links de cobro al instante y compártelos por WhatsApp sin escribir una línea de código.</p>
                                 <a href="/producto/pagos" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
@@ -202,7 +200,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                         <!-- LOW CODE -->
                         <div class="int-card" data-tab-group="tab-lowcode">
                             <div class="int-card-text">
-                                <span class="int-badge badge-purple">Bajo código</span>
                                 <h3 class="int-card-title">Zapier & Make</h3>
                                 <p class="int-card-desc">Automatiza flujos de trabajo complejos conectando Cord con más de 5,000 aplicaciones.</p>
                                 <a href="/integraciones" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
@@ -213,7 +210,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                         </div>
                         <div class="int-card" data-tab-group="tab-lowcode">
                             <div class="int-card-text">
-                                <span class="int-badge badge-purple">Bajo código</span>
                                 <h3 class="int-card-title">Webhooks</h3>
                                 <p class="int-card-desc">Conecta Cord con tu ERP o CRM actual usando webhooks que disparan acciones en tiempo real.</p>
                                 <a href="/desarrolladores" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
@@ -226,7 +222,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                         <!-- API -->
                         <div class="int-card" data-tab-group="tab-api">
                             <div class="int-card-text">
-                                <span class="int-badge badge-orange">API</span>
                                 <h3 class="int-card-title">API RESTful</h3>
                                 <p class="int-card-desc">Integra la facturación CFDI 4.0 directamente en tu propio software con nuestra API moderna.</p>
                                 <a href="/docs/api" class="int-link">Ver documentación <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
@@ -237,7 +232,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                         </div>
                         <div class="int-card" data-tab-group="tab-api">
                             <div class="int-card-text">
-                                <span class="int-badge badge-orange">API</span>
                                 <h3 class="int-card-title">SDKs Nativos</h3>
                                 <p class="int-card-desc">Librerías oficiales para Node.js, Python y PHP que aceleran el desarrollo de tu equipo.</p>
                                 <a href="/docs/sdks" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
@@ -2342,7 +2336,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
        ========================================================== */
     .integration-tabs-section {
         padding: 6rem 0;
-        background: #ffffff;
+        background: #fbfbfd; /* Apple's subtle off-white */
     }
     .integration-header {
         text-align: left;
@@ -2442,16 +2436,16 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     }
     
     .int-card {
-        flex: 0 0 420px;
+        flex: 0 0 440px;
         scroll-snap-align: start;
         background: #ffffff;
-        border-radius: 24px;
-        border: 1px solid rgba(0,0,0,0.06);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        border-radius: 32px;
+        border: none;
+        box-shadow: 0 20px 40px -10px rgba(0,0,0,0.06), inset 0 0 0 1px rgba(0,0,0,0.04);
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        transition: transform 0.3s, box-shadow 0.3s;
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
     @media (max-width: 600px) {
         .int-card {
@@ -2459,36 +2453,24 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         }
     }
     .int-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+        transform: scale(1.01) translateY(-4px);
+        box-shadow: 0 30px 60px -15px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(0,0,0,0.04);
     }
     .int-card-text {
-        padding: 2.5rem 2.5rem 0 2.5rem;
+        padding: 3rem 2.5rem 0 2.5rem;
     }
-    .int-badge {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 1.2rem;
-    }
-    .badge-blue { background: rgba(0, 113, 227, 0.1); color: #0071e3; }
-    .badge-purple { background: rgba(142, 67, 231, 0.1); color: #8e43e7; }
-    .badge-orange { background: rgba(245, 107, 42, 0.1); color: #f56b2a; }
 
     .int-card-title {
-        font-size: 1.4rem;
+        font-size: 1.6rem;
         font-weight: 700;
+        letter-spacing: -0.02em;
         color: #1d1d1f;
         margin: 0 0 0.8rem;
     }
     .int-card-desc {
-        font-size: 1rem;
+        font-size: 1.05rem;
         line-height: 1.5;
-        color: #515154;
+        color: #86868b;
         margin: 0 0 1.5rem;
     }
     .int-link {
@@ -2497,31 +2479,61 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         gap: 4px;
         color: #0071e3;
         font-weight: 600;
-        font-size: 0.95rem;
+        font-size: 1.05rem;
         text-decoration: none;
         transition: color 0.2s;
     }
     .int-link:hover { color: #005bb5; }
-    .int-link svg { width: 16px; height: 16px; transition: transform 0.2s; }
+    .int-link svg { width: 18px; height: 18px; transition: transform 0.2s; }
     .int-link:hover svg { transform: translateX(4px); }
 
     .int-card-graphic {
-        padding: 2rem;
+        padding: 2.5rem;
         margin-top: auto;
         display: flex;
         justify-content: center;
     }
     .mock-ui {
         width: 100%;
-        height: 180px;
-        border-radius: 12px;
+        height: 220px;
+        border-radius: 16px;
         background: #f5f5f7;
-        box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(0,0,0,0.05);
+        position: relative;
+        overflow: hidden;
     }
-    .mock-ui-blue { background: linear-gradient(135deg, #f5f5f7 0%, #e6f0fa 100%); }
-    .mock-ui-purple { background: linear-gradient(135deg, #f5f5f7 0%, #f0e6fa 100%); }
-    .mock-ui-orange { background: linear-gradient(135deg, #f5f5f7 0%, #faeee6 100%); }
-</style>
+    .mock-ui::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 40px;
+        background: rgba(255,255,255,0.4);
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        z-index: 1;
+    }
+    .mock-ui::after {
+        content: '';
+        position: absolute;
+        top: 14px;
+        left: 16px;
+        width: 12px; height: 12px;
+        border-radius: 50%;
+        background: #ff5f56;
+        box-shadow: 20px 0 0 #ffbd2e, 40px 0 0 #27c93f;
+        z-index: 2;
+    }
+    /* Vibrant mesh gradients */
+    .mock-ui-blue {
+        background: radial-gradient(circle at 100% 100%, rgba(0,113,227,0.15) 0%, transparent 60%), radial-gradient(circle at 0% 0%, rgba(0,198,255,0.15) 0%, transparent 60%), #f5f5f7;
+    }
+    .mock-ui-purple {
+        background: radial-gradient(circle at 100% 100%, rgba(142,67,231,0.15) 0%, transparent 60%), radial-gradient(circle at 0% 0%, rgba(200,100,255,0.15) 0%, transparent 60%), #f5f5f7;
+    }
+    .mock-ui-orange {
+        background: radial-gradient(circle at 100% 100%, rgba(245,107,42,0.15) 0%, transparent 60%), radial-gradient(circle at 0% 0%, rgba(255,180,50,0.15) 0%, transparent 60%), #f5f5f7;
+    }</style>
 
 <script>
     // Reactive Parallax Effect for Startups Hero Blobs
