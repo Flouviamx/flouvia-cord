@@ -616,61 +616,12 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
             </section>
         )}
 
-        <!-- ── STATS (Stripe Metric Cards) ── -->
-        <section class="stripe-stats-section reveal">
-            <div class="stripe-container">
-                <div class="stripe-stats-grid">
-                    {solucion.stats.map(st => (
-                        <div class="stripe-stat-card">
-                            <div class="stripe-stat-line"></div>
-                            <div class="stripe-stat-val editorial">
-                                {st.prefix}
-                                {st.countup ? (
-                                    <span class="count-up" data-val={st.countup} data-dec={st.decimals || 0}>{st.countup}</span>
-                                ) : (
-                                    st.valor
-                                )}
-                                {st.suffix}
-                            </div>
-                            <div class="stripe-stat-label">{st.label}</div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </section>
-
-        <!-- ── TESTIMONIAL ── -->
-        {solucion.resultado && (
-            <section class="stripe-testimonial-section reveal">
-                <div class="stripe-container">
-                    <div class="stripe-testimonial-card">
-                        <div class="stripe-quote-mark">“</div>
-                        <h2 class="stripe-testimonial-text">{solucion.resultado.nota}</h2>
-                        <div class="stripe-testimonial-author">
-                            <div class="stripe-author-avatar"></div>
-                            <div class="stripe-author-info">
-                                <b>{solucion.resultado.cliente}</b>
-                                <span>{isEn ? 'Verified Customer' : 'Cliente Verificado'}</span>
-                            </div>
-                        </div>
-                        <div class="stripe-testimonial-metrics">
-                            {solucion.resultado.metricas.map(m => (
-                                <div>
-                                    <b class="editorial">{m.valor}</b>
-                                    <span>{m.label}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </section>
-        )}
 
         <!-- ── FAQ ── -->
         <section class="stripe-faq-section reveal">
             <div class="stripe-container">
-                <h2 class="stripe-h2">{isEn ? 'Frequently asked questions' : 'Preguntas frecuentes'}</h2>
-                <div class="stripe-faq-list">
+                <h2 class="stripe-h2" style="text-align: center;">{isEn ? 'Frequently asked questions' : 'Preguntas frecuentes'}</h2>
+                <div class="stripe-faq-list" style="margin-left: auto; margin-right: auto;">
                     {solucion.faqs.map(f => (
                         <details class="stripe-faq-item">
                             <summary>
@@ -684,26 +635,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
             </div>
         </section>
 
-        <!-- ── CTA ── -->
-        <section class="stripe-cta-section reveal">
-            <div class="stripe-container">
-                <div class="stripe-cta-card">
-                    <h2 class="stripe-h2">{solucion.cta.titulo}</h2>
-                    <p class="stripe-p">{solucion.cta.sub}</p>
-                    <div class="stripe-actions" style="justify-content:center;">
-                        <a href={isEn ? '/en/registro' : '/registro'} class="btn-luxe">
-                            <span>{isEn ? 'Start now' : 'Empezar ahora'}</span>
-                            <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                            <div class="btn-shimmer"></div>
-                        </a>
-                        <a href="/contacto/ventas" class="btn-ghost">
-                            <span>{isEn ? 'Contact sales' : 'Contactar a ventas'}</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </section>
-        
+
         <Footer />
     </main>
 
