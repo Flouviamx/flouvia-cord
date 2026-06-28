@@ -235,7 +235,7 @@ export const SOLUCIONES: Solution[] = [
             {
                 title: 'Agencias y Consultoras',
                 desc: 'Envía propuestas de servicios profesionales al instante, con firmas electrónicas vinculantes y automatiza el cobro de igualas mensuales recurrentes sin fricción.',
-                link: '/producto/pagos',
+                link: '/casos-de-uso/agencias',
                 logos: [
                     { name: 'Ogilvy', domain: 'ogilvy.com' },
                     { name: 'Accenture', domain: 'accenture.com' },
@@ -245,7 +245,7 @@ export const SOLUCIONES: Solution[] = [
             {
                 title: 'SaaS B2B',
                 desc: 'Gestiona suscripciones, contratos personalizados y planes Enterprise. Integra pagos recurrentes y emite facturas CFDI en automático sin tocar el portal del SAT.',
-                link: '/producto/facturacion',
+                link: '/casos-de-uso/saas',
                 logos: [
                     { name: 'Linear', domain: 'linear.app' },
                     { name: 'Stripe', domain: 'stripe.com' },
@@ -255,7 +255,7 @@ export const SOLUCIONES: Solution[] = [
             {
                 title: 'Comercializadoras B2B',
                 desc: 'Cotiza volumen, aplica descuentos por tiers dinámicos, maneja catálogos extensos y automatiza la facturación de grandes pedidos al confirmar el pago.',
-                link: '/producto/cotizaciones',
+                link: '/casos-de-uso/comercializadoras',
                 logos: [
                     { name: 'Grainger', domain: 'grainger.com' },
                     { name: 'Uline', domain: 'uline.com' },
@@ -265,7 +265,7 @@ export const SOLUCIONES: Solution[] = [
             {
                 title: 'Software Factory',
                 desc: 'Envía presupuestos de desarrollo a la medida, divide los pagos por hitos de entrega y recibe notificaciones en tiempo real cuando el cliente aprueba la propuesta.',
-                link: '/producto/aprobaciones',
+                link: '/casos-de-uso/software-factory',
                 logos: [
                     { name: 'Cursor', domain: 'cursor.com' },
                     { name: 'OpenAI', domain: 'openai.com' },

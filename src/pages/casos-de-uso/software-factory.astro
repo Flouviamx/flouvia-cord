@@ -1,0 +1,369 @@
+---
+export const prerender = true;
+
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../../components/landing/Nav.astro';
+import Footer from '../../components/landing/Footer.astro';
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const isEn = lang === 'en';
+const t = useTranslations(lang);
+
+const metaTitle = "Cord para Software Factories | Presupuestos y Hitos";
+const metaDesc = "Envía presupuestos de desarrollo a la medida, divide pagos por hitos y mantén a tu equipo de desarrollo sincronizado.";
+---
+
+<Layout title={metaTitle} description={metaDesc}>
+    <Nav darkHero={true} />
+    
+    <main class="use-case-main">
+        <!-- HERO (Dark, Premium Stripe Style) -->
+        <header class="uc-hero">
+            <div class="uc-hero-bg">
+                <div class="uc-hero-aurora"></div>
+                <div class="uc-hero-grid"></div>
+            </div>
+            
+            <div class="uc-hero-content">
+                <div class="uc-eyebrow">CORD PARA SOFTWARE FACTORIES</div>
+                <h1 class="uc-title reveal">Presupuestos de desarrollo a la medida</h1>
+                <p class="uc-sub reveal">
+                    El desarrollo de software requiere claridad. Envía presupuestos detallados, divide los pagos por hitos de entrega y recibe aprobaciones con firma electrónica.
+                </p>
+                <div class="uc-actions reveal">
+                    <a href="/registro" class="btn-luxe">
+                        <span>Empezar ahora</span>
+                        <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        <div class="btn-shimmer"></div>
+                    </a>
+                    <a href="/contacto/ventas" class="btn-ghost-dark">Agendar demo</a>
+                </div>
+            </div>
+
+            <!-- MOCKUP ABSTRACTION -->
+            <div class="uc-hero-mockup reveal-mockup">
+                <div class="uc-mockup-window">
+                    <div class="uc-mockup-top">
+                        <div class="uc-dots"><span></span><span></span><span></span></div>
+                    </div>
+                    <div class="uc-mockup-body">
+                        <div class="mock-plan">
+                            <span class="mp-title">Desarrollo MVP - App iOS Nativas</span>
+                            <span class="mp-price">$450,000 <small>MXN</small></span>
+                        </div>
+                        <div class="mock-status">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#3b82f6" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Hito 1 (UI/UX) Aprobado y Pagado
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- FEATURES GRID -->
+        <section class="uc-features">
+            <div class="uc-container">
+                <div class="uc-features-header reveal">
+                    <h2>Para los que construyen el futuro</h2>
+                    <p>Herramientas que reducen la fricción comercial para equipos de desarrollo.</p>
+                </div>
+
+                <div class="uc-bento-grid">
+                    <div class="uc-bento-card reveal">
+                        <div class="uc-bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z"></path><path d="M14 3v5h5M16 13H8M16 17H8M10 9H8"></path></svg></div>
+                        <h3>Manejo de Hitos (Milestones)</h3>
+                        <p>No cobres todo al principio ni todo al final. Divide tu presupuesto en entregables (Wireframes, Backend, QA) y cobra automáticamente al cumplir cada hito.</p>
+                    </div>
+                    <div class="uc-bento-card reveal">
+                        <div class="uc-bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg></div>
+                        <h3>Soporte Markdown y Código</h3>
+                        <p>Tus propuestas son técnicas. Usa Markdown nativo en Cord para incluir especificaciones de API, diagramas de arquitectura o snippets de código directamente en la propuesta.</p>
+                    </div>
+                    <div class="uc-bento-card reveal">
+                        <div class="uc-bento-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></div>
+                        <h3>Webhooks en Tiempo Real</h3>
+                        <p>Conecta Cord con Slack, Jira o Linear. Cuando el cliente firme, dispara un webhook para notificar al equipo de ingeniería que es hora de empezar a codear.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA SECTION -->
+        <section class="uc-cta-section">
+            <div class="uc-container">
+                <div class="uc-cta-box reveal">
+                    <h2>Moderniza tus ventas B2B</h2>
+                    <p>Deja que Cord maneje el cierre mientras tu equipo construye.</p>
+                    <a href="/registro" class="btn-luxe">Comenzar gratis</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <Footer />
+</Layout>
+
+<style>
+    /* VARIABLES Y UTILIDADES GLOBALES PARA USE CASES */
+    .use-case-main {
+        --uc-dark: #172554; /* Blue 950 */
+        --uc-darker: #080f26; 
+        --uc-accent: #3b82f6; /* Blue 500 */
+        background: #f8fafc;
+        padding-top: 0;
+        overflow-x: hidden;
+    }
+
+    .uc-container {
+        max-width: 1140px;
+        margin: 0 auto;
+        padding: 0 5%;
+    }
+
+    /* ── HERO SECTION ── */
+    .uc-hero {
+        position: relative;
+        background: var(--uc-darker);
+        color: #fff;
+        padding: 10rem 5% 4rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        overflow: hidden;
+    }
+
+    .uc-hero-bg {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+    }
+
+    .uc-hero-aurora {
+        position: absolute;
+        top: -20%; left: 50%; width: 140vw; height: 120vh;
+        transform: translateX(-50%);
+        background: radial-gradient(ellipse at 50% 20%, rgba(59,130,246,0.2), transparent 50%);
+        filter: blur(60px);
+    }
+
+    .uc-hero-grid {
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        mask-image: radial-gradient(ellipse at 50% 0%, black, transparent 70%);
+        -webkit-mask-image: radial-gradient(ellipse at 50% 0%, black, transparent 70%);
+    }
+
+    .uc-hero-content {
+        position: relative;
+        z-index: 2;
+        max-width: 860px;
+    }
+
+    .uc-eyebrow {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--uc-accent);
+        margin-bottom: 1.5rem;
+    }
+
+    .uc-title {
+        font-size: clamp(2.5rem, 5vw, 4.2rem);
+        font-weight: 800;
+        line-height: 1.05;
+        letter-spacing: -0.04em;
+        margin-bottom: 1.5rem;
+        text-wrap: balance;
+    }
+
+    .uc-sub {
+        font-size: 1.15rem;
+        color: rgba(255,255,255,0.65);
+        max-width: 650px;
+        margin: 0 auto 2.5rem;
+        line-height: 1.6;
+    }
+
+    .uc-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-bottom: 4rem;
+    }
+
+    /* ── BUTTONS ── */
+    .btn-luxe {
+        position: relative;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: #fff; color: var(--uc-darker);
+        padding: 16px 32px; border-radius: 100px;
+        font-size: 0.95rem; font-weight: 700; text-decoration: none;
+        overflow: hidden; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s;
+        box-shadow: 0 8px 24px rgba(255,255,255,0.15);
+    }
+    .btn-luxe span { position: relative; z-index: 2; }
+    .btn-arrow { width: 16px; height: 16px; margin-left: 6px; position: relative; z-index: 2; transition: transform 0.4s; }
+    .btn-luxe:hover .btn-arrow { transform: translateX(4px); }
+    .btn-luxe:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,255,255,0.25); }
+
+    .btn-ghost-dark {
+        display: inline-flex; align-items: center; justify-content: center;
+        color: #fff; padding: 16px 32px; border-radius: 100px;
+        font-size: 0.95rem; font-weight: 600; text-decoration: none;
+        background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+        transition: background 0.3s, transform 0.3s;
+    }
+    .btn-ghost-dark:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+
+    /* ── MOCKUP ── */
+    .uc-hero-mockup {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        max-width: 800px;
+        perspective: 1200px;
+        margin-bottom: -100px;
+    }
+
+    .uc-mockup-window {
+        background: var(--uc-dark);
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+        overflow: hidden;
+        transform: rotateX(8deg);
+        transform-origin: top center;
+        transition: transform 0.5s ease-out;
+    }
+    .uc-mockup-window:hover { transform: rotateX(0deg); }
+
+    .uc-mockup-top {
+        background: rgba(0,0,0,0.4);
+        padding: 12px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .uc-dots { display: flex; gap: 6px; }
+    .uc-dots span { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.2); }
+
+    .uc-mockup-body {
+        padding: 40px;
+        background: var(--uc-dark);
+        text-align: left;
+    }
+    .mock-plan {
+        background: rgba(255,255,255,0.03);
+        padding: 24px;
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.05);
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 20px;
+    }
+    .mp-title { font-size: 1.2rem; font-weight: 600; color: #fff; }
+    .mp-price { font-size: 1.5rem; font-weight: 800; color: #fff; }
+    .mp-price small { font-size: 0.9rem; color: rgba(255,255,255,0.5); font-weight: 500; }
+    
+    .mock-status {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 0.9rem; color: rgba(255,255,255,0.6);
+    }
+
+    /* ── FEATURES ── */
+    .uc-features {
+        padding: 12rem 0 6rem;
+    }
+    .uc-features-header {
+        text-align: center;
+        max-width: 600px;
+        margin: 0 auto 4rem;
+    }
+    .uc-features-header h2 { font-size: 2.2rem; font-weight: 800; color: #0f172a; margin-bottom: 1rem; }
+    .uc-features-header p { font-size: 1.1rem; color: #64748b; line-height: 1.6; }
+
+    .uc-bento-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+    }
+    .uc-bento-card {
+        background: #fff;
+        padding: 2.5rem;
+        border-radius: 20px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .uc-bento-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+    }
+    .uc-bento-icon {
+        width: 48px; height: 48px;
+        background: #f1f5f9;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        color: var(--uc-accent);
+        margin-bottom: 1.5rem;
+    }
+    .uc-bento-icon svg { width: 24px; height: 24px; }
+    .uc-bento-card h3 { font-size: 1.2rem; font-weight: 700; color: #0f172a; margin-bottom: 0.8rem; }
+    .uc-bento-card p { font-size: 0.95rem; color: #64748b; line-height: 1.6; }
+
+    /* ── CTA SECTION ── */
+    .uc-cta-section {
+        padding: 4rem 0 8rem;
+    }
+    .uc-cta-box {
+        background: var(--uc-darker);
+        border-radius: 24px;
+        padding: 4rem 2rem;
+        text-align: center;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+    }
+    .uc-cta-box::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: radial-gradient(circle at center, rgba(59,130,246,0.2), transparent 60%);
+        pointer-events: none;
+    }
+    .uc-cta-box h2 { font-size: 2.2rem; font-weight: 800; margin-bottom: 1rem; position: relative; z-index: 1; }
+    .uc-cta-box p { font-size: 1.1rem; color: rgba(255,255,255,0.7); margin-bottom: 2rem; position: relative; z-index: 1; }
+
+    @media (max-width: 900px) {
+        .uc-title { font-size: 2.5rem; }
+        .uc-bento-grid { grid-template-columns: 1fr; }
+        .uc-hero { padding-top: 8rem; }
+        .uc-actions { flex-direction: column; }
+    }
+</style>
+
+<script>
+    import { gsap } from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    gsap.registerPlugin(ScrollTrigger);
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if(reduced) return;
+
+        gsap.utils.toArray('.reveal').forEach((el: any) => {
+            gsap.fromTo(el, { opacity: 0, y: 20 }, {
+                opacity: 1, y: 0, duration: 0.8, ease: 'power2.out',
+                scrollTrigger: { trigger: el, start: 'top 85%' }
+            });
+        });
+        
+        gsap.fromTo('.reveal-mockup', { opacity: 0, y: 40 }, {
+            opacity: 1, y: 0, duration: 1.2, ease: 'power3.out', delay: 0.2,
+            scrollTrigger: { trigger: '.reveal-mockup', start: 'top 90%' }
+        });
+    });
+</script>
