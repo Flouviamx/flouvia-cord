@@ -55,7 +55,7 @@ export interface SolUseCase {
     title: string;
     desc: string;
     link: string;
-    logos: string[];
+    logos: { name: string; domain: string }[];
 }
 
 export interface Solution {
@@ -236,25 +236,41 @@ export const SOLUCIONES: Solution[] = [
                 title: 'Agencias y Consultoras',
                 desc: 'Envía propuestas de servicios profesionales al instante, con firmas electrónicas vinculantes y automatiza el cobro de igualas mensuales recurrentes sin fricción.',
                 link: '/producto/pagos',
-                logos: ['IDEAL', 'Ogilvy', 'Accenture']
+                logos: [
+                    { name: 'Ogilvy', domain: 'ogilvy.com' },
+                    { name: 'Accenture', domain: 'accenture.com' },
+                    { name: 'IDEO', domain: 'ideo.com' }
+                ]
             },
             {
                 title: 'SaaS B2B',
                 desc: 'Gestiona suscripciones, contratos personalizados y planes Enterprise. Integra pagos recurrentes y emite facturas CFDI en automático sin tocar el portal del SAT.',
                 link: '/producto/facturacion',
-                logos: ['Linear', 'Stripe', 'Vercel']
+                logos: [
+                    { name: 'Linear', domain: 'linear.app' },
+                    { name: 'Stripe', domain: 'stripe.com' },
+                    { name: 'Vercel', domain: 'vercel.com' }
+                ]
             },
             {
                 title: 'Comercializadoras B2B',
                 desc: 'Cotiza volumen, aplica descuentos por tiers dinámicos, maneja catálogos extensos y automatiza la facturación de grandes pedidos al confirmar el pago.',
                 link: '/producto/cotizaciones',
-                logos: ['GAMA', 'ACEROS', 'VERTICE']
+                logos: [
+                    { name: 'Grainger', domain: 'grainger.com' },
+                    { name: 'Uline', domain: 'uline.com' },
+                    { name: 'Fastenal', domain: 'fastenal.com' }
+                ]
             },
             {
                 title: 'Software Factory',
                 desc: 'Envía presupuestos de desarrollo a la medida, divide los pagos por hitos de entrega y recibe notificaciones en tiempo real cuando el cliente aprueba la propuesta.',
                 link: '/producto/aprobaciones',
-                logos: ['Cursor', 'OpenAI', 'GitLab']
+                logos: [
+                    { name: 'Cursor', domain: 'cursor.com' },
+                    { name: 'OpenAI', domain: 'openai.com' },
+                    { name: 'GitLab', domain: 'gitlab.com' }
+                ]
             }
         ],
 
