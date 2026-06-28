@@ -43,6 +43,10 @@ Node requerido: **>=22.12.0** (ver `.nvmrc` → 24.15.0; alineado a Node 24 LTS,
 6. **Ultra-Premium y Minimalista:** Respeta la jerarquía tipográfica. Los títulos deben ser negros absolutos (`#050505`) con *tracking* ajustado (`letter-spacing: -0.04em`) y línea de altura corta (`1.1`). Deja que la interfaz respire con márgenes y paddings muy generosos. Todo debe poder manejarse fluido con el teclado (ej. `Enter` para avanzar).
 7. **Mockups Premium (Estándar de IA):** Siempre que se te pida crear o actualizar un "mockup" de UI para la landing page, DEBES leer y seguir estrictamente las reglas definidas en `MOCKUP_STANDARDS.md`. Debes abstraer la UI real a un componente puramente visual de Tailwind con contenedores flotantes tipo macOS y micro-interacciones.
 8. **Logos de Marcas e Integraciones:** Cuando necesites mostrar un logotipo real de una marca (ej. Stripe, Zapier), utiliza siempre la API de Google Favicon V2 para obtener iconos de alta calidad dinámicamente (`<img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://dominio.com&size=128" />`). NUNCA uses emojis ni SVGs estáticos pesados para marcas.
+9. **Iconografía Duotone Premium (SVG):** Para ilustrar conceptos, características o menús, NUNCA utilices SVGs de trazos delgados simples y aburridos. Todos los iconos SVG decorativos deben seguir el estándar "Glass Duotone":
+   - **Trazos:** Usa `stroke="currentColor"` con un grosor legible y moderno (`stroke-width="1.75"` a `2.5`).
+   - **Rellenos:** Agrega volumen y profundidad con acentos usando `fill="currentColor" fill-opacity="0.12"` a `0.25`. Nunca dejes los iconos 100% "huecos".
+   - **Figuras Intricadas:** Rechaza figuras literales básicas (ej. un cubo simple). Cámbialas por formas complejas, isométricas o de nodos en red. Debe reflejar la estética técnica y exclusiva de un SaaS Quiet Luxury.
 
 ---
 
