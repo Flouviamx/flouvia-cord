@@ -56,8 +56,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
             </div>
             
             <div class="stripe-hero-content stripe-container">
-                <span class="stripe-hero-eyebrow reveal">{solucion.eyebrow}</span>
-                <h1 class="stripe-title" set:html={solucion.titulo} />
+                <h1 class="stripe-title reveal" set:html={solucion.titulo} />
                 
                 <p class="stripe-sub">{solucion.sub}</p>
                 
@@ -94,29 +93,52 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
             </div>
         )}
 
-        <!-- ── WORKFLOW / ARCHITECTURE ── -->
-        {solucion.workflow && (
-            <section class="stripe-workflow-section">
+        <!-- ── AIRY BENTO PILLARS ── -->
+        {solucion.pillars && (
+            <section class="stripe-pillars-section">
                 <div class="stripe-container">
-                    <div class="stripe-workflow-header reveal">
-                        <span class="stripe-section-eyebrow">ARQUITECTURA</span>
-                        <h2 class="stripe-h2">Un flujo de extremo a extremo</h2>
-                        <p class="stripe-p">Desde el primer clic hasta la conciliación contable, automatizado.</p>
-                    </div>
-
-                    <div class="stripe-workflow-grid">
-                        {solucion.workflow.map((w, i) => (
-                            <div class="stripe-workflow-card reveal">
-                                <div class="stripe-workflow-step">{w.step}</div>
-                                <div class="stripe-workflow-content">
-                                    <h3>{w.titulo}</h3>
-                                    <p>{w.desc}</p>
+                    <div class="stripe-pillars-grid">
+                        {solucion.pillars.map((p, i) => (
+                            <div class="stripe-pillar-card reveal">
+                                <div class="stripe-pillar-graphic">
+                                    {i === 0 && (
+                                        <svg width="80%" height="80%" viewBox="0 0 200 150" fill="none">
+                                            <rect x="20" y="30" width="160" height="100" rx="12" fill="#fff" filter="drop-shadow(0 4px 12px rgba(0,0,0,0.04))"/>
+                                            <rect x="40" y="50" width="80" height="8" rx="4" fill="#e2e8f0"/>
+                                            <rect x="40" y="70" width="40" height="6" rx="3" fill="#cbd5e1"/>
+                                            <rect x="40" y="90" width="120" height="24" rx="4" fill="#f1f5f9"/>
+                                        </svg>
+                                    )}
+                                    {i === 1 && (
+                                        <svg width="80%" height="80%" viewBox="0 0 200 150" fill="none">
+                                            <rect x="20" y="30" width="160" height="100" rx="12" fill="#fff" filter="drop-shadow(0 4px 12px rgba(0,0,0,0.04))"/>
+                                            <circle cx="50" cy="80" r="16" fill="#818cf8" opacity="0.2"/>
+                                            <circle cx="50" cy="80" r="8" fill="#818cf8"/>
+                                            <path d="M75 80 L150 80" stroke="#e2e8f0" stroke-width="4" stroke-dasharray="4 4"/>
+                                        </svg>
+                                    )}
+                                    {i === 2 && (
+                                        <svg width="80%" height="80%" viewBox="0 0 200 150" fill="none">
+                                            <rect x="20" y="30" width="160" height="100" rx="12" fill="#fff" filter="drop-shadow(0 4px 12px rgba(0,0,0,0.04))"/>
+                                            <rect x="40" y="100" width="16" height="20" rx="4" fill="#6366f1"/>
+                                            <rect x="64" y="80" width="16" height="40" rx="4" fill="#818cf8"/>
+                                            <rect x="88" y="60" width="16" height="60" rx="4" fill="#a5b4fc"/>
+                                            <rect x="112" y="70" width="16" height="50" rx="4" fill="#c7d2fe"/>
+                                            <rect x="136" y="40" width="16" height="80" rx="4" fill="#6366f1"/>
+                                        </svg>
+                                    )}
                                 </div>
-                                {i < solucion.workflow.length - 1 && (
-                                    <div class="stripe-workflow-connector">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"><path d="M5 12h14m-4-4l4 4-4 4"/></svg>
-                                    </div>
-                                )}
+                                <div class="stripe-pillar-content">
+                                    <h3 class="stripe-pillar-title">{p.titulo}</h3>
+                                    <p class="stripe-pillar-desc">{p.desc}</p>
+                                    <a href="#" class="stripe-pillar-link">
+                                        {p.link}
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                                            <polyline points="19 12 12 19 5 12"></polyline>
+                                        </svg>
+                                    </a>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -1070,78 +1092,94 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         to { transform: translateX(-50%); }
     }
 
-    /* ── WORKFLOW ── */
-    .stripe-workflow-section {
-        padding: 6rem 0;
+    /* ── AIRY BENTO PILLARS ── */
+    .stripe-pillars-section {
+        padding: 4rem 0 6rem;
+        background: var(--stripe-bg);
         position: relative;
         z-index: 10;
-        background: linear-gradient(180deg, var(--stripe-bg) 0%, #f8fafc 100%);
     }
     
-    .stripe-workflow-header {
-        margin-bottom: 4rem;
-        text-align: center;
-        max-width: 600px;
-        margin-left: auto;
-        margin-right: auto;
+    .stripe-pillars-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
     }
     
-    .stripe-workflow-grid {
+    .stripe-pillar-card {
+        background: #fff;
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.02);
         display: flex;
-        gap: 24px;
-        justify-content: space-between;
-        position: relative;
+        flex-direction: column;
+        transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        border: 1px solid rgba(0,0,0,0.04);
     }
     
-    .stripe-workflow-card {
+    .stripe-pillar-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 24px 48px rgba(0,0,0,0.06), 0 8px 16px rgba(0,0,0,0.03);
+    }
+    
+    .stripe-pillar-graphic {
+        background: #f7f9fc;
+        height: 240px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-bottom: 1px solid rgba(0,0,0,0.03);
+        overflow: hidden;
+    }
+    
+    .stripe-pillar-content {
+        padding: 2.5rem;
+        display: flex;
+        flex-direction: column;
         flex: 1;
-        background: var(--stripe-card-bg);
-        border: 1px solid var(--stripe-border);
-        border-radius: 16px;
-        padding: 2rem;
-        position: relative;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-        transition: transform 0.3s, box-shadow 0.3s;
     }
     
-    .stripe-workflow-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 24px rgba(0,0,0,0.08);
-    }
-    
-    .stripe-workflow-step {
-        font-family: var(--font-mono, monospace);
-        color: var(--stripe-cyan);
-        font-size: 0.9rem;
-        font-weight: 700;
+    .stripe-pillar-title {
+        font-size: 1.35rem;
+        font-weight: 600;
+        color: #0a192f;
         margin-bottom: 1rem;
-        background: rgba(59, 130, 246, 0.1);
-        display: inline-block;
-        padding: 4px 8px;
-        border-radius: 6px;
+        line-height: 1.3;
     }
     
-    .stripe-workflow-content h3 {
-        font-size: 1.25rem;
-        font-weight: 700;
-        margin-bottom: 0.75rem;
-        color: var(--stripe-text);
+    .stripe-pillar-desc {
+        font-size: 1rem;
+        color: #555556;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+        flex: 1;
     }
     
-    .stripe-workflow-content p {
+    .stripe-pillar-link {
+        color: #6366f1;
+        font-weight: 600;
         font-size: 0.95rem;
-        color: var(--stripe-muted);
-        line-height: 1.5;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        transition: color 0.2s;
+        margin-top: auto;
     }
     
-    .stripe-workflow-connector {
-        position: absolute;
-        top: 50%;
-        right: -32px;
-        width: 40px;
-        transform: translateY(-50%);
-        color: rgba(10, 25, 47, 0.15);
-        z-index: -1;
+    .stripe-pillar-link svg {
+        width: 16px;
+        height: 16px;
+        transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    
+    .stripe-pillar-link:hover {
+        color: #4f46e5;
+    }
+    
+    .stripe-pillar-card:hover .stripe-pillar-link svg {
+        transform: translateY(2px);
     }
 
     /* ── SECURITY ── */
@@ -1207,8 +1245,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     }
     
     @media (max-width: 992px) {
-        .stripe-workflow-grid { flex-direction: column; }
-        .stripe-workflow-connector { display: none; }
+        .stripe-pillars-grid { grid-template-columns: 1fr; gap: 1.5rem; }
         .stripe-security-grid { grid-template-columns: 1fr; }
     }
 </style>

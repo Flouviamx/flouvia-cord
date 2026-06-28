@@ -68,6 +68,7 @@ export interface Solution {
     integrations?: SolIntegration[];
     security?: SolSecurity;
     workflow?: SolWorkflowStep[];
+    pillars?: { titulo: string; desc: string; link: string }[];
 
     resultado?: {            // caso de uso real con métricas (AI-SEO)
         cliente: string;
@@ -116,6 +117,24 @@ export const SOLUCIONES: Solution[] = [
             { step: '02', titulo: 'Routing de Aprobación', desc: 'Si el descuento excede el umbral, Cord enruta la alerta a Finanzas o al Gerente Regional automáticamente.' },
             { step: '03', titulo: 'Cierre Criptográfico', desc: 'El cliente firma digitalmente. Cord sella el PDF final garantizando su inmutabilidad legal.' },
             { step: '04', titulo: 'Sincronización ERP', desc: 'Al aprobarse, Cord actualiza Salesforce y manda el payload a SAP/Oracle para disparar la facturación.' }
+        ],
+
+        pillars: [
+            {
+                titulo: 'Control centralizado',
+                desc: 'Define reglas de negocio complejas y controla el margen en tiempo real mediante niveles de aprobación.',
+                link: 'Explorar'
+            },
+            {
+                titulo: 'Sincronización ERP',
+                desc: 'Conecta con SAP, Oracle NetSuite o Microsoft Dynamics para disparar la facturación automáticamente.',
+                link: 'Explorar'
+            },
+            {
+                titulo: 'Seguridad corporativa',
+                desc: 'Firmas criptográficas inmutables y control de acceso basado en roles (RBAC) para proteger tu pipeline.',
+                link: 'Explorar'
+            }
         ],
 
         stats: [
@@ -221,6 +240,24 @@ export const SOLUCIONES: Solution[] = [
             { step: '02', titulo: 'Envío sin Fricción', desc: 'El cliente recibe un link web, revisa el plan y acepta con un solo clic.' },
             { step: '03', titulo: 'Checkout', desc: 'Opcionalmente cobras al instante conectando tu cuenta de Stripe.' },
             { step: '04', titulo: 'CFDI 4.0 Automático', desc: 'Emitimos la factura y se la mandamos al cliente. Cero burocracia.' }
+        ],
+
+        pillars: [
+            {
+                titulo: 'Cierre instantáneo',
+                desc: 'Links mágicos de aprobación inmediata que permiten a tus clientes aceptar propuestas en un clic.',
+                link: 'Explorar'
+            },
+            {
+                titulo: 'Presentación premium',
+                desc: 'Luce como una empresa pública desde el primer día con plantillas de diseño impecable.',
+                link: 'Explorar'
+            },
+            {
+                titulo: 'Facturación automática',
+                desc: 'Genera el CFDI automáticamente al aceptar la propuesta, sin tocar el portal del SAT.',
+                link: 'Explorar'
+            }
         ],
 
         stats: [
