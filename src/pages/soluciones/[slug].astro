@@ -305,18 +305,20 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                                     <stop offset="0%" stop-color="var(--stripe-cyan)" />
                                                     <stop offset="100%" stop-color="var(--stripe-accent)" />
                                                 </linearGradient>
-                                            </defs>
-                                            <circle cx="100" cy="75" r="50" fill="url(#glow0)" />
-                                            <circle cx="100" cy="75" r="30" fill="none" stroke="rgba(59, 130, 246, 0.2)" stroke-width="1" />
-                                            <circle cx="100" cy="75" r="45" fill="none" stroke="rgba(59, 130, 246, 0.1)" stroke-width="1" />
-                                            <circle cx="100" cy="75" r="8" fill="var(--stripe-cyan)" />
-                                            <path d="M 20 120 C 60 120 80 50 100 50 C 120 50 140 90 180 90" fill="none" stroke="url(#line0)" stroke-width="2" stroke-dasharray="8 4" class="abstract-dash" />
-                                        </svg>
+                                        <div class="pillar-mock pillar-mock-magic">
+                                            <div class="magic-doc">
+                                                <div class="magic-doc-header"></div>
+                                                <div class="magic-doc-line"></div>
+                                                <div class="magic-doc-line short"></div>
+                                                <div class="magic-doc-btn">
+                                                    <div class="magic-cursor">
+                                                        <svg viewBox="0 0 24 24" fill="white" stroke="#000" stroke-width="1"><path d="M5.5 3.21V20.8c0 .45.54.67.85.35l4.86-4.86a.5.5 0 0 1 .35-.15h6.42c.45 0 .67-.54.35-.85L5.5 3.21z"/></svg>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     )}
                                     {i === 1 && (
-                                        <svg class="abstract-svg abstract-float" viewBox="0 0 200 150">
-                                            <defs>
-                                                <radialGradient id="glow1" cx="50%" cy="50%" r="50%">
                                                     <stop offset="0%" stop-color="var(--stripe-accent)" stop-opacity="0.2" />
                                                     <stop offset="100%" stop-color="var(--stripe-accent)" stop-opacity="0" />
                                                 </radialGradient>
@@ -1905,68 +1907,115 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     }
     
     .stripe-pillar-graphic {
-        background: radial-gradient(circle at center, #f8fafc 0%, #f1f5f9 100%);
+        background: #0a2540; /* Cord Navy */
         height: 240px;
         position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-bottom: 1px solid rgba(0,0,0,0.03);
+        border-bottom: 1px solid rgba(255,255,255,0.05);
         overflow: hidden;
     }
     
-    .abstract-svg {
-        width: 100%;
-        height: 100%;
-        transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    .pillar-mock {
+        width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        position: relative;
     }
 
-    .stripe-pillar-card:hover .abstract-svg {
-        transform: scale(1.05);
+    /* 1. Magic Link (Cierre Instantáneo) */
+    .pillar-mock-magic {
+        background: radial-gradient(circle at center, rgba(0,201,255,0.15) 0%, transparent 60%);
     }
-    
-    /* Abstract Animations */
-    .abstract-pulse {
-        animation: abstractPulse 4s infinite alternate ease-in-out;
+    .magic-doc {
+        width: 140px; height: 160px;
+        background: white; border-radius: 12px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        padding: 16px; display: flex; flex-direction: column; gap: 12px;
+        transform: translateY(10px) scale(0.95);
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
     }
-    @keyframes abstractPulse {
-        0% { transform: scale(1); }
-        100% { transform: scale(1.02); }
+    .stripe-pillar-card:hover .magic-doc {
+        transform: translateY(-5px) scale(1.05);
     }
-    
-    .abstract-float {
-        animation: abstractFloat 6s infinite ease-in-out;
+    .magic-doc-header { height: 30px; border-radius: 6px; background: #f0f0f0; margin-bottom: 8px; }
+    .magic-doc-line { height: 8px; border-radius: 4px; background: #e2e8f0; }
+    .magic-doc-line.short { width: 60%; }
+    .magic-doc-btn { 
+        margin-top: auto; height: 32px; border-radius: 6px; 
+        background: #00C9FF; 
+        box-shadow: 0 4px 12px rgba(0,201,255,0.4);
+        position: relative;
+        transition: background 0.3s;
     }
-    @keyframes abstractFloat {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-4px); }
+    .stripe-pillar-card:hover .magic-doc-btn { background: #0071e3; }
+    .magic-cursor {
+        position: absolute; right: -15px; bottom: -25px;
+        width: 24px; height: 24px;
+        transform: translate(20px, 20px);
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
     }
-    
-    .abstract-pulse-slow {
-        animation: abstractPulse 6s infinite alternate ease-in-out;
+    .stripe-pillar-card:hover .magic-cursor {
+        transform: translate(0, 0);
     }
-    
-    .abstract-dash {
-        animation: abstractDash 20s infinite linear;
+
+    /* 2. Premium UI (Presentación premium) */
+    .pillar-mock-premium {
+        background: radial-gradient(circle at center, rgba(0,113,227,0.2) 0%, transparent 60%);
     }
-    @keyframes abstractDash {
-        to { stroke-dashoffset: -100; }
+    .premium-ui {
+        width: 200px; height: 140px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        display: flex; overflow: hidden;
+        backdrop-filter: blur(10px);
+        transform: perspective(800px) rotateY(-15deg) rotateX(10deg);
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    
-    .abstract-dash-reverse {
-        animation: abstractDashRev 20s infinite linear;
+    .stripe-pillar-card:hover .premium-ui {
+        transform: perspective(800px) rotateY(0deg) rotateX(0deg) scale(1.1);
     }
-    @keyframes abstractDashRev {
-        to { stroke-dashoffset: 100; }
+    .premium-sidebar { width: 40px; background: rgba(0,0,0,0.2); height: 100%; border-right: 1px solid rgba(255,255,255,0.05); }
+    .premium-content { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .premium-hero { height: 40px; border-radius: 6px; background: linear-gradient(135deg, #00C9FF, #0071e3); opacity: 0.8; }
+    .premium-grid { display: flex; gap: 8px; flex: 1; }
+    .premium-box { flex: 1; border-radius: 6px; background: rgba(255,255,255,0.1); }
+
+    /* 3. CFDI 4.0 (Facturación automática) */
+    .pillar-mock-cfdi {
+        background: radial-gradient(circle at center, rgba(16,185,129,0.15) 0%, transparent 60%);
     }
-    
-    .abstract-orbit {
-        animation: orbitFloat 3s infinite alternate ease-in-out;
-        transform-origin: center;
+    .cfdi-receipt {
+        width: 130px; height: 170px;
+        background: #061626; border-radius: 8px;
+        border: 1px dashed rgba(0,201,255,0.4);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 0 20px rgba(0,201,255,0.1);
+        padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 12px;
+        transform: translateY(20px);
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s;
     }
-    @keyframes orbitFloat {
-        0% { transform: translateX(-15px); }
-        100% { transform: translateX(15px); }
+    .stripe-pillar-card:hover .cfdi-receipt {
+        transform: translateY(0);
+        border-color: #10b981; /* Green success */
+    }
+    .cfdi-header { font-family: monospace; font-size: 10px; color: #00C9FF; letter-spacing: 1px; font-weight: bold; }
+    .cfdi-code { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+    .cfdi-line { height: 4px; border-radius: 2px; background: rgba(255,255,255,0.15); }
+    .cfdi-line.short { width: 70%; }
+    .cfdi-stamp {
+        margin-top: auto; width: 40px; height: 40px;
+        border-radius: 50%; border: 2px solid #00C9FF;
+        display: flex; align-items: center; justify-content: center;
+        color: #00C9FF;
+        transition: color 0.3s, border-color 0.3s, transform 0.4s;
+    }
+    .cfdi-stamp svg { width: 20px; height: 20px; }
+    .stripe-pillar-card:hover .cfdi-stamp {
+        border-color: #10b981; color: #10b981;
+        transform: scale(1.1) rotate(-10deg);
     }
     
     .stripe-pillar-content {
