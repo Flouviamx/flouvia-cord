@@ -63,52 +63,97 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
         <div class="mockup">
             <div class="mk-topbar">
                 <div class="mk-dots"><span></span><span></span><span></span></div>
-                <div class="mk-url">cord.flouvia.com/app/cotizaciones/q-0148</div>
+                <div class="mk-url">cord.flouvia.com/q/d2fe0eb175cc8</div>
             </div>
 
-            <div class="mk-body">
-                <aside class="mk-side">
-                    <div class="mk-brand"><img src="/imgs/logo-cord-white.png" alt="Cord" /></div>
-                    <nav class="mk-nav">
-                        <span class="mk-navitem">{t("mk.nav.1")}</span>
-                        <span class="mk-navitem active">{t("mk.nav.2")}</span>
-                        <span class="mk-navitem">{t("mk.nav.3")}</span>
-                        <span class="mk-navitem">{t("mk.nav.4")}</span>
-                        <span class="mk-navitem">{t("mk.nav.5")}</span>
-                    </nav>
-                </aside>
+            <div class="mk-body-public">
+                <div class="mk-q-card">
+                    <!-- Flotante para la animación GSAP -->
+                    <span class="mk-badge mk-badge-ok" id="mkStatus" style="position: absolute; top: 1.5rem; right: 1.5rem; z-index: 10;">{t("mk.status")}</span>
+                    
+                    <!-- Hidden GSAP Targets -->
+                    <div style="display: none;">
+                        <div class="mk-tl-item" data-story="approved"></div>
+                        <div class="mk-tl-item" data-story="viewed"></div>
+                        <div class="mk-tl-item" data-story="sent"></div>
+                        <div class="mk-tl-item" data-story="created"></div>
+                    </div>
 
-                <main class="mk-main">
-                    <div class="mk-head">
-                        <div>
-                            <div class="mk-folio">COT-0148</div>
-                            <div class="mk-client">Distribuidora El Zarco · Net 30</div>
+                    <header class="mk-q-header">
+                        <div class="mk-q-brand-row">
+                            <div class="mk-q-logo-initial">EZ</div>
+                            <div class="mk-q-brand-text">
+                                <span class="mk-q-company">Distribuidora El Zarco</span>
+                            </div>
                         </div>
-                        <span class="mk-badge mk-badge-ok" id="mkStatus">{t("mk.status")}</span>
+                        <div class="mk-q-folio-tag">
+                            <span class="mk-q-folio-eyebrow">COTIZACIÓN</span>
+                            <span class="mk-q-folio-num">COT-0148</span>
+                        </div>
+                    </header>
+
+                    <div class="mk-q-rule"></div>
+
+                    <div class="mk-q-meta">
+                        <div class="mk-q-meta-col">
+                            <span class="mk-q-meta-label">PARA</span>
+                            <span class="mk-q-meta-val">Desarrollos Inmobiliarios Polanco</span>
+                        </div>
+                        <div class="mk-q-meta-col">
+                            <span class="mk-q-meta-label">VÁLIDA HASTA</span>
+                            <span class="mk-q-meta-val">28 jul 2026</span>
+                            <span class="mk-q-vig-chip">Vence en 30 días</span>
+                        </div>
+                        <div class="mk-q-meta-col">
+                            <span class="mk-q-meta-label">TÉRMINOS</span>
+                            <span class="mk-q-meta-val">Contado</span>
+                        </div>
                     </div>
 
-                    <div class="mk-table">
-                        <div class="mk-row mk-row-head"><span>{t("mk.row.head.1")}</span><span>{t("mk.row.head.2")}</span><span>{t("mk.row.head.3")}</span><span>{t("mk.row.head.4")}</span></div>
-                        <div class="mk-row"><span class="mk-prod">{t("mk.prod.1")}</span><span>120</span><span class="editorial mk-num">$182.00</span><span class="editorial mk-num">$21,840.00</span></div>
-                        <div class="mk-row"><span class="mk-prod">{t("mk.prod.2")}</span><span>340</span><span class="editorial mk-num">$168.50</span><span class="editorial mk-num">$57,290.00</span></div>
-                        <div class="mk-row"><span class="mk-prod">{t("mk.prod.3")}</span><span>2,400</span><span class="editorial mk-num">$14.20</span><span class="editorial mk-num">$34,080.00</span></div>
-                        <div class="mk-row mk-row-muted"><span class="mk-prod">{t("mk.prod.4")}</span><span>180</span><span class="editorial mk-num">$312.00</span><span class="editorial mk-num">$56,160.00</span></div>
+                    <div class="mk-q-total-hero">
+                        <div class="mk-q-total-inner">
+                            <span class="mk-q-total-eyebrow">TOTAL A PAGAR</span>
+                            <span class="editorial mk-q-total-amount" data-countup="196469.20">$196,469.20</span>
+                            <span class="mk-q-total-note">MXN · IVA incluido</span>
+                        </div>
                     </div>
 
-                    <div class="mk-total">
-                        <div class="mk-total-line"><span>{t("mk.tot.1")}</span><span class="editorial">$169,370.00</span></div>
-                        <div class="mk-total-line"><span>{t("mk.tot.2")}</span><span class="editorial">$27,099.20</span></div>
-                        <div class="mk-total-line mk-total-grand"><span>{t("mk.tot.3")}</span><span class="editorial mk-grand" data-countup="196469.20" data-decimals="2">$196,469.20</span></div>
+                    <div class="mk-q-items">
+                        <div class="mk-qi-head">
+                            <span>Concepto</span>
+                            <span class="mk-qi-center">Cant.</span>
+                            <span class="mk-qi-right">P. Unit.</span>
+                            <span class="mk-qi-right">Importe</span>
+                        </div>
+                        <div class="mk-qi-row">
+                            <span class="mk-qi-name">{t("mk.prod.1")}</span>
+                            <span class="mk-qi-center mk-qi-qty">120</span>
+                            <span class="editorial mk-qi-right mk-qi-price">$182.00</span>
+                            <span class="editorial mk-qi-right mk-qi-total">$21,840.00</span>
+                        </div>
+                        <div class="mk-qi-row">
+                            <span class="mk-qi-name">{t("mk.prod.2")}</span>
+                            <span class="mk-qi-center mk-qi-qty">340</span>
+                            <span class="editorial mk-qi-right mk-qi-price">$168.50</span>
+                            <span class="editorial mk-qi-right mk-qi-total">$57,290.00</span>
+                        </div>
+                        
+                        <div class="mk-qi-subtotals">
+                            <div class="mk-qt-row"><span>Subtotal</span><span class="editorial">$169,370.00</span></div>
+                            <div class="mk-qt-row"><span>IVA 16%</span><span class="editorial">$27,099.20</span></div>
+                            <div class="mk-qt-row mk-qt-grand"><span>Total</span><span class="editorial">$196,469.20</span></div>
+                        </div>
                     </div>
-                </main>
 
-                <aside class="mk-timeline">
-                    <div class="mk-tl-title">{t("mk.tl.title")}</div>
-                    <div class="mk-tl-item" data-story="approved"><span class="mk-tl-dot dot-green"></span><div><div class="mk-tl-text"><b>{t("mk.tl.1.t")}</b></div><div class="mk-tl-time">{t("mk.tl.1.d")}</div></div></div>
-                    <div class="mk-tl-item" data-story="viewed"><span class="mk-tl-dot dot-green"></span><div><div class="mk-tl-text"><b>{t("mk.tl.2.t")}</b></div><div class="mk-tl-time">{t("mk.tl.2.d")}</div></div></div>
-                    <div class="mk-tl-item" data-story="sent"><span class="mk-tl-dot dot-blue"></span><div><div class="mk-tl-text">{t("mk.tl.3.t")}</div><div class="mk-tl-time">{t("mk.tl.3.d")}</div></div></div>
-                    <div class="mk-tl-item" data-story="created"><span class="mk-tl-dot dot-grey"></span><div><div class="mk-tl-text">{t("mk.tl.4.t")}</div><div class="mk-tl-time">{t("mk.tl.4.d")}</div></div></div>
-                </aside>
+                    <div class="mk-q-actions-area">
+                        <div class="mk-ql-step">
+                            <button class="mk-ql-cta">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                Aprobar cotización
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -407,12 +452,12 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
     }
     .mockup {
         position: relative; z-index: 1;
-        border-radius: 16px; overflow: hidden; background: #0a192f;
+        border-radius: 16px; overflow: hidden; background: #fff;
         box-shadow:
-            0 2px 4px rgba(10,25,47,0.1),
-            0 50px 100px -36px rgba(10,25,47,0.55),
-            0 90px 160px -60px rgba(10,25,47,0.4);
-        border: 1px solid rgba(255,255,255,0.08);
+            0 2px 4px rgba(10,25,47,0.05),
+            0 50px 100px -36px rgba(10,25,47,0.25),
+            0 90px 160px -60px rgba(10,25,47,0.15);
+        border: 1px solid rgba(10,25,47,0.08);
     }
     /* Hairline de luz en el borde superior — detalle Linear */
     .mockup::after {
@@ -421,54 +466,71 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
         pointer-events: none;
     }
 
-    .mk-topbar { display: flex; align-items: center; gap: 1rem; padding: 0.7rem 1rem; background: #0d1f3a; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .mk-topbar { display: flex; align-items: center; gap: 1rem; padding: 0.7rem 1rem; background: #f9f9fa; border-bottom: 1px solid rgba(10,25,47,0.08); }
     .mk-dots { display: flex; gap: 6px; }
-    .mk-dots span { width: 11px; height: 11px; border-radius: 50%; background: rgba(255,255,255,0.16); }
-    .mk-url { flex: 1; text-align: center; font-size: 0.72rem; color: rgba(255,255,255,0.45); background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 7px; max-width: 360px; margin: 0 auto; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .mk-dots span { width: 11px; height: 11px; border-radius: 50%; background: rgba(10,25,47,0.16); }
+    .mk-url { flex: 1; text-align: center; font-size: 0.72rem; color: rgba(10,25,47,0.45); background: rgba(10,25,47,0.05); padding: 5px 12px; border-radius: 7px; max-width: 360px; margin: 0 auto; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
-    .mk-body { display: grid; grid-template-columns: 150px 1fr 200px; background: #fbfcfe; min-height: 430px; text-align: left; }
+    .mk-body-public { background: #f3f2ef; padding: 2rem; display: flex; justify-content: center; min-height: 430px; text-align: left; }
+    
+    .mk-q-card {
+        background: #ffffff;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 580px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.03);
+        padding: 2.2rem 2.2rem 2.6rem;
+        position: relative;
+    }
 
-    .mk-side { background: #0a192f; padding: 1.2rem 0.9rem; display: flex; flex-direction: column; gap: 1.4rem; }
-    .mk-brand { padding-left: 0.4rem; }
-    .mk-brand img { height: 14px; width: auto; display: block; opacity: 0.95; }
-    .mk-nav { display: flex; flex-direction: column; gap: 0.2rem; }
-    .mk-navitem { font-size: 0.8rem; color: rgba(255,255,255,0.5); padding: 8px 12px; border-radius: 8px; font-weight: 500; }
-    .mk-navitem.active { background: rgba(255,255,255,0.08); color: #fff; }
-
-    .mk-main { padding: 1.6rem 1.7rem; display: flex; flex-direction: column; }
-    .mk-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.4rem; }
-    .mk-folio { font-size: 1.15rem; font-weight: 800; color: #0a192f; letter-spacing: -0.5px; }
-    .mk-client { font-size: 0.78rem; color: #667; margin-top: 3px; }
-    .mk-badge { font-size: 0.66rem; font-weight: 700; padding: 6px 12px; border-radius: 100px; letter-spacing: 0.3px; transition: background 0.45s var(--ease-ios), color 0.45s var(--ease-ios); }
+    .mk-badge { font-size: 0.6rem; font-weight: 700; padding: 6px 12px; border-radius: 100px; letter-spacing: 0.3px; transition: background 0.45s var(--ease-ios), color 0.45s var(--ease-ios); }
     .mk-badge-ok { background: rgba(16,185,129,0.12); color: #059669; }
     .mk-badge-sent { background: rgba(59,130,246,0.12); color: #2563eb; }
     .mk-badge-viewed { background: rgba(245,158,11,0.14); color: #b45309; }
+    .mk-badge-draft { background: rgba(10,25,47,0.07); color: #5b6472; }
 
-    .mk-table { display: flex; flex-direction: column; }
-    .mk-row { display: grid; grid-template-columns: 1fr 50px 80px 90px; gap: 0.5rem; align-items: center; padding: 0.7rem 0; border-bottom: 1px solid rgba(10,25,47,0.06); font-size: 0.82rem; color: #334; }
-    .mk-row span:not(.mk-prod) { text-align: right; }
-    .mk-row-head { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: #99a; border-bottom: 1px solid rgba(10,25,47,0.1); }
-    .mk-prod { font-weight: 600; color: #0a192f; }
-    .mk-num { color: #0a192f; }
-    .mk-row-muted { opacity: 0.85; }
+    .mk-q-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; }
+    .mk-q-brand-row { display: flex; align-items: center; gap: 12px; }
+    .mk-q-logo-initial { width: 36px; height: 36px; border-radius: 8px; background: #0a192f; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 800; }
+    .mk-q-brand-text { display: flex; flex-direction: column; }
+    .mk-q-company { font-size: 1.05rem; font-weight: 800; color: #0a192f; letter-spacing: -0.4px; }
+    .mk-q-folio-tag { display: flex; flex-direction: column; align-items: flex-end; }
+    .mk-q-folio-eyebrow { font-size: 0.55rem; font-weight: 800; letter-spacing: 1.2px; color: #99a; }
+    .mk-q-folio-num { font-size: 0.85rem; font-weight: 700; color: #0a192f; margin-top: 2px; }
 
-    .mk-total { margin-top: auto; padding-top: 1.1rem; display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end; }
-    .mk-total-line { display: flex; justify-content: space-between; gap: 2.5rem; min-width: 240px; font-size: 0.82rem; color: #667; }
-    .mk-total-line .editorial { color: #0a192f; font-size: 0.95rem; }
-    .mk-total-grand { border-top: 1px solid rgba(10,25,47,0.1); padding-top: 0.6rem; margin-top: 0.2rem; }
-    .mk-total-grand span:first-child { font-weight: 700; color: #0a192f; font-size: 0.92rem; }
-    .mk-grand { font-size: 1.45rem !important; color: #0a192f !important; }
+    .mk-q-rule { height: 1px; background: rgba(10,25,47,0.08); margin-bottom: 1.5rem; }
 
-    .mk-timeline { background: #f4f7fb; border-left: 1px solid rgba(10,25,47,0.06); padding: 1.4rem 1.1rem; display: flex; flex-direction: column; gap: 1.1rem; }
-    .mk-tl-title { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #99a; }
-    .mk-tl-item { display: flex; gap: 10px; align-items: flex-start; }
-    .mk-tl-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
-    .dot-green { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
-    .dot-blue { background: #3b82f6; }
-    .dot-grey { background: #cbd5e1; }
-    .mk-tl-text { font-size: 0.78rem; color: #334; line-height: 1.3; }
-    .mk-tl-text b { color: #0a192f; }
-    .mk-tl-time { font-size: 0.68rem; color: #99a; margin-top: 2px; }
+    .mk-q-meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .mk-q-meta-col { display: flex; flex-direction: column; align-items: flex-start; }
+    .mk-q-meta-label { font-size: 0.55rem; font-weight: 800; letter-spacing: 0.8px; color: #99a; margin-bottom: 6px; }
+    .mk-q-meta-val { font-size: 0.75rem; font-weight: 600; color: #0a192f; line-height: 1.3; }
+    .mk-q-vig-chip { font-size: 0.55rem; font-weight: 700; color: #059669; background: rgba(16,185,129,0.12); padding: 3px 8px; border-radius: 100px; margin-top: 6px; }
+
+    .mk-q-total-hero { background: rgba(10,25,47,0.03); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; text-align: center; }
+    .mk-q-total-inner { display: flex; flex-direction: column; align-items: center; }
+    .mk-q-total-eyebrow { font-size: 0.6rem; font-weight: 800; letter-spacing: 1.2px; color: #99a; }
+    .mk-q-total-amount { font-size: 2.2rem; color: #0a192f; line-height: 1.1; margin: 4px 0; }
+    .mk-q-total-note { font-size: 0.65rem; font-weight: 600; color: #667; }
+
+    .mk-q-items { margin-bottom: 2rem; }
+    .mk-qi-head { display: grid; grid-template-columns: 1.5fr 50px 70px 80px; gap: 0.5rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(10,25,47,0.1); font-size: 0.6rem; font-weight: 700; color: #99a; text-transform: uppercase; letter-spacing: 0.5px; }
+    .mk-qi-row { display: grid; grid-template-columns: 1.5fr 50px 70px 80px; gap: 0.5rem; padding: 0.8rem 0; border-bottom: 1px solid rgba(10,25,47,0.06); font-size: 0.75rem; align-items: center; }
+    .mk-qi-name { font-weight: 600; color: #0a192f; }
+    .mk-qi-center { text-align: center; color: #667; }
+    .mk-qi-right { text-align: right; }
+    .mk-qi-price { color: #0a192f; }
+    .mk-qi-total { color: #0a192f; font-weight: 700; }
+
+    .mk-qi-subtotals { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; padding-top: 1rem; }
+    .mk-qt-row { display: flex; justify-content: space-between; width: 200px; font-size: 0.75rem; color: #667; }
+    .mk-qt-row .editorial { color: #0a192f; font-size: 0.85rem; }
+    .mk-qt-grand { border-top: 1px solid rgba(10,25,47,0.1); padding-top: 0.6rem; margin-top: 0.2rem; font-weight: 700; color: #0a192f; }
+    .mk-qt-grand .editorial { font-size: 1.1rem; }
+
+    .mk-q-actions-area { background: rgba(10,25,47,0.03); border-radius: 12px; padding: 1.5rem; border: 1px solid rgba(10,25,47,0.06); }
+    .mk-ql-step { display: flex; justify-content: center; }
+    .mk-ql-cta { display: flex; align-items: center; gap: 8px; background: #0a192f; color: #fff; border: none; padding: 14px 24px; border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: transform 0.3s; width: 100%; justify-content: center; }
+
 
     .mk-toast {
         position: absolute; bottom: 9%; right: -1.5%; z-index: 2;
