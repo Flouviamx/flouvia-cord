@@ -291,50 +291,100 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                             <div class="stripe-pillar-card reveal">
                                 <div class="stripe-pillar-graphic">
                                     {i === 0 && (
-                                        <div class="pillar-mock pillar-mock-magic">
-                                            <div class="magic-doc">
-                                                <div class="magic-doc-header"></div>
-                                                <div class="magic-doc-line"></div>
-                                                <div class="magic-doc-line short"></div>
-                                                <div class="magic-doc-btn">
-                                                    <div class="magic-cursor">
-                                                        <svg viewBox="0 0 24 24" fill="white" stroke="#000" stroke-width="1"><path d="M5.5 3.21V20.8c0 .45.54.67.85.35l4.86-4.86a.5.5 0 0 1 .35-.15h6.42c.45 0 .67-.54.35-.85L5.5 3.21z"/></svg>
+                                        <div class="ent-mock-panel ent-mock-control">
+                                            <div class="ent-mock-header">
+                                                <span class="ent-mock-title">Reglas de Aprobación</span>
+                                                <span class="ent-mock-badge badge-active">Activo</span>
+                                            </div>
+                                            <div class="ent-mock-body">
+                                                <div class="ent-mock-row">
+                                                    <div class="ent-mock-col">
+                                                        <span class="em-label">Condición</span>
+                                                        <span class="em-value">Descuento &gt; 15%</span>
+                                                    </div>
+                                                    <div class="ent-mock-col text-right">
+                                                        <span class="em-label" style="display:block; margin-bottom:2px;">Acción</span>
+                                                        <span class="em-badge badge-review">Revisión VP</span>
+                                                    </div>
+                                                </div>
+                                                <div class="ent-mock-row">
+                                                    <div class="ent-mock-col">
+                                                        <span class="em-label">Condición</span>
+                                                        <span class="em-value">Monto &gt; $50k</span>
+                                                    </div>
+                                                    <div class="ent-mock-col text-right">
+                                                        <span class="em-label" style="display:block; margin-bottom:2px;">Acción</span>
+                                                        <span class="em-badge badge-finance">Finanzas</span>
+                                                    </div>
+                                                </div>
+                                                <div class="ent-mock-row em-disabled">
+                                                    <div class="ent-mock-col">
+                                                        <span class="em-label">Condición</span>
+                                                        <span class="em-value">Estándar</span>
+                                                    </div>
+                                                    <div class="ent-mock-col text-right">
+                                                        <span class="em-label" style="display:block; margin-bottom:2px;">Acción</span>
+                                                        <span class="em-badge badge-auto">Auto-Aprobar</span>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     )}
                                     {i === 1 && (
-                                        <div class="pillar-mock pillar-mock-premium">
-                                            <div class="premium-ui">
-                                                <div class="p-ui-nav">
-                                                    <div class="p-ui-dot"></div><div class="p-ui-dot"></div><div class="p-ui-dot"></div>
+                                        <div class="ent-mock-panel ent-mock-erp">
+                                            <div class="ent-mock-header border-bottom">
+                                                <span class="ent-mock-title">Sincronización ERP</span>
+                                                <div class="em-status">
+                                                    <span class="em-pulse"></span>
+                                                    <span class="em-status-text">CONECTADO</span>
                                                 </div>
-                                                <div class="p-ui-body">
-                                                    <div class="p-ui-chart">
-                                                        <div class="p-ui-bar" style="height: 40%"></div>
-                                                        <div class="p-ui-bar" style="height: 70%"></div>
-                                                        <div class="p-ui-bar" style="height: 100%"></div>
-                                                        <div class="p-ui-bar" style="height: 60%"></div>
+                                            </div>
+                                            <div class="ent-mock-body">
+                                                <div class="em-sync-row">
+                                                    <div class="em-icon sap-icon">SAP</div>
+                                                    <div class="em-sync-info">
+                                                        <span class="em-sync-title">Factura #INV-4920</span>
+                                                        <span class="em-sync-time">Completado · hace 2s</span>
+                                                    </div>
+                                                    <div class="em-check">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                                     </div>
                                                 </div>
-                                                <div class="premium-glow"></div>
+                                                <div class="em-sync-row">
+                                                    <div class="em-icon oracle-icon">O</div>
+                                                    <div class="em-sync-info">
+                                                        <span class="em-sync-title">Cliente: Grupo Modelo</span>
+                                                        <span class="em-sync-time">Completado · hace 15s</span>
+                                                    </div>
+                                                    <div class="em-check">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     )}
                                     {i === 2 && (
-                                        <div class="pillar-mock pillar-mock-invoice">
-                                            <div class="invoice-doc">
-                                                <div class="inv-head">
-                                                    <div class="inv-logo"></div>
-                                                    <div class="inv-amount"></div>
+                                        <div class="ent-mock-panel ent-mock-security">
+                                            <div class="ent-mock-header">
+                                                <span class="ent-mock-title">Control de Acceso (RBAC)</span>
+                                                <button class="em-btn-add">Añadir</button>
+                                            </div>
+                                            <div class="ent-mock-body">
+                                                <div class="em-user-row">
+                                                    <div class="em-avatar avatar-admin">AG</div>
+                                                    <div class="em-user-info">
+                                                        <span class="em-user-name">Ana García</span>
+                                                        <span class="em-user-email">ana@empresa.com</span>
+                                                    </div>
+                                                    <div class="em-role-select">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
                                                 </div>
-                                                <div class="inv-body">
-                                                    <div class="inv-row"></div>
-                                                    <div class="inv-row"></div>
-                                                </div>
-                                                <div class="inv-stamp">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                <div class="em-user-row">
+                                                    <div class="em-avatar avatar-finance">CR</div>
+                                                    <div class="em-user-info">
+                                                        <span class="em-user-name">Carlos Ruiz</span>
+                                                        <span class="em-user-email">carlos@empresa.com</span>
+                                                    </div>
+                                                    <div class="em-role-select">Finanzas <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -396,7 +446,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                                 </div>
                                                 <div class="rui-dropdown-header" style="margin-top: 0;"><span>Junio 2026</span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
                                             </div>
-                                            <div style="padding: 24px;">
+                                            <div>
                                                 <div class="rui-header-flex">
                                                     <div>
                                                         <div class="rui-value">MXN 5,839,417.15</div>
@@ -436,42 +486,36 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                         </div>
                                     )}
                                     {idx === 1 && (
-                                        <div class="pro-ui-card real-ui" style="padding: 0;">
-                                            <div class="rui-sidebar-layout">
-                                                <div class="rui-sidebar">
-                                                    <div class="rs-brand"><img src="/imgs/logo-cord-navy.png" width="18" alt="Cord" /></div>
-                                                    <div class="rs-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M3 9h18M9 21V9"></path></svg></div>
-                                                    <div class="rs-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg></div>
-                                                    <div class="rs-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
-                                                    <div class="rs-avatar rbac-grad-1 mt-auto mb-4">AG</div>
+                                        <div class="pro-ui-card real-ui">
+                                            <div class="rui-topbar" style="padding-top: 0;">
+                                                <div style="font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; color: #0a2540;">
+                                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+                                                    Flujo de Datos ERP
                                                 </div>
-                                                <div class="rui-main">
-                                                    <div class="rui-topbar" style="border-bottom: 1px solid #e2e8f0; background: transparent;">
-                                                        <span style="font-size: 13px; font-weight: 700; color: #0f172a;">Flujo de Datos ERP</span>
-                                                        <span class="badge-blue">Sincronizando</span>
-                                                    </div>
-                                                    <div style="padding: 16px; background: #f8fafc;">
-                                                        <div class="rui-pipeline-visual">
-                                                            <div class="rp-node"><img src="/imgs/logo-cord-navy.png" width="20" alt="Cord"/></div>
-                                                            <div class="rp-line"><div class="rp-dot"></div><div class="rp-dot delay-1"></div></div>
-                                                            <div class="rp-node"><svg viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" width="20"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg></div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="rui-terminal">
-                                                        <div class="rui-term-header">
-                                                            <div style="display: flex; gap: 8px; align-items: center; font-weight: 600;">
-                                                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
-                                                                <span>Terminal - Conexión Activa</span>
-                                                            </div>
-                                                        </div>
-                                                        <div><span class="term-green">➜</span> <span class="term-blue">cord</span> sync --target=sap --watch</div>
-                                                        <div style="margin-top: 4px;">[14:32:01] <span class="term-blue">INFO</span> Conectando con SAP NetWeaver...</div>
-                                                        <div>[14:32:02] <span class="term-green">SUCCESS</span> Conexión establecida (3ms)</div>
-                                                        <div>[14:32:03] <span class="term-blue">INFO</span> Sincronizando 45 nuevas facturas...</div>
-                                                        <div>[14:32:04] <span class="term-purple">POST</span> /api/v1/erp/invoices (2.4kb)</div>
-                                                        <div>[14:32:05] <span class="term-green">SUCCESS</span> Payload insertado correctamente.</div>
+                                                <span class="badge-blue">Sincronizando</span>
+                                            </div>
+                                            
+                                            <div style="margin: 16px 0 24px 0;">
+                                                <div class="rui-pipeline-visual">
+                                                    <div class="rp-node" style="background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"><img src="/imgs/logo-cord-navy.png" width="22" alt="Cord"/></div>
+                                                    <div class="rp-line"><div class="rp-dot"></div><div class="rp-dot delay-1"></div></div>
+                                                    <div class="rp-node" style="background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"><svg viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" width="22"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="rui-terminal" style="border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.1);">
+                                                <div class="rui-term-header">
+                                                    <div style="display: flex; gap: 8px; align-items: center; font-weight: 600;">
+                                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                                                        <span>Terminal - Conexión Activa</span>
                                                     </div>
                                                 </div>
+                                                <div><span class="term-green">➜</span> <span class="term-blue">cord</span> sync --target=sap --watch</div>
+                                                <div style="margin-top: 8px;">[14:32:01] <span class="term-blue">INFO</span> Conectando con SAP NetWeaver...</div>
+                                                <div>[14:32:02] <span class="term-green">SUCCESS</span> Conexión establecida (3ms)</div>
+                                                <div>[14:32:03] <span class="term-blue">INFO</span> Sincronizando 45 nuevas facturas...</div>
+                                                <div>[14:32:04] <span class="term-purple">POST</span> /api/v1/erp/invoices (2.4kb)</div>
+                                                <div>[14:32:05] <span class="term-green">SUCCESS</span> Payload insertado correctamente.</div>
                                             </div>
                                         </div>
                                     )}
@@ -484,7 +528,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                                 </div>
                                                 <button class="rui-btn-save">Guardar</button>
                                             </div>
-                                            <div style="padding: 16px;">
+                                            <div>
                                                 <div class="rui-setting-group">
                                                     <div class="rui-setting-row">
                                                         <div class="rs-info">
@@ -1355,57 +1399,65 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     
     .stripe-fg-card {
         background: #fff;
-        border-radius: 24px;
+        border-radius: 20px;
         border: 1px solid rgba(0,0,0,0.04);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.02);
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr 1.1fr;
         overflow: hidden;
+        min-height: 460px;
+        transition: box-shadow 0.3s ease;
+    }
+    
+    .stripe-fg-card:hover {
+        box-shadow: 0 20px 40px -10px rgba(0,0,0,0.06), 0 10px 20px -5px rgba(0,0,0,0.04);
     }
     
     .stripe-fg-card-content {
-        padding: 3rem;
+        padding: 4rem 3rem 4rem 4rem;
         display: flex;
         flex-direction: column;
         justify-content: center;
     }
     
     .stripe-fg-title {
-        font-size: 1.75rem;
-        font-weight: 600;
-        color: var(--stripe-text);
-        margin-bottom: 1rem;
-        line-height: 1.2;
-        letter-spacing: -0.02em;
+        font-size: 2.1rem;
+        font-weight: 700;
+        color: #0a2540;
+        margin-bottom: 1.25rem;
+        line-height: 1.15;
+        letter-spacing: -0.03em;
     }
     
     .stripe-fg-desc {
-        font-size: 1.05rem;
-        color: var(--stripe-muted);
+        font-size: 1.1rem;
+        color: #425466;
         line-height: 1.6;
-        margin-bottom: 2rem;
+        margin-bottom: 2.5rem;
     }
     
     .stripe-fg-tags {
         display: flex;
         flex-direction: column;
-        gap: 0.75rem;
+        gap: 0.5rem;
         align-items: flex-start;
     }
     
     .stripe-fg-tag {
-        background: rgba(59, 130, 246, 0.08);
-        color: var(--stripe-cyan);
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 0.9rem;
+        background: #f3f6fc;
+        color: #3b82f6;
+        padding: 6px 14px;
+        border-radius: 12px;
+        font-size: 0.85rem;
         font-weight: 600;
         text-decoration: none;
-        transition: background 0.2s;
+        transition: background 0.2s, color 0.2s;
+        display: inline-block;
     }
     
     .stripe-fg-tag:hover {
-        background: rgba(59, 130, 246, 0.15);
+        background: #e0e7ff;
+        color: #2563eb;
     }
     
     .stripe-fg-card-visual {
@@ -1414,30 +1466,28 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         align-items: center;
         justify-content: center;
         position: relative;
-        min-height: 400px;
-        overflow: visible;
+        min-height: 100%;
+        overflow: hidden;
     }
 
-    /* UI Mockup Base (Photorealistic) */
+    /* UI Mockup Base (Unified, no floating cards) */
     .real-ui {
-        width: 360px;
-        border-radius: 16px;
-        border: 1px solid rgba(0,0,0,0.06);
-        box-shadow: 0 40px 80px -20px rgba(50,50,93,0.15), 0 20px 40px -20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,1);
-        background: #fff;
+        width: 100%;
+        height: 100%;
+        border: none;
+        box-shadow: none;
+        background: transparent;
         font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
         color: #0f172a;
-        overflow: hidden;
-        transform: translateY(0);
-        transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 3rem 4rem 3rem 0; /* Padding aligns with the right side */
         text-align: left;
-    }
-    .stripe-fg-card:hover .real-ui {
-        transform: translateY(-8px);
     }
     
     /* Global RUI */
-    .rui-topbar { padding: 14px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; background: #fafbfc; }
+    .rui-topbar { padding: 0 0 20px 0; border: none; display: flex; align-items: center; justify-content: space-between; background: transparent; }
     .mac-dots { display: flex; gap: 6px; }
     .mac-dots .dot { width: 10px; height: 10px; border-radius: 50%; }
     .dot.red { background: #ff5f56; } .dot.yellow { background: #ffbd2e; } .dot.green { background: #27c93f; }
@@ -1521,18 +1571,17 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     
     .stripe-resource-card {
         background: #fff;
-        border-radius: 16px;
+        border-radius: 20px;
         border: 1px solid rgba(0,0,0,0.04);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.02);
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        transition: transform 0.3s, box-shadow 0.3s;
+        transition: box-shadow 0.3s ease;
     }
     
     .stripe-resource-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+        box-shadow: 0 20px 40px -10px rgba(0,0,0,0.06), 0 10px 20px -5px rgba(0,0,0,0.04);
     }
     
     .stripe-resource-visual {
@@ -2065,143 +2114,136 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     
     .stripe-pillar-card {
         background: #fff;
-        border-radius: 24px;
+        border-radius: 16px;
         overflow: hidden;
-        box-shadow: 0 12px 32px rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.02);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.02);
         display: flex;
         flex-direction: column;
         transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        border: 1px solid rgba(0,0,0,0.04);
+        border: 1px solid #e6e8eb;
     }
     
     .stripe-pillar-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 24px 48px rgba(0,0,0,0.06), 0 8px 16px rgba(0,0,0,0.03);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.04);
     }
     
     .stripe-pillar-graphic {
-        background: linear-gradient(180deg, #0a2540 0%, #041221 100%); /* Premium Gradient */
-        height: 240px;
+        background: #f6f9fc;
+        height: 260px;
         position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-bottom: 1px solid rgba(255,255,255,0.08);
+        border-bottom: 1px solid #e6e8eb;
         overflow: hidden;
     }
-    
-    .stripe-pillar-graphic::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-        background-size: 20px 20px;
-        opacity: 0.5;
-        mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
-        -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
-    }
-    
-    .pillar-mock {
-        width: 100%; height: 100%;
-        display: flex; align-items: center; justify-content: center;
-        position: relative;
-    }
 
-    /* 1. Magic Link (Cierre Instantáneo) */
-    .pillar-mock-magic {
-        background: radial-gradient(circle at center, rgba(0,201,255,0.15) 0%, transparent 60%);
-    }
-    .magic-doc {
-        width: 140px; height: 160px;
-        background: white; border-radius: 12px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-        padding: 16px; display: flex; flex-direction: column; gap: 12px;
-        transform: translateY(10px) scale(0.95);
-        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        position: relative;
-    }
-    .stripe-pillar-card:hover .magic-doc {
-        transform: translateY(-5px) scale(1.05);
-    }
-    .magic-doc-header { height: 30px; border-radius: 6px; background: #f0f0f0; margin-bottom: 8px; }
-    .magic-doc-line { height: 8px; border-radius: 4px; background: #e2e8f0; }
-    .magic-doc-line.short { width: 60%; }
-    .magic-doc-btn { 
-        margin-top: auto; height: 32px; border-radius: 6px; 
-        background: #00C9FF; 
-        box-shadow: 0 4px 12px rgba(0,201,255,0.4);
-        position: relative;
-        transition: background 0.3s;
-    }
-    .stripe-pillar-card:hover .magic-doc-btn { background: #0071e3; }
-    .magic-cursor {
-        position: absolute; right: -15px; bottom: -25px;
-        width: 24px; height: 24px;
-        transform: translate(20px, 20px);
-        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
-    }
-    .stripe-pillar-card:hover .magic-cursor {
-        transform: translate(0, 0);
-    }
-
-    /* 2. Premium UI (Presentación premium) */
-    .pillar-mock-premium {
-        background: radial-gradient(circle at center, rgba(0,113,227,0.2) 0%, transparent 60%);
-    }
-    .premium-ui {
-        width: 200px; height: 140px;
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.1);
+    /* Enterprise Mockup Shared Styles */
+    .ent-mock-panel {
+        background: #fff;
         border-radius: 12px;
-        display: flex; overflow: hidden;
-        backdrop-filter: blur(10px);
-        transform: perspective(800px) rotateY(-15deg) rotateX(10deg);
-        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .stripe-pillar-card:hover .premium-ui {
-        transform: perspective(800px) rotateY(0deg) rotateX(0deg) scale(1.1);
-    }
-    .premium-sidebar { width: 40px; background: rgba(0,0,0,0.2); height: 100%; border-right: 1px solid rgba(255,255,255,0.05); }
-    .premium-content { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
-    .premium-hero { height: 40px; border-radius: 6px; background: linear-gradient(135deg, #00C9FF, #0071e3); opacity: 0.8; }
-    .premium-grid { display: flex; gap: 8px; flex: 1; }
-    .premium-box { flex: 1; border-radius: 6px; background: rgba(255,255,255,0.1); }
-
-    /* 3. CFDI 4.0 (Facturación automática) */
-    .pillar-mock-cfdi {
-        background: radial-gradient(circle at center, rgba(16,185,129,0.15) 0%, transparent 60%);
-    }
-    .cfdi-receipt {
-        width: 130px; height: 170px;
-        background: #061626; border-radius: 8px;
-        border: 1px dashed rgba(0,201,255,0.4);
-        box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 0 20px rgba(0,201,255,0.1);
-        padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 12px;
-        transform: translateY(20px);
-        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s;
-    }
-    .stripe-pillar-card:hover .cfdi-receipt {
-        transform: translateY(0);
-        border-color: #10b981; /* Green success */
-    }
-    .cfdi-header { font-family: monospace; font-size: 10px; color: #00C9FF; letter-spacing: 1px; font-weight: bold; }
-    .cfdi-code { width: 100%; display: flex; flex-direction: column; gap: 6px; }
-    .cfdi-line { height: 4px; border-radius: 2px; background: rgba(255,255,255,0.15); }
-    .cfdi-line.short { width: 70%; }
-    .cfdi-stamp {
-        margin-top: auto; width: 40px; height: 40px;
-        border-radius: 50%; border: 2px solid #00C9FF;
-        display: flex; align-items: center; justify-content: center;
-        color: #00C9FF;
-        transition: color 0.3s, border-color 0.3s, transform 0.4s;
-    }
-    .cfdi-stamp svg { width: 20px; height: 20px; }
-    .stripe-pillar-card:hover .cfdi-stamp {
-        border-color: #10b981; color: #10b981;
-        transform: scale(1.1) rotate(-10deg);
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 12px 24px rgba(0,0,0,0.06), 0 4px 8px rgba(0,0,0,0.03);
+        width: 260px;
+        display: flex;
+        flex-direction: column;
+        font-family: 'Inter', -apple-system, sans-serif;
+        transform: translateY(15px);
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s;
     }
     
+    .stripe-pillar-card:hover .ent-mock-panel {
+        transform: translateY(5px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.08), 0 8px 16px rgba(0,0,0,0.04);
+    }
+
+    .ent-mock-header {
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .ent-mock-header.border-bottom {
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 10px;
+        margin-bottom: 6px;
+    }
+
+    .ent-mock-title {
+        font-size: 11px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .ent-mock-body {
+        padding: 0 16px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    /* Mockup 1: Control (Reglas) */
+    .ent-mock-badge {
+        font-size: 9px; font-weight: 600; padding: 3px 6px; border-radius: 4px; text-transform: uppercase;
+    }
+    .badge-active { background: #dcfce7; color: #166534; }
+    
+    .ent-mock-row {
+        display: flex; justify-content: space-between; align-items: center;
+        background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 8px; padding: 10px 12px;
+    }
+    .em-disabled { opacity: 0.5; }
+    
+    .ent-mock-col { display: flex; flex-direction: column; gap: 2px; }
+    .em-label { font-size: 9px; color: #64748b; font-weight: 500; }
+    .em-value { font-size: 11px; color: #0f172a; font-weight: 600; }
+    .text-right { text-align: right; align-items: flex-end; }
+    
+    .em-badge { font-size: 9px; font-weight: 600; padding: 3px 6px; border-radius: 4px; display: inline-block; }
+    .badge-review { background: #fef08a; color: #854d0e; }
+    .badge-finance { background: #ffedd5; color: #9a3412; }
+    .badge-auto { background: #dcfce7; color: #166534; }
+
+    /* Mockup 2: ERP Sync */
+    .em-status { display: flex; align-items: center; gap: 4px; }
+    .em-pulse { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 0 2px rgba(34,197,94,0.2); animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); } 70% { box-shadow: 0 0 0 4px rgba(34,197,94,0); } 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); } }
+    .em-status-text { font-size: 9px; font-weight: 700; color: #15803d; letter-spacing: 0.5px; }
+    
+    .em-sync-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+    .em-sync-row:last-child { border-bottom: none; padding-bottom: 0; }
+    
+    .em-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: white; }
+    .sap-icon { background: linear-gradient(135deg, #008ee7, #005a9e); }
+    .oracle-icon { background: linear-gradient(135deg, #f80000, #c20000); font-size: 11px; }
+    
+    .em-sync-info { display: flex; flex-direction: column; flex: 1; gap: 2px; }
+    .em-sync-title { font-size: 11px; font-weight: 600; color: #0f172a; }
+    .em-sync-time { font-size: 9px; color: #64748b; }
+    
+    .em-check svg { width: 14px; height: 14px; color: #22c55e; }
+
+    /* Mockup 3: Security RBAC */
+    .em-btn-add { font-size: 10px; font-weight: 600; background: #0f172a; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
+    .em-btn-add:hover { background: #1e293b; }
+    
+    .em-user-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .em-user-row:last-child { margin-bottom: 0; }
+    
+    .em-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+    .avatar-admin { background: #e0e7ff; color: #4338ca; }
+    .avatar-finance { background: #d1fae5; color: #047857; }
+    
+    .em-user-info { display: flex; flex-direction: column; flex: 1; gap: 2px; }
+    .em-user-name { font-size: 11px; font-weight: 600; color: #0f172a; }
+    .em-user-email { font-size: 9px; color: #64748b; }
+    
+    .em-role-select { font-size: 10px; font-weight: 600; color: #334155; display: flex; align-items: center; gap: 4px; background: #f1f5f9; padding: 5px 8px; border-radius: 4px; border: 1px solid #e2e8f0; cursor: pointer; }
+    .em-role-select svg { width: 10px; height: 10px; }
+
+
     .stripe-pillar-content {
         padding: 2.5rem;
         display: flex;
