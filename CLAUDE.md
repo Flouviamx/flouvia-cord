@@ -1419,7 +1419,6 @@ la historia del producto en loop (ver "Hero story" abajo).
 ### Navbar (`Nav.astro`) — replica el sistema de flouvia-web
 
 Es el mismo patrón que `../flouvia/src/components/Navbar.astro`, adaptado:
-- **Top-bar** oscuro editorial: "PLATAFORMA DE COTIZACIONES B2B · UN PRODUCTO DE FLOUVIA · HECHO EN MÉXICO".
 - **Glass pill** (izquierda) Liquid Glass con los nav-links + **indicador deslizante**
   (`#nav-indicator`, cápsula de vidrio que GSAP desliza al link en hover, estilo
   segmented control iOS).
