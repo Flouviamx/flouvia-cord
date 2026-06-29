@@ -979,8 +979,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                         <!-- Sidebar -->
                         <aside class="dash-sidebar">
                             <div class="dash-logo">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                                <span class="dash-logo-text">Cord</span>
+                                <img src="/imgs/logo-cord-navy.png" alt="Cord" style="height: 24px; width: auto;" />
                             </div>
                         <nav class="dash-nav-links">
                             <a class="dash-link">
@@ -1016,102 +1015,174 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
 
                     <!-- Main Content -->
                     <main class="dash-main">
-                        <header class="dash-header">
-                            <div class="dash-search">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                                <div class="anim-search"></div>
-                            </div>
-                            <div class="dash-header-actions">
-                                <div class="cmk-cta cmk-cta-solid anim-btn" style="padding: 8px 16px;">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                    Nueva cotización
-                                </div>
-                            </div>
-                        </header>
+                        <div class="dash-views-container">
+                            
+                            <!-- View 1: Dashboard -->
+                            <div class="dash-view dash-view-dashboard">
+                                <header class="dash-header">
+                                    <div class="dash-search">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                        <div class="anim-search"></div>
+                                    </div>
+                                    <div class="dash-header-actions">
+                                        <div class="cmk-cta cmk-cta-solid anim-btn" style="padding: 8px 16px;">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                            Nueva cotización
+                                        </div>
+                                    </div>
+                                </header>
 
-                        <div class="dash-content-body">
-                            <!-- KPI Widgets -->
-                            <div class="cmk-kpis" style="margin-bottom: 2rem;">
-                                <div class="cmk-kpi-card">
-                                    <div class="cmk-kpi-l">Por cerrar</div>
-                                    <div class="cmk-kpi-v">$430,000 <span style="font-size: 12px; color: #64748b; font-weight: 500;">MXN</span></div>
-                                    <div style="margin-top: 8px;"><span class="cmk-up">12%</span> <span style="font-size: 11px; color: #64748b; font-weight: 500;">vs mes anterior</span></div>
-                                </div>
-                                <div class="cmk-kpi-card">
-                                    <div class="cmk-kpi-l">Cerrado este mes</div>
-                                    <div class="cmk-kpi-v">$1,250,000 <span style="font-size: 12px; color: #64748b; font-weight: 500;">MXN</span></div>
-                                    <div style="margin-top: 8px;"><span class="cmk-up">8%</span> <span style="font-size: 11px; color: #64748b; font-weight: 500;">12 aprobadas</span></div>
-                                </div>
-                                <div class="cmk-kpi-card">
-                                    <div class="cmk-kpi-l">Tasa de cierre</div>
-                                    <div class="cmk-kpi-v">82.4%</div>
-                                    <div style="margin-top: 8px;"><span class="cmk-down">2%</span> <span style="font-size: 11px; color: #64748b; font-weight: 500;">últimos 90 días</span></div>
-                                </div>
-                            </div>
+                                <div class="dash-content-body">
+                                    <!-- KPI Widgets -->
+                                    <div class="cmk-kpis" style="margin-bottom: 2rem;">
+                                        <div class="cmk-kpi-card">
+                                            <div class="cmk-kpi-l">Por cerrar</div>
+                                            <div class="cmk-kpi-v">$430,000 <span style="font-size: 12px; color: #64748b; font-weight: 500;">MXN</span></div>
+                                            <div style="margin-top: 8px;"><span class="cmk-up">12%</span> <span style="font-size: 11px; color: #64748b; font-weight: 500;">vs mes anterior</span></div>
+                                        </div>
+                                        <div class="cmk-kpi-card">
+                                            <div class="cmk-kpi-l">Cerrado este mes</div>
+                                            <div class="cmk-kpi-v">$1,250,000 <span style="font-size: 12px; color: #64748b; font-weight: 500;">MXN</span></div>
+                                            <div style="margin-top: 8px;"><span class="cmk-up">8%</span> <span style="font-size: 11px; color: #64748b; font-weight: 500;">12 aprobadas</span></div>
+                                        </div>
+                                        <div class="cmk-kpi-card">
+                                            <div class="cmk-kpi-l">Tasa de cierre</div>
+                                            <div class="cmk-kpi-v">82.4%</div>
+                                            <div style="margin-top: 8px;"><span class="cmk-down">2%</span> <span style="font-size: 11px; color: #64748b; font-weight: 500;">últimos 90 días</span></div>
+                                        </div>
+                                    </div>
 
-                            <!-- TABLA DE PROPUESTAS (Stripe Style) -->
-                            <div class="dash-table-header">
-                                <h3 class="dash-view-title">Cotizaciones recientes</h3>
-                                <div class="cmk-seg">
-                                    <span class="on">Todas</span>
-                                    <span>Aceptadas</span>
-                                    <span>Borradores</span>
+                                    <!-- TABLA DE PROPUESTAS (Stripe Style) -->
+                                    <div class="dash-table-header">
+                                        <h3 class="dash-view-title">Cotizaciones recientes</h3>
+                                        <div class="cmk-seg">
+                                            <span class="on">Todas</span>
+                                            <span>Aceptadas</span>
+                                            <span>Borradores</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="dash-table-container" style="border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff; box-shadow: 0 2px 8px rgba(15,23,42,0.02); overflow: hidden;">
+                                        <div class="cmk-th" style="grid-template-columns: 2fr 2fr 1.5fr 1fr 1fr;">
+                                            <span>Cliente</span>
+                                            <span>Proyecto</span>
+                                            <span class="cmk-r">Monto</span>
+                                            <span>Estado</span>
+                                            <span class="cmk-r">Fecha</span>
+                                        </div>
+                                        
+                                        <div class="cmk-tr" style="grid-template-columns: 2fr 2fr 1.5fr 1fr 1fr;">
+                                            <div class="cmk-t1">
+                                                <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://novatech.io&size=128" width="16" height="16" style="border-radius:4px" />
+                                                Novatech Global
+                                            </div>
+                                            <div class="cmk-t2">Implementación ERP</div>
+                                            <div class="cmk-amt">$120,000.00</div>
+                                            <div><span class="cmk-badge cmk-b-green"><div class="cmk-dot cmk-dot-green"></div> Aceptada</span></div>
+                                            <div class="cmk-t2 cmk-r">Hoy, 10:42 AM</div>
+                                        </div>
+                                        
+                                        <div class="cmk-tr hl anim-row" style="grid-template-columns: 2fr 2fr 1.5fr 1fr 1fr;">
+                                            <div class="cmk-t1">
+                                                <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://quantum.net&size=128" width="16" height="16" style="border-radius:4px" />
+                                                Quantum Logistics
+                                            </div>
+                                            <div class="cmk-t2">Optimización Fase 1</div>
+                                            <div class="cmk-amt">$250,000.00</div>
+                                            <div><span class="cmk-badge anim-badge"></span></div>
+                                            <div class="cmk-t2 cmk-r">26 Jun 2026</div>
+                                        </div>
+                                        
+                                        <div class="cmk-tr" style="grid-template-columns: 2fr 2fr 1.5fr 1fr 1fr;">
+                                            <div class="cmk-t1">
+                                                <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://synergy.com&size=128" width="16" height="16" style="border-radius:4px" />
+                                                Synergy Partners
+                                            </div>
+                                            <div class="cmk-t2">Consultoría B2B</div>
+                                            <div class="cmk-amt">$850,000.00</div>
+                                            <div><span class="cmk-badge cmk-b-green">Aceptada</span></div>
+                                            <div class="cmk-t2 cmk-r">Ayer, 4:15 PM</div>
+                                        </div>
+                                        
+                                        <div class="cmk-tr" style="grid-template-columns: 2fr 2fr 1.5fr 1fr 1fr;">
+                                            <div class="cmk-t1">
+                                                <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://stellar.org&size=128" width="16" height="16" style="border-radius:4px" />
+                                                Stellar Health
+                                            </div>
+                                            <div class="cmk-t2">Auditoría Anual</div>
+                                            <div class="cmk-amt">$30,000.00</div>
+                                            <div><span class="cmk-badge cmk-b-amber">Visto</span></div>
+                                            <div class="cmk-t2 cmk-r">25 Jun 2026</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div class="dash-table-container" style="border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff; box-shadow: 0 2px 8px rgba(15,23,42,0.02); overflow: hidden;">
-                                <div class="cmk-th" style="grid-template-columns: 2fr 2fr 1.5fr 1fr 1fr;">
-                                    <span>Cliente</span>
-                                    <span>Proyecto</span>
-                                    <span class="cmk-r">Monto</span>
-                                    <span>Estado</span>
-                                    <span class="cmk-r">Fecha</span>
-                                </div>
-                                
-                                <div class="cmk-tr" style="grid-template-columns: 2fr 2fr 1.5fr 1fr 1fr;">
-                                    <div class="cmk-t1">
-                                        <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://novatech.io&size=128" width="16" height="16" style="border-radius:4px" />
-                                        Novatech Global
+                            <!-- View 2: Quote Editor -->
+                            <div class="dash-view dash-view-quote">
+                                <header class="dash-header" style="justify-content: space-between;">
+                                    <div style="display: flex; align-items: center; gap: 16px;">
+                                        <div class="dash-back-btn">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                                        </div>
+                                        <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin:0; letter-spacing: -0.01em;">Cotización #4082</h3>
+                                        <span class="cmk-badge cmk-b-gray anim-badge-quote" style="margin-left: 8px;">Borrador</span>
                                     </div>
-                                    <div class="cmk-t2">Implementación ERP</div>
-                                    <div class="cmk-amt">$120,000.00</div>
-                                    <div><span class="cmk-badge cmk-b-green"><div class="cmk-dot cmk-dot-green"></div> Aceptada</span></div>
-                                    <div class="cmk-t2 cmk-r">Hoy, 10:42 AM</div>
-                                </div>
-                                
-                                <div class="cmk-tr hl anim-row" style="grid-template-columns: 2fr 2fr 1.5fr 1fr 1fr;">
-                                    <div class="cmk-t1">
-                                        <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://quantum.net&size=128" width="16" height="16" style="border-radius:4px" />
-                                        Quantum Logistics
+                                    <div class="cmk-cta cmk-cta-solid anim-send-btn" style="padding: 8px 16px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-color: #2563eb;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                                        Enviar cotización
                                     </div>
-                                    <div class="cmk-t2">Optimización Fase 1</div>
-                                    <div class="cmk-amt">$250,000.00</div>
-                                    <div><span class="cmk-badge anim-badge"></span></div>
-                                    <div class="cmk-t2 cmk-r">26 Jun 2026</div>
-                                </div>
-                                
-                                <div class="cmk-tr" style="grid-template-columns: 2fr 2fr 1.5fr 1fr 1fr;">
-                                    <div class="cmk-t1">
-                                        <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://synergy.com&size=128" width="16" height="16" style="border-radius:4px" />
-                                        Synergy Partners
+                                </header>
+                                <div class="dash-content-body" style="background: #ffffff;">
+                                    <div class="quote-form">
+                                        <div class="quote-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+                                            <div class="quote-field">
+                                                <label>Cliente</label>
+                                                <div class="quote-input anim-typing-client">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" style="margin-right:8px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                                    <span class="anim-typing-text"></span>
+                                                </div>
+                                            </div>
+                                            <div class="quote-field">
+                                                <label>Proyecto / Referencia</label>
+                                                <div class="quote-input">Rediseño Web UX/UI</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Line items table -->
+                                        <div class="dash-table-container" style="border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff; box-shadow: 0 2px 8px rgba(15,23,42,0.02); overflow: hidden;">
+                                            <div class="cmk-th" style="grid-template-columns: 3fr 1fr 1fr 1fr; background: #f8fafc;">
+                                                <span>Concepto</span>
+                                                <span class="cmk-r">Cantidad</span>
+                                                <span class="cmk-r">Precio Unit.</span>
+                                                <span class="cmk-r">Total</span>
+                                            </div>
+                                            <div class="cmk-tr" style="grid-template-columns: 3fr 1fr 1fr 1fr;">
+                                                <div class="cmk-t1" style="font-weight: 500;">UX/UI Design System</div>
+                                                <div class="cmk-t2 cmk-r">1</div>
+                                                <div class="cmk-t2 cmk-r">$45,000.00</div>
+                                                <div class="cmk-amt">$45,000.00</div>
+                                            </div>
+                                            <div class="cmk-tr hl anim-row-quote" style="grid-template-columns: 3fr 1fr 1fr 1fr;">
+                                                <div class="cmk-t1" style="font-weight: 500;">Desarrollo Frontend</div>
+                                                <div class="cmk-t2 cmk-r">1</div>
+                                                <div class="cmk-t2 cmk-r">$60,000.00</div>
+                                                <div class="cmk-amt">$60,000.00</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
+                                            <div style="width: 260px;">
+                                                <div class="cmk-kv" style="padding: 8px 0; border-bottom: none;"><span class="cmk-k">Subtotal</span><span class="cmk-v">$105,000.00</span></div>
+                                                <div class="cmk-kv" style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;"><span class="cmk-k">IVA (16%)</span><span class="cmk-v">$16,800.00</span></div>
+                                                <div class="cmk-kv" style="padding: 16px 0 0 0; border-bottom: none;"><span class="cmk-k" style="font-weight: 700; color: #0f172a;">Total MXN</span><span class="cmk-v" style="font-size: 22px;">$121,800.00</span></div>
+                                            </div>
+                                        </div>
+                                        
                                     </div>
-                                    <div class="cmk-t2">Consultoría B2B</div>
-                                    <div class="cmk-amt">$850,000.00</div>
-                                    <div><span class="cmk-badge cmk-b-green">Aceptada</span></div>
-                                    <div class="cmk-t2 cmk-r">Ayer, 4:15 PM</div>
-                                </div>
-                                
-                                <div class="cmk-tr" style="grid-template-columns: 2fr 2fr 1.5fr 1fr 1fr;">
-                                    <div class="cmk-t1">
-                                        <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://stellar.org&size=128" width="16" height="16" style="border-radius:4px" />
-                                        Stellar Health
-                                    </div>
-                                    <div class="cmk-t2">Auditoría Anual</div>
-                                    <div class="cmk-amt">$30,000.00</div>
-                                    <div><span class="cmk-badge cmk-b-amber">Visto</span></div>
-                                    <div class="cmk-t2 cmk-r">25 Jun 2026</div>
                                 </div>
                             </div>
+
                         </div>
                     </main>
                     </div>
@@ -2785,8 +2856,8 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         left: 0;
         height: 100%;
         width: 33.33%; /* updated via JS */
-        /* Vibrant cyan to purple gradient */
-        background: linear-gradient(90deg, #00C9FF 0%, #0071e3 50%, #8e43e7 100%);
+        /* Light green to dark blue gradient */
+        background: linear-gradient(90deg, #6ee7b7 0%, #2563eb 50%, #0f172a 100%);
         transition: width 0.1s ease-out; /* smooth follow */
     }
     .stripe-tabs-buttons {
@@ -3348,65 +3419,127 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2));
         width: 24px; height: 24px;
         pointer-events: none;
-        animation: cursorAnim 10s infinite;
+        animation: cursorAnim 16s infinite cubic-bezier(0.22, 1, 0.36, 1);
     }
     .mockup-cursor svg {
         fill: white;
     }
     
     @keyframes cursorAnim {
-        0% { top: 80%; left: 80%; transform: scale(1); } /* Start bottom right */
-        10% { top: 22px; left: calc(100% - 150px); transform: scale(1); } /* Move to button */
-        12% { transform: scale(0.9); } /* Click btn */
-        14% { transform: scale(1); }
-        35% { top: 460px; left: 450px; transform: scale(1); } /* Move to row 3 */
-        42% { top: 460px; left: calc(100% - 250px); transform: scale(1); } /* Move to badge */
-        44% { transform: scale(0.9); } /* Click badge */
-        46% { transform: scale(1); }
-        65% { top: 22px; left: 350px; transform: scale(1); } /* Move to search */
-        67% { transform: scale(0.9); } /* Click search */
-        69% { transform: scale(1); }
-        100% { top: 80%; left: 80%; transform: scale(1); }
+        0%, 10% { top: 80%; left: 80%; transform: scale(1); }
+        /* Move to "Nueva Cotizacion" btn on dashboard */
+        22% { top: 32px; left: calc(100% - 150px); transform: scale(1); }
+        /* Click it */
+        24% { transform: scale(0.9); }
+        26% { transform: scale(1); }
+        
+        /* View transitions at 30%... Cursor moves to Client Input in Quote View */
+        40% { top: 160px; left: 350px; transform: scale(1); }
+        42% { transform: scale(0.9); }
+        44% { transform: scale(1); }
+        
+        /* Cursor moves to Send btn */
+        72% { top: 32px; left: calc(100% - 150px); transform: scale(1); }
+        /* Click Send */
+        76% { transform: scale(0.9); }
+        78% { transform: scale(1); }
+        
+        /* Move back to start */
+        90%, 100% { top: 80%; left: 80%; transform: scale(1); }
     }
 
     .anim-btn {
-        animation: btnAnim 10s infinite;
+        animation: btnAnim 16s infinite;
     }
     @keyframes btnAnim {
-        0%, 10% { transform: translateY(0); box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2); }
-        12%, 14% { transform: translateY(1px); box-shadow: 0 2px 6px rgba(0, 113, 227, 0.4); background: #005bb5; }
-        16%, 100% { transform: translateY(0); box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2); background: #0071e3; }
+        0%, 22% { transform: translateY(0); box-shadow: 0 4px 12px rgba(15,23,42,0.15); }
+        24%, 26% { transform: translateY(1px); box-shadow: 0 2px 6px rgba(15,23,42,0.25); background: #334155; }
+        28%, 100% { transform: translateY(0); box-shadow: 0 4px 12px rgba(15,23,42,0.15); }
     }
 
     .anim-row {
-        animation: rowHoverAnim 10s infinite;
+        animation: rowHoverAnim 16s infinite;
     }
     @keyframes rowHoverAnim {
-        0%, 32% { background: transparent; }
-        35%, 48% { background: #f1f5f9; }
-        50%, 100% { background: transparent; }
+        0%, 8% { background: transparent; }
+        10%, 20% { background: #f1f5f9; }
+        22%, 100% { background: transparent; }
     }
 
-    .anim-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        animation: badgeAnim 10s infinite;
+    /* Views transitions */
+    .dash-views-container {
+        position: relative;
+        flex: 1;
+        overflow: hidden;
     }
-    .anim-badge::after {
-        content: "Enviada";
-        animation: badgeTextAnim 10s infinite;
+    .dash-view {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        animation: 16s infinite cubic-bezier(0.22, 1, 0.36, 1);
     }
-    @keyframes badgeAnim {
-        0%, 43% { background: #dbeafe; color: #2563eb; }
-        44%, 100% { background: #d1fae5; color: #059669; }
+    .dash-view-dashboard {
+        animation-name: dashboardViewAnim;
     }
-    @keyframes badgeTextAnim {
-        0%, 43% { content: "Enviada"; }
-        44%, 100% { content: "Aceptada"; }
+    @keyframes dashboardViewAnim {
+        0%, 30% { opacity: 1; pointer-events: auto; transform: translateX(0) scale(1); }
+        32%, 90% { opacity: 0; pointer-events: none; transform: translateX(-20px) scale(0.98); }
+        94%, 100% { opacity: 1; pointer-events: auto; transform: translateX(0) scale(1); }
+    }
+    .dash-view-quote {
+        opacity: 0; pointer-events: none;
+        animation-name: quoteViewAnim;
+    }
+    @keyframes quoteViewAnim {
+        0%, 30% { opacity: 0; pointer-events: none; transform: translateX(20px) scale(0.98); }
+        32%, 90% { opacity: 1; pointer-events: auto; transform: translateX(0) scale(1); }
+        94%, 100% { opacity: 0; pointer-events: none; transform: translateX(20px) scale(0.98); }
+    }
+
+    /* Quote UI specific */
+    .dash-back-btn {
+        width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; cursor: pointer; color: #64748b; border: 1px solid transparent; transition: all 0.2s;
+    }
+    .quote-field { display: flex; flex-direction: column; gap: 8px; }
+    .quote-field label { font-size: 0.85rem; font-weight: 600; color: #64748b; }
+    .quote-input {
+        height: 40px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; padding: 0 12px; font-size: 0.95rem; color: #0f172a; display: flex; align-items: center; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .anim-typing-text::after {
+        content: "Quantum Logistics";
+        animation: typeAnim 16s infinite;
+    }
+    @keyframes typeAnim {
+        0%, 42% { content: ""; color: #94a3b8; }
+        44% { content: "Q"; color: #0f172a; }
+        45% { content: "Quan"; color: #0f172a; }
+        46% { content: "Quantum"; color: #0f172a; }
+        47%, 100% { content: "Quantum Logistics"; color: #0f172a; }
+    }
+    
+    @keyframes sendBtnAnim {
+        0%, 75% { transform: translateY(0); box-shadow: 0 4px 12px rgba(37,99,235,0.2); }
+        76%, 78% { transform: translateY(1px); box-shadow: 0 2px 6px rgba(37,99,235,0.4); background: #1d4ed8; border-color: #1e40af; }
+        80%, 100% { transform: translateY(0); box-shadow: 0 4px 12px rgba(37,99,235,0.2); background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-color: #2563eb; }
+    }
+    .anim-send-btn {
+        animation: sendBtnAnim 16s infinite;
+    }
+    .anim-badge-quote {
+        animation: badgeQuoteAnim 16s infinite;
+    }
+    @keyframes badgeQuoteAnim {
+        0%, 80% { background: #f8fafc; color: #475569; border-color: #e2e8f0; }
+        82%, 100% { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+    }
+    .anim-badge-quote::after {
+        content: "Borrador";
+        animation: badgeQuoteTextAnim 16s infinite;
+    }
+    @keyframes badgeQuoteTextAnim {
+        0%, 80% { content: "Borrador"; }
+        82%, 100% { content: "Enviada"; }
     }
 
     .anim-search {
@@ -3416,16 +3549,15 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         align-items: center;
     }
     .anim-search::after {
-        content: "Buscar cotizaciones o clientes...";
-        animation: typingAnim 10s infinite;
+        content: "Buscar cotizaciones...";
+        animation: typingAnim 16s infinite;
     }
     @keyframes typingAnim {
-        0%, 68% { content: "Buscar cotizaciones o clientes..."; color: #94a3b8; }
-        70% { content: "Q|"; color: #0a2540; }
-        72% { content: "Quan|"; color: #0a2540; }
-        74% { content: "Quantu|"; color: #0a2540; }
-        76%, 92% { content: "Quantum Logistics|"; color: #0a2540; }
-        95%, 100% { content: "Buscar cotizaciones o clientes..."; color: #94a3b8; }
+        0%, 8% { content: "Buscar cotizaciones..."; color: #94a3b8; }
+        10% { content: "Q|"; color: #0f172a; }
+        12% { content: "Quan|"; color: #0f172a; }
+        14% { content: "Quantum|"; color: #0f172a; }
+        16%, 100% { content: "Quantum Logistics|"; color: #0f172a; }
     }
     
     /* SIDEBAR */
