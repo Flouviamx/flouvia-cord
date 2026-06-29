@@ -337,22 +337,22 @@ const magneticNodes = [
                 <h2 class="uc-power-title reveal">Acelera el flujo de efectivo de tu comercializadora con Cord</h2>
                 <div class="uc-power-grid">
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://sap.com&size=128" alt="SAP"/></div></div>
+                        <div class="uc-power-icon"><div class="uc-pi-chart"><span></span><span></span><span></span></div></div>
                         <h3>Líneas de crédito B2B bajo control</h3>
                         <p>Administra límites de crédito por cliente con precisión. Cord te permite definir plazos (Net 30, 60, 90) y bloquear automáticamente la autorización de nuevos pedidos si un cliente tiene facturas vencidas.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://salesforce.com&size=128" alt="Salesforce"/></div></div>
+                        <div class="uc-power-icon"><div class="uc-pi-sync"></div></div>
                         <h3>Gestión de promesas de pago</h3>
                         <p>Nuestro CRM de cobranza hace el seguimiento pesado por ti. Registra <a href="#">promesas de pago</a> y programa recordatorios automáticos multicanal (Email, SMS, WhatsApp) antes y después del vencimiento.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://quickbooks.intuit.com&size=128" alt="QuickBooks"/></div></div>
+                        <div class="uc-power-icon"><div class="uc-pi-toggle"></div></div>
                         <h3>Multimoneda y tipos de cambio</h3>
                         <p>Opera local e internacionalmente sin fricción. Cord soporta facturación en USD y MXN, calculando automáticamente las <a href="#">ganancias o pérdidas cambiarias</a> al momento de la conciliación bancaria.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://shopify.com&size=128" alt="Shopify"/></div></div>
+                        <div class="uc-power-icon"><div class="uc-pi-doc"></div></div>
                         <h3>Complementos de Pago (REP) automatizados</h3>
                         <p>Cumple con el SAT sin dolores de cabeza. Emitimos y timbramos automáticamente el <a href="#">Complemento de Recepción de Pagos</a> en cuanto un cliente liquida una factura PPD parcial o totalmente.</p>
                     </div>
@@ -1165,24 +1165,21 @@ const magneticNodes = [
     }
     
     /* CSS MOCKUPS FOR ICONS */
-    
     .uc-power-icon {
-        width: 56px;
-        height: 56px;
-        background: rgba(255, 255, 255, 0.9);
-        border: 1px solid rgba(0, 0, 0, 0.05);
-        border-radius: 50%;
+        width: 54px;
+        height: 54px;
+        margin-bottom: 1.5rem;
+        position: relative;
+        border-radius: 12px;
+        background: #f8fafc;
+        box-shadow: 0 4px 12px rgba(10,37,64,0.06);
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 15px 35px rgba(10, 37, 64, 0.08), 0 5px 15px rgba(10, 37, 64, 0.03);
-        margin-bottom: 1.5rem;
+        overflow: hidden;
     }
-    .uc-power-icon img {
-        width: 45%;
-        height: 45%;
-        object-fit: contain;
-    }
+    
+    /* 1. Toggle / Switch */
     .uc-pi-toggle {
         width: 28px;
         height: 16px;
