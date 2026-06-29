@@ -16,14 +16,11 @@
   border-radius: 14px 0 0 0;
   border-top: 1px solid rgba(226, 232, 240, 0.8);
   border-left: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 
-    -20px 20px 40px -10px rgba(15, 23, 42, 0.1),
-    -10px 10px 20px -5px rgba(15, 23, 42, 0.05),
-    inset 1px 1px 0 rgba(255, 255, 255, 1);
+  box-shadow: -24px 24px 60px -24px rgba(10,25,47,0.18);
   overflow: hidden;
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Inter", "SF Pro Display", sans-serif;
   color: #0f172a;
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .cmk-shot::before {
@@ -37,11 +34,7 @@
 }
 
 .stripe-fg-card:hover .cmk-shot { 
-  transform: translateY(-8px) scale(1.01); 
-  box-shadow: 
-    -30px 30px 60px -15px rgba(15, 23, 42, 0.15),
-    -15px 15px 30px -10px rgba(15, 23, 42, 0.08),
-    inset 1px 1px 0 rgba(255, 255, 255, 1);
+  transform: translateY(-6px); 
 }
 @media (max-width: 768px) { .cmk-shot { top: 1.4rem; left: 1.4rem; bottom: -32px; width: calc(100% + 24px); } }
 
