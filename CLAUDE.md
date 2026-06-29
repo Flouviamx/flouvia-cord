@@ -1718,3 +1718,5 @@ El roadmap público (`/roadmap` y `/en/roadmap`) fue rediseñado para alcanzar u
    • Data específica: Textos de alto valor explicativo enfocados en SaaS (Suscripciones, Churn, MRR), Agencias (Retainers, Hitos), Comercializadoras (Crédito B2B, REP, Multimoneda) y Software Factory (Cobros por Commits, T&M, Analítica de márgenes).
 
    • Ajuste de UI: La sección 'Optimiza tus ingresos' se movió para ser la última sección justo antes del Footer en las 4 vistas, quedando después de las Integraciones.
+
+   • Interacción GSAP Magnética: Se creó el componente `MagneticNodes.jsx` usando React y GSAP. Incorpora animación *Zero Gravity* independiente por nodo y un efecto magnético interactivo en `mousemove` que regresa a su origen con `elastic.out(1, 0.3)`. Estilos translúcidos premium aplicados en CSS puro sin Tailwind.

@@ -1,0 +1,61 @@
+/* CSS Puro para MagneticNodes (Estilos Premium) */
+
+.magnetic-nodes-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    perspective: 1000px;
+}
+
+.integration-node-wrapper {
+    cursor: crosshair; /* Cursor sutil para indicar interactividad */
+}
+
+/* Z-index aumenta temporalmente al hacer hover para sobreponerse */
+.integration-node-wrapper:hover {
+    z-index: 50 !important;
+}
+
+.integration-node-float {
+    will-change: transform;
+}
+
+.integration-node {
+    width: 100%;
+    height: 100%;
+    /* Fondo blanco translúcido */
+    background: rgba(255, 255, 255, 0.9);
+    
+    /* Borde finísimo */
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 50%;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* Sombra difuminada muy elegante */
+    box-shadow: 0 15px 35px rgba(10, 37, 64, 0.08), 0 5px 15px rgba(10, 37, 64, 0.03);
+    
+    /* GSAP controla transform, solo aplicamos transition a box-shadow */
+    transition: box-shadow 0.4s ease;
+    
+    /* Filtro de desenfoque premium */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    
+    will-change: transform, box-shadow;
+}
+
+.integration-node-wrapper:hover .integration-node {
+    /* Sombra más intensa al hacer hover */
+    box-shadow: 0 25px 45px rgba(10, 37, 64, 0.15), 0 10px 20px rgba(10, 37, 64, 0.08);
+}
+
+.integration-node img {
+    width: 45%;
+    height: 45%;
+    object-fit: contain;
+    pointer-events: none; /* Previene que la imagen bloquee los eventos del ratón */
+    user-select: none;
+}

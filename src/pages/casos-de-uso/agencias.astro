@@ -1,9 +1,11 @@
 ---
+
 export const prerender = true;
 
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
+import MagneticNodes from '../../components/MagneticNodes.jsx';
 import GreenRampShader from '../../components/soluciones/GreenRampShader.jsx';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
 
@@ -13,7 +15,18 @@ const t = useTranslations(lang);
 
 const metaTitle = "Cord para Agencias y Consultoras | Propuestas y Retainers";
 const metaDesc = "Envía propuestas hermosas, obtén firmas vinculantes y automatiza el cobro de tus igualas (retainers).";
+
+const magneticNodes = [
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://asana.com&size=128", alt: "Asana", top: "10%", left: "30%", width: 100, zIndex: 2 },
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://figma.com&size=128", alt: "Figma", top: "25%", left: "65%", width: 140, zIndex: 3 },
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128", alt: "Slack", top: "50%", left: "15%", width: 120, zIndex: 1 },
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://hubspot.com&size=128", alt: "HubSpot", top: "75%", left: "45%", width: 90, zIndex: 2 },
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://notion.so&size=128", alt: "Notion", top: "60%", left: "80%", width: 110, zIndex: 1 },
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://google.com&size=128", alt: "Google", top: "-5%", left: "75%", width: 70, zIndex: 1 }
+];
+
 ---
+
 
 <Layout title={metaTitle} description={metaDesc}>
     <Nav />
@@ -317,12 +330,7 @@ const metaDesc = "Envía propuestas hermosas, obtén firmas vinculantes y automa
                         </p>
                     </div>
                     <div class="uc-int-visual reveal">
-                        <div class="uc-bubble uc-b-1"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://asana.com&size=128" alt="Asana"/></div></div>
-                        <div class="uc-bubble uc-b-2"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://figma.com&size=128" alt="Figma"/></div></div>
-                        <div class="uc-bubble uc-b-3"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128" alt="Slack"/></div></div>
-                        <div class="uc-bubble uc-b-4"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://hubspot.com&size=128" alt="HubSpot"/></div></div>
-                        <div class="uc-bubble uc-b-5"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://notion.so&size=128" alt="Notion"/></div></div>
-                        <div class="uc-bubble uc-b-6"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://google.com&size=128" alt="Google Workspace"/></div></div>
+                        <MagneticNodes client:load nodes={magneticNodes} />
                     </div>
                 </div>
             </div>

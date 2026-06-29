@@ -1,9 +1,11 @@
 ---
+
 export const prerender = true;
 
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
+import MagneticNodes from '../../components/MagneticNodes.jsx';
 import RampShader from '../../components/soluciones/RampShader.jsx';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
 
@@ -13,7 +15,18 @@ const t = useTranslations(lang);
 
 const metaTitle = "Cord para Software Factories | Presupuestos y Hitos";
 const metaDesc = "Envía presupuestos de desarrollo a la medida, divide pagos por hitos y mantén a tu equipo sincronizado.";
+
+const magneticNodes = [
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://github.com&size=128", alt: "GitHub", top: "10%", left: "30%", width: 100, zIndex: 2 },
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://jira.com&size=128", alt: "Jira", top: "25%", left: "65%", width: 140, zIndex: 3 },
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://linear.app&size=128", alt: "Linear", top: "50%", left: "15%", width: 120, zIndex: 1 },
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://gitlab.com&size=128", alt: "GitLab", top: "75%", left: "45%", width: 90, zIndex: 2 },
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128", alt: "Slack", top: "60%", left: "80%", width: 110, zIndex: 1 },
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://aws.amazon.com&size=128", alt: "AWS", top: "-5%", left: "75%", width: 70, zIndex: 1 }
+];
+
 ---
+
 
 <Layout title={metaTitle} description={metaDesc}>
     <Nav />
@@ -321,12 +334,7 @@ const metaDesc = "Envía presupuestos de desarrollo a la medida, divide pagos po
                         </p>
                     </div>
                     <div class="uc-int-visual reveal">
-                        <div class="uc-bubble uc-b-1"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://github.com&size=128" alt="GitHub"/></div></div>
-                        <div class="uc-bubble uc-b-2"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://jira.com&size=128" alt="Jira"/></div></div>
-                        <div class="uc-bubble uc-b-3"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://linear.app&size=128" alt="Linear"/></div></div>
-                        <div class="uc-bubble uc-b-4"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://gitlab.com&size=128" alt="GitLab"/></div></div>
-                        <div class="uc-bubble uc-b-5"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128" alt="Slack"/></div></div>
-                        <div class="uc-bubble uc-b-6"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://aws.amazon.com&size=128" alt="AWS"/></div></div>
+                        <MagneticNodes client:load nodes={magneticNodes} />
                     </div>
                 </div>
             </div>

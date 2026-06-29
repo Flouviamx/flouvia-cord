@@ -1,9 +1,11 @@
 ---
+
 export const prerender = true;
 
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
+import MagneticNodes from '../../components/MagneticNodes.jsx';
 import RampShader from '../../components/soluciones/RampShader.jsx';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
 
@@ -13,7 +15,18 @@ const t = useTranslations(lang);
 
 const metaTitle = "Cord para Comercializadoras B2B | Cotizaciones y Pedidos";
 const metaDesc = "Digitaliza las ventas de tu comercializadora. Cotiza volumen, maneja descuentos por tier y automatiza facturas de grandes pedidos.";
+
+const magneticNodes = [
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://salesforce.com&size=128", alt: "Salesforce", top: "10%", left: "30%", width: 100, zIndex: 2 },
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://sap.com&size=128", alt: "SAP", top: "25%", left: "65%", width: 140, zIndex: 3 },
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://quickbooks.intuit.com&size=128", alt: "QuickBooks", top: "50%", left: "15%", width: 120, zIndex: 1 },
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://shopify.com&size=128", alt: "Shopify", top: "75%", left: "45%", width: 90, zIndex: 2 },
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://oracle.com&size=128", alt: "Oracle", top: "60%", left: "80%", width: 110, zIndex: 1 },
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://whatsapp.com&size=128", alt: "WhatsApp", top: "-5%", left: "75%", width: 70, zIndex: 1 }
+];
+
 ---
+
 
 <Layout title={metaTitle} description={metaDesc}>
     <Nav />
@@ -309,12 +322,7 @@ const metaDesc = "Digitaliza las ventas de tu comercializadora. Cotiza volumen, 
                         </p>
                     </div>
                     <div class="uc-int-visual reveal">
-                        <div class="uc-bubble uc-b-1"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://salesforce.com&size=128" alt="Salesforce"/></div></div>
-                        <div class="uc-bubble uc-b-2"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://sap.com&size=128" alt="SAP"/></div></div>
-                        <div class="uc-bubble uc-b-3"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://quickbooks.intuit.com&size=128" alt="QuickBooks"/></div></div>
-                        <div class="uc-bubble uc-b-4"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://shopify.com&size=128" alt="Shopify"/></div></div>
-                        <div class="uc-bubble uc-b-5"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://oracle.com&size=128" alt="Oracle"/></div></div>
-                        <div class="uc-bubble uc-b-6"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://whatsapp.com&size=128" alt="WhatsApp"/></div></div>
+                        <MagneticNodes client:load nodes={magneticNodes} />
                     </div>
                 </div>
             </div>
