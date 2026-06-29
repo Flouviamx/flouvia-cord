@@ -10,9 +10,11 @@
 /* ── Frame: stage llena la celda visual; shot sangra y se recorta ── */
 .cmk-stage { position: absolute; inset: 0; }
 .cmk-shot {
-  /* Anclado a los 4 lados: LLENA la celda y SANGRA por derecha/abajo, de modo
-     que el card padre (overflow:hidden) lo recorta como una imagen cortada. */
-  position: absolute; top: 2.2rem; left: 2.2rem; right: -120px; bottom: -48px;
+  /* Ancho cómodo mínimo (520px) para que el contenido NUNCA se estruje; si la
+     celda es más ancha, crece y SANGRA por la derecha. Bleed inferior fijo. El
+     card padre (overflow:hidden) lo recorta como una imagen cortada. */
+  position: absolute; top: 2.2rem; left: 2.2rem; bottom: -40px;
+  width: max(520px, calc(100% + 56px));
   background: #fff; text-align: left;
   border-radius: 14px 0 0 0;
   border-top: 1px solid rgba(10,25,47,0.06);
@@ -24,7 +26,7 @@
   transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .stripe-fg-card:hover .cmk-shot { transform: translateY(-6px); }
-@media (max-width: 768px) { .cmk-shot { top: 1.4rem; left: 1.4rem; right: -40px; bottom: -40px; } }
+@media (max-width: 768px) { .cmk-shot { top: 1.4rem; left: 1.4rem; bottom: -32px; width: calc(100% + 24px); } }
 
 /* ── Top nav / header bar ── */
 .cmk-nav { display: flex; align-items: center; justify-content: space-between; padding: 15px 22px; border-bottom: 1px solid #f1f5f9; }
