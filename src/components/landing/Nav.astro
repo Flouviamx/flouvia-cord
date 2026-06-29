@@ -15,15 +15,7 @@ const { darkHero = false } = Astro.props;
 ---
 
 <header class="navbar-wrapper" id="navbar">
-    <div class="top-bar" id="top-bar">
-        <div class="top-bar-inner">
-            <span class="top-text">{t("nav.top.plataforma")}</span>
-            <span class="top-dot desktop-only">·</span>
-            <span class="top-text desktop-only">{t("nav.top.producto_de")}</span>
-            <span class="top-dot desktop-only">·</span>
-            <span class="top-text desktop-only">{t("nav.top.hecho_en")}</span>
-        </div>
-    </div>
+
 
     <nav class="main-nav">
         <div class="nav-container">
@@ -1015,13 +1007,12 @@ const { darkHero = false } = Astro.props;
 
         // ── ENTRANCE ──
         if (navbar && !reducedMotion) {
-            const topBar = document.getElementById('top-bar');
             const pill = document.getElementById('glass-pill');
             const mainLogo = document.getElementById('main-logo');
             const navRight = document.getElementById('nav-right');
             const rightKids = navRight ? Array.from(navRight.children) : [];
             const mobile = document.getElementById('mobile-pill');
-            const pieces = [topBar, pill, mainLogo, ...rightKids, mobile].filter(Boolean);
+            const pieces = [pill, mainLogo, ...rightKids, mobile].filter(Boolean);
 
             gsap.set(pieces, { opacity: 0, y: -10 });
             gsap.set(navbar, { opacity: 1 });
@@ -1034,8 +1025,7 @@ const { darkHero = false } = Astro.props;
                     if (indicatorRelayout) indicatorRelayout(false);
                 },
             });
-            tl.to(topBar, { opacity: 1, y: 0, duration: 0.6 }, 0)
-              .to([pill, mobile], { opacity: 1, y: 0, duration: 1.0 }, 0.1)
+            tl.to([pill, mobile], { opacity: 1, y: 0, duration: 1.0 }, 0.1)
               .to(mainLogo, { opacity: 1, y: 0, duration: 0.9 }, '<0.07')
               .to(rightKids, { opacity: 1, y: 0, stagger: 0.08, duration: 0.75 }, '<0.05');
         } else if (navbar) {
