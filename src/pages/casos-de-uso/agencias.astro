@@ -17,12 +17,11 @@ const metaTitle = "Cord para Agencias y Consultoras | Propuestas y Retainers";
 const metaDesc = "Envía propuestas hermosas, obtén firmas vinculantes y automatiza el cobro de tus igualas (retainers).";
 
 const magneticNodes = [
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://asana.com&size=128", alt: "Asana", top: "10%", left: "30%", width: 100, zIndex: 2 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://figma.com&size=128", alt: "Figma", top: "25%", left: "65%", width: 140, zIndex: 3 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128", alt: "Slack", top: "50%", left: "15%", width: 120, zIndex: 1 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://hubspot.com&size=128", alt: "HubSpot", top: "75%", left: "45%", width: 90, zIndex: 2 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://notion.so&size=128", alt: "Notion", top: "60%", left: "80%", width: 110, zIndex: 1 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://google.com&size=128", alt: "Google", top: "-5%", left: "75%", width: 70, zIndex: 1 }
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://ogilvy.com&size=128", alt: "Ogilvy", top: "10%", left: "30%", width: 100, zIndex: 2 },
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://accenture.com&size=128", alt: "Accenture", top: "25%", left: "65%", width: 140, zIndex: 3 },
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://ideo.com&size=128", alt: "IDEO", top: "50%", left: "15%", width: 120, zIndex: 1 },
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://pentagram.com&size=128", alt: "Pentagram", top: "75%", left: "45%", width: 90, zIndex: 2 },
+    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://flouvia.com&size=128", alt: "Flouvia", top: "60%", left: "80%", width: 110, zIndex: 1 }
 ];
 
 ---
@@ -378,6 +377,14 @@ const magneticNodes = [
         padding-top: 0;
         overflow-x: hidden;
         color: var(--color-text-muted);
+    }
+    
+    .uc-int-visual :global(.integration-node img) {
+        filter: grayscale(100%) opacity(0.8);
+        transition: all 0.3s ease;
+    }
+    .uc-int-visual :global(.integration-node:hover img) {
+        filter: grayscale(0%) opacity(1);
     }
 
     .uc-container {
