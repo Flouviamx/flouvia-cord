@@ -7,6 +7,16 @@
     perspective: 1000px;
 }
 
+.magnetic-nodes-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0; /* Por debajo de los nodos */
+    pointer-events: none; /* No bloquear interacción con los nodos */
+}
+
 .integration-node-wrapper {
     cursor: crosshair; /* Cursor sutil para indicar interactividad */
 }
