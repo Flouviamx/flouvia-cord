@@ -973,7 +973,9 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                     <div class="dashboard-app-frame">
                         <!-- Cursor Animado -->
                         <div class="mockup-cursor">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="M13 13l6 6"/></svg>
+                            <svg width="22" height="34" viewBox="0 0 24 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M2.5 2.5L2.5 28.5L8.5 22.5L13.5 32.5L17.5 30.5L12.5 20.5L20.5 20.5L2.5 2.5Z" fill="#000000" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/>
+                            </svg>
                         </div>
                         
                         <!-- Sidebar -->
@@ -1135,20 +1137,35 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                 </header>
                                 <div class="dash-content-body" style="background: #ffffff;">
                                     <div class="quote-form">
-                                        <div class="quote-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+                                        
+                                        <!-- Header de seccion -->
+                                        <h4 style="font-size: 0.85rem; font-weight: 700; color: #0a192f; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">Detalles del Cliente</h4>
+
+                                        <div class="quote-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 32px;">
                                             <div class="quote-field">
                                                 <label>Cliente</label>
-                                                <div class="quote-input anim-typing-client">
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" style="margin-right:8px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                                                    <span class="anim-typing-text"></span>
+                                                <div class="quote-input anim-typing-client" style="justify-content: space-between; cursor: default; background: #ffffff;">
+                                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+                                                        <span class="anim-typing-text"></span>
+                                                    </div>
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                                 </div>
                                             </div>
                                             <div class="quote-field">
-                                                <label>Proyecto / Referencia</label>
-                                                <div class="quote-input">Rediseño Web UX/UI</div>
+                                                <label>Vigencia</label>
+                                                <div class="quote-input" style="color: #0f172a; justify-content: space-between; background: #f8fafc;">
+                                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                                        15 días
+                                                    </div>
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                                </div>
                                             </div>
                                         </div>
                                         
+                                        <h4 style="font-size: 0.85rem; font-weight: 700; color: #0a192f; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">Conceptos</h4>
+
                                         <!-- Line items table -->
                                         <div class="dash-table-container" style="border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff; box-shadow: 0 2px 8px rgba(15,23,42,0.02); overflow: hidden;">
                                             <div class="cmk-th" style="grid-template-columns: 3fr 1fr 1fr 1fr; background: #f8fafc;">
@@ -1159,23 +1176,28 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                             </div>
                                             <div class="cmk-tr" style="grid-template-columns: 3fr 1fr 1fr 1fr;">
                                                 <div class="cmk-t1" style="font-weight: 500;">UX/UI Design System</div>
-                                                <div class="cmk-t2 cmk-r">1</div>
-                                                <div class="cmk-t2 cmk-r">$45,000.00</div>
-                                                <div class="cmk-amt">$45,000.00</div>
+                                                <div class="cmk-t2 cmk-r editorial">1</div>
+                                                <div class="cmk-t2 cmk-r editorial">$45,000.00</div>
+                                                <div class="cmk-amt editorial">$45,000.00</div>
                                             </div>
                                             <div class="cmk-tr hl anim-row-quote" style="grid-template-columns: 3fr 1fr 1fr 1fr;">
                                                 <div class="cmk-t1" style="font-weight: 500;">Desarrollo Frontend</div>
-                                                <div class="cmk-t2 cmk-r">1</div>
-                                                <div class="cmk-t2 cmk-r">$60,000.00</div>
-                                                <div class="cmk-amt">$60,000.00</div>
+                                                <div class="cmk-t2 cmk-r editorial">1</div>
+                                                <div class="cmk-t2 cmk-r editorial">$60,000.00</div>
+                                                <div class="cmk-amt editorial">$60,000.00</div>
                                             </div>
                                         </div>
                                         
-                                        <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 24px;">
+                                            <div class="quote-field" style="width: 320px;">
+                                                <label>Mensaje opcional</label>
+                                                <div class="quote-input" style="height: 48px; align-items: flex-start; padding-top: 12px; color: #64748b; background: #f8fafc; font-size: 0.9rem;">Adjunto propuesta del proyecto.</div>
+                                            </div>
+
                                             <div style="width: 260px;">
-                                                <div class="cmk-kv" style="padding: 8px 0; border-bottom: none;"><span class="cmk-k">Subtotal</span><span class="cmk-v">$105,000.00</span></div>
-                                                <div class="cmk-kv" style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;"><span class="cmk-k">IVA (16%)</span><span class="cmk-v">$16,800.00</span></div>
-                                                <div class="cmk-kv" style="padding: 16px 0 0 0; border-bottom: none;"><span class="cmk-k" style="font-weight: 700; color: #0f172a;">Total MXN</span><span class="cmk-v" style="font-size: 22px;">$121,800.00</span></div>
+                                                <div class="cmk-kv" style="padding: 8px 0; border-bottom: none;"><span class="cmk-k">Subtotal</span><span class="cmk-v editorial">$105,000.00</span></div>
+                                                <div class="cmk-kv" style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;"><span class="cmk-k">IVA (16%)</span><span class="cmk-v editorial">$16,800.00</span></div>
+                                                <div class="cmk-kv" style="padding: 16px 0 0 0; border-bottom: none;"><span class="cmk-k" style="font-weight: 700; color: #0a192f;">Total MXN</span><span class="cmk-v editorial" style="font-size: 22px; color: #0a192f;">$121,800.00</span></div>
                                             </div>
                                         </div>
                                         
@@ -2856,9 +2878,10 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         left: 0;
         height: 100%;
         width: 33.33%; /* updated via JS */
-        /* Light green to dark blue gradient */
-        background: linear-gradient(90deg, #6ee7b7 0%, #2563eb 50%, #0f172a 100%);
-        transition: width 0.1s ease-out; /* smooth follow */
+        border-radius: 3px;
+        /* Premium light green to dark blue gradient */
+        background: linear-gradient(90deg, #10b981 0%, #06b6d4 35%, #2563eb 70%, #020617 100%);
+        transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1); /* snappy, premium easing */
     }
     .stripe-tabs-buttons {
         display: flex;
@@ -3415,33 +3438,28 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     .mockup-cursor {
         position: absolute;
         z-index: 100;
-        color: #0a2540;
-        filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2));
-        width: 24px; height: 24px;
         pointer-events: none;
+        filter: drop-shadow(0 6px 10px rgba(10,25,47,0.25));
         animation: cursorAnim 16s infinite cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    .mockup-cursor svg {
-        fill: white;
     }
     
     @keyframes cursorAnim {
         0%, 10% { top: 80%; left: 80%; transform: scale(1); }
         /* Move to "Nueva Cotizacion" btn on dashboard */
-        22% { top: 32px; left: calc(100% - 150px); transform: scale(1); }
+        22% { top: 32px; left: calc(100% - 100px); transform: scale(1); }
         /* Click it */
-        24% { transform: scale(0.9); }
+        24% { transform: scale(0.85); }
         26% { transform: scale(1); }
         
         /* View transitions at 30%... Cursor moves to Client Input in Quote View */
-        40% { top: 160px; left: 350px; transform: scale(1); }
-        42% { transform: scale(0.9); }
+        40% { top: 156px; left: 320px; transform: scale(1); }
+        42% { transform: scale(0.85); }
         44% { transform: scale(1); }
         
         /* Cursor moves to Send btn */
-        72% { top: 32px; left: calc(100% - 150px); transform: scale(1); }
+        72% { top: 32px; left: calc(100% - 100px); transform: scale(1); }
         /* Click Send */
-        76% { transform: scale(0.9); }
+        76% { transform: scale(0.85); }
         78% { transform: scale(1); }
         
         /* Move back to start */
