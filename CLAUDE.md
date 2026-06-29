@@ -1701,3 +1701,12 @@ El roadmap público (`/roadmap` y `/en/roadmap`) fue rediseñado para alcanzar u
    • **Mockups Reales y Limpios:** Cada tarjeta incluye un mockup embebido que ilustra de forma clara y directa la funcionalidad discutida sin badges innecesarios, manteniéndose fiel a la estética de 'quiet luxury' y las líneas de diseño Cord.
    • **Micro Features en Grid:** Debajo de las tarjetas, se agregó una cuadrícula de 4 columnas de iconos con explicaciones concisas sobre las automatizaciones disponibles, como conciliación automática de SPEIs, webhooks y recordatorios.
    • **Unificación de Tema:** Todas estas páginas usan ahora los gradientes y el acento primario Esmeralda (`#10b981`) y fondos navys (`#0a2540`), en consistencia absoluta con la marca de Cord.
+
+✅ **Integraciones en Casos de Uso (jun 2026)** — Se diseñó y desarrolló la sección 'Integrations' estilo nube interactiva (flotante) al final de las 4 vistas de casos de uso.
+   • Layout de 2 columnas: texto explicativo a la izquierda, logotipos burbuja flotantes a la derecha.
+   • Diseño de logotipos: Contenedores blancos `.uc-bubble-inner` con `border-radius: 50
+✅ **Integraciones en Casos de Uso (jun 2026)** — Se diseñó y desarrolló la sección 'Integrations' estilo nube interactiva (flotante) al final de las 4 vistas de casos de uso.
+   • Layout de 2 columnas: texto explicativo a la izquierda, logotipos burbuja flotantes a la derecha.
+   • Diseño de logotipos: Contenedores blancos `.uc-bubble-inner` con `border-radius: 50%`, y una capa envolvente `.uc-bubble` con animación de `floatBubble` (6s, asíncrona entre logotipos por `animation-delay`).
+   • Escalado en Hover: Se usa `transition` y `box-shadow` en hover sin interrumpir el `floatBubble`, para un UI feel moderno ('super cabrón').
+   • Data específica: SaaS usa Stripe/Vercel/Notion; Comercializadoras usa SAP/Salesforce/Shopify; Agencias usa Asana/Figma/HubSpot; Software Factory usa GitHub/Jira/GitLab.

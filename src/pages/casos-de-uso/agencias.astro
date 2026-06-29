@@ -306,6 +306,28 @@ const metaDesc = "Envía propuestas hermosas, obtén firmas vinculantes y automa
     </main>
 
     <Footer />
+        <!-- INTEGRATIONS SECTION -->
+        <section class="uc-integrations">
+            <div class="uc-container">
+                <div class="uc-int-grid">
+                    <div class="uc-int-text reveal">
+                        <h2>Sincroniza la cobranza con tus flujos creativos</h2>
+                        <p>
+                            Si tu agencia ya trabaja con herramientas de gestión, no necesitas cambiarlas. Puedes usar nuestras integraciones para conectar Cord con tus sistemas creativos. Sincroniza desde <a href="#">Asana</a> y <a href="#">Figma</a> hasta plataformas de ventas como <a href="#">HubSpot</a> o <a href="#">Notion</a>, y recibe alertas en <a href="#">Slack</a> al cobrar.
+                        </p>
+                    </div>
+                    <div class="uc-int-visual reveal">
+                        <div class="uc-bubble uc-b-1"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://asana.com&size=128" alt="Asana"/></div></div>
+                        <div class="uc-bubble uc-b-2"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://figma.com&size=128" alt="Figma"/></div></div>
+                        <div class="uc-bubble uc-b-3"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128" alt="Slack"/></div></div>
+                        <div class="uc-bubble uc-b-4"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://hubspot.com&size=128" alt="HubSpot"/></div></div>
+                        <div class="uc-bubble uc-b-5"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://notion.so&size=128" alt="Notion"/></div></div>
+                        <div class="uc-bubble uc-b-6"><div class="uc-bubble-inner"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://google.com&size=128" alt="Google Workspace"/></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
 </Layout>
 
 <style>
@@ -978,6 +1000,111 @@ const metaDesc = "Envía propuestas hermosas, obtén firmas vinculantes y automa
             height: 280px;
         }
         .uc-benefits { padding: 4rem 0 5rem; }
+    }
+
+    /* ── INTEGRATIONS SECTION ── */
+    .uc-integrations {
+        padding: 6rem 0 8rem;
+        background: #f8fafc;
+        overflow: hidden;
+    }
+    .uc-int-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
+        align-items: center;
+    }
+    .uc-int-text {
+        max-width: 480px;
+    }
+    .uc-int-text h2 {
+        font-size: 2.1rem;
+        font-weight: 800;
+        color: #0a2540;
+        margin-bottom: 1.5rem;
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+    }
+    .uc-int-text p {
+        font-size: 1.1rem;
+        color: #425466;
+        line-height: 1.6;
+    }
+    .uc-int-text a {
+        color: #3b82f6;
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.2s;
+    }
+    .uc-int-text a:hover {
+        color: #2563eb;
+    }
+
+    .uc-int-visual {
+        position: relative;
+        height: 400px;
+        width: 100%;
+        perspective: 1000px;
+    }
+    
+    @keyframes floatBubble {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-12px); }
+    }
+    
+    .uc-bubble {
+        position: absolute;
+        animation: floatBubble 6s ease-in-out infinite;
+    }
+    .uc-bubble-inner {
+        width: 100%;
+        height: 100%;
+        background: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 15px 35px rgba(10,37,64,0.08), 0 5px 15px rgba(10,37,64,0.03);
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
+    }
+    .uc-bubble:hover .uc-bubble-inner {
+        transform: scale(1.1);
+        box-shadow: 0 20px 45px rgba(10,37,64,0.12), 0 10px 20px rgba(10,37,64,0.05);
+    }
+    .uc-bubble-inner img {
+        width: 45%;
+        height: 45%;
+        object-fit: contain;
+    }
+    .uc-bubble-inner span {
+        font-weight: 800;
+        font-size: 2.5rem;
+        color: #0a2540;
+    }
+
+    /* Posiciones y tamaños inspirados en Stripe */
+    .uc-b-1 { width: 100px; height: 100px; top: 10%; left: 30%; animation-delay: 0s; z-index: 2; }
+    .uc-b-2 { width: 140px; height: 140px; top: 25%; left: 65%; animation-delay: -2s; z-index: 3; }
+    .uc-b-3 { width: 120px; height: 120px; top: 50%; left: 15%; animation-delay: -4s; z-index: 1; }
+    .uc-b-4 { width: 90px; height: 90px; top: 75%; left: 45%; animation-delay: -1s; z-index: 2; }
+    .uc-b-5 { width: 110px; height: 110px; top: 60%; left: 80%; animation-delay: -3s; z-index: 1; }
+    .uc-b-6 { width: 70px; height: 70px; top: -5%; left: 75%; animation-delay: -5s; z-index: 1; }
+
+    @media (max-width: 900px) {
+        .uc-int-grid {
+            grid-template-columns: 1fr;
+            text-align: center;
+            gap: 3rem;
+        }
+        .uc-int-text {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        .uc-int-visual {
+            height: 350px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
     }
 
 </style>
