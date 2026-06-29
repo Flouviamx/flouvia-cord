@@ -1716,3 +1716,5 @@ El roadmap público (`/roadmap` y `/en/roadmap`) fue rediseñado para alcanzar u
    • Diseño de Iconos: Se diseñaron 6 mini-mockups usando puro CSS (Toggle, Chart, Sync, Doc, Card, Code) con detalles sutiles en `box-shadow` y colores de Cord.
    • Detalles Tipográficos: Títulos `<h3>` de la cuadrícula con una sutil línea lateral (border-left) en color azul de acento (estilo Stripe).
    • Data específica: Textos de alto valor explicativo enfocados en SaaS (Suscripciones, Churn, MRR), Agencias (Retainers, Hitos), Comercializadoras (Crédito B2B, REP, Multimoneda) y Software Factory (Cobros por Commits, T&M, Analítica de márgenes).
+
+   • Ajuste de UI: La sección 'Optimiza tus ingresos' se movió para ser la última sección justo antes del Footer en las 4 vistas, quedando después de las Integraciones.
