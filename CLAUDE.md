@@ -1722,3 +1722,5 @@ El roadmap público (`/roadmap` y `/en/roadmap`) fue rediseñado para alcanzar u
    • Interacción GSAP Magnética: Se creó el componente `MagneticNodes.jsx` usando React y GSAP. Incorpora animación *Zero Gravity* independiente por nodo y un efecto magnético interactivo en `mousemove` que regresa a su origen con `elastic.out(1, 0.3)`. Estilos translúcidos premium aplicados en CSS puro sin Tailwind.
 
    • Red Tensorial de Canvas: Se agregó un `<canvas>` 2D detrás de los MagneticNodes que funciona con un ResizeObserver. Un loop a 60fps usando `gsap.ticker` calcula la distancia Euclidiana entre los centros de cada nodo en tiempo real (leyendo su `getBoundingClientRect` para considerar la gravedad y magnetismo simultáneamente). Dibuja conexiones dinámicas con opacidad y grosor inversamente proporcionales a la distancia usando un estilo 'Clear Mode' (platino translúcido).
+
+   • Ajuste de UI: Se reemplazaron los micro-mockups CSS por los logotipos oficiales de las integraciones en la sección 'Optimiza tus ingresos' de las 4 páginas, adaptando el marco con el mismo estilo glassmorphism.

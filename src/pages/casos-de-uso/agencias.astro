@@ -345,22 +345,22 @@ const magneticNodes = [
                 <h2 class="uc-power-title reveal">Escala tu agencia con el motor financiero de Cord</h2>
                 <div class="uc-power-grid">
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-toggle"></div></div>
+                        <div class="uc-power-icon"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://figma.com&size=128" alt="Figma"/></div></div>
                         <h3>Retainers y cobros recurrentes sin fricción</h3>
                         <p>Olvídate de perseguir pagos cada inicio de mes. Configura cobros recurrentes para tus igualas y deja que Cord realice los cargos automáticamente a las tarjetas o cuentas de tus clientes.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-doc"></div></div>
+                        <div class="uc-power-icon"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://asana.com&size=128" alt="Asana"/></div></div>
                         <h3>Hitos y facturación por proyecto</h3>
                         <p>Cobra anticipos o pagos contra entrega fácilmente. Las <a href="#">facturas por hitos</a> de Cord permiten programar fechas de cobro asociadas a las etapas de tus proyectos creativos.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-sync"></div></div>
+                        <div class="uc-power-icon"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://hubspot.com&size=128" alt="HubSpot"/></div></div>
                         <h3>Conciliación bancaria automática</h3>
                         <p>Deja de cruzar transferencias manuales con facturas. El <a href="#">matching inteligente</a> de Cord detecta los pagos entrantes y los asocia al cliente y proyecto correctos en cuestión de segundos.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-card"></div></div>
+                        <div class="uc-power-icon"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://notion.so&size=128" alt="Notion"/></div></div>
                         <h3>Portal de pagos para clientes</h3>
                         <p>Ofrece una experiencia verdaderamente premium. Tus clientes tendrán un <a href="#">portal de facturación</a> propio donde podrán descargar sus facturas, revisar estados de cuenta y pagar en línea.</p>
                     </div>
@@ -1173,21 +1173,24 @@ const magneticNodes = [
     }
     
     /* CSS MOCKUPS FOR ICONS */
+    
     .uc-power-icon {
-        width: 54px;
-        height: 54px;
-        margin-bottom: 1.5rem;
-        position: relative;
-        border-radius: 12px;
-        background: #f8fafc;
-        box-shadow: 0 4px 12px rgba(10,37,64,0.06);
+        width: 56px;
+        height: 56px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        overflow: hidden;
+        box-shadow: 0 15px 35px rgba(10, 37, 64, 0.08), 0 5px 15px rgba(10, 37, 64, 0.03);
+        margin-bottom: 1.5rem;
     }
-    
-    /* 1. Toggle / Switch */
+    .uc-power-icon img {
+        width: 45%;
+        height: 45%;
+        object-fit: contain;
+    }
     .uc-pi-toggle {
         width: 28px;
         height: 16px;

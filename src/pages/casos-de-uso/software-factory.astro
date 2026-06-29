@@ -349,22 +349,22 @@ const magneticNodes = [
                 <h2 class="uc-power-title reveal">Optimiza la rentabilidad de tu factory con Cord</h2>
                 <div class="uc-power-grid">
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-code">&lt;/&gt;</div></div>
+                        <div class="uc-power-icon"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://github.com&size=128" alt="GitHub"/></div></div>
                         <h3>Cobros vinculados a tu código</h3>
                         <p>Automatiza el inicio de cobros desde tus repositorios. Cuando apruebas un Pull Request crítico o cierras un sprint, Cord puede <a href="#">disparar la facturación</a> correspondiente sin que el Project Manager intervenga.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-doc"></div></div>
+                        <div class="uc-power-icon"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://jira.com&size=128" alt="Jira"/></div></div>
                         <h3>Cálculo de horas facturables</h3>
                         <p>Transforma el trabajo de tus desarrolladores en ingresos reales. Conecta tus herramientas de time-tracking para emitir facturas precisas basadas en modelos de tiempo y materiales (T&M).</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-card"></div></div>
+                        <div class="uc-power-icon"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://gitlab.com&size=128" alt="GitLab"/></div></div>
                         <h3>Dispersión a proveedores y freelancers</h3>
                         <p>Si tu factory trabaja con talento externo o staff augmentation, Cord facilita los pagos. Automatiza las <a href="#">transferencias masivas</a> a tus colaboradores una vez que el cliente haya liquidado el proyecto.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-chart"><span></span><span></span><span></span></div></div>
+                        <div class="uc-power-icon"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://linear.app&size=128" alt="Linear"/></div></div>
                         <h3>Reportes de margen por proyecto</h3>
                         <p>Entiende qué proyectos son realmente rentables para la agencia. Nuestra <a href="#">analítica financiera</a> cruza los costos operativos de tu equipo de desarrollo con los ingresos generados para darte el margen exacto.</p>
                     </div>
@@ -1177,21 +1177,24 @@ const magneticNodes = [
     }
     
     /* CSS MOCKUPS FOR ICONS */
+    
     .uc-power-icon {
-        width: 54px;
-        height: 54px;
-        margin-bottom: 1.5rem;
-        position: relative;
-        border-radius: 12px;
-        background: #f8fafc;
-        box-shadow: 0 4px 12px rgba(10,37,64,0.06);
+        width: 56px;
+        height: 56px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        overflow: hidden;
+        box-shadow: 0 15px 35px rgba(10, 37, 64, 0.08), 0 5px 15px rgba(10, 37, 64, 0.03);
+        margin-bottom: 1.5rem;
     }
-    
-    /* 1. Toggle / Switch */
+    .uc-power-icon img {
+        width: 45%;
+        height: 45%;
+        object-fit: contain;
+    }
     .uc-pi-toggle {
         width: 28px;
         height: 16px;

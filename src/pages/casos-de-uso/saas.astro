@@ -336,22 +336,22 @@ const magneticNodes = [
                 <h2 class="uc-power-title reveal">Optimiza tus ingresos con la plataforma financiera de Cord</h2>
                 <div class="uc-power-grid">
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-toggle"></div></div>
+                        <div class="uc-power-icon"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://stripe.com&size=128" alt="Stripe"/></div></div>
                         <h3>Cobranza automatizada de suscripciones</h3>
                         <p>Cord gestiona el ciclo completo de tus clientes SaaS. Desde cobros prorrateados hasta actualizaciones de planes y cancelaciones automáticas. Reduciendo drásticamente el trabajo manual de tu equipo.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-sync"></div></div>
+                        <div class="uc-power-icon"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128" alt="Slack"/></div></div>
                         <h3>Reducción de churn involuntario</h3>
                         <p>Casi el 30% del abandono es por tarjetas declinadas. Con el <a href="#">smart dunning</a> de Cord, reintentamos cobros fallidos en los mejores horarios y notificamos al cliente automáticamente para actualizar su método de pago.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-doc"></div></div>
+                        <div class="uc-power-icon"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://aws.amazon.com&size=128" alt="AWS"/></div></div>
                         <h3>Reconocimiento de ingresos preciso</h3>
                         <p>Cierra tus libros más rápido. Automatizamos la conciliación y el <a href="#">reconocimiento de ingresos</a> (Revenue Recognition) cumpliendo con normativas contables, manejando reembolsos y descuentos sin esfuerzo.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-chart"><span></span><span></span><span></span></div></div>
+                        <div class="uc-power-icon"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://vercel.com&size=128" alt="Vercel"/></div></div>
                         <h3>Métricas clave en tiempo real</h3>
                         <p>Accede a tu MRR, ARR y LTV en un solo lugar. Nuestras herramientas de <a href="#">analítica avanzada</a> te dan visibilidad total sobre la salud de tus suscripciones y el crecimiento real de tu empresa.</p>
                     </div>
@@ -1164,21 +1164,24 @@ const magneticNodes = [
     }
     
     /* CSS MOCKUPS FOR ICONS */
+    
     .uc-power-icon {
-        width: 54px;
-        height: 54px;
-        margin-bottom: 1.5rem;
-        position: relative;
-        border-radius: 12px;
-        background: #f8fafc;
-        box-shadow: 0 4px 12px rgba(10,37,64,0.06);
+        width: 56px;
+        height: 56px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        overflow: hidden;
+        box-shadow: 0 15px 35px rgba(10, 37, 64, 0.08), 0 5px 15px rgba(10, 37, 64, 0.03);
+        margin-bottom: 1.5rem;
     }
-    
-    /* 1. Toggle / Switch */
+    .uc-power-icon img {
+        width: 45%;
+        height: 45%;
+        object-fit: contain;
+    }
     .uc-pi-toggle {
         width: 28px;
         height: 16px;
