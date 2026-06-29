@@ -1720,28 +1720,34 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     }
 
     /* Aurora spans the full card (both content + mockup columns).
-       Very low opacity keeps the card essentially white. */
+       Same palette as the empresas hero shader (teal esmeralda + indigo),
+       reactive to the cursor via --ax/--ay (teal) and --bx/--by (indigo). */
     .aurora-card-layer {
         position: absolute;
-        inset: -40%;
+        inset: -45%;
         background:
-            radial-gradient(ellipse 80% 65% at var(--ax, 20%) var(--ay, 75%),
-                rgba(0, 200, 140, 0.14) 0%, transparent 60%),
-            radial-gradient(ellipse 65% 75% at var(--bx, 78%) var(--by, 25%),
-                rgba(110, 40, 220, 0.11) 0%, transparent 58%),
-            radial-gradient(ellipse 55% 45% at 50% 50%,
-                rgba(37, 99, 235, 0.05) 0%, transparent 70%);
-        animation: aurora-card-breathe 8s ease-in-out infinite alternate;
+            radial-gradient(ellipse 70% 60% at var(--ax, 22%) var(--ay, 74%),
+                rgba(0, 196, 138, 0.26) 0%, transparent 58%),
+            radial-gradient(ellipse 62% 72% at var(--bx, 80%) var(--by, 22%),
+                rgba(74, 46, 196, 0.20) 0%, transparent 56%),
+            radial-gradient(ellipse 95% 55% at var(--cx, 50%) var(--cy, 48%),
+                rgba(16, 185, 129, 0.13) 0%, transparent 60%),
+            radial-gradient(ellipse 55% 45% at 18% 14%,
+                rgba(37, 99, 235, 0.10) 0%, transparent 66%);
+        animation: aurora-card-breathe 9s ease-in-out infinite alternate;
         pointer-events: none;
         z-index: 0;
         will-change: transform;
+        transition: opacity 0.5s ease;
     }
+    /* Stronger aurora on hover — mirrors the hero's mouse glow */
+    .aurora-card:hover .aurora-card-layer { animation-duration: 6s; }
 
     @keyframes aurora-card-breathe {
         0%   { transform: scale(1)    rotate(0deg); }
-        40%  { transform: scale(1.07) rotate(3deg); }
-        70%  { transform: scale(0.96) rotate(-2deg); }
-        100% { transform: scale(1.05) rotate(4deg); }
+        35%  { transform: scale(1.08) rotate(3deg); }
+        70%  { transform: scale(0.95) rotate(-2.5deg); }
+        100% { transform: scale(1.06) rotate(4deg); }
     }
 
     /* Both content and visual sit above the aurora layer */
@@ -3931,24 +3937,27 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
             const layer = card.querySelector('.aurora-card-layer');
             if (!layer) return;
             let rafId = null;
-            let targetAx = 20, targetAy = 75, targetBx = 78, targetBy = 25;
-            let currentAx = 20, currentAy = 75, currentBx = 78, currentBy = 25;
+            const DEF = { ax: 22, ay: 74, bx: 80, by: 22, cx: 50, cy: 48 };
+            let t = { ...DEF };
+            let c = { ...DEF };
 
-            const lerp = (a, b, t) => a + (b - a) * t;
+            const lerp = (a, b, k) => a + (b - a) * k;
 
             const tick = () => {
-                currentAx = lerp(currentAx, targetAx, 0.06);
-                currentAy = lerp(currentAy, targetAy, 0.06);
-                currentBx = lerp(currentBx, targetBx, 0.06);
-                currentBy = lerp(currentBy, targetBy, 0.06);
-                layer.style.setProperty('--ax', `${currentAx.toFixed(1)}%`);
-                layer.style.setProperty('--ay', `${currentAy.toFixed(1)}%`);
-                layer.style.setProperty('--bx', `${currentBx.toFixed(1)}%`);
-                layer.style.setProperty('--by', `${currentBy.toFixed(1)}%`);
+                c.ax = lerp(c.ax, t.ax, 0.07); c.ay = lerp(c.ay, t.ay, 0.07);
+                c.bx = lerp(c.bx, t.bx, 0.07); c.by = lerp(c.by, t.by, 0.07);
+                c.cx = lerp(c.cx, t.cx, 0.05); c.cy = lerp(c.cy, t.cy, 0.05);
+                layer.style.setProperty('--ax', `${c.ax.toFixed(1)}%`);
+                layer.style.setProperty('--ay', `${c.ay.toFixed(1)}%`);
+                layer.style.setProperty('--bx', `${c.bx.toFixed(1)}%`);
+                layer.style.setProperty('--by', `${c.by.toFixed(1)}%`);
+                layer.style.setProperty('--cx', `${c.cx.toFixed(1)}%`);
+                layer.style.setProperty('--cy', `${c.cy.toFixed(1)}%`);
                 rafId = requestAnimationFrame(tick);
             };
 
             card.addEventListener('mouseenter', () => {
+                cancelAnimationFrame(rafId);
                 rafId = requestAnimationFrame(tick);
             });
 
@@ -3956,20 +3965,20 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                 const rect = card.getBoundingClientRect();
                 const xPct = ((e.clientX - rect.left) / rect.width)  * 100;
                 const yPct = ((e.clientY - rect.top)  / rect.height) * 100;
-                // Teal blob follows mouse; indigo blob is offset opposite
-                targetAx = xPct * 0.65 + 8;
-                targetAy = yPct * 0.65 + 12;
-                targetBx = 100 - xPct * 0.55;
-                targetBy = 100 - yPct * 0.55;
+                // Teal blob follows the cursor; indigo counter-moves; emerald drifts gently
+                t.ax = xPct * 0.7 + 6;
+                t.ay = yPct * 0.7 + 8;
+                t.bx = 100 - xPct * 0.6;
+                t.by = 100 - yPct * 0.6;
+                t.cx = 50 + (xPct - 50) * 0.3;
+                t.cy = 50 + (yPct - 50) * 0.3;
             });
 
             card.addEventListener('mouseleave', () => {
                 cancelAnimationFrame(rafId);
-                // Reset to defaults
-                targetAx = 20; targetAy = 75; targetBx = 78; targetBy = 25;
+                t = { ...DEF };
                 rafId = requestAnimationFrame(tick);
-                // Stop after settling
-                setTimeout(() => cancelAnimationFrame(rafId), 1400);
+                setTimeout(() => cancelAnimationFrame(rafId), 1500);
             });
         });
 

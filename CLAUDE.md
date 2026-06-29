@@ -125,6 +125,34 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
    ⚠️ **Regla a futuro:** cualquier fondo shader nuevo en un hero de landing sigue este patrón
    (`<Canvas>` absoluto dentro del hero, `client:only`, mouse por window+lerp, `pointer-events:none`).
 
+✅ **Shaders GLSL extendidos: aurora en tarjetas + Ramp parametrizado en Casos de Uso (jun 2026)** —
+   continuación del track de shaders, ahora reutilizables:
+   • **`CardAuroraBg.jsx`** — la MISMA aurora del hero de empresas (`DarkAuroraBg`: Simplex 3D + FBM
+     + domain-warp, teal esmeralda + acento índigo) empacada para vivir DENTRO de una tarjeta oscura
+     (`absolute inset:0` bajo el contenido, `z-index:1`). El cursor se mide RELATIVO al canvas de cada
+     tarjeta (`getBoundingClientRect`), pausa el render fuera de viewport (`IntersectionObserver`,
+     `frameloop` `always`↔`never`), `dpr={1}` y `prefers-reduced-motion → null`. Reemplazó los overlays
+     CSS `.aurora-card-layer` (radial-gradients) en las 6 tarjetas de **`/soluciones/empresas`** y en
+     **`/soluciones/startups`** por la aurora WebGL real (mismo look del hero, dentro de la tarjeta).
+   • **`RampShader.jsx`** — versión PARAMETRIZADA del `GreenRampShader` de agencias: el mismo motor de
+     barras verticales cuantizadas (`floor`, corte limpio sin lerp horizontal) pero con la paleta de las
+     barras por **uniforms** (`u_base` abajo · `u_top` arriba) y un prop **`variant`** que selecciona entre
+     `green | blue | azure | purple` (mapa `PALETTES` en RGB 0..1). Un solo componente sirve a varias
+     páginas sin duplicar el GLSL. Se replicó el hero shader full-bleed de **agencias** (fondo absoluto
+     `.uc-hero-bg` + shader `client:only` + `.uc-hero-inner` izq. + fade `::after` de legibilidad, 100dvh,
+     botones píldora con shimmer) a las 3 páginas de Casos de Uso, cada una con su color: **`/casos-de-uso/saas`**
+     = `blue` (cielo suave), **`/casos-de-uso/comercializadoras`** = `azure` (azul más fuerte),
+     **`/casos-de-uso/software-factory`** (dev teams) = `purple` (lila). Se eliminó el hero Stripe de 2
+     columnas (mockup window + eyebrow "Stripe para…") de esas 3 páginas — sin badges sobre el título.
+   • **Mejoras "pro" al Ramp** (sobre el green original, aplican a todas las variantes): cordillera de
+     **parallax de fondo** (banda distinta `bandsB=8` vs `bands=13`, más pálida y baja → profundidad),
+     **glow de cresta** (bloom de color sobre los topes, más intenso bajo el cursor), **specular de 1px**
+     en el borde superior de cada barra, **shimmer viajero** horizontal sobre las crestas, respiración
+     senoidal desfasada y **dither anti-banding**. Todo en el fragment shader (sin coste JS extra).
+   ⚠️ El `GreenRampShader.jsx` original (hero de agencias) queda intacto; `RampShader.jsx` es la base
+   reusable a futuro — para un hero/tarjeta nuevo con barras, importar `RampShader` con su `variant`,
+   NO duplicar el shader. Para auroras en tarjetas, usar `CardAuroraBg` (no overlays CSS).
+
 ✅ **Auditoría de páginas Soluciones (Empresas/Startups) + form de Contacto real (jun 2026)** —
    André pidió revisar las páginas nuevas `/soluciones/empresas` y `/soluciones/startups` (ES+EN),
    verificar links y que TODO el copy sea verdad ("no inventes nada"). Hallazgos y arreglos:

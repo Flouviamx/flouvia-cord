@@ -17,6 +17,7 @@ import { SOLUCIONES_EN } from '../../lib/solucion.en';
 import { getLangFromUrl } from '../../i18n/utils';
 import '../../styles/mockups.css';
 import DarkAuroraBg from '../../components/soluciones/DarkAuroraBg.jsx';
+import CardAuroraBg from '../../components/soluciones/CardAuroraBg.jsx';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = Astro.props.isEn || lang === 'en';
@@ -421,7 +422,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                     <div class="stripe-fg-main">
                         {solucion.blocks.map((block, idx) => (
                             <div class="stripe-fg-card aurora-card reveal">
-                                <div class="aurora-card-layer" aria-hidden="true"></div>
+                                <CardAuroraBg client:only="react" />
                                 <div class="stripe-fg-card-content">
                                     <h3 class="stripe-fg-title">{block.titulo}</h3>
                                     <p class="stripe-fg-desc">{block.copy}</p>
@@ -623,7 +624,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                     <div class="stripe-fg-main">
                         <!-- Block 1 -->
                         <div class="stripe-fg-card aurora-card reveal">
-                            <div class="aurora-card-layer" aria-hidden="true"></div>
+                            <CardAuroraBg client:only="react" />
                             <div class="stripe-fg-card-content">
                                 <h3 class="stripe-fg-title">Motor de Reglas de Negocio</h3>
                                 <p class="stripe-fg-desc">Automatiza decisiones de riesgo, establece límites de crédito dinámicos y aplica reglas de aprobación según monto, descuento y margen en tiempo real.</p>
@@ -660,7 +661,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
 
                         <!-- Block 2 -->
                         <div class="stripe-fg-card aurora-card reveal">
-                            <div class="aurora-card-layer" aria-hidden="true"></div>
+                            <CardAuroraBg client:only="react" />
                             <div class="stripe-fg-card-content">
                                 <h3 class="stripe-fg-title">Reportes en Tiempo Real</h3>
                                 <p class="stripe-fg-desc">Audita absolutamente todo lo que ocurre. Tableros de Business Intelligence integrados para que nunca pierdas visibilidad de tu operación.</p>
@@ -701,7 +702,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
 
                         <!-- Block 3 -->
                         <div class="stripe-fg-card aurora-card reveal">
-                            <div class="aurora-card-layer" aria-hidden="true"></div>
+                            <CardAuroraBg client:only="react" />
                             <div class="stripe-fg-card-content">
                                 <h3 class="stripe-fg-title">Multi-Entidad y Divisas</h3>
                                 <p class="stripe-fg-desc">Opera en varias divisas y entidades: convierte con tasa protegida (FX lock) y mantén cada negocio separado en una sola plataforma.</p>
@@ -1149,98 +1150,79 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     }
     
     .stripe-fg-card {
-        background: #fff;
+        /* Dark card like the empresas hero — the real GLSL aurora (CardAuroraBg)
+           paints over this base; this color avoids a flash before the canvas fades in. */
+        background: #0b0f19;
         border-radius: 24px;
-        border: 1px solid rgba(0,0,0,0.04);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        border: 1px solid rgba(255,255,255,0.07);
+        box-shadow: 0 24px 60px -28px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
         display: grid;
         grid-template-columns: 1fr 1.1fr;
         overflow: hidden;
         min-height: 460px;
     }
-    
-    /* ── Aurora Card — white card, iridescent aurora over the FULL card ── */
+
+    /* ── Aurora Card — dark card, real hero shader behind the content ── */
     .aurora-card {
-        position: relative; /* needed for absolute aurora-card-layer */
+        position: relative; /* needed for absolute CardAuroraBg canvas */
     }
 
-    /* Aurora spans the full card (both content + mockup columns).
-       Very low opacity keeps the card essentially white. */
-    .aurora-card-layer {
-        position: absolute;
-        inset: -40%;
-        background:
-            radial-gradient(ellipse 80% 65% at var(--ax, 20%) var(--ay, 75%),
-                rgba(0, 200, 140, 0.14) 0%, transparent 60%),
-            radial-gradient(ellipse 65% 75% at var(--bx, 78%) var(--by, 25%),
-                rgba(110, 40, 220, 0.11) 0%, transparent 58%),
-            radial-gradient(ellipse 55% 45% at 50% 50%,
-                rgba(37, 99, 235, 0.05) 0%, transparent 70%);
-        animation: aurora-card-breathe 8s ease-in-out infinite alternate;
-        pointer-events: none;
-        z-index: 0;
-        will-change: transform;
-    }
-
-    @keyframes aurora-card-breathe {
-        0%   { transform: scale(1)    rotate(0deg); }
-        40%  { transform: scale(1.07) rotate(3deg); }
-        70%  { transform: scale(0.96) rotate(-2deg); }
-        100% { transform: scale(1.05) rotate(4deg); }
-    }
-
-    /* Both content and visual sit above the aurora layer */
+    /* Content and visual sit above the aurora shader (z-index 1) */
     .aurora-card .stripe-fg-card-content,
     .aurora-card .stripe-fg-card-visual {
         position: relative;
         z-index: 2;
     }
-    
+
     .stripe-fg-card-content {
         padding: 4rem 3rem 4rem 4rem;
         display: flex;
         flex-direction: column;
         justify-content: center;
     }
-    
+
     .stripe-fg-title {
         font-size: 2.1rem;
         font-weight: 700;
-        color: #0a2540;
+        color: #ffffff;
         margin-bottom: 1.25rem;
         line-height: 1.15;
         letter-spacing: -0.03em;
     }
-    
+
     .stripe-fg-desc {
         font-size: 1.1rem;
-        color: #425466;
+        color: rgba(226,232,240,0.72);
         line-height: 1.6;
         margin-bottom: 2.5rem;
     }
-    
+
     .stripe-fg-tags {
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
         align-items: flex-start;
     }
-    
+
     .stripe-fg-tag {
-        background: #f3f6fc;
-        color: #3b82f6;
+        background: rgba(255,255,255,0.06);
+        color: #bcd0ff;
+        border: 1px solid rgba(255,255,255,0.1);
         padding: 6px 14px;
         border-radius: 12px;
         font-size: 0.85rem;
         font-weight: 600;
         text-decoration: none;
-        transition: background 0.2s, color 0.2s;
+        transition: background 0.2s, color 0.2s, border-color 0.2s;
         display: inline-block;
+        -webkit-backdrop-filter: blur(6px);
+        backdrop-filter: blur(6px);
     }
-    
+
     .stripe-fg-tag:hover {
-        background: #e0e7ff;
-        color: #2563eb;
+        background: rgba(255,255,255,0.12);
+        color: #ffffff;
+        border-color: rgba(255,255,255,0.2);
     }
     
     .stripe-fg-card-visual {
@@ -3317,6 +3299,9 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
 </style>
 
 <script>
+    // Aurora de las tarjetas: ahora es el shader GLSL real (CardAuroraBg.jsx),
+    // reactivo al cursor local de cada tarjeta. El tracking CSS quedó obsoleto.
+
     // Reactive Parallax Effect for Startups Hero Blobs
     document.addEventListener('DOMContentLoaded', () => {
         const hero = document.querySelector('.startup-hero');

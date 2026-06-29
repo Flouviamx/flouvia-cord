@@ -4,6 +4,7 @@ export const prerender = true;
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
+import RampShader from '../../components/soluciones/RampShader.jsx';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
 
 const lang = getLangFromUrl(Astro.url);
@@ -18,11 +19,13 @@ const metaDesc = "Envía presupuestos de desarrollo a la medida, divide pagos po
     <Nav />
     
     <main class="use-case-main">
-        <!-- HERO (Stripe 2-column style, Light) -->
+        <!-- HERO (shader full-bleed, Light) -->
         <header class="uc-hero">
-            <div class="uc-container uc-hero-grid">
+            <div class="uc-hero-bg">
+                <RampShader client:only="react" variant="purple" />
+            </div>
+            <div class="uc-container uc-hero-inner">
                 <div class="uc-hero-content">
-                    <div class="uc-eyebrow" style="color: #3b82f6;">Stripe para Dev Teams</div>
                     <h1 class="uc-title reveal">Presupuestos a la medida para desarrollo de software</h1>
                     <p class="uc-sub reveal">
                         El desarrollo de software requiere claridad. Envía presupuestos detallados, divide los pagos por hitos (Milestones) y notifica a tu equipo de ingeniería.
@@ -33,29 +36,7 @@ const metaDesc = "Envía presupuestos de desarrollo a la medida, divide pagos po
                             <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                             <div class="btn-shimmer"></div>
                         </a>
-                        <a href="/contacto/ventas" class="btn-ghost">Contactar a ventas <span class="arrow-right">→</span></a>
-                    </div>
-                </div>
-
-                <div class="uc-hero-visual reveal-mockup">
-                    <div class="uc-visual-glow" style="background: radial-gradient(circle at 50% 50%, rgba(59,130,246,0.2) 0%, transparent 60%);"></div>
-                    <div class="uc-mockup-window">
-                        <div class="uc-mockup-top">
-                            <div class="uc-dots"><span></span><span></span><span></span></div>
-                        </div>
-                        <div class="uc-mockup-body">
-                            <div class="mock-plan">
-                                <span class="mp-title">Desarrollo MVP - App iOS</span>
-                                <span class="mp-price">$450,000 <small>MXN</small></span>
-                            </div>
-                            <div class="mock-status">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#3b82f6" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                Hito 1 (UI/UX) Aprobado y Pagado
-                            </div>
-                            <div class="mock-cfdi">
-                                <span class="cfdi-badge" style="background: rgba(59,130,246,0.1); color: #2563eb;">Webhooks</span> Jira Ticket Creado
-                            </div>
-                        </div>
+                        <a href="/contacto/ventas" class="btn-ghost"><span>Contactar a ventas</span></a>
                     </div>
                 </div>
             </div>
@@ -130,46 +111,44 @@ const metaDesc = "Envía presupuestos de desarrollo a la medida, divide pagos po
         padding: 0 5%;
     }
 
-    /* ── HERO SECTION (2-Column Light) ── */
+    /* ── HERO SECTION (shader full-bleed) ── */
     .uc-hero {
         position: relative;
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
         padding: 8rem 0 4rem;
-        background: #f6f9fc; /* Fondo ultra ligero Stripe */
+        background: #ffffff;
         overflow: hidden;
         border-bottom: 1px solid #e6ebf1;
     }
-    
-    /* Diagonal background cut (Stripe style) */
-    .uc-hero::before {
-        content: '';
+
+    /* Shader background (R3F) — fondo absoluto del hero */
+    .uc-hero-bg {
         position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: #fff;
-        transform: skewY(-4deg);
-        transform-origin: top left;
+        inset: 0;
         z-index: 0;
         pointer-events: none;
     }
+    /* Fade suave hacia el blanco del contenido (legibilidad del texto) */
+    .uc-hero-bg::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(105deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.55) 38%, rgba(255,255,255,0) 72%);
+        pointer-events: none;
+        z-index: 2;
+    }
 
-    .uc-hero-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 3rem;
-        align-items: center;
+    .uc-hero-inner {
         position: relative;
         z-index: 1;
+        width: 100%;
     }
 
     .uc-hero-content {
-        padding-right: 2rem;
-    }
-
-    .uc-eyebrow {
-        font-size: 0.85rem;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-        margin-bottom: 1rem;
+        max-width: 640px;
     }
 
     .uc-title {
@@ -194,107 +173,58 @@ const metaDesc = "Envía presupuestos de desarrollo a la medida, divide pagos po
         display: flex;
         gap: 1rem;
         align-items: center;
+        flex-wrap: wrap;
     }
 
-    /* ── BUTTONS (Light Theme) ── */
+    /* ── BUTTONS (estilo soluciones/startups) ── */
     .btn-luxe {
         position: relative;
         display: inline-flex; align-items: center; justify-content: center;
         background: #0a2540; color: #fff;
-        padding: 14px 28px; border-radius: 100px;
+        padding: 18px 38px; border-radius: 100px;
         font-size: 0.95rem; font-weight: 600; text-decoration: none;
-        overflow: hidden; transition: transform 0.3s, box-shadow 0.3s, background 0.3s;
-        box-shadow: 0 4px 14px rgba(10,37,64,0.15);
+        overflow: hidden;
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 8px 24px rgba(10, 37, 64, 0.2);
     }
     .btn-luxe span { position: relative; z-index: 2; }
-    .btn-arrow { width: 16px; height: 16px; margin-left: 6px; position: relative; z-index: 2; transition: transform 0.3s; }
+    .btn-arrow {
+        position: relative; z-index: 2; display: inline-block;
+        width: 16px; height: 16px; margin-left: 6px;
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
     .btn-luxe:hover .btn-arrow { transform: translateX(4px); }
-    .btn-luxe:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(10,37,64,0.25); background: #061b31; }
+    .btn-shimmer {
+        position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+        transform: skew(-20deg); transition: 0s; z-index: 1;
+    }
+    .btn-luxe:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px rgba(10, 37, 64, 0.3);
+    }
+    .btn-luxe:active {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(10, 37, 64, 0.1);
+    }
+    .btn-luxe:hover .btn-shimmer {
+        left: 150%;
+        transition: left 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    }
 
     .btn-ghost {
-        display: inline-flex; align-items: center;
-        color: #0a2540; font-size: 0.95rem; font-weight: 600; text-decoration: none;
-        transition: color 0.2s;
+        display: inline-flex; align-items: center; gap: 9px;
+        color: #0a2540; text-decoration: none;
+        font-size: 1rem; font-weight: 600;
+        padding: 15px 26px; border-radius: 100px;
+        border: 1px solid rgba(10, 37, 64, 0.15);
+        background: rgba(10, 37, 64, 0.03);
+        transition: background 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
     }
-    .btn-ghost .arrow-right { transition: transform 0.2s; display: inline-block; margin-left: 4px; }
-    .btn-ghost:hover { color: #3b82f6; }
-    .btn-ghost:hover .arrow-right { transform: translateX(4px); }
-
-    /* ── MOCKUP (Right Side) ── */
-    .uc-hero-visual {
-        position: relative;
-        perspective: 1000px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .uc-visual-glow {
-        position: absolute;
-        width: 120%; height: 120%;
-        top: -10%; left: -10%;
-        filter: blur(50px);
-        z-index: 0;
-        opacity: 0.7;
-    }
-
-    .uc-mockup-window {
-        position: relative;
-        z-index: 1;
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 20px 40px rgba(10,37,64,0.1), 0 0 0 1px rgba(10,37,64,0.05);
-        width: 100%;
-        max-width: 450px;
-        transform: rotateY(-10deg) rotateX(5deg);
-        transition: transform 0.5s ease-out;
-    }
-    .uc-hero-visual:hover .uc-mockup-window {
-        transform: rotateY(0deg) rotateX(0deg);
-    }
-
-    .uc-mockup-top {
-        background: #f6f9fc;
-        padding: 12px 16px;
-        border-bottom: 1px solid rgba(10,37,64,0.05);
-        border-radius: 12px 12px 0 0;
-    }
-    .uc-dots { display: flex; gap: 6px; }
-    .uc-dots span { width: 10px; height: 10px; border-radius: 50%; background: #d3dae6; }
-    .uc-dots span:nth-child(1) { background: #ff5f56; }
-    .uc-dots span:nth-child(2) { background: #ffbd2e; }
-    .uc-dots span:nth-child(3) { background: #27c93f; }
-
-    .uc-mockup-body {
-        padding: 30px;
-    }
-    
-    .mock-plan {
-        background: #f6f9fc;
-        padding: 20px;
-        border-radius: 8px;
-        border: 1px solid rgba(10,37,64,0.05);
-        display: flex; flex-direction: column; gap: 8px;
-        margin-bottom: 20px;
-    }
-    .mp-title { font-size: 1.05rem; font-weight: 600; color: #0a2540; }
-    .mp-price { font-size: 1.8rem; font-weight: 800; color: #0a2540; }
-    .mp-price small { font-size: 1rem; color: #687385; font-weight: 500; }
-    
-    .mock-status {
-        display: flex; align-items: center; gap: 8px;
-        font-size: 0.85rem; color: #425466; font-weight: 500;
-        margin-bottom: 12px;
-    }
-    .mock-cfdi {
-        display: flex; align-items: center; gap: 8px;
-        font-size: 0.85rem; color: #425466; font-weight: 500;
-        padding-top: 12px;
-        border-top: 1px dashed rgba(10,37,64,0.1);
-    }
-    .cfdi-badge {
-        background: rgba(16,185,129,0.1); color: #059669;
-        font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+    .btn-ghost:hover {
+        background: rgba(10, 37, 64, 0.08);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
     }
 
     /* ── TRUST LOGOS ── */
@@ -380,12 +310,10 @@ const metaDesc = "Envía presupuestos de desarrollo a la medida, divide pagos po
     .uc-cta-box .btn-luxe:hover { background: #2563eb; box-shadow: 0 6px 20px rgba(59,130,246,0.4); }
 
     @media (max-width: 900px) {
-        .uc-hero-grid { grid-template-columns: 1fr; gap: 4rem; }
-        .uc-hero-content { padding-right: 0; text-align: center; }
-        .uc-actions { justify-content: center; }
+        .uc-hero { padding: 9rem 0 6rem; }
+        .uc-hero-content { max-width: 100%; }
         .uc-title { font-size: 2.5rem; }
         .uc-bento-grid { grid-template-columns: 1fr; }
-        .uc-hero::before { transform: skewY(-2deg); }
     }
 </style>
 
@@ -403,11 +331,6 @@ const metaDesc = "Envía presupuestos de desarrollo a la medida, divide pagos po
                 opacity: 1, y: 0, duration: 0.8, ease: 'power2.out',
                 scrollTrigger: { trigger: el, start: 'top 85%' }
             });
-        });
-        
-        gsap.fromTo('.reveal-mockup', { opacity: 0, x: 30, rotationY: -15 }, {
-            opacity: 1, x: 0, rotationY: -10, duration: 1.2, ease: 'power3.out', delay: 0.2,
-            scrollTrigger: { trigger: '.reveal-mockup', start: 'top 90%' }
         });
     });
 </script>
