@@ -1,0 +1,356 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/landing/Nav.astro';
+import Footer from '../components/landing/Footer.astro';
+
+// 404 inspirada en el rediseño de Stripe 2020: limpia, con gradientes suaves,
+// animaciones sutiles y tipografía clara.
+---
+
+<Layout title="404: Página no encontrada — Cord" description="La página que buscas no existe." noindex={true}>
+    <Nav />
+
+    <main class="not-found-container">
+        <!-- Fondo estilo Stripe 2020 (mesh gradient y grid) -->
+        <div class="background-canvas">
+            <div class="bg-grid"></div>
+            <div class="gradient-blob shape-1"></div>
+            <div class="gradient-blob shape-2"></div>
+            <div class="gradient-blob shape-3"></div>
+        </div>
+
+        <section class="content-wrapper">
+            <div class="text-content">
+                <span class="error-code editorial">404</span>
+                <h1 class="title">Página no encontrada</h1>
+                <p class="description">
+                    Lo sentimos, no pudimos encontrar la página que buscas. Es posible que haya sido eliminada o que la dirección sea incorrecta.
+                </p>
+                <div class="actions">
+                    <a href="/" class="btn btn-primary">
+                        Volver al inicio
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </a>
+                    <a href="/soporte" class="btn btn-secondary">
+                        Centro de ayuda
+                    </a>
+                </div>
+            </div>
+
+            <!-- Elemento decorativo flotante (estilo tarjetas de Stripe) -->
+            <div class="floating-visual">
+                <div class="glass-card card-1">
+                    <div class="card-header"></div>
+                    <div class="card-line w-full"></div>
+                    <div class="card-line w-3/4"></div>
+                    <div class="card-line w-1/2"></div>
+                </div>
+                <div class="glass-card card-2">
+                    <svg class="search-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <Footer />
+</Layout>
+
+<style>
+    /* Contenedor principal */
+    .not-found-container {
+        position: relative;
+        min-height: 100vh;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8rem 2rem 4rem;
+        overflow: hidden;
+        background-color: #fcfcfc;
+    }
+
+    /* Fondo y gradientes (Stripe 2020 inspired) */
+    .background-canvas {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+    }
+
+    .bg-grid {
+        position: absolute;
+        inset: -50%;
+        width: 200%;
+        height: 200%;
+        background-image: 
+            linear-gradient(to right, rgba(10, 25, 47, 0.03) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(10, 25, 47, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        transform: perspective(500px) rotateX(60deg) translateY(-100px) translateZ(-200px);
+        animation: gridMove 20s linear infinite;
+        opacity: 0.6;
+    }
+
+    @keyframes gridMove {
+        0% { transform: perspective(500px) rotateX(60deg) translateY(0) translateZ(-200px); }
+        100% { transform: perspective(500px) rotateX(60deg) translateY(40px) translateZ(-200px); }
+    }
+
+    .gradient-blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.4;
+        animation: floatBlob 15s ease-in-out infinite alternate;
+    }
+
+    /* Colores vibrantes y corporativos */
+    .shape-1 {
+        width: 400px;
+        height: 400px;
+        background: #0a192f; /* Navy de Cord */
+        top: 10%;
+        left: 20%;
+        animation-delay: 0s;
+    }
+
+    .shape-2 {
+        width: 300px;
+        height: 300px;
+        background: #10b981; /* Verde success */
+        bottom: 20%;
+        right: 15%;
+        animation-delay: -5s;
+    }
+
+    .shape-3 {
+        width: 500px;
+        height: 500px;
+        background: #60a5fa; /* Azul claro suave para contraste */
+        top: 40%;
+        left: 40%;
+        animation-delay: -10s;
+        opacity: 0.2;
+    }
+
+    @keyframes floatBlob {
+        0% { transform: translate(0, 0) scale(1); }
+        33% { transform: translate(30px, -50px) scale(1.1); }
+        66% { transform: translate(-20px, 20px) scale(0.9); }
+        100% { transform: translate(0, 0) scale(1); }
+    }
+
+    /* Contenido central */
+    .content-wrapper {
+        position: relative;
+        z-index: 10;
+        max-width: 1200px;
+        width: 100%;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
+        align-items: center;
+    }
+
+    .text-content {
+        max-width: 540px;
+    }
+
+    .error-code {
+        display: inline-block;
+        font-size: 1.25rem;
+        color: #10b981;
+        background: rgba(16, 185, 129, 0.1);
+        padding: 0.25rem 1rem;
+        border-radius: 9999px;
+        margin-bottom: 1.5rem;
+        letter-spacing: 0.05em;
+    }
+
+    .title {
+        font-size: clamp(3rem, 5vw, 4.5rem);
+        line-height: 1.1;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        color: var(--color-blue-deep);
+        margin: 0 0 1.5rem;
+    }
+
+    .description {
+        font-size: 1.25rem;
+        line-height: 1.6;
+        color: var(--color-text-muted);
+        margin-bottom: 2.5rem;
+    }
+
+    /* Botones */
+    .actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.875rem 1.5rem;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .btn-primary {
+        background-color: var(--color-blue-deep);
+        color: white;
+        box-shadow: 0 4px 14px 0 rgba(10, 25, 47, 0.39);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(10, 25, 47, 0.23);
+        background-color: #112a4d;
+    }
+
+    .btn-secondary {
+        background-color: white;
+        color: var(--color-blue-deep);
+        border: 1px solid rgba(10, 25, 47, 0.1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .btn-secondary:hover {
+        border-color: rgba(10, 25, 47, 0.2);
+        background-color: #f8fafc;
+        transform: translateY(-2px);
+    }
+
+    /* Gráficos flotantes tipo Stripe */
+    .floating-visual {
+        position: relative;
+        height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        perspective: 1000px;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 20px;
+        box-shadow: 
+            0 20px 40px -10px rgba(10, 25, 47, 0.1),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+        position: absolute;
+    }
+
+    .card-1 {
+        width: 320px;
+        height: 220px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        transform: rotateX(15deg) rotateY(-15deg) translateZ(50px);
+        animation: floatCard1 8s ease-in-out infinite alternate;
+        z-index: 2;
+    }
+
+    .card-header {
+        height: 40px;
+        width: 40px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+        margin-bottom: 0.5rem;
+    }
+
+    .card-line {
+        height: 12px;
+        border-radius: 6px;
+        background: rgba(10, 25, 47, 0.06);
+    }
+
+    .w-full { width: 100%; }
+    .w-3\/4 { width: 75%; }
+    .w-1\/2 { width: 50%; }
+
+    .card-2 {
+        width: 120px;
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-blue-deep);
+        top: 20%;
+        right: 10%;
+        transform: rotateX(-10deg) rotateY(20deg) translateZ(100px);
+        animation: floatCard2 10s ease-in-out infinite alternate-reverse;
+        z-index: 3;
+    }
+
+    .search-icon {
+        width: 40px;
+        height: 40px;
+        opacity: 0.8;
+    }
+
+    @keyframes floatCard1 {
+        0% { transform: rotateX(15deg) rotateY(-15deg) translateZ(50px) translateY(0); }
+        100% { transform: rotateX(12deg) rotateY(-18deg) translateZ(50px) translateY(-20px); }
+    }
+
+    @keyframes floatCard2 {
+        0% { transform: rotateX(-10deg) rotateY(20deg) translateZ(100px) translateY(0); }
+        100% { transform: rotateX(-5deg) rotateY(15deg) translateZ(120px) translateY(-30px); }
+    }
+
+    /* Responsive */
+    @media (max-width: 968px) {
+        .content-wrapper {
+            grid-template-columns: 1fr;
+            text-align: center;
+            gap: 3rem;
+        }
+
+        .text-content {
+            margin: 0 auto;
+        }
+
+        .actions {
+            justify-content: center;
+        }
+
+        .floating-visual {
+            height: 300px;
+            transform: scale(0.8);
+        }
+
+        .card-2 {
+            right: 20%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .title {
+            font-size: 2.5rem;
+        }
+
+        .floating-visual {
+            display: none;
+        }
+    }
+</style>

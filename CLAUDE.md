@@ -90,6 +90,41 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
 
 ## Estado actual (jun 2026)
 
+✅ **Fondos GLSL (React Three Fiber) en los heroes de Soluciones (jun 2026)** — André entró al
+   mundo de shaders/WebGL y reemplazó los fondos CSS estáticos de los heroes de
+   `/soluciones/empresas` y `/soluciones/startups` por **shaders animados en R3F**. Stack nuevo:
+   `@react-three/fiber` + `three` (ver `package.json`). Patrón compartido de los 3 componentes
+   (en `src/components/soluciones/`): `<Canvas orthographic>` con un `planeGeometry args={[2,2]}`
+   fullscreen, vertex shader de clip-space (`gl_Position = vec4(position.xy, 0.0, 1.0)`, sin cámara),
+   fragment shader con uniforms `u_time`/`u_resolution`/`u_mouse`, `powerPreference:'low-power'`,
+   y el canvas montado con **`position:absolute; inset:0; pointerEvents:'none'`** DENTRO del div de
+   fondo del hero (NO `fixed`/full-page — vive solo en el hero; los botones siguen clickeables).
+   ⚠️ **Siempre `client:only="react"`** (nunca `client:load` — Clerk/Astro SSR → pantalla blanca).
+   El mouse se trackea a nivel `window` (no del canvas, que tiene pointer-events none) y se suaviza
+   con `Vector2.lerp(target, ~0.05)` en `useFrame` para reacción elástica.
+   • **`DarkAuroraBg.jsx`** (hero de **empresas**, modo oscuro) — aurora de fluido tipo Vercel/Linear:
+     Simplex Noise 3D (Gustavson) + FBM 4 octavas + doble domain-warp. Paleta: base navy `#0B0F19`,
+     **2 auroras** (teal esmeralda `vec3(0,0.29,0.205)` principal + acento índigo `vec3(0.105,0.04,0.25)`
+     mínimo). Claves que costó calibrar: el movimiento se ve por **deriva direccional** (`drift1`/`drift2`
+     trasladan las coords del ruido en el tiempo → las auroras VIAJAN, no solo se deforman) + breathing
+     (`sin()` desfasados por blob). El verde se contiene con `smoothstep(-0.05,0.64)` pero la INTENSIDAD
+     la baja el **mix** (`blob1*0.55`), NO el umbral — bajar el umbral lava la pantalla de verde; bajar el
+     mix lo deja como glow tenue (esto es lo que André aprobó). El índigo se ancla a la esquina
+     inferior-izquierda con un término `corner`. Reacción al mouse: empuje del campo (`mPush`) + halo teal
+     (`glow*blob1`, solo intensifica donde ya hay aurora). Tonemap Reinhard `color/(color+0.17)`.
+   • **`QuantizedWaveBg.jsx`** (hero de **startups**, modo claro) — "Quantized Gradient Wave": el eje X se
+     parte en `bands=80.0` columnas vía `floor()`, formando una onda expansiva (campana de Gauss + senos
+     `ripple` + `breathe` autónomo). Para que NO se vean rectángulos: la altura se **interpola entre la
+     columna actual y la siguiente** (`mix(waveHeight(cxA), waveHeight(cxB), smoothstep(fpart))`) y el borde
+     superior se difumina (`edge=0.045`). Paleta modo claro: fondo blanco puro, barras azul cielo `#cae8fd`
+     + verde menta `#ccf1df` (mezcla horizontal por `hueMix`), punta casi blanca. Interacción magnética: el
+     pico `peakX` sigue al `u_mouse.x` + `magnet` eleva barras bajo el cursor. **Capas de pulido premium:**
+     onda de fondo en parallax (2da capa más pálida/lenta vía `waveHeight(cx, layer)`), glow sobre la cresta,
+     shimmer vertical viajero, y **dither anti-banding** (`hash()*0.006` — rompe los escalones de color de los
+     gradientes pastel). El `DataScannerBg.jsx` previo quedó obsoleto (reemplazado por este).
+   ⚠️ **Regla a futuro:** cualquier fondo shader nuevo en un hero de landing sigue este patrón
+   (`<Canvas>` absoluto dentro del hero, `client:only`, mouse por window+lerp, `pointer-events:none`).
+
 ✅ **Auditoría de páginas Soluciones (Empresas/Startups) + form de Contacto real (jun 2026)** —
    André pidió revisar las páginas nuevas `/soluciones/empresas` y `/soluciones/startups` (ES+EN),
    verificar links y que TODO el copy sea verdad ("no inventes nada"). Hallazgos y arreglos:

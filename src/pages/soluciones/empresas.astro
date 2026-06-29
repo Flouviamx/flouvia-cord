@@ -16,6 +16,7 @@ import { SOLUCIONES } from '../../lib/solucion';
 import { SOLUCIONES_EN } from '../../lib/solucion.en';
 import { getLangFromUrl } from '../../i18n/utils';
 import '../../styles/mockups.css';
+import DarkAuroraBg from '../../components/soluciones/DarkAuroraBg.jsx';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = Astro.props.isEn || lang === 'en';
@@ -46,7 +47,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     <main class="stripe-main">
         
         {solucion.slug === 'startups' ? (
-            <!-- ── HERO (Stripe Startups Style) ── -->
             <header class="startup-hero">
                 <div class="startup-hero-bg">
                     <div class="startup-hero-blob-1"></div>
@@ -71,11 +71,9 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                 </div>
             </header>
         ) : (
-            <!-- ── HERO (Stripe Enterprise) ── -->
             <header class="stripe-hero">
                 <div class="stripe-hero-bg">
-                    <div class="stripe-hero-aurora"></div>
-                    <div class="stripe-hero-sweep"></div>
+                    <DarkAuroraBg client:only="react" />
                 </div>
                 
                 <div class="stripe-hero-content stripe-container">
@@ -882,33 +880,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         overflow: hidden;
     }
 
-    /* Aurora mesh — Stripe's signature gradient sweep */
-    .stripe-hero-aurora {
-        position: absolute;
-        inset: 0;
-        background: 
-            radial-gradient(ellipse 80% 60% at 20% 80%, rgba(99, 102, 241, 0.5) 0%, transparent 60%),
-            radial-gradient(ellipse 60% 80% at 80% 20%, rgba(16, 185, 129, 0.3) 0%, transparent 50%),
-            radial-gradient(ellipse 100% 100% at 50% 0%, rgba(10, 25, 47, 0.9) 0%, transparent 80%);
-        opacity: 0.9;
-    }
-
-    /* Gold/amber sweep — Stripe Enterprise's diagonal light band */
-    .stripe-hero-sweep {
-        position: absolute;
-        top: -20%;
-        left: -20%;
-        width: 140%;
-        height: 140%;
-        background: conic-gradient(from 200deg at 40% 60%, transparent 0deg, rgba(251, 191, 36, 0.15) 40deg, rgba(245, 158, 11, 0.12) 80deg, transparent 120deg);
-        filter: blur(60px);
-        animation: sweep-drift 20s ease-in-out infinite alternate;
-    }
-
-    @keyframes sweep-drift {
-        0% { transform: rotate(0deg) scale(1); }
-        100% { transform: rotate(8deg) scale(1.05); }
-    }
     
     .stripe-hero-content {
         position: relative;
@@ -3343,3 +3314,4 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         }
     });
 </script>
+

@@ -16,6 +16,7 @@ import { SOLUCIONES } from '../../lib/solucion';
 import { SOLUCIONES_EN } from '../../lib/solucion.en';
 import { getLangFromUrl } from '../../i18n/utils';
 import '../../styles/mockups.css';
+import QuantizedWaveBg from '../../components/soluciones/QuantizedWaveBg.jsx';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = Astro.props.isEn || lang === 'en';
@@ -46,11 +47,9 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     <main class="stripe-main">
         
         {solucion.slug === 'startups' ? (
-            <!-- ── HERO (Stripe Startups Style) ── -->
             <header class="startup-hero">
                 <div class="startup-hero-bg">
-                    <div class="startup-hero-blob-1"></div>
-                    <div class="startup-hero-blob-2"></div>
+                    <QuantizedWaveBg client:only="react" />
                 </div>
                 
                 <div class="startup-hero-content stripe-container">
@@ -71,7 +70,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                 </div>
             </header>
         ) : (
-            <!-- ── HERO (Stripe Enterprise) ── -->
             <header class="stripe-hero">
                 <div class="stripe-hero-bg">
                     <div class="stripe-hero-aurora"></div>
@@ -181,19 +179,33 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                 <a href="/producto/editor" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
                             </div>
                             <div class="int-card-graphic">
-                                <div class="mock-ui">
-                                    <div class="int-mini-card" style="width: 75%; padding: 14px;">
-                                        <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 12px; text-transform: uppercase;">Catálogo</div>
-                                        <div style="display: flex; gap: 10px; margin-bottom: 12px; align-items: center;">
-                                            <div style="width: 28px; height: 28px; background: #e2e8f0; border-radius: 6px;"></div>
-                                            <div style="flex: 1;">
-                                                <div style="font-size: 12px; color: #0f172a; font-weight: 600; line-height: 1.2;">Licencia Anual</div>
-                                                <div style="font-size: 11px; color: #64748b;">$990.00 / mes</div>
-                                            </div>
-                                        </div>
-                                        <div style="border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px; text-align: center; color: #94a3b8; font-size: 11px; font-weight: 500; background: #f8fafc;">
-                                            + Arrastrar producto
-                                        </div>
+                                <div class="mock-ui imk-editor-bg">
+                                    <!-- Top chrome -->
+                                    <div class="imk-chrome-bar">
+                                        <div class="imk-dots"><span class="imk-d imk-d-r"></span><span class="imk-d imk-d-y"></span><span class="imk-d imk-d-g"></span></div>
+                                        <div class="imk-chrome-title">Nueva cotización — Innovatech SA</div>
+                                    </div>
+                                    <!-- Table header -->
+                                    <div class="imk-tbl-head">
+                                        <span>Producto</span><span class="imk-tc">Cant.</span><span class="imk-tr2">Precio</span><span class="imk-tr2">Total</span>
+                                    </div>
+                                    <!-- Row 1 -->
+                                    <div class="imk-tbl-row">
+                                        <span class="imk-t1">Licencia Pro Anual</span><span class="imk-tc imk-t2">1</span><span class="imk-tr2 imk-t2">$24,000</span><span class="imk-tr2 imk-t1">$24,000</span>
+                                    </div>
+                                    <!-- Row 2 active -->
+                                    <div class="imk-tbl-row imk-row-active">
+                                        <span class="imk-t1">Soporte Técnico Premium</span><span class="imk-tc imk-t2">3</span><span class="imk-tr2 imk-t2">$2,500</span><span class="imk-tr2 imk-t1">$7,500</span>
+                                    </div>
+                                    <!-- Drag zone -->
+                                    <div class="imk-drag-zone">
+                                        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        Arrastra un producto del catálogo
+                                    </div>
+                                    <!-- Total footer -->
+                                    <div class="imk-tbl-foot">
+                                        <span class="imk-foot-label">Total</span>
+                                        <span class="imk-foot-total">$31,500.00</span>
                                     </div>
                                 </div>
                             </div>
@@ -205,28 +217,24 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                 <a href="/producto/link-publico" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
                             </div>
                             <div class="int-card-graphic">
-                                <div class="mock-ui" style="flex-direction: row; gap: 16px; padding: 0 20px;">
-                                    <div class="int-mini-card" style="flex: 1; padding: 12px; align-self: flex-start; margin-top: 20px;">
-                                        <div style="background: #f1f5f9; padding: 10px; border-radius: 12px 12px 12px 0; font-size: 10px; color: #475569; margin-bottom: 8px; max-width: 90%;">
-                                            Hola, necesito renovar.
+                                <div class="mock-ui imk-pay-bg">
+                                    <div class="imk-pay-card">
+                                        <!-- Header -->
+                                        <div class="imk-pay-head">
+                                            <div class="imk-pay-avatar">IN</div>
+                                            <div class="imk-pay-company">
+                                                <div class="imk-t1">Innovatech SA de CV</div>
+                                                <div class="imk-t2">Cotización COT-0342</div>
+                                            </div>
+                                            <div class="imk-badge-green">Vigente</div>
                                         </div>
-                                        <div style="background: #0ea5e9; padding: 10px; border-radius: 12px 12px 0 12px; font-size: 10px; color: #fff; margin-left: auto; max-width: 95%;">
-                                            ¡Claro! Aquí tienes: <br/><strong>cord.mx/pay/123</strong>
+                                        <!-- Amount hero -->
+                                        <div class="imk-pay-amount">
+                                            <div class="imk-pay-total">$31,500</div>
+                                            <div class="imk-t2" style="text-align:center;">MXN · IVA incluido</div>
                                         </div>
-                                    </div>
-                                    <div class="int-mini-card" style="width: 80px; padding: 12px; text-align: center; align-self: flex-end; margin-bottom: 20px;">
-                                        <div style="font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">$990</div>
-                                        <div style="width: 50px; height: 50px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;">
-                                            <div style="background: #0f172a; border-radius: 2px;"></div>
-                                            <div style="background: #0f172a; border-radius: 2px;"></div>
-                                            <div style="background: #0ea5e9; border-radius: 2px;"></div>
-                                            <div style="background: transparent;"></div>
-                                            <div style="background: #0f172a; border-radius: 2px;"></div>
-                                            <div style="background: transparent;"></div>
-                                            <div style="background: #0ea5e9; border-radius: 2px;"></div>
-                                            <div style="background: transparent;"></div>
-                                            <div style="background: #0f172a; border-radius: 2px;"></div>
-                                        </div>
+                                        <!-- CTA -->
+                                        <button class="imk-pay-btn">Aprobar cotización</button>
                                     </div>
                                 </div>
                             </div>
@@ -240,15 +248,39 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                 <a href="/desarrolladores/api" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
                             </div>
                             <div class="int-card-graphic">
-                                <div class="mock-ui">
-                                    <div style="display: flex; align-items: center; gap: 16px;">
-                                        <div class="int-mini-card" style="width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: #0f172a; color: #fff;">
-                                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                <div class="mock-ui imk-flow-bg">
+                                    <div class="imk-flow-wrap">
+                                        <!-- Trigger node -->
+                                        <div class="imk-flow-node">
+                                            <div class="imk-flow-node-label">TRIGGER</div>
+                                            <div class="imk-flow-node-brand">
+                                                <div class="imk-flow-brand-icon imk-navy">C</div>
+                                                <span class="imk-t1">Cord</span>
+                                            </div>
+                                            <div class="imk-flow-event imk-event-blue">quote.approved</div>
                                         </div>
-                                        <svg width="40" height="20" style="color: #94a3b8;"><path d="M0 10h40" stroke="currentColor" stroke-width="3" stroke-dasharray="6 6" fill="none"/></svg>
-                                        <div class="int-mini-card" style="width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: #ff4a00; color: #fff; font-weight: 900; font-size: 24px; border:none;">
-                                            Z
+                                        <!-- Connector -->
+                                        <div class="imk-flow-connector">
+                                            <div class="imk-flow-line"></div>
+                                            <div class="imk-flow-arrow"></div>
                                         </div>
+                                        <!-- Action node -->
+                                        <div class="imk-flow-node">
+                                            <div class="imk-flow-node-label">ACCIÓN</div>
+                                            <div class="imk-flow-node-brand">
+                                                <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://zapier.com&size=32" class="imk-flow-brand-img" alt="Zapier" />
+                                                <span class="imk-t1">Zapier</span>
+                                            </div>
+                                            <div class="imk-flow-event imk-event-orange">Crear Deal</div>
+                                        </div>
+                                    </div>
+                                    <!-- n8n / Make chips -->
+                                    <div class="imk-flow-alts">
+                                        <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://make.com&size=32" class="imk-alt-img" alt="Make" />
+                                        <span class="imk-t2" style="font-size:9.5px;">Make</span>
+                                        <span class="imk-flow-sep">·</span>
+                                        <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://n8n.io&size=32" class="imk-alt-img" alt="n8n" />
+                                        <span class="imk-t2" style="font-size:9.5px;">n8n</span>
                                     </div>
                                 </div>
                             </div>
@@ -260,27 +292,40 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                 <a href="/desarrolladores/api" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
                             </div>
                             <div class="int-card-graphic">
-                                <div class="mock-ui">
-                                    <div class="int-mini-card" style="width: 85%; padding: 0; overflow: hidden; background: #fff;">
-                                        <div style="background: #f8fafc; padding: 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
-                                            <div style="font-size: 11px; font-weight: 600; color: #0f172a;">Eventos Recientes</div>
-                                            <div style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);"></div>
+                                <div class="mock-ui imk-wh-bg">
+                                    <div class="imk-wh-card">
+                                        <!-- Header -->
+                                        <div class="imk-wh-head">
+                                            <span class="imk-t1">Log de entregas</span>
+                                            <div class="imk-live-dot">
+                                                <span class="imk-pulse-dot"></span>
+                                                <span class="imk-t2" style="font-size:9.5px;color:#10b981;">En vivo</span>
+                                            </div>
                                         </div>
-                                        <div style="padding: 12px; display: flex; flex-direction: column; gap: 8px;">
-                                            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9;">
-                                                <div>
-                                                    <div style="font-size: 10px; font-weight: 600; color: #0ea5e9;">quote.paid</div>
-                                                    <div style="font-size: 9px; color: #94a3b8; font-family: monospace;">evt_Xy89Za</div>
-                                                </div>
-                                                <div style="font-size: 9px; font-weight: 600; color: #10b981; background: #d1fae5; padding: 2px 6px; border-radius: 4px;">200 OK</div>
+                                        <!-- Events -->
+                                        <div class="imk-wh-row">
+                                            <span class="imk-wh-dot imk-wh-dot-green"></span>
+                                            <div class="imk-wh-info">
+                                                <span class="imk-wh-event">quote.paid</span>
+                                                <span class="imk-wh-meta">hace 2 min · evt_8xKpQw</span>
                                             </div>
-                                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                                <div>
-                                                    <div style="font-size: 10px; font-weight: 600; color: #0ea5e9;">quote.approved</div>
-                                                    <div style="font-size: 9px; color: #94a3b8; font-family: monospace;">evt_Bv32Wm</div>
-                                                </div>
-                                                <div style="font-size: 9px; font-weight: 600; color: #10b981; background: #d1fae5; padding: 2px 6px; border-radius: 4px;">200 OK</div>
+                                            <span class="imk-status-ok">200</span>
+                                        </div>
+                                        <div class="imk-wh-row">
+                                            <span class="imk-wh-dot imk-wh-dot-green"></span>
+                                            <div class="imk-wh-info">
+                                                <span class="imk-wh-event">quote.approved</span>
+                                                <span class="imk-wh-meta">hace 5 min · evt_3mRvNz</span>
                                             </div>
+                                            <span class="imk-status-ok">200</span>
+                                        </div>
+                                        <div class="imk-wh-row" style="border-bottom:none;">
+                                            <span class="imk-wh-dot imk-wh-dot-green"></span>
+                                            <div class="imk-wh-info">
+                                                <span class="imk-wh-event">quote.viewed</span>
+                                                <span class="imk-wh-meta">hace 9 min · evt_7pLcBk</span>
+                                            </div>
+                                            <span class="imk-status-ok">200</span>
                                         </div>
                                     </div>
                                 </div>
@@ -295,28 +340,25 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                 <a href="/desarrolladores/api" class="int-link">Ver documentación <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
                             </div>
                             <div class="int-card-graphic">
-                                <div class="mock-ui">
-                                    <div class="int-mini-card" style="width: 85%; padding: 16px; background: #fff;">
-                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                                            <div style="display: flex; align-items: center; gap: 8px;">
-                                                <div style="width: 24px; height: 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #0f172a;">API</div>
-                                                <div style="font-size: 11px; font-weight: 600; color: #0f172a;">Rendimiento</div>
-                                            </div>
-                                            <div style="font-size: 10px; color: #64748b;">Últimos 30 min</div>
+                                <div class="mock-ui imk-term-bg">
+                                    <!-- Dark terminal -->
+                                    <div class="imk-term">
+                                        <div class="imk-term-head">
+                                            <div class="imk-dots"><span class="imk-d imk-d-r"></span><span class="imk-d imk-d-y"></span><span class="imk-d imk-d-g"></span></div>
+                                            <span class="imk-term-title">Terminal — cord API</span>
                                         </div>
-                                        <div style="display: flex; gap: 16px; margin-bottom: 16px;">
-                                            <div>
-                                                <div style="font-size: 9px; color: #64748b; font-weight: 500; margin-bottom: 2px;">Éxito (200 OK)</div>
-                                                <div style="font-size: 16px; font-weight: 700; color: #10b981;">99.99%</div>
-                                            </div>
-                                            <div>
-                                                <div style="font-size: 9px; color: #64748b; font-weight: 500; margin-bottom: 2px;">Latencia (p95)</div>
-                                                <div style="font-size: 16px; font-weight: 700; color: #0f172a;">42ms</div>
-                                            </div>
+                                        <div class="imk-term-body">
+                                            <div class="imk-term-line"><span class="imk-tc-gray">$ </span><span class="imk-tc-white">curl -X POST /api/v1/cotizaciones</span></div>
+                                            <div class="imk-term-line imk-term-indent"><span class="imk-tc-gray">-H </span><span class="imk-tc-green">"Authorization: Bearer sk_live_***"</span></div>
+                                            <div class="imk-term-line imk-term-indent"><span class="imk-tc-gray">-d </span><span class="imk-tc-yellow">&apos;cliente_id=cl_9Xv&apos;</span></div>
+                                            <div class="imk-term-blank"></div>
+                                            <div class="imk-term-line"><span class="imk-tc-gray">HTTP/1.1 </span><span class="imk-tc-green">201 Created</span></div>
+                                            <div class="imk-term-line"><span class="imk-tc-muted">&#123;</span></div>
+                                            <div class="imk-term-line imk-term-indent"><span class="imk-tc-muted">"id": </span><span class="imk-tc-green">"cot_9Xvp2m"</span><span class="imk-tc-muted">,</span></div>
+                                            <div class="imk-term-line imk-term-indent"><span class="imk-tc-muted">"total": </span><span class="imk-tc-yellow">31500.00</span><span class="imk-tc-muted">,</span></div>
+                                            <div class="imk-term-line imk-term-indent"><span class="imk-tc-muted">"status": </span><span class="imk-tc-blue">"draft"</span></div>
+                                            <div class="imk-term-line"><span class="imk-tc-muted">&#125;</span></div>
                                         </div>
-                                        <svg viewBox="0 0 100 20" style="width: 100%; height: 20px; overflow: visible;">
-                                            <path d="M0,15 Q10,5 20,10 T40,12 T60,5 T80,10 T100,2" fill="none" stroke="#0ea5e9" stroke-width="2" />
-                                        </svg>
                                     </div>
                                 </div>
                             </div>
@@ -328,24 +370,32 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                 <a href="/desarrolladores/elements" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
                             </div>
                             <div class="int-card-graphic">
-                                <div class="mock-ui">
-                                    <div class="int-mini-card" style="width: 80%; padding: 16px; background: #fff; display: flex; flex-direction: column; align-items: center; gap: 16px;">
-                                        <div style="font-size: 11px; font-weight: 600; color: #0f172a;">Frameworks soportados</div>
-                                        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-                                            <div style="padding: 6px 10px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 6px; background: #f8fafc;">
-                                                <div style="width: 10px; height: 10px; border-radius: 3px; background: #F7DF1E;"></div>
-                                                <div style="font-size: 10px; font-weight: 600; color: #0f172a;">JavaScript</div>
+                                <div class="mock-ui imk-embed-bg">
+                                    <!-- Browser frame -->
+                                    <div class="imk-browser">
+                                        <div class="imk-browser-chrome">
+                                            <div class="imk-dots"><span class="imk-d imk-d-r"></span><span class="imk-d imk-d-y"></span><span class="imk-d imk-d-g"></span></div>
+                                            <div class="imk-browser-url">portal.tucliente.com/cotizacion</div>
+                                        </div>
+                                        <!-- Website content -->
+                                        <div class="imk-browser-body">
+                                            <div class="imk-browser-site-nav">
+                                                <div class="imk-site-logo"></div>
+                                                <div class="imk-site-links"><span></span><span></span><span></span></div>
                                             </div>
-                                            <div style="padding: 6px 10px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 6px; background: #f8fafc;">
-                                                <div style="width: 10px; height: 10px; border-radius: 3px; background: #61DAFB;"></div>
-                                                <div style="font-size: 10px; font-weight: 600; color: #0f172a;">React</div>
-                                            </div>
-                                            <div style="padding: 6px 10px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 6px; background: #f8fafc;">
-                                                <div style="width: 10px; height: 10px; border-radius: 3px; background: #42B883;"></div>
-                                                <div style="font-size: 10px; font-weight: 600; color: #0f172a;">Vue</div>
+                                            <!-- Embedded widget -->
+                                            <div class="imk-embed-widget">
+                                                <div class="imk-embed-eyebrow">COTIZACIÓN · COT-0342</div>
+                                                <div class="imk-embed-amount">$31,500.00</div>
+                                                <div class="imk-embed-sub">MXN · IVA incluido · 3 conceptos</div>
+                                                <div class="imk-embed-cta">Aprobar cotización</div>
                                             </div>
                                         </div>
-                                        <div style="font-size: 10px; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 4px 12px; border-radius: 12px;">Instalación en 1 minuto</div>
+                                    </div>
+                                    <!-- Cord badge -->
+                                    <div class="imk-embed-badge">
+                                        <div class="imk-navy-dot"></div>
+                                        <span>Powered by Cord Elements</span>
                                     </div>
                                 </div>
                             </div>
@@ -440,7 +490,8 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                     <!-- Left Column: Main Features -->
                     <div class="stripe-fg-main">
                         {solucion.blocks.map((block, idx) => (
-                            <div class="stripe-fg-card reveal">
+                            <div class="stripe-fg-card aurora-card reveal">
+                                <div class="aurora-card-layer" aria-hidden="true"></div>
                                 <div class="stripe-fg-card-content">
                                     <h3 class="stripe-fg-title">{block.titulo}</h3>
                                     <p class="stripe-fg-desc">{block.copy}</p>
@@ -631,7 +682,8 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                     <!-- Left Column: Main Features -->
                     <div class="stripe-fg-main">
                         <!-- Block 1 -->
-                        <div class="stripe-fg-card reveal">
+                        <div class="stripe-fg-card aurora-card reveal">
+                            <div class="aurora-card-layer" aria-hidden="true"></div>
                             <div class="stripe-fg-card-content">
                                 <h3 class="stripe-fg-title">Motor de Reglas de Negocio</h3>
                                 <p class="stripe-fg-desc">Automatiza decisiones de riesgo, establece límites de crédito dinámicos y aplica reglas de aprobación según monto, descuento y margen en tiempo real.</p>
@@ -663,7 +715,8 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                         </div>
 
                         <!-- Block 2 -->
-                        <div class="stripe-fg-card reveal">
+                        <div class="stripe-fg-card aurora-card reveal">
+                            <div class="aurora-card-layer" aria-hidden="true"></div>
                             <div class="stripe-fg-card-content">
                                 <h3 class="stripe-fg-title">Reportes en Tiempo Real</h3>
                                 <p class="stripe-fg-desc">Audita absolutamente todo lo que ocurre. Tableros de Business Intelligence integrados para que nunca pierdas visibilidad de tu operación.</p>
@@ -703,7 +756,8 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                         </div>
 
                         <!-- Block 3 -->
-                        <div class="stripe-fg-card reveal">
+                        <div class="stripe-fg-card aurora-card reveal">
+                            <div class="aurora-card-layer" aria-hidden="true"></div>
                             <div class="stripe-fg-card-content">
                                 <h3 class="stripe-fg-title">Multi-Entidad y Divisas</h3>
                                 <p class="stripe-fg-desc">Opera en varias divisas y entidades: convierte con tasa protegida (FX lock) y mantén cada negocio separado en una sola plataforma.</p>
@@ -1386,7 +1440,44 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         flex-direction: column;
         justify-content: center;
     }
-    
+
+    /* ── Aurora Card — white card, iridescent aurora over the FULL card ── */
+    .aurora-card {
+        position: relative; /* needed for absolute aurora-card-layer */
+    }
+
+    /* Aurora spans the full card (both content + mockup columns).
+       Very low opacity keeps the card essentially white. */
+    .aurora-card-layer {
+        position: absolute;
+        inset: -40%;
+        background:
+            radial-gradient(ellipse 80% 65% at var(--ax, 20%) var(--ay, 75%),
+                rgba(0, 200, 140, 0.14) 0%, transparent 60%),
+            radial-gradient(ellipse 65% 75% at var(--bx, 78%) var(--by, 25%),
+                rgba(110, 40, 220, 0.11) 0%, transparent 58%),
+            radial-gradient(ellipse 55% 45% at 50% 50%,
+                rgba(37, 99, 235, 0.05) 0%, transparent 70%);
+        animation: aurora-card-breathe 8s ease-in-out infinite alternate;
+        pointer-events: none;
+        z-index: 0;
+        will-change: transform;
+    }
+
+    @keyframes aurora-card-breathe {
+        0%   { transform: scale(1)    rotate(0deg); }
+        40%  { transform: scale(1.07) rotate(3deg); }
+        70%  { transform: scale(0.96) rotate(-2deg); }
+        100% { transform: scale(1.05) rotate(4deg); }
+    }
+
+    /* Both content and visual sit above the aurora layer */
+    .aurora-card .stripe-fg-card-content,
+    .aurora-card .stripe-fg-card-visual {
+        position: relative;
+        z-index: 2;
+    }
+
     .stripe-fg-title {
         font-size: 1.75rem;
         font-weight: 600;
@@ -1395,21 +1486,21 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         line-height: 1.2;
         letter-spacing: -0.02em;
     }
-    
+
     .stripe-fg-desc {
         font-size: 1.05rem;
         color: var(--stripe-muted);
         line-height: 1.6;
         margin-bottom: 2rem;
     }
-    
+
     .stripe-fg-tags {
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
         align-items: flex-start;
     }
-    
+
     .stripe-fg-tag {
         background: rgba(59, 130, 246, 0.08);
         color: var(--stripe-cyan);
@@ -1420,7 +1511,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         text-decoration: none;
         transition: background 0.2s;
     }
-    
+
     .stripe-fg-tag:hover {
         background: rgba(59, 130, 246, 0.15);
     }
@@ -2322,47 +2413,8 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         position: absolute;
         inset: 0;
         z-index: 0;
-        background: #f6f9fc;
+        background: #f6f9fc; /* fallback mientras carga el shader */
         overflow: hidden;
-        /* Sutil patrón de puntos */
-        background-image: radial-gradient(rgba(10, 37, 64, 0.05) 1px, transparent 1px);
-        background-size: 24px 24px;
-    }
-
-    /* Manchas de color vibrante desenfocadas (Stripe style) - Tonos Azul y Verde */
-    .startup-hero-blob-1 {
-        position: absolute;
-        top: -10%; right: 10%;
-        width: 60vw; height: 60vw;
-        background: radial-gradient(circle, rgba(14, 165, 233, 0.2) 0%, rgba(59, 130, 246, 0.15) 50%, transparent 70%); /* Sky Blue and Blue */
-        border-radius: 50%;
-        filter: blur(60px);
-        animation: stripe-blob 15s infinite alternate ease-in-out;
-        margin-left: calc(var(--mouse-x, 0px) * 2);
-        margin-top: calc(var(--mouse-y, 0px) * 2);
-        transition: margin 0.3s ease-out;
-    }
-
-    .startup-hero-blob-2 {
-        position: absolute;
-        bottom: -20%; left: 0%;
-        width: 50vw; height: 50vw;
-        background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.12) 50%, transparent 70%); /* Emerald and Cyan */
-        border-radius: 50%;
-        filter: blur(60px);
-        animation: stripe-blob-reverse 20s infinite alternate ease-in-out;
-        margin-left: calc(var(--mouse-x, 0px) * -1.5);
-        margin-top: calc(var(--mouse-y, 0px) * -1.5);
-        transition: margin 0.3s ease-out;
-    }
-
-    @keyframes stripe-blob {
-        0% { transform: translate(0, 0) scale(1); }
-        100% { transform: translate(-5%, 10%) scale(1.1); }
-    }
-    @keyframes stripe-blob-reverse {
-        0% { transform: translate(0, 0) scale(1); }
-        100% { transform: translate(10%, -10%) scale(1.05); }
     }
 
     .startup-hero-content {
@@ -2518,6 +2570,15 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     .startup-use-case-card:hover {
         transform: scale(1.02);
         box-shadow: 0 16px 40px rgba(0,0,0,0.08);
+    }
+    .startup-hero-graphic {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        width: 50%;
+        z-index: 1;
+        pointer-events: none;
     }
     .uc-content {
         padding: 3rem 2.5rem 2rem 2.5rem;
@@ -2777,6 +2838,167 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         transform: translateY(-4px) scale(1.02) !important;
         box-shadow: 0 16px 32px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
     }
+
+    /* ─── IMK: Premium integration mockups ─── */
+    /* Shared token classes */
+    .imk-t1 { font-size: 11.5px; font-weight: 600; color: #0f172a; }
+    .imk-t2 { font-size: 10px; font-weight: 500; color: #94a3b8; }
+    .imk-tc { text-align: center; }
+    .imk-tr2 { text-align: right; }
+    .imk-badge-green { font-size: 9px; font-weight: 700; color: #047857; background: rgba(16,185,129,0.1); padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+
+    /* Mac window dots */
+    .imk-dots { display: flex; gap: 5px; }
+    .imk-d { width: 10px; height: 10px; border-radius: 50%; }
+    .imk-d-r { background: #ff5f57; }
+    .imk-d-y { background: #febc2e; }
+    .imk-d-g { background: #28c840; }
+
+    /* ── Card 1: Cotizador Visual ── */
+    .imk-editor-bg { background: #f5f5f7; flex-direction: column; padding: 0; align-items: stretch; }
+    .imk-chrome-bar {
+        height: 34px; background: #fafafa; border-bottom: 1px solid #e8e8e8;
+        display: flex; align-items: center; padding: 0 14px; gap: 8px; flex-shrink: 0;
+    }
+    .imk-chrome-title { font-size: 10.5px; color: #8e8e93; font-weight: 500; margin: 0 auto; }
+    .imk-tbl-head {
+        display: grid; grid-template-columns: 2fr 0.5fr 1fr 1fr;
+        padding: 0 14px; height: 26px; border-bottom: 1px solid #f0f0f0;
+        align-items: center; background: #fff;
+    }
+    .imk-tbl-head span { font-size: 9px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.04em; }
+    .imk-tbl-row {
+        display: grid; grid-template-columns: 2fr 0.5fr 1fr 1fr;
+        padding: 0 14px; height: 36px; border-bottom: 1px solid #f8f8f8;
+        align-items: center; background: #fff;
+    }
+    .imk-row-active { background: rgba(37,99,235,0.04) !important; }
+    .imk-drag-zone {
+        margin: 7px 14px; border: 1.5px dashed #d1d5db; border-radius: 7px;
+        height: 26px; display: flex; align-items: center; justify-content: center;
+        gap: 5px; color: #9ca3af; font-size: 9.5px; font-weight: 500;
+        background: #fff;
+    }
+    .imk-tbl-foot {
+        margin-top: auto; padding: 8px 14px; border-top: 1px solid #efefef;
+        display: flex; justify-content: space-between; align-items: center;
+        background: #fff;
+    }
+    .imk-foot-label { font-size: 10px; font-weight: 600; color: #64748b; }
+    .imk-foot-total { font-size: 14px; font-weight: 700; color: #0a192f; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+
+    /* ── Card 2: Liga de Pago ── */
+    .imk-pay-bg { background: #f0ede8; }
+    .imk-pay-card {
+        background: #fff; border-radius: 16px; width: 82%; padding: 16px;
+        box-shadow: 0 12px 36px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(0,0,0,0.04);
+        display: flex; flex-direction: column; gap: 12px;
+    }
+    .imk-pay-head { display: flex; align-items: center; gap: 9px; }
+    .imk-pay-avatar {
+        width: 28px; height: 28px; border-radius: 7px; background: #0a192f;
+        color: #fff; font-size: 9.5px; font-weight: 700; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .imk-pay-company { flex: 1; }
+    .imk-pay-amount { text-align: center; }
+    .imk-pay-total { font-size: 28px; font-weight: 700; color: #0a192f; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+    .imk-pay-btn {
+        width: 100%; background: #0a192f; color: #fff; border: none;
+        border-radius: 10px; padding: 9px; font-size: 11px; font-weight: 700; cursor: pointer;
+    }
+
+    /* ── Card 3: Zapier & Make ── */
+    .imk-flow-bg { background: #f5f5f7; flex-direction: column; gap: 12px; }
+    .imk-flow-wrap { display: flex; align-items: center; gap: 0; width: 88%; }
+    .imk-flow-node {
+        background: #fff; border-radius: 12px; border: 1.5px solid #e2e8f0;
+        padding: 10px 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        min-width: 110px; text-align: center; flex-shrink: 0;
+    }
+    .imk-flow-node-label { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #94a3b8; margin-bottom: 7px; }
+    .imk-flow-node-brand { display: flex; align-items: center; gap: 6px; justify-content: center; margin-bottom: 6px; }
+    .imk-flow-brand-icon { width: 18px; height: 18px; border-radius: 5px; background: #0a192f; color: #fff; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .imk-flow-brand-img { width: 18px; height: 18px; border-radius: 5px; object-fit: cover; }
+    .imk-navy { background: #0a192f; }
+    .imk-flow-event { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+    .imk-event-blue { color: #1d4ed8; background: rgba(37,99,235,0.09); }
+    .imk-event-orange { color: #c2410c; background: rgba(234,88,12,0.09); }
+    .imk-flow-connector { flex: 1; height: 2px; background: linear-gradient(90deg, #e2e8f0, #0071e3); position: relative; margin: 0 2px; }
+    .imk-flow-arrow { position: absolute; right: -6px; top: -4px; border-left: 7px solid #0071e3; border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
+    .imk-flow-alts { display: flex; align-items: center; gap: 6px; }
+    .imk-alt-img { width: 14px; height: 14px; border-radius: 3px; object-fit: cover; }
+    .imk-flow-sep { color: #d1d5db; font-size: 11px; }
+
+    /* ── Card 4: Webhooks ── */
+    .imk-wh-bg { background: #f5f5f7; }
+    .imk-wh-card {
+        background: #fff; border-radius: 14px; width: 88%;
+        border: 1px solid rgba(0,0,0,0.06);
+        box-shadow: 0 8px 28px rgba(0,0,0,0.07);
+        overflow: hidden;
+    }
+    .imk-wh-head { display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; border-bottom: 1px solid #f1f5f9; background: #fafafa; }
+    .imk-live-dot { display: flex; align-items: center; gap: 5px; }
+    .imk-pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 2.5px rgba(16,185,129,0.2); }
+    .imk-wh-row { display: flex; align-items: center; gap: 9px; padding: 9px 14px; border-bottom: 1px solid #f8f9fa; }
+    .imk-wh-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .imk-wh-dot-green { background: #10b981; }
+    .imk-wh-info { display: flex; flex-direction: column; gap: 1px; flex: 1; }
+    .imk-wh-event { font-size: 10.5px; font-weight: 700; color: #2563eb; font-family: ui-monospace, "SF Mono", monospace; }
+    .imk-wh-meta { font-size: 9px; color: #94a3b8; }
+    .imk-status-ok { font-size: 9.5px; font-weight: 700; color: #047857; background: rgba(16,185,129,0.1); padding: 2px 7px; border-radius: 4px; }
+
+    /* ── Card 5: API RESTful ── */
+    .imk-term-bg { background: #0d1117; border-radius: 14px; padding: 0; }
+    .imk-term { position: absolute; inset: 0; display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; }
+    .imk-term-head {
+        height: 32px; background: #161b22; border-bottom: 1px solid #30363d;
+        display: flex; align-items: center; padding: 0 12px; gap: 10px; flex-shrink: 0;
+    }
+    .imk-term-title { font-size: 9.5px; color: #8b949e; font-weight: 500; margin: 0 auto; }
+    .imk-term-body { padding: 12px 14px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 10px; line-height: 1.75; overflow: hidden; }
+    .imk-term-line { display: flex; flex-wrap: nowrap; gap: 2px; }
+    .imk-term-indent { padding-left: 14px; }
+    .imk-term-blank { height: 6px; }
+    .imk-tc-gray { color: #8b949e; }
+    .imk-tc-white { color: #e6edf3; }
+    .imk-tc-green { color: #3fb950; }
+    .imk-tc-yellow { color: #d29922; }
+    .imk-tc-blue { color: #79c0ff; }
+    .imk-tc-muted { color: #8b949e; }
+
+    /* ── Card 6: Cord Elements ── */
+    .imk-embed-bg { background: #f0ede8; flex-direction: column; gap: 8px; }
+    .imk-browser {
+        background: #fff; border-radius: 12px; width: 86%;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.12), inset 0 0 0 1px rgba(0,0,0,0.06);
+        overflow: hidden;
+    }
+    .imk-browser-chrome {
+        height: 30px; background: #f5f5f7; border-bottom: 1px solid #e8e8e8;
+        display: flex; align-items: center; gap: 8px; padding: 0 10px;
+    }
+    .imk-browser-url {
+        flex: 1; background: #fff; border-radius: 5px; padding: 2.5px 8px;
+        border: 1px solid #e2e8f0; font-size: 9px; color: #94a3b8;
+        margin: 0 6px; text-align: center;
+    }
+    .imk-browser-body { padding: 10px 12px; }
+    .imk-browser-site-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .imk-site-logo { width: 40px; height: 8px; background: #e2e8f0; border-radius: 3px; }
+    .imk-site-links { display: flex; gap: 6px; }
+    .imk-site-links span { width: 20px; height: 6px; background: #f1f5f9; border-radius: 2px; }
+    .imk-embed-widget {
+        background: #fff; border-radius: 9px; border: 1.5px solid #e8e8e8;
+        padding: 10px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .imk-embed-eyebrow { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 4px; }
+    .imk-embed-amount { font-size: 20px; font-weight: 700; color: #0a192f; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; margin-bottom: 1px; }
+    .imk-embed-sub { font-size: 9px; color: #94a3b8; margin-bottom: 8px; }
+    .imk-embed-cta { background: #0a192f; color: #fff; border-radius: 7px; padding: 7px; text-align: center; font-size: 10px; font-weight: 700; }
+    .imk-embed-badge { display: flex; align-items: center; gap: 5px; font-size: 9.5px; color: #94a3b8; font-weight: 500; }
+    .imk-navy-dot { width: 6px; height: 6px; border-radius: 50%; background: #0a192f; }
 
     /* ── CORD APPS MARQUEE ── */
     .cord-apps-section {
@@ -3373,6 +3595,56 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
             hero.style.setProperty('--mouse-y', `0px`);
         });
         
+        // ── Aurora card mouse tracking ─────────────────────────────────────
+        // Each .aurora-card-content gets its own mouse tracker.
+        // Mouse position drives --ax/--ay (teal blob) and --bx/--by (indigo blob)
+        // as percentage values on the .aurora-card-layer element.
+        document.querySelectorAll('.aurora-card').forEach(card => {
+            const layer = card.querySelector('.aurora-card-layer');
+            if (!layer) return;
+            let rafId = null;
+            let targetAx = 20, targetAy = 75, targetBx = 78, targetBy = 25;
+            let currentAx = 20, currentAy = 75, currentBx = 78, currentBy = 25;
+
+            const lerp = (a, b, t) => a + (b - a) * t;
+
+            const tick = () => {
+                currentAx = lerp(currentAx, targetAx, 0.06);
+                currentAy = lerp(currentAy, targetAy, 0.06);
+                currentBx = lerp(currentBx, targetBx, 0.06);
+                currentBy = lerp(currentBy, targetBy, 0.06);
+                layer.style.setProperty('--ax', `${currentAx.toFixed(1)}%`);
+                layer.style.setProperty('--ay', `${currentAy.toFixed(1)}%`);
+                layer.style.setProperty('--bx', `${currentBx.toFixed(1)}%`);
+                layer.style.setProperty('--by', `${currentBy.toFixed(1)}%`);
+                rafId = requestAnimationFrame(tick);
+            };
+
+            card.addEventListener('mouseenter', () => {
+                rafId = requestAnimationFrame(tick);
+            });
+
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const xPct = ((e.clientX - rect.left) / rect.width)  * 100;
+                const yPct = ((e.clientY - rect.top)  / rect.height) * 100;
+                // Teal blob follows mouse; indigo blob is offset opposite
+                targetAx = xPct * 0.65 + 8;
+                targetAy = yPct * 0.65 + 12;
+                targetBx = 100 - xPct * 0.55;
+                targetBy = 100 - yPct * 0.55;
+            });
+
+            card.addEventListener('mouseleave', () => {
+                cancelAnimationFrame(rafId);
+                // Reset to defaults
+                targetAx = 20; targetAy = 75; targetBx = 78; targetBy = 25;
+                rafId = requestAnimationFrame(tick);
+                // Stop after settling
+                setTimeout(() => cancelAnimationFrame(rafId), 1400);
+            });
+        });
+
         // Carousel logic for Startups Use Cases
         const grid = document.querySelector('.startup-use-cases-grid');
         const prevBtn = document.getElementById('startup-prev');
