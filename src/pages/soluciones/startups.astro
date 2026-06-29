@@ -1022,83 +1022,95 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                 <div class="anim-search"></div>
                             </div>
                             <div class="dash-header-actions">
-                                <button class="dash-btn-primary anim-btn">Nueva cotización</button>
+                                <div class="cmk-cta cmk-cta-solid anim-btn" style="padding: 8px 16px;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    Nueva cotización
+                                </div>
                             </div>
                         </header>
 
                         <div class="dash-content-body">
                             <!-- KPI Widgets -->
-                            <div class="dash-kpi-grid">
-                                <div class="dash-kpi">
-                                    <span class="kpi-label">POR CERRAR</span>
-                                    <strong class="kpi-value">$430,000 MXN</strong>
-                                    <span class="kpi-trend positive"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg> 24 cotizaciones activas</span>
+                            <div class="cmk-kpis" style="margin-bottom: 2rem;">
+                                <div class="cmk-kpi-card">
+                                    <div class="cmk-kpi-l">Por cerrar</div>
+                                    <div class="cmk-kpi-v">$430,000 <span style="font-size: 12px; color: #64748b; font-weight: 500;">MXN</span></div>
+                                    <div style="margin-top: 8px;"><span class="cmk-up">12%</span> <span style="font-size: 11px; color: #64748b; font-weight: 500;">vs mes anterior</span></div>
                                 </div>
-                                <div class="dash-kpi">
-                                    <span class="kpi-label">CERRADO ESTE MES</span>
-                                    <strong class="kpi-value">$1,250,000 MXN</strong>
-                                    <span class="kpi-trend positive"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg> 12 aprobadas · 8 pagadas</span>
+                                <div class="cmk-kpi-card">
+                                    <div class="cmk-kpi-l">Cerrado este mes</div>
+                                    <div class="cmk-kpi-v">$1,250,000 <span style="font-size: 12px; color: #64748b; font-weight: 500;">MXN</span></div>
+                                    <div style="margin-top: 8px;"><span class="cmk-up">8%</span> <span style="font-size: 11px; color: #64748b; font-weight: 500;">12 aprobadas</span></div>
                                 </div>
-                                <div class="dash-kpi">
-                                    <span class="kpi-label">TASA DE CIERRE</span>
-                                    <strong class="kpi-value">82.4%</strong>
-                                    <span class="kpi-trend"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> últimos 90 días</span>
+                                <div class="cmk-kpi-card">
+                                    <div class="cmk-kpi-l">Tasa de cierre</div>
+                                    <div class="cmk-kpi-v">82.4%</div>
+                                    <div style="margin-top: 8px;"><span class="cmk-down">2%</span> <span style="font-size: 11px; color: #64748b; font-weight: 500;">últimos 90 días</span></div>
                                 </div>
                             </div>
 
-                            <!-- TABLA DE PROPUESTAS -->
+                            <!-- TABLA DE PROPUESTAS (Stripe Style) -->
                             <div class="dash-table-header">
                                 <h3 class="dash-view-title">Cotizaciones recientes</h3>
-                                <div class="dash-subtabs">
-                                    <span class="subtab">Todas</span>
-                                    <span class="subtab active">Aceptadas</span>
-                                    <span class="subtab">Enviadas</span>
-                                    <span class="subtab">Borradores</span>
+                                <div class="cmk-seg">
+                                    <span class="on">Todas</span>
+                                    <span>Aceptadas</span>
+                                    <span>Borradores</span>
                                 </div>
                             </div>
                             
-                            <div class="dash-table-container">
-                                <table class="dash-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Cliente</th>
-                                            <th>Proyecto</th>
-                                            <th>Monto</th>
-                                            <th>Estado</th>
-                                            <th>Fecha</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td><strong>Novatech Global</strong><br/><span class="td-sub">novatech.io</span></td>
-                                            <td>Implementación ERP</td>
-                                            <td class="td-mono">$120,000 MXN</td>
-                                            <td><span class="badge badge-green">Aceptada</span></td>
-                                            <td class="td-light">Hoy, 10:42 AM</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Synergy Partners</strong><br/><span class="td-sub">synergy.com</span></td>
-                                            <td>Consultoría B2B</td>
-                                            <td class="td-mono">$850,000 MXN</td>
-                                            <td><span class="badge badge-green">Aceptada</span></td>
-                                            <td class="td-light">Ayer, 4:15 PM</td>
-                                        </tr>
-                                        <tr class="anim-row">
-                                            <td><strong>Quantum Logistics</strong><br/><span class="td-sub">quantum.net</span></td>
-                                            <td>Optimización Fase 1</td>
-                                            <td class="td-mono">$250,000 MXN</td>
-                                            <td><span class="badge anim-badge"></span></td>
-                                            <td class="td-light">26 Jun 2026</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Stellar Health</strong><br/><span class="td-sub">stellar.org</span></td>
-                                            <td>Auditoría Anual</td>
-                                            <td class="td-mono">$30,000 MXN</td>
-                                            <td><span class="badge badge-yellow">Visto</span></td>
-                                            <td class="td-light">25 Jun 2026</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                            <div class="dash-table-container" style="border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff; box-shadow: 0 2px 8px rgba(15,23,42,0.02); overflow: hidden;">
+                                <div class="cmk-th" style="grid-template-columns: 2fr 2fr 1.5fr 1fr 1fr;">
+                                    <span>Cliente</span>
+                                    <span>Proyecto</span>
+                                    <span class="cmk-r">Monto</span>
+                                    <span>Estado</span>
+                                    <span class="cmk-r">Fecha</span>
+                                </div>
+                                
+                                <div class="cmk-tr" style="grid-template-columns: 2fr 2fr 1.5fr 1fr 1fr;">
+                                    <div class="cmk-t1">
+                                        <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://novatech.io&size=128" width="16" height="16" style="border-radius:4px" />
+                                        Novatech Global
+                                    </div>
+                                    <div class="cmk-t2">Implementación ERP</div>
+                                    <div class="cmk-amt">$120,000.00</div>
+                                    <div><span class="cmk-badge cmk-b-green"><div class="cmk-dot cmk-dot-green"></div> Aceptada</span></div>
+                                    <div class="cmk-t2 cmk-r">Hoy, 10:42 AM</div>
+                                </div>
+                                
+                                <div class="cmk-tr hl anim-row" style="grid-template-columns: 2fr 2fr 1.5fr 1fr 1fr;">
+                                    <div class="cmk-t1">
+                                        <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://quantum.net&size=128" width="16" height="16" style="border-radius:4px" />
+                                        Quantum Logistics
+                                    </div>
+                                    <div class="cmk-t2">Optimización Fase 1</div>
+                                    <div class="cmk-amt">$250,000.00</div>
+                                    <div><span class="cmk-badge anim-badge"></span></div>
+                                    <div class="cmk-t2 cmk-r">26 Jun 2026</div>
+                                </div>
+                                
+                                <div class="cmk-tr" style="grid-template-columns: 2fr 2fr 1.5fr 1fr 1fr;">
+                                    <div class="cmk-t1">
+                                        <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://synergy.com&size=128" width="16" height="16" style="border-radius:4px" />
+                                        Synergy Partners
+                                    </div>
+                                    <div class="cmk-t2">Consultoría B2B</div>
+                                    <div class="cmk-amt">$850,000.00</div>
+                                    <div><span class="cmk-badge cmk-b-green">Aceptada</span></div>
+                                    <div class="cmk-t2 cmk-r">Ayer, 4:15 PM</div>
+                                </div>
+                                
+                                <div class="cmk-tr" style="grid-template-columns: 2fr 2fr 1.5fr 1fr 1fr;">
+                                    <div class="cmk-t1">
+                                        <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://stellar.org&size=128" width="16" height="16" style="border-radius:4px" />
+                                        Stellar Health
+                                    </div>
+                                    <div class="cmk-t2">Auditoría Anual</div>
+                                    <div class="cmk-amt">$30,000.00</div>
+                                    <div><span class="cmk-badge cmk-b-amber">Visto</span></div>
+                                    <div class="cmk-t2 cmk-r">25 Jun 2026</div>
+                                </div>
                             </div>
                         </div>
                     </main>
@@ -3270,22 +3282,16 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     /* ── DASHBOARD MOCKUP ANIMATED ── */
     .cord-dash-mockup {
         background: #ffffff;
-        border-radius: 12px;
-        box-shadow: 0 40px 80px rgba(0,0,0,0.15), 0 10px 30px rgba(0,0,0,0.08);
-        border: 1px solid rgba(0,0,0,0.06);
+        border-radius: 16px;
+        box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 28px 56px -14px rgba(10,25,47,0.12), inset 0 1px 0 rgba(255,255,255,0.6);
+        border: 1px solid rgba(10,25,47,0.06);
         overflow: hidden;
         display: flex;
         flex-direction: column;
         height: 640px;
-        transform: perspective(1200px) rotateX(2deg);
-        transform-origin: bottom;
-        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s;
         margin-bottom: 2rem;
         position: relative;
-    }
-    .cord-dash-mockup:hover {
-        transform: perspective(1200px) rotateX(0deg);
-        box-shadow: 0 50px 100px rgba(0,0,0,0.18), 0 15px 35px rgba(0,0,0,0.08);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Inter", "SF Pro Display", sans-serif;
     }
     
     /* MAC WINDOW HEADER */
@@ -3425,11 +3431,10 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     /* SIDEBAR */
     .dash-sidebar {
         width: 240px;
-        background: #0a2540;
-        color: white;
+        background: #f8fafc;
         display: flex;
         flex-direction: column;
-        border-right: 1px solid rgba(255,255,255,0.05);
+        border-right: 1px solid #e2e8f0;
         padding-top: 1.5rem;
     }
     .dash-logo {
@@ -3437,7 +3442,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         align-items: center;
         gap: 12px;
         padding: 0 1.5rem 2rem 1.5rem;
-        color: white;
+        color: #0f172a;
     }
     .dash-logo-text {
         font-size: 1.25rem;
@@ -3455,45 +3460,51 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 10px 14px;
-        color: #94a3b8;
+        padding: 8px 12px;
+        color: #475569;
         text-decoration: none;
-        font-size: 0.95rem;
-        font-weight: 500;
+        font-size: 0.9rem;
+        font-weight: 600;
         border-radius: 8px;
         transition: background 0.2s, color 0.2s;
     }
     .dash-link:hover {
-        background: rgba(255,255,255,0.05);
-        color: white;
+        background: #f1f5f9;
+        color: #0f172a;
     }
     .dash-link.active {
-        background: rgba(0, 201, 255, 0.1);
-        color: #00C9FF;
+        background: #ffffff;
+        color: #0f172a;
+        box-shadow: 0 1px 2px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.1);
+        border: 1px solid rgba(226,232,240,0.5);
+    }
+    .dash-link.active svg {
+        color: #3b82f6;
     }
     .dash-user {
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 1.5rem;
-        border-top: 1px solid rgba(255,255,255,0.1);
+        padding: 1.25rem 1.5rem;
+        border-top: 1px solid #e2e8f0;
         cursor: pointer;
         transition: background 0.2s;
     }
     .dash-user:hover {
-        background: rgba(255,255,255,0.05);
+        background: #f1f5f9;
     }
     .dash-avatar {
-        width: 36px;
-        height: 36px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #00C9FF, #0071e3);
+        background: linear-gradient(135deg, #1e293b, #0f172a);
         color: white;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         font-weight: 600;
+        box-shadow: 0 2px 4px rgba(15,23,42,0.15);
     }
     .dash-user-info {
         display: flex;
@@ -3503,13 +3514,14 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     .dash-user-info strong {
         font-size: 0.85rem;
         font-weight: 600;
+        color: #0f172a;
     }
     .dash-user-info span {
         font-size: 0.75rem;
-        color: #94a3b8;
+        color: #64748b;
     }
     .dash-chevron {
-        color: #64748b;
+        color: #94a3b8;
     }
 
     /* MAIN AREA */
@@ -3520,7 +3532,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         overflow: hidden;
     }
     .dash-header {
-        height: 72px;
+        height: 60px;
         background: white;
         border-bottom: 1px solid #e2e8f0;
         display: flex;
@@ -3532,171 +3544,66 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         display: flex;
         align-items: center;
         gap: 12px;
-        background: #f1f5f9;
-        padding: 8px 16px;
-        border-radius: 8px;
-        width: 320px;
+        background: #f8fafc;
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        width: 280px;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
     }
     .dash-search input {
         border: none;
         background: transparent;
         outline: none;
-        font-size: 0.95rem;
-        width: 100%;
-        color: #0a2540;
-    }
-    .dash-btn-primary {
-        background: #0071e3;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 8px;
         font-size: 0.9rem;
-        font-weight: 600;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2);
-        transition: transform 0.2s, box-shadow 0.2s;
+        width: 100%;
+        color: #0f172a;
     }
-    .dash-btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0, 113, 227, 0.3);
-    }
-    
     .dash-content-body {
-        padding: 2.5rem 2rem;
+        padding: 2rem;
         flex: 1;
         overflow-y: auto;
-        background: #f8fafc; /* match section background so it looks like soft app inner bg */
+        background: #fbfbfc; /* slightly lighter than sidebar */
     }
     
-    /* KPI WIDGETS */
-    .dash-kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 24px;
-        margin-bottom: 2.5rem;
-    }
-    .dash-kpi {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-    .kpi-label {
-        font-size: 0.9rem;
-        font-weight: 500;
-        color: #64748b;
-    }
-    .kpi-value {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #0a2540;
-        margin-top: 4px;
-    }
-    .kpi-trend {
-        font-size: 0.85rem;
-        font-weight: 500;
-        color: #94a3b8;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        margin-top: 6px;
-    }
-    .kpi-trend.positive {
-        color: #059669;
-    }
-    .kpi-trend svg {
-        margin-right: 2px;
-    }
-
-    /* TABLE */
     .dash-table-header {
         display: flex;
-        align-items: flex-end;
+        align-items: center;
         justify-content: space-between;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
     }
     .dash-view-title {
-        font-size: 1.5rem;
+        font-size: 1.15rem;
         font-weight: 700;
-        color: #0a2540;
+        color: #0f172a;
         margin: 0;
+        letter-spacing: -0.01em;
     }
-    .dash-subtabs {
-        display: flex;
-        gap: 1.5rem;
-        border-bottom: 1px solid #e2e8f0;
-    }
-    .subtab {
-        font-size: 0.95rem;
-        font-weight: 500;
-        color: #64748b;
-        padding-bottom: 8px;
-        position: relative;
-        cursor: pointer;
-    }
-    .subtab.active {
-        color: #0071e3;
-        font-weight: 600;
-    }
-    .subtab.active::after {
-        content: '';
-        position: absolute;
-        bottom: -1px;
-        left: 0;
-        width: 100%;
-        height: 2px;
-        background: #0071e3;
-    }
-    .dash-table-container {
-        background: white;
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-        overflow: hidden;
-    }
-    .dash-table {
-        width: 100%;
-        border-collapse: collapse;
-        text-align: left;
-    }
-    .dash-table th {
-        background: #f8fafc;
-        padding: 12px 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        border-bottom: 1px solid #e2e8f0;
-    }
-    .dash-table td {
-        padding: 16px 20px;
-        font-size: 0.95rem;
-        color: #0a2540;
-        border-bottom: 1px solid #f1f5f9;
-    }
-    .dash-table tr:last-child td { border-bottom: none; }
-    .dash-table tr:hover td { background: #f8fafc; }
-    .td-sub { font-size: 0.8rem; color: #94a3b8; }
-    .td-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 500; }
-    .td-light { color: #64748b; font-size: 0.9rem; }
-    .badge {
+    
+    .anim-badge {
         display: inline-flex;
         align-items: center;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 0.85rem;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 10.5px;
         font-weight: 600;
+        letter-spacing: -0.01em;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5);
+        animation: badgeAnim 10s infinite;
     }
-    .badge-green { background: #d1fae5; color: #059669; }
-    .badge-blue { background: #dbeafe; color: #2563eb; }
-    .badge-yellow { background: #fef3c7; color: #d97706; }
-
+    .anim-badge::after {
+        content: "Enviada";
+        animation: badgeTextAnim 10s infinite;
+    }
+    @keyframes badgeAnim {
+        0%, 43% { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        44%, 100% { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    }
+    @keyframes badgeTextAnim {
+        0%, 43% { content: "Enviada"; }
+        44%, 100% { content: "Aceptada"; }
+    }
+    
     @media (max-width: 768px) {
         .cord-dash-mockup { flex-direction: column; height: auto; margin-bottom: 0; }
         .dash-sidebar { width: 100%; height: auto; padding: 1rem; }
