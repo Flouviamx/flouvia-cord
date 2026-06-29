@@ -1639,6 +1639,30 @@ El roadmap público (`/roadmap` y `/en/roadmap`) fue rediseñado para alcanzar u
    • **ScrollSpy Horizontal (Barra tipo Stripe):** El menú de integraciones se convirtió en una pista de desplazamiento unificada con un "ScrollSpy" inteligente. Una barra superior con un gradiente animado se llena dinámicamente y resalta la pestaña activa en tiempo real según el porcentaje de scroll.
    • **Gráficos CSS Abstractos (No más ventanas Mac):** Se eliminaron definitivamente todos los adornos tipo "Fake macOS" de las tarjetas de integraciones. En su lugar, se desarrollaron ilustraciones animadas 100% en Vanilla CSS (tarjetas UI isométricas flotantes, nodos de datos conectados, editores de código oscuros) que aportan un look más técnico ("badass"), profesional y ligero sin sobrecargar el DOM.
 
+✅ **Mockups premium `imk-*` + aurora iridiscente en tarjetas de Startups (jun 2026)** —
+   Dos mejoras visuales en `/soluciones/startups.astro`:
+   • **Reescritura de los 6 mockups de integración** ("Integra Cord a tu medida") al
+     estándar Apple/Stripe con el prefijo `imk-*` (no colisiona con `cmk-*`/`bm-*`/`sbm-*`).
+     Cada tarjeta del carrusel (3 tabs × 2 cards): (1) Editor — tabla con chrome, drag-zone dashed,
+     fila activa azul, total footer; (2) Liga de pago — card flotante sobre `#f0ede8` con total 28px
+     y CTA navy full-width; (3) Zapier flow — nodos conectados con logos Google Favicon API;
+     (4) Webhooks — log con dot de pulso verde animado, evento monospace, badge `200 OK`;
+     (5) Terminal oscura — `#0d1117` con `curl` + JSON coloreado; (6) Browser embed — chrome con
+     URL `portal.tucliente.com`, widget con badge "Powered by Cord".
+   • **Aurora iridiscente en las 6 tarjetas `.stripe-fg-card`** — overlay CSS puro (sin WebGL).
+     Cada `.aurora-card` tiene un `.aurora-card-layer` (`position:absolute; inset:-40%`) con 3 blobs
+     `radial-gradient`: teal `rgba(0,200,140,0.14)`, índigo `rgba(110,40,220,0.11)`, azul
+     `rgba(37,99,235,0.05)` — mismos colores que el hero WebGL pero a opacidad muy baja (tarjetas
+     siempre blancas). Animación CSS `aurora-card-breathe` (scale + rotate, 8s). JS RAF con lerp 6%:
+     en `mousemove` los blobs siguen el cursor; en `mouseleave` regresan y el RAF para tras 1.4s.
+     La aurora cubre TODA la tarjeta (texto + mockup) porque el layer está en el padre `.stripe-fg-card`
+     con `z-index:0`; el contenido tiene `z-index:2`. El `overflow:hidden` del padre recorta el `inset:-40%`.
+   ⚠️ **Regla de escape en Astro JSX:** literales `{` `}` en texto de mockups DEBEN ser
+     `&#123;` / `&#125;` — Astro los parsea como expresiones y lanza error de build.
+   ⚠️ **Dep fix (jun 2026):** `@clerk/astro@3.x` solo soporta hasta Astro 6 — NO actualizar
+     a Astro 7 hasta que Clerk publique soporte. Pin: `astro@^6.4.8`, `@astrojs/vercel@^10.0.6`.
+     `nanostores` debe ser dep directa (antes solo transitiva desde Clerk, Rollup no la resolvía).
+
 ✅ **Rediseño Minimalista Puro en Correos Transaccionales (jun 2026)** — Todos los templates de correos (`src/lib/email.ts`, `api/contacto/ventas.ts`, `api/cron/cobranza.ts`, `api/agentes.ts`) siguen una estética de "lienzo en blanco":
    • **Lienzo Puro (Cero Tarjetas):** Los correos no emplean estructuras de tarjetas anidadas flotando sobre fondos grises. El fondo de todo el correo es blanco `#ffffff` (true minimalist).
    • **Logo Corporativo Horizontal:** Se encabeza el correo con el logo horizontal oficial (`logo-cord-navy.png`) alineado a la izquierda para asentar una presencia de marca corporativa, limpia y robusta, en lugar del pequeño ícono.
