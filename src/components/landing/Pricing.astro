@@ -3,10 +3,8 @@ import { getLangFromUrl, useTranslations } from '../../i18n/utils';
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
-// Pricing — 5 planes (Free · Starter · Pro · Scale · Developer). Datos desde
-// src/lib/precios.ts (fuente única, compartida con /precios). Pro = el ANCLA:
-// va al centro, destacado en navy, ribbon "MÁS POPULAR".
-import { PLANES as PLANES_ES } from '../../lib/precios';
+
+import { PLANES as PLANES_ES, precioAnualMensualizado } from '../../lib/precios';
 import { PLANES_EN } from '../../lib/precios.en';
 
 const PLANES = lang === 'es' ? PLANES_ES : PLANES_EN;
@@ -21,37 +19,62 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
     </div>
 
     <div class="pr-grid">
-        {PLANES.map((p) => (
+        {PLANES.map((p, index) => (
             <article class:list={['plan reveal', { 'plan-featured': p.destacado }]}>
-                {p.ribbon && <span class="plan-ribbon">{p.ribbon}</span>}
                 <div class="plan-head">
                     <h3 class="plan-name">{p.nombre}</h3>
+                    <div class="plan-price-wrap">
+                        {p.precioMensual === 0 ? (
+                            <div class="plan-price">
+                                <span class="editorial plan-amount">$0</span>
+                            </div>
+                        ) : (
+                            <div class="plan-price" data-monthly={money0(p.precioMensual)} data-annual={money0(precioAnualMensualizado(p.precioMensual))}>
+                                <span class="editorial plan-amount plan-amount-val">{money0(p.precioMensual)}</span>
+                                <span class="plan-cycle">{t("pr.cycle.m")}</span>
+                            </div>
+                        )}
+                    </div>
+                    
                     <p class="plan-tagline">{p.tagline}</p>
-                </div>
-                <div class="plan-price">
-                    {p.precioMensual === 0 ? (
-                        <>
-                            <span class="editorial plan-amount">$0</span>
-                            <span class="plan-cycle">{t("pr.cycle")}</span>
-                        </>
-                    ) : (
-                        <>
-                            <span class="editorial plan-amount" data-countup={String(p.precioMensual)} data-decimals="0">{money0(p.precioMensual)}</span>
-                            <span class="plan-cycle">{t("pr.cycle.m")}</span>
-                        </>
+
+                    {p.precioMensual > 0 && (
+                        <div class="plan-billing-toggle">
+                            <label class="toggle-switch">
+                                <input type="checkbox" class="billing-toggle-checkbox" />
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="toggle-label">{lang === 'es' ? 'Cobro anual' : 'Billed yearly'}</span>
+                        </div>
                     )}
                 </div>
-                <a
-                    href={p.precioMensual === 0
-                        ? p.ctaHref
-                        : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}&cycle=mensual`)}`}
-                    class:list={['plan-cta', p.destacado ? 'plan-cta-solid' : 'plan-cta-ghost']}
-                >{p.ctaLabel}</a>
-                <ul class="plan-feats">
-                    {p.feats.map((f) => (
-                        <li><span class="pf-check">✓</span> {f}</li>
-                    ))}
-                </ul>
+                
+                <div class="plan-feats-wrap">
+                    <p class="plan-feats-title">{p.id === 'free' ? (lang === 'es' ? 'Incluye:' : 'Includes:') : (lang === 'es' ? 'Todo lo anterior +' : 'Everything above +')}</p>
+                    <ul class="plan-feats">
+                        {p.feats.map((f) => (
+                            <li>
+                                <div class="pf-check">
+                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <span>{f}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+                
+                <div class="plan-footer">
+                    <a
+                        href={p.precioMensual === 0
+                            ? p.ctaHref
+                            : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}&cycle=mensual`)}`}
+                        class:list={['plan-cta', p.destacado ? 'plan-cta-solid' : 'plan-cta-ghost']}
+                        data-plan-id={p.id}
+                        data-base-href={`/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}`)}`}
+                    >{p.ctaLabel}</a>
+                </div>
             </article>
         ))}
     </div>
@@ -61,9 +84,47 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
     </p>
 </section>
 
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const toggles = document.querySelectorAll('.billing-toggle-checkbox');
+        
+        toggles.forEach(toggle => {
+            toggle.addEventListener('change', (e) => {
+                const isAnnual = (e.target as HTMLInputElement).checked;
+                
+                // Sync all toggles
+                toggles.forEach(t => {
+                    if (t !== e.target) {
+                        (t as HTMLInputElement).checked = isAnnual;
+                    }
+                });
+
+                // Update prices
+                document.querySelectorAll('.plan-price').forEach(priceDiv => {
+                    const monthly = priceDiv.getAttribute('data-monthly');
+                    const annual = priceDiv.getAttribute('data-annual');
+                    if (monthly && annual) {
+                        const valSpan = priceDiv.querySelector('.plan-amount-val');
+                        if (valSpan) valSpan.textContent = isAnnual ? annual : monthly;
+                    }
+                });
+
+                // Update CTA hrefs
+                document.querySelectorAll('.plan-cta').forEach(cta => {
+                    const baseHref = cta.getAttribute('data-base-href');
+                    if (baseHref) {
+                        const cycle = isAnnual ? 'anual' : 'mensual';
+                        cta.setAttribute('href', `${baseHref}&cycle=${cycle}`);
+                    }
+                });
+            });
+        });
+    });
+</script>
+
 <style>
-    .pricing { padding: 9rem 5%; max-width: 1320px; margin: 0 auto; }
-    .pr-head { text-align: center; max-width: 600px; margin: 0 auto 3.5rem; }
+    .pricing { padding: 9rem 5%; max-width: 1200px; margin: 0 auto; }
+    .pr-head { text-align: center; max-width: 600px; margin: 0 auto 5rem; }
     .pr-eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #888; margin: 0 0 1.2rem; }
     .pr-title { font-size: clamp(1.9rem, 3.6vw, 3.4rem); font-weight: 800; line-height: 1.14; letter-spacing: -1.2px; color: var(--color-text); margin: 0 0 1.1rem; }
     .pr-sub { font-size: 1.05rem; color: var(--color-text-muted); margin: 0; }
@@ -71,94 +132,175 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
     .pr-grid {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
-        gap: 0.85rem;
+        gap: 0;
         align-items: stretch;
+        border-top: 1px solid var(--color-border);
+        border-bottom: 1px solid var(--color-border);
     }
+    
     .plan {
         position: relative;
-        background: var(--color-bg-soft);
-        border: 1px solid var(--color-border);
-        border-radius: 22px;
-        padding: 1.9rem 1.4rem;
+        padding: 2.5rem 1.5rem;
         display: flex;
         flex-direction: column;
-        gap: 1.2rem;
-        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
+        border-right: 1px solid var(--color-border);
+        background: transparent;
+        transition: background 0.3s ease;
     }
-    .plan:hover { transform: translateY(-4px); box-shadow: 0 30px 70px -30px rgba(10,25,47,0.16); }
+    .plan:last-child {
+        border-right: none;
+    }
+    .plan:hover {
+        background: var(--color-bg-soft);
+    }
 
     .plan-featured {
+        background: rgba(var(--color-blue-rgb, 10, 37, 64), 0.02);
+    }
+    .plan-featured:hover {
+        background: rgba(var(--color-blue-rgb, 10, 37, 64), 0.04);
+    }
+    .plan-featured::before {
+        content: '';
+        position: absolute;
+        top: -1px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--color-blue-deep, #0a192f);
+        z-index: 1;
+    }
+
+    .plan-head { 
+        display: flex; 
+        flex-direction: column; 
+        gap: 0.8rem; 
+        margin-bottom: 2rem;
+        min-height: 160px;
+    }
+    .plan-name { font-size: 1.15rem; font-weight: 600; margin: 0; color: var(--color-text); }
+    
+    .plan-price-wrap { display: flex; align-items: center; }
+    .plan-price { display: flex; align-items: baseline; gap: 4px; }
+    .plan-amount { font-size: 2.2rem; line-height: 1; color: var(--color-text); font-weight: 500; letter-spacing: -1px; }
+    .plan-cycle { font-size: 0.9rem; color: var(--color-text-muted); }
+
+    .plan-tagline { font-size: 0.9rem; margin: 0; color: var(--color-text-muted); line-height: 1.4; }
+
+    .plan-billing-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 0.5rem;
+    }
+    .toggle-switch {
         position: relative;
-        z-index: 2;
-        background: radial-gradient(ellipse at 50% 0%, #112240 0%, #0a192f 80%);
-        border: none;
-        color: #fff;
-        box-shadow: 0 40px 90px -34px rgba(10,25,47,0.5);
-        transform: scale(1.05);
+        display: inline-block;
+        width: 36px;
+        height: 20px;
     }
-    .plan-featured:hover { transform: scale(1.05) translateY(-4px); }
-    .plan-ribbon {
-        position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
-        background: var(--color-ok); color: #fff;
-        font-size: 0.58rem; font-weight: 800; letter-spacing: 1px;
-        padding: 5px 13px; border-radius: 100px;
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: var(--color-border);
+        transition: .4s;
+        border-radius: 20px;
+    }
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 14px;
+        width: 14px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s var(--ease-spring);
+        border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    input:checked + .toggle-slider {
+        background-color: var(--color-text);
+    }
+    input:checked + .toggle-slider:before {
+        transform: translateX(16px);
+    }
+    .toggle-label {
+        font-size: 0.85rem;
+        color: var(--color-text-muted);
+        font-weight: 500;
+        cursor: pointer;
     }
 
-    .plan-head { display: flex; flex-direction: column; gap: 0.35rem; min-height: 64px; }
-    .plan-name { font-size: 1.15rem; font-weight: 700; margin: 0; letter-spacing: -0.4px; }
-    .plan-tagline { font-size: 0.8rem; margin: 0; color: var(--color-text-muted); line-height: 1.35; }
-    .plan-featured .plan-tagline { color: #8892b0; }
+    .plan-feats-wrap {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    .plan-feats-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--color-text);
+        margin: 0 0 1rem 0;
+    }
+    .plan-feats { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.8rem; }
+    .plan-feats li { display: flex; align-items: flex-start; gap: 10px; font-size: 0.85rem; line-height: 1.4; color: var(--color-text-muted); }
+    .pf-check {
+        width: 16px; height: 16px; flex-shrink: 0;
+        color: var(--color-text);
+        display: flex; align-items: center; justify-content: center;
+        margin-top: 2px;
+    }
+    .pf-check svg { width: 12px; height: 12px; }
 
-    .plan-price { display: flex; align-items: baseline; gap: 7px; }
-    .plan-amount { font-size: 2.3rem; line-height: 1; color: var(--color-blue-deep); }
-    .plan-featured .plan-amount { color: #fff; }
-    .plan-cycle { font-size: 0.82rem; color: var(--color-text-muted); font-weight: 500; }
-    .plan-featured .plan-cycle { color: #8892b0; }
-
+    .plan-footer {
+        margin-top: 2.5rem;
+    }
     .plan-cta {
+        display: block;
         text-align: center;
         text-decoration: none;
-        font-size: 0.92rem;
-        font-weight: 600;
-        padding: 13px;
-        border-radius: 12px;
-        transition: transform 0.5s var(--ease-spring), background 0.4s, box-shadow 0.4s;
+        font-size: 0.95rem;
+        font-weight: 500;
+        padding: 10px;
+        border-radius: 8px;
+        transition: all 0.2s;
+        width: 100%;
     }
     .plan-cta-ghost {
-        color: var(--color-blue-deep);
+        color: var(--color-text);
         border: 1px solid var(--color-border);
-        background: #fff;
+        background: transparent;
     }
-    .plan-cta-ghost:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -12px rgba(10,25,47,0.2); }
+    .plan-cta-ghost:hover { background: var(--color-bg-soft); }
     .plan-cta-solid {
-        background: #fff;
-        color: var(--color-blue-deep);
-        box-shadow: 0 12px 28px -10px rgba(0,0,0,0.3);
+        background: var(--color-text);
+        color: var(--color-bg, #fff);
     }
-    .plan-cta-solid:hover { transform: translateY(-2px); }
+    .plan-cta-solid:hover { opacity: 0.9; }
 
-    .plan-feats { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.7rem; }
-    .plan-feats li { display: flex; align-items: flex-start; gap: 9px; font-size: 0.82rem; line-height: 1.35; color: var(--color-text); }
-    .plan-featured .plan-feats li { color: #cdd5e0; }
-    .pf-check {
-        width: 19px; height: 19px; flex-shrink: 0;
-        background: rgba(16,185,129,0.14); color: #059669;
-        border-radius: 50%; display: flex; align-items: center; justify-content: center;
-        font-size: 0.7rem; font-weight: 700;
-    }
-    .plan-featured .pf-check { background: rgba(16,185,129,0.2); color: #34d399; }
+    .pr-note { text-align: center; margin: 3rem 0 0; font-size: 0.95rem; color: var(--color-text-muted); }
+    .pr-note a { color: var(--color-text); font-weight: 500; text-decoration: none; border-bottom: 1px solid var(--color-border); padding-bottom: 1px;}
+    .pr-note a:hover { border-bottom-color: var(--color-text); }
 
-    .pr-note { text-align: center; margin: 3rem 0 0; font-size: 0.98rem; color: var(--color-text-muted); }
-    .pr-note a { color: var(--color-blue-deep); font-weight: 600; text-decoration: none; }
-    .pr-note a:hover { text-decoration: underline; }
-
-    /* 5 → 3 columnas en laptops angostas (Pro sigue destacado) */
-    @media (max-width: 1180px) {
-        .pr-grid { grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-        .plan-featured { transform: none; }
-        .plan-featured:hover { transform: translateY(-4px); }
-    }
-    @media (max-width: 860px) {
-        .pr-grid { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
+    @media (max-width: 1024px) {
+        .pr-grid {
+            grid-template-columns: repeat(1, 1fr);
+            border: none;
+            gap: 1.5rem;
+        }
+        .plan {
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+        }
+        .plan-featured::before {
+            border-radius: 12px 12px 0 0;
+        }
     }
 </style>
+
