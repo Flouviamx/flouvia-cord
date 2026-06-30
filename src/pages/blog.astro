@@ -1,5 +1,4 @@
 ---
-// Blog — Layout: Stripe Floating Hero + Estética: Cord Quiet Luxury
 export const prerender = true;
 
 import Layout from '../layouts/Layout.astro';
@@ -7,6 +6,7 @@ import Nav from '../components/landing/Nav.astro';
 import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
 import BlogCTA from '../components/blog/BlogCTA.astro';
+import BlogCover from '../components/blog/BlogCover.jsx';
 
 import { getCollection } from 'astro:content';
 import { getLangFromUrl } from '../i18n/utils';
@@ -16,11 +16,9 @@ const isEn = Astro.props.isEn || lang === 'en';
 const collectionDir = isEn ? 'en/' : 'es/';
 const allPosts = (await getCollection('blog')).filter(p => p.id.startsWith(collectionDir));
 
-// Featured post is explicitly handled via the "featured" flag or we just take the first one
 const FEATURED_POST = allPosts.find(p => p.data.featured)?.data || allPosts[0]?.data;
 const featuredPostId = allPosts.find(p => p.data.featured)?.id || allPosts[0]?.id;
 
-// Rest of the posts
 const POSTS = allPosts.filter(p => p.id !== featuredPostId).map(p => ({
     id: p.id,
     ...p.data
@@ -31,28 +29,9 @@ const CATEGORIES = [isEn ? 'All' : 'Todos', ...new Set(allPosts.map(p => p.data.
 const featuredAuthorName = FEATURED_POST?.authorName || (isEn ? 'Cord Team' : 'Equipo Cord');
 const featuredAuthorRole = FEATURED_POST?.authorRole || (isEn ? 'Editorial' : 'Redacción');
 
-const getCategoryIcon = (category) => {
-    switch (category) {
-        case 'Finanzas':
-        case 'Finance':
-            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>`;
-        case 'Ventas B2B':
-        case 'B2B Sales':
-            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>`;
-        case 'Fiscal':
-            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
-        case 'Tecnología':
-        case 'Technology':
-            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>`;
-        case 'Operaciones':
-        case 'Operations':
-            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`;
-        default:
-            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
-    }
-};
-
-const featuredAuthorAvatar = FEATURED_POST?.authorAvatar || '/images/blog/cord-author-avatar.png';
+const featuredHref = isEn
+    ? `/en/blog/${featuredPostId?.replace('en/', '')}`
+    : `/blog/${featuredPostId?.replace('es/', '')}`;
 ---
 
 <Layout
@@ -60,125 +39,122 @@ const featuredAuthorAvatar = FEATURED_POST?.authorAvatar || '/images/blog/cord-a
     description={isEn ? "Articles, guides, and strategies on B2B sales, billing, and how to accelerate your revenue." : "Artículos, guías y estrategias sobre ventas B2B, facturación, y cómo acelerar tu flujo de ingresos."}
 >
     <Nav />
-    
-    <!-- Filtro de ruido analógico global -->
-    <div class="analog-noise" aria-hidden="true"></div>
 
     <main class="cord-blog-main">
-        
-        <!-- HERO CANVAS (Gradient Canvas sin líneas) -->
-        <section class="hero-canvas">
-            <!-- Background Gradients tipo Cord (Azules y Cian vibrantes) -->
-            <div class="hero-canvas-bg" aria-hidden="true">
-                <div class="blob blob-1"></div>
-                <div class="blob blob-2"></div>
-                <div class="blob blob-3"></div>
+
+        <!-- Page Header (ElevenLabs-style: clean H1 + social link) -->
+        <header class="blog-header reveal">
+            <div class="blog-container">
+                <h1 class="blog-headline">{isEn ? 'Cord Blog' : 'Blog de Cord'}</h1>
+                <a href="https://linkedin.com/company/flouviamx" target="_blank" rel="noopener" class="blog-social-link">
+                    {isEn ? 'Cord on LinkedIn' : 'Cord en LinkedIn'}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </a>
             </div>
+        </header>
 
-            <!-- Hero Content -->
-            <div class="hero-canvas-content">
-                <!-- Top Links Minimalistas -->
-                <div class="hero-top-links reveal">
-                    <span class="blog-brand">
-                        <span class="stagger-mask"><span class="stagger-line" style="animation-delay: 0ms">{isEn ? 'Cord Blog' : 'Blog de Cord'}</span></span>
-                    </span>
-                    <a href="https://linkedin.com/company/cord" target="_blank" class="social-link stagger-mask">
-                        <span class="stagger-line" style="animation-delay: 100ms">{isEn ? 'Cord on LinkedIn' : 'Cord en LinkedIn'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
-                    </a>
-                </div>
-
-                <!-- Floating Featured Card (Quiet Luxury Hairlines) -->
-                <div class="floating-card-wrapper reveal">
-                    <a href={isEn ? `/en/blog/${featuredPostId?.replace('en/', '')}` : `/blog/${featuredPostId?.replace('es/', '')}`} class="floating-card hairline-border">
-                        <!-- Left: Text -->
-                        <div class="fc-text">
-                            <div class="fc-meta-top">
-                                <span class="fc-category">{FEATURED_POST?.category}</span>
-                                <span class="technical-meta">{FEATURED_POST?.date}</span>
-                            </div>
-                            
-                            <h1 class="fc-title">{FEATURED_POST?.title}</h1>
-                            
-                            <p class="fc-excerpt">{FEATURED_POST?.excerpt}</p>
-                            
-                            <div class="fc-footer-flex">
-                                <div class="fc-author">
-                                    <div class="fc-author-initial">
-                                        {featuredAuthorName.charAt(0).toUpperCase()}
-                                    </div>
-                                    <div class="fc-author-info">
-                                        <strong>{featuredAuthorName}</strong>
-                                        <span class="technical-meta">{featuredAuthorRole}</span>
-                                    </div>
-                                </div>
-                                
-                                <div class="featured-arrow">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                                </div>
-                            </div>
+        <!-- Featured Post — full-width tall card, title inside the shader -->
+        <section class="blog-featured reveal">
+            <div class="blog-container">
+                <a href={featuredHref} class="fc-card">
+                    <!-- Shader image takes full top, title is rendered inside BlogCover -->
+                    <div class="fc-cover">
+                        <BlogCover
+                            client:only="react"
+                            category={FEATURED_POST?.category || 'featured'}
+                            featured={true}
+                            title={FEATURED_POST?.title || ''}
+                        />
+                    </div>
+                    <!-- Compact bottom metadata bar -->
+                    <div class="fc-bar">
+                        <div class="fc-bar-left">
+                            <span class="fc-cat">{FEATURED_POST?.category}</span>
+                            <span class="fc-sep">·</span>
+                            <span class="fc-date">{FEATURED_POST?.date}</span>
+                            {FEATURED_POST?.readTime && (
+                                <>
+                                    <span class="fc-sep">·</span>
+                                    <span class="fc-date">{FEATURED_POST.readTime}</span>
+                                </>
+                            )}
                         </div>
-                        
-                        <!-- Right: Image/Graphic (Stripe-style Abstract Cover) -->
-                        <div class="fc-image stripe-cover gradient-featured">
-                            <div class="stripe-shape shape-1"></div>
-                            <div class="stripe-shape shape-2"></div>
-                            <div class="stripe-pattern-overlay"></div>
-                            <div class="abstract-category-icon" set:html={getCategoryIcon(FEATURED_POST?.category)}></div>
+                        <div class="fc-bar-right">
+                            <div class="fc-avatar">{featuredAuthorName.charAt(0).toUpperCase()}</div>
+                            <strong class="fc-author-name">{featuredAuthorName}</strong>
+                            <svg class="fc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         </div>
-                    </a>
-                </div>
+                    </div>
+                </a>
             </div>
         </section>
 
-        <!-- Filtros Flotantes (Glass Pill) -->
-        <div class="blog-sticky-nav reveal">
-            <div class="blog-filters-glass" id="blog-filters">
-                {CATEGORIES.map((cat, i) => (
-                    <button class={`filter-btn ${i === 0 ? 'active' : ''}`} data-filter={cat === 'Todos' || cat === 'All' ? 'all' : cat}>
-                        {cat}
-                    </button>
-                ))}
+        <!-- Inline Filters — no sticky, just flows naturally -->
+        <div class="blog-filters-bar reveal">
+            <div class="blog-container">
+                <div class="blog-filters" id="blog-filters">
+                    {CATEGORIES.map((cat, i) => (
+                        <button
+                            class={`filter-btn ${i === 0 ? 'active' : ''}`}
+                            data-filter={cat === 'Todos' || cat === 'All' ? 'all' : cat}
+                        >
+                            {cat}
+                        </button>
+                    ))}
+                </div>
             </div>
         </div>
 
-        <!-- Grid de Artículos Recientes -->
+        <!-- Article Grid -->
         <section class="blog-grid-section">
-            <div class="blog-grid" id="blog-grid">
-                {POSTS.map((post, i) => (
-                    <article class="blog-card hairline-border reveal" data-category={post.category} style={`transition-delay: ${(i % 3) * 50}ms`}>
-                        <a href={isEn ? `/en/blog/${post.id.replace('en/', '')}` : `/blog/${post.id.replace('es/', '')}`} class="blog-card-link">
-                            <div class={`blog-img-wrap stripe-cover gradient-${(i % 5) + 1}`}>
-                                <div class="stripe-shape shape-1"></div>
-                                <div class="stripe-shape shape-2"></div>
-                                <div class="stripe-pattern-overlay"></div>
-                                <div class="abstract-category-icon small" set:html={getCategoryIcon(post.category)}></div>
-                                <div class="blog-category-badge">{post.category}</div>
-                            </div>
-                            <div class="blog-content">
-                                <div class="blog-meta">
-                                    <span class="technical-meta">{post.date}</span>
-                                    <span class="dot">·</span>
-                                    <span class="technical-meta">{post.readTime}</span>
+            <div class="blog-container">
+                <div class="blog-grid" id="blog-grid">
+                    {POSTS.map((post, i) => (
+                        <article
+                            class="blog-card reveal"
+                            data-category={post.category}
+                            style={`transition-delay: ${(i % 3) * 40}ms`}
+                        >
+                            <a
+                                href={isEn ? `/en/blog/${post.id.replace('en/', '')}` : `/blog/${post.id.replace('es/', '')}`}
+                                class="blog-card-link"
+                            >
+                                <div class="blog-img-wrap">
+                                    <BlogCover
+                                        client:only="react"
+                                        category={post.category}
+                                        title={post.title}
+                                    />
+                                    <span class="blog-cat-badge">{post.category}</span>
                                 </div>
-                                <h3 class="blog-title">{post.title}</h3>
-                                <p class="blog-excerpt">{post.excerpt}</p>
-                                <div class="blog-read-more">
-                                    {isEn ? 'Read article' : 'Leer artículo'}
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                <div class="blog-card-body">
+                                    <div class="blog-card-meta">
+                                        <span>{post.date}</span>
+                                        {post.readTime && (
+                                            <>
+                                                <span>·</span>
+                                                <span>{post.readTime}</span>
+                                            </>
+                                        )}
+                                    </div>
+                                    <h3 class="blog-card-title">{post.title}</h3>
+                                    <span class="blog-read-link">
+                                        {isEn ? 'Read' : 'Leer'}
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                    </span>
                                 </div>
-                            </div>
-                        </a>
-                    </article>
-                ))}
+                            </a>
+                        </article>
+                    ))}
+                </div>
             </div>
         </section>
 
-        <!-- SUSCRIPCIÓN BENTO CTA -->
         <BlogCTA isEn={isEn} />
-        
+
     </main>
 
-    <Footer 
+    <Footer
         ctaTitle={isEn ? "Ready to accelerate your deals?" : "¿Listo para acelerar tus cierres?"}
         ctaSub={isEn ? "Start for free today — 5 active quotes per month, no credit card." : "Empieza gratis hoy — 5 cotizaciones activas al mes, sin tarjeta."}
         isEn={isEn}
@@ -200,404 +176,394 @@ const featuredAuthorAvatar = FEATURED_POST?.authorAvatar || '/images/blog/cord-a
                 btn.classList.add('active');
 
                 const targetCat = btn.getAttribute('data-filter');
-
                 grid.classList.add('filtering');
-                
+
                 setTimeout(() => {
                     cards.forEach(card => {
                         const cat = card.getAttribute('data-category');
-                        if (targetCat === 'all' || targetCat === cat) {
-                            card.style.display = 'flex';
-                        } else {
-                            card.style.display = 'none';
-                        }
+                        card.style.display = (targetCat === 'all' || targetCat === cat) ? 'flex' : 'none';
                     });
-
                     void grid.offsetWidth;
                     grid.classList.remove('filtering');
-                }, 300);
+                }, 260);
             });
         });
     });
 </script>
 
 <style>
-    /* ==========================================================
-       RUIDO ANALÓGICO & TIPOGRAFÍA TÉCNICA (Quiet Luxury)
-       ========================================================== */
-    .analog-noise {
-        position: fixed; inset: 0; z-index: 1000; pointer-events: none;
-        opacity: 0.035; 
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    }
-    :global(html[data-theme="dark"]) .analog-noise { opacity: 0.05; }
-
-    .technical-meta {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-        font-variant-numeric: tabular-nums;
-        font-size: 0.75rem; font-weight: 600;
-        letter-spacing: 0.04em; color: #6b7280;
-        text-transform: uppercase;
-    }
-    :global(html[data-theme="dark"]) .technical-meta { color: #9ca3af; }
-
-    .stagger-mask { display: inline-block; overflow: hidden; vertical-align: top; }
-    .stagger-line {
-        display: inline-block; transform: translateY(110%);
-        animation: slideUpReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-    @keyframes slideUpReveal { to { transform: translateY(0); } }
-
-    /* ==========================================================
-       BORDES HAIRLINE
-       ========================================================== */
-    .hairline-border {
-        border: none !important;
-        box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.08), 0 20px 40px -20px rgba(0,0,0,0.04);
-    }
-    :global(html[data-theme="dark"]) .hairline-border {
-        box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.08), 0 20px 40px -20px rgba(0,0,0,0.5);
-    }
-
-    /* ==========================================================
-       RESET Y BASE
-       ========================================================== */
+    /* ── Reset & base ───────────────────────────────────────────── */
     .cord-blog-main {
         background: #fdfdfd;
         color: #111827;
         min-height: 100vh;
-        overflow-x: hidden;
         font-family: 'Inter', sans-serif;
     }
     :global(html[data-theme="dark"]) .cord-blog-main { background: #050505; color: #fff; }
 
-    /* ==========================================================
-       HERO CANVAS (Background gradients)
-       ========================================================== */
-    .hero-canvas {
+    /* Shared container */
+    .blog-container {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 5%;
+    }
+
+    /* ── Page Header ────────────────────────────────────────────── */
+    .blog-header {
+        padding: 7rem 0 2.5rem;
+    }
+    .blog-header .blog-container {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 2rem;
+        border-bottom: 1px solid rgba(0,0,0,0.07);
+        padding-bottom: 2rem;
+    }
+    :global(html[data-theme="dark"]) .blog-header .blog-container {
+        border-bottom-color: rgba(255,255,255,0.07);
+    }
+
+    .blog-headline {
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        line-height: 1;
+        color: #050505;
+        margin: 0;
+    }
+    :global(html[data-theme="dark"]) .blog-headline { color: #fff; }
+
+    .blog-social-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #6b7280;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: color 0.2s;
+        flex-shrink: 0;
+    }
+    :global(html[data-theme="dark"]) .blog-social-link { color: #9ca3af; }
+    .blog-social-link:hover { color: #0a192f; }
+    :global(html[data-theme="dark"]) .blog-social-link:hover { color: #fff; }
+    .blog-social-link svg { width: 13px; height: 13px; }
+
+    /* ── Featured Card ──────────────────────────────────────────── */
+    .blog-featured { padding: 2.5rem 0 0; }
+
+    .fc-card {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow:
+            inset 0 0 0 0.5px rgba(0,0,0,0.08),
+            0 2px 8px rgba(0,0,0,0.04),
+            0 24px 60px -16px rgba(0,0,0,0.1);
+        transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+                    box-shadow 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+        background: #fff;
+    }
+    :global(html[data-theme="dark"]) .fc-card {
+        background: #0d0d0d;
+        box-shadow:
+            inset 0 0 0 0.5px rgba(255,255,255,0.07),
+            0 24px 60px -16px rgba(0,0,0,0.5);
+    }
+    .fc-card:hover {
+        transform: translateY(-3px);
+        box-shadow:
+            inset 0 0 0 0.5px rgba(0,0,0,0.1),
+            0 2px 8px rgba(0,0,0,0.04),
+            0 32px 72px -16px rgba(10,25,47,0.14);
+    }
+    :global(html[data-theme="dark"]) .fc-card:hover {
+        box-shadow:
+            inset 0 0 0 0.5px rgba(255,255,255,0.1),
+            0 32px 72px -16px rgba(0,0,0,0.7);
+    }
+
+    /* Shader image area — tall, full-width */
+    .fc-cover {
         position: relative;
         width: 100%;
-        padding-top: 80px; 
-        padding-bottom: 6rem;
-        min-height: 800px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        background-color: #fdfdfd; 
+        aspect-ratio: 21 / 9;
         overflow: hidden;
+        background: #0a192f;
     }
-    :global(html[data-theme="dark"]) .hero-canvas { background-color: #050505; }
+    @media (max-width: 700px) {
+        .fc-cover { aspect-ratio: 4 / 3; }
+    }
 
-    /* Cord Custom Gradient Blobs */
-    .hero-canvas-bg {
-        position: absolute; inset: 0; z-index: 0;
-        overflow: hidden; pointer-events: none;
+    /* Bottom metadata bar */
+    .fc-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.1rem 1.4rem;
+        gap: 1rem;
+        border-top: 1px solid rgba(0,0,0,0.06);
     }
-    .blob {
-        position: absolute;
-        filter: blur(80px);
-        opacity: 0.8;
+    :global(html[data-theme="dark"]) .fc-bar {
+        border-top-color: rgba(255,255,255,0.07);
+    }
+    .fc-bar-left {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+    }
+    .fc-cat {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #0a192f;
+        background: rgba(10,25,47,0.07);
+        padding: 3px 10px;
+        border-radius: 100px;
+    }
+    :global(html[data-theme="dark"]) .fc-cat {
+        color: #93c5fd;
+        background: rgba(147,197,253,0.12);
+    }
+    .fc-sep {
+        color: #d1d5db;
+        font-size: 0.8rem;
+    }
+    .fc-date {
+        font-size: 0.8rem;
+        color: #6b7280;
+        font-variant-numeric: tabular-nums;
+    }
+    :global(html[data-theme="dark"]) .fc-date { color: #9ca3af; }
+
+    .fc-bar-right {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-shrink: 0;
+    }
+    .fc-avatar {
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
-        animation: float 20s infinite ease-in-out alternate;
-    }
-    /* Cord Deep Navy */
-    .blob-1 {
-        top: 10%; left: -5%; width: 700px; height: 700px;
-        background: radial-gradient(circle, rgba(10,37,64,0.18) 0%, transparent 70%); /* #0A2540 */
-        animation-delay: 0s;
-    }
-    /* Cord Classic Blue */
-    .blob-2 {
-        bottom: -20%; right: -10%; width: 800px; height: 800px;
-        background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%); /* #3b82f6 */
-        animation-delay: -5s;
-    }
-    /* Cord Cyan Glow */
-    .blob-3 {
-        top: 30%; left: 40%; width: 500px; height: 500px;
-        background: radial-gradient(circle, rgba(34,211,238,0.08) 0%, transparent 70%); /* #22d3ee */
-        animation-delay: -10s;
-    }
-    @keyframes float {
-        0% { transform: translate(0, 0) scale(1); }
-        100% { transform: translate(40px, 40px) scale(1.1); }
-    }
-    :global(html[data-theme="dark"]) .blob { opacity: 0.4; filter: blur(100px); }
-
-    .hero-canvas-content {
-        position: relative; z-index: 2;
-        width: 100%; max-width: 1280px;
-        padding: 0 5%;
-        display: flex; flex-direction: column;
-        flex-grow: 1;
-    }
-
-    /* Top Links (Blog | Cord en LinkedIn) */
-    .hero-top-links {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 2rem 0; margin-bottom: 2rem;
-    }
-    .blog-brand {
-        font-size: 1.2rem; font-weight: 600; color: #111827;
-        letter-spacing: -0.02em;
-    }
-    :global(html[data-theme="dark"]) .blog-brand { color: #fff; }
-
-    .social-link {
-        display: inline-flex; align-items: center; gap: 4px;
-        font-size: 0.95rem; font-weight: 600; color: #4b5563;
-        text-decoration: none; transition: color 0.2s;
-    }
-    :global(html[data-theme="dark"]) .social-link { color: #9ca3af; }
-    .social-link:hover { color: var(--color-blue-deep); }
-    :global(html[data-theme="dark"]) .social-link:hover { color: #60a5fa; }
-    .social-link svg { width: 14px; height: 14px; }
-
-    /* ==========================================================
-       FLOATING FEATURED CARD (Stripe Layout + Cord Aesthetics)
-       ========================================================== */
-    .floating-card-wrapper {
-        width: 100%;
-        margin-bottom: -10rem; /* Pulls the grid below upwards slightly */
-    }
-
-    .floating-card {
-        display: flex; flex-direction: column;
-        background: linear-gradient(145deg, #ffffff 0%, #f9fafb 100%);
-        border-radius: 24px;
-        overflow: hidden; text-decoration: none; color: inherit;
-        /* Combining hairline border and stripe deep shadow */
-        box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.08), 0 50px 100px -20px rgba(50,50,93,0.15), 0 30px 60px -30px rgba(0,0,0,0.1);
-        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    :global(html[data-theme="dark"]) .floating-card {
-        background: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
-        box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.08), 0 50px 100px -20px rgba(0,0,0,0.5);
-    }
-
-    .floating-card:hover {
-        transform: translateY(-4px);
-        box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.08), 0 50px 100px -20px rgba(10,37,218,0.15), 0 30px 60px -30px rgba(0,0,0,0.1);
-    }
-    :global(html[data-theme="dark"]) .floating-card:hover {
-        box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.12), 0 50px 100px -20px rgba(0,0,0,0.8);
-    }
-
-    @media (min-width: 992px) {
-        .floating-card { flex-direction: row; min-height: 480px; }
-    }
-
-    /* Left Text Side */
-    .fc-text {
-        flex: 1; padding: 3rem 2.5rem;
-        display: flex; flex-direction: column; justify-content: center;
-    }
-    @media (min-width: 992px) { .fc-text { padding: 4.5rem 3.5rem; } }
-
-    .fc-meta-top {
-        display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;
-    }
-    .fc-category {
-        font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
-        color: var(--color-blue-deep);
-        background: rgba(10,37,218,0.06); padding: 6px 14px; border-radius: 100px;
-    }
-    :global(html[data-theme="dark"]) .fc-category { color: #60a5fa; background: rgba(59,130,246,0.15); }
-
-    .fc-title {
-        font-size: clamp(2rem, 3.5vw, 2.8rem); font-weight: 800; line-height: 1.05;
-        letter-spacing: -0.035em; color: #111827; margin: 0 0 1.5rem;
-        transition: color 0.3s;
-    }
-    :global(html[data-theme="dark"]) .fc-title { color: #fff; }
-    .floating-card:hover .fc-title { color: var(--color-blue-deep); }
-    :global(html[data-theme="dark"]) .floating-card:hover .fc-title { color: #60a5fa; }
-
-    .fc-excerpt {
-        font-size: 1.15rem; color: #4b5563; line-height: 1.6; margin: 0 0 3rem;
-    }
-    :global(html[data-theme="dark"]) .fc-excerpt { color: #d1d5db; }
-
-    .fc-footer-flex {
-        display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto;
-    }
-
-    .fc-author {
-        display: flex; align-items: center; gap: 1rem;
-    }
-    .fc-author-initial {
-        width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
         background: linear-gradient(135deg, #0a2540 0%, #3b82f6 100%);
-        color: #fff; display: flex; align-items: center; justify-content: center;
-        font-weight: 700; font-size: 1.1rem;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.75rem;
+        flex-shrink: 0;
     }
-    :global(html[data-theme="dark"]) .fc-author-initial {
-        background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%);
+    .fc-author-name {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #374151;
     }
-    .fc-author-info { display: flex; flex-direction: column; gap: 2px; }
-    .fc-author-info strong { font-size: 0.95rem; font-weight: 700; color: #111827; }
-    :global(html[data-theme="dark"]) .fc-author-info strong { color: #fff; }
+    :global(html[data-theme="dark"]) .fc-author-name { color: #d1d5db; }
+    .fc-arrow {
+        width: 16px;
+        height: 16px;
+        color: #9ca3af;
+        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s;
+    }
+    .fc-card:hover .fc-arrow {
+        transform: translateX(4px);
+        color: #0a192f;
+    }
+    :global(html[data-theme="dark"]) .fc-card:hover .fc-arrow { color: #fff; }
 
-    .featured-arrow {
-        width: 42px; height: 42px; border-radius: 50%; background: #f1f5f9;
-        display: flex; align-items: center; justify-content: center;
-        color: #111827; transition: background 0.4s, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s;
+    /* ── Filters Bar ────────────────────────────────────────────── */
+    .blog-filters-bar {
+        padding: 2.5rem 0 1.5rem;
     }
-    :global(html[data-theme="dark"]) .featured-arrow { background: rgba(255,255,255,0.08); color: #fff; }
-    .featured-arrow svg { width: 18px; height: 18px; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-    
-    .floating-card:hover .featured-arrow {
-        background: var(--color-blue-deep); color: #fff; transform: scale(1.05);
-        box-shadow: 0 8px 20px rgba(10,37,218,0.25);
-    }
-    .floating-card:hover .featured-arrow svg { transform: translateX(3px); }
-
-    /* Right Image Side (Stripe Abstract) */
-    .fc-image {
-        flex: 1; position: relative; overflow: hidden; min-height: 300px;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .stripe-cover {
-        position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;
-        transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .floating-card:hover .stripe-cover { transform: scale(1.02); }
-    .blog-card-link:hover .stripe-cover { transform: scale(1.03); }
-    
-    .stripe-pattern-overlay {
-        position: absolute; inset: 0; z-index: 1; opacity: 0.15;
-        background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,1) 1px, transparent 0);
-        background-size: 24px 24px;
-    }
-    .stripe-shape { position: absolute; border-radius: 50%; filter: blur(40px); z-index: 0; }
-    .shape-1 { width: 150%; height: 150%; top: -50%; left: -50%; background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 60%); }
-    .shape-2 { width: 100%; height: 100%; bottom: -30%; right: -30%; background: radial-gradient(circle, rgba(0,0,0,0.1) 0%, transparent 70%); }
-    
-    .abstract-category-icon {
-        position: relative; z-index: 2;
-        width: 140px; height: 140px;
-        color: rgba(255,255,255,0.9);
-        filter: drop-shadow(0 8px 24px rgba(0,0,0,0.15));
-        transform: rotate(-5deg); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .abstract-category-icon svg { width: 100%; height: 100%; }
-    .small { width: 80px; height: 80px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1)); }
-    .floating-card:hover .abstract-category-icon { transform: rotate(0deg) scale(1.05); }
-    .blog-card-link:hover .abstract-category-icon { transform: rotate(0deg) scale(1.1); }
-
-    /* Flouvia Tech-forward Gradients (Monochromatic & Glass) */
-    .gradient-featured { background: linear-gradient(135deg, #0a2540 0%, #3b82f6 100%); }
-    .gradient-1 { background: linear-gradient(135deg, #0f172a 0%, #06b6d4 100%); }
-    .gradient-2 { background: linear-gradient(135deg, #1e3a8a 0%, #60a5fa 100%); }
-    .gradient-3 { background: linear-gradient(135deg, #172554 0%, #38bdf8 100%); }
-    .gradient-4 { background: linear-gradient(135deg, #082f49 0%, #2dd4bf 100%); }
-    .gradient-5 { background: linear-gradient(135deg, #111827 0%, #94a3b8 100%); }
-
-    /* ==========================================================
-       FILTROS (GLASS PILL)
-       ========================================================== */
-    .blog-sticky-nav {
-        position: sticky; top: 1.5rem; z-index: 50;
-        display: flex; justify-content: center;
-        margin-top: 13rem; /* Push below hero */
-        margin-bottom: 4rem; padding: 0 5%;
-        pointer-events: none;
-    }
-    .blog-filters-glass {
-        pointer-events: auto; display: inline-flex; gap: 0.4rem;
-        background: rgba(255, 255, 255, 0.65);
-        backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-        padding: 6px; border-radius: 100px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06), inset 0 0 0 0.5px rgba(255,255,255,0.8);
-        overflow-x: auto; scrollbar-width: none;
-    }
-    .blog-filters-glass::-webkit-scrollbar { display: none; }
-    :global(html[data-theme="dark"]) .blog-filters-glass {
-        background: rgba(15, 23, 42, 0.5); box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 0 0 0.5px rgba(255,255,255,0.1);
+    .blog-filters {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        flex-wrap: wrap;
     }
 
     .filter-btn {
-        background: transparent; border: none;
-        padding: 8px 18px; border-radius: 100px;
-        font-size: 0.85rem; font-weight: 600; color: #4b5563;
-        cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); white-space: nowrap;
+        background: transparent;
+        border: none;
+        padding: 7px 16px;
+        border-radius: 100px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #6b7280;
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        white-space: nowrap;
     }
     :global(html[data-theme="dark"]) .filter-btn { color: #9ca3af; }
-    .filter-btn:hover { color: #111827; background: rgba(0,0,0,0.04); }
-    :global(html[data-theme="dark"]) .filter-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
-    .filter-btn.active { background: #111827; color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-    :global(html[data-theme="dark"]) .filter-btn.active { background: #fff; color: #000; box-shadow: 0 4px 12px rgba(255,255,255,0.15); }
+    .filter-btn:hover {
+        color: #111827;
+        background: rgba(0,0,0,0.05);
+    }
+    :global(html[data-theme="dark"]) .filter-btn:hover {
+        color: #fff;
+        background: rgba(255,255,255,0.08);
+    }
+    .filter-btn.active {
+        background: #111827;
+        color: #fff;
+    }
+    :global(html[data-theme="dark"]) .filter-btn.active {
+        background: #fff;
+        color: #111827;
+    }
 
-    /* ==========================================================
-       GRID DE ARTÍCULOS RECIENTES
-       ========================================================== */
-    .blog-grid-section { padding: 0 5% 8rem; max-width: 1280px; margin: 0 auto; }
+    /* ── Article Grid ───────────────────────────────────────────── */
+    .blog-grid-section {
+        padding: 0 0 7rem;
+    }
 
     .blog-grid {
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-        gap: 3rem 2rem; transition: opacity 0.3s ease, transform 0.3s ease;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 2rem 1.75rem;
+        transition: opacity 0.26s ease, transform 0.26s ease;
     }
-    .blog-grid.filtering { opacity: 0; transform: translateY(10px); }
+    .blog-grid.filtering { opacity: 0; transform: translateY(8px); }
 
     .blog-card {
-        display: flex; flex-direction: column; background: #fff;
-        border-radius: 20px; padding: 1rem;
-        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow:
+            inset 0 0 0 0.5px rgba(0,0,0,0.07),
+            0 2px 8px rgba(0,0,0,0.03);
+        transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+                    box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    :global(html[data-theme="dark"]) .blog-card { background: rgba(255,255,255,0.02); }
+    :global(html[data-theme="dark"]) .blog-card {
+        background: #0d0d0d;
+        box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.07);
+    }
+    .blog-card:hover {
+        transform: translateY(-3px);
+        box-shadow:
+            inset 0 0 0 0.5px rgba(0,0,0,0.09),
+            0 16px 40px -12px rgba(10,25,47,0.1);
+    }
+    :global(html[data-theme="dark"]) .blog-card:hover {
+        box-shadow:
+            inset 0 0 0 0.5px rgba(255,255,255,0.1),
+            0 16px 40px -12px rgba(0,0,0,0.4);
+    }
 
-    .blog-card:hover { transform: translateY(-4px); box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.08), 0 20px 40px -20px rgba(10,37,218,0.08); }
-    :global(html[data-theme="dark"]) .blog-card:hover { box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.12), 0 20px 40px -20px rgba(0,0,0,0.4); }
+    .blog-card-link {
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
 
-    .blog-card-link { text-decoration: none; color: inherit; display: flex; flex-direction: column; height: 100%; }
-
+    /* Image wrap — shader fills this */
     .blog-img-wrap {
-        position: relative; width: 100%; aspect-ratio: 16/10;
-        border-radius: 12px; overflow: hidden; margin-bottom: 1.5rem;
+        position: relative;
+        width: 100%;
+        aspect-ratio: 3 / 2;
+        overflow: hidden;
+        background: #0d1b3e;
+        flex-shrink: 0;
     }
 
-    .blog-category-badge {
-        position: absolute; top: 1rem; left: 1rem;
-        background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
-        color: #111827; font-size: 0.65rem; font-weight: 700;
-        padding: 4px 10px; border-radius: 100px;
-        text-transform: uppercase; letter-spacing: 0.05em;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    .blog-cat-badge {
+        position: absolute;
+        top: 0.85rem;
+        left: 0.85rem;
+        background: rgba(255,255,255,0.88);
+        backdrop-filter: blur(8px);
+        color: #111827;
+        font-size: 0.6rem;
+        font-weight: 700;
+        padding: 3px 9px;
+        border-radius: 100px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        pointer-events: none;
     }
-    :global(html[data-theme="dark"]) .blog-category-badge { background: rgba(0,0,0,0.6); color: #fff; }
-
-    .blog-content { display: flex; flex-direction: column; flex-grow: 1; padding: 0 0.5rem; }
-
-    .blog-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 0.8rem; }
-
-    .blog-title {
-        font-size: 1.35rem; font-weight: 800; line-height: 1.3; letter-spacing: -0.02em;
-        color: #111827; margin: 0 0 0.8rem; transition: color 0.3s;
+    :global(html[data-theme="dark"]) .blog-cat-badge {
+        background: rgba(0,0,0,0.65);
+        color: #fff;
     }
-    :global(html[data-theme="dark"]) .blog-title { color: #fff; }
-    .blog-card-link:hover .blog-title { color: var(--color-blue-deep); }
-    :global(html[data-theme="dark"]) .blog-card-link:hover .blog-title { color: #60a5fa; }
 
-    .blog-excerpt {
-        font-size: 1rem; color: #4b5563; line-height: 1.6; margin: 0 0 1.5rem;
-        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    /* Card text body — compact */
+    .blog-card-body {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        padding: 1.1rem 1.2rem 1.15rem;
+        gap: 0.5rem;
     }
-    :global(html[data-theme="dark"]) .blog-excerpt { color: #cbd5e1; }
 
-    .blog-read-more {
-        display: inline-flex; align-items: center; gap: 6px;
-        font-size: 0.95rem; font-weight: 700; color: #111827; margin-top: auto;
-        transition: gap 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s;
+    .blog-card-meta {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #9ca3af;
+        letter-spacing: 0.01em;
+        font-variant-numeric: tabular-nums;
     }
-    :global(html[data-theme="dark"]) .blog-read-more { color: #fff; }
-    .blog-read-more svg { width: 16px; height: 16px; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-    .blog-card-link:hover .blog-read-more { gap: 10px; color: var(--color-blue-deep); }
-    :global(html[data-theme="dark"]) .blog-card-link:hover .blog-read-more { color: #60a5fa; }
 
-    @media (max-width: 992px) {
-        .floating-card { grid-template-columns: 1fr; }
-        .fc-image { min-height: 300px; }
-        .fc-text { padding: 3rem 2rem; }
-        .hero-canvas { padding-top: 6rem; }
+    .blog-card-title {
+        font-size: 1rem;
+        font-weight: 700;
+        line-height: 1.35;
+        letter-spacing: -0.018em;
+        color: #111827;
+        margin: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        transition: color 0.2s;
+    }
+    :global(html[data-theme="dark"]) .blog-card-title { color: #fff; }
+    .blog-card-link:hover .blog-card-title { color: #0a192f; }
+    :global(html[data-theme="dark"]) .blog-card-link:hover .blog-card-title { color: #93c5fd; }
+
+    .blog-read-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #6b7280;
+        margin-top: auto;
+        padding-top: 0.4rem;
+        transition: gap 0.35s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s;
+    }
+    :global(html[data-theme="dark"]) .blog-read-link { color: #9ca3af; }
+    .blog-read-link svg { width: 13px; height: 13px; transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+    .blog-card-link:hover .blog-read-link { gap: 8px; color: #0a192f; }
+    :global(html[data-theme="dark"]) .blog-card-link:hover .blog-read-link { color: #fff; }
+    .blog-card-link:hover .blog-read-link svg { transform: translateX(2px); }
+
+    /* ── Responsive ─────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+        .blog-header { padding: 6rem 0 2rem; }
+        .blog-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+    }
+    @media (max-width: 600px) {
+        .blog-header .blog-container { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+        .blog-headline { font-size: 1.75rem; }
+        .fc-bar { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+        .blog-grid { grid-template-columns: 1fr; }
     }
 </style>

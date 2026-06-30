@@ -1,235 +1,197 @@
 ---
 // /src/components/support/SupportHero.astro
+import BlueAuroraBg from './BlueAuroraBg.jsx'
 const { isEn = false } = Astro.props;
 ---
 
 <section class="support-hero">
-    <div class="pr-mesh" aria-hidden="true"></div>
+    <!-- Fondo: color sólido mientras el shader carga (evita flash blanco) -->
+    <div class="sh-bg" aria-hidden="true">
+        <BlueAuroraBg client:only="react" />
+    </div>
+
+    <!-- Contenido sobre el shader -->
     <div class="hero-content">
-        <p class="pp-eyebrow reveal">{isEn ? 'HELP CENTER' : 'CENTRO DE AYUDA'}</p>
-        <h1 class="pr-h1 masked-title">{isEn ? 'How can we help you?' : '¿Cómo podemos ayudarte?'}</h1>
+        <p class="sh-eyebrow reveal">{isEn ? 'HELP CENTER' : 'CENTRO DE AYUDA'}</p>
+        <h1 class="sh-h1 masked-title">{isEn ? 'How can we help you?' : '¿Cómo podemos ayudarte?'}</h1>
+
         <div class="search-container reveal">
             <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" id="support-search-input" placeholder={isEn ? "Search guides, troubleshooting and more..." : "Busca guías, solución de problemas y más..."} class="search-input" autocomplete="off" />
-            <div id="search-results-dropdown" class="search-dropdown hidden">
-                <!-- Resultados de búsqueda inyectados vía JS -->
-            </div>
+            <input
+                type="text"
+                id="support-search-input"
+                placeholder={isEn ? "Search guides, troubleshooting and more..." : "Busca guías, solución de problemas y más..."}
+                class="search-input"
+                autocomplete="off"
+            />
+            <div id="search-results-dropdown" class="search-dropdown hidden"></div>
         </div>
-        <div class="popular-searches reveal">
-            <span class="ps-label">{isEn ? 'Popular searches:' : 'Búsquedas populares:'}</span>
-            <a href={isEn ? "/en/support/emitir-cfdi" : "/soporte/emitir-cfdi"} class="ps-tag">{isEn ? 'Issue CFDI 4.0' : 'Emitir CFDI 4.0'}</a>
-            <a href={isEn ? "/en/support/cobro-divisas" : "/soporte/cobro-divisas"} class="ps-tag">{isEn ? 'International payments' : 'Pagos internacionales'}</a>
-            <a href={isEn ? "/en/support/cord-elements" : "/soporte/cord-elements"} class="ps-tag">Cord Elements</a>
-            <a href={isEn ? "/en/support/invitar-miembros-roles" : "/soporte/invitar-miembros-roles"} class="ps-tag">{isEn ? 'Invite team' : 'Invitar equipo'}</a>
-        </div>
+
     </div>
 </section>
 
 <style>
+    /* ── Hero shell ─────────────────────────────────────────────────────────── */
     .support-hero {
         position: relative;
         z-index: 10;
-        text-align: center;
-        padding: 11.5rem 5% 6rem;
         overflow-x: clip;
         overflow-y: visible;
-        background: var(--color-bg);
-        border-bottom: 1px solid var(--color-border);
     }
-    .pr-mesh {
+
+    /* Fondo oscuro: el color base coincide con el colorBase del shader para
+       que no haya flash mientras WebGL inicializa */
+    .sh-bg {
         position: absolute;
-        inset: -20% -10% auto;
-        height: 100%;
-        background:
-            radial-gradient(ellipse 50% 60% at 28% 20%, rgba(10,25,47,0.05) 0%, transparent 60%),
-            radial-gradient(ellipse 44% 54% at 76% 12%, rgba(10,25,47,0.04) 0%, transparent 60%);
-        pointer-events: none;
+        inset: 0;
+        background: #030d16;
+        z-index: 0;
     }
+
+    /* ── Contenido ──────────────────────────────────────────────────────────── */
     .hero-content {
         position: relative;
-        z-index: 1;
-        max-width: 760px;
+        z-index: 2;
+        text-align: center;
+        max-width: 740px;
         margin: 0 auto;
+        /* Compacto como ElevenLabs: el hero no es viewport completo */
+        padding: 7rem 5% 3.5rem;
     }
-    .pp-eyebrow {
+
+    /* ── Eyebrow ────────────────────────────────────────────────────────────── */
+    .sh-eyebrow {
         font-size: 0.65rem;
         font-weight: 800;
         letter-spacing: 3px;
         text-transform: uppercase;
-        color: #888;
+        color: rgba(148, 187, 233, 0.70);
         margin: 0 0 1.4rem;
     }
-    .pr-h1 {
+
+    /* ── Título ─────────────────────────────────────────────────────────────── */
+    .sh-h1 {
         font-size: clamp(2.4rem, 5.4vw, 4.2rem);
         font-weight: 800;
         line-height: 1.04;
         letter-spacing: -0.035em;
-        color: var(--color-text);
-        margin: 0 0 2.5rem;
+        color: #ffffff;
+        margin: 0 0 2.8rem;
     }
-    
+
+    /* ── Barra de búsqueda ──────────────────────────────────────────────────── */
     .search-container {
         position: relative;
         width: 100%;
         max-width: 640px;
         margin: 0 auto;
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
         border-radius: 16px;
         transition: transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-spring);
     }
-    .search-container:hover, .search-container:focus-within {
-        transform: translateY(-4px);
-        box-shadow: 0 24px 60px rgba(10, 25, 47, 0.12);
+    .search-container:hover,
+    .search-container:focus-within {
+        transform: translateY(-3px);
+        box-shadow: 0 24px 60px rgba(13, 71, 227, 0.18), 0 0 0 1px rgba(255,255,255,0.14);
     }
+
     .search-icon {
         position: absolute;
         left: 24px;
         top: 50%;
         transform: translateY(-50%);
-        width: 24px;
-        height: 24px;
-        color: var(--color-text-muted);
+        width: 22px;
+        height: 22px;
+        color: rgba(255, 255, 255, 0.45);
         pointer-events: none;
         transition: color 0.3s ease;
     }
     .search-container:focus-within .search-icon {
-        color: var(--color-blue-deep);
+        color: rgba(255, 255, 255, 0.85);
     }
+
     .search-input {
         width: 100%;
-        padding: 24px 24px 24px 64px;
-        font-size: 1.125rem;
+        padding: 22px 24px 22px 62px;
+        font-size: 1.1rem;
         font-family: var(--font-sans);
         font-weight: 500;
-        color: var(--color-text);
-        border: 1px solid var(--color-border);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 16px;
         outline: none;
-        background: var(--color-surface, #ffffff);
-        transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    }
-    :global(html[data-theme="dark"]) .search-input {
-        background: rgba(10,25,47,0.4);
+        background: rgba(255, 255, 255, 0.07);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        transition: border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
     }
     .search-input:focus {
-        border-color: var(--color-blue-deep);
-        box-shadow: 0 0 0 4px rgba(9, 105, 218, 0.1);
+        border-color: rgba(100, 160, 255, 0.40);
+        background: rgba(255, 255, 255, 0.10);
+        box-shadow: 0 0 0 4px rgba(13, 71, 227, 0.14), inset 0 1px 0 rgba(255,255,255,0.08);
     }
     .search-input::placeholder {
-        color: var(--color-text-muted);
-        opacity: 0.6;
+        color: rgba(255, 255, 255, 0.38);
         font-weight: 400;
     }
 
-    @media (max-width: 768px) {
-        .support-hero {
-            padding-top: 9.5rem;
-            padding-bottom: 4rem;
-        }
-        .search-input {
-            font-size: 1rem;
-            padding: 20px 20px 20px 56px;
-        }
-        .search-icon {
-            left: 20px;
-            width: 20px;
-            height: 20px;
-        }
-    }
 
-    /* ── POPULAR SEARCHES ── */
-    .popular-searches {
-        margin-top: 1.5rem;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-    }
-    .ps-label {
-        font-size: 0.9rem;
-        color: var(--color-text-muted);
-        font-weight: 500;
-        margin-right: 4px;
-    }
-    .ps-tag {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--color-blue-deep);
-        background: rgba(10, 25, 47, 0.04);
-        padding: 6px 14px;
-        border-radius: 20px;
-        text-decoration: none;
-        transition: all 0.3s var(--ease-spring);
-        border: 1px solid transparent;
-    }
-    .ps-tag:hover {
-        background: #ffffff;
-        color: var(--color-blue-deep);
-        border-color: rgba(10, 25, 47, 0.15);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(10, 25, 47, 0.06);
-    }
-
-    /* ── SEARCH DROPDOWN STYLES ── */
+    /* ── Dropdown de resultados ─────────────────────────────────────────────── */
     .search-dropdown {
         position: absolute;
-        top: calc(100% + 12px);
+        top: calc(100% + 10px);
         left: 0;
         right: 0;
-        background: var(--color-surface, #ffffff);
-        border: 1px solid var(--color-border);
+        background: #ffffff;
+        border: 1px solid rgba(0, 0, 0, 0.08);
         border-radius: 16px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
         max-height: 400px;
         overflow-y: auto;
-        z-index: 100;
+        z-index: 9999;
         text-align: left;
         opacity: 1;
         visibility: visible;
         transform: translateY(0);
-        transition: all 0.3s var(--ease-spring);
-    }
-    :global(html[data-theme="dark"]) .search-dropdown {
-        background: #0d1117;
+        transition: all 0.25s var(--ease-spring);
     }
     .search-dropdown.hidden {
         opacity: 0;
         visibility: hidden;
-        transform: translateY(-10px);
+        transform: translateY(-8px);
         pointer-events: none;
     }
+
     :global(.search-result-item) {
         display: block;
-        padding: 16px 24px;
+        padding: 14px 22px;
         text-decoration: none;
-        color: var(--color-text);
-        border-bottom: 1px solid var(--color-border);
-        transition: background 0.2s;
+        color: var(--color-text, #050505);
+        border-bottom: 1px solid rgba(0,0,0,0.06);
+        transition: background 0.15s;
     }
-    :global(.search-result-item:last-child) {
-        border-bottom: none;
-    }
-    :global(.search-result-item:hover), :global(.search-result-item.active) {
-        background: var(--color-bg-soft);
+    :global(.search-result-item:last-child) { border-bottom: none; }
+    :global(.search-result-item:hover),
+    :global(.search-result-item.active) {
+        background: #f5f5f7;
     }
     :global(.sr-title) {
         font-weight: 600;
-        font-size: 1.05rem;
-        color: var(--color-blue-deep);
-        margin-bottom: 4px;
+        font-size: 0.975rem;
+        color: var(--color-blue-deep, #0a192f);
+        margin-bottom: 3px;
     }
     :global(.sr-title mark) {
-        background: rgba(9,105,218,0.2);
+        background: rgba(13,71,227,0.12);
         color: inherit;
-        border-radius: 2px;
+        border-radius: 3px;
     }
     :global(.sr-desc) {
-        font-size: 0.9rem;
-        color: var(--color-text-muted);
+        font-size: 0.85rem;
+        color: var(--color-text-muted, #555556);
         line-height: 1.4;
         display: -webkit-box;
         -webkit-line-clamp: 2;
@@ -237,32 +199,52 @@ const { isEn = false } = Astro.props;
         overflow: hidden;
     }
     :global(.sr-desc mark) {
-        background: rgba(9,105,218,0.2);
+        background: rgba(13,71,227,0.10);
         color: inherit;
-        border-radius: 2px;
+        border-radius: 3px;
     }
     :global(.sr-cat) {
-        font-size: 0.75rem;
+        font-size: 0.70rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        color: var(--color-text-muted);
-        margin-bottom: 6px;
+        color: #888;
+        margin-bottom: 4px;
         font-weight: 700;
     }
     :global(.sr-header) {
-        padding: 16px 24px 8px;
-        font-size: 0.85rem;
+        padding: 12px 22px 8px;
+        font-size: 0.75rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 1px;
-        color: var(--color-text-muted);
-        border-bottom: 1px solid var(--color-border);
+        color: #aaa;
+        border-bottom: 1px solid rgba(0,0,0,0.06);
     }
     :global(.sr-empty) {
         padding: 24px;
         text-align: center;
-        color: var(--color-text-muted);
-        font-size: 0.95rem;
+        color: #888;
+        font-size: 0.9rem;
+    }
+
+    /* ── Mobile ─────────────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+        .hero-content {
+            padding-top: 6.5rem;
+            padding-bottom: 3rem;
+        }
+        .search-input {
+            font-size: 1rem;
+            padding: 18px 18px 18px 54px;
+        }
+        .search-icon {
+            left: 18px;
+            width: 20px;
+            height: 20px;
+        }
+        .sh-h1 {
+            font-size: clamp(2rem, 8vw, 3rem);
+        }
     }
 </style>
 
@@ -275,18 +257,17 @@ const { isEn = false } = Astro.props;
         let articles: any[] = [];
         let searchTimeout: any;
 
-        function highlightText(text, term) {
+        function highlightText(text: string, term: string) {
             if (!term) return text;
             const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
             return text.replace(regex, '<mark>$1</mark>');
         }
 
-        function renderArticles(results, term = '', title = '') {
+        function renderArticles(results: any[], term = '', title = '') {
             if (results.length === 0) {
                 dropdown.innerHTML = `<div class="sr-empty">No se encontraron artículos para "${term}"</div>`;
                 return;
             }
-
             const headerHtml = title ? `<div class="sr-header">${title}</div>` : '';
             const listHtml = results.map((r: any) => `
                 <a href="${r.url}" class="search-result-item">
@@ -295,21 +276,17 @@ const { isEn = false } = Astro.props;
                     <div class="sr-desc">${highlightText(r.description, term)}</div>
                 </a>
             `).join('');
-
             dropdown.innerHTML = headerHtml + listHtml;
         }
 
-        // Default suggestions
         const showSuggestions = () => {
             if (articles.length === 0) return;
-            // Provide some default suggestions
             const defaultSlugs = ['emitir-cfdi', 'cobro-divisas', 'cord-elements', 'manejo-disputas'];
-            const suggestions = articles.filter(a => defaultSlugs.some(slug => a.url.includes(slug)));
+            const suggestions = articles.filter((a: any) => defaultSlugs.some(slug => a.url.includes(slug)));
             renderArticles(suggestions, '', 'Sugerencias');
             dropdown.classList.remove('hidden');
         };
 
-        // Fetch index on focus
         input.addEventListener('focus', async () => {
             if (articles.length === 0) {
                 try {
@@ -322,33 +299,28 @@ const { isEn = false } = Astro.props;
             if (input.value.trim().length === 0) {
                 showSuggestions();
             } else {
-                input.dispatchEvent(new Event('input')); // Re-trigger search
+                input.dispatchEvent(new Event('input'));
             }
         });
 
-        // Filter on input
         input.addEventListener('input', (e) => {
             const query = (e.target as HTMLInputElement).value.toLowerCase().trim();
             clearTimeout(searchTimeout);
-
             if (query.length === 0) {
                 showSuggestions();
                 return;
             }
-
             searchTimeout = setTimeout(() => {
                 dropdown.classList.remove('hidden');
-                const results = articles.filter(a => 
-                    a.title.toLowerCase().includes(query) || 
+                const results = articles.filter((a: any) =>
+                    a.title.toLowerCase().includes(query) ||
                     a.description.toLowerCase().includes(query) ||
                     a.category.toLowerCase().includes(query)
-                ).slice(0, 6); // Limit to 6 results
-
+                ).slice(0, 6);
                 renderArticles(results, query, 'Resultados');
-            }, 150); // Debounce
+            }, 150);
         });
 
-        // Close on click outside
         document.addEventListener('click', (e) => {
             if (!input.contains(e.target as Node) && !dropdown.contains(e.target as Node)) {
                 dropdown.classList.add('hidden');

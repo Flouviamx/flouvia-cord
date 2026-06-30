@@ -597,6 +597,31 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
 ✅ **App funcional (jun 2026)** — CRUD de clientes/productos (modales), ajustes que guardan,
    acciones de cotización (enviar/aprobar/rechazar/pago/facturar), aprobar/rechazar REAL
    en `/q/[token]`, PDF imprimible personalizado por cuenta (`/app/cotizaciones/[id]/imprimir`)
+✅ **Rediseño premium de `/precios` — tarjetas ElevenLabs + aurora viajera (jun 2026)** —
+   Reescritura completa de `src/pages/precios.astro` con tres mejoras:
+   • **Tarjetas estilo ElevenLabs:** layout card con header visual (`plan-visual`, min-height 168px)
+     + body (`plan-body`) separado. `plan-visual` tiene fondo Apple gray `#f5f5f7` uniforme para
+     todos los planes. Cada tarjeta incluye un overlay de aurora CSS (`div.plan-aurora-bg` +
+     blobs `.pab-b1`/`.pab-b2`): navy `#08152a` + radiales azul eléctrico `rgba(15,99,250,0.6)`
+     y azul hielo `rgba(97,183,255,0.38)`, animados con `@keyframes pab-drift1/2` (orgánico,
+     9s/13s). Por JS: la clase `aurora-active` viaja entre tarjetas — activa por defecto en el
+     plan destacado (Profesional); al hacer `mouseenter` en otra tarjeta la aurora se transfiere
+     (`opacity 0.5s`); al salir del `.pr-grid-wrap` regresa al destacado. El texto del header
+     cambia a blanco con la misma transición. Sin badges "Más popular" (eliminados).
+   • **Calculadora ROI con shader GLSL:** `PriceAuroraBg.jsx` (R3F, `client:only="react"`) — aurora
+     azul eléctrico (#0f63fa) + hielo (#61b7ff) sobre navy #08152a, sin grano. Pasos numerados
+     + sliders bidireccionales. La card aurora es `position:relative; overflow:hidden; background:#08152a`;
+     el canvas es `position:absolute; inset:0; z-index:0`; el contenido va en `.pr-roi-card-inner`
+     con `z-index:2`.
+   • **Botones pill con shimmer:** TODOS los CTAs (tarjetas + fila `<tfoot>` de tabla comparativa)
+     son `border-radius:999px` oscuros (`#111827` → `#0a192f` en hover) con pseudo-elemento `::after`
+     que cruza en shimmer (`translateX(-110%→110%)`), `scale(0.97)` en `:active`. La fila de
+     comparación siempre dice "Empezar" (ES) / "Get started" (EN) — texto uniforme sin variantes
+     "gratis"/"ahora".
+   ⚠️ **Regla a futuro:** aurora viajera = clase JS `aurora-active` sobre el `.plan` (un solo
+   conjunto de nodos CSS por tarjeta, sin WebGL duplicado). `PriceAuroraBg` solo para el ROI card.
+   Botones de precios = siempre oscuros, siempre pill 999px, siempre shimmer.
+
 ✅ **Tabla comparativa exhaustiva + precios en USD (jun 2026)** — La tabla de comparación de
    planes (`COMPARATIVA` / `COMPARATIVA_EN`) se expandió de ~20 filas a ~60 features en
    **13 grupos** cubriendo TODAS las funcionalidades de la app: límites del sistema, consumo

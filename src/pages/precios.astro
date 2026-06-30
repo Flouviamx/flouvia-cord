@@ -11,6 +11,7 @@ import PageAnims from '../components/landing/PageAnims.astro';
 import { PLANES as PLANES_ES, COMPARATIVA as COMPARATIVA_ES, FAQ_PRECIOS as FAQ_ES, precioAnualMensualizado } from '../lib/precios';
 import { PLANES_EN, COMPARATIVA_EN, FAQ_PRECIOS_EN } from '../lib/precios.en';
 import { getLangFromUrl } from '../i18n/utils';
+import PriceAuroraBg from '../components/landing/PriceAuroraBg.jsx';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
@@ -46,13 +47,22 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
                 {PLANES.map((p) => {
                     const anual = precioAnualMensualizado(p.precioMensual);
                     return (
-                        <article class:list={['plan reveal', { 'plan-featured': p.destacado }]}>
-                            <div class="plan-head">
-                                <h3 class="plan-name">{p.nombre}</h3>
-                                <div class="plan-price-wrap">
+                        <article class:list={['plan reveal', `plan-${p.id}`, { 'plan-featured': p.destacado }]}>
+
+                            {/* ── Zona visual (header) ── */}
+                            <div class="plan-visual">
+                                <div class="plan-aurora-bg" aria-hidden="true">
+                                    <div class="pab-b1"></div>
+                                    <div class="pab-b2"></div>
+                                </div>
+                                <div class="plan-visual-top">
+                                    <h3 class="plan-name">{p.nombre}</h3>
+                                </div>
+                                <div class="plan-visual-bottom">
                                     {p.precioMensual === 0 ? (
                                         <div class="plan-price">
                                             <span class="editorial plan-amount">$0</span>
+                                            <span class="plan-cycle">{isEn ? 'forever' : 'siempre'}</span>
                                         </div>
                                     ) : (
                                         <div class="plan-price" data-monthly={money0(p.precioMensual)} data-annual={money0(anual)}>
@@ -60,10 +70,12 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
                                             <span class="plan-cycle">{isEn ? 'USD / mo' : 'MXN / mes'}</span>
                                         </div>
                                     )}
+                                    <p class="plan-tagline">{p.tagline}</p>
                                 </div>
-                                
-                                <p class="plan-tagline">{p.tagline}</p>
+                            </div>
 
+                            {/* ── Body: toggle + CTA + features ── */}
+                            <div class="plan-body">
                                 {p.precioMensual > 0 && (
                                     <div class="plan-billing-toggle">
                                         <label class="toggle-switch">
@@ -73,34 +85,38 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
                                         <span class="toggle-label">{isEn ? 'Billed yearly' : 'Cobro anual'}</span>
                                     </div>
                                 )}
-                            </div>
-                            
-                            <div class="plan-feats-wrap">
-                                <p class="plan-feats-title">{p.id === 'free' ? (isEn ? 'Includes:' : 'Incluye:') : (isEn ? 'Everything above +' : 'Todo lo anterior +')}</p>
-                                <ul class="plan-feats">
-                                    {p.feats.map((f) => (
-                                        <li>
-                                            <div class="pf-check">
-                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                </svg>
-                                            </div>
-                                            <span>{f}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                            
-                            <div class="plan-footer">
+
                                 <a
                                     href={p.precioMensual === 0
                                         ? p.ctaHref
                                         : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}&cycle=mensual`)}`}
                                     data-cta-plan={p.precioMensual === 0 ? undefined : p.id}
                                     data-base-href={`/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}`)}`}
-                                    class:list={['plan-cta', p.destacado ? 'plan-cta-solid' : 'plan-cta-ghost']}
+                                    class="plan-cta plan-cta-solid"
                                 >{p.ctaLabel}</a>
+                                {(p.id === 'scale' || p.id === 'developer') && (
+                                    <a href="mailto:hola@flouvia.com" class="plan-sales-link">
+                                        {isEn ? 'or contact sales' : 'o hablar con ventas'}
+                                    </a>
+                                )}
+
+                                <div class="plan-feats-wrap">
+                                    <p class="plan-feats-title">{p.id === 'free' ? (isEn ? 'Includes:' : 'Incluye:') : (isEn ? 'Everything above +' : 'Todo lo anterior +')}</p>
+                                    <ul class="plan-feats">
+                                        {p.feats.map((f) => (
+                                            <li>
+                                                <div class="pf-check">
+                                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    </svg>
+                                                </div>
+                                                <span>{f}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
                             </div>
+
                         </article>
                     );
                 })}
@@ -121,30 +137,55 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
                         {isEn ? 'Adjust the numbers to your reality. If live tracking helps you close just one extra quote a month, the plan is paid for.' : 'Mueve los números a tu realidad. Si el seguimiento en vivo te ayuda a cerrar una sola cotización más al mes, el plan ya quedó pagado.'}
                     </p>
                     <div class="pr-roi-fields reveal">
-                        <label>
-                            <span>{isEn ? 'Quotes you send per month' : 'Cotizaciones que mandas al mes'}</span>
-                            <input type="number" id="roi-qty" min="1" max="999" value="20" />
-                        </label>
-                        <label>
-                            <span>{isEn ? 'Average ticket (USD)' : 'Ticket promedio (MXN)'}</span>
-                            <input type="number" id="roi-ticket" min="0" step={isEn ? '50' : '500'} value={isEn ? '1800' : '35000'} />
-                        </label>
+                        <div class="pr-roi-step">
+                            <div class="pr-roi-step-num">1</div>
+                            <label>
+                                <span>{isEn ? 'Quotes you send per month' : 'Cotizaciones que mandas al mes'}</span>
+                                <input type="number" id="roi-qty" min="1" max="500" value="20" />
+                                <div class="pr-roi-range-wrap">
+                                    <input type="range" id="roi-qty-range" min="1" max="200" value="20" class="pr-roi-range" />
+                                    <div class="pr-roi-range-labels">
+                                        <span>1</span><span>200</span>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="pr-roi-step">
+                            <div class="pr-roi-step-num">2</div>
+                            <label>
+                                <span>{isEn ? 'Average ticket (USD)' : 'Ticket promedio (MXN)'}</span>
+                                <input type="number" id="roi-ticket" min="0" step={isEn ? '50' : '500'} value={isEn ? '1800' : '35000'} />
+                                <div class="pr-roi-range-wrap">
+                                    <input type="range" id="roi-ticket-range" min="0" max={isEn ? '20000' : '500000'} step={isEn ? '100' : '1000'} value={isEn ? '1800' : '35000'} class="pr-roi-range" />
+                                    <div class="pr-roi-range-labels">
+                                        <span>$0</span><span>{isEn ? '$20k' : '$500k'}</span>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
                     </div>
                 </div>
                 <div class="pr-roi-card reveal-mockup">
-                    <span class="pr-roi-label">{isEn ? 'Monthly pipeline' : 'Mueves al mes'}</span>
-                    <span class="editorial pr-roi-big" id="roi-pipeline">{isEn ? '$36,000' : '$700,000'}</span>
-                    <div class="pr-roi-split">
-                        <div>
-                            <span>{isEn ? 'Professional Plan' : 'Plan Profesional'}</span>
-                            <b class="editorial">{isEn ? '$30' : '$590'}<i>{isEn ? '/mo' : '/mes'}</i></b>
+                    <PriceAuroraBg client:only="react" />
+                    <div class="pr-roi-card-inner">
+                        <span class="pr-roi-label">{isEn ? 'Monthly pipeline' : 'Mueves al mes'}</span>
+                        <span class="editorial pr-roi-big" id="roi-pipeline">{isEn ? '$36,000' : '$700,000'}</span>
+                        <div class="pr-roi-split">
+                            <div>
+                                <span>{isEn ? 'Professional Plan' : 'Plan Profesional'}</span>
+                                <b class="editorial">{isEn ? '$30' : '$590'}<i>{isEn ? '/mo' : '/mes'}</i></b>
+                            </div>
+                            <div>
+                                <span>{isEn ? 'Which is' : 'Es el'}</span>
+                                <b class="editorial" id="roi-pct">0.08%</b>
+                            </div>
                         </div>
-                        <div>
-                            <span>{isEn ? 'Which is' : 'Es el'}</span>
-                            <b class="editorial" id="roi-pct">0.08%</b>
-                        </div>
+                        <p class="pr-roi-foot" id="roi-foot">{isEn ? 'A single extra quote per month pays for the plan ~60 times.' : 'Una sola cotización extra al mes paga el plan ~59 veces.'}</p>
+                        <a href="/registro" class="pr-roi-cta">
+                            {isEn ? 'Start with Professional' : 'Empezar con Profesional'}
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </a>
                     </div>
-                    <p class="pr-roi-foot" id="roi-foot">{isEn ? 'A single extra quote per month pays for the plan ~60 times.' : 'Una sola cotización extra al mes paga el plan ~59 veces.'}</p>
                 </div>
             </div>
         </section>
@@ -194,6 +235,28 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
                             </>
                         ))}
                     </tbody>
+                    <tfoot>
+                        <tr class="pr-tfoot-row">
+                            <td class="pr-tfoot-empty"></td>
+                            {PLANES.map((p) => (
+                                <td class:list={['pr-tfoot-cell', { 'is-featured': p.destacado }]}>
+                                    <a
+                                        href={p.precioMensual === 0
+                                            ? p.ctaHref
+                                            : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}&cycle=mensual`)}`}
+                                        data-base-href={`/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}`)}`}
+                                        data-cta-plan={p.precioMensual === 0 ? undefined : p.id}
+                                        class="pr-tfoot-btn pr-tfoot-btn-solid"
+                                    >{isEn ? 'Get started' : 'Empezar'}</a>
+                                    {(p.id === 'scale' || p.id === 'developer') && (
+                                        <a href="mailto:hola@flouvia.com" class="pr-tfoot-sales">
+                                            {isEn ? 'or contact sales' : 'o hablar con ventas'}
+                                        </a>
+                                    )}
+                                </td>
+                            ))}
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </section>
@@ -287,189 +350,191 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
     .pr-toggle-btn.is-active .pr-toggle-save { background: rgba(255,255,255,0.18); color: #6ee7b7; }
 
     /* ════════ TARJETAS ════════ */
-    .pr-grid-wrap { max-width: 1200px; margin: 0 auto; padding: 2rem 5% 1rem; }
-    @media (min-width: 860px) { .pr-grid-wrap { padding: 3rem 5% 1rem; } }
-    
+    .pr-grid-wrap { max-width: 1260px; margin: 0 auto; padding: 1rem 4% 1rem; }
+    @media (min-width: 860px) { .pr-grid-wrap { padding: 2rem 4% 1rem; } }
+
     .pr-grid {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
-        gap: 0;
+        gap: 1rem;
         align-items: stretch;
-        border-top: 1px solid var(--color-border);
-        border-bottom: 1px solid var(--color-border);
     }
 
+    /* ── Card base ── */
     .plan {
         position: relative;
-        padding: 2.5rem 1.5rem;
         display: flex;
         flex-direction: column;
-        border-right: 1px solid var(--color-border);
-        background: transparent;
-        transition: background 0.3s ease;
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid var(--color-border);
+        background: #fff;
+        transition: box-shadow 0.35s, transform 0.35s;
+        cursor: default;
     }
-    .plan:last-child {
-        border-right: none;
-    }
-    .plan:hover {
-        background: var(--color-bg-soft);
-    }
+    .plan:hover { box-shadow: 0 12px 36px -8px rgba(10,25,47,0.12); transform: translateY(-2px); }
+    .plan-featured { box-shadow: 0 8px 28px -6px rgba(10,25,47,0.16); }
+    .plan-featured:hover { box-shadow: 0 22px 50px -12px rgba(10,25,47,0.28); }
 
-    .plan-featured {
-        background: rgba(var(--color-blue-rgb, 10, 37, 64), 0.02);
-    }
-    .plan-featured:hover {
-        background: rgba(var(--color-blue-rgb, 10, 37, 64), 0.04);
-    }
-    .plan-featured::before {
-        content: '';
-        position: absolute;
-        top: -1px;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background: var(--color-blue-deep, #0a192f);
-        z-index: 1;
-    }
-
-    .plan-head { 
-        display: flex; 
-        flex-direction: column; 
-        gap: 0.8rem; 
-        margin-bottom: 2rem;
-        min-height: 160px;
-    }
-    .plan-name { font-size: 1.15rem; font-weight: 600; margin: 0; color: var(--color-text); }
-    
-    .plan-price-wrap { display: flex; align-items: center; }
-    .plan-price { display: flex; align-items: baseline; gap: 4px; }
-    .plan-amount { font-size: 2.2rem; line-height: 1; color: var(--color-text); font-weight: 500; letter-spacing: -1px; }
-    .plan-cycle { font-size: 0.9rem; color: var(--color-text-muted); display: flex; flex-direction: column; }
-    .plan-cycle .plan-billed { font-style: normal; font-size: 0.7rem; color: var(--color-text-muted); opacity: 0.8; margin-top: -2px; }
-
-    .plan-tagline { font-size: 0.9rem; margin: 0; color: var(--color-text-muted); line-height: 1.4; }
-
-    .plan-billing-toggle {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-top: 0.5rem;
-    }
-    .toggle-switch {
+    /* ── Visual header zone ── */
+    .plan-visual {
         position: relative;
-        display: inline-block;
-        width: 36px;
-        height: 20px;
+        padding: 1.4rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 168px;
+        gap: 0.8rem;
+        background: #f5f5f7; /* Apple gray — neutral for all plans */
+        overflow: hidden;
+        transition: background 0.5s;
     }
-    .toggle-switch input {
+    .plan-visual-top { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+    .plan-visual-bottom { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 0.35rem; margin-top: auto; }
+
+    /* ── Aurora overlay (one per card, CSS-only) ── */
+    .plan-aurora-bg {
+        position: absolute; inset: 0; z-index: 0;
+        background: #08152a;
         opacity: 0;
-        width: 0;
-        height: 0;
+        transition: opacity 0.5s cubic-bezier(0.16,1,0.3,1);
+        pointer-events: none;
     }
-    .toggle-slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-color: var(--color-border);
-        transition: .4s;
-        border-radius: 20px;
+    .plan.aurora-active .plan-visual { background: transparent; }
+    .plan.aurora-active .plan-aurora-bg { opacity: 1; }
+
+    /* Blob 1 — azul eléctrico principal */
+    .pab-b1 {
+        position: absolute; inset: -45%;
+        background:
+            radial-gradient(ellipse 80% 60% at 18% 32%, rgba(15,99,250,0.6) 0%, transparent 52%),
+            radial-gradient(ellipse 60% 75% at 82% 68%, rgba(97,183,255,0.38) 0%, transparent 52%),
+            radial-gradient(ellipse 45% 45% at 52% 48%, rgba(37,99,235,0.22) 0%, transparent 65%);
+        animation: pab-drift1 9s ease-in-out infinite alternate;
     }
-    .toggle-slider:before {
-        position: absolute;
-        content: "";
-        height: 14px;
-        width: 14px;
-        left: 3px;
-        bottom: 3px;
-        background-color: white;
-        transition: .3s var(--ease-spring);
-        border-radius: 50%;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    /* Blob 2 — azul hielo acento */
+    .pab-b2 {
+        position: absolute; inset: -35%;
+        background:
+            radial-gradient(ellipse 65% 55% at 74% 20%, rgba(96,165,250,0.3) 0%, transparent 52%),
+            radial-gradient(ellipse 48% 62% at 26% 80%, rgba(14,165,233,0.28) 0%, transparent 52%);
+        animation: pab-drift2 13s ease-in-out infinite alternate-reverse;
     }
-    input:checked + .toggle-slider {
-        background-color: var(--color-text);
+    @keyframes pab-drift1 {
+        from { transform: translate(-4%, 3%) rotate(-6deg) scale(1); }
+        to   { transform: translate(5%, -4%) rotate(5deg) scale(1.08); }
     }
-    input:checked + .toggle-slider:before {
-        transform: translateX(16px);
-    }
-    .toggle-label {
-        font-size: 0.85rem;
-        color: var(--color-text-muted);
-        font-weight: 500;
-        cursor: pointer;
+    @keyframes pab-drift2 {
+        from { transform: translate(4%, -3%) rotate(4deg) scale(1.05); }
+        to   { transform: translate(-5%, 4%) rotate(-5deg) scale(1); }
     }
 
-    .plan-feats-wrap {
+    /* ── Text colors — default (light visual zone) ── */
+    .plan-name   { font-size: 1.1rem; font-weight: 600; margin: 0; letter-spacing: -0.01em; color: #111827; transition: color 0.4s; }
+    .plan-price  { display: flex; align-items: baseline; gap: 5px; }
+    .plan-amount { font-size: 2rem; line-height: 1; font-weight: 500; letter-spacing: -1.5px; color: #111827; transition: color 0.4s; }
+    .plan-cycle  { font-size: 0.8rem; font-weight: 500; line-height: 1.3; color: #6b7280; transition: color 0.4s; }
+    .plan-tagline { font-size: 0.78rem; margin: 0; line-height: 1.4; color: #6b7280; transition: color 0.4s; }
+
+    /* ── Text colors — when aurora is active (dark visual zone) ── */
+    .plan.aurora-active .plan-name    { color: #fff; }
+    .plan.aurora-active .plan-amount  { color: #fff; }
+    .plan.aurora-active .plan-cycle   { color: rgba(255,255,255,0.6); }
+    .plan.aurora-active .plan-tagline { color: rgba(255,255,255,0.52); }
+
+    /* ── Body ── */
+    .plan-body {
         flex-grow: 1;
         display: flex;
         flex-direction: column;
+        padding: 1.2rem 1.4rem 1.4rem;
+        gap: 0.7rem;
+        border-top: 1px solid var(--color-border);
     }
-    .plan-feats-title {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--color-text);
-        margin: 0 0 1rem 0;
-    }
-    .plan-feats { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.8rem; }
-    .plan-feats li { display: flex; align-items: flex-start; gap: 10px; font-size: 0.85rem; line-height: 1.4; color: var(--color-text-muted); }
-    .pf-check {
-        width: 16px; height: 16px; flex-shrink: 0;
-        color: var(--color-text);
-        display: flex; align-items: center; justify-content: center;
-        margin-top: 2px;
-    }
-    .pf-check svg { width: 12px; height: 12px; }
 
-    .plan-footer {
-        margin-top: 2.5rem;
+    /* Billing toggle */
+    .plan-billing-toggle { display: flex; align-items: center; gap: 8px; }
+    .toggle-switch { position: relative; display: inline-block; width: 34px; height: 19px; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+        position: absolute; cursor: pointer; inset: 0;
+        background: var(--color-border); transition: .3s; border-radius: 20px;
     }
+    .toggle-slider:before {
+        position: absolute; content: ""; height: 13px; width: 13px;
+        left: 3px; bottom: 3px; background: white;
+        transition: .25s var(--ease-spring); border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    input:checked + .toggle-slider { background: #0a192f; }
+    input:checked + .toggle-slider:before { transform: translateX(15px); }
+    .toggle-label { font-size: 0.78rem; color: var(--color-text-muted); font-weight: 500; cursor: pointer; }
+
+    /* ── CTA pill buttons with shimmer ── */
     .plan-cta {
+        position: relative;
+        overflow: hidden;
         display: block;
         text-align: center;
         text-decoration: none;
-        font-size: 0.95rem;
-        font-weight: 500;
-        padding: 10px;
-        border-radius: 8px;
-        transition: all 0.2s;
+        font-size: 0.9rem;
+        font-weight: 600;
+        padding: 12px 16px;
+        border-radius: 999px;
+        transition: transform 0.22s var(--ease-spring), box-shadow 0.22s, background 0.22s, color 0.22s;
         width: 100%;
+        letter-spacing: -0.01em;
     }
-    .plan-cta-ghost {
-        color: var(--color-text);
-        border: 1px solid var(--color-border);
-        background: transparent;
+    .plan-cta::after {
+        content: '';
+        position: absolute; inset: 0;
+        background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%);
+        transform: translateX(-110%);
+        transition: transform 0.55s cubic-bezier(0.16,1,0.3,1);
+        pointer-events: none;
     }
-    .plan-cta-ghost:hover { background: var(--color-bg-soft); }
+    .plan-cta:hover::after { transform: translateX(110%); }
+    .plan-cta:active { transform: scale(0.97); }
+
     .plan-cta-solid {
-        background: var(--color-text);
-        color: var(--color-bg, #fff);
+        background: #111827; color: #fff; border: 1px solid transparent;
     }
-    .plan-cta-solid:hover { opacity: 0.9; }
+    .plan-cta-solid:hover { background: #0a192f; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(10,25,47,0.3); }
+
+    .plan-sales-link {
+        display: block; text-align: center; font-size: 0.76rem;
+        color: var(--color-text-muted); text-decoration: none;
+        transition: color 0.2s; margin-top: -0.25rem;
+    }
+    .plan-sales-link:hover { color: var(--color-text); }
+
+    /* Features */
+    .plan-feats-wrap { flex-grow: 1; display: flex; flex-direction: column; margin-top: 0.3rem; }
+    .plan-feats-title {
+        font-size: 0.75rem; font-weight: 700; color: var(--color-text-muted);
+        text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 0.7rem 0;
+    }
+    .plan-feats { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }
+    .plan-feats li {
+        display: flex; align-items: flex-start; gap: 9px;
+        font-size: 0.82rem; line-height: 1.4; color: var(--color-text-muted);
+        padding: 0.55rem 0; border-bottom: 1px solid var(--color-border);
+    }
+    .plan-feats li:last-child { border-bottom: none; }
+    .pf-check {
+        width: 16px; height: 16px; flex-shrink: 0; color: #0a192f;
+        display: flex; align-items: center; justify-content: center; margin-top: 1px;
+    }
+    .pf-check svg { width: 11px; height: 11px; }
 
     .pr-note { text-align: center; margin: 2rem 0 0; font-size: 0.95rem; color: var(--color-text-muted); }
     @media (min-width: 860px) { .pr-note { margin: 2.6rem 0 0; } }
-    .pr-note a { color: var(--color-text); font-weight: 500; text-decoration: none; border-bottom: 1px solid var(--color-border); padding-bottom: 1px;}
+    .pr-note a { color: var(--color-text); font-weight: 500; text-decoration: none; border-bottom: 1px solid var(--color-border); padding-bottom: 1px; }
     .pr-note a:hover { border-bottom-color: var(--color-text); }
 
-    @media (max-width: 1180px) {
-        .pr-grid {
-            grid-template-columns: repeat(3, 1fr);
-            border: none;
-            gap: 1.5rem;
-        }
-        .plan {
-            border: 1px solid var(--color-border);
-            border-radius: 12px;
-        }
-        .plan-featured::before {
-            border-radius: 12px 12px 0 0;
-        }
-    }
-    @media (max-width: 860px) {
-        .pr-grid {
-            grid-template-columns: 1fr;
-        }
-    }
+    @media (max-width: 1180px) { .pr-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 860px)  { .pr-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px)  { .pr-grid { grid-template-columns: 1fr; } }
 
     /* ════════ COMÚN H2 ════════ */
     .pr-h2 { font-size: clamp(1.7rem, 6vw, 2.4rem); font-weight: 800; line-height: 1.12; letter-spacing: -0.03em; color: var(--color-text); margin: 0 0 1rem; }
@@ -501,13 +566,23 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
     .pr-roi-fields input:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
 
     .pr-roi-card {
-        background: radial-gradient(ellipse at 50% 0%, #112240 0%, #0a192f 80%);
-        border-radius: 20px; padding: 2rem 1.5rem; color: #fff;
+        position: relative;
+        overflow: hidden;
+        background: #08152a;
+        border-radius: 20px; padding: 0; color: #fff;
         box-shadow: 0 30px 60px -20px rgba(5,11,20,0.5), inset 0 0 0 0.5px rgba(255,255,255,0.08);
         text-align: center;
     }
     @media (min-width: 860px) {
-        .pr-roi-card { border-radius: 24px; padding: 2.6rem 2.4rem; box-shadow: 0 50px 100px -40px rgba(5,11,20,0.7), inset 0 0 0 0.5px rgba(255,255,255,0.08); }
+        .pr-roi-card { border-radius: 24px; box-shadow: 0 50px 100px -40px rgba(5,11,20,0.7), inset 0 0 0 0.5px rgba(255,255,255,0.08); }
+    }
+    .pr-roi-card-inner {
+        position: relative;
+        z-index: 2;
+        padding: 2rem 1.5rem;
+    }
+    @media (min-width: 860px) {
+        .pr-roi-card-inner { padding: 2.6rem 2.4rem; }
     }
     .pr-roi-label { font-size: 0.68rem; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase; color: rgba(255,255,255,0.45); }
     .pr-roi-big { display: block; font-size: clamp(2.4rem, 10vw, 3.6rem); margin: 0.5rem 0 1.6rem; line-height: 1; }
@@ -519,7 +594,89 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
     .pr-roi-split b { font-size: 1.3rem; font-weight: 600; }
     @media (min-width: 860px) { .pr-roi-split b { font-size: 1.5rem; } }
     .pr-roi-split b i { font-style: normal; font-size: 0.8rem; color: rgba(255,255,255,0.5); }
-    .pr-roi-foot { font-size: 0.84rem; color: rgba(255,255,255,0.6); margin: 1.2rem 0 0; line-height: 1.5; }
+    .pr-roi-foot { font-size: 0.84rem; color: rgba(255,255,255,0.6); margin: 1.2rem 0 1.6rem; line-height: 1.5; }
+    .pr-roi-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #fff;
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.18);
+        padding: 10px 20px;
+        border-radius: 100px;
+        text-decoration: none;
+        transition: background 0.25s, border-color 0.25s, transform 0.2s;
+        backdrop-filter: blur(8px);
+    }
+    .pr-roi-cta:hover {
+        background: rgba(255,255,255,0.2);
+        border-color: rgba(255,255,255,0.3);
+        transform: translateY(-1px);
+    }
+
+    /* Numbered steps en ROI */
+    .pr-roi-step {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    .pr-roi-step-num {
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--color-bg-soft);
+        border: 1px solid var(--color-border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--color-text-muted);
+        margin-top: 0.35rem;
+        flex-shrink: 0;
+    }
+    .pr-roi-step label {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    /* Range slider */
+    .pr-roi-range-wrap { display: flex; flex-direction: column; gap: 4px; }
+    .pr-roi-range-labels { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--color-text-muted); padding: 0 2px; }
+    .pr-roi-range {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 4px;
+        border-radius: 100px;
+        background: var(--color-border);
+        outline: none;
+        cursor: pointer;
+        accent-color: var(--color-blue-deep);
+    }
+    .pr-roi-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--color-blue-deep);
+        box-shadow: 0 1px 4px rgba(10,25,47,0.35);
+        cursor: pointer;
+        transition: transform 0.15s;
+    }
+    .pr-roi-range::-webkit-slider-thumb:hover { transform: scale(1.15); }
+    .pr-roi-range::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--color-blue-deep);
+        border: none;
+        cursor: pointer;
+    }
 
     /* ════════ COMPARADOR ════════ */
     .pr-compare { max-width: 1080px; margin: 0 auto; padding: 3rem 5%; }
@@ -559,12 +716,43 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
     .pr-cell-val.is-featured { background: var(--color-bg-soft); }
     .pr-yes {
         display: inline-flex; width: 22px; height: 22px; border-radius: 50%;
-        background: rgba(16,185,129,0.14); color: #059669;
+        background: rgba(10,25,47,0.08); color: #0a192f;
         align-items: center; justify-content: center;
     }
     .pr-yes svg { width: 12px; height: 12px; }
     .pr-no { color: #c2c8d0; }
     .pr-txt { font-size: 0.82rem; }
+
+    /* ── Tabla: fila de botones al fondo (Linear / pill shimmer) ── */
+    .pr-tfoot-row { border-top: 2px solid var(--color-border); }
+    .pr-tfoot-empty { padding: 2rem 1rem 1.5rem; }
+    .pr-tfoot-cell { padding: 2rem 0.7rem 1.5rem; text-align: center; vertical-align: top; }
+    .pr-tfoot-cell.is-featured { background: var(--color-bg-soft); border-radius: 0 0 14px 14px; }
+    .pr-tfoot-btn {
+        position: relative; overflow: hidden;
+        display: inline-block; width: 100%;
+        font-size: 0.85rem; font-weight: 600;
+        padding: 11px 12px; border-radius: 999px;
+        text-decoration: none; text-align: center;
+        transition: transform 0.22s var(--ease-spring), box-shadow 0.22s, background 0.22s, color 0.22s;
+    }
+    .pr-tfoot-btn::after {
+        content: '';
+        position: absolute; inset: 0;
+        background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%);
+        transform: translateX(-110%);
+        transition: transform 0.55s cubic-bezier(0.16,1,0.3,1);
+        pointer-events: none;
+    }
+    .pr-tfoot-btn:hover::after { transform: translateX(110%); }
+    .pr-tfoot-btn:active { transform: scale(0.97); }
+    .pr-tfoot-btn-solid { background: #111827; color: #fff; border: 1px solid transparent; }
+    .pr-tfoot-btn-solid:hover { background: #0a192f; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(10,25,47,0.3); }
+    .pr-tfoot-sales {
+        display: block; margin-top: 0.5rem; font-size: 0.76rem;
+        color: var(--color-text-muted); text-decoration: none; transition: color 0.2s;
+    }
+    .pr-tfoot-sales:hover { color: var(--color-text); }
 
     /* ════════ FAQ (HAIRLINE STYLE) ════════ */
     .pr-faq { max-width: 860px; margin: 0 auto; padding: 2rem 5% 5rem; }
@@ -622,14 +810,14 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const isEn = document.documentElement.lang === 'en';
-        
+
         // ── Toggle mensual/anual ──
         const toggles = document.querySelectorAll('.billing-toggle-checkbox');
-        
+
         toggles.forEach(toggle => {
             toggle.addEventListener('change', (e) => {
                 const isAnnual = (e.target as HTMLInputElement).checked;
-                
+
                 // Sync all toggles
                 toggles.forEach(t => {
                     if (t !== e.target) {
@@ -647,11 +835,11 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
                     }
                 });
 
-                // Update CTA hrefs
-                document.querySelectorAll('.plan-cta').forEach(cta => {
+                // Update CTA hrefs (plan cards + tfoot)
+                const cycle = isAnnual ? 'anual' : 'mensual';
+                document.querySelectorAll('[data-base-href]').forEach(cta => {
                     const baseHref = cta.getAttribute('data-base-href');
                     if (baseHref) {
-                        const cycle = isAnnual ? 'anual' : 'mensual';
                         cta.setAttribute('href', `${baseHref}&cycle=${cycle}`);
                     }
                 });
@@ -659,12 +847,15 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
         });
 
         // ── Calculadora de valor ──
-        const qty = document.getElementById('roi-qty') as HTMLInputElement | null;
-        const ticket = document.getElementById('roi-ticket') as HTMLInputElement | null;
-        const pipeline = document.getElementById('roi-pipeline');
-        const pct = document.getElementById('roi-pct');
-        const foot = document.getElementById('roi-foot');
-        const PRO = isEn ? 30 : 590;
+        const qty        = document.getElementById('roi-qty') as HTMLInputElement | null;
+        const ticket     = document.getElementById('roi-ticket') as HTMLInputElement | null;
+        const qtyRange   = document.getElementById('roi-qty-range') as HTMLInputElement | null;
+        const tickRange  = document.getElementById('roi-ticket-range') as HTMLInputElement | null;
+        const pipeline   = document.getElementById('roi-pipeline');
+        const pct        = document.getElementById('roi-pct');
+        const foot       = document.getElementById('roi-foot');
+        const PRO        = isEn ? 30 : 590;
+
         const calc = () => {
             const q = Math.max(0, parseFloat(qty?.value || '0') || 0);
             const t = Math.max(0, parseFloat(ticket?.value || '0') || 0);
@@ -679,8 +870,43 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
                     : (isEn ? 'Enter your average ticket to see the math.' : 'Ingresa tu ticket promedio para ver la cuenta.');
             }
         };
-        qty?.addEventListener('input', calc);
-        ticket?.addEventListener('input', calc);
+
+        // Sync sliders → number inputs
+        qtyRange?.addEventListener('input', () => {
+            if (qty) { qty.value = qtyRange.value; calc(); }
+        });
+        tickRange?.addEventListener('input', () => {
+            if (ticket) { ticket.value = tickRange.value; calc(); }
+        });
+        // Sync number inputs → sliders
+        qty?.addEventListener('input', () => {
+            if (qtyRange) qtyRange.value = qty.value;
+            calc();
+        });
+        ticket?.addEventListener('input', () => {
+            if (tickRange) tickRange.value = ticket.value;
+            calc();
+        });
         calc();
+
+        // ── Aurora viajera en tarjetas de plan ──
+        const cards = [...document.querySelectorAll<HTMLElement>('.plan')];
+        const featured = document.querySelector<HTMLElement>('.plan-featured');
+        const gridWrap = document.querySelector<HTMLElement>('.pr-grid-wrap');
+
+        function setAurora(active: HTMLElement | null) {
+            cards.forEach(c => c.classList.remove('aurora-active'));
+            active?.classList.add('aurora-active');
+        }
+
+        // Predeterminado: plan destacado
+        setAurora(featured);
+
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', () => setAurora(card));
+        });
+
+        // Al salir del grupo de tarjetas → vuelve al destacado
+        gridWrap?.addEventListener('mouseleave', () => setAurora(featured));
     });
 </script>
