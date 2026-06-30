@@ -565,7 +565,7 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
         width: 26%; text-align: left; 
         font-size: 1.35rem; font-weight: 600; color: var(--color-text); 
         letter-spacing: -0.015em;
-        padding-left: 0 !important;
+        padding-left: 1.5rem !important;
     }
     .pr-th-plan {
         text-align: left; vertical-align: bottom;
@@ -580,12 +580,20 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
         transition: background-color 0.2s ease;
     }
     .pr-table tbody tr:not(.pr-group-row):hover {
-        background-color: rgba(0,0,0,0.02);
+        background-color: rgba(0,0,0,0.03);
+    }
+    .pr-table tbody tr:not(.pr-group-row):hover td:first-child {
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
+    }
+    .pr-table tbody tr:not(.pr-group-row):hover td:last-child {
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
     }
     
     /* Horizontal borders */
     .pr-table tbody tr:not(.pr-group-row) td {
-        border-bottom: 1px solid rgba(0,0,0,0.04);
+        border-bottom: 1px solid rgba(0,0,0,0.025);
     }
     .pr-table tbody tr:not(.pr-group-row):last-child td {
         border-bottom: none;
@@ -593,7 +601,7 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
 
     /* Group Row (Core, etc) */
     .pr-group-row td {
-        padding: 4.5rem 0 1.2rem 0;
+        padding: 4.5rem 1.5rem 1.2rem 1.5rem;
         font-size: 1.35rem; font-weight: 600;
         color: var(--color-text);
         letter-spacing: -0.015em;
@@ -602,24 +610,21 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
     
     /* Feature Name Cell */
     .pr-cell-feat { 
-        padding: 1.1rem 1.5rem 1.1rem 0; 
-        font-size: 0.9rem; 
+        padding: 1.1rem 1.5rem 1.1rem 1.5rem; 
+        font-size: 0.95rem; 
         color: rgba(0,0,0,0.55); /* Muted slate color like Linear */
         font-weight: 500;
-        border-right: 1px solid rgba(0,0,0,0.05); /* Faint vertical divider */
+        border-right: none;
         transition: color 0.2s ease;
     }
     .pr-table tbody tr:not(.pr-group-row):hover .pr-cell-feat {
-        color: rgba(0,0,0,0.85);
+        color: var(--color-text);
     }
     
     /* Value Cell */
     .pr-cell-val {
         padding: 1.1rem 1.5rem; 
         text-align: left; 
-        border-right: 1px solid rgba(0,0,0,0.05);
-    }
-    .pr-cell-val:last-child {
         border-right: none;
     }
     
@@ -636,8 +641,8 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
     }
     .pr-no { display: none; }
     .pr-txt { 
-        font-size: 0.9rem; 
-        color: rgba(0,0,0,0.65); 
+        font-size: 0.95rem; 
+        color: rgba(0,0,0,0.75); 
         line-height: 1.4;
         font-weight: 500;
     }
