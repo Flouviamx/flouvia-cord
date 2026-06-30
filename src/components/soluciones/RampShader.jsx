@@ -96,6 +96,10 @@ const fragmentShader = /* glsl */`
     glow *= (0.05 + magnet * 0.10);
     color = mix(color, u_base, glow);
 
+    // ── Fade to white en la parte inferior para fusionarse con el fondo HTML ─
+    float bottomFade = smoothstep(0.3, 0.0, uv.y);
+    color = mix(color, white, bottomFade);
+
     // ── Dither anti-banding (rompe los escalones del pastel) ─────────────────
     float dither = hash(uv * u_resolution.xy);
     color += (dither - 0.5) * 0.005;
@@ -107,6 +111,8 @@ const fragmentShader = /* glsl */`
 function RampPlane({ base, top }) {
   const mouseTarget = useRef(new THREE.Vector2(0.5, 0.5))
   const mouseSmooth = useRef(new THREE.Vector2(0.5, 0.5))
+  const isHovering = useRef(false)
+  const hoverTimeout = useRef(null)
 
   const uniforms = useMemo(() => ({
     u_time:       { value: 0 },
@@ -117,20 +123,49 @@ function RampPlane({ base, top }) {
   }), [])
 
   useEffect(() => {
-    const onMove = (e) => {
+    const handleInteract = (clientX, clientY) => {
+      isHovering.current = true
       mouseTarget.current.set(
-        e.clientX / window.innerWidth,
-        1.0 - e.clientY / window.innerHeight,
+        clientX / window.innerWidth,
+        1.0 - clientY / window.innerHeight,
       )
+      clearTimeout(hoverTimeout.current)
+      hoverTimeout.current = setTimeout(() => {
+        isHovering.current = false
+      }, 2500)
     }
+
+    const onMove = (e) => handleInteract(e.clientX, e.clientY)
+    const onTouch = (e) => {
+      if (e.touches.length > 0) {
+        handleInteract(e.touches[0].clientX, e.touches[0].clientY)
+      }
+    }
+
     window.addEventListener('mousemove', onMove, { passive: true })
-    return () => window.removeEventListener('mousemove', onMove)
+    window.addEventListener('touchmove', onTouch, { passive: true })
+    window.addEventListener('touchstart', onTouch, { passive: true })
+    
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('touchmove', onTouch)
+      window.removeEventListener('touchstart', onTouch)
+      clearTimeout(hoverTimeout.current)
+    }
   }, [])
 
   // Lerp bajo → inercia/regreso elástico al soltar el cursor
   useFrame(({ clock, size }) => {
-    uniforms.u_time.value = clock.getElapsedTime()
+    const time = clock.getElapsedTime()
+    uniforms.u_time.value = time
     uniforms.u_resolution.value.set(size.width, size.height)
+    
+    if (!isHovering.current) {
+      // Movimiento orgánico autónomo para móviles o inactividad
+      mouseTarget.current.x = 0.5 + Math.sin(time * 0.4) * 0.3 + Math.sin(time * 0.65) * 0.1
+      mouseTarget.current.y = 0.5 + Math.cos(time * 0.3) * 0.3
+    }
+    
     mouseSmooth.current.lerp(mouseTarget.current, 0.05)
     uniforms.u_mouse.value.copy(mouseSmooth.current)
   })
