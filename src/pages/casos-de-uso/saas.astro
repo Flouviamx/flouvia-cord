@@ -33,7 +33,13 @@ const magneticNodes = [
     
     <main class="use-case-main">
         <!-- HERO (shader full-bleed, Light) -->
-        <header class="uc-hero">
+        <!-- HERO & TRUST WRAPPER -->
+        <div class="uc-hero-trust-group">
+            <div class="uc-hero-bg">
+                <RampShader client:only="react" variant="blue" />
+            </div>
+
+            <header class="uc-hero">
                         <div class="uc-container uc-hero-inner">
                 <div class="uc-hero-content">
                     <h1 class="uc-title reveal">Contratos B2B y cobros para el software moderno</h1>
@@ -359,6 +365,12 @@ const magneticNodes = [
     }
 
     /* ── HERO SECTION (shader full-bleed) ── */
+    .uc-hero-trust-group {
+        position: relative;
+        overflow: hidden;
+        background: #ffffff;
+    }
+
     .uc-hero {
         position: relative;
         min-height: 100vh;
@@ -366,8 +378,6 @@ const magneticNodes = [
         display: flex;
         align-items: center;
         padding: 8rem 0 4rem;
-        background: #ffffff;
-        overflow: hidden;
         
     }
 
