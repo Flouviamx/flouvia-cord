@@ -160,11 +160,10 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
                 <table class="pr-table">
                     <thead>
                         <tr>
-                            <th class="pr-th-feat"></th>
+                            <th class="pr-th-feat">{isEn ? 'Features' : 'Características'}</th>
                             {PLANES.map((p) => (
                                 <th class:list={['pr-th-plan', { 'is-featured': p.destacado }]}>
                                     <b>{p.nombre}</b>
-                                    <span>{p.precioMensual === 0 ? (isEn ? 'Free' : 'Gratis') : `${money0(p.precioMensual)}${isEn ? '/mo' : '/mes'}`}</span>
                                 </th>
                             ))}
                         </tr>
@@ -181,7 +180,7 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
                                         {([r.free, r.starter, r.pro, r.scale, r.developer] as const).map((v, idx) => (
                                             <td class:list={['pr-cell-val', { 'is-featured': idx === 2 }]}>
                                                 {v === true ? (
-                                                    <span class="pr-yes" aria-label={isEn ? "Included" : "Incluido"}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+                                                    <span class="pr-yes" aria-label={isEn ? "Included" : "Incluido"}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
                                                 ) : v === false ? (
                                                     <span class="pr-no" aria-label={isEn ? "Not included" : "No incluido"}>—</span>
                                                 ) : (
@@ -522,49 +521,88 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
     .pr-roi-foot { font-size: 0.84rem; color: rgba(255,255,255,0.6); margin: 1.2rem 0 0; line-height: 1.5; }
 
     /* ════════ COMPARADOR ════════ */
-    .pr-compare { max-width: 1080px; margin: 0 auto; padding: 3rem 5%; }
-    @media (min-width: 860px) { .pr-compare { padding: 4rem 5%; } }
-    .pr-compare-head { text-align: center; margin-bottom: 2rem; }
+    .pr-compare { max-width: 1200px; margin: 0 auto; padding: 3rem 5%; }
+    @media (min-width: 860px) { .pr-compare { padding: 6rem 5%; } }
+    .pr-compare-head { text-align: center; margin-bottom: 2rem; display: none; /* Linear hides this header text */ }
     @media (min-width: 860px) { .pr-compare-head { margin-bottom: 3rem; } }
     
     .pr-table-scroll { 
         overflow-x: auto; -webkit-overflow-scrolling: touch; 
         border-radius: 12px; padding-bottom: 1rem;
-        box-shadow: inset -15px 0 15px -15px rgba(0,0,0,0.05); /* Ayuda visual para scroll horizontal */
     }
     @media (min-width: 860px) { .pr-table-scroll { border-radius: 18px; padding-bottom: 0; box-shadow: none; } }
     
     .pr-table { width: 100%; border-collapse: collapse; min-width: 920px; }
-    .pr-table thead th { position: sticky; top: 0; }
-    .pr-th-feat { width: 28%; }
+    
+    /* Header row */
+    .pr-table thead th { 
+        position: sticky; top: 0; 
+        background: var(--color-bg); 
+        z-index: 10; 
+        border-bottom: 1px solid transparent; 
+        padding-bottom: 1.5rem;
+    }
+    .pr-th-feat { 
+        width: 25%; text-align: left; 
+        font-size: 1.3rem; font-weight: 500; color: var(--color-text); 
+    }
     .pr-th-plan {
-        padding: 1rem 0.7rem; text-align: center; vertical-align: bottom;
-        border-bottom: 2px solid var(--color-border);
+        padding: 1rem 1rem; text-align: left; vertical-align: bottom;
     }
-    .pr-th-plan b { display: block; font-size: 1rem; font-weight: 700; color: var(--color-text); }
-    .pr-th-plan span { display: block; font-size: 0.76rem; color: var(--color-text-muted); margin-top: 2px; }
-    .pr-th-plan.is-featured { background: var(--color-bg-soft); border-radius: 14px 14px 0 0; border-bottom-color: var(--color-blue-deep); }
-    .pr-th-plan.is-featured b { color: var(--color-blue-deep); }
+    .pr-th-plan b { display: block; font-size: 1.3rem; font-weight: 500; color: var(--color-text); }
+    
+    /* Rows */
+    .pr-table tbody tr {
+        transition: background 0.2s;
+    }
+    .pr-table tbody tr:not(.pr-group-row) {
+        border-bottom: 1px solid var(--color-border);
+    }
+    .pr-table tbody tr:not(.pr-group-row):last-child {
+        border-bottom: none;
+    }
+    .pr-table tbody tr:not(.pr-group-row):hover {
+        background: var(--color-bg-soft);
+    }
 
+    /* Group Row (Core, etc) */
     .pr-group-row td {
-        padding: 1.4rem 1rem 0.6rem;
-        font-size: 0.66rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
-        color: #99a2af;
+        padding: 4rem 0 1rem 0;
+        font-size: 1.3rem; font-weight: 500;
+        color: var(--color-text);
+        border-bottom: none;
     }
-    .pr-cell-feat { padding: 0.85rem 1rem; font-size: 0.88rem; color: var(--color-text); border-bottom: 1px solid var(--color-border); }
+    
+    /* Cells */
+    .pr-cell-feat { 
+        padding: 1.2rem 1rem 1.2rem 0; 
+        font-size: 0.95rem; color: var(--color-text-muted); 
+        border-right: 1px solid var(--color-border); 
+        font-weight: 400;
+    }
     .pr-cell-val {
-        padding: 0.85rem 0.7rem; text-align: center; border-bottom: 1px solid var(--color-border);
-        font-size: 0.82rem; color: var(--color-text); font-weight: 600;
+        padding: 1.2rem 1rem; text-align: left; border-right: 1px solid var(--color-border);
+        font-size: 0.95rem; color: var(--color-text-muted);
     }
-    .pr-cell-val.is-featured { background: var(--color-bg-soft); }
+    .pr-cell-val:last-child {
+        border-right: none;
+    }
+    
+    /* Checkmarks and Text */
     .pr-yes {
-        display: inline-flex; width: 22px; height: 22px; border-radius: 50%;
-        background: rgba(16,185,129,0.14); color: #059669;
+        display: inline-flex; width: 18px; height: 18px;
+        color: var(--color-text);
         align-items: center; justify-content: center;
+        margin-right: 6px;
     }
-    .pr-yes svg { width: 12px; height: 12px; }
-    .pr-no { color: #c2c8d0; }
-    .pr-txt { font-size: 0.82rem; }
+    .pr-yes svg { width: 16px; height: 16px; }
+    .pr-no { color: transparent; /* Linear just leaves it blank */ }
+    .pr-txt { font-size: 0.95rem; }
+    
+    /* Make the text value inline with checkmark if it's text */
+    .pr-cell-val .pr-txt {
+        display: inline-block;
+    }
 
     /* ════════ FAQ (HAIRLINE STYLE) ════════ */
     .pr-faq { max-width: 860px; margin: 0 auto; padding: 2rem 5% 5rem; }
