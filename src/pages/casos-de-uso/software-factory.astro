@@ -97,7 +97,7 @@ const magneticNodes = [
                                         <defs>
                                             <linearGradient id="cord-blue-grad" x1="0%" y1="0%" x2="100%" y2="100%">
                                                 <stop offset="0%" stop-color="#1e3a8a" />
-                                                <stop offset="100%" stop-color="#3b82f6" />
+                                                <stop offset="100%" stop-color="#0f172a" />
                                             </linearGradient>
                                         </defs>
                                         <polygon points="5 3 19 12 5 21 5 3" fill="url(#cord-blue-grad)" />
@@ -218,14 +218,14 @@ const magneticNodes = [
                             <div class="uc-mini-invoice" style="width:260px; padding:16px;">
                                 <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e2e8f0; padding-bottom:12px; margin-bottom:12px;">
                                     <div style="display:flex; align-items:center; gap:8px;">
-                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#0f172a" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                                         <span style="font-size:0.85rem; font-weight:700; color:#0a2540;">Hito 2: Core Backend</span>
                                     </div>
                                     <span style="font-size:0.75rem; color:#64748b;">$18,000 MXN</span>
                                 </div>
                                 <div style="text-align:left; font-size:0.75rem; color:#475569; display:flex; flex-direction:column; gap:8px;">
-                                    <div style="display:flex; align-items:center; gap:6px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#3b82f6" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> PR #42 merged (API Auth)</div>
-                                    <div style="display:flex; align-items:center; gap:6px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#3b82f6" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> PR #45 merged (DB Schema)</div>
+                                    <div style="display:flex; align-items:center; gap:6px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#0f172a" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> PR #42 merged (API Auth)</div>
+                                    <div style="display:flex; align-items:center; gap:6px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#0f172a" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> PR #45 merged (DB Schema)</div>
                                     <div style="display:flex; align-items:center; gap:6px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg> Cliente aprueba Staging</div>
                                 </div>
                                 <div class="uc-mi-form" style="margin-top:16px;">
@@ -246,7 +246,7 @@ const magneticNodes = [
                             <div class="uc-mini-portal" style="flex-direction: column;">
                                 <div class="uc-mp-sidebar" style="width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 20px;">
                                     <div class="uc-mp-brand" style="margin:0;"><div class="uc-mp-dot"></div> Tech Proposal</div>
-                                    <div class="uc-mp-nav" style="background: #3b82f6; color: #fff; padding: 4px 10px; border-radius: 6px;">Firmar y Pagar</div>
+                                    <div class="uc-mp-nav" style="background: #0f172a; color: #fff; padding: 4px 10px; border-radius: 6px;">Firmar y Pagar</div>
                                 </div>
                                 <div class="uc-mp-main" style="padding: 16px 20px;">
                                     <div class="uc-mp-header" style="margin-bottom: 12px; font-size:1rem;">Módulos Adicionales</div>
@@ -257,7 +257,7 @@ const magneticNodes = [
                                         </div>
                                         <div style="display:flex; align-items:center; gap:10px;">
                                             <span style="font-weight:600; font-size:0.8rem; color:#0a2540;">+$2,500</span>
-                                            <div style="width:36px; height:20px; background:#3b82f6; border-radius:12px; position:relative;">
+                                            <div style="width:36px; height:20px; background:#0f172a; border-radius:12px; position:relative;">
                                                 <div style="width:16px; height:16px; background:#fff; border-radius:50%; position:absolute; top:2px; right:2px;"></div>
                                             </div>
                                         </div>
@@ -549,7 +549,7 @@ const magneticNodes = [
     .uc-split-label {
         font-size: 1rem;
         font-weight: 700;
-        color: #3b82f6; /* Emerald */
+        color: #0f172a; /* Emerald */
         margin-bottom: 1.2rem;
         display: block;
     }
@@ -704,6 +704,84 @@ const magneticNodes = [
     }
     .uc-sf-progress span {
         font-size: 0.7rem;
+    }
+    .uc-sf-bar {
+        width: 120px;
+        height: 8px;
+        background: #e2e8f0;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .uc-sf-fill {
+        height: 100%;
+        background: #0f172a;
+    }
+    .uc-sf-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .uc-sf-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+    }
+    .uc-sf-done {
+        background: #f8fafc;
+    }
+    .uc-sf-active {
+        border-color: #0f172a;
+        box-shadow: 0 4px 12px rgba(15,23,42,0.05);
+    }
+    .uc-sf-locked {
+        opacity: 0.6;
+    }
+    .uc-sf-info {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        text-align: left;
+    }
+    .uc-sf-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #0a2540;
+    }
+    .uc-sf-amount {
+        font-size: 0.75rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+    .uc-sf-status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .uc-sf-done .uc-sf-status {
+        color: #10b981;
+    }
+    .uc-sf-locked .uc-sf-status {
+        color: #94a3b8;
+    }
+    .uc-sf-btn {
+        background: #0f172a;
+        color: #fff;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .uc-sf-btn:hover {
+        background: #1e293b;
     }
     
     @media (max-width: 900px) {
