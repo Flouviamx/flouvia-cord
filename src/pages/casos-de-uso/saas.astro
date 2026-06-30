@@ -144,54 +144,37 @@ const magneticNodes = [
                                 </div>
                             </div>
                             
-                            <div class="uc-mockup-body">
-                                <h4>Propuesta Anual — Nexus SaaS</h4>
-                                <p>Selecciona el nivel de servicio para tu empresa</p>
-                                
-                                <div class="uc-mockup-cards">
-                                    <div class="uc-mc uc-mc-1">
-                                        <div class="uc-mc-title">Hobby</div>
-                                        <div class="uc-mc-icon">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="2" fill="#fff"/></svg>
-                                        </div>
-                                        <div class="uc-mc-btn">Activar</div>
+                            <div class="uc-mockup-body" style="padding: 20px;">
+                                <div class="uc-saas-checkout">
+                                    <div class="uc-sc-header">
+                                        <h4>Resumen de Contrato</h4>
+                                        <div class="uc-sc-status">Pendiente</div>
                                     </div>
-                                    <div class="uc-mc uc-mc-2">
-                                        <div class="uc-mc-badge">Scale</div>
-                                        <div class="uc-mc-title">Pro</div>
-                                        <div class="uc-mc-icon">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                    <div class="uc-sc-plan">
+                                        <div class="uc-sc-plan-info">
+                                            <span class="uc-sc-tier">Plan Enterprise</span>
+                                            <span class="uc-sc-seats">50 Asientos (Anual)</span>
                                         </div>
-                                        <div class="uc-mc-btn">Activar</div>
+                                        <div class="uc-sc-price">$45,000<span>/año</span></div>
                                     </div>
-                                    <div class="uc-mc uc-mc-3">
-                                        <div class="uc-mc-title">Enterprise</div>
-                                        <div class="uc-mc-icon">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="2" fill="#fff"/></svg>
+                                    <div class="uc-sc-breakdown">
+                                        <div class="uc-sc-row">
+                                            <span>Licencias (50 x $1k)</span>
+                                            <span>$50,000</span>
                                         </div>
-                                        <div class="uc-mc-btn">Contactar</div>
+                                        <div class="uc-sc-row uc-sc-discount">
+                                            <span>Descuento (10%)</span>
+                                            <span>-$5,000</span>
+                                        </div>
+                                        <div class="uc-sc-divider"></div>
+                                        <div class="uc-sc-row uc-sc-total">
+                                            <span>Total Neto</span>
+                                            <span>$45,000</span>
+                                        </div>
                                     </div>
-                                </div>
-                                
-                                <div class="uc-mockup-features">
-                                    <ul>
-                                        <li>Hasta 3 usuarios</li>
-                                        <li>50 cotizaciones/mes</li>
-                                        <li>3 CFDI incluidos</li>
-                                    </ul>
-                                    <ul>
-                                        <li>Hasta 5 usuarios</li>
-                                        <li>Cotizaciones ilimitadas</li>
-                                        <li>20 CFDI/mes</li>
-                                        <li>Seguimiento en vivo</li>
-                                    </ul>
-                                    <ul>
-                                        <li>Usuarios ilimitados</li>
-                                        <li>1,000 CFDI/mes</li>
-                                        <li>API REST + webhooks</li>
-                                        <li>MCP bidireccional</li>
-                                        <li>Audit log</li>
-                                    </ul>
+                                    <div class="uc-sc-actions">
+                                        <div class="uc-sc-btn">Firmar y Emitir CFDI</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -656,142 +639,246 @@ const magneticNodes = [
     .uc-mockup-nav span.active {
         color: #0a2540;
         font-weight: 600;
-        background: #f1f5f9;
-        padding: 4px 10px;
-        border-radius: 6px;
     }
     
     .uc-mockup-body {
-        padding: 48px 32px;
-        background: #f5f5f7;
-        text-align: center;
+        background: #f8fafc;
+        border-top: 1px solid rgba(10,37,64,0.06);
     }
     
-    .uc-mockup-body h4 {
-        font-size: 1.25rem;
+    .uc-saas-checkout {
+        background: #fff;
+        border: 1px solid rgba(10,37,64,0.08);
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 10px 30px -10px rgba(10,37,64,0.08);
+    }
+
+    .uc-sc-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .uc-sc-header h4 {
+        font-size: 1.05rem;
         font-weight: 800;
         color: #0a2540;
-        margin-bottom: 8px;
     }
-    
-    .uc-mockup-body p {
-        font-size: 0.9rem;
-        color: #475569;
-        margin-bottom: 40px;
+    .uc-sc-status {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #b45309;
+        background: #fef3c7;
+        padding: 4px 10px;
+        border-radius: 20px;
     }
-    
-    .uc-mockup-cards {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        position: relative;
-        z-index: 1;
-        margin-bottom: 40px;
+
+    .uc-sc-plan {
+        display: flex;
+        justify-content: space-between;
         align-items: center;
+        padding: 16px;
+        background: #f1f5f9;
+        border-radius: 8px;
+        margin-bottom: 20px;
     }
-    
+    .uc-sc-plan-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .uc-sc-tier {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #0a2540;
+    }
+    .uc-sc-seats {
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+    .uc-sc-price {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #0a2540;
+        display: flex;
+        align-items: baseline;
+        gap: 2px;
+    }
+    .uc-sc-price span {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+    }
+
+    .uc-sc-breakdown {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 24px;
+    }
+    .uc-sc-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        color: #475569;
+    }
+    .uc-sc-discount {
+        color: #10b981;
+        font-weight: 500;
+    }
+    .uc-sc-divider {
+        height: 1px;
+        background: #e2e8f0;
+        margin: 4px 0;
+    }
+    .uc-sc-total {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: #0a2540;
+    }
+
+    .uc-sc-actions {
+        display: flex;
+        justify-content: flex-end;
+    }
+    .uc-sc-btn {
+        background: #0f172a;
+        color: #fff;
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .uc-sc-btn:hover {
+        background: #1e293b;
+    }
+
     .uc-mc {
         background: #fff;
-        padding: 24px 16px;
-        border: 1px solid rgba(10,37,64,0.06);
+        border: 1px solid rgba(10,37,64,0.07);
+        border-radius: 16px;
+        padding: 20px 15px;
         position: relative;
-        text-align: center;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 1px 2px rgba(10,37,64,0.04);
+        transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease;
     }
-    
-    .uc-mc-1 { border-radius: 12px 0 0 12px; border-right: none; }
-    .uc-mc-3 { border-radius: 0 12px 12px 0; border-left: none; }
+
     .uc-mc-2 {
-        border-radius: 12px;
-        background: #ffffff;
-        box-shadow: 0 20px 40px rgba(10,37,64,0.08), 0 4px 12px rgba(10,37,64,0.04);
+        border-color: var(--uc-accent);
+        box-shadow: 0 0 0 1px var(--uc-accent), 0 26px 50px -22px var(--uc-accent-shadow), 0 8px 20px -14px rgba(10,37,64,0.16);
+        transform: translateY(-12px);
         z-index: 2;
-        padding: 36px 16px;
-        border: 1px solid rgba(10,37,64,0.1);
     }
-    
+
     .uc-mc-badge {
         position: absolute;
-        top: -12px;
+        top: -11px;
         left: 50%;
         transform: translateX(-50%);
-        background: #0a192f;
+        background: var(--uc-accent);
         color: #fff;
-        font-size: 0.65rem;
+        font-size: 0.6rem;
         font-weight: 700;
-        padding: 4px 10px;
+        padding: 4px 11px;
         border-radius: 999px;
         letter-spacing: 0.5px;
         text-transform: uppercase;
+        white-space: nowrap;
+        box-shadow: 0 6px 14px -4px var(--uc-accent-shadow);
     }
-    
-    .uc-mc-title {
-        font-size: 0.85rem;
+
+    .uc-mc-tier {
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        margin-bottom: 9px;
+    }
+
+    .uc-mc-amount {
+        font-size: 1.45rem;
         font-weight: 700;
         color: #0a2540;
-        margin-bottom: 20px;
-    }
-    
-    .uc-mc-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        margin: 0 auto 20px;
+        letter-spacing: -0.045em;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
         display: flex;
-        align-items: center;
-        justify-content: center;
+        align-items: baseline;
+        gap: 3px;
+        flex-wrap: wrap;
     }
-    .uc-mc-1 .uc-mc-icon { background: #f1f5f9; color: #475569; } 
-    .uc-mc-2 .uc-mc-icon { background: #eff6ff; color: #1e3a8a; } /* Emerald */
-    .uc-mc-3 .uc-mc-icon { background: #f1f5f9; color: #0a2540; } 
-    
-    .uc-mc-btn {
-        background: #f1f5f9;
+    .uc-mc-amount span {
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: #94a3b8;
+        letter-spacing: 0;
+    }
+
+    .uc-mc-chip {
+        align-self: flex-start;
+        font-size: 0.62rem;
+        font-weight: 700;
+        color: var(--uc-accent);
+        background: var(--uc-accent-soft);
+        padding: 2px 8px;
+        border-radius: 999px;
+        margin-top: 8px;
+    }
+
+    .uc-mc-feats {
+        list-style: none;
+        padding: 0;
+        margin: 14px 0 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex: 1;
+    }
+    .uc-mc-feats li {
+        font-size: 0.73rem;
         color: #475569;
-        font-size: 0.75rem;
+        line-height: 1.3;
+        padding-left: 18px;
+        position: relative;
+    }
+    .uc-mc-feats li::before {
+        content: '✓';
+        position: absolute;
+        left: 0;
+        top: 0;
+        color: var(--uc-accent);
+        font-size: 0.72rem;
+        font-weight: 800;
+    }
+
+    .uc-mc-btn {
+        margin-top: auto;
+        background: #eef1f5;
+        color: #334155;
+        font-size: 0.74rem;
         font-weight: 600;
-        padding: 8px 16px;
-        border-radius: 6px;
-        display: inline-block;
+        padding: 9px 12px;
+        border-radius: 10px;
+        text-align: center;
         transition: all 0.2s;
     }
     .uc-mc-2 .uc-mc-btn {
-        background: #0a192f;
+        background: var(--uc-accent);
         color: #ffffff;
+        box-shadow: 0 8px 18px -6px var(--uc-accent-shadow);
     }
-    .uc-mc-3 .uc-mc-btn {
+    .uc-mc-btn.is-muted {
         background: #f1f5f9;
-        color: #0a2540;
-    }
-    
-    .uc-mockup-features {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 16px;
-        text-align: left;
-        font-size: 0.75rem;
-        color: #475569;
-        line-height: 1.5;
-        padding: 0 16px;
-    }
-    
-    .uc-mockup-features ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-    
-    .uc-mockup-features li {
-        margin-bottom: 10px;
-        position: relative;
-        padding-left: 14px;
-    }
-    .uc-mockup-features li::before {
-        content: '→';
-        position: absolute;
-        left: 0;
         color: #94a3b8;
-        font-size: 0.7rem;
     }
-    
+
     @media (max-width: 900px) {
         .uc-split-grid {
             grid-template-columns: 1fr;
@@ -801,12 +888,8 @@ const magneticNodes = [
             max-width: 100%;
         }
         .uc-mockup-nav { display: none; }
-        .uc-mockup-features { grid-template-columns: 1fr; gap: 24px; text-align: center; }
-        .uc-mockup-features li::before { display: none; }
-        .uc-mockup-features li { padding-left: 0; }
-        .uc-mockup-cards { grid-template-columns: 1fr; gap: 16px; margin-bottom: 24px; }
-        .uc-mc-1, .uc-mc-3 { border-radius: 8px; border: 1px solid rgba(10,25,47,0.06); }
-        .uc-mc-2 { padding: 24px 16px; }
+        .uc-mockup-cards { grid-template-columns: 1fr; gap: 12px; }
+        .uc-mc-2 { transform: none; }
     }
 
     /* ── CTA SECTION ── */
@@ -828,13 +911,13 @@ const magneticNodes = [
         content: '';
         position: absolute;
         top: 0; left: 0; right: 0; bottom: 0;
-        background: radial-gradient(circle at center top, rgba(59,130,246,0.15), transparent 70%);
+        background: radial-gradient(circle at center top, rgba(255,255,255,0.08), transparent 70%);
         pointer-events: none;
     }
     .uc-cta-box h2 { font-size: 2.2rem; font-weight: 800; margin-bottom: 1rem; position: relative; z-index: 1; }
     .uc-cta-box p { font-size: 1.1rem; color: #aab7c4; margin-bottom: 2rem; position: relative; z-index: 1; }
-    .uc-cta-box .btn-luxe { background: #3b82f6; color: #fff; box-shadow: 0 4px 14px rgba(59,130,246,0.3); }
-    .uc-cta-box .btn-luxe:hover { background: #2563eb; box-shadow: 0 6px 20px rgba(59,130,246,0.4); }
+    .uc-cta-box .btn-luxe { background: #ffffff; color: #0a2540; box-shadow: 0 4px 14px rgba(255,255,255,0.1); }
+    .uc-cta-box .btn-luxe:hover { background: #f8fafc; box-shadow: 0 6px 20px rgba(255,255,255,0.2); }
 
     @media (max-width: 900px) {
         .uc-hero { padding: 9rem 0 6rem; }
@@ -886,14 +969,14 @@ const magneticNodes = [
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        color: #3b82f6;
+        color: #0f172a;
         font-weight: 700;
         font-size: 0.95rem;
         text-decoration: none;
         transition: color 0.2s;
     }
     .uc-link-arrow:hover {
-        color: #2563eb;
+        color: #334155;
     }
     .uc-link-arrow span {
         transition: transform 0.2s;
@@ -919,7 +1002,7 @@ const magneticNodes = [
     .cord-bg-1 {
         position: absolute;
         inset: 0;
-        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        background: linear-gradient(135deg, #0a2540 0%, #1e293b 100%);
         clip-path: polygon(0 0, 100% 0, 100% 60%, 0 80%);
     }
 
@@ -930,14 +1013,14 @@ const magneticNodes = [
         box-shadow: 0 20px 40px -10px rgba(10,37,64,0.15);
         padding: 24px; text-align: center; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
-    .uc-mi-logo { width: 40px; height: 40px; border-radius: 50%; background: #f1f5f9; color: #3b82f6; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; margin: 0 auto 12px; }
+    .uc-mi-logo { width: 40px; height: 40px; border-radius: 50%; background: #0a2540; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; margin: 0 auto 12px; }
     .uc-mi-title { font-size: 0.95rem; font-weight: 700; color: #0a2540; margin-bottom: 4px; }
     .uc-mi-sub { font-size: 0.75rem; color: #64748b; margin-bottom: 20px; }
     .uc-mi-amount { font-size: 1.6rem; font-weight: 800; color: #0a2540; margin-bottom: 24px; }
     .uc-mi-currency { font-size: 0.85rem; color: #64748b; font-weight: 600; }
     .uc-mi-form { display: flex; flex-direction: column; gap: 10px; }
     .uc-mi-input { border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; font-size: 0.75rem; color: #475569; display: flex; align-items: center; gap: 8px; text-align: left; background: #f8fafc; }
-    .uc-mi-btn { background: #3b82f6; color: #fff; border-radius: 6px; padding: 10px; font-size: 0.8rem; font-weight: 600; margin-top: 5px; }
+    .uc-mi-btn { background: #0a2540; color: #fff; border-radius: 6px; padding: 10px; font-size: 0.8rem; font-weight: 600; margin-top: 5px; }
 
     .uc-mini-portal {
         display: flex; width: 100%; height: 100%; background: #fff;
@@ -947,7 +1030,7 @@ const magneticNodes = [
         display: flex; flex-direction: column; gap: 12px;
     }
     .uc-mp-brand { font-size: 0.85rem; font-weight: 700; color: #0a2540; display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
-    .uc-mp-dot { width: 16px; height: 16px; background: #3b82f6; border-radius: 4px; }
+    .uc-mp-dot { width: 16px; height: 16px; background: #0f172a; border-radius: 4px; }
     .uc-mp-nav { font-size: 0.75rem; color: #64748b; font-weight: 500; }
     .uc-mp-main { flex: 1; padding: 24px; text-align: left; }
     .uc-mp-header { font-size: 1.2rem; font-weight: 700; color: #0a2540; margin-bottom: 20px; }
@@ -956,7 +1039,7 @@ const magneticNodes = [
     .uc-mp-row div { display: flex; flex-direction: column; gap: 4px; }
     .uc-mp-row strong { color: #0a2540; font-size: 0.9rem; }
     .uc-mp-row span { color: #64748b; }
-    .uc-mp-tag { background: #eff6ff; color: #1e3a8a; padding: 4px 8px; border-radius: 100px; font-weight: 600; font-size: 0.7rem; }
+    .uc-mp-tag { background: #f1f5f9; color: #334155; padding: 4px 8px; border-radius: 100px; font-weight: 600; font-size: 0.7rem; }
     .uc-mp-divider { height: 1px; background: #e2e8f0; margin: 16px 0; }
 
     /* Micro Features */
@@ -984,7 +1067,7 @@ const magneticNodes = [
         width: 36px;
         height: 36px;
         margin-bottom: 1.5rem;
-        color: #3b82f6;
+        color: #0f172a;
     }
     .uc-mf-icon svg {
         width: 100%;
@@ -1002,13 +1085,15 @@ const magneticNodes = [
         line-height: 1.6;
     }
     .uc-link-inline {
-        color: #3b82f6;
+        color: #0f172a;
         text-decoration: none;
-        font-weight: 600;
-        transition: color 0.2s;
+        font-weight: 700;
+        border-bottom: 1px solid rgba(15,23,42,0.2);
+        padding-bottom: 1px;
+        transition: border-color 0.2s;
     }
     .uc-link-inline:hover {
-        color: #2563eb;
+        border-color: #0f172a;
     }
 
     @media (max-width: 900px) {
@@ -1063,13 +1148,15 @@ const magneticNodes = [
         line-height: 1.6;
     }
     .uc-int-text a {
-        color: #3b82f6;
+        color: #0f172a;
         text-decoration: none;
-        font-weight: 600;
-        transition: color 0.2s;
+        font-weight: 700;
+        border-bottom: 1px solid rgba(15,23,42,0.2);
+        padding-bottom: 1px;
+        transition: border-color 0.2s;
     }
     .uc-int-text a:hover {
-        color: #2563eb;
+        border-color: #0f172a;
     }
 
     .uc-int-visual {
@@ -1182,7 +1269,7 @@ const magneticNodes = [
     .uc-pi-toggle {
         width: 28px;
         height: 16px;
-        background: #3b82f6;
+        background: #0f172a;
         border-radius: 10px;
         position: relative;
     }
@@ -1206,18 +1293,18 @@ const magneticNodes = [
     }
     .uc-pi-chart span {
         width: 6px;
-        background: #3b82f6;
+        background: #0f172a;
         border-radius: 2px 2px 0 0;
     }
-    .uc-pi-chart span:nth-child(1) { height: 12px; background: #93c5fd; }
+    .uc-pi-chart span:nth-child(1) { height: 12px; background: #cbd5e1; }
     .uc-pi-chart span:nth-child(2) { height: 18px; }
-    .uc-pi-chart span:nth-child(3) { height: 24px; background: #1e3a8a; }
+    .uc-pi-chart span:nth-child(3) { height: 24px; background: #020617; }
     
     /* 3. Sync / Refresh (using CSS borders) */
     .uc-pi-sync {
         width: 24px;
         height: 24px;
-        border: 3px solid #3b82f6;
+        border: 3px solid #0f172a;
         border-top-color: transparent;
         border-radius: 50%;
         position: relative;
@@ -1229,7 +1316,7 @@ const magneticNodes = [
         right: -3px;
         border-left: 6px solid transparent;
         border-right: 6px solid transparent;
-        border-top: 6px solid #3b82f6;
+        border-top: 6px solid #0f172a;
         transform: rotate(-45deg);
     }
     
@@ -1238,7 +1325,7 @@ const magneticNodes = [
         width: 20px;
         height: 26px;
         background: #fff;
-        border: 2px solid #3b82f6;
+        border: 2px solid #0f172a;
         border-radius: 4px;
         position: relative;
     }
@@ -1246,20 +1333,20 @@ const magneticNodes = [
         content: '';
         position: absolute;
         top: 4px; left: 3px; right: 8px;
-        height: 2px; background: #93c5fd;
+        height: 2px; background: #0f172a;
     }
     .uc-pi-doc::after {
         content: '';
         position: absolute;
         top: 10px; left: 3px; right: 3px;
-        height: 2px; background: #93c5fd;
+        height: 2px; background: #0f172a;
     }
     
     /* 5. Wallet / Card */
     .uc-pi-card {
         width: 26px;
         height: 18px;
-        background: #1e3a8a;
+        background: #0f172a;
         border-radius: 4px;
         position: relative;
     }
@@ -1268,12 +1355,12 @@ const magneticNodes = [
         position: absolute;
         top: 4px; left: 0; right: 0;
         height: 4px;
-        background: #3b82f6;
+        background: #475569;
     }
     
     /* 6. Code / Bracket */
     .uc-pi-code {
-        color: #3b82f6;
+        color: #0f172a;
         font-family: monospace;
         font-size: 20px;
         font-weight: bold;
@@ -1285,7 +1372,7 @@ const magneticNodes = [
         font-weight: 700;
         color: #0a2540;
         margin-bottom: 1rem;
-        border-left: 3px solid #3b82f6;
+        border-left: 3px solid #0f172a;
         padding-left: 12px;
         line-height: 1.4;
     }
@@ -1295,13 +1382,15 @@ const magneticNodes = [
         line-height: 1.6;
     }
     .uc-power-item a {
-        color: #3b82f6;
+        color: #0f172a;
         text-decoration: none;
-        font-weight: 600;
-        transition: color 0.2s;
+        font-weight: 700;
+        border-bottom: 1px solid rgba(15,23,42,0.2);
+        padding-bottom: 1px;
+        transition: border-color 0.2s;
     }
     .uc-power-item a:hover {
-        color: #2563eb;
+        border-color: #0f172a;
     }
 
     @media (max-width: 768px) {
