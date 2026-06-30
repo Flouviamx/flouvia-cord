@@ -90,6 +90,33 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
 
 ## Estado actual (jun 2026)
 
+✅ **Precios por volumen + Promesas de pago + landing de Integraciones (jun 2026)** — tres features
+   nacidas de la auditoría de `/casos-de-uso/*` (claims que la app no cumplía → ahora sí):
+   • **Precios por volumen (matriz por producto):** columna nueva `productos.precios_volumen jsonb`
+     (`[{min, precio}]` ordenada asc; default `[]`). Saneada por `normVolumen()` en `queries.ts`
+     (exportada, reusada por `/api/productos`). El modal de `/app/productos` tiene un editor de niveles
+     (clases `vol-*`: "Desde N pz → $X", agregar/quitar). **El cotizador `/app/cotizaciones/nueva` lo aplica
+     en vivo:** al cambiar la cantidad de una línea de catálogo, `volUnit(l)` busca el nivel más alto cuyo
+     `min` se alcanza y reescribe `l.lista`; sobre ese precio se aplica el descuento por nivel de cliente
+     (`applyDesc`) salvo que el vendedor haya fijado un precio manual (`l.negoTouched`). Muestra una nota
+     verde "precio x volumen (N+)" bajo el nombre. Las líneas de IA (`ai-draft`) heredan los tiers del
+     `catMap` por id. El payload no cambió de forma (sigue mandando `precio_unitario`=lista vigente).
+   • **Promesas de pago (cobranza):** tabla nueva `promesas_pago` (org_id, cotizacion_id, fecha_promesa,
+     monto?, nota, estado pendiente|cumplida|incumplida) + RLS/FORCE. API `/api/promesas` (POST/PATCH
+     estado/DELETE, gated por `requirePerm('cobranza')`). `getCobranza()` adjunta la promesa pendiente más
+     reciente por cotización (`item.promesa`). UI en `/app/cobranza`: botón de calendario por fila + modal
+     (`#promModal`) para registrar/editar (fecha, monto opcional, nota), badge "Promete <fecha>" en la
+     columna de estado, "Marcar cumplida" / "Quitar". Editar = DELETE+POST (reemplaza la vigente). Es
+     **seguimiento manual** — NO automatiza cobros ni manda nada.
+   • **Landing `/desarrolladores/integraciones` (ES+EN):** entrada nueva `integraciones` en
+     `desarrolladores.ts` + `.en.ts` (auto-genera `/desarrolladores/integraciones` y `/en/...`). Hero mockup
+     (webhook `POST quote.paid` firmado, tema teal) en `[slug].astro` + 2 block mockups en
+     `DevBlockMockup.astro` (`integraciones` index 0 = terminal del payload + firma; index 1 = lista de
+     destinos Zapier/Make/n8n/Slack/backend). Copy HONESTO: Cord NO tiene conectores propietarios por
+     proveedor; emite webhooks HMAC-SHA256 (6 eventos) + API REST + Slack nativo; conectas SAP/Oracle/
+     Salesforce vía Zapier/Make/n8n. Cableada en el megamenú de `Nav.astro` (desktop + móvil) y en
+     `Footer.astro`. ⚠️ Correr `npm run db:migrate` (1 columna + 1 tabla).
+
 ✅ **Fondos GLSL (React Three Fiber) en los heroes de Soluciones (jun 2026)** — André entró al
    mundo de shaders/WebGL y reemplazó los fondos CSS estáticos de los heroes de
    `/soluciones/empresas` y `/soluciones/startups` por **shaders animados en R3F**. Stack nuevo:
@@ -125,15 +152,52 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
    ⚠️ **Regla a futuro:** cualquier fondo shader nuevo en un hero de landing sigue este patrón
    (`<Canvas>` absoluto dentro del hero, `client:only`, mouse por window+lerp, `pointer-events:none`).
 
+✅ **`GreenRampShader.jsx` — hero shader de Casos de Uso / Agencias (jun 2026)** — `/casos-de-uso/agencias`
+   tenía un mockup flotante estático en el hero; se reemplazó por un shader R3F de fondo. ⚠️ Nota de doc
+   drift: las entradas de abajo ("Shaders GLSL extendidos…") ya referenciaban `GreenRampShader`/`RampShader`
+   como si existieran, pero los archivos NO estaban en el repo — este es el `GreenRampShader.jsx` real.
+   • **`src/components/soluciones/GreenRampShader.jsx`** — "Green Ramp" modo claro Quiet Luxury: barras
+     verticales SÓLIDAS cuantizadas (`floor(uv.x * 13.0)` → corte limpio *stepped*, SIN lerp horizontal
+     entre barras, a diferencia de `QuantizedWaveBg`). La altura crece en diagonal izq→der (`mix(0.16,0.82,cx)`),
+     respira lentísimo (`u_time*0.18`, dos senos desfasados = ecualizador pesado), y reacciona magnéticamente
+     al cursor (`exp(-mDist²*90)` eleva+ilumina 1-2 barras bajo el mouse; el regreso elástico lo da el
+     `lerp(target,0.05)` sobre `u_mouse` en JS). Paleta: blanco puro de fondo + verde salvia `vec3(0.776,0.871,0.808)`
+     en la base → menta `vec3(0.886,0.953,0.910)` → blanco arriba (se desvanece). Dither anti-banding. Sin luces,
+     `shaderMaterial` crudo, `planeGeometry [2,2]` fullscreen, `powerPreference:'low-power'`. Mismo patrón R3F
+     que los otros heroes (`<Canvas>` orthographic absoluto dentro del hero, `client:only="react"`,
+     `pointer-events:none`, mouse por window+lerp).
+   • **`agencias.astro`**: se MONTÓ el shader en `.uc-hero-bg` (`absolute inset:0`, NO `fixed` full-page —
+     regla del proyecto: vive solo en el hero) con un `::after` de fade blanco (gradiente 105°) para
+     legibilidad del texto. Se ELIMINÓ el mockup (`.uc-hero-visual` + todo su CSS `.uc-mockup-*`/`.mock-*`),
+     el corte diagonal `::before`, y el tween GSAP `.reveal-mockup` huérfano. El hero ahora ocupa
+     `min-height:100dvh` (`display:flex; align-items:center`) → al recargar solo se ve el hero, el resto
+     baja al scrollear. Texto alineado a la izquierda (`max-width:640px`). Botones reestilizados al patrón
+     de `soluciones/startups`: primario navy pill (`padding:18px 38px`, flecha que desliza + `.btn-shimmer`
+     que cruza en hover, transiciones `cubic-bezier(0.16,1,0.3,1)`) y ghost = píldora con borde translúcido
+     (antes era link de texto plano). El primario se dejó navy (no blanco como startups) por el fondo blanco.
+
 ✅ **Shaders GLSL extendidos: aurora en tarjetas + Ramp parametrizado en Casos de Uso (jun 2026)** —
    continuación del track de shaders, ahora reutilizables:
    • **`CardAuroraBg.jsx`** — la MISMA aurora del hero de empresas (`DarkAuroraBg`: Simplex 3D + FBM
      + domain-warp, teal esmeralda + acento índigo) empacada para vivir DENTRO de una tarjeta oscura
      (`absolute inset:0` bajo el contenido, `z-index:1`). El cursor se mide RELATIVO al canvas de cada
      tarjeta (`getBoundingClientRect`), pausa el render fuera de viewport (`IntersectionObserver`,
-     `frameloop` `always`↔`never`), `dpr={1}` y `prefers-reduced-motion → null`. Reemplazó los overlays
-     CSS `.aurora-card-layer` (radial-gradients) en las 6 tarjetas de **`/soluciones/empresas`** y en
-     **`/soluciones/startups`** por la aurora WebGL real (mismo look del hero, dentro de la tarjeta).
+     `frameloop` `always`↔`never`), `dpr={1}` y `prefers-reduced-motion → null`. El teal va un pelín más
+     presente que el hero (mix `0.62` vs `0.55`) porque es el foco de la tarjeta.
+   • ✅ **CABLEADO REAL en `/soluciones/empresas` (jun 2026, doc-drift corregido):** las 6 tarjetas de
+     **"Capacidades Core"** y **"Herramientas Avanzadas"** (`.stripe-fg-card.aurora-card`) SEGUÍAN siendo
+     blancas con la aurora FALSA de CSS (`.aurora-card-layer` = `radial-gradient` + RAF que lerpeaba
+     `--ax/--ay/...`) — la entrada vieja describía `CardAuroraBg` como ya aplicado pero NO lo estaba.
+     Ahora sí: se reemplazaron los 4 marcadores `<div class="aurora-card-layer">` por
+     `<CardAuroraBg client:only="react" />`, las tarjetas se re-estilizaron a **modo oscuro como el hero**
+     (fondo `#0b0f19` para evitar flash antes del fade-in del canvas, título blanco, desc
+     `rgba(226,232,240,0.72)`, tags de vidrio con `backdrop-filter`), y se borró el bloque JS de tracking
+     CSS (obsoleto) + las reglas `.aurora-card-layer`/`@keyframes aurora-card-breathe`. Los mockups
+     `cmk-*` (screenshots blancos) quedan como capturas recortadas estilo Stripe sobre la tarjeta oscura.
+     ⚠️ Ahora hay **7 contextos WebGL** en la página (1 hero + 6 tarjetas); el IntersectionObserver
+     mantiene activas solo las visibles. **`/soluciones/startups` AÚN usa la aurora CSS** (`.aurora-card`
+     con overlay `.aurora-card-layer`, ver entrada "Mockups premium `imk-*`" abajo) — NO migrada a
+     `CardAuroraBg` todavía.
    • **`RampShader.jsx`** — versión PARAMETRIZADA del `GreenRampShader` de agencias: el mismo motor de
      barras verticales cuantizadas (`floor`, corte limpio sin lerp horizontal) pero con la paleta de las
      barras por **uniforms** (`u_base` abajo · `u_top` arriba) y un prop **`variant`** que selecciona entre
@@ -1222,6 +1286,7 @@ identidad sigue siendo Clerk (userId), solo la membresía/permiso es nuestra.
 - `api_keys` — llaves API públicas (hash SHA-256, mode test|live, scope read|write)
 - `webhooks` — endpoints salientes (HMAC-sha256, best-effort, 1 retry)
 - `intereses_moratorios` — cargos mensuales de interés moratorio por cotización (cron día 1; idempotente por cotizacion_id+periodo)
+- `promesas_pago` — promesa de pago del cliente para una fecha (cobranza; seguimiento manual, no automatiza). `productos.precios_volumen jsonb` = matriz de precios por volumen `[{min,precio}]`
 
 Patrón RLS: `org_id = current_setting('app.org_id', TRUE)::uuid` — activo a nivel de
 base de datos (jun 2026). El backend usa `withOrgTx(orgId, ...queries)` en `db.ts`

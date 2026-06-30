@@ -148,6 +148,31 @@ const otra = (isEn ? DEV_PAGES_EN : DEV_PAGES).find((p) => p.slug !== page.slug)
                                 </div>
                             </div>
                         )}
+                        {page.slug === 'integraciones' && (
+                            <div class="dv-api" style="border-color:#10b98140;">
+                                <div class="dv-api-bar" style="background:#064e3b; border-bottom:1px solid #10b98140;">
+                                    <span class="dv-dots"><i></i><i></i><i></i></span>
+                                    <span class="dv-method" style="color:#34d399;">POST</span>
+                                    <span class="dv-endpoint" style="color:#a7f3d0;">https://tu-erp.com/webhooks/cord</span>
+                                    <span class="dv-api-stat" style="color:#6ee7b7;">200 OK</span>
+                                </div>
+                                <div class="dv-api-body" style="background:#022c22;">
+                                    <div class="dv-api-req"><code><span class="c-key" style="color:#6ee7b7;">X-Cord-Event</span>: <span class="c-str" style="color:#a7f3d0;">quote.paid</span>
+<span class="c-key" style="color:#6ee7b7;">X-Cord-Signature</span>: <span class="c-str" style="color:#a7f3d0;">sha256=4f1ad8c…</span></code></div>
+                                    <div class="dv-api-divider"></div>
+                                    <pre class="dv-api-res" style="color:#d1fae5;"><code><span class="dv-line">{`{`}</span>
+<span class="dv-line">  <span class="c-key" style="color:#6ee7b7;">"event"</span>: <span class="c-str" style="color:#a7f3d0;">"quote.paid"</span>,</span>
+<span class="dv-line">  <span class="c-key" style="color:#6ee7b7;">"data"</span>: {`{`}</span>
+<span class="dv-line">    <span class="c-key" style="color:#6ee7b7;">"folio"</span>: <span class="c-str" style="color:#a7f3d0;">"COT-0149"</span>,</span>
+<span class="dv-line">    <span class="c-key" style="color:#6ee7b7;">"status"</span>: <span class="c-str" style="color:#a7f3d0;">"paid"</span>,</span>
+<span class="dv-line">    <span class="c-key" style="color:#6ee7b7;">"total"</span>: <span class="c-num" style="color:#fcd34d;">196469.2</span>,</span>
+<span class="dv-line">    <span class="c-key" style="color:#6ee7b7;">"cliente"</span>: <span class="c-str" style="color:#a7f3d0;">"{isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}"</span></span>
+<span class="dv-line">  {`}`}</span>
+<span class="dv-line">{`}`}</span></code></pre>
+                                    <span class="dv-api-latency" style="color:#6ee7b7;">{isEn ? 'delivered · auto-retry on failure' : 'entregado · reintento automático si falla'}</span>
+                                </div>
+                            </div>
+                        )}
                         {page.slug === 'fiscal' && (
                             <div class="dv-api" style="border-color:#6366f140;">
                                 <div class="dv-api-bar" style="background:#312e81; border-bottom:1px solid #6366f140;">

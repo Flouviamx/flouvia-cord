@@ -124,7 +124,7 @@ const magneticNodes = [
                                 </div>
                                 <div class="uc-feature-content">
                                     <h3>Manejo de Crédito (Net 30/60)</h3>
-                                    <p>Otorga términos de pago institucionales. Cord envía la factura, gestiona la cobranza y timbra el <a href="#">REP</a> cuando registras el depósito.</p>
+                                    <p>Otorga términos de pago institucionales. Cord registra el límite de crédito por cliente, bloquea nuevos pedidos si hay saldo vencido y envía recordatorios automáticos antes del vencimiento Net 30/60.</p>
                                 </div>
                             </div>
                         </div>
@@ -212,9 +212,9 @@ const magneticNodes = [
                     <!-- Tarjeta 1 -->
                     <div class="uc-bento-card reveal">
                         <div class="uc-bc-text">
-                            <h3>Gestión de crédito comercial (Net 30/60) automatizada</h3>
-                            <p>Ofrecer crédito ya no significa asumir riesgos ni contratar más personal de cobranza. Cord hace el scoring, establece límites por cliente y persigue los pagos atrasados de manera automática.</p>
-                            <a href="/registro" class="uc-link-arrow">Mejora tus procesos de crédito <span>&rarr;</span></a>
+                            <h3>Límites de crédito por cliente con bloqueo automático</h3>
+                            <p>Define el límite de crédito de cada distribuidor en Cord. Si un cliente intenta pasar un nuevo pedido con saldo vencido, el sistema lo marca y tu equipo recibe la alerta antes de aprobar.</p>
+                            <a href="/registro" class="uc-link-arrow">Controla tu cartera de crédito <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
                             <div class="uc-mockup-bg cord-bg-1"></div>
@@ -237,33 +237,33 @@ const magneticNodes = [
                     <!-- Tarjeta 2 -->
                     <div class="uc-bento-card reveal">
                         <div class="uc-bc-text">
-                            <h3>Complementos de pago (REP) sin estrés operativo</h3>
-                            <p>Tus clientes te depositan y tu equipo de finanzas pasa horas cuadrando bancos. Cord detecta el SPEI, identifica la factura origen y emite el REP correspondiente en segundos, notificando al cliente.</p>
-                            <a href="/registro" class="uc-link-arrow">Automatiza la emisión de REPs <span>&rarr;</span></a>
+                            <h3>Cobranza vencida con recordatorios automáticos</h3>
+                            <p>Cord muestra el aging de tu cartera por cliente, los saldos vencidos y los días promedio de cobro. Cuando un cliente no ha pagado, manda recordatorios automáticos por correo y WhatsApp antes y después del vencimiento.</p>
+                            <a href="/registro" class="uc-link-arrow">Mejora tu ciclo de cobro <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup" style="background:#fff;">
                             <div class="uc-mini-portal" style="flex-direction: column;">
                                 <div class="uc-mp-sidebar" style="width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 20px;">
-                                    <div class="uc-mp-brand" style="margin:0;"><div class="uc-mp-dot"></div> Conciliación SPEI</div>
+                                    <div class="uc-mp-brand" style="margin:0;"><div class="uc-mp-dot"></div> Cobranza vencida</div>
                                     <div class="uc-mp-nav" style="background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 6px;">Hoy</div>
                                 </div>
                                 <div class="uc-mp-main" style="padding: 16px 20px;">
-                                    <div class="uc-mp-card" style="margin-bottom:8px; border-left:4px solid #3b82f6;">
+                                    <div class="uc-mp-card" style="margin-bottom:8px; border-left:4px solid #ef4444;">
                                         <div class="uc-mp-row">
                                             <div>
-                                                <strong>SPEI Recibido - $45,200.00</strong>
-                                                <span>Factura F-2894 pagada</span>
+                                                <strong>Distribuidora El Sol — $45,200</strong>
+                                                <span>Vence en 3 días · Net 30</span>
                                             </div>
-                                            <div class="uc-mp-tag">REP Emitido</div>
+                                            <div class="uc-mp-tag" style="background:#fef2f2; color:#dc2626;">Recordatorio enviado</div>
                                         </div>
                                     </div>
-                                    <div class="uc-mp-card" style="border-left:4px solid #e2e8f0;">
+                                    <div class="uc-mp-card" style="border-left:4px solid #f59e0b;">
                                         <div class="uc-mp-row">
                                             <div>
-                                                <strong>SPEI Recibido - $12,500.00</strong>
-                                                <span>Procesando...</span>
+                                                <strong>Grupo Norteño — $12,500</strong>
+                                                <span>Vence mañana</span>
                                             </div>
-                                            <div class="uc-mp-tag" style="background:#f1f5f9; color:#475569;">Asignando</div>
+                                            <div class="uc-mp-tag" style="background:#fffbeb; color:#92400e;">WhatsApp enviado</div>
                                         </div>
                                     </div>
                                 </div>
@@ -287,8 +287,8 @@ const magneticNodes = [
                             <div class="uc-mf-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
                             </div>
-                            <h4>Sincronización ERP</h4>
-                            <p>Conecta Cord con tu sistema de inventario o <a href="#" class="uc-link-inline">ERP existente</a> vía webhooks para descontar stock en tiempo real.</p>
+                            <h4>Webhooks para tu ERP</h4>
+                            <p>Cord emite <code>quote.approved</code> y <code>quote.paid</code> para que tu ERP o sistema de inventario reaccione vía Zapier, Make o tu propio backend al cerrar un pedido.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
@@ -316,9 +316,9 @@ const magneticNodes = [
             <div class="uc-container">
                 <div class="uc-int-grid">
                     <div class="uc-int-text reveal">
-                        <h2>Sincroniza pedidos e inventario de manera infalible</h2>
+                        <h2>Conecta Cord con tu ecosistema vía webhooks y API</h2>
                         <p>
-                            Integra la gestión de cuentas por cobrar de Cord con el ecosistema de tu comercializadora. Sincroniza stock y clientes con tu ERP principal como <a href="#">SAP</a> u <a href="#">Oracle</a>, tu CRM comercial como <a href="#">Salesforce</a>, o incluso tus canales digitales en <a href="#">Shopify</a>.
+                            Cord emite eventos reales en cada etapa del ciclo de venta — <code>quote.sent</code>, <code>quote.approved</code>, <code>quote.paid</code> — que puedes escuchar desde Zapier o Make para actualizar tu ERP, tu CRM o tu sistema de inventario sin escribir conectores complejos. La integración con Slack notifica a tu equipo al instante.
                         </p>
                     </div>
                     <div class="uc-int-visual reveal">
@@ -348,13 +348,13 @@ const magneticNodes = [
                     </div>
                     <div class="uc-power-item reveal">
                         <div class="uc-power-icon"><div class="uc-pi-toggle"></div></div>
-                        <h3>Multimoneda y tipos de cambio</h3>
-                        <p>Opera local e internacionalmente sin fricción. Cord soporta facturación en USD y MXN, calculando automáticamente las <a href="#">ganancias o pérdidas cambiarias</a> al momento de la conciliación bancaria.</p>
+                        <h3>Multi-divisa con tasa protegida</h3>
+                        <p>Cotiza a clientes del extranjero en USD o EUR con tasa de cambio bloqueada (buffer configurable). Tu cliente ve el monto en su moneda; tú facturas y cobras en MXN con la tasa que fijaste al enviar la cotización.</p>
                     </div>
                     <div class="uc-power-item reveal">
                         <div class="uc-power-icon"><div class="uc-pi-doc"></div></div>
-                        <h3>Complementos de Pago (REP) automatizados</h3>
-                        <p>Cumple con el SAT sin dolores de cabeza. Emitimos y timbramos automáticamente el <a href="#">Complemento de Recepción de Pagos</a> en cuanto un cliente liquida una factura PPD parcial o totalmente.</p>
+                        <h3>CFDI 4.0 al cerrar cada pedido</h3>
+                        <p>Cuando tu cliente aprueba la cotización, Cord timbra el CFDI 4.0 vía PAC certificado. El XML y el PDF quedan vinculados al pedido y disponibles para descarga desde el portal del cliente sin intervención de tu equipo.</p>
                     </div>
                 </div>
             </div>

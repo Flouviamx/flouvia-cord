@@ -323,6 +323,47 @@ export function Cotizacion({ token }) {
         ],
         cta: { titulo: 'Expande tu mercado sin el dolor de cabeza fiscal.', sub: 'Únete a las empresas que operan binacionalmente.' },
     },
+    {
+        slug: 'integraciones',
+        nav: 'Integraciones y webhooks',
+        eyebrow: 'INTEGRACIONES · WEBHOOKS',
+        titulo: 'Conecta Cord a cualquier ERP o CRM. Sin esperar un conector.',
+        sub: 'No mantenemos conectores propietarios para cada sistema (SAP, Oracle, Salesforce…). En su lugar Cord emite webhooks firmados en cada evento de tu ciclo de venta — los apuntas a Zapier, Make, n8n o tu propio backend y reaccionas en tiempo real. Lo que ves en la app, también por API REST.',
+        plan: 'En todos los planes · webhooks limitados por plan (Free 1 → Developer 100) · Slack nativo · llaves de prueba gratis para la API',
+        stats: [
+            { valor: '6', countup: 6, label: 'eventos que Cord emite: sent, viewed, approved, rejected, paid, invoiced' },
+            { valor: '1', countup: 1, label: 'firma HMAC-SHA256 por entrega (X-Cord-Signature), verificable' },
+            { valor: '3', countup: 3, label: 'formas de integrar: webhooks salientes, API REST y MCP' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'WEBHOOKS SALIENTES',
+                titulo: 'Tu sistema reacciona a cada evento de venta.',
+                copy: 'Registras una URL en Ajustes › Developers › Webhooks y eliges qué eventos te interesan. Cuando una cotización se envía, se ve, se aprueba, se rechaza, se paga o se factura, Cord hace un POST con el payload en JSON. Cada entrega va firmada con HMAC-SHA256 en el header X-Cord-Signature para que verifiques que vino de Cord. Es best-effort con un reintento, y cada intento queda en un log que puedes reenviar.',
+                bullets: [
+                    'Header X-Cord-Signature: sha256=&lt;hmac del cuerpo crudo&gt; + X-Cord-Event',
+                    'Payload con id, folio, status, total, cliente y link público',
+                    'Log de entregas con estado, latencia y botón de reenvío en Ajustes',
+                ],
+            },
+            {
+                eyebrow: 'SIN CONECTORES PROPIETARIOS',
+                titulo: 'Zapier, Make, n8n o tu backend.',
+                copy: 'En vez de atarte a un conector "nativo" por cada proveedor, apuntas el webhook a una plataforma no-code (Zapier, Make, n8n) y de ahí llegas a miles de apps —incluidos SAP, Oracle, Salesforce, HubSpot o Notion— sin que escribamos código por ti. ¿Prefieres control total? Llama directo a la API REST. Y si tu equipo vive en Slack, esa sí es integración nativa: las alertas de cada evento llegan solas.',
+                bullets: [
+                    'Conecta a más de 5,000 apps vía Zapier / Make / n8n con un webhook',
+                    'O usa la API REST: crea cotizaciones, clientes y productos desde tu código',
+                    'Slack nativo: notificación automática en cada evento de cotización',
+                ],
+            },
+        ],
+        steps: [
+            { titulo: 'Registra tu endpoint', copy: 'En Ajustes › Developers › Webhooks. Elige los eventos y guarda el secret (se muestra una vez).' },
+            { titulo: 'Verifica la firma', copy: 'Calcula el HMAC-SHA256 del cuerpo crudo con tu secret y compáralo con X-Cord-Signature.' },
+            { titulo: 'Enruta a tu sistema', copy: 'Procesa el JSON en tu backend, o déjalo caer en Zapier/Make/n8n para llegar a tu ERP o CRM.' },
+        ],
+        cta: { titulo: 'Conecta Cord a tu stack hoy.', sub: 'Registra un webhook o genera una llave de prueba y recibe tu primer evento en minutos.' },
+    },
 ];
 
 export const findDevPage = (slug: string) => DEV_PAGES.find((p) => p.slug === slug);

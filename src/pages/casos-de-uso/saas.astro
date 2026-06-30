@@ -13,8 +13,8 @@ const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
 const t = useTranslations(lang);
 
-const metaTitle = "Cord para SaaS B2B | Gestión de Suscripciones y Contratos";
-const metaDesc = "Optimiza tus cobros recurrentes y contratos empresariales con Cord. La plataforma ideal para startups SaaS y negocios de software.";
+const metaTitle = "Cord para SaaS B2B | Contratos, Cobros y CFDI";
+const metaDesc = "Cierra contratos B2B, cobra en línea y emite CFDI 4.0 en automático. La plataforma de ventas para empresas SaaS en México.";
 
 const magneticNodes = [
     { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://stripe.com&size=128", alt: "Stripe", top: "10%", left: "30%", width: 100, zIndex: 2 },
@@ -39,9 +39,9 @@ const magneticNodes = [
             </div>
             <div class="uc-container uc-hero-inner">
                 <div class="uc-hero-content">
-                    <h1 class="uc-title reveal">Gestión de suscripciones para el software moderno</h1>
+                    <h1 class="uc-title reveal">Contratos B2B y cobros para el software moderno</h1>
                     <p class="uc-sub reveal">
-                        Automatiza los pagos recurrentes, unifica tus contratos B2B y emite CFDI 4.0 en automático. Construido para empresas SaaS de alto crecimiento.
+                        Envía propuestas interactivas, firma digitalmente los contratos y emite CFDI 4.0 al instante. Construido para empresas SaaS que venden a otras empresas en México.
                     </p>
                     <div class="uc-actions reveal">
                         <a href="/registro" class="btn-luxe">
@@ -84,10 +84,10 @@ const magneticNodes = [
                 <div class="uc-split-grid">
                     
                     <div class="uc-split-text reveal">
-                        <span class="uc-split-label">Billing Engine</span>
-                        <h2 class="uc-split-title">Suscripciones diseñadas para escalar</h2>
+                        <span class="uc-split-label">Contratos y Cobros</span>
+                        <h2 class="uc-split-title">Propuestas que cierran y facturas que salen solas</h2>
                         <p class="uc-split-desc">
-                            Maneja facturación recurrente, prorrateos por asiento y asientos adicionales sin dolores de cabeza operativos en tu <a href="#">pasarela de pagos</a>.
+                            Desde el primer contacto hasta el CFDI timbrado. Cord centraliza la cotización, la aprobación digital y la facturación en un solo flujo.
                         </p>
                         
                         <div class="uc-split-list">
@@ -104,8 +104,8 @@ const magneticNodes = [
                                     </svg>
                                 </div>
                                 <div class="uc-feature-content">
-                                    <h3>Modelos de precios complejos</h3>
-                                    <p>Desde <a href="#">tarifas fijas</a> hasta <a href="#">facturación por uso</a> o por volumen, nuestro motor de pricing se adapta a la evolución de tu modelo B2B al instante.</p>
+                                    <h3>Planes y precios por nivel de cliente</h3>
+                                    <p>Asigna niveles (Estándar, Agencia, Enterprise) con descuentos fijos por cliente. El cotizador aplica el precio correcto al instante, sin hojas de cálculo.</p>
                                 </div>
                             </div>
                             
@@ -123,8 +123,8 @@ const magneticNodes = [
                                     </svg>
                                 </div>
                                 <div class="uc-feature-content">
-                                    <h3>Facturación automatizada (CFDI)</h3>
-                                    <p>Emitir facturas válidas en México ya no requiere intervención humana. Tus clientes reciben sus <a href="#">comprobantes fiscales</a> automáticamente apenas se concreta el cargo mensual de su membresía.</p>
+                                    <h3>CFDI 4.0 al aprobar la propuesta</h3>
+                                    <p>En cuanto tu cliente firma la cotización en línea, Cord timbra el CFDI con el SAT vía Facturapi y lo envía por correo. Sin captura manual, sin esperas.</p>
                                 </div>
                             </div>
                         </div>
@@ -145,8 +145,8 @@ const magneticNodes = [
                             </div>
                             
                             <div class="uc-mockup-body">
-                                <h4>Planes de Suscripción</h4>
-                                <p>Elige el plan ideal para escalar tu equipo</p>
+                                <h4>Propuesta Anual — Nexus SaaS</h4>
+                                <p>Selecciona el nivel de servicio para tu empresa</p>
                                 
                                 <div class="uc-mockup-cards">
                                     <div class="uc-mc uc-mc-1">
@@ -175,22 +175,22 @@ const magneticNodes = [
                                 
                                 <div class="uc-mockup-features">
                                     <ul>
-                                        <li>1 proyecto activo</li>
-                                        <li>10 miembros</li>
-                                        <li>Soporte comunitario</li>
+                                        <li>Hasta 3 usuarios</li>
+                                        <li>50 cotizaciones/mes</li>
+                                        <li>3 CFDI incluidos</li>
                                     </ul>
                                     <ul>
-                                        <li>Proyectos ilimitados</li>
-                                        <li>Hasta 50 miembros</li>
-                                        <li>Integraciones API</li>
-                                        <li>Soporte prioritario</li>
+                                        <li>Hasta 5 usuarios</li>
+                                        <li>Cotizaciones ilimitadas</li>
+                                        <li>20 CFDI/mes</li>
+                                        <li>Seguimiento en vivo</li>
                                     </ul>
                                     <ul>
-                                        <li>Entornos dedicados</li>
-                                        <li>Miembros ilimitados</li>
-                                        <li>Single Sign-On (SSO)</li>
-                                        <li>Account manager</li>
-                                        <li>SLA de 99.9%</li>
+                                        <li>Usuarios ilimitados</li>
+                                        <li>1,000 CFDI/mes</li>
+                                        <li>API REST + webhooks</li>
+                                        <li>MCP bidireccional</li>
+                                        <li>Audit log</li>
                                     </ul>
                                 </div>
                             </div>
@@ -205,10 +205,10 @@ const magneticNodes = [
         <section class="uc-benefits">
             <div class="uc-container">
                 <div class="uc-benefits-intro reveal">
-                    <span class="uc-split-label">Reduce el trabajo de ingeniería</span>
-                    <h2 class="uc-split-title">Ahorra tiempo y recursos dedicados a los cobros</h2>
+                    <span class="uc-split-label">Sin trabajo manual</span>
+                    <h2 class="uc-split-title">Cobra rápido y mantén a tu equipo enfocado en el producto</h2>
                     <p class="uc-split-desc">
-                        Atiende tus necesidades de cobranza sin comprometer la capacidad de tus ingenieros. Gracias a las interfaces de Cord, podrás ofrecer experiencias de cobro optimizadas mientras centras todos tus esfuerzos en desarrollar tu producto principal.
+                        Tu equipo de ventas genera la propuesta en Cord, el cliente la aprueba en un clic y el CFDI sale solo. Sin perseguir firmas ni capturar datos fiscales manualmente.
                     </p>
                 </div>
 
@@ -216,8 +216,8 @@ const magneticNodes = [
                     <!-- Tarjeta 1 -->
                     <div class="uc-bento-card reveal">
                         <div class="uc-bc-text">
-                            <h3>Recibe pagos más rápido con facturas prediseñadas</h3>
-                            <p>Las facturas alojadas por Cord se cobran automáticamente y emiten el CFDI 4.0 al instante. Contamos con flujos optimizados para B2B que facilitan el cobro a clientes empresariales en todo México.</p>
+                            <h3>Link de pago y CFDI en el mismo flujo</h3>
+                            <p>Tu cliente recibe el link de la cotización, paga con tarjeta o SPEI, y Cord emite el CFDI 4.0 al instante. Sin recapturar datos, sin coordinar por correo.</p>
                             <a href="/registro" class="uc-link-arrow">Empieza ahora mismo <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
@@ -238,8 +238,8 @@ const magneticNodes = [
                     <!-- Tarjeta 2 -->
                     <div class="uc-bento-card reveal">
                         <div class="uc-bc-text">
-                            <h3>Lanza un portal de clientes en cuestión de minutos</h3>
-                            <p>Deja que tus clientes modifiquen su suscripción, actualicen sus datos fiscales o descarguen sus XMLs por medio de un enlace seguro en el portal de clientes prediseñado de Cord. Todo con los colores de tu marca.</p>
+                            <h3>Portal de cliente con tu marca en minutos</h3>
+                            <p>Cada cotización tiene su propio link seguro donde tu cliente revisa el desglose, descarga el PDF y el XML, aprueba o rechaza con firma digital. Todo en los colores de tu empresa.</p>
                             <a href="/registro" class="uc-link-arrow">Empieza ahora mismo <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup" style="background:#fff;">
@@ -273,35 +273,35 @@ const magneticNodes = [
 
                 <!-- Micro Features Grid -->
                 <div class="uc-micro-features reveal">
-                    <h3 class="uc-mf-title">Agiliza tus operaciones con la automatización integrada</h3>
+                    <h3 class="uc-mf-title">Más velocidad en cada etapa del ciclo comercial</h3>
                     <div class="uc-mf-grid">
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                             </div>
-                            <h4>Automatización con webhooks</h4>
-                            <p><a href="#" class="uc-link-inline">Activa operaciones</a> automáticamente en función de eventos como actualizaciones de planes, pagos exitosos y cancelaciones.</p>
+                            <h4>Webhooks en cada evento</h4>
+                            <p>Cord emite eventos reales — <code>quote.approved</code>, <code>quote.paid</code>, <code>quote.invoiced</code> — que puedes escuchar desde Zapier, Make o tu propio backend.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M16.2 7.8l-2 6.3-6.4 2.1 2-6.3z"></path></svg>
                             </div>
-                            <h4>Prorrateo de cobros</h4>
-                            <p>Cord <a href="#" class="uc-link-inline">prorratea</a> de forma automática el cobro exacto cuando tus usuarios añaden asientos o hacen upgrades a mitad de mes.</p>
+                            <h4>Cobranza automática</h4>
+                            <p>Si un contrato vence y no se ha pagado, Cord envía recordatorios por correo y WhatsApp antes del vencimiento sin que tengas que intervenir.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                             </div>
-                            <h4>Programa suscripciones</h4>
-                            <p><a href="#" class="uc-link-inline">Configura reglas</a> para modificar fácilmente las suscripciones a lo largo del tiempo, como pruebas gratis que pasan a planes de pago.</p>
+                            <h4>Control de aprobaciones</h4>
+                            <p>Define umbrales de descuento y margen mínimo. Si un vendedor se pasa, la propuesta se congela y espera aprobación del gerente antes de salir.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                             </div>
-                            <h4>Recordatorios automáticos</h4>
-                            <p>Maximiza la retención de clientes mediante <a href="#" class="uc-link-inline">dunning y correos automáticos</a> por tarjetas vencidas o pagos rechazados.</p>
+                            <h4>Correos al instante</h4>
+                            <p>Tu cliente recibe el link de la propuesta por correo al enviar, y tú recibes una notificación en cuanto la abre, la aprueba o la rechaza.</p>
                         </div>
                     </div>
                 </div>
@@ -315,9 +315,9 @@ const magneticNodes = [
             <div class="uc-container">
                 <div class="uc-int-grid">
                     <div class="uc-int-text reveal">
-                        <h2>Sincroniza los datos en tu stack de desarrollo</h2>
+                        <h2>Conecta Cord con tu stack vía webhooks y API</h2>
                         <p>
-                            Si ya tienes herramientas para gestionar el código, el producto o las ventas, puedes usar nuestras integraciones prediseñadas. Sincroniza desde <a href="#">Notion</a> y <a href="#">GitHub</a> hasta plataformas de despliegue como <a href="#">Vercel</a> y <a href="#">AWS</a>, sin escribir conectores complejos.
+                            Cord emite eventos reales en cada etapa del ciclo de ventas — <code>quote.sent</code>, <code>quote.approved</code>, <code>quote.paid</code> — que puedes escuchar desde Zapier, Make, n8n o tu propio backend para sincronizar con Notion, Slack, tu CRM o cualquier herramienta de tu equipo.
                         </p>
                     </div>
                     <div class="uc-int-visual reveal">
@@ -333,27 +333,27 @@ const magneticNodes = [
                 <!-- POWER SECTION -->
         <section class="uc-power">
             <div class="uc-container">
-                <h2 class="uc-power-title reveal">Optimiza tus ingresos con la plataforma financiera de Cord</h2>
+                <h2 class="uc-power-title reveal">Cierra más contratos, cobra más rápido</h2>
                 <div class="uc-power-grid">
                     <div class="uc-power-item reveal">
                         <div class="uc-power-icon"><div class="uc-pi-toggle"></div></div>
-                        <h3>Cobranza automatizada de suscripciones</h3>
-                        <p>Cord gestiona el ciclo completo de tus clientes SaaS. Desde cobros prorrateados hasta actualizaciones de planes y cancelaciones automáticas. Reduciendo drásticamente el trabajo manual de tu equipo.</p>
+                        <h3>Propuestas con precios por nivel de cliente</h3>
+                        <p>Define niveles — Estándar, Plata, Oro, Distribuidor — y Cord aplica el descuento correspondiente automáticamente al elegir el cliente. Menos negociación improvisada, márgenes más controlados.</p>
                     </div>
                     <div class="uc-power-item reveal">
                         <div class="uc-power-icon"><div class="uc-pi-sync"></div></div>
-                        <h3>Reducción de churn involuntario</h3>
-                        <p>Casi el 30% del abandono es por tarjetas declinadas. Con el <a href="#">smart dunning</a> de Cord, reintentamos cobros fallidos en los mejores horarios y notificamos al cliente automáticamente para actualizar su método de pago.</p>
+                        <h3>Portal de cliente con tu marca</h3>
+                        <p>Cada propuesta genera un link seguro donde tu cliente revisa el desglose, aprueba con firma digital y descarga el PDF y el XML del CFDI — sin que tengas que mandar documentos por correo.</p>
                     </div>
                     <div class="uc-power-item reveal">
                         <div class="uc-power-icon"><div class="uc-pi-doc"></div></div>
-                        <h3>Reconocimiento de ingresos preciso</h3>
-                        <p>Cierra tus libros más rápido. Automatizamos la conciliación y el <a href="#">reconocimiento de ingresos</a> (Revenue Recognition) cumpliendo con normativas contables, manejando reembolsos y descuentos sin esfuerzo.</p>
+                        <h3>CFDI 4.0 sin salir de Cord</h3>
+                        <p>Al aprobar la propuesta, Cord timbra el CFDI 4.0 vía PAC certificado. El XML y el PDF quedan vinculados a la cotización y disponibles para descarga desde el portal del cliente.</p>
                     </div>
                     <div class="uc-power-item reveal">
                         <div class="uc-power-icon"><div class="uc-pi-chart"><span></span><span></span><span></span></div></div>
-                        <h3>Métricas clave en tiempo real</h3>
-                        <p>Accede a tu MRR, ARR y LTV en un solo lugar. Nuestras herramientas de <a href="#">analítica avanzada</a> te dan visibilidad total sobre la salud de tus suscripciones y el crecimiento real de tu empresa.</p>
+                        <h3>Seguimiento en vivo y cobranza</h3>
+                        <p>Sabes en tiempo real cuándo tu cliente abrió la propuesta. Si no ha pagado, Cord envía recordatorios automáticos por correo y WhatsApp antes del vencimiento sin que tengas que intervenir.</p>
                     </div>
                 </div>
             </div>

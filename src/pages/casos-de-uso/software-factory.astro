@@ -87,7 +87,7 @@ const magneticNodes = [
                         <span class="uc-split-label">Hitos y Entregables</span>
                         <h2 class="uc-split-title">Presupuestos técnicos y pagos ágiles</h2>
                         <p class="uc-split-desc">
-                            El desarrollo de software requiere claridad. Divide tus proyectos en entregables, redacta en <a href="#">Markdown</a> y sincroniza los cobros con tu pipeline de CI/CD.
+                            El desarrollo de software requiere claridad. Divide tus proyectos en entregables, define el pago de cada fase y comparte con tu cliente un link donde puede aprobar y pagar directamente.
                         </p>
                         
                         <div class="uc-split-list">
@@ -123,8 +123,8 @@ const magneticNodes = [
                                     </svg>
                                 </div>
                                 <div class="uc-feature-content">
-                                    <h3>Soporte para Código</h3>
-                                    <p>Tus propuestas son técnicas. Incluye especificaciones de API, <a href="#">diagramas de arquitectura</a> o snippets de código directamente en el editor.</p>
+                                    <h3>Propuestas técnicas detalladas</h3>
+                                    <p>El editor de Cord permite líneas libres con descripción larga. Describe cada entregable con el detalle que requiere — tecnología, alcance, criterios de aceptación — y el cliente lo ve claramente antes de aprobar.</p>
                                 </div>
                             </div>
                         </div>
@@ -213,9 +213,9 @@ const magneticNodes = [
                     <!-- Tarjeta 1 -->
                     <div class="uc-bento-card reveal">
                         <div class="uc-bc-text">
-                            <h3>Liberación de pagos por milestones</h3>
-                            <p>Asocia el cobro de una factura a la aprobación de un Pull Request o al cierre de un sprint. Cord envía automáticamente el link de cobro a tu cliente tan pronto como el hito se marca como completado.</p>
-                            <a href="/registro" class="uc-link-arrow">Integra tus repositorios <span>&rarr;</span></a>
+                            <h3>Cobros por fase del proyecto</h3>
+                            <p>Divide el proyecto en hitos — Setup, Core, Launch — y cotiza cada uno por separado. Cuando completes una fase, envías la cotización correspondiente y el cliente la aprueba con firma digital desde su link.</p>
+                            <a href="/registro" class="uc-link-arrow">Crear propuesta por hitos <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
                             <div class="uc-mockup-bg cord-bg-1"></div>
@@ -292,15 +292,15 @@ const magneticNodes = [
                             <div class="uc-mf-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
                             </div>
-                            <h4>Integración API First</h4>
-                            <p>Utiliza nuestra <a href="#" class="uc-link-inline">API REST GraphQL</a> para integrar Cord profundamente en tus propias herramientas internas y dashboards.</p>
+                            <h4>API REST nativa</h4>
+                            <p>Integra Cord con tus herramientas internas vía nuestra <a href="/desarrolladores/api" class="uc-link-inline">API REST</a>. Crea cotizaciones, consulta clientes y gestiona productos directamente desde tu código.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
                             </div>
-                            <h4>Webhooks fiables</h4>
-                            <p>Escucha eventos financieros con <a href="#" class="uc-link-inline">webhooks</a> 100% tipados y con reintentos automáticos configurables.</p>
+                            <h4>Webhooks con firma HMAC</h4>
+                            <p>Escucha eventos reales — <code>quote.approved</code>, <code>quote.paid</code> — con firma <code>X-Cord-Signature: sha256=…</code>. Conecta tu backend, Zapier o Make al instante.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
@@ -328,9 +328,9 @@ const magneticNodes = [
             <div class="uc-container">
                 <div class="uc-int-grid">
                     <div class="uc-int-text reveal">
-                        <h2>Automatiza la cobranza desde tus repositorios</h2>
+                        <h2>Conecta Cord con tu stack de desarrollo vía webhooks</h2>
                         <p>
-                            Elimina el trabajo manual de verificar entregables. Integra Cord con <a href="#">GitHub</a> o <a href="#">GitLab</a> para disparar facturas automáticamente al hacer merge de Pull Requests, o asocia pagos a hitos completados en <a href="#">Jira</a> y <a href="#">Linear</a>.
+                            Cord emite eventos reales — <code>quote.approved</code>, <code>quote.paid</code>, <code>quote.invoiced</code> — que puedes escuchar desde Zapier o Make para notificar a tu equipo en Slack, actualizar tickets en Jira o Linear, y disparar acciones en tu propio backend.
                         </p>
                     </div>
                     <div class="uc-int-visual reveal">
@@ -346,27 +346,27 @@ const magneticNodes = [
                 <!-- POWER SECTION -->
         <section class="uc-power">
             <div class="uc-container">
-                <h2 class="uc-power-title reveal">Optimiza la rentabilidad de tu factory con Cord</h2>
+                <h2 class="uc-power-title reveal">Cobra cada entregable con precisión y sin fricciones</h2>
                 <div class="uc-power-grid">
                     <div class="uc-power-item reveal">
                         <div class="uc-power-icon"><div class="uc-pi-code">&lt;/&gt;</div></div>
-                        <h3>Cobros vinculados a tu código</h3>
-                        <p>Automatiza el inicio de cobros desde tus repositorios. Cuando apruebas un Pull Request crítico o cierras un sprint, Cord puede <a href="#">disparar la facturación</a> correspondiente sin que el Project Manager intervenga.</p>
+                        <h3>CFDI 4.0 al cerrar cada hito</h3>
+                        <p>Cuando tu cliente aprueba la cotización del hito, Cord timbra el CFDI 4.0 automáticamente vía PAC certificado. El XML y el PDF quedan disponibles de inmediato para descarga sin salir de Cord.</p>
                     </div>
                     <div class="uc-power-item reveal">
                         <div class="uc-power-icon"><div class="uc-pi-doc"></div></div>
-                        <h3>Cálculo de horas facturables</h3>
-                        <p>Transforma el trabajo de tus desarrolladores en ingresos reales. Conecta tus herramientas de time-tracking para emitir facturas precisas basadas en modelos de tiempo y materiales (T&M).</p>
+                        <h3>Propuestas con módulos opcionales</h3>
+                        <p>Agrega partidas opcionales a tu cotización — "Soporte extendido 3 meses", "Setup de infraestructura" — y el cliente decide qué incluir antes de firmar. Tú controlas los márgenes con el Auditor Silencioso.</p>
                     </div>
                     <div class="uc-power-item reveal">
                         <div class="uc-power-icon"><div class="uc-pi-card"></div></div>
-                        <h3>Dispersión a proveedores y freelancers</h3>
-                        <p>Si tu factory trabaja con talento externo o staff augmentation, Cord facilita los pagos. Automatiza las <a href="#">transferencias masivas</a> a tus colaboradores una vez que el cliente haya liquidado el proyecto.</p>
+                        <h3>Multi-divisa para clientes internacionales</h3>
+                        <p>Cotiza en USD o EUR con tasa de cambio protegida (buffer configurable). Tu cliente ve el monto en su moneda, tú facturas y cobras en MXN con la tasa que bloqueaste al enviar la propuesta.</p>
                     </div>
                     <div class="uc-power-item reveal">
                         <div class="uc-power-icon"><div class="uc-pi-chart"><span></span><span></span><span></span></div></div>
-                        <h3>Reportes de margen por proyecto</h3>
-                        <p>Entiende qué proyectos son realmente rentables para la agencia. Nuestra <a href="#">analítica financiera</a> cruza los costos operativos de tu equipo de desarrollo con los ingresos generados para darte el margen exacto.</p>
+                        <h3>Analítica de margen por proyecto</h3>
+                        <p>El Auditor Silencioso de Cord revisa el margen bruto de cada línea y bloquea cotizaciones que estén por debajo del mínimo que tú defines. Entiende qué tipos de proyecto son más rentables para tu equipo.</p>
                     </div>
                 </div>
             </div>

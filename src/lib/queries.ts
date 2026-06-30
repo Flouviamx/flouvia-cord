@@ -308,7 +308,20 @@ export async function getProductos() {
         precio: num(p.precio_lista),
         costo: num(p.costo),
         activo: p.activo as boolean,
+        // Matriz de precios por volumen: [{min, precio}] ordenada asc por min.
+        preciosVolumen: normVolumen(p.precios_volumen),
     }));
+}
+
+// Normaliza/saneadel jsonb de precios por volumen a [{min, precio}] válido y ordenado.
+export function normVolumen(raw: unknown): { min: number; precio: number }[] {
+    let arr: any = raw;
+    if (typeof raw === 'string') { try { arr = JSON.parse(raw); } catch { arr = []; } }
+    if (!Array.isArray(arr)) return [];
+    return arr
+        .map((t: any) => ({ min: Math.floor(Number(t?.min) || 0), precio: Math.max(0, Number(t?.precio) || 0) }))
+        .filter((t) => t.min > 0 && t.precio > 0)
+        .sort((a, b) => a.min - b.min);
 }
 
 // ── CLIENTES ──────────────────────────────────────────────────────────────────
@@ -624,8 +637,8 @@ export async function getCobranza() {
     const [org] = await sql`select * from orgs where id = ${orgId}`;
     const rate = num(org?.interes_moratorio_pct);
 
-    // Dos queries de datos en un solo batch.
-    const [dlRows, rows] = await withOrgTx(orgId,
+    // Tres queries de datos en un solo batch.
+    const [dlRows, rows, promRows] = await withOrgTx(orgId,
         sql`select coalesce(avg(extract(epoch from (e.paid_at - (coalesce(c.approved_at, c.created_at)
                 + make_interval(days => case c.terminos when 'net30' then 30 when 'net60' then 60 else 0 end)))) / 86400), 0) as avg_delay
             from cotizaciones c
@@ -639,7 +652,16 @@ export async function getCobranza() {
             left join clientes cl on cl.id = c.cliente_id
             where c.org_id = ${orgId} and c.status in ('approved','invoiced')
             order by coalesce(c.approved_at, c.created_at) asc`,
+        // Promesas de pago vigentes (pendientes) — la más reciente por cotización.
+        sql`select cotizacion_id, id, fecha_promesa, monto, nota
+            from promesas_pago
+            where org_id = ${orgId} and estado = 'pendiente'
+            order by created_at desc`,
     );
+
+    // Mapa cotizacion_id → promesa pendiente más reciente.
+    const promMap = new Map<string, any>();
+    for (const p of promRows) { if (!promMap.has(p.cotizacion_id as string)) promMap.set(p.cotizacion_id as string, p); }
 
     const avgDelay = Math.round(num(dlRows[0]?.avg_delay));
     const DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
@@ -656,6 +678,8 @@ export async function getCobranza() {
         const interes = overdue && rate > 0 ? tot * (Math.pow(1 + rate / 100, diff / 30) - 1) : 0;
         const expected = new Date(due); expected.setDate(expected.getDate() + avgDelay);
         const expDias = Math.round((expected.getTime() - today.getTime()) / MS);
+        const prom = promMap.get(r.id as string);
+        const fechaProm = prom ? String(prom.fecha_promesa).slice(0, 10) : '';
         return {
             id: r.id as string, folio: r.folio as string,
             empresa: (r.empresa as string) ?? 'Sin cliente',
@@ -667,6 +691,14 @@ export async function getCobranza() {
             diasVencido: overdue ? diff : 0, diasParaVencer: overdue ? 0 : -diff,
             bucket, interes: Math.round(interes),
             expectedFecha: fmtDate(expected), expectedDias: expDias,
+            // Promesa de pago pendiente (seguimiento manual). null = sin promesa.
+            promesa: prom ? {
+                id: prom.id as string,
+                fechaISO: fechaProm,
+                fecha: fmtDate(fechaProm),
+                monto: prom.monto != null ? num(prom.monto) : null,
+                nota: (prom.nota as string) || '',
+            } : null,
         };
     });
 

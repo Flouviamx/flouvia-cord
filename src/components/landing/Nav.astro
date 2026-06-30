@@ -152,6 +152,10 @@ const { darkHero = false } = Astro.props;
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" fill-opacity="0.12"/><rect x="7" y="7" width="10" height="4" rx="1.5" fill="currentColor" fill-opacity="0.3" stroke="none"/><rect x="7" y="14" width="4" height="3" rx="1" stroke-opacity="0.7"/><rect x="13" y="14" width="4" height="3" rx="1" stroke-opacity="0.7"/></svg></span>
                                     <span class="mega-copy"><b>{t("nav.mega.dev.3.title")}</b><i>{t("nav.mega.dev.3.desc")}</i></span>
                                 </a>
+                                <a href={l("/desarrolladores/integraciones")} class="mega-item">
+                                    <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v6" stroke-opacity="0.5"/><rect x="8" y="9" width="8" height="6" rx="2" fill="currentColor" fill-opacity="0.2"/><path d="M6 21a3 3 0 0 1 3-3M18 21a3 3 0 0 0-3-3M12 15v3" stroke-opacity="0.7"/><circle cx="6" cy="20.5" r="1.5" stroke-opacity="0.8"/><circle cx="18" cy="20.5" r="1.5" stroke-opacity="0.8"/></svg></span>
+                                    <span class="mega-copy"><b>{isEn ? 'Integrations & webhooks' : 'Integraciones y webhooks'}</b><i>{isEn ? 'Connect any ERP/CRM via webhooks' : 'Conecta cualquier ERP/CRM por webhooks'}</i></span>
+                                </a>
                                 <a href={l("/desarrolladores/status")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"/><path d="M4 12h3.5l2.5-6 3 12 2.5-6H20" stroke-width="2"/></svg></span>
                                     <span class="mega-copy"><b>{t("nav.mega.dev.4.title")}</b><i>{t("nav.mega.dev.4.desc")}</i></span>
@@ -371,6 +375,10 @@ const { darkHero = false } = Astro.props;
                             <a href={l("/desarrolladores/elements")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" fill-opacity="0.12"/><rect x="7" y="7" width="10" height="4" rx="1.5" fill="currentColor" fill-opacity="0.3" stroke="none"/><rect x="7" y="14" width="4" height="3" rx="1" stroke-opacity="0.7"/><rect x="13" y="14" width="4" height="3" rx="1" stroke-opacity="0.7"/></svg></span>
                                 <span class="m-sub-copy"><b>{t("nav.mega.dev.3.title")}</b><i>{t("nav.mega.dev.3.desc")}</i></span>
+                            </a>
+                            <a href={l("/desarrolladores/integraciones")} class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v6" stroke-opacity="0.5"/><rect x="8" y="9" width="8" height="6" rx="2" fill="currentColor" fill-opacity="0.2"/><path d="M6 21a3 3 0 0 1 3-3M18 21a3 3 0 0 0-3-3M12 15v3" stroke-opacity="0.7"/><circle cx="6" cy="20.5" r="1.5" stroke-opacity="0.8"/><circle cx="18" cy="20.5" r="1.5" stroke-opacity="0.8"/></svg></span>
+                                <span class="m-sub-copy"><b>{isEn ? 'Integrations & webhooks' : 'Integraciones y webhooks'}</b><i>{isEn ? 'Connect any ERP/CRM via webhooks' : 'Conecta cualquier ERP/CRM por webhooks'}</i></span>
                             </a>
                             <a href={l("/desarrolladores/status")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"/><path d="M4 12h3.5l2.5-6 3 12 2.5-6H20" stroke-width="2"/></svg></span>

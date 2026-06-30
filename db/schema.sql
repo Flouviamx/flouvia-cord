@@ -801,3 +801,36 @@ alter table cotizacion_comentarios force row level security;
 alter table cotizacion_firmas force row level security;
 alter table cobranza_conversaciones force row level security;
 alter table planes_pago_negociados force row level security;
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Precios por volumen + Promesas de pago (jun 2026)
+-- ════════════════════════════════════════════════════════════════════════════
+
+-- 1) Matriz de precios por volumen por producto.
+-- jsonb = array de niveles ordenados por cantidad mínima ascendente:
+--   [{"min": 500, "precio": 90}, {"min": 2000, "precio": 75}]
+-- El precio_lista base aplica cuando la cantidad es menor al primer nivel.
+-- El editor de cotizaciones aplica el precio del nivel que corresponda a la
+-- cantidad de cada línea (sobre él se calcula el descuento por nivel de cliente).
+alter table productos add column if not exists precios_volumen jsonb not null default '[]'::jsonb;
+
+-- 2) Promesas de pago — el cliente prometió pagar en una fecha. Útil para
+-- comercializadoras con cartera de crédito. Feature de seguimiento manual en
+-- Cobranza (no automatiza nada; solo registra el compromiso para dar seguimiento).
+create table if not exists promesas_pago (
+  id              uuid        default gen_random_uuid() primary key,
+  org_id          uuid        not null references orgs(id) on delete cascade,
+  cotizacion_id   uuid        not null references cotizaciones(id) on delete cascade,
+  fecha_promesa   date        not null,
+  monto           numeric,                                  -- null = el saldo completo
+  nota            text,
+  estado          text        not null default 'pendiente', -- 'pendiente' | 'cumplida' | 'incumplida'
+  created_at      timestamptz default now()
+);
+create index if not exists idx_promesas_pago_org on promesas_pago(org_id, fecha_promesa);
+create index if not exists idx_promesas_pago_cot on promesas_pago(cotizacion_id, created_at desc);
+
+alter table promesas_pago enable row level security;
+create policy "rls_promesas_pago" on promesas_pago
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+alter table promesas_pago force row level security;

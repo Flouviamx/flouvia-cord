@@ -227,6 +227,44 @@ const { slug, index } = Astro.props;
       </div>
     </div>
   )}
+
+  {/* ══════════════════════ INTEGRACIONES ══════════════════════ */}
+  {slug === 'integraciones' && index === 0 && (
+    <div class="dbm-stage dbm-api-m2">
+      <div class="dbm-floating dbm-float-top-right">
+        <div class="dbm-pill"><i class="dbm-dot dbm-dot-green"></i><span>quote.paid</span></div>
+      </div>
+      <div class="dbm-terminal">
+        <div class="dbm-head"><span>POST · webhook</span><span>200 OK</span></div>
+        <pre class="dbm-code dbm-api-json"><code>{`{`}
+  <span class="dbm-key">"event"</span>: <span class="dbm-str">"quote.paid"</span>,
+  <span class="dbm-key">"data"</span>: {`{`}
+    <span class="dbm-key">"folio"</span>: <span class="dbm-str">"COT-0149"</span>,
+    <span class="dbm-key">"total"</span>: <span class="dbm-num">196469.2</span>
+  {`}`}
+{`}`}</code></pre>
+        <div class="dbm-meta"><span>X-Cord-Signature</span><span class="dbm-meta-total">sha256=4f1a…</span></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'integraciones' && index === 1 && (
+    <div class="dbm-stage dbm-api-m1">
+      <div class="dbm-floating dbm-float-top-right">
+        <div class="dbm-pill dbm-pill-brand"><span>1 webhook → ∞ apps</span></div>
+      </div>
+      <div class="dbm-card">
+        <div class="dbm-head"><span>Destinos</span><span>activos</span></div>
+        <div class="dbm-toollist">
+          <div class="dbm-toolrow"><i></i>Zapier</div>
+          <div class="dbm-toolrow"><i></i>Make</div>
+          <div class="dbm-toolrow"><i></i>n8n</div>
+          <div class="dbm-toolrow dbm-toolrow-write"><i></i>Slack<b>nativo</b></div>
+          <div class="dbm-toolrow"><i></i>Tu backend / ERP</div>
+        </div>
+      </div>
+    </div>
+  )}
 </div>
 
 <style>

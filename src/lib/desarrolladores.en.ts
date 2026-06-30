@@ -291,6 +291,47 @@ export function Cotizacion({ token }) {
         ],
         cta: { titulo: 'Expand your market without the tax headache.', sub: 'Join the companies operating binationally.' },
     },
+    {
+        slug: 'integraciones',
+        nav: 'Integrations & webhooks',
+        eyebrow: 'INTEGRATIONS · WEBHOOKS',
+        titulo: 'Connect Cord to any ERP or CRM. No waiting for a connector.',
+        sub: 'We don\'t maintain proprietary connectors for every system (SAP, Oracle, Salesforce…). Instead, Cord emits signed webhooks on every event of your sales cycle — point them at Zapier, Make, n8n, or your own backend and react in real time. Everything you see in the app is also available via REST API.',
+        plan: 'On every plan · webhooks capped by plan (Free 1 → Developer 100) · native Slack · free test keys for the API',
+        stats: [
+            { valor: '6', countup: 6, label: 'events Cord emits: sent, viewed, approved, rejected, paid, invoiced' },
+            { valor: '1', countup: 1, label: 'HMAC-SHA256 signature per delivery (X-Cord-Signature), verifiable' },
+            { valor: '3', countup: 3, label: 'ways to integrate: outbound webhooks, REST API and MCP' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'OUTBOUND WEBHOOKS',
+                titulo: 'Your system reacts to every sales event.',
+                copy: 'Register a URL under Settings › Developers › Webhooks and pick the events you care about. When a quote is sent, viewed, approved, rejected, paid, or invoiced, Cord POSTs the JSON payload. Each delivery is signed with HMAC-SHA256 in the X-Cord-Signature header so you can verify it came from Cord. It\'s best-effort with one retry, and every attempt is logged so you can replay it.',
+                bullets: [
+                    'Header X-Cord-Signature: sha256=&lt;hmac of the raw body&gt; + X-Cord-Event',
+                    'Payload with id, folio, status, total, client and public link',
+                    'Delivery log with status, latency and a replay button in Settings',
+                ],
+            },
+            {
+                eyebrow: 'NO PROPRIETARY CONNECTORS',
+                titulo: 'Zapier, Make, n8n, or your backend.',
+                copy: 'Instead of locking you into a "native" connector per vendor, you point the webhook at a no-code platform (Zapier, Make, n8n) and from there reach thousands of apps —including SAP, Oracle, Salesforce, HubSpot or Notion— without us writing code for you. Want full control? Call the REST API directly. And if your team lives in Slack, that one is a native integration: alerts for every event arrive on their own.',
+                bullets: [
+                    'Connect to 5,000+ apps via Zapier / Make / n8n with one webhook',
+                    'Or use the REST API: create quotes, clients and products from your code',
+                    'Native Slack: automatic notification on every quote event',
+                ],
+            },
+        ],
+        steps: [
+            { titulo: 'Register your endpoint', copy: 'Under Settings › Developers › Webhooks. Pick the events and save the secret (shown once).' },
+            { titulo: 'Verify the signature', copy: 'Compute the HMAC-SHA256 of the raw body with your secret and compare it to X-Cord-Signature.' },
+            { titulo: 'Route to your system', copy: 'Process the JSON in your backend, or drop it into Zapier/Make/n8n to reach your ERP or CRM.' },
+        ],
+        cta: { titulo: 'Connect Cord to your stack today.', sub: 'Register a webhook or generate a test key and receive your first event in minutes.' },
+    },
 ];
 
 export const findDevPageEn = (slug: string) => DEV_PAGES_EN.find((p) => p.slug === slug);

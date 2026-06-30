@@ -186,6 +186,27 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     // Catálogo map para acceso rápido por ID
     const catMap = Object.fromEntries(catalogo.map(p => [p.id, p]));
 
+    // ── Precios por volumen (matriz por producto) ──
+    // Dada la cantidad de la línea, devuelve el precio del nivel más alto cuyo
+    // mínimo se alcanza; si ninguno aplica, el precio de lista base. `l.vol` viene
+    // ordenado asc por min, así que el último que pase es el correcto.
+    const volUnit = (l) => {
+        if (!l.id || !Array.isArray(l.vol) || !l.vol.length) return l.baseLista ?? l.lista;
+        let price = l.baseLista ?? l.lista;
+        for (const t of l.vol) { if (l.cantidad >= t.min) price = t.precio; }
+        return price;
+    };
+    // Mínimo del nivel de volumen activo (0 = ninguno).
+    const volMin = (l) => {
+        if (!l.id || !Array.isArray(l.vol)) return 0;
+        let m = 0; for (const t of l.vol) { if (l.cantidad >= t.min) m = t.min; } return m;
+    };
+    // HTML del sub-texto del nombre (unidad + nota de volumen si aplica).
+    const nameNote = (l) => {
+        const vm = volMin(l);
+        return l.unidad + (vm ? ` · <b class="lr-volnote">precio x volumen (${vm}+)</b>` : '');
+    };
+
     // ── Descuento por nivel de cliente (price tiers) ──
     const $client = document.getElementById('clientSelect');
     const $descNote = document.getElementById('descNote');
@@ -240,8 +261,8 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
             row.className = 'line-row';
             
             // Si es línea libre, el nombre es editable.
-            const nameHtml = l.id 
-                ? `<span class="lr-name">${l.nombre}<small>${l.unidad}</small></span>`
+            const nameHtml = l.id
+                ? `<span class="lr-name">${l.nombre}<small>${nameNote(l)}</small></span>`
                 : `<input type="text" class="lr-input lr-desc-input" value="${l.nombre}" data-idx="${idx}" data-field="nombre" placeholder="Descripción de la línea..." />`;
 
             row.innerHTML = `
@@ -263,21 +284,23 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     $select.addEventListener('change', () => {
         const p = catMap[$select.value];
         if (!p) return;
-        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, lista: p.precio, costo: p.costo || 0, negociado: applyDesc(p.precio), cantidad: 1 });
+        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: applyDesc(p.precio), cantidad: 1, negoTouched: false });
         $select.selectedIndex = 0;
         render();
     });
 
     document.getElementById('btnFreeLine')?.addEventListener('click', () => {
-        lines.push({ id: null, nombre: '', unidad: 'pieza', lista: 0, costo: 0, negociado: 0, cantidad: 1 });
+        lines.push({ id: null, nombre: '', unidad: 'pieza', baseLista: 0, lista: 0, vol: [], costo: 0, negociado: 0, cantidad: 1, negoTouched: false });
         render();
     });
 
     // Al cambiar de cliente, reaplica el descuento a las líneas del catálogo
+    // (sobre el precio de volumen vigente) y reactiva el auto-tracking.
     $client?.addEventListener('change', () => {
         const d = currentDesc();
         lines.forEach((l) => {
             if (l.id) { // Solo aplica a items del catálogo
+                l.negoTouched = false;
                 l.negociado = d > 0 ? Math.round(l.lista * (1 - d / 100) * 100) / 100 : null;
             }
         });
@@ -296,20 +319,40 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         }
 
         const val = parseFloat(t.value) || 0;
-        if (t.dataset.field === 'cantidad') lines[idx].cantidad = Math.max(1, Math.round(val));
+        const row = t.closest('.line-row');
+        const l = lines[idx];
+
+        if (t.dataset.field === 'cantidad') {
+            l.cantidad = Math.max(1, Math.round(val));
+            // Precio por volumen: la cantidad puede cambiar el precio de lista vigente.
+            if (l.id) {
+                const newLista = volUnit(l);
+                if (newLista !== l.lista) {
+                    l.lista = newLista;
+                    if (!l.negoTouched) l.negociado = applyDesc(l.lista);
+                }
+                // Actualiza in-place lista, negociado (si auto) y la nota de volumen.
+                const listaEl = row.querySelector('.lr-lista'); if (listaEl) listaEl.textContent = fmt(l.lista);
+                const small = row.querySelector('.lr-name small'); if (small) small.innerHTML = nameNote(l);
+                if (!l.negoTouched) {
+                    const negoEl = row.querySelector('.lr-nego');
+                    const pf = l.negociado ?? l.lista;
+                    if (negoEl) { negoEl.value = pf.toFixed(2); negoEl.classList.toggle('is-deal', l.negociado !== null && l.negociado < l.lista); }
+                }
+            }
+        }
         if (t.dataset.field === 'negociado') {
-            lines[idx].negociado = val;
-            if (lines[idx].id) t.classList.toggle('is-deal', val < lines[idx].lista);
+            l.negociado = val;
+            l.negoTouched = true; // el usuario fijó un precio manual → no auto-ajustar
+            if (l.id) t.classList.toggle('is-deal', val < l.lista);
         }
 
         // recalcula visualmente la fila actual sin perder el foco
-        const row = t.closest('.line-row');
-        const l = lines[idx];
         const precioFinal = l.negociado ?? l.lista;
         row.querySelector('.lr-importe').textContent = fmt(precioFinal * l.cantidad);
         const badge = row.querySelector('.lr-margen');
         if (badge) badge.outerHTML = margenBadge(l.costo, precioFinal);
-        
+
         recalc();
     });
 
@@ -477,15 +520,24 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'No se pudo armar');
                 lines.length = 0;
-                data.items.forEach((it) => lines.push({
-                    id: it.id || null,
-                    nombre: it.nombre || it.descripcion,
-                    unidad: it.unidad || 'pieza',
-                    lista: it.lista || 0,
-                    costo: 0, 
-                    negociado: it.negociado,
-                    cantidad: it.cantidad || 1
-                }));
+                data.items.forEach((it) => {
+                    const cat = it.id ? catMap[it.id] : null;
+                    const l = {
+                        id: it.id || null,
+                        nombre: it.nombre || it.descripcion,
+                        unidad: it.unidad || 'pieza',
+                        baseLista: it.lista || 0,
+                        lista: it.lista || 0,
+                        vol: cat ? (cat.preciosVolumen || []) : [],
+                        costo: cat ? (cat.costo || 0) : 0,
+                        negociado: it.negociado,
+                        cantidad: it.cantidad || 1,
+                        negoTouched: it.negociado != null,
+                    };
+                    // Ajusta el precio de lista al nivel de volumen de su cantidad.
+                    if (l.id) l.lista = volUnit(l);
+                    lines.push(l);
+                });
                 render();
                 const n = data.items.length;
                 $aiStatus.textContent = `✓ ${n} línea${n === 1 ? '' : 's'} armada${n === 1 ? '' : 's'}. Revisa cantidades y precios.`;
@@ -514,6 +566,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     .line-row:last-child { border-bottom: none; }
     .lr-name { font-size: 0.86rem; font-weight: 500; color: var(--color-text); display: flex; flex-direction: column; }
     .lr-name small { font-size: 0.68rem; color: var(--color-text-muted); font-weight: 500; }
+    .lr-volnote { color: #059669; font-weight: 600; }
     .lr-lista { font-size: 0.82rem; color: var(--color-text-muted); text-decoration: line-through; }
     
     .lr-input {

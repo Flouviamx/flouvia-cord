@@ -127,7 +127,8 @@ const hay = (C?.items.length ?? 0) > 0;
                 <span>Cliente</span><span>Folio</span><span>Términos</span><span>Vence</span><span>Estado</span><span class="t-right">Saldo</span><span class="t-right">Acción</span>
             </div>
             {C.items.map((it) => (
-                <div class="t-row" data-id={it.id} data-token={it.token} data-folio={it.folio} data-empresa={it.empresa} data-total={money(it.total)} data-tel={it.telefono} data-vence={it.vence}>
+                <div class="t-row" data-id={it.id} data-token={it.token} data-folio={it.folio} data-empresa={it.empresa} data-total={money(it.total)} data-tel={it.telefono} data-vence={it.vence}
+                    data-prom-id={it.promesa?.id ?? ''} data-prom-fecha={it.promesa?.fechaISO ?? ''} data-prom-monto={it.promesa?.monto != null ? String(it.promesa.monto) : ''} data-prom-nota={it.promesa?.nota ?? ''}>
                     <span class="t-client"><span class="t-avatar">{it.inicial}</span>{it.empresa}</span>
                     <a class="t-folio" href={`/app/cotizaciones/${it.id}`}>{it.folio}</a>
                     <span class="t-muted">{it.terminos}</span>
@@ -136,12 +137,21 @@ const hay = (C?.items.length ?? 0) > 0;
                         {it.overdue
                             ? <span class="est est-over">Vencida {it.diasVencido} d</span>
                             : <span class="est est-due">{it.diasParaVencer === 0 ? 'Vence hoy' : `Vence en ${it.diasParaVencer} d`}</span>}
+                        {it.promesa && (
+                            <span class="est est-prom" title={it.promesa.nota || 'Promesa de pago'}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                                Promete {it.promesa.fecha}
+                            </span>
+                        )}
                     </span>
                     <span class="t-saldo t-right">
                         <span class="editorial t-amount">{money(it.total, 0)}</span>
                         {it.interes > 0 && <small class="t-interes">+{money(it.interes, 0)} mora</small>}
                     </span>
                     <span class="t-actions t-right">
+                        <button class:list={['cob-prom', { 'has-prom': it.promesa }]} title="Promesa de pago" aria-label="Promesa de pago">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        </button>
                         <button class="cob-whats" title="Recordar por WhatsApp" aria-label="Recordar por WhatsApp">
                             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
                         </button>
@@ -150,6 +160,37 @@ const hay = (C?.items.length ?? 0) > 0;
                 </div>
             ))}
         </section>
+
+        <!-- Modal: registrar / gestionar promesa de pago -->
+        <dialog class="modal" id="promModal">
+            <form method="dialog" class="m-form" id="promForm">
+                <div class="m-head">
+                    <h2 id="promTitle">Promesa de pago</h2>
+                    <button type="button" class="m-close" id="promClose" aria-label="Cerrar">✕</button>
+                </div>
+                <p class="prom-ctx" id="promCtx"></p>
+                <div class="m-field">
+                    <label for="promFecha">¿Cuándo promete pagar? *</label>
+                    <input class="m-input" id="promFecha" type="date" required />
+                </div>
+                <div class="m-field">
+                    <label for="promMonto">Monto comprometido (opcional)</label>
+                    <input class="m-input" id="promMonto" type="number" min="0" step="0.01" placeholder="Déjalo vacío si promete el saldo completo" />
+                </div>
+                <div class="m-field">
+                    <label for="promNota">Nota (opcional)</label>
+                    <input class="m-input" id="promNota" placeholder="Ej. confirmó por teléfono, paga al recibir factura…" maxlength="400" />
+                </div>
+                <p class="m-error" id="promErr"></p>
+                <div class="m-actions">
+                    <button type="button" class="m-delete" id="promDel" hidden>Quitar promesa</button>
+                    <span class="m-spacer"></span>
+                    <button type="button" class="m-done" id="promDone" hidden>Marcar cumplida</button>
+                    <button type="submit" class="m-save" id="promSave">Guardar</button>
+                </div>
+            </form>
+        </dialog>
+
         <p class="cob-err" id="cobErr"></p>
         </>
     )}
@@ -259,6 +300,43 @@ const hay = (C?.items.length ?? 0) > 0;
     .cob-paid:disabled { opacity: 0.55; cursor: wait; }
     .cob-err { font-size: 0.78rem; color: var(--color-danger); margin: 0.6rem 0 0; min-height: 1em; }
 
+    /* Promesa de pago: badge en estado + botón de acción */
+    .t-estado { display: inline-flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+    .est-prom { display: inline-flex; align-items: center; gap: 4px; color: #7c5cff; background: rgba(124,92,255,0.1); }
+    .est-prom svg { width: 11px; height: 11px; }
+    .cob-prom {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 30px; height: 30px; border-radius: 8px; cursor: pointer;
+        color: var(--color-text-muted); background: var(--color-bg-soft); border: 1px solid var(--color-border);
+        transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .cob-prom svg { width: 15px; height: 15px; }
+    .cob-prom:hover { color: var(--color-text); border-color: #cbd5e1; }
+    .cob-prom.has-prom { color: #7c5cff; background: rgba(124,92,255,0.1); border-color: rgba(124,92,255,0.3); }
+
+    /* Modal de promesa (mismo lenguaje que los modales de la app) */
+    .modal { border: none; border-radius: 18px; padding: 0; width: min(440px, calc(100vw - 2rem)); box-shadow: 0 40px 90px -30px rgba(10,25,47,0.45); }
+    .modal::backdrop { background: rgba(10,25,47,0.38); backdrop-filter: blur(4px); }
+    .m-form { display: flex; flex-direction: column; gap: 0.9rem; padding: 1.5rem 1.6rem 1.4rem; }
+    .m-head { display: flex; align-items: center; justify-content: space-between; }
+    .m-head h2 { font-size: 1.05rem; font-weight: 700; margin: 0; letter-spacing: -0.3px; }
+    .m-close { background: var(--color-bg-soft); border: 1px solid var(--color-border); width: 30px; height: 30px; border-radius: 9px; cursor: pointer; font-size: 0.8rem; color: var(--color-text-muted); }
+    .prom-ctx { font-size: 0.8rem; color: var(--color-text-muted); margin: -0.3rem 0 0; line-height: 1.45; }
+    .prom-ctx b { color: var(--color-text); font-weight: 600; }
+    .m-field { display: flex; flex-direction: column; gap: 0.4rem; }
+    .m-field label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
+    .m-input { font-family: var(--font-sans); font-size: 0.88rem; font-weight: 500; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 10px 12px; transition: border-color 0.25s; }
+    .m-input:focus { outline: none; border-color: var(--color-blue-deep); }
+    .m-error { font-size: 0.78rem; color: var(--color-danger); margin: 0; min-height: 1em; }
+    .m-actions { display: flex; align-items: center; gap: 0.6rem; }
+    .m-spacer { flex: 1; }
+    .m-delete { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: var(--color-danger); background: none; border: none; cursor: pointer; padding: 9px 4px; }
+    .m-delete[hidden] { display: none; }
+    .m-done { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: #059669; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 9px; padding: 8px 14px; cursor: pointer; }
+    .m-done[hidden] { display: none; }
+    .m-save { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; background: var(--color-blue-deep); color: #fff; border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; box-shadow: 0 6px 18px -8px rgba(10,25,47,0.5); }
+    .m-save:disabled { opacity: 0.6; cursor: wait; }
+
     /* Empty */
     .empty { padding: 4rem 2rem; text-align: center; }
     .empty h2 { font-size: 1.1rem; font-weight: 700; margin: 0 0 0.5rem; }
@@ -292,7 +370,7 @@ const hay = (C?.items.length ?? 0) > 0;
 </style>
 
 <script>
-    // Cobranza: marcar cobrada (PATCH paid) + recordatorio por WhatsApp.
+    // Cobranza: marcar cobrada (PATCH paid) + recordatorio por WhatsApp + promesa de pago.
     document.addEventListener('DOMContentLoaded', () => {
         const err = document.getElementById('cobErr');
         const cleanPhone = (t: string) => {
@@ -302,8 +380,78 @@ const hay = (C?.items.length ?? 0) > 0;
             return d;
         };
 
+        // ── Promesa de pago (modal) ──
+        const promModal = document.getElementById('promModal') as HTMLDialogElement | null;
+        const $p = (id: string) => document.getElementById(id) as HTMLInputElement;
+        let promRow: HTMLElement | null = null;
+        const todayISO = () => new Date().toISOString().slice(0, 10);
+
+        const openProm = (row: HTMLElement) => {
+            if (!promModal) return;
+            promRow = row;
+            const d = row.dataset;
+            const has = !!d.promId;
+            document.getElementById('promTitle')!.textContent = has ? 'Editar promesa de pago' : 'Registrar promesa de pago';
+            document.getElementById('promCtx')!.innerHTML = `<b>${d.empresa || 'Cliente'}</b> · ${d.folio} · saldo ${d.total}`;
+            $p('promFecha').value = d.promFecha || '';
+            $p('promFecha').min = todayISO();
+            $p('promMonto').value = d.promMonto || '';
+            $p('promNota').value = d.promNota || '';
+            document.getElementById('promErr')!.textContent = '';
+            (document.getElementById('promDel') as HTMLButtonElement).hidden = !has;
+            (document.getElementById('promDone') as HTMLButtonElement).hidden = !has;
+            (document.getElementById('promSave') as HTMLButtonElement).disabled = false;
+            promModal.showModal();
+        };
+
+        document.getElementById('promClose')?.addEventListener('click', () => promModal?.close());
+
+        const promApi = async (method: string, body: any) => {
+            const res = await fetch('/api/promesas', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'No se pudo guardar la promesa');
+            return data;
+        };
+
+        document.getElementById('promForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!promRow) return;
+            const save = document.getElementById('promSave') as HTMLButtonElement;
+            const errP = document.getElementById('promErr')!;
+            const fecha = $p('promFecha').value;
+            if (!fecha) { errP.textContent = 'Elige la fecha en que el cliente promete pagar.'; return; }
+            save.disabled = true; errP.textContent = '';
+            try {
+                const oldId = promRow.dataset.promId;
+                if (oldId) await promApi('DELETE', { id: oldId }); // reemplaza la promesa vigente
+                await promApi('POST', {
+                    cotizacion_id: promRow.dataset.id,
+                    fecha_promesa: fecha,
+                    monto: $p('promMonto').value || null,
+                    nota: $p('promNota').value || null,
+                });
+                location.reload();
+            } catch (e2: any) { errP.textContent = e2.message; save.disabled = false; }
+        });
+
+        document.getElementById('promDone')?.addEventListener('click', async () => {
+            if (!promRow?.dataset.promId) return;
+            const errP = document.getElementById('promErr')!;
+            try { await promApi('PATCH', { id: promRow.dataset.promId, estado: 'cumplida' }); location.reload(); }
+            catch (e2: any) { errP.textContent = e2.message; }
+        });
+
+        document.getElementById('promDel')?.addEventListener('click', async () => {
+            if (!promRow?.dataset.promId) return;
+            const errP = document.getElementById('promErr')!;
+            try { await promApi('DELETE', { id: promRow.dataset.promId }); location.reload(); }
+            catch (e2: any) { errP.textContent = e2.message; }
+        });
+
         document.querySelectorAll<HTMLElement>('.t-row').forEach((row) => {
             const d = row.dataset;
+
+            row.querySelector('.cob-prom')?.addEventListener('click', () => openProm(row));
 
             row.querySelector('.cob-whats')?.addEventListener('click', () => {
                 const link = `${location.origin}/q/${d.token}`;

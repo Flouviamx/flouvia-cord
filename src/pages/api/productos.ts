@@ -6,7 +6,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
-import { requirePerm } from '../../lib/queries';
+import { requirePerm, normVolumen } from '../../lib/queries';
 
 function clean(body: any) {
     return {
@@ -16,6 +16,8 @@ function clean(body: any) {
         precio: Math.max(0, Number(body.precio) || 0),
         costo: Math.max(0, Number(body.costo) || 0),
         activo: body.activo === undefined ? true : Boolean(body.activo),
+        // Matriz de precios por volumen — saneada y ordenada por min asc.
+        preciosVolumen: normVolumen(body.precios_volumen),
     };
 }
 
@@ -28,8 +30,8 @@ export const POST: APIRoute = async ({ request }) => {
 
     const orgId = await getActiveOrgId();
     const [[row]] = await withOrgTx(orgId, sql`
-        insert into productos (org_id, sku, nombre, unidad, precio_lista, costo, activo)
-        values (${orgId}, ${p.sku}, ${p.nombre}, ${p.unidad}, ${p.precio}, ${p.costo}, ${p.activo})
+        insert into productos (org_id, sku, nombre, unidad, precio_lista, costo, activo, precios_volumen)
+        values (${orgId}, ${p.sku}, ${p.nombre}, ${p.unidad}, ${p.precio}, ${p.costo}, ${p.activo}, ${JSON.stringify(p.preciosVolumen)})
         returning id`);
     await logAudit(orgId, { accion: 'producto.creado', entidad: 'producto', entidad_id: row.id as string, detalle: p.nombre, ip: reqIp(request) });
     return json({ id: row.id });
@@ -47,7 +49,8 @@ export const PATCH: APIRoute = async ({ request }) => {
     const [rows] = await withOrgTx(orgId, sql`
         update productos set
             sku = ${p.sku}, nombre = ${p.nombre}, unidad = ${p.unidad},
-            precio_lista = ${p.precio}, costo = ${p.costo}, activo = ${p.activo}
+            precio_lista = ${p.precio}, costo = ${p.costo}, activo = ${p.activo},
+            precios_volumen = ${JSON.stringify(p.preciosVolumen)}
         where id = ${body.id} and org_id = ${orgId}
         returning id`);
     if (!rows.length) return json({ error: 'Producto no encontrado' }, 404);
