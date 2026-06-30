@@ -47,10 +47,12 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     <main class="stripe-main">
         
         {solucion.slug === 'startups' ? (
-            <header class="startup-hero">
+            <div class="startup-hero-trust-group">
                 <div class="startup-hero-bg">
                     <QuantizedWaveBg client:only="react" />
                 </div>
+                
+                <header class="startup-hero">
                 
                 <div class="startup-hero-content stripe-container">
                     <h1 class="startup-title reveal" set:html={solucion.titulo} />
@@ -69,33 +71,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                     </div>
                 </div>
             </header>
-        ) : (
-            <header class="stripe-hero">
-                <div class="stripe-hero-bg">
-                    <div class="stripe-hero-aurora"></div>
-                    <div class="stripe-hero-sweep"></div>
-                </div>
-                
-                <div class="stripe-hero-content stripe-container">
-                    <h1 class="stripe-title reveal" set:html={solucion.titulo} />
-                    
-                    <p class="stripe-sub">{solucion.sub}</p>
-                    
-                    <div class="stripe-actions">
-                        <a href={isEn ? '/en/registro' : '/registro'} class="btn-luxe">
-                            <span>{isEn ? 'Start now' : 'Empezar ahora'}</span>
-                            <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                            <div class="btn-shimmer"></div>
-                        </a>
-                        <a href="/contacto/ventas" class="btn-ghost">
-                            <span>{isEn ? 'Contact sales' : 'Contactar a ventas'}</span>
-                        </a>
-                    </div>
-                </div>
-            </header>
-        )}
-
-        <!-- ── STARTUP USE CASES ── -->
+        
         {solucion.useCases && (
             <section class="startup-use-cases-section reveal">
                 <div class="stripe-container">
@@ -138,6 +114,33 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                         ))}
                     </div>
             </section>
+        )}
+
+            </div>
+        ) : (
+            <header class="stripe-hero">
+                <div class="stripe-hero-bg">
+                    <div class="stripe-hero-aurora"></div>
+                    <div class="stripe-hero-sweep"></div>
+                </div>
+                
+                <div class="stripe-hero-content stripe-container">
+                    <h1 class="stripe-title reveal" set:html={solucion.titulo} />
+                    
+                    <p class="stripe-sub">{solucion.sub}</p>
+                    
+                    <div class="stripe-actions">
+                        <a href={isEn ? '/en/registro' : '/registro'} class="btn-luxe">
+                            <span>{isEn ? 'Start now' : 'Empezar ahora'}</span>
+                            <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            <div class="btn-shimmer"></div>
+                        </a>
+                        <a href="/contacto/ventas" class="btn-ghost">
+                            <span>{isEn ? 'Contact sales' : 'Contactar a ventas'}</span>
+                        </a>
+                    </div>
+                </div>
+            </header>
         )}
 
         <!-- ── STARTUP INTEGRATION TABS (Apple Style) ── -->
@@ -2676,6 +2679,12 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     /* ==========================================================
        HERO (Startup - Vercel/Linear style)
        ========================================================== */
+    .startup-hero-trust-group {
+        position: relative;
+        overflow: hidden;
+        background: #f6f9fc;
+    }
+
     .startup-hero {
         position: relative;
         padding: 0 0;
@@ -2684,15 +2693,12 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        overflow: hidden;
-        background: #f6f9fc; /* Stripe light bg */
     }
     
     .startup-hero-bg {
         position: absolute;
         inset: 0;
         z-index: 0;
-        background: #f6f9fc; /* fallback mientras carga el shader */
         overflow: hidden;
     }
 
@@ -2753,7 +2759,8 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
        ========================================================== */
     .startup-use-cases-section {
         padding: 6rem 0;
-        background: #f6f9fc;
+        position: relative;
+        z-index: 1;
     }
     .startup-section-header {
         display: flex;
