@@ -3,882 +3,1107 @@ export const prerender = true;
 
 import Layout from '../../layouts/Layout.astro';
 import { getLangFromUrl } from '../../i18n/utils';
+import PriceAuroraBg from '../../components/landing/PriceAuroraBg.jsx';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
 
-const title = isEn
-    ? "Contact Sales | Cord by Flouvia"
-    : "Contacto de Ventas | Cord by Flouvia";
-
+const title = isEn ? "Contact Sales | Cord" : "Contacto de Ventas | Cord";
 const description = isEn
-    ? "Get in touch with the Cord sales team to learn how we can help digitize your B2B quotes and orders."
-    : "Comunícate con el equipo de ventas de Cord para descubrir cómo digitalizar tus cotizaciones y pedidos B2B.";
+    ? "Talk to the Cord team. Start a personalized demo in under 24 hours."
+    : "Habla con el equipo de Cord. Empieza tu demo personalizada en menos de 24 horas.";
+
+const t = {
+    // Left panel
+    headline:   isEn ? "B2B quotes that\nclose themselves." : "Cotizaciones B2B\nque cierran solas.",
+    sub:        isEn ? "Talk to our team and start a personalized demo in under 24 hours." : "Habla con nuestro equipo y empieza una demo personalizada en menos de 24 horas.",
+    feat1:      isEn ? "Digital portal your client approves and signs from the link" : "Portal digital que tu cliente firma desde el link",
+    feat2:      isEn ? "CFDI 4.0 automatically issued at close" : "CFDI 4.0 timbrado automáticamente al cierre",
+    feat3:      isEn ? "No commissions — payments go directly to your account" : "Sin comisiones — el pago va directo a tu cuenta",
+    m1v: "5 min", m1l: isEn ? "to your first quote" : "primera cotización",
+    m2v: "3×",   m2l: isEn ? "faster than Excel" : "más rápido que Excel",
+    m3v: "$0",   m3l: isEn ? "commissions" : "de comisiones",
+    badge:      isEn ? "We reply within 24 business hours" : "Respuesta en menos de 24 horas hábiles",
+    // Step 1
+    s1t: isEn ? "What's your work email?" : "¿Cuál es tu correo?",
+    s1d: isEn ? "We'll use it to send you details and schedule a call." : "Lo usaremos para enviarte la info y agendar tu demo.",
+    s1l: isEn ? "Work email" : "Correo corporativo",
+    s1p: "tu@empresa.com",
+    s1h: isEn ? "No spam, ever." : "Sin correos no deseados.",
+    // Step 2
+    s2t: isEn ? "Tell us about yourself" : "Cuéntanos sobre ti",
+    s2d: isEn ? "A bit of context helps us tailor your demo." : "Un poco de contexto nos ayuda a personalizar tu demo.",
+    s2fn: isEn ? "First name" : "Nombre",
+    s2ln: isEn ? "Last name" : "Apellidos",
+    s2co: isEn ? "Company" : "Empresa",
+    s2ro: isEn ? "Job title" : "Cargo",
+    s2in: isEn ? "Industry" : "Industria",
+    // Step 3
+    s3t: isEn ? "How do you work today?" : "¿Cómo operan hoy?",
+    s3d: isEn ? "Understanding your current setup helps us focus the demo." : "Entender tu situación actual nos ayuda a enfocar tu demo.",
+    s3tm: isEn ? "Sales team size" : "Equipo de ventas",
+    s3qu: isEn ? "Quotes per month" : "Cotizaciones al mes",
+    s3to: isEn ? "Current tool" : "Herramienta actual",
+    // Step 4
+    s4t: isEn ? "What are you looking to solve?" : "¿Qué quieres resolver?",
+    s4d: isEn ? "Pick all that apply — we'll personalize your demo around these." : "Selecciona todo lo que aplique — personalizamos tu demo en base a esto.",
+    s4ch: isEn ? "Main challenges (pick all that apply)" : "Retos principales (puedes elegir varios)",
+    s4tl: isEn ? "When do you need this?" : "¿Para cuándo?",
+    s4ms: isEn ? "Anything else? (optional)" : "¿Algo más? (opcional)",
+    s4mp: isEn ? "E.g. We need ERP integration and automated credit approvals…" : "Ej. Necesitamos integrar con nuestro ERP y automatizar las aprobaciones de crédito…",
+    // Success
+    succT: isEn ? "You're all set!" : "¡Todo listo!",
+    succD: isEn ? "A Cord specialist will reach out within 24 hours." : "Un especialista de Cord te contactará en menos de 24 horas.",
+    succC: isEn ? "Explore pricing while you wait →" : "Explora los planes mientras esperas →",
+    // Buttons
+    cont: isEn ? "Continue" : "Continuar",
+    back: isEn ? "← Back" : "← Atrás",
+    subm: isEn ? "Send request" : "Enviar solicitud",
+    stepOf: (n: number) => isEn ? `Step ${n} of 4` : `Paso ${n} de 4`,
+};
+
+const industries    = isEn ? ['Distribution','Manufacturing','Construction','B2B Services','Software / SaaS','Agency','Wholesale','Other'] : ['Distribución','Manufactura','Construcción','Servicios B2B','Software / SaaS','Agencia','Comercio mayorista','Otro'];
+const industryVals  = ['distribucion','manufactura','construccion','servicios','saas','agencia','mayorista','otro'];
+
+const teamSizes     = isEn ? ['Just me','2 – 10','11 – 50','+50 people'] : ['Solo yo','2 – 10','11 – 50','+50 personas'];
+const teamVals      = ['solo','2_10','11_50','50plus'];
+
+const quoteLbls     = isEn ? ['Under 50','50 – 200','200 – 500','+500'] : ['Menos de 50','50 – 200','200 – 500','+500'];
+const quoteVals     = ['lt50','50_200','200_500','500plus'];
+
+const toolLbls      = isEn ? ['Excel / Word','ERP (SAP, Oracle…)','In-house system','No system'] : ['Excel / Word','ERP (SAP, Oracle…)','Sistema propio','Sin sistema'];
+const toolVals      = ['excel','erp','sistema_propio','sin_sistema'];
+
+const challengeLbls = isEn ? ['Client portal','Auto CFDI invoicing','Collections & AR','Discount approvals','Integrations / API','Analytics & margins'] : ['Portal del cliente','CFDI automático','Cobranza y cobro','Aprobaciones de descuentos','Integraciones / API','Analítica y márgenes'];
+const challengeVals = ['portal','cfdi','cobranza','aprobaciones','integraciones','analitica'];
+
+const timelineLbls  = isEn ? ['ASAP','1 – 3 months','Just exploring'] : ['Lo antes posible','1 – 3 meses','Solo explorando'];
+const timelineVals  = ['urgente','1_3meses','explorando'];
 ---
 
 <Layout title={title} description={description}>
-    <!-- Minimal Header -->
-    <header class="minimal-header">
-        <a href="/" class="logo-link">
-            <img src="/imgs/logo-cord-navy.png" alt="Cord" class="logo-img" />
-        </a>
-        <a href="/app" class="dashboard-link">
-            {isEn ? "Dashboard" : "Dashboard"} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </a>
-    </header>
+<div class="vs-layout">
 
-    <main class="minimal-contact-page">
-        <section class="card-section">
-            <div class="stepper-card reveal-mockup">
-                <!-- Stepper Header -->
-                <div class="stepper-header">
-                    <div class="step active">
-                        <span class="step-indicator"></span>
-                        <span class="step-label">{isEn ? "Your email" : "Tu correo"}</span>
-                    </div>
-                    <div class="step">
-                        <span class="step-indicator"></span>
-                        <span class="step-label">{isEn ? "Your info" : "Tu información"}</span>
-                    </div>
-                    <div class="step">
-                        <span class="step-indicator"></span>
-                        <span class="step-label">{isEn ? "Let's talk" : "Hablemos"}</span>
-                    </div>
-                </div>
-                <!-- Stepper Progress & Form -->
-                <div class="stepper-progress">
-                    <div class="progress-bar" id="progressBar" style="width: 33.33%;"></div>
-                </div>
+  <!-- ══════════════════════════════════════════════════
+       LEFT — Brand & Trust
+  ══════════════════════════════════════════════════ -->
+  <aside class="vs-left" aria-hidden="true">
+    <PriceAuroraBg client:only="react" />
+    <div class="vs-mesh"></div>
+    <div class="vs-left-inner">
 
-                    <form id="contactWizard" class="minimal-form" novalidate>
-                    <!-- Honeypot anti-spam: oculto para humanos, los bots lo rellenan -->
-                    <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
-                    <!-- STEP 1: Email & ERP -->
-                    <div class="step-content" id="step-1">
-                        <h1 class="step-title">{isEn ? "We'll get you to the right place" : "Te llevamos al lugar correcto"}</h1>
-                        <p class="step-subtitle">{isEn ? "We just need a few details to tailor our solution." : "Solo necesitamos un par de datos para empezar."}</p>
+      <a href="/" class="vs-logo-link">
+        <img src="/imgs/logo-cord-white.png" alt="Cord" class="vs-logo" />
+      </a>
 
-                        <div class="form-fields">
-                            <div class="form-row-horizontal">
-                                <label for="email">{isEn ? "Work email" : "Correo corporativo"}</label>
-                                <input type="email" id="email" name="email" placeholder="elena@tu-empresa.com" required />
-                            </div>
-                            <div class="form-row-horizontal">
-                                <label for="erp">{isEn ? "Current ERP system" : "Sistema ERP actual"}</label>
-                                <div class="select-wrapper">
-                                    <select id="erp" name="erp">
-                                        <option value="" disabled selected>{isEn ? "Select..." : "Selecciona..."}</option>
-                                        <option value="SAP">SAP</option>
-                                        <option value="Oracle">Oracle NetSuite</option>
-                                        <option value="Microsoft">Microsoft Dynamics</option>
-                                        <option value="Odoo">Odoo</option>
-                                        <option value="Contpaqi">CONTPAQi / ASPEL</option>
-                                        <option value="Propio">{isEn ? "In-house / Custom" : "Desarrollo propio"}</option>
-                                        <option value="Otro">{isEn ? "Other / None" : "Otro / Ninguno"}</option>
-                                    </select>
-                                    <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                                </div>
-                            </div>
-                        </div>
+      <div class="vs-pitch">
+        <h2 class="vs-headline">{t.headline}</h2>
+        <p class="vs-sub">{t.sub}</p>
+        <ul class="vs-feats">
+          {[t.feat1, t.feat2, t.feat3].map(f => (
+            <li class="vs-feat">
+              <span class="vs-feat-icon">
+                <svg viewBox="0 0 12 10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="1 5 4 8 11 1"/>
+                </svg>
+              </span>
+              <span>{f}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
 
-                        <div class="form-actions">
-                            <button type="button" class="continue-btn js-next">
-                                {isEn ? "Continue" : "Continuar"} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                            </button>
-                        </div>
-                    </div>
+      <div class="vs-metrics">
+        {[[t.m1v,t.m1l],[t.m2v,t.m2l],[t.m3v,t.m3l]].map(([v,l], i) => (<>
+          {i > 0 && <span class="vs-metric-sep" aria-hidden="true"></span>}
+          <div class="vs-metric">
+            <span class="vs-metric-val">{v}</span>
+            <span class="vs-metric-lbl">{l}</span>
+          </div>
+        </>))}
+      </div>
 
-                    <!-- STEP 2: Personal Info -->
-                    <div class="step-content" id="step-2" style="display: none;">
-                        <h1 class="step-title">{isEn ? "Tell us about yourself" : "Cuéntanos sobre ti"}</h1>
-                        <p class="step-subtitle">{isEn ? "Basic info to personalize your experience." : "Queremos saber con quién hablaremos."}</p>
-                        
-                        <div class="form-fields">
-                            <div class="form-row-horizontal">
-                                <label for="firstName">{isEn ? "First Name" : "Nombre"}</label>
-                                <input type="text" id="firstName" name="firstName" placeholder="Elena" required />
-                            </div>
-                            <div class="form-row-horizontal">
-                                <label for="lastName">{isEn ? "Last Name" : "Apellidos"}</label>
-                                <input type="text" id="lastName" name="lastName" placeholder="García" required />
-                            </div>
-                            <div class="form-row-horizontal">
-                                <label for="company">{isEn ? "Company Name" : "Nombre de la empresa"}</label>
-                                <input type="text" id="company" name="company" placeholder="Ejemplo Corporativo S.A." required />
-                            </div>
-                            <div class="form-row-horizontal">
-                                <label for="role">{isEn ? "Job Title" : "Cargo o puesto"}</label>
-                                <input type="text" id="role" name="role" placeholder="Director de Ventas / CFO" required />
-                            </div>
-                        </div>
-                        
-                        <div class="form-actions">
-                            <button type="button" class="continue-btn btn-back js-prev">
-                                {isEn ? "Back" : "Atrás"}
-                            </button>
-                            <button type="button" class="continue-btn js-next">
-                                {isEn ? "Continue" : "Continuar"} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                            </button>
-                        </div>
-                    </div>
+      <div class="vs-left-foot">
+        <div class="vs-badge">
+          <span class="vs-pulse" aria-hidden="true"></span>
+          <span>{t.badge}</span>
+        </div>
+        <a href="mailto:cord@flouvia.com" class="vs-mail">cord@flouvia.com</a>
+      </div>
 
-                    <!-- STEP 3: Let's talk -->
-                    <div class="step-content" id="step-3" style="display: none;">
-                        <h1 class="step-title">{isEn ? "How can we help?" : "¿En qué te podemos ayudar?"}</h1>
-                        <p class="step-subtitle">{isEn ? "Give us a bit of context." : "Danos contexto sobre tus operaciones B2B."}</p>
-                        
-                        <div class="form-fields">
-                            <div class="form-row-stacked">
-                                <label>{isEn ? "Monthly Sales Volume" : "Volumen B2B Mensual"}</label>
-                                <div class="radio-card-grid">
-                                    <label class="radio-card">
-                                        <input type="radio" name="volume" value="1m_10m" required />
-                                        <span class="radio-card-content">
-                                            <span class="radio-title">$1M - $10M MXN</span>
-                                        </span>
-                                    </label>
-                                    <label class="radio-card">
-                                        <input type="radio" name="volume" value="10m_50m" />
-                                        <span class="radio-card-content">
-                                            <span class="radio-title">$10M - $50M MXN</span>
-                                        </span>
-                                    </label>
-                                    <label class="radio-card">
-                                        <input type="radio" name="volume" value="50m_200m" />
-                                        <span class="radio-card-content">
-                                            <span class="radio-title">$50M - $200M MXN</span>
-                                        </span>
-                                    </label>
-                                    <label class="radio-card">
-                                        <input type="radio" name="volume" value="over_200m" />
-                                        <span class="radio-card-content">
-                                            <span class="radio-title">{isEn ? "Over $200M" : "Más de $200M MXN"}</span>
-                                        </span>
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="form-row-horizontal" style="align-items: flex-start;">
-                                <label for="message" style="margin-top: 14px;">{isEn ? "Key challenges" : "Principales retos"}</label>
-                                <textarea id="message" name="message" rows="3" placeholder={isEn ? "E.g. We need to automate our credit approvals and SAT invoicing..." : "Ej. Necesitamos automatizar nuestro portal de distribuidores y timbrado..."}></textarea>
-                            </div>
-                        </div>
-                        
-                        <div class="form-actions">
-                            <button type="button" class="continue-btn btn-back js-prev">
-                                {isEn ? "Back" : "Atrás"}
-                            </button>
-                            <button type="submit" class="continue-btn">
-                                {isEn ? "Submit" : "Enviar"} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- SUCCESS MESSAGE -->
-                    <div class="step-content" id="step-success" style="display: none; text-align: center; padding: 40px 0;">
-                        <div class="success-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                        </div>
-                        <h1 class="step-title">{isEn ? "Thanks for reaching out!" : "¡Gracias por contactarnos!"}</h1>
-                        <p class="step-subtitle" style="margin-bottom: 0;">{isEn ? "A Cord expert will be in touch shortly." : "Un experto de Cord se pondrá en contacto contigo muy pronto."}</p>
-                    </div>
-                </form>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════════════════════════════════
+       RIGHT — Form Wizard
+  ══════════════════════════════════════════════════ -->
+  <main class="vs-right">
+
+    <!-- Mobile compact header -->
+    <div class="vs-mob-bar">
+      <a href="/"><img src="/imgs/logo-cord-white.png" alt="Cord" class="vs-mob-logo" /></a>
+    </div>
+
+    <div class="vs-form-wrap">
+
+      <!-- Progress -->
+      <div class="vs-prog-track" aria-hidden="true">
+        <div class="vs-prog-fill" id="vsProgFill" style="width:25%"></div>
+      </div>
+      <p class="vs-step-ctr" id="vsStepCtr">{t.stepOf(1)}</p>
+
+      <!-- Form -->
+      <form id="vsForm" novalidate>
+        <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"
+               style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
+
+        <div class="vs-slides" id="vsSlides">
+
+          <!-- ─── STEP 1: Email ─────────────────── -->
+          <div class="vs-slide" data-step="0">
+            <h1 class="vs-stitle">{t.s1t}</h1>
+            <p class="vs-sdesc">{t.s1d}</p>
+            <div class="vs-fields">
+              <div class="vs-fgroup">
+                <label for="vsEmail" class="vs-lbl">{t.s1l}</label>
+                <input type="email" id="vsEmail" name="email" class="vs-input vs-input-hero"
+                       placeholder={t.s1p} autocomplete="email" required />
+                <p class="vs-hint">{t.s1h}</p>
+              </div>
             </div>
-        </section>
-        
-        <!-- Gradient splash in bottom right (like screenshot) but with Cord tones -->
-        <div class="bottom-gradient-splash"></div>
-    </main>
+            <div class="vs-actions vs-actions-end">
+              <button type="button" class="vs-btn-next" data-next="1">
+                {t.cont}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- ─── STEP 2: Company info ──────────── -->
+          <div class="vs-slide" data-step="1" style="display:none">
+            <h1 class="vs-stitle">{t.s2t}</h1>
+            <p class="vs-sdesc">{t.s2d}</p>
+            <div class="vs-fields">
+              <div class="vs-frow2">
+                <div class="vs-fgroup">
+                  <label for="vsFirstName" class="vs-lbl">{t.s2fn}</label>
+                  <input type="text" id="vsFirstName" name="firstName" class="vs-input"
+                         placeholder="Elena" autocomplete="given-name" required />
+                </div>
+                <div class="vs-fgroup">
+                  <label for="vsLastName" class="vs-lbl">{t.s2ln}</label>
+                  <input type="text" id="vsLastName" name="lastName" class="vs-input"
+                         placeholder="García" autocomplete="family-name" />
+                </div>
+              </div>
+              <div class="vs-fgroup">
+                <label for="vsCompany" class="vs-lbl">{t.s2co}</label>
+                <input type="text" id="vsCompany" name="company" class="vs-input"
+                       placeholder="Mi Empresa S.A. de C.V." autocomplete="organization" required />
+              </div>
+              <div class="vs-fgroup">
+                <label for="vsRole" class="vs-lbl">{t.s2ro}</label>
+                <input type="text" id="vsRole" name="role" class="vs-input"
+                       placeholder="Director de Ventas · CFO · Gerente" autocomplete="organization-title" />
+              </div>
+              <div class="vs-fgroup">
+                <label class="vs-lbl">{t.s2in}</label>
+                <div class="vs-chips" data-name="industry" data-type="single">
+                  {industries.map((ind, i) => (
+                    <button type="button" class="vs-chip" data-value={industryVals[i]}>{ind}</button>
+                  ))}
+                </div>
+                <input type="hidden" name="industry" class="vs-chip-val" />
+              </div>
+            </div>
+            <div class="vs-actions">
+              <button type="button" class="vs-btn-back" data-prev="0">{t.back}</button>
+              <button type="button" class="vs-btn-next" data-next="2">
+                {t.cont}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- ─── STEP 3: Operations ────────────── -->
+          <div class="vs-slide" data-step="2" style="display:none">
+            <h1 class="vs-stitle">{t.s3t}</h1>
+            <p class="vs-sdesc">{t.s3d}</p>
+            <div class="vs-fields">
+              <div class="vs-fgroup">
+                <label class="vs-lbl">{t.s3tm}</label>
+                <div class="vs-chips" data-name="teamSize" data-type="single">
+                  {teamSizes.map((sz, i) => (
+                    <button type="button" class="vs-chip" data-value={teamVals[i]}>{sz}</button>
+                  ))}
+                </div>
+                <input type="hidden" name="teamSize" class="vs-chip-val" data-req="true" />
+              </div>
+              <div class="vs-fgroup">
+                <label class="vs-lbl">{t.s3qu}</label>
+                <div class="vs-chips" data-name="monthlyQuotes" data-type="single">
+                  {quoteLbls.map((q, i) => (
+                    <button type="button" class="vs-chip" data-value={quoteVals[i]}>{q}</button>
+                  ))}
+                </div>
+                <input type="hidden" name="monthlyQuotes" class="vs-chip-val" data-req="true" />
+              </div>
+              <div class="vs-fgroup">
+                <label class="vs-lbl">{t.s3to}</label>
+                <div class="vs-chips" data-name="currentTool" data-type="single">
+                  {toolLbls.map((tl, i) => (
+                    <button type="button" class="vs-chip" data-value={toolVals[i]}>{tl}</button>
+                  ))}
+                </div>
+                <input type="hidden" name="currentTool" class="vs-chip-val" data-req="true" />
+              </div>
+            </div>
+            <div class="vs-actions">
+              <button type="button" class="vs-btn-back" data-prev="1">{t.back}</button>
+              <button type="button" class="vs-btn-next" data-next="3">
+                {t.cont}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- ─── STEP 4: Challenges ────────────── -->
+          <div class="vs-slide" data-step="3" style="display:none">
+            <h1 class="vs-stitle">{t.s4t}</h1>
+            <p class="vs-sdesc">{t.s4d}</p>
+            <div class="vs-fields">
+              <div class="vs-fgroup">
+                <label class="vs-lbl">{t.s4ch}</label>
+                <div class="vs-chips" data-name="challenges" data-type="multi">
+                  {challengeLbls.map((ch, i) => (
+                    <button type="button" class="vs-chip" data-value={challengeVals[i]}>{ch}</button>
+                  ))}
+                </div>
+                <input type="hidden" name="challenges" class="vs-chip-val" data-req="true" />
+              </div>
+              <div class="vs-fgroup">
+                <label class="vs-lbl">{t.s4tl}</label>
+                <div class="vs-chips" data-name="timeline" data-type="single">
+                  {timelineLbls.map((tl, i) => (
+                    <button type="button" class="vs-chip" data-value={timelineVals[i]}>{tl}</button>
+                  ))}
+                </div>
+                <input type="hidden" name="timeline" class="vs-chip-val" data-req="true" />
+              </div>
+              <div class="vs-fgroup">
+                <label for="vsMessage" class="vs-lbl">{t.s4ms}</label>
+                <textarea id="vsMessage" name="message" class="vs-input vs-textarea"
+                          placeholder={t.s4mp} rows="3"></textarea>
+              </div>
+            </div>
+            <div class="vs-actions">
+              <button type="button" class="vs-btn-back" data-prev="2">{t.back}</button>
+              <button type="submit" class="vs-btn-submit" id="vsSubmitBtn">
+                {t.subm}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- ─── SUCCESS ───────────────────────── -->
+          <div class="vs-slide vs-success-slide" data-step="success" style="display:none">
+            <div class="vs-success-icon" id="vsSuccessIcon" aria-hidden="true">
+              <svg class="vs-check-svg" viewBox="0 0 64 64" fill="none">
+                <circle class="vs-check-circle" cx="32" cy="32" r="28"
+                        stroke="#0a192f" stroke-width="2" stroke-linecap="round"/>
+                <polyline class="vs-check-mark" points="20 32 28 40 44 24"
+                          stroke="#0a192f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <h1 class="vs-stitle">{t.succT}</h1>
+            <p class="vs-sdesc" id="vsSuccessDesc">{t.succD}</p>
+            <a href="/precios" class="vs-succ-cta">{t.succC}</a>
+          </div>
+
+        </div><!-- /vs-slides -->
+      </form>
+
+    </div><!-- /vs-form-wrap -->
+  </main>
+
+</div><!-- /vs-layout -->
 </Layout>
 
+<!-- Hide global nav/footer on this standalone page -->
 <style is:global>
-    .js-anim .reveal-mockup { opacity: 0; }
+  body:has(.vs-layout) #navbar,
+  body:has(.vs-layout) footer { display: none !important; }
+  body:has(.vs-layout) { overflow-x: hidden; }
 </style>
 
 <style>
-    /* Reset layout background to a soft white/gray */
-    :global(body) {
-        background-color: #f5f5f7; /* Apple's signature light gray */
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-    }
+/* ══════════════════════════════════════════════════════════
+   LAYOUT
+══════════════════════════════════════════════════════════ */
+.vs-layout {
+  display: grid;
+  grid-template-columns: 38% 1fr;
+  min-height: 100vh;
+}
 
-    .minimal-header {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 24px 40px;
-        z-index: 100;
-        background: transparent;
-    }
+/* ══════════════════════════════════════════════════════════
+   LEFT PANEL
+══════════════════════════════════════════════════════════ */
+.vs-left {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #08152a;
+}
 
-    .logo-img {
-        height: 22px;
-        width: auto;
-    }
+.vs-mesh {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-image: radial-gradient(rgba(255,255,255,0.018) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+}
 
-    .dashboard-link {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: var(--color-blue-deep, #0a192f);
-        text-decoration: none;
-        transition: opacity 0.2s;
-    }
+.vs-left-inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 48px 52px;
+}
 
-    .dashboard-link:hover {
-        opacity: 0.7;
-    }
+.vs-logo-link { display: inline-block; margin-bottom: 0; }
+.vs-logo { height: 20px; width: auto; opacity: 0.92; }
 
-    .dashboard-link svg {
-        width: 16px;
-        height: 16px;
-    }
+.vs-pitch {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px 0 32px;
+}
 
-    .minimal-contact-page {
-        position: relative;
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-    }
-    
-    /* Bottom Right Gradient Splash (Cord Aurora Effect) */
-    .bottom-gradient-splash {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 120vw;
-        height: 120vh;
-        transform: translate(-50%, -50%);
-        background: radial-gradient(circle at 50% 50%, rgba(10, 25, 47, 0.08), transparent 50%),
-                    radial-gradient(circle at 80% 20%, rgba(92, 235, 223, 0.12), transparent 40%),
-                    radial-gradient(circle at 20% 80%, rgba(10, 25, 47, 0.06), transparent 40%);
-        filter: blur(120px);
-        z-index: 0;
-        pointer-events: none;
-        opacity: 0.9;
-    }
+.vs-headline {
+  font-size: clamp(1.9rem, 2.6vw, 2.5rem);
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  margin: 0 0 18px 0;
+  white-space: pre-line;
+}
 
-    .card-section {
-        position: relative;
-        z-index: 10;
-        width: 100%;
-        max-width: 800px;
-        padding: 0 20px;
-    }
+.vs-sub {
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: rgba(226, 232, 240, 0.65);
+  margin: 0 0 40px 0;
+  font-weight: 400;
+  max-width: 340px;
+}
 
-    .stepper-card {
-        background: #ffffff;
-        border-radius: 40px; /* Apple extreme rounding */
-        box-shadow: 
-            0 4px 24px rgba(0,0,0,0.02),
-            0 16px 48px rgba(0,0,0,0.04),
-            0 40px 100px rgba(10, 25, 47, 0.06),
-            0 0 0 1px rgba(0,0,0,0.02);
-        padding: 64px 80px;
-        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    
-    .stepper-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 
-            0 8px 32px rgba(0,0,0,0.03),
-            0 24px 64px rgba(0,0,0,0.05),
-            0 60px 120px rgba(10, 25, 47, 0.08),
-            0 0 0 1px rgba(0,0,0,0.02);
-    }
+.vs-feats {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 
-    /* Stepper Header */
-    .stepper-header {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 16px;
-    }
+.vs-feat {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  color: rgba(226, 232, 240, 0.82);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
 
-    .step {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        opacity: 0.4;
-        transition: opacity 0.3s;
-    }
+.vs-feat-icon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.75);
+  margin-top: 1px;
+}
+.vs-feat-icon svg { width: 10px; height: 10px; }
 
-    .step.active {
-        opacity: 1;
-    }
+/* Metrics strip */
+.vs-metrics {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 28px 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 32px;
+}
 
-    .step-indicator {
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        border: 2px solid var(--color-blue-deep, #0a192f);
-        background: transparent;
-    }
+.vs-metric { flex: 1; text-align: center; }
+.vs-metric-val {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.vs-metric-lbl {
+  display: block;
+  font-size: 0.72rem;
+  color: rgba(148,163,184,0.75);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+.vs-metric-sep {
+  width: 1px;
+  height: 36px;
+  background: rgba(255,255,255,0.07);
+}
 
-    .step.active .step-indicator {
-        border: 2px solid var(--color-blue-deep, #0a192f);
-        box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 4px var(--color-blue-deep, #0a192f);
-        background: var(--color-blue-deep, #0a192f);
-    }
-    
-    .step.completed .step-indicator {
-        background: var(--color-blue-deep, #0a192f);
-        border: 2px solid var(--color-blue-deep, #0a192f);
-        color: white;
-    }
+/* Left footer */
+.vs-left-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
-    .step-label {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--color-blue-deep, #0a192f);
-    }
+.vs-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: rgba(226,232,240,0.65);
+  font-weight: 500;
+}
 
-    .stepper-progress {
-        width: 100%;
-        height: 3px;
-        background: rgba(10, 25, 47, 0.05);
-        border-radius: 2px;
-        margin-bottom: 56px;
-        overflow: hidden;
-    }
+.vs-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 0 rgba(16,185,129,0.45);
+  animation: vs-pulse 2.2s infinite;
+}
+@keyframes vs-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(16,185,129,0.45); }
+  70%  { box-shadow: 0 0 0 8px rgba(16,185,129,0); }
+  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
 
-    .progress-bar {
-        height: 100%;
-        background: var(--color-blue-deep, #0a192f); 
-        border-radius: 2px;
-        transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    }
+.vs-mail {
+  font-size: 0.82rem;
+  color: rgba(148,163,184,0.6);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.vs-mail:hover { color: rgba(226,232,240,0.8); }
 
-    /* Step Content */
-    .step-content {
-        padding: 0 4px;
-    }
+/* ══════════════════════════════════════════════════════════
+   MOBILE BAR (left panel collapsed to header)
+══════════════════════════════════════════════════════════ */
+.vs-mob-bar {
+  display: none;
+  align-items: center;
+  height: 60px;
+  padding: 0 24px;
+  background: #0a192f;
+  flex-shrink: 0;
+}
+.vs-mob-logo { height: 17px; width: auto; }
 
-    .step-title {
-        font-size: 2.2rem;
-        font-weight: 700;
-        color: #050505;
-        margin: 0 0 10px 0;
-        letter-spacing: -0.04em;
-        line-height: 1.1;
-    }
+/* ══════════════════════════════════════════════════════════
+   RIGHT PANEL
+══════════════════════════════════════════════════════════ */
+.vs-right {
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
 
-    .step-subtitle {
-        font-size: 1.1rem;
-        color: #666666;
-        margin: 0 0 48px 0;
-        line-height: 1.5;
-        font-weight: 400;
-    }
+.vs-form-wrap {
+  flex: 1;
+  max-width: 580px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 56px 48px 80px;
+  display: flex;
+  flex-direction: column;
+}
 
-    .form-fields {
-        display: flex;
-        flex-direction: column;
-        gap: 36px;
-    }
+/* Progress */
+.vs-prog-track {
+  width: 100%;
+  height: 2px;
+  background: rgba(0,0,0,0.06);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.vs-prog-fill {
+  height: 100%;
+  background: #0a192f;
+  border-radius: 2px;
+  transition: width 0.5s cubic-bezier(0.16,1,0.3,1);
+}
 
-    .minimal-form {
-        display: flex;
-        flex-direction: column;
-    }
+.vs-step-ctr {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #86868b;
+  margin: 0 0 52px 0;
+}
 
-    .form-row-horizontal {
-        display: grid;
-        grid-template-columns: 200px 1fr;
-        align-items: center;
-        gap: 32px;
-    }
-    
-    .form-row-stacked {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-    }
-    
-    .form-row-stacked label {
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: var(--color-blue-deep, #0a192f);
-    }
+/* ══════════════════════════════════════════════════════════
+   SLIDE TYPOGRAPHY
+══════════════════════════════════════════════════════════ */
+.vs-stitle {
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  font-weight: 700;
+  color: #050505;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  margin: 0 0 12px 0;
+}
 
-    .form-row-horizontal label {
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: var(--color-blue-deep, #0a192f);
-        line-height: 1.4;
-    }
+.vs-sdesc {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #6e6e73;
+  margin: 0 0 44px 0;
+  font-weight: 400;
+}
 
-    .minimal-form input,
-    .minimal-form select,
-    .minimal-form textarea {
-        width: 100%;
-        padding: 16px 20px;
-        font-family: var(--font-sans);
-        font-size: 1.05rem;
-        color: #000000;
-        background-color: #f5f5f7; /* Apple secondary background */
-        border: none;
-        border-radius: 12px;
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        outline: none;
-    }
-    
-    .minimal-form textarea {
-        resize: vertical;
-        min-height: 100px;
-    }
+/* ══════════════════════════════════════════════════════════
+   FORM FIELDS
+══════════════════════════════════════════════════════════ */
+.vs-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
 
-    .minimal-form input::placeholder,
-    .minimal-form textarea::placeholder {
-        color: #86868b; /* Apple placeholder text */
-        transition: opacity 0.2s ease;
-    }
+.vs-fgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 
-    .minimal-form input:focus::placeholder {
-        opacity: 0.3;
-    }
+.vs-frow2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
 
-    .minimal-form input:hover,
-    .minimal-form select:hover,
-    .minimal-form textarea:hover {
-        background-color: #e5e5ea;
-    }
+.vs-lbl {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #3d3d3d;
+  letter-spacing: 0.01em;
+}
 
-    .minimal-form input:focus,
-    .minimal-form select:focus,
-    .minimal-form textarea:focus {
-        background-color: #ffffff;
-        box-shadow: 0 0 0 4px rgba(10, 25, 47, 0.15); /* Cord Navy Focus Ring */
-    }
-    
-    /* Mostrar error visual de HTML5 validación custom */
-    .minimal-form input:invalid.has-error,
-    .minimal-form select:invalid.has-error {
-        border-color: #ef4444;
-        background-color: #fef2f2;
-        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
-    }
+.vs-hint {
+  font-size: 0.8rem;
+  color: #86868b;
+  margin: 0;
+  line-height: 1.4;
+}
 
-    /* Transición suave para los labels cuando el input está enfocado */
-    .form-row-horizontal:focus-within label {
-        color: var(--color-blue-deep, #0a192f);
-        transform: translateX(2px);
-    }
-    
-    .form-row-horizontal label {
-        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease;
-    }
+.vs-input {
+  width: 100%;
+  padding: 14px 18px;
+  background: #f5f5f7;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.975rem;
+  color: #1d1d1f;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  transition: background 0.18s ease, box-shadow 0.18s ease;
+  outline: none;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+}
 
-    .select-wrapper {
-        position: relative;
-    }
+.vs-input-hero {
+  font-size: 1.3rem;
+  padding: 18px 22px;
+  border-radius: 14px;
+  letter-spacing: -0.01em;
+}
 
-    .minimal-form select {
-        appearance: none;
-        cursor: pointer;
-        padding-right: 36px;
-    }
+.vs-textarea {
+  resize: vertical;
+  min-height: 90px;
+  line-height: 1.5;
+}
 
-    .select-arrow {
-        position: absolute;
-        right: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 14px;
-        height: 14px;
-        color: var(--color-text-muted, #555556);
-        pointer-events: none;
-        transition: transform 0.3s ease;
-    }
-    
-    .select-wrapper:hover .select-arrow {
-        transform: translateY(-50%) scale(1.1);
-        color: var(--color-blue-deep, #0a192f);
-    }
-    
-    /* Radio Cards */
-    .radio-card-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-    }
-    
-    .radio-card {
-        cursor: pointer;
-        position: relative;
-    }
-    
-    .radio-card input {
-        position: absolute;
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
-    
-    .radio-card-content {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 18px;
-        background: #f5f5f7;
-        border: 2px solid transparent;
-        border-radius: 16px;
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        height: 100%;
-        text-align: center;
-    }
-    
-    .radio-title {
-        font-size: 1rem;
-        font-weight: 500;
-        color: #1d1d1f;
-        transition: color 0.2s ease;
-    }
-    
-    .radio-card:hover .radio-card-content {
-        background: #e5e5ea;
-        transform: scale(0.98);
-    }
-    
-    .radio-card input:checked + .radio-card-content {
-        background: #ffffff;
-        border: 2px solid #0a192f;
-        box-shadow: 0 8px 24px rgba(10, 25, 47, 0.12);
-        transform: scale(1);
-    }
-    
-    .radio-card input:checked + .radio-card-content .radio-title {
-        color: #0a192f;
-        font-weight: 600;
-    }
-    
-    .radio-card input:focus-visible + .radio-card-content {
-        box-shadow: 0 0 0 4px rgba(10, 25, 47, 0.15);
-    }
+.vs-input::placeholder { color: #aeaeb2; }
+.vs-input:hover { background: #e8e8ed; }
+.vs-input:focus {
+  background: #ffffff;
+  box-shadow: 0 0 0 3.5px rgba(10,25,47,0.13), 0 1px 4px rgba(0,0,0,0.05);
+}
+.vs-input.vs-invalid {
+  background: #fff0f0;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.18);
+}
 
-    .form-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 16px;
-        margin-top: 48px;
-        padding-top: 32px;
-        border-top: 1px solid rgba(10, 25, 47, 0.06);
-    }
-    
-    .btn-back {
-        background-color: transparent !important;
-        color: var(--color-blue-deep, #0a192f) !important;
-        box-shadow: none !important;
-        border: 1px solid rgba(10, 25, 47, 0.1) !important;
-    }
-    
-    .btn-back:hover {
-        background-color: rgba(10, 25, 47, 0.04) !important;
-        transform: none !important;
-    }
+/* ══════════════════════════════════════════════════════════
+   CHIPS
+══════════════════════════════════════════════════════════ */
+.vs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
 
-    .continue-btn {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background-color: var(--color-blue-deep, #0a192f);
-        color: #ffffff;
-        font-family: var(--font-sans);
-        font-size: 1rem;
-        font-weight: 600;
-        border: none;
-        border-radius: 999px; /* Apple pill button */
-        padding: 14px 32px;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        box-shadow: 0 4px 16px rgba(10, 25, 47, 0.2);
-    }
+.vs-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: #f5f5f7;
+  border: 1.5px solid transparent;
+  color: #1d1d1f;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16,1,0.3,1);
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  white-space: nowrap;
+  line-height: 1;
+  user-select: none;
+}
 
-    .continue-btn:hover {
-        background-color: #0d213f;
-        box-shadow: 0 8px 24px rgba(10, 25, 47, 0.3);
-        transform: scale(1.02);
-    }
+.vs-chip:hover {
+  background: #e8e8ed;
+  transform: translateY(-1px);
+}
 
-    .continue-btn:active {
-        transform: scale(0.98);
-        box-shadow: 0 2px 8px rgba(10, 25, 47, 0.2);
-    }
+.vs-chip:active { transform: scale(0.97); }
 
-    .continue-btn svg {
-        width: 16px;
-        height: 16px;
-        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
+.vs-chip.vs-sel {
+  background: #ffffff;
+  border-color: #0a192f;
+  color: #0a192f;
+  font-weight: 600;
+  box-shadow: 0 2px 14px rgba(10,25,47,0.12), 0 0 0 0.5px #0a192f;
+}
 
-    .continue-btn:hover svg {
-        transform: translateX(4px);
-    }
-    
-    .success-icon {
-        width: 64px;
-        height: 64px;
-        margin: 0 auto 24px;
-        border-radius: 50%;
-        background: rgba(10, 25, 47, 0.05);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--color-blue-deep, #0a192f);
-    }
-    
-    .success-icon svg {
-        width: 32px;
-        height: 32px;
-    }
+.vs-chip.vs-invalid-chip {
+  border-color: rgba(239,68,68,0.4);
+}
 
-    /* RESPONSIVE */
-    @media (max-width: 950px) {
-        .stepper-card {
-            grid-template-columns: 1fr;
-        }
-        
-        .trust-panel {
-            padding: 40px 32px;
-        }
-    }
+/* ══════════════════════════════════════════════════════════
+   ACTIONS
+══════════════════════════════════════════════════════════ */
+.vs-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+}
 
-    @media (max-width: 768px) {
-        .form-row-horizontal {
-            grid-template-columns: 1fr;
-            gap: 10px;
-        }
-        
-        .form-row-horizontal label {
-            margin-top: 0 !important;
-        }
-        
-        .stepper-header {
-            flex-direction: column;
-            gap: 16px;
-            align-items: flex-start;
-        }
-        
-        .stepper-form-column {
-            padding: 40px 32px;
-        }
+.vs-actions-end { justify-content: flex-end; }
 
-        .stepper-card {
-            border-radius: 16px;
-        }
+.vs-btn-back {
+  background: none;
+  border: none;
+  color: #86868b;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 4px;
+  transition: color 0.2s;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  letter-spacing: 0.01em;
+}
+.vs-btn-back:hover { color: #0a192f; }
 
-        .minimal-header {
-            padding: 24px;
-        }
-        
-        .form-actions {
-            margin-top: 32px;
-            padding-top: 24px;
-        }
-        
-        .radio-card-grid {
-            grid-template-columns: 1fr;
-        }
-    }
+.vs-btn-next,
+.vs-btn-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: #0a192f;
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  padding: 14px 30px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.28s cubic-bezier(0.16,1,0.3,1);
+  box-shadow: 0 4px 18px rgba(10,25,47,0.22), 0 1px 3px rgba(10,25,47,0.1);
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  letter-spacing: -0.01em;
+  position: relative;
+  overflow: hidden;
+}
+
+.vs-btn-next::after,
+.vs-btn-submit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.07) 50%, transparent 60%);
+  transform: translateX(-110%);
+  transition: transform 0.55s ease;
+}
+.vs-btn-next:hover::after,
+.vs-btn-submit:hover::after { transform: translateX(110%); }
+
+.vs-btn-next:hover,
+.vs-btn-submit:hover {
+  background: #112240;
+  box-shadow: 0 8px 28px rgba(10,25,47,0.28);
+  transform: translateY(-1px);
+}
+.vs-btn-next:active,
+.vs-btn-submit:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(10,25,47,0.2); }
+
+.vs-btn-next svg,
+.vs-btn-submit svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  transition: transform 0.28s cubic-bezier(0.16,1,0.3,1);
+}
+.vs-btn-next:hover svg,
+.vs-btn-submit:hover svg { transform: translateX(4px); }
+
+.vs-btn-next:disabled,
+.vs-btn-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════════
+   SUCCESS SLIDE
+══════════════════════════════════════════════════════════ */
+.vs-success-slide {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-top: 16px;
+}
+
+.vs-success-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 32px;
+}
+
+.vs-check-svg { width: 64px; height: 64px; }
+
+.vs-check-circle {
+  stroke-dasharray: 176;
+  stroke-dashoffset: 176;
+}
+.vs-check-mark {
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+}
+
+.vs-succ-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 32px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0a192f;
+  text-decoration: none;
+  border-bottom: 1.5px solid rgba(10,25,47,0.2);
+  padding-bottom: 2px;
+  transition: all 0.2s;
+}
+.vs-succ-cta:hover {
+  color: #112240;
+  border-color: #0a192f;
+  gap: 10px;
+}
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .vs-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .vs-left { display: none; }
+  .vs-mob-bar { display: flex; }
+  .vs-right { min-height: calc(100vh - 60px); }
+  .vs-form-wrap { padding: 36px 28px 60px; }
+  .vs-stitle { font-size: 1.7rem; }
+}
+
+@media (max-width: 480px) {
+  .vs-form-wrap { padding: 28px 20px 56px; }
+  .vs-frow2 { grid-template-columns: 1fr; }
+  .vs-stitle { font-size: 1.5rem; }
+  .vs-chip { padding: 9px 16px; font-size: 0.82rem; }
+  .vs-btn-next, .vs-btn-submit { padding: 13px 24px; font-size: 0.9rem; }
+  .vs-input-hero { font-size: 1.1rem; padding: 16px 18px; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   SLIDE TRANSITIONS (JS manages display, GSAP manages anim)
+══════════════════════════════════════════════════════════ */
+.vs-slide { will-change: transform, opacity; }
 </style>
 
 <script>
-    import { gsap } from 'gsap';
-    
-    document.addEventListener('DOMContentLoaded', () => {
-        const isEnPage = location.pathname.startsWith('/en');
-        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (reduced) {
-            gsap.set('.reveal-mockup', { opacity: 1, y: 0 });
-            return;
+import { gsap } from 'gsap';
+
+document.addEventListener('DOMContentLoaded', () => {
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isEn    = location.pathname.startsWith('/en');
+
+  // ─── Entrance animation ────────────────────────────────
+  if (!reduced) {
+    const left = document.querySelector('.vs-left');
+    if (left) gsap.from(left, { x: -24, opacity: 0, duration: 0.9, ease: 'power3.out' });
+
+    const right = document.querySelector('.vs-form-wrap');
+    if (right) gsap.from(right, { x: 24, opacity: 0, duration: 0.9, ease: 'power3.out', delay: 0.06 });
+
+    const leftItems = document.querySelectorAll('.vs-logo, .vs-headline, .vs-sub, .vs-feat, .vs-metrics, .vs-left-foot');
+    if (leftItems.length) {
+      gsap.from(leftItems, { y: 18, opacity: 0, duration: 0.65, stagger: 0.07, ease: 'power2.out', delay: 0.25 });
+    }
+  }
+
+  // ─── Chip logic ────────────────────────────────────────
+  document.querySelectorAll<HTMLElement>('.vs-chips').forEach(group => {
+    const type  = group.dataset.type || 'single';
+    const name  = group.dataset.name || '';
+    const hidden = document.querySelector<HTMLInputElement>(`input[name="${name}"]`);
+
+    group.querySelectorAll<HTMLButtonElement>('.vs-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        if (type === 'single') {
+          group.querySelectorAll('.vs-chip').forEach(c => c.classList.remove('vs-sel'));
+          chip.classList.add('vs-sel');
+          if (hidden) hidden.value = chip.dataset.value || '';
+        } else {
+          chip.classList.toggle('vs-sel');
+          const selected = [...group.querySelectorAll('.vs-chip.vs-sel')]
+            .map(c => (c as HTMLButtonElement).dataset.value || '').filter(Boolean);
+          if (hidden) hidden.value = selected.join(',');
         }
-
-        // Animación de entrada suave del card central
-        const card = document.querySelector<HTMLElement>('.reveal-mockup');
-        if (card) {
-            gsap.set(card, { y: 20, scale: 0.98, opacity: 0 });
-            gsap.to(card, { 
-                opacity: 1, y: 0, scale: 1, duration: 1.0, ease: 'power3.out', delay: 0.1 
-            });
-        }
-        
-        // --- WIZARD LOGIC ---
-        const form = document.getElementById('contactWizard') as HTMLFormElement;
-        const nextBtns = document.querySelectorAll('.js-next');
-        const prevBtns = document.querySelectorAll('.js-prev');
-        const steps = [
-            document.getElementById('step-1'),
-            document.getElementById('step-2'),
-            document.getElementById('step-3'),
-            document.getElementById('step-success')
-        ];
-        const stepIndicators = document.querySelectorAll('.step');
-        const progressBar = document.getElementById('progressBar');
-        
-        let currentStep = 0;
-        
-        const updateUI = (oldStep: number, newStep: number) => {
-            // Validate before moving forward
-            if (newStep > oldStep && form) {
-                const fields = steps[oldStep]?.querySelectorAll('input, select, textarea');
-                let isValid = true;
-                fields?.forEach((el) => {
-                    const field = el as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-                    if (!field.checkValidity()) {
-                        field.classList.add('has-error');
-                        isValid = false;
-                        field.reportValidity();
-                    } else {
-                        field.classList.remove('has-error');
-                    }
-                });
-                if (!isValid) return false;
-            }
-        
-            // Animate transition
-            const outgoing = steps[oldStep];
-            const incoming = steps[newStep];
-            
-            if (outgoing && incoming) {
-                gsap.to(outgoing, {
-                    opacity: 0, y: -10, duration: 0.3, ease: 'power2.in',
-                    onComplete: () => {
-                        outgoing.style.display = 'none';
-                        incoming.style.display = 'block';
-                        gsap.fromTo(incoming, 
-                            { opacity: 0, y: 10 },
-                            { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }
-                        );
-                    }
-                });
-            }
-            
-            // Update Stepper Progress
-            if (newStep < 3) {
-                stepIndicators.forEach((el, index) => {
-                    const indicator = el.querySelector('.step-indicator');
-                    
-                    if (index < newStep) {
-                        el.classList.add('completed');
-                        el.classList.remove('active');
-                        if (indicator) {
-                            indicator.innerHTML = '<svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto; display: block; position: relative; top: 1px;"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-                        }
-                    } else if (index === newStep) {
-                        el.classList.add('active');
-                        el.classList.remove('completed');
-                        if (indicator) indicator.innerHTML = '';
-                    } else {
-                        el.classList.remove('active', 'completed');
-                        if (indicator) indicator.innerHTML = '';
-                    }
-                });
-                
-                if (progressBar) {
-                    progressBar.style.width = `${((newStep + 1) / 3) * 100}%`;
-                }
-            } else {
-                // If success step, maybe hide the stepper header
-                const header = document.querySelector('.stepper-header') as HTMLElement;
-                const prog = document.querySelector('.stepper-progress') as HTMLElement;
-                if(header) gsap.to(header, {opacity: 0, duration: 0.3, onComplete: () => header.style.display = 'none'});
-                if(prog) gsap.to(prog, {opacity: 0, duration: 0.3, onComplete: () => prog.style.display = 'none'});
-            }
-            
-            return true;
-        };
-        
-        nextBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (currentStep < 2) {
-                    if(updateUI(currentStep, currentStep + 1)) {
-                        currentStep++;
-                    }
-                }
-            });
-        });
-        
-        prevBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (currentStep > 0) {
-                    updateUI(currentStep, currentStep - 1);
-                    currentStep--;
-                }
-            });
-        });
-        
-        // Handle Submit — envío REAL a /api/contacto/ventas (correo a ventas + ack).
-        if(form) {
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                // Valida el paso actual (volumen + mensaje) antes de enviar.
-                const fields = steps[currentStep]?.querySelectorAll('input, select, textarea');
-                let isValid = true;
-                fields?.forEach((el) => {
-                    const field = el as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-                    if (!field.checkValidity()) {
-                        field.classList.add('has-error');
-                        field.reportValidity();
-                        isValid = false;
-                    }
-                });
-                if (!isValid) return;
-
-                const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement | null;
-                if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = '0.6'; }
-
-                const fd = new FormData(form);
-                const payload = Object.fromEntries(fd.entries());
-
-                try {
-                    const res = await fetch('/api/contacto/ventas', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload),
-                    });
-                    if (!res.ok) throw new Error('bad status');
-                } catch (err) {
-                    // Si el envío falla, reactiva el botón y avisa (sin perder el lead capturado).
-                    if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = '1'; }
-                    alert(isEnPage
-                        ? 'We could not send your message. Please try again or email hola@flouvia.com.'
-                        : 'No pudimos enviar tu mensaje. Intenta de nuevo o escríbenos a hola@flouvia.com.');
-                    return;
-                }
-
-                // Éxito → pantalla de confirmación.
-                if(updateUI(currentStep, 3)) {
-                    currentStep = 3;
-                }
-            });
-            
-            // Handle Keyboard Navigation (Enter key)
-            form.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    // Prevent default on everything except textareas
-                    if ((e.target as HTMLElement).tagName !== 'TEXTAREA') {
-                        e.preventDefault();
-                        
-                        // If it's the last step, submit
-                        if (currentStep === 2) {
-                            form.dispatchEvent(new Event('submit'));
-                        } else if (currentStep < 2) {
-                            // Find and click the next button
-                            const currentStepEl = steps[currentStep];
-                            const nextBtn = currentStepEl?.querySelector('.js-next') as HTMLButtonElement;
-                            if (nextBtn) nextBtn.click();
-                        }
-                    }
-                }
-            });
-        }
+      });
     });
+  });
+
+  // ─── Slide management ──────────────────────────────────
+  const slides    = document.querySelectorAll<HTMLElement>('.vs-slide');
+  const progFill  = document.getElementById('vsProgFill');
+  const stepCtr   = document.getElementById('vsStepCtr');
+  const progPct   = [25, 50, 75, 100];
+
+  let current = 0;
+
+  function updateProgress(step: number) {
+    if (progFill && step < progPct.length) {
+      progFill.style.width = `${progPct[step]}%`;
+    }
+    if (stepCtr && step < 4) {
+      stepCtr.textContent = isEn ? `Step ${step + 1} of 4` : `Paso ${step + 1} de 4`;
+    }
+    if (step === 4) {
+      const track = document.querySelector('.vs-prog-track') as HTMLElement;
+      const ctr   = document.querySelector('.vs-step-ctr') as HTMLElement;
+      if (track) gsap.to(track, { opacity: 0, duration: 0.3, onComplete: () => track.style.display = 'none' });
+      if (ctr)   gsap.to(ctr,   { opacity: 0, duration: 0.3, onComplete: () => ctr.style.display   = 'none' });
+    }
+  }
+
+  function goToSlide(from: number, to: number, dir: 'fwd' | 'bk') {
+    const fromEl = slides[from];
+    const toEl   = slides[to];
+    if (!fromEl || !toEl) return;
+
+    const xOut = dir === 'fwd' ? -28 : 28;
+    const xIn  = dir === 'fwd' ?  28 : -28;
+
+    if (reduced) {
+      fromEl.style.display = 'none';
+      toEl.style.display   = 'block';
+      updateProgress(to);
+      return;
+    }
+
+    gsap.to(fromEl, {
+      x: xOut, opacity: 0, duration: 0.28, ease: 'power2.in',
+      onComplete: () => {
+        fromEl.style.display = 'none';
+        gsap.set(fromEl, { x: 0, opacity: 1 });
+        toEl.style.display = 'block';
+        gsap.fromTo(toEl, { x: xIn, opacity: 0 }, { x: 0, opacity: 1, duration: 0.38, ease: 'power3.out' });
+      }
+    });
+    updateProgress(to);
+  }
+
+  // ─── Validation ────────────────────────────────────────
+  function validateSlide(idx: number): boolean {
+    const slide = slides[idx];
+    if (!slide) return true;
+    let ok = true;
+
+    // Text/email inputs
+    slide.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input[required], textarea[required]').forEach(el => {
+      if (el.type === 'hidden') return;
+      const valid = el.checkValidity() && el.value.trim() !== '';
+      el.classList.toggle('vs-invalid', !valid);
+      if (!valid) ok = false;
+    });
+
+    // Chip groups that are required
+    slide.querySelectorAll<HTMLInputElement>('input.vs-chip-val[data-req="true"]').forEach(el => {
+      const empty = !el.value.trim();
+      if (empty) {
+        ok = false;
+        const groupName = el.name;
+        const group = slide.querySelector<HTMLElement>(`.vs-chips[data-name="${groupName}"]`);
+        if (group) {
+          gsap.fromTo(group, { x: -4 }, { x: 0, duration: 0.25, ease: 'power1.out',
+            repeat: 3, yoyo: true });
+          group.querySelectorAll('.vs-chip').forEach(c => c.classList.add('vs-invalid-chip'));
+          setTimeout(() => group.querySelectorAll('.vs-chip').forEach(c => c.classList.remove('vs-invalid-chip')), 1200);
+        }
+      }
+    });
+
+    return ok;
+  }
+
+  // ─── Next buttons ──────────────────────────────────────
+  document.querySelectorAll<HTMLButtonElement>('.vs-btn-next').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const next = parseInt(btn.dataset.next || '1', 10);
+      if (validateSlide(current)) {
+        goToSlide(current, next, 'fwd');
+        current = next;
+      }
+    });
+  });
+
+  // ─── Back buttons ──────────────────────────────────────
+  document.querySelectorAll<HTMLButtonElement>('.vs-btn-back').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const prev = parseInt(btn.dataset.prev || '0', 10);
+      goToSlide(current, prev, 'bk');
+      current = prev;
+    });
+  });
+
+  // ─── Submit ────────────────────────────────────────────
+  const form = document.getElementById('vsForm') as HTMLFormElement | null;
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!validateSlide(current)) return;
+
+      const submitBtn = document.getElementById('vsSubmitBtn') as HTMLButtonElement | null;
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = '0.6'; }
+
+      const fd      = new FormData(form);
+      const payload = Object.fromEntries(fd.entries());
+
+      try {
+        const res = await fetch('/api/contacto/ventas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error('bad status');
+      } catch {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = '1'; }
+        alert(isEn
+          ? 'Could not send your message. Please try again or email cord@flouvia.com.'
+          : 'No pudimos enviar tu mensaje. Intenta de nuevo o escríbenos a cord@flouvia.com.');
+        return;
+      }
+
+      // Personalize success message
+      const firstName = (fd.get('firstName') as string || '').trim().split(' ')[0];
+      const email     = (fd.get('email') as string || '').toLowerCase().trim();
+      const desc = document.getElementById('vsSuccessDesc');
+      if (desc && firstName && email) {
+        desc.textContent = isEn
+          ? `A Cord specialist will reach out to ${email} within 24 hours, ${firstName}.`
+          : `Un especialista de Cord te escribirá a ${email} en menos de 24 horas, ${firstName}.`;
+      }
+
+      // Go to success
+      const successSlide = slides[slides.length - 1];
+      const fromEl       = slides[current];
+
+      if (!reduced) {
+        gsap.to(fromEl, {
+          y: -20, opacity: 0, duration: 0.3, ease: 'power2.in',
+          onComplete: () => {
+            fromEl.style.display = 'none';
+            successSlide.style.display = 'flex';
+            gsap.from(successSlide, { y: 24, opacity: 0, duration: 0.5, ease: 'power3.out' });
+            // Animate checkmark
+            const circle = successSlide.querySelector<SVGCircleElement>('.vs-check-circle');
+            const mark   = successSlide.querySelector<SVGPolylineElement>('.vs-check-mark');
+            if (circle) gsap.to(circle, { strokeDashoffset: 0, duration: 0.7, ease: 'power2.out', delay: 0.15 });
+            if (mark)   gsap.to(mark,   { strokeDashoffset: 0, duration: 0.45, ease: 'power2.out', delay: 0.7 });
+          }
+        });
+      } else {
+        fromEl.style.display    = 'none';
+        successSlide.style.display = 'flex';
+        const circle = successSlide.querySelector<SVGCircleElement>('.vs-check-circle');
+        const mark   = successSlide.querySelector<SVGPolylineElement>('.vs-check-mark');
+        if (circle) circle.style.strokeDashoffset = '0';
+        if (mark)   mark.style.strokeDashoffset   = '0';
+      }
+
+      updateProgress(4);
+    });
+
+    // Keyboard: Enter advances
+    form.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key !== 'Enter') return;
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'TEXTAREA') return;
+      e.preventDefault();
+      if (current === 3) {
+        form.dispatchEvent(new Event('submit', { bubbles: true }));
+      } else {
+        const nextBtn = slides[current]?.querySelector<HTMLButtonElement>('.vs-btn-next');
+        if (nextBtn) nextBtn.click();
+      }
+    });
+  }
+});
 </script>

@@ -12,12 +12,19 @@ const vertexShader = /* glsl */`
 `
 
 // ─── Fragment Shader ──────────────────────────────────────────────────────────
-// Misma paleta que el usuario aprobó, con movimiento mucho más evidente.
 const fragmentShader = /* glsl */`
   precision highp float;
   uniform float u_time;
   uniform vec2  u_resolution;
   uniform vec2  u_mouse;
+  uniform vec3  u_colorBase;
+  uniform vec3  u_colorPrimary;
+  uniform vec3  u_colorAccent;
+  uniform vec3  u_colorGreen;
+  uniform float u_greenStr;
+  uniform vec3  u_colorBlue;
+  uniform float u_blueStr;
+  uniform float u_light;
   varying vec2  vUv;
 
   // ── Simplex Noise 3D (Stefan Gustavson, dominio público) ──────────────────
@@ -90,10 +97,10 @@ const fragmentShader = /* glsl */`
     vec2 aspect = vec2(u_resolution.x / u_resolution.y, 1.0);
     vec2 uv = (vUv - 0.5) * aspect;
 
-    // ── Paleta (azul medianoche · teal esmeralda + acento índigo) ─────────
-    vec3 colorBase   = vec3(0.043, 0.059, 0.098); // #0B0F19
-    vec3 colorTeal   = vec3(0.000, 0.290, 0.205); // esmeralda muy oscuro
-    vec3 colorIndigo = vec3(0.105, 0.040, 0.250); // índigo, acento
+    // ── Paleta (vía uniforms — dark por defecto, claro si light=true) ─────
+    vec3 colorBase   = u_colorBase;
+    vec3 colorTeal   = u_colorPrimary;
+    vec3 colorIndigo = u_colorAccent;
 
     float t = u_time * 0.62;
 
@@ -140,39 +147,96 @@ const fragmentShader = /* glsl */`
     float breath1 = 0.74 + 0.26 * sin(u_time * 0.50);
     float breath3 = 0.62 + 0.38 * sin(u_time * 0.42 + 4.19);
 
+    // ── Capa 3: aurora verde (solo modo claro, esquina derecha-abajo) ─────
+    vec2 driftG = vec2(t * 0.09, -t * 0.13) + mPush * 0.5;
+    vec3 qG = vec3(uv * 0.72 + driftG + w1 * 0.45, t * 0.78 + 3.3);
+    float blobG = fbm(qG + vec3(6.2, 0.8, 2.4));
+    blobG = smoothstep(-0.05, 0.62, blobG);
+    blobG = pow(blobG, 2.1);
+    float cornerG = smoothstep(-0.55, 0.45, uv.x) * smoothstep(-0.40, 0.35, uv.y);
+    blobG = max(blobG, blobG * 0.5 + cornerG * 0.50);
+    float breathG = 0.68 + 0.32 * sin(u_time * 0.37 + 2.1);
+
+    // ── Capa 4: aurora azul eléctrico (solo modo oscuro, arriba-derecha) ──
+    vec2 driftB = vec2(t * 0.13, -t * 0.08) - mPush * 0.6;
+    vec3 qB = vec3(uv * 0.65 + driftB - w0 * 0.40, t * 0.85 + 9.1);
+    float blobB = fbm(qB + vec3(2.9, 4.7, 1.5));
+    blobB = smoothstep(-0.08, 0.60, blobB);
+    blobB = pow(blobB, 1.9);
+    // ancla arriba-derecha, lejos del teal (centro-izquierda)
+    float cornerB = smoothstep(-0.40, 0.55, uv.x) * smoothstep(-0.30, 0.50, -uv.y);
+    blobB = max(blobB, blobB * 0.55 + cornerB * 0.48);
+    float breathB = 0.70 + 0.30 * sin(u_time * 0.44 + 1.3);
+
     // ── Compositing (teal principal + acento índigo) ──────────────────────
-    // mix BAJO → glow teal tenue (no humo brillante); halo del cursor sutil
-    float glow = mPull * 0.22;
+    // modo oscuro: mix 0.55 (tenue); modo claro: 0.82 (más visible sobre blanco)
+    float mixStr = mix(0.55, 0.82, u_light);
+    float glow = mPull * mix(0.22, 0.35, u_light);
     vec3 color = colorBase;
-    color = mix(color, colorTeal,   clamp(blob1 * 0.55 * breath1 + glow * blob1, 0.0, 1.0));
-    color = mix(color, colorIndigo, blob3 * 0.55 * breath3);
+    color = mix(color, colorTeal,   clamp(blob1 * mixStr * breath1 + glow * blob1, 0.0, 1.0));
+    color = mix(color, colorIndigo, blob3 * mixStr * breath3);
+    // aurora verde: solo cuando u_greenStr > 0 (modo claro)
+    color = mix(color, u_colorGreen, clamp(blobG * u_greenStr * breathG, 0.0, 1.0));
+    // aurora azul eléctrico: solo cuando u_blueStr > 0 (modo oscuro)
+    color = mix(color, u_colorBlue,  clamp(blobB * u_blueStr  * breathB, 0.0, 1.0));
 
-    // ── Viñeta ────────────────────────────────────────────────────────────
+    // ── Viñeta (casi nula en modo claro) ──────────────────────────────────
     float vig = 1.0 - dot(uv * 0.88, uv * 0.88);
-    color *= clamp(pow(vig, 0.50), 0.0, 1.0);
+    color *= clamp(pow(vig, mix(0.50, 0.15, u_light)), mix(0.0, 0.94, u_light), 1.0);
 
-    // ── Film Grain ────────────────────────────────────────────────────────
-    color += (grain(vUv, u_time) - 0.5) * 0.030;
+    // ── Film Grain (reducido en modo claro) ───────────────────────────────
+    color += (grain(vUv, u_time) - 0.5) * mix(0.030, 0.006, u_light);
 
-    // ── Tonemap ───────────────────────────────────────────────────────────
-    color = color / (color + vec3(0.17));
+    // ── Tonemap: Reinhard en oscuro, bypass en claro ───────────────────────
+    vec3 tonemapped = color / (color + vec3(0.17));
+    color = mix(tonemapped, color, u_light);
 
     gl_FragColor = vec4(color, 1.0);
   }
 `
 
+// ─── Paletas ─────────────────────────────────────────────────────────────────
+const PALETTE_DARK = {
+  base:     new THREE.Color(0.043, 0.059, 0.098), // #0B0F19 navy
+  primary:  new THREE.Color(0.000, 0.290, 0.205), // teal esmeralda
+  accent:   new THREE.Color(0.105, 0.040, 0.250), // índigo
+  green:    new THREE.Color(0.200, 0.700, 0.400), // inerte en dark
+  greenStr: 0.0,
+  blue:     new THREE.Color(0.180, 0.510, 0.980), // azul eléctrico #2e82fa
+  blueStr:  0.62,
+}
+const PALETTE_LIGHT = {
+  base:     new THREE.Color(0.965, 0.976, 0.988), // #f6f9fc blanco suave
+  primary:  new THREE.Color(0.490, 0.780, 0.960), // azul cielo #7dc7f5
+  accent:   new THREE.Color(0.580, 0.820, 0.940), // azul más suave (complementa)
+  green:    new THREE.Color(0.380, 0.840, 0.580), // verde esmeralda #61d694
+  greenStr: 0.78,
+  blue:     new THREE.Color(0.180, 0.510, 0.980), // inerte en light
+  blueStr:  0.0,
+}
+
 // ─── Mesh fullscreen ─────────────────────────────────────────────────────────
-function AuroraPlane() {
+function AuroraPlane({ light = false }) {
   const meshRef = useRef()
   const mouseTarget = useRef(new THREE.Vector2(0.5, 0.5))
   const mouseSmooth = useRef(new THREE.Vector2(0.5, 0.5))
   const isHovering = useRef(false)
   const hoverTimeout = useRef(null)
 
+  const pal = light ? PALETTE_LIGHT : PALETTE_DARK
+
   const uniforms = useMemo(() => ({
-    u_time:       { value: 0 },
-    u_resolution: { value: new THREE.Vector2(800, 600) },
-    u_mouse:      { value: new THREE.Vector2(0.5, 0.5) },
+    u_time:         { value: 0 },
+    u_resolution:   { value: new THREE.Vector2(800, 600) },
+    u_mouse:        { value: new THREE.Vector2(0.5, 0.5) },
+    u_colorBase:    { value: pal.base.clone() },
+    u_colorPrimary: { value: pal.primary.clone() },
+    u_colorAccent:  { value: pal.accent.clone() },
+    u_colorGreen:   { value: pal.green.clone() },
+    u_greenStr:     { value: pal.greenStr },
+    u_colorBlue:    { value: pal.blue.clone() },
+    u_blueStr:      { value: pal.blueStr },
+    u_light:        { value: light ? 1.0 : 0.0 },
   }), [])
 
   useEffect(() => {
@@ -238,7 +302,8 @@ function AuroraPlane() {
 
 // ─── Componente exportable ────────────────────────────────────────────────────
 // position: absolute → vive dentro del hero, no cubre toda la página
-export default function DarkAuroraBg() {
+// prop `light` → paleta clara (fondo blanco, aurora azul cielo + verde menta)
+export default function DarkAuroraBg({ light = false }) {
   const [visible, setVisible] = useState(false)
 
   // Fade-in suave tras montar para evitar el flash inicial
@@ -266,7 +331,7 @@ export default function DarkAuroraBg() {
       }}
       resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
     >
-      <AuroraPlane />
+      <AuroraPlane light={light} />
     </Canvas>
   )
 }

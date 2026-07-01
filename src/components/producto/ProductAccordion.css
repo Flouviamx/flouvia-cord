@@ -1,0 +1,276 @@
+/* ── ProductAccordion v2 — WebGL + Varied Inactive Sizes
+   Prefix: pac-*
+   Cord aesthetic: navy/blue WebGL shader, expo.out transitions
+   ─────────────────────────────────────────────────────────── */
+
+.pac-section {
+  padding: 4rem 5% 5.5rem;
+  background: #ffffff;
+}
+
+.pac-container {
+  display: flex;
+  gap: 12px;
+  height: 560px;
+  max-width: 1260px;
+  margin: 0 auto;
+}
+
+/* ── Card base ─────────────────────────────────────────────── */
+.pac-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 26px;
+  cursor: pointer;
+  flex-shrink: 0;
+  min-width: 54px;
+  box-shadow:
+    0 2px 4px rgba(5, 11, 20, 0.14),
+    0 14px 40px rgba(5, 11, 20, 0.24),
+    0 40px 80px -20px rgba(5, 11, 20, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  will-change: flex-grow;
+  transition: box-shadow 0.35s ease;
+}
+
+.pac-card:focus-visible {
+  outline: 2px solid rgba(99, 179, 255, 0.6);
+  outline-offset: 2px;
+}
+
+.pac-card:hover {
+  box-shadow:
+    0 2px 4px rgba(5, 11, 20, 0.16),
+    0 18px 52px rgba(5, 11, 20, 0.30),
+    0 48px 96px -22px rgba(5, 11, 20, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+/* ── WebGL shader canvas ───────────────────────────────────── */
+.pac-shader-wrap {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+.pac-shader-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ── Specular rim light ────────────────────────────────────── */
+.pac-rim {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    inset 1px 0 0 rgba(255, 255, 255, 0.04),
+    inset -1px 0 0 rgba(255, 255, 255, 0.04),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.08);
+}
+
+.pac-card.pac-active .pac-rim {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 1px 0 0 rgba(255, 255, 255, 0.06),
+    inset -1px 0 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.10);
+}
+
+/* ── Gradient scrim — lighter on inactive, strong on active ── */
+.pac-scrim {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 55%;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(4, 8, 18, 0.55) 0%,
+    rgba(4, 8, 18, 0.22) 50%,
+    transparent 100%
+  );
+  transition: background 0.5s ease;
+}
+
+.pac-card.pac-active .pac-scrim {
+  height: 70%;
+  background: linear-gradient(
+    to top,
+    rgba(4, 8, 18, 0.96) 0%,
+    rgba(4, 8, 18, 0.80) 32%,
+    rgba(4, 8, 18, 0.40) 62%,
+    transparent 100%
+  );
+}
+
+/* ── Duotone icon ──────────────────────────────────────────── */
+.pac-icon {
+  position: absolute;
+  top: 1.8rem;
+  left: 1.8rem;
+  width: 52px;
+  height: 52px;
+  z-index: 4;
+  pointer-events: none;
+  color: #ffffff;
+  /* opacity + scale + y animated by GSAP */
+}
+
+.pac-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Vertical label (inactive cards) ──────────────────────── */
+.pac-vlabel {
+  position: absolute;
+  bottom: 1.8rem;
+  left: 50%;
+  transform: translateX(-50%) rotate(-90deg);
+  transform-origin: center center;
+  white-space: nowrap;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 2.6px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.48);
+  z-index: 5;
+  pointer-events: none;
+  /* opacity animated by GSAP */
+}
+
+/* ── Text block (active card only) ────────────────────────── */
+.pac-text {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0 2.2rem 2.4rem;
+  z-index: 5;
+  pointer-events: none;
+  /* opacity + y animated by GSAP */
+}
+
+.pac-eyebrow {
+  display: block;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+  margin-bottom: 0.6rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pac-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', sans-serif;
+  font-size: 1.22rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 0.65rem;
+  line-height: 1.2;
+  letter-spacing: -0.028em;
+}
+
+.pac-sub {
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Text', sans-serif;
+  font-size: 0.855rem;
+  line-height: 1.60;
+  color: rgba(210, 224, 242, 0.70);
+  margin: 0;
+}
+
+/* ── Mobile: columna vertical ──────────────────────────────── */
+@media (max-width: 860px) {
+  .pac-section {
+    padding: 3rem 4% 4rem;
+  }
+
+  .pac-container {
+    flex-direction: column;
+    height: auto;
+    gap: 10px;
+  }
+
+  .pac-card {
+    flex-grow: unset !important;
+    height: 68px;
+    min-width: unset;
+    min-height: unset;
+    border-radius: 18px;
+    transition: height 0.55s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+  }
+
+  .pac-card.pac-active {
+    height: 268px;
+  }
+
+  .pac-icon {
+    width: 42px;
+    height: 42px;
+    top: 1.2rem;
+    left: 1.4rem;
+  }
+
+  .pac-vlabel {
+    bottom: auto;
+    top: 50%;
+    left: 70px;
+    transform: translateY(-50%) rotate(0deg);
+    letter-spacing: 2px;
+    font-size: 0.6rem;
+  }
+
+  .pac-text {
+    padding: 0 1.4rem 1.6rem;
+  }
+
+  .pac-title {
+    font-size: 1.05rem;
+  }
+
+  .pac-sub {
+    font-size: 0.82rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .pac-scrim {
+    height: 65%;
+  }
+}
+
+@media (max-width: 520px) {
+  .pac-container {
+    gap: 8px;
+  }
+
+  .pac-card {
+    height: 62px;
+    border-radius: 14px;
+  }
+
+  .pac-card.pac-active {
+    height: 248px;
+  }
+
+  .pac-sub {
+    -webkit-line-clamp: 2;
+  }
+}

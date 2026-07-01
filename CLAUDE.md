@@ -227,6 +227,15 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
      Honeypot anti-spam (`website`). Nueva env opcional **`SALES_EMAIL`** (default `hola@flouvia.com`);
      gated por `RESEND_API_KEY` (sin ella responde ok igual, `emailed:false`). El submit en
      `ventas.astro` ahora hace fetch real + valida + deshabilita botón + avisa si falla.
+   • **Rediseño premium `/contacto/ventas` (jun 2026):** split-panel layout — 38% panel izquierdo
+     navy sticky con **`PriceAuroraBg` WebGL** (mismo shader de aurora azul eléctrico de `/precios`)
+     + dots mesh flotante, logo blanco, headline, 3 value props y métricas strip; 62% panel derecho
+     blanco con **wizard de 4 pasos** con chips premium (pill 999px). Pasos: (0) email hero,
+     (1) datos + industria chips, (2) equipo/volumen/herramienta chips, (3) retos multi-select
+     + timeline + textarea opcional. Transiciones GSAP direction-aware + checkmark SVG animado al
+     éxito. API actualiza: 6 nuevos campos de calificación (industry, teamSize, monthlyQuotes,
+     currentTool, challenges, timeline); asunto con "URGENTE" si timeline=urgente. Wrapper EN en
+     `/en/contacto/ventas.astro`. Nav y footer ocultos con `body:has(.vs-layout)`. CSS prefix `vs-*`.
    • **Claims FALSOS corregidos a la realidad** (en ambas páginas + `src/lib/solucion.ts`/`.en.ts`):
      "Librerías oficiales Node/Python/PHP" (no hay SDKs) → **Cord Elements** (Web Component+React+Vue);
      "+5,000 aplicaciones / Zapier nativo" → "webhooks que conectas a Zapier/Make/n8n"; eventos de
@@ -397,6 +406,22 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
      tenían `category: "Cuenta"`/`"Account"` en vez de `"Cuenta y Equipo"`/`"Account & Team"` → no
      aparecían en su categoría del hub). **El Blog quedó intacto: está correcto.**
 
+✅ **Hero del Centro de Ayuda — aurora azul GLSL + dark mode compacto (jun 2026)** —
+   `SupportHero.astro` rediseñado a estilo ElevenLabs: hero oscuro compacto (`padding: 7rem 5% 3.5rem`)
+   con shader de fondo, barra de búsqueda en glassmorphism y sin sección de búsquedas populares.
+   • **`src/components/support/BlueAuroraBg.jsx`** — nuevo shader R3F exclusivo del Centro de Ayuda.
+     Paleta oceánica: base navy `#0A0F1C`, teal profundo `#004F4F` (dominante, izquierda como ElevenLabs),
+     cobalto `#0D1E61` (centro-derecha), cyan sutil que sigue al cursor. Diferencias técnicas clave
+     respecto a `DarkAuroraBg`: escala UV `0.42` (blobs 2× más grandes y atmosféricos), solo 3 octavas
+     de FBM (más suave), `smoothstep(-0.30, 0.55)` (bordes difusos vs los cortes del teal original),
+     fade oscuro en la parte superior (`topFade` — zona del navbar más oscura), y **grano de película
+     doble capa** (estática + animada a ~24fps, intensidad `0.020`). Movimiento autónomo lento (`t*0.40`,
+     lerp `0.03`) para móvil. `client:only="react"`, `pointer-events:none`, `powerPreference:'low-power'`.
+   • **Dropdown claro:** `background:#ffffff`, `z-index:9999`, `overflow-y: visible` en el hero
+     (`overflow-x: clip`) para que el dropdown no quede cortado por el contenedor oscuro.
+   ⚠️ **Regla:** para el hero de soporte (dark compacto + aurora), usar `BlueAuroraBg` (NOT
+     `DarkAuroraBg` — esa es de empresas/teal). Para heroes de landing: patrones en `src/components/soluciones/`.
+
 ✅ **Internacionalización del Centro de Ayuda (Support Center) (jun 2026)** — Se añadió soporte bilingüe (`/soporte` y `/en/support`).
    • **Arquitectura y Artículos:** Se crearon wrappers en `src/pages/en/support` que re-utilizan los templates de español pasando la bandera `isEn`. Los 66 artículos base en `src/content/support/en/` fueron **completamente traducidos al inglés B2B profesional** (retirando emojis y ajustando todos los enlaces internos). El build genera 132 rutas estáticas sin error.
    • **Componentes Dinámicos:** Los componentes `SupportHero`, `SupportCards`, `SupportSearch` y `FeedbackWidget` ahora tienen copys estáticos en ambos idiomas y renderizan dinámicamente según la ruta.
@@ -434,13 +459,61 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
      sólido `#0f172a` (no semi-transparente). El glow ambiental (`.sbm-glow`) pasó a núcleo azul
      `rgba(59,130,246,0.12)` + navy para dar profundidad. Resultado: idénticos a los de producto a nivel CSS.
 
+✅ **FAQ unificada — componente `FaqAccordion.astro` (jun 2026)** — las 5 secciones de FAQ del
+   sitio tenían 3 implementaciones distintas (`pr-faq-*` en Faq.astro y precios; `pp-faq-*` en
+   producto/[slug]; `stripe-faq-*` en empresas y startups) con comportamientos distintos
+   (`<details>` nativo en 4 casos, `<button>` JS en 1) y estilos inconsistentes. Se consolidaron
+   en un único componente `src/components/landing/FaqAccordion.astro`:
+   • **Diseño Apple/Stripe/Linear/ElevenLabs:** ícono circular `34×34px` con ring `1px` sutil
+     que pasa de gris a navy al abrir, conteniendo un `+` SVG cuya línea vertical hace `scaleY(0)`
+     con spring para convertirse en `−`. Hairline `border-top` en la lista + `border-bottom` por item.
+   • **Animación via CSS grid trick:** `grid-template-rows: 0fr → 1fr` para altura suave sin
+     medir alturas con JS. Respuesta con `opacity + translateY(-5px → 0)` y delay 80ms.
+   • **One-at-a-time por lista:** el JS agrupa items por `.faq-acc-list` padre → múltiples
+     instancias coexisten en la misma página sin conflicto.
+   • **Accesibilidad completa:** `aria-expanded`, `aria-controls`, `role="region"`,
+     `aria-labelledby`, `focus-visible`. Respeta `prefers-reduced-motion`.
+   • **Props:** `faqs`, `eyebrow?`, `title?` (HTML), `id` (para IDs únicos), `class?`,
+     `maxWidth?` (default `780px`). El título siempre lleva clase `masked-title`.
+   • **Padding por página** vía `:global(.mi-clase)` en cada caller — el componente tiene
+     `5rem 5%` de default; precios usa `4rem 5% 8rem`, producto `5rem 5% 3rem`, soluciones
+     `5rem 5% 7rem`.
+   • **Centro de Ayuda unificado (jul 2026):** el FAQ de `SupportCards.astro` (que usaba
+     `<details>` nativo con prefijo `pr-faq-*`) también migró a `<FaqAccordion id="support"
+     class="supp-faq-acc" maxWidth="860px" />`. Override de padding vía `:global(.supp-faq-acc)
+     { padding: 4rem 0 }` (la sección vive dentro de `.content-wrapper` que ya tiene el margen
+     horizontal). Aplica tanto en `/soporte` (ES) como en `/en/support` (EN) ya que `isEn`
+     fluye desde `soporte.astro` → `SupportCards`.
+   • **Botones CTA pill+shimmer (jul 2026):** todos los botones de acción en soporte
+     (`pcta-button` en `SupportCards`, `cta-button` y `empty-cta` en `[categoria].astro`)
+     upgrades a `border-radius: 999px` + efecto shimmer (`::after` que barre de izq a der en
+     `:hover`, `linear-gradient(105deg)`) + `scale(0.97)` en `:active`, consistentes con el
+     patrón de botones pill en precios y producto.
+   ⚠️ **Regla a futuro:** TODO acordeón de FAQ (landing, precios, producto, soluciones, soporte)
+     usa `<FaqAccordion>`. NUNCA volver a `<details>` ni a `<button>` ad-hoc para FAQs.
+     Los prefijos `pr-faq-*`, `pp-faq-*` y `stripe-faq-*` están eliminados del codebase.
+     TODO botón CTA prominente (primario pill) usa `border-radius: 999px` + shimmer `::after`.
+
 ✅ **Rediseño Premium B2B del Blog y Microinteracciones (jun 2026)** — Elevando la estética a "Top Top / Quiet Luxury":
    • **TOC Scrollspy Animado (Left Sidebar):** Rediseño ultra-premium del índice flotante. Se usa un track vertical sutil con una píldora indicadora (`toc-indicator`) que navega dinámicamente con transiciones `cubic-bezier`. Los enlaces del índice presentan un elegante micro-desplazamiento lateral (`translateX(4px)`) en hover/activo. Bug crítico solucionado: se removió un `position: relative` en `.toc-container` que rompía el comportamiento global de `position: sticky`.
    • **Botones de Redes Expansivos (Right Sidebar):** La barra de compartir (`.share-pill`) se transformó en botones circulares de `44x44px` que se expanden magnéticamente a `140px` al hacer hover. Se utilizó `position: absolute` para garantizar que el texto interior haga un "fade in" impecable sin moverse físicamente en el DOM. Función de portapapeles en JS con estado de éxito ("¡Copiado!").
    • **Layout Grid Ajustado:** Se forzó un canvas puramente blanco (`#ffffff`) para la vista de artículo, removiendo distracciones. El contenedor principal grid ahora aplica `align-items: flex-start` a las barras laterales para permitirles flotar el 100% de la longitud del contenedor padre (resolviendo colapsos de flex-stretch).
-   
+
+✅ **Blog — Portadas WebGL GLSL + Layout tipo ElevenLabs (jun 2026)** — sustitución completa de las portadas CSS estáticas y reestructuración del layout de `/blog`:
+   • **`src/components/blog/BlogCover.jsx`** (`client:only="react"`) — portada dinámica vía WebGL puro (sin Three.js/R3F para reducir overhead con múltiples contextos por página). Motor: FBM de 5 octavas con **domain-warp de 2 capas** (`q` → `r` → `fbm(uv+r)`) produciendo gradientes orgánicos fotográficos. Tonemap Reinhard + dither anti-banding. Props: `category` (paleta), `featured` (tamaños), `title` (overlay de texto). Paletas dark→mid→highlight: `Finanzas` navy→azul→azure, `Ventas B2B` dark-teal→cyan, `Fiscal` forest→emerald→mint, `Tecnología` dark-purple→lavender, `Operaciones` warm-dark→gold.
+   • **Mouse parallax** — tracking a nivel `window` (patrón del proyecto; `pointerEvents:'none'` en el canvas). Coords relativas al `wrapRef`. Lerp `0.055` por frame. Móvil: `touchmove` + `deviceorientation` (giroscopio).
+   • **IntersectionObserver** — pausa RAF cuando el canvas no está visible. Resume automáticamente. Crítico con 7+ contextos WebGL por página.
+   • **Overlay de título** — scrim `linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 100%)`. Texto blanco Inter 700 bottom-left. Featured: `clamp(1.6rem,2.8vw,2.4rem)`. Grid: `clamp(0.88rem,1.4vw,1.05rem)`. Clamp a 3 líneas (`-webkit-line-clamp`).
+   • **Watermark de categoría** — ícono SVG a `opacity:0.09` blanco, `position:absolute top-right`, `zIndex:2` (sobre canvas, bajo título). 140px en featured / 90px en grid. Por categoría: `TrendingUp` (Finanzas), target concéntrico (Ventas B2B), `FileText` (Fiscal), código `</>` (Tecnología), barras verticales (Operaciones). Textura subpixel sin competir con el gradient.
+   • **`/blog` — Layout ElevenLabs:** eliminados blobs CSS (`.hero-canvas`, `.blob-1/2/3`, `@keyframes float`), `floating-card-wrapper` con truco `margin-bottom:-10rem`, y `blog-sticky-nav` con `margin-top:13rem`.
+     – **Header limpio**: `<h1>Blog de Cord</h1>` + "Cord en LinkedIn →" en la misma fila, hairline separator.
+     – **Featured full-width**: aspect ratio `21/9`, shader ocupa toda el área, título dentro del gradient bottom-left. Barra inferior compacta: categoría + fecha + avatar + autor + flecha.
+     – **Filtros inline**: sin sticky, justo debajo del featured. Pills simples.
+     – **Grid compacto**: `minmax(320px,1fr)`, imagen `3/2`, card body solo con fecha + título + "Leer →" (excerpt eliminado).
+   ⚠️ **Regla a futuro:** covers del blog = `<BlogCover client:only="react" />`. NUNCA reintroducir `.stripe-cover`, `.gradient-1…5` ni blobs CSS. La página de artículo individual (`/blog/[slug]`) conserva su layout editorial sin cambios.
+
 ✅ **Nuevas páginas de Blog y Planes de Soporte (jun 2026)** — rediseño del landing para mejor conversión B2B:
-   • **Blog dedicado (`/blog`):** Se eliminó "Cómo funciona" de la navegación global y se reemplazó por la landing del Blog. Estética ultra-premium con grid de artículos (hero glassmorphism, orbes). Además, **migramos a Astro Content Collections:** los artículos ahora viven como archivos Markdown independientes (`src/content/blog/*.md`) que generan rutas dinámicas (`/blog/[slug]`) con un layout hiper-limpio estilo editorial y un Bento Grid de captura de leads al pie (inspirado en Stripe).
+   • **Blog dedicado (`/blog`):** Se eliminó "Cómo funciona" de la navegación global y se reemplazó por la landing del Blog. **Migramos a Astro Content Collections:** los artículos ahora viven como archivos Markdown independientes (`src/content/blog/*.md`) que generan rutas dinámicas (`/blog/[slug]`) con un layout editorial limpio y un Bento Grid de captura de leads al pie.
    • **Página de Cómo Funciona Mejorada:** Se reconstruyó `/como-funciona` con un nuevo hero que incluye un mockup flotante interactivo de aprobación de cotizaciones, y un grid de características clave estilo Stripe.
    • **Planes de Soporte (`/planes-soporte`):** Se migró de tarjetas de precio genéricas a una tabla de SLA técnica detallada que refleja mejor la venta de servicios Enterprise.
 ✅ **Centro de Ayuda de Clase Mundial (jun 2026)** — rediseño y reescritura masiva de `/soporte`:
@@ -586,6 +659,22 @@ Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cable
    • **Pago pulido**: panel con monto restated + "Pago protegido vía Stripe" + chips de tarjeta.
    • **Micro-lujo**: count-up del total al cargar (`data-countup`) + reveal escalonado de las
      líneas (`.qi-reveal`). Todo respeta `prefers-reduced-motion`.
+✅ **Rediseño del chat en el link público (jun 2026)** — `src/components/q/QuoteCard.astro`
+   El área de conversación (`.q-chat`) fue rediseñada de cero para verse y sentirse como un chat real:
+   • **Eliminado el `<details>` acordeón** ("¿Tienes una duda o quieres negociar?") — era el mayor
+     problema UX: ocultaba el input detrás de un click y no invitaba a escribir.
+   • **Compose area siempre visible** (`.q-compose`): textarea auto-resize + botón enviar (flecha SVG
+     circular, toma el `color` de marca de la org). La contraoferta y el campo de precio viven en una
+     sección secundaria debajo, subtil pero accesible.
+   • **Burbujas tipo iMessage**: mensajes del cliente a la derecha (navy `#0a192f`) / vendedor a la
+     izquierda (gris claro `#f3f4f6`), radio asimétrico (3px en la esquina de origen). Contrareofertas
+     con fondo ámbar tenue.
+   • **Thread con scroll suave**: `max-height: 280px; overflow-y: auto` + scroll automático al fondo
+     con `requestAnimationFrame` cuando llega un mensaje nuevo.
+   • **IDs de JS intactos** (`#qMsg`, `#qProp`, `#qSendMsg`, `#qSendCounter`, `#qNegOk`, `#qNegErr`,
+     `#qThread`): toda la lógica de envío/contraoferta/appendMsg funciona sin cambios.
+   • Regla de construcción: el input de chat en `/q` siempre debe ser un compose open (no acordeón).
+     Los per-line item threads (`.qi-thread`) NO se tocaron — siguen expandiéndose inline.
 ✅ **Restauración UI (jun 2026)** — Se restauraron los botones de Notificaciones y Ayuda en la topbar que se habían borrado accidentalmente y se corrigió el CSS (`.tb-icon`) para eliminar bordes azules de focus nativos en Safari/macOS.
 ✅ Esqueleto Astro + tokens de diseño
 ✅ **Landing de ventas completa** (estilo Stripe/Linear con ADN Flouvia) — desplegada
@@ -1724,12 +1813,14 @@ El componente `Sidebar.astro` es el menú principal de la app y presenta un dise
 - **Microinteracciones:** Las tooltips en modo colapsado utilizan `transform-origin: left center` para brotar elásticamente desde el ícono. El indicador de ítem activo es una "pastilla de cristal" calculada matemáticamente en JS mediante `getBoundingClientRect()` para evitar bugs de offsetTop en anidamientos CSS.
 - **Sombra Premium:** `--sb-shadow` iguala de forma idéntica la sombra doble de la `topbar` (`0 12px 36px -8px rgba(10,25,47,0.14)`) para asegurar que la sidebar no luzca plana frente al resto de los paneles, creando un volumen 3D ultra-premium.
 
-### Blog Aesthetics (Stripe/Flouvia Pattern)
-El blog público (`/blog`) emplea un diseño sin imágenes (image-less) fuertemente inspirado en Stripe, adaptado a los colores corporativos de Flouvia (Cord).
-- **Portadas CSS:** En lugar de fotografías genéricas, los posts utilizan portadas dinámicas generadas 100% con HTML y CSS (`.stripe-cover` con abstract shapes y glassmorphism).
-- **Flouvia Gradients:** Se usa una paleta tech/B2B estricta (navy, cyan, teal, silver glass) a través de clases `.gradient-1` a `.gradient-5`.
-- **Íconos Vectoriales Abstractos:** Las portadas inyectan SVG minimalistas translúcidos mapeados dinámicamente a la categoría del artículo (Finanzas, Ventas B2B, Fiscal, Tecnología, etc.), flotando sobre los gradientes con sombra (`drop-shadow`).
-- **Avatares Minimalistas:** Los avatares de autor utilizan un componente de inicial estilizada (`.fc-author-initial`) en lugar de fotografías reales. Es un círculo con gradiente azul corporativo y texto en blanco, garantizando un aspecto "Quiet Luxury" y limpio sin importar qué autor publique.
+### Blog Aesthetics (WebGL GLSL — ElevenLabs Pattern)
+El blog público (`/blog`) usa portadas generadas por **WebGL puro** (`BlogCover.jsx`, `client:only="react"`), no CSS ni fotografías.
+- **Portadas GLSL:** FBM de 5 octavas con domain-warp de 2 capas → gradiente orgánico fotográfico. Tonemap Reinhard + dither. Reactivo al mouse (parallax UV shift) y al giroscopio en móvil. IntersectionObserver pausa el RAF cuando el canvas no está visible.
+- **Paletas por categoría:** `PAL` en `BlogCover.jsx` — 3 stops dark→mid→highlight. `Finanzas`=navy/azure, `Ventas B2B`=teal/cyan, `Fiscal`=forest/mint, `Tecnología`=purple/lavender, `Operaciones`=warm/gold.
+- **Overlay de título:** scrim bottom-up con texto blanco Inter 700, bottom-left en todos los cards. `featured=true` usa fuente mayor (`clamp(1.6rem,2.8vw,2.4rem)`).
+- **Watermark de categoría:** ícono SVG a 9% de opacidad blanco, arriba-derecha, por encima del canvas pero bajo el título. Textura subpixel sin competir con el gradient.
+- **Layout `/blog`:** header limpio `<h1>` + LinkedIn link, featured `21/9` full-width con metadata bar compacta, filtros inline sin sticky, grid `3/2` sin excerpt.
+- **Avatares Minimalistas:** inicial estilizada (`.fc-avatar`) — círculo con gradiente azul Cord en la metadata bar del featured card. Sin fotografías de autor.
 
 ### Navbar & Mobile UX
 - **Mobile Navbar Refinements:** Se corrigieron los estilos del language switcher (ES/EN) en la vista móvil (Glassmorphism + dark text en selección). Se ajustó la posición para no saturar la cabecera y se reubicó arriba del footer.
@@ -1814,3 +1905,61 @@ El roadmap público (`/roadmap` y `/en/roadmap`) fue rediseñado para alcanzar u
    • Red Tensorial de Canvas: Se agregó un `<canvas>` 2D detrás de los MagneticNodes que funciona con un ResizeObserver. Un loop a 60fps usando `gsap.ticker` calcula la distancia Euclidiana entre los centros de cada nodo en tiempo real (leyendo su `getBoundingClientRect` para considerar la gravedad y magnetismo simultáneamente). Dibuja conexiones dinámicas con opacidad y grosor inversamente proporcionales a la distancia usando un estilo 'Clear Mode' (platino translúcido).
 
    • Ajuste Visual de Nodos en Agencias: En `agencias.astro`, los iconos de los nodos magnéticos fueron reemplazados por los logotipos de las agencias (Ogilvy, Accenture, IDEO, Pentagram, Flouvia) manteniendo su color original, para integrarlos visualmente en lugar de mostrar logos de herramientas.
+
+✅ **`ProductAccordion` — galería flex expandible WebGL en páginas de producto (jun 2026)** —
+   `src/components/producto/ProductAccordion.jsx` + `ProductAccordion.css` (prefijo `pac-*`).
+   Componente React montado en `/producto/[slug]` como `<ProductAccordion slug={feature.slug} client:only="react" />`.
+   • **Motor WebGL idéntico a `BlogCover.jsx`:** WebGL puro (sin R3F), FBM de 5 octavas con domain-warp de 2
+     capas (`q → r → fbm(uv+r)`), Tonemap Reinhard + dither anti-banding. 4 paletas navy/azul eléctrico
+     (todas oscuras, mismo espectro); uniforms `u_res/u_time/u_mouse/u_ca/u_cb/u_cc`.
+   • **Canvas de tamaño FIJO (480×560px):** se setea UNA vez al montar; CSS `width:100%; height:100%`
+     estira visualmente. **Sin `ResizeObserver`** — el bug crítico era que `ResizeObserver` se disparaba
+     en cada frame mientras GSAP animaba `flexGrow`, reiniciando el contexto WebGL y causando flashes
+     negros. Regla: **NUNCA redimensionar un canvas WebGL dentro de una animación de layout;**
+     fijar las dimensiones del canvas y dejar que CSS escale.
+   • **Tamaños inactivos variados:** `RESTING = [0.85, 1.55, 1.10, 1.75]` — cada posición tiene un
+     `flex-grow` de reposo distinto (estilo ElevenLabs), evitando que todas las tarjetas inactivas
+     luzcan iguales.
+   • **Tarjetas inactivas = solo shader + ícono apagado:** sin texto ni etiqueta vertical en reposo.
+     Solo el shader atmosférico + ícono apagado (`opacity:0.38, scale:0.72`). Al activarse: ícono
+     sube a pleno + bloque de texto (eyebrow + título + subtítulo) aparece desde abajo.
+   • **GSAP `flexGrow` con `expo.out 0.90s`:** en `useEffect` + `gsap.context()` + `.revert()` para
+     cleanup (sin `@gsap/react`). Los textos tienen stagger intencional: activo aparece a `t=0.26`,
+     inactivos se ocultan desde `t=0`.
+   • **Íconos duotone glass Apple-style:** `fillOpacity` en múltiples capas (12–18% fondo, 30–55%
+     detalle, 55–65% acento), `stroke 1.6–1.75px`, `strokeLinecap/Join="round"`.
+   • **`IntersectionObserver`** pausa el RAF cuando el canvas no está en viewport.
+   • **Mobile:** `flex-direction:column`, `flex-grow:unset`, transición de altura CSS
+     (inactiva 68px → activa 268px), sin GSAP en mobile.
+   • Se ELIMINÓ la sección `<!-- ── STATS ──` de `[slug].astro` (filas hairline con métricas
+     numéricas por feature). La sección fue borrada completamente; el `ProductAccordion` queda
+     directamente sobre los bloques de detalle `<!-- ── BLOQUES DE DETALLE ──`.
+   ⚠️ **Regla a futuro:** si se añade un nuevo shader a un contenedor cuyo tamaño es animado
+     por GSAP (o cualquier animación CSS), siempre usar canvas de tamaño fijo + CSS scaling.
+     No usar `ResizeObserver` en contenedores con transiciones de `flex-grow`/`width`/`height`.
+
+✅ **Hero de producto rediseñado: split-layout + 100dvh + mockups light mode (jul 2026)** —
+   Reescritura del template `src/pages/producto/[slug].astro` en tres ejes:
+   • **Split layout izq/der:** `.pp-hero-inner` ahora es un grid `1fr 1.4fr` con `.pp-hero-text`
+     a la izquierda y `.pp-hero-visual` a la derecha. El visual tiene `margin-right: -12%` para
+     que el mockup sangre fuera del contenedor (parcialmente cortado = intencional). El badge
+     eyebrow se **eliminó del hero** (ya no existe en el template).
+   • **Hero 100dvh exacto:** `.pp-hero` es `display: flex; align-items: center; min-height: 100dvh`
+     — el contenido queda verticalmente centrado en la primera pantalla, sin espacio en blanco
+     excesivo arriba. `.pp-hero-inner` tiene `padding: 7rem 5% 4rem 6%` (el 7rem superior da
+     clearance al navbar sticky).
+   • **Título verdaderamente a la izquierda:** GSAP `wrapLines()` inyecta `.m-line` y `.m-line-in`
+     dinámicamente sin `data-astro-cid`, así los estilos scoped de Astro no los alcanzan. Se añadió
+     `<style is:global>` después del bloque `<style>` con:
+     `.pp-hero-text .m-line { text-align: left !important }` y
+     `.pp-hero-text .m-line-in { display: block !important }`.
+     ⚠️ **Regla:** cualquier override a nodos inyectados por GSAP/JS en runtime DEBE ir en
+     `<style is:global>` — los estilos scoped de Astro solo aplican a nodos con `data-astro-cid`.
+   • **Todos los mockups hero convertidos a light mode (Apple/Linear):** se reemplazaron los fondos
+     navy oscuros de TODOS los componentes `mk-*` por superficies blancas con sombras sutiles
+     multicapa. Cambios clave: `.mk-window` (blanco, dots macOS de colores), `.mk-sidebar` (gris
+     claro `#f8fafc`), `.mk-row` (texto dark `#334155`), `.mk-public-card` (blanco, botón Aprobar
+     navy), `.mk-toast` (blanco, sombra ligera), `.mk-tl` (blanco, items en gris), `.mk-cfdi`
+     (blanco), `.mk-cli` (blanco), `.mk-ar` (blanco, burbujas IA azul claro / cliente navy),
+     `.mk-fx-*` (blanco/gray), `.mk-intl-*` (blanco). Las animaciones GSAP que terminaban en
+     `rgba(255,255,255,0.03)` (dark) se corrigieron a `#f8fafc` o `transparent`.

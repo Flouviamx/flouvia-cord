@@ -264,19 +264,35 @@ const hasArticles = categoryArticles.length > 0;
         line-height: 1.5;
     }
     .empty-cta {
-        display: inline-block;
-        padding: 12px 24px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 28px;
         background: var(--color-blue-deep);
         color: #ffffff;
         font-weight: 600;
-        border-radius: 12px;
+        border-radius: 999px;
         text-decoration: none;
-        transition: transform 0.2s, box-shadow 0.2s;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.35s var(--ease-spring), box-shadow 0.35s var(--ease-spring);
+        box-shadow: 0 4px 14px rgba(10,25,47,0.15);
+    }
+    .empty-cta::after {
+        content: '';
+        position: absolute;
+        top: 0; left: -110%;
+        width: 60%; height: 100%;
+        background: linear-gradient(105deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s ease;
+        pointer-events: none;
     }
     .empty-cta:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(10,25,47,0.15);
+        box-shadow: 0 8px 24px rgba(10,25,47,0.22);
     }
+    .empty-cta:hover::after { left: 160%; }
+    .empty-cta:active { transform: scale(0.97); }
 
     /* Contact CTA (Copied from SupportCards to match style) */
     .contact-cta {
@@ -318,24 +334,36 @@ const hasArticles = categoryArticles.length > 0;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 16px 32px;
+        padding: 17px 36px;
         background: #ffffff;
         color: var(--color-blue-deep);
         font-weight: 700;
         font-size: 1rem;
-        border-radius: 12px;
+        border-radius: 999px;
         text-decoration: none;
-        transition: all 0.4s var(--ease-spring);
         white-space: nowrap;
         margin-left: 32px;
-        box-shadow: 0 12px 28px -10px rgba(0,0,0,0.3);
         position: relative;
+        overflow: hidden;
         z-index: 1;
+        transition: transform 0.35s var(--ease-spring), box-shadow 0.35s var(--ease-spring);
+        box-shadow: 0 12px 28px -10px rgba(0,0,0,0.3);
+    }
+    .cta-button::after {
+        content: '';
+        position: absolute;
+        top: 0; left: -110%;
+        width: 60%; height: 100%;
+        background: linear-gradient(105deg, transparent, rgba(255,255,255,0.35), transparent);
+        transition: left 0.5s ease;
+        pointer-events: none;
     }
     .cta-button:hover {
         transform: translateY(-2px);
         box-shadow: 0 20px 40px -15px rgba(0,0,0,0.4);
     }
+    .cta-button:hover::after { left: 160%; }
+    .cta-button:active { transform: scale(0.97); }
 
     @media (max-width: 768px) {
         .articles-grid {

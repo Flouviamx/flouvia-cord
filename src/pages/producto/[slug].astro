@@ -9,6 +9,8 @@ import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
 import PageAnims from '../../components/landing/PageAnims.astro';
 import BlockMockup from '../../components/producto/BlockMockup.astro';
+import ProductAccordion from '../../components/producto/ProductAccordion.jsx';
+import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 import { FEATURES } from '../../lib/producto';
 import { FEATURES_EN } from '../../lib/producto.en';
 import { getLangFromUrl } from '../../i18n/utils';
@@ -52,19 +54,21 @@ const faqSchema = {
         <section class="pp-hero">
             <div class="pp-hero-mesh" aria-hidden="true"></div>
             <div class="pp-hero-inner">
-                <p class="pp-eyebrow reveal">{feature.eyebrow}</p>
-                <h1 class="pp-title masked-title" set:html={feature.titulo} />
-                <p class="pp-sub reveal">{feature.sub}</p>
-                <div class="pp-actions reveal">
-                    <a href="/registro" class="pp-btn-primary">
-                        <span>{isEn ? 'Start for free' : 'Empezar gratis'}</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                    </a>
-                    <a href="/q/demo" class="pp-btn-ghost">{isEn ? 'See a real quote' : 'Ver una cotización real'}</a>
+                <div class="pp-hero-text">
+                    <h1 class="pp-title masked-title" set:html={feature.titulo} />
+                    <p class="pp-sub reveal">{feature.sub}</p>
+                    <div class="pp-actions reveal">
+                        <a href="/registro" class="pp-btn-primary">
+                            <span>{isEn ? 'Start for free' : 'Empezar gratis'}</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </a>
+                        <a href="/q/demo" class="pp-btn-ghost">{isEn ? 'See a real quote' : 'Ver una cotización real'}</a>
+                    </div>
+                    <p class="pp-plan reveal">{feature.plan}</p>
                 </div>
-                <p class="pp-plan reveal">{feature.plan}</p>
 
                 <!-- Mockup específico del feature -->
+                <div class="pp-hero-visual">
                 <div class="pp-mockup-wrap reveal-mockup">
                     <div class="pp-mesh-bg" aria-hidden="true"></div>
                     <div class="pp-glow" aria-hidden="true"></div>
@@ -74,7 +78,6 @@ const faqSchema = {
                         {feature.slug === 'editor' && (
                             <div class="mk-window">
                                 <div class="mk-bar">
-                                    <span class="mk-dots"><i></i><i></i><i></i></span>
                                     <span class="mk-bar-title">COT-0149 · {isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}</span>
                                     <div class="mk-bar-actions">
                                         <span class="mk-avatar-sm">RM</span>
@@ -83,9 +86,9 @@ const faqSchema = {
                                 </div>
                                 <div class="mk-body">
                                     <div class="mk-sidebar">
-                                        <div class="mk-sb-item mk-sb-active"><i>📄</i> {isEn ? 'Current quote' : 'Cotización actual'}</div>
-                                        <div class="mk-sb-item"><i>👤</i> {isEn ? 'Client details' : 'Datos del cliente'}</div>
-                                        <div class="mk-sb-item"><i>⚙️</i> {isEn ? 'Settings' : 'Configuración'}</div>
+                                        <div class="mk-sb-item mk-sb-active"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" fill-opacity="0.12" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></i> {isEn ? 'Current quote' : 'Cotización actual'}</div>
+                                        <div class="mk-sb-item"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" fill-opacity="0.12" d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4" fill="currentColor" fill-opacity="0.12"/></svg></i> {isEn ? 'Client details' : 'Datos del cliente'}</div>
+                                        <div class="mk-sb-item"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.15"/><path fill="currentColor" fill-opacity="0.08" d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></i> {isEn ? 'Settings' : 'Configuración'}</div>
                                     </div>
                                     <div class="mk-content">
                                         <div class="mk-rows">
@@ -114,6 +117,7 @@ const faqSchema = {
                         )}
 
                         {feature.slug === 'link-publico' && (
+                          <>
                             <div class="mk-public" id="publicWrap">
                                 <div class="mk-public-card" id="publicCard">
                                     <div class="mk-public-head">
@@ -140,28 +144,31 @@ const faqSchema = {
                                 </div>
                                 <div class="mk-success-overlay" id="publicSuccess">
                                     <div class="mk-success-ring"></div>
-                                    <i class="mk-success-check">✓</i>
+                                    <i class="mk-success-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></i>
                                     <b>¡{isEn ? 'Successfully approved!' : 'Aprobada exitosamente!'}</b>
                                 </div>
                             </div>
+                            <div class="pp-bub pp-bub-in pp-lp-bub" id="lpBub1" style="top: 6%; left: 1%;">
+                                <span class="pp-bub-name">{isEn ? 'Client' : 'Cliente'}</span>
+                                {isEn ? 'Any better price on the rebar?' : '¿Me mejoras el precio del acero?'}
+                            </div>
+                            <div class="pp-bub pp-bub-out pp-lp-bub" id="lpBub2" style="bottom: 20%; left: 6%;">
+                                {isEn ? 'Done — updated the line ✓' : 'Listo — actualicé la línea ✓'}
+                            </div>
+                          </>
                         )}
 
                         {feature.slug === 'seguimiento' && (
-                            <div class="mk-track">
-                                <div class="mk-track-head">
-                                    <div class="mk-toast" id="trackToast">
-                                        <span class="mk-toast-dot"></span>
-                                        <div class="mk-toast-content">
-                                            <b>Raúl Mendoza</b> {isEn ? 'opened your quote' : 'abrió tu cotización'}
-                                            <i>hace 3 min</i>
-                                        </div>
-                                    </div>
+                            <div class="mk-window mk-track2">
+                                <div class="mk-track-topbar">
+                                    <div class="mk-track-ti"><b>{isEn ? 'Activity' : 'Actividad'}</b><span>COT-0148 · {isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}</span></div>
+                                    <span class="mk-live-pill"><i id="satTrDot"></i> {isEn ? 'Viewing now' : 'Viendo ahora'}</span>
                                 </div>
                                 <div class="mk-tl">
-                                    <div class="mk-tl-row mk-on track-item"><i class="ok">✓</i><div class="mk-tl-info"><b>{isEn ? 'Approved' : 'Aprobada'}</b><span>El Zarco aprobó la cotización · hoy, 12:36</span></div><span class="mk-avatar-sm">EZ</span></div>
-                                    <div class="mk-tl-row mk-on track-item"><i class="warn">👁</i><div class="mk-tl-info"><b>Vista (3 veces)</b><span>Raúl Mendoza abrió el link · hoy, 12:31</span></div><span class="mk-avatar-sm">RM</span></div>
-                                    <div class="mk-tl-row track-item"><i>✉️</i><div class="mk-tl-info"><b>Enviada</b><span>Por correo y WhatsApp · hoy, 11:02</span></div></div>
-                                    <div class="mk-tl-row track-item"><i>📄</i><div class="mk-tl-info"><b>Creada</b><span>{isEn ? 'Draft' : 'Borrador'} COT-0148 · hoy, 10:41</span></div></div>
+                                    <div class="mk-tl-row mk-on track-item"><i class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></i><div class="mk-tl-info"><b>{isEn ? 'Approved' : 'Aprobada'}</b><span>{isEn ? 'El Zarco approved the quote' : 'El Zarco aprobó la cotización'} · 12:36</span></div><span class="mk-avatar-sm">EZ</span></div>
+                                    <div class="mk-tl-row mk-on track-item"><i class="warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" fill-opacity="0.12" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.2"/></svg></i><div class="mk-tl-info"><b>{isEn ? 'Viewed 3 times' : 'Vista 3 veces'}</b><span>{isEn ? 'Raúl opened the link' : 'Raúl Mendoza abrió el link'} · 12:31</span></div><span class="mk-avatar-sm">RM</span></div>
+                                    <div class="mk-tl-row track-item"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" fill="currentColor" fill-opacity="0.12"/><polyline points="22,6 12,13 2,6"/></svg></i><div class="mk-tl-info"><b>{isEn ? 'Sent' : 'Enviada'}</b><span>{isEn ? 'By email and WhatsApp' : 'Por correo y WhatsApp'} · 11:02</span></div></div>
+                                    <div class="mk-tl-row track-item"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" fill-opacity="0.12" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></i><div class="mk-tl-info"><b>{isEn ? 'Created' : 'Creada'}</b><span>{isEn ? 'Draft' : 'Borrador'} COT-0148 · 10:41</span></div></div>
                                 </div>
                             </div>
                         )}
@@ -184,15 +191,20 @@ const faqSchema = {
                                     </div>
                                     <div class="mk-cfdi-stamp" id="cfdiStamp">
                                         <div class="mk-stamp-ring"></div>
-                                        <span class="mk-check">✓</span>
-                                        <span>Timbrada ante el SAT · desde COT-0148</span>
+                                        <span class="mk-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+                                        <span>{isEn ? 'Stamped with the SAT · from COT-0148' : 'Timbrada ante el SAT · desde COT-0148'}</span>
                                     </div>
                                 </div>
                             </div>
                         )}
 
                         {feature.slug === 'clientes-credito' && (
-                            <div class="mk-cli">
+                            <div class="mk-window mk-cliwin">
+                              <div class="mk-bar">
+                                <span class="mk-bar-title">Cord · {isEn ? 'Clients & credit' : 'Clientes y crédito'}</span>
+                                <span class="mk-badge mk-badge-sent">3 {isEn ? 'clients' : 'clientes'}</span>
+                              </div>
+                              <div class="mk-cli">
                                 <div class="mk-cli-row cli-item">
                                     <span class="mk-avatar mk-avatar-ez">EZ</span>
                                     <div class="mk-cli-info"><b>{isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}</b><i>Raúl Mendoza · DEZ981123QX1</i></div>
@@ -217,38 +229,38 @@ const faqSchema = {
                                     <div class="mk-term-wrap"><span class="mk-term mk-term-cash">Contado</span></div>
                                     <div class="mk-credit">
                                         <div class="mk-credit-bar"><i></i></div>
-                                        <span class="editorial">Sin crédito</span>
+                                        <span class="editorial">{isEn ? 'No credit' : 'Sin crédito'}</span>
                                     </div>
                                 </div>
+                              </div>
                             </div>
                         )}
 
                         {feature.slug === 'cobranza-ia' && (
-                            <div class="mk-ar">
-                                <div class="mk-ar-head">
-                                    <span class="mk-avatar mk-avatar-ez">EZ</span>
-                                    <div>
-                                        <b>{isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}</b>
-                                        <i>COT-0131 · $412,300 por cobrar</i>
-                                    </div>
-                                    <span class="mk-badge mk-ar-overdue">● 47 días vencido</span>
+                            <div class="mk-chatfree" id="arFree">
+                                <div class="cf-msg cf-in" data-cf="0">
+                                    <span class="cf-name">{isEn ? 'Cord Agent' : 'Agente Cord'} <em class="cf-badge">IA</em></span>
+                                    <div class="cf-bub cf-bub-in">{isEn ? 'Hi Raúl, your $412,300 balance is 47 days overdue. Can I help you clear it in 3 monthly payments, no surcharges?' : 'Hola Raúl, tu saldo de $412,300 venció hace 47 días. ¿Te ayudo a liquidarlo en 3 pagos mensuales, sin recargos?'}</div>
                                 </div>
-                                <div class="mk-ar-thread" id="arThread">
-                                    <div class="mk-ar-bubble mk-ar-ai">
-                                        <span class="mk-ar-tag">Agente Cord</span>
-                                        Hola Raúl, tu saldo de $412,300 venció hace 47 días. ¿Te ayudo a liquidarlo en 3 pagos mensuales sin recargos?
-                                    </div>
-                                    <div class="mk-ar-bubble mk-ar-client">Sí, me funciona en 3 partes.</div>
-                                    <div class="mk-ar-bubble mk-ar-ai">
-                                        <span class="mk-ar-tag">Agente Cord</span>
-                                        Perfecto. Plan propuesto — esperando tu visto bueno:
-                                    </div>
+                                <div class="cf-msg cf-out" data-cf="1">
+                                    <span class="cf-name">Raúl · El Zarco</span>
+                                    <div class="cf-bub cf-bub-out">{isEn ? 'Yes, 3 parts works for me.' : 'Sí, me funciona en 3 partes.'}</div>
                                 </div>
-                                <div class="mk-ar-plan" id="arPlan">
-                                    <div class="mk-ar-cuota"><span>Cuota 1 · 15 jul</span><b class="editorial">$137,433</b></div>
-                                    <div class="mk-ar-cuota"><span>Cuota 2 · 15 ago</span><b class="editorial">$137,433</b></div>
-                                    <div class="mk-ar-cuota"><span>Cuota 3 · 15 sep</span><b class="editorial">$137,434</b></div>
-                                    <div class="mk-ar-approve">Aprobar plan de pagos</div>
+                                <div class="cf-msg cf-in" data-cf="2">
+                                    <span class="cf-name">{isEn ? 'Cord Agent' : 'Agente Cord'} <em class="cf-badge">IA</em></span>
+                                    <div class="cf-bub cf-bub-in">{isEn ? 'Done — here’s the plan:' : 'Listo — este es el plan:'}</div>
+                                </div>
+                                <div class="cf-plan" data-cf="3">
+                                    <div class="cf-plan-head"><span>{isEn ? 'Payment plan' : 'Plan de pagos'}</span><b class="editorial">$412,300</b></div>
+                                    <div class="cf-plan-rows">
+                                        <div class="cf-cuota"><span>15 jul</span><b class="editorial">$137,433</b></div>
+                                        <div class="cf-cuota"><span>15 ago</span><b class="editorial">$137,433</b></div>
+                                        <div class="cf-cuota"><span>15 sep</span><b class="editorial">$137,434</b></div>
+                                    </div>
+                                    <div class="cf-approve" id="cfApprove">{isEn ? 'Approve plan' : 'Aprobar plan'}</div>
+                                </div>
+                                <div class="cf-msg cf-out" data-cf="4">
+                                    <div class="cf-bub cf-bub-out cf-bub-ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> {isEn ? 'Approved' : 'Aprobado'}</div>
                                 </div>
                             </div>
                         )}
@@ -273,7 +285,7 @@ const faqSchema = {
                                     </div>
                                     <div class="mk-fx-rate">
                                         <span class="mk-fx-rate-line">1 USD = <b class="editorial" id="fxRate">$18.50 MXN</b></span>
-                                        <span class="mk-fx-lock" id="fxLock">🔒 lock 30 días</span>
+                                        <span class="mk-fx-lock" id="fxLock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.12"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> lock 30 días</span>
                                     </div>
                                     <div class="mk-fx-totals">
                                         <div class="mk-fx-total"><span>El cliente ve</span><b class="editorial">USD 10,620.50</b></div>
@@ -290,7 +302,7 @@ const faqSchema = {
                                     <span class="mk-bar-title">COT-0151 · Pacific Hardware (US)</span>
                                     <span class="mk-badge mk-badge-sent">● USD → MXN</span>
                                 </div>
-                                <div class="mk-intl-pill" id="intlPill">🔒 Tasa blindada</div>
+                                <div class="mk-intl-pill" id="intlPill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.15"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Tasa blindada</div>
                                 <div class="mk-intl-body">
                                     <div class="mk-rows mk-rows-intl">
                                         <div class="mk-row mk-row-head"><span>{isEn ? 'Product' : 'Producto'}</span><span>{isEn ? 'Qty' : 'Cant.'}</span><span>{isEn ? 'Price' : 'Precio'} USD</span><span>{isEn ? 'Amount' : 'Importe'}</span></div>
@@ -347,48 +359,127 @@ const faqSchema = {
                             </div>
                         )}
 
+                        {feature.slug === 'finanzas' && (
+                            <div class="mk-window mk-fin" id="finHero">
+                                <div class="mk-bar">
+                                    <span class="mk-bar-title">Cord · {isEn ? 'CFO Dashboard' : 'Panel financiero'}</span>
+                                    <span class="mk-badge mk-badge-ok">● {isEn ? 'Live' : 'En vivo'}</span>
+                                </div>
+                                <div class="mk-fin-body">
+                                    <div class="mk-fin-kpis">
+                                        <div class="mk-fin-kpi"><span>Pipeline</span><b class="editorial" id="finK1" data-to="1.84">$0.00M</b></div>
+                                        <div class="mk-fin-kpi"><span>{isEn ? 'Expected' : 'Ingreso esperado'}</span><b class="editorial mk-green" id="finK2" data-to="1.29">$0.00M</b></div>
+                                        <div class="mk-fin-kpi"><span>DSO</span><b class="editorial">34<i> días</i></b></div>
+                                    </div>
+                                    <div class="mk-fin-chart-head"><span>{isEn ? 'Expected cash · next 5 weeks' : 'Flujo esperado · próximas 5 semanas'}</span><span class="mk-fin-chart-legend">MXN</span></div>
+                                    <div class="mk-fin-chart" id="finChart">
+                                        <div class="mk-fin-bar"><i style="--h: 46%"></i><em>S1</em></div>
+                                        <div class="mk-fin-bar"><i style="--h: 66%"></i><em>S2</em></div>
+                                        <div class="mk-fin-bar"><i style="--h: 52%"></i><em>S3</em></div>
+                                        <div class="mk-fin-bar mk-fin-bar-hot"><i style="--h: 90%"></i><em>S4</em></div>
+                                        <div class="mk-fin-bar"><i style="--h: 60%"></i><em>S5</em></div>
+                                    </div>
+                                    <div class="mk-fin-insight" id="finInsight">
+                                        <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" fill-opacity="0.15" d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1h6c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg></i>
+                                        <span><b>{isEn ? 'AI insight:' : 'Insight de IA:'}</b> {isEn ? '71% of your cash is concentrated in El Zarco. Diversify before week 4.' : 'el 71% de tu flujo se concentra en El Zarco. Diversifica antes de la semana 4.'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {feature.slug === 'aprobaciones' && (
+                            <div class="mk-window mk-apr" id="aprHero">
+                                <div class="mk-bar">
+                                    <span class="mk-dots"><i></i><i></i><i></i></span>
+                                    <span class="mk-bar-title">COT-0148</span>
+                                    <span class="mk-badge mk-apr-pending">● {isEn ? 'Pending' : 'Pendiente'}</span>
+                                </div>
+                                <div class="mk-apr-body">
+                                    <div class="mk-apr-line">
+                                        <div class="mk-apr-line-info"><b>{isEn ? 'Rebar 3/8" × 12m' : 'Varilla 3/8" × 12m'}</b><i>340 pz · {isEn ? 'negotiated' : 'negociado'} $168.50</i></div>
+                                        <span class="mk-apr-margin" id="aprMargin">{isEn ? 'Margin' : 'Margen'} 18%</span>
+                                    </div>
+                                    <div class="mk-apr-gauge">
+                                        <div class="mk-apr-gauge-track">
+                                            <div class="mk-apr-gauge-fill" id="aprFill"></div>
+                                            <div class="mk-apr-gauge-min"><span>{isEn ? 'min 25%' : 'mín 25%'}</span></div>
+                                        </div>
+                                    </div>
+                                    <div class="mk-apr-alert" id="aprAlert">
+                                        <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path fill="currentColor" fill-opacity="0.12" d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></i>
+                                        <span>{isEn ? 'Margin 18% is below the 25% minimum' : 'Margen 18% por debajo del mínimo de 25%'}</span>
+                                    </div>
+                                    <div class="mk-apr-actions">
+                                        <span class="mk-apr-reject">{isEn ? 'Reject' : 'Rechazar'}</span>
+                                        <span class="mk-apr-approve" id="aprBtn">{isEn ? 'Approve anyway' : 'Aprobar de todos modos'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {feature.slug === 'equipo' && (
+                            <div class="mk-window mk-team" id="teamHero">
+                                <div class="mk-bar">
+                                    <span class="mk-dots"><i></i><i></i><i></i></span>
+                                    <span class="mk-bar-title">Cord · {isEn ? 'Team & roles' : 'Equipo y roles'}</span>
+                                    <span class="mk-badge mk-badge-sent">● 4 {isEn ? 'members' : 'miembros'}</span>
+                                </div>
+                                <div class="mk-team-body">
+                                    <div class="mk-team-row team-item">
+                                        <span class="mk-avatar mk-avatar-cg">RM</span>
+                                        <div class="mk-team-info"><b>Raúl Mendoza</b><i>raul@materialesdelvalle.mx</i></div>
+                                        <span class="mk-role mk-role-owner">{isEn ? 'Owner' : 'Dueño'}</span>
+                                    </div>
+                                    <div class="mk-team-row team-item">
+                                        <span class="mk-avatar">LF</span>
+                                        <div class="mk-team-info"><b>Lucía Ferreira</b><i>lucia@materialesdelvalle.mx</i></div>
+                                        <span class="mk-role mk-role-admin">Admin</span>
+                                    </div>
+                                    <div class="mk-team-row team-item">
+                                        <span class="mk-avatar mk-avatar-gf">MR</span>
+                                        <div class="mk-team-info"><b>Marco Ruiz</b><i>marco@materialesdelvalle.mx</i></div>
+                                        <span class="mk-role mk-role-sales">{isEn ? 'Sales' : 'Vendedor'}</span>
+                                    </div>
+                                    <div class="mk-team-row team-item mk-team-row-ghost">
+                                        <span class="mk-avatar mk-avatar-pending">AV</span>
+                                        <div class="mk-team-info"><b>Ana Vega</b><i>{isEn ? 'invitation sent' : 'invitación enviada'}</i></div>
+                                        <span class="mk-role mk-role-view">{isEn ? 'View' : 'Lectura'}</span>
+                                    </div>
+                                    <div class="mk-team-invite" id="teamInvite">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        {isEn ? 'Invite by email' : 'Invitar por correo'}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                     </div>
                 </div>
+                </div>{/* /pp-hero-visual */}
             </div>
         </section>
 
-        <!-- ── STATS ── -->
-        <section class="pp-stats">
-            <div class="pp-stats-inner">
-                {feature.stats.map((s) => (
-                    <div class="pp-stat reveal">
-                        <span class="pp-stat-label">{s.label}</span>
-                        <span class="pp-stat-dots"></span>
-                        <span
-                            class="pp-stat-num editorial"
-                            data-countup={s.countup !== undefined ? String(s.countup) : undefined}
-                            data-decimals={s.decimals !== undefined ? String(s.decimals) : undefined}
-                            data-prefix={s.prefix}
-                            data-suffix={s.suffix}
-                        >{s.prefix ?? ''}{s.valor}{s.suffix ?? ''}</span>
-                    </div>
-                ))}
-            </div>
-        </section>
+        <!-- ── PRODUCT ACCORDION ── -->
+        <ProductAccordion slug={feature.slug} client:only="react" />
 
-        <!-- ── BLOQUES DE DETALLE ── -->
-        <section class="pp-blocks">
+        <!-- ── BENTO GRID ── -->
+        <section class="pp-bento">
             {feature.blocks.map((b, i) => (
-                <article class:list={['pp-block', { 'pp-block-flip': i % 2 === 1 }]}>
-                    <div class="pp-block-text">
-                        <p class="pp-eyebrow reveal">{b.eyebrow}</p>
-                        <h2 class="pp-h2 masked-title" set:html={b.titulo} />
-                        <p class="pp-copy reveal">{b.copy}</p>
-                        <ul class="pp-bullets">
+                <article class={`pp-bcard pp-bcard-${i}`}>
+                    <div class="pp-bcard-text">
+                        <p class="pp-bcard-eyebrow">{b.eyebrow}</p>
+                        <h2 class="pp-bcard-h2 masked-title" set:html={b.titulo} />
+                        <p class="pp-bcard-copy reveal">{b.copy}</p>
+                        <ul class="pp-bcard-bullets">
                             {b.bullets.map((bl) => (
                                 <li class="reveal">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" /></svg>
                                     <span>{bl}</span>
                                 </li>
                             ))}
                         </ul>
                     </div>
-                    <div class="pp-block-visual" style="align-items: center; justify-content: center; padding: 0;">
+                    <div class="pp-bcard-visual">
                         <BlockMockup slug={feature.slug} index={i} />
                     </div>
                 </article>
@@ -396,25 +487,13 @@ const faqSchema = {
         </section>
 
         <!-- ── FAQ ── -->
-        <section class="pp-faq">
-            <div class="pp-faq-head">
-                <p class="pp-eyebrow reveal">PREGUNTAS FRECUENTES</p>
-                <h2 class="pp-h2 masked-title">{isEn ? 'Most common questions about' : 'Lo que más nos preguntan sobre'} {feature.nav.toLowerCase()}.</h2>
-            </div>
-            <div class="pp-faq-list">
-                {feature.faqs.map((f, i) => (
-                    <div class="pp-faq-item reveal">
-                        <button class="pp-faq-q" aria-expanded="false" aria-controls={`pp-faq-panel-${i}`}>
-                            <span>{f.q}</span>
-                            <span class="pp-faq-icon" aria-hidden="true"></span>
-                        </button>
-                        <div class="pp-faq-panel" id={`pp-faq-panel-${i}`} role="region">
-                            <p class="pp-faq-a">{f.a}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </section>
+        <FaqAccordion
+            faqs={feature.faqs}
+            eyebrow={isEn ? 'FREQUENTLY ASKED QUESTIONS' : 'PREGUNTAS FRECUENTES'}
+            title={`${isEn ? 'Most common questions about' : 'Lo que más nos preguntan sobre'} ${feature.nav.toLowerCase()}.`}
+            id={`producto-${feature.slug}`}
+            class="pp-faq-acc"
+        />
 
         <!-- ── CROSS-LINKS ── -->
         <section class="pp-more">
@@ -422,11 +501,13 @@ const faqSchema = {
                 <p class="pp-eyebrow reveal">MÁS DE CORD</p>
                 <h2 class="pp-h2 masked-title">{isEn ? 'Explore the rest of the product.' : 'Explora el resto del producto.'}</h2>
             </div>
-            <div class="pp-more-grid">
+            <div class="pp-more-list">
                 {otros.map((f) => (
-                    <a href={`/producto/${f.slug}`} class="pp-more-card reveal">
-                        <b>{f.nav}</b>
-                        <span>{f.sub.split('.')[0]}.</span>
+                    <a href={`/producto/${f.slug}`} class="pp-more-row reveal">
+                        <div class="pp-more-info">
+                            <b>{f.nav}</b>
+                            <span>{f.sub.split('.')[0]}.</span>
+                        </div>
                         <i class="pp-more-arrow">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         </i>
@@ -441,12 +522,13 @@ const faqSchema = {
 </Layout>
 
 <style>
-    /* ════════ HERO ════════ */
+    /* ════════ HERO — fills exactly 100dvh ════════ */
     .pp-hero {
         position: relative;
-        padding: 11.5rem 5% 5rem;
-        text-align: center;
-        overflow: clip;
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        overflow-x: clip;
         background: var(--color-bg);
     }
     .pp-hero-mesh {
@@ -457,43 +539,107 @@ const faqSchema = {
             radial-gradient(ellipse 44% 54% at 76% 12%, rgba(10,25,47,0.04) 0%, transparent 60%);
         pointer-events: none;
     }
-    .pp-hero-inner { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; }
+    /* Split layout: texto izq / mockup der */
+    .pp-hero-inner {
+        position: relative; z-index: 1;
+        width: 100%;
+        max-width: 1440px; margin: 0 auto;
+        padding: 7rem 5% 4rem 6%;
+        display: grid;
+        grid-template-columns: 0.92fr 1.55fr;
+        gap: 2.6rem;
+        align-items: center;
+    }
+    .pp-hero-text {
+        text-align: left;
+    }
+    /* El visual sangra por la derecha intencionalmente y ocupa MÁS espacio */
+    .pp-hero-visual {
+        position: relative;
+        overflow: visible;
+        margin-right: -16%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
     .pp-eyebrow {
-        font-size: 0.65rem; font-weight: 800; letter-spacing: 3px;
-        text-transform: uppercase; color: #888; margin: 0 0 1.4rem;
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 0.6rem; font-weight: 800; letter-spacing: 2.5px;
+        text-transform: uppercase; color: var(--color-blue-deep);
+        background: rgba(10,25,47,0.06); border: 1px solid rgba(10,25,47,0.10);
+        border-radius: 100px; padding: 5px 14px;
+        margin: 0 0 1.6rem;
     }
     .pp-title {
-        font-size: clamp(2.4rem, 5.4vw, 4.4rem);
-        font-weight: 800; line-height: 1.04; letter-spacing: -0.035em;
-        color: var(--color-text); margin: 0 0 1.6rem;
+        font-size: clamp(2.4rem, 4.2vw, 3.8rem);
+        font-weight: 800; line-height: 1.1; letter-spacing: -0.04em;
+        color: #050505; margin: 0 0 1.4rem;
+        text-align: left;
     }
     .pp-sub {
-        font-size: 1.12rem; line-height: 1.65; color: var(--color-text-muted);
-        max-width: 640px; margin: 0 auto 2.2rem;
+        font-size: 1.08rem; line-height: 1.65; color: var(--color-text-muted);
+        max-width: 480px; margin: 0 0 2.2rem;
+        text-align: left;
     }
-    .pp-actions { display: flex; gap: 0.9rem; justify-content: center; align-items: center; flex-wrap: wrap; }
+    .pp-actions { display: flex; gap: 0.9rem; justify-content: flex-start; align-items: center; flex-wrap: wrap; }
     .pp-btn-primary {
-        display: inline-flex; align-items: center; gap: 10px;
+        display: inline-flex; align-items: center; gap: 10px; position: relative; overflow: hidden;
         background: var(--color-blue-deep); color: #fff;
         text-decoration: none; font-size: 0.98rem; font-weight: 600;
-        padding: 14px 28px; border-radius: 13px;
+        padding: 14px 30px; border-radius: 999px;
         box-shadow: 0 18px 44px -16px rgba(10,25,47,0.55);
         transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
     }
+    .pp-btn-primary::after {
+        content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.18) 50%, transparent 62%);
+        transform: translateX(-110%); transition: transform 0.55s ease;
+    }
+    .pp-btn-primary:hover::after { transform: translateX(110%); }
     .pp-btn-primary svg { width: 15px; height: 15px; transition: transform 0.5s var(--ease-spring); }
     .pp-btn-primary:hover { transform: translateY(-3px); box-shadow: 0 26px 56px -16px rgba(10,25,47,0.6); }
     .pp-btn-primary:hover svg { transform: translateX(4px); }
+    .pp-btn-primary:active { transform: scale(0.97); }
     .pp-btn-ghost {
         color: var(--color-text); text-decoration: none; font-weight: 600; font-size: 0.98rem;
-        padding: 14px 10px;
-        transition: color 0.3s;
+        padding: 14px 22px; border-radius: 999px;
+        border: 1px solid var(--color-border);
+        transition: color 0.3s, border-color 0.3s, background 0.3s;
     }
-    .pp-btn-ghost:hover { color: var(--color-blue-deep); }
-    .pp-plan { font-size: 0.78rem; color: #99a2af; margin: 1.3rem 0 0; font-weight: 600; }
+    .pp-btn-ghost:hover { color: var(--color-blue-deep); border-color: rgba(10,25,47,0.2); background: rgba(10,25,47,0.03); }
+    .pp-plan { font-size: 0.78rem; color: #99a2af; margin: 1.3rem 0 0; font-weight: 600; text-align: left; }
 
-    /* ── Mockup del hero (EXTREME MOTION GRAPHICS) ── */
-    .pp-mockup-wrap { position: relative; max-width: 820px; margin: 4.5rem auto 0; perspective: 1400px; transform-style: preserve-3d; }
+    /* ── Mockup del hero ── */
+    .pp-mockup-wrap { position: relative; max-width: 1000px; width: 100%; margin: 0; perspective: 1500px; transform-style: preserve-3d; }
+
+    /* ── Satélites flotantes (viven FUERA de la card, en el espacio libre — estilo Stripe) ── */
+    .pp-sat {
+        position: absolute; z-index: 9;
+        background: #ffffff; border-radius: 14px;
+        border: 1px solid rgba(10,25,47,0.05);
+        box-shadow: 0 1px 2px rgba(10,25,47,0.04), 0 10px 24px -6px rgba(10,25,47,0.10), 0 26px 56px -20px rgba(10,25,47,0.18);
+        padding: 11px 13px;
+        will-change: transform;
+    }
+    .pp-sat-row { display: flex; align-items: center; gap: 10px; }
+    .pp-sat-ico { width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+    .pp-sat-ico svg { width: 15px; height: 15px; }
+    .pp-sat-ico-green { background: rgba(16,185,129,0.12); color: #059669; }
+    .pp-sat-ico-blue { background: rgba(37,99,235,0.10); color: #2563eb; }
+    .pp-sat-ico-amber { background: rgba(245,158,11,0.12); color: #d97706; }
+    .pp-sat-txt b { display: block; font-size: 0.74rem; font-weight: 700; color: #0f172a; line-height: 1.25; }
+    .pp-sat-txt span { display: block; font-size: 0.66rem; color: #94a3b8; margin-top: 1px; }
+    .pp-sat-live { display: inline-flex; align-items: center; gap: 7px; font-size: 0.7rem; font-weight: 700; color: #0f172a; }
+    .pp-sat-live i { width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,0.5); }
+
+    /* Burbujas de chat que flotan libres (conversación fuera de card) */
+    .pp-bub { position: absolute; z-index: 9; max-width: 210px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.4; font-weight: 500;
+        box-shadow: 0 6px 20px -6px rgba(10,25,47,0.18); }
+    .pp-bub-in { background: #ffffff; color: #334155; border: 1px solid rgba(10,25,47,0.06); border-radius: 16px 16px 16px 4px; }
+    .pp-bub-out { background: #0a192f; color: #fff; border-radius: 16px 16px 4px 16px; }
+    .pp-bub-name { display: block; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #94a3b8; margin-bottom: 3px; }
+    .pp-cfdi-file { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.4px; color: #475569; background: #f1f5f9; border: 1px solid rgba(10,25,47,0.08); padding: 3px 7px; border-radius: 6px; }
     
     .pp-mesh-bg {
         position: absolute;
@@ -501,151 +647,169 @@ const faqSchema = {
         transform: translateX(-50%);
         width: 1400px; height: 900px;
         background:
-            radial-gradient(ellipse 40% 50% at 20% 30%, rgba(59,130,246,0.10), transparent 60%),
-            radial-gradient(ellipse 45% 45% at 80% 25%, rgba(16,185,129,0.07), transparent 60%),
-            radial-gradient(ellipse 50% 55% at 50% 10%, rgba(10,25,47,0.10), transparent 55%);
-        filter: blur(30px);
+            radial-gradient(ellipse 46% 52% at 32% 26%, rgba(10,25,47,0.06), transparent 62%),
+            radial-gradient(ellipse 44% 46% at 74% 20%, rgba(10,25,47,0.045), transparent 62%);
+        filter: blur(34px);
         pointer-events: none;
-        opacity: 0.9;
+        opacity: 0.85;
     }
-    
+
     .pp-glow {
-        position: absolute; inset: -8% -4% 12%;
-        background: radial-gradient(ellipse at center, rgba(10,25,47,0.18) 0%, transparent 70%);
-        filter: blur(40px); z-index: 0;
+        position: absolute; inset: -6% -4% 14%;
+        background: radial-gradient(ellipse at center, rgba(10,25,47,0.05) 0%, transparent 72%);
+        filter: blur(44px); z-index: 0;
         pointer-events: none;
     }
 
     .pp-mockup {
         position: relative;
         text-align: left;
-        color: #fff;
-        /* Removed background, padding, and backdrop-filter to prevent double-borders and clipping */
+        color: #0a192f; /* light mode: texto oscuro */
     }
 
-    /* badges compartidos */
+    /* ── Sombra compartida para cards light ── */
+    .mk-card-light {
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.07), 0 32px 64px rgba(0,0,0,0.06);
+        border: 1px solid rgba(0,0,0,0.08);
+    }
+
+    /* badges compartidos — LIGHT */
     .mk-badge {
         font-size: 0.6rem; font-weight: 800; letter-spacing: 0.8px;
         padding: 4px 10px; border-radius: 100px; white-space: nowrap; text-transform: uppercase;
     }
-    .mk-badge-draft { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); }
-    .mk-badge-sent  { color: #93c5fd; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); }
-    .mk-badge-ok    { color: #34d399; background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); }
+    .mk-badge-draft { color: #64748b; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.10); }
+    .mk-badge-sent  { color: #2563eb; background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2); }
+    .mk-badge-ok    { color: #059669; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); }
     
+    /* Avatares planos y sobrios — sin glow de color (más real, menos caricatura) */
     .mk-avatar {
         width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
-        background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; 
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 12px rgba(37,99,235,0.3);
+        background: #334155; color: #fff;
         display: inline-flex; align-items: center; justify-content: center;
-        font-size: 0.85rem; font-weight: 800;
+        font-size: 0.82rem; font-weight: 700;
     }
-    .mk-avatar-ez { background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 12px rgba(217,119,6,0.3); }
-    .mk-avatar-cg { background: linear-gradient(135deg, #10b981, #059669); box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 12px rgba(5,150,105,0.3); }
-    .mk-avatar-gf { background: linear-gradient(135deg, #8b5cf6, #6d28d9); box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 12px rgba(109,40,217,0.3); }
-    
+    .mk-avatar-ez { background: #b45309; }
+    .mk-avatar-cg { background: #047857; }
+    .mk-avatar-gf { background: #6d28d9; }
+
     .mk-avatar-sm {
         width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0;
-        background: #3b82f6; color: #fff;
+        background: #475569; color: #fff;
         display: inline-flex; align-items: center; justify-content: center;
-        font-size: 0.55rem; font-weight: 800;
+        font-size: 0.55rem; font-weight: 700;
     }
 
-    /* ── EDITOR APP SIMULATION ── */
+    /* ── EDITOR APP SIMULATION — LIGHT / premium Linear-Stripe frame ── */
     .mk-window {
-        background: #0a192f;
-        border-radius: 14px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1);
-        border: 1px solid rgba(255,255,255,0.06);
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow:
+            0 0 0 1px rgba(10,25,47,0.035),
+            0 2px 6px rgba(10,25,47,0.04),
+            0 14px 32px -8px rgba(10,25,47,0.12),
+            0 52px 100px -28px rgba(10,25,47,0.20);
         position: relative; overflow: hidden;
+        isolation: isolate;
     }
-    .mk-bar { 
-        display: flex; align-items: center; justify-content: space-between; 
-        padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02);
+    /* Glass edge highlight (subtle, no sheen — sober) */
+    .mk-window::before {
+        content: ''; position: absolute; inset: 0; border-radius: 16px; z-index: 6;
+        pointer-events: none;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
     }
-    .mk-dots { display: inline-flex; gap: 6px; }
-    .mk-dots i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.2); }
-    .mk-bar-title { font-size: 0.75rem; font-weight: 600; color: rgba(255,255,255,0.6); position: absolute; left: 50%; transform: translateX(-50%); }
+    /* Real product toolbar — NO macOS traffic lights, title left, status right */
+    .mk-bar {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        padding: 13px 18px; border-bottom: 1px solid rgba(10,25,47,0.06);
+        background: #fcfdfe;
+        position: relative; z-index: 2;
+    }
+    /* Traffic lights removed — user dislikes the fake-macOS look */
+    .mk-dots { display: none; }
+    .mk-bar-title { font-size: 0.8rem; font-weight: 600; color: #0f172a; letter-spacing: -0.01em; margin-right: auto; }
     .mk-bar-actions { display: flex; align-items: center; gap: 10px; }
-    
+
     .mk-body { display: flex; height: 320px; }
-    .mk-sidebar { width: 180px; background: rgba(255,255,255,0.01); border-right: 1px solid rgba(255,255,255,0.03); padding: 12px; display: flex; flex-direction: column; gap: 4px; }
-    .mk-sb-item { padding: 8px 10px; border-radius: 6px; font-size: 0.7rem; color: rgba(255,255,255,0.5); display: flex; align-items: center; gap: 8px; cursor: default; }
-    .mk-sb-active { background: rgba(59,130,246,0.1); color: #93c5fd; font-weight: 500; }
-    .mk-sb-item i { font-style: normal; opacity: 0.7; }
-    
-    .mk-content { flex: 1; padding: 1.5rem; display: flex; flex-direction: column; }
+    .mk-sidebar { width: 180px; background: #f8fafc; border-right: 1px solid rgba(0,0,0,0.06); padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+    .mk-sb-item { padding: 8px 10px; border-radius: 6px; font-size: 0.7rem; color: #64748b; display: flex; align-items: center; gap: 8px; cursor: default; }
+    .mk-sb-active { background: rgba(37,99,235,0.08); color: #2563eb; font-weight: 600; }
+    .mk-sb-item i { display: flex; align-items: center; flex-shrink: 0; }
+    .mk-sb-item i svg { width: 13px; height: 13px; }
+
+    .mk-content { flex: 1; padding: 1.5rem; display: flex; flex-direction: column; background: #fff; }
     .mk-rows { display: flex; flex-direction: column; gap: 4px; flex: 1; }
     .mk-row {
         display: grid; grid-template-columns: 2fr 0.5fr 1fr 1fr;
         gap: 8px; align-items: center;
-        font-size: 0.75rem; color: rgba(255,255,255,0.8); font-weight: 500;
+        font-size: 0.75rem; color: #334155; font-weight: 500;
         padding: 8px 12px; border-radius: 8px;
         background: transparent; border: 1px solid transparent;
         transition: background 0.3s, border-color 0.3s;
     }
     .mk-row span:nth-child(n+2) { text-align: right; }
-    .mk-row-head { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: rgba(255,255,255,0.4); padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); border-radius: 0; }
-    .mk-row-edit { background: rgba(16,185,129,0.04); border-color: rgba(16,185,129,0.1); position: relative; }
-    .mk-green { color: #34d399; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end; }
+    .mk-row-head { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #94a3b8; padding-bottom: 8px; border-bottom: 1px solid rgba(0,0,0,0.06); border-radius: 0; }
+    .mk-row-edit { background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.15); position: relative; }
+    .mk-green { color: #059669; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end; }
     .mk-chip {
         font-style: normal; font-size: 0.55rem; font-weight: 800;
-        color: #34d399; background: rgba(16,185,129,0.15); border: 1px solid rgba(52,211,153,0.3);
+        color: #059669; background: rgba(16,185,129,0.10); border: 1px solid rgba(16,185,129,0.2);
         padding: 2px 4px; border-radius: 4px;
         opacity: 0; transform: scale(0.5); /* for GSAP */
     }
     .mk-totals {
         display: flex; justify-content: flex-end; gap: 2rem;
         margin-top: auto; padding-top: 1rem;
-        border-top: 1px solid rgba(255,255,255,0.05);
+        border-top: 1px solid rgba(0,0,0,0.06);
     }
     .mk-tot-col { display: flex; flex-direction: column; gap: 4px; text-align: right; }
-    .mk-tot-col span { font-size: 0.65rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.5px; }
-    .mk-tot-col b { font-size: 0.8rem; color: rgba(255,255,255,0.9); font-weight: 600; }
-    .mk-tot-final b { font-size: 1.1rem; color: #fff; }
+    .mk-tot-col span { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+    .mk-tot-col b { font-size: 0.8rem; color: #334155; font-weight: 600; }
+    .mk-tot-final b { font-size: 1.1rem; color: #0a192f; font-weight: 800; }
 
     .mk-cursor {
-        position: absolute; top: 0; left: 0; width: 20px; height: 20px; color: #fff;
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); z-index: 100;
+        position: absolute; top: 0; left: 0; width: 20px; height: 20px; color: #0a192f;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); z-index: 100;
         pointer-events: none; opacity: 0;
     }
     
     /* ── LINK PÚBLICO SIMULATION ── */
     .mk-public { position: relative; max-width: 440px; margin: 0 auto; perspective: 1000px; }
-    .mk-public-card { 
+    .mk-public-card {
         display: flex; flex-direction: column; gap: 1.25rem; padding: 1.5rem;
-        background: linear-gradient(145deg, rgba(10,25,47,0.85), rgba(10,25,47,0.95));
-        border-radius: 18px; box-shadow: 0 24px 48px -12px rgba(2,6,12,0.8), inset 0 1px 1px rgba(255,255,255,0.1);
-        backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08);
+        background: #ffffff;
+        border-radius: 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.08), 0 40px 80px rgba(0,0,0,0.06);
+        border: 1px solid rgba(0,0,0,0.07);
     }
     .mk-public-head { display: flex; align-items: center; gap: 12px; }
-    .mk-public-head b { display: block; font-size: 0.95rem; font-weight: 600; color: #fff; }
-    .mk-public-head i { display: block; font-style: normal; font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-top: 2px; }
+    .mk-public-head b { display: block; font-size: 0.95rem; font-weight: 600; color: #0f172a; }
+    .mk-public-head i { display: block; font-style: normal; font-size: 0.75rem; color: #64748b; margin-top: 2px; }
     .mk-public-head .mk-badge { margin-left: auto; }
     .mk-public-total {
         text-align: center; padding: 1.75rem 1rem;
-        background: rgba(255,255,255,0.02); border-radius: 14px;
-        border: 1px solid rgba(255,255,255,0.04);
+        background: #f8fafc; border-radius: 14px;
+        border: 1px solid rgba(0,0,0,0.06);
     }
-    .mk-public-total span { display: block; font-size: 0.65rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 8px; }
-    .mk-public-total b { display: block; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px; color: #fff; }
-    .mk-public-total i { display: block; font-style: normal; font-size: 0.7rem; color: rgba(255,255,255,0.4); margin-top: 8px; }
+    .mk-public-total span { display: block; font-size: 0.65rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px; }
+    .mk-public-total b { display: block; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px; color: #0a192f; }
+    .mk-public-total i { display: block; font-style: normal; font-size: 0.7rem; color: #94a3b8; margin-top: 8px; }
     .mk-public-actions { display: flex; gap: 0.85rem; }
-    
+
     .mk-btn-wrap { position: relative; flex: 1; display: flex; cursor: pointer; }
-    .mk-btn-glow { position: absolute; inset: 0; background: #3b82f6; filter: blur(14px); opacity: 0; border-radius: 12px; transition: opacity 0.3s; }
+    .mk-btn-glow { position: absolute; inset: 0; background: #2563eb; filter: blur(14px); opacity: 0; border-radius: 12px; transition: opacity 0.3s; }
     .mk-approve {
         position: relative; flex: 1; text-align: center; display: flex; align-items: center; justify-content: center;
-        background: #fff; color: #0f172a;
+        background: #0a192f; color: #fff;
         font-size: 0.9rem; font-weight: 700;
-        padding: 14px; border-radius: 12px; box-shadow: 0 4px 12px rgba(255,255,255,0.15); z-index: 2;
+        padding: 14px; border-radius: 12px; box-shadow: 0 4px 12px rgba(10,25,47,0.25); z-index: 2;
     }
     .mk-reject {
-        text-align: center; color: rgba(255,255,255,0.6); display: flex; align-items: center; justify-content: center;
+        text-align: center; color: #64748b; display: flex; align-items: center; justify-content: center;
         font-size: 0.9rem; font-weight: 600;
-        padding: 14px 20px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+        padding: 14px 20px; border-radius: 12px; background: #f1f5f9; border: 1px solid rgba(0,0,0,0.08);
     }
-    .mk-via { text-align: center; font-size: 0.7rem; color: rgba(255,255,255,0.4); margin-top: -0.5rem; }
-    .mk-via b { color: rgba(255,255,255,0.7); }
+    .mk-via { text-align: center; font-size: 0.7rem; color: #94a3b8; margin-top: -0.5rem; }
+    .mk-via b { color: #64748b; }
     
     .mk-success-overlay {
         position: absolute; inset: 0; background: rgba(16,185,129,0.9);
@@ -654,7 +818,8 @@ const faqSchema = {
         opacity: 0; pointer-events: none; z-index: 10; gap: 12px;
     }
     .mk-success-ring { position: absolute; width: 80px; height: 80px; border-radius: 50%; border: 2px solid #fff; opacity: 0; }
-    .mk-success-check { font-size: 3rem; font-style: normal; color: #fff; font-weight: 800; }
+    .mk-success-check { width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; font-style: normal; color: #fff; }
+    .mk-success-check svg { width: 52px; height: 52px; }
     .mk-success-overlay b { color: #fff; font-size: 1.2rem; }
 
     /* ── SEGUIMIENTO TIMELINE ── */
@@ -662,10 +827,9 @@ const faqSchema = {
     .mk-track-head { display: flex; justify-content: center; height: 50px; }
     .mk-toast {
         display: flex; align-items: center; gap: 12px;
-        background: rgba(10,25,47,0.85); border-radius: 100px; border: 1px solid rgba(255,255,255,0.1);
-        padding: 8px 16px; font-size: 0.75rem; color: #f8fafc;
-        box-shadow: 0 12px 24px -8px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1);
-        backdrop-filter: blur(16px);
+        background: #ffffff; border-radius: 100px; border: 1px solid rgba(0,0,0,0.08);
+        padding: 8px 16px; font-size: 0.75rem; color: #334155;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.04);
         opacity: 0; transform: translateY(20px); /* GSAP target */
     }
     .mk-toast-dot {
@@ -673,94 +837,108 @@ const faqSchema = {
         box-shadow: 0 0 0 4px rgba(56,189,248,0.2); animation: mk-pulse 2s infinite;
     }
     .mk-toast-content { display: flex; align-items: center; gap: 6px; }
-    .mk-toast-content i { color: rgba(255,255,255,0.4); }
-    
-    .mk-tl { 
+    .mk-toast-content i { color: #94a3b8; }
+
+    /* Seguimiento v2 — una sola card de actividad, pro y limpia */
+    .mk-track2 { max-width: 500px; margin: 0 auto; }
+    .mk-track-topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid rgba(10,25,47,0.06); background: #fcfdfe; }
+    .mk-track-ti b { display: block; font-size: 0.85rem; font-weight: 600; color: #0f172a; letter-spacing: -0.01em; }
+    .mk-track-ti span { display: block; font-size: 0.68rem; color: #94a3b8; margin-top: 2px; }
+    .mk-live-pill { display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; font-size: 0.66rem; font-weight: 700; color: #059669; background: rgba(16,185,129,0.09); border: 1px solid rgba(16,185,129,0.22); padding: 5px 11px; border-radius: 100px; }
+    .mk-live-pill i { width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,0.5); }
+    .mk-track2 .mk-tl { background: transparent; border: none; border-radius: 0; box-shadow: none; padding: 0.5rem 0.7rem; }
+
+    .mk-tl {
         display: flex; flex-direction: column; gap: 4px;
-        background: rgba(10,25,47,0.8);
-        border-radius: 18px; padding: 1.25rem; border: 1px solid rgba(255,255,255,0.08);
-        box-shadow: 0 24px 48px -12px rgba(2,6,12,0.8);
+        background: #ffffff;
+        border-radius: 18px; padding: 1.25rem; border: 1px solid rgba(0,0,0,0.07);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.07);
     }
     .mk-tl-row {
         display: flex; align-items: center; gap: 14px;
         padding: 12px 14px; border-radius: 12px;
         opacity: 0; transform: translateX(-20px); /* GSAP staggered */
     }
-    .mk-tl-row.mk-on { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.04); }
+    .mk-tl-row.mk-on { background: #f8fafc; border: 1px solid rgba(0,0,0,0.05); }
     .mk-tl-row i {
         width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-        background: rgba(255,255,255,0.1); flex-shrink: 0; font-style: normal; font-size: 0.7rem; color: #fff;
-        box-shadow: inset 0 1px 1px rgba(255,255,255,0.2);
+        background: #e2e8f0; flex-shrink: 0; font-style: normal; color: #64748b;
     }
-    .mk-tl-row i.ok { background: #10b981; box-shadow: 0 0 12px rgba(16,185,129,0.4); }
-    .mk-tl-row i.warn { background: #f59e0b; box-shadow: 0 0 12px rgba(245,158,11,0.4); }
+    .mk-tl-row i svg { width: 11px; height: 11px; }
+    .mk-tl-row i.ok { background: #10b981; color: #fff; box-shadow: 0 0 10px rgba(16,185,129,0.3); }
+    .mk-tl-row i.warn { background: #f59e0b; color: #fff; box-shadow: 0 0 10px rgba(245,158,11,0.3); }
     .mk-tl-info { flex: 1; }
-    .mk-tl-info b { display: block; font-size: 0.85rem; color: #fff; margin-bottom: 2px; }
-    .mk-tl-info span { display: block; font-size: 0.7rem; color: rgba(255,255,255,0.5); }
+    .mk-tl-info b { display: block; font-size: 0.85rem; color: #0f172a; margin-bottom: 2px; }
+    .mk-tl-info span { display: block; font-size: 0.7rem; color: #94a3b8; }
     
-    /* ── CFDI ── */
-    .mk-cfdi { 
-        position: relative; display: flex; flex-direction: column; max-width: 520px; margin: 0 auto; 
-        background: rgba(10,25,47,0.85);
-        border-radius: 18px; box-shadow: 0 24px 48px -12px rgba(2,6,12,0.8), inset 0 1px 1px rgba(255,255,255,0.1);
-        backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08);
+    /* ── CFDI — LIGHT ── */
+    .mk-cfdi {
+        position: relative; display: flex; flex-direction: column; max-width: 520px; margin: 0 auto;
+        background: #ffffff;
+        border-radius: 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.08), 0 40px 80px rgba(0,0,0,0.06);
+        border: 1px solid rgba(0,0,0,0.07);
         overflow: hidden;
     }
     .mk-cfdi-bg-code {
         position: absolute; inset: 0; padding: 1.5rem;
-        font-family: var(--font-mono, monospace); font-size: 0.6rem; color: rgba(255,255,255,0.04);
+        font-family: var(--font-mono, monospace); font-size: 0.6rem; color: rgba(0,0,0,0.04);
         line-height: 1.6; user-select: none; z-index: 0;
     }
     .mk-cfdi-front { position: relative; z-index: 1; padding: 1.5rem; }
     .mk-cfdi-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-    .mk-cfdi-head b { font-size: 0.95rem; color: #fff; font-weight: 600; }
+    .mk-cfdi-head b { font-size: 0.95rem; color: #0f172a; font-weight: 600; }
     .mk-cfdi-rows { display: flex; flex-direction: column; gap: 6px; }
     .mk-cfdi-rows > div {
         display: flex; justify-content: space-between; gap: 1rem; align-items: center;
         padding: 10px 14px; border-radius: 10px;
-        background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03);
+        background: #f8fafc; border: 1px solid rgba(0,0,0,0.05);
         font-size: 0.8rem;
     }
-    .mk-cfdi-rows span { color: rgba(255,255,255,0.4); font-weight: 700; font-size: 0.65rem; letter-spacing: 0.8px; text-transform: uppercase; }
-    .mk-cfdi-rows b { font-weight: 500; color: #f8fafc; text-align: right; }
+    .mk-cfdi-rows span { color: #94a3b8; font-weight: 700; font-size: 0.65rem; letter-spacing: 0.8px; text-transform: uppercase; }
+    .mk-cfdi-rows b { font-weight: 500; color: #0f172a; text-align: right; }
     .mk-cfdi-stamp {
         position: relative; display: flex; align-items: center; gap: 12px;
-        font-size: 0.75rem; color: rgba(255,255,255,0.6);
-        padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 1rem;
+        font-size: 0.75rem; color: #64748b;
+        padding-top: 1rem; border-top: 1px solid rgba(0,0,0,0.06); margin-top: 1rem;
     }
     .mk-stamp-ring { position: absolute; left: 0; width: 28px; height: 28px; border-radius: 50%; border: 1px solid #34d399; opacity: 0; }
     .mk-check {
         width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; position: relative; z-index: 2;
         background: #10b981; color: #fff; box-shadow: 0 4px 12px rgba(16,185,129,0.4);
         display: inline-flex; align-items: center; justify-content: center;
-        font-size: 0.9rem; font-weight: 800; transform: scale(0); /* GSAP */
+        transform: scale(0); /* GSAP */
     }
+    .mk-check svg { width: 14px; height: 14px; }
 
-    /* ── CLIENTES Y CRÉDITO ── */
-    .mk-cli { 
-        display: flex; flex-direction: column; gap: 8px; 
-        background: rgba(15,23,42,0.6);
-        border-radius: 18px; padding: 1.25rem; border: 1px solid rgba(255,255,255,0.06);
+    /* ── CLIENTES Y CRÉDITO — LIGHT ── */
+    .mk-cli {
+        display: flex; flex-direction: column; gap: 8px;
+        background: #ffffff;
+        border-radius: 18px; padding: 1.25rem; border: 1px solid rgba(0,0,0,0.07);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.07);
     }
+    /* dentro de la ventana: sin card-en-card */
+    .mk-cliwin { max-width: 540px; margin: 0 auto; }
+    .mk-cliwin .mk-cli { background: transparent; border: none; border-radius: 0; box-shadow: none; padding: 0.9rem; }
     .mk-cli-row {
         display: grid; grid-template-columns: auto 1.5fr auto 1fr;
         gap: 16px; align-items: center;
         padding: 12px 14px; border-radius: 12px;
-        background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03);
+        background: #f8fafc; border: 1px solid rgba(0,0,0,0.05);
         opacity: 0; transform: translateY(15px); /* GSAP */
     }
-    .mk-cli-info b { display: block; font-size: 0.85rem; color: #fff; font-weight: 600; margin-bottom: 2px; }
-    .mk-cli-info i { display: block; font-style: normal; font-size: 0.7rem; color: rgba(255,255,255,0.4); }
+    .mk-cli-info b { display: block; font-size: 0.85rem; color: #0f172a; font-weight: 600; margin-bottom: 2px; }
+    .mk-cli-info i { display: block; font-style: normal; font-size: 0.7rem; color: #94a3b8; }
     .mk-term-wrap { display: flex; justify-content: flex-end; }
     .mk-term {
         font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px;
-        color: #93c5fd; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2);
+        color: #2563eb; background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.2);
         padding: 4px 10px; border-radius: 100px; text-transform: uppercase;
     }
-    .mk-term-cash { color: #cbd5e1; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+    .mk-term-cash { color: #64748b; background: #f1f5f9; border-color: rgba(0,0,0,0.08); }
     .mk-credit { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
     .mk-credit-bar {
-        width: 100%; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.05);
+        width: 100%; height: 4px; border-radius: 2px; background: #e2e8f0;
         overflow: hidden; display: flex;
     }
     .mk-credit-bar i {
@@ -768,67 +946,166 @@ const faqSchema = {
         transform-origin: left; transform: scaleX(0); /* GSAP */
     }
     .mk-credit-bar i.warn-bar { background: linear-gradient(90deg, #3b82f6, #f59e0b); }
-    .mk-credit span { font-size: 0.7rem; color: rgba(255,255,255,0.5); font-weight: 500; font-family: var(--font-mono, monospace); }
+    .mk-credit span { font-size: 0.7rem; color: #64748b; font-weight: 500; font-family: var(--font-mono, monospace); }
 
-    /* ── COBRANZA IA (agente AR que negocia un plan de pagos) ── */
+    /* ── COBRANZA IA — LIGHT ── */
     .mk-ar {
         max-width: 470px; margin: 0 auto;
         display: flex; flex-direction: column; gap: 1rem; padding: 1.4rem;
-        background: linear-gradient(160deg, rgba(14,34,64,0.92), rgba(8,20,36,0.96));
-        border-radius: 18px; border: 1px solid rgba(255,255,255,0.08);
-        box-shadow: 0 24px 48px -12px rgba(2,6,12,0.8), inset 0 1px 1px rgba(255,255,255,0.08);
+        background: #ffffff;
+        border-radius: 18px; border: 1px solid rgba(0,0,0,0.07);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.08), 0 40px 80px rgba(0,0,0,0.06);
     }
     .mk-ar-head { display: flex; align-items: center; gap: 12px; }
-    .mk-ar-head b { display: block; font-size: 0.92rem; color: #fff; font-weight: 600; }
-    .mk-ar-head i { display: block; font-style: normal; font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-top: 2px; }
-    .mk-ar-overdue { margin-left: auto; color: #fca5a5; background: rgba(239,68,68,0.14); border: 1px solid rgba(239,68,68,0.28); }
+    .mk-ar-head b { display: block; font-size: 0.92rem; color: #0f172a; font-weight: 600; }
+    .mk-ar-head i { display: block; font-style: normal; font-size: 0.72rem; color: #64748b; margin-top: 2px; }
+    .mk-ar-overdue { margin-left: auto; color: #dc2626; background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.2); }
     .mk-ar-thread { display: flex; flex-direction: column; gap: 8px; }
-    .mk-ar-bubble { font-size: 0.8rem; line-height: 1.5; padding: 10px 13px; border-radius: 13px; max-width: 90%; color: #f1f5f9; }
-    .mk-ar-ai { align-self: flex-start; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.2); border-bottom-left-radius: 4px; }
-    .mk-ar-client { align-self: flex-end; background: #fff; color: #0f172a; font-weight: 500; border-bottom-right-radius: 4px; }
-    .mk-ar-tag { display: block; font-size: 0.55rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #93c5fd; margin-bottom: 4px; }
+    .mk-ar-bubble { font-size: 0.8rem; line-height: 1.5; padding: 10px 13px; border-radius: 13px; max-width: 90%; color: #334155; }
+    .mk-ar-ai { align-self: flex-start; background: rgba(37,99,235,0.07); border: 1px solid rgba(37,99,235,0.14); border-bottom-left-radius: 4px; color: #1e40af; }
+    .mk-ar-client { align-self: flex-end; background: #0a192f; color: #fff; font-weight: 500; border-bottom-right-radius: 4px; }
+    .mk-ar-tag { display: block; font-size: 0.55rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #2563eb; margin-bottom: 4px; }
     .mk-ar-plan {
         display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 13px;
-        background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+        background: #f8fafc; border: 1px solid rgba(0,0,0,0.06);
     }
-    .mk-ar-cuota { display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; color: rgba(255,255,255,0.7); }
-    .mk-ar-cuota b { color: #fff; font-weight: 600; }
+    .mk-ar-cuota { display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; color: #64748b; }
+    .mk-ar-cuota b { color: #0f172a; font-weight: 600; }
     .mk-ar-approve {
         margin-top: 4px; text-align: center; font-size: 0.82rem; font-weight: 700;
-        padding: 11px; border-radius: 11px; background: #34d399; color: #052e1f;
+        padding: 11px; border-radius: 11px; background: #059669; color: #fff;
     }
 
-    /* ── MULTI-DIVISA / FX (panel del editor) ── */
+    /* ── COBRANZA IA — chat LIBRE sobre el hero (sin card contenedora, estilo Stripe) ── */
+    .mk-chatfree {
+        position: relative; width: 100%; max-width: 460px;
+        margin: 0 auto 0 22%;
+        display: flex; flex-direction: column; gap: 16px;
+        padding: 8px 0;
+    }
+    /* indicador "escribiendo…" (chat en vivo real) */
+    .cf-typing-msg { align-self: flex-start; }
+    .cf-typing-msg.cf-out { align-self: flex-end; }
+    .cf-dots { display: inline-flex; gap: 5px; padding: 14px 16px; background: #ffffff; border: 1px solid rgba(10,25,47,0.06); border-radius: 18px 18px 18px 5px; box-shadow: 0 8px 24px -8px rgba(10,25,47,0.18); }
+    .cf-typing-msg.cf-out .cf-dots { background: #0a192f; border-color: transparent; border-radius: 18px 18px 5px 18px; }
+    .cf-dots span { width: 7px; height: 7px; border-radius: 50%; background: #cbd5e1; animation: cf-blink 1.25s infinite ease-in-out; }
+    .cf-typing-msg.cf-out .cf-dots span { background: rgba(255,255,255,0.6); }
+    .cf-dots span:nth-child(2) { animation-delay: 0.18s; }
+    .cf-dots span:nth-child(3) { animation-delay: 0.36s; }
+    @keyframes cf-blink { 0%, 65%, 100% { opacity: 0.35; transform: translateY(0); } 32% { opacity: 1; transform: translateY(-3px); } }
+    .cf-msg { display: flex; flex-direction: column; gap: 5px; max-width: 82%; }
+    .cf-in { align-self: flex-start; align-items: flex-start; }
+    .cf-out { align-self: flex-end; align-items: flex-end; }
+    .cf-name { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.3px; color: #94a3b8; padding: 0 4px; display: inline-flex; align-items: center; gap: 6px; }
+    .cf-badge { font-style: normal; font-size: 0.5rem; font-weight: 800; letter-spacing: 0.5px; color: #2563eb; background: rgba(37,99,235,0.1); padding: 1px 5px; border-radius: 5px; }
+    .cf-bub { font-size: 0.86rem; line-height: 1.45; font-weight: 500; padding: 12px 16px;
+        box-shadow: 0 8px 24px -8px rgba(10,25,47,0.18); }
+    .cf-bub-in { background: #ffffff; color: #334155; border: 1px solid rgba(10,25,47,0.06); border-radius: 18px 18px 18px 5px; }
+    .cf-bub-out { background: #0a192f; color: #fff; border-radius: 18px 18px 5px 18px; }
+    .cf-bub-ok { display: inline-flex; align-items: center; gap: 7px; background: #059669; font-weight: 700; }
+    .cf-bub-ok svg { width: 15px; height: 15px; }
+    /* la "product card" del plan flota libre también */
+    .cf-plan { align-self: flex-start; width: 300px; background: #ffffff; border: 1px solid rgba(10,25,47,0.06); border-radius: 18px;
+        box-shadow: 0 2px 6px rgba(10,25,47,0.04), 0 20px 48px -14px rgba(10,25,47,0.20); overflow: hidden; }
+    .cf-plan-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; border-bottom: 1px solid rgba(10,25,47,0.05); background: #fcfdfe; }
+    .cf-plan-head span { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #94a3b8; }
+    .cf-plan-head b { font-size: 0.98rem; color: #0f172a; }
+    .cf-plan-rows { display: flex; flex-direction: column; padding: 6px 8px; }
+    .cf-cuota { display: flex; align-items: center; justify-content: space-between; padding: 9px 8px; font-size: 0.8rem; color: #64748b; border-bottom: 1px solid rgba(10,25,47,0.04); }
+    .cf-cuota:last-child { border-bottom: none; }
+    .cf-cuota b { color: #0f172a; font-weight: 600; }
+    .cf-approve { margin: 6px 12px 12px; text-align: center; font-size: 0.82rem; font-weight: 700; padding: 11px; border-radius: 11px; background: #0a192f; color: #fff; box-shadow: 0 6px 16px -4px rgba(10,25,47,0.4); }
+
+    /* ── MULTI-DIVISA / FX — LIGHT ── */
     .mk-fx-body { padding: 1.2rem 1.3rem 1.4rem; }
     .mk-fx-controls { display: flex; gap: 1rem; margin-bottom: 1rem; }
     .mk-fx-field { flex: 1; display: flex; flex-direction: column; gap: 6px; }
-    .mk-fx-field label { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: rgba(255,255,255,0.4); }
-    .mk-fx-seg { display: inline-flex; background: rgba(255,255,255,0.04); border-radius: 9px; padding: 3px; gap: 2px; align-self: flex-start; }
-    .mk-fx-seg span { font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.5); padding: 5px 11px; border-radius: 7px; }
-    .mk-fx-seg span.on { background: rgba(59,130,246,0.2); color: #93c5fd; box-shadow: inset 0 0 0 1px rgba(59,130,246,0.3); }
-    .mk-fx-buffer { font-size: 0.85rem; font-weight: 600; color: #fff; background: rgba(255,255,255,0.04); border-radius: 9px; padding: 8px 12px; align-self: flex-start; }
-    .mk-fx-rate { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; border-radius: 11px; background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.14); margin-bottom: 1rem; }
-    .mk-fx-rate-line { font-size: 0.82rem; color: rgba(255,255,255,0.7); }
-    .mk-fx-rate-line b { color: #fff; margin-left: 4px; }
-    .mk-fx-lock { font-size: 0.66rem; font-weight: 700; color: #93c5fd; background: rgba(59,130,246,0.14); border: 1px solid rgba(59,130,246,0.25); padding: 4px 9px; border-radius: 100px; white-space: nowrap; }
+    .mk-fx-field label { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: #94a3b8; }
+    .mk-fx-seg { display: inline-flex; background: #f1f5f9; border-radius: 9px; padding: 3px; gap: 2px; align-self: flex-start; border: 1px solid rgba(0,0,0,0.06); }
+    .mk-fx-seg span { font-size: 0.72rem; font-weight: 600; color: #64748b; padding: 5px 11px; border-radius: 7px; }
+    .mk-fx-seg span.on { background: #fff; color: #1e40af; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+    .mk-fx-buffer { font-size: 0.85rem; font-weight: 600; color: #0f172a; background: #f1f5f9; border-radius: 9px; padding: 8px 12px; align-self: flex-start; border: 1px solid rgba(0,0,0,0.07); }
+    .mk-fx-rate { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; border-radius: 11px; background: rgba(37,99,235,0.05); border: 1px solid rgba(37,99,235,0.14); margin-bottom: 1rem; }
+    .mk-fx-rate-line { font-size: 0.82rem; color: #475569; }
+    .mk-fx-rate-line b { color: #0f172a; margin-left: 4px; }
+    .mk-fx-lock { display: inline-flex; align-items: center; gap: 5px; font-size: 0.66rem; font-weight: 700; color: #2563eb; background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.2); padding: 4px 9px; border-radius: 100px; white-space: nowrap; }
+    .mk-fx-lock svg { width: 12px; height: 12px; flex-shrink: 0; }
     .mk-fx-totals { display: flex; flex-direction: column; gap: 6px; }
-    .mk-fx-total { display: flex; align-items: center; justify-content: space-between; padding: 11px 13px; border-radius: 11px; background: rgba(255,255,255,0.03); }
-    .mk-fx-total span { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: rgba(255,255,255,0.4); }
-    .mk-fx-total b { font-size: 1.05rem; color: #fff; }
-    .mk-fx-total-mxn b { color: #34d399; }
+    .mk-fx-total { display: flex; align-items: center; justify-content: space-between; padding: 11px 13px; border-radius: 11px; background: #f8fafc; border: 1px solid rgba(0,0,0,0.05); }
+    .mk-fx-total span { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #94a3b8; }
+    .mk-fx-total b { font-size: 1.05rem; color: #0f172a; }
+    .mk-fx-total-mxn b { color: #059669; }
 
     /* ── FACTURACIÓN INTERNACIONAL (US/MX) ── */
     .mk-intl { position: relative; }
     .mk-intl-body { padding: 1.1rem 1.2rem 1.3rem; }
     .mk-rows-intl { display: flex; flex-direction: column; gap: 4px; }
     .mk-rows-intl .mk-row { grid-template-columns: 1.7fr 0.6fr 1fr 1fr; }
-    .mk-intl-totals { display: flex; flex-direction: column; gap: 6px; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.06); }
-    .mk-intl-tot { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; border-radius: 10px; background: rgba(255,255,255,0.03); }
-    .mk-intl-tot span { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: rgba(255,255,255,0.4); }
-    .mk-intl-tot b { font-size: 0.95rem; color: #fff; }
-    .mk-intl-tot-fiscal b { color: #34d399; }
-    .mk-intl-rate { font-size: 0.66rem; color: rgba(255,255,255,0.4); text-align: right; padding-right: 4px; }
-    .mk-intl-pill { position: absolute; top: 46px; right: 14px; z-index: 3; font-size: 0.64rem; font-weight: 700; color: #93c5fd; background: rgba(10,25,47,0.82); border: 1px solid rgba(59,130,246,0.3); padding: 5px 11px; border-radius: 100px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+    .mk-intl-totals { display: flex; flex-direction: column; gap: 6px; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(0,0,0,0.06); }
+    .mk-intl-tot { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; border-radius: 10px; background: #f8fafc; border: 1px solid rgba(0,0,0,0.05); }
+    .mk-intl-tot span { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #94a3b8; }
+    .mk-intl-tot b { font-size: 0.95rem; color: #0f172a; }
+    .mk-intl-tot-fiscal b { color: #059669; }
+    .mk-intl-rate { font-size: 0.66rem; color: #94a3b8; text-align: right; padding-right: 4px; }
+    .mk-intl-pill { display: inline-flex; align-items: center; gap: 5px; position: absolute; top: 46px; right: 14px; z-index: 3; font-size: 0.64rem; font-weight: 700; color: #2563eb; background: rgba(255,255,255,0.95); border: 1px solid rgba(37,99,235,0.25); padding: 5px 11px; border-radius: 100px; box-shadow: 0 2px 8px rgba(0,0,0,0.10); }
+    .mk-intl-pill svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+    /* ── FINANZAS / CFO — dashboard con barras ── */
+    .mk-fin-body { padding: 1.2rem 1.3rem 1.4rem; display: flex; flex-direction: column; gap: 1.05rem; }
+    .mk-fin-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .mk-fin-kpi { background: #f8fafc; border: 1px solid rgba(10,25,47,0.05); border-radius: 12px; padding: 11px 13px; display: flex; flex-direction: column; gap: 4px; }
+    .mk-fin-kpi span { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #94a3b8; }
+    .mk-fin-kpi b { font-size: 1.05rem; color: #0f172a; }
+    .mk-fin-kpi b i { font-size: 0.6rem; font-weight: 600; color: #94a3b8; font-style: normal; }
+    .mk-fin-chart-head { display: flex; align-items: center; justify-content: space-between; }
+    .mk-fin-chart-head span { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; color: #64748b; }
+    .mk-fin-chart-legend { color: #cbd5e1 !important; }
+    .mk-fin-chart { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; align-items: end; height: 118px; padding: 0 4px; }
+    .mk-fin-bar { display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end; }
+    .mk-fin-bar i { display: block; width: 100%; max-width: 38px; height: var(--h); border-radius: 5px 5px 2px 2px; background: #e2e8f0; transform-origin: bottom; transform: scaleY(0); }
+    .mk-fin-bar em { font-size: 0.6rem; font-weight: 600; color: #94a3b8; font-style: normal; }
+    .mk-fin-bar-hot i { background: linear-gradient(180deg, #1e3a5f, #0a192f); }
+    .mk-fin-insight { display: flex; align-items: flex-start; gap: 10px; padding: 11px 13px; border-radius: 12px; background: #f8fafc; border: 1px solid rgba(10,25,47,0.06); }
+    .mk-fin-insight i { flex-shrink: 0; color: #64748b; display: flex; margin-top: 1px; }
+    .mk-fin-insight i svg { width: 16px; height: 16px; }
+    .mk-fin-insight span { font-size: 0.74rem; line-height: 1.5; color: #475569; }
+    .mk-fin-insight b { color: #0f172a; font-weight: 700; }
+
+    /* ── APROBACIONES / control de márgenes ── */
+    .mk-apr-body { padding: 1.3rem 1.3rem 1.4rem; display: flex; flex-direction: column; gap: 1.05rem; }
+    .mk-apr-pending { color: #d97706; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.28); }
+    .mk-apr-line { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 15px; border-radius: 12px; background: #f8fafc; border: 1px solid rgba(10,25,47,0.05); }
+    .mk-apr-line-info b { display: block; font-size: 0.9rem; color: #0f172a; font-weight: 600; margin-bottom: 3px; }
+    .mk-apr-line-info i { font-style: normal; font-size: 0.72rem; color: #94a3b8; }
+    .mk-apr-margin { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.3px; color: #dc2626; background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.2); padding: 5px 11px; border-radius: 100px; }
+    .mk-apr-gauge { padding: 2px 2px 0; }
+    .mk-apr-gauge-track { position: relative; height: 10px; border-radius: 100px; background: #eef2f7; overflow: visible; }
+    .mk-apr-gauge-fill { height: 100%; width: 0%; border-radius: 100px; background: linear-gradient(90deg, #f87171, #dc2626); box-shadow: 0 2px 8px -1px rgba(220,38,38,0.4); }
+    .mk-apr-gauge-min { position: absolute; top: -5px; bottom: -5px; left: 50%; width: 2px; border-radius: 2px; background: #0f172a; }
+    .mk-apr-gauge-min span { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; color: #0f172a; }
+    .mk-apr-alert { display: flex; align-items: center; gap: 10px; padding: 11px 13px; border-radius: 12px; background: rgba(220,38,38,0.05); border: 1px solid rgba(220,38,38,0.16); }
+    .mk-apr-alert i { flex-shrink: 0; color: #dc2626; display: flex; }
+    .mk-apr-alert i svg { width: 17px; height: 17px; }
+    .mk-apr-alert span { font-size: 0.76rem; font-weight: 500; line-height: 1.45; color: #b91c1c; }
+    .mk-apr-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .mk-apr-reject { padding: 9px 18px; border-radius: 8px; border: 1px solid rgba(10,25,47,0.12); color: #475569; font-size: 0.8rem; font-weight: 600; }
+    .mk-apr-approve { padding: 9px 18px; border-radius: 8px; background: #0f172a; color: #fff; font-size: 0.8rem; font-weight: 600; box-shadow: 0 4px 12px -3px rgba(15,23,42,0.4); }
+
+    /* ── EQUIPO / roles ── */
+    .mk-team-body { padding: 1rem 1.1rem 1.15rem; display: flex; flex-direction: column; gap: 8px; }
+    .mk-team-row { display: flex; align-items: center; gap: 12px; padding: 11px 13px; border-radius: 12px; background: #f8fafc; border: 1px solid rgba(10,25,47,0.05); }
+    .mk-team-row-ghost { opacity: 0.72; border-style: dashed; }
+    .mk-team-info { flex: 1; min-width: 0; }
+    .mk-team-info b { display: block; font-size: 0.85rem; color: #0f172a; font-weight: 600; margin-bottom: 2px; }
+    .mk-team-info i { display: block; font-style: normal; font-size: 0.7rem; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mk-role { flex-shrink: 0; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; padding: 5px 11px; border-radius: 100px; }
+    .mk-role-owner { color: #0f172a; background: rgba(10,25,47,0.07); border: 1px solid rgba(10,25,47,0.14); }
+    .mk-role-admin { color: #7c3aed; background: rgba(124,58,237,0.09); border: 1px solid rgba(124,58,237,0.2); }
+    .mk-role-sales { color: #2563eb; background: rgba(37,99,235,0.09); border: 1px solid rgba(37,99,235,0.2); }
+    .mk-role-view  { color: #64748b; background: rgba(100,116,139,0.09); border: 1px solid rgba(100,116,139,0.2); }
+    .mk-avatar-pending { background: linear-gradient(135deg, #cbd5e1, #94a3b8) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,0.3) !important; }
+    .mk-team-invite { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px; padding: 11px; border-radius: 12px; border: 1px dashed rgba(37,99,235,0.35); color: #2563eb; font-size: 0.8rem; font-weight: 600; background: rgba(37,99,235,0.03); }
+    .mk-team-invite svg { width: 15px; height: 15px; }
 
     /* ════════ STATS ════════ */
     .pp-stats {
@@ -854,134 +1131,202 @@ const faqSchema = {
         font-size: 1.4rem; color: var(--color-text); font-weight: 600; letter-spacing: -0.02em;
     }
 
-    /* ════════ BLOQUES ════════ */
-    .pp-blocks {
-        max-width: 1080px; margin: 0 auto;
-        padding: 8rem 5% 6rem;
-        display: flex; flex-direction: column; gap: 14rem;
+    /* ════════ BENTO GRID — ElevenLabs / Stripe style ════════ */
+    .pp-bento {
+        max-width: 1360px;
+        margin: 0 auto;
+        padding: 6rem 5% 5rem;
+        display: grid;
+        grid-template-columns: 5fr 7fr;
+        gap: 1.5rem;
     }
-    .pp-block {
-        display: grid; grid-template-columns: 1.1fr 0.9fr;
-        gap: 4.5rem; align-items: center;
-    }
-    .pp-block-text, .pp-block-visual { min-width: 0; }
-    .pp-block-flip .pp-block-text { order: 2; }
-    .pp-block-flip .pp-block-visual { order: 1; }
 
-    .pp-h2 {
-        font-size: clamp(1.7rem, 3vw, 2.4rem);
-        font-weight: 800; line-height: 1.12; letter-spacing: -0.03em;
-        color: var(--color-text); margin: 0 0 1.1rem;
+    /* Cards 0 and 1 sit side-by-side; card 2+ span full width */
+    .pp-bcard-2,
+    .pp-bcard-3 {
+        grid-column: 1 / -1;
     }
-    .pp-copy { font-size: 1.02rem; line-height: 1.7; color: var(--color-text-muted); margin: 0 0 1.6rem; }
-    .pp-bullets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.8rem; }
-    .pp-bullets li { display: flex; align-items: flex-start; gap: 11px; font-size: 0.95rem; color: var(--color-text); font-weight: 500; }
-    .pp-bullets svg { width: 16px; height: 16px; color: var(--color-ok); flex-shrink: 0; margin-top: 3px; }
 
-    .pp-block-visual {
+    .pp-bcard {
+        background: #f5f5f7;
+        border-radius: 24px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-height: 540px;
+        border: 1px solid rgba(0,0,0,0.06);
+        box-shadow:
+            0 1px 3px rgba(0,0,0,0.04),
+            0 24px 48px -14px rgba(0,0,0,0.08);
+    }
+
+    /* Full-width cards: text left, visual right */
+    .pp-bcard-2,
+    .pp-bcard-3 {
+        flex-direction: row;
+        min-height: 480px;
+    }
+
+    /* Text sits in the upper-left — same apple-gray surface */
+    .pp-bcard-text {
+        padding: 3rem 2.8rem 2rem;
+        flex-shrink: 0;
         position: relative;
-        min-height: 260px;
-        display: flex; align-items: center; justify-content: center;
-        /* No background, no border, no overflow clip -> transparent stage */
+        z-index: 2;
     }
-    .pp-card-num {
-        font-size: 5rem; line-height: 0.9;
-        color: rgba(10,25,47,0.08);
-        font-weight: 600;
+
+    /* In full-width (row) cards, text takes ~40% */
+    .pp-bcard-2 .pp-bcard-text,
+    .pp-bcard-3 .pp-bcard-text {
+        flex: 0 0 40%;
+        padding: 3.8rem 2.6rem 3.8rem 4rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    /* Visual area: same surface as the card — single uniform color */
+    .pp-bcard-visual {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        min-height: 340px;
+        background: #f5f5f7;
+    }
+
+    .pp-bcard-eyebrow {
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 2.8px;
+        text-transform: uppercase;
+        color: #b0b0b8;
+        margin: 0 0 0.9rem;
+    }
+
+    .pp-bcard-h2 {
+        font-size: clamp(1.35rem, 2.1vw, 1.85rem);
+        font-weight: 800;
+        line-height: 1.12;
+        letter-spacing: -0.035em;
+        color: #050505;
+        margin: 0 0 0.9rem;
+    }
+
+    .pp-bcard-copy {
+        font-size: 0.875rem;
+        line-height: 1.68;
+        color: var(--color-text-muted);
+        margin: 0 0 1.4rem;
+    }
+
+    .pp-bcard-bullets {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+    }
+
+    .pp-bcard-bullets li {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 0.83rem;
+        color: var(--color-text);
+        font-weight: 500;
+        line-height: 1.45;
+    }
+
+    .pp-bcard-bullets svg {
+        width: 15px;
+        height: 15px;
+        color: var(--color-ok);
+        flex-shrink: 0;
+        margin-top: 1px;
     }
 
     /* ════════ CROSS-LINKS ════════ */
+
+    /* ── Responsive bento ── */
+    @media (max-width: 960px) {
+        .pp-bento {
+            grid-template-columns: 1fr;
+            gap: 1.25rem;
+            padding: 4rem 5% 3rem;
+        }
+        .pp-bcard-2,
+        .pp-bcard-3 {
+            flex-direction: column;
+            min-height: 500px;
+        }
+        .pp-bcard-2 .pp-bcard-text,
+        .pp-bcard-3 .pp-bcard-text {
+            flex: none;
+            padding: 2.8rem 2.4rem 1.6rem;
+        }
+        .pp-bcard-2 .pp-bcard-visual,
+        .pp-bcard-3 .pp-bcard-visual {
+            border-left: none;
+            border-top: 1px solid rgba(0,0,0,0.055);
+        }
+        .pp-bcard { min-height: 460px; }
+    }
+
     .pp-more {
         max-width: 1080px; margin: 0 auto;
         padding: 6rem 5% 8rem;
     }
     .pp-more-head { text-align: center; margin-bottom: 3.2rem; }
-    .pp-more-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.1rem; }
-    .pp-more-card {
-        position: relative;
-        display: flex; flex-direction: column; gap: 0.5rem;
-        background: var(--color-bg-soft);
-        border: 1px solid var(--color-border);
-        border-radius: 20px;
-        padding: 1.7rem 1.8rem;
+    .pp-more-list { display: flex; flex-direction: column; }
+    .pp-more-row {
+        display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
+        padding: 1.6rem 0.4rem; border-bottom: 1px solid var(--color-border);
         text-decoration: none;
-        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring), border-color 0.4s;
+        transition: padding-left 0.4s var(--ease-spring), background 0.3s;
     }
-    .pp-more-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 30px 70px -30px rgba(10,25,47,0.18);
-        border-color: rgba(10,25,47,0.12);
-    }
-    .pp-more-card b { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.3px; color: var(--color-text); }
-    .pp-more-card span { font-size: 0.88rem; line-height: 1.55; color: var(--color-text-muted); padding-right: 2.4rem; }
+    .pp-more-row:first-child { border-top: 1px solid var(--color-border); }
+    .pp-more-row:hover { padding-left: 1.2rem; }
+    .pp-more-info { display: flex; flex-direction: column; gap: 0.3rem; }
+    .pp-more-info b { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.3px; color: var(--color-text); }
+    .pp-more-info span { font-size: 0.88rem; line-height: 1.5; color: var(--color-text-muted); }
     .pp-more-arrow {
-        position: absolute; right: 1.5rem; top: 1.6rem;
-        width: 30px; height: 30px; border-radius: 50%;
+        flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%;
         background: rgba(10,25,47,0.05); color: var(--color-blue-deep);
         display: flex; align-items: center; justify-content: center;
         transition: background 0.35s, color 0.35s, transform 0.5s var(--ease-spring);
     }
-    .pp-more-arrow svg { width: 13px; height: 13px; }
-    .pp-more-card:hover .pp-more-arrow { background: var(--color-blue-deep); color: #fff; transform: translateX(3px); }
+    .pp-more-arrow svg { width: 14px; height: 14px; }
+    .pp-more-row:hover .pp-more-arrow { background: var(--color-blue-deep); color: #fff; transform: translateX(3px); }
 
-    /* ════════ FAQ ════════ */
-    .pp-faq {
-        max-width: 760px; margin: 0 auto;
-        padding: 5rem 5% 2rem;
-    }
-    .pp-faq-head { text-align: center; margin-bottom: 2.6rem; }
-    .pp-faq-head .pp-h2 { margin: 0; }
-    .pp-faq-list { display: flex; flex-direction: column; }
-    .pp-faq-item { border-bottom: 1px solid var(--color-border); }
-    .pp-faq-q {
-        display: flex; justify-content: space-between; align-items: center; gap: 1.5rem;
-        width: 100%; padding: 1.5rem 0.2rem;
-        cursor: pointer; background: none; border: none; text-align: left;
-        font-family: var(--font-sans); font-size: 1.08rem; font-weight: 600;
-        color: var(--color-text); transition: color 0.3s var(--ease-ios);
-    }
-    .pp-faq-q:hover, .pp-faq-item.open .pp-faq-q { color: var(--color-blue-deep); }
-    .pp-faq-icon { position: relative; width: 16px; height: 16px; flex-shrink: 0; transition: transform 0.5s var(--ease-spring); }
-    .pp-faq-icon::before, .pp-faq-icon::after {
-        content: ''; position: absolute; top: 50%; left: 50%;
-        background: var(--color-text-muted);
-        transition: transform 0.4s var(--ease-spring);
-    }
-    .pp-faq-icon::before { width: 14px; height: 2px; transform: translate(-50%, -50%); }
-    .pp-faq-icon::after { width: 2px; height: 14px; transform: translate(-50%, -50%); }
-    .pp-faq-item.open .pp-faq-icon { transform: rotate(90deg); }
-    .pp-faq-item.open .pp-faq-icon::after { transform: translate(-50%, -50%) scaleY(0); }
-    .pp-faq-panel {
-        display: grid; grid-template-rows: 0fr;
-        transition: grid-template-rows 0.55s var(--ease-spring);
-    }
-    .pp-faq-panel > .pp-faq-a { overflow: hidden; min-height: 0; }
-    .pp-faq-item.open .pp-faq-panel { grid-template-rows: 1fr; }
-    .pp-faq-a {
-        margin: 0; padding: 0 0.2rem;
-        font-size: 1rem; line-height: 1.7; color: var(--color-text-muted); max-width: 92%;
-        opacity: 0; transform: translateY(-6px);
-        transition: opacity 0.45s var(--ease-ios) 0.08s, transform 0.5s var(--ease-spring) 0.08s, padding 0.45s var(--ease-spring);
-    }
-    .pp-faq-item.open .pp-faq-a { opacity: 1; transform: translateY(0); padding-bottom: 1.6rem; }
-    @media (prefers-reduced-motion: reduce) {
-        .pp-faq-panel, .pp-faq-a, .pp-faq-icon { transition: none; }
-    }
+    /* ── FAQ padding override ── */
+    :global(.pp-faq-acc) { padding: 5rem 5% 3rem; }
 
     /* ════════ RESPONSIVE ════════ */
+    @media (max-width: 1000px) {
+        .pp-hero {
+            min-height: 100dvh;
+            align-items: flex-start;
+        }
+        .pp-hero-inner {
+            grid-template-columns: 1fr;
+            gap: 0;
+            padding: 6rem 6% 3rem;
+        }
+        .pp-hero-text {
+            padding-bottom: 2.5rem;
+            text-align: left;
+        }
+        .pp-hero-visual {
+            margin-left: -6%;
+            margin-right: -6%;
+            justify-content: flex-start;
+        }
+        .pp-mockup-wrap { max-width: 100%; }
+    }
     @media (max-width: 860px) {
-        .pp-hero { padding-top: 9.5rem; }
-        .pp-stats { padding: 4rem 8%; }
-        .pp-stat { flex-direction: column; align-items: flex-start; gap: 0.4rem; padding: 1.2rem 0; }
-        .pp-stat-dots { display: none; }
-        .pp-stat-num { font-size: 1.6rem; color: var(--color-blue-deep); }
-        .pp-stat-label { font-size: 0.95rem; line-height: 1.4; }
-        .pp-blocks { gap: 4.5rem; }
-        .pp-block { grid-template-columns: 1fr; gap: 1.8rem; }
-        .pp-block-flip .pp-block-text { order: 1; }
-        .pp-block-flip .pp-block-visual { order: 2; }
-        .pp-block-visual { min-height: 170px; margin-top: 2rem; }
-        .pp-more-grid { grid-template-columns: 1fr; }
+        .pp-hero { padding-top: 8.5rem; }
+        .pp-title { font-size: clamp(2rem, 7vw, 2.8rem); }
         .mk-row { grid-template-columns: 1.4fr 0.5fr 1fr; }
         .mk-row span:nth-child(4) { display: none; }
         .mk-cli-row { grid-template-columns: auto 1fr; }
@@ -990,30 +1335,175 @@ const faqSchema = {
     }
 </style>
 
+<!-- Global override: GSAP wrapLines() inyecta .m-line/.m-line-in sin data-astro-cid,
+     por eso el override al título DEBE ser is:global para aplicar a los nodos dinámicos -->
+<style is:global>
+    .pp-hero-text .pp-title { text-align: left !important; }
+    .pp-hero-text .m-line   { text-align: left !important; width: 100%; }
+    .pp-hero-text .m-line-in { display: block !important; text-align: left !important; }
+
+    /* ══════════════════════════════════════════════════════════
+       BENTO MOCKUPS — Light mode, screenshot-on-surface look
+       Stripe/ElevenLabs bleed: stage overflows the bottom,
+       card overflow:hidden clips it → cropped screenshot effect
+    ══════════════════════════════════════════════════════════ */
+
+    /* Mockups VIEJOS (bm-card): peek al fondo con corte sutil */
+    .pp-bcard-visual .bm-wrap {
+        position: absolute;
+        inset: 0;
+        overflow: visible;
+        padding: 0 0.6rem;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+    }
+    .pp-bcard-visual .bm-stage {
+        width: max(320px, 88%);
+        max-width: none;
+        transform: translateY(3%);
+        transform-origin: bottom center;
+    }
+    /* Ventana COMPLETA (bm-app): llena el ancho, arriba, sangra por abajo */
+    .pp-bcard-visual .bm-wrap:has(.bm-app) {
+        padding: 1.7rem 1.6rem 0;
+        align-items: flex-start;
+        justify-content: center;
+    }
+    .pp-bcard-visual .bm-stage:has(.bm-app) {
+        width: 100%;
+        max-width: 560px;
+        transform: none;
+    }
+    /* Remove dark ambient — light mockups don't need it */
+    .pp-bcard-visual .bm-mesh { display: none; }
+    .pp-bcard-visual .bm-glow { display: none; }
+
+    /* ── Light mockup: white surface, force ALL text dark ── */
+    /* !important overrides Astro scoped selectors which gain element-type specificity */
+    .pp-bcard-visual .bm-card,
+    .pp-bcard-visual .bm-terminal,
+    .pp-bcard-visual .bm-search,
+    .pp-bcard-visual .bm-timeline-card,
+    .pp-bcard-visual .bm-board-col,
+    .pp-bcard-visual .bm-push-notif {
+        background: #ffffff !important;
+        border: 1px solid rgba(0,0,0,0.07) !important;
+        box-shadow:
+            0 1px 2px rgba(0,0,0,0.04),
+            0 10px 28px -6px rgba(0,0,0,0.09),
+            0 36px 72px -18px rgba(0,0,0,0.12),
+            inset 0 1px 0 rgba(255,255,255,1) !important;
+        color: #111827 !important;
+    }
+    /* Force ALL descendant text dark — catches anything that inherits white from .bm-card */
+    .pp-bcard-visual .bm-card *,
+    .pp-bcard-visual .bm-terminal *,
+    .pp-bcard-visual .bm-search *,
+    .pp-bcard-visual .bm-timeline-card *,
+    .pp-bcard-visual .bm-board-col *,
+    .pp-bcard-visual .bm-push-notif * { color: #374151 !important; }
+    /* Re-apply semantic color overrides AFTER the blanket reset */
+    .pp-bcard-visual .bm-bold,
+    .pp-bcard-visual b { color: #050505 !important; }
+    .pp-bcard-visual .editorial { color: #050505 !important; font-weight: 700; }
+    .pp-bcard-visual .bm-head,
+    .pp-bcard-visual .bm-head * { color: rgba(0,0,0,0.4) !important; }
+    .pp-bcard-visual .bm-row span { color: #374151 !important; }
+    .pp-bcard-visual i { color: rgba(0,0,0,0.38) !important; }
+    .pp-bcard-visual .bm-divider { background: rgba(0,0,0,0.07) !important; }
+    .pp-bcard-visual .bm-row { border-bottom-color: rgba(0,0,0,0.05) !important; }
+    .pp-bcard-visual .bm-active { background: rgba(10,25,47,0.035) !important; }
+    /* Semantic colors */
+    .pp-bcard-visual .bm-green,
+    .pp-bcard-visual .mk-green { color: #059669 !important; }
+    .pp-bcard-visual .bm-orange { color: #d97706 !important; }
+    /* Light pills */
+    .pp-bcard-visual .bm-pill {
+        background: #ffffff !important;
+        border: 1px solid rgba(0,0,0,0.09) !important;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.11) !important;
+    }
+    .pp-bcard-visual .bm-pill * { color: #111827 !important; }
+    /* Navy accent pill stays dark */
+    .pp-bcard-visual .bm-pill-dark {
+        background: #0a192f !important;
+        border-color: transparent !important;
+        box-shadow: 0 4px 14px rgba(10,25,47,0.3) !important;
+    }
+    .pp-bcard-visual .bm-pill-dark,
+    .pp-bcard-visual .bm-pill-dark * { color: #ffffff !important; }
+    /* Status dots */
+    .pp-bcard-visual .bm-dot-blue { background: #3b82f6 !important; }
+    .pp-bcard-visual .bm-dot-green { background: #10b981 !important; }
+    /* Toast */
+    .pp-bcard-visual .bm-toast {
+        background: #ffffff !important;
+        border: 1px solid rgba(0,0,0,0.08) !important;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important;
+    }
+    .pp-bcard-visual .bm-toast * { color: #111827 !important; }
+    /* Chip */
+    .pp-bcard-visual .mk-chip {
+        background: rgba(5,150,105,0.1) !important;
+        color: #059669 !important;
+    }
+    /* Progress bars */
+    .pp-bcard-visual .bm-margin-bar-bg { background: rgba(0,0,0,0.07) !important; }
+    .pp-bcard-visual .bm-margin-bar-fill { background: linear-gradient(90deg, #10b981, #34d399) !important; }
+    .pp-bcard-visual .bm-credit-bar-bg { background: rgba(0,0,0,0.07) !important; }
+    .pp-bcard-visual .bm-credit-bar-fill { background: linear-gradient(90deg, #10b981, #34d399) !important; }
+    /* Avatars */
+    .pp-bcard-visual .bm-avatar,
+    .pp-bcard-visual .bm-avatar-sm { background: #0a192f !important; color: #ffffff !important; }
+    /* Chat bubbles */
+    .pp-bcard-visual .bm-msg-in { background: #f3f4f6 !important; color: #111827 !important; }
+    .pp-bcard-visual .bm-msg-out { background: #0a192f !important; color: #fff !important; }
+    /* Brand */
+    .pp-bcard-visual .bm-brand-dots span { background: #d1d5db !important; }
+    .pp-bcard-visual .bm-brand-card { background: #f9fafb !important; }
+    /* Tags */
+    .pp-bcard-visual .bm-tag-warn { background: rgba(245,158,11,0.1) !important; color: #d97706 !important; }
+    .pp-bcard-visual .bm-tag-blue { background: rgba(37,99,235,0.1) !important; color: #2563eb !important; }
+    /* Large total number */
+    .pp-bcard-visual .bm-large { color: #050505 !important; }
+    /* Fake cursor */
+    .pp-bcard-visual .bm-fake-cursor svg { stroke: #0a192f !important; }
+
+    /* Full-width (row) cards: big mockup fills the right column, bleeds bottom */
+    .pp-bcard-2 .pp-bcard-visual .bm-wrap,
+    .pp-bcard-3 .pp-bcard-visual .bm-wrap {
+        padding: 0 1rem;
+        align-items: flex-end;
+        justify-content: center;
+    }
+    .pp-bcard-2 .pp-bcard-visual .bm-stage,
+    .pp-bcard-3 .pp-bcard-visual .bm-stage {
+        width: max(360px, 88%);
+        transform: translateY(3%);
+        transform-origin: bottom center;
+    }
+    /* Ventana completa en card full-width */
+    .pp-bcard-2 .pp-bcard-visual .bm-wrap:has(.bm-app),
+    .pp-bcard-3 .pp-bcard-visual .bm-wrap:has(.bm-app) {
+        padding: 2.4rem 2rem 0;
+        align-items: flex-start;
+        justify-content: flex-start;
+    }
+    .pp-bcard-2 .pp-bcard-visual .bm-stage:has(.bm-app),
+    .pp-bcard-3 .pp-bcard-visual .bm-stage:has(.bm-app) {
+        width: 100%;
+        max-width: 600px;
+        transform: none;
+    }
+</style>
+
 <script>
     import { gsap } from 'gsap';
     import { ScrollTrigger } from 'gsap/ScrollTrigger';
     gsap.registerPlugin(ScrollTrigger);
 
-    // FAQ: acordeón (un solo abierto a la vez)
     document.addEventListener('DOMContentLoaded', () => {
-        const items = Array.from(document.querySelectorAll<HTMLElement>('.pp-faq-item'));
-        items.forEach((item) => {
-            const btn = item.querySelector<HTMLButtonElement>('.pp-faq-q');
-            if (!btn) return;
-            btn.addEventListener('click', () => {
-                const willOpen = !item.classList.contains('open');
-                items.forEach((other) => {
-                    other.classList.remove('open');
-                    other.querySelector('.pp-faq-q')?.setAttribute('aria-expanded', 'false');
-                });
-                if (willOpen) {
-                    item.classList.add('open');
-                    btn.setAttribute('aria-expanded', 'true');
-                }
-            });
-        });
-
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (!reduced) {
             // Entrada limpia de los BlockMockups: fade + rise (sin rotación 3D — igual al index)
@@ -1094,17 +1584,12 @@ const faqSchema = {
                       .to(card, { scale: 1, opacity: 1, duration: 0.5 }, '<');
                 }
 
-                // Seguimiento Animation
+                // Seguimiento Animation (filas del timeline; el toast lo maneja el sistema de satélites)
                 const trackItems = document.querySelectorAll('.track-item');
                 if (trackItems.length) {
-                    const toast = document.getElementById('trackToast');
-                    gsap.to(trackItems, { 
-                        opacity: 1, x: 0, duration: 0.8, stagger: 0.15, ease: 'power2.out',
-                        scrollTrigger: { trigger: '.mk-track', start: 'top 80%', once: true }
-                    });
-                    gsap.to(toast, { 
-                        opacity: 1, y: 0, duration: 0.6, ease: 'back.out(1.2)', delay: 0.8,
-                        scrollTrigger: { trigger: '.mk-track', start: 'top 80%', once: true }
+                    gsap.to(trackItems, {
+                        opacity: 1, x: 0, duration: 0.7, stagger: 0.14, ease: 'power2.out', delay: 0.4,
+                        scrollTrigger: { trigger: '.mk-track2', start: 'top 80%', once: true }
                     });
                 }
                 
@@ -1136,22 +1621,47 @@ const faqSchema = {
                     });
                 }
 
-                // Cobranza IA Animation (agente que negocia un plan de pagos en cuotas)
-                const arThread = document.getElementById('arThread');
-                if (arThread) {
-                    const bubbles = arThread.querySelectorAll('.mk-ar-bubble');
-                    const plan = document.getElementById('arPlan');
-                    const cuotas = plan ? plan.querySelectorAll('.mk-ar-cuota') : [];
-                    const approve = plan ? plan.querySelector('.mk-ar-approve') : null;
-                    gsap.set(bubbles, { opacity: 0, y: 12 });
-                    gsap.set(cuotas, { opacity: 0, y: 8 });
-                    const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.6, delay: 0.5 });
-                    tl.set(bubbles, { opacity: 0, y: 12 })
-                      .set(cuotas, { opacity: 0, y: 8 });
-                    bubbles.forEach((b, i) => tl.to(b, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, i === 0 ? '>' : '+=0.85'));
-                    tl.to(cuotas, { opacity: 1, y: 0, duration: 0.45, stagger: 0.14, ease: 'power2.out' }, '+=0.3');
-                    if (approve) tl.fromTo(approve, { boxShadow: '0 0 0 0 rgba(52,211,153,0)' }, { boxShadow: '0 0 0 5px rgba(52,211,153,0.2)', duration: 0.6, yoyo: true, repeat: 3, ease: 'sine.inOut' }, '+=0.2');
-                    tl.to([...bubbles, ...cuotas], { opacity: 0, duration: 0.5 }, '+=2.2');
+                // Cobranza IA — chat LIBRE sobre el hero con "escribiendo…" real (loop)
+                const arFree = document.getElementById('arFree');
+                if (arFree) {
+                    const steps = [...arFree.querySelectorAll('[data-cf]')];
+                    const approve = document.getElementById('cfApprove');
+                    const cuotas = arFree.querySelectorAll('.cf-cuota');
+                    const makeTyping = (isOut) => {
+                        const m = document.createElement('div');
+                        m.className = 'cf-typing-msg ' + (isOut ? 'cf-out' : 'cf-in');
+                        m.innerHTML = '<div class="cf-dots"><span></span><span></span><span></span></div>';
+                        return m;
+                    };
+                    const reset = () => { gsap.set(steps, { opacity: 0, y: 16, scale: 0.96 }); gsap.set(cuotas, { opacity: 0, x: -8 }); arFree.querySelectorAll('.cf-typing-msg').forEach(n => n.remove()); };
+                    reset();
+                    ScrollTrigger.create({
+                        trigger: arFree, start: 'top 80%', once: true,
+                        onEnter: () => {
+                            const tl = gsap.timeline({ delay: 0.4, repeat: -1, repeatDelay: 3.2 });
+                            steps.forEach((s, i) => {
+                                const isOut = s.classList.contains('cf-out');
+                                const isPlan = s.classList.contains('cf-plan');
+                                if (!isPlan) {
+                                    // aparece "escribiendo…" en el lugar del mensaje, luego lo reemplaza la burbuja
+                                    tl.call(() => {
+                                        const t = makeTyping(isOut); s.parentNode.insertBefore(t, s); s._t = t;
+                                        gsap.fromTo(t, { opacity: 0, scale: 0.8, y: 8 }, { opacity: 1, scale: 1, y: 0, duration: 0.3, ease: 'back.out(2)' });
+                                    }, null, i === 0 ? '>' : '+=0.45');
+                                    tl.to({}, { duration: 0.75 });
+                                    tl.call(() => { if (s._t) { const t = s._t; gsap.to(t, { opacity: 0, scale: 0.8, duration: 0.2, onComplete: () => t.remove() }); } });
+                                    tl.to(s, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: 'back.out(1.4)' }, '+=0.06');
+                                } else {
+                                    tl.to(s, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.3)' }, '+=0.5');
+                                    tl.to(cuotas, { opacity: 1, x: 0, duration: 0.4, stagger: 0.12, ease: 'power2.out' }, '-=0.1');
+                                    if (approve) tl.fromTo(approve, { boxShadow: '0 6px 16px -4px rgba(10,25,47,0.4), 0 0 0 0 rgba(10,25,47,0)' }, { boxShadow: '0 6px 16px -4px rgba(10,25,47,0.4), 0 0 0 6px rgba(10,25,47,0.12)', duration: 0.6, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '+=0.15');
+                                }
+                            });
+                            // cierre del loop: se desvanece y reinicia
+                            tl.to(steps, { opacity: 0, y: 10, duration: 0.5, stagger: 0.04 }, '+=1.6');
+                            tl.add(() => reset());
+                        },
+                    });
                 }
 
                 // Multi-divisa Animation (count-up de la tasa + pop del lock + flash del total MXN)
@@ -1168,7 +1678,7 @@ const faqSchema = {
                             gsap.timeline({ delay: 0.5 })
                                 .to(obj, { v: 18.50, duration: 1, ease: 'power2.out', onUpdate: () => { if (rate) rate.textContent = '$' + obj.v.toFixed(2) + ' MXN'; } })
                                 .to(lock, { opacity: 1, scale: 1, duration: 0.45, ease: 'back.out(1.6)' }, '-=0.25')
-                                .fromTo(mxn, { backgroundColor: 'rgba(16,185,129,0.18)' }, { backgroundColor: 'rgba(255,255,255,0.03)', duration: 1.1, ease: 'power2.out' }, '-=0.1');
+                                .fromTo(mxn, { backgroundColor: 'rgba(16,185,129,0.18)' }, { backgroundColor: '#f8fafc', duration: 1.1, ease: 'power2.out' }, '-=0.1');
                         },
                     });
                 }
@@ -1184,10 +1694,97 @@ const faqSchema = {
                         onEnter: () => {
                             gsap.timeline({ delay: 0.5 })
                                 .to(pill, { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: 'back.out(1.6)' })
-                                .fromTo(fiscal, { backgroundColor: 'rgba(16,185,129,0.2)' }, { backgroundColor: 'rgba(255,255,255,0.03)', duration: 1.1, ease: 'power2.out' }, '-=0.1');
+                                .fromTo(fiscal, { backgroundColor: 'rgba(16,185,129,0.2)' }, { backgroundColor: '#f8fafc', duration: 1.1, ease: 'power2.out' }, '-=0.1');
                         },
                     });
                 }
+
+                // Finanzas / CFO — count-up KPIs + barras que crecen + insight + pulso del pico
+                const finHero = document.getElementById('finHero');
+                if (finHero) {
+                    const bars = finHero.querySelectorAll('.mk-fin-bar i');
+                    const insight = document.getElementById('finInsight');
+                    const k1 = document.getElementById('finK1');
+                    const k2 = document.getElementById('finK2');
+                    const hot = finHero.querySelector('.mk-fin-bar-hot i');
+                    gsap.set(insight, { opacity: 0, y: 10 });
+                    const countTo = (el, to) => { const o = { v: 0 }; return gsap.to(o, { v: to, duration: 1.1, ease: 'power2.out', onUpdate: () => { if (el) el.textContent = '$' + o.v.toFixed(2) + 'M'; } }); };
+                    ScrollTrigger.create({
+                        trigger: finHero, start: 'top 78%', once: true,
+                        onEnter: () => {
+                            const tl = gsap.timeline({ delay: 0.35 });
+                            tl.to(bars, { scaleY: 1, duration: 0.85, stagger: 0.09, ease: 'power3.out' })
+                              .add(countTo(k1, parseFloat(k1.dataset.to)), '<')
+                              .add(countTo(k2, parseFloat(k2.dataset.to)), '<0.15')
+                              .to(insight, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, '-=0.3');
+                            if (hot) gsap.to(hot, { filter: 'brightness(1.12)', duration: 1.1, yoyo: true, repeat: -1, ease: 'sine.inOut', delay: 1.4 });
+                        },
+                    });
+                }
+
+                // Aprobaciones — el gauge llena a 18% (zona roja bajo el mínimo), alerta entra, botón pulsa
+                const aprHero = document.getElementById('aprHero');
+                if (aprHero) {
+                    const fill = document.getElementById('aprFill');
+                    const alert = document.getElementById('aprAlert');
+                    const btn = document.getElementById('aprBtn');
+                    const margin = document.getElementById('aprMargin');
+                    gsap.set(alert, { opacity: 0, y: 8 });
+                    gsap.set(margin, { scale: 0.6, opacity: 0 });
+                    ScrollTrigger.create({
+                        trigger: aprHero, start: 'top 78%', once: true,
+                        onEnter: () => {
+                            gsap.timeline({ delay: 0.4 })
+                                .to(fill, { width: '18%', duration: 0.9, ease: 'power3.out' })
+                                .to(margin, { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(1.6)' }, '-=0.4')
+                                .to(alert, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, '-=0.15')
+                                .fromTo(btn, { boxShadow: '0 0 0 0 rgba(15,23,42,0)' }, { boxShadow: '0 0 0 5px rgba(15,23,42,0.12)', duration: 0.7, yoyo: true, repeat: 3, ease: 'sine.inOut' }, '+=0.2');
+                        },
+                    });
+                }
+
+                // Equipo — filas entran en cascada + el botón invitar pulsa
+                const teamHero = document.getElementById('teamHero');
+                if (teamHero) {
+                    const rows = teamHero.querySelectorAll('.team-item');
+                    const invite = document.getElementById('teamInvite');
+                    gsap.set(rows, { opacity: 0, x: -14 });
+                    gsap.set(invite, { opacity: 0, y: 8 });
+                    ScrollTrigger.create({
+                        trigger: teamHero, start: 'top 78%', once: true,
+                        onEnter: () => {
+                            gsap.timeline({ delay: 0.35 })
+                                .to(rows, { opacity: 1, x: 0, duration: 0.6, stagger: 0.11, ease: 'power2.out' })
+                                .to(invite, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, '-=0.2');
+                        },
+                    });
+                }
+
+                // ── Ambient float sutil para TODOS los mockups del hero (toque Linear, sobrio) ──
+                const heroMock = wrap.querySelector('.pp-mockup > *');
+                if (heroMock) {
+                    gsap.to(heroMock, { y: '-=7', duration: 4.6, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+                }
+
+                // ── Burbujas de chat flotantes (link público): entrada + float suave ──
+                const bubs = wrap.querySelectorAll('.pp-bub');
+                if (bubs.length) {
+                    gsap.set(bubs, { opacity: 0, y: 14, scale: 0.92 });
+                    ScrollTrigger.create({
+                        trigger: wrap, start: 'top 82%', once: true,
+                        onEnter: () => {
+                            gsap.to(bubs, { opacity: 1, y: 0, scale: 1, duration: 0.7, stagger: 0.2, ease: 'back.out(1.4)', delay: 0.5,
+                                onComplete: () => {
+                                    wrap.querySelectorAll('.pp-bub-in').forEach((el) => gsap.to(el, { y: '-=8', duration: 3.8, ease: 'sine.inOut', yoyo: true, repeat: -1 }));
+                                    wrap.querySelectorAll('.pp-bub-out').forEach((el) => gsap.to(el, { y: '+=8', duration: 4.4, ease: 'sine.inOut', yoyo: true, repeat: -1 }));
+                                },
+                            });
+                        },
+                    });
+                }
+                // pulso del punto "Viendo ahora" (seguimiento)
+                const liveDot = document.getElementById('satTrDot');
+                if (liveDot) gsap.to(liveDot, { boxShadow: '0 0 0 6px rgba(16,185,129,0)', duration: 1.4, repeat: -1, ease: 'power1.out' });
             }
 
             // ───────────────────────── BLOCK MOCKUPS GSAP ─────────────────────────
@@ -1200,379 +1797,67 @@ const faqSchema = {
                 const price = bEditor0.querySelector('.price-val');
                 const obj = { val: 191.48 };
 
-                ScrollTrigger.create({
-                    trigger: bEditor0, start: 'top 85%',
-                    onEnter: () => {
-                        const tl = gsap.timeline({ repeat: -1, repeatDelay: 2 });
-                        tl.set(cursor, { x: 120, y: 150, opacity: 0 })
-                          .set(chip, { opacity: 0, scale: 0.5 })
-                          .to(cursor, { opacity: 1, duration: 0.4 })
-                          .to(cursor, { x: 190, y: 40, duration: 1, ease: 'power3.inOut' })
-                          .to(cursor, { scale: 0.85, duration: 0.1, yoyo: true, repeat: 1 })
-                          .to(row, { backgroundColor: 'rgba(16,185,129,0.15)', duration: 0.3 })
-                          .to(chip, { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(1.5)' })
-                          .to(row, { backgroundColor: 'rgba(255,255,255,0.02)', duration: 0.3 })
-                          .to(obj, { val: 168.50, duration: 0.8, onUpdate: () => price.textContent = `$${obj.val.toFixed(2)}` }, '-=0.3')
-                          .to(cursor, { opacity: 0, y: '+=30', duration: 0.5 });
-                    }
-                });
+                if (cursor && row && chip && price) {
+                    ScrollTrigger.create({
+                        trigger: bEditor0, start: 'top 85%',
+                        onEnter: () => {
+                            const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.2 });
+                            tl.set(cursor, { x: 210, y: 230, opacity: 0 })
+                              .set(chip, { opacity: 0, scale: 0.5 })
+                              .to(cursor, { opacity: 1, duration: 0.4 })
+                              .to(cursor, { x: 330, y: 118, duration: 1, ease: 'power3.inOut' })
+                              .to(cursor, { scale: 0.85, duration: 0.1, yoyo: true, repeat: 1 })
+                              .to(row, { backgroundColor: 'rgba(16,185,129,0.12)', duration: 0.3 })
+                              .to(chip, { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(1.5)' })
+                              .to(row, { backgroundColor: 'transparent', duration: 0.3 })
+                              .to(obj, { val: 168.50, duration: 0.8, onUpdate: () => price.textContent = `$${obj.val.toFixed(2)}` }, '-=0.3')
+                              .to(cursor, { opacity: 0, y: '+=30', duration: 0.5 });
+                        }
+                    });
+                }
             }
 
-            // Editor M1 (Margin Bar)
+            // Editor M1 (catálogo — filas en cascada + caret que teclea)
             const bEditor1 = document.querySelector('.bm-editor-m1');
             if (bEditor1) {
-                const fill = bEditor1.querySelector('.bm-margin-bar-fill');
-                gsap.to(fill, {
-                    width: '85%', ease: 'none',
-                    scrollTrigger: { trigger: bEditor1, start: 'top 95%', end: 'top 40%', scrub: 1 }
-                });
+                const rows = bEditor1.querySelectorAll('.cat-r');
+                const caret = bEditor1.querySelector('.bm-search-caret');
+                if (caret) gsap.to(caret, { opacity: 0, duration: 0.5, repeat: -1, yoyo: true, ease: 'steps(1)' });
+                if (rows.length) {
+                    ScrollTrigger.create({
+                        trigger: bEditor1, start: 'top 85%', once: true,
+                        onEnter: () => gsap.fromTo(rows, { opacity: 0, x: -10 }, { opacity: 1, x: 0, stagger: 0.1, duration: 0.55, ease: 'power2.out', delay: 0.3 }),
+                    });
+                }
             }
 
-            // Editor M2 (Staggered Taxes)
+            // Editor M2 (resumen — filas de totales en cascada)
             const bEditor2 = document.querySelector('.bm-editor-m2');
             if (bEditor2) {
                 const rows = bEditor2.querySelectorAll('.bm-stag-row');
-                const stamp = bEditor2.querySelector('.bm-stamp-hide');
+                if (rows.length) {
+                    ScrollTrigger.create({
+                        trigger: bEditor2, start: 'top 85%', once: true,
+                        onEnter: () => gsap.fromTo(rows, { opacity: 0, x: -10 }, { opacity: 1, x: 0, stagger: 0.14, duration: 0.6, ease: 'power2.out', delay: 0.3 }),
+                    });
+                }
+            }
+
+            // ── Ventanas completas del bento (bm-app): cascada de filas al entrar ──
+            document.querySelectorAll('.pp-bcard-visual .bm-app').forEach((app) => {
+                const stage = app.closest('.bm-stage');
+                if (stage && /bm-editor-m/.test(stage.className || '')) return; // editor tiene su propia animación
+                const rows = app.querySelectorAll('.bm-kv, .bm-step, .bm-cc-b, .bm-stat, .bm-tot-r, .bm-g:not(.bm-g-head)');
+                if (!rows.length) return;
+                gsap.set(rows, { opacity: 0, y: 10 });
                 ScrollTrigger.create({
-                    trigger: bEditor2, start: 'top 85%', once: true,
-                    onEnter: () => {
-                        gsap.fromTo(rows, { opacity: 0, x: -10 }, { opacity: 1, x: 0, stagger: 0.15, duration: 0.6, ease: 'power2.out', delay: 0.3 });
-                        gsap.fromTo(stamp, { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.5)', delay: 1 });
-                    }
+                    trigger: app, start: 'top 88%', once: true,
+                    onEnter: () => gsap.to(rows, { opacity: 1, y: 0, duration: 0.5, stagger: 0.07, ease: 'power2.out', delay: 0.2, clearProps: 'transform' }),
                 });
-            }
+                const approve = app.querySelector('.bm-lp-approve');
+                if (approve) gsap.to(approve, { boxShadow: '0 6px 16px -4px rgba(10,25,47,0.4), 0 0 0 5px rgba(10,25,47,0.12)', duration: 1, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+            });
 
-            // Public M0 (Chat)
-            const bPub0 = document.querySelector('.bm-public-m0');
-            if (bPub0) {
-                const typing = bPub0.querySelector('.bm-msg-typing');
-                const outMsg = bPub0.querySelector('.bm-msg-out');
-                ScrollTrigger.create({
-                    trigger: bPub0, start: 'top 85%',
-                    onEnter: () => {
-                        const tl = gsap.timeline({ repeat: -1, repeatDelay: 3 });
-                        tl.set(outMsg, { display: 'none', opacity: 0, y: 10 })
-                          .set(typing, { display: 'block', opacity: 0 })
-                          .to(typing, { opacity: 1, duration: 0.3, delay: 0.5 })
-                          .to(typing, { opacity: 0, duration: 0.3 }, '+=1.5')
-                          .set(typing, { display: 'none' })
-                          .set(outMsg, { display: 'block' })
-                          .to(outMsg, { opacity: 1, y: 0, duration: 0.4, ease: 'back.out(1.2)' });
-                    }
-                });
-            }
-
-            // Public M1 (Branding Colors Scrub)
-            const bPub1 = document.querySelector('.bm-public-m1');
-            if (bPub1) {
-                const card = bPub1.querySelector('.bm-brand-card');
-                const logoPill = bPub1.querySelector('.bm-logo-pill');
-                
-                const tl = gsap.timeline({
-                    scrollTrigger: { trigger: bPub1, start: 'top 95%', end: 'top 30%', scrub: 1 }
-                });
-                tl.to(card, { borderColor: '#10b981', boxShadow: '0 0 30px rgba(16,185,129,0.2)', ease: 'none' }, 0)
-                  .to(logoPill, { background: '#10b981', ease: 'none' }, 0);
-            }
-
-            // Public M2 (Push Notif)
-            const bPub2 = document.querySelector('.bm-public-m2');
-            if (bPub2) {
-                const push = bPub2.querySelector('.bm-push-notif');
-                ScrollTrigger.create({
-                    trigger: bPub2, start: 'top 85%',
-                    onEnter: () => {
-                        const tl = gsap.timeline({ repeat: -1, repeatDelay: 3 });
-                        tl.set(push, { opacity: 0, y: -20, scale: 0.95 })
-                          .to(push, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.5)' })
-                          .to(push, { x: -3, duration: 0.05, yoyo: true, repeat: 3 }, '+=0.2') // vibrate
-                          .to(push, { opacity: 0, y: -10, duration: 0.4 }, '+=2.5');
-                    }
-                });
-            }
-
-            // Seguimiento M0 (Timeline Fill)
-            const bTrack0 = document.querySelector('.bm-track-m0');
-            if (bTrack0) {
-                const fill = bTrack0.querySelector('.bm-tl-fill');
-                const node = bTrack0.querySelector('.bm-node-pending');
-                ScrollTrigger.create({
-                    trigger: bTrack0, start: 'top 85%', once: true,
-                    onEnter: () => {
-                        gsap.to(fill, { height: '80%', duration: 2, ease: 'power2.inOut', delay: 0.5 });
-                        gsap.to(node, { opacity: 1, duration: 0.5, delay: 2.2 });
-                    }
-                });
-            }
-
-            // Seguimiento M1 (Kanban — auto-drag en loop, motion graphic)
-            const bTrack1 = document.querySelector('.bm-track-m1');
-            if (bTrack1) {
-                const card = bTrack1.querySelector('.bm-kanban-drag');
-                const drop = bTrack1.querySelector('.bm-kanban-drop');
-                ScrollTrigger.create({
-                    trigger: bTrack1, start: 'top 80%', once: true,
-                    onEnter: () => {
-                        const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.8 });
-                        tl.set(card, { x: 0, y: 0, scale: 1, boxShadow: '0 2px 4px rgba(0,0,0,0.12)' })
-                          .set(drop, { opacity: 0 })
-                          .to(card, { scale: 1.04, boxShadow: '0 18px 36px rgba(0,0,0,0.45)', duration: 0.35, ease: 'power2.out' }, '+=0.5')
-                          .to(drop, { opacity: 1, duration: 0.3 }, '<')
-                          .to(card, { x: 120, y: 70, duration: 0.9, ease: 'power2.inOut' }, '+=0.15')
-                          .to(card, { scale: 1, boxShadow: '0 2px 4px rgba(0,0,0,0.12)', duration: 0.3, ease: 'power2.out' })
-                          .to(drop, { opacity: 0, duration: 0.3 }, '<');
-                    }
-                });
-            }
-
-            // Seguimiento M2 (Search)
-            const bTrack2 = document.querySelector('.bm-track-m2');
-            if (bTrack2) {
-                const type = bTrack2.querySelector('.bm-search-type');
-                const res1 = bTrack2.querySelector('.bm-s-res-1');
-                const res2 = bTrack2.querySelector('.bm-s-res-2');
-                ScrollTrigger.create({
-                    trigger: bTrack2, start: 'top 85%',
-                    onEnter: () => {
-                        const tl = gsap.timeline({ repeat: -1, repeatDelay: 2 });
-                        const text = 'varilla';
-                        let curr = '';
-                        tl.set([res1, res2], { opacity: 0, y: 10 });
-                        
-                        text.split('').forEach(char => {
-                            tl.add(() => { curr += char; type.textContent = curr + '_'; }, '+=0.1');
-                        });
-                        tl.add(() => type.textContent = curr, '+=0.2')
-                          .to([res1, res2], { opacity: 1, y: 0, duration: 0.4, stagger: 0.1 }, '+=0.2')
-                          .to(type, { opacity: 0, duration: 0.1 }, '+=1.5')
-                          .add(() => type.textContent = '_')
-                          .to(type, { opacity: 1, duration: 0.1 });
-                    }
-                });
-            }
-
-            // CFDI M0 (XML Matrix Scramble)
-            const bCfdi0 = document.querySelector('.bm-cfdi-m0');
-            if (bCfdi0) {
-                const matrix = bCfdi0.querySelector('.bm-matrix-text');
-                const orig = matrix.innerHTML;
-                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*';
-                ScrollTrigger.create({
-                    trigger: bCfdi0, start: 'top 85%', once: true,
-                    onEnter: () => {
-                        let iters = 0;
-                        const interval = setInterval(() => {
-                            matrix.innerHTML = orig.split('').map(c => {
-                                if (c === '<' || c === '>' || c === ' ' || c === '\\n') return c;
-                                return Math.random() > 0.5 ? chars[Math.floor(Math.random() * chars.length)] : c;
-                            }).join('');
-                            iters++;
-                            if (iters > 15) { clearInterval(interval); matrix.innerHTML = orig; gsap.to(matrix, { opacity: 0.2, duration: 1 }); }
-                        }, 50);
-                    }
-                });
-            }
-
-            // CFDI M1 (Terminal SCRUB)
-            const bCfdi1 = document.querySelector('.bm-cfdi-m1');
-            if (bCfdi1) {
-                const lines = bCfdi1.querySelectorAll('.bm-term-line');
-                const stamp = bCfdi1.querySelector('.bm-cert-stamp');
-                
-                const tl = gsap.timeline({
-                    scrollTrigger: { trigger: bCfdi1, start: 'top 95%', end: 'top 40%', scrub: 1 }
-                });
-                
-                gsap.set(stamp, { opacity: 0, scale: 0 });
-                lines.forEach((l, i) => {
-                    tl.to(l, { opacity: 1, duration: 0.1 }, i * 0.1);
-                });
-                tl.to(stamp, { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.5)' });
-            }
-
-            // CFDI M2 (Laser Barcode)
-            const bCfdi2 = document.querySelector('.bm-cfdi-m2');
-            if (bCfdi2) {
-                const laser = bCfdi2.querySelector('.bm-laser');
-                ScrollTrigger.create({
-                    trigger: bCfdi2, start: 'top 85%',
-                    onEnter: () => {
-                        gsap.to(laser, { opacity: 1, duration: 0.2, repeat: -1, repeatDelay: 2, yoyo: true });
-                        gsap.to(laser, { top: '100%', duration: 1, repeat: -1, repeatDelay: 1.2, ease: 'none' });
-                    }
-                });
-            }
-
-            // Credit M0 (Progress Bar SCRUB)
-            const bCred0 = document.querySelector('.bm-credit-m0');
-            if (bCred0) {
-                const fill = bCred0.querySelector('.bm-credit-fill');
-                const val = bCred0.querySelector('.bm-credit-val');
-                const req = bCred0.querySelector('.bm-req-appr');
-                const obj = { v: 0 };
-                
-                const tl = gsap.timeline({
-                    scrollTrigger: { trigger: bCred0, start: 'top 95%', end: 'top 30%', scrub: 1 }
-                });
-                
-                gsap.set(req, { opacity: 0, scale: 0 });
-                tl.to(fill, { width: '85%', duration: 2, ease: 'none' }, 0)
-                  .to(obj, { v: 425, duration: 2, ease: 'none', onUpdate: () => val.textContent = Math.round(obj.v).toString() }, 0)
-                  .to(fill, { backgroundColor: '#f59e0b', duration: 0.5 }, 1.5)
-                  .to(req, { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.5)' }, 1.8);
-            }
-
-            // Credit M1 (SPEI Payment)
-            const bCred1 = document.querySelector('.bm-credit-m1');
-            if (bCred1) {
-                const status = bCred1.querySelector('.bm-spei-status');
-                const toast = bCred1.querySelector('.bm-spei-toast');
-                ScrollTrigger.create({
-                    trigger: bCred1, start: 'top 85%',
-                    onEnter: () => {
-                        const tl = gsap.timeline({ repeat: -1, repeatDelay: 3 });
-                        tl.set(toast, { opacity: 0, y: 10 })
-                          .to(status, { opacity: 0.4, duration: 0.4, yoyo: true, repeat: 3 })
-                          .to(toast, { opacity: 1, y: 0, duration: 0.5, ease: 'back.out(1.5)' })
-                          .to(status, { color: '#34d399', onStart: () => status.textContent = 'Pagado' }, '<')
-                          .to(toast, { opacity: 0, duration: 0.4 }, '+=2')
-                          .set(status, { clearProps: 'all', textContent: 'Pendiente' });
-                    }
-                });
-            }
-
-            // Credit M2 (Bar Chart SCRUB)
-            const bCred2 = document.querySelector('.bm-credit-m2');
-            if (bCred2) {
-                const cols = bCred2.querySelectorAll('.bm-chart-col-fill');
-                const heights = ['40%', '70%', '50%', '90%', '60%'];
-                
-                const tl = gsap.timeline({
-                    scrollTrigger: { trigger: bCred2, start: 'top 95%', end: 'top 30%', scrub: 1 }
-                });
-                
-                cols.forEach((c, i) => {
-                    tl.to(c, { height: heights[i], duration: 1, ease: 'none' }, i * 0.1);
-                });
-            }
-
-            // Cobranza IA M0 (la negociación cierra: respuesta + "Plan aceptado")
-            const bAr0 = document.querySelector('.bm-ar-m0');
-            if (bAr0) {
-                const reply = bAr0.querySelector('.bm-ar-reply-hide');
-                const badge = bAr0.querySelector('.bm-ar-badge-hide');
-                ScrollTrigger.create({
-                    trigger: bAr0, start: 'top 85%',
-                    onEnter: () => {
-                        const tl = gsap.timeline({ repeat: -1, repeatDelay: 3 });
-                        tl.set(reply, { opacity: 0, y: 10 })
-                          .set(badge, { opacity: 0, scale: 0.6 })
-                          .to(reply, { opacity: 1, y: 0, duration: 0.5, ease: 'back.out(1.2)' }, '+=1')
-                          .to(badge, { opacity: 1, scale: 1, duration: 0.45, ease: 'back.out(1.5)' }, '+=0.3')
-                          .to(badge, { opacity: 0, duration: 0.4 }, '+=2');
-                    }
-                });
-            }
-
-            // Cobranza IA M1 (flujo de caja proyectado — barras suben al entrar)
-            const bAr1 = document.querySelector('.bm-ar-m1');
-            if (bAr1) {
-                const cols = bAr1.querySelectorAll('.bm-chart-col-fill');
-                const heights = ['45%', '65%', '80%', '95%', '70%'];
-                const tl = gsap.timeline({ scrollTrigger: { trigger: bAr1, start: 'top 90%', once: true } });
-                cols.forEach((c, i) => tl.to(c, { height: heights[i], duration: 0.6, ease: 'power2.out' }, i * 0.12));
-            }
-
-            // Cobranza IA M2 (supervisión — filas + cambio de estado en vivo)
-            const bAr2 = document.querySelector('.bm-ar-m2');
-            if (bAr2) {
-                const rows = bAr2.querySelectorAll('.bm-ar-row');
-                const status = bAr2.querySelector('.bm-ar-status');
-                ScrollTrigger.create({
-                    trigger: bAr2, start: 'top 85%', once: true,
-                    onEnter: () => {
-                        gsap.fromTo(rows, { opacity: 0, x: -10 }, { opacity: 1, x: 0, stagger: 0.14, duration: 0.5, ease: 'power2.out' });
-                        if (status) {
-                            gsap.timeline({ repeat: -1, repeatDelay: 3, delay: 1.6 })
-                                .to(status, { color: '#34d399', duration: 0.4, onStart: () => { status.textContent = 'Pagado'; } })
-                                .to(status, { color: '#fbbf24', duration: 0.4, onStart: () => { status.textContent = 'Negociando'; } }, '+=2.2');
-                        }
-                    }
-                });
-            }
-
-            // Multi-divisa M0 (dos monedas — filas entran)
-            const bFx0 = document.querySelector('.bm-fx-m0');
-            if (bFx0) {
-                const rows = bFx0.querySelectorAll('.bm-row');
-                ScrollTrigger.create({ trigger: bFx0, start: 'top 88%', once: true,
-                    onEnter: () => gsap.fromTo(rows, { opacity: 0, x: -10 }, { opacity: 1, x: 0, stagger: 0.15, duration: 0.5, ease: 'power2.out' }) });
-            }
-
-            // Multi-divisa M1 (tipo de cambio — terminal que se enciende)
-            const bFx1 = document.querySelector('.bm-fx-m1');
-            if (bFx1) {
-                const lines = bFx1.querySelectorAll('.bm-term-line');
-                gsap.set(lines, { opacity: 0 });
-                ScrollTrigger.create({ trigger: bFx1, start: 'top 88%', once: true,
-                    onEnter: () => gsap.to(lines, { opacity: 1, stagger: 0.25, duration: 0.15 }) });
-            }
-
-            // Multi-divisa M2 (cobertura — barra + tasa aplicada en loop)
-            const bFx2 = document.querySelector('.bm-fx-m2');
-            if (bFx2) {
-                const fill = bFx2.querySelector('.bm-fx-buffer-fill');
-                const applied = bFx2.querySelector('.bm-fx-applied');
-                ScrollTrigger.create({ trigger: bFx2, start: 'top 85%', once: true,
-                    onEnter: () => {
-                        const obj = { v: 18.50 };
-                        gsap.timeline({ repeat: -1, repeatDelay: 2 })
-                            .set(fill, { width: '0%' })
-                            .call(() => { if (applied) applied.textContent = '$18.50'; })
-                            .to(fill, { width: '80%', duration: 1, ease: 'power2.out' })
-                            .to(obj, { v: 18.87, duration: 0.8, ease: 'power2.out', onUpdate: () => { if (applied) applied.textContent = '$' + obj.v.toFixed(2); } }, '<')
-                            .set(obj, { v: 18.50 })
-                            .to({}, { duration: 1.6 });
-                    } });
-            }
-
-            // Internacional M0 (cobertura — spot count-up + chip de buffer)
-            const bIntl0 = document.querySelector('.bm-intl-m0');
-            if (bIntl0) {
-                const spot = bIntl0.querySelector('.bm-intl-spot');
-                const chip = bIntl0.querySelector('.bm-intl-chip');
-                gsap.set(chip, { opacity: 0, scale: 0.5 });
-                ScrollTrigger.create({ trigger: bIntl0, start: 'top 85%', once: true,
-                    onEnter: () => {
-                        const obj = { v: 18.10 };
-                        gsap.timeline()
-                            .to(obj, { v: 18.42, duration: 0.8, ease: 'power2.out', onUpdate: () => { if (spot) spot.textContent = '$' + obj.v.toFixed(2); } })
-                            .to(chip, { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(1.6)' });
-                    } });
-            }
-
-            // Internacional M1 (dos divisas — convertido USD→MXN en loop)
-            const bIntl1 = document.querySelector('.bm-intl-m1');
-            if (bIntl1) {
-                const conv = bIntl1.querySelector('.bm-intl-conv');
-                ScrollTrigger.create({ trigger: bIntl1, start: 'top 85%', once: true,
-                    onEnter: () => {
-                        const obj = { v: 12480 };
-                        gsap.timeline({ repeat: -1, repeatDelay: 2.4 })
-                            .set(obj, { v: 12480 })
-                            .to(obj, { v: 230880, duration: 1.1, ease: 'power2.out', onUpdate: () => { if (conv) conv.textContent = '$' + Math.round(obj.v).toLocaleString('es-MX') + '.00'; } })
-                            .to({}, { duration: 1.8 });
-                    } });
-            }
-
-            // Internacional M2 (CFDI real — status "Timbrado" hace pop)
-            const bIntl2 = document.querySelector('.bm-intl-m2');
-            if (bIntl2) {
-                const status = bIntl2.querySelector('.bm-intl-status');
-                gsap.set(status, { scale: 0.7, opacity: 0.5 });
-                ScrollTrigger.create({ trigger: bIntl2, start: 'top 85%', once: true,
-                    onEnter: () => gsap.to(status, { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(1.6)', delay: 0.4 }) });
-            }
         }
     });
 </script>

@@ -88,7 +88,7 @@ const otra = (isEn ? DEV_PAGES_EN : DEV_PAGES).find((p) => p.slug !== page.slug)
                                     </div>
                                     <div class="dv-conn dv-conn-2">
                                         <span class="dv-dot dv-dot-r" id="mcpD2"></span>
-                                        <i class="dv-check" id="mcpCheck">✓</i>
+                                        <i class="dv-check" id="mcpCheck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></i>
                                     </div>
                                     <div class="dv-node dv-node-ext">{isEn ? 'Your CRM / ERP' : 'Tu CRM / ERP'}</div>
                                 </div>
@@ -614,8 +614,14 @@ const otra = (isEn ? DEV_PAGES_EN : DEV_PAGES).find((p) => p.slug !== page.slug)
         pointer-events: none;
     }
     .pp-hero-inner { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; }
-    .pp-eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #888; margin: 0 0 1.4rem; }
-    .pp-title { font-size: clamp(2.4rem, 5.4vw, 4.4rem); font-weight: 800; line-height: 1.04; letter-spacing: -0.035em; color: var(--color-text); margin: 0 0 1.6rem; }
+    .pp-eyebrow {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 0.6rem; font-weight: 800; letter-spacing: 2.5px;
+        text-transform: uppercase; color: var(--color-blue-deep);
+        background: rgba(10,25,47,0.06); border: 1px solid rgba(10,25,47,0.10);
+        border-radius: 100px; padding: 5px 14px; margin: 0 0 1.6rem;
+    }
+    .pp-title { font-size: clamp(2.4rem, 5.4vw, 4.4rem); font-weight: 800; line-height: 1.1; letter-spacing: -0.04em; color: #050505; margin: 0 0 1.6rem; }
     .pp-sub { font-size: 1.12rem; line-height: 1.65; color: var(--color-text-muted); max-width: 660px; margin: 0 auto 2.2rem; }
     .pp-actions { display: flex; gap: 0.9rem; justify-content: center; align-items: center; flex-wrap: wrap; }
     .pp-btn-primary {

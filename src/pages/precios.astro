@@ -12,6 +12,7 @@ import { PLANES as PLANES_ES, COMPARATIVA as COMPARATIVA_ES, FAQ_PRECIOS as FAQ_
 import { PLANES_EN, COMPARATIVA_EN, FAQ_PRECIOS_EN } from '../lib/precios.en';
 import { getLangFromUrl } from '../i18n/utils';
 import PriceAuroraBg from '../components/landing/PriceAuroraBg.jsx';
+import FaqAccordion from '../components/landing/FaqAccordion.astro';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
@@ -262,23 +263,14 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
         </section>
 
         <!-- ── FAQ ── -->
-        <section class="pr-faq">
-            <div class="pr-faq-head">
-                <p class="pp-eyebrow reveal">{isEn ? 'FREQUENTLY ASKED QUESTIONS' : 'PREGUNTAS FRECUENTES'}</p>
-                <h2 class="pr-h2 masked-title" set:html={isEn ? 'What people ask before paying.' : 'Lo que se pregunta antes de pagar.'} />
-            </div>
-            <div class="pr-faq-list">
-                {FAQ_PRECIOS.map((f) => (
-                    <details class="pr-faq-item reveal">
-                        <summary>
-                            <span>{f.q}</span>
-                            <i class="pr-faq-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></i>
-                        </summary>
-                        <div class="pr-faq-body"><p>{f.a}</p></div>
-                    </details>
-                ))}
-            </div>
-        </section>
+        <FaqAccordion
+            faqs={FAQ_PRECIOS}
+            eyebrow={isEn ? 'FREQUENTLY ASKED QUESTIONS' : 'PREGUNTAS FRECUENTES'}
+            title={isEn ? 'What people ask before paying.' : 'Lo que se pregunta antes de pagar.'}
+            id="precios"
+            class="pr-faq-acc"
+            maxWidth="860px"
+        />
     </main>
 
     <Footer
@@ -754,57 +746,9 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
     }
     .pr-tfoot-sales:hover { color: var(--color-text); }
 
-    /* ════════ FAQ (HAIRLINE STYLE) ════════ */
-    .pr-faq { max-width: 860px; margin: 0 auto; padding: 2rem 5% 5rem; }
-    @media (min-width: 860px) { .pr-faq { padding: 4rem 5% 8rem; } }
-    .pr-faq-head { text-align: center; margin-bottom: 2rem; }
-    @media (min-width: 860px) { .pr-faq-head { margin-bottom: 2.6rem; } }
-    .pr-faq-list {
-        display: flex;
-        flex-direction: column;
-        border-top: 1px solid var(--color-border);
-    }
-    .pr-faq-item {
-        border-bottom: 1px solid var(--color-border);
-        overflow: hidden;
-    }
-    .pr-faq-item summary {
-        list-style: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 1.2rem 0;
-        font-size: 1.05rem;
-        font-weight: 600;
-        color: var(--color-text);
-    }
-    @media (min-width: 860px) { .pr-faq-item summary { padding: 1.5rem 0; font-size: 1.1rem; } }
-    .pr-faq-item summary::-webkit-details-marker { display: none; }
-    .pr-faq-ico {
-        flex-shrink: 0;
-        color: var(--color-text-muted);
-        transition: transform 0.4s var(--ease-spring), color 0.3s;
-    }
-    .pr-faq-ico svg { width: 18px; height: 18px; }
-    @media (min-width: 860px) { .pr-faq-ico svg { width: 20px; height: 20px; } }
-    .pr-faq-item[open] .pr-faq-ico {
-        transform: rotate(135deg);
-        color: var(--color-text);
-    }
-    .pr-faq-body {
-        padding: 0 0 1.2rem;
-    }
-    @media (min-width: 860px) { .pr-faq-body { padding: 0 0 1.5rem; } }
-    .pr-faq-body p {
-        margin: 0;
-        font-size: 0.95rem;
-        line-height: 1.6;
-        color: var(--color-text-muted);
-        max-width: 700px;
-    }
-    @media (min-width: 860px) { .pr-faq-body p { font-size: 1rem; } }
+    /* ── FAQ padding override ── */
+    :global(.pr-faq-acc) { padding: 3rem 5% 7rem; }
+    @media (min-width: 860px) { :global(.pr-faq-acc) { padding: 4rem 5% 8rem; } }
 </style>
 
 <script>

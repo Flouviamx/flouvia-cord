@@ -1,9 +1,10 @@
 ---
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+import FaqAccordion from './FaqAccordion.astro';
+
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
-const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
-// FAQ — acordeón nativo (<details>) con estilo Flouvia.
+
 const faqs = [
     { q: t('faq.1.q'), a: t('faq.1.a') },
     { q: t('faq.2.q'), a: t('faq.2.a') },
@@ -15,79 +16,16 @@ const faqs = [
 ];
 ---
 
-<section class="faq" id="faq">
-    <div class="faq-inner">
-        <div class="faq-head">
-            <p class="faq-eyebrow reveal">{t("faq.eyebrow")}</p>
-            <h2 class="faq-title reveal">{t("faq.title")}</h2>
-        </div>
-
-        <div class="pr-faq-list reveal">
-            {faqs.map((f) => (
-                <details class="pr-faq-item">
-                    <summary>
-                        <span>{f.q}</span>
-                        <i class="pr-faq-ico" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        </i>
-                    </summary>
-                    <div class="pr-faq-body"><p>{f.a}</p></div>
-                </details>
-            ))}
-        </div>
-    </div>
-</section>
+<FaqAccordion
+    faqs={faqs}
+    eyebrow={t('faq.eyebrow')}
+    title={t('faq.title')}
+    id="home"
+    class="faq-home-section"
+/>
 
 <style>
-    .faq { padding: 6rem 5%; }
-    .faq-inner { max-width: 760px; margin: 0 auto; }
-    .faq-head { text-align: center; margin-bottom: 3rem; }
-    .faq-eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #888; margin: 0 0 1.2rem; }
-    .faq-title { font-size: clamp(1.9rem, 3.6vw, 3.4rem); font-weight: 800; line-height: 1.14; letter-spacing: -1.2px; color: var(--color-text); margin: 0; }
-
-    /* ── NATIVE DETAILS FAQ (QUIET LUXURY) ── */
-    .pr-faq-list {
-        display: flex;
-        flex-direction: column;
-        max-width: 860px;
-        margin: 0 auto;
-        border-top: 1px solid var(--color-border);
-    }
-    .pr-faq-item {
-        border-bottom: 1px solid var(--color-border);
-        overflow: hidden;
-    }
-    .pr-faq-item summary {
-        list-style: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 1.5rem 0;
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--color-text);
-    }
-    .pr-faq-item summary::-webkit-details-marker { display: none; }
-    .pr-faq-ico {
-        flex-shrink: 0;
-        color: var(--color-text-muted);
-        transition: transform 0.4s var(--ease-spring), color 0.3s;
-    }
-    .pr-faq-ico svg { width: 20px; height: 20px; }
-    .pr-faq-item[open] .pr-faq-ico {
-        transform: rotate(135deg);
-        color: var(--color-text);
-    }
-    .pr-faq-body {
-        padding: 0 0 1.5rem;
-    }
-    .pr-faq-body p {
-        margin: 0;
-        font-size: 1rem;
-        line-height: 1.6;
-        color: var(--color-text-muted);
-        max-width: 700px;
-    }
+.faq-home-section {
+    padding: 6rem 5% 7rem;
+}
 </style>

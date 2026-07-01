@@ -68,10 +68,13 @@ no hace nada.
 > se ve barata.
 
 ### Chrome contextual (no siempre lleva ventana)
-- **App / dashboard** → frame de navegador mínimo: 3 puntos gris (`#d1d1d6`, monocromáticos,
-  sin semáforo de colores) + pill de URL limpia (`dashboard.cord.flouvia.com`). O un sidebar
-  de app real.
-- **Checkout / teléfono / componente suelto** → tarjeta flotante **sin** frame de navegador.
+- ⛔ **NUNCA la "ventana estilo macOS con los 3 puntos de colores"** (semáforo rojo/amarillo/
+  verde). André lo rechazó explícitamente: se ve caricaturesco. Ni siquiera en gris.
+- **App / dashboard** → **toolbar real de producto**: título/breadcrumb a la izquierda
+  (`COT-0149 · Distribuidora El Zarco`, peso 600, navy) + estado/badge a la derecha
+  (`● En vivo`, avatar, `● Borrador`). Fondo `#fcfdfe`, hairline `border-bottom`. Se lee
+  como el header de un panel de Linear/Stripe, no como una ventana de sistema operativo.
+- **Checkout / teléfono / componente suelto** → tarjeta flotante **sin** frame.
 - **Stat callout / chart** → tarjeta suelta, sin frame.
 
 ### Sombras (compuestas — NUNCA `shadow-lg` genérico)
@@ -128,6 +131,42 @@ Todo respeta `prefers-reduced-motion` (estado final visible y correcto sin JS).
 
 ---
 
+## 4.5 MOCKUPS DEL HERO (`producto/[slug].astro`, clases `mk-*`)
+
+El mockup del hero es la pieza que más vende. Reglas específicas (aprendidas con André,
+jun-jul 2026 — sus referencias son los heroes de Stripe):
+
+1. **Grande y sangra por la derecha.** El hero es split (`0.92fr 1.55fr`); el visual ocupa
+   MÁS de la mitad, `margin-right: -16%`, y la ventana/tarjeta **se corta en el borde derecho
+   de la pantalla** (bleed intencional, estilo Stripe checkout). Se debe sentir amplio, no
+   una tarjetita centrada. `.pp-mockup-wrap { max-width: 1000px }`.
+2. **Sobrio y REAL, nada caricaturesco.** Colores apagados: avatares **planos** (`#334155`,
+   `#b45309`… — SIN gradientes brillantes ni glow de color), barras de chart en gris
+   (`#e2e8f0`) con **un solo** acento navy (`#0a192f`), callouts en gris neutro. Nada de
+   `linear-gradient` neón ni sombras de color saturadas.
+3. ⛔ **PROHIBIDOS los "badges flotantes / dispersos"** (mini-tarjetas satélite tipo
+   "Cliente viendo", "+12% vs semana", "2 facturas en riesgo" flotando alrededor de la card).
+   André los rechazó: se ven dispersos y baratos. El mockup debe ser **una sola pieza
+   cohesiva** (la ventana/tarjeta con su contenido), no una card rodeada de pastillas.
+4. **Features conversacionales → chat LIBRE sobre el hero (NO dentro de una card).** Para
+   cobranza-IA / negociación, la conversación vive como **burbujas flotando directamente
+   sobre el fondo del hero** (patrón de Stripe payment-links), NO metida en una tarjeta con
+   borde. Estructura: `.mk-chatfree` transparente (sin fondo/borde), burbujas `.cf-msg`
+   alternando izq (`cf-in`, blanca) / der (`cf-out`, navy) con etiqueta de nombre encima, y
+   la pieza final (ej. plan de pagos) como tarjetita que **también flota** en el flujo.
+   Centrada-a-la-derecha del espacio visual (`margin: 0 auto 0 22%`).
+5. **Animación GSAP "cabrona" pero con propósito:**
+   - **Ambient float** sutil y continuo en todo el mockup (`y: -7, 4.6s, sine.inOut, yoyo`).
+   - **Micro-historia** que se auto-reproduce y prueba el copy (cursor que negocia el precio,
+     barras que crecen con count-up, sello que se timbra, timeline que se enciende).
+   - **Chat en vivo:** indicador "escribiendo…" (3 puntos que rebotan, `.cf-dots`) que aparece
+     en el lugar del mensaje y luego lo reemplaza la burbuja — se siente una conversación real.
+     Loop con `repeat:-1` + `repeatDelay` y reset limpio.
+   - Siempre `prefers-reduced-motion` → estado final estático y legible.
+6. **Sin la ventana macOS** (ver §2): toolbar real, jamás los 3 puntitos de colores.
+
+---
+
 ## 5. PROHIBIDO (reglas de sangre)
 
 1. **Tailwind** (`bg-white/70`, `rounded-[2rem]`, `max-w-5xl`…) — no existe en este repo.
@@ -137,6 +176,11 @@ Todo respeta `prefers-reduced-motion` (estado final visible y correcto sin JS).
 4. **Skeletons como relleno principal.** Solo para periferia/cortes de borde.
 5. **Cursor/toast obligatorios.** Son opcionales; el realismo manda.
 6. **Cajas Bento de bordes duros, emojis, glass en la superficie principal, glow saturado.**
+7. **La ventana macOS con los 3 puntos de colores (semáforo).** Jamás. Usa toolbar real (§2).
+8. **Badges flotantes / satélites dispersos** alrededor de un mockup (§4.5.3). El mockup es
+   una pieza cohesiva; las conversaciones van como chat libre sobre el hero, no como pastillas.
+9. **Colores caricaturescos** en heroes: gradientes neón, avatares con glow de color, barras
+   multicolor. Sobrio y desaturado (§4.5.2).
 
 ---
 
@@ -151,3 +195,8 @@ Todo respeta `prefers-reduced-motion` (estado final visible y correcto sin JS).
 - [ ] ¿Números con `.editorial`, marcas con Favicon V2, cero emojis?
 - [ ] ¿Animación con estado final por defecto y `prefers-reduced-motion` cubierto?
 - [ ] ¿Scroll nativo oculto donde aplique?
+- [ ] **(Hero)** ¿SIN ventana macOS de 3 puntos? ¿toolbar real con título izq + estado der?
+- [ ] **(Hero)** ¿Grande y sangrando por la derecha, no una tarjetita centrada?
+- [ ] **(Hero)** ¿SIN badges/satélites flotantes dispersos? ¿pieza cohesiva?
+- [ ] **(Hero)** ¿Colores sobrios (avatares planos, barras gris + 1 acento), nada neón?
+- [ ] **(Hero conversacional)** ¿chat LIBRE sobre el fondo (no en card) + "escribiendo…"?

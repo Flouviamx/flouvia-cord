@@ -306,11 +306,11 @@ const hayContacto = !!(vEmail || vWa || vTel);
         </div>
     </div>
 
-    <!-- Conversación + negociación -->
+    <!-- Conversación + chat directo -->
     {mostrarChat && (
         <div class="q-chat">
             <div class="q-thread" id="qThread" hidden={conversacion.length === 0}>
-                <span class="q-chat-label">CONVERSACIÓN</span>
+                <div class="q-chat-eyebrow">CONVERSACIÓN</div>
                 {conversacion.map((m) => (
                     <div class:list={['q-msg', m.mine ? 'mine' : 'theirs', { counter: m.tipo === 'counter' }]}>
                         <span class="q-msg-text">{m.detalle}</span>
@@ -320,19 +320,28 @@ const hayContacto = !!(vEmail || vWa || vTel);
             </div>
 
             {!yaAprobada && !yaRechazada && (
-                <details class="q-negotiate" data-token={q.token}>
-                    <summary>¿Tienes una duda o quieres negociar el precio?</summary>
-                    <div class="q-neg-body">
-                        <textarea class="ql-input ql-textarea" id="qMsg" rows="2" placeholder="Escribe tu duda o propuesta al vendedor…"></textarea>
-                        <input class="ql-input" type="number" id="qProp" min="0" step="100" placeholder="Tu precio objetivo en MXN (opcional)" />
-                        <div class="q-neg-btns">
-                            <button class="ql-ghost" id="qSendMsg">Enviar mensaje</button>
-                            <button class="ql-ghost ql-counter-btn" id="qSendCounter" style={`border-color:${color}; color:${color}`}>Hacer contraoferta</button>
-                        </div>
-                        <p class="q-neg-ok" id="qNegOk" hidden>Enviado. {ORG.nombre} lo verá al instante.</p>
-                        <p class="ql-error" id="qNegErr"></p>
+                <div class="q-compose" data-token={q.token}>
+                    <div class="q-compose-row">
+                        <textarea
+                            class="q-compose-ta"
+                            id="qMsg"
+                            rows="1"
+                            placeholder="Escribe un mensaje o propuesta…"
+                        ></textarea>
+                        <button class="q-compose-send" id="qSendMsg" aria-label="Enviar" style={`background:${color}`}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        </button>
                     </div>
-                </details>
+                    <div class="q-compose-extras">
+                        <input class="q-compose-price" type="number" id="qProp" min="0" step="100" placeholder="Propuesta en MXN (opcional)" />
+                        <button class="q-counter-pill" id="qSendCounter" style={`color:${color}; border-color:${color}`}>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                            Contraoferta
+                        </button>
+                    </div>
+                    <p class="q-compose-ok" id="qNegOk" hidden>Enviado. {ORG.nombre} lo verá al instante.</p>
+                    <p class="ql-error" id="qNegErr"></p>
+                </div>
             )}
         </div>
     )}
@@ -575,7 +584,19 @@ const hayContacto = !!(vEmail || vWa || vTel);
         const time = document.createElement('span'); time.className = 'q-msg-time'; time.textContent = 'ahora';
         div.append(t, time);
         thread.appendChild(div);
+        requestAnimationFrame(() => { thread.scrollTop = thread.scrollHeight; });
     };
+
+    // ── Auto-resize del compose textarea ──
+    (() => {
+        const ta = document.getElementById('qMsg') as HTMLTextAreaElement | null;
+        if (!ta) return;
+        const resize = () => {
+            ta.style.height = 'auto';
+            ta.style.height = Math.min(ta.scrollHeight, 110) + 'px';
+        };
+        ta.addEventListener('input', resize);
+    })();
 
     const sendNeg = async (action: 'comment' | 'counter', btn: HTMLButtonElement) => {
         const mensaje = msgEl?.value.trim() ?? '';
@@ -926,22 +947,69 @@ const hayContacto = !!(vEmail || vWa || vTel);
 .ql-stamp { font-size: 0.68rem; color: #d1d5db; margin: 0; font-variant-numeric: tabular-nums; }
 
 /* ── Conversación ─────────────────────────────── */
-.q-chat { display: flex; flex-direction: column; gap: 1rem; }
-.q-chat-label { font-size: 0.5rem; font-weight: 800; letter-spacing: 2px; color: #d1d5db; }
-.q-thread { display: flex; flex-direction: column; gap: 0.6rem; }
-.q-msg { display: flex; flex-direction: column; gap: 3px; max-width: 86%; padding: 0.7rem 0.95rem; border-radius: 14px; font-size: 0.84rem; }
-.q-msg.theirs { align-self: flex-start; background: #fafafa; border: 1px solid rgba(10,25,47,0.07); border-bottom-left-radius: 4px; }
-.q-msg.mine { align-self: flex-end; background: #0a192f; color: #fff; border-bottom-right-radius: 4px; }
-.q-msg.counter { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); color: #111; }
+.q-chat { display: flex; flex-direction: column; gap: 0.75rem; }
+.q-chat-eyebrow { font-size: 0.49rem; font-weight: 800; letter-spacing: 2px; color: #d1d5db; margin-bottom: 0.4rem; }
+.q-thread {
+    display: flex; flex-direction: column; gap: 0.45rem;
+    max-height: 280px; overflow-y: auto; scroll-behavior: smooth;
+    padding-right: 2px;
+}
+.q-thread::-webkit-scrollbar { width: 3px; }
+.q-thread::-webkit-scrollbar-thumb { background: rgba(10,25,47,0.1); border-radius: 2px; }
+.q-msg { display: flex; flex-direction: column; gap: 3px; max-width: 80%; padding: 0.65rem 0.9rem; font-size: 0.86rem; }
+.q-msg.theirs { align-self: flex-start; background: #f3f4f6; color: #111; border-radius: 14px 14px 14px 3px; }
+.q-msg.mine { align-self: flex-end; background: #0a192f; color: #fff; border-radius: 14px 14px 3px 14px; }
+.q-msg.counter { background: rgba(245,158,11,0.09); border: 1px solid rgba(245,158,11,0.25); color: #111; border-radius: 14px 14px 3px 14px; align-self: flex-end; }
 .q-msg-text { line-height: 1.5; }
-.q-msg-time { font-size: 0.62rem; opacity: 0.5; }
-.q-negotiate { border: 1px solid rgba(10,25,47,0.08); border-radius: 14px; padding: 0 1.2rem; background: #fafafa; }
-.q-negotiate summary { list-style: none; cursor: pointer; padding: 1rem 0; font-size: 0.86rem; font-weight: 600; color: #6b7280; }
-.q-negotiate summary::-webkit-details-marker { display: none; }
-.q-neg-body { display: flex; flex-direction: column; gap: 0.7rem; padding-bottom: 1.2rem; }
-.q-neg-btns { display: flex; gap: 0.6rem; }
-.ql-counter-btn { font-weight: 700; background: #fff !important; }
-.q-neg-ok { font-size: 0.8rem; color: #059669; font-weight: 600; margin: 0; }
+.q-msg-time { font-size: 0.58rem; opacity: 0.42; margin-top: 2px; }
+
+/* Compose */
+.q-compose {
+    display: flex; flex-direction: column; gap: 0;
+    background: #f9fafb; border: 1px solid rgba(10,25,47,0.07);
+    border-radius: 16px; overflow: hidden;
+}
+.q-compose-row { display: flex; align-items: flex-end; gap: 0; padding: 0.75rem 0.75rem 0.6rem; }
+.q-compose-ta {
+    flex: 1; font-family: var(--font-sans); font-size: 0.875rem; color: #111;
+    background: transparent; border: none; outline: none;
+    resize: none; line-height: 1.5; min-height: 22px; max-height: 110px; overflow-y: auto; padding: 0;
+}
+.q-compose-ta::placeholder { color: #c1c8d4; }
+.q-compose-send {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: none; cursor: pointer; flex-shrink: 0; margin-left: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), filter 0.2s;
+    box-shadow: 0 2px 8px -2px rgba(10,25,47,0.35);
+}
+.q-compose-send:hover { transform: scale(1.12); filter: brightness(1.08); }
+.q-compose-send:active { transform: scale(0.93); transition-duration: 0.08s; }
+.q-compose-extras {
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    padding: 0.5rem 0.75rem 0.6rem;
+    border-top: 1px solid rgba(10,25,47,0.055);
+}
+.q-compose-price {
+    font-family: var(--font-sans); font-size: 0.77rem; color: #6b7280;
+    background: #fff; border: 1px solid rgba(10,25,47,0.09);
+    border-radius: 8px; padding: 5px 10px; flex: 1; min-width: 0; max-width: 170px;
+    transition: border-color 0.2s;
+}
+.q-compose-price:focus { outline: none; border-color: rgba(10,25,47,0.28); }
+.q-compose-price::placeholder { color: #cdd2da; }
+.q-counter-pill {
+    font-family: var(--font-sans); font-size: 0.73rem; font-weight: 600;
+    background: none; border: 1px solid; border-radius: 100px;
+    padding: 5px 11px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px;
+    transition: opacity 0.2s, transform 0.25s;
+    opacity: 0.8; white-space: nowrap;
+}
+.q-counter-pill:hover { opacity: 1; transform: translateY(-1px); }
+.q-counter-pill:active { transform: translateY(0) scale(0.97); }
+.q-compose-ok { font-size: 0.77rem; color: #059669; font-weight: 600; margin: 0; padding: 0 0.75rem 0.6rem; }
 
 /* ── Elementos de Firma Inmutable ───────────────── */
 .ql-legal-box {

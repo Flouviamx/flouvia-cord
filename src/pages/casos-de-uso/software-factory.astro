@@ -6,7 +6,7 @@ import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
 import MagneticNodes from '../../components/MagneticNodes.jsx';
-import RampShader from '../../components/soluciones/RampShader.jsx';
+import QuantizedWaveBg from '../../components/soluciones/QuantizedWaveBg.jsx';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
 
 const lang = getLangFromUrl(Astro.url);
@@ -32,28 +32,23 @@ const magneticNodes = [
     <Nav />
     
     <main class="use-case-main">
-        <!-- HERO (shader full-bleed, Light) -->
-        <!-- HERO & TRUST WRAPPER -->
-        <div class="uc-hero-trust-group">
-            <div class="uc-hero-bg">
-                <RampShader client:only="react" variant="purple" />
+        <!-- HERO -->
+        <header class="startup-hero">
+            <div class="startup-hero-bg">
+                <QuantizedWaveBg client:only="react" />
             </div>
-
-            <header class="uc-hero">
-                        <div class="uc-container uc-hero-inner">
-                <div class="uc-hero-content">
-                    <h1 class="uc-title reveal">Presupuestos a la medida para desarrollo de software</h1>
-                    <p class="uc-sub reveal">
-                        El desarrollo de software requiere claridad. Envía presupuestos detallados, divide los pagos por hitos (Milestones) y notifica a tu equipo de ingeniería.
-                    </p>
-                    <div class="uc-actions reveal">
-                        <a href="/registro" class="btn-luxe">
-                            <span>Empezar ahora</span>
-                            <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                            <div class="btn-shimmer"></div>
-                        </a>
-                        <a href="/contacto/ventas" class="btn-ghost"><span>Contactar a ventas</span></a>
-                    </div>
+            <div class="startup-hero-content">
+                <h1 class="startup-title reveal">Presupuestos a la medida para desarrollo de software</h1>
+                <p class="startup-sub">
+                    El desarrollo de software requiere claridad. Envía presupuestos detallados, divide los pagos por hitos (Milestones) y notifica a tu equipo de ingeniería.
+                </p>
+                <div class="startup-actions">
+                    <a href="/registro" class="btn-luxe">
+                        <span>Empezar ahora</span>
+                        <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        <div class="btn-shimmer"></div>
+                    </a>
+                    <a href="/contacto/ventas" class="btn-ghost"><span>Contactar a ventas</span></a>
                 </div>
             </div>
         </header>
@@ -80,7 +75,6 @@ const magneticNodes = [
                 </div>
             </div>
         </section>
-        </div>
 
         <!-- STRIPE-LIKE SPLIT SECTION -->
         <section class="uc-split-feature">
@@ -390,48 +384,76 @@ const magneticNodes = [
         padding: 0 5%;
     }
 
-    /* ── HERO SECTION (shader full-bleed) ── */
-    .uc-hero-trust-group {
+    /* ── HERO (idéntico a soluciones/startups) ── */
+    .startup-hero {
         position: relative;
-        overflow: hidden;
-        background: #ffffff;
-    }
-
-    .uc-hero {
-        position: relative;
-        min-height: 100vh;
+        padding: 0;
         min-height: 100dvh;
         display: flex;
+        flex-direction: column;
+        justify-content: center;
         align-items: center;
-        padding: 8rem 0 4rem;
-        
+        overflow: hidden;
+        background: #f6f9fc;
     }
 
-    /* Shader background (R3F) — fondo absoluto del hero */
-    .uc-hero-bg {
+    .startup-hero-bg {
         position: absolute;
         inset: 0;
         z-index: 0;
-        pointer-events: none;
-    }
-    /* Fade suave hacia el blanco del contenido (legibilidad del texto) */
-    .uc-hero-bg::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(105deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.55) 38%, rgba(255,255,255,0) 72%);
-        pointer-events: none;
-        z-index: 2;
+        background: #f6f9fc;
+        overflow: hidden;
     }
 
-    .uc-hero-inner {
+    .startup-hero-content {
         position: relative;
-        z-index: 1;
+        z-index: 10;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        max-width: 1140px;
         width: 100%;
+        margin: 0 auto;
+        padding: 2rem 5% 0;
     }
 
-    .uc-hero-content {
-        max-width: 640px;
+    .startup-title {
+        font-size: clamp(3rem, 5vw, 5.5rem);
+        line-height: 1.05;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        margin: 0 0 1.5rem;
+        color: #0a2540;
+        text-wrap: balance;
+        max-width: 900px;
+    }
+
+    .startup-sub {
+        font-size: clamp(1.1rem, 1.8vw, 1.3rem);
+        line-height: 1.6;
+        color: #425466;
+        max-width: 650px;
+        margin: 0 0 2.5rem 0;
+        font-weight: 400;
+    }
+
+    .startup-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .startup-hero .btn-ghost {
+        color: #0a2540;
+        border: 1px solid rgba(10, 37, 64, 0.15);
+        background: rgba(10, 37, 64, 0.03);
+    }
+
+    .startup-hero .btn-ghost:hover {
+        background: rgba(10, 37, 64, 0.08);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.05);
     }
 
     .uc-title {

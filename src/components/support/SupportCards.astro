@@ -1,6 +1,7 @@
 ---
 // /src/components/support/SupportCards.astro
 import { getCollection } from 'astro:content';
+import FaqAccordion from '../landing/FaqAccordion.astro';
 
 const { isEn = false } = Astro.props;
 const allSupport = await getCollection('support');
@@ -126,20 +127,14 @@ const faqs = isEn ? [
         </div>
 
         <!-- ── PREGUNTAS FRECUENTES (FAQ) ── -->
-        <h2 class="pr-h2 masked-title mt-32 text-center">{isEn ? 'Frequently asked questions' : 'Preguntas frecuentes'}</h2>
-        <div class="pr-faq-list reveal">
-            {faqs.map((f) => (
-                <details class="pr-faq-item">
-                    <summary>
-                        <span>{f.q}</span>
-                        <i class="pr-faq-ico" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        </i>
-                    </summary>
-                    <div class="pr-faq-body"><p>{f.a}</p></div>
-                </details>
-            ))}
-        </div>
+        <FaqAccordion
+            faqs={faqs}
+            eyebrow={isEn ? 'FREQUENTLY ASKED QUESTIONS' : 'PREGUNTAS FRECUENTES'}
+            title={isEn ? 'Frequently asked questions' : 'Preguntas frecuentes'}
+            id="support"
+            class="supp-faq-acc"
+            maxWidth="860px"
+        />
 
         <!-- ── CONTACT CTA PREMIUM (HAIRLINE STYLE) ── -->
         <div class="premium-cta reveal">
@@ -291,54 +286,8 @@ const faqs = isEn ? [
         color: var(--color-blue-deep);
     }
 
-    /* ── FAQ (HAIRLINE STYLE) ── */
-    .text-center {
-        text-align: center;
-    }
-    .pr-faq-list {
-        display: flex;
-        flex-direction: column;
-        max-width: 860px;
-        margin: 0 auto;
-        border-top: 1px solid var(--color-border);
-    }
-    .pr-faq-item {
-        border-bottom: 1px solid var(--color-border);
-        overflow: hidden;
-    }
-    .pr-faq-item summary {
-        list-style: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 1.5rem 0;
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--color-text);
-    }
-    .pr-faq-item summary::-webkit-details-marker { display: none; }
-    .pr-faq-ico {
-        flex-shrink: 0;
-        color: var(--color-text-muted);
-        transition: transform 0.4s var(--ease-spring), color 0.3s;
-    }
-    .pr-faq-ico svg { width: 20px; height: 20px; }
-    .pr-faq-item[open] .pr-faq-ico {
-        transform: rotate(135deg);
-        color: var(--color-text);
-    }
-    .pr-faq-body {
-        padding: 0 0 1.5rem;
-    }
-    .pr-faq-body p {
-        margin: 0;
-        font-size: 1rem;
-        line-height: 1.6;
-        color: var(--color-text-muted);
-        max-width: 700px;
-    }
+    /* ── FAQ accordion override (inside content-wrapper, strips extra padding) ── */
+    :global(.supp-faq-acc) { padding: 4rem 0; }
 
     /* ── PREMIUM CONTACT CTA (HAIRLINE) ── */
     .premium-cta {
@@ -368,21 +317,36 @@ const faqs = isEn ? [
     .pcta-button {
         display: inline-flex;
         align-items: center;
-        gap: 12px;
-        padding: 16px 32px;
-        background: var(--color-text);
-        color: var(--color-bg);
+        gap: 10px;
+        padding: 17px 36px;
+        background: #111827;
+        color: #ffffff;
         font-weight: 600;
         font-size: 1rem;
-        border-radius: 12px;
+        border-radius: 999px;
         text-decoration: none;
-        transition: transform 0.3s ease;
+        position: relative;
+        overflow: hidden;
         white-space: nowrap;
         margin-left: 2rem;
+        transition: transform 0.35s var(--ease-spring), box-shadow 0.35s var(--ease-spring);
+        box-shadow: 0 4px 14px rgba(10,25,47,0.12);
+    }
+    .pcta-button::after {
+        content: '';
+        position: absolute;
+        top: 0; left: -110%;
+        width: 60%; height: 100%;
+        background: linear-gradient(105deg, transparent, rgba(255,255,255,0.16), transparent);
+        transition: left 0.5s ease;
+        pointer-events: none;
     }
     .pcta-button:hover {
         transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(10,25,47,0.18);
     }
+    .pcta-button:hover::after { left: 160%; }
+    .pcta-button:active { transform: scale(0.97); }
 
     @media (max-width: 1024px) {
         .editorial-grid {

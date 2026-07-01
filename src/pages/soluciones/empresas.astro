@@ -18,6 +18,7 @@ import { getLangFromUrl } from '../../i18n/utils';
 import '../../styles/mockups.css';
 import DarkAuroraBg from '../../components/soluciones/DarkAuroraBg.jsx';
 import CardAuroraBg from '../../components/soluciones/CardAuroraBg.jsx';
+import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = Astro.props.isEn || lang === 'en';
@@ -809,22 +810,14 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
 
 
         <!-- ── FAQ ── -->
-        <section class="stripe-faq-section reveal">
-            <div class="stripe-container">
-                <h2 class="stripe-h2" style="text-align: center;">{isEn ? 'Frequently asked questions' : 'Preguntas frecuentes'}</h2>
-                <div class="stripe-faq-list" style="margin-left: auto; margin-right: auto;">
-                    {solucion.faqs.map(f => (
-                        <details class="stripe-faq-item">
-                            <summary>
-                                <h3>{f.q}</h3>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                            </summary>
-                            <div class="stripe-faq-a"><p>{f.a}</p></div>
-                        </details>
-                    ))}
-                </div>
-            </div>
-        </section>
+        <FaqAccordion
+            faqs={solucion.faqs}
+            eyebrow={isEn ? 'FREQUENTLY ASKED QUESTIONS' : 'PREGUNTAS FRECUENTES'}
+            title={isEn ? 'Frequently asked questions' : 'Preguntas frecuentes'}
+            id="empresas-faq"
+            class="sol-faq-acc"
+            maxWidth="800px"
+        />
 
 
         <Footer />
@@ -1611,60 +1604,8 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         color: var(--stripe-muted);
     }
 
-    /* ════════════════════════════════════════════════════════════════
-       FAQ
-    ════════════════════════════════════════════════════════════════ */
-    .stripe-faq-section {
-        padding: 6rem 0;
-        position: relative;
-        z-index: 10;
-    }
-    
-    .stripe-faq-list {
-        max-width: 800px;
-        margin-top: 3rem;
-    }
-    
-    .stripe-faq-item {
-        border-bottom: 1px solid var(--stripe-border);
-    }
-    
-    .stripe-faq-item summary {
-        padding: 1.5rem 0;
-        cursor: pointer;
-        list-style: none;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .stripe-faq-item summary::-webkit-details-marker {
-        display: none;
-    }
-    
-    .stripe-faq-item summary h3 {
-        font-size: 1.1rem;
-        font-weight: 600;
-        margin: 0;
-        color: var(--stripe-text);
-    }
-    
-    .stripe-faq-item summary svg {
-        width: 20px;
-        height: 20px;
-        color: var(--stripe-muted);
-        transition: transform 0.2s ease;
-    }
-    
-    .stripe-faq-item[open] summary svg {
-        transform: rotate(180deg);
-    }
-    
-    .stripe-faq-a {
-        padding-bottom: 1.5rem;
-        color: var(--stripe-muted);
-        line-height: 1.6;
-    }
+    /* ── FAQ padding override ── */
+    :global(.sol-faq-acc) { padding: 5rem 5% 7rem; }
 
     /* ════════════════════════════════════════════════════════════════
        CTA

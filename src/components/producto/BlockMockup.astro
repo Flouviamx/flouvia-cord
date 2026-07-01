@@ -8,21 +8,22 @@ const { slug, index } = Astro.props;
   {/* ────────────────── EDITOR ────────────────── */}
   {slug === 'editor' && index === 0 && (
     <div class="bm-stage bm-editor-m0">
-      <div class="bm-floating bm-float-top-right">
-        <div class="bm-pill">
-          <i class="bm-dot bm-dot-blue"></i>
-          <span>Guardado automático</span>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">COT-0149 · Distribuidora El Zarco</span>
+          <span class="bm-app-badge">Borrador</span>
         </div>
-      </div>
-      <div class="bm-card">
-        <div class="bm-row"><span>Cemento gris 50kg</span><span>120</span><b class="editorial">$182.00</b></div>
-        <div class="bm-row bm-row-target">
-          <span>Varilla 3/8" × 12m</span><span>340</span>
-          <b class="editorial mk-green"><span class="price-val">$191.48</span> <i class="mk-chip bm-chip-hide">−12%</i></b>
+        <div class="bm-app-body">
+          <div class="bm-g bm-g5 bm-g-head"><span>Producto</span><span>Cant.</span><span>Lista</span><span>Negociado</span><span class="bm-r">Importe</span></div>
+          <div class="bm-g bm-g5"><span>Cemento gris 50kg</span><span>120</span><span class="bm-mut">$182.00</span><b>$182.00</b><b class="editorial bm-r">$21,840</b></div>
+          <div class="bm-g bm-g5 bm-row-target"><span>Varilla 3/8" × 12m</span><span>340</span><span class="bm-mut bm-strike">$191.48</span><b class="mk-green"><span class="price-val">$168.50</span> <i class="mk-chip bm-chip-hide">−12%</i></b><b class="editorial bm-r">$57,290</b></div>
+          <div class="bm-g bm-g5"><span>Block hueco 15×20×40</span><span>2,400</span><span class="bm-mut">$14.20</span><b>$14.20</b><b class="editorial bm-r">$34,080</b></div>
+          <div class="bm-g bm-g5"><span>Malla electro. 6×6</span><span>180</span><span class="bm-mut">$312.00</span><b>$312.00</b><b class="editorial bm-r">$56,160</b></div>
+          <div class="bm-g bm-g5"><span>Arena de río</span><span>60 m³</span><span class="bm-mut">$540.00</span><b>$540.00</b><b class="editorial bm-r">$32,400</b></div>
+          <div class="bm-g bm-g5"><span>Grava 3/4"</span><span>45 m³</span><span class="bm-mut">$410.00</span><b>$410.00</b><b class="editorial bm-r">$18,450</b></div>
         </div>
-        <div class="bm-row"><span>Block hueco</span><span>2400</span><b class="editorial">$14.20</b></div>
+        <div class="bm-app-foot"><span>6 partidas · IVA incluido</span><b class="editorial">Total $196,469.20</b></div>
       </div>
-      <!-- Cursor falso -->
       <div class="bm-fake-cursor">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
       </div>
@@ -31,38 +32,44 @@ const { slug, index } = Astro.props;
 
   {slug === 'editor' && index === 1 && (
     <div class="bm-stage bm-editor-m1">
-      <div class="bm-floating bm-float-bottom-left">
-        <div class="bm-pill bm-pill-dark">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
-          <span class="bm-margin-text">Margen 24%</span>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Catálogo · 248 productos</span>
+          <span class="bm-app-badge bm-badge-blue">+ Nuevo</span>
         </div>
-      </div>
-      <div class="bm-card">
-        <div class="bm-head"><span>Costo Base</span><span>Lista</span></div>
-        <div class="bm-row"><span>$128.00</span><b>$182.00</b></div>
-        <div class="bm-row bm-active">
-           <span>$140.00</span>
-           <div class="bm-margin-bar-bg"><div class="bm-margin-bar-fill"></div></div>
-           <b>$168.50</b>
+        <div class="bm-app-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span class="bm-search-q">Varilla</span><span class="bm-search-caret"></span></div>
+        <div class="bm-app-body">
+          <div class="bm-g bm-gcat bm-g-head"><span>Producto</span><span>SKU</span><span>Precio</span><span class="bm-r">Estado</span></div>
+          <div class="bm-g bm-gcat cat-r"><span>Cemento gris 50kg</span><span class="bm-mut">CEM-050</span><b>$182.00</b><span class="bm-r"><i class="bm-st bm-st-on"></i>Activo</span></div>
+          <div class="bm-g bm-gcat cat-r bm-active"><span>Varilla 3/8" × 12m</span><span class="bm-mut">VAR-038</span><b>$191.48</b><span class="bm-r"><i class="bm-st bm-st-on"></i>Activo</span></div>
+          <div class="bm-g bm-gcat cat-r"><span>Block hueco 15×20×40</span><span class="bm-mut">BLK-154</span><b>$14.20</b><span class="bm-r"><i class="bm-st bm-st-on"></i>Activo</span></div>
+          <div class="bm-g bm-gcat cat-r"><span>Malla electro. 6×6</span><span class="bm-mut">MAL-066</span><b>$312.00</b><span class="bm-r"><i class="bm-st bm-st-on"></i>Activo</span></div>
+          <div class="bm-g bm-gcat cat-r"><span>Arena de río m³</span><span class="bm-mut">ARE-001</span><b>$540.00</b><span class="bm-r"><i class="bm-st bm-st-off"></i>Pausado</span></div>
+          <div class="bm-g bm-gcat cat-r"><span>Grava 3/4" m³</span><span class="bm-mut">GRA-034</span><b>$410.00</b><span class="bm-r"><i class="bm-st bm-st-on"></i>Activo</span></div>
         </div>
-        <div class="bm-row"><span>$9.80</span><b>$14.20</b></div>
       </div>
     </div>
   )}
 
   {slug === 'editor' && index === 2 && (
     <div class="bm-stage bm-editor-m2">
-      <div class="bm-floating bm-float-bottom-right bm-stamp-hide">
-        <div class="bm-pill">
-          <i class="bm-dot bm-dot-green"></i>
-          <span>Subtotal calculado</span>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">COT-0149 · Resumen</span>
+          <span class="bm-app-badge bm-badge-green">Listo</span>
         </div>
-      </div>
-      <div class="bm-card">
-        <div class="bm-row bm-stag-row"><span>Subtotal</span><b>$169,370.00</b></div>
-        <div class="bm-row bm-stag-row"><span>IVA 16%</span><b>$27,099.20</b></div>
-        <div class="bm-divider bm-stag-row"></div>
-        <div class="bm-row bm-stag-row bm-total-row"><span class="bm-bold">Total a pagar</span><b class="bm-large">$196,469.20</b></div>
+        <div class="bm-app-body">
+          <div class="bm-g bm-g3 bm-g-head"><span>Concepto</span><span>Cant.</span><span class="bm-r">Importe</span></div>
+          <div class="bm-g bm-g3"><span>Cemento gris 50kg</span><span>120</span><b class="editorial bm-r">$21,840.00</b></div>
+          <div class="bm-g bm-g3"><span>Varilla 3/8" × 12m</span><span>340</span><b class="editorial bm-r">$57,290.00</b></div>
+          <div class="bm-g bm-g3"><span>Block hueco 15×20×40</span><span>2,400</span><b class="editorial bm-r">$34,080.00</b></div>
+          <div class="bm-g bm-g3"><span>Malla electro. 6×6</span><span>180</span><b class="editorial bm-r">$56,160.00</b></div>
+          <div class="bm-app-tot">
+            <div class="bm-tot-r bm-stag-row"><span>Subtotal</span><b class="editorial">$169,370.00</b></div>
+            <div class="bm-tot-r bm-stag-row"><span>IVA 16%</span><b class="editorial">$27,099.20</b></div>
+            <div class="bm-tot-r bm-tot-final bm-stag-row"><span>Total a pagar</span><b class="editorial bm-large">$196,469.20</b></div>
+          </div>
+        </div>
       </div>
     </div>
   )}
@@ -70,59 +77,60 @@ const { slug, index } = Astro.props;
   {/* ────────────────── LINK PÚBLICO ────────────────── */}
   {slug === 'link-publico' && index === 0 && (
     <div class="bm-stage bm-public-m0">
-      <div class="bm-floating bm-float-bottom-left bm-toast-hide">
-        <div class="bm-toast">
-          <span class="bm-avatar">MR</span>
-          <div class="bm-toast-text"><b>Mario Ruiz</b><i>dejó un comentario</i></div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">portal.cord.mx/q/COT-0148</span>
+          <span class="bm-app-badge bm-badge-green">Abierto</span>
         </div>
-      </div>
-      <div class="bm-card bm-chat">
-        <div class="bm-msg bm-msg-in"><span>¿Incluye la maniobra de descarga?</span></div>
-        <div class="bm-msg bm-msg-typing"><span>...</span></div>
-        <div class="bm-msg bm-msg-out bm-msg-hide"><span>Sí, la descarga a pie de obra está incluida en el total.</span></div>
+        <div class="bm-uid" style="padding:14px 16px;border-bottom:1px solid rgba(10,25,47,0.05);">
+          <span class="bm-avat a2">MV</span>
+          <div class="bm-uid-tx"><b>Materiales del Valle</b><span>te envió una cotización</span></div>
+        </div>
+        <div class="bm-total-hero"><span>Total con IVA</span><b class="editorial">$196,469.20</b><em>Net 30 · vigente al 24 jun 2026</em></div>
+        <div class="bm-cc" style="padding-top:0;">
+          <div class="bm-cc-b bm-cc-cl">¿Incluye la maniobra de descarga?</div>
+          <div class="bm-cc-b bm-cc-ai">Sí, la descarga a pie de obra está incluida en el total.</div>
+        </div>
+        <div style="display:flex;gap:8px;padding:4px 12px 14px;">
+          <div class="bm-btn2 bm-btn2-nav bm-lp-approve" style="flex:1;margin:0;">Aprobar cotización</div>
+          <div class="bm-btn2 bm-btn2-ghost" style="margin:0;">Rechazar</div>
+        </div>
       </div>
     </div>
   )}
 
   {slug === 'link-publico' && index === 1 && (
     <div class="bm-stage bm-public-m1">
-      <div class="bm-floating bm-float-top-right">
-        <div class="bm-pill bm-pill-brand bm-logo-pill">
-          <span>Tu Logo</span>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Ajustes · Marca</span>
+          <span class="bm-app-badge bm-badge-blue">Guardar</span>
         </div>
-      </div>
-      <div class="bm-card bm-brand-card">
-        <div class="bm-brand-head">
-          <div class="bm-brand-logo"></div>
-          <div><b>Acero Monterrey</b><i>acero-monterrey.cord.mx</i></div>
+        <div class="bm-uid" style="padding:14px 16px;border-bottom:1px solid rgba(10,25,47,0.05);">
+          <span class="bm-avat a3" style="border-radius:10px;">AM</span>
+          <div class="bm-uid-tx"><b>Acero Monterrey</b><span>acero-monterrey.cord.mx</span></div>
         </div>
-        <div class="bm-brand-color">
-          <span>Brand Color</span>
-          <div class="bm-color-swatch-wrap">
-             <div class="bm-color-swatch bm-swatch-1"></div>
-             <div class="bm-color-swatch bm-swatch-2"></div>
-             <div class="bm-color-swatch bm-swatch-3"></div>
-          </div>
-        </div>
-      </div>
-      <div class="bm-fake-cursor">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
+        <div class="bm-kv"><span>Logotipo</span><span class="bm-tg bm-tg-green">Subido</span></div>
+        <div class="bm-kv"><span>Color de marca</span><div class="bm-sw"><i style="background:#2563eb;"></i><i style="background:#0a192f;"></i><i style="background:#059669;"></i></div></div>
+        <div class="bm-kv"><span>"Powered by Cord"</span><span class="bm-tg bm-tg-gray">Oculto</span></div>
+        <div class="bm-kv"><span>PDF con tu marca</span><span class="bm-tg bm-tg-green">Activo</span></div>
       </div>
     </div>
   )}
 
   {slug === 'link-publico' && index === 2 && (
     <div class="bm-stage bm-public-m2">
-      <div class="bm-push-notif">
-         <div class="bm-push-icon"><img src="/imgs/logo-cord-white.png" alt="" /></div>
-         <div class="bm-push-body">
-            <b>Cord B2B</b>
-            <span>Distribuidora El Zarco acaba de abrir la cotización COT-0148.</span>
-         </div>
-      </div>
-      <div class="bm-card bm-dim">
-        <div class="bm-row"><span>Estado</span><b>Pendiente</b></div>
-        <div class="bm-row"><span>Total</span><b>$196k</b></div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">COT-0148 · Actividad</span>
+          <span class="bm-app-badge bm-badge-green">Aprobada</span>
+        </div>
+        <div class="bm-steps">
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Aprobada por el cliente</b><span>El Zarco firmó digitalmente · hoy 12:36</span></div></div>
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Pago recibido</b><span>Stripe · $196,469.20 · 12:41</span></div></div>
+          <div class="bm-step"><span class="bm-step-ico pend"></span><div class="bm-step-tx"><b>Factura CFDI</b><span>lista para timbrar</span></div></div>
+        </div>
+        <div class="bm-app-foot"><span>Aviso enviado a tu equipo</span><b>$196,469.20</b></div>
       </div>
     </div>
   )}
@@ -130,59 +138,51 @@ const { slug, index } = Astro.props;
   {/* ────────────────── SEGUIMIENTO ────────────────── */}
   {slug === 'seguimiento' && index === 0 && (
     <div class="bm-stage bm-track-m0">
-      <div class="bm-timeline-card">
-         <div class="bm-tl-line">
-            <div class="bm-tl-fill"></div>
-         </div>
-         <div class="bm-tl-nodes">
-            <div class="bm-tl-node"><i class="bm-icon-check">✓</i><span>Borrador</span></div>
-            <div class="bm-tl-node"><i class="bm-icon-check">✓</i><span>Enviada</span></div>
-            <div class="bm-tl-node"><i class="bm-icon-check">✓</i><span>Vista</span></div>
-            <div class="bm-tl-node bm-node-pending"><i></i><span>Aprobada</span></div>
-         </div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Actividad reciente</span>
+          <span class="bm-app-badge bm-badge-green">● En vivo</span>
+        </div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a1">RM</span><div class="bm-uid-tx"><b>Raúl abrió COT-0148</b><span>hace 5 min · 3ª vez</span></div></div><span class="bm-tg bm-tg-amber">Comparando</span></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a2">LF</span><div class="bm-uid-tx"><b>Lucía abrió COT-0151</b><span>hace 22 min · 1ª vez</span></div></div><span class="bm-tg bm-tg-blue">Nueva vista</span></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a3">MR</span><div class="bm-uid-tx"><b>Marco abrió COT-0149</b><span>hace 1 h · 2ª vez</span></div></div><span class="bm-tg bm-tg-gray">Vista</span></div>
+        <div class="bm-app-foot"><span>Llama mientras está caliente</span><b>3 aperturas</b></div>
       </div>
     </div>
   )}
 
   {slug === 'seguimiento' && index === 1 && (
     <div class="bm-stage bm-track-m1">
-      <div class="bm-kanban">
-        <div class="bm-board-col">
-          <div class="bm-col-head">Negociación</div>
-          <div class="bm-board-card bm-kanban-drag">
-            <span class="bm-badge bm-badge-orange">COT-0148</span>
-            <b>$196k</b>
-            <div class="bm-card-foot"><span class="bm-avatar-sm">EZ</span><i>Hace 1h</i></div>
-          </div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">COT-0148 · Historia</span>
+          <span class="bm-app-badge bm-badge-green">Pagada</span>
         </div>
-        <div class="bm-board-col">
-          <div class="bm-col-head">Ganadas</div>
-          <div class="bm-board-card bm-dim">
-            <span class="bm-badge bm-badge-gray">COT-0149</span>
-            <b>$24k</b>
-            <div class="bm-card-foot"><span class="bm-avatar-sm">GF</span><i>Ayer</i></div>
-          </div>
-          <!-- Drop target -->
-          <div class="bm-kanban-drop"></div>
+        <div class="bm-steps">
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Creada</b><span>Borrador · 10:41</span></div></div>
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Enviada</b><span>Correo y WhatsApp · 11:02</span></div></div>
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Vista (3 veces)</b><span>Raúl Mendoza · 12:31</span></div></div>
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Aprobada · Pagada</b><span>Stripe · 12:41</span></div></div>
         </div>
-      </div>
-      <div class="bm-fake-cursor">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
       </div>
     </div>
   )}
 
   {slug === 'seguimiento' && index === 2 && (
     <div class="bm-stage bm-track-m2">
-      <div class="bm-search">
-        <div class="bm-search-bar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <span class="bm-search-type">_</span>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Pipeline</span>
+          <span class="bm-app-badge bm-badge-blue">Este mes</span>
         </div>
-        <div class="bm-search-res">
-          <div class="bm-s-res-1"><b>COT-0148</b><span>Varilla 3/8" × 12m</span></div>
-          <div class="bm-s-res-2"><b>COT-0092</b><span>Varilla 1/2" × 12m</span></div>
+        <div class="bm-2col">
+          <div class="bm-stat"><span>Por cerrar</span><b class="editorial">$1.84M</b></div>
+          <div class="bm-stat"><span>Cerrado</span><b class="editorial g">$920k</b></div>
         </div>
+        <div class="bm-kv"><span>Enviadas · 12</span><div class="bm-cbar" style="width:120px;"><i style="width:70%;"></i></div></div>
+        <div class="bm-kv"><span>Vistas · 8</span><div class="bm-cbar" style="width:120px;"><i style="width:48%;background:#f59e0b;"></i></div></div>
+        <div class="bm-kv"><span>Aprobadas · 5</span><div class="bm-cbar" style="width:120px;"><i style="width:30%;background:#059669;"></i></div></div>
+        <div class="bm-app-foot"><span>2 por vencer en 48 h</span><b>Tasa de cierre 41%</b></div>
       </div>
     </div>
   )}
@@ -190,60 +190,53 @@ const { slug, index } = Astro.props;
   {/* ────────────────── CFDI ────────────────── */}
   {slug === 'cfdi' && index === 0 && (
     <div class="bm-stage bm-cfdi-m0">
-      <div class="bm-floating bm-float-top-left">
-          <div class="bm-pill bm-pill-brand">
-             <span>Timbrado SAT 4.0</span>
-          </div>
-      </div>
-      <div class="bm-card bm-cfdi-card">
-        <div class="bm-fake-xml bm-matrix-text">
-          &lt;cfdi:Comprobante Version="4.0"&gt;           &lt;cfdi:Emisor Rfc="MVA24..."/&gt;           &lt;cfdi:Conceptos&gt;...&lt;/cfdi&gt;
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Factura CFDI 4.0</span>
+          <span class="bm-app-badge bm-badge-green">Timbrada</span>
         </div>
-        <div class="bm-row"><span>Status</span><b class="bm-green">Generado</b></div>
-        <div class="bm-row"><span>UUID</span><b>a1b2c3d4-9f01...</b></div>
+        <div class="bm-code">&lt;cfdi:Comprobante <b>Version="4.0"</b> Serie="A" Folio="1048"&gt; &lt;cfdi:Emisor Rfc="MVA240611AB3"/&gt;</div>
+        <div class="bm-kv"><span>UUID</span><b class="editorial" style="font-size:0.72rem;">a1b2c3d4-9f01-4e22-b7aa</b></div>
+        <div class="bm-kv"><span>Emisor</span><b>Materiales del Valle · MVA240611AB3</b></div>
+        <div class="bm-kv"><span>Receptor</span><b>Distribuidora El Zarco · DEZ981123QX1</b></div>
+        <div class="bm-kv"><span>Uso CFDI</span><b>G03 · Gastos en general</b></div>
+        <div class="bm-app-foot"><span>Timbrada ante el SAT</span><b class="editorial">$196,469.20 MXN</b></div>
       </div>
     </div>
   )}
 
   {slug === 'cfdi' && index === 1 && (
     <div class="bm-stage bm-cfdi-m1">
-      <div class="bm-floating bm-float-bottom-right bm-cert-stamp">
-        <div class="bm-pill">
-           <i class="bm-dot bm-dot-green"></i>
-           <span>Conectado</span>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Ajustes · Sello Digital (CSD)</span>
+          <span class="bm-app-badge bm-badge-green">Conectado</span>
         </div>
-      </div>
-      <div class="bm-terminal">
-        <div class="bm-term-head">
-          <i></i><i></i><i></i>
-          <span>cert.key</span>
-        </div>
-        <div class="bm-term-body">
-          <span class="bm-term-line line-1">Loading CSD...</span>
-          <span class="bm-term-line bm-term-ok line-2">[OK] Validating .CER</span>
-          <span class="bm-term-line line-3">Decrypting .KEY password...</span>
-          <span class="bm-term-line bm-term-ok line-4">[OK] Ready for signing</span>
-          <span class="bm-term-cursor">_</span>
-        </div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a2" style="border-radius:8px;"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5z"/></svg></span><div class="bm-uid-tx"><b>certificado.cer</b><span>válido hasta 2028</span></div></div><span class="bm-tg bm-tg-green">OK</span></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a4" style="border-radius:8px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><div class="bm-uid-tx"><b>llave.key</b><span>cifrada y aislada</span></div></div><span class="bm-tg bm-tg-green">OK</span></div>
+        <div class="bm-kv"><span>PAC autorizado (SAT)</span><span class="bm-tg bm-tg-green">Timbrando</span></div>
+        <div class="bm-kv"><span>País</span><span class="bm-tg bm-tg-blue">México</span></div>
+        <div class="bm-app-foot"><span>Se conecta una vez y listo</span><b>RFC MVA240611AB3</b></div>
       </div>
     </div>
   )}
 
   {slug === 'cfdi' && index === 2 && (
     <div class="bm-stage bm-cfdi-m2">
-      <div class="bm-floating bm-float-top-right">
-        <div class="bm-pill bm-pill-dark">
-          <i class="bm-icon-check">✓</i>
-          <span>Autofactura</span>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">COT-0148 · Ciclo completo</span>
+          <span class="bm-app-badge bm-badge-green">Facturada</span>
         </div>
-      </div>
-      <div class="bm-card">
-        <div class="bm-barcode">
-          <div class="bm-bars"></div>
-          <div class="bm-laser"></div>
-          <span>Ticket: 9812-7361-0021</span>
+        <div class="bm-steps">
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Cotización aprobada</b><span>$196,469.20 · 12:36</span></div></div>
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Pago recibido</b><span>Stripe · 12:41</span></div></div>
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>CFDI timbrado</b><span>UUID a1b2c3d4… · 12:42</span></div></div>
         </div>
-        <div class="bm-btn bm-btn-outline">Ver PDF</div>
+        <div style="display:flex;gap:8px;padding:2px 12px 14px;">
+          <div class="bm-btn2 bm-btn2-ghost" style="flex:1;margin:0;">Ver PDF</div>
+          <div class="bm-btn2 bm-btn2-ghost" style="flex:1;margin:0;">Descargar XML</div>
+        </div>
       </div>
     </div>
   )}
@@ -251,51 +244,54 @@ const { slug, index } = Astro.props;
   {/* ────────────────── CLIENTES & CRÉDITO ────────────────── */}
   {slug === 'clientes-credito' && index === 0 && (
     <div class="bm-stage bm-credit-m0">
-       <div class="bm-floating bm-float-top-left bm-req-appr">
-          <div class="bm-pill">
-             <i class="bm-dot bm-dot-orange"></i>
-             <span>Requiere aprobación</span>
-          </div>
-       </div>
-      <div class="bm-card">
-        <div class="bm-head"><b>Distribuidora El Zarco</b><span class="bm-tag bm-tag-warn">Net 30</span></div>
-        <div class="bm-credit-bar">
-          <div class="bm-credit-fill"></div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Distribuidora El Zarco</span>
+          <span class="bm-app-badge bm-badge-blue">Cliente</span>
         </div>
-        <div class="bm-row"><span>Crédito usado</span><b>$<span class="bm-credit-val">0</span>k / $500k</b></div>
+        <div class="bm-uid" style="padding:14px 16px;border-bottom:1px solid rgba(10,25,47,0.05);">
+          <span class="bm-avat a1">EZ</span>
+          <div class="bm-uid-tx"><b>Raúl Mendoza</b><span>raul@elzarco.mx · +52 55 1234 5678</span></div>
+        </div>
+        <div class="bm-kv"><span>RFC</span><b>DEZ981123QX1</b></div>
+        <div class="bm-kv"><span>Régimen fiscal</span><b>601 · General de Ley</b></div>
+        <div class="bm-kv"><span>Términos de pago</span><span class="bm-tg bm-tg-amber">Net 30</span></div>
+        <div class="bm-kv"><span>Límite de crédito</span><b class="editorial">$500,000</b></div>
+        <div class="bm-app-foot"><span>Datos listos para el CFDI</span><b>18 cotizaciones</b></div>
       </div>
     </div>
   )}
 
   {slug === 'clientes-credito' && index === 1 && (
     <div class="bm-stage bm-credit-m1">
-       <div class="bm-floating bm-float-bottom-left bm-spei-toast">
-          <div class="bm-toast bm-toast-sm bm-toast-success">
-             <i class="bm-icon-check">✓</i>
-             <div><span>Pago registrado</span><b>$45,000.00</b></div>
-          </div>
-       </div>
-      <div class="bm-card">
-        <div class="bm-row"><span>Factura F-102</span><b>$45,000.00</b></div>
-        <div class="bm-divider"></div>
-        <div class="bm-row"><span>Estado</span><b class="bm-spei-status bm-orange">Pendiente</b></div>
-        <div class="bm-row"><span>Método</span><b>SPEI</b></div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Exposición de crédito</span>
+          <span class="bm-app-badge bm-badge-blue">3 clientes</span>
+        </div>
+        <div class="bm-kv"><div style="flex:1;"><b style="display:block;font-size:0.8rem;">El Zarco</b><div class="bm-cbar" style="margin-top:6px;"><i class="warn" style="width:85%;"></i></div></div><b class="editorial" style="margin-left:12px;">$425k/$500k</b></div>
+        <div class="bm-kv"><div style="flex:1;"><b style="display:block;font-size:0.8rem;">Constructora GAMA</b><div class="bm-cbar" style="margin-top:6px;"><i style="width:72%;"></i></div></div><b class="editorial" style="margin-left:12px;">$612k/$850k</b></div>
+        <div class="bm-kv"><div style="flex:1;"><b style="display:block;font-size:0.8rem;">Grupo Ferrex</b><div class="bm-cbar" style="margin-top:6px;"><i style="width:8%;"></i></div></div><span class="bm-tg bm-tg-gray" style="margin-left:12px;">Contado</span></div>
+        <div class="bm-app-foot"><span>El Zarco cerca de su límite</span><b>Riesgo $1.04M</b></div>
       </div>
     </div>
   )}
 
   {slug === 'clientes-credito' && index === 2 && (
     <div class="bm-stage bm-credit-m2">
-      <div class="bm-card">
-        <div class="bm-head"><span>Líneas de crédito</span></div>
-        <div class="bm-chart">
-          <div class="bm-chart-col c-1"><div class="bm-chart-col-fill"></div></div>
-          <div class="bm-chart-col c-2"><div class="bm-chart-col-fill"></div></div>
-          <div class="bm-chart-col c-3"><div class="bm-chart-col-fill"></div></div>
-          <div class="bm-chart-col c-4 bm-chart-active"><div class="bm-chart-col-fill"></div></div>
-          <div class="bm-chart-col c-5"><div class="bm-chart-col-fill"></div></div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">El Zarco · Relación</span>
+          <span class="bm-app-badge bm-badge-green">Cliente A</span>
         </div>
-        <div class="bm-row"><span>Total riesgo</span><b>$1.2M</b></div>
+        <div class="bm-2col">
+          <div class="bm-stat"><span>Tasa de aprobación</span><b class="g">86%</b></div>
+          <div class="bm-stat"><span>Días a pago</span><b>28</b></div>
+        </div>
+        <div class="bm-kv"><span>Cotizaciones</span><b>18 · $2.4M</b></div>
+        <div class="bm-kv"><span>Pagos a tiempo</span><span class="bm-tg bm-tg-green">16 de 18</span></div>
+        <div class="bm-kv"><span>Último cierre</span><b>hace 4 días</b></div>
+        <div class="bm-app-foot"><span>La memoria comercial, en datos</span><b>Mejor decisión de precio</b></div>
       </div>
     </div>
   )}
@@ -303,43 +299,50 @@ const { slug, index } = Astro.props;
   {/* ────────────────── COBRANZA CON IA ────────────────── */}
   {slug === 'cobranza-ia' && index === 0 && (
     <div class="bm-stage bm-ar-m0">
-      <div class="bm-floating bm-float-top-right bm-ar-badge-hide">
-        <div class="bm-pill"><i class="bm-dot bm-dot-green"></i><span>Plan aceptado</span></div>
-      </div>
-      <div class="bm-card bm-chat">
-        <div class="bm-msg bm-msg-in"><span>El agente escribió a Raúl por correo</span></div>
-        <div class="bm-msg bm-msg-out"><span>Propuesta: 3 pagos de $137,433 · sin recargos</span></div>
-        <div class="bm-msg bm-msg-in bm-ar-reply-hide"><span>De acuerdo, empiezo el 15 de julio</span></div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Agente de cobranza · El Zarco</span>
+          <span class="bm-app-badge bm-badge-amber">47 días vencido</span>
+        </div>
+        <div class="bm-cc">
+          <div class="bm-cc-b bm-cc-ai"><span class="bm-cc-tag">Agente Cord · IA</span>Hola Raúl, tu saldo de $412,300 venció hace 47 días. ¿Lo liquidamos en 3 pagos, sin recargos?</div>
+          <div class="bm-cc-b bm-cc-cl">De acuerdo, empiezo el 15 de julio.</div>
+          <div class="bm-cc-b bm-cc-ai"><span class="bm-cc-tag">Agente Cord · IA</span>Listo — plan de 3 × $137,433 registrado.</div>
+        </div>
+        <div class="bm-app-foot"><span>Negocia dentro de tus reglas</span><b class="bm-tg bm-tg-green">Plan activo</b></div>
       </div>
     </div>
   )}
 
   {slug === 'cobranza-ia' && index === 1 && (
     <div class="bm-stage bm-ar-m1">
-      <div class="bm-floating bm-float-top-left">
-        <div class="bm-pill bm-pill-brand"><span>AI CFO Insight</span></div>
-      </div>
-      <div class="bm-card">
-        <div class="bm-head"><span>Flujo esperado · 90 días</span><span class="bm-green">IA</span></div>
-        <div class="bm-chart">
-          <div class="bm-chart-col"><div class="bm-chart-col-fill"></div></div>
-          <div class="bm-chart-col"><div class="bm-chart-col-fill"></div></div>
-          <div class="bm-chart-col"><div class="bm-chart-col-fill"></div></div>
-          <div class="bm-chart-col bm-chart-active"><div class="bm-chart-col-fill"></div></div>
-          <div class="bm-chart-col"><div class="bm-chart-col-fill"></div></div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Flujo de caja · 90 días</span>
+          <span class="bm-app-badge bm-badge-green">IA</span>
         </div>
-        <div class="bm-row"><span>Ingreso proyectado</span><b>$1.84M</b></div>
+        <div class="bm-2col">
+          <div class="bm-stat"><span>Ingreso proyectado</span><b class="editorial g">$1.84M</b></div>
+          <div class="bm-stat"><span>Probabilidad</span><b>82%</b></div>
+        </div>
+        <div class="bm-bars2"><i style="height:44%"></i><i style="height:62%"></i><i style="height:54%"></i><i class="hot" style="height:88%"></i><i style="height:70%"></i></div>
+        <div class="bm-bars2-x"><span>30d</span><span>45d</span><span>60d</span><span>75d</span><span>90d</span></div>
+        <div class="bm-app-foot"><span>Basado en tu historial real de pago</span><b class="bm-tg bm-tg-amber">Riesgo El Zarco</b></div>
       </div>
     </div>
   )}
 
   {slug === 'cobranza-ia' && index === 2 && (
     <div class="bm-stage bm-ar-m2">
-      <div class="bm-card">
-        <div class="bm-head"><span>Conversaciones de cobranza</span></div>
-        <div class="bm-row bm-ar-row"><span>Distribuidora El Zarco</span><b class="bm-ar-status bm-orange">Negociando</b></div>
-        <div class="bm-row bm-ar-row"><span>Constructora GAMA</span><b class="bm-green">Plan activo</b></div>
-        <div class="bm-row bm-ar-row"><span>Grupo Ferrex</span><b>Esperando tu OK</b></div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Supervisión de cobranza</span>
+          <span class="bm-app-badge bm-badge-blue">Opt-in</span>
+        </div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a1">EZ</span><div class="bm-uid-tx"><b>Distribuidora El Zarco</b><span>$412,300 · agente activo</span></div></div><span class="bm-tg bm-tg-amber">Negociando</span></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a2">CG</span><div class="bm-uid-tx"><b>Constructora GAMA</b><span>plan de 3 cuotas</span></div></div><span class="bm-tg bm-tg-green">Plan activo</span></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a3">GF</span><div class="bm-uid-tx"><b>Grupo Ferrex</b><span>fuera de límites</span></div></div><span class="bm-tg bm-tg-gray">Tu OK</span></div>
+        <div class="bm-app-foot"><span>Cada acción en el audit log</span><b>Tú apruebas</b></div>
       </div>
     </div>
   )}
@@ -347,45 +350,50 @@ const { slug, index } = Astro.props;
   {/* ────────────────── MULTI-DIVISA / FX ────────────────── */}
   {slug === 'divisas' && index === 0 && (
     <div class="bm-stage bm-fx-m0">
-      <div class="bm-floating bm-float-top-right">
-        <div class="bm-pill"><i class="bm-dot bm-dot-blue"></i><span>Factura en MXN</span></div>
-      </div>
-      <div class="bm-card">
-        <div class="bm-head"><span>Presentación</span><span>Factura</span></div>
-        <div class="bm-row"><span>USD 10,620.50</span><b class="editorial">$196,469.20</b></div>
-        <div class="bm-row"><span>EUR 9,760.00</span><b class="editorial">$196,176.00</b></div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">COT-0150 · Acme Imports</span>
+          <span class="bm-app-badge bm-badge-blue">USD → MXN</span>
+        </div>
+        <div class="bm-kv"><span>Moneda de presentación</span><span class="bm-tg bm-tg-blue">USD</span></div>
+        <div class="bm-kv"><span>Moneda fiscal (factura)</span><span class="bm-tg bm-tg-green">MXN</span></div>
+        <div class="bm-2col">
+          <div class="bm-stat"><span>El cliente ve</span><b class="editorial">US$10,620.50</b></div>
+          <div class="bm-stat"><span>Se factura</span><b class="editorial g">$196,469.20</b></div>
+        </div>
+        <div class="bm-app-foot"><span>Tasa guardada en la cotización</span><b>1 USD = $18.50</b></div>
       </div>
     </div>
   )}
 
   {slug === 'divisas' && index === 1 && (
     <div class="bm-stage bm-fx-m1">
-      <div class="bm-floating bm-float-top-left">
-        <div class="bm-pill"><i class="bm-dot bm-dot-green"></i><span>En vivo</span></div>
-      </div>
-      <div class="bm-terminal">
-        <div class="bm-term-head"><i></i><i></i><i></i><span>fx.spot</span></div>
-        <div class="bm-term-body">
-          <span class="bm-term-line">Consultando BCE…</span>
-          <span class="bm-term-line bm-term-ok">[OK] USD/MXN 18.50</span>
-          <span class="bm-term-line bm-term-ok">[OK] EUR/MXN 20.10</span>
-          <span class="bm-term-line">spot lock listo · 30 días</span>
-          <span class="bm-term-cursor">_</span>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Tipo de cambio</span>
+          <span class="bm-app-badge bm-badge-green">● En vivo · BCE</span>
         </div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a4" style="border-radius:8px;">$</span><div class="bm-uid-tx"><b>USD / MXN</b><span>spot del día</span></div></div><b class="editorial">$18.50</b></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a3" style="border-radius:8px;">€</span><div class="bm-uid-tx"><b>EUR / MXN</b><span>spot del día</span></div></div><b class="editorial">$20.10</b></div>
+        <div class="bm-kv"><span>Fuente</span><span class="bm-tg bm-tg-blue">Banco Central Europeo</span></div>
+        <div class="bm-kv"><span>Respaldo si falla</span><span class="bm-tg bm-tg-green">Activo</span></div>
+        <div class="bm-app-foot"><span>Preview mientras cotizas</span><b>Sin capturar nada</b></div>
       </div>
     </div>
   )}
 
   {slug === 'divisas' && index === 2 && (
     <div class="bm-stage bm-fx-m2">
-      <div class="bm-floating bm-float-bottom-right">
-        <div class="bm-pill bm-pill-brand"><span>🔒 Lock 30 días</span></div>
-      </div>
-      <div class="bm-card">
-        <div class="bm-head"><span>Cobertura</span></div>
-        <div class="bm-row"><span>Tasa spot</span><b class="editorial">$18.50</b></div>
-        <div class="bm-row"><span>Buffer +2%</span><div class="bm-margin-bar-bg"><div class="bm-margin-bar-fill bm-fx-buffer-fill"></div></div></div>
-        <div class="bm-row bm-active"><span>Tasa aplicada</span><b class="editorial bm-green bm-fx-applied">$18.50</b></div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Cobertura cambiaria</span>
+          <span class="bm-app-badge bm-badge-green">FX lock 30 días</span>
+        </div>
+        <div class="bm-kv"><span>Tasa spot</span><b class="editorial">$18.50</b></div>
+        <div class="bm-kv"><span>Buffer de cobertura</span><div class="bm-cbar" style="width:120px;"><i style="width:60%;background:#059669;"></i></div></div>
+        <div class="bm-kv bm-active" style="border-radius:0;"><span>Tasa aplicada</span><b class="editorial" style="color:#059669;">$18.87 <span class="bm-tg bm-tg-green">+2%</span></b></div>
+        <div class="bm-kv"><span>Congelada hasta</span><b>24 jul 2026</b></div>
+        <div class="bm-app-foot"><span>El margen que cierras es el que cobras</span><b>Protegido</b></div>
       </div>
     </div>
   )}
@@ -393,96 +401,100 @@ const { slug, index } = Astro.props;
   {/* ────────────────── FACTURACIÓN INTERNACIONAL ────────────────── */}
   {slug === 'internacional' && index === 0 && (
     <div class="bm-stage bm-intl-m0">
-      <div class="bm-floating bm-float-top-right">
-        <div class="bm-pill bm-pill-brand"><span>🔒 30 días</span></div>
-      </div>
-      <div class="bm-card">
-        <div class="bm-head"><span>Cobertura cambiaria</span></div>
-        <div class="bm-row"><span>Tasa spot (BCE)</span><b class="editorial bm-intl-spot">$18.42</b></div>
-        <div class="bm-row bm-row-target"><span>Tasa aplicada</span><b class="editorial bm-green"><span class="bm-intl-applied">$18.79</span> <i class="mk-chip bm-intl-chip">+2%</i></b></div>
-        <div class="bm-row"><span>FX lock</span><b>30 días</b></div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Cobertura cambiaria</span>
+          <span class="bm-app-badge bm-badge-green">FX lock 30 días</span>
+        </div>
+        <div class="bm-kv"><span>Tasa spot (BCE)</span><b class="editorial">$18.42</b></div>
+        <div class="bm-kv"><span>Buffer de cobertura</span><div class="bm-cbar" style="width:120px;"><i style="width:55%;background:#059669;"></i></div></div>
+        <div class="bm-kv bm-active" style="border-radius:0;"><span>Tasa aplicada</span><b class="editorial" style="color:#059669;">$18.79 <span class="bm-tg bm-tg-green">+2%</span></b></div>
+        <div class="bm-kv"><span>USD → MXN · EUR → MXN</span><span class="bm-tg bm-tg-blue">Congelada</span></div>
+        <div class="bm-app-foot"><span>El dólar se mueve, tu margen no</span><b>Guardada con la cotización</b></div>
       </div>
     </div>
   )}
 
   {slug === 'internacional' && index === 1 && (
     <div class="bm-stage bm-intl-m1">
-      <div class="bm-card">
-        <div class="bm-head"><span>Divisas del trato</span></div>
-        <div class="bm-row"><span>Presentación (cliente)</span><span class="bm-tag bm-tag-blue">USD</span></div>
-        <div class="bm-row"><span>Fiscal (factura)</span><span class="bm-tag bm-tag-mxn">MXN</span></div>
-        <div class="bm-divider"></div>
-        <div class="bm-row"><span>Convertido</span><b class="editorial bm-intl-conv">$230,880.00</b></div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">COT-0151 · Pacific Hardware (US)</span>
+          <span class="bm-app-badge bm-badge-blue">USD → MXN</span>
+        </div>
+        <div class="bm-kv"><span>Divisa de presentación</span><span class="bm-tg bm-tg-blue">USD · cliente</span></div>
+        <div class="bm-kv"><span>Divisa fiscal</span><span class="bm-tg bm-tg-green">MXN · factura</span></div>
+        <div class="bm-2col">
+          <div class="bm-stat"><span>Presentación</span><b class="editorial">US$12,480.00</b></div>
+          <div class="bm-stat"><span>Convertido (MXN)</span><b class="editorial g">$230,880.00</b></div>
+        </div>
+        <div class="bm-app-foot"><span>Tasa, fuente y vigencia registradas</span><b>Tasa 18.50</b></div>
       </div>
     </div>
   )}
 
   {slug === 'internacional' && index === 2 && (
     <div class="bm-stage bm-intl-m2">
-      <div class="bm-floating bm-float-top-right">
-        <div class="bm-pill bm-pill-brand"><span>México · SAT 4.0</span></div>
-      </div>
-      <div class="bm-floating bm-float-bottom-left bm-intl-us">
-        <div class="bm-pill bm-pill-dark"><span>EE.UU. · en desarrollo</span></div>
-      </div>
-      <div class="bm-card bm-cfdi-card">
-        <div class="bm-fake-xml">&lt;cfdi:Comprobante Version="4.0"&gt; &lt;cfdi:Emisor Rfc="MVA24..."/&gt; &lt;/cfdi:Comprobante&gt;</div>
-        <div class="bm-row"><span>Status</span><b class="bm-green bm-intl-status">Timbrado</b></div>
-        <div class="bm-row"><span>UUID</span><b>a1b2c3d4-9f01...</b></div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Registro fiscal por país</span>
+          <span class="bm-app-badge bm-badge-green">Multi-país</span>
+        </div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a2" style="border-radius:8px;">MX</span><div class="bm-uid-tx"><b>México · CFDI 4.0</b><span>timbrado real vía Facturapi</span></div></div><span class="bm-tg bm-tg-green">Timbrado</span></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a4" style="border-radius:8px;">US</span><div class="bm-uid-tx"><b>EE.UU. · Commercial Invoice</b><span>arquitectura cableada</span></div></div><span class="bm-tg bm-tg-gray">Próximo</span></div>
+        <div class="bm-code" style="border-top:1px solid rgba(10,25,47,0.05);border-bottom:none;">UUID <b>a1b2c3d4-9f01-4e22-b7aa</b> · SAT ✓</div>
+        <div class="bm-app-foot"><span>Un solo lugar por país</span><b>$230,880.00 MXN</b></div>
       </div>
     </div>
   )}
   {/* ────────────────── FINANZAS ────────────────── */}
   {slug === 'finanzas' && index === 0 && (
     <div class="bm-stage bm-fin-m0">
-      <div class="bm-floating bm-float-top-right">
-        <div class="bm-pill bm-pill-brand"><span>AI CFO</span></div>
-      </div>
-      <div class="bm-card">
-        <div class="bm-head"><span>Flujo de caja 90 días</span></div>
-        <div class="bm-chart">
-          <div class="bm-chart-col"><div class="bm-chart-col-fill" style="height:40%"></div></div>
-          <div class="bm-chart-col"><div class="bm-chart-col-fill" style="height:60%"></div></div>
-          <div class="bm-chart-col"><div class="bm-chart-col-fill" style="height:80%"></div></div>
-          <div class="bm-chart-col bm-chart-active"><div class="bm-chart-col-fill" style="height:100%"></div></div>
-          <div class="bm-chart-col"><div class="bm-chart-col-fill" style="height:50%"></div></div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">DSO por cliente</span>
+          <span class="bm-app-badge bm-badge-green">IA</span>
         </div>
-        <div class="bm-row"><span>Proyección ajustada (DSO)</span><b class="bm-green">$2.4M</b></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a1">EZ</span><div class="bm-uid-tx"><b>El Zarco</b><span>Net 30 · paga en 42 días</span></div></div><b class="bm-tg bm-tg-amber">DSO 42</b></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a2">CG</span><div class="bm-uid-tx"><b>Constructora GAMA</b><span>Net 60 · paga en 58 días</span></div></div><b class="bm-tg bm-tg-green">DSO 58</b></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a3">GF</span><div class="bm-uid-tx"><b>Grupo Ferrex</b><span>Contado · paga en 3 días</span></div></div><b class="bm-tg bm-tg-green">DSO 3</b></div>
+        <div class="bm-app-foot"><span>No adivina: usa tu historial real</span><b class="editorial">Proyección $2.4M</b></div>
       </div>
     </div>
   )}
 
   {slug === 'finanzas' && index === 1 && (
     <div class="bm-stage bm-fin-m1">
-      <div class="bm-floating bm-float-bottom-left">
-        <div class="bm-pill">
-           <i class="bm-dot bm-dot-orange"></i>
-           <span>Alerta temprana</span>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Riesgo de cartera</span>
+          <span class="bm-app-badge bm-badge-amber">● Alerta</span>
         </div>
-      </div>
-      <div class="bm-card">
-        <div class="bm-head"><span>Riesgo de concentración</span></div>
-        <div class="bm-row"><span>Grupo Constructor A</span><b class="bm-orange">42% de cartera</b></div>
-        <div class="bm-row"><span>DSO promedio histórico</span><b>+18 días</b></div>
-        <div class="bm-divider"></div>
-        <div class="bm-row"><span>Recomendación AI</span><b>Limitar crédito</b></div>
+        <div class="bm-kv"><div style="flex:1;"><b style="display:block;font-size:0.8rem;">Grupo Constructor A</b><div class="bm-cbar" style="margin-top:6px;"><i class="warn" style="width:42%;"></i></div></div><b class="bm-tg bm-tg-red" style="margin-left:12px;">42%</b></div>
+        <div class="bm-kv"><div style="flex:1;"><b style="display:block;font-size:0.8rem;">El Zarco</b><div class="bm-cbar" style="margin-top:6px;"><i style="width:24%;"></i></div></div><span class="bm-tg bm-tg-gray" style="margin-left:12px;">24%</span></div>
+        <div class="bm-kv"><span>DSO promedio histórico</span><b class="bm-tg bm-tg-amber">+18 días</b></div>
+        <div class="bm-app-foot"><span>Recomendación de IA</span><b>Limitar crédito a Grupo A</b></div>
       </div>
     </div>
   )}
 
   {slug === 'finanzas' && index === 2 && (
     <div class="bm-stage bm-fin-m2">
-      <div class="bm-floating bm-float-top-left">
-        <div class="bm-pill bm-pill-dark">
-          <i class="bm-icon-check">✓</i>
-          <span>Reporte actualizado</span>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Panel del CFO</span>
+          <span class="bm-app-badge bm-badge-green">● En vivo</span>
         </div>
-      </div>
-      <div class="bm-card">
-        <div class="bm-head"><span>Panel Gerencial</span></div>
-        <div class="bm-row"><span>Efectivo disponible</span><b>$840k</b></div>
-        <div class="bm-row"><span>Por cobrar (30 días)</span><b class="bm-green">$1.1M</b></div>
-        <div class="bm-row"><span>Riesgo impago estimado</span><b class="bm-orange">1.2%</b></div>
+        <div class="bm-2col">
+          <div class="bm-stat"><span>Efectivo disponible</span><b class="editorial">$840k</b></div>
+          <div class="bm-stat"><span>Por cobrar 30d</span><b class="editorial g">$1.1M</b></div>
+        </div>
+        <div class="bm-kv"><span>Riesgo de impago estimado</span><b class="bm-tg bm-tg-amber">1.2%</b></div>
+        <div class="bm-kv"><span>DSO global</span><b>34 días</b></div>
+        <div style="display:flex;gap:8px;padding:2px 12px 14px;">
+          <div class="bm-btn2 bm-btn2-ghost" style="flex:1;margin:0;">Exportar CSV</div>
+          <div class="bm-btn2 bm-btn2-ghost" style="flex:1;margin:0;">Exportar PDF</div>
+        </div>
       </div>
     </div>
   )}
@@ -490,54 +502,51 @@ const { slug, index } = Astro.props;
   {/* ────────────────── APROBACIONES ────────────────── */}
   {slug === 'aprobaciones' && index === 0 && (
     <div class="bm-stage bm-appr-m0">
-      <div class="bm-floating bm-float-top-left">
-        <div class="bm-pill">
-          <i class="bm-dot bm-dot-blue"></i>
-          <span>Reglas de margen</span>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Reglas de descuento</span>
+          <span class="bm-app-badge bm-badge-blue">Por rol</span>
         </div>
-      </div>
-      <div class="bm-card">
-        <div class="bm-head"><span>Umbrales de descuento</span></div>
-        <div class="bm-row"><span>Vendedor Junior</span><b>Max 5%</b></div>
-        <div class="bm-row"><span>Vendedor Senior</span><b>Max 15%</b></div>
-        <div class="bm-row bm-row-target"><span>Excepción</span><b class="bm-orange">Requiere Gerencia</b></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a4">VJ</span><div class="bm-uid-tx"><b>Vendedor Junior</b><span>catálogo estándar</span></div></div><b class="bm-tg bm-tg-gray">Máx 5%</b></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a2">VS</span><div class="bm-uid-tx"><b>Vendedor Senior</b><span>cuentas asignadas</span></div></div><b class="bm-tg bm-tg-blue">Máx 15%</b></div>
+        <div class="bm-kv bm-active" style="border-radius:0;"><div class="bm-uid"><span class="bm-avat a1">!</span><div class="bm-uid-tx"><b>Margen mínimo 25%</b><span>por debajo se bloquea</span></div></div><span class="bm-tg bm-tg-amber">Gerencia</span></div>
+        <div class="bm-app-foot"><span>Validación silenciosa en tiempo real</span><b>Auto-bloqueo</b></div>
       </div>
     </div>
   )}
 
   {slug === 'aprobaciones' && index === 1 && (
     <div class="bm-stage bm-appr-m1">
-      <div class="bm-push-notif">
-         <div class="bm-push-icon"><img src="/imgs/logo-cord-white.png" alt="" /></div>
-         <div class="bm-push-body">
-            <b>Aprobación requerida</b>
-            <span>COT-0294 con 18% descuento ($240k).</span>
-         </div>
-      </div>
-      <div class="bm-card bm-dim">
-        <div class="bm-row"><span>Autorizado por</span><b>Pendiente</b></div>
-        <div class="bm-btn bm-btn-outline" style="margin-top: 8px;">Revisar margen</div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">COT-0294 · Aprobación</span>
+          <span class="bm-app-badge bm-badge-amber">Pendiente</span>
+        </div>
+        <div class="bm-kv"><span>Vendedor</span><b>Laura G. · descuento 18%</b></div>
+        <div class="bm-kv"><span>Margen resultante</span><b class="bm-tg bm-tg-red">18% · bajo mínimo</b></div>
+        <div class="bm-kv"><span>Monto</span><b class="editorial">$240,000</b></div>
+        <div class="bm-cc" style="padding:8px 12px 0;"><div class="bm-cc-b bm-cc-ai" style="font-size:0.74rem;"><span class="bm-cc-tag">Laura</span>Cliente clave, ¿lo autorizas?</div></div>
+        <div style="display:flex;gap:8px;padding:8px 12px 14px;">
+          <div class="bm-btn2 bm-btn2-nav" style="flex:1;margin:0;">Aprobar</div>
+          <div class="bm-btn2 bm-btn2-ghost" style="margin:0;">Rechazar</div>
+        </div>
       </div>
     </div>
   )}
 
   {slug === 'aprobaciones' && index === 2 && (
     <div class="bm-stage bm-appr-m2">
-      <div class="bm-floating bm-float-bottom-right">
-        <div class="bm-pill bm-pill-brand">
-          <i class="bm-icon-check" style="background: rgba(255,255,255,0.2); box-shadow: none;">✓</i>
-          <span>Aprobado por Gerencia</span>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">COT-0294 · Bitácora</span>
+          <span class="bm-app-badge bm-badge-green">Aprobada</span>
         </div>
-      </div>
-      <div class="bm-timeline-card">
-         <div class="bm-tl-line">
-            <div class="bm-tl-fill" style="height: 100%;"></div>
-         </div>
-         <div class="bm-tl-nodes">
-            <div class="bm-tl-node"><i class="bm-icon-check">✓</i><span>Solicitud enviada (10:15)</span></div>
-            <div class="bm-tl-node"><i class="bm-icon-check">✓</i><span>Margen revisado (10:22)</span></div>
-            <div class="bm-tl-node"><i class="bm-icon-check">✓</i><span>Aprobación liberada (10:24)</span></div>
-         </div>
+        <div class="bm-steps">
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Solicitud enviada</b><span>Laura G. · 18% descuento · 10:15</span></div></div>
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Margen revisado</b><span>Auditor silencioso · 18% &lt; 25% · 10:22</span></div></div>
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Aprobación liberada</b><span>Ana P. · Gerencia · 10:24</span></div></div>
+        </div>
+        <div class="bm-app-foot"><span>Responsabilidad clara por descuento</span><b>Log inmutable</b></div>
       </div>
     </div>
   )}
@@ -545,119 +554,97 @@ const { slug, index } = Astro.props;
   {/* ────────────────── EQUIPO ────────────────── */}
   {slug === 'equipo' && index === 0 && (
     <div class="bm-stage bm-eq-m0">
-      <div class="bm-floating bm-float-top-right">
-         <div class="bm-pill bm-pill-dark"><span>Permisos B2B</span></div>
-      </div>
-      <div class="bm-card">
-        <div class="bm-head"><span>Directorio de usuarios</span></div>
-        <div class="bm-row"><span>Laura G.</span><span class="bm-tag bm-tag-blue">Vendedor</span></div>
-        <div class="bm-row"><span>Carlos M.</span><span class="bm-tag bm-tag-warn">Gerente</span></div>
-        <div class="bm-row"><span>Ana P.</span><span class="bm-tag bm-tag-mxn">Admin</span></div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Equipo y roles</span>
+          <span class="bm-app-badge bm-badge-blue">4 miembros</span>
+        </div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a3">AP</span><div class="bm-uid-tx"><b>Ana Pérez</b><span>ana@tu-empresa.mx</span></div></div><span class="bm-tg bm-tg-purple">Admin</span></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a1">CM</span><div class="bm-uid-tx"><b>Carlos M.</b><span>ve todo el pipeline</span></div></div><span class="bm-tg bm-tg-amber">Gerente</span></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a4">LG</span><div class="bm-uid-tx"><b>Laura G.</b><span>solo su cartera</span></div></div><span class="bm-tg bm-tg-blue">Vendedor</span></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a2">RS</span><div class="bm-uid-tx"><b>Rosa S.</b><span>solo lectura</span></div></div><span class="bm-tg bm-tg-gray">Contador</span></div>
+        <div class="bm-app-foot"><span>Cada quien ve solo lo suyo</span><b>Sin exportar ni borrar</b></div>
       </div>
     </div>
   )}
 
   {slug === 'equipo' && index === 1 && (
     <div class="bm-stage bm-eq-m1">
-      <div class="bm-floating bm-float-top-left">
-        <div class="bm-pill bm-pill-brand"><span>Org switching</span></div>
-      </div>
-      <div class="bm-card bm-brand-card">
-        <div class="bm-brand-head">
-          <div class="bm-brand-logo" style="border-radius: 50%;"></div>
-          <div><b>Acero Monterrey</b><i>RFC: ACM981...</i></div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Cambiar de empresa</span>
+          <span class="bm-app-badge bm-badge-blue">Multi-empresa</span>
         </div>
-        <div class="bm-divider"></div>
-        <div class="bm-brand-head" style="opacity: 0.5;">
-          <div class="bm-brand-logo" style="border-radius: 4px;"></div>
-          <div><b>Ferretería Central</b><i>RFC: FEC882...</i></div>
-        </div>
+        <div class="bm-kv bm-active" style="border-radius:0;"><div class="bm-uid"><span class="bm-avat a2">AM</span><div class="bm-uid-tx"><b>Acero Monterrey</b><span>RFC ACM981123 · activa</span></div></div><span class="bm-tg bm-tg-green">Actual</span></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a1">FC</span><div class="bm-uid-tx"><b>Ferretería Central</b><span>RFC FEC882045</span></div></div><span class="bm-tg bm-tg-gray">Cambiar</span></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a4">DP</span><div class="bm-uid-tx"><b>Distribuidora del Pacífico</b><span>RFC DPA070312</span></div></div><span class="bm-tg bm-tg-gray">Cambiar</span></div>
+        <div class="bm-app-foot"><span>Logo y sellos aislados por marca</span><b>Reportes consolidados</b></div>
       </div>
     </div>
   )}
 
   {slug === 'equipo' && index === 2 && (
     <div class="bm-stage bm-eq-m2">
-      <div class="bm-floating bm-float-bottom-right">
-        <div class="bm-pill">
-           <i class="bm-dot bm-dot-green"></i>
-           <span>Sesión activa</span>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Acceso y seguridad</span>
+          <span class="bm-app-badge bm-badge-green">SSO activo</span>
         </div>
-      </div>
-      <div class="bm-card bm-chat" style="align-items: center; padding: 20px;">
-         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 32px; height: 32px; color: #fff; margin-bottom: 8px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-         <b style="font-size: 0.9rem;">Single Sign-On</b>
-         <span style="color: rgba(255,255,255,0.6); text-align: center; margin-top: 4px;">Autenticado vía Google Workspace @tu-empresa.com</span>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a4" style="border-radius:8px;">G</span><div class="bm-uid-tx"><b>Google Workspace</b><span>@tu-empresa.com</span></div></div><span class="bm-tg bm-tg-green">Conectado</span></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a1" style="border-radius:8px;">M</span><div class="bm-uid-tx"><b>Microsoft Entra</b><span>SAML / OIDC</span></div></div><span class="bm-tg bm-tg-gray">Disponible</span></div>
+        <div class="bm-kv"><span>Autenticación robusta</span><span class="bm-tg bm-tg-blue">Clerk</span></div>
+        <div class="bm-kv"><span>Bitácora de sesiones</span><span class="bm-tg bm-tg-green">Auditada</span></div>
+        <div class="bm-app-foot"><span>Accesos de grado empresarial</span><b>SSO · SAML</b></div>
       </div>
     </div>
   )}
   {/* ────────────────── NEGOCIACIÓN ────────────────── */}
   {slug === 'negociacion' && index === 0 && (
     <div class="bm-stage bm-nego-m0">
-      <div class="bm-floating bm-float-bottom-right">
-        <div class="bm-pill"><i class="bm-dot bm-dot-red"></i><span>Contraoferta recibida</span></div>
-      </div>
-      <div class="bm-card">
-        <div class="bm-row"><span>Cemento gris 50kg</span><span class="bm-badge bm-badge-gray">Aprobado</span><b class="editorial">$21,840</b></div>
-        <div class="bm-row bm-active">
-          <span>Varilla 3/8"</span><span class="bm-badge bm-badge-orange">Ajuste de precio</span>
-          <div style="display:flex; flex-direction:column; align-items:flex-end;">
-            <b class="editorial" style="text-decoration:line-through; color:rgba(255,255,255,0.4); font-size:10px;">$57,290</b>
-            <b class="editorial" style="color:#fbbf24;">$55,000</b>
-          </div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">COT-0148 · Aprobación por línea</span>
+          <span class="bm-app-badge bm-badge-amber">Contraoferta</span>
         </div>
-        <div class="bm-row"><span>Block hueco</span><span class="bm-badge bm-badge-gray">Aprobado</span><b class="editorial">$34,080</b></div>
+        <div class="bm-kv"><div style="flex:1;"><b style="display:block;font-size:0.8rem;">Cemento gris 50kg</b><span class="bm-mut" style="font-size:0.68rem;">120 pz</span></div><span class="bm-tg bm-tg-green" style="margin-right:10px;">Aprobado</span><b class="editorial">$21,840</b></div>
+        <div class="bm-kv bm-active" style="border-radius:0;"><div style="flex:1;"><b style="display:block;font-size:0.8rem;">Varilla 3/8" × 12m</b><span class="bm-mut" style="font-size:0.68rem;text-decoration:line-through;">$57,290</span></div><span class="bm-tg bm-tg-amber" style="margin-right:10px;">Ajuste</span><b class="editorial" style="color:#d97706;">$55,000</b></div>
+        <div class="bm-kv"><div style="flex:1;"><b style="display:block;font-size:0.8rem;">Block hueco 15×20×40</b><span class="bm-mut" style="font-size:0.68rem;">2,400 pz</span></div><span class="bm-tg bm-tg-green" style="margin-right:10px;">Aprobado</span><b class="editorial">$34,080</b></div>
+        <div class="bm-app-foot"><span>Aprueba 9, negocia 1 · chat por línea</span><b>2 de 3 cerradas</b></div>
       </div>
     </div>
   )}
 
   {slug === 'negociacion' && index === 1 && (
     <div class="bm-stage bm-nego-m1">
-      <div class="bm-floating bm-float-top-left">
-        <div class="bm-pill bm-pill-brand"><span>Historial inmutable</span></div>
-      </div>
-      <div class="bm-card">
-        <div class="bm-tl">
-          <div class="bm-tl-row">
-            <div class="bm-tl-line"></div>
-            <div class="bm-tl-node"><i>✓</i></div>
-            <div class="bm-tl-content">
-              <b>v1. Original</b><span>Enviada por ti</span>
-            </div>
-          </div>
-          <div class="bm-tl-row">
-            <div class="bm-tl-line"></div>
-            <div class="bm-tl-node" style="background:#fbbf24; box-shadow: 0 0 0 4px #0a192f, 0 2px 8px rgba(245,158,11,0.3);"></div>
-            <div class="bm-tl-content">
-              <b>v2. Contraoferta</b><span>Revisada por cliente</span>
-            </div>
-          </div>
-          <div class="bm-tl-row bm-active">
-            <div class="bm-tl-line"></div>
-            <div class="bm-tl-node"><i>✓</i></div>
-            <div class="bm-tl-content">
-              <b>v3. Aprobada</b><span>Fijada hoy</span>
-            </div>
-          </div>
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">COT-0148 · Versiones</span>
+          <span class="bm-app-badge bm-badge-green">Inmutable</span>
         </div>
+        <div class="bm-steps">
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>v1 · Original</b><span>Enviada por ti · $196,469.20</span></div></div>
+          <div class="bm-step"><span class="bm-step-ico warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span><div class="bm-step-tx"><b>v2 · Contraoferta</b><span>Por el cliente · $190,000 <em>−3.2%</em></span></div></div>
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>v3 · Aprobada</b><span>Fijada hoy · $192,400</span></div></div>
+        </div>
+        <div class="bm-app-foot"><span>Compara o restaura con un clic</span><b>3 versiones</b></div>
       </div>
     </div>
   )}
 
   {slug === 'negociacion' && index === 2 && (
     <div class="bm-stage bm-nego-m2">
-      <div class="bm-floating bm-float-bottom-right">
-        <div class="bm-pill"><i class="bm-dot bm-dot-green"></i><span>Firma validada</span></div>
-      </div>
-      <div class="bm-card bm-cfdi-card">
-        <div class="bm-fake-xml" style="opacity: 0.8; font-family: monospace; font-size: 8px; color: #34d399; line-height: 1.2;">
-          e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855...           d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592...           31d6cfe0d16ae931b73c59d7e0c089c0ce02d84c04a43b749d8e6a2b8e5c4a5...
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">COT-0148 v3 · Firma</span>
+          <span class="bm-app-badge bm-badge-green">Sellada</span>
         </div>
-        <div style="position:relative; z-index:1; background:rgba(10,25,47,0.85); padding: 12px; border-radius: 8px; display:flex; flex-direction:column; gap:4px; align-items:center; text-align:center; border: 1px solid rgba(52,211,153,0.2);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" style="width:24px; height:24px; margin-bottom:4px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-          <b style="color:#fff; font-size:12px;">Acuerdo cerrado</b>
-          <span style="color:rgba(255,255,255,0.6); font-size:10px;">Hash SHA-256 inyectado</span>
+        <div style="padding:18px 16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;">
+          <span class="bm-avat a2" style="width:44px;height:44px;border-radius:12px;"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5z"/><path d="M9 12l2 2 4-4"/></svg></span>
+          <b style="font-size:0.95rem;color:#0f172a;">Acuerdo cerrado y firmado</b>
+          <span style="font-size:0.7rem;color:#94a3b8;">Firma con validez legal · IP y fecha registradas</span>
         </div>
+        <div class="bm-code" style="border-top:1px solid rgba(10,25,47,0.05);">SHA-256 <b>e3b0c44298fc1c149afbf4c8996fb924…7852b855</b></div>
+        <div class="bm-app-foot"><span>Auditoría matemática independiente</span><b class="bm-tg bm-tg-green">Verificable</b></div>
       </div>
     </div>
   )}
@@ -713,6 +700,110 @@ const { slug, index } = Astro.props;
     max-width: 340px;
     z-index: 2;
   }
+
+  /* ── VENTANA COMPLETA (bento) — UI rica y densa que llena la tarjeta ── */
+  .bm-app {
+    width: 100%;
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid rgba(10,25,47,0.06);
+    box-shadow: 0 1px 2px rgba(10,25,47,0.04), 0 18px 44px -14px rgba(10,25,47,0.16), 0 44px 90px -30px rgba(10,25,47,0.20);
+    overflow: hidden;
+    color: #0f172a;
+    font-size: 0.76rem;
+    text-align: left;
+  }
+  .bm-app-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 16px; border-bottom: 1px solid rgba(10,25,47,0.06); background: #fcfdfe; }
+  .bm-app-title { font-size: 0.78rem; font-weight: 600; color: #0f172a; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-app-badge { flex-shrink: 0; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; padding: 4px 10px; border-radius: 100px; color: #64748b; background: rgba(10,25,47,0.05); border: 1px solid rgba(10,25,47,0.09); }
+  .bm-badge-blue { color: #2563eb; background: rgba(37,99,235,0.09); border-color: rgba(37,99,235,0.2); }
+  .bm-badge-green { color: #059669; background: rgba(16,185,129,0.09); border-color: rgba(16,185,129,0.22); }
+  .bm-app-body { padding: 6px 8px 8px; }
+  .bm-app-search { display: flex; align-items: center; gap: 8px; margin: 10px 8px 4px; padding: 9px 12px; border-radius: 10px; background: #f4f6f9; border: 1px solid rgba(10,25,47,0.06); color: #94a3b8; font-size: 0.74rem; }
+  .bm-app-search svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .bm-search-q { color: #0f172a; font-weight: 500; }
+  .bm-search-caret { width: 1.5px; height: 14px; background: #2563eb; }
+
+  /* grid rows */
+  .bm-g { display: grid; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; font-size: 0.75rem; color: #475569; }
+  .bm-g5 { grid-template-columns: 1.7fr 0.6fr 0.8fr 1fr 0.9fr; }
+  .bm-gcat { grid-template-columns: 1.7fr 0.9fr 0.8fr 0.9fr; }
+  .bm-g3 { grid-template-columns: 1.9fr 0.6fr 1fr; }
+  .bm-g-head { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #a3adba; padding-bottom: 4px; padding-top: 2px; }
+  .bm-g:not(.bm-g-head) { border-bottom: 1px solid rgba(10,25,47,0.04); border-radius: 0; }
+  .bm-g b { color: #0f172a; font-weight: 600; }
+  .bm-r { text-align: right; justify-self: end; }
+  .bm-mut { color: #94a3b8; }
+  .bm-strike { text-decoration: line-through; }
+  .bm-active { background: rgba(37,99,235,0.05); border-radius: 8px; }
+  .bm-st { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
+  .bm-st-on { background: #10b981; }
+  .bm-st-off { background: #cbd5e1; }
+  .bm-app-foot { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid rgba(10,25,47,0.06); background: #fcfdfe; font-size: 0.72rem; color: #94a3b8; }
+  .bm-app-foot b { color: #0f172a; font-weight: 700; }
+  .bm-app-tot { margin: 8px 6px 2px; padding: 10px 10px 4px; border-top: 1px solid rgba(10,25,47,0.08); }
+  .bm-tot-r { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; font-size: 0.78rem; color: #64748b; }
+  .bm-tot-r b { color: #0f172a; font-weight: 600; }
+  .bm-tot-final { margin-top: 4px; padding-top: 10px; border-top: 1px solid rgba(10,25,47,0.08); }
+  .bm-tot-final span { font-weight: 700; color: #0f172a; }
+  .bm-large { font-size: 1.05rem !important; }
+
+  /* ── Helpers reutilizables para las ventanas completas ── */
+  .bm-kv { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid rgba(10,25,47,0.05); font-size: 0.77rem; color: #475569; }
+  .bm-kv:last-child { border-bottom: none; }
+  .bm-kv b { color: #0f172a; font-weight: 600; }
+  .bm-kv .bm-mut, .bm-kv i { color: #94a3b8; font-style: normal; }
+  .bm-avat { width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 0.66rem; font-weight: 700; color: #fff; background: #334155; }
+  .bm-avat.a1 { background: #b45309; } .bm-avat.a2 { background: #047857; } .bm-avat.a3 { background: #6d28d9; } .bm-avat.a4 { background: #1d4ed8; }
+  .bm-uid { display: flex; align-items: center; gap: 10px; }
+  .bm-uid-tx b { display: block; font-size: 0.8rem; color: #0f172a; font-weight: 600; }
+  .bm-uid-tx span { display: block; font-size: 0.68rem; color: #94a3b8; }
+  .bm-tg { flex-shrink: 0; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; padding: 3px 9px; border-radius: 100px; }
+  .bm-tg-blue { color: #2563eb; background: rgba(37,99,235,0.09); border: 1px solid rgba(37,99,235,0.2); }
+  .bm-tg-green { color: #059669; background: rgba(16,185,129,0.09); border: 1px solid rgba(16,185,129,0.22); }
+  .bm-tg-amber { color: #d97706; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25); }
+  .bm-tg-red { color: #dc2626; background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.2); }
+  .bm-tg-gray { color: #64748b; background: rgba(10,25,47,0.05); border: 1px solid rgba(10,25,47,0.1); }
+  .bm-tg-purple { color: #7c3aed; background: rgba(124,58,237,0.09); border: 1px solid rgba(124,58,237,0.2); }
+  .bm-bars2 { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; align-items: end; height: 104px; padding: 12px 14px 6px; }
+  .bm-bars2 > i { display: block; border-radius: 5px 5px 2px 2px; background: #e2e8f0; transform-origin: bottom; }
+  .bm-bars2 > i.hot { background: linear-gradient(180deg,#1e3a5f,#0a192f); }
+  .bm-bars2-x { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; padding: 0 14px 8px; }
+  .bm-bars2-x span { text-align: center; font-size: 0.58rem; font-weight: 600; color: #a3adba; }
+  .bm-cbar { height: 8px; border-radius: 100px; background: #eef2f7; overflow: hidden; }
+  .bm-cbar > i { display: block; height: 100%; border-radius: 100px; background: #2563eb; }
+  .bm-cbar > i.warn { background: linear-gradient(90deg,#f59e0b,#dc2626); }
+  .bm-steps { display: flex; flex-direction: column; padding: 8px 14px; }
+  .bm-step { display: flex; gap: 12px; align-items: flex-start; padding: 9px 0; position: relative; }
+  .bm-step:not(:last-child) .bm-step-ico::after { content: ''; position: absolute; left: 10px; top: 24px; height: 26px; width: 2px; background: rgba(10,25,47,0.09); }
+  .bm-step-ico { position: relative; width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #10b981; color: #fff; }
+  .bm-step-ico svg { width: 12px; height: 12px; }
+  .bm-step-ico.warn { background: #f59e0b; } .bm-step-ico.pend { background: #e2e8f0; color: #94a3b8; }
+  .bm-step-tx { flex: 1; }
+  .bm-step-tx b { display: block; font-size: 0.78rem; color: #0f172a; font-weight: 600; }
+  .bm-step-tx span { display: block; font-size: 0.68rem; color: #94a3b8; margin-top: 1px; }
+  .bm-step-tx em { font-style: normal; font-size: 0.62rem; color: #cbd5e1; }
+  .bm-cc { display: flex; flex-direction: column; gap: 9px; padding: 14px; }
+  .bm-cc-b { max-width: 84%; font-size: 0.78rem; line-height: 1.42; padding: 10px 13px; box-shadow: 0 4px 14px -6px rgba(10,25,47,0.12); }
+  .bm-cc-ai { align-self: flex-start; background: #ffffff; color: #334155; border: 1px solid rgba(10,25,47,0.06); border-radius: 15px 15px 15px 4px; }
+  .bm-cc-cl { align-self: flex-end; background: #0a192f; color: #fff; border-radius: 15px 15px 4px 15px; }
+  .bm-cc-tag { display: block; font-size: 0.55rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: #2563eb; margin-bottom: 3px; }
+  .bm-sw { display: flex; gap: 8px; }
+  .bm-sw > i { width: 26px; height: 26px; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.8), 0 2px 6px rgba(0,0,0,0.12); }
+  .bm-total-hero { text-align: center; padding: 16px; }
+  .bm-total-hero span { display: block; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #a3adba; }
+  .bm-total-hero b { display: block; font-size: 1.9rem; color: #0f172a; letter-spacing: -0.03em; margin-top: 4px; }
+  .bm-total-hero em { display: block; font-style: normal; font-size: 0.68rem; color: #94a3b8; margin-top: 4px; }
+  .bm-btn2 { text-align: center; font-size: 0.8rem; font-weight: 700; padding: 11px; border-radius: 10px; margin: 4px 12px; }
+  .bm-btn2-nav { background: #0a192f; color: #fff; }
+  .bm-btn2-ghost { border: 1px solid rgba(10,25,47,0.12); color: #475569; }
+  .bm-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px 12px; }
+  .bm-stat { background: #f8fafc; border: 1px solid rgba(10,25,47,0.05); border-radius: 10px; padding: 10px 11px; }
+  .bm-stat span { display: block; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #a3adba; }
+  .bm-stat b { display: block; font-size: 1.05rem; color: #0f172a; margin-top: 3px; }
+  .bm-stat b.g { color: #059669; } .bm-stat b.o { color: #d97706; }
+  .bm-code { font-family: var(--font-mono, monospace); font-size: 0.6rem; line-height: 1.5; color: #94a3b8; padding: 10px 14px; background: #f8fafc; border-bottom: 1px solid rgba(10,25,47,0.05); word-break: break-all; }
+  .bm-code b { color: #2563eb; font-weight: 600; }
 
   /* Floating elements — contained positioning */
   .bm-floating { position: absolute; z-index: 10; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3)); }

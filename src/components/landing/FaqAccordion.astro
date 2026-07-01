@@ -1,0 +1,264 @@
+---
+// FaqAccordion.astro — Unified premium FAQ accordion
+// Apple · Stripe · Linear · ElevenLabs aesthetic
+// Usage: <FaqAccordion faqs={[{q,a}]} eyebrow="..." title="..." id="unique" />
+
+interface Props {
+    faqs: { q: string; a: string }[];
+    eyebrow?: string;
+    title?: string;
+    id?: string;
+    class?: string;
+    maxWidth?: string;
+}
+
+const {
+    faqs,
+    eyebrow,
+    title,
+    id = 'faq',
+    class: className = '',
+    maxWidth = '780px',
+} = Astro.props;
+
+const uid = `facc-${id}`;
+---
+
+<section class:list={['faq-acc-section', className]} id={id}>
+    <div class="faq-acc-wrap" style={`--faq-max-w: ${maxWidth}`}>
+        {eyebrow && (
+            <p class="faq-acc-eyebrow reveal">{eyebrow}</p>
+        )}
+        {title && (
+            <h2 class="faq-acc-title masked-title" set:html={title} />
+        )}
+        <div class="faq-acc-list" role="list">
+            {faqs.map((f, i) => (
+                <div class="faq-acc-item reveal" role="listitem">
+                    <button
+                        class="faq-acc-q"
+                        aria-expanded="false"
+                        aria-controls={`${uid}-body-${i}`}
+                        id={`${uid}-btn-${i}`}
+                        type="button"
+                    >
+                        <span class="faq-acc-q-text">{f.q}</span>
+                        <span class="faq-acc-icon" aria-hidden="true">
+                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <line x1="4" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/>
+                                <line class="faq-ico-v" x1="10" y1="4" x2="10" y2="16" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/>
+                            </svg>
+                        </span>
+                    </button>
+                    <div
+                        class="faq-acc-body"
+                        id={`${uid}-body-${i}`}
+                        role="region"
+                        aria-labelledby={`${uid}-btn-${i}`}
+                    >
+                        <div class="faq-acc-body-inner">
+                            <p class="faq-acc-a" set:html={f.a} />
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+</section>
+
+<style>
+/* ── Section ── */
+.faq-acc-section {
+    padding: 5rem 5%;
+}
+.faq-acc-wrap {
+    max-width: var(--faq-max-w, 780px);
+    margin: 0 auto;
+}
+
+/* ── Eyebrow ── */
+.faq-acc-eyebrow {
+    display: block;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 2.8px;
+    text-transform: uppercase;
+    color: #888;
+    margin: 0 0 1.2rem;
+    text-align: center;
+}
+
+/* ── Title ── */
+.faq-acc-title {
+    font-size: clamp(1.9rem, 3.5vw, 3.1rem);
+    font-weight: 800;
+    line-height: 1.12;
+    letter-spacing: -0.04em;
+    color: var(--color-text);
+    margin: 0 0 3rem;
+    text-align: center;
+}
+
+/* ── List ── */
+.faq-acc-list {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--color-border);
+}
+
+/* ── Item ── */
+.faq-acc-item {
+    border-bottom: 1px solid var(--color-border);
+}
+
+/* ── Question button ── */
+.faq-acc-q {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    width: 100%;
+    padding: 1.5rem 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: var(--font-sans);
+    font-size: 1.08rem;
+    font-weight: 600;
+    color: var(--color-text);
+    transition: color 0.25s ease;
+    outline: none;
+}
+.faq-acc-q:focus-visible {
+    outline: 2px solid rgba(10, 25, 47, 0.4);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+.faq-acc-q:hover { color: #050505; }
+.faq-acc-item.is-open .faq-acc-q { color: #050505; }
+
+/* ── Icon circle ── */
+.faq-acc-icon {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    background: transparent;
+    transition:
+        background 0.28s ease,
+        border-color 0.28s ease,
+        color 0.28s ease;
+}
+.faq-acc-icon svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+}
+.faq-acc-q:hover .faq-acc-icon {
+    background: rgba(10, 25, 47, 0.04);
+    border-color: rgba(10, 25, 47, 0.18);
+    color: var(--color-blue-deep, #0a192f);
+}
+.faq-acc-item.is-open .faq-acc-icon {
+    background: rgba(10, 25, 47, 0.07);
+    border-color: rgba(10, 25, 47, 0.22);
+    color: var(--color-blue-deep, #0a192f);
+}
+
+/* ── Icon: vertical line morphs away ── */
+.faq-ico-v {
+    transform-origin: 10px 10px;
+    transition:
+        transform 0.36s cubic-bezier(0.34, 1.56, 0.64, 1),
+        opacity   0.26s ease;
+}
+.faq-acc-item.is-open .faq-ico-v {
+    transform: scaleY(0);
+    opacity: 0;
+}
+
+/* ── Body (CSS grid trick: smooth height to auto) ── */
+.faq-acc-body {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.faq-acc-item.is-open .faq-acc-body {
+    grid-template-rows: 1fr;
+}
+.faq-acc-body-inner {
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* ── Answer text ── */
+.faq-acc-a {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.76;
+    color: var(--color-text-muted, #555);
+    max-width: 680px;
+    padding-bottom: 0;
+    opacity: 0;
+    transform: translateY(-5px);
+    transition:
+        opacity   0.4s  ease 0.08s,
+        transform 0.44s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s,
+        padding-bottom 0.42s ease;
+}
+.faq-acc-item.is-open .faq-acc-a {
+    opacity: 1;
+    transform: translateY(0);
+    padding-bottom: 1.75rem;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+    .faq-ico-v,
+    .faq-acc-icon,
+    .faq-acc-body,
+    .faq-acc-a,
+    .faq-acc-q { transition: none; }
+}
+
+/* ── Mobile ── */
+@media (max-width: 680px) {
+    .faq-acc-section { padding: 4rem 5%; }
+    .faq-acc-q {
+        font-size: 1rem;
+        padding: 1.25rem 0;
+        gap: 1rem;
+    }
+    .faq-acc-a { font-size: 0.95rem; }
+    .faq-acc-icon { width: 30px; height: 30px; }
+    .faq-acc-icon svg { width: 14px; height: 14px; }
+}
+</style>
+
+<script>
+// One-at-a-time accordion, grouped per list so multiple can coexist on a page
+document.querySelectorAll<HTMLElement>('.faq-acc-list').forEach((list) => {
+    const items = Array.from(list.querySelectorAll<HTMLElement>('.faq-acc-item'));
+    items.forEach((item) => {
+        const btn = item.querySelector<HTMLButtonElement>('.faq-acc-q');
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+            const willOpen = !item.classList.contains('is-open');
+            items.forEach((other) => {
+                other.classList.remove('is-open');
+                other.querySelector<HTMLButtonElement>('.faq-acc-q')?.setAttribute('aria-expanded', 'false');
+            });
+            if (willOpen) {
+                item.classList.add('is-open');
+                btn.setAttribute('aria-expanded', 'true');
+            }
+        });
+    });
+});
+</script>
