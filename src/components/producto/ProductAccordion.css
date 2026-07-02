@@ -83,7 +83,16 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
     inset 1px 0 0 rgba(255, 255, 255, 0.06),
     inset -1px 0 0 rgba(255, 255, 255, 0.06),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.10);
+    inset 0 -1px 0 rgba(0, 0, 0, 0.10),
+    inset 0 0 0 1px rgba(120, 190, 255, 0.14);
+}
+
+.pac-card.pac-active {
+  box-shadow:
+    0 2px 4px rgba(5, 11, 20, 0.16),
+    0 18px 52px rgba(5, 11, 20, 0.30),
+    0 56px 110px -24px rgba(5, 11, 20, 0.40),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
 }
 
 /* ── Gradient scrim — lighter on inactive, strong on active ── */

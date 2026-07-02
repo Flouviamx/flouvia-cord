@@ -48,6 +48,23 @@ export const FEATURES_EN: Feature[] = [
                 ],
             },
         ],
+        showcase: [
+            {
+                eyebrow: 'THE COST OF SPREADSHEETS',
+                titulo: 'Every hour in a spreadsheet is a sale you did not close.',
+                copy: 'While you drag cells and fix formulas, your competitor already sent their quote. Cord builds the same quote in 4 minutes — catalog, tax, and total already solved.',
+            },
+            {
+                eyebrow: 'ZERO FRICTION',
+                titulo: 'Add, negotiate, send. Without jumping across three screens.',
+                copy: 'Search the product, adjust the line price, watch the total recalculate — all in the same place where you used to bounce between the catalog, a calculator, and a Word doc.',
+            },
+            {
+                eyebrow: 'ZERO TYPOS',
+                titulo: 'The number you send is the correct number.',
+                copy: 'Tax, totals, and per-line discounts calculate themselves. No more clients calling to tell you your spreadsheet added up wrong.',
+            },
+        ],
         faqs: [
             {
                 q: 'How does Cord\'s quote editor work?',
@@ -107,6 +124,23 @@ export const FEATURES_EN: Feature[] = [
                     'Online payment with Stripe (Professional plan)',
                     'The complete history is left on the timeline',
                 ],
+            },
+        ],
+        showcase: [
+            {
+                eyebrow: 'THE PDF NOBODY REOPENS',
+                titulo: 'An attachment dies in the inbox. A link stays alive.',
+                copy: 'Most quote PDFs get opened once and lost. Cord sends a link your client can approve with a thumb, from WhatsApp, without hunting for a lost file.',
+            },
+            {
+                eyebrow: 'YOUR BRAND, NOT OURS',
+                titulo: 'It should look like a serious company sent it — because it did.',
+                copy: 'Your logo, your colors, your own domain. Your client sees your business, not a generic "powered by". Trust is built from the first click.',
+            },
+            {
+                eyebrow: 'FROM YES TO GETTING PAID',
+                titulo: 'Approval stops being the end of the process. It becomes the start of getting paid.',
+                copy: 'The second your client says yes, you know instantly and payment or credit terms are ready to activate. Zero "did you see my quote?" calls.',
             },
         ],
         faqs: [
@@ -170,6 +204,23 @@ export const FEATURES_EN: Feature[] = [
                 ],
             },
         ],
+        showcase: [
+            {
+                eyebrow: 'INTEREST COOLS OFF FAST',
+                titulo: 'A client who viewed your quote 10 minutes ago is still thinking about you.',
+                copy: 'One who viewed it two weeks ago is not. Cord alerts you the exact second they open the link — so you call while you are still on their mind.',
+            },
+            {
+                eyebrow: 'VIEWED 3 TIMES = THEY ARE COMPARING',
+                titulo: 'You know exactly how close the yes is.',
+                copy: 'Every open gets logged. If your client came back several times in one day, they are not ignoring you — they are deciding. That is your cue to call, not to wait.',
+            },
+            {
+                eyebrow: 'YOUR REAL PIPELINE',
+                titulo: 'Stop guessing how much you will close this month.',
+                copy: 'The dashboard tells you how much is about to close, how much already closed, and which quotes have gone dangerously silent. Decisions with numbers, not with the memory of your last call.',
+            },
+        ],
         faqs: [
             {
                 q: 'How do I know if my client has seen the quote in Cord?',
@@ -231,6 +282,23 @@ export const FEATURES_EN: Feature[] = [
                 ],
             },
         ],
+        showcase: [
+            {
+                eyebrow: 'THE RISK OF RETYPING',
+                titulo: 'Every time you type a piece of data again, there is a chance for a tax error.',
+                copy: 'The tax ID, products, amounts — they are already in the approved quote. Cord uses them as-is to stamp the invoice. Zero transcription, zero fines from a fat-fingered digit.',
+            },
+            {
+                eyebrow: '5 MINUTES, ONCE',
+                titulo: 'Connect your digital seal today. Never touch it again.',
+                copy: 'You upload your certificate once, encrypted and isolated in your account. From there, every approved quote becomes an invoice with one click — not an appointment with your accountant.',
+            },
+            {
+                eyebrow: 'EVERYTHING IN ONE THREAD',
+                titulo: 'When accounting asks, everything is in the same place.',
+                copy: 'The invoice stays linked to its quote, with its UUID and full timeline. No searching two different systems to reconcile who paid what.',
+            },
+        ],
         faqs: [
             {
                 q: 'How does Cord stamp the CFDI automatically?',
@@ -290,6 +358,23 @@ export const FEATURES_EN: Feature[] = [
                     'Better pricing and credit decisions',
                     'Commercial memory stops living in just one person',
                 ],
+            },
+        ],
+        showcase: [
+            {
+                eyebrow: '"WE MISSED IT" NO LONGER HAPPENS',
+                titulo: 'You know how much credit each client has left before you say yes.',
+                copy: 'Set a credit limit per client and let the system watch it. Selling on credit stops being an act of faith.',
+            },
+            {
+                eyebrow: 'THE SAME RULES FOR EVERYONE',
+                titulo: 'No sales rep should be allowed to invent their own terms.',
+                copy: 'Cash, Net 30, or Net 60 — the client record applies them automatically on every quote. The business sets the rules, not the memory of each rep.',
+            },
+            {
+                eyebrow: 'COMMERCIAL MEMORY, TURNED INTO DATA',
+                titulo: 'Who pays on time shows up. Who does not, too.',
+                copy: 'The full history per client tells you who deserves a better price and who should pay a deposit — with evidence, not the opinion of one rep who might leave tomorrow.',
             },
         ],
         faqs: [
@@ -354,6 +439,23 @@ export const FEATURES_EN: Feature[] = [
                 ],
             },
         ],
+        showcase: [
+            {
+                eyebrow: 'NEVER TIRED OF ASKING',
+                titulo: 'Your best collector never sleeps, never gets frustrated, never forgets.',
+                copy: 'The AI agent follows up on every overdue invoice at night, on weekends, always. Your receivables stop cooling off while you wait for someone to have time to write.',
+            },
+            {
+                eyebrow: 'NEGOTIATES, NOT JUST REMINDS',
+                titulo: 'It does not send a "please pay". It proposes a real payment plan.',
+                copy: 'Up to three monthly installments, within the limits you set. If the client asks for something outside that range, the AI escalates to you — it never decides beyond what it should.',
+            },
+            {
+                eyebrow: 'ZERO BLACK BOX',
+                titulo: 'Everything the AI does, you can read.',
+                copy: 'Every email, every agreement, every installment lands in an immutable audit log. You turn the agent on client by client — automation does not mean losing control.',
+            },
+        ],
         faqs: [
             {
                 q: 'How does Cord\'s AI agent collect automatically?',
@@ -414,6 +516,23 @@ export const FEATURES_EN: Feature[] = [
                     'FX lock: the rate is frozen for 30 days per quote',
                     'Protects your profit from movement between approval and invoicing',
                 ],
+            },
+        ],
+        showcase: [
+            {
+                eyebrow: 'THE DOLLAR MOVES. YOUR MARGIN SHOULD NOT.',
+                titulo: 'Between approval and invoicing, the exchange rate can eat your profit.',
+                copy: 'Cord locks the rate for 30 days with a hedging buffer. The margin you negotiated is the margin you collect, no matter what the dollar does in between.',
+            },
+            {
+                eyebrow: 'NOTHING TO TYPE IN',
+                titulo: "Today's rate, not last week's spreadsheet.",
+                copy: 'Cord pulls the live exchange rate automatically. No one on your team has to remember to check it before quoting.',
+            },
+            {
+                eyebrow: 'TWO CURRENCIES, ONE DEAL',
+                titulo: 'Your client sees dollars. The tax authority sees pesos. No one gets confused.',
+                copy: 'Present in USD or EUR as your international client expects; invoice in pesos as Mexico requires. Both currencies stay locked together in the same document.',
             },
         ],
         faqs: [
@@ -478,6 +597,23 @@ export const FEATURES_EN: Feature[] = [
                 ],
             },
         ],
+        showcase: [
+            {
+                eyebrow: 'SELLING WITHOUT BORDERS',
+                titulo: 'The business that no longer fits in one country should not run on tools built for one country.',
+                copy: 'Quote in dollars to a client in Texas and invoice in pesos in Guadalajara — from the same account, the same catalog, the same system.',
+            },
+            {
+                eyebrow: 'REAL HEDGING',
+                titulo: 'The exchange rate stops being a gamble.',
+                copy: 'Configurable hedging buffer plus a 30-day rate lock. You know exactly how many pesos you will collect from the moment the client approves in dollars.',
+            },
+            {
+                eyebrow: 'MEXICO STAMPS FOR REAL',
+                titulo: 'Real CFDI 4.0, not a simulation that looks like an invoice.',
+                copy: 'When the deal closes in Mexico, the UUID, XML, and PDF come out stamped with the tax authority — on an architecture already built to add more countries.',
+            },
+        ],
         faqs: [
             {
                 q: 'Does Cord let me quote in dollars and invoice in pesos?',
@@ -538,6 +674,23 @@ export const FEATURES_EN: Feature[] = [
                     'Export to CSV or PDF',
                     'Zero monthly reconciliation time',
                 ],
+            },
+        ],
+        showcase: [
+            {
+                eyebrow: 'NO MORE GUESSWORK',
+                titulo: 'You know how much you will collect before you collect it.',
+                copy: "Cord does not assume Net 30 gets paid on day 30. It analyzes each client's real history and projects your flow with the truth, not the contract.",
+            },
+            {
+                eyebrow: 'THE RISK YOU DO NOT SEE IN TIME',
+                titulo: 'If 40% of your receivables depend on a single client, you want to know today.',
+                copy: 'The risk concentration alert warns you before that client starts slipping — so you can act while there is still room to maneuver.',
+            },
+            {
+                eyebrow: 'BOARD-READY',
+                titulo: 'The report that used to take you an afternoon is already built.',
+                copy: 'A live, exportable dashboard, always up to date. Zero reconciliation time when someone from finance asks how the month is going.',
             },
         ],
         faqs: [
@@ -602,6 +755,23 @@ export const FEATURES_EN: Feature[] = [
                 ],
             },
         ],
+        showcase: [
+            {
+                eyebrow: 'THE DISCOUNT NOBODY AUTHORIZED',
+                titulo: 'A rep in a rush to close can give away your margin without meaning to.',
+                copy: 'Define how far a discount can go before your approval is required. Sales speed no longer competes with profitability.',
+            },
+            {
+                eyebrow: 'APPROVE FROM WHEREVER YOU ARE',
+                titulo: 'One tap from your phone, and the sale keeps moving.',
+                copy: 'When a quote crosses the threshold, you get notified instantly — with the exact margin being given up. Approving or requesting changes takes seconds, not a meeting.',
+            },
+            {
+                eyebrow: 'SILENT AUDITOR',
+                titulo: 'Every exception gets logged, even when no one is watching in the moment.',
+                copy: 'Who requested the discount, who approved it, and why — the immutable log answers the question before anyone has to ask it.',
+            },
+        ],
         faqs: [
             {
                 q: 'Can I have different thresholds per sales rep?',
@@ -664,6 +834,23 @@ export const FEATURES_EN: Feature[] = [
                 ],
             },
         ],
+        showcase: [
+            {
+                eyebrow: 'EVERYONE SEES ONLY WHAT THEY NEED',
+                titulo: 'Security should not be a favor you ask your sales rep for.',
+                copy: 'The rep only sees their own book. The manager sees the full pipeline. The accountant only gets in for the invoices. No one has access to more than they need, by design.',
+            },
+            {
+                eyebrow: 'GROW WITHOUT MULTIPLYING ACCOUNTS',
+                titulo: 'Multiple legal entities, one single control panel.',
+                copy: 'Switch companies with one click instead of juggling separate passwords for every brand in the group. Catalog, collections, and reports stay organized separately.',
+            },
+            {
+                eyebrow: 'ENTERPRISE-GRADE SECURITY',
+                titulo: 'When someone leaves the company, their access leaves the same day.',
+                copy: 'Sign-in with your team\'s corporate credentials. Cut the email, Cord gets cut too — no tickets, no waiting for someone to remember to revoke access.',
+            },
+        ],
         faqs: [
             {
                 q: 'Can a sales rep see another rep\'s clients?',
@@ -724,6 +911,23 @@ export const FEATURES_EN: Feature[] = [
                     'Independent mathematical audit',
                     'Legal certainty in the commercial agreement',
                 ],
+            },
+        ],
+        showcase: [
+            {
+                eyebrow: 'TOTAL REJECTION, AVOIDED',
+                titulo: 'One price should not cost you the whole sale.',
+                copy: 'Your client approves 9 lines and objects to just 1 — not all 10. Negotiation becomes surgical instead of all-or-nothing.',
+            },
+            {
+                eyebrow: 'THE "I NEVER APPROVED THAT"',
+                titulo: 'Every version gets frozen. No one can rewrite history.',
+                copy: 'If the client says they approved something else, you have the exact record: what, when, and who. Memory no longer depends on a lost email.',
+            },
+            {
+                eyebrow: 'BANK-GRADE CERTAINTY',
+                titulo: 'A signature not even you can alter afterward.',
+                copy: 'A SHA-256 hash seals the final approved version. Not a single comma can be touched without the mathematical signature giving it away.',
             },
         ],
         faqs: [

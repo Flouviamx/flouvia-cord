@@ -10,6 +10,7 @@ import Footer from '../../components/landing/Footer.astro';
 import PageAnims from '../../components/landing/PageAnims.astro';
 import BlockMockup from '../../components/producto/BlockMockup.astro';
 import ProductAccordion from '../../components/producto/ProductAccordion.jsx';
+import FeatureShowcase from '../../components/producto/FeatureShowcase.astro';
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 import { FEATURES } from '../../lib/producto';
 import { FEATURES_EN } from '../../lib/producto.en';
@@ -485,6 +486,9 @@ const faqSchema = {
                 </article>
             ))}
         </section>
+
+        <!-- ── FEATURE SHOWCASE (tabbed, ElevenLabs-style) ── -->
+        <FeatureShowcase slug={feature.slug} tabs={feature.showcase} nav={feature.nav} isEn={isEn} />
 
         <!-- ── FAQ ── -->
         <FaqAccordion

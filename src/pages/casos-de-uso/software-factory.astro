@@ -8,6 +8,7 @@ import Footer from '../../components/landing/Footer.astro';
 import MagneticNodes from '../../components/MagneticNodes.jsx';
 import QuantizedWaveBg from '../../components/soluciones/QuantizedWaveBg.jsx';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+import '../../styles/mockups.css';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
@@ -129,60 +130,43 @@ const magneticNodes = [
                     </div>
 
                     <div class="uc-split-mockup reveal">
-                        <div class="uc-mockup-wrapper">
-                            <div class="uc-mockup-header">
-                                <div class="uc-mockup-logo">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="#0a2540"><rect x="2" y="2" width="20" height="20" rx="4"/></svg>
-                                    Build &amp; Ship Inc.
+                        <div class="uc-cmk-window">
+                            <div class="cmk-nav">
+                                <div class="cmk-nav-l">
+                                    <span class="cmk-nav-title">Proyecto · MVP Fintech</span>
+                                    <span class="cmk-nav-sub">· Build &amp; Ship Inc.</span>
                                 </div>
-                                <div class="uc-mockup-nav">
-                                    <span>Propuesta</span>
-                                    <span class="active">Milestones</span>
-                                    <span>Settings</span>
-                                </div>
+                                <span class="cmk-badge cmk-b-blue">35% cobrado</span>
                             </div>
-                            
-                            <div class="uc-mockup-body" style="padding: 24px;">
-                                <div class="uc-sf-milestones">
-                                    <div class="uc-sf-header">
-                                        <h4>Proyecto: Desarrollo de MVP Fintech</h4>
-                                        <div class="uc-sf-progress">
-                                            <div class="uc-sf-bar"><div class="uc-sf-fill" style="width: 35%;"></div></div>
-                                            <span>35% Pagado</span>
-                                        </div>
-                                    </div>
-                                    <div class="uc-sf-list">
-                                        <!-- Milestone 1 -->
-                                        <div class="uc-sf-item uc-sf-done">
-                                            <div class="uc-sf-info">
-                                                <span class="uc-sf-title">1. UX/UI Prototyping</span>
-                                                <span class="uc-sf-amount">$15,000</span>
-                                            </div>
-                                            <div class="uc-sf-status">
-                                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                                Cobrado / CFDI Emitido
-                                            </div>
-                                        </div>
-                                        <!-- Milestone 2 -->
-                                        <div class="uc-sf-item uc-sf-active">
-                                            <div class="uc-sf-info">
-                                                <span class="uc-sf-title">2. Backend API Setup</span>
-                                                <span class="uc-sf-amount">$25,000</span>
-                                            </div>
-                                            <div class="uc-sf-btn">Aprobar Entregable y Pagar</div>
-                                        </div>
-                                        <!-- Milestone 3 -->
-                                        <div class="uc-sf-item uc-sf-locked">
-                                            <div class="uc-sf-info">
-                                                <span class="uc-sf-title">3. Frontend Delivery</span>
-                                                <span class="uc-sf-amount">$20,000</span>
-                                            </div>
-                                            <div class="uc-sf-status">
-                                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                                Bloqueado (Requiere Fase 2)
-                                            </div>
-                                        </div>
-                                    </div>
+                            <div class="cmk-body">
+                                <div class="cmk-kv" style="border-bottom:none; padding-top:0;">
+                                    <span class="cmk-k">Avance de cobro del proyecto</span>
+                                    <span class="cmk-v editorial">$21,000 de $60,000</span>
+                                </div>
+                                <div style="width:100%; height:8px; background:#e2e8f0; border-radius:10px; overflow:hidden; margin:2px 0 10px;">
+                                    <div style="width:35%; height:100%; background:linear-gradient(90deg,#1e293b,#0f172a); border-radius:10px;"></div>
+                                </div>
+                                <div class="cmk-th" style="grid-template-columns:1.9fr 76px 126px">
+                                    <span>Hito</span><span class="cmk-r">Monto</span><span>Estado</span>
+                                </div>
+                                <div class="cmk-tr" style="grid-template-columns:1.9fr 76px 126px">
+                                    <span class="cmk-t1">1 · UX/UI Prototipo</span>
+                                    <span class="cmk-amt editorial">$15,000</span>
+                                    <span class="cmk-badge cmk-b-green"><span class="cmk-dot cmk-dot-green"></span>Cobrado · CFDI</span>
+                                </div>
+                                <div class="cmk-tr hl" style="grid-template-columns:1.9fr 76px 126px">
+                                    <span class="cmk-t1">2 · Backend API</span>
+                                    <span class="cmk-amt editorial">$25,000</span>
+                                    <span class="cmk-badge cmk-b-blue"><span class="cmk-dot cmk-dot-blue"></span>Enviada · vista hoy</span>
+                                </div>
+                                <div class="cmk-tr" style="grid-template-columns:1.9fr 76px 126px; border-bottom:none;">
+                                    <span class="cmk-t1" style="color:#94a3b8;">3 · Frontend</span>
+                                    <span class="cmk-amt editorial" style="color:#94a3b8;">$20,000</span>
+                                    <span class="cmk-badge cmk-b-gray">Bloqueado · fase 2</span>
+                                </div>
+                                <div class="cmk-alert cmk-alert-green" style="margin-top:12px;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    El cliente aprueba cada hito con firma digital y el CFDI se timbra solo al pagar.
                                 </div>
                             </div>
                         </div>
@@ -212,22 +196,36 @@ const magneticNodes = [
                             <a href="/registro" class="uc-link-arrow">Crear propuesta por hitos <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
-                            <div class="uc-mockup-bg cord-bg-1"></div>
-                            <div class="uc-mini-invoice" style="width:260px; padding:16px;">
-                                <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e2e8f0; padding-bottom:12px; margin-bottom:12px;">
-                                    <div style="display:flex; align-items:center; gap:8px;">
-                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#0f172a" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                                        <span style="font-size:0.85rem; font-weight:700; color:#0a2540;">Hito 2: Core Backend</span>
+                            <div class="cmk-stage">
+                                <div class="cmk-shot">
+                                    <div class="cmk-nav">
+                                        <div class="cmk-nav-l">
+                                            <span class="cmk-nav-title">Hito 2 · Core Backend</span>
+                                        </div>
+                                        <span class="cmk-badge cmk-b-blue">$18,000 MXN</span>
                                     </div>
-                                    <span style="font-size:0.75rem; color:#64748b;">$18,000 MXN</span>
-                                </div>
-                                <div style="text-align:left; font-size:0.75rem; color:#475569; display:flex; flex-direction:column; gap:8px;">
-                                    <div style="display:flex; align-items:center; gap:6px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#0f172a" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> PR #42 merged (API Auth)</div>
-                                    <div style="display:flex; align-items:center; gap:6px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#0f172a" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> PR #45 merged (DB Schema)</div>
-                                    <div style="display:flex; align-items:center; gap:6px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg> Cliente aprueba Staging</div>
-                                </div>
-                                <div class="uc-mi-form" style="margin-top:16px;">
-                                    <div class="uc-mi-btn" style="background:#e2e8f0; color:#64748b;">Factura Pendiente de Hito</div>
+                                    <div class="cmk-body">
+                                        <div class="cmk-eyebrow" style="margin-bottom:10px;">Entregables de la fase</div>
+                                        <div class="cmk-kv">
+                                            <span class="cmk-t1" style="font-family:ui-monospace,Menlo,monospace; font-size:12px;">PR #42 · API Auth</span>
+                                            <span class="cmk-badge cmk-b-green">Merged</span>
+                                        </div>
+                                        <div class="cmk-kv">
+                                            <span class="cmk-t1" style="font-family:ui-monospace,Menlo,monospace; font-size:12px;">PR #45 · DB Schema</span>
+                                            <span class="cmk-badge cmk-b-green">Merged</span>
+                                        </div>
+                                        <div class="cmk-kv" style="border-bottom:none;">
+                                            <span class="cmk-t1" style="font-family:ui-monospace,Menlo,monospace; font-size:12px;">Staging · aprobación del cliente</span>
+                                            <span class="cmk-badge cmk-b-amber">Pendiente</span>
+                                        </div>
+                                        <div style="display:flex; gap:10px; margin-top:12px">
+                                            <span class="cmk-cta cmk-cta-solid" style="flex:1; justify-content:center">Enviar cotización del hito</span>
+                                        </div>
+                                        <div style="display:flex; align-items:center; gap:8px; background:#f8fafc; padding:10px 14px; border-radius:8px; border:1px solid #f1f5f9; margin-top:12px;">
+                                            <span class="cmk-dot cmk-dot-blue"></span>
+                                            <span class="cmk-t2" style="color:#475569; font-weight:600;">Al aprobar el hito: firma digital + link de pago + CFDI</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -240,36 +238,32 @@ const magneticNodes = [
                             <p>Crea cotizaciones detalladas que tus clientes entienden, con opciones adicionales y up-sells (como "Migración AWS" o "Soporte 24/7") que pueden activar o desactivar antes de firmar.</p>
                             <a href="/registro" class="uc-link-arrow">Genera propuestas técnicas <span>&rarr;</span></a>
                         </div>
-                        <div class="uc-bc-mockup" style="background:#fff;">
-                            <div class="uc-mini-portal" style="flex-direction: column;">
-                                <div class="uc-mp-sidebar" style="width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 20px;">
-                                    <div class="uc-mp-brand" style="margin:0;"><div class="uc-mp-dot"></div> Tech Proposal</div>
-                                    <div class="uc-mp-nav" style="background: #0f172a; color: #fff; padding: 4px 10px; border-radius: 6px;">Firmar y Pagar</div>
-                                </div>
-                                <div class="uc-mp-main" style="padding: 16px 20px;">
-                                    <div class="uc-mp-header" style="margin-bottom: 12px; font-size:1rem;">Módulos Adicionales</div>
-                                    <div class="uc-mp-card" style="margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
-                                        <div>
-                                            <strong>Infraestructura AWS + CI/CD</strong>
-                                            <span style="font-size:0.75rem; color:#64748b; display:block;">Setup inicial y pipelines</span>
-                                        </div>
-                                        <div style="display:flex; align-items:center; gap:10px;">
-                                            <span style="font-weight:600; font-size:0.8rem; color:#0a2540;">+$2,500</span>
-                                            <div style="width:36px; height:20px; background:#0f172a; border-radius:12px; position:relative;">
-                                                <div style="width:16px; height:16px; background:#fff; border-radius:50%; position:absolute; top:2px; right:2px;"></div>
-                                            </div>
-                                        </div>
+                        <div class="uc-bc-mockup">
+                            <div class="cmk-stage">
+                                <div class="cmk-shot">
+                                    <div class="cmk-chrome">
+                                        <div class="cmk-chrome-url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> buildship.cord.app/q/mvp2</div>
                                     </div>
-                                    <div class="uc-mp-card" style="display:flex; align-items:center; justify-content:space-between; opacity:0.6;">
-                                        <div>
-                                            <strong>Soporte Extendido (SLA 99%)</strong>
-                                            <span style="font-size:0.75rem; color:#64748b; display:block;">Respuesta en &lt; 2hrs</span>
+                                    <div class="cmk-body">
+                                        <div class="cmk-eyebrow" style="margin-bottom:10px;">Módulos adicionales de la propuesta</div>
+                                        <div class="cmk-kv">
+                                            <span class="cmk-t1" style="flex-direction:column; align-items:flex-start; gap:2px;">Infraestructura AWS + CI/CD<span class="cmk-t2" style="font-weight:500;">Setup inicial y pipelines</span></span>
+                                            <span style="display:inline-flex; align-items:center; gap:10px;"><span class="cmk-v editorial">+$2,500</span><span class="cmk-toggle"></span></span>
                                         </div>
-                                        <div style="display:flex; align-items:center; gap:10px;">
-                                            <span style="font-weight:600; font-size:0.8rem; color:#0a2540;">+$800/mes</span>
-                                            <div style="width:36px; height:20px; background:#e2e8f0; border-radius:12px; position:relative;">
-                                                <div style="width:16px; height:16px; background:#fff; border-radius:50%; position:absolute; top:2px; left:2px;"></div>
-                                            </div>
+                                        <div class="cmk-kv">
+                                            <span class="cmk-t1" style="color:#64748b; flex-direction:column; align-items:flex-start; gap:2px;">Soporte extendido · SLA 99%<span class="cmk-t2" style="font-weight:500;">Respuesta en menos de 2 h</span></span>
+                                            <span style="display:inline-flex; align-items:center; gap:10px;"><span class="cmk-v editorial" style="color:#94a3b8;">+$800/mes</span><span class="cmk-toggle off"></span></span>
+                                        </div>
+                                        <div class="cmk-kv" style="border-bottom:none;">
+                                            <span class="cmk-k" style="font-weight:700; color:#0f172a;">Total con módulos</span>
+                                            <span class="cmk-v editorial" style="font-size:16px;">$28,700 MXN</span>
+                                        </div>
+                                        <div style="display:flex; gap:10px; margin-top:12px">
+                                            <span class="cmk-cta cmk-cta-solid" style="flex:1.4; justify-content:center">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px; height:14px;"><path d="M20 6L9 17l-5-5"></path></svg>
+                                                Firmar y pagar
+                                            </span>
+                                            <span class="cmk-cta cmk-cta-ghost" style="flex:1; justify-content:center">Descargar PDF</span>
                                         </div>
                                     </div>
                                 </div>
@@ -658,7 +652,31 @@ const magneticNodes = [
     .uc-split-mockup {
         position: relative;
     }
-    
+
+    /* Ventana cmk-* (kit compartido de mockups, calca estilo Stripe) */
+    .uc-cmk-window {
+        position: relative;
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        text-align: left;
+        border: 1px solid rgba(10, 25, 47, 0.08);
+        box-shadow:
+            0 2px 4px rgba(10, 25, 47, 0.05),
+            0 40px 80px -24px rgba(10, 25, 47, 0.18),
+            inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    /* En los bentos el screenshot sangra por abajo y solo 14px a la derecha,
+       para que los badges y montos que cuentan la historia queden visibles */
+    .uc-bc-mockup .cmk-shot {
+        top: 1.8rem;
+        left: 1.8rem;
+        right: -14px;
+        bottom: -40px;
+        width: auto;
+    }
+
     .uc-mockup-wrapper {
         position: relative;
         background: #f5f5f7;

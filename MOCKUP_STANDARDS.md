@@ -167,6 +167,36 @@ jun-jul 2026 — sus referencias son los heroes de Stripe):
 
 ---
 
+## 4.6 SHOWCASE TABBED (`FeatureShowcase.astro` + `ShowcaseMockup.astro`, clases `shwm-*`)
+
+Patrón nuevo (jul 2026) para la sección que vive debajo del bento en `/producto/[slug]`:
+un mockup GRANDE (`.shw-stage`, 560px alto) que cambia según la pestaña activa de 3 tabs
+debajo (estilo `elevenlabs.io/creative`). Reglas específicas:
+
+1. **Escala de HERO, no de bento.** El canvas es más grande que las tarjetas del bento
+   (`.pp-bcard-visual`) — el contenido puede ser un poco más espacioso/cinemático, pero
+   sigue siendo denso y real (tabla con filas, chat con burbujas), nunca una ilustración
+   suelta con mucho espacio vacío.
+2. **CSS 100% autocontenido con su propio prefijo (`shwm-*`).** Astro scopea `<style>` por
+   componente — las clases `.bm-*` de `BlockMockup.astro` NO están disponibles aquí aunque
+   se importen visualmente parecidas. Construye tu propio set de primitivas reusables
+   (`.shwm-app`, `.shwm-bar`, `.shwm-g`, `.shwm-badge`, `.shwm-foot`…) antes de componer las
+   36 escenas, igual que `BlockMockup.astro` hace con `bm-*`.
+3. **Una idea visual por tab, literal al copy.** Cada tab tiene `{eyebrow, titulo, copy}`
+   con gancho de marketing (ver `showcase` en `producto.ts`) — el mockup debe PROBAR esa
+   frase específica, no ser un dashboard genérico reciclado entre tabs.
+4. **El fondo gris de `.shw-stage` (`#f5f5f7`) puede llevar una aurora WebGL** detrás de los
+   mockups (`ShowcaseAuroraBg.jsx` — ver "Regla a futuro" en `docs/historial.md`, entrada
+   `FeatureShowcase`). Si se toca, el shader debe seguir siendo TRANSPARENTE (alpha por
+   blob, nunca un fondo opaco) para no tapar el gris — solo se agregan las auroras encima.
+5. **Auditar clases antes de entregar.** Si el archivo se construye con un agente en un solo
+   pase (36 escenas es mucho volumen), es fácil que una clase usada en el markup nunca se
+   defina en el `<style>` — pasó una vez (`.shwm-search`/`.shwm-drop-r`/`.shwm-landing` sin
+   estilos, ver `docs/historial.md`). Antes de dar por bueno el archivo, comparar clases
+   usadas en el markup contra selectores definidos en `<style>`.
+
+---
+
 ## 5. PROHIBIDO (reglas de sangre)
 
 1. **Tailwind** (`bg-white/70`, `rounded-[2rem]`, `max-w-5xl`…) — no existe en este repo.
@@ -200,3 +230,7 @@ jun-jul 2026 — sus referencias son los heroes de Stripe):
 - [ ] **(Hero)** ¿SIN badges/satélites flotantes dispersos? ¿pieza cohesiva?
 - [ ] **(Hero)** ¿Colores sobrios (avatares planos, barras gris + 1 acento), nada neón?
 - [ ] **(Hero conversacional)** ¿chat LIBRE sobre el fondo (no en card) + "escribiendo…"?
+- [ ] **(Showcase tabbed)** ¿CSS con prefijo propio (`shwm-*`), sin depender de clases scoped
+      de otro componente (`.bm-*`)?
+- [ ] **(Showcase tabbed)** ¿Se auditaron las clases usadas en el markup contra las definidas
+      en `<style>` (ver §4.6.5) antes de entregar?

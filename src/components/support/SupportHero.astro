@@ -1,13 +1,13 @@
 ---
 // /src/components/support/SupportHero.astro
-import BlueAuroraBg from './BlueAuroraBg.jsx'
+import SupportCoverBg from './SupportCoverBg.jsx'
 const { isEn = false } = Astro.props;
 ---
 
 <section class="support-hero">
     <!-- Fondo: color sólido mientras el shader carga (evita flash blanco) -->
     <div class="sh-bg" aria-hidden="true">
-        <BlueAuroraBg client:only="react" />
+        <SupportCoverBg client:only="react" />
     </div>
 
     <!-- Contenido sobre el shader -->
@@ -47,7 +47,7 @@ const { isEn = false } = Astro.props;
     .sh-bg {
         position: absolute;
         inset: 0;
-        background: #030d16;
+        background: #020610;
         z-index: 0;
     }
 
@@ -78,8 +78,12 @@ const { isEn = false } = Astro.props;
         font-weight: 800;
         line-height: 1.04;
         letter-spacing: -0.035em;
-        color: #ffffff;
+        color: #ffffff !important;
+        text-shadow: 0 2px 24px rgba(0,0,0,0.35);
         margin: 0 0 2.8rem;
+    }
+    .sh-h1 :global(.m-line-in) {
+        color: #ffffff !important;
     }
 
     /* ── Barra de búsqueda ──────────────────────────────────────────────────── */

@@ -8,6 +8,7 @@ import Footer from '../../components/landing/Footer.astro';
 import MagneticNodes from '../../components/MagneticNodes.jsx';
 import QuantizedWaveBg from '../../components/soluciones/QuantizedWaveBg.jsx';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+import '../../styles/mockups.css';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
@@ -121,56 +122,33 @@ const magneticNodes = [
                     </div>
 
                     <div class="uc-split-mockup reveal">
-                        <div class="uc-rw-glow"></div>
-                        <div class="uc-retainer-widget">
-                            <div class="uc-rw-header">
-                                <div class="uc-rw-brand">
-                                    <div class="uc-rw-avatar">
-                                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0f172a" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-                                    </div>
-                                    <div>
-                                        <div class="uc-rw-title">Acme Corporation</div>
-                                        <div class="uc-rw-sub">Acuerdo Mensual: Growth Marketing</div>
-                                    </div>
+                        <div class="uc-cmk-window">
+                            <div class="cmk-nav">
+                                <div class="cmk-nav-l">
+                                    <span class="cmk-nav-title">Iguala · Growth Marketing</span>
+                                    <span class="cmk-nav-sub">· Acme Corporation</span>
                                 </div>
-                                <div class="uc-rw-status">
-                                    <span class="uc-status-dot"></span> Vigente
-                                </div>
+                                <span class="cmk-badge cmk-b-green"><span class="cmk-dot cmk-dot-green"></span>Vigente</span>
                             </div>
-                            
-                            <div class="uc-rw-body">
-                                <div class="uc-rw-amount-block">
-                                    <span class="uc-rw-currency">$</span>
-                                    <span class="uc-rw-amount">38,000</span>
-                                    <span class="uc-rw-period">/mes</span>
+                            <div class="cmk-body">
+                                <div class="cmk-big editorial">$38,000 <span style="font-size:14px; font-weight:600; color:#64748b;">MXN / mes</span></div>
+                                <div class="cmk-big-sub">Acuerdo mensual · Net 15 · Renovación automática</div>
+                                <div class="cmk-divider"></div>
+                                <div class="cmk-kv">
+                                    <span class="cmk-t1">Acuerdo firmado<span class="cmk-t2" style="display:block; font-weight:500;">Firma electrónica con validez legal</span></span>
+                                    <span class="cmk-badge cmk-b-green">Completado</span>
                                 </div>
-                                
-                                <div class="uc-rw-timeline">
-                                    <div class="uc-tl-item success">
-                                        <div class="uc-tl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
-                                        <div class="uc-tl-content">
-                                            <strong>Acuerdo firmado</strong>
-                                            <span>Firma electrónica vinculante confirmada</span>
-                                        </div>
-                                    </div>
-                                    <div class="uc-tl-item success">
-                                        <div class="uc-tl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
-                                        <div class="uc-tl-content">
-                                            <strong>Método de pago asegurado</strong>
-                                            <span>Cobro recurrente habilitado</span>
-                                        </div>
-                                    </div>
-                                    <div class="uc-tl-item active">
-                                        <div class="uc-tl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
-                                        <div class="uc-tl-content">
-                                            <strong>Facturación automatizada</strong>
-                                            <span>CFDI 4.0 procesado exitosamente</span>
-                                        </div>
-                                    </div>
+                                <div class="cmk-kv">
+                                    <span class="cmk-t1">Método de pago asegurado<span class="cmk-t2" style="display:block; font-weight:500;">Cobro recurrente habilitado vía Stripe</span></span>
+                                    <span class="cmk-badge cmk-b-green">Completado</span>
                                 </div>
-                                
-                                <div class="uc-rw-footer">
-                                    Próxima ejecución: <strong>01 de Julio, 2026</strong>
+                                <div class="cmk-kv" style="border-bottom:none;">
+                                    <span class="cmk-t1">CFDI 4.0 de junio<span class="cmk-t2" style="display:block; font-weight:500;">Timbrado y enviado sin intervención</span></span>
+                                    <span class="cmk-badge cmk-b-green">Emitido</span>
+                                </div>
+                                <div class="cmk-kv" style="border-top:1px solid #e2e8f0; border-bottom:none; margin-top:4px; padding-top:12px;">
+                                    <span class="cmk-k" style="font-weight:700; color:#0f172a;">Próximo cobro</span>
+                                    <span class="cmk-badge cmk-b-blue">01 jul 2026 · Programado</span>
                                 </div>
                             </div>
                         </div>
@@ -200,15 +178,37 @@ const magneticNodes = [
                             <a href="/registro" class="uc-link-arrow">Descubre los enlaces de pago <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
-                            <div class="uc-mockup-bg cord-bg-1"></div>
-                            <div class="uc-mini-invoice" style="width:260px;">
-                                <div class="uc-mi-logo" style="border-radius: 8px;">P</div>
-                                <div class="uc-mi-title">Propuesta: Branding 2026</div>
-                                <div class="uc-mi-sub">Anticipo (50%) - Acme Corp</div>
-                                <div class="uc-mi-amount">$45,000.00 <span class="uc-mi-currency">MXN</span></div>
-                                <div class="uc-mi-form">
-                                    <div class="uc-mi-btn" style="background:#0a2540;">Pagar con Tarjeta</div>
-                                    <div class="uc-mi-btn" style="background:#fff; color:#0a2540; border:1px solid #e2e8f0;">Transferencia SPEI</div>
+                            <div class="cmk-stage">
+                                <div class="cmk-shot">
+                                    <div class="cmk-chrome">
+                                        <div class="cmk-chrome-url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> studio.cord.app/q/br26</div>
+                                    </div>
+                                    <div class="cmk-body">
+                                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                                            <div class="cmk-brand">
+                                                <div class="cmk-brand-dot" style="background:#0f172a;">SD</div>
+                                                <div>
+                                                    <div class="cmk-t1" style="font-size:14px">Propuesta · Branding 2026</div>
+                                                    <div class="cmk-t2">Anticipo 50% · Acme Corp</div>
+                                                </div>
+                                            </div>
+                                            <span class="cmk-badge cmk-b-blue">Aprobada</span>
+                                        </div>
+                                        <div class="cmk-divider"></div>
+                                        <div class="cmk-big editorial">$45,000.00 MXN</div>
+                                        <div class="cmk-big-sub">Anticipo del proyecto · Total $90,000</div>
+                                        <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px">
+                                            <span class="cmk-cta cmk-cta-solid" style="justify-content:center">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px; height:14px;"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                                                Pagar con tarjeta
+                                            </span>
+                                            <span class="cmk-cta cmk-cta-ghost" style="justify-content:center">Transferencia SPEI</span>
+                                        </div>
+                                        <div style="display:flex; align-items:center; gap:8px; background:#f8fafc; padding:10px 14px; border-radius:8px; border:1px solid #f1f5f9; margin-top:14px;">
+                                            <span class="cmk-dot cmk-dot-green"></span>
+                                            <span class="cmk-t2" style="color:#475569; font-weight:600;">Pago protegido vía Stripe · CFDI automático al pagar</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -221,30 +221,40 @@ const magneticNodes = [
                             <p>Visualiza todas tus igualas activas, qué clientes ya vieron la propuesta y cuáles no han pagado. Cord envía recordatorios automáticos por correo y WhatsApp antes del vencimiento sin que tengas que intervenir.</p>
                             <a href="/registro" class="uc-link-arrow">Empieza a cobrar mejor <span>&rarr;</span></a>
                         </div>
-                        <div class="uc-bc-mockup" style="background:#fff;">
-                            <div class="uc-mini-portal" style="flex-direction: column;">
-                                <div class="uc-mp-sidebar" style="width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 20px;">
-                                    <div class="uc-mp-brand" style="margin:0;"><div class="uc-mp-dot"></div> Cord</div>
-                                    <div class="uc-mp-nav" style="background: #0f172a; color: #fff; padding: 4px 10px; border-radius: 6px;">+ Nuevo Retainer</div>
-                                </div>
-                                <div class="uc-mp-main" style="padding: 16px 20px;">
-                                    <div class="uc-mp-header" style="margin-bottom: 12px; font-size:1rem;">Igualas Activas — Jun 2026</div>
-                                    <div class="uc-mp-card" style="margin-bottom:8px;">
-                                        <div class="uc-mp-row">
-                                            <div>
-                                                <strong>Acme Corp - SEO Mensual</strong>
-                                                <span>$30,000 MXN / mes</span>
-                                            </div>
-                                            <div class="uc-mp-tag">Cobrado hoy</div>
-                                        </div>
+                        <div class="uc-bc-mockup">
+                            <div class="cmk-stage">
+                                <div class="cmk-shot">
+                                    <div class="cmk-nav">
+                                        <span class="cmk-nav-title">Igualas activas</span>
+                                        <div class="cmk-seg"><span class="on">Jun 2026</span><span>Historial</span></div>
                                     </div>
-                                    <div class="uc-mp-card">
-                                        <div class="uc-mp-row">
-                                            <div>
-                                                <strong>Stark Ind. - Social Media</strong>
-                                                <span>$45,000 MXN / mes</span>
-                                            </div>
-                                            <div class="uc-mp-tag" style="background:#f1f5f9; color:#475569;">Próx: 01/Jul</div>
+                                    <div class="cmk-th" style="grid-template-columns:1.7fr 84px 112px">
+                                        <span>Cliente</span><span class="cmk-r">Iguala</span><span>Estado</span>
+                                    </div>
+                                    <div class="cmk-tr" style="grid-template-columns:1.7fr 84px 112px">
+                                        <span class="cmk-t1"><div class="cmk-av cmk-av-1">AC</div> Acme Corp · SEO</span>
+                                        <span class="cmk-amt editorial">$30,000</span>
+                                        <span class="cmk-badge cmk-b-green"><span class="cmk-dot cmk-dot-green"></span>Cobrada hoy</span>
+                                    </div>
+                                    <div class="cmk-tr" style="grid-template-columns:1.7fr 84px 112px">
+                                        <span class="cmk-t1"><div class="cmk-av cmk-av-2">SI</div> Stark Ind. · Social</span>
+                                        <span class="cmk-amt editorial">$45,000</span>
+                                        <span class="cmk-badge cmk-b-blue">Próx. 01 jul</span>
+                                    </div>
+                                    <div class="cmk-tr" style="grid-template-columns:1.7fr 84px 112px">
+                                        <span class="cmk-t1"><div class="cmk-av cmk-av-3">NB</div> Nimbus · Branding</span>
+                                        <span class="cmk-amt editorial">$22,000</span>
+                                        <span class="cmk-badge cmk-b-amber">Vista · sin pagar</span>
+                                    </div>
+                                    <div class="cmk-tr" style="grid-template-columns:1.7fr 84px 112px; border-bottom:none;">
+                                        <span class="cmk-t1"><div class="cmk-av cmk-av-1" style="background:#475569">VL</div> Vela Foods · Media</span>
+                                        <span class="cmk-amt editorial">$40,000</span>
+                                        <span class="cmk-badge cmk-b-green"><span class="cmk-dot cmk-dot-green"></span>Cobrada 02 jun</span>
+                                    </div>
+                                    <div class="cmk-body" style="padding-top:12px;">
+                                        <div class="cmk-kv" style="border-top:1px solid #e2e8f0; border-bottom:none; padding-top:12px;">
+                                            <span class="cmk-k" style="font-weight:700; color:#0f172a;">MRR de igualas</span>
+                                            <span class="cmk-v editorial" style="font-size:15px;">$137,000 MXN</span>
                                         </div>
                                     </div>
                                 </div>
@@ -646,6 +656,32 @@ const magneticNodes = [
         display: flex;
         justify-content: center;
         align-items: center;
+    }
+
+    /* Ventana cmk-* (kit compartido de mockups, calca estilo Stripe) */
+    .uc-cmk-window {
+        position: relative;
+        width: 100%;
+        max-width: 520px;
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        text-align: left;
+        border: 1px solid rgba(10, 25, 47, 0.08);
+        box-shadow:
+            0 2px 4px rgba(10, 25, 47, 0.05),
+            0 40px 80px -24px rgba(10, 25, 47, 0.18),
+            inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    /* En los bentos el screenshot sangra por abajo y solo 14px a la derecha,
+       para que los badges y montos que cuentan la historia queden visibles */
+    .uc-bc-mockup .cmk-shot {
+        top: 1.8rem;
+        left: 1.8rem;
+        right: -14px;
+        bottom: -40px;
+        width: auto;
     }
 
     .uc-rw-glow {

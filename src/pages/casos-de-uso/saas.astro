@@ -8,6 +8,7 @@ import Footer from '../../components/landing/Footer.astro';
 import MagneticNodes from '../../components/MagneticNodes.jsx';
 import QuantizedWaveBg from '../../components/soluciones/QuantizedWaveBg.jsx';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+import '../../styles/mockups.css';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
@@ -129,50 +130,50 @@ const magneticNodes = [
                     </div>
 
                     <div class="uc-split-mockup reveal">
-                        <div class="uc-mockup-wrapper">
-                            <div class="uc-mockup-header">
-                                <div class="uc-mockup-logo">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="#0a2540"><rect x="2" y="2" width="20" height="20" rx="4"/></svg>
-                                    Nexus SaaS
+                        <div class="uc-cmk-window">
+                            <div class="cmk-nav">
+                                <div class="cmk-nav-l">
+                                    <span class="cmk-nav-title">Editor · COT-0342</span>
+                                    <span class="cmk-nav-sub">· Acme Corp</span>
                                 </div>
-                                <div class="uc-mockup-nav">
-                                    <span>Dashboard</span>
-                                    <span class="active">Suscripciones</span>
-                                    <span>Settings</span>
-                                </div>
+                                <span class="cmk-badge cmk-b-gray">Borrador</span>
                             </div>
-                            
-                            <div class="uc-mockup-body" style="padding: 20px;">
-                                <div class="uc-saas-checkout">
-                                    <div class="uc-sc-header">
-                                        <h4>Resumen de Contrato</h4>
-                                        <div class="uc-sc-status">Pendiente</div>
+                            <div class="cmk-body">
+                                <div class="cmk-brand" style="margin-bottom:12px;">
+                                    <div class="cmk-brand-dot" style="background:#0f172a;">AC</div>
+                                    <div>
+                                        <div class="cmk-t1" style="font-size:14px">Contrato anual para Acme Corp</div>
+                                        <div class="cmk-t2">Nivel Agencia · −10% aplicado · Renovación anual</div>
                                     </div>
-                                    <div class="uc-sc-plan">
-                                        <div class="uc-sc-plan-info">
-                                            <span class="uc-sc-tier">Plan Enterprise</span>
-                                            <span class="uc-sc-seats">50 Asientos (Anual)</span>
-                                        </div>
-                                        <div class="uc-sc-price">$45,000<span>/año</span></div>
-                                    </div>
-                                    <div class="uc-sc-breakdown">
-                                        <div class="uc-sc-row">
-                                            <span>Licencias (50 x $1k)</span>
-                                            <span>$50,000</span>
-                                        </div>
-                                        <div class="uc-sc-row uc-sc-discount">
-                                            <span>Descuento (10%)</span>
-                                            <span>-$5,000</span>
-                                        </div>
-                                        <div class="uc-sc-divider"></div>
-                                        <div class="uc-sc-row uc-sc-total">
-                                            <span>Total Neto</span>
-                                            <span>$45,000</span>
-                                        </div>
-                                    </div>
-                                    <div class="uc-sc-actions">
-                                        <div class="uc-sc-btn">Firmar y Emitir CFDI</div>
-                                    </div>
+                                </div>
+                                <div class="cmk-th" style="grid-template-columns:1.9fr 40px 78px 88px; margin-top:8px">
+                                    <span>Concepto</span><span class="cmk-r">Cant.</span><span class="cmk-r">Precio</span><span class="cmk-r">Importe</span>
+                                </div>
+                                <div class="cmk-tr" style="grid-template-columns:1.9fr 40px 78px 88px">
+                                    <span class="cmk-t1">Licencias Pro <span class="cmk-badge cmk-b-green">−10%</span></span>
+                                    <span class="cmk-t2 cmk-r">50</span>
+                                    <span class="cmk-amt editorial">$900</span>
+                                    <span class="cmk-amt editorial">$45,000</span>
+                                </div>
+                                <div class="cmk-tr" style="grid-template-columns:1.9fr 40px 78px 88px">
+                                    <span class="cmk-t1">Onboarding</span>
+                                    <span class="cmk-t2 cmk-r">1</span>
+                                    <span class="cmk-amt editorial">$15,000</span>
+                                    <span class="cmk-amt editorial">$15,000</span>
+                                </div>
+                                <div class="cmk-tr" style="grid-template-columns:1.9fr 40px 78px 88px; border-bottom:none;">
+                                    <span class="cmk-t1">Soporte SLA</span>
+                                    <span class="cmk-t2 cmk-r">12</span>
+                                    <span class="cmk-amt editorial">$2,000</span>
+                                    <span class="cmk-amt editorial">$24,000</span>
+                                </div>
+                                <div class="cmk-kv" style="border-top:1px solid #e2e8f0; border-bottom:none; margin-top:4px; padding-top:12px;">
+                                    <span class="cmk-k" style="font-weight:700; color:#0f172a;">Total con IVA</span>
+                                    <span class="cmk-v editorial" style="font-size:16px;">$97,440 MXN</span>
+                                </div>
+                                <div class="cmk-alert cmk-alert-green" style="margin-top:12px;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    Al aprobar: firma digital con validez legal y CFDI 4.0 timbrado en automático.
                                 </div>
                             </div>
                         </div>
@@ -202,15 +203,33 @@ const magneticNodes = [
                             <a href="/registro" class="uc-link-arrow">Empieza ahora mismo <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
-                            <div class="uc-mockup-bg cord-bg-1"></div>
-                            <div class="uc-mini-invoice">
-                                <div class="uc-mi-logo">N</div>
-                                <div class="uc-mi-title">Factura de Nexus SaaS</div>
-                                <div class="uc-mi-sub">Cobrado a Acme Corp</div>
-                                <div class="uc-mi-amount">$9,900.00 <span class="uc-mi-currency">MXN</span></div>
-                                <div class="uc-mi-form">
-                                    <div class="uc-mi-input"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> Tarjeta terminada en 4242</div>
-                                    <div class="uc-mi-btn">Pagado exitosamente</div>
+                            <div class="cmk-stage">
+                                <div class="cmk-shot">
+                                    <div class="cmk-chrome">
+                                        <div class="cmk-chrome-url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> nexus.cord.app/q/8xk2</div>
+                                    </div>
+                                    <div class="cmk-body">
+                                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                                            <div class="cmk-brand">
+                                                <div class="cmk-brand-dot" style="background:#0f172a;">N</div>
+                                                <div>
+                                                    <div class="cmk-t1" style="font-size:14px">Nexus SaaS</div>
+                                                    <div class="cmk-t2">COT-0342 · Acme Corp</div>
+                                                </div>
+                                            </div>
+                                            <span class="cmk-badge cmk-b-green"><span class="cmk-dot cmk-dot-green"></span>Pagada</span>
+                                        </div>
+                                        <div class="cmk-divider"></div>
+                                        <div class="cmk-big editorial">$97,440.00 MXN</div>
+                                        <div class="cmk-big-sub">Pagado con tarjeta ····4242 · hoy 11:24</div>
+                                        <div class="cmk-divider"></div>
+                                        <div class="cmk-kv"><span class="cmk-k">CFDI 4.0</span><span class="cmk-badge cmk-b-green">Timbrado y enviado</span></div>
+                                        <div class="cmk-kv" style="border-bottom:none"><span class="cmk-k">Folio fiscal (UUID)</span><span class="cmk-v cmk-v-mono">D4C2-88F1-A9E3</span></div>
+                                        <div style="display:flex; gap:10px; margin-top:10px">
+                                            <span class="cmk-cta cmk-cta-ghost" style="flex:1; justify-content:center">PDF</span>
+                                            <span class="cmk-cta cmk-cta-ghost" style="flex:1; justify-content:center">XML</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -223,27 +242,38 @@ const magneticNodes = [
                             <p>Cada cotización tiene su propio link seguro donde tu cliente revisa el desglose, descarga el PDF y el XML, aprueba o rechaza con firma digital. Todo en los colores de tu empresa.</p>
                             <a href="/registro" class="uc-link-arrow">Empieza ahora mismo <span>&rarr;</span></a>
                         </div>
-                        <div class="uc-bc-mockup" style="background:#fff;">
-                            <div class="uc-mini-portal">
-                                <div class="uc-mp-sidebar">
-                                    <div class="uc-mp-brand"><div class="uc-mp-dot"></div> Nexus</div>
-                                    <div class="uc-mp-nav">Planes</div>
-                                    <div class="uc-mp-nav">Facturación</div>
-                                </div>
-                                <div class="uc-mp-main">
-                                    <div class="uc-mp-header">Facturación</div>
-                                    <div class="uc-mp-card">
-                                        <div class="uc-mp-row">
-                                            <div>
-                                                <strong>Plan Pro (Anual)</strong>
-                                                <span>Se renueva el 15/Nov/2026</span>
+                        <div class="uc-bc-mockup">
+                            <div class="cmk-stage">
+                                <div class="cmk-shot">
+                                    <div class="cmk-chrome">
+                                        <div class="cmk-chrome-url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> propuestas.nexus.mx/q/8xk2</div>
+                                    </div>
+                                    <div class="cmk-body">
+                                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                                            <div class="cmk-brand">
+                                                <div class="cmk-brand-dot" style="background:#0f172a;">N</div>
+                                                <div>
+                                                    <div class="cmk-t1" style="font-size:14px">Propuesta para Acme Corp</div>
+                                                    <div class="cmk-t2">Folio COT-0342 · Vigencia 30 días</div>
+                                                </div>
                                             </div>
-                                            <div class="uc-mp-tag">Activo</div>
+                                            <span class="cmk-badge cmk-b-blue">Vigente</span>
                                         </div>
-                                        <div class="uc-mp-divider"></div>
-                                        <div class="uc-mp-row">
-                                            <span>•••• 4242 (Vence 12/28)</span>
-                                            <span style="color:#0f172a; font-weight:600; cursor:pointer;">Actualizar</span>
+                                        <div class="cmk-divider"></div>
+                                        <div class="cmk-kv"><span class="cmk-k">Licencias Pro ×50</span><span class="cmk-v editorial">$45,000</span></div>
+                                        <div class="cmk-kv"><span class="cmk-k">Onboarding dedicado</span><span class="cmk-v editorial">$15,000</span></div>
+                                        <div class="cmk-kv"><span class="cmk-k">Soporte prioritario SLA ×12</span><span class="cmk-v editorial">$24,000</span></div>
+                                        <div class="cmk-kv" style="border-bottom:none"><span class="cmk-k" style="font-weight:700; color:#0f172a;">Total con IVA</span><span class="cmk-v editorial" style="font-size:15px;">$97,440 MXN</span></div>
+                                        <div style="display:flex; gap:10px; margin-top:12px">
+                                            <span class="cmk-cta cmk-cta-solid" style="flex:1.4; justify-content:center">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px; height:14px;"><path d="M20 6L9 17l-5-5"></path></svg>
+                                                Aprobar y firmar
+                                            </span>
+                                            <span class="cmk-cta cmk-cta-ghost" style="flex:1; justify-content:center">Descargar PDF</span>
+                                        </div>
+                                        <div style="display:flex; align-items:center; gap:8px; background:#f8fafc; padding:10px 14px; border-radius:8px; border:1px solid #f1f5f9; margin-top:14px;">
+                                            <span class="cmk-dot cmk-dot-green"></span>
+                                            <span class="cmk-t2" style="color:#475569; font-weight:600;">Conectado en tiempo real · firma con validez legal</span>
                                         </div>
                                     </div>
                                 </div>
@@ -642,7 +672,31 @@ const magneticNodes = [
     .uc-split-mockup {
         position: relative;
     }
-    
+
+    /* Ventana cmk-* (kit compartido de mockups, calca estilo Stripe) */
+    .uc-cmk-window {
+        position: relative;
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        text-align: left;
+        border: 1px solid rgba(10, 25, 47, 0.08);
+        box-shadow:
+            0 2px 4px rgba(10, 25, 47, 0.05),
+            0 40px 80px -24px rgba(10, 25, 47, 0.18),
+            inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    /* En los bentos el screenshot sangra por abajo y solo 14px a la derecha,
+       para que los badges y montos que cuentan la historia queden visibles */
+    .uc-bc-mockup .cmk-shot {
+        top: 1.8rem;
+        left: 1.8rem;
+        right: -14px;
+        bottom: -40px;
+        width: auto;
+    }
+
     .uc-mockup-wrapper {
         position: relative;
         background: #f5f5f7;

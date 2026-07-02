@@ -6,6 +6,7 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/landing/Nav.astro';
 import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
+import RoadmapCoverBg from '../components/landing/RoadmapCoverBg.jsx';
 import { roadmapData } from '../lib/roadmap-data';
 
 const statusMap = {
@@ -23,6 +24,9 @@ const statusMap = {
     <main class="rd-main">
         <!-- ── HERO ── -->
         <header class="rd-hero">
+            <div class="rd-hero-bg" aria-hidden="true">
+                <RoadmapCoverBg client:only="react" />
+            </div>
             <div class="rd-hero-inner">
                 <p class="pp-eyebrow reveal">PLATAFORMA CORD</p>
                 <h1 class="rd-h1 masked-title">Todo lo que estamos construyendo.</h1>
@@ -118,33 +122,43 @@ const statusMap = {
     .rd-main {
         background: var(--color-bg);
         min-height: 100vh;
-        padding-top: 8rem;
-    }
-    @media (min-width: 900px) {
-        .rd-main { padding-top: 10rem; }
     }
 
-    .pp-eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #888; margin: 0 0 1rem; }
+    .pp-eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: rgba(210, 228, 255, 0.75); margin: 0 0 1rem; }
     @media (min-width: 900px) { .pp-eyebrow { margin: 0 0 1.4rem; } }
-    
-    /* Hero */
+
+    /* Hero — sección oscura full-bleed con el shader de fondo (mismo motor que el hero de soporte) */
     .rd-hero {
+        position: relative;
+        overflow: hidden;
         text-align: center;
-        padding: 0 5% 3rem;
-        max-width: 800px;
-        margin: 0 auto;
+        padding: 7rem 5% 3rem;
     }
     @media (min-width: 900px) {
-        .rd-hero { padding: 0 5% 4rem; }
+        .rd-hero { padding: 7.5rem 5% 4rem; }
+    }
+    .rd-hero-bg {
+        position: absolute;
+        inset: 0;
+        background: #050f22;
+        z-index: 0;
+    }
+    .rd-hero-inner {
+        position: relative;
+        z-index: 2;
+        max-width: 800px;
+        margin: 0 auto;
     }
     .rd-h1 {
         font-size: clamp(2.4rem, 8vw, 4.2rem);
         font-weight: 800; line-height: 1.05; letter-spacing: -0.035em;
-        color: var(--color-text); margin: 0 0 1.2rem;
+        color: #ffffff !important; text-shadow: 0 2px 24px rgba(0,0,0,0.35);
+        margin: 0 0 1.2rem;
     }
+    .rd-h1 :global(.m-line-in) { color: #ffffff !important; }
     @media (min-width: 900px) { .rd-h1 { margin: 0 0 1.4rem; } }
     .rd-lead {
-        font-size: clamp(1rem, 4vw, 1.15rem); line-height: 1.6; color: var(--color-text-muted);
+        font-size: clamp(1rem, 4vw, 1.15rem); line-height: 1.6; color: rgba(226, 236, 253, 0.78);
     }
 
     /* Layout principal */
@@ -154,14 +168,14 @@ const statusMap = {
         gap: 3rem;
         max-width: 1200px;
         margin: 0 auto;
-        padding: 0 5% 4rem;
+        padding: 3rem 5% 4rem;
         align-items: start;
     }
     @media (min-width: 900px) {
-        .rd-layout { grid-template-columns: 280px 1fr; gap: 5rem; padding: 0 5% 5rem; }
+        .rd-layout { grid-template-columns: 280px 1fr; gap: 5rem; padding: 4.5rem 5% 5rem; }
     }
 
-    /* Sidebar & Filters */
+    /* Sidebar & Filters — panel plano "Apple gray", sin borde ni sombra de card */
     .rd-sidebar {
         position: relative;
         top: 0;
@@ -170,78 +184,76 @@ const statusMap = {
     @media (min-width: 900px) {
         .rd-sidebar { position: sticky; top: 6rem; z-index: 1; }
     }
-    
+
     .rd-sidebar-card {
-        background: var(--color-bg);
-        border: 1px solid var(--color-border);
-        border-radius: 20px;
+        background: var(--color-bg-soft);
+        border-radius: 28px;
         padding: 1.6rem;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-        position: relative;
     }
     @media (min-width: 900px) {
-        .rd-sidebar-card { border-radius: 24px; padding: 2.2rem; }
-        .rd-sidebar-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 100%;
-            border-radius: 24px;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
-            pointer-events: none;
-        }
+        .rd-sidebar-card { border-radius: 30px; padding: 1.8rem; }
     }
 
+    /* Segmented control estilo iOS — pill deslizante entre 2 tabs */
     .rd-tabs {
+        position: relative;
         display: flex;
-        gap: 1.5rem;
-        margin-bottom: 1.5rem;
-        border-bottom: 1px solid var(--color-border);
+        gap: 2px;
+        padding: 3px;
+        margin-bottom: 1.8rem;
+        background: rgba(10, 25, 47, 0.05);
+        border-radius: 13px;
     }
-    @media (min-width: 900px) {
-        .rd-tabs { gap: 2rem; margin-bottom: 2rem; }
+    .rd-tabs::before {
+        content: '';
+        position: absolute;
+        top: 3px; left: 3px;
+        width: calc(50% - 3px);
+        height: calc(100% - 6px);
+        background: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(10,25,47,0.10), 0 1px 1px rgba(10,25,47,0.04);
+        transition: transform 0.35s var(--ease-spring);
+    }
+    .rd-tabs:has(.rd-tab:nth-child(2).is-active)::before {
+        transform: translateX(100%);
     }
     .rd-tab {
+        position: relative;
+        z-index: 1;
+        flex: 1;
         background: none;
         border: none;
-        padding: 0 0 0.8rem;
+        padding: 0.6rem 0.8rem;
+        border-radius: 10px;
         font-family: inherit;
-        font-size: 1.05rem;
-        font-weight: 800;
+        font-size: 0.82rem;
+        font-weight: 600;
         color: var(--color-text-muted);
         cursor: pointer;
-        position: relative;
         transition: color 0.3s;
-    }
-    @media (min-width: 900px) {
-        .rd-tab { padding: 0 0 1rem; font-size: 1.15rem; }
+        white-space: nowrap;
     }
     .rd-tab:hover {
         color: var(--color-text);
     }
     .rd-tab.is-active {
         color: var(--color-text);
-    }
-    .rd-tab.is-active::after {
-        content: '';
-        position: absolute;
-        bottom: -1px;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background: var(--color-text);
+        font-weight: 700;
     }
 
     .rd-filters-title {
-        font-size: 0.95rem;
-        font-weight: 700;
-        color: var(--color-text);
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 1.6px;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
         margin: 0 0 1rem;
     }
     .rd-filters {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: 0.6rem;
     }
 
     .rd-filter-group {
@@ -250,37 +262,33 @@ const statusMap = {
     .rd-select {
         width: 100%;
         appearance: none;
-        background: var(--color-bg-soft);
-        border: 1px solid transparent;
-        border-radius: 16px;
-        padding: 0.7rem 2.5rem 0.7rem 1.2rem;
+        background: #ffffff;
+        border: none;
+        border-radius: 13px;
+        padding: 0.7rem 2.5rem 0.7rem 1.1rem;
         font-family: inherit;
         font-size: 0.85rem;
         font-weight: 500;
         color: var(--color-text);
         cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    @media (min-width: 900px) {
-        .rd-select { border-radius: 20px; }
+        transition: box-shadow 0.3s ease;
     }
     .rd-select:hover {
-        background: var(--color-border);
+        box-shadow: 0 1px 2px rgba(10,25,47,0.06);
     }
     .rd-select:focus {
         outline: none;
-        border-color: var(--color-text);
-        background: transparent;
+        box-shadow: 0 0 0 3px rgba(10,25,47,0.10);
     }
     .rd-select-ico {
         position: absolute;
-        right: 1.2rem;
+        right: 1.1rem;
         top: 50%;
         transform: translateY(-50%);
         pointer-events: none;
         color: var(--color-text-muted);
     }
-    .rd-select-ico svg { width: 16px; height: 16px; }
+    .rd-select-ico svg { width: 15px; height: 15px; }
 
     /* Toggle Switch */
     .rd-toggle-wrap {
@@ -426,13 +434,17 @@ const statusMap = {
     /* Dark mode support */
     @media (prefers-color-scheme: dark) {
         .rd-sidebar-card {
-            background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            background: rgba(255,255,255,0.04);
         }
-        @media (min-width: 900px) {
-            .rd-sidebar-card::before {
-                box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
-            }
+        .rd-tabs {
+            background: rgba(255,255,255,0.05);
+        }
+        .rd-tabs::before {
+            background: rgba(255,255,255,0.10);
+            box-shadow: none;
+        }
+        .rd-select {
+            background: rgba(255,255,255,0.07);
         }
         .status-live { color: #34d399; }
         .status-beta { color: #fbbf24; }

@@ -434,30 +434,65 @@ export default function ProductAccordion({ slug = 'editor' }) {
   const cardsRef   = useRef([]);
   const textsRef   = useRef([]);
   const iconsRef   = useRef([]);
+  const vlabelsRef = useRef([]);
   const sectionRef = useRef(null);
+  const hoverTimer = useRef(null);
 
   const slides = SLIDES[slug] || SLIDES.editor;
 
+  // Las tarjetas inactivas son angostas (~130px). Sin este "dwell", un swipe
+  // rápido dispara el crecimiento GSAP de la tarjeta apuntada y el cursor —
+  // que sigue en movimiento — sale de su área angosta antes de que alcance su
+  // tamaño final, disparando el hover de la siguiente en cascada. El resultado:
+  // el cursor "rebota" hasta la primera tarjeta en vez de quedarse en la
+  // penúltima. El dwell espera a que el cursor SE ASIENTE antes de comprometer
+  // el cambio — también hace que la interacción se sienta deliberada, no
+  // apresurada.
+  const HOVER_DWELL = 140;
+
+  function scheduleActive(i) {
+    if (i === activeIndex) return;
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = setTimeout(() => {
+      hoverTimer.current = null;
+      setActiveIndex(i);
+    }, HOVER_DWELL);
+  }
+
+  function commitActive(i) {
+    if (hoverTimer.current) { clearTimeout(hoverTimer.current); hoverTimer.current = null; }
+    setActiveIndex(i);
+  }
+
+  useEffect(() => () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+  }, []);
+
   // Estado inicial cuando cambia el slug
   useEffect(() => {
+    if (hoverTimer.current) { clearTimeout(hoverTimer.current); hoverTimer.current = null; }
     setActiveIndex(0);
-    const cards = cardsRef.current.filter(Boolean);
-    const texts = textsRef.current.filter(Boolean);
-    const icons = iconsRef.current.filter(Boolean);
+    const cards   = cardsRef.current.filter(Boolean);
+    const texts   = textsRef.current.filter(Boolean);
+    const icons   = iconsRef.current.filter(Boolean);
+    const vlabels = vlabelsRef.current.filter(Boolean);
     if (!cards.length) return;
     gsap.set(cards, { flexGrow: (i) => i === 0 ? ACTIVE_GROW : RESTING[i] });
     gsap.set(texts, { opacity: (i) => i === 0 ? 1 : 0, y: (i) => i === 0 ? 0 : 16 });
     gsap.set(icons, {
-      opacity: (i) => i === 0 ? 1 : 0.38,
-      scale:   (i) => i === 0 ? 1 : 0.72,
+      opacity: (i) => i === 0 ? 1 : 0.46,
+      scale:   (i) => i === 0 ? 1 : 0.76,
+      y:       (i) => i === 0 ? 0 : 4,
     });
+    gsap.set(vlabels, { opacity: (i) => i === 0 ? 0 : 0.9 });
   }, [slug]);
 
   // Animación al cambiar el activo
   useEffect(() => {
-    const cards = cardsRef.current.filter(Boolean);
-    const texts = textsRef.current.filter(Boolean);
-    const icons = iconsRef.current.filter(Boolean);
+    const cards   = cardsRef.current.filter(Boolean);
+    const texts   = textsRef.current.filter(Boolean);
+    const icons   = iconsRef.current.filter(Boolean);
+    const vlabels = vlabelsRef.current.filter(Boolean);
     if (!cards.length) return;
 
     const ctx = gsap.context(() => {
@@ -485,9 +520,19 @@ export default function ProductAccordion({ slug = 'editor' }) {
       // Iconos
       icons.forEach((icon, i) => {
         tl.to(icon, {
-          opacity: i === activeIndex ? 1 : 0.38,
-          scale:   i === activeIndex ? 1 : 0.72,
+          opacity: i === activeIndex ? 1 : 0.46,
+          scale:   i === activeIndex ? 1 : 0.76,
+          y:       i === activeIndex ? 0 : 4,
           duration: 0.55,
+          ease: 'power2.out',
+        }, 0);
+      });
+
+      // Etiquetas verticales "01 / 02 / 03 / 04" — solo en inactivas
+      vlabels.forEach((label, i) => {
+        tl.to(label, {
+          opacity: i === activeIndex ? 0 : 0.9,
+          duration: i === activeIndex ? 0.16 : 0.4,
           ease: 'power2.out',
         }, 0);
       });
@@ -504,12 +549,13 @@ export default function ProductAccordion({ slug = 'editor' }) {
             key={i}
             ref={el => (cardsRef.current[i] = el)}
             className={`pac-card${i === activeIndex ? ' pac-active' : ''}`}
-            onMouseEnter={() => setActiveIndex(i)}
-            onClick={() => setActiveIndex(i)}
+            onMouseEnter={() => scheduleActive(i)}
+            onMouseLeave={() => { if (hoverTimer.current) { clearTimeout(hoverTimer.current); hoverTimer.current = null; } }}
+            onClick={() => commitActive(i)}
             role="button"
             tabIndex={0}
             aria-label={slide.title}
-            onKeyDown={e => e.key === 'Enter' && setActiveIndex(i)}
+            onKeyDown={e => e.key === 'Enter' && commitActive(i)}
           >
             {/* Canvas WebGL a tamaño fijo — CSS lo estira sin reset */}
             <div className="pac-shader-wrap" aria-hidden="true">
@@ -529,6 +575,15 @@ export default function ProductAccordion({ slug = 'editor' }) {
               aria-hidden="true"
             >
               {ICONS[slide.icon]}
+            </div>
+
+            {/* Etiqueta vertical — visible solo en tarjetas inactivas */}
+            <div
+              ref={el => (vlabelsRef.current[i] = el)}
+              className="pac-vlabel"
+              aria-hidden="true"
+            >
+              {slide.label}
             </div>
 
             {/* Texto completo — solo visible en tarjeta activa */}

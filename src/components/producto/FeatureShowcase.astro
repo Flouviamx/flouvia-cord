@@ -1,0 +1,341 @@
+---
+// FeatureShowcase — sección tabbed bajo el bento de /producto/[slug].
+// Un mockup grande (estilo ElevenLabs "Flows") que cambia según la pestaña activa
+// debajo; barra indicadora que se desliza + rellena como temporizador de autoplay.
+import ShowcaseMockup from './ShowcaseMockup.astro';
+import ShowcaseAuroraBg from './ShowcaseAuroraBg.jsx';
+
+interface ShowcaseTab {
+    eyebrow: string;
+    titulo: string;
+    copy: string;
+}
+
+interface Props {
+    slug: string;
+    tabs: ShowcaseTab[];
+    nav: string;
+    isEn?: boolean;
+}
+
+const { slug, tabs, nav, isEn = false } = Astro.props as Props;
+---
+
+<section class="shw-section">
+    <div class="shw-head">
+        <p class="shw-eyebrow reveal">{isEn ? 'WHY IT MATTERS' : 'POR QUÉ IMPORTA'}</p>
+        <h2 class="shw-h2 masked-title">
+            {isEn
+                ? `This is what ${nav.toLowerCase()} actually changes.`
+                : `Esto es lo que ${nav.toLowerCase()} cambia de verdad.`}
+        </h2>
+    </div>
+
+    <div class="shw-stage-wrap reveal-mockup">
+        <div class="shw-stage">
+            <ShowcaseAuroraBg client:only="react" />
+            {tabs.map((t, i) => (
+                <div class={`shw-panel${i === 0 ? ' shw-panel-active' : ''}`} data-panel={i}>
+                    <ShowcaseMockup slug={slug} index={i} />
+                </div>
+            ))}
+        </div>
+    </div>
+
+    <div class="shw-tabs-wrap">
+        <div class="shw-track" role="tablist">
+            <span class="shw-indicator" aria-hidden="true"><i class="shw-indicator-fill"></i></span>
+            {tabs.map((t, i) => (
+                <button
+                    type="button"
+                    class={`shw-tab${i === 0 ? ' shw-tab-active' : ''}`}
+                    data-tab={i}
+                    role="tab"
+                    aria-selected={i === 0 ? 'true' : 'false'}
+                >
+                    <span class="shw-tab-eyebrow">{t.eyebrow}</span>
+                    <span class="shw-tab-title">{t.titulo}</span>
+                    <span class="shw-tab-copy">{t.copy}</span>
+                </button>
+            ))}
+        </div>
+    </div>
+</section>
+
+<style>
+    .shw-section {
+        max-width: 1360px;
+        margin: 0 auto;
+        padding: 1rem 5% 8rem;
+    }
+
+    .shw-head {
+        max-width: 620px;
+        margin: 0 auto 3.4rem;
+        text-align: center;
+    }
+    .shw-eyebrow {
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: #b0b0b8;
+        margin: 0 0 0.9rem;
+    }
+    .shw-h2 {
+        font-size: clamp(1.6rem, 2.6vw, 2.15rem);
+        font-weight: 800;
+        letter-spacing: -0.035em;
+        line-height: 1.16;
+        color: #050505;
+        margin: 0;
+    }
+
+    /* ── Stage (big single mockup, ElevenLabs-style) ── */
+    .shw-stage {
+        position: relative;
+        background: #f5f5f7;
+        border-radius: 28px;
+        border: 1px solid rgba(0,0,0,0.06);
+        box-shadow:
+            0 1px 3px rgba(0,0,0,0.04),
+            0 32px 64px -18px rgba(0,0,0,0.10),
+            inset 0 1px 0 rgba(255,255,255,0.6);
+        overflow: hidden;
+        height: 560px;
+    }
+    .shw-panel {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        pointer-events: none;
+        transform-origin: center center;
+    }
+    .shw-panel-active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    /* Sin JS (o reduced-motion): swap instantáneo, sin transición — GSAP
+       toma el control del crossfade cuando corre (ver <script> abajo). */
+
+    /* ── Tabs row ── */
+    .shw-tabs-wrap { margin-top: 2.6rem; }
+    .shw-track {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        column-gap: 2.4rem;
+        border-top: 1px solid var(--color-border);
+    }
+    .shw-indicator {
+        position: absolute;
+        top: -1px; left: 0;
+        height: 2px; width: 0;
+        background: rgba(10,25,47,0.10);
+        display: block;
+        overflow: hidden;
+        border-radius: 2px;
+    }
+    .shw-indicator-fill {
+        display: block;
+        height: 100%; width: 100%;
+        background: #050505;
+        transform-origin: left center;
+        transform: scaleX(0);
+    }
+
+    .shw-tab {
+        appearance: none;
+        background: none;
+        border: none;
+        text-align: left;
+        cursor: pointer;
+        padding: 1.7rem 0 0.4rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        font-family: inherit;
+        transition: transform 0.4s var(--ease-spring, ease);
+    }
+    .shw-tab:hover { transform: translateY(-2px); }
+    .shw-tab:active { transform: translateY(0) scale(0.99); }
+
+    .shw-tab-eyebrow {
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 2.4px;
+        text-transform: uppercase;
+        color: #b0b0b8;
+        transition: color 0.35s ease;
+    }
+    .shw-tab-active .shw-tab-eyebrow { color: var(--color-blue-deep); }
+
+    .shw-tab-title {
+        font-size: 1.02rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1.32;
+        color: #050505;
+        transition: color 0.35s ease;
+    }
+    .shw-tab:not(.shw-tab-active):hover .shw-tab-title { color: var(--color-blue-deep); }
+
+    .shw-tab-copy {
+        font-size: 0.85rem;
+        line-height: 1.62;
+        color: var(--color-text-muted);
+        max-width: 36ch;
+        opacity: 0.72;
+        transition: opacity 0.35s ease;
+    }
+    .shw-tab-active .shw-tab-copy { opacity: 1; }
+
+    /* ── Responsive ── */
+    @media (max-width: 960px) {
+        .shw-stage { height: 460px; }
+    }
+    @media (max-width: 760px) {
+        .shw-stage { height: 400px; border-radius: 22px; }
+        .shw-track {
+            grid-template-columns: 1fr;
+            row-gap: 0.2rem;
+            border-top: none;
+        }
+        .shw-indicator { display: none; }
+        .shw-tab {
+            padding: 1.1rem 0 1.1rem 1rem;
+            border-left: 2px solid var(--color-border);
+            margin-bottom: 0.2rem;
+        }
+        .shw-tab:hover { transform: none; }
+        .shw-tab-active { border-left-color: #050505; }
+        .shw-tab-copy { max-width: none; }
+    }
+</style>
+
+<script>
+    import { gsap } from 'gsap';
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const AUTOPLAY_S = 6;
+
+        document.querySelectorAll<HTMLElement>('.shw-section').forEach((section) => {
+            const track = section.querySelector<HTMLElement>('.shw-track');
+            const indicator = section.querySelector<HTMLElement>('.shw-indicator');
+            const fill = section.querySelector<HTMLElement>('.shw-indicator-fill');
+            const tabs = Array.from(section.querySelectorAll<HTMLButtonElement>('.shw-tab'));
+            const panels = Array.from(section.querySelectorAll<HTMLElement>('.shw-panel'));
+            if (!track || !indicator || !fill || !tabs.length || !panels.length) return;
+
+            let active = 0;
+            let fillTween: gsap.core.Tween | null = null;
+            let started = false;
+            let inView = false;
+
+            const rectOf = (el: HTMLElement) => {
+                const tr = track.getBoundingClientRect();
+                const r = el.getBoundingClientRect();
+                return { x: r.left - tr.left, width: r.width };
+            };
+
+            const placeIndicator = (i: number, animate: boolean) => {
+                const { x, width } = rectOf(tabs[i]);
+                if (animate && !reduced) {
+                    gsap.to(indicator, { x, width, duration: 0.5, ease: 'power3.out' });
+                } else {
+                    gsap.set(indicator, { x, width });
+                }
+            };
+
+            // Autoplay NUNCA se detiene por interacción del usuario — solo se
+            // pausa fuera de viewport (perf). Un clic manual salta de tab y
+            // el conteo vuelve a arrancar desde ahí; el ciclo sigue corriendo.
+            const startFill = () => {
+                if (reduced) return;
+                fillTween?.kill();
+                gsap.set(fill, { scaleX: 0 });
+                fillTween = gsap.to(fill, {
+                    scaleX: 1, duration: AUTOPLAY_S, ease: 'none',
+                    onComplete: () => setActive((active + 1) % tabs.length, true),
+                });
+                if (!inView) fillTween.pause();
+            };
+
+            // Crossfade "settle" premium (Apple-style): el panel entrante llega
+            // ligeramente grande + desenfocado + corrido hacia abajo y se asienta
+            // en foco (power3.out, como el settle del hero); el saliente se hunde
+            // y se desvanece debajo (power2.inOut). z-index temporal asegura que
+            // el entrante quede SIEMPRE encima durante el cruce.
+            const crossfade = (nextPanel: HTMLElement, prevPanel: HTMLElement) => {
+                if (nextPanel === prevPanel) return;
+                if (reduced) {
+                    prevPanel.classList.remove('shw-panel-active');
+                    nextPanel.classList.add('shw-panel-active');
+                    return;
+                }
+                gsap.killTweensOf([nextPanel, prevPanel]);
+                nextPanel.classList.add('shw-panel-active');
+                nextPanel.style.zIndex = '2';
+                prevPanel.style.zIndex = '1';
+
+                gsap.set(nextPanel, { opacity: 0, scale: 1.035, y: 16, filter: 'blur(16px)' });
+                gsap.to(prevPanel, {
+                    opacity: 0, scale: 0.978, y: -6, duration: 0.5, ease: 'power2.inOut',
+                    onComplete: () => {
+                        prevPanel.classList.remove('shw-panel-active');
+                        prevPanel.style.zIndex = '';
+                        gsap.set(prevPanel, { clearProps: 'transform,filter,opacity' });
+                    },
+                });
+                gsap.to(nextPanel, {
+                    opacity: 1, scale: 1, y: 0, filter: 'blur(0px)', duration: 0.9, ease: 'power3.out',
+                    onComplete: () => {
+                        nextPanel.style.zIndex = '';
+                        gsap.set(nextPanel, { clearProps: 'transform,filter' });
+                    },
+                });
+            };
+
+            const setActive = (i: number, auto = false) => {
+                if (i === active && !auto) { startFill(); return; }
+                const prevPanel = panels[active];
+                tabs[active].classList.remove('shw-tab-active');
+                tabs[active].setAttribute('aria-selected', 'false');
+                active = i;
+                tabs[active].classList.add('shw-tab-active');
+                tabs[active].setAttribute('aria-selected', 'true');
+                crossfade(panels[active], prevPanel);
+                placeIndicator(active, true);
+                startFill();
+            };
+
+            tabs.forEach((tab, i) => {
+                tab.addEventListener('click', () => setActive(i));
+            });
+
+            placeIndicator(0, false);
+
+            const resync = () => placeIndicator(active, false);
+            window.addEventListener('resize', resync);
+            (document as any).fonts?.ready?.then(resync);
+
+            if (!reduced) {
+                const io = new IntersectionObserver((entries) => {
+                    entries.forEach((entry) => {
+                        inView = entry.isIntersecting;
+                        if (inView && !started) {
+                            started = true;
+                            startFill();
+                        } else if (!inView) {
+                            fillTween?.pause();
+                        } else if (inView) {
+                            fillTween?.resume();
+                        }
+                    });
+                }, { threshold: 0.4 });
+                io.observe(section);
+            }
+        });
+    });
+</script>

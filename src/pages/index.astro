@@ -193,6 +193,7 @@ const description = isEn
         const demoEl = document.getElementById('heroDemo');
         const stepEls = Array.from(document.querySelectorAll<HTMLButtonElement>('.demo-step'));
         const tlItems = Array.from(document.querySelectorAll<HTMLElement>('.mk-tl-item[data-story]'));
+        const stpItems = Array.from(document.querySelectorAll<HTMLElement>('.mk-stp[data-story]'));
 
         if (mkStatus && mkToast && mkChip && demoEl && stepEls.length) {
             const DWELL = 2.7;
@@ -212,6 +213,7 @@ const description = isEn
                 mkStatus.textContent = `● ${st.badge[1]}`;
                 if (animate) gsap.fromTo(mkStatus, { scale: 0.84, opacity: 0.4 }, { scale: 1, opacity: 1, duration: 0.45, ease: 'power2.out' });
                 tlItems.forEach((it) => it.classList.toggle('is-pending', !st.on.includes(it.dataset.story || '')));
+                stpItems.forEach((it) => it.classList.toggle('is-pending', !st.on.includes(it.dataset.story || '')));
                 const dur = animate ? 0.5 : 0;
                 gsap.to(mkToast, { opacity: st.toast ? 1 : 0, duration: dur });
                 gsap.to(mkChip, { opacity: st.chip ? 1 : 0, y: st.chip ? 0 : -10, duration: dur });

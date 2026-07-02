@@ -22,6 +22,12 @@ export interface Faq {
     a: string;
 }
 
+export interface ShowcaseTab {
+    eyebrow: string;      // etiqueta corta sobre el título
+    titulo: string;       // hook, orientado al gancho psicológico (pérdida/urgencia/prueba social/autoridad)
+    copy: string;         // 1-2 frases, tono editorial B2B, sin exagerar
+}
+
 export interface Feature {
     slug: string;
     nav: string;             // nombre corto (cross-links, megamenú)
@@ -32,6 +38,7 @@ export interface Feature {
     plan: string;            // en qué plan vive
     stats: FeatureStat[];
     blocks: FeatureBlock[];
+    showcase: ShowcaseTab[]; // sección tabbed bajo el bento — 3 ángulos de venta con mockup grande
     faqs: Faq[];             // FAQ + FAQPage JSON-LD (mínimo 3 por página)
     cta: { titulo: string; sub: string };
 }
@@ -81,6 +88,23 @@ export const FEATURES: Feature[] = [
                     'Vigencia con fecha de expiración automática',
                     'Folio consecutivo con tu prefijo (COT-0148, COT-0149…)',
                 ],
+            },
+        ],
+        showcase: [
+            {
+                eyebrow: 'EL COSTO DE EXCEL',
+                titulo: 'Cada hora en una hoja de cálculo es una venta que no cerraste.',
+                copy: 'Mientras arrastras celdas y corriges fórmulas, tu competencia ya mandó su cotización. Cord arma la misma en 4 minutos — con el catálogo, el IVA y el total ya resueltos.',
+            },
+            {
+                eyebrow: 'SIN FRICCIÓN',
+                titulo: 'Agrega, negocia, envía. Sin saltar entre tres pantallas.',
+                copy: 'Busca el producto, ajusta el precio de la línea, mira el total recalcularse — todo en el mismo lugar donde antes brincabas entre el catálogo, la calculadora y el Word.',
+            },
+            {
+                eyebrow: 'CERO ERRORES DE DEDO',
+                titulo: 'El número que envías es el número correcto.',
+                copy: 'El IVA, los totales y el descuento por línea se calculan solos. Ya no hay un cliente que te llame para decirte que tu Excel sumó mal.',
             },
         ],
         faqs: [
@@ -144,6 +168,23 @@ export const FEATURES: Feature[] = [
                 ],
             },
         ],
+        showcase: [
+            {
+                eyebrow: 'EL PDF QUE NADIE VUELVE A ABRIR',
+                titulo: 'Un adjunto muere en la bandeja de entrada. Un link vive.',
+                copy: 'La mayoría de los PDF de cotización se abren una sola vez y se pierden. Cord manda un link que tu cliente aprueba con el pulgar, desde WhatsApp, sin buscar un archivo perdido.',
+            },
+            {
+                eyebrow: 'TU MARCA, NO LA NUESTRA',
+                titulo: 'Que se vea como lo mandó una empresa seria — porque lo es.',
+                copy: 'Logo, colores y dominio propio. Tu cliente ve tu negocio, no un "powered by" genérico. La confianza se construye desde el primer clic.',
+            },
+            {
+                eyebrow: 'DEL SÍ AL COBRO',
+                titulo: 'Aprobar deja de ser el final del proceso. Es el inicio del cobro.',
+                copy: 'En cuanto tu cliente dice que sí, tú lo sabes al instante y el pago o el crédito ya están listos para activarse. Cero llamadas de "¿ya viste mi cotización?".',
+            },
+        ],
         faqs: [
             {
                 q: '¿Mi cliente necesita crear una cuenta para aprobar una cotización de Cord?',
@@ -203,6 +244,23 @@ export const FEATURES: Feature[] = [
                     'Pipeline visual por estado',
                     'Detecta cotizaciones por vencer antes de que expiren',
                 ],
+            },
+        ],
+        showcase: [
+            {
+                eyebrow: 'EL INTERÉS SE ENFRÍA RÁPIDO',
+                titulo: 'Un cliente que vio tu cotización hace 10 minutos todavía piensa en ti.',
+                copy: 'Uno que la vio hace dos semanas, ya no. Cord te avisa el segundo exacto en que abren el link — para que llames cuando todavía te tienen en la cabeza.',
+            },
+            {
+                eyebrow: 'LA VIO 3 VECES = ESTÁ COMPARANDO',
+                titulo: 'Sabes exactamente qué tan cerca está el sí.',
+                copy: 'Cada apertura queda registrada. Si tu cliente volvió a entrar varias veces en un día, no te está ignorando — está decidiendo. Es tu señal para llamar, no para esperar.',
+            },
+            {
+                eyebrow: 'TU PIPELINE, DE VERDAD',
+                titulo: 'Deja de adivinar cuánto vas a cerrar este mes.',
+                copy: 'El dashboard te dice cuánto dinero está por cerrar, cuánto ya cerraste y qué cotizaciones llevan un silencio peligroso. Decisiones con números, no con la memoria de la última llamada.',
             },
         ],
         faqs: [
@@ -266,6 +324,23 @@ export const FEATURES: Feature[] = [
                 ],
             },
         ],
+        showcase: [
+            {
+                eyebrow: 'EL RIESGO DE RECAPTURAR',
+                titulo: 'Cada vez que vuelves a escribir un dato, hay una oportunidad de error fiscal.',
+                copy: 'El RFC, los productos, los montos — ya están en la cotización aprobada. Cord los usa tal cual para timbrar el CFDI. Cero transcripción, cero multas por un dedo torcido.',
+            },
+            {
+                eyebrow: '5 MINUTOS, UNA SOLA VEZ',
+                titulo: 'Conecta tu sello digital hoy. No lo vuelvas a tocar.',
+                copy: 'Subes tu CSD una vez, cifrado y aislado en tu cuenta. A partir de ahí, cada cotización aprobada se convierte en factura con un clic — no con una cita en la agenda de tu contador.',
+            },
+            {
+                eyebrow: 'TODO EN UN SOLO HILO',
+                titulo: 'Cuando contabilidad pregunte, todo está en el mismo lugar.',
+                copy: 'La factura queda ligada a su cotización, con su UUID y su timeline completo. Nada de buscar en dos sistemas distintos para reconciliar quién pagó qué.',
+            },
+        ],
         faqs: [
             {
                 q: '¿Cómo timbra el CFDI automáticamente Cord?',
@@ -325,6 +400,23 @@ export const FEATURES: Feature[] = [
                     'Mejores decisiones de precio y crédito',
                     'La memoria comercial deja de vivir en una sola persona',
                 ],
+            },
+        ],
+        showcase: [
+            {
+                eyebrow: 'EL "SE NOS PASÓ" YA NO EXISTE',
+                titulo: 'Sabes cuánto crédito le queda a cada cliente antes de decir que sí.',
+                copy: 'Asigna un límite por cliente y deja que el sistema lo vigile. Vender a crédito deja de ser un acto de fe.',
+            },
+            {
+                eyebrow: 'MISMAS REGLAS PARA TODOS',
+                titulo: 'Que ningún vendedor invente sus propios términos.',
+                copy: 'Contado, Net 30 o Net 60 — la ficha del cliente los aplica sola en cada cotización. El negocio decide las reglas, no la memoria de cada vendedor.',
+            },
+            {
+                eyebrow: 'LA MEMORIA COMERCIAL, EN DATOS',
+                titulo: 'Quién paga a tiempo se nota. Quién no, también.',
+                copy: 'El historial completo por cliente te dice a quién darle mejor precio y a quién pedirle anticipo — con evidencia, no con la opinión de un solo vendedor que puede irse mañana.',
             },
         ],
         faqs: [
@@ -389,6 +481,23 @@ export const FEATURES: Feature[] = [
                 ],
             },
         ],
+        showcase: [
+            {
+                eyebrow: 'NUNCA SE CANSA DE PREGUNTAR',
+                titulo: 'Tu mejor cobrador no duerme, no se frustra y no se le olvida.',
+                copy: 'El agente de IA da seguimiento a cada factura vencida de noche, fin de semana, siempre. La cartera deja de enfriarse esperando a que alguien tenga tiempo de escribir.',
+            },
+            {
+                eyebrow: 'NEGOCIA, NO SOLO RECUERDA',
+                titulo: 'No manda un "por favor paga". Propone un plan de pagos real.',
+                copy: 'Hasta tres cuotas mensuales, dentro de los límites que tú definiste. Si el cliente pide algo fuera de rango, la IA te lo escala — nunca decide sola lo que no le toca.',
+            },
+            {
+                eyebrow: 'CERO CAJA NEGRA',
+                titulo: 'Todo lo que hace la IA, tú lo puedes leer.',
+                copy: 'Cada correo, cada acuerdo, cada cuota queda en un audit log inmutable. Enciendes el agente cliente por cliente — automatizar no significa perder el control.',
+            },
+        ],
         faqs: [
             {
                 q: '¿Cómo cobra de forma automática el agente de IA de Cord?',
@@ -449,6 +558,23 @@ export const FEATURES: Feature[] = [
                     'FX lock: la tasa se congela 30 días por cotización',
                     'Protege tu utilidad del movimiento entre aprobar y facturar',
                 ],
+            },
+        ],
+        showcase: [
+            {
+                eyebrow: 'EL DÓLAR SE MUEVE. TU MARGEN NO DEBERÍA.',
+                titulo: 'Entre que aprueban y que facturas, el tipo de cambio se puede comer tu utilidad.',
+                copy: 'Cord congela la tasa por 30 días con un colchón de cobertura. El margen que negociaste es el margen que cobras, sin importar qué haga el dólar mientras tanto.',
+            },
+            {
+                eyebrow: 'SIN CAPTURAR NADA',
+                titulo: 'La tasa del día, no la del Excel de la semana pasada.',
+                copy: 'Cord trae el tipo de cambio en vivo automáticamente. Nadie en tu equipo tiene que acordarse de revisar el tipo de cambio antes de cotizar.',
+            },
+            {
+                eyebrow: 'DOS MONEDAS, UN SOLO TRATO',
+                titulo: 'Tu cliente ve dólares. El SAT ve pesos. Nadie se confunde.',
+                copy: 'Presenta en USD o EUR como espera tu cliente internacional; factura en pesos como exige México. Ambas monedas quedan amarradas en el mismo documento.',
             },
         ],
         faqs: [
@@ -513,6 +639,23 @@ export const FEATURES: Feature[] = [
                 ],
             },
         ],
+        showcase: [
+            {
+                eyebrow: 'VENDER SIN FRONTERA',
+                titulo: 'El negocio que ya no cabe en un solo país no debería usar herramientas de un solo país.',
+                copy: 'Cotiza en dólares a un cliente en Texas y factura en pesos en Guadalajara — desde la misma cuenta, el mismo catálogo, el mismo sistema.',
+            },
+            {
+                eyebrow: 'COBERTURA REAL',
+                titulo: 'El tipo de cambio ya no es una apuesta.',
+                copy: 'Buffer de cobertura configurable más tasa congelada 30 días. Sabes exactamente cuánto vas a cobrar en pesos desde el momento en que el cliente aprueba en dólares.',
+            },
+            {
+                eyebrow: 'MÉXICO TIMBRA DE VERDAD',
+                titulo: 'CFDI 4.0 real, no una simulación con apariencia de factura.',
+                copy: 'Cuando el trato se cierra en México, el UUID, el XML y el PDF salen timbrados ante el SAT — con una arquitectura ya lista para sumar más países.',
+            },
+        ],
         faqs: [
             {
                 q: '¿Cord permite cotizar en dólares y facturar en pesos?',
@@ -573,6 +716,23 @@ export const FEATURES: Feature[] = [
                     'Exportación a CSV o PDF',
                     'Cero tiempo de conciliación mensual',
                 ],
+            },
+        ],
+        showcase: [
+            {
+                eyebrow: 'SE ACABARON LAS ADIVINANZAS',
+                titulo: 'Sabes cuánto vas a cobrar antes de cobrarlo.',
+                copy: 'Cord no asume que Net 30 se paga al día 30. Analiza el historial real de cada cliente y proyecta tu flujo con la verdad, no con el contrato.',
+            },
+            {
+                eyebrow: 'EL RIESGO QUE NO VES A TIEMPO',
+                titulo: 'Si el 40% de tu cartera depende de un solo cliente, quieres saberlo hoy.',
+                copy: 'El semáforo de concentración de riesgo te avisa antes de que ese cliente se atrase — para que actúes mientras todavía hay margen de maniobra.',
+            },
+            {
+                eyebrow: 'LISTO PARA LA JUNTA',
+                titulo: 'El reporte que antes te tomaba una tarde armar, ahora ya está armado.',
+                copy: 'Dashboard en vivo, exportable, siempre actualizado. Cero tiempo de conciliación cuando alguien de finanzas pregunta cómo va el mes.',
             },
         ],
         faqs: [
@@ -637,6 +797,23 @@ export const FEATURES: Feature[] = [
                 ],
             },
         ],
+        showcase: [
+            {
+                eyebrow: 'EL DESCUENTO QUE NADIE AUTORIZÓ',
+                titulo: 'Un vendedor apurado por cerrar puede regalar tu margen sin querer.',
+                copy: 'Define hasta dónde puede llegar un descuento antes de que se necesite tu aprobación. La velocidad de ventas ya no compite con la rentabilidad.',
+            },
+            {
+                eyebrow: 'APRUEBA DESDE DONDE ESTÉS',
+                titulo: 'Un clic desde el celular, y la venta sigue su curso.',
+                copy: 'Cuando una cotización rebasa el umbral, te llega la notificación al instante — con el margen exacto que se está cediendo. Aprobar o pedir ajustes toma segundos, no una junta.',
+            },
+            {
+                eyebrow: 'AUDITORÍA SILENCIOSA',
+                titulo: 'Cada excepción queda registrada, aunque nadie la esté viendo en el momento.',
+                copy: 'Quién pidió el descuento, quién lo aprobó y por qué — el log inmutable responde la pregunta antes de que alguien tenga que hacerla.',
+            },
+        ],
         faqs: [
             {
                 q: '¿Puedo tener diferentes umbrales por vendedor?',
@@ -699,6 +876,23 @@ export const FEATURES: Feature[] = [
                 ],
             },
         ],
+        showcase: [
+            {
+                eyebrow: 'CADA QUIEN VE LO QUE LE TOCA',
+                titulo: 'La seguridad no debería ser un favor que le pides a tu vendedor.',
+                copy: 'El vendedor solo ve su cartera. El gerente ve el pipeline completo. El contador solo entra por los CFDI. Nadie tiene acceso a más de lo que necesita, por diseño.',
+            },
+            {
+                eyebrow: 'CRECE SIN MULTIPLICAR CUENTAS',
+                titulo: 'Varias razones sociales, un solo panel de control.',
+                copy: 'Cambia de empresa con un clic en vez de manejar contraseñas distintas para cada marca del corporativo. Catálogo, cobranza y reportes se mantienen organizados por separado.',
+            },
+            {
+                eyebrow: 'SEGURIDAD DE NIVEL EMPRESARIAL',
+                titulo: 'Cuando alguien deja la empresa, se le va el acceso el mismo día.',
+                copy: 'Inicio de sesión con las credenciales corporativas de tu equipo. Cortas el correo, se corta Cord — sin tickets, sin esperar a que alguien se acuerde de revocar el acceso.',
+            },
+        ],
         faqs: [
             {
                 q: '¿Puede un vendedor ver los clientes de otro vendedor?',
@@ -759,6 +953,23 @@ export const FEATURES: Feature[] = [
                     'Auditoría matemática independiente',
                     'Certeza jurídica en el acuerdo comercial',
                 ],
+            },
+        ],
+        showcase: [
+            {
+                eyebrow: 'EL RECHAZO TOTAL, EVITADO',
+                titulo: 'Que un solo precio no te cueste toda la venta.',
+                copy: 'Tu cliente aprueba 9 líneas y objeta solo 1 — no rechaza las 10. La negociación se vuelve quirúrgica en vez de todo-o-nada.',
+            },
+            {
+                eyebrow: 'EL "YO NUNCA APROBÉ ESO"',
+                titulo: 'Cada versión queda congelada. Nadie puede reescribir la historia.',
+                copy: 'Si el cliente dice que aprobó otra cosa, tienes el registro exacto: qué, cuándo y quién. La memoria ya no depende de un correo perdido.',
+            },
+            {
+                eyebrow: 'CERTEZA DE GRADO BANCARIO',
+                titulo: 'Una firma que ni tú puedes alterar después.',
+                copy: 'El hash SHA-256 sella la versión final aprobada. Ni una coma se puede tocar sin que la firma matemática lo delate.',
             },
         ],
         faqs: [

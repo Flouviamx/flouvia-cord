@@ -8,6 +8,7 @@ import Footer from '../../components/landing/Footer.astro';
 import MagneticNodes from '../../components/MagneticNodes.jsx';
 import QuantizedWaveBg from '../../components/soluciones/QuantizedWaveBg.jsx';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+import '../../styles/mockups.css';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
@@ -129,66 +130,56 @@ const magneticNodes = [
                     </div>
 
                     <div class="uc-split-mockup reveal">
-                        <div class="uc-mockup-wrapper">
-                            <div class="uc-mockup-header">
-                                <div class="uc-mockup-logo">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="#0a2540"><rect x="2" y="2" width="20" height="20" rx="4"/></svg>
-                                    Global Supply Co.
+                        <div class="uc-cmk-window">
+                            <div class="cmk-nav">
+                                <div class="cmk-nav-l">
+                                    <span class="cmk-nav-title">Cotización · COT-8924</span>
+                                    <span class="cmk-nav-sub">· Global Supply Co.</span>
                                 </div>
-                                <div class="uc-mockup-nav">
-                                    <span>Catálogo</span>
-                                    <span class="active">Cotización</span>
-                                    <span>Facturas</span>
-                                </div>
+                                <span class="cmk-badge cmk-b-blue">Net 30</span>
                             </div>
-                            
-                            <div class="uc-mockup-body" style="padding: 24px;">
-                                <div class="uc-com-po">
-                                    <div class="uc-cpo-header">
-                                        <div class="uc-cpo-title">
-                                            <h4>Orden de Compra #PO-8924</h4>
-                                            <span>Global Supply Co.</span>
-                                        </div>
-                                        <div class="uc-cpo-terms">Términos: Net 30</div>
+                            <div class="cmk-body">
+                                <div class="cmk-brand" style="margin-bottom:12px;">
+                                    <div class="cmk-brand-dot" style="background:#0f172a;">GS</div>
+                                    <div>
+                                        <div class="cmk-t1" style="font-size:14px">Pedido para Global Supply Co.</div>
+                                        <div class="cmk-t2">Nivel Distribuidor · Crédito disponible $64,000</div>
                                     </div>
-                                    <div class="uc-cpo-table">
-                                        <div class="uc-cpo-th">
-                                            <span>SKU</span>
-                                            <span>Cant.</span>
-                                            <span>Precio Unit.</span>
-                                            <span>Total</span>
-                                        </div>
-                                        <div class="uc-cpo-tr">
-                                            <span>SKU-892 (Industrial)</span>
-                                            <span>500</span>
-                                            <span>$115.20</span>
-                                            <span>$57,600</span>
-                                        </div>
-                                        <div class="uc-cpo-tr">
-                                            <span>SKU-104 (Filtros)</span>
-                                            <span>200</span>
-                                            <span>$45.00</span>
-                                            <span>$9,000</span>
-                                        </div>
-                                    </div>
-                                    <div class="uc-cpo-summary">
-                                        <div class="uc-cpo-row">
-                                            <span>Subtotal</span>
-                                            <span>$66,600</span>
-                                        </div>
-                                        <div class="uc-cpo-row uc-cpo-tax">
-                                            <span>IVA (16%)</span>
-                                            <span>$10,656</span>
-                                        </div>
-                                        <div class="uc-cpo-divider"></div>
-                                        <div class="uc-cpo-row uc-cpo-total">
-                                            <span>Total a Pagar (MXN)</span>
-                                            <span>$77,256</span>
-                                        </div>
-                                    </div>
-                                    <div class="uc-cpo-actions">
-                                        <div class="uc-cpo-btn">Autorizar PO y Generar CFDI</div>
-                                    </div>
+                                </div>
+                                <div class="cmk-th" style="grid-template-columns:2fr 40px 72px 84px; margin-top:8px">
+                                    <span>Producto</span><span class="cmk-r">Cant.</span><span class="cmk-r">Unit.</span><span class="cmk-r">Importe</span>
+                                </div>
+                                <div class="cmk-tr" style="grid-template-columns:2fr 40px 72px 84px">
+                                    <span class="cmk-t1">Rodamiento 6205 <span class="cmk-badge cmk-b-green">vol. 500+</span></span>
+                                    <span class="cmk-t2 cmk-r">500</span>
+                                    <span class="cmk-amt editorial">$115.20</span>
+                                    <span class="cmk-amt editorial">$57,600</span>
+                                </div>
+                                <div class="cmk-tr" style="grid-template-columns:2fr 40px 72px 84px">
+                                    <span class="cmk-t1">Filtro hidráulico HD</span>
+                                    <span class="cmk-t2 cmk-r">200</span>
+                                    <span class="cmk-amt editorial">$45.00</span>
+                                    <span class="cmk-amt editorial">$9,000</span>
+                                </div>
+                                <div class="cmk-tr" style="grid-template-columns:2fr 40px 72px 84px; border-bottom:none;">
+                                    <span class="cmk-t1">Banda transp. 12m</span>
+                                    <span class="cmk-t2 cmk-r">80</span>
+                                    <span class="cmk-amt editorial">$310.00</span>
+                                    <span class="cmk-amt editorial">$24,800</span>
+                                </div>
+                                <div class="cmk-kv" style="border-top:1px solid #e2e8f0; margin-top:4px; padding-top:12px;">
+                                    <span class="cmk-k">Subtotal</span><span class="cmk-v editorial">$91,400</span>
+                                </div>
+                                <div class="cmk-kv">
+                                    <span class="cmk-k">IVA 16%</span><span class="cmk-v editorial">$14,624</span>
+                                </div>
+                                <div class="cmk-kv" style="border-bottom:none;">
+                                    <span class="cmk-k" style="font-weight:700; color:#0f172a;">Total (MXN)</span>
+                                    <span class="cmk-v editorial" style="font-size:16px;">$106,024</span>
+                                </div>
+                                <div class="cmk-alert cmk-alert-amber" style="margin-top:10px;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                                    El pedido excede el crédito disponible. Se pedirá aprobación del gerente antes de enviar.
                                 </div>
                             </div>
                         </div>
@@ -218,18 +209,39 @@ const magneticNodes = [
                             <a href="/registro" class="uc-link-arrow">Controla tu cartera de crédito <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
-                            <div class="uc-mockup-bg cord-bg-1"></div>
-                            <div class="uc-mini-invoice" style="width:260px;">
-                                <div class="uc-mi-logo" style="border-radius: 8px;">D</div>
-                                <div class="uc-mi-title">Distribuidora El Sol</div>
-                                <div class="uc-mi-sub">Línea de Crédito (Net 30)</div>
-                                <div style="text-align:left; margin-bottom:10px; font-size:0.8rem; color:#475569;">Crédito Utilizado: <strong style="color:#0a2540;">$85,000</strong></div>
-                                <div style="width:100%; height:8px; background:#e2e8f0; border-radius:10px; margin-bottom:4px; overflow:hidden;">
-                                    <div style="width:56%; height:100%; background:#0f172a;"></div>
-                                </div>
-                                <div style="text-align:right; font-size:0.75rem; color:#64748b; margin-bottom:20px;">Límite: $150,000 MXN</div>
-                                <div class="uc-mi-form">
-                                    <div class="uc-mi-btn" style="background:#0a2540;">Aprobar Nuevo Pedido</div>
+                            <div class="cmk-stage">
+                                <div class="cmk-shot">
+                                    <div class="cmk-nav">
+                                        <div class="cmk-nav-l">
+                                            <span class="cmk-nav-title">Crédito · Distribuidora El Sol</span>
+                                        </div>
+                                        <span class="cmk-badge cmk-b-amber">57% utilizado</span>
+                                    </div>
+                                    <div class="cmk-body">
+                                        <div class="cmk-kv" style="border-bottom:none; padding-top:0;">
+                                            <span class="cmk-k">Crédito utilizado</span>
+                                            <span class="cmk-v editorial">$85,000</span>
+                                        </div>
+                                        <div style="width:100%; height:8px; background:#e2e8f0; border-radius:10px; overflow:hidden; margin:2px 0 6px;">
+                                            <div style="width:57%; height:100%; background:linear-gradient(90deg,#1e293b,#0f172a); border-radius:10px;"></div>
+                                        </div>
+                                        <div class="cmk-kv">
+                                            <span class="cmk-k">Límite autorizado · Net 30</span>
+                                            <span class="cmk-v editorial">$150,000 MXN</span>
+                                        </div>
+                                        <div class="cmk-kv">
+                                            <span class="cmk-k">Saldo vencido</span>
+                                            <span class="cmk-badge cmk-b-red">$12,400 · 8 días</span>
+                                        </div>
+                                        <div class="cmk-kv" style="border-bottom:none;">
+                                            <span class="cmk-k">Pedido nuevo PO-8931</span>
+                                            <span class="cmk-badge cmk-b-amber">Retenido</span>
+                                        </div>
+                                        <div class="cmk-alert cmk-alert-amber" style="margin-top:8px;">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                                            Pedido retenido por saldo vencido. Tu equipo recibió la alerta para revisarlo.
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -242,29 +254,40 @@ const magneticNodes = [
                             <p>Cord muestra el aging de tu cartera por cliente, los saldos vencidos y los días promedio de cobro. Cuando un cliente no ha pagado, manda recordatorios automáticos por correo y WhatsApp antes y después del vencimiento.</p>
                             <a href="/registro" class="uc-link-arrow">Mejora tu ciclo de cobro <span>&rarr;</span></a>
                         </div>
-                        <div class="uc-bc-mockup" style="background:#fff;">
-                            <div class="uc-mini-portal" style="flex-direction: column;">
-                                <div class="uc-mp-sidebar" style="width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 20px;">
-                                    <div class="uc-mp-brand" style="margin:0;"><div class="uc-mp-dot"></div> Cobranza vencida</div>
-                                    <div class="uc-mp-nav" style="background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 6px;">Hoy</div>
-                                </div>
-                                <div class="uc-mp-main" style="padding: 16px 20px;">
-                                    <div class="uc-mp-card" style="margin-bottom:8px; border-left:4px solid #ef4444;">
-                                        <div class="uc-mp-row">
-                                            <div>
-                                                <strong>Distribuidora El Sol — $45,200</strong>
-                                                <span>Vence en 3 días · Net 30</span>
-                                            </div>
-                                            <div class="uc-mp-tag" style="background:#fef2f2; color:#dc2626;">Recordatorio enviado</div>
-                                        </div>
+                        <div class="uc-bc-mockup">
+                            <div class="cmk-stage">
+                                <div class="cmk-shot">
+                                    <div class="cmk-nav">
+                                        <span class="cmk-nav-title">Cobranza</span>
+                                        <div class="cmk-seg"><span class="on">Aging</span><span>Por cliente</span></div>
                                     </div>
-                                    <div class="uc-mp-card" style="border-left:4px solid #f59e0b;">
-                                        <div class="uc-mp-row">
-                                            <div>
-                                                <strong>Grupo Norteño — $12,500</strong>
-                                                <span>Vence mañana</span>
-                                            </div>
-                                            <div class="uc-mp-tag" style="background:#fffbeb; color:#92400e;">WhatsApp enviado</div>
+                                    <div class="cmk-th" style="grid-template-columns:1.5fr 76px 116px">
+                                        <span>Cliente</span><span class="cmk-r">Saldo</span><span>Seguimiento</span>
+                                    </div>
+                                    <div class="cmk-tr" style="grid-template-columns:1.5fr 76px 116px">
+                                        <span class="cmk-t1"><div class="cmk-av cmk-av-2">ES</div> Dist. El Sol</span>
+                                        <span class="cmk-amt editorial">$45,200</span>
+                                        <span class="cmk-badge cmk-b-red">Recordatorio · 3 días</span>
+                                    </div>
+                                    <div class="cmk-tr" style="grid-template-columns:1.5fr 76px 116px">
+                                        <span class="cmk-t1"><div class="cmk-av cmk-av-1">GN</div> Grupo Norteño</span>
+                                        <span class="cmk-amt editorial">$12,500</span>
+                                        <span class="cmk-badge cmk-b-amber">WhatsApp · mañana</span>
+                                    </div>
+                                    <div class="cmk-tr" style="grid-template-columns:1.5fr 76px 116px">
+                                        <span class="cmk-t1"><div class="cmk-av cmk-av-3">FM</div> Ferre Mayoreo</span>
+                                        <span class="cmk-amt editorial">$8,900</span>
+                                        <span class="cmk-badge cmk-b-gray">Al corriente</span>
+                                    </div>
+                                    <div class="cmk-tr" style="grid-template-columns:1.5fr 76px 116px; border-bottom:none;">
+                                        <span class="cmk-t1"><div class="cmk-av cmk-av-1" style="background:#475569">AB</div> Abastos Bajío</span>
+                                        <span class="cmk-amt editorial">$21,300</span>
+                                        <span class="cmk-badge cmk-b-gray">Al corriente</span>
+                                    </div>
+                                    <div class="cmk-body" style="padding-top:12px;">
+                                        <div class="cmk-kv" style="border-top:1px solid #e2e8f0; border-bottom:none; padding-top:12px;">
+                                            <span class="cmk-k" style="font-weight:700; color:#0f172a;">DSO promedio</span>
+                                            <span class="cmk-badge cmk-b-green">34 días · saludable</span>
                                         </div>
                                     </div>
                                 </div>
@@ -663,7 +686,31 @@ const magneticNodes = [
     .uc-split-mockup {
         position: relative;
     }
-    
+
+    /* Ventana cmk-* (kit compartido de mockups, calca estilo Stripe) */
+    .uc-cmk-window {
+        position: relative;
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        text-align: left;
+        border: 1px solid rgba(10, 25, 47, 0.08);
+        box-shadow:
+            0 2px 4px rgba(10, 25, 47, 0.05),
+            0 40px 80px -24px rgba(10, 25, 47, 0.18),
+            inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    /* En los bentos el screenshot sangra por abajo y solo 14px a la derecha,
+       para que los badges y montos que cuentan la historia queden visibles */
+    .uc-bc-mockup .cmk-shot {
+        top: 1.8rem;
+        left: 1.8rem;
+        right: -14px;
+        bottom: -40px;
+        width: auto;
+    }
+
     .uc-mockup-wrapper {
         position: relative;
         background: #f5f5f7;
