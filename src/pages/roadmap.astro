@@ -14,12 +14,23 @@ const statusMap = {
     'beta': 'En beta',
     'next': 'Próximamente'
 };
+
+// BreadcrumbList (jul 2026, auditoría SEO/AI-SEO)
+const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Cord', item: 'https://cord.flouvia.com/' },
+        { '@type': 'ListItem', position: 2, name: 'Roadmap', item: 'https://cord.flouvia.com/roadmap' },
+    ],
+};
 ---
 
 <Layout
     title="Roadmap y Plataforma — Cord"
     description="Descubre todas las herramientas y funciones de Cord a detalle. Desde el editor de cotizaciones hasta facturación y cobranza con IA."
 >
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
     <Nav />
     <main class="rd-main">
         <!-- ── HERO ── -->

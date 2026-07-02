@@ -7,6 +7,7 @@ import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
 import MagneticNodes from '../../components/MagneticNodes.jsx';
 import QuantizedWaveBg from '../../components/soluciones/QuantizedWaveBg.jsx';
+import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
 import '../../styles/mockups.css';
 
@@ -14,8 +15,44 @@ const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
 const t = useTranslations(lang);
 
-const metaTitle = "Cord para SaaS B2B | Contratos, Cobros y CFDI";
-const metaDesc = "Cierra contratos B2B, cobra en línea y emite CFDI 4.0 en automático. La plataforma de ventas para empresas SaaS en México.";
+const metaTitle = "Cord para SaaS B2B — Contratos, Cobros y CFDI en México";
+const metaDesc = "Cierra contratos B2B, cobra en línea y emite CFDI 4.0 en automático. La plataforma de ventas para empresas SaaS que venden a otras empresas en México.";
+
+// FAQ + JSON-LD (jul 2026, auditoría SEO/AI-SEO — mismo criterio que
+// /producto/*): esta página no tenía FAQ visible ni ningún dato
+// estructurado. Preguntas ancladas a capacidades reales del producto (no al
+// copy de marketing de la página, para no heredar afirmaciones de más).
+const FAQS = [
+    {
+        q: '¿Cord reemplaza mi motor de facturación recurrente (Stripe Billing, Chargebee)?',
+        a: 'No. Cord no cobra suscripciones de forma recurrente — se especializa en el ciclo de venta B2B: propuesta, aprobación digital y CFDI 4.0 por cada contrato o renovación. Sigues usando Stripe u otra pasarela para el cobro recurrente; Cord se integra vía API y webhooks para mantener todo sincronizado.',
+    },
+    {
+        q: '¿Puedo sincronizar Cord con mi CRM o Slack?',
+        a: 'Sí. Cord emite webhooks (quote.sent, quote.approved, quote.paid) que puedes conectar a Zapier, Make, n8n o tu propio backend para sincronizar con Notion, Slack o el CRM que ya uses.',
+    },
+    {
+        q: '¿El CFDI 4.0 que emite Cord es real o simulado?',
+        a: 'Es real: Cord timbra ante el SAT vía un PAC certificado (Facturapi). El XML y el PDF quedan disponibles desde el portal del cliente y desde tu cuenta, sin recapturar datos en otro sistema.',
+    },
+    {
+        q: '¿Necesito tarjeta para probar Cord con mi equipo?',
+        a: 'No. El plan gratuito de Cord no pide tarjeta: hasta 5 cotizaciones activas, catálogo y clientes limitados, y armado de cotizaciones con IA incluido para probar el flujo completo.',
+    },
+];
+const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQS.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+};
+const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Cord', item: 'https://cord.flouvia.com/' },
+        { '@type': 'ListItem', position: 2, name: 'SaaS B2B', item: 'https://cord.flouvia.com/casos-de-uso/saas' },
+    ],
+};
 
 const magneticNodes = [
     { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://stripe.com&size=128", alt: "Stripe", top: "10%", left: "30%", width: 100, zIndex: 2 },
@@ -30,8 +67,10 @@ const magneticNodes = [
 
 
 <Layout title={metaTitle} description={metaDesc}>
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
     <Nav />
-    
+
     <main class="use-case-main">
         <!-- HERO -->
         <header class="startup-hero">
@@ -369,9 +408,21 @@ const magneticNodes = [
                 </div>
             </div>
         </section>
+
+        <FaqAccordion
+            faqs={FAQS}
+            eyebrow="PREGUNTAS FRECUENTES"
+            title="Lo que preguntan las empresas de SaaS antes de empezar."
+            id="saas"
+            class="uc-faq-acc"
+        />
     <Footer />
 
 </Layout>
+
+<style>
+    :global(.uc-faq-acc) { padding: 5rem 5% 7rem; }
+</style>
 
 <style>
     /* VARIABLES Y UTILIDADES GLOBALES PARA USE CASES */

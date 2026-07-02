@@ -32,12 +32,25 @@ const featuredAuthorRole = FEATURED_POST?.authorRole || (isEn ? 'Editorial' : 'R
 const featuredHref = isEn
     ? `/en/blog/${featuredPostId?.replace('en/', '')}`
     : `/blog/${featuredPostId?.replace('es/', '')}`;
+
+// BreadcrumbList (jul 2026, auditoría SEO/AI-SEO)
+const SITE = 'https://cord.flouvia.com';
+const base = isEn ? `${SITE}/en` : SITE;
+const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Cord', item: `${base}/` },
+        { '@type': 'ListItem', position: 2, name: 'Blog', item: `${base}/blog` },
+    ],
+};
 ---
 
 <Layout
-    title={isEn ? "Blog | Cord" : "Blog | Cord"}
-    description={isEn ? "Articles, guides, and strategies on B2B sales, billing, and how to accelerate your revenue." : "Artículos, guías y estrategias sobre ventas B2B, facturación, y cómo acelerar tu flujo de ingresos."}
+    title={isEn ? "Blog | Cord" : "Blog de Cord — Ventas B2B, Facturación y CFDI en México"}
+    description={isEn ? "Articles, guides, and strategies on B2B sales, billing, and how to accelerate your revenue." : "Artículos, guías y estrategias sobre ventas B2B, facturación, CFDI y cómo acelerar tu flujo de ingresos. Para cualquier negocio B2B en México."}
 >
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
     <Nav />
 
     <main class="cord-blog-main">

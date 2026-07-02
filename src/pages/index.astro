@@ -8,14 +8,16 @@ import Hero from '../components/landing/Hero.astro';
 import Features from '../components/landing/Features.astro';
 import AdvancedFeatures from '../components/landing/AdvancedFeatures.astro';
 import Steps from '../components/landing/Steps.astro';
+import CtaDuo from '../components/landing/CtaDuo.astro';
 import ClientView from '../components/landing/ClientView.astro';
 import Pricing from '../components/landing/Pricing.astro';
 import Faq from '../components/landing/Faq.astro';
 import Footer from '../components/landing/Footer.astro';
-import { getLangFromUrl } from '../i18n/utils';
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
+const t = useTranslations(lang);
 
 // ── Datos estructurados (JSON-LD) — HowTo del flujo de venta B2B de Cord.
 //    Lo lee Google para enriquecer el resultado de búsqueda de la home.
@@ -62,13 +64,85 @@ const howToSchema = {
     ],
 };
 
-const title = isEn 
-    ? "Cord — B2B platform for quotes, orders and CFDI | by Flouvia"
-    : "Cord — Plataforma B2B para cotizaciones, pedidos y CFDI | by Flouvia";
+// Título y descripción (jul 2026, auditoría SEO/AI-SEO): reescritos para dejar
+// explícito desde el <title> que Cord es un SOFTWARE PÚBLICO e INDEPENDIENTE
+// (no una herramienta interna/exclusiva de Flouvia) — así los motores de
+// búsqueda y los LLMs que citan la página no infieren "producto exclusivo de
+// clientes de Flouvia". "by Flouvia" se movió del <title> a un dato de
+// confianza secundario dentro de la descripción, sin liderar el mensaje.
+const title = isEn
+    ? "Cord — B2B Quoting, Order & CFDI Invoicing Software (Mexico)"
+    : "Cord — Software de Cotizaciones B2B y CFDI 4.0 en México";
 
 const description = isEn
-    ? "Cord digitizes your B2B operations: quotes with negotiated prices, one-click approval, Net 30/60 terms, and automated SAT CFDI 4.0. For distributors and wholesalers in Mexico. A Flouvia product."
-    : "Cord digitaliza tus operaciones B2B: cotizaciones con precios negociados, aprobación en un clic, términos Net 30/60 y CFDI 4.0 automático ante el SAT. Para distribuidores y mayoristas en México. Un producto de Flouvia.";
+    ? "Cord is independent B2B software for quotes, orders, credit terms (Net 30/60) and automated SAT e-invoicing (CFDI 4.0). Built for any B2B business in Mexico — not only Flouvia customers. Free plan forever, by the team at Flouvia."
+    : "Cord es un software B2B independiente para cotizaciones, pedidos, términos de crédito (Net 30/60) y CFDI 4.0 automático ante el SAT. Para cualquier negocio B2B en México — no solo clientes de Flouvia. Plan gratis para siempre, hecho por el equipo de Flouvia.";
+
+// ── Datos estructurados adicionales (jul 2026) ──────────────────────────
+// Organization (Flouvia, la empresa creadora) + SoftwareApplication (Cord,
+// el producto — independiente, con su propio dominio/oferta) + FAQPage
+// (misma fuente que <Faq /> más abajo, así el schema SIEMPRE coincide con
+// el texto visible). Este trío es la forma "machine-readable" correcta de
+// decir "Cord es un producto propio, hecho por Flouvia, disponible para
+// cualquier negocio" — exactamente el problema que los LLMs venían
+// malinterpretando al no encontrar esta señal explícita en el HTML.
+const orgSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    '@id': 'https://flouvia.com/#organization',
+    name: 'Flouvia',
+    url: 'https://flouvia.com',
+    logo: 'https://cord.flouvia.com/imgs/logo-cord-navy.png',
+    sameAs: [
+        'https://instagram.com/flouvia',
+        'https://tiktok.com/@flouvia',
+        'https://x.com/flouvia',
+    ],
+};
+
+const softwareSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    '@id': 'https://cord.flouvia.com/#software',
+    name: 'Cord',
+    url: 'https://cord.flouvia.com',
+    applicationCategory: 'BusinessApplication',
+    applicationSubCategory: isEn ? 'B2B Quoting & Invoicing Software' : 'Software de Cotizaciones y Facturación B2B',
+    operatingSystem: 'Web',
+    description: isEn
+        ? 'Cord is a standalone, publicly available B2B SaaS for creating quotes with negotiated pricing, tracking approvals in real time, and stamping Mexican CFDI 4.0 e-invoices automatically. Open to any B2B business in Mexico, independent of Flouvia\'s other products.'
+        : 'Cord es un SaaS B2B independiente y de acceso público para crear cotizaciones con precios negociados, dar seguimiento a las aprobaciones en tiempo real y timbrar CFDI 4.0 automáticamente ante el SAT. Abierto a cualquier negocio B2B en México, independiente de los demás productos de Flouvia.',
+    audience: {
+        '@type': 'BusinessAudience',
+        audienceType: isEn ? 'Any B2B business in Mexico (distributors, wholesalers, manufacturers, service providers, SaaS, agencies)' : 'Cualquier negocio B2B en México (distribuidoras, mayoristas, manufactura, servicios, SaaS, agencias)',
+    },
+    creator: { '@id': 'https://flouvia.com/#organization' },
+    provider: { '@id': 'https://flouvia.com/#organization' },
+    offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: isEn ? 'USD' : 'MXN',
+        description: isEn ? 'Free plan, forever — no credit card required.' : 'Plan gratis para siempre — sin tarjeta de crédito.',
+    },
+    featureList: isEn
+        ? ['Negotiated B2B pricing', 'One-click quote approval', 'Real-time view tracking', 'Automated CFDI 4.0 e-invoicing', 'Net 30/60 credit terms', 'Public API & webhooks']
+        : ['Precios negociados B2B', 'Aprobación de cotizaciones en un clic', 'Seguimiento en tiempo real', 'CFDI 4.0 automático', 'Términos de crédito Net 30/60', 'API pública y webhooks'],
+};
+
+// Misma fuente (claves faq.1..faq.8 de ui.ts) que consume <Faq /> — el
+// schema queda garantizado a coincidir con el contenido visible.
+const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: Array.from({ length: 8 }, (_, i) => i + 1).map((n) => ({
+        '@type': 'Question',
+        name: t(`faq.${n}.q` as any),
+        acceptedAnswer: {
+            '@type': 'Answer',
+            text: t(`faq.${n}.a` as any),
+        },
+    })),
+};
 ---
 
 <Layout title={title} description={description}>
@@ -76,7 +150,25 @@ const description = isEn
         slot="head"
         type="application/ld+json"
         is:inline
+        set:html={JSON.stringify(orgSchema)}
+    />
+    <script
+        slot="head"
+        type="application/ld+json"
+        is:inline
+        set:html={JSON.stringify(softwareSchema)}
+    />
+    <script
+        slot="head"
+        type="application/ld+json"
+        is:inline
         set:html={JSON.stringify(howToSchema)}
+    />
+    <script
+        slot="head"
+        type="application/ld+json"
+        is:inline
+        set:html={JSON.stringify(faqSchema)}
     />
     <Nav />
     <main>
@@ -84,6 +176,7 @@ const description = isEn
         <Features />
         <AdvancedFeatures />
         <Steps />
+        <CtaDuo />
         <ClientView />
         <Pricing />
         <Faq />
@@ -163,7 +256,6 @@ const description = isEn
         heroTl
             .to('.hero .hero-pill', { opacity: 1, y: 0, duration: 0.8 }, 0)
             .to('.hero .hero-desc', { opacity: 1, y: 0, duration: 0.9 }, 0.45)
-            .to('.hero .hero-points', { opacity: 1, y: 0, duration: 0.9 }, 0.55)
             .to('.hero .hero-actions', { opacity: 1, y: 0, duration: 0.9 }, 0.65)
             .to('.hero .hero-microcopy', { opacity: 1, y: 0, duration: 0.9 }, 0.75);
 

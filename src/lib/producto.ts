@@ -50,7 +50,7 @@ export const FEATURES: Feature[] = [
         eyebrow: 'EDITOR DE COTIZACIONES',
         titulo: 'La cotización perfecta, en minutos.',
         sub: 'Arrastra productos de tu catálogo, negocia el precio línea por línea y mira el total recalcularse con IVA en vivo. Lo que antes era una hora en Excel, ahora son minutos.',
-        metaTitle: 'Cómo hacer cotizaciones B2B con precios negociados en México — Cord by Flouvia',
+        metaTitle: 'Cómo hacer cotizaciones B2B con precios negociados en México — Cord',
         metaDescription: 'El editor de cotizaciones de Cord permite negociar el precio de cada producto por separado, aplicar términos Net 30/60, calcular IVA en tiempo real y generar un link de aprobación con tu marca. Para distribuidores y mayoristas en México.',
         plan: 'Disponible en todos los planes',
         stats: [
@@ -129,7 +129,8 @@ export const FEATURES: Feature[] = [
         eyebrow: 'LINK PÚBLICO',
         titulo: 'Tu cliente aprueba en un clic.',
         sub: 'Cada cotización genera un link elegante con tu marca. Tu cliente lo abre desde el celular, revisa los precios y aprueba — sin crear cuenta, sin descargar nada, sin fricción.',
-        metaTitle: 'Aprobación de cotizaciones B2B por link sin registro — Cord by Flouvia',
+        metaTitle: 'Aprobación de cotizaciones B2B por link sin registro — Cord',
+        metaDescription: 'El link público de Cord genera una página con tu marca (logo, colores y datos fiscales) donde tu cliente revisa la cotización y aprueba en un clic, sin crear cuenta ni descargar nada. Para cualquier negocio B2B en México.',
         plan: 'Disponible en todos los planes',
         stats: [
             { valor: '0', countup: 0, label: 'cuentas que tu cliente necesita crear' },
@@ -207,7 +208,8 @@ export const FEATURES: Feature[] = [
         eyebrow: 'SEGUIMIENTO EN VIVO',
         titulo: 'Sabes el momento exacto en que la ven.',
         sub: 'Se acabó el "¿ya la revisaste?". Cord te avisa en cuanto tu cliente abre la cotización, cuántas veces la ha visto y qué hizo después — para que llames en el momento justo.',
-        metaTitle: 'Saber cuándo tu cliente abrió la cotización — seguimiento en vivo | Cord by Flouvia',
+        metaTitle: 'Saber cuándo tu cliente abrió la cotización: seguimiento en vivo — Cord',
+        metaDescription: 'El seguimiento en vivo de Cord te avisa el instante exacto en que tu cliente abre la cotización, cuántas veces la vio y qué hizo después, para que sepas cuándo dar seguimiento. Sin adivinar, sin perseguir por WhatsApp.',
         plan: 'Disponible en todos los planes',
         stats: [
             { valor: '3', countup: 3, suffix: ' min', label: 'el aviso llega en cuanto abren el link' },
@@ -285,7 +287,8 @@ export const FEATURES: Feature[] = [
         eyebrow: 'FACTURACIÓN CFDI 4.0',
         titulo: 'De cotización aprobada a factura timbrada.',
         sub: 'Cuando el trato se cierra, la factura sale sola: CFDI 4.0 real, timbrado ante el SAT, directo desde la cotización. Sin recapturar en otro portal, sin errores de transcripción.',
-        metaTitle: 'CFDI 4.0 automático desde la cotización aprobada — Cord by Flouvia',
+        metaTitle: 'CFDI 4.0 automático desde la cotización aprobada — Cord',
+        metaDescription: 'Cord timbra el CFDI 4.0 automáticamente ante el SAT en cuanto se aprueba la cotización, sin recapturar datos en otro portal. Facturación electrónica real para cualquier negocio B2B en México.',
         plan: 'Disponible desde el plan Starter',
         stats: [
             { valor: '1', countup: 1, suffix: ' clic', label: 'de la cotización aprobada al CFDI' },
@@ -363,7 +366,8 @@ export const FEATURES: Feature[] = [
         eyebrow: 'CLIENTES Y CRÉDITO',
         titulo: 'El crédito es tu ventaja. Contrólalo.',
         sub: 'En B2B vender a crédito es vender más — si lo controlas. Cord guarda los términos de cada cliente (Contado, Net 30, Net 60) y su límite de crédito, y los aplica solos en cada cotización.',
-        metaTitle: 'Gestión de crédito B2B: Net 30, Net 60 y límite por cliente — Cord by Flouvia',
+        metaTitle: 'Gestión de crédito B2B: Net 30, Net 60 y límite por cliente — Cord',
+        metaDescription: 'Cord guarda los términos de crédito de cada cliente (Contado, Net 30, Net 60) y su límite, y los aplica automáticamente en cada cotización — para vender a crédito sin perder el control de tu cartera.',
         plan: 'Plan Profesional en adelante',
         stats: [
             { valor: '3', countup: 3, label: 'términos por cliente: Contado, Net 30, Net 60' },
@@ -441,7 +445,7 @@ export const FEATURES: Feature[] = [
         eyebrow: 'COBRANZA AUTÓNOMA CON IA',
         titulo: 'Tu cobranza trabaja sola, hasta de noche.',
         sub: 'Un agente de inteligencia artificial da seguimiento a cada factura vencida por ti: le escribe al cliente, negocia un plan de pagos en cuotas y te avisa solo cuando necesita tu visto bueno. Tú apruebas, la IA persigue — sin que se te enfríe la cartera.',
-        metaTitle: 'Cobranza automática con IA para empresas B2B en México — Cord by Flouvia',
+        metaTitle: 'Cobranza automática con IA para empresas B2B en México — Cord',
         metaDescription: 'El agente de cobranza con IA de Cord da seguimiento a las facturas vencidas, negocia planes de pago de hasta 3 cuotas mensuales y proyecta tu flujo de caja a 90 días. Tú apruebas cada acuerdo; queda todo en bitácora. Para negocios B2B en México.',
         plan: 'Plan Scale en adelante',
         stats: [
@@ -520,7 +524,7 @@ export const FEATURES: Feature[] = [
         eyebrow: 'MULTI-DIVISA Y COBERTURA CAMBIARIA',
         titulo: 'Cotiza en dólares. Factura en pesos. Cuida tu margen.',
         sub: 'Tu cliente ve el precio en su moneda; tú facturas en pesos. Cord congela el tipo de cambio del día por 30 días y le suma una cobertura, para que el margen que cerraste sea el margen que cobras.',
-        metaTitle: 'Cotizaciones en dólares y euros con cobertura cambiaria para empresas en México — Cord by Flouvia',
+        metaTitle: 'Cotizaciones en dólares y euros con cobertura cambiaria para empresas en México — Cord',
         metaDescription: 'Cotiza en USD o EUR y factura en pesos. Cord toma la tasa spot del Banco Central Europeo, le aplica un buffer de cobertura para proteger tu margen y congela el tipo de cambio 30 días (FX lock). Para negocios B2B en México que venden con divisas.',
         plan: 'Disponible en todos los planes',
         stats: [
@@ -599,7 +603,7 @@ export const FEATURES: Feature[] = [
         eyebrow: 'FACTURACIÓN INTERNACIONAL (US/MX)',
         titulo: 'Cotiza en dólares. Factura como debe ser.',
         sub: 'Vende a clientes en Estados Unidos sin perder el margen al tipo de cambio: cotiza en USD, blinda la tasa por 30 días y factura en MXN con CFDI 4.0 real. Una sola plataforma para el negocio que ya no cabe en una frontera.',
-        metaTitle: 'Facturación internacional US/MX: cotiza en dólares, factura CFDI 4.0 en pesos — Cord by Flouvia',
+        metaTitle: 'Facturación internacional US/MX: cotiza en dólares, factura CFDI 4.0 en pesos — Cord',
         metaDescription: 'Cord cotiza en USD con cobertura cambiaria (tasa congelada 30 días) y factura en MXN con CFDI 4.0 timbrado ante el SAT vía Facturapi. Arquitectura multi-país lista para crecer. Para empresas B2B mexicanas que exportan o venden en dólares.',
         plan: 'Cobertura cambiaria y multi-divisa en todos los planes (incluido el gratuito); el timbrado CFDI 4.0 ante el SAT desde el plan Starter',
         stats: [
@@ -678,7 +682,7 @@ export const FEATURES: Feature[] = [
         eyebrow: 'TU CFO CON IA',
         titulo: 'Flujo de caja predictivo a 90 días.',
         sub: 'Cruza tu pipeline con el historial real de pago de cada cliente. Sabes cuánto cobrarás antes de cobrarlo y detectas riesgos de impago antes de que sucedan.',
-        metaTitle: 'Flujo de caja predictivo y CFO con IA para B2B — Cord by Flouvia',
+        metaTitle: 'Flujo de caja predictivo y CFO con IA para B2B — Cord',
         metaDescription: 'Cord usa IA para proyectar tu flujo de caja a 90 días cruzando tu pipeline con el historial de pago real de tus clientes.',
         plan: 'Plan Scale en adelante',
         stats: [
@@ -757,7 +761,7 @@ export const FEATURES: Feature[] = [
         eyebrow: 'CONTROL DE MÁRGENES Y APROBACIONES',
         titulo: 'Vende rápido, pero con el margen correcto.',
         sub: 'Define umbrales de descuento por rol. Si un vendedor da un descuento mayor al permitido, la cotización se pausa y pide aprobación gerencial. Tú cuidas el margen, ellos cierran la venta.',
-        metaTitle: 'Control de márgenes y flujo de aprobaciones para ventas B2B — Cord by Flouvia',
+        metaTitle: 'Control de márgenes y flujo de aprobaciones para ventas B2B — Cord',
         metaDescription: 'Configura umbrales de descuento y flujos de aprobación gerencial para asegurar la rentabilidad de cada cotización en tu equipo de ventas.',
         plan: 'Plan Profesional en adelante',
         stats: [
@@ -836,7 +840,7 @@ export const FEATURES: Feature[] = [
         eyebrow: 'EQUIPO, ROLES Y MULTI-EMPRESA',
         titulo: 'Todo tu equipo, trabajando en sincronía.',
         sub: 'Invita a tus vendedores, administradores y contadores con permisos granulares. Gestiona múltiples razones sociales o marcas desde una misma cuenta maestra.',
-        metaTitle: 'Gestión de equipo, roles y multi-empresa para B2B — Cord by Flouvia',
+        metaTitle: 'Gestión de equipo, roles y multi-empresa para B2B — Cord',
         metaDescription: 'Administra tu equipo de ventas con permisos granulares y gestiona múltiples empresas o razones sociales desde una sola cuenta de Cord.',
         plan: 'Disponible desde el plan Starter (Multi-empresa requiere Profesional)',
         stats: [
@@ -915,7 +919,7 @@ export const FEATURES: Feature[] = [
         eyebrow: 'NEGOCIACIÓN Y APROBACIONES',
         titulo: 'Acuerdos blindados, línea por línea.',
         sub: 'Tus clientes pueden revisar, ajustar cantidades o proponer un nuevo precio en productos específicos. Cada cambio genera una versión inmutable firmada criptográficamente — adiós a los malentendidos.',
-        metaTitle: 'Negociación de cotizaciones B2B en México — Cord by Flouvia',
+        metaTitle: 'Negociación de cotizaciones B2B en México — Cord',
         metaDescription: 'Permite a tus clientes aprobar o contraofertar línea por línea. Cada versión es inmutable y se firma con SHA-256 para total transparencia.',
         plan: 'Disponible desde el plan Pro',
         stats: [

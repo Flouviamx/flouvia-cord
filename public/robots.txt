@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /app/
+Disallow: /api/
+Disallow: /embed/
+Disallow: /sign-in
+Disallow: /sign-up
+Disallow: /forgot-password
+Disallow: /verify-email
+Disallow: /onboarding/
+
+Sitemap: https://cord.flouvia.com/sitemap.xml

@@ -7,12 +7,15 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 ---
 
 <section class="features" id="producto">
+  <div class="features-inner">
     <div class="ft-head">
         <p class="ft-eyebrow reveal">{t("ft.eyebrow")}</p>
-        <h2 class="ft-title reveal" set:html={t("ft.title")} />
-        <p class="ft-sub reveal">
-            {t("ft.sub")}
-        </p>
+        <div class="ft-head-row">
+            <h2 class="ft-title reveal" set:html={t("ft.title")} />
+            <p class="ft-sub reveal">
+                {t("ft.sub")}
+            </p>
+        </div>
     </div>
 
     <div class="bento">
@@ -77,27 +80,43 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
             </div>
         </article>
     </div>
+  </div>
 </section>
 
 <style>
     .features {
-        padding: 9rem 5%;
+        padding: 7rem 5%;
+        background: var(--color-bg-soft);
+    }
+    .features-inner {
         max-width: 1180px;
         margin: 0 auto;
     }
-    .ft-head { text-align: center; max-width: 680px; margin: 0 auto 4.5rem; }
+    .ft-head { text-align: left; margin: 0 0 4.5rem; }
     .ft-eyebrow {
         font-size: 0.65rem; font-weight: 800; letter-spacing: 3px;
         text-transform: uppercase; color: #888; margin: 0 0 1.2rem;
     }
+    /* Título a la izquierda, descripción a la derecha (mismo patrón del hero) */
+    .ft-head-row {
+        display: grid;
+        grid-template-columns: 1.25fr 1fr;
+        gap: 3.5rem;
+        align-items: start;
+    }
     .ft-title {
-        font-size: clamp(1.9rem, 3.6vw, 3.4rem);
-        font-weight: 800; line-height: 1.14; letter-spacing: -1.2px;
-        color: var(--color-text); margin: 0 0 1.2rem;
+        font-size: clamp(2.1rem, 3.4vw, 3.6rem);
+        font-weight: 700; line-height: 1.1; letter-spacing: -0.035em;
+        color: #0a192f; margin: 0;
     }
     .ft-sub {
-        font-size: 1.1rem; line-height: 1.6;
+        font-size: 1.02rem; line-height: 1.65;
         color: var(--color-text-muted); margin: 0;
+        padding-top: 0.4rem;
+    }
+    @media (max-width: 800px) {
+        .ft-head-row { grid-template-columns: 1fr; gap: 1.3rem; }
+        .ft-sub { padding-top: 0; }
     }
 
     .bento {

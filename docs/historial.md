@@ -8,6 +8,185 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Auditoría SEO + AI-SEO (GEO) + copywriting de todo el sitio público (jul 2026)** —
+   André reportó el problema raíz: la IA (LLMs/AI Overviews) interpretaba Cord como un
+   producto **exclusivo de los clientes de Flouvia** en vez de un SaaS público e
+   independiente, porque el sitio repetía "by Flouvia"/"UN PRODUCTO DE FLOUVIA" en el
+   `<title>`, la meta description, el trust strip del hero, el footer y el eyebrow del
+   menú móvil — sin ningún dato estructurado que aclarara lo contrario. Pasada completa
+   página por página (index → precios → producto → soluciones/casos de uso →
+   desarrolladores → recursos), cubriendo SEO clásico, AI-SEO/GEO (JSON-LD) y
+   copywriting/psicología de marketing. Verificado en cada tanda con `npm run build` +
+   Playwright contra `.vercel/output/static` (regla ya documentada abajo:
+   [[verify-mockups-against-build]]).
+   • **`/index`:** `<title>`/`<meta description>` reescritos (quité "by Flouvia" del
+     título; la independencia de Flouvia se explicita en la descripción: "no solo
+     clientes de Flouvia"). JSON-LD nuevo: `Organization` (Flouvia) + `SoftwareApplication`
+     (Cord, con `creator`/`provider` apuntando a Flouvia — la forma correcta en schema.org
+     de decir "hecho por X pero es su propio producto") + `FAQPage` (antes no existía).
+     Nueva FAQ #8 explícita: *"¿Cord es lo mismo que la app de Flouvia para Shopify?"*.
+     El trust strip del hero pasó de una sola línea ("CONSTRUIDO SOBRE LA INGENIERÍA DE
+     FLOUVIA") a 4 señales reales (CFDI 4.0 ante el SAT · cifrado TLS+AES-256 · hecho en
+     México · respaldado por Flouvia — Flouvia ahora es 1 de 4 señales, no el mensaje
+     completo). `hero.desc` abre con "para cualquier negocio en México — con o sin tienda
+     en línea". Footer/menú móvil: "Un producto de" → "Hecho por el equipo de";
+     "COTIZACIONES B2B · POR FLOUVIA" → "SOFTWARE B2B · PARA CUALQUIER NEGOCIO EN MÉXICO".
+   • **`/precios`:** mismo criterio + fix de un bug real (la descripción vieja decía
+     "crece a Profesional o **Negocio**" — ese plan no existe, es "Scale"). JSON-LD
+     `Product` con un `Offer` por cada uno de los 5 planes + `FAQPage`. FAQ nueva:
+     *"¿Necesito ser cliente de Flouvia para contratar un plan?"*.
+   • **`/producto/*` (12 páginas × ES/EN = 24):** ya tenían buena base (`metaTitle`,
+     `FAQPage` por página), pero las 24 `metaTitle` terminaban en "— Cord by Flouvia" —
+     quitado en todas. Completé las 8 `metaDescription` que faltaban (4 features × 2
+     idiomas). Agregué `BreadcrumbList` al template `[slug].astro` (antes ninguna de las
+     12 tenía jerarquía estructurada).
+   • **`/soluciones/empresas` y `/soluciones/startups`:** mismo fix de `metaTitle` (sin
+     "by Flouvia") + "México" agregado a las `metaDescription` + `BreadcrumbList` nuevo.
+   • **Casos de uso (`saas`, `agencias`, `comercializadoras`, `software-factory`):** no
+     tenían FAQ visible ni ningún JSON-LD. Escribí 4 preguntas nuevas por página (16 en
+     total, ES only — no hay `/en/casos-de-uso`), ancladas a features reales del producto
+     (no al copy de marketing de cada página), con `FaqAccordion` + `FAQPage` +
+     `BreadcrumbList`. **Hallazgo sin resolver (pendiente, ver abajo): los "trust logos"**
+     (Ogilvy, Salesforce, Stripe, Vercel, GitHub, etc. con copy "usan Cord"/"operan con
+     Cord") **casi seguro no son clientes reales** — André pidió dejarlo así por ahora.
+   • **`/desarrolladores/*` (6 páginas × ES/EN + `status`):** la sección con menos base —
+     la interfaz `DevPage` ni siquiera tenía campos `metaTitle`/`metaDescription`/`faqs`.
+     Se agregaron (espejo del patrón de `Feature` en `producto.ts`) + 18 FAQ nuevas (3 por
+     página) + `FAQPage`/`BreadcrumbList` en el template. **2 bugs de plan inexistente
+     corregidos:** `api` decía "Plan Negocio" (no existe; la API ya no está gateada a un
+     plan — está en todos, limitada por cantidad, ver el fix de gating de jun 2026) y
+     `fiscal` decía "Plan Enterprise" (no existe; el tope real es "Developer"). De paso se
+     arregló una corrupción real en `desarrolladores.ts`: el campo `sub` de la interfaz
+     `DevPage` estaba atrapado dentro de un comentario de una sola línea (`// H1, admite
+     <br/>sub: string;`), typo que no rompía el build pero sí el tipado. `status.astro`
+     (ES y EN — son archivos separados, no comparten componente) ganó `BreadcrumbList` y
+     se corrigió un **link roto real**: el botón "Contactar Soporte" mandaba a
+     `support@cord.com`/`soporte@cord.com` (dominio que Flouvia no posee) → corregido a
+     `soporte@flouvia.com` (el correo real usado en todo el resto del sitio).
+   • **Recursos (Blog, Centro de Ayuda, Roadmap, Contacto ventas):** el contenido ya
+     estaba bien escrito (auditoría de exactitud previa, ver entrada "Auditoría y
+     reescritura de exactitud de Soporte/Blog/Roadmap" más abajo) pero sin NINGÚN dato
+     estructurado. Trabajo a nivel de template para que el esfuerzo se multiplicara:
+     `BlogPosting`+`BreadcrumbList` en `blog/[slug].astro` (14 posts × ES/EN), `Article`+
+     `BreadcrumbList` en `soporte/[slug].astro` (132 artículos × ES/EN), `FAQPage`+
+     `BreadcrumbList` en el hub `soporte.astro` (el FAQ se extrajo a
+     **`src/lib/support-faq.ts`**, fuente única compartida con `SupportCards.astro` para
+     que el schema nunca se desincronice del texto visible), `BreadcrumbList` en
+     `soporte/categoria/[categoria].astro`, en `roadmap.astro`/`en/roadmap.astro` y en
+     las 20 páginas de detalle `roadmap/[slug].astro`, y en `contacto/ventas.astro`.
+     **Bug real corregido:** la FAQ del hub de soporte decía *"las llaves de producción
+     requieren el plan Scale o Developer"* — falso desde el fix de gating de jun 2026 (la
+     API ya está en todos los planes). `/q/demo` se dejó intacto (ya tenía `noindex`
+     correcto — es un link de cotización, no contenido indexable).
+   • **Infraestructura SEO nueva (no existía nada de esto):** `public/robots.txt`
+     (disallow `/app`, `/api`, `/embed`, rutas de auth; referencia al sitemap),
+     `public/llms.txt` (estándar emergente para agentes de IA — resume qué es Cord y
+     aclara explícitamente la independencia de Flouvia en texto plano), y
+     **`src/pages/sitemap.xml.ts`** (endpoint dinámico, `prerender=true`, sin dependencias
+     nuevas): enumera páginas estáticas + producto/soluciones/desarrolladores (desde los
+     `.ts` de contenido, fuente única) + roadmap + blog + soporte (vía `getCollection`) —
+     234 URLs con hreflang ES/EN. El helper `pairEntry()` arma el `<xhtml:link>` cuando el
+     patrón de ruta ES/EN no es un simple prefijo `/en/` (ej. `/soporte/x` ↔
+     `/en/support/x`).
+   ⚠️ **2 hallazgos de exactitud SIN resolver** (fuera de alcance de esta pasada, quedan
+     para revisión de André): (1) `agencias.astro` (casos de uso) dice que Cord "agenda
+     los cobros mensuales, procesa el pago... automáticamente" para igualas/retainers —
+     pero el pago real es vía link de Stripe Checkout + recordatorios, no cargo
+     recurrente automático a tarjeta; podría estar sobre-prometiendo. (2)
+     `/desarrolladores/fiscal` afirma "100% cumplimiento normativo SAT **e IRS**" y tiene
+     un ejemplo de código `cord.tax.calculate()` que no parece ser un endpoint real —
+     combinado con que el proveedor de facturación US está documentado como no terminado
+     (`USInvoiceProvider` stub, ver "Pendiente" al final de este archivo), es una
+     afirmación fuerte que vale la pena revisar con calma.
+   ⚠️ **Regla a futuro:** toda página pública nueva sigue este mismo patrón: `<title>`
+     keyword-rich SIN "by Flouvia" (la independencia va en la descripción/FAQ, no en el
+     título), `metaDescription` propia (nunca depender solo del fallback a `sub`),
+     `BreadcrumbList` siempre, y `FAQPage` cuando haya FAQ visible — **el schema JSON-LD
+     SIEMPRE debe leer de la MISMA fuente que el componente visual** (nunca un array
+     duplicado a mano — por eso `support-faq.ts` se extrajo a un archivo compartido) para
+     que nunca diverjan. Verificar con `npm run build` + Playwright contra
+     `.vercel/output/static`, nunca contra `npm run dev` (ver regla de verificación de
+     mockups).
+
+✅ **Hero del index rediseñado — layout "unido" estilo ElevenLabs/Linear + header de
+   Features (jul 2026)** — André pidió que el hero dejara de sentirse como dos secciones
+   separadas (texto centrado full-height + gran gap + mockup aparte) y se acercara al
+   patrón de ElevenLabs/Linear: texto y producto "unidos" en la misma pantalla.
+   • **`Hero.astro` — texto+mockup unidos:** se quitó el `min-height: calc(100vh-120px)`
+     de `.hero-inner` y se comprimió el ritmo vertical (título/desc/acciones/badge) para
+     que el mockup ya no viva en una sección aparte tras un `margin-bottom: 6rem` — ahora
+     empieza a sangrar dentro del primer viewport (se corta en el fold, como las
+     referencias) en vez de requerir scroll completo para verse.
+   • **Botón "Ver demo en 2 min" ELIMINADO** (no existe video demo) — se quitó el
+     `btn-ghost` y las llaves `hero.btn.demo` (ES/EN) de `src/i18n/ui.ts`.
+   • **Título a la izquierda, descripción a la derecha (split ElevenLabs):** nuevo wrapper
+     `.hero-top` (`display:grid; grid-template-columns:1.25fr 1fr`) que pone `.hero-title`
+     a la izquierda y `.hero-desc` a la derecha, ambos `text-align:left`; en mobile
+     colapsa a 1 columna (`@media max-width:900px`). El botón "Empezar gratis" quedó
+     left-aligned debajo del título (antes centrado).
+   • **Chips "Aprobación en un clic · CFDI 4.0 automatizado · Gratis para empezar"
+     ELIMINADOS** (los badges de palomita verde) — se borró `.hero-points`/`.hp-item`/
+     `.hp-sep` del markup y CSS, y las llaves `hero.point.1/2/3` (ES/EN) de `ui.ts`. Se
+     limpió también la línea muerta `.to('.hero .hero-points', …)` del timeline GSAP en
+     `index.astro`.
+   • **Trust strip (CFDI/cifrado/país/Flouvia) subido:** `.hero-trust` pasó de
+     `margin-top: 8rem` a `2.75rem` — ahora queda pegado justo debajo del mockup en vez
+     de flotar solo tras un scroll largo.
+   • **`Features.astro` (sección "El sistema que conecta…", justo debajo del mockup) —
+     mismo split que el hero:** nuevo wrapper `.ft-head-row` (grid `1.25fr 1fr`) con
+     `.ft-title` a la izquierda y `.ft-sub` a la derecha (antes ambos centrados en una
+     columna de 680px). Colapsa a 1 columna en `@media max-width:800px`.
+   • **Bug real encontrado — título achicado no se veía (`h1.masked-title` global con
+     `!important`):** al reducir el `font-size` de `.hero-title` en `Hero.astro` no pasaba
+     nada visualmente porque `Layout.astro` tiene una regla global
+     `h1.masked-title { font-size: … !important; text-align:center !important; … }`
+     pensada para UNIFICAR el tamaño de título en todas las páginas públicas — esa regla
+     le ganaba a `.hero-title` por `!important`, sin importar la especificidad normal.
+     Fix: el hero del home ahora también usa `!important` en `.hero-title` (que sí gana
+     por tener mayor especificidad — dos clases/atributo vs. una clase) para divergir
+     A PROPÓSITO solo en el home, **sin tocar la regla global** que sigue unificando el
+     resto de heroes (`/producto/*`, `/soluciones/*`, etc.). **Regla a futuro:** si un
+     `h1.masked-title` no refleja un cambio de estilo esperado, revisar primero el
+     `!important` de `Layout.astro` antes de asumir que es un problema de HMR/caché.
+   • **Bug de entorno confirmado — iCloud sigue rompiendo el watcher de Vite:** durante
+     esta sesión, ediciones a `Hero.astro` no se reflejaban en `npm run dev` (el HTML
+     servido seguía con el CSS viejo) hasta hacer `touch` manual del archivo — el watcher
+     de chokidar pierde eventos de escritura bajo `~/Desktop` (sincronizado con iCloud).
+     Ya documentado como riesgo conocido (ver "iCloud sigue rompiendo el repo" más abajo,
+     incidente del `.git`); esta vez afectó HMR en vez de refs de git. **Si un cambio de
+     CSS/Astro no se refleja en dev pese a estar bien guardado: `touch` el archivo antes
+     de sospechar de caché de Vite.**
+
+✅ **Blog — TOC del artículo y CTA final rediseñados a cards Apple + fix de copy falso (jul 2026)** —
+   André pidió que el índice flotante y la sección final del artículo (`/blog/[slug]`) se sintieran
+   "más estilo Apple" y reportó que el CTA de contratación era falso (Cord no está contratando).
+   • **TOC (`toc-container`, sidebar izquierdo del artículo):** el card ya tenía `background:#fff`
+     pero con `border-radius:20px` y una sola sombra muy sutil (`0 10px 40px -10px rgba(0,0,0,.05)`)
+     — sobre el fondo blanco de la página no se leía como tarjeta, se veía como texto plano.
+     Se subió a `border-radius:28px` + sombra compuesta en capas (contacto + ambiente difusa +
+     inset highlight superior + inset hairline 0.045 opacity) siguiendo el mismo lenguaje que
+     `.bento-card` de `BlockMockup`/`ShowcaseMockup` (Regla de Diseño 4: tarjetas blancas puras,
+     radius masivo, sombras difusas multicapa). **No se tocó `position` del contenedor** — el
+     `.sticky` (`position:sticky; top:140px`) se dejó intacto a propósito porque un bug previo
+     documentado en este mismo archivo (`position:relative` en `.toc-container`) ya había roto el
+     sticky una vez; solo se ajustó `border-radius`/`padding`/`box-shadow`.
+   • **`BlogCTA.astro` (sección final "Suscríbete al Blog de Cord"):** las 3 tarjetas del bento
+     (`.bento-card`) tenían `background:#fff` sin NINGÚN `box-shadow` (la clase `hairline-border`
+     en el markup no tenía definición en el `<style>` — CSS muerto) → sobre el fondo blanco de la
+     página quedaban completamente planas, sin volumen. Rediseño completo: `border-radius:32px`,
+     sombra compuesta en capas (mismo patrón que el TOC), hover con `translateY(-4px)` + sombra más
+     profunda, iconos duotone glass (squircle `rgba(10,25,47,.07→.03)` + `inset` highlight, SVGs con
+     `fill-opacity` por la Regla de Diseño 9), input de suscripción en gris Apple `#f5f5f7` con foco
+     navy (Regla 5), botón pill con `scale(0.97)` en `:active`. Se quitó la clase huérfana
+     `hairline-border` del markup (no hacía nada).
+   • **Fix de copy falso:** la tarjeta pequeña de "¿Te gusta lo que lees?" decía "Cord construye
+     infraestructura financiera... Únete al equipo" con CTA "Ver vacantes" → `/unirse` — pero
+     `/unirse/[token]` es el flujo de INVITACIÓN DE EQUIPO (org_members), no una página de empleos;
+     Cord no tiene vacantes abiertas. Se reemplazó por un CTA honesto: "Seguir en LinkedIn" →
+     `https://linkedin.com/company/flouviamx` (el mismo link real que ya usa `/blog` en el header
+     y el share-pill del artículo), con copy ajustado ("Síguenos para más análisis y casos de
+     estudio" en vez de "Únete al equipo"). ES/EN actualizados en paralelo.
+
 ✅ **Index — teléfono + precios premium + sección "Avanzadas" estilo Apple (jul 2026)** — tres
    arreglos pedidos por André tras ver el index ("el celular quedó raro raro… lo de precios como la
    página de precios… esta sección más estilo Apple, mil veces mejor").

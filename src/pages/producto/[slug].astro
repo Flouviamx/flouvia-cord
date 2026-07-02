@@ -37,6 +37,26 @@ const faqSchema = {
         acceptedAnswer: { '@type': 'Answer', text: f.a },
     })),
 };
+
+// BreadcrumbList (jul 2026, auditoría SEO/AI-SEO — mismo criterio que /index
+// y /precios): antes estas 12 páginas no tenían ninguna señal de jerarquía;
+// esto le dice a Google/IA "esta es una feature DENTRO del producto Cord",
+// ayuda a Google a mostrar el breadcrumb en el resultado de búsqueda y
+// refuerza (junto con el metaTitle sin "by Flouvia") que Cord es el
+// producto, no una sub-página de Flouvia.
+const SITE = 'https://cord.flouvia.com';
+const base = isEn ? `${SITE}/en` : SITE;
+// Solo 2 niveles: no existe un índice real de /producto que enlazar (mismo
+// caso que /soluciones — ver docs/app-rutas.md), y un ListItem con URL
+// duplicada no cumple las guías de datos estructurados de Google.
+const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Cord', item: `${base}/` },
+        { '@type': 'ListItem', position: 2, name: feature.nav, item: `${base}/producto/${feature.slug}` },
+    ],
+};
 ---
 
 <Layout
@@ -48,6 +68,12 @@ const faqSchema = {
         type="application/ld+json"
         is:inline
         set:html={JSON.stringify(faqSchema)}
+    />
+    <script
+        slot="head"
+        type="application/ld+json"
+        is:inline
+        set:html={JSON.stringify(breadcrumbSchema)}
     />
     <Nav />
     <main>

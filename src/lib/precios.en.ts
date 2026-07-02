@@ -259,4 +259,8 @@ export const FAQ_PRECIOS_EN: { q: string; a: string }[] = [
         q: 'Is the Developer plan for integrating Cord into my system?',
         a: 'Exactly. Developer includes 50,000 API calls per month, the cheapest overages, unlimited users and AI, and the embeddable quoter. It is the foundation for connecting Cord to your ERP, e-commerce, or client portal.',
     },
+    {
+        q: 'Do I need to be a Flouvia customer to sign up for a plan?',
+        a: 'No. Cord is independent software: any B2B business in Mexico can sign up directly at cord.flouvia.com and choose a plan, with no prior relationship with Flouvia or any other product required.',
+    },
 ];

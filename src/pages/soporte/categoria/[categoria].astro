@@ -31,9 +31,24 @@ const categoryArticles = allArticles.filter(a => a.id.startsWith(langPrefix) && 
 
 // If there are few articles, we'll populate the UI with 'coming soon' or just show the real ones.
 const hasArticles = categoryArticles.length > 0;
+
+// BreadcrumbList (jul 2026, auditoría SEO/AI-SEO)
+const SITE = 'https://cord.flouvia.com';
+const base = isEn ? `${SITE}/en` : SITE;
+const supportBase = isEn ? `${SITE}/en/support` : `${SITE}/soporte`;
+const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Cord', item: `${base}/` },
+        { '@type': 'ListItem', position: 2, name: isEn ? 'Help Center' : 'Centro de Ayuda', item: supportBase },
+        { '@type': 'ListItem', position: 3, name, item: `${supportBase}/${isEn ? 'category' : 'categoria'}/${categoria}` },
+    ],
+};
 ---
 
 <Layout title={`${name} - ${isEn ? 'Cord Help Center' : 'Centro de Ayuda Cord'}`} description={isEn ? `Help articles about ${name}` : `Artículos de ayuda sobre ${name}`}>
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
     <Nav />
     <main class="cat-page-layout">
         <div class="pr-mesh" aria-hidden="true"></div>

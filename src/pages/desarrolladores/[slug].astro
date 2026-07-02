@@ -10,6 +10,7 @@ import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
 import PageAnims from '../../components/landing/PageAnims.astro';
 import DevBlockMockup from '../../components/desarrolladores/DevBlockMockup.astro';
+import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 import { DEV_PAGES } from '../../lib/desarrolladores';
 import { DEV_PAGES_EN } from '../../lib/desarrolladores.en';
 import { getLangFromUrl } from '../../i18n/utils';
@@ -23,9 +24,34 @@ const isEn = Astro.props.isEn || lang === 'en';
 const currentPage = Astro.props.page || Astro.props.page;
 const page = isEn && currentPage ? DEV_PAGES_EN.find((p) => p.slug === currentPage.slug) || currentPage : currentPage;
 const otra = (isEn ? DEV_PAGES_EN : DEV_PAGES).find((p) => p.slug !== page.slug)!;
+
+// Datos estructurados (jul 2026, auditoría SEO/AI-SEO — mismo criterio que
+// /producto/*): esta plantilla no tenía metaTitle/metaDescription propios
+// (título genérico `${nav} — Cord`), ni FAQPage, ni BreadcrumbList.
+const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: page.faqs.map((f: { q: string; a: string }) => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+};
+const SITE = 'https://cord.flouvia.com';
+const base = isEn ? `${SITE}/en` : SITE;
+const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Cord', item: `${base}/` },
+        { '@type': 'ListItem', position: 2, name: page.nav, item: `${base}/desarrolladores/${page.slug}` },
+    ],
+};
 ---
 
-<Layout title={`${page.nav} — Cord`} description={page.sub}>
+<Layout title={page.metaTitle ?? `${page.nav} — Cord`} description={page.metaDescription ?? page.sub}>
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
     <Nav />
     <main>
         <!-- ── HERO ── -->
@@ -269,6 +295,14 @@ const otra = (isEn ? DEV_PAGES_EN : DEV_PAGES).find((p) => p.slug !== page.slug)
                 </span>
             </a>
         </section>
+
+        <FaqAccordion
+            faqs={page.faqs}
+            eyebrow={isEn ? 'FREQUENTLY ASKED QUESTIONS' : 'PREGUNTAS FRECUENTES'}
+            title={isEn ? `What developers ask about ${page.nav}.` : `Lo que preguntan los developers sobre ${page.nav}.`}
+            id={`dev-${page.slug}`}
+            class="dv-faq-acc"
+        />
     </main>
 
     <Footer ctaTitle={page.cta.titulo.replace(/\. /, '.<br />')} ctaSub={page.cta.sub} />
@@ -849,4 +883,6 @@ const otra = (isEn ? DEV_PAGES_EN : DEV_PAGES).find((p) => p.slug !== page.slug)
         .pp-block-flip .pp-block-visual { order: 2; }
         .dv-more-row { padding: 1.4rem 1.4rem; }
     }
+
+    :global(.dv-faq-acc) { padding: 0 5% 7rem; }
 </style>

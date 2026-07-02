@@ -13,6 +13,17 @@ const description = isEn
     ? "Talk to the Cord team. Start a personalized demo in under 24 hours."
     : "Habla con el equipo de Cord. Empieza tu demo personalizada en menos de 24 horas.";
 
+// BreadcrumbList (jul 2026, auditoría SEO/AI-SEO)
+const base = isEn ? 'https://cord.flouvia.com/en' : 'https://cord.flouvia.com';
+const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Cord', item: `${base}/` },
+        { '@type': 'ListItem', position: 2, name: isEn ? 'Contact Sales' : 'Contacto de Ventas', item: `${base}/contacto/ventas` },
+    ],
+};
+
 const t = {
     // Left panel
     headline:   isEn ? "B2B quotes that\nclose themselves." : "Cotizaciones B2B\nque cierran solas.",
@@ -82,6 +93,7 @@ const timelineVals  = ['urgente','1_3meses','explorando'];
 ---
 
 <Layout title={title} description={description}>
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
 <div class="vs-layout">
 
   <!-- ══════════════════════════════════════════════════

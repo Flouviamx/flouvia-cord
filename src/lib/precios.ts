@@ -302,4 +302,8 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
         q: '¿El plan Developer es para integrar Cord a mi sistema?',
         a: 'Exacto. Developer incluye 50,000 llamadas a la API al mes, los excedentes más baratos, usuarios e IA ilimitados y el cotizador embebible. Es la base para conectar Cord a tu ERP, e-commerce o portal de clientes.',
     },
+    {
+        q: '¿Necesito ser cliente de Flouvia para contratar un plan?',
+        a: 'No. Cord es un software independiente: cualquier negocio B2B en México puede registrarse directamente en cord.flouvia.com y elegir un plan, sin relación previa con Flouvia ni con ningún otro producto.',
+    },
 ];

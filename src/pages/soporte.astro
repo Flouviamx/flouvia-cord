@@ -9,14 +9,39 @@ import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
 import SupportHero from '../components/support/SupportHero.astro';
 import SupportCards from '../components/support/SupportCards.astro';
+import { SUPPORT_FAQ_ES, SUPPORT_FAQ_EN } from '../lib/support-faq';
 
 const { isEn = false } = Astro.props;
+
+// Datos estructurados (jul 2026, auditoría SEO/AI-SEO) — misma fuente que
+// <SupportCards> consume para el FAQ visible, así el schema siempre coincide.
+const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: (isEn ? SUPPORT_FAQ_EN : SUPPORT_FAQ_ES).map((f) => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+};
+const SITE = 'https://cord.flouvia.com';
+const base = isEn ? `${SITE}/en` : SITE;
+const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Cord', item: `${base}/` },
+        { '@type': 'ListItem', position: 2, name: isEn ? 'Help Center' : 'Centro de Ayuda', item: isEn ? `${SITE}/en/support` : `${SITE}/soporte` },
+    ],
+};
 ---
 
 <Layout
     title={isEn ? "Help Center & Support — Cord" : "Centro de Ayuda y Soporte — Cord"}
     description={isEn ? "Find quick answers, guides, and support articles to master Cord. We are here to help." : "Encuentra respuestas rápidas, guías y artículos de soporte para dominar Cord. Estamos aquí para ayudarte."}
 >
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
     <Nav />
     <main>
         <SupportHero isEn={isEn} />

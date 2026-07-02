@@ -35,6 +35,18 @@ const faqSchema = {
     })),
 };
 
+// BreadcrumbList (jul 2026, auditoría SEO/AI-SEO — mismo criterio que /producto/*)
+const SITE = 'https://cord.flouvia.com';
+const base = isEn ? `${SITE}/en` : SITE;
+const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Cord', item: `${base}/` },
+        { '@type': 'ListItem', position: 2, name: solucion.nav, item: `${base}/soluciones/${solucion.slug}` },
+    ],
+};
+
 // Array estático de logos (Stripe-style logo cloud)
 const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS'];
 ---
@@ -44,6 +56,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     description={solucion.metaDescription ?? solucion.sub}
 >
     <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
     <Nav darkHero={solucion.slug === 'empresas'} />
     <main class="stripe-main">
         

@@ -8,7 +8,7 @@ export const FEATURES_EN: Feature[] = [
         eyebrow: 'QUOTE EDITOR',
         titulo: 'The perfect quote, in minutes.',
         sub: 'Drag products from your catalog, negotiate prices line by line, and watch the total recalculate with tax live. What used to take an hour in Excel now takes minutes.',
-        metaTitle: 'How to make B2B quotes with negotiated prices in Mexico — Cord by Flouvia',
+        metaTitle: 'How to make B2B quotes with negotiated prices in Mexico — Cord',
         metaDescription: 'Cord\'s quote editor lets you negotiate the price of each product separately, apply Net 30/60 terms, calculate tax in real time, and generate an approval link with your brand.',
         plan: 'Available on all plans',
         stats: [
@@ -87,7 +87,8 @@ export const FEATURES_EN: Feature[] = [
         eyebrow: 'PUBLIC LINK',
         titulo: 'Your client approves in one click.',
         sub: 'Every quote generates an elegant link with your brand. Your client opens it from their phone, reviews the prices, and approves — no account creation, no downloads, no friction.',
-        metaTitle: 'B2B quote approval via link without registration — Cord by Flouvia',
+        metaTitle: 'B2B quote approval via link without registration — Cord',
+        metaDescription: "Cord's public link creates a branded page (logo, colors, and tax details) where your client reviews the quote and approves in one click — no account, no downloads. For any B2B business in Mexico.",
         plan: 'Available on all plans',
         stats: [
             { valor: '0', countup: 0, label: 'accounts your client needs to create' },
@@ -165,7 +166,8 @@ export const FEATURES_EN: Feature[] = [
         eyebrow: 'LIVE TRACKING',
         titulo: 'You know the exact moment they view it.',
         sub: 'No more asking "did you review it yet?". Cord notifies you the moment your client opens the quote, how many times they\'ve seen it, and what they did next — so you call at the perfect time.',
-        metaTitle: 'Know when your client opened the quote — live tracking | Cord by Flouvia',
+        metaTitle: 'Know when your client opened the quote: live tracking — Cord',
+        metaDescription: "Cord's live tracking notifies you the exact moment your client opens the quote, how many times they viewed it, and what they did next — so you know exactly when to follow up. No more guessing.",
         plan: 'Available on all plans',
         stats: [
             { valor: '3', countup: 3, suffix: ' min', label: 'the alert arrives as soon as they open the link' },
@@ -243,7 +245,8 @@ export const FEATURES_EN: Feature[] = [
         eyebrow: 'CFDI 4.0 E-INVOICING',
         titulo: 'From approved quote to stamped invoice.',
         sub: 'When the deal closes, the invoice comes out on its own: real CFDI 4.0, stamped with the SAT, right from the quote. No retyping in another portal, no transcription errors.',
-        metaTitle: 'Automated CFDI 4.0 from the approved quote — Cord by Flouvia',
+        metaTitle: 'Automated CFDI 4.0 from the approved quote — Cord',
+        metaDescription: "Cord automatically stamps CFDI 4.0 e-invoices with Mexico's SAT the moment a quote is approved — no re-entering data in another portal. Real e-invoicing for any B2B business in Mexico.",
         plan: 'Available from the Starter plan',
         stats: [
             { valor: '1', countup: 1, suffix: ' click', label: 'from approved quote to CFDI' },
@@ -321,7 +324,8 @@ export const FEATURES_EN: Feature[] = [
         eyebrow: 'CLIENTS AND CREDIT',
         titulo: 'Credit is your advantage. Control it.',
         sub: 'In B2B, selling on credit is selling more — if you control it. Cord saves each client\'s terms (Cash, Net 30, Net 60) and their credit limit, and applies them automatically to each quote.',
-        metaTitle: 'B2B credit management: Net 30, Net 60, and credit limit per client — Cord by Flouvia',
+        metaTitle: 'B2B credit management: Net 30, Net 60, and credit limit per client — Cord',
+        metaDescription: "Cord stores each client's credit terms (Cash, Net 30, Net 60) and credit limit, applying them automatically to every quote — sell on credit without losing control of your receivables.",
         plan: 'Professional plan and above',
         stats: [
             { valor: '3', countup: 3, label: 'terms per client: Cash, Net 30, Net 60' },
@@ -399,7 +403,7 @@ export const FEATURES_EN: Feature[] = [
         eyebrow: 'AUTONOMOUS AI COLLECTIONS',
         titulo: 'Your collections work alone, even at night.',
         sub: 'An artificial intelligence agent follows up on every overdue invoice for you: it emails the client, negotiates an installment plan, and only alerts you when it needs your approval. You approve, the AI chases — without your AR going cold.',
-        metaTitle: 'Automated AI collections for B2B companies in Mexico — Cord by Flouvia',
+        metaTitle: 'Automated AI collections for B2B companies in Mexico — Cord',
         metaDescription: 'Cord\'s AI collections agent follows up on overdue invoices, negotiates payment plans of up to 3 monthly installments, and projects your cash flow 90 days out.',
         plan: 'Scale plan and above',
         stats: [
@@ -478,7 +482,7 @@ export const FEATURES_EN: Feature[] = [
         eyebrow: 'MULTI-CURRENCY AND FX HEDGING',
         titulo: 'Quote in dollars. Invoice in pesos. Protect your margin.',
         sub: 'Your client sees the price in their currency; you invoice in pesos. Cord locks the daily exchange rate for 30 days and adds a hedging buffer, so the margin you closed is the margin you collect.',
-        metaTitle: 'Quotes in dollars and euros with FX hedging for companies in Mexico — Cord by Flouvia',
+        metaTitle: 'Quotes in dollars and euros with FX hedging for companies in Mexico — Cord',
         metaDescription: 'Quote in USD or EUR and invoice in MXN. Cord takes the spot rate from the ECB, applies a hedging buffer to protect your margin, and locks the FX rate for 30 days.',
         plan: 'Available on all plans',
         stats: [
@@ -557,7 +561,7 @@ export const FEATURES_EN: Feature[] = [
         eyebrow: 'INTERNATIONAL INVOICING (US/MX)',
         titulo: 'Quote in dollars. Invoice the right way.',
         sub: 'Sell to clients in the US without losing margin to the exchange rate: quote in USD, shield the rate for 30 days, and invoice in MXN with real CFDI 4.0. A single platform for the business that no longer fits within one border.',
-        metaTitle: 'US/MX international invoicing: quote in dollars, invoice CFDI 4.0 in pesos — Cord by Flouvia',
+        metaTitle: 'US/MX international invoicing: quote in dollars, invoice CFDI 4.0 in pesos — Cord',
         metaDescription: 'Cord quotes in USD with FX hedging (rate locked for 30 days) and invoices in MXN with CFDI 4.0 stamped with the SAT via Facturapi. Multi-country architecture ready to grow.',
         plan: 'FX hedging and multi-currency on all plans; CFDI 4.0 SAT stamping from the Starter plan',
         stats: [
@@ -636,7 +640,7 @@ export const FEATURES_EN: Feature[] = [
         eyebrow: 'YOUR AI CFO',
         titulo: 'Predictive cash flow at 90 days.',
         sub: 'Cross-reference your pipeline with each client\'s real payment history. Know what you will collect before you collect it and spot non-payment risks before they happen.',
-        metaTitle: 'Predictive cash flow and AI CFO for B2B — Cord by Flouvia',
+        metaTitle: 'Predictive cash flow and AI CFO for B2B — Cord',
         metaDescription: 'Cord uses AI to project your cash flow up to 90 days by crossing your pipeline with the actual payment history of your clients.',
         plan: 'Scale plan and above',
         stats: [
@@ -715,7 +719,7 @@ export const FEATURES_EN: Feature[] = [
         eyebrow: 'MARGIN CONTROL AND APPROVALS',
         titulo: 'Sell fast, but with the right margin.',
         sub: 'Define discount thresholds by role. If a sales rep gives a discount greater than allowed, the quote is paused and requests management approval. You protect the margin, they close the deal.',
-        metaTitle: 'Margin control and approval workflows for B2B sales — Cord by Flouvia',
+        metaTitle: 'Margin control and approval workflows for B2B sales — Cord',
         metaDescription: 'Set up discount thresholds and management approval workflows to ensure the profitability of every quote in your sales team.',
         plan: 'Professional plan and above',
         stats: [
@@ -794,7 +798,7 @@ export const FEATURES_EN: Feature[] = [
         eyebrow: 'TEAM, ROLES AND MULTI-ENTITY',
         titulo: 'Your whole team, working in sync.',
         sub: 'Invite your sales reps, admins, and accountants with granular permissions. Manage multiple entities or brands from a single master account.',
-        metaTitle: 'Team management, roles and multi-entity for B2B — Cord by Flouvia',
+        metaTitle: 'Team management, roles and multi-entity for B2B — Cord',
         metaDescription: 'Manage your sales team with granular permissions and handle multiple companies or entities from a single Cord account.',
         plan: 'Available from the Starter plan (Multi-entity requires Professional)',
         stats: [
@@ -873,7 +877,7 @@ export const FEATURES_EN: Feature[] = [
         eyebrow: 'NEGOTIATION & APPROVALS',
         titulo: 'Bulletproof agreements, line by line.',
         sub: 'Your clients can review, adjust quantities, or counteroffer on specific products. Every change generates an immutable, cryptographically signed version — goodbye misunderstandings.',
-        metaTitle: 'B2B Quote Negotiation — Cord by Flouvia',
+        metaTitle: 'B2B Quote Negotiation — Cord',
         metaDescription: 'Allow clients to approve or counteroffer line by line. Every version is immutable and SHA-256 signed for full transparency.',
         plan: 'Available on the Pro plan',
         stats: [

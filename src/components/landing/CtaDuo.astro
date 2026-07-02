@@ -1,0 +1,127 @@
+---
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+import StepShaderBg from './StepShaderBg.jsx';
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
+// Dos tarjetas "unidas" debajo de Steps (referencia: Stripe.com/mx — tarjetas
+// con texto a la izquierda y un visual que sangra desde la esquina). El visual
+// es el MISMO componente de shader (StepShaderBg) que ya usan las tarjetas de
+// Steps — consistencia visual, no un color/gradiente nuevo.
+---
+
+<section class="cta-duo">
+    <div class="cta-duo-inner">
+        <a href={l('/soluciones/startups')} class="cta-card reveal">
+            <div class="cta-card-text">
+                <h3 class="cta-card-h">{t('duo.1.h')}</h3>
+                <p class="cta-card-p">{t('duo.1.p')}</p>
+                <span class="cta-card-link">
+                    {t('duo.1.link')}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </span>
+            </div>
+            <div class="cta-card-visual">
+                <StepShaderBg client:only="react" />
+            </div>
+        </a>
+
+        <a href={l('/elements')} class="cta-card reveal">
+            <div class="cta-card-text">
+                <h3 class="cta-card-h">{t('duo.2.h')}</h3>
+                <p class="cta-card-p">{t('duo.2.p')}</p>
+                <span class="cta-card-link">
+                    {t('duo.2.link')}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </span>
+            </div>
+            <div class="cta-card-visual">
+                <StepShaderBg client:only="react" />
+            </div>
+        </a>
+    </div>
+</section>
+
+<style>
+    .cta-duo {
+        position: relative;
+        background: var(--color-bg-soft);
+        padding: 0 5% 6rem;
+    }
+    .cta-duo-inner {
+        max-width: 1180px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    .cta-card {
+        position: relative;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        border-radius: 28px;
+        min-height: 200px;
+        padding: 2.2rem 2.4rem;
+        background: #fff;
+        text-decoration: none;
+        box-shadow:
+            0 2px 4px rgba(10,25,47,0.04),
+            0 30px 60px -26px rgba(10,25,47,0.16),
+            inset 0 1px 0 rgba(255,255,255,0.6);
+        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
+    }
+    .cta-card:hover {
+        transform: translateY(-6px);
+        box-shadow:
+            0 2px 4px rgba(10,25,47,0.05),
+            0 40px 76px -26px rgba(10,25,47,0.22),
+            inset 0 1px 0 rgba(255,255,255,0.6);
+    }
+
+    .cta-card-text { position: relative; z-index: 2; max-width: 54%; }
+    .cta-card-h {
+        font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em;
+        color: #0a192f; margin: 0 0 0.5rem;
+    }
+    .cta-card-p {
+        font-size: 0.92rem; line-height: 1.55;
+        color: var(--color-text-muted); margin: 0 0 1.1rem;
+    }
+    .cta-card-link {
+        display: inline-flex; align-items: center; gap: 7px;
+        font-size: 0.94rem; font-weight: 600; color: var(--color-blue-deep);
+    }
+    .cta-card-link svg { width: 16px; height: 16px; transition: transform 0.35s var(--ease-spring); }
+    .cta-card:hover .cta-card-link svg { transform: translateX(4px); }
+
+    /* El shader vive del lado derecho pero se DIFUMINA hacia el blanco de la
+       tarjeta (mask-image, no un corte duro tipo clip-path) — azul que se
+       desvanece, nunca una línea recta. */
+    .cta-card-visual {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        -webkit-mask-image: linear-gradient(100deg, transparent 0%, transparent 50%, rgba(0,0,0,0.35) 66%, #000 90%);
+        mask-image: linear-gradient(100deg, transparent 0%, transparent 50%, rgba(0,0,0,0.35) 66%, #000 90%);
+    }
+
+    /* Mobile: franja debajo del texto, con el mismo difuminado pero vertical. */
+    @media (max-width: 860px) {
+        .cta-duo-inner { grid-template-columns: 1fr; }
+        .cta-card {
+            display: flex; flex-direction: column; align-items: stretch;
+            min-height: 0; padding: 2.2rem 2rem;
+        }
+        .cta-card-text { max-width: 100%; }
+        .cta-card-visual {
+            position: relative; inset: auto; z-index: 1;
+            width: calc(100% + 4rem);
+            margin: 1.8rem -2rem -2.2rem;
+            height: 180px;
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, transparent 15%, rgba(0,0,0,0.5) 40%, #000 70%);
+            mask-image: linear-gradient(to bottom, transparent 0%, transparent 15%, rgba(0,0,0,0.5) 40%, #000 70%);
+        }
+    }
+</style>

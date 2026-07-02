@@ -52,12 +52,48 @@ const relatedArticles = categoryEntries.filter(a => a.id !== entry.id).slice(0, 
 // Helper to format category for URLs
 const slugifyCategory = (cat: string) => cat.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'y').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 const catSlug = slugifyCategory(entry.data.category);
+
+// Datos estructurados (jul 2026, auditoría SEO/AI-SEO): los 132 artículos de
+// soporte (66 ES + 66 EN) no tenían ningún JSON-LD. Article (no BlogPosting:
+// son documentación de producto, no editorial) + BreadcrumbList con la
+// jerarquía real Home > Centro de ayuda > Categoría > Artículo.
+const SITE = 'https://cord.flouvia.com';
+const base = isEn ? `${SITE}/en` : SITE;
+const supportBase = isEn ? `${SITE}/en/support` : `${SITE}/soporte`;
+const articleSlug = entry.id.replace(/^(es|en)\//, '');
+const articleUrl = `${supportBase}/${articleSlug}`;
+const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: entry.data.title,
+    description: entry.data.description,
+    articleSection: entry.data.category,
+    author: { '@type': 'Organization', name: 'Cord' },
+    publisher: {
+        '@type': 'Organization',
+        name: 'Cord',
+        logo: { '@type': 'ImageObject', url: `${SITE}/imgs/logo-cord-navy.png` },
+    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': articleUrl },
+};
+const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Cord', item: `${base}/` },
+        { '@type': 'ListItem', position: 2, name: isEn ? 'Help Center' : 'Centro de Ayuda', item: supportBase },
+        { '@type': 'ListItem', position: 3, name: entry.data.category, item: `${supportBase}/${isEn ? 'category' : 'categoria'}/${catSlug}` },
+        { '@type': 'ListItem', position: 4, name: entry.data.title, item: articleUrl },
+    ],
+};
 ---
 
 <Layout
     title={`${entry.data.title} — ${isEn ? 'Cord Help Center' : 'Centro de Ayuda Cord'}`}
     description={entry.data.description}
 >
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(articleSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
     <Nav />
     <main class="article-layout">
         

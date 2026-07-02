@@ -95,8 +95,8 @@ export const SOLUCIONES: Solution[] = [
         eyebrow: 'PARA EMPRESAS',
         titulo: 'Cotizaciones escalables para equipos de alto rendimiento.',
         sub: 'Moderniza el proceso comercial de tu empresa. Cord elimina cuellos de botella en aprobaciones, controla el margen en tiempo real y asegura que cada propuesta enviada cumpla con los lineamientos de la compañía.',
-        metaTitle: 'Software de cotizaciones B2B para Empresas — Cord by Flouvia',
-        metaDescription: 'Plataforma empresarial para escalar procesos de cotización, controlar listas de precios por volumen y gestionar aprobaciones de crédito con seguridad y cumplimiento.',
+        metaTitle: 'Software de cotizaciones B2B para Empresas en México — Cord',
+        metaDescription: 'Plataforma empresarial para escalar procesos de cotización, controlar listas de precios por volumen y gestionar aprobaciones de crédito con seguridad y cumplimiento. Para cualquier empresa B2B en México.',
         paraQuien: 'Cord para Empresas está diseñado para corporativos, distribuidores a gran escala y empresas B2B consolidadas que manejan grandes volúmenes de propuestas, requieren control estricto sobre precios y márgenes, y necesitan visibilidad total sobre el pipeline de ventas.',
         dolor: 'Los procesos comerciales descentralizados causan fugas de margen y pérdida de visibilidad en el cierre.',
         
@@ -221,8 +221,8 @@ export const SOLUCIONES: Solution[] = [
         eyebrow: 'PARA STARTUPS',
         titulo: 'Crece rápido, factura al instante.',
         sub: 'La agilidad es tu mayor ventaja. Cord te permite enviar propuestas profesionales en minutos, iterar precios, cerrar tratos con un clic y automatizar la facturación CFDI sin tocar un portal del SAT.',
-        metaTitle: 'Cotizaciones y facturación rápida para Startups — Cord by Flouvia',
-        metaDescription: 'Cord ayuda a startups y agencias de crecimiento rápido a enviar propuestas, cerrar clientes con un clic y automatizar la facturación. Escala sin burocracia.',
+        metaTitle: 'Cotizaciones y facturación rápida para Startups — Cord',
+        metaDescription: 'Cord ayuda a startups y agencias de crecimiento rápido en México a enviar propuestas, cerrar clientes con un clic y automatizar el CFDI 4.0. Escala sin burocracia, sin ser cliente de Flouvia.',
         paraQuien: 'Cord para Startups está diseñado para empresas de tecnología, agencias digitales y negocios de rápido crecimiento que necesitan velocidad extrema para proponer, iterar y cerrar clientes sin la sobrecarga administrativa tradicional.',
         dolor: 'Pierdes horas armando propuestas en PDFs que no convierten y facturando a mano.',
         

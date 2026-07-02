@@ -20,12 +20,62 @@ const PLANES = isEn ? PLANES_EN : PLANES_ES;
 const COMPARATIVA = isEn ? COMPARATIVA_EN : COMPARATIVA_ES;
 const FAQ_PRECIOS = isEn ? FAQ_PRECIOS_EN : FAQ_ES;
 const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+// Título/descripción (jul 2026, auditoría SEO/AI-SEO — mismo criterio que el
+// home): keyword real + precio ancla ("desde $0") + planes correctos (la
+// descripción vieja decía "Profesional o Negocio", pero el plan se llama
+// "Scale", no "Negocio" — dato falso que Google/IA podían repetir) +
+// aclaración de independencia de Flouvia, consistente con /index y el FAQ.
+const title = isEn
+    ? "Cord Pricing — B2B Quoting & CFDI Software, Plans from $0"
+    : "Precios de Cord — Software de Cotizaciones B2B desde $0";
+
+const description = isEn
+    ? "Compare Cord's 5 plans — Free, Starter, Pro, Scale, and Developer. B2B quoting, CFDI 4.0 e-invoicing, and API access. No contracts, cancel anytime. For any B2B business in Mexico, not only Flouvia customers."
+    : "Compara los 5 planes de Cord: Gratis, Starter, Profesional, Scale y Developer. Cotizaciones B2B, CFDI 4.0 y acceso a la API. Sin contratos, cancela cuando quieras. Para cualquier negocio B2B en México, no solo clientes de Flouvia.";
+
+// ── JSON-LD: Product + Offer por plan (jul 2026) ──────────────────────────
+// Antes esta página no tenía ningún dato estructurado — un vacío grande en
+// la página que más le importa a alguien buscando "cuánto cuesta Cord".
+// Product+offers es el schema correcto para que Google/IA puedan citar
+// "desde $0" / "planes desde $X" en resultados enriquecidos.
+const SITE = 'https://cord.flouvia.com';
+const currency = isEn ? 'USD' : 'MXN';
+const productSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: 'Cord',
+    description: isEn
+        ? 'Independent B2B SaaS for quotes, orders, and automated CFDI 4.0 e-invoicing. Open to any B2B business in Mexico.'
+        : 'SaaS B2B independiente para cotizaciones, pedidos y CFDI 4.0 automático. Abierto a cualquier negocio B2B en México.',
+    brand: { '@type': 'Brand', name: 'Cord' },
+    offers: PLANES.map((p) => ({
+        '@type': 'Offer',
+        name: `Cord ${p.nombre}`,
+        price: String(p.precioMensual),
+        priceCurrency: currency,
+        url: `${SITE}/registro`,
+        description: p.tagline,
+        ...(p.precioMensual > 0 ? { priceSpecification: { '@type': 'UnitPriceSpecification', price: String(p.precioMensual), priceCurrency: currency, billingDuration: 'P1M' } } : {}),
+    })),
+};
+
+// FAQPage — misma fuente (FAQ_PRECIOS) que consume <FaqAccordion /> abajo,
+// así el schema siempre coincide con el texto visible.
+const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQ_PRECIOS.map((f) => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+};
 ---
 
-<Layout
-    title={isEn ? "Pricing — Cord" : "Precios — Cord"}
-    description={isEn ? "Cord plans in USD. Start for free up to 5 active quotes; upgrade to Pro or Business when you close. No contracts." : "Planes de Cord en pesos, IVA incluido. Empieza gratis hasta 5 cotizaciones activas; crece a Profesional o Negocio cuando cierres. Sin contratos."}
->
+<Layout title={title} description={description}>
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(productSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
     <Nav />
     <main>
         <!-- ── HERO ── -->

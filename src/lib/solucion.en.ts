@@ -9,8 +9,8 @@ export const SOLUCIONES_EN: Solution[] = [
         eyebrow: 'FOR ENTERPRISES',
         titulo: 'Scalable quoting for high-performance teams.',
         sub: 'Modernize your company\'s commercial process. Cord eliminates approval bottlenecks, controls margin in real-time, and ensures every sent proposal complies with company guidelines.',
-        metaTitle: 'B2B Quoting Software for Enterprise — Cord by Flouvia',
-        metaDescription: 'Enterprise platform to scale quoting processes, control volume pricing lists, and manage credit approvals with security and compliance.',
+        metaTitle: 'B2B Quoting Software for Enterprise in Mexico — Cord',
+        metaDescription: 'Enterprise platform to scale quoting processes, control volume pricing lists, and manage credit approvals with security and compliance. For any B2B enterprise in Mexico.',
         paraQuien: 'Cord for Enterprise is designed for corporations, large-scale distributors, and consolidated B2B companies handling large proposal volumes, requiring strict control over pricing and margins, and needing total visibility over their sales pipeline.',
         dolor: 'Decentralized commercial processes cause margin leaks and loss of visibility in closing.',
         integrations: [
@@ -130,8 +130,8 @@ export const SOLUCIONES_EN: Solution[] = [
         eyebrow: 'FOR STARTUPS',
         titulo: 'Grow fast, bill instantly.',
         sub: 'Agility is your biggest advantage. Cord lets you send professional proposals in minutes, iterate pricing, close deals with one click, and automate billing without touching a tax portal.',
-        metaTitle: 'Fast Quoting and Billing for Startups — Cord by Flouvia',
-        metaDescription: 'Cord helps startups and fast-growing agencies send proposals, close clients with one click, and automate billing. Scale without bureaucracy.',
+        metaTitle: 'Fast Quoting and Billing for Startups in Mexico — Cord',
+        metaDescription: 'Cord helps startups and fast-growing agencies in Mexico send proposals, close clients with one click, and automate CFDI 4.0 e-invoicing. Scale without bureaucracy, no Flouvia customer relationship required.',
         paraQuien: 'Cord for Startups is designed for tech companies, digital agencies, and fast-growing businesses that need extreme speed to propose, iterate, and close clients without traditional administrative overhead.',
         dolor: 'You waste hours putting together proposals in PDFs that do not convert and billing by hand.',
         useCases: [

@@ -13,6 +13,7 @@ const faqs = [
     { q: t('faq.5.q'), a: t('faq.5.a') },
     { q: t('faq.6.q'), a: t('faq.6.a') },
     { q: t('faq.7.q'), a: t('faq.7.a') },
+    { q: t('faq.8.q'), a: t('faq.8.a') },
 ];
 ---
 
@@ -25,7 +26,22 @@ const faqs = [
 />
 
 <style>
-.faq-home-section {
+/* ⚠️ FaqAccordion.astro es un componente hijo — el elemento renderizado solo
+   lleva el data-astro-cid DE FaqAccordion, nunca el de este archivo. Un
+   selector `.faq-home-section { ... }` sin :global() aquí compila con el cid
+   de Faq.astro y por lo tanto NUNCA hace match en el DOM real (CSS muerto).
+   Mismo fondo que el resto del home + padding — override scopeado solo al
+   home; FaqAccordion es compartido con /precios, /producto, /soluciones y
+   /soporte y no se toca ahí. */
+:global(.faq-home-section) {
     padding: 6rem 5% 7rem;
+    background: var(--color-bg-soft);
+}
+:global(.faq-home-section .faq-acc-title) {
+    font-size: clamp(2.1rem, 3.4vw, 3.6rem) !important;
+    font-weight: 700 !important;
+    line-height: 1.1 !important;
+    letter-spacing: -0.035em !important;
+    color: #0a192f !important;
 }
 </style>

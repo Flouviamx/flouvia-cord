@@ -30,12 +30,24 @@ const areaMap = {
 };
 
 const htmlContent = marked.parse(item.content.es);
+
+// BreadcrumbList (jul 2026, auditoría SEO/AI-SEO)
+const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Cord', item: 'https://cord.flouvia.com/' },
+        { '@type': 'ListItem', position: 2, name: 'Roadmap', item: 'https://cord.flouvia.com/roadmap' },
+        { '@type': 'ListItem', position: 3, name: item.title.es, item: `https://cord.flouvia.com/roadmap/${item.slug}` },
+    ],
+};
 ---
 
 <Layout
     title={`${item.title.es} — Cord Roadmap`}
     description={item.shortDesc.es}
 >
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
     <Nav />
     <main class="rd-doc-main">
         <!-- Contenido principal estilo Documentación -->
