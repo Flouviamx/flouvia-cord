@@ -54,6 +54,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
                         {CLIENTES.map((c) => (
                             <option value={c.id} data-desc={String(c.descuentoPct)} data-nivel={c.nivel}>{c.empresa} — {c.contacto}</option>
                         ))}
+                        <option value="__NEW__" class="opt-action">+ Crear nuevo cliente…</option>
                     </select>
                     <div class="term-chips" id="termChips">
                         {['Contado', 'Net 30', 'Net 60'].map((t) => (
@@ -112,7 +113,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
                 <div class="sum-field" style="flex-direction: row; align-items: center; justify-content: space-between; margin-top: 0.5rem; margin-bottom: -0.5rem;">
                     <label for="ivaIncluido" style="margin:0; cursor: pointer; color: var(--color-text);">Precios ya incluyen IVA</label>
                     <label class="s-toggle" title="Precios incluyen IVA">
-                        <input type="checkbox" id="ivaIncluido" />
+                        <input type="checkbox" id="ivaIncluido" checked={ORG.ivaIncluidoDefecto} />
                         <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
                     </label>
                 </div>
@@ -174,6 +175,36 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         </aside>
     </div>
 
+    <!-- Modal Cliente Nuevo -->
+    <div class="nc-overlay" id="ncOverlay" hidden>
+        <div class="nc-modal" role="dialog" aria-modal="true">
+            <div class="nc-head">
+                <h2>Crear cliente</h2>
+                <button type="button" class="nc-close" id="ncClose" aria-label="Cerrar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <form id="ncForm" class="nc-body">
+                <div class="nc-field">
+                    <label for="ncEmpresa">Empresa <span class="nc-req">*</span></label>
+                    <input type="text" id="ncEmpresa" class="ed-textarea nc-input" required placeholder="Ej. Constructora Sur S.A. de C.V." />
+                </div>
+                <div class="nc-field">
+                    <label for="ncContacto">Contacto <span class="opt">(opcional)</span></label>
+                    <input type="text" id="ncContacto" class="ed-textarea nc-input" placeholder="Nombre de la persona" />
+                </div>
+                <div class="nc-field">
+                    <label for="ncEmail">Correo <span class="opt">(opcional)</span></label>
+                    <input type="email" id="ncEmail" class="ed-textarea nc-input" placeholder="Para enviar la cotización" />
+                </div>
+                <div class="nc-foot">
+                    <button type="button" class="btn-draft" id="ncCancel">Cancelar</button>
+                    <button type="submit" class="btn-send" id="ncSubmit">Crear y seleccionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div class="toast" id="toast" hidden>
         <span class="toast-dot"></span>
@@ -216,6 +247,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
 
     // ── Descuento por nivel de cliente (price tiers) ──
     const $client = document.getElementById('clientSelect');
+    let lastClientVal = $client ? $client.value : '';
     const $descNote = document.getElementById('descNote');
     const currentDesc = () => { const o = $client && $client.options[$client.selectedIndex]; return o && !o.disabled ? (parseFloat(o.dataset.desc) || 0) : 0; };
     const applyDesc = (lista) => { const d = currentDesc(); return d > 0 ? Math.round(lista * (1 - d / 100) * 100) / 100 : null; };
@@ -310,6 +342,12 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     // Al cambiar de cliente, reaplica el descuento a las líneas del catálogo
     // (sobre el precio de volumen vigente) y reactiva el auto-tracking.
     $client?.addEventListener('change', () => {
+        if ($client.value === '__NEW__') {
+            $client.value = lastClientVal; // Revertir visualmente temporalmente
+            openClientModal();
+            return;
+        }
+        lastClientVal = $client.value;
         const d = currentDesc();
         lines.forEach((l) => {
             if (l.id) { // Solo aplica a items del catálogo
@@ -568,6 +606,85 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         });
     }
 
+    // ── Modal Nuevo Cliente ──
+    const $ncOverlay = document.getElementById('ncOverlay');
+    const $ncForm = document.getElementById('ncForm');
+    const $ncEmpresa = document.getElementById('ncEmpresa');
+    const $ncContacto = document.getElementById('ncContacto');
+    const $ncEmail = document.getElementById('ncEmail');
+    const $ncSubmit = document.getElementById('ncSubmit');
+
+    function openClientModal() {
+        if (!$ncOverlay) return;
+        $ncForm.reset();
+        $ncOverlay.hidden = false;
+        setTimeout(() => $ncEmpresa?.focus(), 50);
+    }
+    
+    function closeClientModal() {
+        if ($ncOverlay) $ncOverlay.hidden = true;
+    }
+
+    document.getElementById('ncClose')?.addEventListener('click', closeClientModal);
+    document.getElementById('ncCancel')?.addEventListener('click', closeClientModal);
+    $ncOverlay?.addEventListener('click', (e) => {
+        if (e.target === $ncOverlay) closeClientModal();
+    });
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && $ncOverlay && !$ncOverlay.hidden) closeClientModal();
+    });
+
+    $ncForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const empresa = $ncEmpresa.value.trim();
+        if (!empresa) return;
+
+        const prevHTML = $ncSubmit.innerHTML;
+        $ncSubmit.disabled = true;
+        $ncSubmit.textContent = 'Creando…';
+
+        try {
+            const res = await fetch('/api/clientes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    empresa,
+                    contacto: $ncContacto.value.trim(),
+                    email: $ncEmail.value.trim()
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al crear cliente');
+
+            const opt = document.createElement('option');
+            opt.value = data.id;
+            opt.dataset.desc = "0";
+            opt.dataset.nivel = "estandar";
+            opt.textContent = `${empresa} — ${$ncContacto.value.trim()}`;
+            
+            const newOpt = $client.querySelector('option[value="__NEW__"]');
+            if (newOpt) {
+                $client.insertBefore(opt, newOpt);
+            } else {
+                $client.appendChild(opt);
+            }
+            
+            $client.value = data.id;
+            lastClientVal = data.id;
+            
+            $client.dispatchEvent(new Event('change'));
+            
+            closeClientModal();
+            if (typeof showToast !== 'undefined') showToast('Cliente creado ✓', 2000);
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            $ncSubmit.disabled = false;
+            $ncSubmit.innerHTML = prevHTML;
+        }
+    });
+
     // Inicializa la interfaz vacía.
     render();
     reflectDesc();
@@ -628,6 +745,44 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
 </style>
 
 <style>
+    /* Modal Nuevo Cliente */
+    .nc-overlay {
+        position: fixed; inset: 0; z-index: 1000;
+        background: rgba(10, 25, 47, 0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+        display: flex; align-items: center; justify-content: center; padding: 1rem;
+        opacity: 1; transition: opacity 0.2s;
+    }
+    .nc-overlay[hidden] { opacity: 0; pointer-events: none; display: flex; }
+    .nc-modal {
+        background: var(--surface, #fff); border-radius: 24px; width: 100%; max-width: 440px;
+        box-shadow: 0 20px 40px -10px rgba(10,25,47,0.15), 0 0 0 1px rgba(10,25,47,0.05);
+        display: flex; flex-direction: column; overflow: hidden;
+        transform: translateY(0) scale(1); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .nc-overlay[hidden] .nc-modal { transform: translateY(15px) scale(0.98); }
+    .nc-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--color-border);
+    }
+    .nc-head h2 { margin: 0; font-size: 1.1rem; font-weight: 600; color: var(--color-text); letter-spacing: -0.01em; }
+    .nc-close {
+        background: transparent; border: none; padding: 6px; cursor: pointer; color: var(--color-text-muted);
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        transition: background 0.2s, color 0.2s; margin: -6px;
+    }
+    .nc-close:hover { background: var(--color-bg-soft); color: var(--color-text); }
+    .nc-close svg { width: 18px; height: 18px; }
+    .nc-body { display: flex; flex-direction: column; padding: 1.5rem; gap: 1.25rem; }
+    .nc-field { display: flex; flex-direction: column; gap: 0.4rem; }
+    .nc-field label { font-size: 0.82rem; font-weight: 500; color: var(--color-text); display: flex; justify-content: space-between; }
+    .nc-req { color: #dc2626; }
+    .nc-input { padding: 9px 12px; height: auto; }
+    .nc-foot {
+        display: flex; align-items: center; justify-content: flex-end; gap: 0.8rem;
+        margin-top: 0.5rem;
+    }
+    .nc-foot .btn-send { margin-top: 0; padding: 9px 16px; }
+
     .draft-tag { font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); background: var(--color-bg-soft); border: 1px solid var(--color-border); padding: 4px 10px; border-radius: 6px; }
 
     /* Encabezados flat */

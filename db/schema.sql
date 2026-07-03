@@ -839,3 +839,5 @@ alter table promesas_pago force row level security;
 alter table cotizaciones add column if not exists iva_incluido boolean not null default false;
 alter table cotizacion_versiones add column if not exists iva_incluido boolean not null default false;
 
+
+alter table orgs add column if not exists iva_incluido_defecto boolean not null default false;

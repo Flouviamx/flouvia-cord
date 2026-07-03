@@ -50,6 +50,7 @@ export const ORG = {
     email: 'ventas@materialesdelvalle.mx',
     plan: 'Profesional',
     prefix: 'COT',
+    iva_incluido_defecto: false,
 };
 
 export const STATUS_META: Record<QuoteStatus, { label: string; color: string; bg: string }> = {

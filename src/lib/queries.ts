@@ -88,6 +88,7 @@ export async function getOrg() {
         whatsapp: (o.whatsapp as string) ?? '',
         regimenFiscal: (o.regimen_fiscal as string) ?? '',
         usoCfdi: (o.uso_cfdi as string) ?? '',
+        ivaIncluidoDefecto: (o.iva_incluido_defecto as boolean) ?? false,
         cpFiscal: (o.cp_fiscal as string) ?? '',
         serieFolio: (o.serie_folio as string) ?? '',
         zonaHoraria: (o.zona_horaria as string) || 'America/Mexico_City',

@@ -47,6 +47,7 @@ export const PATCH: APIRoute = async ({ request }) => {
     const pdfMensaje = body.pdf_mensaje !== undefined ? (String(body.pdf_mensaje).trim() || null) : actual.pdf_mensaje;
     const pdfCond = body.pdf_condiciones !== undefined ? (String(body.pdf_condiciones).trim() || null) : actual.pdf_condiciones;
     const pdfLista = body.pdf_mostrar_lista !== undefined ? Boolean(body.pdf_mostrar_lista) : actual.pdf_mostrar_lista;
+    const ivaIncluidoDef = body.iva_incluido_defecto !== undefined ? Boolean(body.iva_incluido_defecto) : actual.iva_incluido_defecto;
     const pdfTemplate = body.pdf_template !== undefined
         ? (TEMPLATES.has(String(body.pdf_template)) ? String(body.pdf_template) : 'clasico')
         : actual.pdf_template;
@@ -115,7 +116,7 @@ export const PATCH: APIRoute = async ({ request }) => {
     await withOrgTx(orgId, sql`
         update orgs set
             nombre = ${nombre}, rfc = ${rfc}, razon_social = ${razon},
-            color_marca = ${color}, quote_prefix = ${prefix}, iva_pct = ${iva},
+            color_marca = ${color}, quote_prefix = ${prefix}, iva_pct = ${iva}, iva_incluido_defecto = ${ivaIncluidoDef},
             email_contacto = ${email}, telefono = ${telefono}, direccion = ${direccion},
             logo_url = ${logoUrl}, pdf_template = ${pdfTemplate},
             pdf_mensaje = ${pdfMensaje}, pdf_condiciones = ${pdfCond}, pdf_mostrar_lista = ${pdfLista},

@@ -348,8 +348,18 @@ const { title, page, heading, crumbs = [] } = Astro.props;
         --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
         --sidebar-w: 232px;
         --content-max: 1240px;
+    }
 
-        /* ── Sidebar (espejo de la topbar): vidrio BLANCO en claro, navy en oscuro.
+    /* ── Componente Toggle Global (.s-toggle) ── */
+    .s-toggle { display: flex; align-items: center; gap: 11px; cursor: pointer; user-select: none; }
+    .s-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+    .s-toggle-track { width: 44px; height: 24px; border-radius: 100px; flex-shrink: 0; background: rgba(10,25,47,0.15); position: relative; transition: background 0.3s var(--ease-ios); }
+    .s-toggle-thumb { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.25); transition: transform 0.3s var(--ease-spring); }
+    .s-toggle input:checked + .s-toggle-track { background: var(--color-blue-deep); }
+    .s-toggle input:checked + .s-toggle-track .s-toggle-thumb { transform: translateX(20px); }
+    .s-toggle-text { font-size: 0.82rem; color: var(--color-text); font-weight: 500; }
+
+    /* ── Sidebar (espejo de la topbar): vidrio BLANCO en claro, navy en oscuro.
            Todo el contenido de la sidebar lee estas variables, así que cambia de tema
            sin duplicar reglas. Los valores light van aquí; el bloque dark los reescribe. */
         --sb-bg: linear-gradient(180deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.6) 100%);

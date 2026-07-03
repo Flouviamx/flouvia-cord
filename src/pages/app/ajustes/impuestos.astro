@@ -38,6 +38,20 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
         </div>
         <p class="dev-note">El predeterminado de tipo <b>IVA</b> alimenta el cálculo del editor de cotizaciones (hoy: {ORG.ivaPct}%). Los de retención alimentan las retenciones globales. IEPS y exento se guardan para uso futuro por línea.</p>
     </div>
+
+    <div class="s-block" style="margin-top: 2rem;">
+        <div class="imp-head">
+            <h3>Comportamiento en cotizaciones</h3>
+        </div>
+        <div style="padding: 0.5rem 0 1rem;">
+            <label class="s-toggle">
+                <input type="checkbox" id="ivaIncluidoDefecto" checked={ORG.ivaIncluidoDefecto} />
+                <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                <span class="s-toggle-text">Precios ya incluyen IVA por defecto al crear nuevas cotizaciones</span>
+            </label>
+            <p class="dev-note" style="margin-top: 0.8rem;">Si lo activas, el switch de "Precios ya incluyen IVA" aparecerá encendido cada vez que crees una cotización nueva.</p>
+        </div>
+    </div>
 </SettingsShell>
 
 <dialog id="impDlg" class="kdlg">
@@ -154,6 +168,21 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
                 (b.closest('.imp-row') as HTMLElement)?.remove();
             } catch (err: any) { alert(err.message || 'No se pudo eliminar'); }
         }));
+
+        document.getElementById('ivaIncluidoDefecto')?.addEventListener('change', async (e) => {
+            const checked = (e.target as HTMLInputElement).checked;
+            try {
+                const res = await fetch('/api/org', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ iva_incluido_defecto: checked })
+                });
+                if (!res.ok) throw new Error();
+            } catch {
+                alert('No se pudo guardar la configuración');
+                (e.target as HTMLInputElement).checked = !checked;
+            }
+        });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initImpuestos);
     else initImpuestos();
