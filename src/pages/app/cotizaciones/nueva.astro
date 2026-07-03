@@ -4,6 +4,7 @@
 // en vivo con IVA, y al enviar hace POST a /api/cotizaciones (inserta en Neon).
 import AppLayout from '../../../layouts/AppLayout.astro';
 import { getProductos, getClientes, getOrg } from '../../../lib/queries';
+import { REGIMENES_FISCALES, USOS_CFDI } from '../../../lib/sat';
 
 const [productos, CLIENTES, ORG] = await Promise.all([getProductos(), getClientes(), getOrg()]);
 const catalogo = productos.filter(p => p.activo);
@@ -176,34 +177,101 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     </div>
 
     <!-- Modal Cliente Nuevo -->
-    <div class="nc-overlay" id="ncOverlay">
-        <div class="nc-modal" role="dialog" aria-modal="true">
-            <div class="nc-head">
-                <h2>Crear cliente</h2>
-                <button type="button" class="nc-close" id="ncClose" aria-label="Cerrar">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
+    <dialog class="modal" id="clientModal">
+        <form method="dialog" class="m-form" id="clientForm">
+            <div class="m-head">
+                <h2 id="mTitle">Nuevo cliente</h2>
+                <button type="button" class="m-close" id="mClose" aria-label="Cerrar">✕</button>
             </div>
-            <form id="ncForm" class="nc-body">
-                <div class="nc-field">
-                    <label for="ncEmpresa">Empresa <span class="nc-req">*</span></label>
-                    <input type="text" id="ncEmpresa" class="ed-textarea nc-input" required placeholder="Ej. Constructora Sur S.A. de C.V." />
+
+            <div class="m-field">
+                <label for="fEmpresa">Empresa *</label>
+                <input class="m-input" id="fEmpresa" name="empresa" required placeholder="Distribuidora El Zarco" />
+            </div>
+            <div class="m-row">
+                <div class="m-field">
+                    <label for="fContacto">Contacto</label>
+                    <input class="m-input" id="fContacto" name="contacto" placeholder="Raúl Mendoza" />
                 </div>
-                <div class="nc-field">
-                    <label for="ncContacto">Contacto <span class="opt">(opcional)</span></label>
-                    <input type="text" id="ncContacto" class="ed-textarea nc-input" placeholder="Nombre de la persona" />
+                <div class="m-field">
+                    <label for="fEmail">Correo</label>
+                    <input class="m-input" id="fEmail" name="email" type="email" placeholder="compras@elzarco.mx" />
                 </div>
-                <div class="nc-field">
-                    <label for="ncEmail">Correo <span class="opt">(opcional)</span></label>
-                    <input type="email" id="ncEmail" class="ed-textarea nc-input" placeholder="Para enviar la cotización" />
+            </div>
+            <div class="m-row">
+                <div class="m-field">
+                    <label for="fRfc">RFC</label>
+                    <input class="m-input" id="fRfc" name="rfc" placeholder="DEZ981123QX1" maxlength="13" />
                 </div>
-                <div class="nc-foot">
-                    <button type="button" class="btn-draft" id="ncCancel">Cancelar</button>
-                    <button type="submit" class="btn-send" id="ncSubmit">Crear y seleccionar</button>
+                <div class="m-field">
+                    <label for="fLimite">Límite de crédito (MXN)</label>
+                    <input class="m-input" id="fLimite" name="limite" type="number" min="0" step="1000" placeholder="500000" />
                 </div>
-            </form>
-        </div>
-    </div>
+            </div>
+            <div class="m-field">
+                <label>Nivel de precio</label>
+                <div class="m-chips m-tiers" id="fTiers">
+                    <button type="button" class="chip tier active" data-v="estandar" data-sug="0">Estándar</button>
+                    <button type="button" class="chip tier" data-v="plata" data-sug="5">Plata</button>
+                    <button type="button" class="chip tier" data-v="oro" data-sug="10">Oro</button>
+                    <button type="button" class="chip tier" data-v="distribuidor" data-sug="15">Distribuidor</button>
+                </div>
+                <input type="hidden" id="fNivel" value="estandar" />
+            </div>
+            <div class="m-field">
+                <label for="fDescuento">Descuento automático en sus precios</label>
+                <div class="disc-row">
+                    <div class="disc-input">
+                        <input class="m-input" id="fDescuento" type="number" min="0" max="100" step="1" placeholder="0" />
+                        <span class="disc-suffix">%</span>
+                    </div>
+                    <span class="disc-preview" id="discPreview">Sin descuento</span>
+                </div>
+                <span class="m-hint">Cada vez que le cotices, sus precios bajan este % solos. Ej. <b>Oro = −10%</b>: un producto de $1,000 le sale en $900.</span>
+            </div>
+            <div class="m-field">
+                <label>Términos de pago</label>
+                <div class="m-chips" id="fTerminos">
+                    <button type="button" class="chip active" data-v="contado">Contado</button>
+                    <button type="button" class="chip" data-v="net30">Net 30</button>
+                    <button type="button" class="chip" data-v="net60">Net 60</button>
+                </div>
+            </div>
+
+            <details class="m-fiscal">
+                <summary>Datos fiscales para CFDI (opcional)</summary>
+                <p class="m-hint" style="margin: 0 0 0.75rem 0;">Si los capturas, al facturar timbramos el CFDI 4.0 a nombre de este cliente. Si los dejas vacíos, usamos "público en general".</p>
+                <div class="m-row">
+                    <div class="m-field">
+                        <label for="fRegimen">Régimen fiscal</label>
+                        <select class="m-input" id="fRegimen">
+                            <option value="">— Sin especificar —</option>
+                            {REGIMENES_FISCALES.map((r) => <option value={r.codigo}>{r.nombre}</option>)}
+                        </select>
+                    </div>
+                    <div class="m-field">
+                        <label for="fCp">Código postal (domicilio fiscal)</label>
+                        <input class="m-input" id="fCp" inputmode="numeric" maxlength="5" placeholder="06600" />
+                    </div>
+                </div>
+                <div class="m-field">
+                    <label for="fUso">Uso del CFDI</label>
+                    <select class="m-input" id="fUso">
+                        <option value="">— Sin especificar (G03) —</option>
+                        {USOS_CFDI.map((u) => <option value={u.codigo}>{u.nombre}</option>)}
+                    </select>
+                </div>
+            </details>
+
+            <p class="m-error" id="mError"></p>
+
+            <div class="m-actions">
+                <span class="m-spacer"></span>
+                <button type="button" class="m-cancel" id="mCancel">Cancelar</button>
+                <button type="submit" class="m-save" id="mSave">Crear y seleccionar</button>
+            </div>
+        </form>
+    </dialog>
 
     <!-- Toast -->
     <div class="toast" id="toast" hidden>
@@ -607,37 +675,56 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     }
 
     // ── Modal Nuevo Cliente ──
-    const $ncOverlay = document.getElementById('ncOverlay');
-    const $ncForm = document.getElementById('ncForm');
-    const $ncEmpresa = document.getElementById('ncEmpresa');
-    const $ncContacto = document.getElementById('ncContacto');
-    const $ncEmail = document.getElementById('ncEmail');
-    const $ncSubmit = document.getElementById('ncSubmit');
+    const $ncOverlay = document.getElementById('clientModal');
+    const $ncForm = document.getElementById('clientForm');
+
+    // Manejo de chips y estado local del form
+    let terminos = 'contado';
+    const chips = Array.from(document.querySelectorAll('#fTerminos .chip'));
+    const setTerm = (v) => { terminos = v; chips.forEach(c => c.classList.toggle('active', c.dataset.v === v)); };
+    chips.forEach(c => c.addEventListener('click', () => setTerm(c.dataset.v)));
+
+    const tierChips = Array.from(document.querySelectorAll('.chip.tier'));
+    const updateDiscPreview = () => {
+        const d = Number(document.getElementById('fDescuento').value || 0);
+        const el = document.getElementById('discPreview');
+        if (!el) return;
+        if (d <= 0) { el.innerHTML = 'Sin descuento'; el.classList.remove('on'); }
+        else { el.innerHTML = `$1,000 → <b>$${Math.round(1000 * (1 - d / 100)).toLocaleString('es-MX')}</b>`; el.classList.add('on'); }
+    };
+    const setNivel = (v, applySuggested = false) => {
+        document.getElementById('fNivel').value = v;
+        tierChips.forEach(c => c.classList.toggle('active', c.dataset.v === v));
+        if (applySuggested) {
+            const chip = tierChips.find(c => c.dataset.v === v);
+            document.getElementById('fDescuento').value = chip && chip.dataset.sug && chip.dataset.sug !== '0' ? chip.dataset.sug : '';
+        }
+        updateDiscPreview();
+    };
+    tierChips.forEach(c => c.addEventListener('click', () => setNivel(c.dataset.v, true)));
+    document.getElementById('fDescuento').addEventListener('input', updateDiscPreview);
 
     function openClientModal() {
         if (!$ncOverlay) return;
         $ncForm.reset();
-        $ncOverlay.classList.add('is-open');
-        setTimeout(() => $ncEmpresa?.focus(), 50);
+        setNivel('estandar', false);
+        setTerm('contado');
+        $ncOverlay.showModal();
     }
     
     function closeClientModal() {
-        if ($ncOverlay) $ncOverlay.classList.remove('is-open');
+        if ($ncOverlay) $ncOverlay.close();
     }
 
-    document.getElementById('ncClose')?.addEventListener('click', closeClientModal);
-    document.getElementById('ncCancel')?.addEventListener('click', closeClientModal);
+    document.getElementById('mClose')?.addEventListener('click', closeClientModal);
+    document.getElementById('mCancel')?.addEventListener('click', closeClientModal);
     $ncOverlay?.addEventListener('click', (e) => {
         if (e.target === $ncOverlay) closeClientModal();
-    });
-    
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && $ncOverlay && $ncOverlay.classList.contains('is-open')) closeClientModal();
     });
 
     $ncForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const empresa = $ncEmpresa.value.trim();
+        const empresa = document.getElementById('fEmpresa').value.trim();
         if (!empresa) return;
 
         const prevHTML = $ncSubmit.innerHTML;
@@ -745,43 +832,83 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
 </style>
 
 <style>
-    /* Modal Nuevo Cliente */
-    .nc-overlay {
-        position: fixed; inset: 0; z-index: 1000;
-        background: rgba(10, 25, 47, 0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
-        display: flex; align-items: center; justify-content: center; padding: 1rem;
-        opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s;
+    /* ── Modal Nuevo Cliente ── */
+    .modal {
+        border: none; border-radius: 18px; padding: 0;
+        width: min(520px, calc(100vw - 2rem));
+        box-shadow: 0 40px 90px -30px rgba(10,25,47,0.45);
     }
-    .nc-overlay.is-open { opacity: 1; visibility: visible; }
-    .nc-modal {
-        background: var(--surface, #fff); border-radius: 24px; width: 100%; max-width: 440px;
-        box-shadow: 0 20px 40px -10px rgba(10,25,47,0.15), 0 0 0 1px rgba(10,25,47,0.05);
-        display: flex; flex-direction: column; overflow: hidden;
-        transform: translateY(15px) scale(0.98); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    .modal::backdrop { background: rgba(10,25,47,0.38); backdrop-filter: blur(4px); }
+    .m-form { display: flex; flex-direction: column; gap: 0.95rem; padding: 1.5rem 1.6rem 1.4rem; }
+    .m-head { display: flex; align-items: center; justify-content: space-between; }
+    .m-head h2 { font-size: 1.05rem; font-weight: 700; margin: 0; letter-spacing: -0.3px; }
+    .m-close {
+        background: var(--color-bg-soft); border: 1px solid var(--color-border);
+        width: 30px; height: 30px; border-radius: 9px; cursor: pointer;
+        font-size: 0.8rem; color: var(--color-text-muted);
     }
-    .nc-overlay.is-open .nc-modal { transform: translateY(0) scale(1); }
-    .nc-head {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--color-border);
+    .m-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.95rem; }
+    .m-fiscal { border-top: 1px solid var(--color-border); padding-top: 0.95rem; display: flex; flex-direction: column; gap: 0.95rem; }
+    .m-fiscal > summary { cursor: pointer; font-size: 0.78rem; font-weight: 700; color: var(--color-text); list-style: none; user-select: none; }
+    .m-fiscal > summary::-webkit-details-marker { display: none; }
+    .m-fiscal > summary::before { content: '+ '; color: var(--color-text-muted); font-weight: 700; }
+    .m-fiscal[open] > summary::before { content: '− '; }
+    .m-field { display: flex; flex-direction: column; gap: 0.4rem; }
+    .m-field label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
+    .m-input {
+        font-family: var(--font-sans); font-size: 0.88rem; font-weight: 500;
+        color: var(--color-text); background: var(--color-bg-soft);
+        border: 1px solid var(--color-border); border-radius: 9px;
+        padding: 10px 12px; transition: border-color 0.25s;
     }
-    .nc-head h2 { margin: 0; font-size: 1.1rem; font-weight: 600; color: var(--color-text); letter-spacing: -0.01em; }
-    .nc-close {
-        background: transparent; border: none; padding: 6px; cursor: pointer; color: var(--color-text-muted);
-        border-radius: 50%; display: flex; align-items: center; justify-content: center;
-        transition: background 0.2s, color 0.2s; margin: -6px;
+    .m-input:focus { outline: none; border-color: var(--color-blue-deep); }
+
+    .m-chips { display: flex; gap: 0.5rem; }
+    .chip {
+        font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600;
+        color: var(--color-text-muted); background: var(--color-bg-soft);
+        border: 1px solid var(--color-border); border-radius: 100px;
+        padding: 7px 16px; cursor: pointer;
+        transition: all 0.25s var(--ease-ios);
     }
-    .nc-close:hover { background: var(--color-bg-soft); color: var(--color-text); }
-    .nc-close svg { width: 18px; height: 18px; }
-    .nc-body { display: flex; flex-direction: column; padding: 1.5rem; gap: 1.25rem; }
-    .nc-field { display: flex; flex-direction: column; gap: 0.4rem; }
-    .nc-field label { font-size: 0.82rem; font-weight: 500; color: var(--color-text); display: flex; justify-content: space-between; }
-    .nc-req { color: #dc2626; }
-    .nc-input { padding: 9px 12px; height: auto; }
-    .nc-foot {
-        display: flex; align-items: center; justify-content: flex-end; gap: 0.8rem;
-        margin-top: 0.5rem;
+    .chip.active { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); }
+
+    /* Descuento por nivel: input con sufijo % + vista previa en pesos */
+    .disc-row { display: flex; align-items: center; gap: 0.7rem; }
+    .disc-input { position: relative; flex: 0 0 120px; }
+    .disc-input .m-input { padding-right: 26px; width: 100%; }
+    .disc-suffix { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.85rem; color: var(--color-text-muted); pointer-events: none; }
+    .disc-preview { font-size: 0.82rem; font-weight: 500; color: var(--color-text-muted); }
+    .disc-preview.on { color: #059669; }
+    .disc-preview b { font-weight: 700; }
+
+    .m-error { font-size: 0.78rem; color: var(--color-danger); margin: 0; min-height: 1em; }
+
+    .m-actions { display: flex; align-items: center; gap: 0.6rem; }
+    .m-spacer { flex: 1; }
+    .m-cancel {
+        font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600;
+        color: var(--color-text); background: var(--color-bg-soft);
+        border: 1px solid var(--color-border); border-radius: 9px;
+        padding: 9px 16px; cursor: pointer;
     }
-    .nc-foot .btn-send { margin-top: 0; padding: 9px 16px; }
+    .m-save {
+        font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600;
+        background: var(--color-blue-deep); color: #fff;
+        border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer;
+        box-shadow: 0 6px 18px -8px rgba(10,25,47,0.5);
+    }
+    .m-save:disabled { opacity: 0.6; cursor: wait; }
+    
+    @media (max-width: 560px) {
+        .modal {
+            width: 100%; max-width: 100%;
+            margin: 0; top: auto; bottom: 0; left: 0; right: 0;
+            border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+            border-top-left-radius: 24px; border-top-right-radius: 24px;
+        }
+        .m-form { padding: 1.25rem 1.2rem 2rem; gap: 1rem; }
+    }
 
     .draft-tag { font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); background: var(--color-bg-soft); border: 1px solid var(--color-border); padding: 4px 10px; border-radius: 6px; }
 

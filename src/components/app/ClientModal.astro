@@ -1,0 +1,99 @@
+---
+import { REGIMENES_FISCALES, USOS_CFDI } from '../../lib/sat';
+---
+
+<dialog class="modal" id="clientModal">
+    <form method="dialog" class="m-form" id="clientForm">
+        <div class="m-head">
+            <h2 id="mTitle">Nuevo cliente</h2>
+            <button type="button" class="m-close" id="mClose" aria-label="Cerrar">✕</button>
+        </div>
+
+        <div class="m-field">
+            <label for="fEmpresa">Empresa *</label>
+            <input class="m-input" id="fEmpresa" name="empresa" required placeholder="Distribuidora El Zarco" />
+        </div>
+        <div class="m-row">
+            <div class="m-field">
+                <label for="fContacto">Contacto</label>
+                <input class="m-input" id="fContacto" name="contacto" placeholder="Raúl Mendoza" />
+            </div>
+            <div class="m-field">
+                <label for="fEmail">Correo</label>
+                <input class="m-input" id="fEmail" name="email" type="email" placeholder="compras@elzarco.mx" />
+            </div>
+        </div>
+        <div class="m-row">
+            <div class="m-field">
+                <label for="fRfc">RFC</label>
+                <input class="m-input" id="fRfc" name="rfc" placeholder="DEZ981123QX1" maxlength="13" />
+            </div>
+            <div class="m-field">
+                <label for="fLimite">Límite de crédito (MXN)</label>
+                <input class="m-input" id="fLimite" name="limite" type="number" min="0" step="1000" placeholder="500000" />
+            </div>
+        </div>
+        <div class="m-field">
+            <label>Nivel de precio</label>
+            <div class="m-chips m-tiers" id="fTiers">
+                <button type="button" class="chip tier active" data-v="estandar" data-sug="0">Estándar</button>
+                <button type="button" class="chip tier" data-v="plata" data-sug="5">Plata</button>
+                <button type="button" class="chip tier" data-v="oro" data-sug="10">Oro</button>
+                <button type="button" class="chip tier" data-v="distribuidor" data-sug="15">Distribuidor</button>
+            </div>
+            <input type="hidden" id="fNivel" value="estandar" />
+        </div>
+        <div class="m-field">
+            <label for="fDescuento">Descuento automático en sus precios</label>
+            <div class="disc-row">
+                <div class="disc-input">
+                    <input class="m-input" id="fDescuento" type="number" min="0" max="100" step="1" placeholder="0" />
+                    <span class="disc-suffix">%</span>
+                </div>
+                <span class="disc-preview" id="discPreview">Sin descuento</span>
+            </div>
+            <span class="m-hint">Cada vez que le cotices, sus precios bajan este % solos. Ej. <b>Oro = −10%</b>: un producto de $1,000 le sale en $900.</span>
+        </div>
+        <div class="m-field">
+            <label>Términos de pago</label>
+            <div class="m-chips" id="fTerminos">
+                <button type="button" class="chip active" data-v="contado">Contado</button>
+                <button type="button" class="chip" data-v="net30">Net 30</button>
+                <button type="button" class="chip" data-v="net60">Net 60</button>
+            </div>
+        </div>
+
+        <details class="m-fiscal">
+            <summary>Datos fiscales para CFDI (opcional)</summary>
+            <p class="m-hint" style="margin: 0 0 0.75rem 0;">Si los capturas, al facturar timbramos el CFDI 4.0 a nombre de este cliente. Si los dejas vacíos, usamos "público en general".</p>
+            <div class="m-row">
+                <div class="m-field">
+                    <label for="fRegimen">Régimen fiscal</label>
+                    <select class="m-input" id="fRegimen">
+                        <option value="">— Sin especificar —</option>
+                        {REGIMENES_FISCALES.map((r) => <option value={r.codigo}>{r.nombre}</option>)}
+                    </select>
+                </div>
+                <div class="m-field">
+                    <label for="fCp">Código postal (domicilio fiscal)</label>
+                    <input class="m-input" id="fCp" inputmode="numeric" maxlength="5" placeholder="06600" />
+                </div>
+            </div>
+            <div class="m-field">
+                <label for="fUso">Uso del CFDI</label>
+                <select class="m-input" id="fUso">
+                    <option value="">— Sin especificar (G03) —</option>
+                    {USOS_CFDI.map((u) => <option value={u.codigo}>{u.nombre}</option>)}
+                </select>
+            </div>
+        </details>
+
+        <p class="m-error" id="mError"></p>
+
+        <div class="m-actions">
+            <span class="m-spacer"></span>
+            <button type="button" class="m-cancel" id="mCancel">Cancelar</button>
+            <button type="submit" class="m-save" id="mSave">Crear y seleccionar</button>
+        </div>
+    </form>
+</dialog>
