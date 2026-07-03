@@ -832,7 +832,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
 </style>
 
 <style>
-    /* ── Modal Nuevo Cliente ── */
+    /* ── Modal ── */
     .modal {
         border: none; border-radius: 18px; padding: 0;
         width: min(520px, calc(100vw - 2rem));
@@ -864,6 +864,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     .m-input:focus { outline: none; border-color: var(--color-blue-deep); }
 
     .m-chips { display: flex; gap: 0.5rem; }
+    .m-tiers { flex-wrap: wrap; }
     .chip {
         font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600;
         color: var(--color-text-muted); background: var(--color-bg-soft);
@@ -886,6 +887,12 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
 
     .m-actions { display: flex; align-items: center; gap: 0.6rem; }
     .m-spacer { flex: 1; }
+    .m-delete {
+        font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600;
+        color: var(--color-danger); background: none; border: none; cursor: pointer;
+        padding: 9px 4px;
+    }
+    .m-delete[hidden] { display: none; }
     .m-cancel {
         font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600;
         color: var(--color-text); background: var(--color-bg-soft);
@@ -899,16 +906,39 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         box-shadow: 0 6px 18px -8px rgba(10,25,47,0.5);
     }
     .m-save:disabled { opacity: 0.6; cursor: wait; }
-    
+
+    @media (max-width: 880px) {
+        .t-head { display: none; }
+        /* Fila tipo lista: empresa arriba, contacto debajo, límite a la derecha */
+        .t-row {
+            grid-template-columns: 1fr auto;
+            grid-template-areas: "name amount" "contact amount";
+            gap: 0.15rem 1rem; align-items: center; padding: 0.8rem 0.3rem;
+        }
+        .t-client { grid-area: name; }
+        .t-contact { grid-area: contact; display: flex; }
+        .t-amount { grid-area: amount; align-self: center; }
+        .t-muted, .t-term { display: none; }
+        .m-row { grid-template-columns: 1fr; }
+    }
+
+    /* En móvil el modal se vuelve un "bottom sheet" que sube desde abajo (nativo). */
     @media (max-width: 560px) {
         .modal {
             width: 100%; max-width: 100%;
             margin: 0; top: auto; bottom: 0; left: 0; right: 0;
-            border-bottom-left-radius: 0; border-bottom-right-radius: 0;
-            border-top-left-radius: 24px; border-top-right-radius: 24px;
+            border-radius: 20px 20px 0 0;
+            max-height: 92dvh;
+            animation: sheet-up 0.32s var(--ease-spring);
         }
-        .m-form { padding: 1.25rem 1.2rem 2rem; gap: 1rem; }
+        .m-form {
+            padding: 1.3rem 1.2rem;
+            padding-bottom: calc(1.3rem + env(safe-area-inset-bottom));
+            max-height: 92dvh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+        }
     }
+    @keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) { .modal { animation: none; } }
 
     .draft-tag { font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); background: var(--color-bg-soft); border: 1px solid var(--color-border); padding: 4px 10px; border-radius: 6px; }
 
