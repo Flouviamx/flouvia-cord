@@ -176,7 +176,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     </div>
 
     <!-- Modal Cliente Nuevo -->
-    <div class="nc-overlay" id="ncOverlay" hidden>
+    <div class="nc-overlay" id="ncOverlay">
         <div class="nc-modal" role="dialog" aria-modal="true">
             <div class="nc-head">
                 <h2>Crear cliente</h2>
@@ -617,12 +617,12 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     function openClientModal() {
         if (!$ncOverlay) return;
         $ncForm.reset();
-        $ncOverlay.hidden = false;
+        $ncOverlay.classList.add('is-open');
         setTimeout(() => $ncEmpresa?.focus(), 50);
     }
     
     function closeClientModal() {
-        if ($ncOverlay) $ncOverlay.hidden = true;
+        if ($ncOverlay) $ncOverlay.classList.remove('is-open');
     }
 
     document.getElementById('ncClose')?.addEventListener('click', closeClientModal);
@@ -632,7 +632,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     });
     
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && $ncOverlay && !$ncOverlay.hidden) closeClientModal();
+        if (e.key === 'Escape' && $ncOverlay && $ncOverlay.classList.contains('is-open')) closeClientModal();
     });
 
     $ncForm?.addEventListener('submit', async (e) => {
@@ -750,16 +750,16 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         position: fixed; inset: 0; z-index: 1000;
         background: rgba(10, 25, 47, 0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
         display: flex; align-items: center; justify-content: center; padding: 1rem;
-        opacity: 1; transition: opacity 0.2s;
+        opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s;
     }
-    .nc-overlay[hidden] { opacity: 0; pointer-events: none; display: flex; }
+    .nc-overlay.is-open { opacity: 1; visibility: visible; }
     .nc-modal {
         background: var(--surface, #fff); border-radius: 24px; width: 100%; max-width: 440px;
         box-shadow: 0 20px 40px -10px rgba(10,25,47,0.15), 0 0 0 1px rgba(10,25,47,0.05);
         display: flex; flex-direction: column; overflow: hidden;
-        transform: translateY(0) scale(1); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transform: translateY(15px) scale(0.98); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    .nc-overlay[hidden] .nc-modal { transform: translateY(15px) scale(0.98); }
+    .nc-overlay.is-open .nc-modal { transform: translateY(0) scale(1); }
     .nc-head {
         display: flex; align-items: center; justify-content: space-between;
         padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--color-border);

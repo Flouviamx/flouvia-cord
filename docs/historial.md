@@ -8,6 +8,9 @@
 
 ## Estado actual (jun 2026)
 
+✅ **IVA incluido por defecto y refactor de toggles tipo iOS (jul 2026)** —
+   Se implementó la capacidad de manejar cotizaciones con precios que ya incluyen IVA mediante un toggle en el editor (`nueva.astro`, `editar.astro`). La lógica matemática se ajustó en backend (`mock.ts`) para calcular siempre el subtotal base correcto y almacenarlo en BD. Se agregó la columna `iva_incluido_defecto` a la tabla `orgs` para permitir a cada negocio configurar si las cotizaciones nuevas inician con este switch encendido (gestionado desde `Ajustes > Impuestos`). Finalmente, la clase global `.s-toggle` se extrajo a `AppLayout.astro` y se rediseñó con dimensiones 44x24px y color Navy (`var(--color-blue-deep)`) para homologar una estética nativa tipo iOS (Apple) en todos los interruptores de la app.
+
 ✅ **Auditoría SEO + AI-SEO (GEO) + copywriting de todo el sitio público (jul 2026)** —
    André reportó el problema raíz: la IA (LLMs/AI Overviews) interpretaba Cord como un
    producto **exclusivo de los clientes de Flouvia** en vez de un SaaS público e
