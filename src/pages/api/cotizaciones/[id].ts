@@ -9,6 +9,7 @@ import { sql, getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
 import { notifyQuoteSent } from '../../../lib/email';
 import { requirePerm } from '../../../lib/queries';
 import { dispatchQuoteEvent, type WebhookEvent } from '../../../lib/webhooks';
+import { after } from '../../../lib/after';
 import { reportUsage } from '../../../lib/billing';
 import { emitFiscalDocument } from '../../../lib/fiscal/emit';
 
@@ -64,7 +65,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
             await sql`update cotizaciones set aprob_estado = 'aprobada', status = 'sent', sent_at = coalesce(sent_at, ${now}) where id = ${id}`;
             await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'sent', 'Aprobada por gerencia y enviada al cliente')`;
             await logAudit(orgId, { accion: 'cotizacion.aprobacion_aprobada', entidad: 'cotizacion', entidad_id: id, detalle: rows[0].folio as string, ip: reqIp(request) });
-            await dispatchQuoteEvent(orgId, id, 'quote.sent');
+            after(dispatchQuoteEvent(orgId, id, 'quote.sent'));
             return json({ ok: true, status: 'sent' });
         }
         await sql`update cotizaciones set aprob_estado = 'rechazada' where id = ${id}`;
@@ -86,19 +87,21 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         for (const it of body.items) subtotal += Number(it.precio_negociado ?? it.precio_unitario ?? 0) * Number(it.cantidad ?? 1);
         const [org] = await sql`select iva_pct from orgs where id = ${orgId}`;
         const ivaPct = org.iva_pct !== undefined && org.iva_pct !== null ? Number(org.iva_pct) / 100 : 0.16;
-        const iva = subtotal * ivaPct;
-        const total = subtotal + iva;
+        const iva_incluido = Boolean(body.iva_incluido);
+        const iva = iva_incluido ? subtotal - (subtotal / (1 + ivaPct)) : subtotal * ivaPct;
+        const realSubtotal = iva_incluido ? subtotal / (1 + ivaPct) : subtotal;
+        const total = iva_incluido ? subtotal : subtotal + iva;
         const nextVersion = Number(rows[0].version || 1) + 1;
 
-        await sql`update cotizaciones set subtotal = ${subtotal}, iva = ${iva}, total = ${total}, version = ${nextVersion} where id = ${id}`;
+        await sql`update cotizaciones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total}, version = ${nextVersion}, iva_incluido = ${iva_incluido} where id = ${id}`;
         await sql`delete from cotizacion_items where cotizacion_id = ${id}`;
         let orden = 0;
         for (const it of body.items) {
             await sql`insert into cotizacion_items (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden)
                       values (${id}, ${it.producto_id || null}, ${it.descripcion}, ${Number(it.cantidad) || 1}, ${Number(it.precio_unitario) || 0}, ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)}, ${Number(it.costo_unitario) || 0}, ${orden++})`;
         }
-        await sql`insert into cotizacion_versiones (cotizacion_id, org_id, version, subtotal, iva, total, items, notas)
-                  values (${id}, ${orgId}, ${nextVersion}, ${subtotal}, ${iva}, ${total}, ${JSON.stringify(body.items)}, null)`;
+        await sql`insert into cotizacion_versiones (cotizacion_id, org_id, version, subtotal, iva, total, items, notas, iva_incluido)
+                  values (${id}, ${orgId}, ${nextVersion}, ${realSubtotal}, ${iva}, ${total}, ${JSON.stringify(body.items)}, null, ${iva_incluido})`;
         await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'comment', ${'Versión ' + nextVersion + ' creada'})`;
     }
 
@@ -122,7 +125,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
     // Notifica el evento a las webhooks suscritas de la org (best-effort).
     const whev = WH_MAP[action.evento];
-    if (whev) await dispatchQuoteEvent(orgId, id, whev);
+    if (whev) after(dispatchQuoteEvent(orgId, id, whev));
 
     // Emisión fiscal: enruta al proveedor del país (CFDI MX, invoice US, …) vía
     // FiscalFactory y registra el documento en documentos_fiscales. Best-effort:

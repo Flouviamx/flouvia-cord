@@ -5,7 +5,8 @@
 // .dbm-app-foot) que llenan la tarjeta del bento — toolbar real de producto
 // (título izq + badge der, SIN los 3 puntos macOS), tabla/lista/timeline con
 // datos plausibles y footer. Para escenas de CÓDIGO/JSON se usa la variante
-// terminal oscura .dbm-term (contextualmente correcta, estilo Stripe/GitHub).
+// .dbm-term — misma superficie LIGHT que .dbm-app (jul 2026: se eliminó la
+// variante de terminal oscura, todos los mockups del sitio son claros).
 // El prefijo dbm-* es autocontenido (Astro scopea <style> por componente).
 // Cada escena expone hooks (ids/clases) que el <script> de [slug].astro anima
 // como motion-graphic en loop. Copy/estructura vienen de desarrolladores.ts.
@@ -286,8 +287,8 @@ const { slug, index } = Astro.props;
 <style>
   /* ════════════════════════════════════════════════════════════
      DEV BLOCK MOCKUP — ventanas completas (espejo de BlockMockup.astro)
-     Prefijo dbm-* autocontenido. Superficie LIGHT para ventanas de
-     producto (.dbm-app) y DARK terminal para escenas de código (.dbm-term).
+     Prefijo dbm-* autocontenido. Superficie LIGHT para ambas variantes:
+     ventanas de producto (.dbm-app) y escenas de código (.dbm-term).
   ════════════════════════════════════════════════════════════ */
   .dbm-wrap {
     position: relative; width: 100%; height: 100%;
@@ -407,26 +408,26 @@ const { slug, index } = Astro.props;
   .dbm-cbar { height: 8px; border-radius: 100px; background: #eef2f7; overflow: hidden; }
   .dbm-cbar > i { display: block; height: 100%; border-radius: 100px; }
 
-  /* fiscal-0 inline terminal */
-  .dbm-term-inline { margin: 6px 12px; padding: 9px 12px; border-radius: 9px; background: #0e1b2e; font-family: ui-monospace, monospace; font-size: 0.64rem; color: #93c5fd; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .dbm-term-inline code { color: #7eb3ff; }
-  .dbm-term-inline b { color: #fcd34d; }
+  /* fiscal-0 inline code chip */
+  .dbm-term-inline { margin: 6px 12px; padding: 9px 12px; border-radius: 9px; background: #f4f6f9; border: 1px solid rgba(10,25,47,0.06); font-family: ui-monospace, monospace; font-size: 0.64rem; color: #475569; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .dbm-term-inline code { color: #2563eb; }
+  .dbm-term-inline b { color: #059669; font-weight: 700; }
 
-  /* ── TERMINAL DARK (código/JSON) ── */
+  /* ── TERMINAL / CÓDIGO (light — espejo de .dbm-app) ── */
   .dbm-term {
     width: 100%;
-    background: linear-gradient(168deg, #0e2036 0%, #0a1628 60%, #08111f 100%);
-    border-radius: 16px; border: 1px solid rgba(255,255,255,0.06); overflow: hidden;
-    box-shadow: 0 1px 2px rgba(2,6,12,0.3), 0 18px 44px -14px rgba(2,6,12,0.55), 0 44px 90px -30px rgba(2,6,12,0.6);
-    color: #e2e8f0; text-align: left;
+    background: #ffffff;
+    border-radius: 16px; border: 1px solid rgba(10,25,47,0.06); overflow: hidden;
+    box-shadow: 0 1px 2px rgba(10,25,47,0.04), 0 18px 44px -14px rgba(10,25,47,0.16), 0 44px 90px -30px rgba(10,25,47,0.20);
+    color: #334155; text-align: left;
   }
-  .dbm-term-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); }
-  .dbm-term-title { font-family: ui-monospace, monospace; font-size: 0.7rem; font-weight: 600; color: rgba(255,255,255,0.72); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .dbm-term-method { font-weight: 800; color: #34d399; margin-right: 4px; }
-  .dbm-term-badge { flex-shrink: 0; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.4px; padding: 4px 10px; border-radius: 100px; color: #4ade80; background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.24); }
-  .dbm-term-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 15px; border-top: 1px solid rgba(255,255,255,0.06); font-family: ui-monospace, monospace; font-size: 0.58rem; color: rgba(255,255,255,0.4); }
-  .dbm-term-total { color: #93c5fd; }
-  .dbm-code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; line-height: 1.7; font-size: 0.68rem; color: rgba(255,255,255,0.82); white-space: pre-wrap; padding: 12px 15px; margin: 0; }
+  .dbm-term-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 15px; border-bottom: 1px solid rgba(10,25,47,0.06); background: #fcfdfe; }
+  .dbm-term-title { font-family: ui-monospace, monospace; font-size: 0.7rem; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dbm-term-method { font-weight: 800; color: #059669; margin-right: 4px; }
+  .dbm-term-badge { flex-shrink: 0; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.4px; padding: 4px 10px; border-radius: 100px; color: #047857; background: rgba(16,185,129,0.10); border: 1px solid rgba(16,185,129,0.22); }
+  .dbm-term-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 15px; border-top: 1px solid rgba(10,25,47,0.06); font-family: ui-monospace, monospace; font-size: 0.58rem; color: #94a3b8; }
+  .dbm-term-total { color: #2563eb; }
+  .dbm-code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; line-height: 1.7; font-size: 0.68rem; color: #334155; white-space: pre-wrap; padding: 12px 15px; margin: 0; }
   .dbm-api-json { padding: 12px 15px; }
   .dbm-api-json code { font-family: inherit; white-space: pre; }
   .dbm-hl-target { transition: color 0.3s; }
@@ -435,10 +436,10 @@ const { slug, index } = Astro.props;
   /* el-0/el-1 (dead) */
   .dbm-el-code { font-size: 0.6rem; }
   .dbm-el-codebox { min-height: 34px; transition: opacity 0.18s; }
-  .dbm-cursor { display: inline-block; width: 6px; height: 12px; background: #fff; vertical-align: middle; margin-left: 2px; animation: dbm-blink 1s step-end infinite; }
+  .dbm-cursor { display: inline-block; width: 6px; height: 12px; background: #0f172a; vertical-align: middle; margin-left: 2px; animation: dbm-blink 1s step-end infinite; }
   @keyframes dbm-blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
   .dbm-el-preview { position: relative; margin: 8px 15px 4px; height: 46px; border-radius: 9px; overflow: hidden; }
-  .dbm-el-skel { position: absolute; inset: 0; border-radius: 9px; background: rgba(255,255,255,0.05); background-image: linear-gradient(100deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%); background-size: 200% 100%; }
+  .dbm-el-skel { position: absolute; inset: 0; border-radius: 9px; background: #eef1f5; background-image: linear-gradient(100deg, transparent 30%, rgba(10,25,47,0.07) 50%, transparent 70%); background-size: 200% 100%; }
   .dbm-el-mini { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; border-radius: 9px; background: #fff; color: #0a192f; opacity: 0; }
   .dbm-el-mini span { font-size: 0.66rem; color: #64748b; font-weight: 600; }
   .dbm-el-mini b { font-size: 0.82rem; color: #0a192f; }
@@ -461,9 +462,9 @@ const { slug, index } = Astro.props;
      runtime (innerHTML). El DOM inyectado NO lleva el data-attr de scope de Astro,
      así que estas reglas DEBEN ser globales. -->
 <style is:global>
-  .dbm-jtag { color: #f472b6; }
-  .dbm-jstr { color: #7dd3fc; }
-  .dbm-jkey { color: #93c5fd; }
-  .dbm-jnum { color: #fcd34d; }
+  .dbm-jtag { color: #be185d; }
+  .dbm-jstr { color: #0e7490; }
+  .dbm-jkey { color: #1d4ed8; }
+  .dbm-jnum { color: #b45309; }
   .dbm-hl-target { transition: color 0.3s; }
 </style>

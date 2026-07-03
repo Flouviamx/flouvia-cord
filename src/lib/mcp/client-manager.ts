@@ -1,6 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { sql } from "../db";
+import { assertSafeWebhookTarget } from "../ssrf";
 
 export interface AllowedTool {
   serverName: string;
@@ -82,6 +83,10 @@ export class McpClientManager {
       if (!allowedTools || allowedTools.length === 0) continue;
 
       try {
+        // Anti-SSRF: la URL del servidor MCP la configura la org. Bloquea destinos
+        // internos/metadata (con resolución DNS) ANTES de conectar y de mandarle el
+        // auth_token. Si es insegura, lanza y el catch de abajo salta ese servidor.
+        await assertSafeWebhookTarget(server.url_sse);
         const url = new URL(server.url_sse);
         // Inyectamos el auth_token del servidor (si existe) tanto en la conexión
         // SSE inicial como en los POST recurrentes, así los servidores con auth

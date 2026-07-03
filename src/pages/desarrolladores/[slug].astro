@@ -10,13 +10,17 @@ import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
 import PageAnims from '../../components/landing/PageAnims.astro';
 import DevBlockMockup from '../../components/desarrolladores/DevBlockMockup.astro';
+import TrustGrid from '../../components/desarrolladores/TrustGrid.astro';
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
+import PriceAuroraBg from '../../components/landing/PriceAuroraBg.jsx';
 import { DEV_PAGES } from '../../lib/desarrolladores';
 import { DEV_PAGES_EN } from '../../lib/desarrolladores.en';
 import { getLangFromUrl } from '../../i18n/utils';
 
 export function getStaticPaths() {
-    return DEV_PAGES.map((p) => ({ params: { slug: p.slug }, props: { page: p } }));
+    // 'elements' NO genera página aquí: se consolidó en /elements y esta ruta hace 301
+    // (ver redirects en astro.config.mjs). El dato sigue en DEV_PAGES como fuente única.
+    return DEV_PAGES.filter((p) => p.slug !== 'elements').map((p) => ({ params: { slug: p.slug }, props: { page: p } }));
 }
 
 const lang = getLangFromUrl(Astro.url);
@@ -222,8 +226,11 @@ const breadcrumbSchema = {
 
         <!-- ── BLOQUES (bento de tarjetas — mismo patrón que /producto) ── -->
         <section class="pp-bento">
-            {page.blocks.map((b, i) => (
-                <article class={`pp-bcard pp-bcard-${i}`}>
+            {page.blocks.map((b, i) => {
+                const dark = i === 0;
+                return (
+                <article class={`pp-bcard pp-bcard-${i}${dark ? ' pp-bcard-dark' : ''}`}>
+                    {dark && <PriceAuroraBg client:only="react" />}
                     <div class="pp-bcard-text">
                         <p class="pp-bcard-eyebrow">{b.eyebrow}</p>
                         <h2 class="pp-bcard-h2 masked-title" set:html={b.titulo} />
@@ -241,8 +248,11 @@ const breadcrumbSchema = {
                         <DevBlockMockup slug={page.slug} index={i} />
                     </div>
                 </article>
-            ))}
+                );
+            })}
         </section>
+
+        {page.trust && <TrustGrid trust={page.trust} />}
 
         <FaqAccordion
             faqs={page.faqs}
@@ -425,7 +435,7 @@ const breadcrumbSchema = {
                         if (totalEl) totalEl.textContent = snaps[i].total;
                         if (nameEl) nameEl.textContent = snaps[i].name;
                         const hl = pre ? pre.querySelector('.dbm-hl-target') : null;
-                        if (hl) gsap.fromTo(hl, { color: '#fcd34d' }, { color: '#34d399', duration: 0.5, yoyo: true, repeat: 1 });
+                        if (hl) gsap.fromTo(hl, { color: '#b45309' }, { color: '#059669', duration: 0.5, yoyo: true, repeat: 1 });
                         i = (i + 1) % snaps.length;
                     }).to({}, { duration: 1.4 });
                 } });
@@ -706,6 +716,25 @@ const breadcrumbSchema = {
     .pp-bcard-bullets li { display: flex; align-items: flex-start; gap: 8px; font-size: 0.83rem; color: var(--color-text); font-weight: 500; line-height: 1.45; }
     .pp-bcard-bullets svg { width: 15px; height: 15px; color: var(--color-ok); flex-shrink: 0; margin-top: 1px; }
 
+    /* ── Tarjeta oscura con aurora GLSL (PriceAuroraBg, mismo shader del ROI
+       de /precios) — fondo #08152a navy evita el flash antes de que el canvas
+       cargue, contenido/mockup por encima en z-index 2, texto reestilizado a
+       modo oscuro. Siempre el bloque 0 (tarjeta izquierda) de CUALQUIER
+       página de /desarrolladores/[slug] — api, mcp, fx, fiscal, etc. ── */
+    .pp-bcard-dark {
+        position: relative;
+        background: #08152a;
+        border-color: rgba(255,255,255,0.08);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 28px 60px -24px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .pp-bcard-dark .pp-bcard-text,
+    .pp-bcard-dark .pp-bcard-visual { position: relative; z-index: 2; background: transparent; }
+    .pp-bcard-dark .pp-bcard-eyebrow { color: rgba(255,255,255,0.45); }
+    .pp-bcard-dark .pp-bcard-h2 { color: #ffffff; }
+    .pp-bcard-dark .pp-bcard-copy { color: rgba(226,232,240,0.72); }
+    .pp-bcard-dark .pp-bcard-bullets li { color: rgba(255,255,255,0.92); }
+    .pp-bcard-dark .pp-bcard-bullets svg { color: #34d399; }
+
     /* ════════ CROSS-LINK (última sección) ════════ */
     .dv-more { max-width: 1080px; margin: 0 auto; padding: 2rem 5% 8rem; }
     .dv-more-row {
@@ -764,6 +793,16 @@ const breadcrumbSchema = {
     }
     .pp-bcard-visual .dbm-app,
     .pp-bcard-visual .dbm-term { max-width: 560px; }
+
+    /* Tarjetas HORIZONTALES (texto izq + mockup der, pp-bcard-2/3): centrar la
+       ventana en TODO el espacio visual disponible (no solo horizontal, sino
+       también vertical) — antes quedaba pegada arriba con un hueco grande
+       abajo y se veía desalineada. */
+    .pp-bcard-2 .pp-bcard-visual .dbm-wrap,
+    .pp-bcard-3 .pp-bcard-visual .dbm-wrap {
+        padding: 1.6rem;
+        align-items: center;
+    }
 
     @media (max-width: 960px) {
         .pp-bcard-visual .dbm-wrap { position: relative; inset: auto; padding: 1.4rem 1.4rem 0; }

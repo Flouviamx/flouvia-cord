@@ -22,6 +22,12 @@ export default defineConfig({
   redirects: {
     '/login': '/sign-in',
     '/registro': '/sign-up',
+    // Cord Elements se consolidó en /elements (página única y más completa: demo en
+    // vivo + npm + tabs por framework + bento + FAQ). La ruta vieja de la plantilla de
+    // desarrolladores queda como 301 para conservar el SEO. El dato `elements` sigue en
+    // desarrolladores.ts porque /elements reutiliza sus blocks+faqs (fuente única).
+    '/desarrolladores/elements': '/elements',
+    '/en/desarrolladores/elements': '/en/elements',
   },
 
   integrations: [clerk({ localization: esMX, afterSignOutUrl: '/' }), react()],

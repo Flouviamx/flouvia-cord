@@ -2,13 +2,26 @@ import { clerkMiddleware } from "@clerk/astro/server";
 import { reqContext } from "./lib/context";
 
 // APIs que DEBEN seguir públicas (las llaman terceros sin sesión Clerk):
-//   /api/q/*       → vista pública del cliente (token secreto)
-//   /api/stripe/*  → webhook de Stripe (firma propia)
-//   /api/cron/*    → cron de Vercel (protegido por CRON_SECRET)
-//   /api/v1/*      → API PÚBLICA (cada ruta se autentica por API key: Bearer)
-//   /api/mcp       → servidor MCP (se autentica por API key: Bearer)
-//   /api/clerk/*   → webhooks de Clerk (se autentican por firma Svix)
-const PUBLIC_API_PREFIXES = ["/api/q/", "/api/stripe/", "/api/cron/", "/api/v1/", "/api/mcp", "/api/clerk/"];
+//   /api/q/*         → vista pública del cliente (token secreto)
+//   /api/stripe/*    → webhook de Stripe (firma propia)
+//   /api/cron/*      → cron de Vercel (protegido por CRON_SECRET)
+//   /api/v1/*        → API PÚBLICA (cada ruta se autentica por API key: Bearer)
+//   /api/mcp/sse|message → transporte MCP (se autentica por API key: Bearer)
+//   /api/clerk/*     → webhooks de Clerk (se autentican por firma Svix)
+//
+// ⚠️ MCP: se listan las SUB-rutas exactas que se auto-autentican por API key.
+// NO usar el prefijo "/api/mcp" a secas: haría públicas rutas de SESIÓN como
+// /api/mcp/playground (requirePerm) y saltaría su gate de auth. El endpoint
+// JSON-RPC base /api/mcp se cubre con match EXACTO, no por prefijo.
+//
+// NOTA: /api/webhooks/inbound-email NO va aquí a propósito — hoy queda gateado
+// por sesión (el proveedor de correo no la tiene, así que no es alcanzable). Para
+// activarlo hay que (1) agregarlo aquí y (2) exigir INBOUND_EMAIL_SECRET dentro
+// del handler (ya implementado) para que no quede abierto.
+// /api/contacto/* → formulario público de ventas (lead capture, sin sesión; el
+// handler valida honeypot + rate limit propio, ya que aquí salta el limiter interno).
+const PUBLIC_API_PREFIXES = ["/api/q/", "/api/stripe/", "/api/cron/", "/api/v1/", "/api/mcp/sse", "/api/mcp/message", "/api/clerk/", "/api/contacto/"];
+const PUBLIC_API_EXACT = ["/api/mcp"];
 
 // ── Rate limiting (in-memory, por IP) ────────────────────────────────────────
 // Ventana: 60 s. Límites:
@@ -46,7 +59,8 @@ export const onRequest = clerkMiddleware((auth, context, next) => {
 
     const isApp = path === "/app" || path.startsWith("/app/");
     const isApi = path.startsWith("/api/");
-    const isPublicApi = PUBLIC_API_PREFIXES.some((p) => path.startsWith(p));
+    const isPublicApi =
+        PUBLIC_API_EXACT.includes(path) || PUBLIC_API_PREFIXES.some((p) => path.startsWith(p));
 
     // Rate limiting en APIs internas (las públicas tienen su propia auth)
     if (isApi && !isPublicApi) {

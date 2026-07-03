@@ -9,6 +9,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sendEmail } from '../../../lib/email';
+import { rateLimit, tooMany } from '../../../lib/ratelimit';
 
 const SALES_TO = import.meta.env.SALES_EMAIL || process.env.SALES_EMAIL || 'hola@flouvia.com';
 
@@ -72,6 +73,11 @@ function row(label: string, value: string, highlight = false) {
 }
 
 export const POST: APIRoute = async ({ request }) => {
+    // Público (sin sesión) → limita por IP aquí: cada envío puede disparar 2 correos.
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anon';
+    const rl = await rateLimit(`contacto:${ip}`, 5, 60);
+    if (!rl.ok) return tooMany(rl.retryAfter);
+
     let body: Record<string, unknown> = {};
     try { body = await request.json(); } catch {
         return json({ error: 'Cuerpo inválido' }, 400);

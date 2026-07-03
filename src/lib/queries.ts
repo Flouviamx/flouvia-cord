@@ -4,10 +4,12 @@
 // Re-exporta los helpers puros y STATUS_META del mock (no se duplican).
 
 import { sql, getActiveOrgId, withOrgTx, withPublicToken } from './db';
-import { currentUserId } from './context';
+import { currentUserId, currentOrgIdOverride } from './context';
 import { dispatchQuoteEvent } from './webhooks';
 import { memberCan, type Membership, type PermKey, type PermMap } from './permissions';
 import { INCLUDED } from './billing';
+import { cached } from './cache';
+import { after } from './after';
 import {
     STATUS_META, IVA, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal,
     type QuoteStatus, type MockItem, type MockEvent, type MockQuote,
@@ -362,6 +364,7 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [])
         aprobMotivo: (c.aprob_motivo as string) ?? null,
         total: num(c.total),
         version: num(c.version) || 1,
+        iva_incluido: Boolean(c.iva_incluido),
         items: items.map((it): MockItem => ({
             id: it.id,
             descripcion: it.descripcion,
@@ -386,16 +389,22 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [])
     };
 }
 
-// Lista (sin items/eventos detallados).
-export async function getCotizaciones(): Promise<MockQuote[]> {
+// Lista (sin items/eventos detallados). Acepta paginación opcional; por defecto
+// aplica un techo de seguridad alto (100k) para acotar el peor caso sin cambiar
+// el comportamiento actual (ninguna org real llega a esa cifra). La vista de lista
+// puede pasar { limit, offset } para paginar de verdad.
+export async function getCotizaciones(opts?: { limit?: number; offset?: number }): Promise<MockQuote[]> {
     const orgId = await getActiveOrgId();
+    const limit = Math.min(Math.max(opts?.limit ?? 100000, 1), 100000);
+    const offset = Math.max(opts?.offset ?? 0, 0);
     const [rows] = await withOrgTx(orgId, sql`
         select c.*, cl.empresa, cl.terminos_default,
                coalesce(c.terminos, cl.terminos_default) as terminos
         from cotizaciones c
         left join clientes cl on cl.id = c.cliente_id
         where c.org_id = ${orgId}
-        order by c.created_at desc`);
+        order by c.created_at desc
+        limit ${limit} offset ${offset}`);
     return rows.map(c => rowToQuote(c, [], [], []));
 }
 
@@ -540,12 +549,19 @@ export async function markViewed(token: string) {
         sql`update cotizaciones set status = 'viewed'
             where id = ${c.id} and status = 'sent'`,
     );
-    await dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.viewed');
+    // Fondo: no bloquear el render del link del cliente con el webhook saliente.
+    after(dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.viewed'));
 }
 
 // ── ANALÍTICA (/app/analitica) ────────────────────────────────────────────────
 // Seis queries en un solo batch HTTP — mejora significativa de latencia.
 export async function getAnalytics() {
+    // Cacheado ~30s: agregados de tendencia toleran staleness leve; recorta los
+    // escaneos completos a Neon en recargas/navegación y bajo muchos usuarios.
+    const orgId = await getActiveOrgId();
+    return cached(`analytics:${orgId}`, 30, getAnalyticsUncached);
+}
+async function getAnalyticsUncached() {
     const orgId = await getActiveOrgId();
 
     const [kRows, meses, margRows, clientes, productos, plRows] = await withOrgTx(orgId,
@@ -748,6 +764,10 @@ export async function getCobranza() {
 // con el historial REAL por cliente: tasa de cierre (aprobadas / enviadas),
 // días promedio a cierre (created→approved) y días a cobro (approved→paid).
 export async function getCFO() {
+    const orgId = await getActiveOrgId();
+    return cached(`cfo:${orgId}`, 30, getCFOUncached);
+}
+async function getCFOUncached() {
     const orgId = await getActiveOrgId();
 
     const [activos, histRows, pagoRows] = await withOrgTx(orgId,
@@ -973,8 +993,16 @@ export async function getMembers(): Promise<MemberRow[]> {
 
 export async function getMyMembership(): Promise<Membership> {
     const userId = currentUserId();
+    // FAIL-CLOSED sin sesión Clerk. El único carril legítimo sin userId es M2M
+    // (API key), donde currentOrgIdOverride() está seteado y la llave ya es dueña
+    // de su org. Para cualquier otro caso (una ruta mal clasificada como pública,
+    // un handler alcanzado sin sesión), NO asumir owner: devolver un principal sin
+    // permisos para que requirePerm() deniegue en vez de autorizar como dueño.
+    if (!userId) {
+        if (currentOrgIdOverride()) return { rol: 'owner', permisos: {}, esOwner: true };
+        return { rol: 'anon', permisos: {}, esOwner: false };
+    }
     const orgId = await getActiveOrgId();
-    if (!userId) return { rol: 'owner', permisos: {}, esOwner: true };
     try {
         const rows = await sql`select rol, permisos from org_members where org_id = ${orgId} and clerk_user_id = ${userId} and estado = 'activo' limit 1`;
         if (!rows.length) return { rol: 'owner', permisos: {}, esOwner: true };

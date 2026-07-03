@@ -5,7 +5,8 @@ import DesarrolladoresTemplate from '../../../pages/desarrolladores/[slug].astro
 import { DEV_PAGES_EN } from '../../../lib/desarrolladores.en';
 
 export function getStaticPaths() {
-    return DEV_PAGES_EN.map((p) => ({ params: { slug: p.slug }, props: { page: p } }));
+    // 'elements' se consolidó en /en/elements (301 en astro.config.mjs) — no se genera aquí.
+    return DEV_PAGES_EN.filter((p) => p.slug !== 'elements').map((p) => ({ params: { slug: p.slug }, props: { page: p } }));
 }
 
 const { page } = Astro.props;

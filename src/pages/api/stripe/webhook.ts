@@ -90,7 +90,8 @@ async function markQuotePaid(session: any) {
         await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                   values (${rows[0].org_id}, ${cid}, 'paid', 'Pago recibido vía Stripe')`;
         await logAudit(rows[0].org_id as string, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea (Stripe)' });
-        await dispatchQuoteEvent(rows[0].org_id as string, cid, 'quote.paid');
+        // Fondo: no demorar el 200 a Stripe con nuestro webhook saliente (evita reintentos).
+        after(dispatchQuoteEvent(rows[0].org_id as string, cid, 'quote.paid'));
     }
 }
 

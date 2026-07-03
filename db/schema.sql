@@ -834,3 +834,8 @@ alter table promesas_pago enable row level security;
 create policy "rls_promesas_pago" on promesas_pago
   using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
 alter table promesas_pago force row level security;
+
+-- ── Cotizaciones: IVA incluido (jul 2026) ──
+alter table cotizaciones add column if not exists iva_incluido boolean not null default false;
+alter table cotizacion_versiones add column if not exists iva_incluido boolean not null default false;
+

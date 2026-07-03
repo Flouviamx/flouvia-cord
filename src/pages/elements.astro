@@ -8,7 +8,16 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/landing/Nav.astro';
 import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
+import FaqAccordion from '../components/landing/FaqAccordion.astro';
+import DevBlockMockup from '../components/desarrolladores/DevBlockMockup.astro';
 import { getLangFromUrl, useTranslations } from '../i18n/utils';
+import { DEV_PAGES } from '../lib/desarrolladores';
+import { DEV_PAGES_EN } from '../lib/desarrolladores.en';
+
+// Reutiliza el copy de bloques/FAQ ya escrito para /desarrolladores/elements
+// (misma fuente, cero duplicación) — la grilla de 3 tarjetas y el FAQ de esta
+// página son el mismo contenido, no una copia a mano.
+const elementsData = (isEnPage: boolean) => (isEnPage ? DEV_PAGES_EN : DEV_PAGES).find((p) => p.slug === 'elements')!;
 
 // Snippets de instalación por framework (tabs estilo Stripe). El embed es el mismo
 // iframe en todos; cambia sólo cómo cargas el script según tu stack.
@@ -84,18 +93,43 @@ defineProps({ token: String });
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
 const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
+const devPage = elementsData(isEn);
 
 const EVENTS = `document.querySelector('[data-cord-cotizador]')
   .addEventListener('cord:approved', (e) => {
     // tu cliente aprobó — registra la venta, redirige, etc.
     analytics.track('cotizacion_aprobada', e.detail);
   });`;
+
+// Datos estructurados (mismo criterio que /producto y /desarrolladores — ver
+// docs/historial.md, auditoría SEO/AI-SEO jul 2026): esta página no tenía nada.
+const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: devPage.faqs.map((f) => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+};
+const SITE = 'https://cord.flouvia.com';
+const base = isEn ? `${SITE}/en` : SITE;
+const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Cord', item: `${base}/` },
+        { '@type': 'ListItem', position: 2, name: 'Cord Elements', item: `${base}/elements` },
+    ],
+};
 ---
 
 <Layout
     title={isEn ? "Cord Elements — your quote builder, embedded anywhere" : "Cord Elements — tu cotizador, embebido en cualquier sitio"}
     description={isEn ? "Bring Cord's quote builder to your own portal or your clients' with one line of code. Your brand, approval, and online payment, inside their ecosystem." : "Lleva el cotizador de Cord a tu propio portal o al de tus clientes con una línea de código. Tu marca, aprobación y pago en línea, dentro de su ecosistema."}
 >
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
     <Nav />
     <main>
         <!-- ════════ HERO ════════ -->
@@ -135,18 +169,18 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
                     <div class="el-demo-glow" aria-hidden="true"></div>
                     <div class="el-browser">
                         <div class="el-browser-bar">
-                            <span class="el-dots"><i></i><i></i><i></i></span>
                             <span class="el-url">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                                 portal.tucliente.com/cotizacion
                             </span>
+                            <span class="el-live-badge"><i></i>{isEn ? 'live' : 'en vivo'}</span>
                         </div>
                         <div class="el-browser-body">
                             <div class="el-host-chrome" aria-hidden="true">
                                 <span class="el-host-logo">ACME Industrial</span>
                                 <span class="el-host-nav"><i></i><i></i><i></i></span>
                             </div>
-                            <p class="el-host-line" aria-hidden="true">{isEn ? 'Your quote is ready 👇' : 'Tu cotización está lista 👇'}</p>
+                            <p class="el-host-line" aria-hidden="true">{isEn ? 'Your quote is ready' : 'Tu cotización está lista'}</p>
                             <!-- iframe REAL del producto -->
                             <iframe class="el-demo-frame" src="/embed/demo" title={isEn ? "Cord Quote Builder (live demo)" : "Cotizador Cord (demo en vivo)"} loading="lazy"></iframe>
                             <span class="el-host-foot" aria-hidden="true">{isEn ? '© ACME Industrial · client portal' : '© ACME Industrial · portal de clientes'}</span>
@@ -202,6 +236,30 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
             </div>
         </section>
 
+        <!-- ════════ BENTO (3 tarjetas, mismo patrón que /producto y /desarrolladores) ════════ -->
+        <section class="pp-bento">
+            {devPage.blocks.map((b, i) => (
+                <article class={`pp-bcard pp-bcard-${i}`}>
+                    <div class="pp-bcard-text">
+                        <p class="pp-bcard-eyebrow">{b.eyebrow}</p>
+                        <h2 class="pp-bcard-h2 masked-title" set:html={b.titulo} />
+                        <p class="pp-bcard-copy reveal">{b.copy}</p>
+                        <ul class="pp-bcard-bullets">
+                            {b.bullets.map((bl) => (
+                                <li class="reveal">
+                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" /></svg>
+                                    <span set:html={bl} />
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                    <div class="pp-bcard-visual reveal-mockup">
+                        <DevBlockMockup slug="elements" index={i} />
+                    </div>
+                </article>
+            ))}
+        </section>
+
         <!-- ════════ CARACTERÍSTICAS (lista, no tarjetas) ════════ -->
         <section class="el-features">
             <div class="el-feat-head">
@@ -251,7 +309,7 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
                 </ul>
             </div>
             <div class="el-code el-code-dev reveal-mockup">
-                <div class="el-code-bar"><span class="el-dots"><i></i><i></i><i></i></span><span>app.js</span></div>
+                <div class="el-code-bar"><span>app.js</span><span class="el-code-bar-badge">{isEn ? 'listener' : 'listener'}</span></div>
                 <pre><code>{EVENTS}</code></pre>
             </div>
         </section>
@@ -262,6 +320,13 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
             <p class="el-mid-sub reveal">{isEn ? <Fragment>Each quote also lives on its own public page <code>/q/{'{'}token{'}'}</code> — the exact same builder, zero code. Embedding is for when you want it to live <i>inside</i> your site.</Fragment> : <Fragment>Cada cotización vive también en su propia página pública <code>/q/{'{'}token{'}'}</code> — el mismo cotizador, sin tocar código. El embed es para cuando quieres que viva <i>dentro</i> de tu sitio.</Fragment>}</p>
             <a href={l("/q/demo")} class="el-btn-ghost reveal" target="_blank" rel="noopener">{isEn ? 'View a real quote ↗' : 'Ver una cotización real ↗'}</a>
         </section>
+
+        <FaqAccordion
+            faqs={devPage.faqs}
+            eyebrow={isEn ? 'FREQUENTLY ASKED QUESTIONS' : 'PREGUNTAS FRECUENTES'}
+            title={isEn ? 'What developers ask about Elements.' : 'Lo que preguntan los developers sobre Elements.'}
+            id="elements-faq"
+        />
     </main>
 
     <Footer
@@ -298,11 +363,10 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
         font-size: 0.65rem; font-weight: 800; letter-spacing: 3px;
         text-transform: uppercase; color: #888; margin: 0 0 1.3rem;
     }
-    .el-title {
-        font-size: clamp(2.5rem, 4.6vw, 4.2rem);
-        font-weight: 800; line-height: 1.03; letter-spacing: -0.035em;
-        color: var(--color-text); margin: 0 0 1.5rem;
-    }
+    /* El tamaño/peso real lo gobierna el estándar global h1.masked-title (Layout.astro);
+       aquí solo el color/margen propios de este hero + el override de alineación de abajo
+       (el layout es split izq/der, el título NO debe centrarse). */
+    .el-title { color: var(--color-text); margin: 0 0 1.5rem; }
     .el-sub {
         font-size: 1.1rem; line-height: 1.65; color: var(--color-text-muted);
         margin: 0 0 2.1rem;
@@ -310,21 +374,30 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
     .el-sub b { color: var(--color-text); font-weight: 600; }
     .el-actions { display: flex; gap: 0.9rem; align-items: center; flex-wrap: wrap; }
     .el-btn-primary {
-        display: inline-flex; align-items: center; gap: 10px;
+        display: inline-flex; align-items: center; gap: 10px; position: relative; overflow: hidden;
         background: var(--color-blue-deep); color: #fff;
         text-decoration: none; font-size: 0.98rem; font-weight: 600;
-        padding: 14px 28px; border-radius: 13px;
+        padding: 14px 30px; border-radius: 999px;
         box-shadow: 0 18px 44px -16px rgba(10,25,47,0.55);
         transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
     }
+    .el-btn-primary::after {
+        content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.18) 50%, transparent 62%);
+        transform: translateX(-110%); transition: transform 0.55s ease;
+    }
+    .el-btn-primary:hover::after { transform: translateX(110%); }
     .el-btn-primary svg { width: 15px; height: 15px; transition: transform 0.5s var(--ease-spring); }
     .el-btn-primary:hover { transform: translateY(-3px); box-shadow: 0 26px 56px -16px rgba(10,25,47,0.6); }
     .el-btn-primary:hover svg { transform: translateX(4px); }
+    .el-btn-primary:active { transform: scale(0.97); }
     .el-btn-ghost {
         color: var(--color-text); text-decoration: none; font-weight: 600; font-size: 0.98rem;
-        padding: 14px 10px; transition: color 0.3s;
+        padding: 14px 22px; border-radius: 999px;
+        border: 1px solid var(--color-border);
+        transition: color 0.3s, border-color 0.3s, background 0.3s;
     }
-    .el-btn-ghost:hover { color: var(--color-blue-deep); }
+    .el-btn-ghost:hover { color: var(--color-blue-deep); border-color: rgba(10,25,47,0.2); background: rgba(10,25,47,0.03); }
 
     /* Comando de instalación copiable */
     .el-cmd {
@@ -378,8 +451,13 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
         padding: 12px 16px;
         background: #f4f6f9; border-bottom: 1px solid rgba(10,25,47,0.07);
     }
-    .el-dots { display: inline-flex; gap: 6px; flex-shrink: 0; }
-    .el-dots i { width: 11px; height: 11px; border-radius: 50%; background: rgba(10,25,47,0.13); }
+    .el-live-badge {
+        display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+        font-size: 0.66rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase;
+        color: #059669; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.22);
+        border-radius: 100px; padding: 5px 10px;
+    }
+    .el-live-badge i { width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px rgba(16,185,129,0.6); }
     .el-url {
         display: inline-flex; align-items: center; gap: 7px;
         font-size: 0.76rem; color: var(--color-text-muted); font-weight: 500;
@@ -440,11 +518,15 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
         box-shadow: 0 40px 90px -40px rgba(5,11,20,0.7), inset 0 0 0 0.5px rgba(255,255,255,0.07);
     }
     .el-code-bar {
-        display: flex; align-items: center; gap: 12px;
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
         padding: 11px 16px; border-bottom: 1px solid rgba(255,255,255,0.08);
         font-size: 0.74rem; color: rgba(255,255,255,0.5); font-weight: 500;
     }
-    .el-code-bar .el-dots i { background: rgba(255,255,255,0.16); width: 10px; height: 10px; }
+    .el-code-bar-badge {
+        font-size: 0.6rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase;
+        color: rgba(255,255,255,0.55); background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; padding: 4px 9px;
+    }
     .el-code pre { margin: 0; padding: 1.4rem 1.5rem; overflow-x: auto; }
     .el-code code {
         font-family: ui-monospace, 'SF Mono', Menlo, monospace;
@@ -545,6 +627,29 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
     .el-mid-sub { font-size: 1rem; line-height: 1.65; color: var(--color-text-muted); margin: 0 0 1.6rem; }
     .el-mid-sub i { font-style: normal; color: var(--color-text); font-weight: 600; }
 
+    /* ════════ BENTO — 3 tarjetas (mismo patrón que /producto y /desarrolladores) ════════ */
+    .pp-bento {
+        max-width: 1360px; margin: 0 auto; padding: 2rem 5% 6rem;
+        display: grid; grid-template-columns: 5fr 7fr; gap: 1.5rem;
+    }
+    .pp-bcard-2, .pp-bcard-3 { grid-column: 1 / -1; }
+    .pp-bcard {
+        background: #f5f5f7; border-radius: 24px; overflow: hidden;
+        display: flex; flex-direction: column; min-height: 540px;
+        border: 1px solid rgba(0,0,0,0.06);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 24px 48px -14px rgba(0,0,0,0.08);
+    }
+    .pp-bcard-2, .pp-bcard-3 { flex-direction: row; min-height: 480px; }
+    .pp-bcard-text { padding: 3rem 2.8rem 2rem; flex-shrink: 0; position: relative; z-index: 2; }
+    .pp-bcard-2 .pp-bcard-text, .pp-bcard-3 .pp-bcard-text { flex: 0 0 40%; padding: 3.8rem 2.6rem 3.8rem 4rem; display: flex; flex-direction: column; justify-content: center; }
+    .pp-bcard-visual { flex: 1; position: relative; overflow: hidden; min-height: 340px; background: #f5f5f7; }
+    .pp-bcard-eyebrow { font-size: 0.6rem; font-weight: 800; letter-spacing: 2.8px; text-transform: uppercase; color: #b0b0b8; margin: 0 0 0.9rem; }
+    .pp-bcard-h2 { font-size: clamp(1.35rem, 2.1vw, 1.85rem); font-weight: 800; line-height: 1.12; letter-spacing: -0.035em; color: #050505; margin: 0 0 0.9rem; }
+    .pp-bcard-copy { font-size: 0.875rem; line-height: 1.68; color: var(--color-text-muted); margin: 0 0 1.4rem; }
+    .pp-bcard-bullets { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.55rem; }
+    .pp-bcard-bullets li { display: flex; align-items: flex-start; gap: 8px; font-size: 0.83rem; color: var(--color-text); font-weight: 500; line-height: 1.45; }
+    .pp-bcard-bullets svg { width: 15px; height: 15px; color: var(--color-ok); flex-shrink: 0; margin-top: 1px; }
+
     /* ════════ RESPONSIVE ════════ */
     @media (max-width: 920px) {
         .el-hero { padding-top: 9rem; }
@@ -555,6 +660,28 @@ const EVENTS = `document.querySelector('[data-cord-cotizador]')
         .el-feat-list { grid-template-columns: 1fr; gap: 0; }
         .el-steps { grid-template-columns: 1fr; gap: 1.8rem; }
         .el-demo-frame { height: 480px; }
+        .pp-bento { grid-template-columns: 1fr; gap: 1.25rem; padding: 1.5rem 5% 3rem; }
+        .pp-bcard-2, .pp-bcard-3 { flex-direction: column; min-height: 500px; }
+        .pp-bcard-2 .pp-bcard-text, .pp-bcard-3 .pp-bcard-text { flex: none; padding: 2.8rem 2.4rem 1.6rem; }
+        .pp-bcard { min-height: 460px; }
+    }
+
+    /* El hero es un split izq/der (texto + demo) — el h1.masked-title global lo
+       centra por defecto para los heroes centrados del resto del sitio; este
+       título debe quedarse pegado a la izquierda, como en /producto y /desarrolladores. */
+    .el-hero-text .el-title { text-align: left !important; }
+
+    /* Ventana del bento: llena el ancho, arriba, sangra por abajo (mismo patrón que
+       /desarrolladores/[slug] — DevBlockMockup se reutiliza tal cual). */
+    .pp-bcard-visual .dbm-wrap {
+        position: absolute; inset: 0;
+        padding: 1.7rem 1.6rem 0;
+        align-items: flex-start; justify-content: center;
+    }
+    .pp-bcard-visual .dbm-app,
+    .pp-bcard-visual .dbm-term { max-width: 560px; }
+    @media (max-width: 960px) {
+        .pp-bcard-visual .dbm-wrap { position: relative; inset: auto; padding: 1.4rem 1.4rem 0; }
     }
 </style>
 

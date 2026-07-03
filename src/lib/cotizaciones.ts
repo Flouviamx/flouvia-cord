@@ -32,6 +32,7 @@ export interface NewQuoteInput {
     base_currency?: string | null;
     fiscal_currency?: string | null;
     fx_buffer_pct?: number | null;
+    iva_incluido?: boolean;
 }
 
 export interface CreateQuoteResult {
@@ -72,8 +73,10 @@ export async function createCotizacion(
     const [org] = await sql`select * from orgs where id = ${orgId}`;
 
     const ivaPct = org.iva_pct !== undefined && org.iva_pct !== null ? Number(org.iva_pct) / 100 : 0.16;
-    const iva = subtotal * ivaPct;
-    const total = subtotal + iva;
+    const iva_incluido = Boolean(input.iva_incluido);
+    const iva = iva_incluido ? subtotal - (subtotal / (1 + ivaPct)) : subtotal * ivaPct;
+    const realSubtotal = iva_incluido ? subtotal / (1 + ivaPct) : subtotal;
+    const total = iva_incluido ? subtotal : subtotal + iva;
 
     const [{ maxn }] = await sql`
         select coalesce(max(nullif(regexp_replace(folio, '\\D', '', 'g'), '')::int), 0) as maxn
@@ -146,11 +149,11 @@ export async function createCotizacion(
     const [cot] = await sql`
         insert into cotizaciones
             (org_id, cliente_id, folio, status, subtotal, iva, total, terminos, vigencia, notas, sent_at, aprob_estado, aprob_motivo,
-             moneda, base_currency, fiscal_currency, fx_rate, fx_rate_source, fx_locked_until)
+             moneda, base_currency, fiscal_currency, fx_rate, fx_rate_source, fx_locked_until, iva_incluido)
         values
-            (${orgId}, ${clienteId}, ${folio}, ${status}, ${subtotal}, ${iva}, ${total},
+            (${orgId}, ${clienteId}, ${folio}, ${status}, ${realSubtotal}, ${iva}, ${total},
              ${terminos}, ${vigencia.toISOString()}, ${input.notas || null}, ${sentAt}, ${aprobEstado}, ${aprobMotivo},
-             ${baseCurrency}, ${baseCurrency}, ${fiscalCurrency}, ${fxRate}, ${fxSource}, ${fxLockedUntil})
+             ${baseCurrency}, ${baseCurrency}, ${fiscalCurrency}, ${fxRate}, ${fxSource}, ${fxLockedUntil}, ${iva_incluido})
         returning id, public_token`;
 
     let orden = 0;
@@ -168,9 +171,9 @@ export async function createCotizacion(
 
     await sql`
         insert into cotizacion_versiones
-            (cotizacion_id, org_id, version, subtotal, iva, total, items, notas)
+            (cotizacion_id, org_id, version, subtotal, iva, total, items, notas, iva_incluido)
         values
-            (${cot.id}, ${orgId}, 1, ${subtotal}, ${iva}, ${total}, ${JSON.stringify(items)}, ${input.notas || null})`;
+            (${cot.id}, ${orgId}, 1, ${realSubtotal}, ${iva}, ${total}, ${JSON.stringify(items)}, ${input.notas || null}, ${iva_incluido})`;
 
     await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
               values (${orgId}, ${cot.id}, 'created', 'Borrador creado')`;

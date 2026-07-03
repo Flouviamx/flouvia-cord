@@ -88,6 +88,25 @@ export const DEV_PAGES_EN: DevPage[] = [
             { q: 'What can I do with the API besides creating quotes?', a: 'Read and create clients and products, and query your collections pipeline — generally, the same things you see in the app, exposed as REST endpoints under /api/v1.' },
         ],
         cta: { titulo: 'Connect Cord to your system.', sub: 'Generate a free test key and make your first call today.' },
+        trust: {
+            eyebrow: 'INFRASTRUCTURE',
+            titulo: 'Built for production',
+            proteccion: {
+                icon: 'shield',
+                titulo: 'Enterprise-grade security',
+                copy: 'Every call travels encrypted with TLS; data at rest, with AES-256. Row Level Security in the database isolates every organization — no query ever crosses data between different businesses.',
+            },
+            puntos: [
+                { icon: 'key', titulo: 'Test and live keys, revocable instantly' },
+                { icon: 'doc', titulo: 'We only store your key\'s hash, never in plaintext' },
+            ],
+            grid: [
+                { icon: 'gauge', titulo: '~500 requests/min per IP', copy: 'The limit runs on a 60-second window; if you hit it, the response carries the exact code and wait time.' },
+                { icon: 'globe', titulo: 'Infrastructure and data hosted in Mexico', copy: "Your database and the API's compute live in the Mexico region — no unnecessary hops to other continents." },
+                { icon: 'unlock', titulo: 'Available from the Free plan', copy: 'There\'s no exclusive plan that "unlocks" the API — every plan ships its own number of keys and monthly call limit.' },
+                { icon: 'layers', titulo: 'limit/offset pagination on every endpoint', copy: 'Every listing endpoint accepts limit and offset, so you build your own pagination without guessing page size.' },
+            ],
+        },
     },
     {
         slug: 'mcp',
@@ -162,6 +181,25 @@ await mcpManager.disconnectAll();`,
             { q: 'Do I need a different key for MCP and the REST API?', a: 'No, it\'s the same API key for both — the authorization header is identical.' },
         ],
         cta: { titulo: 'Connect AI to your business. In both directions.', sub: 'Same header, same key. Expose your 7 tools and link your systems with permissions you control.' },
+        trust: {
+            eyebrow: 'GOVERNANCE',
+            titulo: 'Explicit access, never open',
+            proteccion: {
+                icon: 'shield',
+                titulo: 'Every query respects your RLS',
+                copy: 'The MCP session is bound to your org_id: every tool the AI invokes —yours or an external server\'s— filters through Row Level Security. No agent ever sees another organization\'s data.',
+            },
+            puntos: [
+                { icon: 'doc', titulo: 'Every agent action lands in the audit log' },
+                { icon: 'key', titulo: 'Same API key for the REST API and MCP' },
+            ],
+            grid: [
+                { icon: 'toggle', titulo: 'Per-server permission, revocable instantly', copy: "Turn your agent's access to each external MCP server on or off from Settings, without waiting on a deploy." },
+                { icon: 'route', titulo: 'Up to 5 agent-loop turns per quote', copy: "It's a safety cap: the AI queries your systems up to 5 times before drafting — never an infinite loop." },
+                { icon: 'globe', titulo: '2 transports: stateless HTTP and HTTP/SSE', copy: 'Use plain JSON-RPC for one-off calls, or the SSE channel with a session when you need continuous streaming.' },
+                { icon: 'unlock', titulo: 'Available on every plan', copy: "Inbound and outbound MCP share the same API key — there's no separate plan for connecting AI to your business." },
+            ],
+        },
     },
     {
         slug: 'elements',
@@ -241,6 +279,25 @@ export function Cotizacion({ token }) {
             { q: 'What framework does Cord Elements work with?', a: 'The <cord-cotizador> Web Component works in any HTML, Astro, or Vue site; there\'s a native React wrapper (@flouviahq/elements/react) and a one-line loader (embed.js) for WordPress or framework-less sites.' },
         ],
         cta: { titulo: 'Bring your quoter to where your clients are.', sub: 'Create your free account and embed your first quoter today — one line of code.' },
+        trust: {
+            eyebrow: 'EMBEDDABLE QUOTER',
+            titulo: 'Secure by design',
+            proteccion: {
+                icon: 'shield',
+                titulo: 'Shielded against clickjacking',
+                copy: 'You decide which domains your embedded quoter can live on: a per-account allowlist controls the CSP frame-ancestors header, so no one else can embed it on a site you didn\'t authorize.',
+            },
+            puntos: [
+                { icon: 'unlock', titulo: 'Free signup, no backend of your own to maintain' },
+                { icon: 'doc', titulo: '5 live events: ready, approved, rejected, message, pay' },
+            ],
+            grid: [
+                { icon: 'globe', titulo: 'Works on any stack: HTML, React, Vue, Astro', copy: 'The same secure iframe mounts via a script tag, the npm package, or the Web Component — pick what fits your stack.' },
+                { icon: 'key', titulo: 'Authenticated by the quote\'s public token', copy: "No session or account to share: the quote's public token is all the embed needs to work." },
+                { icon: 'toggle', titulo: 'Remove the "via Cord" notice on a paid plan', copy: 'The Free plan shows a discreet "via Cord" notice; remove it anytime from Settings on a paid plan.' },
+                { icon: 'route', titulo: 'Same secure iframe, three ways to integrate it', copy: 'Switch from plain HTML to React or the Web Component without losing anything — same iframe, same events.' },
+            ],
+        },
     },
     {
         slug: 'fx',
@@ -283,6 +340,25 @@ export function Cotizacion({ token }) {
             { q: 'Does the live interbank rate cost extra?', a: 'The Banxico FIX rate is included on every plan; live interbank rates are available from the Professional plan up.' },
         ],
         cta: { titulo: 'Keep your profitability shielded.', sub: 'Integrate live exchange rates today.' },
+        trust: {
+            eyebrow: 'FX COVERAGE',
+            titulo: 'Your margin, protected',
+            proteccion: {
+                icon: 'shield',
+                titulo: 'The rate you lock is the rate you get',
+                copy: 'Freeze the exchange rate for up to 30 days (FX lock) from the moment you quote. Even if the peso moves before your client pays, your margin doesn\'t move with it.',
+            },
+            puntos: [
+                { icon: 'gauge', titulo: 'Configurable coverage buffer per quote' },
+                { icon: 'doc', titulo: 'CFDI 4.0 is stamped in pesos, with the rate already applied' },
+            ],
+            grid: [
+                { icon: 'globe', titulo: 'Banxico FIX at no extra cost, on every plan', copy: "Banxico's official rate is included from the Free plan, at no extra charge to query." },
+                { icon: 'refresh', titulo: 'Live interbank rates from the Professional plan', copy: "For larger deals, the live interbank rate shrinks the margin you'd otherwise leave on the table." },
+                { icon: 'lock', titulo: 'Rate frozen for up to 30 days (FX lock)', copy: 'Quote today, your client approves in two weeks, and the rate you showed them is still the one that gets invoiced.' },
+                { icon: 'layers', titulo: 'Quoting currency and invoicing currency, independent', copy: 'Your client can see the price in USD while the CFDI 4.0 stamps in pesos — no manual conversion on your end.' },
+            ],
+        },
     },
     {
         slug: 'fiscal',
@@ -325,6 +401,25 @@ export function Cotizacion({ token }) {
             { q: 'Can I have one legal entity in Mexico and another in the US under the same account?', a: "Cord's data model supports multiple legal entities under one account. Contact sales to confirm availability for your plan and use case." },
         ],
         cta: { titulo: 'Expand your market without the tax headache.', sub: 'Join the companies operating binationally.' },
+        trust: {
+            eyebrow: 'MULTI-COUNTRY COMPLIANCE',
+            titulo: 'Compliance without friction',
+            proteccion: {
+                icon: 'shield',
+                titulo: 'Real CFDI 4.0 with the SAT',
+                copy: 'Stamping runs in production through a certified PAC (Facturapi): your Digital Seal Certificate, your RFC, your real invoice. Without a key configured, the flow runs in simulated mode so you can test it risk-free.',
+            },
+            puntos: [
+                { icon: 'doc', titulo: 'RFC (Mexico) and EIN (United States) validation' },
+                { icon: 'layers', titulo: 'Multiple legal entities under one account' },
+            ],
+            grid: [
+                { icon: 'gauge', titulo: 'VAT, IEPS, and withholdings mapped per product', copy: "Every product carries its own tax profile, so the calculation doesn't depend on someone remembering it by hand." },
+                { icon: 'globe', titulo: 'Multi-country architecture: one adapter per tax provider', copy: 'Mexico already runs in production through a certified PAC; new countries are added as their own adapter.' },
+                { icon: 'unlock', titulo: 'Developer plan', copy: 'The international tax module lives on the plan that also brings more API keys and the highest stamping volume.' },
+                { icon: 'route', titulo: 'Cross-border US/MX: contact sales for your case', copy: 'If you sell between Mexico and the US with entities in both countries, sales confirms the exact scope for your account.' },
+            ],
+        },
     },
     {
         slug: 'integraciones',
@@ -373,6 +468,25 @@ export function Cotizacion({ token }) {
             { q: 'How do I verify a webhook really came from Cord?', a: 'Every delivery includes the X-Cord-Signature header with an HMAC-SHA256 of the raw body, signed with the secret Cord gave you when you created the endpoint — you validate it before processing the event.' },
         ],
         cta: { titulo: 'Connect Cord to your stack today.', sub: 'Register a webhook or generate a test key and receive your first event in minutes.' },
+        trust: {
+            eyebrow: 'RELIABILITY',
+            titulo: 'Deliveries you can trust',
+            proteccion: {
+                icon: 'shield',
+                titulo: 'Every delivery, signed and verifiable',
+                copy: 'Every webhook goes out signed with HMAC-SHA256 in the X-Cord-Signature header — you compute the hash of the raw body with your secret and confirm it came from Cord, not someone else.',
+            },
+            puntos: [
+                { icon: 'refresh', titulo: 'Automatic retry if the first delivery fails' },
+                { icon: 'doc', titulo: 'Delivery log with status, latency, and manual resend' },
+            ],
+            grid: [
+                { icon: 'route', titulo: 'Zapier, Make, n8n, or your own backend', copy: 'One webhook reaches thousands of apps without Cord maintaining a proprietary connector for each one.' },
+                { icon: 'toggle', titulo: 'Native Slack: automatic alerts per event', copy: 'Unlike Zapier or Make, Slack needs no middleman: the notification lands straight in your channel.' },
+                { icon: 'gauge', titulo: 'From 1 endpoint (Free) to 100 (Developer)', copy: 'The limit grows with your plan; overages are measured by API usage, not by the number of registered endpoints.' },
+                { icon: 'key', titulo: 'Secret shown once, never in plaintext', copy: 'Copy it when you create it — after that only its fingerprint remains to sign with, no way to see it in full again.' },
+            ],
+        },
     },
 ];
 

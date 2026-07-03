@@ -10,6 +10,7 @@
 import { createHmac } from 'node:crypto';
 import { sql } from './db';
 import { postToSlack } from './slack';
+import { assertSafeWebhookTarget } from './ssrf';
 
 // Catálogo de eventos públicos (lo consume la UI y la validación de la API).
 export const WEBHOOK_EVENTS = [
@@ -57,6 +58,16 @@ async function deliver(hook: any, evento: string, body: string, prueba = false):
     let status = 0;
     let error: string | null = null;
     let ok = false;
+
+    // Anti-SSRF: re-valida el destino (con resolución DNS) justo antes de golpearlo.
+    // Atrapa rebinding y URLs internas que se colaron antes de este control.
+    try {
+        await assertSafeWebhookTarget(hook.url as string);
+    } catch (e: any) {
+        await logDelivery(hook, evento, body, { status: 0, ok: false, error: e?.message || 'destino bloqueado', intento: 1, ms: 0, response: '', prueba });
+        sql`update webhooks set last_status = null, last_error = ${e?.message || 'destino bloqueado'}, last_delivery_at = now() where id = ${hook.id}`.catch(() => {});
+        return;
+    }
 
     for (let intento = 0; intento < 2; intento++) {
         const ctrl = new AbortController();

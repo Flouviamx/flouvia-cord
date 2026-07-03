@@ -476,7 +476,9 @@ const hay = (C?.items.length ?? 0) > 0;
                     });
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.error || 'No se pudo registrar el pago');
-                    location.reload();
+                    // Optimista: quita la fila cobrada en sitio (los KPI/aging se
+                    // recalculan en la próxima navegación).
+                    row.remove();
                 } catch (e2: any) {
                     if (err) err.textContent = e2.message;
                     btn.disabled = false;

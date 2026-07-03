@@ -18,6 +18,11 @@ interface ReqCtx {
     // Org ACTIVA de Clerk Organizations (org_xxx). El middleware la toma de
     // auth().orgId; getActiveOrgId() la mapea al UUID interno (orgs.clerk_org_id).
     clerkOrgId?: string | null;
+    // Memo por-request del org_id ya resuelto por getActiveOrgId(). Se llena la
+    // PRIMERA vez que se resuelve y se reutiliza el resto del request para evitar
+    // ~8-9 round-trips redundantes a Neon en un solo render de página. Es mutable
+    // a propósito: el store de AsyncLocalStorage está aislado por request.
+    resolvedOrgId?: string;
 }
 
 export const reqContext = new AsyncLocalStorage<ReqCtx>();
@@ -35,4 +40,15 @@ export function currentOrgIdOverride(): string | null {
 /** Org activa de Clerk Organizations (org_xxx) de la sesión, o null. */
 export function currentClerkOrgId(): string | null {
     return reqContext.getStore()?.clerkOrgId ?? null;
+}
+
+/** org_id ya resuelto y memoizado para este request, o null si aún no. */
+export function memoizedOrgId(): string | null {
+    return reqContext.getStore()?.resolvedOrgId ?? null;
+}
+
+/** Guarda el org_id resuelto en el store del request para reutilizarlo. */
+export function memoizeOrgId(orgId: string): void {
+    const store = reqContext.getStore();
+    if (store) store.resolvedOrgId = orgId;
 }

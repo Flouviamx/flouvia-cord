@@ -7,7 +7,7 @@
 // usar sql.query('... $1 ...', [params]).
 
 import { neon } from '@neondatabase/serverless';
-import { currentUserId, currentOrgIdOverride, currentClerkOrgId } from './context';
+import { currentUserId, currentOrgIdOverride, currentClerkOrgId, memoizedOrgId, memoizeOrgId } from './context';
 
 const url = import.meta.env.DATABASE_URL || process.env.DATABASE_URL;
 
@@ -15,6 +15,11 @@ if (!url) {
     // No tiramos en build (las páginas SSR sólo tocan la DB en runtime), pero
     // dejamos un error claro si alguna query corre sin la variable.
     console.warn('[db] DATABASE_URL no está definida — las queries fallarán en runtime.');
+} else if (!/-pooler\./.test(url)) {
+    // El driver HTTP abre una conexión por query. Sin el endpoint POOLED de Neon
+    // (host con "-pooler"), un pico de concurrencia agota las conexiones directas
+    // y la app tira 500s. Es la causa #1 de caídas al pasar de 1 a miles de users.
+    console.warn('[db] DATABASE_URL NO usa el endpoint pooled de Neon (host sin "-pooler"). Bajo carga concurrente puede agotar las conexiones directas de Neon. Usa el connection string "Pooled" del dashboard de Neon.');
 }
 
 export const sql = neon(url || 'postgres://invalid');
@@ -50,6 +55,18 @@ export async function getActiveOrgId(): Promise<string> {
     const orgOverride = currentOrgIdOverride();
     if (orgOverride) return orgOverride;
 
+    // 0.1) Memo por-request: la resolución es idéntica durante todo el request
+    //      (misma sesión/org activa). Un render de dashboard llama esto ~8-9 veces;
+    //      resolverlo una sola vez ahorra ~8 round-trips a Neon por página.
+    const memo = memoizedOrgId();
+    if (memo) return memo;
+
+    const resolved = await resolveOrgId();
+    memoizeOrgId(resolved);
+    return resolved;
+}
+
+async function resolveOrgId(): Promise<string> {
     const userId = currentUserId();
     if (!userId) return demoOrgId(); // sin sesión (cron, etc.) → org demo
 

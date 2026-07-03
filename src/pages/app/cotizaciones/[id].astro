@@ -120,7 +120,10 @@ const dotColor = (tipo: string) =>
                 <div class="di-totals">
                     <div class="dt-line"><span>Subtotal</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
                     <div class="dt-line"><span>IVA 16%</span><span class="editorial">{money(quoteIva(q))}</span></div>
-                    <div class="dt-line dt-grand"><span>Total</span><span class="editorial">{money(quoteTotal(q))}</span></div>
+                    <div class="dt-line dt-grand">
+                        <span>Total {q.iva_incluido && <span style="font-size: 0.7em; font-weight: 500; color: var(--color-text-muted); margin-left: 0.4rem; background: var(--color-bg-soft); padding: 2px 6px; border-radius: 4px;">Precios con IVA incluido</span>}</span>
+                        <span class="editorial">{money(quoteTotal(q))}</span>
+                    </div>
                 </div>
             </section>
 

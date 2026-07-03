@@ -129,7 +129,7 @@ const pendingCount = countFor('approval');
                     <div class="bd-col-total editorial">{total > 0 ? money(total, 0) : '—'}</div>
                     <div class="bd-cards" data-col={col.key}>
                         {cards.map((q) => (
-                            <div class="bd-card" draggable="true" data-id={q.id} data-status={q.status}>
+                            <div class="bd-card" draggable="true" data-id={q.id} data-status={q.status} data-amount={q.total ?? 0}>
                                 <div class="bd-card-top">
                                     <span class="bd-card-folio">{q.folio}</span>
                                     <span class="editorial bd-card-amount">{money(q.total ?? 0, 0)}</span>
@@ -327,6 +327,23 @@ const pendingCount = countFor('approval');
         toastEl.textContent = msg; toastEl.hidden = false;
         clearTimeout(toastT); toastT = setTimeout(() => { toastEl.hidden = true; }, 2600);
     };
+    // Recomputa cuenta + total de CADA columna desde sus tarjetas actuales en el
+    // DOM (determinista: no depende de mapear acción→estado). Se usa tras un
+    // movimiento optimista y tras un rollback.
+    const fmtMoney = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+    const recomputeCols = () => {
+        document.querySelectorAll<HTMLElement>('.bd-cards').forEach((zone) => {
+            const col = zone.closest('.bd-col');
+            if (!col) return;
+            const cards = zone.querySelectorAll<HTMLElement>('.bd-card');
+            let total = 0;
+            cards.forEach((c) => { total += Number(c.dataset.amount || 0); });
+            const countEl = col.querySelector('.bd-count');
+            const totalEl = col.querySelector('.bd-col-total');
+            if (countEl) countEl.textContent = String(cards.length);
+            if (totalEl) totalEl.textContent = total > 0 ? fmtMoney(total) : '—';
+        });
+    };
 
     document.querySelectorAll<HTMLElement>('.bd-card').forEach((card) => {
         card.addEventListener('dragstart', () => { dragEl = card; dragId = card.dataset.id || ''; dragStatus = card.dataset.status || ''; card.classList.add('dragging'); });
@@ -344,13 +361,20 @@ const pendingCount = countFor('approval');
             e.preventDefault(); zone.classList.remove('drop-ok', 'drop-no');
             const mv = MOVES[zone.dataset.col || ''];
             if (!mv || !mv.from.includes(dragStatus)) { boardToast('Ese movimiento no es válido en el pipeline.'); return; }
-            if (dragEl) zone.appendChild(dragEl);
+            const fromZone = dragEl?.parentElement as HTMLElement | null;
+            if (dragEl) zone.appendChild(dragEl); // movimiento optimista inmediato
+            recomputeCols();                        // cuentas/totales al instante
             try {
                 const res = await fetch(`/api/cotizaciones/${dragId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: mv.action }) });
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || 'No se pudo mover');
-                location.reload();
-            } catch (err: any) { boardToast(err.message); setTimeout(() => location.reload(), 800); }
+                if (dragEl && d.status) dragEl.dataset.status = d.status; // estado autoritativo del server
+            } catch (err: any) {
+                // Rollback: regresa la tarjeta a su columna original y recomputa.
+                if (dragEl && fromZone) fromZone.appendChild(dragEl);
+                recomputeCols();
+                boardToast(err.message);
+            }
         });
     });
 </script>

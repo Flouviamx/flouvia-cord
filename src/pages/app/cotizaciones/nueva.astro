@@ -109,6 +109,13 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
                 <div class="sum-count" id="sumCount">Agrega productos para ver el total</div>
                 <div class="sum-line"><span>Subtotal</span><span class="editorial" id="sumSubtotal">$0.00</span></div>
                 <div class="sum-line sum-save" id="sumSaveLine" hidden><span>Le descontaste</span><span class="editorial" id="sumSave">$0.00</span></div>
+                <div class="sum-field" style="flex-direction: row; align-items: center; justify-content: space-between; margin-top: 0.5rem; margin-bottom: -0.5rem;">
+                    <label for="ivaIncluido" style="margin:0; cursor: pointer; color: var(--color-text);">Precios ya incluyen IVA</label>
+                    <label class="s-toggle" title="Precios incluyen IVA">
+                        <input type="checkbox" id="ivaIncluido" />
+                        <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                    </label>
+                </div>
                 <div class="sum-line"><span>IVA {ORG.ivaPct}%</span><span class="editorial" id="sumIva">$0.00</span></div>
                 <input type="hidden" id="cfgIva" value={ORG.ivaPct} />
                 <div class="sum-divider"></div>
@@ -219,10 +226,16 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
 
     function recalc() {
         const ivaPct = (Number((document.getElementById('cfgIva') || {}).value) || 0) / 100;
+        const ivaIncluido = document.getElementById('ivaIncluido') ? document.getElementById('ivaIncluido').checked : false;
         const subtotal = lines.reduce((s, l) => s + (l.negociado ?? l.lista) * l.cantidad, 0);
-        document.getElementById('sumSubtotal').textContent = fmt(subtotal);
-        document.getElementById('sumIva').textContent = fmt(subtotal * ivaPct);
-        document.getElementById('sumTotal').textContent = fmt(subtotal * (1 + ivaPct));
+        
+        const iva = ivaIncluido ? subtotal - (subtotal / (1 + ivaPct)) : subtotal * ivaPct;
+        const realSubtotal = ivaIncluido ? subtotal / (1 + ivaPct) : subtotal;
+        const total = ivaIncluido ? subtotal : subtotal + iva;
+
+        document.getElementById('sumSubtotal').textContent = fmt(realSubtotal);
+        document.getElementById('sumIva').textContent = fmt(iva);
+        document.getElementById('sumTotal').textContent = fmt(total);
 
         // Conteo de líneas/piezas + cuánto le descontaste al cliente (lista vs negociado)
         const nLines = lines.length;
@@ -405,6 +418,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
             base_currency,
             fiscal_currency,
             fx_buffer_pct,
+            iva_incluido: document.getElementById('ivaIncluido') ? document.getElementById('ivaIncluido').checked : false,
             items: lines.map(l => ({
                 producto_id: l.id || null,
                 descripcion: l.nombre || 'Línea libre',
@@ -505,6 +519,11 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     const $aiBtn = document.getElementById('aiBtn');
     const $aiText = document.getElementById('aiText');
     const $aiStatus = document.getElementById('aiStatus');
+    const $linesBody = document.getElementById('linesBody');
+    if ($linesBody) $linesBody.addEventListener('click', onLinesClick);
+    const $ivaIncluido = document.getElementById('ivaIncluido');
+    if ($ivaIncluido) $ivaIncluido.addEventListener('change', recalc);
+    
     if ($aiBtn) {
         $aiBtn.addEventListener('click', async () => {
             const text = ($aiText.value || '').trim();

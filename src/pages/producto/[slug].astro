@@ -1511,12 +1511,14 @@ const breadcrumbSchema = {
         transform: translateY(3%);
         transform-origin: bottom center;
     }
-    /* Ventana completa en card full-width */
+    /* Ventana completa en card full-width — centrada en TODO el espacio
+       visual disponible (no solo horizontal, también vertical): antes
+       quedaba pegada arriba con un hueco grande abajo y se veía desalineada. */
     .pp-bcard-2 .pp-bcard-visual .bm-wrap:has(.bm-app),
     .pp-bcard-3 .pp-bcard-visual .bm-wrap:has(.bm-app) {
-        padding: 2.4rem 2rem 0;
-        align-items: flex-start;
-        justify-content: flex-start;
+        padding: 2rem;
+        align-items: center;
+        justify-content: center;
     }
     .pp-bcard-2 .pp-bcard-visual .bm-stage:has(.bm-app),
     .pp-bcard-3 .pp-bcard-visual .bm-stage:has(.bm-app) {

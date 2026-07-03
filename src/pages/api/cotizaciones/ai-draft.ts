@@ -13,7 +13,8 @@ import type { APIRoute } from 'astro';
 import Anthropic from '@anthropic-ai/sdk';
 import { getProductos } from '../../../lib/queries';
 import { getActiveOrgId } from '../../../lib/db';
-import { reportUsage } from '../../../lib/billing';
+import { reportUsage, checkQuota } from '../../../lib/billing';
+import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { McpClientManager } from '../../../lib/mcp/client-manager';
 import { getDefaultAgentId } from '../../../lib/agents/governance';
 
@@ -101,6 +102,12 @@ export const POST: APIRoute = async ({ request }) => {
     const byId = new Map(productos.map((p) => [p.id, p]));
 
     const orgId = await getActiveOrgId();
+    // Rate limit por org + cuota de plan ANTES de gastar en Anthropic (evita abuso
+    // y gasto runaway: el free se corta en su tope, los de pago en el techo de seguridad).
+    const rl = await rateLimit(`ai:${orgId}`, 20, 60);
+    if (!rl.ok) return tooMany(rl.retryAfter);
+    const quota = await checkQuota(orgId, 'ia');
+    if (!quota.ok) return json({ error: quota.reason }, 429);
     // Agente por defecto de la org → resuelve sus permisos sobre servidores MCP.
     const agenteId = await getDefaultAgentId(orgId);
     const mcpManager = new McpClientManager(orgId, agenteId);

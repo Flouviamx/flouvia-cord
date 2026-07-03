@@ -565,13 +565,17 @@ const canEdit = memberCan(ME, 'productos');
 
         btnDelete.addEventListener('click', async () => {
             if (!editId || !confirm('¿Eliminar este producto del catálogo?')) return;
+            const delId = editId;
             const res = await fetch('/api/productos', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: editId }),
+                body: JSON.stringify({ id: delId }),
             });
-            if (res.ok) location.reload();
-            else errorEl.textContent = (await res.json()).error || 'No se pudo eliminar';
+            if (res.ok) {
+                // Optimista: quita la fila en sitio y cierra el modal (sin recargar).
+                document.querySelector(`.t-row[data-id="${delId}"]`)?.remove();
+                modal.close();
+            } else errorEl.textContent = (await res.json()).error || 'No se pudo eliminar';
         });
     });
 </script>

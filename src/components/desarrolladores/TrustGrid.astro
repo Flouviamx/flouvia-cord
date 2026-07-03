@@ -1,0 +1,275 @@
+---
+// TrustGrid — sección de confianza/infraestructura debajo del bento en
+// /desarrolladores/[slug]. Sección OSCURA de ancho completo (rompe el patrón
+// claro de la página, como pp-bcard-dark más arriba en la misma página): el
+// TrustGlobe (WebGL/GLSL, estilo el globo de Stripe) vive como fondo ambiental
+// de TODA la sección — no dentro de una tarjeta/panel recortado. Izquierda =
+// bloque de protección (ícono + título + copy) y 2 puntos cortos, con
+// divisores hairline claros sobre oscuro (Regla 3). Derecha = fila
+// interactiva de 4 datos — clic para expandir (más ancho + copy extendida),
+// mismo lenguaje que ProductAccordion.jsx. Contenido en desarrolladores.ts /
+// .en.ts (campo `trust`, por página, ES+EN). Prefijo dvt-* autocontenido.
+import type { DevTrust, DevTrustIcon } from '../../lib/desarrolladores';
+import TrustGlobe from './TrustGlobe.jsx';
+
+export interface Props { trust: DevTrust }
+const { trust } = Astro.props;
+
+const svg = (inner: string) => `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+
+const ICONS: Record<DevTrustIcon, string> = {
+    shield: svg(`<path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6l7-3z" fill="currentColor" fill-opacity="0.14"/><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6l7-3z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8.5 12l2.3 2.3L15.5 9.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>`),
+    key: svg(`<circle cx="8" cy="15" r="4.25" fill="currentColor" fill-opacity="0.14"/><circle cx="8" cy="15" r="4.25" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M11 12l8.5-8.5M16.5 6.5l2 2M14 9l2 2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>`),
+    doc: svg(`<path d="M6 3.5h8l4 4v13a1 1 0 01-1 1H6a1 1 0 01-1-1v-16a1 1 0 011-1z" fill="currentColor" fill-opacity="0.12"/><path d="M6 3.5h8l4 4v13a1 1 0 01-1 1H6a1 1 0 01-1-1v-16a1 1 0 011-1z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 3.5v4h4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 12.5h8M8 15.5h8M8 18.5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`),
+    gauge: svg(`<path d="M4 15a8 8 0 1116 0" fill="currentColor" fill-opacity="0.12"/><path d="M4 15a8 8 0 1116 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12 15l4.3-4.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="15" r="1.35" fill="currentColor"/>`),
+    globe: svg(`<circle cx="12" cy="12" r="8.5" fill="currentColor" fill-opacity="0.12"/><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 12h17" stroke="currentColor" stroke-width="1.4"/><path d="M12 3.5c2.6 2.3 4 5.3 4 8.5s-1.4 6.2-4 8.5c-2.6-2.3-4-5.3-4-8.5s1.4-6.2 4-8.5z" fill="none" stroke="currentColor" stroke-width="1.4"/>`),
+    unlock: svg(`<rect x="5" y="11" width="14" height="9.5" rx="2.2" fill="currentColor" fill-opacity="0.14"/><rect x="5" y="11" width="14" height="9.5" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 11V7.5a4 4 0 017.6-1.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="15.5" r="1.4" fill="currentColor"/>`),
+    lock: svg(`<rect x="5" y="11" width="14" height="9.5" rx="2.2" fill="currentColor" fill-opacity="0.14"/><rect x="5" y="11" width="14" height="9.5" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 11V7.5a4 4 0 018 0V11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="15.5" r="1.4" fill="currentColor"/>`),
+    layers: svg(`<path d="M12 3.5l8 4.2-8 4.2-8-4.2 8-4.2z" fill="currentColor" fill-opacity="0.16" stroke="currentColor" stroke-width="1.55" stroke-linejoin="round"/><path d="M4 12l8 4.2 8-4.2" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linejoin="round"/><path d="M4 15.8l8 4.2 8-4.2" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linejoin="round"/>`),
+    toggle: svg(`<rect x="3" y="8" width="18" height="9" rx="4.5" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.7"/><circle cx="15" cy="12.5" r="2.9" fill="currentColor"/>`),
+    route: svg(`<circle cx="6" cy="6.5" r="2.3" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.55"/><circle cx="18" cy="17.5" r="2.3" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.55"/><path d="M6 8.8v3.4a3 3 0 003 3h6a3 3 0 003 3v-.2" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round"/>`),
+    refresh: svg(`<path d="M4.5 12a7.5 7.5 0 0112.6-5.5" fill="currentColor" fill-opacity="0.1"/><path d="M4.5 12a7.5 7.5 0 0112.6-5.5M19.5 12a7.5 7.5 0 01-12.6 5.5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><path d="M17.5 4.7v3.5H14M6.5 19.3v-3.5H10" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>`),
+};
+---
+
+<section class="dvt-section">
+    <div class="dvt-bg-globe" aria-hidden="true">
+        <TrustGlobe client:only="react" />
+    </div>
+
+    <div class="dvt-inner">
+        <div class="dvt-left">
+            <p class="dvt-eyebrow">{trust.eyebrow}</p>
+            <h2 class="dvt-title masked-title" set:html={trust.titulo} />
+
+            <div class="dvt-protect dvt-anim-protect">
+                <span class="dvt-picon" set:html={ICONS[trust.proteccion.icon]} />
+                <div class="dvt-protect-tx">
+                    <h3>{trust.proteccion.titulo}</h3>
+                    <p>{trust.proteccion.copy}</p>
+                </div>
+            </div>
+
+            <ul class="dvt-points">
+                {trust.puntos.map((p) => (
+                    <li class="dvt-anim-point">
+                        <span class="dvt-sicon" set:html={ICONS[p.icon]} />
+                        <span>{p.titulo}</span>
+                    </li>
+                ))}
+            </ul>
+        </div>
+
+        <div class="dvt-right dvt-anim-right">
+            <div class="dvt-row">
+                {trust.grid.map((g, i) => (
+                    <button type="button" class="dvt-item" aria-expanded={i === 0 ? 'true' : 'false'}>
+                        <span class="dvt-dot"></span>
+                        <span class="dvt-glabel">{g.titulo}</span>
+                        <p class="dvt-gcopy">{g.copy}</p>
+                    </button>
+                ))}
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* ── Sección oscura de ancho completo — el globo es el fondo de TODA la
+       sección, no de una tarjeta recortada. ── */
+    .dvt-section {
+        position: relative;
+        overflow: hidden;
+        background: radial-gradient(ellipse 90% 70% at 16% 18%, #123058 0%, #0a1830 55%, #060f1f 100%);
+        padding: 6.5rem 0;
+    }
+    .dvt-bg-globe { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+    .dvt-bg-globe :global(canvas) { display: block; }
+    /* Scrim de legibilidad: oscurece la mitad izquierda (donde vive el texto)
+       sin tapar el globo del todo — se disuelve hacia la derecha, donde el
+       globo es el protagonista. */
+    .dvt-section::before {
+        content: '';
+        position: absolute; inset: 0; z-index: 1; pointer-events: none;
+        background: linear-gradient(100deg, rgba(6,14,28,0.86) 0%, rgba(6,14,28,0.55) 32%, rgba(6,14,28,0.08) 58%, transparent 72%);
+    }
+
+    .dvt-inner {
+        position: relative; z-index: 2;
+        max-width: 1360px; margin: 0 auto; padding: 0 5%;
+        display: grid; grid-template-columns: 0.85fr 1.25fr; gap: 5rem;
+        align-items: center;
+    }
+
+    /* ── Columna izquierda — claro sobre oscuro ── */
+    .dvt-eyebrow { font-size: 0.62rem; font-weight: 800; letter-spacing: 2.8px; text-transform: uppercase; color: rgba(255,255,255,0.42); margin: 0 0 1.1rem; }
+    .dvt-title { font-size: clamp(2rem, 3.15vw, 2.75rem); font-weight: 800; line-height: 1.08; letter-spacing: -0.04em; color: #ffffff; margin: 0 0 2.9rem; }
+
+    .dvt-protect { display: flex; align-items: flex-start; gap: 1.2rem; padding-bottom: 2.1rem; border-bottom: 1px solid rgba(255,255,255,0.14); }
+    .dvt-picon { flex-shrink: 0; width: 36px; height: 36px; border-radius: 11px; background: rgba(255,255,255,0.08); color: #bcd9ff; display: flex; align-items: center; justify-content: center; }
+    .dvt-picon :global(svg) { width: 18px; height: 18px; }
+    .dvt-protect-tx h3 { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; color: #ffffff; margin: 0 0 0.5rem; }
+    .dvt-protect-tx p { font-size: 0.92rem; line-height: 1.72; color: rgba(226,232,240,0.72); margin: 0; }
+
+    .dvt-points { list-style: none; margin: 0; padding: 0; }
+    .dvt-points li { display: flex; align-items: center; gap: 0.95rem; padding: 1.25rem 0; border-bottom: 1px solid rgba(255,255,255,0.14); font-size: 0.93rem; font-weight: 500; letter-spacing: -0.005em; color: rgba(255,255,255,0.92); }
+    .dvt-points li:last-child { border-bottom: none; }
+    .dvt-sicon { flex-shrink: 0; width: 36px; height: 36px; border-radius: 11px; background: rgba(255,255,255,0.08); color: #bcd9ff; display: flex; align-items: center; justify-content: center; }
+    .dvt-sicon :global(svg) { width: 18px; height: 18px; }
+
+    /* ── Columna derecha — fila interactiva, clic para expandir ── */
+    .dvt-right { position: relative; }
+    .dvt-row {
+        display: flex;
+        min-height: 400px;
+        border-radius: 22px;
+        border: 1px solid rgba(255,255,255,0.12);
+        overflow: hidden;
+        background: rgba(6,15,30,0.22);
+        backdrop-filter: blur(1px); -webkit-backdrop-filter: blur(1px);
+    }
+    .dvt-item {
+        all: unset;
+        box-sizing: border-box;
+        cursor: pointer;
+        position: relative;
+        flex-grow: 1; flex-shrink: 1; flex-basis: 0%;
+        display: flex; flex-direction: column; justify-content: flex-end;
+        padding: 2.2rem 1.9rem;
+        border-right: 1px solid rgba(255,255,255,0.12);
+        transition: flex-grow 0.7s cubic-bezier(0.16,1,0.3,1), background-color 0.4s ease;
+    }
+    .dvt-item:last-child { border-right: none; }
+    .dvt-item:focus-visible { outline: 2px solid #5aa9ff; outline-offset: -2px; }
+    .dvt-item[aria-expanded="true"] { flex-grow: 2.5; background: rgba(10,25,47,0.24); }
+    .dvt-item:hover { background: rgba(255,255,255,0.03); }
+
+    .dvt-dot { flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: #5aa9ff; box-shadow: 0 0 10px rgba(90,169,255,0.85); margin-bottom: 0.9rem; }
+    .dvt-glabel { display: block; font-size: 0.88rem; font-weight: 600; letter-spacing: -0.01em; line-height: 1.4; color: rgba(255,255,255,0.94); transition: font-size 0.4s ease; }
+    .dvt-item[aria-expanded="true"] .dvt-glabel { font-size: 1.06rem; color: #ffffff; }
+    .dvt-gcopy {
+        margin: 0 0 0; max-height: 0; opacity: 0; overflow: hidden;
+        font-size: 0.84rem; line-height: 1.62; color: rgba(226,232,240,0.72);
+        transition: max-height 0.55s cubic-bezier(0.16,1,0.3,1), opacity 0.4s ease, margin-top 0.45s ease;
+    }
+    .dvt-item[aria-expanded="true"] .dvt-gcopy { max-height: 180px; opacity: 1; margin-top: 0.8rem; }
+
+    @media (max-width: 1000px) {
+        .dvt-inner { grid-template-columns: 1fr; gap: 3.2rem; }
+        .dvt-row { min-height: unset; }
+    }
+    @media (max-width: 720px) {
+        .dvt-section { padding: 4.5rem 0; }
+        .dvt-row { flex-direction: column; }
+        .dvt-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.12); padding: 1.6rem 1.5rem; }
+        .dvt-item:last-child { border-bottom: none; }
+    }
+</style>
+
+<style is:global>
+    /* Gate anti-FOUC: los elementos coreografiados por el script de abajo
+       arrancan ocultos SOLO cuando JS está activo (.js-anim en <html>).
+       Sin JS / reduced-motion → visibles y en su estado final al instante. */
+    .js-anim .dvt-anim-protect,
+    .js-anim .dvt-anim-point,
+    .js-anim .dvt-anim-right { opacity: 0; }
+    .js-anim .dvt-anim-right .dvt-item { opacity: 0; }
+    .js-anim .dvt-anim-right .dvt-dot { transform: scale(0); }
+    .js-anim .dvt-anim-right .dvt-glabel { opacity: 0; }
+</style>
+
+<script>
+    import { gsap } from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    gsap.registerPlugin(ScrollTrigger);
+
+    // "Apple settle": blur-to-focus + scale/y suave (mismo lenguaje que
+    // FeatureShowcase.astro). Cada pieza "aterriza" en foco, no un fade plano.
+    const BLUR_IN = 'blur(14px)';
+
+    const init = () => {
+        const section = document.querySelector<HTMLElement>('.dvt-section');
+        if (!section) return;
+
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        // ── Clic para expandir (independiente de la animación de entrada;
+        //    el estado activo/inactivo lo maneja CSS vía aria-expanded). ──
+        const items = gsap.utils.toArray<HTMLElement>('.dvt-item', section);
+        items.forEach((item, i) => {
+            item.addEventListener('click', () => {
+                items.forEach((it, j) => it.setAttribute('aria-expanded', String(i === j)));
+            });
+        });
+
+        const picon = section.querySelector<HTMLElement>('.dvt-picon');
+        const protectTx = section.querySelector<HTMLElement>('.dvt-protect-tx');
+        const protect = section.querySelector<HTMLElement>('.dvt-anim-protect');
+        const points = gsap.utils.toArray<HTMLElement>('.dvt-anim-point', section);
+        const right = section.querySelector<HTMLElement>('.dvt-anim-right');
+        const dots = gsap.utils.toArray<HTMLElement>('.dvt-dot', section);
+        const labels = gsap.utils.toArray<HTMLElement>('.dvt-glabel', section);
+
+        const revealAll = () => {
+            gsap.set([protect, ...points, right, ...items, ...labels], { clearProps: 'all', opacity: 1 });
+            gsap.set(dots, { clearProps: 'all', scale: 1 });
+            gsap.set([picon, protectTx], { clearProps: 'all', opacity: 1 });
+        };
+
+        if (reduced) { revealAll(); return; }
+
+        // Estados iniciales (el gate .js-anim ya los ocultó vía CSS; aquí
+        // fijamos transform/blur para el settle).
+        if (picon) gsap.set(picon, { opacity: 0, scale: 0.6, filter: BLUR_IN });
+        if (protectTx) gsap.set(protectTx, { opacity: 0, y: 12, filter: BLUR_IN });
+        gsap.set(points, { y: 14, filter: BLUR_IN });
+        if (right) gsap.set(right, { scale: 0.97, y: 22, filter: BLUR_IN, transformOrigin: 'center center' });
+        gsap.set(items, { y: 16 });
+        gsap.set(labels, { y: 8 });
+
+        ScrollTrigger.create({
+            trigger: section,
+            start: 'top 85%',
+            once: true,
+            onEnter: () => {
+                const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+                // 1. Ícono de protección: pop suave + blur-to-focus, antes que su texto.
+                tl.to(picon, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.55 }, 0)
+                  .to(protectTx, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.6 }, 0.14)
+                  .set(protect, { opacity: 1 }, 0);
+
+                // 2. Puntos en cascada, cada uno con settle blur-to-focus.
+                tl.to(points, {
+                    opacity: 1, y: 0, filter: 'blur(0px)',
+                    duration: 0.55, stagger: 0.09,
+                }, 0.22);
+
+                // 3. Fila derecha: settle más pronunciado (scale + blur-to-focus).
+                tl.to(right, {
+                    opacity: 1, scale: 1, y: 0, filter: 'blur(0px)',
+                    duration: 0.7, ease: 'power3.out',
+                }, 0.18);
+
+                // 4. Items "aterrizan" uno a uno: dot con pop/glow, luego label sube.
+                tl.to(items, { opacity: 1, y: 0, duration: 0.4, stagger: 0.08 }, 0.44);
+                tl.to(dots, {
+                    scale: 1, duration: 0.34, ease: 'back.out(2.2)', stagger: 0.08,
+                }, 0.48);
+                tl.to(labels, {
+                    opacity: 1, y: 0, duration: 0.42, stagger: 0.08,
+                }, 0.56);
+
+                // Limpieza: soltar filter/transform para no atrapar hovers ni
+                // degradar el canvas del globo.
+                tl.set([picon, protectTx, ...points, right, ...items, ...labels], { clearProps: 'filter,transform' });
+            },
+        });
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+</script>

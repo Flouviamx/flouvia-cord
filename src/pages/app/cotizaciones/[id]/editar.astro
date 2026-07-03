@@ -70,6 +70,13 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
             <section class="ed-summary">
                 <div class="section-head"><h2>Resumen</h2></div>
                 <div class="sum-line"><span>Subtotal</span><span class="editorial" id="sumSubtotal">$0.00</span></div>
+                <div class="sum-field" style="flex-direction: row; align-items: center; justify-content: space-between; margin-top: 0.5rem; margin-bottom: -0.5rem;">
+                    <label for="ivaIncluido" style="margin:0; cursor: pointer; color: var(--color-text);">Precios ya incluyen IVA</label>
+                    <label class="s-toggle" title="Precios incluyen IVA">
+                        <input type="checkbox" id="ivaIncluido" ${q.iva_incluido ? 'checked' : ''} />
+                        <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                    </label>
+                </div>
                 <div class="sum-line"><span>IVA {ORG.ivaPct}%</span><span class="editorial" id="sumIva">$0.00</span></div>
                 <input type="hidden" id="cfgIva" value={ORG.ivaPct} />
                 <div class="sum-divider"></div>
@@ -114,10 +121,16 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
 
     function recalc() {
         const ivaPct = (Number((document.getElementById('cfgIva') || {}).value) || 0) / 100;
+        const ivaIncluido = document.getElementById('ivaIncluido') ? document.getElementById('ivaIncluido').checked : false;
         const subtotal = lines.reduce((s, l) => s + (l.negociado ?? l.lista) * l.cantidad, 0);
-        document.getElementById('sumSubtotal').textContent = fmt(subtotal);
-        document.getElementById('sumIva').textContent = fmt(subtotal * ivaPct);
-        document.getElementById('sumTotal').textContent = fmt(subtotal * (1 + ivaPct));
+        
+        const iva = ivaIncluido ? subtotal - (subtotal / (1 + ivaPct)) : subtotal * ivaPct;
+        const realSubtotal = ivaIncluido ? subtotal / (1 + ivaPct) : subtotal;
+        const total = ivaIncluido ? subtotal : subtotal + iva;
+
+        document.getElementById('sumSubtotal').textContent = fmt(realSubtotal);
+        document.getElementById('sumIva').textContent = fmt(iva);
+        document.getElementById('sumTotal').textContent = fmt(total);
     }
 
     function margenBadge(costo, precio) {
@@ -202,6 +215,9 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
         render();
     });
 
+    const $ivaIncluido = document.getElementById('ivaIncluido');
+    if ($ivaIncluido) $ivaIncluido.addEventListener('change', recalc);
+
     // ── Guardado real (PATCH /api/cotizaciones/[id] con action=resend e items) ──
     const toast = document.getElementById('toast');
     const toastMsg = document.getElementById('toastMsg');
@@ -218,6 +234,7 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
         
         const payload = {
             action: 'resend',
+            iva_incluido: document.getElementById('ivaIncluido') ? document.getElementById('ivaIncluido').checked : false,
             items: lines.map(l => ({
                 producto_id: l.id || null,
                 descripcion: l.nombre || 'Línea',

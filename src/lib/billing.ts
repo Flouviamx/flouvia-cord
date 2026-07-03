@@ -78,6 +78,44 @@ export const DIM_COL: Record<MeterDim, 'ia' | 'cfdi' | 'api' | 'usuarios'> = {
     ia: 'ia', timbrado: 'cfdi', api: 'api', usuario: 'usuarios',
 };
 
+// Techo de seguridad para planes con excedente: aunque el overage se cobra, un
+// múltiplo del incluido corta el gasto runaway de una cuenta comprometida antes
+// de que genere una factura enorme de Anthropic/Facturapi.
+const OVERAGE_SAFETY_MULTIPLIER = 10;
+
+/**
+ * Verifica ANTES de una llamada externa costosa (IA/CFDI) si la org está dentro
+ * de su cuota. Planes de tope duro (free) se bloquean al llegar al incluido;
+ * planes con excedente se permiten hasta un techo de seguridad (10× incluido).
+ * NUNCA lanza: ante cualquier fallo devuelve ok (no bloquear por un error de DB).
+ */
+export async function checkQuota(orgId: string, dim: MeterDim): Promise<{ ok: boolean; reason?: string }> {
+    const col = DIM_COL[dim];
+    const periodo = new Date().toISOString().slice(0, 7); // YYYY-MM (UTC)
+    try {
+        const [row] = await sql`
+            select coalesce(o.plan, 'free') as plan, up.ia, up.cfdi, up.api, up.usuarios
+            from orgs o
+            left join uso_periodo up on up.org_id = o.id and up.periodo = ${periodo}
+            where o.id = ${orgId}`;
+        const plan = ((row?.plan as PlanId) ?? 'free');
+        const limit = INCLUDED[plan]?.[col];
+        if (limit === null || limit === undefined) return { ok: true }; // ilimitado
+        const used = Number(row?.[col] ?? 0);
+        const isOverage = OVERAGE_PLANS.includes(plan);
+        if (!isOverage) {
+            if (used >= limit) return { ok: false, reason: `Alcanzaste el límite de tu plan (${limit} este mes). Sube de plan para seguir usando esta función.` };
+            return { ok: true };
+        }
+        if (used >= limit * OVERAGE_SAFETY_MULTIPLIER) {
+            return { ok: false, reason: 'Uso excepcionalmente alto este periodo. Contáctanos para desbloquear.' };
+        }
+        return { ok: true };
+    } catch {
+        return { ok: true }; // fail-open: un error de cuota jamás debe romper la operación
+    }
+}
+
 // ── Reverse map: price_id base → plan (lo usa el webhook para sincronizar) ─────
 export const PRICE_TO_PLAN: Record<string, PaidPlan> = (() => {
     const m: Record<string, PaidPlan> = {};

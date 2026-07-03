@@ -9,6 +9,8 @@ import type { APIRoute } from 'astro';
 import { createHash } from 'node:crypto';
 import { sql } from '../../../lib/db';
 import { dispatchQuoteEvent } from '../../../lib/webhooks';
+import { after } from '../../../lib/after';
+import { rateLimit, tooMany } from '../../../lib/ratelimit';
 
 const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n);
 
@@ -18,6 +20,13 @@ export const POST: APIRoute = async ({ params, request }) => {
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
 
     const action = body.action;
+
+    // Rate limit por token (el link es público, sin sesión): el 'ping' de presencia
+    // es frecuente (límite alto); las acciones que ESCRIBEN (comentar/contraofertar/
+    // aprobar/rechazar) van más apretadas para frenar el spam de filas en 'eventos'.
+    const rl = await rateLimit(`q:${action === 'ping' ? 'ping:' : ''}${token}`, action === 'ping' ? 120 : 30, 60);
+    if (!rl.ok) return tooMany(rl.retryAfter);
+
     const rows = await sql`select id, org_id, status from cotizaciones where public_token = ${token}`;
     if (!rows.length) return json({ error: 'Cotización no encontrada' }, 404);
     const c = rows[0];
@@ -90,7 +99,8 @@ export const POST: APIRoute = async ({ params, request }) => {
         txQueries.push(sql`insert into cotizacion_firmas (org_id, cotizacion_id, firmante_nombre, firmante_email, firmante_ip, user_agent, snapshot_hash)
                   values (${c.org_id}, ${c.id}, ${signedBy || 'Anónimo'}, ${email || null}, ${ip}, ${ua}, ${snapshotHash})`);
         await (sql as any).transaction(txQueries);
-        await dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.approved');
+        // Fondo: el webhook/Slack jamás debe hacer esperar al cliente que aprueba.
+        after(dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.approved'));
         return json({ ok: true, status: 'approved', hash: snapshotHash, partial: isPartial });
     }
 
@@ -101,7 +111,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         const comentario = String(body.comentario ?? '').trim().slice(0, 500);
         await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                   values (${c.org_id}, ${c.id}, 'rejected', ${comentario ? `El cliente rechazó: "${comentario}"` : 'El cliente rechazó la cotización desde el link'})`;
-        await dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.rejected');
+        after(dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.rejected'));
         return json({ ok: true, status: 'rejected' });
     }
 

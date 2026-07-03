@@ -2,8 +2,21 @@ import type { APIRoute } from 'astro';
 import { sql } from '../../../lib/db';
 import { runARAgent } from '../../../lib/agents/ar-agent';
 
-// Webhook para recibir correos entrantes (ej. Resend o SendGrid Inbound Parse)
+export const prerender = false;
+
+const INBOUND_SECRET = import.meta.env.INBOUND_EMAIL_SECRET || process.env.INBOUND_EMAIL_SECRET;
+
+// Webhook para recibir correos entrantes (ej. Resend o SendGrid Inbound Parse).
+// AUTENTICADO por secreto compartido: el proveedor de correo debe mandar
+// `Authorization: Bearer <INBOUND_EMAIL_SECRET>`. Sin secreto configurado se
+// rechaza todo (fail-closed) — este endpoint dispara al agente de IA (costo) y
+// escribe en la conversación de cobranza, así que jamás debe quedar abierto.
 export const POST: APIRoute = async ({ request }) => {
+  const authz = request.headers.get('authorization') || '';
+  const token = /^Bearer\s+(.+)$/i.exec(authz.trim())?.[1];
+  if (!INBOUND_SECRET || token !== INBOUND_SECRET) {
+    return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
+  }
   try {
     const payload = await request.json();
     

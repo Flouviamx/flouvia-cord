@@ -15,6 +15,7 @@ import type { APIRoute } from 'astro';
 import { sql } from './db';
 import { reqContext } from './context';
 import { reportUsage } from './billing';
+import { rateLimit, tooMany } from './ratelimit';
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
@@ -51,6 +52,12 @@ function bearerToken(request: Request): string | null {
  * crear/editar). Una key 'write' también puede leer; una 'read' no puede escribir.
  */
 export async function authApiKey(request: Request, need: ApiScope = 'read'): Promise<ApiAuth | Response> {
+    // Corta floods de tokens basura por IP ANTES de tocar Neon (cada intento hacía
+    // un lookup de api_keys). Límite generoso: un cliente legítimo no lo alcanza.
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anon';
+    const ipRl = await rateLimit(`apiauth:${ip}`, 120, 60);
+    if (!ipRl.ok) return tooMany(ipRl.retryAfter);
+
     const token = bearerToken(request);
     if (!token) {
         return jsonError('Falta la API key. Envíala en el header Authorization: Bearer <key>.', 'missing_key', 401);
@@ -104,6 +111,10 @@ export function withApiAuth(
     return async (ctx) => {
         const auth = await authApiKey(ctx.request, need);
         if (auth instanceof Response) return auth;
+        // Rate limit por LLAVE (además del per-IP): acota el throughput de una key
+        // válida contra endpoints que crean filas reales; el consumo se factura aparte.
+        const keyRl = await rateLimit(`apikey:${auth.keyId}`, 600, 60);
+        if (!keyRl.ok) return tooMany(keyRl.retryAfter);
         // Mide la llamada a la API pública (solo llaves en vivo se facturan).
         // Fire-and-forget: reportUsage nunca lanza y no debe frenar la respuesta.
         if (auth.mode === 'live') void reportUsage(auth.orgId, 'api', 1);

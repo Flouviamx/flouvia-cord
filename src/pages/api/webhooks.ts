@@ -14,6 +14,7 @@ import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm, getWebhookDeliveries } from '../../lib/queries';
 import { webhookLimit, planLabel } from '../../lib/permissions';
 import { WEBHOOK_EVENT_IDS, sendTestEvent, redeliver } from '../../lib/webhooks';
+import { validateWebhookUrl } from '../../lib/ssrf';
 
 export const GET: APIRoute = async ({ request, url }) => {
     const denied = await requirePerm('ajustes'); if (denied) return denied;
@@ -28,10 +29,6 @@ function cleanEventos(v: unknown): string[] {
     return [...new Set(v.map(String).filter((e) => WEBHOOK_EVENT_IDS.includes(e)))];
 }
 
-function validUrl(u: string): boolean {
-    try { const x = new URL(u); return x.protocol === 'https:' || x.protocol === 'http:'; }
-    catch { return false; }
-}
 
 export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('ajustes'); if (denied) return denied;
@@ -59,7 +56,8 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const url = String(body.url ?? '').trim();
-    if (!validUrl(url)) return json({ error: 'La URL no es válida (debe empezar con https://)' }, 400);
+    const urlCheck = validateWebhookUrl(url);
+    if (!urlCheck.ok) return json({ error: urlCheck.error }, 400);
 
     const orgId = await getActiveOrgId();
     // Límite por plan (free también tiene, pero poquito). Contamos los existentes.
@@ -104,7 +102,8 @@ export const PATCH: APIRoute = async ({ request }) => {
         await withOrgTx(orgId, sql`update webhooks set eventos = ${JSON.stringify(cleanEventos(body.eventos))}::jsonb where id = ${id} and org_id = ${orgId}`);
     }
     if (typeof body.url === 'string') {
-        if (!validUrl(body.url)) return json({ error: 'La URL no es válida' }, 400);
+        const urlCheck = validateWebhookUrl(body.url.trim());
+        if (!urlCheck.ok) return json({ error: urlCheck.error }, 400);
         await withOrgTx(orgId, sql`update webhooks set url = ${body.url.trim()} where id = ${id} and org_id = ${orgId}`);
     }
     return json({ ok: true });

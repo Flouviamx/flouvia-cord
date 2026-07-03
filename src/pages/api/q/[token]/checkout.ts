@@ -5,12 +5,16 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql } from '../../../../lib/db';
+import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
 export const POST: APIRoute = async ({ params, request }) => {
     if (!STRIPE_KEY) return json({ error: 'El pago en línea aún no está configurado.' }, 503);
     const token = params.token ?? '';
+    // Crear sesiones de Stripe es costoso/abusable: límite estricto por token.
+    const rl = await rateLimit(`checkout:${token}`, 6, 60);
+    if (!rl.ok) return tooMany(rl.retryAfter);
     const rows = await sql`select id, folio, total, status from cotizaciones where public_token = ${token}`;
     if (!rows.length) return json({ error: 'Cotización no encontrada' }, 404);
     const c = rows[0];

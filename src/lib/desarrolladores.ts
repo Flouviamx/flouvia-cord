@@ -23,6 +23,23 @@ export interface DevStep { titulo: string; copy: string; }
 
 export interface DevFaq { q: string; a: string; }
 
+// Íconos disponibles en el mapa compartido de src/components/desarrolladores/TrustGrid.astro
+export type DevTrustIcon = 'shield' | 'key' | 'doc' | 'gauge' | 'globe' | 'unlock' | 'layers' | 'toggle' | 'route' | 'refresh' | 'lock';
+
+export interface DevTrustItem {
+    icon: DevTrustIcon;
+    titulo: string;
+    copy?: string;   // texto extendido que se revela al expandir la celda (grid del TrustGrid)
+}
+
+export interface DevTrust {
+    eyebrow: string;
+    titulo: string;
+    proteccion: { icon: DevTrustIcon; titulo: string; copy: string };
+    puntos: DevTrustItem[];  // 2 renglones cortos bajo el bloque de protección
+    grid: DevTrustItem[];    // 4 celdas del grid 2×2 con divisores hairline
+}
+
 export interface DevPage {
     slug: string;
     nav: string;
@@ -37,6 +54,7 @@ export interface DevPage {
     steps: DevStep[];
     faqs: DevFaq[];        // FAQ + FAQPage JSON-LD (mínimo 3 por página)
     cta: { titulo: string; sub: string };
+    trust?: DevTrust;       // sección "confianza/infra" debajo del bento (TrustGrid.astro)
 }
 
 export const DEV_PAGES: DevPage[] = [
@@ -126,6 +144,25 @@ export const DEV_PAGES: DevPage[] = [
             { q: '¿Qué puedo hacer con la API además de crear cotizaciones?', a: 'Leer y crear clientes y productos, y consultar tu cartera de cobranza — en general, lo mismo que ves en la app, expuesto como endpoints REST bajo /api/v1.' },
         ],
         cta: { titulo: 'Conecta Cord a tu sistema.', sub: 'Genera una llave de prueba gratis y haz tu primera llamada hoy.' },
+        trust: {
+            eyebrow: 'INFRAESTRUCTURA',
+            titulo: 'Construida para producción',
+            proteccion: {
+                icon: 'shield',
+                titulo: 'Seguridad de nivel empresarial',
+                copy: 'Cada llamada viaja cifrada con TLS; los datos en reposo, con AES-256. La Row Level Security de la base aísla cada organización — ninguna consulta cruza datos entre negocios distintos.',
+            },
+            puntos: [
+                { icon: 'key', titulo: 'Llaves test y live, revocables al instante' },
+                { icon: 'doc', titulo: 'Solo guardamos el hash de tu llave, nunca en claro' },
+            ],
+            grid: [
+                { icon: 'gauge', titulo: '~500 peticiones/min por IP', copy: 'El límite corre por ventana de 60 segundos; si lo alcanzas, la respuesta trae el código y el tiempo de espera exactos.' },
+                { icon: 'globe', titulo: 'Infraestructura y datos alojados en México', copy: 'Tu base de datos y el cómputo de la API viven en la región de México, sin saltos innecesarios a otros continentes.' },
+                { icon: 'unlock', titulo: 'Disponible desde el plan Gratis', copy: 'No existe un plan exclusivo que "desbloquea" la API — cada plan trae su propio número de llaves y límite mensual de llamadas.' },
+                { icon: 'layers', titulo: 'Paginación limit/offset en cada endpoint', copy: 'Todos los listados aceptan limit y offset, así construyes tu propia paginación sin adivinar el tamaño de página.' },
+            ],
+        },
     },
     {
         slug: 'mcp',
@@ -200,6 +237,25 @@ await mcpManager.disconnectAll();`,
             { q: '¿Necesito una llave distinta para el MCP y para la API REST?', a: 'No. Es la misma API key la que usas para ambos; el header de autorización es idéntico.' },
         ],
         cta: { titulo: 'Conecta la IA a tu negocio. En los dos sentidos.', sub: 'Mismo header, misma llave. Expón tus 7 herramientas y enlaza tus sistemas con permisos que tú controlas.' },
+        trust: {
+            eyebrow: 'GOBERNANZA',
+            titulo: 'Acceso explícito, nunca abierto',
+            proteccion: {
+                icon: 'shield',
+                titulo: 'Cada consulta respeta tu RLS',
+                copy: 'La sesión MCP queda atada a tu org_id: cada herramienta que la IA invoca —tuya o de un servidor externo— filtra por Row Level Security. Ningún agente ve datos de otra organización.',
+            },
+            puntos: [
+                { icon: 'doc', titulo: 'Cada acción del agente queda en el audit log' },
+                { icon: 'key', titulo: 'Misma API key para la API REST y el MCP' },
+            ],
+            grid: [
+                { icon: 'toggle', titulo: 'Permiso por servidor, revocable al instante', copy: 'Activas o apagas el acceso de tu agente a cada servidor MCP externo desde Ajustes, sin esperar un despliegue.' },
+                { icon: 'route', titulo: 'Máximo 5 vueltas del agent loop por cotización', copy: 'Es un tope de seguridad: la IA consulta tus sistemas hasta 5 veces antes de armar el borrador, nunca en loop infinito.' },
+                { icon: 'globe', titulo: '2 transportes: HTTP sin estado y HTTP/SSE', copy: 'Usa JSON-RPC simple para llamadas puntuales, o el canal SSE con sesión cuando necesitas streaming continuo.' },
+                { icon: 'unlock', titulo: 'Disponible en todos los planes', copy: 'El MCP entrante y saliente usan la misma llave de API — no hay un plan aparte para conectar IA a tu negocio.' },
+            ],
+        },
     },
     {
         slug: 'elements',
@@ -279,6 +335,25 @@ export function Cotizacion({ token }) {
             { q: '¿En qué framework funciona Cord Elements?', a: 'El Web Component <cord-cotizador> funciona en cualquier HTML, Astro o Vue; hay un wrapper nativo de React (@flouviahq/elements/react) y un loader de una línea (embed.js) para WordPress o sitios sin framework.' },
         ],
         cta: { titulo: 'Lleva tu cotizador a donde están tus clientes.', sub: 'Crea tu cuenta gratis y embebe tu primer cotizador hoy mismo — una línea de código.' },
+        trust: {
+            eyebrow: 'COTIZADOR EMBEBIBLE',
+            titulo: 'Seguro por diseño',
+            proteccion: {
+                icon: 'shield',
+                titulo: 'Blindado contra clickjacking',
+                copy: 'Tú decides en qué dominios puede vivir tu cotizador embebido: una allowlist por cuenta controla el header CSP frame-ancestors, así nadie más puede insertarlo en un sitio que no autorizaste.',
+            },
+            puntos: [
+                { icon: 'unlock', titulo: 'Signup gratis, sin backend propio que mantener' },
+                { icon: 'doc', titulo: '5 eventos en vivo: ready, approved, rejected, message, pay' },
+            ],
+            grid: [
+                { icon: 'globe', titulo: 'Funciona en cualquier stack: HTML, React, Vue, Astro', copy: 'El mismo iframe seguro se monta con un script, el paquete de npm o el Web Component — tú eliges según tu stack.' },
+                { icon: 'key', titulo: 'Autenticado por el token público de la cotización', copy: 'No hay sesión ni cuenta que compartir: el token de la cotización es todo lo que el embed necesita para funcionar.' },
+                { icon: 'toggle', titulo: 'Quita el aviso "vía Cord" desde un plan de pago', copy: 'En el plan Gratis el cotizador muestra un discreto "vía Cord"; lo retiras en cualquier momento desde Ajustes.' },
+                { icon: 'route', titulo: 'Mismo iframe seguro, tres formas de integrarlo', copy: 'Cambias de HTML plano a React o Web Component sin perder nada — el iframe y sus eventos siguen siendo los mismos.' },
+            ],
+        },
     },
     {
         slug: 'fx',
@@ -321,6 +396,25 @@ export function Cotizacion({ token }) {
             { q: '¿El tipo de cambio interbancario tiene costo extra?', a: 'El fix de Banxico está incluido en todos los planes; los tipos interbancarios en vivo están disponibles desde el plan Profesional.' },
         ],
         cta: { titulo: 'Mantén tu rentabilidad blindada.', sub: 'Integra tipos de cambio en vivo hoy mismo.' },
+        trust: {
+            eyebrow: 'COBERTURA CAMBIARIA',
+            titulo: 'Tu margen, protegido',
+            proteccion: {
+                icon: 'shield',
+                titulo: 'La tasa que cierras es la que cobras',
+                copy: 'Congela el tipo de cambio hasta por 30 días (FX lock) desde que cotizas. Aunque el peso se mueva antes de que tu cliente pague, tu margen no se mueve con él.',
+            },
+            puntos: [
+                { icon: 'gauge', titulo: 'Buffer de cobertura configurable por cotización' },
+                { icon: 'doc', titulo: 'El CFDI 4.0 se timbra en pesos, ya con la tasa aplicada' },
+            ],
+            grid: [
+                { icon: 'globe', titulo: 'Fix de Banxico sin costo extra, en todos los planes', copy: 'El tipo de cambio oficial de Banxico viene incluido desde el plan Gratis, sin cargo adicional por consultarlo.' },
+                { icon: 'refresh', titulo: 'Tipos interbancarios en vivo desde plan Profesional', copy: 'Para operaciones grandes, la tasa interbancaria en tiempo real reduce el margen que dejas sobre la mesa.' },
+                { icon: 'lock', titulo: 'Tasa congelada hasta 30 días (FX lock)', copy: 'Cotizas hoy, tu cliente aprueba en dos semanas, y la tasa que le mostraste sigue siendo la que se factura.' },
+                { icon: 'layers', titulo: 'Divisa de cotización y de facturación, independientes', copy: 'Tu cliente puede ver el precio en USD mientras el CFDI 4.0 se timbra en pesos, sin que hagas la conversión a mano.' },
+            ],
+        },
     },
     {
         slug: 'fiscal',
@@ -363,6 +457,25 @@ export function Cotizacion({ token }) {
             { q: '¿Puedo tener una entidad en México y otra en Estados Unidos en la misma cuenta?', a: 'El modelo de datos de Cord soporta múltiples entidades legales bajo una misma cuenta. Contacta a ventas para confirmar la disponibilidad según tu plan y tu caso de uso.' },
         ],
         cta: { titulo: 'Expande tu mercado sin el dolor de cabeza fiscal.', sub: 'Únete a las empresas que operan binacionalmente.' },
+        trust: {
+            eyebrow: 'CUMPLIMIENTO MULTI-PAÍS',
+            titulo: 'Cumplimiento sin fricción',
+            proteccion: {
+                icon: 'shield',
+                titulo: 'CFDI 4.0 real ante el SAT',
+                copy: 'El timbrado corre en producción vía un PAC certificado (Facturapi): tu Certificado de Sello Digital, tu RFC, tu factura real. Sin una llave configurada, el flujo corre en modo simulado para que pruebes sin comprometerte.',
+            },
+            puntos: [
+                { icon: 'doc', titulo: 'Validación de RFC (México) y EIN (Estados Unidos)' },
+                { icon: 'layers', titulo: 'Múltiples entidades legales bajo una misma cuenta' },
+            ],
+            grid: [
+                { icon: 'gauge', titulo: 'IVA, IEPS y retenciones mapeados por producto', copy: 'Cada producto lleva su propio perfil de impuestos, así el cálculo no depende de que alguien lo recuerde a mano.' },
+                { icon: 'globe', titulo: 'Arquitectura multi-país: un adaptador por proveedor fiscal', copy: 'México ya opera en producción vía un PAC certificado; nuevos países se agregan como su propio adaptador.' },
+                { icon: 'unlock', titulo: 'Plan Developer', copy: 'El módulo fiscal internacional vive en el plan que también trae más llaves de API y el mayor volumen de timbrado.' },
+                { icon: 'route', titulo: 'Cross-border US/MX: contacta a ventas para tu caso', copy: 'Si vendes entre México y Estados Unidos con entidades en ambos países, ventas confirma el alcance exacto para tu cuenta.' },
+            ],
+        },
     },
     {
         slug: 'integraciones',
@@ -411,6 +524,25 @@ export function Cotizacion({ token }) {
             { q: '¿Cómo verifico que un webhook realmente viene de Cord?', a: 'Cada entrega incluye el header X-Cord-Signature con un HMAC-SHA256 del cuerpo crudo, firmado con el secret que Cord te dio al crear el endpoint — lo validas antes de procesar el evento.' },
         ],
         cta: { titulo: 'Conecta Cord a tu stack hoy.', sub: 'Registra un webhook o genera una llave de prueba y recibe tu primer evento en minutos.' },
+        trust: {
+            eyebrow: 'CONFIABILIDAD',
+            titulo: 'Entregas en las que puedes confiar',
+            proteccion: {
+                icon: 'shield',
+                titulo: 'Cada entrega, firmada y verificable',
+                copy: 'Todo webhook sale firmado con HMAC-SHA256 en el header X-Cord-Signature — calculas el hash del cuerpo crudo con tu secret y confirmas que vino de Cord, no de alguien más.',
+            },
+            puntos: [
+                { icon: 'refresh', titulo: 'Reintento automático si la primera entrega falla' },
+                { icon: 'doc', titulo: 'Log de entregas con estado, latencia y reenvío manual' },
+            ],
+            grid: [
+                { icon: 'route', titulo: 'Zapier, Make, n8n o tu backend propio', copy: 'Un mismo webhook llega a miles de apps sin que Cord mantenga un conector propietario por cada una.' },
+                { icon: 'toggle', titulo: 'Slack nativo: alertas automáticas por evento', copy: 'A diferencia de Zapier o Make, Slack no necesita intermediario: la notificación llega sola a tu canal.' },
+                { icon: 'gauge', titulo: 'De 1 endpoint (Gratis) a 100 (Developer)', copy: 'El límite crece con el plan; los excedentes se miden por consumo de API, no por número de endpoints registrados.' },
+                { icon: 'key', titulo: 'Secret mostrado una sola vez, nunca en claro', copy: 'Cópialo al crearlo — después solo queda su huella para firmar, no hay forma de volver a verlo completo.' },
+            ],
+        },
     },
 ];
 

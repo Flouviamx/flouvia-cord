@@ -36,7 +36,8 @@ const PRODUCT_PATHS = FEATURES.map((f) => ({ path: `/producto/${f.slug}`, priori
 const SOLUTION_PATHS = SOLUCIONES.map((s) => ({ path: `/soluciones/${s.slug}`, priority: '0.7', changefreq: 'monthly' })).filter(
     (s) => !STATIC_PATHS.some((p) => p.path === s.path)
 );
-const DEV_PATHS = DEV_PAGES.map((d) => ({ path: `/desarrolladores/${d.slug}`, priority: '0.5', changefreq: 'monthly' }));
+// 'elements' vive en /elements (STATIC_PATHS), no en /desarrolladores/elements (301) — se excluye.
+const DEV_PATHS = DEV_PAGES.filter((d) => d.slug !== 'elements').map((d) => ({ path: `/desarrolladores/${d.slug}`, priority: '0.5', changefreq: 'monthly' }));
 const ROADMAP_PATHS = roadmapData.map((r) => ({ path: `/roadmap/${r.slug}`, priority: '0.4', changefreq: 'monthly' }));
 
 const ALL_PATHS = [...STATIC_PATHS, ...PRODUCT_PATHS, ...SOLUTION_PATHS, ...DEV_PATHS, ...ROADMAP_PATHS];
