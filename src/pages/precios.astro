@@ -350,11 +350,8 @@ const faqSchema = {
     .pp-eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #888; margin: 0 0 1rem; }
     @media (min-width: 860px) { .pp-eyebrow { margin: 0 0 1.4rem; } }
     
-    .pr-h1 {
-        font-size: clamp(2.4rem, 8vw, 4.2rem);
-        font-weight: 800; line-height: 1.04; letter-spacing: -0.035em;
-        color: var(--color-text); margin: 0 0 1.2rem;
-    }
+    /* El tamaño/peso real lo gobierna el estándar global h1.masked-title (Layout.astro). */
+    .pr-h1 { margin: 0 0 1.2rem; }
     @media (min-width: 860px) { .pr-h1 { margin: 0 0 1.4rem; } }
     
     .pr-lead { font-size: clamp(1rem, 4vw, 1.1rem); line-height: 1.6; color: var(--color-text-muted); max-width: 560px; margin: 0 auto 2rem; }

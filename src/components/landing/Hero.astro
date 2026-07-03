@@ -303,18 +303,12 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
         opacity: 0.8;
     }
 
-    /* ── TÍTULO (más chico que el resto de páginas públicas, a propósito) ──
-       !important: gana sobre el h1.masked-title global de Layout.astro (que unifica
-       el tamaño de título en TODAS las páginas públicas) sin afectar los demás heroes. */
+    /* ── TÍTULO — el tamaño/peso/tracking ES el estándar global (h1.masked-title en
+       Layout.astro, jul 2026); aquí solo quedan los overrides propios del layout partido
+       de este hero (texto a la izquierda, sin límite de ancho ni margen inferior). */
     .hero-title {
-        font-size: clamp(2.1rem, 3.4vw, 3.6rem) !important;
-        line-height: 1.1 !important;
-        font-weight: 700 !important;
-        letter-spacing: -0.035em !important;
-        color: #0a192f !important;
         margin: 0 !important;
         max-width: none !important;
-        text-wrap: balance !important;
         text-align: left !important;
     }
 

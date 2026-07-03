@@ -601,9 +601,8 @@ const breadcrumbSchema = {
         border-radius: 100px; padding: 5px 14px;
         margin: 0 0 1.6rem;
     }
+    /* El tamaño/peso real lo gobierna el estándar global h1.masked-title (Layout.astro). */
     .pp-title {
-        font-size: clamp(2.4rem, 4.2vw, 3.8rem);
-        font-weight: 800; line-height: 1.1; letter-spacing: -0.04em;
         color: #050505; margin: 0 0 1.4rem;
         text-align: left;
     }
@@ -1356,7 +1355,6 @@ const breadcrumbSchema = {
     }
     @media (max-width: 860px) {
         .pp-hero { padding-top: 8.5rem; }
-        .pp-title { font-size: clamp(2rem, 7vw, 2.8rem); }
         .mk-row { grid-template-columns: 1.4fr 0.5fr 1fr; }
         .mk-row span:nth-child(4) { display: none; }
         .mk-cli-row { grid-template-columns: auto 1fr; }

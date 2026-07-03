@@ -1,9 +1,14 @@
 ---
 // DevBlockMockup — mockups de los bloques de /desarrolladores/[slug].
-// Mismo sistema visual "premium solid" que components/producto/BlockMockup.astro
-// (tarjetas navy sólidas, glow ambiental, pills flotantes, cursores falsos), pero
-// con escenas de API / MCP / Elements. Cada escena expone hooks (clases/ids) que
-// el <script> de [slug].astro anima como motion-graphic en loop.
+// Reescrito (jul 2026) al estándar de components/producto/BlockMockup.astro:
+// ventanas COMPLETAS y densas (.dbm-app / .dbm-app-bar / .dbm-app-body /
+// .dbm-app-foot) que llenan la tarjeta del bento — toolbar real de producto
+// (título izq + badge der, SIN los 3 puntos macOS), tabla/lista/timeline con
+// datos plausibles y footer. Para escenas de CÓDIGO/JSON se usa la variante
+// terminal oscura .dbm-term (contextualmente correcta, estilo Stripe/GitHub).
+// El prefijo dbm-* es autocontenido (Astro scopea <style> por componente).
+// Cada escena expone hooks (ids/clases) que el <script> de [slug].astro anima
+// como motion-graphic en loop. Copy/estructura vienen de desarrolladores.ts.
 export interface Props {
     slug: string;
     index: number;
@@ -11,436 +16,454 @@ export interface Props {
 const { slug, index } = Astro.props;
 ---
 <div class={`dbm-wrap dbm-${slug}-${index}`}>
-  <div class="dbm-mesh" aria-hidden="true"></div>
-  <div class="dbm-glow" aria-hidden="true"></div>
 
   {/* ══════════════════════ API ══════════════════════ */}
   {slug === 'api' && index === 0 && (
-    <div class="dbm-stage dbm-api-m0">
-      <div class="dbm-floating dbm-float-top-right dbm-api0-pill">
-        <div class="dbm-pill"><i class="dbm-dot dbm-dot-green"></i><span>Sin recapturar</span></div>
+    <div class="dbm-app dbm-api-m0">
+      <div class="dbm-app-bar">
+        <span class="dbm-app-title">Sincronización · ERP ↔ Cord</span>
+        <span class="dbm-app-badge dbm-badge-green">● Conectado</span>
       </div>
-      <div class="dbm-card">
-        <div class="dbm-head"><span>Tu ERP</span><span>Cord</span></div>
-        <div class="dbm-sync">
-          <div class="dbm-sync-side">
-            <div class="dbm-node dbm-node-soft">ERP</div>
-          </div>
-          <div class="dbm-sync-rail">
-            <span class="dbm-rail-dot dbm-rail-r" id="apiSyncR"></span>
-            <span class="dbm-rail-dot dbm-rail-l" id="apiSyncL"></span>
-          </div>
-          <div class="dbm-sync-side">
-            <div class="dbm-node dbm-brand">Cord</div>
-          </div>
+      <div class="dbm-sync-lane">
+        <div class="dbm-node dbm-node-soft">Tu ERP</div>
+        <div class="dbm-rail">
+          <span class="dbm-rail-dot dbm-rail-r" id="apiSyncR"></span>
+          <span class="dbm-rail-dot dbm-rail-l" id="apiSyncL"></span>
         </div>
-        <div class="dbm-sync-rows">
-          <div class="dbm-sync-row dbm-sync-row-in" id="apiSyncRow1"><span class="dbm-ar">→</span> Catálogo · 412 productos</div>
-          <div class="dbm-sync-row dbm-sync-row-out" id="apiSyncRow2"><span class="dbm-al">←</span> COT-0149 · aprobada</div>
+        <div class="dbm-node dbm-node-brand">
+          <img src="/imgs/logo-cord-navy.png" alt="Cord" />
         </div>
       </div>
+      <div class="dbm-app-body">
+        <div class="dbm-kv dbm-sync-row" id="apiSyncRow1"><div class="dbm-uid"><span class="dbm-ar">→</span><div class="dbm-uid-tx"><b>POST /api/v1/productos</b><span>412 productos importados del ERP</span></div></div><span class="dbm-tg dbm-tg-blue">Entrante</span></div>
+        <div class="dbm-kv dbm-sync-row" id="apiSyncRow2"><div class="dbm-uid"><span class="dbm-al">←</span><div class="dbm-uid-tx"><b>GET /api/v1/cotizaciones/q_19a</b><span>COT-0149 · aprobada · $196,469.20</span></div></div><span class="dbm-tg dbm-tg-green">Saliente</span></div>
+        <div class="dbm-kv"><span>Última sincronización</span><b>hace 12 s · 142 ms</b></div>
+      </div>
+      <div class="dbm-app-foot"><span>Sin recapturar de un lado a otro</span><b>Bidireccional</b></div>
     </div>
   )}
 
   {slug === 'api' && index === 1 && (
-    <div class="dbm-stage dbm-api-m1">
-      <div class="dbm-floating dbm-float-bottom-right dbm-api1-revoke dbm-story-pill">
-        <div class="dbm-pill dbm-pill-danger"><i class="dbm-dot dbm-dot-red"></i><span>Revocada</span></div>
+    <div class="dbm-app dbm-api-m1">
+      <div class="dbm-app-bar">
+        <span class="dbm-app-title">Ajustes · Claves de API</span>
+        <span class="dbm-app-badge dbm-badge-blue">2 activas</span>
       </div>
-      <div class="dbm-card">
+      <div class="dbm-app-body">
         <div class="dbm-keychip" id="apiKey">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="3.5"/><path d="M10 13l8-8 3 3M16 7l2 2"/></svg>
-          <span class="dbm-keyval">sk_live_8f2a••••••••</span>
+          <span class="dbm-key-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="3.5"/><path d="M10 13l8-8 3 3M16 7l2 2"/></svg></span>
+          <span class="dbm-key-val">sk_live_8f2a••••••••3d1c</span>
+          <span class="dbm-tg dbm-tg-gray" id="apiKeyTag">Producción</span>
         </div>
         <div class="dbm-scopes">
-          <div class="dbm-scope"><i class="dbm-scope-check">✓</i><span>read</span><b>consultar</b></div>
-          <div class="dbm-scope"><i class="dbm-scope-check">✓</i><span>write</span><b>crear</b></div>
+          <div class="dbm-scope"><i class="dbm-scope-ck">✓</i><span>read</span><b>consultar</b></div>
+          <div class="dbm-scope"><i class="dbm-scope-ck">✓</i><span>write</span><b>crear</b></div>
         </div>
-        <div class="dbm-divider"></div>
+        <div class="dbm-kv"><span>Último uso</span><b>hace 3 min · 89.4.12.2</b></div>
         <div class="dbm-reqline"><span>GET /cotizaciones</span><b class="dbm-status" id="apiAuthStatus">200 OK</b></div>
       </div>
+      <div class="dbm-app-foot"><span>Revócala y muere al instante</span><b class="dbm-tg dbm-tg-red dbm-revoke-tag" id="apiRevoke">Revocar</b></div>
     </div>
   )}
 
   {slug === 'api' && index === 2 && (
-    <div class="dbm-stage dbm-api-m2">
-      <div class="dbm-terminal">
-        <div class="dbm-seg dbm-api-tabs">
-          <span class="dbm-seg-on">cotizaciones</span><span>clientes</span><span>productos</span><span>cobranza</span>
-        </div>
-        <pre class="dbm-code dbm-api-json" id="apiJson"><code>{`{`}
-  <span class="dbm-key">"folio"</span>: <span class="dbm-str">"COT-0149"</span>,
-  <span class="dbm-key">"status"</span>: <span class="dbm-str">"sent"</span>,
-  <span class="dbm-key">"total"</span>: <span class="dbm-num dbm-hl-target">196469.2</span>
-{`}`}</code></pre>
-        <div class="dbm-meta"><span>limit 50 · offset 0</span><span class="dbm-meta-total">total 412</span></div>
+    <div class="dbm-term dbm-api-m2">
+      <div class="dbm-term-bar">
+        <span class="dbm-term-title"><span class="dbm-term-method">GET</span> /api/v1/<span id="apiEndpointName">cotizaciones</span></span>
+        <span class="dbm-term-badge">200 OK</span>
       </div>
+      <div class="dbm-seg dbm-api-tabs">
+        <span class="dbm-seg-on">cotizaciones</span><span>clientes</span><span>productos</span><span>cobranza</span>
+      </div>
+      <pre class="dbm-code dbm-api-json" id="apiJson"><code>{`{`}
+  <span class="dbm-jkey">"folio"</span>: <span class="dbm-jstr">"COT-0149"</span>,
+  <span class="dbm-jkey">"cliente"</span>: <span class="dbm-jstr">"Distribuidora El Zarco"</span>,
+  <span class="dbm-jkey">"status"</span>: <span class="dbm-jstr">"sent"</span>,
+  <span class="dbm-jkey">"total"</span>: <span class="dbm-jnum dbm-hl-target">196469.2</span>
+{`}`}</code></pre>
+      <div class="dbm-term-foot"><span>limit 50 · offset 0 · pesos, no centavos</span><span class="dbm-term-total" id="apiMetaTotal">total 412</span></div>
     </div>
   )}
 
   {/* ══════════════════════ MCP ══════════════════════ */}
   {slug === 'mcp' && index === 0 && (
-    <div class="dbm-stage dbm-mcp-m0">
-      <div class="dbm-floating dbm-float-top-right">
-        <div class="dbm-pill dbm-pill-brand"><span>JSON-RPC 2.0</span></div>
+    <div class="dbm-app dbm-mcp-m0">
+      <div class="dbm-app-bar">
+        <span class="dbm-app-title">Cord como servidor MCP</span>
+        <span class="dbm-app-badge dbm-badge-blue">JSON-RPC 2.0</span>
       </div>
-      <div class="dbm-card">
-        <div class="dbm-head"><span>Cord como servidor</span></div>
+      <div class="dbm-app-body">
         <div class="dbm-seg dbm-mcp-transports">
-          <span class="dbm-seg-on" id="mcpT0">HTTP</span><span id="mcpT1">SSE</span>
+          <span class="dbm-seg-on" id="mcpT0">HTTP</span><span id="mcpT1">SSE · streaming</span>
         </div>
         <div class="dbm-toollist">
-          <div class="dbm-toolrow"><i></i>listar_cotizaciones</div>
-          <div class="dbm-toolrow"><i></i>cartera_vencida</div>
-          <div class="dbm-toolrow"><i></i>resumen_negocio</div>
-          <div class="dbm-toolrow"><i></i>buscar_cliente</div>
-          <div class="dbm-toolrow"><i></i>listar_productos</div>
-          <div class="dbm-toolrow"><i></i>detalle_cotizacion</div>
-          <div class="dbm-toolrow dbm-toolrow-write"><i></i>crear_cotizacion_borrador<b>write</b></div>
+          <div class="dbm-toolrow"><i class="dbm-tool-dot"></i><code>listar_cotizaciones</code><span class="dbm-tg dbm-tg-gray">read</span></div>
+          <div class="dbm-toolrow"><i class="dbm-tool-dot"></i><code>cartera_vencida</code><span class="dbm-tg dbm-tg-gray">read</span></div>
+          <div class="dbm-toolrow"><i class="dbm-tool-dot"></i><code>resumen_negocio</code><span class="dbm-tg dbm-tg-gray">read</span></div>
+          <div class="dbm-toolrow"><i class="dbm-tool-dot"></i><code>buscar_cliente</code><span class="dbm-tg dbm-tg-gray">read</span></div>
+          <div class="dbm-toolrow"><i class="dbm-tool-dot"></i><code>listar_productos</code><span class="dbm-tg dbm-tg-gray">read</span></div>
+          <div class="dbm-toolrow"><i class="dbm-tool-dot"></i><code>detalle_cotizacion</code><span class="dbm-tg dbm-tg-gray">read</span></div>
+          <div class="dbm-toolrow dbm-toolrow-w"><i class="dbm-tool-dot dbm-w"></i><code>crear_cotizacion_borrador</code><span class="dbm-tg dbm-tg-amber">write</span></div>
         </div>
       </div>
+      <div class="dbm-app-foot"><span>Mismo header, misma llave que la API</span><b>7 herramientas</b></div>
     </div>
   )}
 
   {slug === 'mcp' && index === 1 && (
-    <div class="dbm-stage dbm-mcp-m1">
-      <div class="dbm-floating dbm-float-top-left">
-        <div class="dbm-pill"><i class="dbm-dot dbm-dot-blue"></i><span>max 5 vueltas</span></div>
+    <div class="dbm-app dbm-mcp-m1">
+      <div class="dbm-app-bar">
+        <span class="dbm-app-title">Cord como cliente MCP</span>
+        <span class="dbm-app-badge dbm-badge-blue">Agent loop · máx 5</span>
       </div>
-      <div class="dbm-card">
-        <div class="dbm-head"><span>Cord como cliente</span></div>
-        <div class="dbm-sync">
-          <div class="dbm-sync-side"><div class="dbm-node dbm-brand">Cord</div></div>
-          <div class="dbm-sync-rail"><span class="dbm-rail-dot dbm-rail-r" id="mcpClientDot"></span></div>
-          <div class="dbm-sync-side"><div class="dbm-node dbm-node-ext">CRM</div></div>
-        </div>
+      <div class="dbm-sync-lane">
+        <div class="dbm-node dbm-node-brand"><img src="/imgs/logo-cord-navy.png" alt="Cord" /></div>
+        <div class="dbm-rail"><span class="dbm-rail-dot dbm-rail-r" id="mcpClientDot"></span></div>
+        <div class="dbm-node dbm-node-ext">CRM del cliente</div>
+      </div>
+      <div class="dbm-app-body">
         <div class="dbm-log" id="mcpClientLog">
-          <div>conectando…</div>
-          <div>listTools() → 4 tools</div>
-          <div class="dbm-success">contexto recibido ✓</div>
+          <div><span class="dbm-log-t">→</span> connect(https://crm.cliente.com/mcp)</div>
+          <div><span class="dbm-log-t">→</span> listTools() → 4 herramientas</div>
+          <div><span class="dbm-log-t">←</span> get_saldo("El Zarco") → $412,300</div>
+          <div class="dbm-log-ok"><span class="dbm-log-t">✓</span> contexto listo · la IA cotiza</div>
         </div>
       </div>
+      <div class="dbm-app-foot"><span>Consulta antes de cotizar</span><b>Con tu permiso</b></div>
     </div>
   )}
 
   {slug === 'mcp' && index === 2 && (
-    <div class="dbm-stage dbm-mcp-m2">
-      <div class="dbm-floating dbm-float-top-right">
-        <div class="dbm-pill"><i class="dbm-dot dbm-dot-green"></i><span>RLS · por org</span></div>
+    <div class="dbm-app dbm-mcp-m2">
+      <div class="dbm-app-bar">
+        <span class="dbm-app-title">Gobernanza de agentes</span>
+        <span class="dbm-app-badge dbm-badge-green">RLS · por org</span>
       </div>
-      <div class="dbm-card">
-        <div class="dbm-head"><span>Gobernanza</span><span>Asistente Cord</span></div>
-        <div class="dbm-gov">
-          <div class="dbm-gov-row"><span>Servidor A · ventas</span><span class="dbm-gov-pill dbm-gov-on">permitido</span></div>
-          <div class="dbm-gov-row dbm-gov-target"><span>CRM externo</span><span class="dbm-gov-pill dbm-gov-off" id="mcpGovPill">sin acceso</span></div>
-          <div class="dbm-gov-row"><span>Servidor C · finanzas</span><span class="dbm-gov-pill dbm-gov-off">sin acceso</span></div>
-        </div>
+      <div class="dbm-app-body">
+        <div class="dbm-kv"><div class="dbm-uid"><span class="dbm-avat a2">A</span><div class="dbm-uid-tx"><b>Servidor A · ventas</b><span>2 herramientas firmadas</span></div></div><span class="dbm-gov-pill dbm-gov-on">permitido</span></div>
+        <div class="dbm-kv dbm-gov-target"><div class="dbm-uid"><span class="dbm-avat a4">E</span><div class="dbm-uid-tx"><b>CRM externo</b><span>esperando tu firma</span></div></div><span class="dbm-gov-pill dbm-gov-off" id="mcpGovPill">sin acceso</span></div>
+        <div class="dbm-kv"><div class="dbm-uid"><span class="dbm-avat a1">F</span><div class="dbm-uid-tx"><b>Servidor C · finanzas</b><span>bloqueado por política</span></div></div><span class="dbm-gov-pill dbm-gov-off">sin acceso</span></div>
       </div>
+      <div class="dbm-app-foot"><span>Cada acción queda en el audit log</span><b>Tú firmas</b></div>
     </div>
   )}
 
   {/* ══════════════════════ ELEMENTS ══════════════════════ */}
   {slug === 'elements' && index === 0 && (
-    <div class="dbm-stage dbm-el-m0">
-      <div class="dbm-floating dbm-float-top-right">
-        <div class="dbm-pill"><i class="dbm-dot dbm-dot-blue"></i><span>Altura automática</span></div>
+    <div class="dbm-term dbm-el-m0">
+      <div class="dbm-term-bar">
+        <span class="dbm-term-title">index.html</span>
+        <span class="dbm-term-badge">Altura automática</span>
       </div>
-      <div class="dbm-terminal">
-        <div class="dbm-head"><span>Una línea de código</span></div>
-        <div class="dbm-code">
-          <span class="dbm-tag-lt">&lt;script</span> src=<span class="dbm-str">"…/embed.js"</span><span class="dbm-tag-lt">&gt;</span>           <span class="dbm-tag-lt">&lt;div</span> data-cord-cotizador<span class="dbm-tag-lt">&gt;</span><span class="dbm-cursor"></span>
-        </div>
-        <div class="dbm-el-preview">
-          <div class="dbm-el-skel" id="elSkel"></div>
-          <div class="dbm-el-mini" id="elMini"><span>Cotización lista</span><b class="editorial">$196k</b></div>
-        </div>
+      <div class="dbm-code dbm-el-code">
+        <span class="dbm-jtag">&lt;script src=</span><span class="dbm-jstr">"…/embed.js"</span><span class="dbm-jtag">&gt;&lt;/script&gt;</span>
+        <span class="dbm-jtag">&lt;div</span> data-cord-cotizador data-token=<span class="dbm-jstr">"…"</span><span class="dbm-jtag">&gt;</span><span class="dbm-cursor"></span>
       </div>
+      <div class="dbm-el-preview">
+        <div class="dbm-el-skel" id="elSkel"></div>
+        <div class="dbm-el-mini" id="elMini"><span>Cotización lista</span><b class="editorial">$196,469.20</b></div>
+      </div>
+      <div class="dbm-term-foot"><span>Una línea de código</span><span class="dbm-term-total">iframe seguro</span></div>
     </div>
   )}
 
   {slug === 'elements' && index === 1 && (
-    <div class="dbm-stage dbm-el-m1">
-      <div class="dbm-terminal">
-        <div class="dbm-seg dbm-el-tabs">
-          <span class="dbm-seg-on">HTML</span><span>React</span><span>Web Component</span>
-        </div>
-        <div class="dbm-code dbm-el-code" id="elCode">
-          <span class="dbm-tag-lt">&lt;script src=</span><span class="dbm-str">"…/embed.js"</span><span class="dbm-tag-lt">&gt;</span>
-        </div>
-        <div class="dbm-el-pkg">npm i @flouviahq/elements</div>
+    <div class="dbm-term dbm-el-m1">
+      <div class="dbm-term-bar">
+        <span class="dbm-term-title">@flouviahq/elements</span>
+        <span class="dbm-term-badge">v0.2.0</span>
       </div>
+      <div class="dbm-seg dbm-el-tabs">
+        <span class="dbm-seg-on">HTML</span><span>React</span><span>Web Component</span>
+      </div>
+      <div class="dbm-code dbm-el-codebox" id="elCode">
+        <span class="dbm-jtag">&lt;script src=</span><span class="dbm-jstr">"…/embed.js"</span><span class="dbm-jtag">&gt;</span>
+      </div>
+      <div class="dbm-term-foot"><span>npm i @flouviahq/elements</span><span class="dbm-term-total">React · Vue · Astro</span></div>
     </div>
   )}
 
   {slug === 'elements' && index === 2 && (
-    <div class="dbm-stage dbm-el-m2">
-      <div class="dbm-floating dbm-float-top-right dbm-el2-event dbm-story-pill">
-        <div class="dbm-pill dbm-pill-brand"><span>cord:approved</span></div>
+    <div class="dbm-app dbm-el-m2">
+      <div class="dbm-app-bar">
+        <span class="dbm-app-title">portal.tucliente.com</span>
+        <span class="dbm-app-badge dbm-badge-blue">frame-ancestors</span>
       </div>
-      <div class="dbm-el-card">
-        <div class="dbm-el-cardhead"><span class="dbm-el-brand">MV</span><b>Tu cotización</b><span class="dbm-el-badge" id="elBadge">Revisar</span></div>
-        <div class="dbm-el-line"><span>Total con IVA</span><b class="editorial">$196,469.20</b></div>
-        <div class="dbm-el-approve" id="elApprove">Aprobar</div>
+      <div class="dbm-el-embed">
+        <div class="dbm-el-card">
+          <div class="dbm-el-cardhead"><span class="dbm-avat a1" style="border-radius:7px;">MV</span><b>Tu cotización</b><span class="dbm-el-badge" id="elBadge">Revisar</span></div>
+          <div class="dbm-kv"><span>Cemento gris 50kg × 120</span><b class="editorial">$21,840.00</b></div>
+          <div class="dbm-kv"><span>Total con IVA</span><b class="editorial">$196,469.20</b></div>
+          <div class="dbm-btn2 dbm-btn2-nav" id="elApprove">Aprobar cotización</div>
+        </div>
+        <div class="dbm-fake-cursor" id="elCursor">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 2l12 11.2-5.8.5 3.3 7.3-2.25 1-3.2-7.4-4.4 4.7z"/></svg>
+        </div>
       </div>
-      <div class="dbm-el-csp">frame-ancestors: tudominio.com</div>
-      <div class="dbm-fake-cursor" id="elCursor">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 2l12 11.2-5.8.5 3.3 7.3-2.25 1-3.2-7.4-4.4 4.7z"/></svg>
-      </div>
+      <div class="dbm-app-foot dbm-el2-event"><span><i class="dbm-evt-dot"></i>cord:approved · COT-0148</span><b>Evento nativo</b></div>
     </div>
   )}
 
   {/* ══════════════════════ FX ══════════════════════ */}
   {slug === 'fx' && index === 0 && (
-    <div class="dbm-stage dbm-api-m0">
-      <div class="dbm-floating dbm-float-top-right">
-        <div class="dbm-pill"><i class="dbm-dot dbm-dot-green"></i><span>Banxico FIX</span></div>
+    <div class="dbm-app dbm-fx-m0">
+      <div class="dbm-app-bar">
+        <span class="dbm-app-title">COT-0150 · Acme Imports</span>
+        <span class="dbm-app-badge dbm-badge-green">● Banxico FIX</span>
       </div>
-      <div class="dbm-card">
-        <div class="dbm-head"><span>USD</span><span>MXN</span></div>
-        <div class="dbm-sync">
-          <div class="dbm-sync-side">
-            <div class="dbm-node dbm-node-soft" style="font-size:12px;">$1.00</div>
-          </div>
-          <div class="dbm-sync-rail">
-            <span class="dbm-rail-dot dbm-rail-r" style="animation-duration: 2s;"></span>
-          </div>
-          <div class="dbm-sync-side">
-            <div class="dbm-node dbm-brand" style="font-size:12px; font-weight:bold;">$18.45</div>
-          </div>
+      <div class="dbm-app-body">
+        <div class="dbm-fx-hero">
+          <div class="dbm-fx-side"><span>El cliente ve</span><b class="editorial">US$10,620.50</b></div>
+          <div class="dbm-fx-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg><em id="fxRate">1 USD = $18.4520</em></div>
+          <div class="dbm-fx-side"><span>Se factura</span><b class="editorial g">$196,469.20</b></div>
         </div>
+        <div class="dbm-kv"><span>Buffer de cobertura</span><div class="dbm-cbar" style="width:110px;"><i style="width:60%;background:#059669;"></i></div></div>
+        <div class="dbm-kv"><span>Tasa congelada (FX lock)</span><span class="dbm-tg dbm-tg-green">30 días</span></div>
+        <div class="dbm-kv"><span>Fuente</span><b>Banxico FIX · 2026-06-26 12:00 UTC</b></div>
       </div>
+      <div class="dbm-app-foot"><span>El margen que cierras es el que cobras</span><b>Protegido</b></div>
     </div>
   )}
 
   {/* ══════════════════════ FISCAL ══════════════════════ */}
   {slug === 'fiscal' && index === 0 && (
-    <div class="dbm-stage dbm-api-m2">
-      <div class="dbm-floating dbm-float-top-right">
-        <div class="dbm-pill dbm-pill-brand"><span>Tax Compliance</span></div>
+    <div class="dbm-app dbm-fiscal-m0">
+      <div class="dbm-app-bar">
+        <span class="dbm-app-title">Tax engine · multi-región</span>
+        <span class="dbm-app-badge dbm-badge-green">Cumplimiento</span>
       </div>
-      <div class="dbm-terminal">
-        <pre class="dbm-code dbm-api-json"><code>{`{`}
-  <span class="dbm-key">"region"</span>: <span class="dbm-str">"MX-NLE"</span>,
-  <span class="dbm-key">"tax_rate"</span>: <span class="dbm-num">0.16</span>,
-  <span class="dbm-key">"tax_name"</span>: <span class="dbm-str">"IVA"</span>
-{`}`}</code></pre>
+      <div class="dbm-app-body">
+        <div class="dbm-kv"><div class="dbm-uid"><span class="dbm-avat a2" style="border-radius:8px;">MX</span><div class="dbm-uid-tx"><b>México · IVA 16%</b><span>CFDI 4.0 · timbrado real</span></div></div><b class="editorial">$240.00</b></div>
+        <div class="dbm-kv"><div class="dbm-uid"><span class="dbm-avat a4" style="border-radius:8px;">US</span><div class="dbm-uid-tx"><b>EE.UU. · Sales Tax</b><span>Commercial Invoice</span></div></div><span class="dbm-tg dbm-tg-gray">Próximo</span></div>
+        <div class="dbm-term-inline"><code>POST /api/v1/tax/calculate</code> → <b class="dbm-jnum">$1,740.00</b></div>
+        <div class="dbm-kv"><span>Subtotal · impuesto · total</span><b class="editorial">1,500 · 240 · 1,740</b></div>
       </div>
+      <div class="dbm-app-foot"><span>Impuestos locales, globales</span><b>Un solo endpoint</b></div>
     </div>
   )}
 
   {/* ══════════════════════ INTEGRACIONES ══════════════════════ */}
   {slug === 'integraciones' && index === 0 && (
-    <div class="dbm-stage dbm-api-m2">
-      <div class="dbm-floating dbm-float-top-right">
-        <div class="dbm-pill"><i class="dbm-dot dbm-dot-green"></i><span>quote.paid</span></div>
+    <div class="dbm-term dbm-int-m0">
+      <div class="dbm-term-bar">
+        <span class="dbm-term-title"><span class="dbm-term-method">POST</span> tu-erp.com/webhooks/cord</span>
+        <span class="dbm-term-badge">200 OK</span>
       </div>
-      <div class="dbm-terminal">
-        <div class="dbm-head"><span>POST · webhook</span><span>200 OK</span></div>
-        <pre class="dbm-code dbm-api-json"><code>{`{`}
-  <span class="dbm-key">"event"</span>: <span class="dbm-str">"quote.paid"</span>,
-  <span class="dbm-key">"data"</span>: {`{`}
-    <span class="dbm-key">"folio"</span>: <span class="dbm-str">"COT-0149"</span>,
-    <span class="dbm-key">"total"</span>: <span class="dbm-num">196469.2</span>
+      <div class="dbm-int-headers">
+        <div><span class="dbm-jkey">X-Cord-Event</span>: <span class="dbm-jstr">quote.paid</span></div>
+        <div><span class="dbm-jkey">X-Cord-Signature</span>: <span class="dbm-jstr">sha256=4f1ad8c…</span></div>
+      </div>
+      <pre class="dbm-code dbm-api-json"><code>{`{`}
+  <span class="dbm-jkey">"event"</span>: <span class="dbm-jstr">"quote.paid"</span>,
+  <span class="dbm-jkey">"data"</span>: {`{`}
+    <span class="dbm-jkey">"folio"</span>: <span class="dbm-jstr">"COT-0149"</span>,
+    <span class="dbm-jkey">"total"</span>: <span class="dbm-jnum">196469.2</span>,
+    <span class="dbm-jkey">"cliente"</span>: <span class="dbm-jstr">"El Zarco"</span>
   {`}`}
 {`}`}</code></pre>
-        <div class="dbm-meta"><span>X-Cord-Signature</span><span class="dbm-meta-total">sha256=4f1a…</span></div>
-      </div>
+      <div class="dbm-term-foot"><span>HMAC-SHA256 del cuerpo crudo</span><span class="dbm-term-total">reintento auto</span></div>
     </div>
   )}
 
   {slug === 'integraciones' && index === 1 && (
-    <div class="dbm-stage dbm-api-m1">
-      <div class="dbm-floating dbm-float-top-right">
-        <div class="dbm-pill dbm-pill-brand"><span>1 webhook → ∞ apps</span></div>
+    <div class="dbm-app dbm-int-m1">
+      <div class="dbm-app-bar">
+        <span class="dbm-app-title">Destinos del webhook</span>
+        <span class="dbm-app-badge dbm-badge-blue">1 → ∞ apps</span>
       </div>
-      <div class="dbm-card">
-        <div class="dbm-head"><span>Destinos</span><span>activos</span></div>
-        <div class="dbm-toollist">
-          <div class="dbm-toolrow"><i></i>Zapier</div>
-          <div class="dbm-toolrow"><i></i>Make</div>
-          <div class="dbm-toolrow"><i></i>n8n</div>
-          <div class="dbm-toolrow dbm-toolrow-write"><i></i>Slack<b>nativo</b></div>
-          <div class="dbm-toolrow"><i></i>Tu backend / ERP</div>
-        </div>
+      <div class="dbm-app-body">
+        <div class="dbm-kv"><div class="dbm-uid"><img class="dbm-logo" src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://zapier.com&size=128" alt="Zapier" width="24" height="24" loading="lazy" /><div class="dbm-uid-tx"><b>Zapier</b><span>6,000+ apps sin código</span></div></div><span class="dbm-tg dbm-tg-green">Activo</span></div>
+        <div class="dbm-kv"><div class="dbm-uid"><img class="dbm-logo" src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://make.com&size=128" alt="Make" width="24" height="24" loading="lazy" /><div class="dbm-uid-tx"><b>Make</b><span>escenarios visuales</span></div></div><span class="dbm-tg dbm-tg-green">Activo</span></div>
+        <div class="dbm-kv"><div class="dbm-uid"><img class="dbm-logo" src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://n8n.io&size=128" alt="n8n" width="24" height="24" loading="lazy" /><div class="dbm-uid-tx"><b>n8n</b><span>self-hosted</span></div></div><span class="dbm-tg dbm-tg-gray">Listo</span></div>
+        <div class="dbm-kv"><div class="dbm-uid"><img class="dbm-logo" src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128" alt="Slack" width="24" height="24" loading="lazy" /><div class="dbm-uid-tx"><b>Slack</b><span>integración nativa</span></div></div><span class="dbm-tg dbm-tg-blue">Nativo</span></div>
+        <div class="dbm-kv"><div class="dbm-uid"><span class="dbm-avat a1" style="border-radius:7px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" fill-opacity="0.15" d="M4 5h16v14H4z"/><path d="M4 9h16M9 5v14"/></svg></span><div class="dbm-uid-tx"><b>Tu backend / ERP</b><span>endpoint HTTP propio</span></div></div><span class="dbm-tg dbm-tg-gray">Directo</span></div>
       </div>
+      <div class="dbm-app-foot"><span>Sin esperar un conector propietario</span><b>6 eventos</b></div>
     </div>
   )}
 </div>
 
 <style>
-  /* PREMIUM SOLID MOCKUP SYSTEM — espejo de components/producto/BlockMockup.astro */
+  /* ════════════════════════════════════════════════════════════
+     DEV BLOCK MOCKUP — ventanas completas (espejo de BlockMockup.astro)
+     Prefijo dbm-* autocontenido. Superficie LIGHT para ventanas de
+     producto (.dbm-app) y DARK terminal para escenas de código (.dbm-term).
+  ════════════════════════════════════════════════════════════ */
   .dbm-wrap {
-    position: relative; width: 100%; height: 100%; min-height: 280px;
-    display: flex; align-items: center; justify-content: center;
-    overflow: visible; padding: 2rem 1.5rem; background: transparent;
+    position: relative; width: 100%; height: 100%;
+    display: flex; align-items: flex-start; justify-content: center;
   }
-  .dbm-mesh {
-    position: absolute; inset: -30%;
-    background:
-      radial-gradient(ellipse 55% 50% at 30% 25%, rgba(59,130,246,0.09) 0%, transparent 55%),
-      radial-gradient(ellipse 50% 55% at 75% 70%, rgba(16,185,129,0.06) 0%, transparent 55%),
-      radial-gradient(ellipse 60% 50% at 50% 50%, rgba(10,25,47,0.08) 0%, transparent 50%);
-    filter: blur(30px); pointer-events: none;
+
+  /* ── VENTANA LIGHT COMPLETA ── */
+  .dbm-app {
+    width: 100%;
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid rgba(10,25,47,0.06);
+    box-shadow: 0 1px 2px rgba(10,25,47,0.04), 0 18px 44px -14px rgba(10,25,47,0.16), 0 44px 90px -30px rgba(10,25,47,0.20);
+    overflow: hidden; color: #0f172a; font-size: 0.76rem; text-align: left;
   }
-  .dbm-glow {
-    position: absolute; inset: 10% -5%;
-    background: radial-gradient(ellipse at center, rgba(10,25,47,0.12) 0%, transparent 65%);
-    filter: blur(25px); pointer-events: none; z-index: 0;
-  }
-  .dbm-stage { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; max-width: 330px; z-index: 2; }
+  .dbm-app-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 16px; border-bottom: 1px solid rgba(10,25,47,0.06); background: #fcfdfe; }
+  .dbm-app-title { font-size: 0.78rem; font-weight: 600; color: #0f172a; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dbm-app-badge { flex-shrink: 0; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; padding: 4px 10px; border-radius: 100px; color: #64748b; background: rgba(10,25,47,0.05); border: 1px solid rgba(10,25,47,0.09); }
+  .dbm-badge-blue { color: #2563eb; background: rgba(37,99,235,0.09); border-color: rgba(37,99,235,0.2); }
+  .dbm-badge-green { color: #059669; background: rgba(16,185,129,0.09); border-color: rgba(16,185,129,0.22); }
+  .dbm-app-body { padding: 4px 6px 6px; }
+  .dbm-app-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-top: 1px solid rgba(10,25,47,0.06); background: #fcfdfe; font-size: 0.72rem; color: #94a3b8; }
+  .dbm-app-foot b { color: #0f172a; font-weight: 700; }
 
-  /* Floating pills */
-  .dbm-floating { position: absolute; z-index: 10; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3)); }
-  .dbm-story-pill { opacity: 0; }
-  .dbm-float-top-right { top: -6px; right: -6px; transform: translate(10%, -45%); }
-  .dbm-float-top-left { top: -6px; left: -6px; transform: translate(-10%, -45%); }
-  .dbm-float-bottom-right { bottom: -6px; right: -6px; transform: translate(10%, 45%); }
-  .dbm-float-bottom-left { bottom: -6px; left: -6px; transform: translate(-10%, 45%); }
+  /* key-value row */
+  .dbm-kv { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid rgba(10,25,47,0.05); font-size: 0.77rem; color: #475569; }
+  .dbm-kv:last-child { border-bottom: none; }
+  .dbm-kv > b { color: #0f172a; font-weight: 600; }
+  .dbm-uid { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .dbm-uid-tx { min-width: 0; }
+  .dbm-uid-tx b { display: block; font-size: 0.78rem; color: #0f172a; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dbm-uid-tx span { display: block; font-size: 0.67rem; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dbm-avat { width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 800; color: #fff; background: #334155; }
+  .dbm-avat.a1 { background: #b45309; } .dbm-avat.a2 { background: #047857; } .dbm-avat.a3 { background: #6d28d9; } .dbm-avat.a4 { background: #1d4ed8; }
+  .dbm-logo { width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0; box-shadow: 0 1px 4px rgba(10,25,47,0.12); }
+  .editorial { font-variant-numeric: tabular-nums; letter-spacing: -0.2px; }
+  .dbm-kv .editorial { color: #0f172a; font-weight: 600; }
+  .dbm-kv .editorial.g { color: #059669; }
 
-  /* Solid dark card / terminal */
-  .dbm-card, .dbm-terminal {
-    background: linear-gradient(165deg, #0e2240 0%, #0a192f 60%, #081424 100%);
-    border: 1px solid rgba(255,255,255,0.07);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1), 0 20px 40px -10px rgba(5,11,20,0.55), inset 0 1px 0 rgba(255,255,255,0.08);
-    border-radius: 14px; padding: 1.1rem; width: 100%; color: #f8fafc;
-    font-size: 0.72rem; font-weight: 500; position: relative;
-  }
-  .dbm-terminal { font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
-  .editorial { font-family: var(--font-mono, ui-monospace, monospace); letter-spacing: -0.2px; }
-  b { font-weight: 700; color: #fff; }
+  /* tags */
+  .dbm-tg { flex-shrink: 0; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; padding: 3px 9px; border-radius: 100px; }
+  .dbm-tg-blue { color: #2563eb; background: rgba(37,99,235,0.09); border: 1px solid rgba(37,99,235,0.2); }
+  .dbm-tg-green { color: #059669; background: rgba(16,185,129,0.09); border: 1px solid rgba(16,185,129,0.22); }
+  .dbm-tg-amber { color: #d97706; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25); }
+  .dbm-tg-red { color: #dc2626; background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.2); }
+  .dbm-tg-gray { color: #64748b; background: rgba(10,25,47,0.05); border: 1px solid rgba(10,25,47,0.1); }
 
-  .dbm-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(255,255,255,0.4); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); }
-  .dbm-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 10px 0; }
-
-  /* Pills */
-  .dbm-pill {
-    background: #0f172a; border: 1px solid rgba(255,255,255,0.08);
-    padding: 6px 12px; border-radius: 100px; display: flex; align-items: center; gap: 6px;
-    font-size: 0.62rem; font-weight: 600; white-space: nowrap; color: #e2e8f0;
-  }
-  .dbm-pill-brand { background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; color: #fff; box-shadow: 0 4px 12px rgba(37,99,235,0.3); font-family: ui-monospace, monospace; }
-  .dbm-pill-danger { background: rgba(127,29,29,0.6); border-color: rgba(239,68,68,0.35); color: #fecaca; }
-  .dbm-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-  .dbm-dot-blue { background: #60a5fa; box-shadow: 0 0 6px rgba(96,165,250,0.6); }
-  .dbm-dot-green { background: #34d399; box-shadow: 0 0 6px rgba(52,211,153,0.6); }
-  .dbm-dot-red { background: #f87171; box-shadow: 0 0 6px rgba(248,113,113,0.6); }
-
-  /* Code / syntax */
-  .dbm-code { line-height: 1.65; font-size: 0.66rem; }
-  .dbm-tag-lt { color: #ec4899; }
-  .dbm-str { color: #34d399; }
-  .dbm-key { color: #93c5fd; }
-  .dbm-num { color: #fcd34d; }
-  .dbm-cursor { display: inline-block; width: 6px; height: 12px; background: #fff; vertical-align: middle; margin-left: 2px; animation: dbm-blink 1s step-end infinite; }
-  @keyframes dbm-blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
-
-  /* Nodes + sync rail (api-0, mcp-1) */
-  .dbm-sync { display: flex; align-items: center; gap: 10px; }
-  .dbm-sync-side { flex-shrink: 0; }
-  .dbm-node { background: rgba(255,255,255,0.05); padding: 7px 13px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.68rem; font-weight: 600; }
-  .dbm-node-soft { color: rgba(255,255,255,0.8); }
-  .dbm-node.dbm-brand { background: rgba(59,130,246,0.15); border-color: #3b82f6; color: #93c5fd; box-shadow: 0 0 18px rgba(59,130,246,0.18); }
-  .dbm-node-ext { color: #34d399; border-color: rgba(52,211,153,0.3); }
-  .dbm-sync-rail { flex: 1; height: 2px; background: rgba(255,255,255,0.1); position: relative; }
-  .dbm-rail-dot { position: absolute; top: -3px; width: 8px; height: 8px; border-radius: 50%; opacity: 0; }
-  .dbm-rail-r { left: 0; background: #3b82f6; box-shadow: 0 0 10px #3b82f6; }
-  .dbm-rail-l { left: 0; background: #34d399; box-shadow: 0 0 10px #34d399; }
+  /* sync lane (api-0, mcp-1) */
+  .dbm-sync-lane { display: flex; align-items: center; gap: 10px; padding: 14px 16px 10px; }
+  .dbm-node { flex-shrink: 0; padding: 8px 12px; border-radius: 9px; font-size: 0.68rem; font-weight: 600; background: #f4f6f9; border: 1px solid rgba(10,25,47,0.07); color: #475569; }
+  .dbm-node-soft { color: #475569; }
+  .dbm-node-brand { background: #fff; border-color: rgba(37,99,235,0.22); box-shadow: 0 2px 10px rgba(37,99,235,0.1); display: inline-flex; align-items: center; padding: 9px 13px; }
+  .dbm-node-brand img { height: 13px; width: auto; display: block; }
+  .dbm-node-ext { color: #047857; border-color: rgba(16,185,129,0.28); background: rgba(16,185,129,0.05); }
+  .dbm-rail { flex: 1; height: 2px; background: rgba(10,25,47,0.08); position: relative; border-radius: 2px; }
+  .dbm-rail-dot { position: absolute; top: -3px; left: 0; width: 8px; height: 8px; border-radius: 50%; opacity: 0; }
+  .dbm-rail-r { background: #2563eb; box-shadow: 0 0 10px rgba(37,99,235,0.6); }
+  .dbm-rail-l { background: #059669; box-shadow: 0 0 10px rgba(16,185,129,0.6); }
 
   /* api-0 sync rows */
-  .dbm-sync-rows { margin-top: 12px; display: flex; flex-direction: column; gap: 5px; }
-  .dbm-sync-row { font-size: 0.64rem; padding: 7px 10px; border-radius: 8px; background: rgba(255,255,255,0.025); color: rgba(255,255,255,0.78); opacity: 0; }
-  .dbm-sync-row .dbm-ar { color: #60a5fa; font-weight: 800; }
-  .dbm-sync-row .dbm-al { color: #34d399; font-weight: 800; }
+  .dbm-sync-row .dbm-ar, .dbm-sync-row .dbm-al { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 7px; font-weight: 800; flex-shrink: 0; }
+  .dbm-sync-row .dbm-ar { color: #2563eb; background: rgba(37,99,235,0.1); }
+  .dbm-sync-row .dbm-al { color: #059669; background: rgba(16,185,129,0.1); }
 
   /* api-1 auth */
-  .dbm-keychip { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 10px; background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.18); margin-bottom: 12px; transition: opacity 0.3s; }
-  .dbm-keychip svg { width: 16px; height: 16px; color: #93c5fd; flex-shrink: 0; }
-  .dbm-keyval { font-family: ui-monospace, monospace; font-size: 0.66rem; color: #cbd5e1; letter-spacing: 0.5px; }
-  .dbm-key-revoked { opacity: 0.4; }
-  .dbm-key-revoked .dbm-keyval { text-decoration: line-through; color: #f87171; }
-  .dbm-scopes { display: flex; gap: 8px; }
-  .dbm-scope { flex: 1; display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 9px; background: rgba(255,255,255,0.025); font-size: 0.62rem; }
-  .dbm-scope span { font-family: ui-monospace, monospace; color: #93c5fd; }
-  .dbm-scope b { color: rgba(255,255,255,0.55); font-weight: 500; font-size: 0.58rem; margin-left: auto; }
-  .dbm-scope-check { width: 14px; height: 14px; border-radius: 50%; background: #10b981; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.5rem; font-style: normal; font-weight: 800; }
-  .dbm-reqline { display: flex; justify-content: space-between; align-items: center; font-family: ui-monospace, monospace; font-size: 0.64rem; color: rgba(255,255,255,0.6); }
-  .dbm-status { font-weight: 700; color: #34d399; }
-  .dbm-status-fail { color: #f87171; }
+  .dbm-keychip { display: flex; align-items: center; gap: 9px; padding: 10px 12px; margin: 8px 6px 4px; border-radius: 10px; background: #f4f6f9; border: 1px solid rgba(10,25,47,0.06); transition: opacity 0.3s; }
+  .dbm-key-ico { width: 20px; height: 20px; flex-shrink: 0; color: #2563eb; }
+  .dbm-key-ico svg { width: 100%; height: 100%; }
+  .dbm-key-val { font-family: ui-monospace, monospace; font-size: 0.7rem; color: #0f172a; letter-spacing: 0.3px; flex: 1; }
+  .dbm-keychip .dbm-tg { margin-left: auto; }
+  .dbm-key-revoked { opacity: 0.55; }
+  .dbm-key-revoked .dbm-key-val { text-decoration: line-through; color: #dc2626; }
+  .dbm-scopes { display: flex; gap: 8px; padding: 8px 6px; }
+  .dbm-scope { flex: 1; display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 9px; background: #f8fafc; border: 1px solid rgba(10,25,47,0.05); font-size: 0.66rem; }
+  .dbm-scope span { font-family: ui-monospace, monospace; color: #2563eb; font-weight: 600; }
+  .dbm-scope b { color: #94a3b8; font-weight: 500; font-size: 0.6rem; margin-left: auto; }
+  .dbm-scope-ck { width: 15px; height: 15px; border-radius: 50%; background: #10b981; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.52rem; font-style: normal; font-weight: 800; }
+  .dbm-reqline { display: flex; justify-content: space-between; align-items: center; margin: 4px 6px 0; padding: 10px 12px; border-radius: 9px; background: #f8fafc; font-family: ui-monospace, monospace; font-size: 0.68rem; color: #64748b; }
+  .dbm-status { font-weight: 700; color: #059669; }
+  .dbm-status-fail { color: #dc2626; }
+  .dbm-revoke-tag { cursor: default; transition: background 0.3s, color 0.3s; }
 
-  /* api-2 json */
-  .dbm-api-json { margin: 0; }
-  .dbm-api-json code { font-family: ui-monospace, monospace; font-size: 0.66rem; line-height: 1.7; color: rgba(255,255,255,0.82); white-space: pre; }
-  .dbm-hl-target { transition: color 0.3s, text-shadow 0.3s; }
-  .dbm-meta { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); font-family: ui-monospace, monospace; font-size: 0.58rem; color: rgba(255,255,255,0.4); }
-  .dbm-meta-total { color: #93c5fd; }
-
-  /* Segmented control (api-2 tabs, mcp transports, el tabs) */
-  .dbm-seg { display: inline-flex; background: rgba(255,255,255,0.04); border-radius: 9px; padding: 3px; gap: 2px; margin-bottom: 12px; flex-wrap: wrap; }
-  .dbm-seg span { font-size: 0.58rem; font-weight: 600; color: rgba(255,255,255,0.45); padding: 5px 9px; border-radius: 7px; white-space: nowrap; transition: color 0.25s, background 0.25s; }
-  .dbm-seg .dbm-seg-on { background: rgba(59,130,246,0.2); color: #93c5fd; box-shadow: inset 0 0 0 1px rgba(59,130,246,0.3); }
+  /* segmented control */
+  .dbm-seg { display: inline-flex; background: rgba(10,25,47,0.045); border-radius: 9px; padding: 3px; gap: 2px; margin: 8px 6px; flex-wrap: wrap; }
+  .dbm-seg span { font-size: 0.62rem; font-weight: 700; color: #94a3b8; padding: 5px 10px; border-radius: 7px; white-space: nowrap; transition: color 0.25s, background 0.25s, box-shadow 0.25s; }
+  .dbm-seg .dbm-seg-on { background: #ffffff; color: #0f172a; box-shadow: 0 1px 3px rgba(10,25,47,0.12); }
 
   /* mcp-0 tool list */
-  .dbm-toollist { display: flex; flex-direction: column; gap: 4px; }
-  .dbm-toolrow { display: flex; align-items: center; gap: 8px; font-family: ui-monospace, monospace; font-size: 0.62rem; color: rgba(255,255,255,0.78); padding: 5px 9px; border-radius: 7px; background: rgba(255,255,255,0.025); }
-  .dbm-toolrow i { width: 6px; height: 6px; border-radius: 50%; background: #34d399; box-shadow: 0 0 6px rgba(52,211,153,0.6); flex-shrink: 0; }
-  .dbm-toolrow-write b { margin-left: auto; font-size: 0.5rem; font-weight: 700; color: #fbbf24; background: rgba(245,158,11,0.14); padding: 2px 6px; border-radius: 5px; }
+  .dbm-toollist { display: flex; flex-direction: column; gap: 3px; padding: 2px 6px 4px; }
+  .dbm-toolrow { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: 8px; background: #f8fafc; }
+  .dbm-toolrow code { font-family: ui-monospace, monospace; font-size: 0.68rem; color: #334155; flex: 1; }
+  .dbm-toolrow .dbm-tool-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; flex-shrink: 0; }
+  .dbm-toolrow .dbm-tool-dot.dbm-w { background: #f59e0b; }
 
   /* mcp-1 log */
-  .dbm-log { margin-top: 12px; display: flex; flex-direction: column; gap: 3px; font-family: ui-monospace, monospace; }
-  .dbm-log > div { font-size: 0.6rem; color: rgba(255,255,255,0.6); opacity: 0; }
-  .dbm-success { color: #34d399; }
+  .dbm-log { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; font-family: ui-monospace, monospace; }
+  .dbm-log > div { font-size: 0.68rem; color: #64748b; opacity: 0; display: flex; align-items: center; gap: 8px; }
+  .dbm-log-t { color: #94a3b8; font-weight: 700; }
+  .dbm-log-ok { color: #059669 !important; }
+  .dbm-log-ok .dbm-log-t { color: #059669; }
 
   /* mcp-2 governance */
-  .dbm-gov { display: flex; flex-direction: column; gap: 5px; }
-  .dbm-gov-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,0.025); font-size: 0.66rem; color: rgba(255,255,255,0.75); }
-  .dbm-gov-target { background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.14); }
-  .dbm-gov-pill { font-size: 0.54rem; font-weight: 700; padding: 3px 9px; border-radius: 100px; white-space: nowrap; }
-  .dbm-gov-on { color: #34d399; background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.25); }
-  .dbm-gov-off { color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); }
+  .dbm-gov-target { background: rgba(37,99,235,0.045); }
+  .dbm-gov-pill { flex-shrink: 0; font-size: 0.56rem; font-weight: 800; padding: 3px 9px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .dbm-gov-on { color: #059669; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.22); }
+  .dbm-gov-off { color: #94a3b8; background: rgba(10,25,47,0.04); border: 1px solid rgba(10,25,47,0.08); }
 
-  /* el-0 preview */
-  .dbm-el-preview { position: relative; margin-top: 12px; height: 50px; border-radius: 9px; overflow: hidden; }
+  /* fx-0 */
+  .dbm-fx-hero { display: flex; align-items: stretch; gap: 8px; padding: 10px 10px 12px; }
+  .dbm-fx-side { flex: 1; background: #f8fafc; border: 1px solid rgba(10,25,47,0.05); border-radius: 10px; padding: 11px 12px; }
+  .dbm-fx-side span { display: block; font-size: 0.56rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: #a3adba; }
+  .dbm-fx-side b { display: block; font-size: 1rem; color: #0f172a; margin-top: 4px; }
+  .dbm-fx-side b.g { color: #059669; }
+  .dbm-fx-arrow { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 0 2px; }
+  .dbm-fx-arrow svg { width: 18px; height: 18px; color: #2563eb; }
+  .dbm-fx-arrow em { font-style: normal; font-size: 0.52rem; font-family: ui-monospace, monospace; color: #94a3b8; white-space: nowrap; }
+  .dbm-cbar { height: 8px; border-radius: 100px; background: #eef2f7; overflow: hidden; }
+  .dbm-cbar > i { display: block; height: 100%; border-radius: 100px; }
+
+  /* fiscal-0 inline terminal */
+  .dbm-term-inline { margin: 6px 12px; padding: 9px 12px; border-radius: 9px; background: #0e1b2e; font-family: ui-monospace, monospace; font-size: 0.64rem; color: #93c5fd; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .dbm-term-inline code { color: #7eb3ff; }
+  .dbm-term-inline b { color: #fcd34d; }
+
+  /* ── TERMINAL DARK (código/JSON) ── */
+  .dbm-term {
+    width: 100%;
+    background: linear-gradient(168deg, #0e2036 0%, #0a1628 60%, #08111f 100%);
+    border-radius: 16px; border: 1px solid rgba(255,255,255,0.06); overflow: hidden;
+    box-shadow: 0 1px 2px rgba(2,6,12,0.3), 0 18px 44px -14px rgba(2,6,12,0.55), 0 44px 90px -30px rgba(2,6,12,0.6);
+    color: #e2e8f0; text-align: left;
+  }
+  .dbm-term-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); }
+  .dbm-term-title { font-family: ui-monospace, monospace; font-size: 0.7rem; font-weight: 600; color: rgba(255,255,255,0.72); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dbm-term-method { font-weight: 800; color: #34d399; margin-right: 4px; }
+  .dbm-term-badge { flex-shrink: 0; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.4px; padding: 4px 10px; border-radius: 100px; color: #4ade80; background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.24); }
+  .dbm-term-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 15px; border-top: 1px solid rgba(255,255,255,0.06); font-family: ui-monospace, monospace; font-size: 0.58rem; color: rgba(255,255,255,0.4); }
+  .dbm-term-total { color: #93c5fd; }
+  .dbm-code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; line-height: 1.7; font-size: 0.68rem; color: rgba(255,255,255,0.82); white-space: pre-wrap; padding: 12px 15px; margin: 0; }
+  .dbm-api-json { padding: 12px 15px; }
+  .dbm-api-json code { font-family: inherit; white-space: pre; }
+  .dbm-hl-target { transition: color 0.3s; }
+  .dbm-int-headers { padding: 10px 15px 4px; font-family: ui-monospace, monospace; font-size: 0.64rem; line-height: 1.9; }
+
+  /* el-0/el-1 (dead) */
+  .dbm-el-code { font-size: 0.6rem; }
+  .dbm-el-codebox { min-height: 34px; transition: opacity 0.18s; }
+  .dbm-cursor { display: inline-block; width: 6px; height: 12px; background: #fff; vertical-align: middle; margin-left: 2px; animation: dbm-blink 1s step-end infinite; }
+  @keyframes dbm-blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+  .dbm-el-preview { position: relative; margin: 8px 15px 4px; height: 46px; border-radius: 9px; overflow: hidden; }
   .dbm-el-skel { position: absolute; inset: 0; border-radius: 9px; background: rgba(255,255,255,0.05); background-image: linear-gradient(100deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%); background-size: 200% 100%; }
   .dbm-el-mini { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; border-radius: 9px; background: #fff; color: #0a192f; opacity: 0; }
   .dbm-el-mini span { font-size: 0.66rem; color: #64748b; font-weight: 600; }
-  .dbm-el-mini b { font-size: 0.9rem; color: #0a192f; }
+  .dbm-el-mini b { font-size: 0.82rem; color: #0a192f; }
 
-  /* el-1 code */
-  .dbm-el-code { min-height: 34px; font-size: 0.6rem; transition: opacity 0.18s; }
-  .dbm-el-pkg { margin-top: 12px; font-family: ui-monospace, monospace; font-size: 0.6rem; color: #93c5fd; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); padding: 5px 10px; border-radius: 7px; display: inline-block; }
-
-  /* el-2 embedded card (light) */
-  .dbm-el-m2 { position: relative; width: 100%; }
-  .dbm-el-card { background: #fff; border-radius: 12px; padding: 0.95rem; box-shadow: 0 14px 34px rgba(2,6,12,0.5); }
-  .dbm-el-cardhead { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-  .dbm-el-brand { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg,#f59e0b,#d97706); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.52rem; font-weight: 800; }
-  .dbm-el-cardhead b { font-size: 0.72rem; color: #0a192f; flex: 1; }
-  .dbm-el-badge { font-size: 0.52rem; font-weight: 800; padding: 3px 8px; border-radius: 100px; color: #d97706; background: rgba(245,158,11,0.14); white-space: nowrap; transition: background 0.3s, color 0.3s; }
-  .dbm-el-line { display: flex; justify-content: space-between; align-items: center; font-size: 0.68rem; color: #475569; padding: 6px 0 10px; }
-  .dbm-el-line .editorial { color: #0a192f; font-weight: 600; }
-  .dbm-el-approve { text-align: center; font-size: 0.7rem; font-weight: 700; color: #fff; background: #0a192f; border-radius: 8px; padding: 9px; }
-  .dbm-el-csp { margin-top: 10px; font-family: ui-monospace, monospace; font-size: 0.55rem; color: rgba(52,211,153,0.8); text-align: center; }
-
-  /* fake cursor */
-  .dbm-fake-cursor { position: absolute; z-index: 50; bottom: 40px; right: 28px; width: 20px; height: 20px; color: #0a192f; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4)); opacity: 0; pointer-events: none; }
+  /* el-2 embed (dead) */
+  .dbm-el-embed { position: relative; padding: 14px; background: #f0ede8; }
+  .dbm-el-card { background: #fff; border-radius: 12px; padding: 0.9rem; box-shadow: 0 10px 28px -8px rgba(10,25,47,0.18); border: 1px solid rgba(10,25,47,0.05); }
+  .dbm-el-cardhead { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .dbm-el-cardhead b { font-size: 0.74rem; color: #0a192f; flex: 1; }
+  .dbm-el-badge { font-size: 0.54rem; font-weight: 800; padding: 3px 8px; border-radius: 100px; color: #d97706; background: rgba(245,158,11,0.14); white-space: nowrap; transition: background 0.3s, color 0.3s; }
+  .dbm-btn2 { text-align: center; font-size: 0.74rem; font-weight: 700; padding: 10px; border-radius: 9px; margin-top: 4px; }
+  .dbm-btn2-nav { background: #0a192f; color: #fff; }
+  .dbm-el2-event span { display: flex; align-items: center; gap: 7px; color: #059669; font-family: ui-monospace, monospace; font-size: 0.64rem; }
+  .dbm-evt-dot { width: 6px; height: 6px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px rgba(52,211,153,0.7); }
+  .dbm-fake-cursor { position: absolute; right: 30px; bottom: 20px; width: 20px; height: 20px; color: #0a192f; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.35)); opacity: 0; z-index: 5; }
   .dbm-fake-cursor svg { width: 100%; height: 100%; }
-
-  @media (max-width: 860px) {
-    .dbm-wrap { min-height: 230px; padding: 1.5rem 1rem; }
-    .dbm-stage { max-width: 300px; }
-    .dbm-float-top-right, .dbm-float-bottom-right { right: 0; transform: translate(4%, -38%); }
-    .dbm-float-top-left, .dbm-float-bottom-left { left: 0; transform: translate(-4%, -38%); }
-    .dbm-float-bottom-right, .dbm-float-bottom-left { transform: translate(4%, 38%); }
-  }
 </style>
 
-<!-- Colores de sintaxis para el código que el <script> de [slug].astro inyecta en runtime
-     (innerHTML). El DOM inyectado NO lleva el data-attr de scope de Astro, así que estas
-     reglas DEBEN ser globales o no pintarían. (Ver regla del proyecto sobre DOM inyectado.) -->
+<!-- Colores de sintaxis para el JSON que el <script> de [slug].astro inyecta en
+     runtime (innerHTML). El DOM inyectado NO lleva el data-attr de scope de Astro,
+     así que estas reglas DEBEN ser globales. -->
 <style is:global>
-  .dbm-tag-lt { color: #ec4899; }
-  .dbm-str { color: #34d399; }
-  .dbm-key { color: #93c5fd; }
-  .dbm-num { color: #fcd34d; }
+  .dbm-jtag { color: #f472b6; }
+  .dbm-jstr { color: #7dd3fc; }
+  .dbm-jkey { color: #93c5fd; }
+  .dbm-jnum { color: #fcd34d; }
   .dbm-hl-target { transition: color 0.3s; }
 </style>

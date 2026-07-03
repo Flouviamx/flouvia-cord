@@ -156,12 +156,15 @@ const locale = lang === 'es' ? 'es_MX' : 'en_US';
         font-variant-numeric: tabular-nums;
     }
 
-    /* Unificar todos los títulos principales de páginas públicas (Hero style sobrio pero negrita) */
+    /* Unificar todos los títulos principales de páginas públicas (Hero style sobrio pero negrita).
+       Estándar = el tamaño del hero del index (jul 2026, a petición de André: "quiero que
+       todos los títulos estén igual" — antes el index era más chico a propósito; ahora su
+       tamaño es EL estándar para toda la web pública). */
     h1.masked-title {
-        font-size: clamp(2.4rem, 4.8vw, 4.5rem) !important;
-        line-height: 1.06 !important;
-        font-weight: 800 !important;
-        letter-spacing: -0.04em !important;
+        font-size: clamp(2.1rem, 3.4vw, 3.6rem) !important;
+        line-height: 1.1 !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.035em !important;
         color: var(--color-blue-deep) !important;
         margin: 0 auto 3rem !important;
         max-width: 900px !important;
