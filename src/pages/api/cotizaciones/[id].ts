@@ -82,6 +82,11 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     const rows = await sql`select id, status, version from cotizaciones where id = ${id} and org_id = ${orgId}`;
     if (!rows.length) return json({ error: 'Cotización no encontrada' }, 404);
 
+    const actual = rows[0].status as string;
+    if (!action.from.includes(actual)) {
+        return json({ error: `No se puede pasar de "${actual}" con esta acción` }, 409);
+    }
+
     // Si se actualizan líneas (resend, update_draft, o send con items)
     if (['resend', 'update_draft', 'send'].includes(body.action) && Array.isArray(body.items)) {
         let subtotal = 0;
@@ -129,10 +134,6 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         }
     }
 
-    const actual = rows[0].status as string;
-    if (!action.from.includes(actual)) {
-        return json({ error: `No se puede pasar de "${actual}" con esta acción` }, 409);
-    }
 
     const now = new Date().toISOString();
     if (action.to === 'sent') {
