@@ -61,10 +61,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     const orgId = await getActiveOrgId();
     // Límite por plan (free también tiene, pero poquito). Contamos los existentes.
-    const [[[planResult]]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`);
+    const [[planResult]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`);
     const plan = planResult?.plan;
     let usados = 0;
-    try { const [[[c]]] = await withOrgTx(orgId, sql`select count(*)::int as n from webhooks where org_id = ${orgId}`); usados = (c?.n as number) ?? 0; }
+    try { const [[c]] = await withOrgTx(orgId, sql`select count(*)::int as n from webhooks where org_id = ${orgId}`); usados = (c?.n as number) ?? 0; }
     catch { return json({ error: 'No se pudo crear. ¿Corriste la migración (npm run db:migrate)?' }, 500); }
     const limite = webhookLimit(plan as string);
     if (usados >= limite) {

@@ -28,10 +28,10 @@ export const POST: APIRoute = async ({ request }) => {
     // Límite por plan de claves ACTIVAS (no revocadas). Todos los planes (incluido
     // free) pueden generar claves de prueba Y en vivo, pero la cantidad está
     // limitada — free = prueba real (poquito); el consumo se mide por uso aparte.
-    const [[[planResult]]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`);
+    const [[planResult]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`);
     const plan = planResult?.plan;
     let activas = 0;
-    try { const [[[c]]] = await withOrgTx(orgId, sql`select count(*)::int as n from api_keys where org_id = ${orgId} and revoked_at is null`); activas = (c?.n as number) ?? 0; }
+    try { const [[c]] = await withOrgTx(orgId, sql`select count(*)::int as n from api_keys where org_id = ${orgId} and revoked_at is null`); activas = (c?.n as number) ?? 0; }
     catch { return json({ error: 'No se pudo crear la llave. ¿Corriste la migración (npm run db:migrate)?' }, 500); }
     const limite = apiKeyLimit(plan as string);
     if (activas >= limite) {
