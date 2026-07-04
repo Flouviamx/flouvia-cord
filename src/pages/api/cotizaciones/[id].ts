@@ -111,7 +111,6 @@ export const PATCH: APIRoute = async ({ params, request }) => {
                         notas = ${body.notas || null},
                         base_currency = ${body.base_currency || 'MXN'},
                         fiscal_currency = ${body.fiscal_currency || 'MXN'},
-                        fx_buffer_pct = ${Number(body.fx_buffer_pct) || 0},
                         subtotal = ${realSubtotal}, iva = ${iva}, total = ${total},
                         version = ${nextVersion}, iva_incluido = ${iva_incluido}
                       where id = ${id}`;
