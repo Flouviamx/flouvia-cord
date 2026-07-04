@@ -22,6 +22,15 @@ const canEdit = memberCan(ME, 'productos');
             <h2>Catálogo</h2>
             <span class="cat-count">{PRODUCTOS.length} producto{PRODUCTOS.length === 1 ? '' : 's'}</span>
         </div>
+        <div class="search-bar-wrap">
+            <div class="search-bar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="searchProductos" type="search" placeholder="Buscar por nombre, SKU o unidad…" autocomplete="off" />
+                <button class="search-clear" id="searchClear" aria-label="Limpiar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+        </div>
         <div class="t-head">
             <span>SKU</span><span>Producto</span><span>Unidad</span><span class="t-right">Precio de lista</span><span>Estado</span>
         </div>
@@ -778,4 +787,97 @@ const canEdit = memberCan(ME, 'productos');
             URL.revokeObjectURL(a.href);
         });
     });
+</script>
+
+<style>
+    .search-bar-wrap {
+        padding: 0.75rem 0 0.25rem;
+    }
+    .search-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        background: var(--color-surface, #f5f5f7);
+        border: 1.5px solid transparent;
+        border-radius: 10px;
+        padding: 0 0.9rem;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        max-width: 420px;
+    }
+    .search-bar:focus-within {
+        border-color: var(--color-blue-deep, #0a192f);
+        box-shadow: 0 0 0 3px rgba(10,25,47,0.07);
+        background: #fff;
+    }
+    .search-bar svg {
+        width: 16px;
+        height: 16px;
+        color: var(--color-text-muted, #888);
+        flex-shrink: 0;
+    }
+    .search-bar input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        outline: none;
+        font-size: 0.875rem;
+        color: var(--color-text, #111);
+        padding: 0.6rem 0;
+        font-family: inherit;
+    }
+    .search-bar input::placeholder { color: #aaa; }
+    .search-clear {
+        display: none;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        color: #aaa;
+        line-height: 1;
+    }
+    .search-clear svg { width: 14px; height: 14px; }
+    .search-clear:hover { color: var(--color-blue-deep, #0a192f); }
+    .t-row[hidden] { display: none !important; }
+    .search-no-results {
+        text-align: center;
+        padding: 2.5rem 1rem;
+        color: var(--color-text-muted, #888);
+        font-size: 0.9rem;
+        display: none;
+    }
+</style>
+
+<script is:inline>
+    (function () {
+        const input = document.getElementById('searchProductos');
+        const clearBtn = document.getElementById('searchClear');
+        if (!input) return;
+
+        const rows = Array.from(document.querySelectorAll('.catalogo .t-row'));
+        let noResults = document.querySelector('.search-no-results');
+        if (!noResults) {
+            noResults = document.createElement('div');
+            noResults.className = 'search-no-results';
+            noResults.textContent = 'Sin resultados para esta búsqueda.';
+            input.closest('.catalogo').appendChild(noResults);
+        }
+
+        function filter() {
+            const q = input.value.trim().toLowerCase();
+            clearBtn.style.display = q ? 'block' : 'none';
+            let visible = 0;
+            rows.forEach(row => {
+                const sku = (row.dataset.sku || '').toLowerCase();
+                const nombre = (row.dataset.nombre || '').toLowerCase();
+                const unidad = (row.dataset.unidad || '').toLowerCase();
+                const match = !q || sku.includes(q) || nombre.includes(q) || unidad.includes(q);
+                row.hidden = !match;
+                if (match) visible++;
+            });
+            noResults.style.display = visible === 0 && q ? 'block' : 'none';
+        }
+
+        input.addEventListener('input', filter);
+        clearBtn.addEventListener('click', () => { input.value = ''; clearBtn.style.display = 'none'; filter(); input.focus(); });
+    })();
 </script>
