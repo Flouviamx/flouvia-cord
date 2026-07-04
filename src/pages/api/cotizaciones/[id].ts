@@ -103,10 +103,11 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         const nextVersion = body.action === 'resend' ? Number(rows[0].version || 1) + 1 : Number(rows[0].version || 1);
 
         if (body.action === 'update_draft' || (body.action === 'send' && actual === 'draft')) {
+            const vigDias = Number(body.vigencia_dias) || 30;
             await sql`update cotizaciones set
                         cliente_id = ${body.cliente_id || null},
                         terminos = ${body.terminos || 'contado'},
-                        vigencia_dias = ${Number(body.vigencia_dias) || 30},
+                        vigencia = (current_date + (${vigDias} * interval '1 day'))::date,
                         notas = ${body.notas || null},
                         base_currency = ${body.base_currency || 'MXN'},
                         fiscal_currency = ${body.fiscal_currency || 'MXN'},
