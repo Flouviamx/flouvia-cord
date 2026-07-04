@@ -38,6 +38,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     const id = params.id ?? '';
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
+    try {
 
     // Permisos: aprobar/rechazar requieren 'aprobar'; lo demás, 'cotizar'.
     const denied = await requirePerm(APROBAR_ACTIONS.has(String(body.action)) ? 'aprobar' : 'cotizar');
@@ -141,7 +142,8 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     } else if (action.to === 'approved') {
         await sql`update cotizaciones set status = 'approved', approved_at = ${now} where id = ${id}`;
     } else {
-        await sql.query(`update cotizaciones set status = $1 where id = $2`, [action.to, id]);
+        await sql`update cotizaciones set status = ${action.to} where id = ${id}`;
+
     }
 
     await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
@@ -174,6 +176,10 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     }
 
     return json({ ok: true, status: action.to, email, fiscal });
+    } catch (err: any) {
+        console.error('[PATCH cotizacion]', err);
+        return json({ error: err?.message || 'Error interno' }, 500);
+    }
 };
 
 export const DELETE: APIRoute = async ({ params }) => {
