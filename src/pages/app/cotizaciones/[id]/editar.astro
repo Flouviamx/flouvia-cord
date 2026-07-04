@@ -113,7 +113,7 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
     </div>
 </AppLayout>
 
-<script is:inline define:vars={{ catalogo, aprobMargenMin: ORG.aprobMargenMin, qItems: q.items, qId: q.id }}>
+<script is:inline define:vars={{ catalogo, aprobMargenMin: ORG.aprobMargenMin, qItems: q.items, qId: q.id, qStatus: q.status }}>
     const lines = [...qItems].map(it => ({
         id: it.producto_id || null, // Nota: el rowToQuote no incluye producto_id nativamente, requeriría arreglo si es vital, pero se asume nombre
         nombre: it.descripcion,
@@ -245,7 +245,7 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
         const original = btn.innerHTML;
         btn.disabled = true; btn.style.opacity = '0.7';
         
-        const isDraft = ${q.status === 'draft'};
+        const isDraft = qStatus === 'draft';
         if (action === 'send') showToast(isDraft ? 'Enviando al cliente…' : 'Generando nueva versión y enviando…');
         else showToast('Guardando borrador…');
         
@@ -279,7 +279,7 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
         }
     }
 
-    document.getElementById('btnSend')?.addEventListener('click', (e) => save(e.currentTarget, ${q.status === 'draft' ? "'send'" : "'resend'"}));
+    document.getElementById('btnSend')?.addEventListener('click', (e) => save(e.currentTarget, qStatus === 'draft' ? 'send' : 'resend'));
     document.getElementById('btnUpdateDraft')?.addEventListener('click', (e) => save(e.currentTarget, 'update_draft'));
 
     render();
