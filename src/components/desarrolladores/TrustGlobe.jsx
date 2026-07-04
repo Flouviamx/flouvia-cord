@@ -1,136 +1,186 @@
-import { useRef, useMemo, useEffect, useState } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
+import { useRef, useMemo, useEffect, useState, Suspense } from 'react'
+import { Canvas, useFrame, useLoader } from '@react-three/fiber'
+import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TrustGlobe — globo 3D de puntos "tipo Stripe" para la sección de confianza de
-// /desarrolladores/[slug]. NO es un fragment-shader fullscreen como las auroras
-// del proyecto: aquí SÍ hay geometría 3D real (perspectiva/profundidad).
-//   • Puntos distribuidos en espiral de Fibonacci sobre la esfera (no wireframe).
-//   • ShaderMaterial propio: puntos circulares suaves + size attenuation por
-//     profundidad + fresnel (borde de la esfera más tenue que el centro).
-//   • 6 arcos great-circle con un pulso viajero (paquetes de datos, estilo Stripe).
-//   • Auto-rotación Y lenta + tilt reactivo al mouse (lerp, tracking por window).
-//   • Paleta navy/azul Cord (#5aa9ff / #93c5fd) sobre #08152a — SIN teal.
+// TrustGlobe — globo interactivo estilo Stripe.
+//   • Textura de tierra precisa (puntos sólo en los continentes).
+//   • Océano reemplazado por un aura/aurora azul claro sutil.
+//   • 18,000 puntos para súper alta definición.
+//   • Interactivo: OrbitControls para arrastrar y mover con el mouse.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const R = 1.0 // radio de la esfera
+const R = 1.0
 
-// ── Colores (lineales, se multiplican en el shader) ──────────────────────────
-const COL_DOT   = new THREE.Color('#5aa9ff') // azul acento (coherente con .dvt-dot)
-const COL_DOT2  = new THREE.Color('#93c5fd') // azul-blanco frío para variar
-const COL_ARC   = new THREE.Color('#bcd9ff') // arcos: un poco más blancos
-const COL_PULSE = new THREE.Color('#ffffff') // cresta del pulso: blanco
+const EARTH_MASK_URL = 'https://unpkg.com/three-globe/example/img/earth-water.png'
 
-// ─── Esfera de Fibonacci ──────────────────────────────────────────────────────
-function fibonacciSphere(n, radius) {
-  const pts = []
-  const phi = Math.PI * (3.0 - Math.sqrt(5.0)) // golden angle
-  for (let i = 0; i < n; i++) {
-    const y = 1 - (i / (n - 1)) * 2 // -1 .. 1
-    const r = Math.sqrt(1 - y * y)
-    const theta = phi * i
-    pts.push(new THREE.Vector3(Math.cos(theta) * r, y, Math.sin(theta) * r).multiplyScalar(radius))
-  }
-  return pts
+function latLonToVec3(lat, lon, radius) {
+  const phi = (90 - lat) * Math.PI / 180
+  // Prime Meridian (lon=0) at +Z. East (lon=90) at +X.
+  const theta = lon * Math.PI / 180
+  return new THREE.Vector3(
+    radius * Math.sin(phi) * Math.sin(theta),
+    radius * Math.cos(phi),
+    radius * Math.sin(phi) * Math.cos(theta),
+  )
 }
 
-// slerp entre dos puntos sobre la esfera (arco great-circle)
+function fibonacciSphere(n, radius) {
+  const positions = new Float32Array(n * 3)
+  const uvs = new Float32Array(n * 2)
+  const rands = new Float32Array(n)
+  
+  const golden = Math.PI * (3 - Math.sqrt(5))
+  for (let i = 0; i < n; i++) {
+    const y = 1 - (i / (n - 1)) * 2
+    const r = Math.sqrt(1 - y * y)
+    const theta = golden * i
+    
+    const x = Math.cos(theta) * r
+    const z = Math.sin(theta) * r
+    
+    positions[i * 3] = x * radius
+    positions[i * 3 + 1] = y * radius
+    positions[i * 3 + 2] = z * radius
+    
+    // Calcular lat/lon consistentes con latLonToVec3
+    const lat = Math.asin(THREE.MathUtils.clamp(y, -1, 1))
+    const lon = Math.atan2(x, z) // atan2(x, z) para mapear X=East, Z=Greenwich
+    
+    // UV map estándar: Greenwich en el centro (0.5)
+    uvs[i * 2] = (lon + Math.PI) / (2 * Math.PI)
+    uvs[i * 2 + 1] = (lat + Math.PI / 2) / Math.PI
+    
+    rands[i] = Math.random()
+  }
+  return { positions, uvs, rands }
+}
+
 function slerpOnSphere(a, b, t, radius) {
   const na = a.clone().normalize()
   const nb = b.clone().normalize()
-  let dot = THREE.MathUtils.clamp(na.dot(nb), -1, 1)
+  const dot = THREE.MathUtils.clamp(na.dot(nb), -1, 1)
   const omega = Math.acos(dot)
   if (omega < 1e-4) return na.clone().multiplyScalar(radius)
   const so = Math.sin(omega)
-  const s0 = Math.sin((1 - t) * omega) / so
-  const s1 = Math.sin(t * omega) / so
-  return na.clone().multiplyScalar(s0).add(nb.clone().multiplyScalar(s1)).multiplyScalar(radius)
+  return na.clone().multiplyScalar(Math.sin((1 - t) * omega) / so)
+    .add(nb.clone().multiplyScalar(Math.sin(t * omega) / so))
+    .multiplyScalar(radius)
 }
 
-// ─── Shaders de los puntos ────────────────────────────────────────────────────
+const MAJOR_CITIES = [
+  [40.7, -74.0],  // NYC
+  [37.8, -122.4], // SF
+  [34.0, -118.2], // LA
+  [41.8, -87.6],  // Chicago
+  [19.4, -99.1],  // CDMX
+  [-23.5, -46.6], // SP
+  [-34.6, -58.4], // BA
+  [51.5, -0.1],   // London
+  [48.9, 2.3],    // Paris
+  [52.5, 13.4],   // Berlin
+  [40.4, -3.7],   // Madrid
+  [25.2, 55.3],   // Dubai
+  [1.3, 103.8],   // Singapur
+  [35.7, 139.7],  // Tokyo
+  [31.2, 121.4],  // Shanghai
+  [22.3, 114.2],  // HK
+  [-33.9, 151.2], // Sydney
+  [28.6, 77.2],   // Delhi
+]
+
+const COLORS = [
+  '#0a192f', // Azul Navy
+  '#60a5fa', // Azul Claro
+  '#34d399', // Verde Claro
+  '#94a3b8', // Gris
+]
+
+// Generamos 40 rutas aleatorias pero semi-estables
+const ROUTES = Array.from({ length: 40 }).map((_, i) => {
+  // Pseudo-random usando el índice
+  const startIdx = (i * 7) % MAJOR_CITIES.length
+  const endIdx = (i * 13 + 5) % MAJOR_CITIES.length
+  // (i * 7) con length 4 distribuye de manera pareja
+  const colorIdx = (i * 7) % COLORS.length 
+  return {
+    from: MAJOR_CITIES[startIdx],
+    to: MAJOR_CITIES[endIdx !== startIdx ? endIdx : (endIdx + 1) % MAJOR_CITIES.length],
+    color: COLORS[colorIdx]
+  }
+})
+
 const dotVert = /* glsl */`
   uniform float u_time;
   uniform float u_size;
   uniform float u_pixelRatio;
-  attribute float a_rand;      // 0..1 por punto (variación de tamaño/brillo/twinkle)
-  attribute float a_tone;      // 0..1 mezcla de color dot ↔ dot2
-  varying float v_fres;        // fresnel (1 en el centro visto, 0 en el rim)
+  uniform sampler2D u_map;
+  
+  attribute float a_rand;
+  attribute vec2 a_uv;
+  
+  varying float v_fres;
+  varying float v_land;
   varying float v_rand;
-  varying float v_tone;
-  varying float v_depth;
 
   void main() {
     v_rand = a_rand;
-    v_tone = a_tone;
+    float waterMask = texture2D(u_map, a_uv).r;
+    v_land = 1.0 - smoothstep(0.1, 0.5, waterMask);
+
+    if (v_land < 0.1) {
+        gl_Position = vec4(2.0, 2.0, 2.0, 1.0); 
+        return;
+    }
 
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
-
-    // Normal del punto = su posición normalizada rotada a view-space.
     vec3 nrm = normalize(mat3(modelViewMatrix) * normalize(position));
-    // La cámara mira -Z en view-space; el punto "de frente" tiene nrm.z ~ +1.
     v_fres = clamp(nrm.z, 0.0, 1.0);
 
-    // profundidad normalizada para atenuar cara lejana (z más negativo = lejos)
-    v_depth = clamp((mv.z + 3.6) / 2.6, 0.0, 1.0);
-
-    // twinkle sutil por punto
-    float tw = 0.82 + 0.18 * sin(u_time * 1.6 + a_rand * 40.0);
-
-    gl_Position = projectionMatrix * mv;
-
-    // size attenuation: más chico lejos + variación por punto + twinkle
-    float sz = u_size * (0.55 + a_rand * 0.85) * tw;
+    float tw = 0.95 + 0.05 * sin(u_time * 0.8 + a_rand * 50.0);
+    float sz = u_size * (0.65 + a_rand * 0.35) * tw;
+    
     gl_PointSize = sz * u_pixelRatio * (1.0 / -mv.z);
+    gl_Position = projectionMatrix * mv;
   }
 `
 
 const dotFrag = /* glsl */`
   precision highp float;
-  uniform vec3 u_dot;
-  uniform vec3 u_dot2;
+  uniform vec3 u_land_color;
   varying float v_fres;
-  varying float v_rand;
-  varying float v_tone;
-  varying float v_depth;
+  varying float v_land;
 
   void main() {
-    // punto circular suave (no cuadrado): núcleo brillante + halo de glow
+    if (v_land < 0.1) discard;
+
     vec2 c = gl_PointCoord - 0.5;
     float d = length(c);
-    float core = smoothstep(0.42, 0.06, d);        // núcleo nítido
-    float halo = smoothstep(0.5, 0.0, d);          // glow amplio
-    float alpha = clamp(core + halo * 0.6, 0.0, 1.0);
+    float circle = smoothstep(0.48, 0.06, d);
+    if (circle < 0.01) discard;
+
+    float fresnelAlpha = 0.45 + 0.55 * pow(v_fres, 0.5);
+    float alpha = circle * fresnelAlpha;
     if (alpha < 0.01) discard;
 
-    // brillo: el frente (fresnel alto) brilla; el rim se apaga → lectura 3D
-    // (piso más alto que antes: el lado lejano ya no se pierde tanto detrás
-    // del vidrio esmerilado de las celdas)
-    float front = 0.62 + 0.95 * pow(v_fres, 0.9);
-    // atenuación por profundidad (cara lejana más tenue, pero aún visible)
-    float depthDim = mix(0.68, 1.0, v_depth);
-
-    vec3 col = mix(u_dot, u_dot2, v_tone);
-    // el núcleo va brillante (blanquea un poco hacia el centro del punto);
-    // el halo aporta el "bloom" azul suave
-    vec3 lit = col * front * depthDim;
-    lit += mix(col, vec3(1.0), 0.3) * core * 0.7 * front;      // realce del núcleo
-    lit += vec3(0.22, 0.40, 0.72) * halo * 0.85 * depthDim;    // bloom azul
-
-    gl_FragColor = vec4(lit, alpha);
+    gl_FragColor = vec4(u_land_color, alpha);
   }
 `
 
-// ─── Shaders de los arcos ─────────────────────────────────────────────────────
 const arcVert = /* glsl */`
-  attribute float a_t;     // 0..1 posición a lo largo del arco
-  attribute float a_arc;   // índice del arco (para desfasar los pulsos)
+  attribute float a_t;
+  attribute float a_arc;
+  attribute vec3 a_color;
   varying float v_t;
   varying float v_arc;
   varying float v_fres;
+  varying vec3 v_color;
+
   void main() {
     v_t = a_t;
     v_arc = a_arc;
+    v_color = a_color;
     vec3 nrm = normalize(mat3(modelViewMatrix) * normalize(position));
     v_fres = clamp(nrm.z, 0.0, 1.0);
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
@@ -140,44 +190,52 @@ const arcVert = /* glsl */`
 const arcFrag = /* glsl */`
   precision highp float;
   uniform float u_time;
-  uniform vec3  u_arc;
-  uniform vec3  u_pulse;
   varying float v_t;
   varying float v_arc;
   varying float v_fres;
+  varying vec3 v_color;
 
   void main() {
-    // línea base del arco (más visible cerca del centro de la esfera) — subida
-    // para que la red se lea incluso sin el pulso viajero encima
-    float base = 0.24 + 0.34 * v_fres;
+    // Velocidad de la animación (cada ciclo dura unos 4.5 segundos)
+    float speed = 0.22;
+    // phase va de 0.0 a 1.0
+    float phase = fract(u_time * speed + v_arc * 0.81); 
 
-    // pulso viajero: una gaussiana en head que recorre a_t de 0→1 en loop,
-    // desfasada por arco. head sale de fuera de rango para dar "espera" entre pulsos.
-    float speed = 0.32;
-    float cycle = 2.6;
-    float phase = fract(u_time * speed + v_arc * 0.37);
-    float head  = phase * (1.0 + 0.25) - 0.125; // recorre ligeramente fuera de [0,1]
-    float dist  = v_t - head;
-    // estela: brillante en la cabeza, cae hacia atrás
-    float trail = exp(-max(dist, 0.0) * 9.0) * 0.85 + exp(-abs(dist) * 22.0);
-    trail = clamp(trail, 0.0, 1.2);
+    // Fase 1: Dibujado de la conexión (0.0 -> 0.35)
+    // El haz crece desde el punto A hasta el punto B
+    float drawProgress = smoothstep(0.0, 0.35, phase);
+    
+    // Si este pixel está por delante del progreso de dibujo, no se ve todavía
+    if (v_t > drawProgress) discard;
 
-    // el pulso también se atenúa en la cara lejana
-    float depthMask = 0.32 + 0.68 * v_fres;
+    // Fase 2: Desvanecimiento (0.6 -> 1.0)
+    // La línea entera se apaga suavemente para dar paso a otras
+    float fade = 1.0 - smoothstep(0.6, 1.0, phase);
 
-    vec3 col = u_arc * base;
-    col += u_pulse * trail * depthMask;
+    // Brillo intenso en la "punta" de la conexión sólo mientras se está dibujando
+    float isDrawing = step(phase, 0.35); // 1.0 si phase < 0.35, 0.0 si no
+    float tipGlow = exp(-abs(v_t - drawProgress) * 20.0) * isDrawing;
 
-    float alpha = clamp(base + trail * depthMask, 0.0, 1.0);
+    // La base de la línea se hace sutilmente más opaca hacia el destino
+    float baseAlpha = 0.25 + 0.5 * v_t; 
+    
+    // Alpha combinado (línea base + punta brillante) afectado por el fade general
+    float lineAlpha = (baseAlpha + tipGlow * 2.0) * fade;
+
+    // Ocultar suavemente las partes en la cara posterior del globo
+    float depthMask = 0.15 + 0.85 * v_fres;
+    float alpha = lineAlpha * depthMask;
+    
     if (alpha < 0.015) discard;
+
+    // Aumentamos el brillo del color en la punta
+    vec3 col = v_color * (0.7 + tipGlow * 1.5);
     gl_FragColor = vec4(col, alpha);
   }
 `
 
-// ─── Atmósfera / cuerpo de la esfera ──────────────────────────────────────────
-// Un shell translúcido con fresnel: aporta "presencia" de globo (un halo azul
-// en el borde) sin tapar los puntos. Renderiza el interior (BackSide) para que el
-// glow quede detrás de los puntos y en el rim.
+// ─── Aurora Base ────────────────────────────────────────────────────────────
+// "Cord Aesthetic": Minimalista, Apple-like, gris/plata sutil, no neón.
 const atmoVert = /* glsl */`
   varying vec3 v_nrm;
   varying vec3 v_view;
@@ -190,74 +248,68 @@ const atmoVert = /* glsl */`
 `
 const atmoFrag = /* glsl */`
   precision highp float;
-  uniform vec3 u_glow;
   varying vec3 v_nrm;
   varying vec3 v_view;
   void main() {
-    float fres = pow(1.0 - abs(dot(v_nrm, v_view)), 2.2);
-    float alpha = fres * 0.68;
-    // núcleo interior tenue (da cuerpo, no un aro hueco) — un poco más presente
-    float core = (1.0 - fres) * 0.09;
-    gl_FragColor = vec4(u_glow * (fres * 1.1 + 0.14), alpha + core);
+    float fres = pow(1.0 - abs(dot(v_nrm, v_view)), 1.5);
+    float alpha = fres * 0.18;
+    float core = (1.0 - fres) * 0.02; 
+    // Aurora gris-plata con un ligerísimo tono azul frío (Cord minimal)
+    gl_FragColor = vec4(vec3(0.92, 0.94, 0.96), alpha + core);
   }
 `
+
 function GlobeAtmosphere() {
-  const uniforms = useMemo(() => ({
-    u_glow: { value: new THREE.Color('#2b6fd6') },
-  }), [])
   return (
-    <mesh scale={1.09}>
-      <sphereGeometry args={[R, 48, 48]} />
-      <shaderMaterial
-        vertexShader={atmoVert}
-        fragmentShader={atmoFrag}
-        uniforms={uniforms}
-        transparent
-        side={THREE.BackSide}
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-      />
-    </mesh>
+    <>
+      {/* Halo exterior suave y elegante */}
+      <mesh scale={1.04}>
+        <sphereGeometry args={[R, 48, 48]} />
+        <shaderMaterial
+          vertexShader={atmoVert}
+          fragmentShader={atmoFrag}
+          transparent
+          side={THREE.BackSide}
+          depthWrite={false}
+        />
+      </mesh>
+      {/* Base sólida gris Apple (f5f5f7) súper sutil */}
+      <mesh scale={0.99}>
+        <sphereGeometry args={[R, 48, 48]} />
+        <meshBasicMaterial color="#f5f5f7" transparent opacity={0.4} depthWrite={false} />
+      </mesh>
+    </>
   )
 }
 
-// ─── Puntos de la esfera ──────────────────────────────────────────────────────
-function GlobeDots({ count = 1400 }) {
+function GlobeDots({ count = 18000 }) {
   const matRef = useRef()
+  const earthTexture = useLoader(THREE.TextureLoader, EARTH_MASK_URL)
+  
+  earthTexture.minFilter = THREE.LinearFilter
+  earthTexture.magFilter = THREE.LinearFilter
 
-  const { geometry, spherePts } = useMemo(() => {
-    const spherePts = fibonacciSphere(count, R)
-    const positions = new Float32Array(count * 3)
-    const rand = new Float32Array(count)
-    const tone = new Float32Array(count)
-    for (let i = 0; i < count; i++) {
-      positions[i * 3] = spherePts[i].x
-      positions[i * 3 + 1] = spherePts[i].y
-      positions[i * 3 + 2] = spherePts[i].z
-      rand[i] = Math.random()
-      tone[i] = Math.random()
-    }
+  const geometry = useMemo(() => {
+    const { positions, uvs, rands } = fibonacciSphere(count, R)
     const g = new THREE.BufferGeometry()
     g.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-    g.setAttribute('a_rand', new THREE.BufferAttribute(rand, 1))
-    g.setAttribute('a_tone', new THREE.BufferAttribute(tone, 1))
-    return { geometry: g, spherePts }
+    g.setAttribute('a_uv', new THREE.BufferAttribute(uvs, 2))
+    g.setAttribute('a_rand', new THREE.BufferAttribute(rands, 1))
+    return g
   }, [count])
 
   const uniforms = useMemo(() => ({
-    u_time:        { value: 0 },
-    u_size:        { value: 16.0 },
-    u_pixelRatio:  { value: Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 1.5) },
-    u_dot:         { value: COL_DOT.clone() },
-    u_dot2:        { value: COL_DOT2.clone() },
-  }), [])
+    u_time:       { value: 0 },
+    u_size:       { value: 12.0 },
+    u_pixelRatio: { value: Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 2) },
+    u_map:        { value: earthTexture },
+    // Cord signature Navy: #0a192f (hace muchísimo contraste en modo claro)
+    u_land_color: { value: new THREE.Color('#0a192f') },
+  }), [earthTexture])
 
   useFrame(({ clock }) => {
     if (matRef.current) uniforms.u_time.value = clock.getElapsedTime()
   })
-
-  // exponer los puntos para que los arcos elijan pares
-  GlobeDots._pts = spherePts
 
   return (
     <points geometry={geometry}>
@@ -268,64 +320,52 @@ function GlobeDots({ count = 1400 }) {
         uniforms={uniforms}
         transparent
         depthWrite={false}
-        blending={THREE.AdditiveBlending}
       />
     </points>
   )
 }
 
-// ─── Arcos great-circle con pulso viajero ─────────────────────────────────────
-function GlobeArcs({ pairs = 6, segments = 64 }) {
+function GlobeArcs({ segments = 128 }) {
   const matRef = useRef()
 
   const geometry = useMemo(() => {
-    // pares de puntos "interesantes" (bien separados) sobre la esfera
-    const pick = () => {
-      const a = new THREE.Vector3().randomDirection().multiplyScalar(R)
-      let b
-      do {
-        b = new THREE.Vector3().randomDirection().multiplyScalar(R)
-      } while (a.clone().normalize().dot(b.clone().normalize()) > 0.35) // asegurar separación
-      return [a, b]
-    }
-
     const positions = []
     const aT = []
     const aArc = []
+    const aColor = []
     const indices = []
     let vOffset = 0
 
-    for (let p = 0; p < pairs; p++) {
-      const [a, b] = pick()
+    ROUTES.forEach((route, p) => {
+      const a = latLonToVec3(route.from[0], route.from[1], R)
+      const b = latLonToVec3(route.to[0], route.to[1], R)
+      const col = new THREE.Color(route.color)
+
       for (let s = 0; s <= segments; s++) {
         const t = s / segments
-        // slerp sobre la superficie + un pequeño "arco" radial hacia afuera
-        // (más alto a medio camino) → el trazo se despega de la esfera.
         const pos = slerpOnSphere(a, b, t, R)
-        const bulge = Math.sin(t * Math.PI) * 0.16
+        const bulge = Math.sin(t * Math.PI) * 0.16 
         pos.setLength(R + bulge)
         positions.push(pos.x, pos.y, pos.z)
         aT.push(t)
         aArc.push(p)
-        if (s < segments) {
-          indices.push(vOffset + s, vOffset + s + 1)
-        }
+        aColor.push(col.r, col.g, col.b)
+        if (s < segments) indices.push(vOffset + s, vOffset + s + 1)
       }
       vOffset += segments + 1
-    }
+    })
 
     const g = new THREE.BufferGeometry()
     g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
     g.setAttribute('a_t', new THREE.Float32BufferAttribute(aT, 1))
     g.setAttribute('a_arc', new THREE.Float32BufferAttribute(aArc, 1))
+    g.setAttribute('a_color', new THREE.Float32BufferAttribute(aColor, 3))
     g.setIndex(indices)
     return g
-  }, [pairs, segments])
+  }, [segments])
 
   const uniforms = useMemo(() => ({
-    u_time:  { value: 0 },
-    u_arc:   { value: COL_ARC.clone() },
-    u_pulse: { value: COL_PULSE.clone() },
+    u_time: { value: 0 },
   }), [])
 
   useFrame(({ clock }) => {
@@ -341,54 +381,23 @@ function GlobeArcs({ pairs = 6, segments = 64 }) {
         uniforms={uniforms}
         transparent
         depthWrite={false}
-        blending={THREE.AdditiveBlending}
       />
     </lineSegments>
   )
 }
 
-// ─── Grupo giratorio + tilt reactivo al mouse ────────────────────────────────
 function GlobeScene({ reduced }) {
   const groupRef = useRef()
-  const mouseTarget = useRef(new THREE.Vector2(0, 0))
-  const mouseSmooth = useRef(new THREE.Vector2(0, 0))
-
-  useEffect(() => {
-    if (reduced) return
-    const onMove = (e) => {
-      mouseTarget.current.set(
-        (e.clientX / window.innerWidth) * 2 - 1,
-        (e.clientY / window.innerHeight) * 2 - 1,
-      )
-    }
-    window.addEventListener('mousemove', onMove, { passive: true })
-    return () => window.removeEventListener('mousemove', onMove)
-  }, [reduced])
-
-  useFrame((_, delta) => {
-    const g = groupRef.current
-    if (!g) return
-    // tilt suave hacia el cursor
-    mouseSmooth.current.lerp(mouseTarget.current, 0.045)
-    if (!reduced) {
-      g.rotation.y += delta * 0.12 // auto-rotación Y lenta
-    }
-    // parallax/tilt: inclina un poco hacia el mouse (sobre la rotación base)
-    g.rotation.x = -0.28 + mouseSmooth.current.y * 0.18
-    g.rotation.z = mouseSmooth.current.x * 0.06
-  })
-
-  // ligera inclinación inicial para que se vea "3D" desde el primer frame
+  // Ya no rotamos manualmente aquí, OrbitControls se encarga de la auto-rotación.
   return (
-    <group ref={groupRef} rotation={[-0.28, reduced ? 0.6 : 0, 0]}>
+    <group ref={groupRef} rotation={[0, reduced ? -0.8 : -0.8, 0]}>
       <GlobeAtmosphere />
-      <GlobeDots />
+      <GlobeDots count={18000} />
       <GlobeArcs />
     </group>
   )
 }
 
-// ─── Componente exportable ────────────────────────────────────────────────────
 export default function TrustGlobe() {
   const wrapRef = useRef(null)
   const [visible, setVisible] = useState(false)
@@ -397,13 +406,11 @@ export default function TrustGlobe() {
   const reduced = typeof window !== 'undefined'
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-  // Fade-in tras montar (evita flash inicial)
   useEffect(() => {
     const id = requestAnimationFrame(() => setVisible(true))
     return () => cancelAnimationFrame(id)
   }, [])
 
-  // Pausa el render loop fuera del viewport
   useEffect(() => {
     const el = wrapRef.current
     if (!el) return
@@ -420,16 +427,20 @@ export default function TrustGlobe() {
     <div
       ref={wrapRef}
       style={{
-        position: 'absolute',
-        inset: 0,
-        pointerEvents: 'none',
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'auto',
         opacity: visible ? 1 : 0,
         transition: 'opacity 0.9s ease',
+        cursor: 'grab',
       }}
+      onMouseDown={(e) => (e.currentTarget.style.cursor = 'grabbing')}
+      onMouseUp={(e) => (e.currentTarget.style.cursor = 'grab')}
+      onMouseLeave={(e) => (e.currentTarget.style.cursor = 'grab')}
     >
       <Canvas
-        dpr={[1, 1.5]}
-        camera={{ position: [0, 0, 2.6], fov: 42, near: 0.1, far: 100 }}
+        dpr={[1, 2]}
+        camera={{ position: [0, 0, 3.2], fov: 45, near: 0.1, far: 100 }}
         frameloop={reduced ? 'demand' : frameloop}
         gl={{
           antialias: true,
@@ -437,10 +448,20 @@ export default function TrustGlobe() {
           powerPreference: 'low-power',
           preserveDrawingBuffer: false,
         }}
-        style={{ pointerEvents: 'none', background: 'transparent' }}
+        style={{ pointerEvents: 'auto', background: 'transparent' }}
         resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
       >
-        <GlobeScene reduced={reduced} />
+        <Suspense fallback={null}>
+          <GlobeScene reduced={reduced} />
+          <OrbitControls 
+            enablePan={false} 
+            enableZoom={false} 
+            autoRotate={!reduced}
+            autoRotateSpeed={0.8}
+            enableDamping={true}
+            dampingFactor={0.05}
+          />
+        </Suspense>
       </Canvas>
     </div>
   )
