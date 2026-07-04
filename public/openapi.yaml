@@ -1,0 +1,192 @@
+openapi: 3.0.3
+info:
+  title: Flouvia Cord B2B API
+  description: API REST oficial para automatizar cotizaciones, clientes y productos.
+  version: "1.0.0"
+servers:
+  - url: https://cord.flouvia.com/api/v1
+    description: Servidor de Producción
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Usa tu llave secreta (sk_test_... o sk_live_...) obtenida en la pestaña Ajustes > API.
+security:
+  - bearerAuth: []
+paths:
+  /cotizaciones:
+    get:
+      summary: Listar cotizaciones
+      description: Devuelve las cotizaciones de la organización de forma paginada.
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [draft, sent, approved, paid, rejected]
+          description: Filtrar por estado.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Lista de cotizaciones con metadatos de paginación.
+    post:
+      summary: Crear cotización
+      description: Crea una cotización nueva. Requiere alcance de escritura (write).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - items
+              properties:
+                send:
+                  type: boolean
+                  description: Si es true, se aprueba automáticamente (si no rompe topes) y se genera el enlace de envío.
+                notas:
+                  type: string
+                  description: Texto interno o mensaje.
+                cliente_id:
+                  type: string
+                  description: UUID de un cliente previamente creado.
+                terminos:
+                  type: string
+                  enum: [contado, net30, net60]
+                vigencia_dias:
+                  type: integer
+                  default: 30
+                base_currency:
+                  type: string
+                  default: MXN
+                fiscal_currency:
+                  type: string
+                  default: MXN
+                iva_incluido:
+                  type: boolean
+                  default: false
+                items:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required:
+                      - descripcion
+                      - cantidad
+                      - precio_unitario
+                    properties:
+                      descripcion:
+                        type: string
+                      cantidad:
+                        type: number
+                      precio_unitario:
+                        type: number
+                      producto_id:
+                        type: string
+      responses:
+        '200':
+          description: Cotización creada correctamente.
+  /clientes:
+    get:
+      summary: Listar clientes
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Directorio de clientes.
+    post:
+      summary: Crear cliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - empresa
+              properties:
+                empresa:
+                  type: string
+                contacto:
+                  type: string
+                email:
+                  type: string
+                telefono:
+                  type: string
+                rfc:
+                  type: string
+                terminos:
+                  type: string
+                  enum: [contado, net30, net60]
+                limite:
+                  type: number
+                nivel:
+                  type: string
+                  enum: [estandar, plata, oro, distribuidor]
+                descuento_pct:
+                  type: number
+      responses:
+        '200':
+          description: Cliente creado exitosamente.
+  /productos:
+    get:
+      summary: Listar productos
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Catálogo de productos.
+    post:
+      summary: Crear producto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nombre
+              properties:
+                nombre:
+                  type: string
+                sku:
+                  type: string
+                unidad:
+                  type: string
+                  default: pieza
+                precio:
+                  type: number
+                activo:
+                  type: boolean
+                  default: true
+      responses:
+        '200':
+          description: Producto creado.

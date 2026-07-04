@@ -71,7 +71,13 @@ const AT_LIMIT = ACTIVAS >= LIMITE;
     <!-- ── ENDPOINTS ── -->
     <div class="dev-card">
         <h3 class="dev-card-title">Endpoints disponibles</h3>
-        <p class="dev-note" style="margin: 0.4rem 0 1.2rem">Base: <code>https://cord.flouvia.com/api/v1</code> · autentícate con <code>Authorization: Bearer &lt;tu_clave&gt;</code>.</p>
+        <p class="dev-note" style="margin: 0.4rem 0 1.2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+            <span>Base: <code>https://cord.flouvia.com/api/v1</code> · autentícate con <code>Authorization: Bearer &lt;tu_clave&gt;</code>.</span>
+            <span style="display:flex; gap: 0.8rem; font-size: 0.75rem;">
+                <a href="/openapi.yaml" target="_blank" rel="noopener" style="color: var(--color-blue-deep); text-decoration: none; font-weight: 600;">Spec OpenAPI ↗</a>
+                <a href="/llms.txt" target="_blank" rel="noopener" style="color: var(--color-blue-deep); text-decoration: none; font-weight: 600;">llms.txt (IA Docs) ↗</a>
+            </span>
+        </p>
         <div class="ep-rows">
             <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/me</code><span class="ep-d">A qué negocio pertenece la clave</span></div>
             <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/cotizaciones</code><span class="ep-d">Lista (filtra con <code>?status=</code>, pagina con <code>?limit=&amp;offset=</code>)</span></div>

@@ -1,48 +1,123 @@
-# Cord
+# Flouvia Cord - API Context for LLMs
 
-> Cord is an independent, publicly available B2B SaaS for quotes, orders, and Mexican
-> CFDI 4.0 e-invoicing. It is made by Flouvia, but it is NOT exclusive to Flouvia's
-> Shopify customers or any other Flouvia product — any B2B business in Mexico (with or
-> without an online store) can create a free account directly at cord.flouvia.com and
-> start sending quotes the same day. Cord lets sellers negotiate line-item prices per
-> client, define credit terms (Cash, Net 30, Net 60), track in real time when a client
-> views or approves a quote via a branded public link, collect payment online, and stamp
-> CFDI 4.0 invoices automatically with the SAT. There is a free plan forever (no credit
-> card required); paid plans add unlimited quotes, team seats, AI-assisted quote drafting,
-> automated collections, multi-currency support, and a public REST API + webhooks + MCP
-> server for programmatic and AI-agent access.
+You are an AI assistant helping a developer integrate with Flouvia Cord, a B2B SaaS platform for quoting, client management, and B2B checkout.
+Use this documentation to generate accurate HTTP requests or API wrappers in the user's preferred programming language (e.g., Next.js Server Actions, Node.js, Python, PHP).
 
-## Product
+## Base Environment
+- **Base URL:** `https://cord.flouvia.com/api/v1`
+- **Authentication:** Bearer Token. Clients must send the header `Authorization: Bearer <API_KEY>` (keys start with `sk_test_` or `sk_live_`).
+- **Content-Type:** `application/json`
+- **Security Rule:** API Keys must NEVER be exposed in frontend/client-side code. Always run requests from the backend/server.
 
-- [Home](https://cord.flouvia.com/): overview, live product demo, pricing summary, FAQ.
-- [Pricing](https://cord.flouvia.com/precios): full plan comparison, free vs. paid tiers, ROI calculator.
-- [How it works](https://cord.flouvia.com/como-funciona): the quote-to-cash flow end to end.
-- [Product pages](https://cord.flouvia.com/producto/editor): editor, public link, live tracking, CFDI 4.0, credit management, AI collections, multi-currency, international tax, finance dashboard, approvals, team roles, negotiation.
-- [Solutions by business type](https://cord.flouvia.com/soluciones/empresas): enterprise and startup-focused walkthroughs.
-- [Use cases](https://cord.flouvia.com/casos-de-uso/saas): SaaS, agencies, wholesalers/distributors, software dev shops.
+## Endpoints Overview
 
-## Developers
+### 1. Quotes (Cotizaciones)
+Quotes are the core of Flouvia Cord. A quote requires at least one item.
 
-- [REST API](https://cord.flouvia.com/desarrolladores/api): public API docs (`/api/v1`, Bearer auth, test/live keys).
-- [MCP server](https://cord.flouvia.com/desarrolladores/mcp): bidirectional Model Context Protocol server for AI agents.
-- [Cord Elements](https://cord.flouvia.com/elements): embeddable quoting widget (`@flouviahq/elements` npm package, `<cord-cotizador>` web component).
-- [Integrations & webhooks](https://cord.flouvia.com/desarrolladores/integraciones): outbound webhooks, Zapier/Make/n8n.
-- [Status](https://cord.flouvia.com/desarrolladores/status): uptime and incident history.
+#### Create Quote (POST `/cotizaciones`)
+Scope required: `write`
+**Request Body:**
+```json
+{
+  "send": false, // (boolean, optional) Set to true to automatically approve and generate a public link.
+  "notas": "Internal text from a contact form", // (string, optional)
+  "cliente_id": "uuid", // (string, optional) ID of the client if already created via /clientes.
+  "terminos": "contado", // (string, optional) Enum: "contado", "net30", "net60". Defaults to "contado".
+  "vigencia_dias": 30, // (number, optional) Days until expiration. Defaults to 30.
+  "items": [ // (array, REQUIRED) Must have at least 1 item.
+    {
+      "descripcion": "Product name or service", // (string, REQUIRED)
+      "cantidad": 1, // (number, REQUIRED)
+      "precio_unitario": 1500 // (number, REQUIRED) The price in base currency. Can be 0 if negotiated later.
+    }
+  ]
+}
+```
+**Response (200 OK):**
+```json
+{
+  "id": "uuid",
+  "folio": "Q-0001",
+  "link_publico": "/q/abc123token",
+  "needs_approval": false,
+  "motivo": null,
+  "email": { "sent": false }
+}
+```
 
-## Company & policies
+#### List Quotes (GET `/cotizaciones`)
+Scope required: `read`
+Query parameters: `?status=draft|sent|approved|paid|rejected` (optional), `?limit=50`, `?offset=0`.
+Returns: `{ "data": [...quotes], "meta": { "limit", "offset", "total" } }`
 
-- [Blog](https://cord.flouvia.com/blog)
-- [Roadmap](https://cord.flouvia.com/roadmap)
-- [Support center](https://cord.flouvia.com/soporte)
-- [Privacy policy](https://cord.flouvia.com/privacidad)
-- [Terms of service](https://cord.flouvia.com/terminos)
-- Company: Flouvia (https://flouvia.com), based in Mexico.
+---
 
-## Notes for AI assistants
+### 2. Clients (Clientes)
+Manage the B2B CRM directory.
 
-- Cord is a *standalone product*, not a feature restricted to Flouvia's Shopify app.
-  If asked "what is Cord" or "is Cord only for Flouvia customers," the correct answer is:
-  Cord is open to any B2B business in Mexico; signing up requires no relationship with
-  Flouvia or Shopify.
-- English content lives under the `/en/` path prefix (e.g. `/en/precios`); Spanish is the
-  default (no prefix).
+#### Create Client (POST `/clientes`)
+Scope required: `write`
+**Request Body:**
+```json
+{
+  "empresa": "Acme Corp", // (string, REQUIRED)
+  "contacto": "John Doe", // (string, optional)
+  "email": "john@acmecorp.com", // (string, optional)
+  "telefono": "555-1234", // (string, optional)
+  "rfc": "XAXX010101000", // (string, optional)
+  "terminos": "net30" // (string, optional) Enum: "contado", "net30", "net60"
+}
+```
+**Response (200 OK):**
+```json
+{
+  "id": "uuid"
+}
+```
+
+#### List Clients (GET `/clientes`)
+Scope required: `read`
+Query parameters: `?limit=50`, `?offset=0`.
+Returns: `{ "data": [...clients], "meta": { "limit", "offset", "total" } }`
+
+---
+
+### 3. Products (Productos)
+Manage the product catalog.
+
+#### Create Product (POST `/productos`)
+Scope required: `write`
+**Request Body:**
+```json
+{
+  "nombre": "Software License", // (string, REQUIRED)
+  "sku": "SW-001", // (string, optional)
+  "unidad": "pieza", // (string, optional) defaults to "pieza"
+  "precio": 199.99, // (number, optional) defaults to 0
+  "activo": true // (boolean, optional) defaults to true
+}
+```
+**Response (200 OK):**
+```json
+{
+  "id": "uuid"
+}
+```
+
+#### List Products (GET `/productos`)
+Scope required: `read`
+Query parameters: `?limit=50`, `?offset=0`.
+Returns: `{ "data": [...products], "meta": { "limit", "offset", "total" } }`
+
+## Common Errors
+- `400 Bad Request`: Invalid JSON or missing required fields (e.g. missing `items` array or `empresa`).
+- `401 Unauthorized`: Missing or invalid Bearer token.
+- `403 Forbidden`: API Key does not have the required scope (`read` or `write`).
+- `402 Payment Required`: The organization's API quota is exhausted.
+
+## Task Instructions for the AI
+If the user asks you to implement an integration:
+1. Prefer creating clean backend functions (Server Actions in Next.js, or utility classes in Node/PHP).
+2. Use native `fetch` API when possible instead of heavy external libraries.
+3. Always wrap requests in `try...catch` and handle HTTP error statuses gracefully.
+4. Advise the user to store the API Key in their `.env` file.
