@@ -26,6 +26,8 @@ const targets = [
     { entryPoints: ['src/webflow.ts'], outfile: 'dist/webflow.mjs', format: 'esm' },
     { entryPoints: ['src/webflow.ts'], outfile: 'dist/webflow.cjs', format: 'cjs' },
     { entryPoints: ['src/webflow.ts'], outfile: 'dist/webflow.js', format: 'iife', globalName: 'CordWebflow' },
+    { entryPoints: ['src/server.ts'], outfile: 'dist/server.mjs', format: 'esm', platform: 'node' },
+    { entryPoints: ['src/server.ts'], outfile: 'dist/server.cjs', format: 'cjs', platform: 'node' },
 ];
 
 for (const t of targets) {

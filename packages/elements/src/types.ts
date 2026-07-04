@@ -1,3 +1,5 @@
+import type * as React from 'react';
+
 // Tipos públicos de @flouviahq/elements. Superficie mínima a propósito.
 
 /** Payload que viaja con cada evento del cotizador. */
@@ -66,6 +68,7 @@ export interface CreateQuoteInput {
 
 export interface CreateQuoteResponse {
     id: string;
+    token?: string;
     folio?: string;
     link_publico?: string;
     needs_approval?: boolean;
@@ -97,6 +100,26 @@ export interface CreateResponse {
     id: string;
 }
 
+export interface CordProduct {
+    id: string;
+    nombre: string;
+    nombre_web?: string;
+    sku?: string;
+    precio?: number;
+    precio_final?: number;
+    unidad?: string;
+    activo?: boolean;
+}
+
+export interface CordClient {
+    id: string;
+    empresa: string;
+    contacto?: string;
+    email?: string;
+    telefono?: string;
+    terminos?: Terminos;
+}
+
 export interface PaginatedResponse<T> {
     data: T[];
     meta: {
@@ -104,4 +127,29 @@ export interface PaginatedResponse<T> {
         offset: number;
         total: number;
     };
+}
+
+// ==== Appearance API ====
+export interface CordAppearanceVariables {
+    colorPrimary?: string;
+    colorText?: string;
+    colorBackground?: string;
+    fontFamily?: string;
+    borderRadius?: string;
+    [key: string]: string | undefined;
+}
+
+export interface CordAppearance {
+    variables?: CordAppearanceVariables;
+    fonts?: Array<{ cssSrc: string }>;
+}
+
+export interface CordProviderProps {
+    proxyUrl?: string;
+    publishableKey?: string;
+    token?: string;
+    locale?: 'en' | 'es';
+    appearance?: CordAppearance;
+    onAnalyticsEvent?: (event: string, payload?: unknown) => void;
+    children: React.ReactNode;
 }

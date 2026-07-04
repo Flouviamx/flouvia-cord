@@ -1,11 +1,21 @@
 {
   "name": "@flouviahq/elements",
-  "version": "0.3.0",
+  "version": "0.6.2",
   "description": "Embebe el cotizador B2B de Cord en cualquier sitio — Web Component + wrappers de React, Vue, Framer y Webflow. Tu marca, aprobación y pago en línea.",
   "type": "module",
   "license": "MIT",
   "homepage": "https://cord.flouvia.com/elements",
-  "keywords": ["cord", "cotizaciones", "b2b", "quote", "embed", "web-component", "react", "mexico", "cfdi"],
+  "keywords": [
+    "cord",
+    "cotizaciones",
+    "b2b",
+    "quote",
+    "embed",
+    "web-component",
+    "react",
+    "mexico",
+    "cfdi"
+  ],
   "exports": {
     ".": {
       "types": "./types/index.d.ts",
@@ -32,12 +42,21 @@
       "import": "./dist/webflow.mjs",
       "require": "./dist/webflow.cjs"
     },
+    "./server": {
+      "types": "./types/server.d.ts",
+      "import": "./dist/server.mjs",
+      "require": "./dist/server.cjs"
+    },
     "./package.json": "./package.json"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./types/index.d.ts",
-  "files": ["dist", "types", "README.md"],
+  "files": [
+    "dist",
+    "types",
+    "README.md"
+  ],
   "scripts": {
     "build": "node build.mjs",
     "prepublishOnly": "node build.mjs"
@@ -48,9 +67,15 @@
     "framer": "*"
   },
   "peerDependenciesMeta": {
-    "react": { "optional": true },
-    "vue": { "optional": true },
-    "framer": { "optional": true }
+    "react": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    },
+    "framer": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "esbuild": "*"
