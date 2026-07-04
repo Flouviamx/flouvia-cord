@@ -8,6 +8,7 @@ export type QuoteStatus =
 
 export interface MockItem {
     id?: string;
+    producto_id?: string | null;
     descripcion: string;
     cantidad: number;
     unidad: string;
@@ -27,6 +28,7 @@ export interface MockQuote {
     id: string;
     folio: string;
     cliente: string;
+    cliente_id?: string;
     clienteInicial: string;
     status: QuoteStatus;
     terminos: 'Contado' | 'Net 30' | 'Net 60';

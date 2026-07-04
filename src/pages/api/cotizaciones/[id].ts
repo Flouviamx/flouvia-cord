@@ -96,7 +96,22 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         // resend crea nueva versión, draft update/send sobre draft usa la actual
         const nextVersion = body.action === 'resend' ? Number(rows[0].version || 1) + 1 : Number(rows[0].version || 1);
 
-        await sql`update cotizaciones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total}, version = ${nextVersion}, iva_incluido = ${iva_incluido} where id = ${id}`;
+        if (body.action === 'update_draft' || (body.action === 'send' && actual === 'draft')) {
+            await sql`update cotizaciones set
+                        cliente_id = ${body.cliente_id || null},
+                        terminos = ${body.terminos || 'contado'},
+                        vigencia_dias = ${Number(body.vigencia_dias) || 30},
+                        notas = ${body.notas || null},
+                        base_currency = ${body.base_currency || 'MXN'},
+                        fiscal_currency = ${body.fiscal_currency || 'MXN'},
+                        fx_buffer_pct = ${Number(body.fx_buffer_pct) || 0},
+                        subtotal = ${realSubtotal}, iva = ${iva}, total = ${total},
+                        version = ${nextVersion}, iva_incluido = ${iva_incluido}
+                      where id = ${id}`;
+        } else {
+            await sql`update cotizaciones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total}, version = ${nextVersion}, iva_incluido = ${iva_incluido} where id = ${id}`;
+        }
+
         await sql`delete from cotizacion_items where cotizacion_id = ${id}`;
         let orden = 0;
         for (const it of body.items) {

@@ -354,6 +354,7 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [])
         id: c.id,
         folio: c.folio,
         cliente: c.empresa ?? 'Sin cliente',
+        cliente_id: c.cliente_id,
         clienteInicial: initials(c.empresa ?? '—'),
         status: c.status as QuoteStatus,
         terminos: termLabel(c.terminos),
@@ -368,6 +369,7 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [])
         iva_incluido: Boolean(c.iva_incluido),
         items: items.map((it): MockItem => ({
             id: it.id,
+            producto_id: it.producto_id,
             descripcion: it.descripcion,
             cantidad: num(it.cantidad),
             unidad: it.unidad ?? 'pieza',

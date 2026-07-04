@@ -239,7 +239,7 @@ const dotColor = (tipo: string) =>
 
                 {q.status === 'draft' && canCotizar && (
                     <>
-                        <a href={`/app/cotizaciones/${q.id}/editar`} class="act-secondary act-link" style="text-align: center; text-decoration: none; display: block; margin-top: 0.5rem; margin-bottom: 0.5rem;">Continuar editando</a>
+                        <a href={`/app/cotizaciones/nueva?draft=${q.id}`} class="act-secondary act-link" style="text-align: center; text-decoration: none; display: block; margin-top: 0.5rem; margin-bottom: 0.5rem;">Continuar editando</a>
                         <button class="act-delete" id="btnDelete" style="width: 100%;">Eliminar borrador</button>
                     </>
                 )}

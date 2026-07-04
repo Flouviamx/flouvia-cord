@@ -3,18 +3,28 @@
 // agregas productos del catálogo, negocias precio por línea, el total se recalcula
 // en vivo con IVA, y al enviar hace POST a /api/cotizaciones (inserta en Neon).
 import AppLayout from '../../../layouts/AppLayout.astro';
-import { getProductos, getClientes, getOrg } from '../../../lib/queries';
+import { getProductos, getClientes, getOrg, getCotizacion } from '../../../lib/queries';
 import { REGIMENES_FISCALES, USOS_CFDI } from '../../../lib/sat';
+
+const draftId = Astro.url.searchParams.get('draft');
+let draftQuote = null;
+if (draftId) {
+    draftQuote = await getCotizacion(draftId);
+    if (!draftQuote || draftQuote.status !== 'draft') {
+        return Astro.redirect('/app/cotizaciones/nueva');
+    }
+}
 
 const [productos, CLIENTES, ORG] = await Promise.all([getProductos(), getClientes(), getOrg()]);
 const catalogo = productos.filter(p => p.activo);
 
 // Defaults reales desde Ajustes › Cotizaciones e impuestos.
-const TERM_DEFAULT_LABEL = ({ contado: 'Contado', net30: 'Net 30', net60: 'Net 60' } as Record<string, string>)[ORG.terminosDefault] ?? 'Contado';
+const TERM_DEFAULT_LABEL = draftQuote ? draftQuote.terminos : (({ contado: 'Contado', net30: 'Net 30', net60: 'Net 60' } as Record<string, string>)[ORG.terminosDefault] ?? 'Contado');
 const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b) => a - b);
+
 ---
 
-<AppLayout title="Nueva cotización" page="cotizaciones" heading="Nueva cotización" crumbs={[{ label: 'Cotizaciones', href: '/app/cotizaciones' }]}>
+<AppLayout title={draftQuote ? "Editar borrador" : "Nueva cotización"} page="cotizaciones" heading={draftQuote ? "Editar borrador" : "Nueva cotización"} crumbs={[{ label: 'Cotizaciones', href: '/app/cotizaciones' }]}>
     <span slot="topbar-actions" class="draft-tag">Borrador</span>
 
     <div class="editor-grid">
@@ -100,7 +110,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
             <!-- Notas -->
             <section class="ed-block">
                 <div class="section-head"><h2>Notas para el cliente <span class="opt">(opcional)</span></h2></div>
-                <textarea id="notasText" class="ed-textarea" rows="2" placeholder="Ej. Precio especial por volumen — entrega en obra incluida."></textarea>
+                <textarea id="notasText" class="ed-textarea" rows="2" placeholder="Ej. Precio especial por volumen — entrega en obra incluida.">{draftQuote?.notas || ''}</textarea>
             </section>
         </div>
 
@@ -114,7 +124,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
                 <div class="sum-field" style="flex-direction: row; align-items: center; justify-content: space-between; margin-top: 0.5rem; margin-bottom: -0.5rem;">
                     <label for="ivaIncluido" style="margin:0; cursor: pointer; color: var(--color-text);">Precios ya incluyen IVA</label>
                     <label class="s-toggle" title="Precios incluyen IVA">
-                        <input type="checkbox" id="ivaIncluido" checked={ORG.ivaIncluidoDefecto} />
+                        <input type="checkbox" id="ivaIncluido" checked={draftQuote ? draftQuote.iva_incluido : ORG.ivaIncluidoDefecto} />
                         <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
                     </label>
                 </div>
@@ -126,7 +136,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
                 <div class="sum-field">
                     <label>Vigencia</label>
                     <select class="ed-select">
-                        {VIGENCIAS.map((n) => <option selected={n === ORG.vigenciaDefaultDias}>{n} días</option>)}
+                        {VIGENCIAS.map((n) => <option selected={n === (draftQuote ? parseInt(draftQuote.vigencia) : ORG.vigenciaDefaultDias)}>{n} días</option>)}
                     </select>
                 </div>
 
@@ -280,8 +290,35 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     </div>
 </AppLayout>
 
-<script is:inline define:vars={{ catalogo, aprobMargenMin: ORG.aprobMargenMin }}>
+<script is:inline define:vars={{ catalogo, aprobMargenMin: ORG.aprobMargenMin, draftQuote }}>
     const lines = [];
+    const catMap = Object.fromEntries(catalogo.map(p => [p.id, p]));
+    const volUnit = (l) => {
+        if (!l.id || !Array.isArray(l.vol) || !l.vol.length) return l.baseLista ?? l.lista;
+        let price = l.baseLista ?? l.lista;
+        for (const t of l.vol) { if (l.cantidad >= t.min) price = t.precio; }
+        return price;
+    };
+
+    if (draftQuote) {
+        draftQuote.items.forEach(it => {
+            const cat = it.producto_id ? catMap[it.producto_id] : null;
+            const l = {
+                id: it.producto_id || null,
+                nombre: it.descripcion,
+                unidad: it.unidad || 'pieza',
+                baseLista: cat ? cat.precio : it.precioLista,
+                lista: cat ? cat.precio : it.precioLista, // se ajustará con volUnit
+                vol: cat ? (cat.preciosVolumen || []) : [],
+                costo: cat ? (cat.costo || 0) : 0,
+                negociado: it.precioNegociado,
+                cantidad: it.cantidad,
+                negoTouched: it.precioNegociado !== null
+            };
+            if (l.id) l.lista = volUnit(l);
+            lines.push(l);
+        });
+    }
     const $lines = document.getElementById('lines');
     const $empty = document.getElementById('linesEmpty');
     const $select = document.getElementById('productSelect');
@@ -289,19 +326,11 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     const fmtPct = (n) => Number.isFinite(n) ? Math.round(n) + '%' : '—';
     const margenPct = (costo, precio) => (costo > 0 && precio > 0) ? (precio - costo) / precio * 100 : null;
 
-    // Catálogo map para acceso rápido por ID
-    const catMap = Object.fromEntries(catalogo.map(p => [p.id, p]));
 
     // ── Precios por volumen (matriz por producto) ──
     // Dada la cantidad de la línea, devuelve el precio del nivel más alto cuyo
     // mínimo se alcanza; si ninguno aplica, el precio de lista base. `l.vol` viene
-    // ordenado asc por min, así que el último que pase es el correcto.
-    const volUnit = (l) => {
-        if (!l.id || !Array.isArray(l.vol) || !l.vol.length) return l.baseLista ?? l.lista;
-        let price = l.baseLista ?? l.lista;
-        for (const t of l.vol) { if (l.cantidad >= t.min) price = t.precio; }
-        return price;
-    };
+
     // Mínimo del nivel de volumen activo (0 = ninguno).
     const volMin = (l) => {
         if (!l.id || !Array.isArray(l.vol)) return 0;
@@ -541,17 +570,34 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         const original = btn.innerHTML;
         btn.disabled = true; btn.style.opacity = '0.7';
         showToast(send ? 'Enviando…' : 'Guardando…');
+        
         try {
-            const res = await fetch('/api/cotizaciones', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(buildPayload(send)),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Error al guardar');
-            if (data.needsApproval) showToast(`Aprobación solicitada — ${data.folio}. Espera el visto bueno de gerencia.`);
-            else showToast(send ? `Enviada — ${data.folio} ✓` : `Borrador ${data.folio} guardado ✓`);
-            setTimeout(() => { window.location.href = `/app/cotizaciones/${data.id}`; }, 1100);
+            if (draftQuote) {
+                // If it's a draft, update it instead of creating a new one
+                const payload = buildPayload(send);
+                payload.action = send ? 'send' : 'update_draft';
+                const res = await fetch(`/api/cotizaciones/${draftQuote.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Error al guardar');
+                showToast(send ? 'Enviada con éxito ✓' : 'Borrador guardado ✓');
+                setTimeout(() => { window.location.href = `/app/cotizaciones/${draftQuote.id}`; }, 1100);
+            } else {
+                // Normal creation
+                const res = await fetch('/api/cotizaciones', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(buildPayload(send)),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Error al guardar');
+                if (data.needsApproval) showToast(`Aprobación solicitada — ${data.folio}. Espera el visto bueno de gerencia.`);
+                else showToast(send ? `Enviada — ${data.folio} ✓` : `Borrador ${data.folio} guardado ✓`);
+                setTimeout(() => { window.location.href = `/app/cotizaciones/${data.id}`; }, 1100);
+            }
         } catch (err) {
             btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = original;
             showToast(err.message || 'Error de red', 2600);
@@ -771,6 +817,12 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
             $ncSubmit.innerHTML = prevHTML;
         }
     });
+
+    if (draftQuote && draftQuote.cliente_id && $client) {
+        $client.value = draftQuote.cliente_id;
+        lastClientVal = draftQuote.cliente_id;
+        reflectDesc();
+    }
 
     // Inicializa la interfaz vacía.
     render();
