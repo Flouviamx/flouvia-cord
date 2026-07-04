@@ -8,6 +8,9 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Refactor: flujo de "Continuar editando" para usar el editor completo (jul 2026)** —
+   A petición de André, la acción "Continuar editando" de un borrador (`/app/cotizaciones/[id].astro`) ya no manda a la página parcial `editar.astro`, sino que redirige a `/app/cotizaciones/nueva?draft=[id]`. En `nueva.astro` se implementó la lógica para detectar el parámetro `draft`, cargar la cotización usando `getCotizacion()`, y pre-poblar dinámicamente todo el estado inicial: cliente seleccionado, productos (incluyendo precios negociados), notas y días de vigencia. Se actualizó también el endpoint `PATCH /api/cotizaciones/[id]` para que cuando se actualice o envíe un borrador (`action: 'update_draft'` o `action: 'send'`), se guarden correctamente todos los campos mutables del formulario (`cliente_id`, `terminos`, `vigencia_dias`, `notas`, etc.) que antes solo se guardaban en la creación. Esto unifica la experiencia de creación y edición en la misma interfaz poderosa ("como si apenas la estuviera creando").
+
 ✅ **IVA incluido por defecto y refactor de toggles tipo iOS (jul 2026)** —
    Se implementó la capacidad de manejar cotizaciones con precios que ya incluyen IVA mediante un toggle en el editor (`nueva.astro`, `editar.astro`). La lógica matemática se ajustó en backend (`mock.ts`) para calcular siempre el subtotal base correcto y almacenarlo en BD. Se agregó la columna `iva_incluido_defecto` a la tabla `orgs` para permitir a cada negocio configurar si las cotizaciones nuevas inician con este switch encendido (gestionado desde `Ajustes > Impuestos`). Finalmente, la clase global `.s-toggle` se extrajo a `AppLayout.astro` y se rediseñó con dimensiones 44x24px y color Navy (`var(--color-blue-deep)`) para homologar una estética nativa tipo iOS (Apple) en todos los interruptores de la app.
 
