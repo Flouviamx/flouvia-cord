@@ -70,16 +70,8 @@ const AT_LIMIT = ACTIVAS >= LIMITE;
 
     <!-- ── ENDPOINTS ── -->
     <div class="dev-card">
-        <div class="dev-card-header" style="align-items: flex-start; margin-bottom: 1.2rem;">
-            <div>
-                <h3 class="dev-card-title">Endpoints disponibles</h3>
-                <p class="dev-note" style="margin: 0.4rem 0 0">Base: <code>https://cord.flouvia.com/api/v1</code> · autentícate con <code>Authorization: Bearer &lt;tu_clave&gt;</code>.</p>
-            </div>
-            <button class="api-btn-ghost" id="btnAiPrompt" style="font-size:0.75rem; padding: 0.4rem 0.8rem; display:flex; align-items:center; gap:0.4rem;" title="Copia instrucciones para que ChatGPT o Cursor escriban tu integración">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                Generar prompt para IA
-            </button>
-        </div>
+        <h3 class="dev-card-title">Endpoints disponibles</h3>
+        <p class="dev-note" style="margin: 0.4rem 0 1.2rem">Base: <code>https://cord.flouvia.com/api/v1</code> · autentícate con <code>Authorization: Bearer &lt;tu_clave&gt;</code>.</p>
         <div class="ep-rows">
             <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/me</code><span class="ep-d">A qué negocio pertenece la clave</span></div>
             <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/cotizaciones</code><span class="ep-d">Lista (filtra con <code>?status=</code>, pagina con <code>?limit=&amp;offset=</code>)</span></div>
@@ -95,6 +87,12 @@ const AT_LIMIT = ACTIVAS >= LIMITE;
             <span class="ep-code-label">Ejemplo</span>
             <pre><code>curl https://cord.flouvia.com/api/v1/cotizaciones \
   -H "Authorization: Bearer sk_live_xxxxxxxxxxxx"</code></pre>
+        </div>
+        <div style="margin-top: 1.5rem;">
+            <button class="api-btn-ghost" id="btnAiPrompt" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.6rem;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Generar prompt de integración para ChatGPT / Cursor
+            </button>
         </div>
     </div>
 
@@ -245,41 +243,43 @@ const AT_LIMIT = ACTIVAS >= LIMITE;
         const btnAi = document.getElementById('btnAiPrompt');
         if (btnAi) {
             btnAi.addEventListener('click', async () => {
-                const prompt = `Eres un experto en desarrollo backend. Ayúdame a integrar la API de Flouvia Cord en mi proyecto.
+                const prompt = `Eres un Desarrollador Backend Senior (experto en TypeScript, Node.js y frameworks modernos como Next.js).
+Tu tarea es implementar la integración con la API REST de Flouvia Cord (un SaaS B2B) para mi aplicación.
 
-URL BASE: https://cord.flouvia.com/api/v1
-AUTENTICACIÓN: Header "Authorization: Bearer <TU_API_KEY_AQUI>"
+== CONTEXTO TÉCNICO ==
+- Base URL: https://cord.flouvia.com/api/v1
+- Autenticación: Header "Authorization: Bearer <TU_API_KEY>"
+- Content-Type: application/json
 
-1. Crear Cotización (POST /cotizaciones)
-JSON Body:
+== REQUERIMIENTO ==
+Crea el código necesario para automatizar la creación de una cotización cuando un usuario realiza una acción en mi aplicación (por ejemplo, enviar un formulario B2B).
+Debes estructurar el código siguiendo las mejores prácticas: separación de responsabilidades, manejo de errores de red (try/catch), y validación de variables de entorno. 
+IMPORTANTE: Si estoy usando Next.js App Router, implementa esto como un Server Action (o Route Handler) para jamás exponer la API Key en el lado del cliente (browser).
+
+== ESQUEMA DEL ENDPOINT (POST /cotizaciones) ==
+El endpoint de Cord requiere este JSON de forma estricta:
 {
-  "send": false, // true para enviarla automáticamente al cliente
-  "notas": "Texto interno (opcional)",
-  "cliente_id": "uuid del cliente (opcional)",
-  "items": [ // OBLIGATORIO al menos 1
+  "send": boolean, // (Opcional) Si es true, la cotización se aprueba y se genera un link público inmediatamente. Si es false, se queda como borrador.
+  "notas": string, // (Opcional) Campo de texto libre para uso interno o volcar detalles de un formulario.
+  "cliente_id": string, // (Opcional) UUID del cliente si ya existe en el directorio de Cord.
+  "items": [ // (OBLIGATORIO) Array con al menos 1 producto/servicio
     {
-      "descripcion": "Nombre del producto / servicio",
-      "cantidad": 1,
-      "precio_unitario": 1500
+      "descripcion": string, // (Obligatorio) Nombre del concepto (ej. "Solicitud Cotización Web")
+      "cantidad": number, // (Obligatorio) 
+      "precio_unitario": number // (Obligatorio) Precio en la moneda base. Puedes mandar 0 si se negociará después por un vendedor.
     }
   ]
 }
 
-2. Sincronizar Cliente (POST /clientes)
-JSON Body:
-{
-  "empresa": "Nombre de la empresa (Obligatorio)",
-  "email": "contacto@empresa.com",
-  "telefono": "1234567890"
-}
-
-Genera el código necesario en mi lenguaje/framework actual para hacer una de estas peticiones HTTP de forma segura desde el backend (servidor). Si estoy en Next.js, usa Route Handlers o Server Actions.`;
+== SALIDA ESPERADA ==
+- Escribe la función de integración (ej. \`src/actions/cord.ts\`).
+- Incluye comentarios sobre cómo llamar a esta función de manera segura desde mi frontend.`;
                 try {
                     await navigator.clipboard.writeText(prompt);
                     const original = btnAi.innerHTML;
-                    btnAi.textContent = '✓ Copiado al portapapeles';
+                    btnAi.textContent = '✓ Prompt copiado — Pégalo en ChatGPT o Cursor';
                     btnAi.style.color = '#6ee7b7';
-                    setTimeout(() => { btnAi.innerHTML = original; btnAi.style.color = ''; }, 2500);
+                    setTimeout(() => { btnAi.innerHTML = original; btnAi.style.color = ''; }, 3500);
                 } catch {}
             });
         }
