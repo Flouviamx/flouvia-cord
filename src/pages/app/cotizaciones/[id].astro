@@ -238,7 +238,10 @@ const dotColor = (tipo: string) =>
                 <button class="act-secondary" id="btnDuplicate" style="width: 100%; margin-top: 0.5rem;">Duplicar cotización</button>
 
                 {q.status === 'draft' && canCotizar && (
-                    <button class="act-delete" id="btnDelete" style="width: 100%; margin-top: 0.5rem;">Eliminar borrador</button>
+                    <>
+                        <a href={`/app/cotizaciones/${q.id}/editar`} class="act-secondary act-link" style="text-align: center; text-decoration: none; display: block; margin-top: 0.5rem; margin-bottom: 0.5rem;">Continuar editando</a>
+                        <button class="act-delete" id="btnDelete" style="width: 100%;">Eliminar borrador</button>
+                    </>
                 )}
                 <p class="act-error" id="actError"></p>
             </section>

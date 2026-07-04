@@ -25,12 +25,13 @@ const APROBAR_ACTIONS = new Set(['approve', 'reject', 'approve_request', 'reject
 
 // Transiciones permitidas: action → { desde[], status final, evento }
 const ACTIONS: Record<string, { from: string[]; to: string; evento: string; detalle: string }> = {
-    send:     { from: ['draft'],                      to: 'sent',     evento: 'sent',     detalle: 'Cotización enviada — link generado' },
-    resend:   { from: ['sent', 'viewed', 'expired'],  to: 'sent',     evento: 'sent',     detalle: 'Cotización reenviada al cliente' },
-    approve:  { from: ['sent', 'viewed'],             to: 'approved', evento: 'approved', detalle: 'Cotización marcada como aprobada' },
-    reject:   { from: ['sent', 'viewed'],             to: 'rejected', evento: 'rejected', detalle: 'Cotización marcada como rechazada' },
-    paid:     { from: ['approved', 'invoiced'],       to: 'paid',     evento: 'paid',     detalle: 'Pago registrado' },
-    invoiced: { from: ['approved', 'paid'],           to: 'invoiced', evento: 'invoiced', detalle: 'CFDI emitido' },
+    send:         { from: ['draft'],                      to: 'sent',     evento: 'sent',     detalle: 'Cotización enviada — link generado' },
+    resend:       { from: ['sent', 'viewed', 'expired'],  to: 'sent',     evento: 'sent',     detalle: 'Cotización reenviada al cliente' },
+    update_draft: { from: ['draft'],                      to: 'draft',    evento: 'comment',  detalle: 'Borrador actualizado' },
+    approve:      { from: ['sent', 'viewed'],             to: 'approved', evento: 'approved', detalle: 'Cotización marcada como aprobada' },
+    reject:       { from: ['sent', 'viewed'],             to: 'rejected', evento: 'rejected', detalle: 'Cotización marcada como rechazada' },
+    paid:         { from: ['approved', 'invoiced'],       to: 'paid',     evento: 'paid',     detalle: 'Pago registrado' },
+    invoiced:     { from: ['approved', 'paid'],           to: 'invoiced', evento: 'invoiced', detalle: 'CFDI emitido' },
 };
 
 export const PATCH: APIRoute = async ({ params, request }) => {
@@ -81,8 +82,8 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     const rows = await sql`select id, status, version from cotizaciones where id = ${id} and org_id = ${orgId}`;
     if (!rows.length) return json({ error: 'Cotización no encontrada' }, 404);
 
-    // Si se reenvía con líneas modificadas, generamos nueva versión
-    if (body.action === 'resend' && Array.isArray(body.items)) {
+    // Si se actualizan líneas (resend, update_draft, o send con items)
+    if (['resend', 'update_draft', 'send'].includes(body.action) && Array.isArray(body.items)) {
         let subtotal = 0;
         for (const it of body.items) subtotal += Number(it.precio_negociado ?? it.precio_unitario ?? 0) * Number(it.cantidad ?? 1);
         const [org] = await sql`select iva_pct from orgs where id = ${orgId}`;
@@ -91,7 +92,9 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         const iva = iva_incluido ? subtotal - (subtotal / (1 + ivaPct)) : subtotal * ivaPct;
         const realSubtotal = iva_incluido ? subtotal / (1 + ivaPct) : subtotal;
         const total = iva_incluido ? subtotal : subtotal + iva;
-        const nextVersion = Number(rows[0].version || 1) + 1;
+        
+        // resend crea nueva versión, draft update/send sobre draft usa la actual
+        const nextVersion = body.action === 'resend' ? Number(rows[0].version || 1) + 1 : Number(rows[0].version || 1);
 
         await sql`update cotizaciones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total}, version = ${nextVersion}, iva_incluido = ${iva_incluido} where id = ${id}`;
         await sql`delete from cotizacion_items where cotizacion_id = ${id}`;
@@ -100,9 +103,15 @@ export const PATCH: APIRoute = async ({ params, request }) => {
             await sql`insert into cotizacion_items (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden)
                       values (${id}, ${it.producto_id || null}, ${it.descripcion}, ${Number(it.cantidad) || 1}, ${Number(it.precio_unitario) || 0}, ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)}, ${Number(it.costo_unitario) || 0}, ${orden++})`;
         }
-        await sql`insert into cotizacion_versiones (cotizacion_id, org_id, version, subtotal, iva, total, items, notas, iva_incluido)
-                  values (${id}, ${orgId}, ${nextVersion}, ${realSubtotal}, ${iva}, ${total}, ${JSON.stringify(body.items)}, null, ${iva_incluido})`;
-        await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'comment', ${'Versión ' + nextVersion + ' creada'})`;
+        
+        if (body.action === 'resend') {
+            await sql`insert into cotizacion_versiones (cotizacion_id, org_id, version, subtotal, iva, total, items, notas, iva_incluido)
+                      values (${id}, ${orgId}, ${nextVersion}, ${realSubtotal}, ${iva}, ${total}, ${JSON.stringify(body.items)}, null, ${iva_incluido})`;
+            await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'comment', ${'Versión ' + nextVersion + ' creada'})`;
+        } else {
+            // Actualizamos la versión existente (borrador)
+            await sql`update cotizacion_versiones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total}, items = ${JSON.stringify(body.items)}, iva_incluido = ${iva_incluido} where cotizacion_id = ${id} and version = ${nextVersion}`;
+        }
     }
 
     const actual = rows[0].status as string;
