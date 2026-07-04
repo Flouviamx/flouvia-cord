@@ -38,3 +38,70 @@ export interface CordController {
     /** El elemento contenedor. */
     readonly el: HTMLElement;
 }
+
+// ==== API Types ====
+export type QuoteStatus = 'draft' | 'sent' | 'approved' | 'paid' | 'rejected';
+export type Terminos = 'contado' | 'net30' | 'net60';
+export type NivelCliente = 'estandar' | 'plata' | 'oro' | 'distribuidor';
+
+export interface QuoteItemInput {
+    descripcion: string;
+    cantidad: number;
+    precio_unitario: number;
+    producto_id?: string;
+}
+
+export interface CreateQuoteInput {
+    send?: boolean;
+    notas?: string;
+    cliente_id?: string;
+    terminos?: Terminos;
+    vigencia_dias?: number;
+    base_currency?: string;
+    fiscal_currency?: string;
+    fx_buffer_pct?: number;
+    iva_incluido?: boolean;
+    items: QuoteItemInput[];
+}
+
+export interface CreateQuoteResponse {
+    id: string;
+    folio?: string;
+    link_publico?: string;
+    needs_approval?: boolean;
+    motivo?: string;
+    email?: { sent: boolean };
+}
+
+export interface CreateClientInput {
+    empresa: string;
+    contacto?: string;
+    email?: string;
+    telefono?: string;
+    rfc?: string;
+    terminos?: Terminos;
+    limite?: number;
+    nivel?: NivelCliente;
+    descuento_pct?: number;
+}
+
+export interface CreateProductInput {
+    nombre: string;
+    sku?: string;
+    unidad?: string;
+    precio?: number;
+    activo?: boolean;
+}
+
+export interface CreateResponse {
+    id: string;
+}
+
+export interface PaginatedResponse<T> {
+    data: T[];
+    meta: {
+        limit: number;
+        offset: number;
+        total: number;
+    };
+}

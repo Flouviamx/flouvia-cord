@@ -2,10 +2,21 @@
 // Importarlo registra automáticamente <cord-cotizador>.
 export { mountCotizador } from './core';
 export { CordCotizadorElement, defineCordElements } from './element';
+export { CordAPI, CordError } from './api';
 export type {
     CordElementOptions,
     CordController,
     CordEventDetail,
+    QuoteStatus,
+    Terminos,
+    NivelCliente,
+    QuoteItemInput,
+    CreateQuoteInput,
+    CreateQuoteResponse,
+    CreateClientInput,
+    CreateProductInput,
+    CreateResponse,
+    PaginatedResponse
 } from './types';
 
 import { defineCordElements } from './element';
