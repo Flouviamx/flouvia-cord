@@ -70,8 +70,16 @@ const AT_LIMIT = ACTIVAS >= LIMITE;
 
     <!-- ── ENDPOINTS ── -->
     <div class="dev-card">
-        <h3 class="dev-card-title">Endpoints disponibles</h3>
-        <p class="dev-note" style="margin: 0.4rem 0 1.2rem">Base: <code>https://cord.flouvia.com/api/v1</code> · autentícate con <code>Authorization: Bearer &lt;tu_clave&gt;</code>.</p>
+        <div class="dev-card-header" style="align-items: flex-start; margin-bottom: 1.2rem;">
+            <div>
+                <h3 class="dev-card-title">Endpoints disponibles</h3>
+                <p class="dev-note" style="margin: 0.4rem 0 0">Base: <code>https://cord.flouvia.com/api/v1</code> · autentícate con <code>Authorization: Bearer &lt;tu_clave&gt;</code>.</p>
+            </div>
+            <button class="api-btn-ghost" id="btnAiPrompt" style="font-size:0.75rem; padding: 0.4rem 0.8rem; display:flex; align-items:center; gap:0.4rem;" title="Copia instrucciones para que ChatGPT o Cursor escriban tu integración">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Generar prompt para IA
+            </button>
+        </div>
         <div class="ep-rows">
             <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/me</code><span class="ep-d">A qué negocio pertenece la clave</span></div>
             <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/cotizaciones</code><span class="ep-d">Lista (filtra con <code>?status=</code>, pagina con <code>?limit=&amp;offset=</code>)</span></div>
@@ -233,6 +241,48 @@ const AT_LIMIT = ACTIVAS >= LIMITE;
                 } catch (err: any) { alert(err.message || 'No se pudo revocar'); }
             });
         });
+
+        const btnAi = document.getElementById('btnAiPrompt');
+        if (btnAi) {
+            btnAi.addEventListener('click', async () => {
+                const prompt = `Eres un experto en desarrollo backend. Ayúdame a integrar la API de Flouvia Cord en mi proyecto.
+
+URL BASE: https://cord.flouvia.com/api/v1
+AUTENTICACIÓN: Header "Authorization: Bearer <TU_API_KEY_AQUI>"
+
+1. Crear Cotización (POST /cotizaciones)
+JSON Body:
+{
+  "send": false, // true para enviarla automáticamente al cliente
+  "notas": "Texto interno (opcional)",
+  "cliente_id": "uuid del cliente (opcional)",
+  "items": [ // OBLIGATORIO al menos 1
+    {
+      "descripcion": "Nombre del producto / servicio",
+      "cantidad": 1,
+      "precio_unitario": 1500
+    }
+  ]
+}
+
+2. Sincronizar Cliente (POST /clientes)
+JSON Body:
+{
+  "empresa": "Nombre de la empresa (Obligatorio)",
+  "email": "contacto@empresa.com",
+  "telefono": "1234567890"
+}
+
+Genera el código necesario en mi lenguaje/framework actual para hacer una de estas peticiones HTTP de forma segura desde el backend (servidor). Si estoy en Next.js, usa Route Handlers o Server Actions.`;
+                try {
+                    await navigator.clipboard.writeText(prompt);
+                    const original = btnAi.innerHTML;
+                    btnAi.textContent = '✓ Copiado al portapapeles';
+                    btnAi.style.color = '#6ee7b7';
+                    setTimeout(() => { btnAi.innerHTML = original; btnAi.style.color = ''; }, 2500);
+                } catch {}
+            });
+        }
     }
 
     // ── Actividad del API: refrescar sin recargar ──
