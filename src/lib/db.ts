@@ -7,7 +7,7 @@
 // usar sql.query('... $1 ...', [params]).
 
 import { neon } from '@neondatabase/serverless';
-import { currentUserId, currentOrgIdOverride, currentClerkOrgId, memoizedOrgId, memoizeOrgId } from './context';
+import { currentUserId, currentOrgIdOverride, currentClerkOrgId, memoizedOrgId, memoizeOrgId, isTestModeRequest } from './context';
 
 const url = import.meta.env.DATABASE_URL || process.env.DATABASE_URL;
 
@@ -51,7 +51,8 @@ async function ensureOwnerMember(orgId: string, userId: string): Promise<void> {
 
 export async function getActiveOrgId(): Promise<string> {
     // 0) Carril máquina-a-máquina: si la request entró por API key, el middleware
-    //    de la ruta /api/v1 ya resolvió y guardó el org_id. Es la verdad absoluta.
+    //    de la ruta /api/v1 ya resolvió y guardó el org_id. Es la verdad absoluta
+    //    (las llaves sk_test_ ya llegan aquí con la org sandbox resuelta).
     const orgOverride = currentOrgIdOverride();
     if (orgOverride) return orgOverride;
 
@@ -61,9 +62,61 @@ export async function getActiveOrgId(): Promise<string> {
     const memo = memoizedOrgId();
     if (memo) return memo;
 
-    const resolved = await resolveOrgId();
+    let resolved = await resolveOrgId();
+
+    // 0.9) ENTORNO DE PRUEBA (cookie cord_test_mode): en vez de la org real se
+    //      resuelve su org SANDBOX espejo — datos 100% aislados, tipo Stripe.
+    //      Si la resolución del sandbox falla NO caemos a la org real: escribir
+    //      datos de prueba en producción sería peor que un error visible.
+    if (isTestModeRequest()) {
+        resolved = await resolveSandboxOrgId(resolved);
+    }
+
     memoizeOrgId(resolved);
     return resolved;
+}
+
+/**
+ * Devuelve el id de la org SANDBOX espejo de `parentId` (creándola la primera
+ * vez, con un snapshot de la marca/config del padre + datos de ejemplo). Si
+ * `parentId` ya ES una sandbox, se devuelve tal cual (no se anidan sandboxes).
+ */
+export async function resolveSandboxOrgId(parentId: string): Promise<string> {
+    let rows: any[];
+    try {
+        rows = await sql`select id, sandbox_of, (select s.id from orgs s where s.sandbox_of = orgs.id limit 1) as sandbox_id
+                         from orgs where id = ${parentId} limit 1`;
+    } catch {
+        throw new Error('[db] No se pudo resolver el entorno de prueba — ¿corriste la migración (npm run db:migrate)?');
+    }
+    if (!rows.length) return parentId; // org inexistente: deja que el flujo normal falle
+    if (rows[0].sandbox_of) return parentId;          // ya es una sandbox
+    if (rows[0].sandbox_id) return rows[0].sandbox_id as string; // ya existe
+
+    // Primera vez: crear la sandbox copiando el snapshot de marca/config del padre.
+    // El índice único parcial (sandbox_of) hace el insert idempotente ante carreras.
+    const [created] = await sql`
+        insert into orgs (sandbox_of, nombre, logo_url, color_marca, quote_prefix, plan,
+                          country_code, iva_pct, vigencia_default_dias, terminos_default,
+                          pdf_template, pdf_mensaje, pdf_condiciones, portal_bienvenida,
+                          email_from_name, iva_incluido_defecto)
+        select id, nombre, logo_url, color_marca, quote_prefix, plan,
+               country_code, iva_pct, vigencia_default_dias, terminos_default,
+               pdf_template, pdf_mensaje, pdf_condiciones, portal_bienvenida,
+               email_from_name, iva_incluido_defecto
+        from orgs where id = ${parentId}
+        on conflict (sandbox_of) where sandbox_of is not null
+        do update set sandbox_of = excluded.sandbox_of
+        returning id`;
+    const sandboxId = created.id as string;
+
+    // Sembrar datos de ejemplo (best-effort): que el modo prueba no arranque vacío.
+    try {
+        const { seedDemoData } = await import('./onboarding');
+        await seedDemoData(sandboxId, currentUserId() ?? 'sandbox');
+    } catch { /* la sandbox funciona igual sin seed */ }
+
+    return sandboxId;
 }
 
 async function resolveOrgId(): Promise<string> {
@@ -93,14 +146,17 @@ async function resolveOrgId(): Promise<string> {
     // 1) ¿Es miembro ACTIVO de alguna org? (incluye al owner, sembrado como miembro).
     //    Orden: membresía más reciente primero — un invitado que se une después
     //    cae en la org a la que lo invitaron. Resiliente si la tabla no existe.
+    //    ⚠️ Se EXCLUYEN las orgs sandbox (sandbox_of no nulo): una membresía ahí
+    //    jamás debe capturar la sesión normal (solo se entra vía modo de prueba).
     try {
         const mem = await sql`
-            select org_id from org_members
-            where clerk_user_id = ${userId} and estado = 'activo'
-            order by joined_at desc nulls last, created_at desc
+            select m.org_id from org_members m
+            join orgs o on o.id = m.org_id and o.sandbox_of is null
+            where m.clerk_user_id = ${userId} and m.estado = 'activo'
+            order by m.joined_at desc nulls last, m.created_at desc
             limit 1`;
         if (mem.length) return mem[0].org_id as string;
-    } catch { /* tabla aún no migrada → seguimos con la lógica legacy */ }
+    } catch { /* tabla/columna aún no migrada → seguimos con la lógica legacy */ }
 
     // 2) ¿Tiene una org propia (creada antes de Equipo)? → sembrar su membresía owner.
     const rows = await sql`select id from orgs where clerk_user_id = ${userId} limit 1`;

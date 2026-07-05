@@ -12,6 +12,7 @@ import { dispatchQuoteEvent, type WebhookEvent } from '../../../lib/webhooks';
 import { after } from '../../../lib/after';
 import { reportUsage } from '../../../lib/billing';
 import { emitFiscalDocument } from '../../../lib/fiscal/emit';
+import { sanitizeItem, MAX_ITEMS } from '../../../lib/cotizaciones';
 
 // Evento interno (eventos.tipo) → evento público de webhook.
 const WH_MAP: Record<string, WebhookEvent> = {
@@ -90,8 +91,11 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
     // Si se actualizan líneas (resend, update_draft, o send con items)
     if (['resend', 'update_draft', 'send'].includes(body.action) && Array.isArray(body.items)) {
+        if (body.items.length > MAX_ITEMS) return json({ error: `Demasiadas líneas (máximo ${MAX_ITEMS}).` }, 400);
+        // Saneado: montos finitos no-negativos + descripción acotada (misma lógica que crear).
+        const items = body.items.map(sanitizeItem);
         let subtotal = 0;
-        for (const it of body.items) subtotal += Number(it.precio_negociado ?? it.precio_unitario ?? 0) * Number(it.cantidad ?? 1);
+        for (const it of items) subtotal += Number(it.precio_negociado ?? it.precio_unitario ?? 0) * Number(it.cantidad ?? 1);
         const [org] = await sql`select iva_pct from orgs where id = ${orgId}`;
         const ivaPct = org.iva_pct !== undefined && org.iva_pct !== null ? Number(org.iva_pct) / 100 : 0.16;
         const iva_incluido = Boolean(body.iva_incluido);
@@ -120,14 +124,14 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
         await sql`delete from cotizacion_items where cotizacion_id = ${id}`;
         let orden = 0;
-        for (const it of body.items) {
+        for (const it of items) {
             await sql`insert into cotizacion_items (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden)
                       values (${id}, ${it.producto_id || null}, ${it.descripcion}, ${Number(it.cantidad) || 1}, ${Number(it.precio_unitario) || 0}, ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)}, ${Number(it.costo_unitario) || 0}, ${orden++})`;
         }
         
         if (body.action === 'resend') {
             await sql`insert into cotizacion_versiones (cotizacion_id, org_id, version, subtotal, iva, total, items, notas, iva_incluido)
-                      values (${id}, ${orgId}, ${nextVersion}, ${realSubtotal}, ${iva}, ${total}, ${JSON.stringify(body.items)}, null, ${iva_incluido})`;
+                      values (${id}, ${orgId}, ${nextVersion}, ${realSubtotal}, ${iva}, ${total}, ${JSON.stringify(items)}, null, ${iva_incluido})`;
             await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'comment', ${'Versión ' + nextVersion + ' creada'})`;
         } else {
             // Actualizamos la versión existente (borrador)

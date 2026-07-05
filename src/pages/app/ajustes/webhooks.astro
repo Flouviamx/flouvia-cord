@@ -148,7 +148,7 @@ const AT_LIMIT = USADOS >= LIMITE;
                 if (!res.ok) throw new Error(d.error || 'No se pudo crear');
                 secretEl.textContent = d.secret;
                 stepForm.hidden = true; stepDone.hidden = false;
-            } catch (err: any) { alert(err.message || 'No se pudo crear'); createBtn.disabled = false; }
+            } catch (err: any) { (window as any).cordToast?.(err.message || 'No se pudo crear', 'error'); createBtn.disabled = false; }
         });
 
         document.querySelectorAll('[data-toggle]').forEach((el) => {
@@ -159,7 +159,7 @@ const AT_LIMIT = USADOS >= LIMITE;
                     const res = await fetch('/api/webhooks', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, activo }) });
                     if (!res.ok) throw new Error();
                     (el.closest('.wh-item') as HTMLElement)?.classList.toggle('off', !activo);
-                } catch { (el as HTMLInputElement).checked = !activo; alert('No se pudo actualizar'); }
+                } catch { (el as HTMLInputElement).checked = !activo; (window as any).cordToast?.('No se pudo actualizar', 'error'); }
             });
         });
 
@@ -171,7 +171,7 @@ const AT_LIMIT = USADOS >= LIMITE;
                     const res = await fetch('/api/webhooks', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
                     if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'No se pudo eliminar'); }
                     (btn.closest('.wh-item') as HTMLElement)?.remove();
-                } catch (err: any) { alert(err.message || 'No se pudo eliminar'); }
+                } catch (err: any) { (window as any).cordToast?.(err.message || 'No se pudo eliminar', 'error'); }
             });
         });
 

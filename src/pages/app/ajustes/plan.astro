@@ -157,7 +157,7 @@ const planActual = PLANES.find((p) => p.id === planRaw);
         b.addEventListener('click', async () => {
             const t = b.textContent; b.disabled = true; b.textContent = 'Abriendo…';
             try { await post('/api/billing/portal'); }
-            catch (e: any) { alert(e.message); b.disabled = false; b.textContent = t; }
+            catch (e: any) { (window as any).cordToast?.(e.message || 'No se pudo procesar', 'error'); b.disabled = false; b.textContent = t; }
         });
     });
 </script>

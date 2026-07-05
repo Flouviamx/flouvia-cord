@@ -20,6 +20,10 @@ const catalogo = productos.filter(p => p.activo);
 
 // Defaults reales desde Ajustes › Cotizaciones e impuestos.
 const TERM_DEFAULT_LABEL = draftQuote ? draftQuote.terminos : (({ contado: 'Contado', net30: 'Net 30', net60: 'Net 60' } as Record<string, string>)[ORG.terminosDefault] ?? 'Contado');
+// Moneda inicial del editor: la del borrador si se está editando; si no, la
+// moneda default de la org (Ajustes → General). FIX jul 2026: antes MXN estaba
+// hardcodeado y el ajuste "moneda" era placebo.
+const DEFAULT_CURRENCY = ((draftQuote as any)?.baseCurrency ?? (draftQuote as any)?.base_currency ?? ORG.moneda ?? 'MXN') as string;
 const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b) => a - b);
 
 ---
@@ -143,9 +147,9 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
                 <div class="sum-field">
                     <label>¿En qué moneda le cotizas?</label>
                     <select class="ed-select" id="fxBase">
-                        <option value="MXN" selected>🇲🇽 Pesos mexicanos (MXN)</option>
-                        <option value="USD">🇺🇸 Dólares (USD)</option>
-                        <option value="EUR">🇪🇺 Euros (EUR)</option>
+                        <option value="MXN" selected={DEFAULT_CURRENCY === 'MXN'}>🇲🇽 Pesos mexicanos (MXN)</option>
+                        <option value="USD" selected={DEFAULT_CURRENCY === 'USD'}>🇺🇸 Dólares (USD)</option>
+                        <option value="EUR" selected={DEFAULT_CURRENCY === 'EUR'}>🇪🇺 Euros (EUR)</option>
                     </select>
                 </div>
 
@@ -657,6 +661,9 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     }
     function scheduleFx() { clearTimeout(fxTimer); fxTimer = setTimeout(refreshFx, 250); }
     $fxBase?.addEventListener('change', refreshFx);
+    // Si la moneda inicial (default de la org o del borrador) no es MXN, el
+    // panel de cobertura FX debe aparecer desde el primer render.
+    if ($fxBase && $fxBase.value !== 'MXN') refreshFx();
     // Colchón: chips de preset (Poco / Normal / Cauto)
     $fxCushion?.querySelectorAll('.fx-cush-chip').forEach((chip) => {
         chip.addEventListener('click', () => {
@@ -811,7 +818,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
             closeClientModal();
             if (typeof showToast !== 'undefined') showToast('Cliente creado ✓', 2000);
         } catch (err) {
-            alert(err.message);
+            (window as any).cordToast?.(err.message || 'No se pudo guardar la cotización', 'error');
         } finally {
             $ncSubmit.disabled = false;
             $ncSubmit.innerHTML = prevHTML;

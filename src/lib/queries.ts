@@ -459,7 +459,8 @@ export async function getCotizacionByToken(token: string) {
                o.embed_domains as org_embed_domains,
                o.email_contacto as org_email, o.telefono as org_tel, o.whatsapp as org_wa,
                o.portal_banner as org_portal_banner, o.portal_bienvenida as org_portal_bienvenida,
-               o.portal_mostrar_chat as org_portal_chat, o.portal_powered as org_portal_powered
+               o.portal_mostrar_chat as org_portal_chat, o.portal_powered as org_portal_powered,
+               (o.sandbox_of is not null) as org_es_prueba
             from cotizaciones c
             left join clientes cl on cl.id = c.cliente_id
             join orgs o on o.id = c.org_id
@@ -535,6 +536,9 @@ export async function getCotizacionByToken(token: string) {
             portalBienvenida: (rows[0].org_portal_bienvenida as string) ?? '',
             portalMostrarChat: (rows[0].org_portal_chat as boolean) ?? true,
             portalPowered: (rows[0].org_portal_powered as boolean) ?? true,
+            // Entorno de PRUEBA: la página pública marca la cotización como de
+            // prueba (cinta ámbar) — nadie debe confundirla con una real.
+            esPrueba: (rows[0].org_es_prueba as boolean) ?? false,
         },
     };
 }

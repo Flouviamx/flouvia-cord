@@ -54,7 +54,7 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, origi
                o.nombre as org_nombre, coalesce(o.color_marca, '#0a192f') as color,
                coalesce(o.pdf_mensaje, '') as mensaje,
                o.email_from_name, o.email_reply_to, o.email_intro, o.email_firma,
-               o.email_contacto, o.portal_powered
+               o.email_contacto, o.portal_powered, o.sandbox_of
         from cotizaciones c
         join orgs o on o.id = c.org_id
         left join clientes cl on cl.id = c.cliente_id
@@ -99,9 +99,12 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, origi
             </div>
         </div>
     </div>`;
+    // Entorno de PRUEBA: el correo sale marcado — que nadie confunda una
+    // cotización de prueba con una real.
+    const testPrefix = r.sandbox_of ? '[Prueba] ' : '';
     return sendEmail({
         to: r.email,
-        subject: `Cotización ${r.folio} — ${r.org_nombre}`,
+        subject: `${testPrefix}Cotización ${r.folio} — ${r.org_nombre}`,
         html,
         fromName: r.email_from_name || r.org_nombre,
         replyTo: r.email_reply_to || r.email_contacto || null,

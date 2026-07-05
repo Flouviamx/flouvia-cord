@@ -256,7 +256,7 @@ const tpl = ORG.pdfTemplate || 'clasico';
         logoFile.addEventListener('change', () => {
             const f = logoFile.files?.[0];
             if (!f) return;
-            if (f.size > 1_000_000) { alert('El logo pesa más de 1 MB. Usa una imagen más ligera.'); logoFile.value = ''; return; }
+            if (f.size > 1_000_000) { (window as any).cordToast?.('El logo pesa más de 1 MB. Usa una imagen más ligera.', 'error'); logoFile.value = ''; return; }
             const reader = new FileReader();
             reader.onload = () => { const url = String(reader.result); oLogo.value = url; logoImg.src = url; logoImg.style.display = ''; logoFallback.style.display = 'none'; render(); };
             reader.readAsDataURL(f);

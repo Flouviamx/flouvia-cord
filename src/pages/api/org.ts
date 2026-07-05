@@ -53,6 +53,9 @@ export const PATCH: APIRoute = async ({ request }) => {
         : actual.pdf_template;
     const aprobDesc = body.aprob_descuento_max !== undefined ? Math.min(100, Math.max(0, Number(body.aprob_descuento_max) || 0)) : actual.aprob_descuento_max;
     const aprobMonto = body.aprob_monto_max !== undefined ? Math.max(0, Number(body.aprob_monto_max) || 0) : actual.aprob_monto_max;
+    // FIX jul 2026: este campo tenía data-field en Ajustes → Aprobaciones pero el
+    // PATCH lo ignoraba — el margen mínimo del Auditor Silencioso nunca se guardaba.
+    const aprobMargen = body.aprob_margen_min !== undefined ? Math.min(100, Math.max(0, Number(body.aprob_margen_min) || 0)) : actual.aprob_margen_min;
     const interes = body.interes_moratorio_pct !== undefined ? Math.min(100, Math.max(0, Number(body.interes_moratorio_pct) || 0)) : actual.interes_moratorio_pct;
     const logoUrl = body.logo_url !== undefined
         ? (String(body.logo_url) === '' ? null : (logoOk(String(body.logo_url)) ? String(body.logo_url) : actual.logo_url))
@@ -120,7 +123,7 @@ export const PATCH: APIRoute = async ({ request }) => {
             email_contacto = ${email}, telefono = ${telefono}, direccion = ${direccion},
             logo_url = ${logoUrl}, pdf_template = ${pdfTemplate},
             pdf_mensaje = ${pdfMensaje}, pdf_condiciones = ${pdfCond}, pdf_mostrar_lista = ${pdfLista},
-            aprob_descuento_max = ${aprobDesc}, aprob_monto_max = ${aprobMonto}, interes_moratorio_pct = ${interes},
+            aprob_descuento_max = ${aprobDesc}, aprob_monto_max = ${aprobMonto}, aprob_margen_min = ${aprobMargen}, interes_moratorio_pct = ${interes},
             vigencia_default_dias = ${vigDias}, terminos_default = ${termDef},
             retencion_isr_pct = ${retIsr}, retencion_iva_pct = ${retIva}, texto_legal = ${textoLegal},
             sitio_web = ${sitioWeb}, whatsapp = ${whatsapp},

@@ -841,3 +841,13 @@ alter table cotizacion_versiones add column if not exists iva_incluido boolean n
 
 
 alter table orgs add column if not exists iva_incluido_defecto boolean not null default false;
+
+-- ── Entorno de PRUEBA real, tipo Stripe (jul 2026) ───────────────────────────
+-- Cada org puede tener UNA org "sandbox" espejo (sandbox_of → org padre). La
+-- sandbox es una org COMPLETA: todo el RLS, queries y features existentes
+-- funcionan sin cambios. El toggle "Entorno de prueba" (cookie cord_test_mode,
+-- leída por el middleware) hace que getActiveOrgId() resuelva la sandbox en vez
+-- de la org real; las llaves sk_test_ también operan sobre ella. Los datos de
+-- prueba y los reales NUNCA se mezclan (aislamiento por org_id + RLS).
+alter table orgs add column if not exists sandbox_of uuid references orgs(id) on delete cascade;
+create unique index if not exists idx_orgs_sandbox_of on orgs(sandbox_of) where sandbox_of is not null;

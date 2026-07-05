@@ -161,7 +161,7 @@ const VARS = ['{cliente}', '{empresa}', '{folio}', '{total}', '{link}', '{vigenc
                 const res = await fetch('/api/plantillas', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
                 if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
                 location.reload();
-            } catch (e: any) { alert(e.message || 'No se pudo eliminar'); }
+            } catch (e: any) { (window as any).cordToast?.(e.message || 'No se pudo eliminar', 'error'); }
         }));
 
         form.addEventListener('submit', async (e) => {
@@ -176,7 +176,7 @@ const VARS = ['{cliente}', '{empresa}', '{folio}', '{total}', '{link}', '{vigenc
                 });
                 if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
                 location.reload();
-            } catch (e: any) { alert(e.message || 'No se pudo guardar'); save.disabled = false; }
+            } catch (e: any) { (window as any).cordToast?.(e.message || 'No se pudo guardar', 'error'); save.disabled = false; }
         });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPlantillas);

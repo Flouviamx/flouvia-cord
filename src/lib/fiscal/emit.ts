@@ -26,7 +26,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
   const [head] = await sql`
     select
       o.country_code, o.iva_pct, o.cp_fiscal as org_cp, o.uso_cfdi as org_uso,
-      o.facturapi_live_key,
+      o.facturapi_live_key, o.sandbox_of,
       c.subtotal, c.iva, c.total, c.fiscal_currency,
       cl.empresa as cliente_empresa, cl.rfc as cliente_rfc,
       cl.email as cliente_email, cl.contacto as cliente_contacto,
@@ -61,6 +61,18 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
   }
 
   const docType = documentTypeFor(country);
+
+  // ENTORNO DE PRUEBA: jamás timbrar un documento fiscal real. Se registra un
+  // documento SIMULADO (honesto: provider_data.simulado + modo_prueba) para que
+  // el flujo completo se pueda ensayar sin consecuencias ante el SAT.
+  if (head.sandbox_of) {
+    const fakeId = `SIM-${cotizacionId.slice(0, 8).toUpperCase()}`;
+    const providerData = { simulado: true, modo_prueba: true, nota: 'Documento generado en el entorno de prueba — sin validez fiscal.' };
+    await sql`
+      insert into documentos_fiscales (org_id, cotizacion_id, country_code, document_type, fiscal_id, status, provider_data)
+      values (${orgId}, ${cotizacionId}, ${country}, ${docType}, ${fakeId}, 'issued', ${JSON.stringify(providerData)})`;
+    return { emitted: true, documentId: fakeId, fiscalId: fakeId, status: 'issued' };
+  }
 
   let resp: FiscalDocumentResponse;
   try {

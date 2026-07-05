@@ -101,8 +101,14 @@ export const onRequest = clerkMiddleware((auth, context, next) => {
         });
     }
 
+    // Entorno de PRUEBA: la cookie cord_test_mode (seteada por el toggle del org
+    // switcher) hace que getActiveOrgId() resuelva la org SANDBOX espejo. Solo
+    // aplica al carril de SESIÓN (app + APIs internas): las rutas públicas y el
+    // carril de API key (sk_test_) tienen su propia resolución.
+    const testMode = context.cookies.get("cord_test_mode")?.value === "1";
+
     // Exponer el userId Y la org activa de Clerk a las queries (db.ts →
     // getActiveOrgId) durante todo el render/handler de este request, vía
     // AsyncLocalStorage.
-    return reqContext.run({ userId: userId ?? null, clerkOrgId: orgId ?? null }, () => next());
+    return reqContext.run({ userId: userId ?? null, clerkOrgId: orgId ?? null, testMode }, () => next());
 });

@@ -157,6 +157,20 @@ const hasAccess = !perm || memberCan(ME!, perm);
     .s-save.saving .s-save-spinner { opacity: 1; }
     .s-save.saving { opacity: 0.85; pointer-events: none; }
 
+    /* Dirty — hay cambios sin guardar: el botón "respira" con un anillo sutil
+       para llamar la atención sin gritar (patrón Stripe). */
+    .s-save.dirty:not(.saving):not(.saved) {
+        box-shadow: 0 8px 22px -10px rgba(10,25,47,0.5), 0 0 0 3px rgba(10,25,47,0.10);
+        animation: s-breathe 2.2s ease-in-out infinite;
+    }
+    @keyframes s-breathe {
+        0%, 100% { box-shadow: 0 8px 22px -10px rgba(10,25,47,0.5), 0 0 0 2px rgba(10,25,47,0.06); }
+        50%      { box-shadow: 0 8px 22px -10px rgba(10,25,47,0.5), 0 0 0 4px rgba(10,25,47,0.14); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .s-save.dirty:not(.saving):not(.saved) { animation: none; }
+    }
+
     /* Saved flash — botón pulsa verde brevemente */
     .s-save.saved { background: #0f766e; box-shadow: 0 8px 22px -10px rgba(15,118,110,0.5); animation: s-pulse 0.45s var(--ease-spring); pointer-events: none; }
     .s-save.saved .s-save-label { opacity: 0; transform: scale(0.9); }
@@ -227,6 +241,44 @@ const hasAccess = !perm || memberCan(ME!, perm);
             ct.addEventListener('input', () => { if (/^#[0-9a-fA-F]{6}$/.test(ct.value)) cp.value = ct.value; });
         }
 
+        // ── Detección de cambios sin guardar (estilo Stripe) ──
+        // Serializa los [data-field]; si difiere del snapshot inicial, la barra
+        // entra en estado "dirty" (botón resaltado + aviso al salir de la página).
+        const serialize = () => {
+            const state: Record<string, unknown> = {};
+            form.querySelectorAll('[data-field]').forEach((node) => {
+                const el = node as HTMLInputElement;
+                const k = el.dataset.field!;
+                if (el.type === 'checkbox') state[k] = el.checked;
+                else if (el.type === 'radio') { if (el.checked) state[k] = el.value; }
+                else state[k] = el.value;
+            });
+            return JSON.stringify(state);
+        };
+        let baseline = serialize();
+        let dirty = false;
+        const syncDirty = () => {
+            const now = serialize() !== baseline;
+            if (now === dirty) return;
+            dirty = now;
+            btn.classList.toggle('dirty', dirty);
+        };
+        form.addEventListener('input', syncDirty);
+        form.addEventListener('change', syncDirty);
+        window.addEventListener('beforeunload', (e) => {
+            if (!dirty) return;
+            e.preventDefault();
+            e.returnValue = '';
+        });
+
+        // ⌘S / Ctrl+S guarda (en vez del "Guardar página" del navegador).
+        window.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+                e.preventDefault();
+                if (!btn.disabled) btn.click();
+            }
+        });
+
         btn.addEventListener('click', async () => {
             const body: Record<string, unknown> = {};
             form.querySelectorAll('[data-field]').forEach((node) => {
@@ -248,7 +300,10 @@ const hasAccess = !perm || memberCan(ME!, perm);
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || 'No se pudo guardar');
 
-                // Estado: saved (pulse verde + check animado)
+                // Estado: saved (pulse verde + check animado). El snapshot se
+                // re-toma: lo guardado es el nuevo estado "limpio".
+                baseline = serialize();
+                syncDirty();
                 btn.classList.remove('saving');
                 btn.classList.add('saved');
                 if (msgText) msgText.textContent = 'Cambios guardados';

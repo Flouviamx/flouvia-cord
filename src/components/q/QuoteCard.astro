@@ -42,6 +42,12 @@ const hayContacto = !!(vEmail || vWa || vTel);
 ---
 
 <div class="q-card" data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'}>
+    {ORG.esPrueba && (
+        <div class="q-test-ribbon" role="status">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 12h4l-1.5 8L17 9h-4.5z"/></svg>
+            Cotización de prueba — sin validez comercial ni fiscal
+        </div>
+    )}
     {banner && <div class="q-banner" style={`background:${color}`}>{banner}</div>}
 
     <!-- Cabecera: marca del emisor -->
@@ -762,6 +768,18 @@ const hayContacto = !!(vEmail || vWa || vTel);
     color: #fff; font-size: 0.83rem; font-weight: 600;
     text-align: center; line-height: 1.4;
 }
+
+/* Cinta de ENTORNO DE PRUEBA — ámbar, siempre arriba de todo */
+.q-test-ribbon {
+    display: flex; align-items: center; justify-content: center; gap: 0.45rem;
+    margin: -0.8rem -1rem 0; padding: 0.6rem 1.2rem;
+    border-radius: 18px 18px 0 0;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #fff; font-size: 0.78rem; font-weight: 700;
+    letter-spacing: 0.02em; text-align: center; line-height: 1.4;
+}
+.q-test-ribbon svg { width: 13px; height: 13px; flex-shrink: 0; }
+.q-test-ribbon + .q-banner { border-radius: 0; }
 
 /* ── Header ──────────────────────────────────── */
 .q-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }

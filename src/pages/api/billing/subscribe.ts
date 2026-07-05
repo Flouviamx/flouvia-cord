@@ -30,6 +30,13 @@ export const POST: APIRoute = async ({ request }) => {
     if (!isPaidPlan(plan)) return json({ error: 'Plan inválido' }, 400);
 
     const orgId = await getActiveOrgId();
+
+    // El ENTORNO DE PRUEBA nunca toca Stripe Billing real.
+    const [sb] = await sql`select sandbox_of from orgs where id = ${orgId}`;
+    if (sb?.sandbox_of) {
+        return json({ error: 'Estás en el entorno de prueba. Sal del modo de prueba para gestionar tu plan.' }, 409);
+    }
+
     const org = await getOrg();
     const origin = new URL(request.url).origin;
 

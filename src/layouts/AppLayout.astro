@@ -29,6 +29,11 @@ interface Props {
 }
 
 const { title, page, heading, crumbs = [] } = Astro.props;
+
+// Entorno de PRUEBA (cookie leída server-side — misma señal que usa el
+// middleware/getActiveOrgId para resolver la org sandbox). Pinta el banner
+// ámbar tipo Stripe para que el modo de prueba sea inconfundible.
+const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
 ---
 
 <!doctype html>
@@ -99,6 +104,16 @@ const { title, page, heading, crumbs = [] } = Astro.props;
 
             <!-- ── MAIN ── -->
             <div class="app-main">
+                {isTestEnv && (
+                    <div class="test-banner" role="status">
+                        <span class="test-banner-badge">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 12h4l-1.5 8L17 9h-4.5z"/></svg>
+                            Entorno de prueba
+                        </span>
+                        <span class="test-banner-desc">Todo lo que hagas aquí es de prueba — tus datos reales no se tocan.</span>
+                        <button class="test-banner-exit" id="testEnvExit" type="button">Salir del modo de prueba</button>
+                    </div>
+                )}
                 <header class="topbar">
                     <button class="tb-burger" id="navBurger" type="button" aria-label="Abrir menú">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -966,6 +981,43 @@ const { title, page, heading, crumbs = [] } = Astro.props;
         color: #b45309; background: rgba(245,158,11,0.1);
         padding: 4px 9px; border-radius: 100px; white-space: nowrap;
     }
+
+    /* ── Banner de ENTORNO DE PRUEBA (tipo Stripe: ámbar, inconfundible) ── */
+    .test-banner {
+        display: flex; align-items: center; gap: 0.7rem;
+        margin: 1rem 1rem 0; padding: 0.45rem 0.55rem 0.45rem 0.6rem;
+        border-radius: 13px;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        box-shadow: 0 8px 24px -10px rgba(217,119,6,0.55), inset 0 1px 0 rgba(255,255,255,0.28);
+        color: #ffffff;
+        position: sticky; top: 0.55rem; z-index: 60;
+    }
+    .test-banner + .topbar { margin-top: 0.75rem; top: 3.6rem; }
+    .test-banner-badge {
+        display: inline-flex; align-items: center; gap: 0.35rem;
+        font-size: 0.68rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase;
+        background: rgba(255,255,255,0.18);
+        border: 1px solid rgba(255,255,255,0.3);
+        padding: 3px 10px 3px 8px; border-radius: 100px; white-space: nowrap;
+    }
+    .test-banner-badge svg { width: 12px; height: 12px; }
+    .test-banner-desc {
+        font-size: 0.78rem; font-weight: 500; color: rgba(255,255,255,0.92);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .test-banner-exit {
+        margin-left: auto; flex-shrink: 0; cursor: pointer;
+        font-size: 0.74rem; font-weight: 700; color: #92400e;
+        background: #ffffff; border: none; border-radius: 999px;
+        padding: 6px 14px;
+        box-shadow: 0 2px 6px rgba(120,53,15,0.25);
+        transition: transform 0.18s cubic-bezier(0.16,1,0.3,1), box-shadow 0.18s;
+    }
+    .test-banner-exit:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(120,53,15,0.3); }
+    .test-banner-exit:active { transform: scale(0.96); }
+    @media (max-width: 700px) {
+        .test-banner-desc { display: none; }
+    }
     /* Iconos globales empujados a la derecha (el buscador queda pegado a la izquierda) */
     .tb-right { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; }
 
@@ -1196,6 +1248,15 @@ const { title, page, heading, crumbs = [] } = Astro.props;
 </style>
 
 <script>
+    // ── Salir del entorno de prueba (banner ámbar) ──
+    // Limpia la cookie (fuente de verdad server-side) + el espejo en localStorage
+    // y regresa al dashboard real.
+    document.getElementById('testEnvExit')?.addEventListener('click', () => {
+        document.cookie = 'cord_test_mode=; path=/; max-age=0; SameSite=Lax';
+        try { localStorage.setItem('cord_test_mode', 'false'); } catch {}
+        window.location.assign('/app');
+    });
+
     // ── Menú de comandos (Cmd+K) ── buscador global + navegación rápida.
     function initCmdk() {
         const cmdk = document.getElementById('cmdk');

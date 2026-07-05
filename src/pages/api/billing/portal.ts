@@ -13,7 +13,8 @@ export const POST: APIRoute = async ({ request }) => {
     if (!STRIPE_KEY) return json({ error: 'La facturación aún no está configurada.' }, 503);
 
     const orgId = await getActiveOrgId();
-    const [o] = await sql`select stripe_customer_id from orgs where id = ${orgId}`;
+    const [o] = await sql`select stripe_customer_id, sandbox_of from orgs where id = ${orgId}`;
+    if (o?.sandbox_of) return json({ error: 'Estás en el entorno de prueba. Sal del modo de prueba para gestionar tu plan.' }, 409);
     const customer = o?.stripe_customer_id as string | undefined;
     if (!customer) return json({ error: 'Aún no tienes una suscripción activa.' }, 409);
 

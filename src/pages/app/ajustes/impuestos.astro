@@ -147,7 +147,7 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || 'No se pudo crear');
                 location.reload();
-            } catch (err: any) { alert(err.message || 'No se pudo crear'); btn.disabled = false; }
+            } catch (err: any) { (window as any).cordToast?.(err.message || 'No se pudo crear', 'error'); btn.disabled = false; }
         });
 
         document.querySelectorAll('[data-setdef]').forEach((b) => b.addEventListener('click', async () => {
@@ -156,7 +156,7 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
                 const res = await fetch('/api/impuestos', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, es_default: true }) });
                 if (!res.ok) throw new Error();
                 location.reload();
-            } catch { alert('No se pudo actualizar'); }
+            } catch { (window as any).cordToast?.('No se pudo actualizar', 'error'); }
         }));
 
         document.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => {
@@ -166,7 +166,7 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
                 const res = await fetch('/api/impuestos', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
                 if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'No se pudo eliminar'); }
                 (b.closest('.imp-row') as HTMLElement)?.remove();
-            } catch (err: any) { alert(err.message || 'No se pudo eliminar'); }
+            } catch (err: any) { (window as any).cordToast?.(err.message || 'No se pudo eliminar', 'error'); }
         }));
 
         document.getElementById('ivaIncluidoDefecto')?.addEventListener('change', async (e) => {
@@ -179,7 +179,7 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
                 });
                 if (!res.ok) throw new Error();
             } catch {
-                alert('No se pudo guardar la configuración');
+                (window as any).cordToast?.('No se pudo guardar la configuración', 'error');
                 (e.target as HTMLInputElement).checked = !checked;
             }
         });

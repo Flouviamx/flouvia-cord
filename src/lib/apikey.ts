@@ -12,7 +12,7 @@
 
 import { createHash } from 'node:crypto';
 import type { APIRoute } from 'astro';
-import { sql } from './db';
+import { sql, resolveSandboxOrgId } from './db';
 import { reqContext } from './context';
 import { reportUsage } from './billing';
 import { rateLimit, tooMany } from './ratelimit';
@@ -68,7 +68,8 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
     let row: any;
     try {
         [row] = await sql`
-            select k.id, k.org_id, k.scope, k.mode, k.revoked_at, coalesce(o.plan, 'free') as plan
+            select k.id, k.org_id, k.scope, k.mode, k.revoked_at,
+                   coalesce(o.plan, 'free') as plan, o.sandbox_of
             from api_keys k
             join orgs o on o.id = k.org_id
             where k.hash = ${hash}
@@ -91,10 +92,25 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
         return jsonError('Esta API key es de solo lectura.', 'insufficient_scope', 403);
     }
 
+    // ENTORNO DE PRUEBA (tipo Stripe): las llaves sk_test_ operan sobre la org
+    // SANDBOX espejo — nunca tocan datos reales. Si la llave ya pertenece a la
+    // sandbox (creada desde la UI en modo prueba), se usa tal cual. Una llave
+    // live que viva en una sandbox es un estado inválido: se rechaza.
+    let orgId = row.org_id as string;
+    if (mode === 'test' && !row.sandbox_of) {
+        try {
+            orgId = await resolveSandboxOrgId(orgId);
+        } catch {
+            return jsonError('No se pudo resolver el entorno de prueba de esta llave.', 'server_error', 500);
+        }
+    } else if (mode === 'live' && row.sandbox_of) {
+        return jsonError('Esta llave pertenece al entorno de prueba. Genera una llave en vivo fuera del modo de prueba.', 'invalid_key', 401);
+    }
+
     // Marca de uso (best-effort: nunca debe romper la request).
     sql`update api_keys set last_used_at = now() where id = ${row.id}`.catch(() => {});
 
-    return { orgId: row.org_id as string, scope, mode, keyId: row.id as string };
+    return { orgId, scope, mode, keyId: row.id as string };
 }
 
 /**

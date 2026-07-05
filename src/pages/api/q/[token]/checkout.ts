@@ -15,11 +15,19 @@ export const POST: APIRoute = async ({ params, request }) => {
     // Crear sesiones de Stripe es costoso/abusable: límite estricto por token.
     const rl = await rateLimit(`checkout:${token}`, 6, 60);
     if (!rl.ok) return tooMany(rl.retryAfter);
-    const rows = await sql`select id, folio, total, status from cotizaciones where public_token = ${token}`;
+    const rows = await sql`
+        select c.id, c.folio, c.total, c.status, o.sandbox_of
+        from cotizaciones c join orgs o on o.id = c.org_id
+        where c.public_token = ${token}`;
     if (!rows.length) return json({ error: 'Cotización no encontrada' }, 404);
     const c = rows[0];
     if (!['approved', 'invoiced'].includes(c.status as string)) {
         return json({ error: 'Esta cotización no está lista para pago' }, 409);
+    }
+    // Cotización del ENTORNO DE PRUEBA: jamás cobrar dinero real. El vendedor
+    // puede simular el cobro con la acción "Registrar pago" desde su detalle.
+    if (c.sandbox_of) {
+        return json({ error: 'Esta cotización es de prueba — el pago en línea está deshabilitado. El vendedor puede registrar el pago manualmente para simular el flujo.' }, 409);
     }
 
     const origin = new URL(request.url).origin;

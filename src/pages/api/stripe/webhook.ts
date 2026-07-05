@@ -18,6 +18,12 @@ const WH_SECRET = import.meta.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WE
 export const POST: APIRoute = async ({ request }) => {
     const raw = await request.text();
 
+    // En producción (Vercel) el secreto es OBLIGATORIO: sin él, cualquiera podría
+    // POSTear un evento falso (p.ej. marcar una cotización como pagada). Fail-closed.
+    // En dev/local (sin VERCEL) se permite correr sin verificar para pruebas.
+    if (!WH_SECRET && process.env.VERCEL) {
+        return new Response('webhook mal configurado (falta STRIPE_WEBHOOK_SECRET)', { status: 500 });
+    }
     // Verificación de firma (si hay secreto configurado).
     if (WH_SECRET) {
         try {

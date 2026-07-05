@@ -8,6 +8,65 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Entorno de prueba REAL tipo Stripe + fixes de guardado/cableado (jul 2026)** — el toggle
+   "Entorno de prueba" dejó de ser cosmético. Diseño elegido: **org SANDBOX espejo**
+   (`orgs.sandbox_of uuid → org padre`, índice único parcial `idx_orgs_sandbox_of`) — la sandbox
+   es una org COMPLETA, así que TODO el multi-tenant/RLS/queries existentes funcionan sin cambios
+   y los datos de prueba jamás se mezclan con los reales.
+   • **Señal server-side:** la fuente de verdad es la **cookie `cord_test_mode`** (ya no
+     localStorage). `src/store/testMode.ts` la escribe (localStorage queda como espejo para
+     `api.astro`) y expone `toggleTestMode()` que navega tras el cambio (si la ruta actual trae un
+     UUID va a `/app` — esa entidad no existe en el otro entorno). El middleware la lee →
+     `reqContext.testMode` → **`getActiveOrgId()` (db.ts) resuelve `resolveSandboxOrgId(parent)`**:
+     find-or-create idempotente (`on conflict (sandbox_of) where sandbox_of is not null`), copia
+     snapshot de marca/config del padre (nombre, logo, color, prefix, plan, país, IVA, vigencia,
+     términos, pdf_*, portal_bienvenida, email_from_name, iva_incluido_defecto) y siembra datos de
+     ejemplo vía `seedDemoData()` (import dinámico para evitar ciclo). Si la resolución sandbox
+     falla se LANZA error (nunca caer a la org real: escribir datos de prueba en producción sería
+     peor que un 500). Probado E2E contra la BD real: idempotente, no anida, no captura membresías.
+   • **Defensa anti-captura:** la resolución por membresía (paso 1 de `resolveOrgId`) ahora
+     excluye orgs sandbox (`join orgs o on o.sandbox_of is null`) — una membresía en sandbox jamás
+     debe capturar la sesión normal. NUNCA sembrar `org_members` en sandboxes.
+   • **Llaves API tipo Stripe:** `authApiKey` (apikey.ts) resuelve las **sk_test_ → org sandbox**
+     (find-or-create); una llave live que viva en una sandbox se rechaza (estado inválido).
+     `POST /api/keys` fuerza `mode='test'` si la org activa es sandbox. En `api.astro` el segmento
+     "Vivo" se deshabilita cuando el entorno de prueba está activo.
+   • **Salvaguardas de dinero/fiscal real:** checkout público de cotizaciones sandbox → 409
+     (jamás cobrar dinero real); `billing/subscribe` y `billing/portal` → 409 en sandbox;
+     `emit.ts` corta ANTES del provider y registra documento **simulado** (`provider_data.simulado
+     + modo_prueba`, `fiscal_id SIM-…`); correos de cotización con asunto `[Prueba]`; crons de
+     intereses/cobranza-IA excluyen `sandbox_of is not null`. `reportUsage` a Stripe se salta solo
+     (la sandbox no tiene `stripe_customer_id`).
+   • **UI inconfundible (ámbar = test, como Stripe):** banner sticky `test-banner` en
+     `AppLayout` (gradiente ámbar + botón "Salir del modo de prueba" que limpia la cookie), toggle
+     del org switcher re-coloreado a ámbar (era verde), y **cinta `q-test-ribbon` en el link
+     público** ("Cotización de prueba — sin validez comercial ni fiscal") vía el campo nuevo
+     `org.esPrueba` de `getCotizacionByToken`.
+   • **BUG CRÍTICO arreglado — cron de recordatorios:** `/api/cron/recordatorios` usaba
+     `getActiveOrgId()` que sin sesión SIEMPRE resolvía la org demo → **ningún negocio real recibía
+     recordatorios de cobro**. Reescrito para iterar la cartera de TODAS las orgs (excluyendo
+     sandboxes y demo) en una sola query. Nota relacionada verificada empíricamente: el rol
+     `neondb_owner` tiene `rolbypassrls=true`, por eso las queries directas de crons/apikey
+     funcionan aunque las tablas tengan FORCE RLS (el RLS es defensa en profundidad, no bloqueo).
+   • **BUG de guardado — `aprob_margen_min`:** tenía `data-field` en Ajustes → Aprobaciones pero
+     el PATCH `/api/org` lo ignoraba → el margen mínimo del Auditor Silencioso NUNCA se guardaba.
+     Agregado al handler y al UPDATE. ⚠️ Regla: todo `data-field` nuevo DEBE agregarse a
+     `/api/org` (el guardado genérico no avisa si el server ignora un campo).
+   • **SettingsShell — cambios sin guardar + ⌘S:** la barra de guardar ahora detecta estado
+     "dirty" (serializa los `[data-field]` vs snapshot; botón con anillo que respira), avisa con
+     `beforeunload` si sales sin guardar, y ⌘S/Ctrl+S guarda. El snapshot se re-toma tras guardar.
+   • **Ajuste placebo cableado — moneda default:** el editor `/nueva` hardcodeaba `MXN selected`;
+     ahora `DEFAULT_CURRENCY` = moneda del borrador o `ORG.moneda` (Ajustes → General) y si no es
+     MXN el panel FX se abre desde el primer render.
+   • **Barrido `alert()` → `window.cordToast(…, 'error')`** en plan, branding, plantillas,
+     impuestos, api, webhooks, pdf y el editor (14 reemplazos; el aviso informativo de
+     `datos.astro` se dejó). Los `confirm()` de acciones destructivas se conservan (pendiente:
+     modal propio).
+   • ✅ **Migración YA CORRIDA contra la BD de prod** (columna + índice, aditivo).
+   ⬜ Pendientes del track test-mode: badge "Prueba" junto al nombre de la org en el switcher;
+     ocultar botones de upgrade en `/app/ajustes/plan` cuando `isTestEnv`; botón "vaciar datos de
+     prueba" (Stripe lo tiene); excluir sandboxes de KPIs si algún día hay métricas cross-org.
+
 ✅ **Rediseño Apple-style en Sidebar y Fix de Logo de Branding (jul 2026)** —
    Se limpió la interfaz del `Sidebar.astro` para alinearse a las reglas de "Quiet Luxury" y estética Apple:
    • Se eliminó el efecto "Spotlight" (brillo mágico siguiendo el cursor) y el desvanecido superior/inferior (`mask-image`), reemplazándolos con *hover states* sutiles.
@@ -1318,9 +1377,9 @@
    `$clerkStore`/`$userStore` inyectada por `@clerk/astro`. Sí se usa el nativo para
    `<UserProfile/>` (Ajustes › Cuenta). Las
    entradas de abajo que dicen "componentes nativos/oficiales de Clerk" reflejan un intento
-   que se revirtió a los `Custom*`. **El "Entorno de prueba" (`testMode.ts` / `cord_test_mode`)
-   es COSMÉTICO**: solo cambia el prefijo de API key mostrado en Ajustes › Developers; NO
-   aísla datos de test (no hay sandbox real). ⚠️ Auth en re-trabajo activo (André): hay
+   que se revirtió a los `Custom*`. **El "Entorno de prueba" ya es REAL
+   (jul 2026)**: org sandbox espejo con datos 100% aislados — ver la entrada "Entorno de
+   prueba REAL tipo Stripe" arriba (la nota vieja decía que era cosmético). ⚠️ Auth en re-trabajo activo (André): hay
    componentes nuevos sin commitear en `src/components/auth/` (`SignInForm.tsx`, etc.).
 ✅ **Clerk Premium UI & Nativos (jun 2026)** — Retorno a los componentes oficiales de Clerk (`<SignIn />`, `<SignUp />`, `<OrganizationSwitcher />`, `<OrganizationProfile />`) estilizados globalmente vía `appearance` con un diseño oscuro premium estilo Stripe/Linear (`src/lib/clerk-theme.ts`), eliminando código React manual redundante.
    • **Flujos de Autenticación**: Las rutas `/sign-in` y `/sign-up` montan los componentes nativos de `@clerk/astro` con redirecciones server-side desde `/login` y `/registro` en `astro.config.mjs`.
@@ -1621,8 +1680,7 @@
 
 ⬜ Pendiente (no bloquea lanzamiento): `FACTURAPI_API_KEY` live en prod;
    `USInvoiceProvider` real (US); publicar `@flouviahq/elements` v0.2.0 (`npm login && npm
-   publish`); "tiempo real" full vía SSE/WebSocket (hoy es polling). Deuda menor: el "Entorno de
-   prueba" es cosmético (solo cambia el prefijo de API key mostrado); `/api/*` aún no migra a
+   publish`); "tiempo real" full vía SSE/WebSocket (hoy es polling). Deuda menor: `/api/*` aún no migra a
    `withOrgTx` (pendiente para activar `FORCE ROW LEVEL SECURITY`); rate-limit del middleware es
    in-memory por instancia (para escala multi-réplica usar Upstash Redis); y 5 vulnerabilidades de
    `npm audit` de bajo riesgo (esbuild dev-Windows / path-to-regexp build-time) cuyo fix exige

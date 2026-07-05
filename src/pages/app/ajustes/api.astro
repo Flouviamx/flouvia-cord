@@ -179,15 +179,22 @@ const AT_LIMIT = ACTIVAS >= LIMITE;
         if (!dialog || !newBtn || !createDlg) return;
 
         // Segmented Vivo/Prueba → modo de la próxima clave (prueba por default).
-        let mode = localStorage.getItem('cord_test_mode') === 'true' ? 'test' : 'live';
+        // Si el ENTORNO DE PRUEBA está activo (cookie/sandbox), el servidor fuerza
+        // mode=test — el segmento "Vivo" se deshabilita para que la UI diga la verdad.
+        const inTestEnv = document.cookie.split('; ').includes('cord_test_mode=1');
+        let mode = inTestEnv || localStorage.getItem('cord_test_mode') === 'true' ? 'test' : 'live';
 
         const setModeUI = (newMode: string) => {
-            mode = newMode;
+            mode = inTestEnv ? 'test' : newMode;
             document.querySelectorAll('.dev-seg-btn').forEach((x) => x.classList.remove('active'));
             const activeBtn = document.querySelector(`.dev-seg-btn[data-mode="${mode}"]`);
             if (activeBtn) activeBtn.classList.add('active');
         };
         setModeUI(mode);
+        if (inTestEnv) {
+            const liveBtn = document.querySelector('.dev-seg-btn[data-mode="live"]') as HTMLButtonElement | null;
+            if (liveBtn) { liveBtn.disabled = true; liveBtn.title = 'Estás en el entorno de prueba — sal del modo de prueba para generar llaves en vivo.'; }
+        }
 
         document.querySelectorAll('.dev-seg-btn').forEach((b) => b.addEventListener('click', () => {
             setModeUI((b as HTMLElement).dataset.mode || 'test');
@@ -225,7 +232,7 @@ const AT_LIMIT = ACTIVAS >= LIMITE;
                 dialog.showModal();
                 dialog.addEventListener('close', () => location.reload(), { once: true });
             } catch (err: any) {
-                alert(err.message || 'No se pudo crear la clave');
+                (window as any).cordToast?.(err.message || 'No se pudo crear la clave', 'error');
             } finally { go.disabled = false; }
         });
 
@@ -242,7 +249,7 @@ const AT_LIMIT = ACTIVAS >= LIMITE;
                     const res = await fetch('/api/keys', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
                     if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'No se pudo revocar'); }
                     location.reload();
-                } catch (err: any) { alert(err.message || 'No se pudo revocar'); }
+                } catch (err: any) { (window as any).cordToast?.(err.message || 'No se pudo revocar', 'error'); }
             });
         });
 

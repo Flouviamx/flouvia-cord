@@ -21,15 +21,18 @@ export const POST: APIRoute = async ({ request }) => {
 
     const nombre = String(body.nombre ?? '').trim().slice(0, 60) || 'Sin nombre';
     const scope = body.scope === 'write' ? 'write' : 'read';
-    const mode = body.mode === 'test' ? 'test' : 'live';
+    let mode = body.mode === 'test' ? 'test' : 'live';
 
     const orgId = await getActiveOrgId();
 
     // Límite por plan de claves ACTIVAS (no revocadas). Todos los planes (incluido
     // free) pueden generar claves de prueba Y en vivo, pero la cantidad está
     // limitada — free = prueba real (poquito); el consumo se mide por uso aparte.
-    const [[planResult]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`);
+    const [[planResult]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan, (sandbox_of is not null) as is_sandbox from orgs where id = ${orgId}`);
     const plan = planResult?.plan;
+    // En el ENTORNO DE PRUEBA (org sandbox) solo se generan llaves sk_test_:
+    // una llave "live" nacida en la sandbox sería un estado inválido.
+    if (planResult?.is_sandbox) mode = 'test';
     let activas = 0;
     try { const [[c]] = await withOrgTx(orgId, sql`select count(*)::int as n from api_keys where org_id = ${orgId} and revoked_at is null`); activas = (c?.n as number) ?? 0; }
     catch { return json({ error: 'No se pudo crear la llave. ¿Corriste la migración (npm run db:migrate)?' }, 500); }

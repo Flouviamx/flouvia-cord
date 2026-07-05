@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '@nanostores/react';
 import { $clerkStore, $userStore, $organizationStore, $isLoadedStore } from '@clerk/astro/client';
-import { $isTestMode } from '../../store/testMode';
+import { $isTestMode, toggleTestMode } from '../../store/testMode';
 
 export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: string }) {
   const isLoaded = useStore($isLoadedStore);
@@ -101,7 +101,7 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
 
           <div className="dropdown-divider"></div>
           
-          <button className={`dropdown-action-btn dev-mode-toggle ${isTestMode ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); $isTestMode.set(!isTestMode); }}>
+          <button className={`dropdown-action-btn dev-mode-toggle ${isTestMode ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); toggleTestMode(!isTestMode); }}>
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
               <polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline>
@@ -439,20 +439,21 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
           transition: transform 0.2s, background 0.2s;
         }
 
+        /* Ámbar tipo Stripe: el color universal de "modo de prueba" */
         .toggle-switch.on {
-          background: rgba(16, 185, 129, 0.4); /* green indication for test mode maybe? or cord color */
+          background: rgba(245, 158, 11, 0.35);
         }
 
         .toggle-switch.on .toggle-thumb {
           transform: translateX(12px);
-          background: #34d399; /* lighter green */
+          background: #f59e0b;
         }
 
         .dev-mode-toggle.active {
-          color: #34d399; /* testing active color */
+          color: #d97706;
         }
         .dev-mode-toggle.active svg {
-          color: #34d399;
+          color: #d97706;
         }
 
         .dev-mode-toggle:hover .toggle-thumb {

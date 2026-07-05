@@ -23,6 +23,10 @@ interface ReqCtx {
     // ~8-9 round-trips redundantes a Neon en un solo render de página. Es mutable
     // a propósito: el store de AsyncLocalStorage está aislado por request.
     resolvedOrgId?: string;
+    // Entorno de PRUEBA (cookie cord_test_mode, leída en el middleware). Cuando
+    // está activo, getActiveOrgId() resuelve la org SANDBOX espejo (orgs.sandbox_of)
+    // en vez de la real — datos de prueba 100% aislados, tipo Stripe test mode.
+    testMode?: boolean;
 }
 
 export const reqContext = new AsyncLocalStorage<ReqCtx>();
@@ -45,6 +49,11 @@ export function currentClerkOrgId(): string | null {
 /** org_id ya resuelto y memoizado para este request, o null si aún no. */
 export function memoizedOrgId(): string | null {
     return reqContext.getStore()?.resolvedOrgId ?? null;
+}
+
+/** ¿Este request viene en modo de PRUEBA (cookie cord_test_mode)? */
+export function isTestModeRequest(): boolean {
+    return reqContext.getStore()?.testMode === true;
 }
 
 /** Guarda el org_id resuelto en el store del request para reutilizarlo. */

@@ -34,7 +34,8 @@ export const GET: APIRoute = async ({ request }) => {
         select id, nombre, interes_moratorio_pct,
                (select email from org_members where org_id = orgs.id and rol = 'owner' limit 1) as owner_email
         from orgs
-        where interes_moratorio_pct > 0`;
+        where interes_moratorio_pct > 0
+          and sandbox_of is null`;
 
     let totalCargos = 0;
     let totalOrgs   = 0;

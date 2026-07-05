@@ -11,6 +11,32 @@ import { FXService } from './fx/FXService';
 
 const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(Math.round(n));
 
+// Número FINITO y no-negativo, o el fallback. Cierra el hueco de montos negativos,
+// NaN (string basura) o Infinity (JSON 1e999) que envenenarían subtotal/IVA/total.
+const num = (v: unknown, fallback = 0): number => {
+    const n = Number(v);
+    return Number.isFinite(n) && n >= 0 ? n : fallback;
+};
+
+// Máximo de líneas por cotización — evita que un POST con miles de items dispare
+// miles de INSERT secuenciales (DoS + latencia).
+export const MAX_ITEMS = 200;
+
+// Sanea una línea: números finitos no-negativos y descripción acotada. Se aplica
+// UNA vez y el arreglo saneado alimenta todo (subtotal, aprobación, inserts, snapshot).
+export function sanitizeItem(it: NewQuoteItem): NewQuoteItem {
+    const nego = it.precio_negociado;
+    const q = num(it.cantidad, 1);
+    return {
+        producto_id: it.producto_id || null,
+        descripcion: String(it.descripcion ?? '').slice(0, 500),
+        cantidad: q > 0 ? q : 1,
+        precio_unitario: num(it.precio_unitario, 0),
+        precio_negociado: (nego === null || nego === undefined) ? null : num(nego, 0),
+        costo_unitario: (it.costo_unitario === null || it.costo_unitario === undefined) ? null : num(it.costo_unitario, 0),
+    };
+}
+
 export interface NewQuoteItem {
     producto_id?: string | null;
     descripcion: string;
@@ -60,14 +86,17 @@ export async function createCotizacion(
     input: NewQuoteInput,
     opts: { origin: string; ip: string; actor?: string },
 ): Promise<CreateQuoteResult> {
-    const items = Array.isArray(input.items) ? input.items : [];
-    if (!items.length) throw new QuoteError('Agrega al menos un producto', 400);
+    const rawItems = Array.isArray(input.items) ? input.items : [];
+    if (!rawItems.length) throw new QuoteError('Agrega al menos un producto', 400);
+    if (rawItems.length > MAX_ITEMS) throw new QuoteError(`Demasiadas líneas (máximo ${MAX_ITEMS} por cotización).`, 400);
+    // Saneado una sola vez → todo lo de abajo opera sobre montos finitos y no-negativos.
+    const items = rawItems.map(sanitizeItem);
 
     // Subtotal server-side (no confiar en el cliente).
     let subtotal = 0;
     for (const it of items) {
         const precio = it.precio_negociado ?? it.precio_unitario ?? 0;
-        subtotal += Number(precio) * Number(it.cantidad ?? 1);
+        subtotal += num(precio) * num(it.cantidad, 1);
     }
 
     const [org] = await sql`select * from orgs where id = ${orgId}`;

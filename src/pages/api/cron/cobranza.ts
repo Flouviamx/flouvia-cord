@@ -41,6 +41,7 @@ export const GET: APIRoute = async ({ request }) => {
         AND c.paid_at IS NULL
         AND c.vigencia < NOW()
         AND o.ai_cobranza_activa = true
+        AND o.sandbox_of IS NULL
     `;
 
     const results = [];
