@@ -3,7 +3,7 @@ import { useStore } from '@nanostores/react';
 import { $clerkStore, $userStore, $organizationStore, $isLoadedStore } from '@clerk/astro/client';
 import { $isTestMode } from '../../store/testMode';
 
-export default function CustomOrgSwitcher() {
+export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: string }) {
   const isLoaded = useStore($isLoadedStore);
   const user = useStore($userStore);
   const organization = useStore($organizationStore);
@@ -54,8 +54,8 @@ export default function CustomOrgSwitcher() {
         aria-expanded={isOpen}
       >
         <div className="org-avatar" style={{ overflow: 'hidden' }}>
-          {organization?.imageUrl ? (
-            <img src={organization.imageUrl} alt={activeName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          {orgLogoUrl ? (
+            <img src={orgLogoUrl} alt={activeName} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           ) : (
             initial
           )}
@@ -80,8 +80,8 @@ export default function CustomOrgSwitcher() {
                 onClick={() => handleSwitch(mem.organization.id)}
               >
                 <div className="org-avatar small" style={{ overflow: 'hidden' }}>
-                  {mem.organization.imageUrl ? (
-                    <img src={mem.organization.imageUrl} alt={mem.organization.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {orgLogoUrl && organization?.id === mem.organization.id ? (
+                    <img src={orgLogoUrl} alt={mem.organization.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                   ) : (
                     mem.organization.name.charAt(0).toUpperCase()
                   )}

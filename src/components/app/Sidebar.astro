@@ -3,11 +3,13 @@
 // Extraído de AppLayout.astro para mantener la separación de responsabilidades.
 // Recibe `page` para marcar el ítem activo en la navegación.
 
-import { getSidebarBadges } from '../../lib/queries';
+import { getSidebarBadges, getOrg } from '../../lib/queries';
 import CustomOrgSwitcher from './CustomOrgSwitcher';
 
 // Contadores en vivo de la sidebar (estilo Linear): seguimiento + cartera vencida.
 const badges = await getSidebarBadges();
+const ORG = await getOrg();
+const orgLogoUrl = ORG.logoUrl || '';
 
 interface Props {
     page: string;         // id de la página activa en el sidebar
@@ -56,7 +58,7 @@ const NAV_GROUPS = [
     <!-- Cuenta — arriba -->
     <div class="sb-account">
         <!-- Custom Org Switcher (full custom B2B motor) -->
-        <CustomOrgSwitcher client:load />
+        <CustomOrgSwitcher client:load orgLogoUrl={orgLogoUrl} />
     </div>
 
     <!-- Acciones móviles (solo en drawer) — crear / ayuda / config -->
