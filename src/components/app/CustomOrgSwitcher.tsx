@@ -53,7 +53,13 @@ export default function CustomOrgSwitcher() {
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
       >
-        <div className="org-avatar">{initial}</div>
+        <div className="org-avatar">
+          {organization?.hasImage ? (
+            <img src={organization.imageUrl} alt={activeName} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
+          ) : (
+            initial
+          )}
+        </div>
         <span className="org-name">{activeName}</span>
         <svg className="chevron-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="6 9 12 15 18 9"></polyline>
@@ -73,7 +79,13 @@ export default function CustomOrgSwitcher() {
                 className={`org-list-item ${organization?.id === mem.organization.id ? 'selected' : ''}`}
                 onClick={() => handleSwitch(mem.organization.id)}
               >
-                <div className="org-avatar small">{mem.organization.name.charAt(0).toUpperCase()}</div>
+                <div className="org-avatar small">
+                  {mem.organization.hasImage ? (
+                    <img src={mem.organization.imageUrl} alt={mem.organization.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
+                  ) : (
+                    mem.organization.name.charAt(0).toUpperCase()
+                  )}
+                </div>
                 <div className="org-details">
                   <span className="org-item-name">{mem.organization.name}</span>
                   <span className="org-item-role">{mem.role === 'org:admin' ? 'Admin' : 'Miembro'}</span>
