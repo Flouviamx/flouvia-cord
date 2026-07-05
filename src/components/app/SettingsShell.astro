@@ -54,8 +54,14 @@ const hasAccess = !perm || memberCan(ME!, perm);
             {hasAccess && <slot />}
             {hasAccess && save && (
                 <div class="s-save-row">
-                    <button class="s-save" id="sBtn">Guardar cambios</button>
-                    <span class="s-saved" id="sMsg">✓ Cambios guardados</span>
+                    <button class="s-save" id="sBtn">
+                        <span class="s-save-label">Guardar cambios</span>
+                        <svg class="s-save-spinner" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" opacity="0.25"/><path d="M18 10a8 8 0 0 1-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>
+                    <span class="s-saved" id="sMsg">
+                        <svg class="s-check-icon" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4.5 4L16 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span class="s-saved-text">Cambios guardados</span>
+                    </span>
                 </div>
             )}
         </div>
@@ -113,19 +119,72 @@ const hasAccess = !perm || memberCan(ME!, perm);
         font-family: var(--font-sans); font-size: 0.88rem; font-weight: 600;
         background: var(--color-blue-deep); color: #fff; border: none; border-radius: 10px;
         padding: 12px 26px; cursor: pointer; box-shadow: 0 8px 22px -10px rgba(10,25,47,0.5);
-        transition: transform 0.4s var(--ease-spring), opacity 0.2s;
+        transition: transform 0.4s var(--ease-spring), background 0.35s var(--ease-ios), box-shadow 0.35s;
         width: 100%;
         justify-content: center;
         display: flex;
+        align-items: center;
+        gap: 0;
+        position: relative;
+        min-height: 44px;
     }
     @media (min-width: 601px) {
-        .s-save { width: auto; display: inline-block; }
+        .s-save { width: auto; display: inline-flex; }
     }
-    .s-save:hover { transform: translateY(-2px); }
-    .s-save:disabled { opacity: 0.6; cursor: wait; transform: none; }
-    .s-saved { font-size: 0.8rem; font-weight: 600; color: var(--color-ok); opacity: 0; transition: opacity 0.3s var(--ease-ios); }
-    .s-saved.show { opacity: 1; }
+    .s-save:hover:not(:disabled):not(.saving):not(.saved) { transform: translateY(-2px); }
+    .s-save:active:not(:disabled):not(.saving) { transform: translateY(0) scale(0.97); }
+    .s-save:disabled { cursor: wait; transform: none; }
+
+    /* Label + spinner layout */
+    .s-save-label { transition: opacity 0.2s, transform 0.2s var(--ease-spring); }
+    .s-save-spinner { width: 18px; height: 18px; position: absolute; opacity: 0; transition: opacity 0.2s; animation: s-spin 0.7s linear infinite; }
+    .s-save.saving .s-save-label { opacity: 0; transform: scale(0.9); }
+    .s-save.saving .s-save-spinner { opacity: 1; }
+    .s-save.saving { opacity: 0.85; pointer-events: none; }
+
+    /* Saved flash — botón pulsa verde brevemente */
+    .s-save.saved { background: #0f766e; box-shadow: 0 8px 22px -10px rgba(15,118,110,0.5); animation: s-pulse 0.45s var(--ease-spring); pointer-events: none; }
+    .s-save.saved .s-save-label { opacity: 0; transform: scale(0.9); }
+    .s-save.saved .s-save-spinner { opacity: 0; }
+
+    @keyframes s-pulse {
+        0% { transform: scale(1); }
+        35% { transform: scale(0.95); }
+        70% { transform: scale(1.03); }
+        100% { transform: scale(1); }
+    }
+
+    @keyframes s-spin {
+        to { transform: rotate(360deg); }
+    }
+
+    @keyframes s-shake {
+        0%, 100% { transform: translateX(0); }
+        15% { transform: translateX(-3px); }
+        30% { transform: translateX(3px); }
+        45% { transform: translateX(-2px); }
+        60% { transform: translateX(2px); }
+        75% { transform: translateX(-1px); }
+    }
+
+    /* Mensaje de estado (check + texto) */
+    .s-saved {
+        display: inline-flex; align-items: center; gap: 5px;
+        font-size: 0.8rem; font-weight: 600; color: var(--color-ok);
+        opacity: 0; transform: translateY(4px);
+        transition: opacity 0.35s var(--ease-ios), transform 0.35s var(--ease-spring);
+    }
+    .s-saved.show { opacity: 1; transform: translateY(0); }
     .s-saved.error { color: var(--color-danger); }
+
+    /* Checkmark SVG animado */
+    .s-check-icon { width: 16px; height: 16px; flex-shrink: 0; }
+    .s-check-icon path {
+        stroke-dasharray: 24;
+        stroke-dashoffset: 24;
+        transition: stroke-dashoffset 0.4s var(--ease-spring) 0.05s;
+    }
+    .s-saved.show .s-check-icon path { stroke-dashoffset: 0; }
 
     /* Panel de acceso denegado inline */
     .access-denied { display: flex; flex-direction: column; align-items: flex-start; gap: 0.6rem; padding: 2.4rem 0 1rem; }
@@ -137,11 +196,14 @@ const hasAccess = !perm || memberCan(ME!, perm);
 <script>
     // Guardado genérico de Ajustes: junta todos los [data-field] del formulario
     // y los manda a PATCH /api/org (que solo toca los campos presentes).
+    // Micro-animaciones: spinner durante fetch, pulse+check en éxito, shake en error.
     function initSettingsSave() {
         const btn = document.getElementById('sBtn') as HTMLButtonElement | null;
         const msg = document.getElementById('sMsg');
         const form = document.querySelector('[data-settings-form]');
         if (!btn || !msg || !form) return;
+
+        const msgText = msg.querySelector('.s-saved-text') as HTMLElement | null;
 
         const cp = document.getElementById('oColorPick') as HTMLInputElement | null;
         const ct = document.getElementById('oColor') as HTMLInputElement | null;
@@ -159,16 +221,41 @@ const hasAccess = !perm || memberCan(ME!, perm);
                 else if (el.type === 'radio') { if (el.checked) body[k] = el.value; }
                 else body[k] = el.value;
             });
-            btn.disabled = true; msg.className = 's-saved';
+
+            // Estado: saving (spinner)
+            btn.disabled = true;
+            btn.classList.remove('saved');
+            btn.classList.add('saving');
+            msg.className = 's-saved';
+
             try {
                 const res = await fetch('/api/org', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || 'No se pudo guardar');
-                msg.textContent = '✓ Cambios guardados'; msg.className = 's-saved show';
-                setTimeout(() => msg.classList.remove('show'), 2600);
+
+                // Estado: saved (pulse verde + check animado)
+                btn.classList.remove('saving');
+                btn.classList.add('saved');
+                if (msgText) msgText.textContent = 'Cambios guardados';
+                msg.className = 's-saved show';
+
+                setTimeout(() => {
+                    btn.classList.remove('saved');
+                    btn.disabled = false;
+                }, 500);
+                setTimeout(() => msg.classList.remove('show'), 2800);
+
             } catch (err: any) {
-                msg.textContent = err.message || 'No se pudo guardar'; msg.className = 's-saved show error';
-            } finally { btn.disabled = false; }
+                // Estado: error (shake + mensaje rojo)
+                btn.classList.remove('saving');
+                btn.disabled = false;
+                btn.style.animation = 's-shake 0.4s var(--ease-spring)';
+                btn.addEventListener('animationend', () => { btn.style.animation = ''; }, { once: true });
+
+                if (msgText) msgText.textContent = err.message || 'No se pudo guardar';
+                msg.className = 's-saved show error';
+                setTimeout(() => msg.classList.remove('show'), 3500);
+            }
         });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSettingsSave);

@@ -63,8 +63,14 @@ const on = (ev: string, c: string) => !!(P[ev] && P[ev][c]);
     </div>
 
     <div class="s-save-row">
-        <button class="s-save" id="nBtn">Guardar cambios</button>
-        <span class="s-saved" id="nMsg">✓ Cambios guardados</span>
+        <button class="s-save" id="nBtn">
+            <span class="s-save-label">Guardar cambios</span>
+            <svg class="s-save-spinner" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" opacity="0.25"/><path d="M18 10a8 8 0 0 1-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <span class="s-saved" id="nMsg">
+            <svg class="s-check-icon" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4.5 4L16 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="s-saved-text">Cambios guardados</span>
+        </span>
     </div>
 </SettingsShell>
 
@@ -96,6 +102,8 @@ const on = (ev: string, c: string) => !!(P[ev] && P[ev][c]);
         const slack = document.getElementById('oSlack') as HTMLInputElement | null;
         if (!btn || !msg || !grid) return;
 
+        const msgText = msg.querySelector('.s-saved-text') as HTMLElement | null;
+
         btn.addEventListener('click', async () => {
             const notif_prefs: Record<string, Record<string, boolean>> = {};
             grid.querySelectorAll('.notif-row[data-ev]').forEach((row) => {
@@ -107,7 +115,13 @@ const on = (ev: string, c: string) => !!(P[ev] && P[ev][c]);
                 });
                 notif_prefs[ev] = canales;
             });
-            btn.disabled = true; msg.className = 's-saved';
+
+            // Estado: saving (spinner)
+            btn.disabled = true;
+            btn.classList.remove('saved');
+            btn.classList.add('saving');
+            msg.className = 's-saved';
+
             try {
                 const res = await fetch('/api/org/prefs', {
                     method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -115,11 +129,30 @@ const on = (ev: string, c: string) => !!(P[ev] && P[ev][c]);
                 });
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || 'No se pudo guardar');
-                msg.textContent = '✓ Cambios guardados'; msg.className = 's-saved show';
-                setTimeout(() => msg.classList.remove('show'), 2600);
+
+                // Estado: saved (pulse verde + check animado)
+                btn.classList.remove('saving');
+                btn.classList.add('saved');
+                if (msgText) msgText.textContent = 'Cambios guardados';
+                msg.className = 's-saved show';
+
+                setTimeout(() => {
+                    btn.classList.remove('saved');
+                    btn.disabled = false;
+                }, 500);
+                setTimeout(() => msg.classList.remove('show'), 2800);
+
             } catch (err: any) {
-                msg.textContent = err.message || 'No se pudo guardar'; msg.className = 's-saved show error';
-            } finally { btn.disabled = false; }
+                // Estado: error (shake + mensaje rojo)
+                btn.classList.remove('saving');
+                btn.disabled = false;
+                btn.style.animation = 's-shake 0.4s var(--ease-spring)';
+                btn.addEventListener('animationend', () => { btn.style.animation = ''; }, { once: true });
+
+                if (msgText) msgText.textContent = err.message || 'No se pudo guardar';
+                msg.className = 's-saved show error';
+                setTimeout(() => msg.classList.remove('show'), 3500);
+            }
         });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initNotif);
