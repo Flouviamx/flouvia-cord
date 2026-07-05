@@ -318,6 +318,8 @@ const canEdit = memberCan(ME, 'productos');
     .vol-field { gap: 0.6rem; }
     .m-optlbl { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.6px; color: #b3bcc9; }
     .m-hint { font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.4; margin-top: -0.1rem; }
+</style>
+<style is:global>
     .vol-list { display: flex; flex-direction: column; gap: 0.55rem; }
     .vol-list:empty { display: none; }
     .vol-row { display: grid; grid-template-columns: 1fr auto 1fr 34px; gap: 0.6rem; align-items: center; }
@@ -343,6 +345,8 @@ const canEdit = memberCan(ME, 'productos');
         cursor: pointer; color: #94a3b8; transition: color 0.2s, border-color 0.2s, background 0.2s; 
     }
     .vol-del:hover { color: #ef4444; border-color: #fca5a5; background: rgba(239,68,68,0.08); }
+</style>
+<style>
     .vol-add {
         align-self: flex-start; display: inline-flex; align-items: center; gap: 6px;
         font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600; cursor: pointer;
