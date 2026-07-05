@@ -8,6 +8,10 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Barra de búsqueda en Catálogo/Directorio y rediseño de Precios por Volumen (jul 2026)** —
+   Se implementó filtrado de cliente *instantáneo* (sin recargar ni hacer queries a la BD) en las pantallas de Productos y Clientes. Se reubicó la barra de búsqueda en el header (junto a los botones principales) integrando la clase `ph-search` con estilos premium y expandibles al hacer focus.
+   • Además, se rediseñó la matriz de **Precios por volumen** en el modal de editar producto: se eliminaron los selectores numéricos por defecto del navegador, se añadió una clase `.vol-cell` con borde focus `var(--color-blue-deep)` y sombra similar a la de Apple, y se incluyó una etiqueta `<style is:global>` específica en `productos.astro` para permitir que Astro aplique los estilos premium al HTML generado dinámicamente (`innerHTML`) por JS.
+
 ✅ **Evolución de `@flouviahq/elements` a God-Level SDK (v0.5.0 y v0.6.0) (jul 2026)** —
    Se transformó la librería original (que solo era un wrapper de iframe) en una infraestructura financiera B2B nativa completa, al nivel de Stripe o Clerk:
    • **Patrón Compound (Slots):** El cotizador React (`<CordBuilder>`) dejó de ser una caja negra. Ahora expone componentes como `<CordBuilder.Header>`, `<CordBuilder.Config>`, `<CordBuilder.Items>` que el developer puede componer o reemplazar.
