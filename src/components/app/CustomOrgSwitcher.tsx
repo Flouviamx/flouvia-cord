@@ -53,9 +53,9 @@ export default function CustomOrgSwitcher() {
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
       >
-        <div className="org-avatar">
-          {organization?.hasImage ? (
-            <img src={organization.imageUrl} alt={activeName} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
+        <div className="org-avatar" style={{ overflow: 'hidden' }}>
+          {organization?.imageUrl ? (
+            <img src={organization.imageUrl} alt={activeName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
             initial
           )}
@@ -79,9 +79,9 @@ export default function CustomOrgSwitcher() {
                 className={`org-list-item ${organization?.id === mem.organization.id ? 'selected' : ''}`}
                 onClick={() => handleSwitch(mem.organization.id)}
               >
-                <div className="org-avatar small">
-                  {mem.organization.hasImage ? (
-                    <img src={mem.organization.imageUrl} alt={mem.organization.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
+                <div className="org-avatar small" style={{ overflow: 'hidden' }}>
+                  {mem.organization.imageUrl ? (
+                    <img src={mem.organization.imageUrl} alt={mem.organization.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
                     mem.organization.name.charAt(0).toUpperCase()
                   )}
