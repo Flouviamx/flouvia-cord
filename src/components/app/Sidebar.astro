@@ -147,13 +147,11 @@ const NAV_GROUPS = [
     }
     .sidebar > * { position: relative; z-index: 1; }
 
-    /* ── Nav agrupada (scroll con fade-out en ambos extremos) ── */
+    /* ── Nav agrupada ── */
     .sb-nav {
         position: relative;
         display: flex; flex-direction: column; gap: 1rem;
         overflow-y: auto; flex: 1;
-        mask-image: linear-gradient(to bottom, transparent 0%, black 18px, black calc(100% - 22px), transparent 100%);
-        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 18px, black calc(100% - 22px), transparent 100%);
         /* Ocultar barra de scroll para evitar que empuje los elementos y rompa el centrado */
         scrollbar-width: none;
     }
