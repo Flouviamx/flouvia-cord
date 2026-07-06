@@ -128,6 +128,7 @@ export async function getApiKeys() {
         masked: `${k.prefix}${'•'.repeat(20)}${k.last4}`,
         scope: (k.scope as string) || 'read',
         mode: (k.mode as string) || 'live',
+        type: (k.type as string) || 'secret',
         creada: fmtDate(k.created_at),
         ultimoUso: k.last_used_at ? fmtRelative(k.last_used_at) : null,
         revocada: !!k.revoked_at,

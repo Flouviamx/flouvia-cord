@@ -125,3 +125,38 @@ export declare class CordAPI {
         list(options?: { limit?: number; offset?: number }): Promise<PaginatedResponse<any>>;
     };
 }
+
+// ==== Motor de cálculo compartido (engine) ====
+export interface EngineItemInput {
+    producto_id?: string | null;
+    descripcion?: string;
+    cantidad?: number | string;
+    precio_unitario?: number | string;
+    precio_negociado?: number | string | null;
+    costo_unitario?: number | string | null;
+}
+
+export interface EngineItem {
+    producto_id: string | null;
+    descripcion: string;
+    cantidad: number;
+    precio_unitario: number;
+    precio_negociado: number | null;
+    costo_unitario: number | null;
+}
+
+export interface EngineTotals {
+    subtotal: number;
+    iva: number;
+    total: number;
+    sumPrecios: number;
+    ivaIncluido: boolean;
+    ivaPct: number;
+}
+
+/** Número finito y no-negativo, o el fallback (cierra NaN/Infinity/negativos). */
+export declare function num(v: unknown, fallback?: number): number;
+/** Sanea una línea: montos finitos no-negativos + descripción acotada. */
+export declare function sanitizeItem(it: EngineItemInput): EngineItem;
+/** Calcula subtotal/IVA/total con la MISMA lógica que el backend de Cord. */
+export declare function calculateTotals(items: EngineItemInput[], ivaPct: number, ivaIncluido: boolean): EngineTotals;

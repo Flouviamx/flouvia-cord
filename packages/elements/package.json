@@ -1,6 +1,6 @@
 {
   "name": "@flouviahq/elements",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "Embebe el cotizador B2B de Cord en cualquier sitio — Web Component + wrappers de React, Vue, Framer y Webflow. Tu marca, aprobación y pago en línea.",
   "type": "module",
   "license": "MIT",

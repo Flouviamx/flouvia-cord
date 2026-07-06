@@ -31,6 +31,8 @@ export interface CordElementOptions {
     onPay?: (detail: CordEventDetail) => void;
     /** Catch-all: cualquier evento `cord:*` (incluye los anteriores). */
     onEvent?: (type: string, detail: CordEventDetail) => void;
+    /** Configuración de branding para inyectar al iframe */
+    appearance?: CordAppearance;
 }
 
 /** Handle devuelto por mountCotizador() para limpiar la instancia. */
@@ -53,16 +55,27 @@ export interface QuoteItemInput {
     producto_id?: string;
 }
 
+/** Datos para crear una nueva cotización vía API o SDK. */
 export interface CreateQuoteInput {
+    /** Si es `true`, la cotización se enviará por correo al cliente inmediatamente tras crearla. */
     send?: boolean;
+    /** Notas adicionales o términos específicos que aparecerán al final de la cotización. */
     notas?: string;
+    /** ID del cliente (requerido si `send` es true o si se quieren tomar los términos por defecto del cliente). */
     cliente_id?: string;
+    /** Términos de pago (ej. 'contado', 'net30'). Sobrescribe los del cliente. */
     terminos?: Terminos;
+    /** Cuántos días es válida la cotización. Por defecto toma el valor de los ajustes de la organización (ej. 30). */
     vigencia_dias?: number;
+    /** Moneda base en la que el cliente ve la cotización (ej. 'MXN', 'USD'). */
     base_currency?: string;
+    /** Moneda fiscal en la que se facturará (ej. 'MXN'). Si difiere de base_currency, se usa FX con cobertura. */
     fiscal_currency?: string;
+    /** Porcentaje de buffer para el tipo de cambio (ej. 0.05 para 5%). */
     fx_buffer_pct?: number;
+    /** Si es `true`, los precios unitarios de los items ya incluyen IVA. */
     iva_incluido?: boolean;
+    /** Lista de productos o servicios a cotizar. Obligatorio (mínimo 1). */
     items: QuoteItemInput[];
 }
 
@@ -139,17 +152,43 @@ export interface CordAppearanceVariables {
     [key: string]: string | undefined;
 }
 
+/**
+ * Define el sistema de diseño visual inyectado en el Iframe (CordEmbed)
+ * para mantener consistencia con tu aplicación anfitriona.
+ */
 export interface CordAppearance {
+    /** Fuerza el tema claro, oscuro, o usa la preferencia del sistema. */
+    theme?: 'light' | 'dark' | 'auto';
+    /** 
+     * Variables CSS. Modifican colores, tipografías y bordes globales de los componentes.
+     * Soporta valores como '#fff', 'hsl(210 100% 50%)', '12px', 'Inter, sans-serif'.
+     */
     variables?: CordAppearanceVariables;
+    /** (Avanzado) Reglas para selectores específicos dentro del iframe. */
+    rules?: Record<string, any>;
+    /** Fuentes externas a cargar (ej. Google Fonts). */
     fonts?: Array<{ cssSrc: string }>;
 }
 
+/**
+ * Propiedades del CordProvider para envolver aplicaciones React/Next.js.
+ * Todas las llamadas de los hooks hijos heredarán esta configuración.
+ */
 export interface CordProviderProps {
+    /** (Opcional) URL absoluta hacia tu Backend for Frontend que hace de proxy a la API de Cord. */
     proxyUrl?: string;
+    /** 
+     * Llave pública (`pk_live_...` o `pk_test_...`) para interactuar con la API de Cord
+     * directamente desde el navegador sin necesidad de un backend. 
+     */
     publishableKey?: string;
+    /** Token público de una cotización (`cot_...`). Configura el contexto para un Iframe de Cotizador. */
     token?: string;
+    /** Idioma de la interfaz y formateos. Por defecto es 'es'. */
     locale?: 'en' | 'es';
+    /** Estilos inyectados a todos los componentes o iframes renderizados en el Provider. */
     appearance?: CordAppearance;
+    /** Callback global para interceptar eventos de telemetría o acciones (ej. CHECKOUT_STARTED). */
     onAnalyticsEvent?: (event: string, payload?: unknown) => void;
     children: React.ReactNode;
 }

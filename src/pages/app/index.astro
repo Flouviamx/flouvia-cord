@@ -61,9 +61,9 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
 
     <!-- Salud del pipeline (DSO · concentración · ingreso esperado) -->
     <section class="health">
-        <div class="section-head">
-            <h2>Salud del pipeline</h2>
-            <a href="/app/cfo" class="see-all">Ver CFO →</a>
+        <div class="sec-head">
+            <h2 class="sec-title">Salud del pipeline</h2>
+            <a href="/app/cfo" class="sec-link">Ver CFO →</a>
         </div>
         <div class="health-grid">
             <div class="health-cell">
@@ -86,9 +86,9 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
 
     <!-- Pipeline -->
     <section class="pipeline">
-        <div class="section-head">
-            <h2>Pipeline</h2>
-            <a href="/app/cotizaciones" class="see-all">Ver todas →</a>
+        <div class="sec-head">
+            <h2 class="sec-title">Pipeline</h2>
+            <a href="/app/cotizaciones" class="sec-link">Ver todas →</a>
         </div>
         <div class="pipe-row">
             {(['draft', 'sent', 'viewed', 'approved', 'paid'] as const).map((st) => {
@@ -111,9 +111,9 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     <!-- Flujo esperado (5 semanas) + Necesitan seguimiento -->
     <div class="two-col two-col-flow">
         <section class="flow-card">
-            <div class="section-head">
-                <h2>Flujo esperado · 5 semanas</h2>
-                <a href="/app/tesoreria/flujo" class="see-all">Tesorería →</a>
+            <div class="sec-head">
+                <h2 class="sec-title">Flujo esperado · 5 semanas</h2>
+                <a href="/app/tesoreria/flujo" class="sec-link">Tesorería →</a>
             </div>
             <div class="flow-bars">
                 {semanas.map((s) => (
@@ -130,8 +130,8 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
         </section>
 
         <section class="silence-card">
-            <div class="section-head">
-                <h2>Necesitan seguimiento</h2>
+            <div class="sec-head">
+                <h2 class="sec-title">Necesitan seguimiento</h2>
                 {silenciadas.length > 0 && <span class="silence-count">{CFO.kpis.nSilenciadas}</span>}
             </div>
             {silenciadas.length > 0 ? (
@@ -160,9 +160,9 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     <div class="two-col">
         <!-- Cotizaciones recientes -->
         <section class="list-card">
-            <div class="section-head">
-                <h2>Recientes</h2>
-                <a href="/app/cotizaciones" class="see-all">Ver todas →</a>
+            <div class="sec-head">
+                <h2 class="sec-title">Recientes</h2>
+                <a href="/app/cotizaciones" class="sec-link">Ver todas →</a>
             </div>
             <div class="quote-list">
                 {recientes.map((q) => (
@@ -183,7 +183,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
 
         <!-- Actividad -->
         <section class="activity-card">
-            <div class="section-head"><h2>Actividad</h2></div>
+            <div class="sec-head"><h2 class="sec-title">Actividad</h2></div>
             <div class="feed">
                 {eventosFeed.map((e) => (
                     <a href={`/app/cotizaciones/${e.id}`} class="feed-item">
@@ -201,7 +201,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     <!-- Mix: clientes por tasa de aprobación + productos por ingreso -->
     <div class="two-col two-col-even">
         <section class="rank-card">
-            <div class="section-head"><h2>Clientes por tasa de aprobación</h2></div>
+            <div class="sec-head"><h2 class="sec-title">Clientes por tasa de aprobación</h2></div>
             {clientesTasa.length > 0 ? (
                 <div class="rank-list">
                     {clientesTasa.map((c) => (
@@ -216,7 +216,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
         </section>
 
         <section class="rank-card">
-            <div class="section-head"><h2>Productos por ingreso</h2></div>
+            <div class="sec-head"><h2 class="sec-title">Productos por ingreso</h2></div>
             {topProductos.length > 0 ? (
                 <div class="rank-list">
                     {topProductos.map((p) => (
@@ -233,7 +233,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
 
     <!-- Tareas / recordatorios -->
     <section class="tasks-card">
-        <div class="section-head"><h2>Tareas y recordatorios</h2></div>
+        <div class="sec-head"><h2 class="sec-title">Tareas y recordatorios</h2></div>
         <form class="task-add" id="taskAdd">
             <input id="taskTitulo" class="task-input" placeholder="Ej. Llamar a GAMA para dar seguimiento…" autocomplete="off" required />
             <input id="taskDue" class="task-date" type="date" aria-label="Fecha límite" />
@@ -318,10 +318,6 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     .kpi-sub { font-size: 0.78rem; color: var(--color-text-muted); }
 
     .pipeline { margin-bottom: 2.6rem; }
-    .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1.2rem; padding-bottom: 0.7rem; border-bottom: 1px solid var(--color-border); }
-    .section-head h2 { font-size: 0.7rem; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; color: #99a2af; margin: 0; }
-    .see-all { font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted); text-decoration: none; transition: color 0.25s; }
-    .see-all:hover { color: var(--color-blue-deep); }
 
     .pipe-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.8rem; }
     .pipe-col {
@@ -392,8 +388,8 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     .flow-bars { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.7rem; align-items: end; }
     .flow-col { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; justify-content: flex-end; text-align: center; }
     .flow-amount { font-size: 0.74rem; color: var(--color-blue-deep); white-space: nowrap; }
-    .flow-track { width: 60%; max-width: 34px; height: 130px; display: flex; align-items: flex-end; background: var(--color-bg-soft); border-radius: 7px; overflow: hidden; }
-    .flow-fill { width: 100%; background: linear-gradient(180deg, #1d4ed8, #0a192f); border-radius: 7px 7px 0 0; min-height: 4px; transition: height 0.7s var(--ease-spring); }
+    .flow-track { width: 60%; max-width: 34px; height: 130px; display: flex; align-items: flex-end; background: var(--chart-track); border-radius: 7px; overflow: hidden; }
+    .flow-fill { width: 100%; background: var(--chart-fill); border-radius: 7px 7px 0 0; min-height: 4px; transition: height 0.7s var(--ease-spring); }
     .flow-label { font-size: 0.64rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
     .flow-n { font-size: 0.64rem; color: #aab2bd; min-height: 0.8em; }
 
@@ -419,9 +415,9 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     .rank-list { display: flex; flex-direction: column; gap: 0.7rem; }
     .rank-row { display: grid; grid-template-columns: minmax(0, 1.1fr) 1.4fr auto; align-items: center; gap: 0.8rem; }
     .rank-name { font-size: 0.8rem; font-weight: 550; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .rank-track { height: 8px; background: var(--color-bg-soft); border-radius: 100px; overflow: hidden; }
-    .rank-fill { height: 100%; border-radius: 100px; background: linear-gradient(90deg, #1d4ed8, #0a192f); min-width: 4px; transition: width 0.7s var(--ease-spring); }
-    .rank-fill-ok { background: linear-gradient(90deg, #10b981, #059669); }
+    .rank-track { height: 8px; background: var(--chart-track); border-radius: 100px; overflow: hidden; }
+    .rank-fill { height: 100%; border-radius: 100px; background: var(--chart-fill); min-width: 4px; transition: width 0.7s var(--ease-spring); }
+    .rank-fill-ok { background: var(--color-ok); }
     .rank-val { font-size: 0.82rem; color: var(--color-blue-deep); font-variant-numeric: tabular-nums; white-space: nowrap; }
     .rank-empty { font-size: 0.82rem; color: var(--color-text-muted); margin: 0.4rem 0; }
 

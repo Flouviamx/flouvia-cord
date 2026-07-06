@@ -311,6 +311,7 @@ create index if not exists idx_apikeys_org on api_keys(org_id, created_at desc);
 -- Modo sandbox/test (jun 2026): las llaves sk_test_ no tocan datos reales y NO
 -- requieren plan Negocio (libres para probar). sk_live_ sí están gated.
 alter table api_keys add column if not exists mode text not null default 'live';  -- live | test
+alter table api_keys add column if not exists type text not null default 'secret'; -- secret | publishable
 
 -- ── Seguridad de la organización (jun 2026) ─────────────────────────────────
 alter table orgs add column if not exists require_2fa boolean not null default false;     -- exigir 2FA a todo el equipo
@@ -851,3 +852,14 @@ alter table orgs add column if not exists iva_incluido_defecto boolean not null 
 -- prueba y los reales NUNCA se mezclan (aislamiento por org_id + RLS).
 alter table orgs add column if not exists sandbox_of uuid references orgs(id) on delete cascade;
 create unique index if not exists idx_orgs_sandbox_of on orgs(sandbox_of) where sandbox_of is not null;
+
+-- ── Stripe Connect y Transferencias (jul 2026) ──────────────────────────────
+alter table orgs add column if not exists stripe_account_id text;
+alter table orgs add column if not exists stripe_account_type text;
+alter table orgs add column if not exists stripe_charges_enabled boolean not null default false;
+alter table orgs add column if not exists acepta_tarjeta boolean not null default true;
+alter table orgs add column if not exists acepta_transferencia boolean not null default false;
+alter table orgs add column if not exists banco_nombre text;
+alter table orgs add column if not exists banco_clabe text;
+alter table orgs add column if not exists banco_beneficiario text;
+alter table orgs add column if not exists cobro_spei_auto boolean not null default false;

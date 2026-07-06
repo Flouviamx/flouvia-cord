@@ -20,32 +20,36 @@ export class CordWebhooks {
             throw new Error('No signature header provided');
         }
 
-        const parts = signatureHeader.split(',').reduce((acc, part) => {
-            const [k, v] = part.split('=');
-            if (k && v) acc[k.trim()] = v.trim();
-            return acc;
-        }, {} as Record<string, string>);
+        // The server sends X-Cord-Signature: sha256=<hmac(rawBody)>
+        let signature = signatureHeader;
+        if (signatureHeader.startsWith('sha256=')) {
+            signature = signatureHeader.replace('sha256=', '').trim();
+        }
 
-        const timestamp = parts['t'];
-        const signature = parts['v1'];
-
-        if (!timestamp || !signature) {
+        if (!signature) {
             throw new Error('Invalid signature header format');
         }
 
-        const age = Math.floor(Date.now() / 1000) - parseInt(timestamp, 10);
-        if (age > tolerance) {
-            throw new Error('Webhook signature has expired');
-        }
+        // Timestamp validation disabled until Phase 2 (Server Parity)
+        // const age = Math.floor(Date.now() / 1000) - parseInt(timestamp, 10);
+        // if (age > tolerance) {
+        //     throw new Error('Webhook signature has expired');
+        // }
 
         const payloadString = Buffer.isBuffer(payload) ? payload.toString('utf8') : payload;
-        const signedPayload = `${timestamp}.${payloadString}`;
+        
+        // In the future, this should include the timestamp: `${timestamp}.${payloadString}`
+        const signedPayload = payloadString;
+        
         const expectedSignature = crypto
             .createHmac('sha256', endpointSecret)
             .update(signedPayload)
             .digest('hex');
 
-        if (expectedSignature !== signature) {
+        const expectedBuffer = Buffer.from(expectedSignature, 'hex');
+        const signatureBuffer = Buffer.from(signature, 'hex');
+
+        if (expectedBuffer.length !== signatureBuffer.length || !crypto.timingSafeEqual(expectedBuffer, signatureBuffer)) {
             throw new Error('Webhook signature mismatch');
         }
 

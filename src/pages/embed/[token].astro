@@ -24,6 +24,54 @@ const { quote: q, org: ORG, conversacion } = result;
 // Registra la apertura del cliente (igual que /q).
 await markViewed(token ?? '');
 
+// ── Appearance API ──
+const appearanceParam = Astro.url.searchParams.get('appearance');
+let appearanceCSS = '';
+if (appearanceParam) {
+    try {
+        const parsed = JSON.parse(appearanceParam);
+        // Sanitización estricta para evitar XSS reflejado:
+        // Se rechazan caracteres como < > { } ; y eval/expression.
+        const isSafe = (str: string) => typeof str === 'string' && !/[<>{};]|expression|javascript|vbscript/i.test(str);
+        
+        let vars = '';
+        let fontImports = '';
+        
+        if (parsed.variables && typeof parsed.variables === 'object') {
+            for (const [key, val] of Object.entries(parsed.variables)) {
+                if (key !== 'fontFamily' && isSafe(val as string)) {
+                    // Validar nombre de propiedad: solo letras y números
+                    const safeKey = key.replace(/[^a-zA-Z0-9]/g, '');
+                    const cssVar = `--cord-${safeKey.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}`;
+                    vars += `${cssVar}: ${val};\n`;
+                }
+            }
+        }
+        
+        if (parsed.fonts && Array.isArray(parsed.fonts)) {
+            // Allowlist de hosts de fuentes: sin esto, un @import podría cargar una
+            // hoja de estilos externa arbitraria (redressing/UI-injection). Solo
+            // proveedores de fuentes conocidos y de solo-fuentes.
+            const FONT_HOSTS = ['https://fonts.googleapis.com/', 'https://fonts.bunny.net/'];
+            parsed.fonts.forEach((f: any) => {
+                if (f.cssSrc && isSafe(f.cssSrc) && FONT_HOSTS.some((h) => f.cssSrc.startsWith(h))) {
+                    fontImports += `@import url('${f.cssSrc}');\n`;
+                }
+            });
+            const fontFamily = parsed.variables?.fontFamily || parsed.fonts[0]?.cssSrc?.split('family=')[1]?.split('&')[0];
+            if (fontFamily && isSafe(fontFamily)) {
+                vars += `--cord-font-family: ${fontFamily.replace(/\+/g, ' ')};\n`;
+            }
+        }
+        
+        // Se eliminó el soporte de `rules` (selectores CSS arbitrarios) por seguridad.
+        if (vars) {
+            appearanceCSS += `:root {\n${vars}}\n`;
+        }
+        appearanceCSS = fontImports + appearanceCSS;
+    } catch (e) {}
+}
+
 // ── CSP: ¿quién puede embeber esta cotización? ──
 // Lista separada por comas / saltos de línea en orgs.embed_domains. Cada entrada
 // es un host-source de CSP ("cliente.com", "https://app.cliente.com", "*.cliente.com").
@@ -53,6 +101,7 @@ const puedePagar = pagoActivo && ['approved', 'invoiced'].includes(q.status);
             puedePagar={puedePagar}
         />
     </div>
+    {appearanceCSS && <style set:html={appearanceCSS}></style>}
 </EmbedLayout>
 
 <script>
@@ -76,14 +125,14 @@ const puedePagar = pagoActivo && ['approved', 'invoiced'].includes(q.status);
     window.addEventListener('load', reportHeight);
 
     // 'ready' = contenido ya estilado (fuentes cargadas) → el padre revela el iframe.
-    const ready = () => { reportHeight(); post('cord:ready'); };
+    const ready = () => { reportHeight(); post('cord:ready'); post('cord:viewed'); };
     reportHeight();
     const fonts = (document as any).fonts?.ready;
     if (fonts) fonts.then(ready); else ready();
     window.addEventListener('load', ready);
 
     // 2) Relay: cada evento del QuoteCard → postMessage al padre.
-    for (const name of ['cord:approved', 'cord:rejected', 'cord:message', 'cord:pay'] as const) {
+    for (const name of ['cord:approved', 'cord:rejected', 'cord:message', 'cord:pay', 'cord:signed'] as const) {
         window.addEventListener(name, (e) => {
             post(name, { detail: (e as CustomEvent).detail });
             // tras aprobar/rechazar la altura cambia (aparece el estado final)

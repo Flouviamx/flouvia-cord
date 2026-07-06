@@ -98,10 +98,9 @@ const isManaged = !canEdit;
 
     .sso-soon { display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; }
     .sso-soon-badge {
-        display: inline-flex; align-items: center; gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        background: linear-gradient(135deg, rgba(10,25,47,0.06), rgba(14,165,233,0.08));
-        border: 1px solid var(--color-border); border-radius: 100px;
+        .sso-intro { display: flex; align-items: center; gap: 1.2rem; padding: 1.4rem; border-radius: 14px;
+        background: var(--color-bg-soft);
+        border: 1px solid var(--color-border); margin-bottom: 2.2rem; }
         font-size: 0.82rem; font-weight: 600; color: var(--color-text);
         letter-spacing: 0.2px;
     }
@@ -111,9 +110,9 @@ const isManaged = !canEdit;
     }
     
     .btn-primary {
-        display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-        background: linear-gradient(135deg, #0a192f 0%, #112240 100%); color: white;
-        padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 500; font-size: 0.95rem;
+        .btn-create { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.88rem;
+        background: var(--color-blue-deep); color: white;
+        padding: 10px 18px; border-radius: 10px; text-decoration: none; transition: transform 0.25s var(--ease-spring); }
         border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(10, 25, 47, 0.15);
         transition: all 0.2s ease;
     }
@@ -132,10 +131,8 @@ const isManaged = !canEdit;
         box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);
         border: 1px solid var(--color-border);
     }
-    .sso-graphic-bg {
-        position: absolute; inset: 0; pointer-events: none;
-        background: radial-gradient(circle at 50% -20%, rgba(14, 165, 233, 0.08) 0%, transparent 70%);
-    }
+    .sso-empty { text-align: center; padding: 4rem 1.5rem; border: 1px dashed var(--color-border); border-radius: 16px;
+        background: none; }
 
     .sso-nodes {
         display: flex; align-items: center; justify-content: center; gap: 1rem; width: 100%; z-index: 2;

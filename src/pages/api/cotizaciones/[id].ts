@@ -12,7 +12,8 @@ import { dispatchQuoteEvent, type WebhookEvent } from '../../../lib/webhooks';
 import { after } from '../../../lib/after';
 import { reportUsage } from '../../../lib/billing';
 import { emitFiscalDocument } from '../../../lib/fiscal/emit';
-import { sanitizeItem, MAX_ITEMS } from '../../../lib/cotizaciones';
+import { MAX_ITEMS } from '../../../lib/cotizaciones';
+import { sanitizeItem } from '../../../../packages/elements/src/engine';
 
 // Evento interno (eventos.tipo) → evento público de webhook.
 const WH_MAP: Record<string, WebhookEvent> = {

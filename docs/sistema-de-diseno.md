@@ -82,6 +82,19 @@ Sin SplitText, sin blur/scale en reveals de contenido.
 - `Clerk.signOut(cb)` necesita callback para no auto-navegar.
 - **Error 500 / TypeError de Clerk en SSR (Pantalla Blanca):** Al usar componentes de React de Clerk (como `<WorkspaceSwitcher />`, `<SignInForm />`, etc.) dentro de `.astro`, **siempre** usar `client:only="react"`, NUNCA `client:load`. Clerk depende de `<ClerkProvider>`, el cual no existe en el SSR de Astro. Usar `client:load` causa que Astro intente pre-renderizarlo en servidor, provocando un crasheo interno en Vite ("TypeError: Cannot read properties of undefined") y dejando la pantalla blanca.
 - **Corrupción de caché de Vite (tsconfig.json):** Mantén la configuración de TypeScript nativa de Astro. Forzar `"jsx": "react-jsx"` en `compilerOptions` corrompe el servidor de desarrollo (`npm run dev`) tirando TypeErrors fantasmas durante la transformación de dependencias. Si esto ocurre, borrar `.vite`, `.astro`, `node_modules` y hacer un `npm install` limpio.
+- ⚠️ **NUNCA sintaxis TypeScript dentro de un `<script is:inline>` (jul 2026):** un
+  `<script>` normal de Astro se compila con esbuild (quita los tipos → JS válido), PERO
+  un `<script is:inline>` (obligatorio cuando usa `define:vars` para pasar datos del
+  servidor, como el editor `nueva.astro`/`editar.astro`) se manda **verbatim** al
+  navegador. Ahí, cualquier sintaxis TS-only —`(window as any)`, `foo as HTMLElement`,
+  `querySelector<T>()`, `x!.bar` non-null assertion, `let x: Tipo`, anotaciones de tipo—
+  es un **SyntaxError que mata TODO el script del bloque**, dejando la página sin
+  interactividad (pasó al barrer `alert()` → `(window as any).cordToast?.()` en
+  `nueva.astro` y `pdf.astro` — rompió el creador de cotizaciones completo). En un
+  `is:inline` usar JS puro: `if (window.cordToast) window.cordToast(...)` en vez del cast.
+  `?.` y `??` SÍ son JS válido. Para auditar: extraer cada bloque `is:inline` y correrlo
+  por `node --check` (valida sintaxis sin importar referencias). Los `<script>` normales
+  (productos/clientes tienen ambos) sí admiten TS — el bug es exclusivo de `is:inline`.
 
 ---
 

@@ -18,7 +18,6 @@ export class CordError extends Error {
 export class CordAPI {
     private readonly baseUrl: string;
     private readonly apiKey: string;
-    public readonly testMode: boolean;
 
     constructor(apiKey?: string, baseUrl: string = 'https://cord.flouvia.com/api/v1') {
         const key = apiKey || (typeof process !== 'undefined' ? process.env.CORD_API_KEY : undefined);
@@ -26,7 +25,6 @@ export class CordAPI {
             throw new Error('Cord API Key is required. Pass it to the constructor or set CORD_API_KEY environment variable.');
         }
         this.apiKey = key;
-        this.testMode = key.startsWith('sk_test_');
         this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
     }
 
@@ -36,7 +34,6 @@ export class CordAPI {
             headers: {
                 'Authorization': `Bearer ${this.apiKey}`,
                 'Content-Type': 'application/json',
-                ...(this.testMode ? { 'X-Cord-Mode': 'test' } : {}),
                 ...init?.headers,
             },
         });

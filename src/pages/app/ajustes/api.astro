@@ -52,7 +52,10 @@ const AT_LIMIT = ACTIVAS >= LIMITE;
                 <div class:list={['key-trow', { revoked: k.revocada }]} data-id={k.id}>
                     <span class="key-cell-name">
                         <span class="key-nm">{k.nombre}</span>
-                        <span class={`key-mode ${k.mode}`}>{k.mode === 'test' ? 'Prueba' : 'Vivo'}</span>
+                        <span style="display:flex;gap:0.3rem">
+                            <span class={`key-mode ${k.mode}`}>{k.mode === 'test' ? 'Prueba' : 'Vivo'}</span>
+                            <span class={`key-mode`} style={`background:${k.type === 'publishable' ? '#e0e7ff' : '#f1f5f9'}; color:${k.type === 'publishable' ? '#4f46e5' : '#475569'}`}>{k.type === 'publishable' ? 'Pública' : 'Secreta'}</span>
+                        </span>
                     </span>
                     <code class="key-cell-token">{k.masked}</code>
                     <span class={`key-scope ${k.scope}`}>{k.scope === 'write' ? 'Escritura' : 'Lectura'}</span>
@@ -138,6 +141,19 @@ const AT_LIMIT = ACTIVAS >= LIMITE;
             <input class="s-input" id="kName" placeholder="Producción, Zapier, Mi ERP…" />
         </div>
         <div class="s-field">
+            <label>Tipo de clave</label>
+            <div class="scope-opts" style="margin-bottom: 1.1rem;">
+                <label class="scope-opt">
+                    <input type="radio" name="kType" value="secret" checked />
+                    <span class="scope-body"><b>Secreta (Backend)</b><i>Se usa en tu servidor para interactuar libremente con la API.</i></span>
+                </label>
+                <label class="scope-opt">
+                    <input type="radio" name="kType" value="publishable" />
+                    <span class="scope-body"><b>Pública (Frontend)</b><i>Segura para navegadores. Acceso restringido (jamás puede leer cobranza ni configuraciones).</i></span>
+                </label>
+            </div>
+        </div>
+        <div class="s-field" id="kScopeField">
             <label>Permisos</label>
             <div class="scope-opts">
                 <label class="scope-opt">
@@ -207,10 +223,20 @@ const AT_LIMIT = ACTIVAS >= LIMITE;
 
         const nameIn = document.getElementById('kName') as HTMLInputElement;
         const titleEl = document.getElementById('kCreateTitle')!;
+
+        // Ocultar campo de scope si es Publishable Key
+        document.querySelectorAll('input[name="kType"]').forEach((r) => {
+            r.addEventListener('change', (e) => {
+                const isPub = (e.target as HTMLInputElement).value === 'publishable';
+                document.getElementById('kScopeField')!.style.display = isPub ? 'none' : 'block';
+            });
+        });
         newBtn.addEventListener('click', () => {
             titleEl.textContent = mode === 'test' ? 'Nueva API key de prueba' : 'Nueva API key EN VIVO';
             nameIn.value = mode === 'test' ? 'Pruebas' : 'Producción';
             (createDlg.querySelector('input[name="kScope"][value="read"]') as HTMLInputElement).checked = true;
+            (createDlg.querySelector('input[name="kType"][value="secret"]') as HTMLInputElement).checked = true;
+            document.getElementById('kScopeField')!.style.display = 'block';
             createDlg.showModal(); nameIn.focus(); nameIn.select();
         });
         document.getElementById('kCreateCancel')?.addEventListener('click', () => createDlg.close());
@@ -218,12 +244,13 @@ const AT_LIMIT = ACTIVAS >= LIMITE;
         document.getElementById('kCreateGo')?.addEventListener('click', async () => {
             const nombre = nameIn.value.trim() || 'Sin nombre';
             const scope = (createDlg.querySelector('input[name="kScope"]:checked') as HTMLInputElement)?.value || 'read';
+            const type = (createDlg.querySelector('input[name="kType"]:checked') as HTMLInputElement)?.value || 'secret';
             const go = document.getElementById('kCreateGo') as HTMLButtonElement;
             go.disabled = true;
             try {
                 const res = await fetch('/api/keys', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre, scope, mode }),
+                    body: JSON.stringify({ nombre, scope, mode, type }),
                 });
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || 'No se pudo crear');

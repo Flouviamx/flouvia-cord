@@ -133,7 +133,7 @@ export async function stripe(
     path: string,
     params?: Record<string, string>,
     method: 'GET' | 'POST' = 'POST',
-    opts?: { version?: string },
+    opts?: { version?: string; stripeAccount?: string },
 ): Promise<any> {
     if (!STRIPE_KEY) throw new Error('STRIPE_SECRET_KEY no configurada');
     const isGet = method === 'GET';
@@ -145,6 +145,7 @@ export async function stripe(
             Authorization: `Bearer ${STRIPE_KEY}`,
             ...(isGet ? {} : { 'Content-Type': 'application/x-www-form-urlencoded' }),
             ...(opts?.version ? { 'Stripe-Version': opts.version } : {}),
+            ...(opts?.stripeAccount ? { 'Stripe-Account': opts.stripeAccount } : {}),
         },
         body: isGet ? undefined : body,
     });
@@ -219,4 +220,51 @@ export async function reportUsage(orgId: string, dim: MeterDim, value = 1): Prom
             'payload[value]': String(value),
         });
     } catch { /* best-effort: Stripe reintenta vía dashboard si hace falta */ }
+}
+
+// ── Stripe Connect (Pagos directos a la cuenta del dueño) ─────────────────────
+
+export async function createConnectAccount(orgId: string, type: 'standard' | 'express'): Promise<string> {
+    const acc = await stripe('/v1/accounts', {
+        type,
+        country: 'MX', // default a MX por ahora
+        'metadata[org_id]': orgId,
+    });
+    return acc.id;
+}
+
+export async function createAccountLink(accountId: string, returnUrl: string, refreshUrl: string): Promise<string> {
+    const link = await stripe('/v1/account_links', {
+        account: accountId,
+        refresh_url: refreshUrl,
+        return_url: returnUrl,
+        type: 'account_onboarding',
+    });
+    return link.url;
+}
+
+export function getConnectOAuthUrl(orgId: string, redirectUri: string): string {
+    const clientId = import.meta.env.STRIPE_CONNECT_CLIENT_ID || process.env.STRIPE_CONNECT_CLIENT_ID;
+    if (!clientId) throw new Error('STRIPE_CONNECT_CLIENT_ID no configurada');
+    const u = new URL('https://connect.stripe.com/oauth/authorize');
+    u.searchParams.set('response_type', 'code');
+    u.searchParams.set('client_id', clientId);
+    u.searchParams.set('scope', 'read_write');
+    u.searchParams.set('state', orgId);
+    u.searchParams.set('redirect_uri', redirectUri);
+    return u.toString();
+}
+
+export async function exchangeOAuthCode(code: string): Promise<string> {
+    const res = await stripe('/oauth/token', {
+        grant_type: 'authorization_code',
+        code,
+    });
+    if (!res.stripe_user_id) throw new Error('No se pudo obtener el account id');
+    return res.stripe_user_id;
+}
+
+export async function getAccountStatus(accountId: string): Promise<{ charges_enabled: boolean }> {
+    const acc = await stripe(`/v1/accounts/${accountId}`, undefined, 'GET');
+    return { charges_enabled: !!acc.charges_enabled };
 }

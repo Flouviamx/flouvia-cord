@@ -128,8 +128,8 @@ const NAV_GROUPS = [
         /* Pill flotante de VIDRIO — espejo de la topbar: blanca en claro, navy en oscuro.
            Todo via variables --sb-* (definidas en :root y reescritas en data-theme="dark"). */
         background: var(--sb-bg);
-        backdrop-filter: blur(34px) saturate(1.9) brightness(1.03);
-        -webkit-backdrop-filter: blur(34px) saturate(1.9) brightness(1.03);
+        backdrop-filter: blur(24px) saturate(1.4);
+        -webkit-backdrop-filter: blur(24px) saturate(1.4);
         border: 1px solid var(--sb-border);
         box-shadow: var(--sb-shadow);
         border-radius: 22px;
@@ -162,11 +162,9 @@ const NAV_GROUPS = [
     /* Indicador deslizante (segmented control) — ahora con backdrop-filter vidrio */
     .sb-indicator {
         position: absolute; left: 0; right: 0; top: 0; height: 0;
-        border-radius: 12px; opacity: 0; pointer-events: none; z-index: 0;
-        background: var(--sb-indicator-bg);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        box-shadow: var(--sb-indicator-shadow);
+        border-radius: 10px; opacity: 0; pointer-events: none; z-index: 0;
+        background: var(--sb-active-bg);
+        box-shadow: 0 2px 4px rgba(10,25,47,0.03);
         transition: top 0.42s var(--ease-spring), height 0.42s var(--ease-spring), opacity 0.3s var(--ease-ios);
         will-change: top, height;
     }
@@ -192,7 +190,7 @@ const NAV_GROUPS = [
     .sb-item {
         position: relative; z-index: 1;
         display: flex; align-items: center; gap: 11px;
-        padding: 8px 11px; border-radius: 12px;
+        padding: 9px 11px; border-radius: 10px;
         font-size: 0.86rem; font-weight: 500;
         color: var(--sb-text); text-decoration: none;
         transition: color 0.25s var(--ease-ios), background 0.25s var(--ease-ios), box-shadow 0.25s var(--ease-ios), transform 0.2s var(--ease-ios);
@@ -203,7 +201,7 @@ const NAV_GROUPS = [
     .sb-group:nth-child(3) .sb-item { animation-delay: 0.15s; }
     .sb-group:nth-child(4) .sb-item { animation-delay: 0.2s; }
     
-    .sb-item svg { width: 16px; height: 16px; opacity: var(--sb-icon-op, 0.7); flex-shrink: 0; transition: opacity 0.2s var(--ease-ios), transform 0.2s var(--ease-ios); }
+    .sb-item svg { width: 16px; height: 16px; opacity: var(--sb-icon-op, 0.8); flex-shrink: 0; transition: opacity 0.2s var(--ease-ios), transform 0.2s var(--ease-ios); }
     .sb-item:hover svg { opacity: 1; }
     .sb-item:active svg { transform: scale(0.95); }
     
@@ -231,7 +229,7 @@ const NAV_GROUPS = [
     .sb-item:hover::before, .sb-action-row:hover::before { opacity: 1; }
 
     /* Antes de que el indicador de vidrio se posicione (pre-JS): pill sutil en el activo */
-    .sb-nav:not(.sb-ind-ready) .sb-item.active { background: var(--sb-active-bg); box-shadow: var(--sb-indicator-shadow); }
+    .sb-nav:not(.sb-ind-ready) .sb-item.active { background: var(--sb-active-bg); box-shadow: 0 2px 4px rgba(10,25,47,0.03); }
     
     /* Drag & Drop Feedback para Fijados */
     .sb-pin-row { position: relative; transition: opacity 0.2s; }

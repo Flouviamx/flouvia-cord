@@ -9,33 +9,14 @@ import { notifyQuoteSent } from './email';
 import { dispatchQuoteEvent } from './webhooks';
 import { FXService } from './fx/FXService';
 
-const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(Math.round(n));
+import { num, sanitizeItem, calculateTotals } from '../../packages/elements/src/engine';
 
-// Número FINITO y no-negativo, o el fallback. Cierra el hueco de montos negativos,
-// NaN (string basura) o Infinity (JSON 1e999) que envenenarían subtotal/IVA/total.
-const num = (v: unknown, fallback = 0): number => {
-    const n = Number(v);
-    return Number.isFinite(n) && n >= 0 ? n : fallback;
-};
+const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(Math.round(n));
 
 // Máximo de líneas por cotización — evita que un POST con miles de items dispare
 // miles de INSERT secuenciales (DoS + latencia).
 export const MAX_ITEMS = 200;
 
-// Sanea una línea: números finitos no-negativos y descripción acotada. Se aplica
-// UNA vez y el arreglo saneado alimenta todo (subtotal, aprobación, inserts, snapshot).
-export function sanitizeItem(it: NewQuoteItem): NewQuoteItem {
-    const nego = it.precio_negociado;
-    const q = num(it.cantidad, 1);
-    return {
-        producto_id: it.producto_id || null,
-        descripcion: String(it.descripcion ?? '').slice(0, 500),
-        cantidad: q > 0 ? q : 1,
-        precio_unitario: num(it.precio_unitario, 0),
-        precio_negociado: (nego === null || nego === undefined) ? null : num(nego, 0),
-        costo_unitario: (it.costo_unitario === null || it.costo_unitario === undefined) ? null : num(it.costo_unitario, 0),
-    };
-}
 
 export interface NewQuoteItem {
     producto_id?: string | null;
@@ -92,20 +73,13 @@ export async function createCotizacion(
     // Saneado una sola vez → todo lo de abajo opera sobre montos finitos y no-negativos.
     const items = rawItems.map(sanitizeItem);
 
-    // Subtotal server-side (no confiar en el cliente).
-    let subtotal = 0;
-    for (const it of items) {
-        const precio = it.precio_negociado ?? it.precio_unitario ?? 0;
-        subtotal += num(precio) * num(it.cantidad, 1);
-    }
-
+    // Subtotal server-side (no confiar en el cliente) mediante el engine compartido
     const [org] = await sql`select * from orgs where id = ${orgId}`;
-
     const ivaPct = org.iva_pct !== undefined && org.iva_pct !== null ? Number(org.iva_pct) / 100 : 0.16;
     const iva_incluido = Boolean(input.iva_incluido);
-    const iva = iva_incluido ? subtotal - (subtotal / (1 + ivaPct)) : subtotal * ivaPct;
-    const realSubtotal = iva_incluido ? subtotal / (1 + ivaPct) : subtotal;
-    const total = iva_incluido ? subtotal : subtotal + iva;
+    
+    const { subtotal, iva, total } = calculateTotals(items as any[], ivaPct, iva_incluido);
+    const realSubtotal = subtotal;
 
     const [{ maxn }] = await sql`
         select coalesce(max(nullif(regexp_replace(folio, '\\D', '', 'g'), '')::int), 0) as maxn

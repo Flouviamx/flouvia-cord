@@ -90,8 +90,8 @@ const rankClientesConAncho = D.rankClientes.map(c => ({
 
         <!-- Proyección semanal de flujo de caja -->
         <section class="forecast-card">
-            <div class="section-head">
-                <h2>Proyección de flujo de caja</h2>
+            <div class="sec-head">
+                <h2 class="sec-title">Proyección de flujo de caja</h2>
                 <span class="section-note">valor esperado = monto × tasa de cierre histórica del cliente</span>
             </div>
             <div class="weeks">
@@ -117,8 +117,8 @@ const rankClientesConAncho = D.rankClientes.map(c => ({
 
         <!-- Pipeline por cliente (ranking) -->
         <section class="rank-card">
-            <div class="section-head">
-                <h2>Pipeline ponderado por cliente</h2>
+            <div class="sec-head">
+                <h2 class="sec-title">Pipeline ponderado por cliente</h2>
                 <span class="section-note">ordenado por valor esperado</span>
             </div>
             <div class="rank-header">
@@ -151,8 +151,8 @@ const rankClientesConAncho = D.rankClientes.map(c => ({
 
         <!-- Detalle del pipeline -->
         <section class="pipeline-card">
-            <div class="section-head">
-                <h2>Detalle del pipeline</h2>
+            <div class="sec-head">
+                <h2 class="sec-title">Detalle del pipeline</h2>
                 <span class="section-note">{D.items.length} cotización{D.items.length === 1 ? '' : 'es'} activas</span>
             </div>
             <div class="pipe-table">
@@ -187,8 +187,8 @@ const rankClientesConAncho = D.rankClientes.map(c => ({
         <!-- Cotizaciones silenciadas -->
         {D.silenciadas.length > 0 && (
             <section class="silenciadas-card" id="silenciadas">
-                <div class="section-head">
-                    <h2>Sin respuesta (+7 días)</h2>
+                <div class="sec-head">
+                    <h2 class="sec-title">Sin respuesta (+7 días)</h2>
                     <span class="section-note">candidatas a seguimiento</span>
                 </div>
                 {D.silenciadas.map((s) => (
@@ -235,8 +235,6 @@ const rankClientesConAncho = D.rankClientes.map(c => ({
     .alert-link:hover { text-decoration: underline; }
 
     /* Section header */
-    .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1.2rem; padding-bottom: 0.7rem; border-bottom: 1px solid var(--color-border); }
-    .section-head h2 { font-size: 0.68rem; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; color: #99a2af; margin: 0; }
     .section-note { font-size: 0.72rem; color: var(--color-text-muted); }
 
     /* Proyección semanal */
@@ -246,8 +244,8 @@ const rankClientesConAncho = D.rankClientes.map(c => ({
     .week-meta { display: flex; flex-direction: column; gap: 2px; }
     .week-label { font-size: 0.84rem; font-weight: 600; color: var(--color-text); }
     .week-sub { font-size: 0.7rem; color: var(--color-text-muted); }
-    .week-track { height: 12px; background: var(--color-bg-soft); border-radius: 100px; overflow: hidden; border: 1px solid var(--color-border); }
-    .week-fill { display: block; height: 100%; border-radius: 100px; background: linear-gradient(90deg, #1e3a5f, #10b981); min-width: 0; transition: width 0.7s var(--ease-spring); }
+    .week-track { height: 12px; background: var(--chart-track); border-radius: 100px; overflow: hidden; border: 1px solid var(--color-border); }
+    .week-fill { display: block; height: 100%; border-radius: 100px; background: var(--chart-fill); min-width: 0; transition: width 0.7s var(--ease-spring); }
     .week-val { font-size: 0.9rem; color: var(--color-blue-deep); text-align: right; white-space: nowrap; }
     .week-zero { color: #c4cdd8; font-size: 0.88rem; }
     .forecast-note { font-size: 0.73rem; color: var(--color-text-muted); line-height: 1.55; padding-top: 0.8rem; border-top: 1px solid var(--color-border); margin: 0; }
@@ -267,8 +265,8 @@ const rankClientesConAncho = D.rankClientes.map(c => ({
     .rank-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
     .rank-name { font-size: 0.84rem; font-weight: 600; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .rank-meta { font-size: 0.68rem; color: var(--color-text-muted); }
-    .rank-barwrap { height: 5px; background: var(--color-bg-soft); border-radius: 100px; overflow: hidden; border: 1px solid var(--color-border); margin-top: 4px; }
-    .rank-bar { display: block; height: 100%; background: linear-gradient(90deg, #1e3a5f, #10b981); border-radius: 100px; }
+    .rank-barwrap { height: 5px; background: var(--chart-track); border-radius: 100px; overflow: hidden; border: 1px solid var(--color-border); margin-top: 4px; }
+    .rank-bar { display: block; height: 100%; background: var(--chart-fill); border-radius: 100px; }
     .rank-amount { font-size: 0.86rem; color: var(--color-text-muted); }
     .rank-expected { font-size: 0.92rem; color: #059669; }
     .tasa-pill { display: inline-block; padding: 2px 9px; border-radius: 100px; font-size: 0.73rem; font-weight: 700; }

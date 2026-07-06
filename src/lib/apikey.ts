@@ -22,11 +22,13 @@ const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 export type ApiScope = 'read' | 'write';
 
 export type ApiMode = 'live' | 'test';
+export type ApiKeyType = 'secret' | 'publishable';
 
 export interface ApiAuth {
     orgId: string;
     scope: ApiScope;
     mode: ApiMode;
+    type: ApiKeyType;
     keyId: string;
 }
 
@@ -68,8 +70,8 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
     let row: any;
     try {
         [row] = await sql`
-            select k.id, k.org_id, k.scope, k.mode, k.revoked_at,
-                   coalesce(o.plan, 'free') as plan, o.sandbox_of
+            select k.id, k.org_id, k.scope, k.mode, k.type, k.revoked_at,
+                   coalesce(o.plan, 'free') as plan, o.sandbox_of, o.embed_domains
             from api_keys k
             join orgs o on o.id = k.org_id
             where k.hash = ${hash}
@@ -83,6 +85,43 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
     }
 
     const mode: ApiMode = row.mode === 'test' ? 'test' : 'live';
+    const type: ApiKeyType = row.type === 'publishable' ? 'publishable' : 'secret';
+
+    if (type === 'publishable') {
+        const url = new URL(request.url);
+        const path = url.pathname;
+        const method = request.method.toUpperCase();
+
+        // Seguridad estricta Frontend Publishable Keys:
+        // Solo lectura de productos y creación de cotizaciones.
+        // NUNCA acceder a CRM (clientes) o listar todas las cotizaciones.
+        const isAllowedPath = 
+            (method === 'POST' && path.includes('/cotizaciones')) ||
+            (method === 'GET' && path.includes('/productos'));
+
+        if (!isAllowedPath) {
+            return jsonError('Publishable Key no tiene permisos para esta acción. Usa una Secret Key desde tu backend.', 'insufficient_scope', 403);
+        }
+
+        // Validación de Origin para prevenir robo de pk_
+        const origin = request.headers.get('origin') || request.headers.get('referer');
+        if (!origin) {
+            return jsonError('Origin no detectado. Las Publishable Keys requieren enviar el header Origin o Referer.', 'missing_origin', 403);
+        }
+
+        const dominios = (row.embed_domains || '').split(/[\s,]+/).map((d: string) => d.trim()).filter(Boolean);
+        if (dominios.length > 0) {
+            try {
+                const originHost = new URL(origin).hostname;
+                const matched = dominios.some((d: string) => d === originHost || originHost.endsWith('.' + d.replace(/^\*\./, '')));
+                if (!matched) {
+                    return jsonError('Origin no autorizado para usar esta Publishable Key.', 'unauthorized_origin', 403);
+                }
+            } catch {
+                return jsonError('Origin inválido.', 'invalid_origin', 403);
+            }
+        }
+    }
 
     // La API está disponible en TODOS los planes (incluido free, limitado). El
     // consumo de las llaves en vivo se mide/factura por uso (Stripe Billing).
@@ -110,7 +149,7 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
     // Marca de uso (best-effort: nunca debe romper la request).
     sql`update api_keys set last_used_at = now() where id = ${row.id}`.catch(() => {});
 
-    return { orgId, scope, mode, keyId: row.id as string };
+    return { orgId, scope, mode, type, keyId: row.id as string };
 }
 
 /**
@@ -127,9 +166,9 @@ export function withApiAuth(
     return async (ctx) => {
         const auth = await authApiKey(ctx.request, need);
         if (auth instanceof Response) return auth;
-        // Rate limit por LLAVE (además del per-IP): acota el throughput de una key
-        // válida contra endpoints que crean filas reales; el consumo se factura aparte.
-        const keyRl = await rateLimit(`apikey:${auth.keyId}`, 600, 60);
+        // Rate limit por LLAVE: las pk_ (frontend) son más restringidas para evitar abusos.
+        const maxReqs = auth.type === 'publishable' ? 120 : 600; // pk_ 120/min vs sk_ 600/min
+        const keyRl = await rateLimit(`apikey:${auth.keyId}`, maxReqs, 60);
         if (!keyRl.ok) return tooMany(keyRl.retryAfter);
         // Mide la llamada a la API pública (solo llaves en vivo se facturan).
         // Fire-and-forget: reportUsage nunca lanza y no debe frenar la respuesta.

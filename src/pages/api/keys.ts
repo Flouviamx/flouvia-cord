@@ -20,7 +20,8 @@ export const POST: APIRoute = async ({ request }) => {
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
 
     const nombre = String(body.nombre ?? '').trim().slice(0, 60) || 'Sin nombre';
-    const scope = body.scope === 'write' ? 'write' : 'read';
+    const type = body.type === 'publishable' ? 'publishable' : 'secret';
+    const scope = type === 'publishable' ? 'write' : (body.scope === 'write' ? 'write' : 'read');
     let mode = body.mode === 'test' ? 'test' : 'live';
 
     const orgId = await getActiveOrgId();
@@ -41,9 +42,10 @@ export const POST: APIRoute = async ({ request }) => {
         return json({ error: `Tu plan ${planLabel(plan as string)} permite ${limite} claves activas. Revoca una o sube de plan.` }, 403);
     }
 
-    // sk_(live|test)_ + 48 hex. prefix visible = sk_xxxx_ + 8, last4 = últimos 4.
+    // sk_(live|test)_ o pk_(live|test)_ + 48 hex. prefix visible = pk_xxxx_ + 8, last4 = últimos 4.
     const raw = randomBytes(24).toString('hex');         // 48 hex chars
-    const secret = `sk_${mode}_${raw}`;
+    const prefixStr = type === 'publishable' ? 'pk' : 'sk';
+    const secret = `${prefixStr}_${mode}_${raw}`;
     const prefix = secret.slice(0, 16);
     const last4 = secret.slice(-4);
     const hash = sha256(secret);
@@ -51,8 +53,8 @@ export const POST: APIRoute = async ({ request }) => {
     let row: any;
     try {
         [[row]] = await withOrgTx(orgId, sql`
-            insert into api_keys (org_id, nombre, prefix, last4, hash, scope, mode, created_by)
-            values (${orgId}, ${nombre}, ${prefix}, ${last4}, ${hash}, ${scope}, ${mode}, ${reqIp(request)})
+            insert into api_keys (org_id, nombre, prefix, last4, hash, scope, mode, type, created_by)
+            values (${orgId}, ${nombre}, ${prefix}, ${last4}, ${hash}, ${scope}, ${mode}, ${type}, ${reqIp(request)})
             returning id`);
     } catch (e: any) {
         return json({ error: 'No se pudo crear la llave. ¿Corriste la migración (npm run db:migrate)?' }, 500);

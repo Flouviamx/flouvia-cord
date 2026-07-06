@@ -3,6 +3,8 @@
 export { mountCotizador } from './core';
 export { CordCotizadorElement, defineCordElements } from './element';
 export { CordAPI, CordError } from './api';
+export { num, sanitizeItem, calculateTotals } from './engine';
+export type { EngineItem, EngineItemInput, EngineTotals } from './engine';
 export type {
     CordElementOptions,
     CordController,

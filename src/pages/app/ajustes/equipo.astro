@@ -197,9 +197,9 @@ const getAvatarColor = (name: string) => {
     
     .tm-tabs { display: flex; gap: 4px; background: var(--color-bg-soft); padding: 4px; border-radius: 999px; border: 1px solid var(--color-border); box-shadow: inset 0 1px 3px rgba(0,0,0,0.02); overflow-x: auto; scrollbar-width: none; }
     .tm-tabs::-webkit-scrollbar { display: none; }
-    .tm-tab { background: transparent; border: none; font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); padding: 8px 16px; border-radius: 999px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; gap: 8px; font-family: var(--font-sans); white-space: nowrap; }
+    .tm-tab { padding: 8px 14px; font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted); cursor: pointer; border-radius: 10px; transition: all 0.25s var(--ease-ios); }
     .tm-tab:hover { color: var(--color-text); }
-    .tm-tab.active { background: linear-gradient(135deg, var(--color-blue-deep) 0%, #17325c 100%); color: #fff; box-shadow: 0 2px 6px rgba(10, 25, 47, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1); text-shadow: 0 1px 1px rgba(0,0,0,0.2); transform: scale(1.02); }
+    .tm-tab.active { background: var(--color-blue-deep); color: #fff; box-shadow: 0 2px 6px rgba(10, 25, 47, 0.25); transform: scale(1.02); }
     
     .tm-badge { display: inline-flex; align-items: center; justify-content: center; background: var(--color-bg); padding: 0 6px; border-radius: 10px; font-size: 0.65rem; min-width: 18px; height: 18px; color: var(--color-text-muted); border: 1px solid var(--color-border); font-weight: 600; transition: all 0.3s; }
     .tm-tab.active .tm-badge { background: rgba(255,255,255,0.2); color: #fff; border-color: transparent; text-shadow: none; }
@@ -208,11 +208,14 @@ const getAvatarColor = (name: string) => {
     
     .btn-primary {
         display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-        background: linear-gradient(135deg, #0a192f 0%, #112240 100%); color: white;
+        background: var(--color-blue-deep); color: white;
         padding: 0.65rem 1.25rem; border-radius: 8px; font-weight: 500; font-size: 0.88rem;
         border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(10, 25, 47, 0.15);
         transition: all 0.2s ease;
     }
+    .btn-invite { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.88rem;
+        background: var(--color-blue-deep); color: white;
+        padding: 10px 16px; border-radius: 10px; cursor: pointer; border: none; transition: transform 0.25s var(--ease-spring); }
     .btn-primary:hover {
         transform: translateY(-1px); box-shadow: 0 6px 16px rgba(10, 25, 47, 0.25);
     }
@@ -305,9 +308,9 @@ const getAvatarColor = (name: string) => {
     .tm-dd-danger { color: #ef4444; }
     .tm-dd-danger:hover { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
     
-    .tm-empty-state { 
-        display: flex; flex-direction: column; align-items: center; justify-content: center; 
-        padding: 5rem 2rem; text-align: center; background: linear-gradient(to bottom, #fff, rgba(248, 250, 252, 0.5));
+    .tm-empty {
+        padding: 5rem 2rem; text-align: center; background: var(--surface);
+        border-radius: 16px; border: 1px dashed var(--color-border);
     }
     .tm-empty-icon { 
         width: 64px; height: 64px; border-radius: 16px; background: #fff; 
@@ -355,11 +358,9 @@ const getAvatarColor = (name: string) => {
     
     .modal-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 2rem; }
     
-    .btn-danger {
-        display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white;
-        padding: 0.65rem 1.25rem; border-radius: 8px; font-weight: 500; font-size: 0.88rem;
-        border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    .btn-danger { display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; font-size: 0.85rem; width: 100%;
+        background: var(--color-danger); color: white;
+        padding: 10px; border-radius: 8px; border: none; cursor: pointer; 
         transition: all 0.2s ease;
     }
     .btn-danger:hover {

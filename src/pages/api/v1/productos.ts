@@ -8,10 +8,16 @@ import { sql, getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
 import { getProductos } from '../../../lib/queries';
 import { ok, fail, pageParams } from '../../../lib/apiv1';
 
-export const GET = withApiAuth('read', async ({ url }) => {
+export const GET = withApiAuth('read', async ({ url }, auth) => {
     const all = await getProductos();
     const { limit, offset } = pageParams(url);
-    return ok(all.slice(offset, offset + limit), { limit, offset, total: all.length });
+    const page = all.slice(offset, offset + limit);
+    // Las llaves publicables (pk_) se exponen en el navegador: NUNCA reveles el
+    // costo (margen) del catálogo. Solo las secretas (backend) ven el costo.
+    const data = auth.type === 'publishable'
+        ? page.map(({ costo, ...rest }) => rest)
+        : page;
+    return ok(data, { limit, offset, total: all.length });
 });
 
 export const POST = withApiAuth('write', async ({ request }, auth) => {

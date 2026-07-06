@@ -49,14 +49,15 @@ export function mountCotizador(target: HTMLElement, opts: CordElementOptions): C
     injectStyles();
     target.classList.add('cord-embed');
 
-    // Skeleton mientras carga.
     const skeleton = document.createElement('div');
     skeleton.className = 'cord-embed-skeleton';
     skeleton.innerHTML = '<div class="cord-embed-shimmer"></div>';
     target.appendChild(skeleton);
 
+    const appearanceQuery = opts.appearance ? '?appearance=' + encodeURIComponent(JSON.stringify(opts.appearance)) : '';
+
     const iframe = document.createElement('iframe');
-    iframe.src = base + '/embed/' + encodeURIComponent(opts.token);
+    iframe.src = base + '/embed/' + encodeURIComponent(opts.token) + appearanceQuery;
     iframe.title = 'Cotización';
     iframe.setAttribute('loading', 'lazy');
     iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');

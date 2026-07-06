@@ -41,7 +41,7 @@ identidad sigue siendo Clerk (userId), solo la membresía/permiso es nuestra.
 - `org_members` — equipo multi-usuario (rol, permisos jsonb, estado, token invitación); sincronizado desde Clerk vía webhook
 - `tareas` — recordatorios CRM del vendedor
 - `audit_log` — registro inmutable de acciones (logAudit/reqIp)
-- `api_keys` — llaves API públicas (hash SHA-256, mode test|live, scope read|write)
+- `api_keys` — llaves API públicas (hash SHA-256, mode test|live, scope read|write, **type secret|publishable** jul 2026 — ver "Cord Elements: llaves pk_/sk_" en historial.md)
 - `webhooks` — endpoints salientes (HMAC-sha256, best-effort, 1 retry)
 - `intereses_moratorios` — cargos mensuales de interés moratorio por cotización (cron día 1; idempotente por cotizacion_id+periodo)
 - `promesas_pago` — promesa de pago del cliente para una fecha (cobranza; seguimiento manual, no automatiza). `productos.precios_volumen jsonb` = matriz de precios por volumen `[{min,precio}]`

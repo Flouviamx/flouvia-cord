@@ -15,7 +15,7 @@ interface Props {
 }
 
 const { quote: q, org: ORG, conversacion, yaAprobada, yaRechazada, puedePagar, standalone = false } = Astro.props;
-const color = ORG.colorMarca || '#0a192f';
+const color = `var(--cord-color-primary, ${ORG.colorMarca || '#0a192f'})`;
 const mostrarChat = ORG.portalMostrarChat !== false;
 const banner = (ORG.portalBanner ?? '').trim();
 const bienvenida = (ORG.portalBienvenida ?? '').trim();
@@ -517,6 +517,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
             }
             showStep('stepApproved');
             emit('cord:approved', { signed_by: signedBy, hash: res.hash });
+            emit('cord:signed', { signed_by: signedBy, hash: res.hash });
         } catch (err: any) {
             if (errEl) errEl.textContent = (err as Error).message;
             confirmSignBtn.disabled = false;

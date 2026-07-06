@@ -8,6 +8,66 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Cord Elements — llaves publishable/secret + engine compartido + fixes de seguridad y dinero (jul 2026)** —
+   pasada grande sobre `@flouviahq/elements` (`packages/elements/`) para acercarlo al nivel
+   Stripe/Clerk Elements, hecha por André y verificada/corregida por auditoría.
+   • **Modelo de llaves `pk_`/`sk_` real (como Stripe):** columna nueva `api_keys.type`
+     (`secret` default | `publishable`). En Ajustes › Developers (`api.astro`) el modal de
+     creación ahora tiene selector "Secreta (Backend)" vs "Pública (Frontend)"; las `pk_`
+     se muestran con badge distinto en la tabla. `authApiKey` (`apikey.ts`) aplica un
+     **scope estricto** a las `pk_` (pensadas para vivir expuestas en el navegador):
+     solo `POST /api/v1/cotizaciones` (crear) y `GET /api/v1/productos` (catálogo,
+     **sin el campo `costo`** — ver bug abajo); NUNCA `GET /cotizaciones` (cartera) ni
+     nada de `/clientes` (CRM). Validación de `Origin`/`Referer` contra `orgs.embed_domains`
+     que **falla-cerrado** para `pk_` (sin Origin → 403; antes era `if (origin) {...}`,
+     un `curl` sin ese header se lo saltaba entero). Rate-limit propio más estricto
+     (120/min `pk_` vs 600/min `sk_`). Al crear una `pk_` el scope se fuerza a `write`
+     (antes nacía `read` y no podía hacer su único trabajo real: crear cotizaciones).
+   • **Motor de cálculo compartido (`packages/elements/src/engine.ts`):** `num`/
+     `sanitizeItem`/`calculateTotals` — la MISMA lógica de IVA/subtotal/total que usa
+     `createCotizacion` (`src/lib/cotizaciones.ts`) y el `CordBuilder` nativo del SDK,
+     para que dejen de poder divergir en los totales. El paquete lo re-exporta con tipos
+     (`EngineItem`/`EngineItemInput`/`EngineTotals` agregados a mano en
+     `packages/elements/types/index.d.ts`, que antes NO declaraba estos exports).
+     ⚠️ **Paridad parcial:** `PATCH /api/cotizaciones/[id]` (editar) sí importa
+     `sanitizeItem` del engine, pero `nueva.astro`/`editar.astro` (UI de la app) siguen
+     con su cálculo inline propio — no es 100% una sola fuente de verdad todavía.
+   • **Appearance API que SÍ llega al iframe:** antes `<CordProvider appearance>` solo
+     tematizaba el `CordBuilder` nativo; el iframe (`<CordCotizador>`, el producto
+     estrella) lo ignoraba. Ahora `core.ts` serializa `appearance` a un query param
+     de `/embed/[token]`, que lo aplica a `QuoteCard`/`EmbedLayout` vía variables CSS
+     `--cord-*` (color primario, texto, fondo, fuente).
+   • **3 bugs reales encontrados y corregidos en esta misma pasada:**
+     (1) **Dinero — doble división del subtotal:** al migrar `createCotizacion` al
+     engine quedó `const realSubtotal = subtotal / (1 + ivaPct)` sobre un `subtotal`
+     que el engine YA devolvía sin IVA — con `iva_incluido=true` el subtotal guardado
+     quedaba mal (`subtotal + iva ≠ total`) y además rompía la paridad con `[id].ts`
+     (editar), que sí calculaba bien. Fix: `const realSubtotal = subtotal` (el engine
+     ya normaliza ambos casos). (2) **XSS reflejado en `/embed/[token]`:** el query
+     param `appearance` se parseaba a CSS e inyectaba con `<style set:html={...}>`
+     sin sanitizar — un valor con `</style><script>` rompía la etiqueta y ejecutaba JS
+     en `cord.flouvia.com`, alcanzable sin auth vía `/embed/demo?appearance=...`. Fix:
+     whitelist de caracteres (`isSafe()` rechaza `< > { } ;`/`expression`/`javascript`/
+     `vbscript`), nombres de propiedad saneados, soporte de `rules` (selectores CSS
+     arbitrarios) eliminado, y las fuentes (`@import`) ahora solo cargan desde una
+     allowlist de hosts (`fonts.googleapis.com`/`fonts.bunny.net`) — antes cualquier
+     `https://` pasaba, permitiendo cargar una hoja de estilos externa arbitraria.
+     (3) **La `pk_` filtraba el CRM completo y la cartera:** el primer intento de scope
+     permitía `path.includes('/cotizaciones')` sin distinguir método (GET listaba TODAS
+     las cotizaciones) y `GET /clientes` sin restricción — cualquiera que viera el
+     código fuente de una página con una `pk_` expuesta podía leer el directorio de
+     clientes (email/RFC/límite de crédito) y el pipeline completo. Ya arreglado (ver
+     scope estricto arriba). Adicionalmente se encontró y cerró que `GET /productos`
+     con `pk_` seguía filtrando `costo` (margen) del catálogo — el serializer ahora
+     excluye ese campo cuando `auth.type === 'publishable'`.
+   • **Housekeeping:** `packages/elements/src/engine.ts` vive DENTRO del paquete (no en
+     `src/lib/`) para que `@flouviahq/elements` siga siendo self-contained/extraíble a
+     su propio repo — la app lo importa desde `../../packages/elements/src/engine`, no
+     al revés. Se quitó un `import { CordCotizadorElement } from './element'` sin usar
+     en `react.tsx` que arriesgaba un crash en SSR de Next.js (`HTMLElement` no existe
+     en Node; ese archivo hace `class ... extends HTMLElement` a nivel de módulo).
+   ⚠️ Correr `npm run db:migrate` (columna `api_keys.type`).
+
 ✅ **Org Switcher rediseñado — estilo Apple/Settings, "inset grouped list" (jul 2026)** —
    `CustomOrgSwitcher.tsx` pasó de un dropdown plano genérico a un patrón Apple System
    Settings, reusando el MISMO lenguaje visual que el drawer de Ayuda (`.help-inset-group`/

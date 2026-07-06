@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { calculateTotals } from './engine';
 import { mountCotizador } from './core';
 import type { 
     CordElementOptions, 
@@ -139,12 +140,22 @@ export function useCordContext() {
 
 // ==== Hooks (Headless UI) ====
 
+/**
+ * Obtiene el contexto actual de Cord.
+ * @param quoteToken (Opcional) Token de cotización. Si se provee, sobrescribe el token del Provider.
+ * @returns Un objeto con el `token` activo.
+ */
 export function useCord(quoteToken?: string) {
     const context = useCordContext();
     const activeToken = quoteToken || context.token;
     return { token: activeToken };
 }
 
+/**
+ * Obtiene la lista de productos (catálogo) de la organización.
+ * Usa `proxyUrl` o `publishableKey` según la configuración del CordProvider.
+ * @returns `products` (arreglo), `isLoading`, `error`, y `refetch` para recargar.
+ */
 export function useCordCatalog() {
     const context = useCordContext();
     const [products, setProducts] = useState<CordProduct[]>([]);
@@ -152,12 +163,23 @@ export function useCordCatalog() {
     const [error, setError] = useState<Error | null>(null);
 
     const fetchCatalog = useCallback(async () => {
-        if (!context.proxyUrl) return;
+        if (!context.proxyUrl && !context.publishableKey) return;
         setIsLoading(true);
         try {
-            const endpoint = context.proxyUrl.replace(/\/$/, '');
-            const url = endpoint.endsWith('create') ? endpoint.replace('/create', '/products') : `${endpoint}/products`;
-            const res = await fetch(url);
+            let url = '';
+            if (context.proxyUrl) {
+                const endpoint = context.proxyUrl.replace(/\/$/, '');
+                url = endpoint.endsWith('/create') ? endpoint.substring(0, endpoint.length - 7) + '/productos' : `${endpoint}/productos`;
+            } else {
+                url = 'https://cord.flouvia.com/api/v1/productos';
+            }
+
+            const headers: Record<string, string> = {};
+            if (context.publishableKey) {
+                headers['Authorization'] = `Bearer ${context.publishableKey}`;
+            }
+
+            const res = await fetch(url, { headers });
             if (!res.ok) throw new Error('Failed to fetch catalog');
             const data = await res.json();
             setProducts(data.data || data);
@@ -175,6 +197,11 @@ export function useCordCatalog() {
     return { products, isLoading, error, refetch: fetchCatalog };
 }
 
+/**
+ * Obtiene la lista de clientes de la organización.
+ * Usa `proxyUrl` o `publishableKey` según la configuración del CordProvider.
+ * @returns `clients` (arreglo), `isLoading`, `error`, y `refetch` para recargar.
+ */
 export function useCordClients() {
     const context = useCordContext();
     const [clients, setClients] = useState<CordClient[]>([]);
@@ -182,12 +209,23 @@ export function useCordClients() {
     const [error, setError] = useState<Error | null>(null);
 
     const fetchClients = useCallback(async () => {
-        if (!context.proxyUrl) return;
+        if (!context.proxyUrl && !context.publishableKey) return;
         setIsLoading(true);
         try {
-            const endpoint = context.proxyUrl.replace(/\/$/, '');
-            const url = endpoint.endsWith('create') ? endpoint.replace('/create', '/clientes') : `${endpoint}/clientes`;
-            const res = await fetch(url);
+            let url = '';
+            if (context.proxyUrl) {
+                const endpoint = context.proxyUrl.replace(/\/$/, '');
+                url = endpoint.endsWith('/create') ? endpoint.substring(0, endpoint.length - 7) + '/clientes' : `${endpoint}/clientes`;
+            } else {
+                url = 'https://cord.flouvia.com/api/v1/clientes';
+            }
+
+            const headers: Record<string, string> = {};
+            if (context.publishableKey) {
+                headers['Authorization'] = `Bearer ${context.publishableKey}`;
+            }
+
+            const res = await fetch(url, { headers });
             if (!res.ok) throw new Error('Failed to fetch clients');
             const data = await res.json();
             setClients(data.data || data);
@@ -205,6 +243,11 @@ export function useCordClients() {
     return { clients, isLoading, error, refetch: fetchClients };
 }
 
+/**
+ * Hook para crear una nueva cotización programáticamente.
+ * Usa `proxyUrl` o `publishableKey` según la configuración del CordProvider.
+ * @returns Función `createQuote`, estado `isLoading` y `error`.
+ */
 export function useCreateQuote() {
     const context = useCordContext();
     const [isLoading, setIsLoading] = useState(false);
@@ -218,9 +261,6 @@ export function useCreateQuote() {
             const headers: Record<string, string> = { 'Content-Type': 'application/json' };
             if (context.publishableKey) {
                 headers['Authorization'] = `Bearer ${context.publishableKey}`;
-                if (context.publishableKey.startsWith('pk_test_')) {
-                    headers['X-Cord-Mode'] = 'test';
-                }
             }
 
             const res = await fetch(endpoint, {
@@ -228,9 +268,9 @@ export function useCreateQuote() {
                 headers,
                 body: JSON.stringify(data),
             });
-            const result = await res.json();
-            if (!res.ok) throw new Error(result.error || 'Failed to create quote');
-            return result;
+            const d = await res.json();
+            if (!res.ok) throw new Error(d.error || 'No se pudo crear la cotización');
+            return d as CreateQuoteResponse;
         } catch (err: any) {
             setError(err);
             return null;
@@ -266,6 +306,7 @@ interface BuilderContextType {
     handleSubmit: (e: React.FormEvent) => void;
     updateItem: (idx: number, updates: any) => void;
     removeItem: (idx: number) => void;
+    submitError: string | null;
 }
 
 const BuilderContext = createContext<BuilderContextType | null>(null);
@@ -283,9 +324,10 @@ export interface CordBuilderProps {
     catalog?: CordProduct[];
     clients?: CordClient[];
     children?: ReactNode; // Supports composable UI
+    ivaPct?: number; // IVA percentage, defaults to 0.16
 }
 
-export function CordBuilder({ onQuoteCreated, className, style, catalog, clients: propClients, children }: CordBuilderProps) {
+export function CordBuilder({ onQuoteCreated, className, style, catalog, clients: propClients, children, ivaPct = 0.16 }: CordBuilderProps) {
     const context = useCordContext();
     const t = useCordTranslations();
     const { createQuote, isLoading } = useCreateQuote();
@@ -303,23 +345,11 @@ export function CordBuilder({ onQuoteCreated, className, style, catalog, clients
     const [vigenciaDias, setVigenciaDias] = useState(15);
     const [moneda, setMoneda] = useState('MXN');
     const [ivaIncluido, setIvaIncluido] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
     const [items, setItems] = useState([{ descripcion: '', cantidad: 1, precio_unitario: 0 }]);
 
-    const sumPrecios = items.reduce((acc, i) => acc + i.cantidad * i.precio_unitario, 0);
-    let subtotal = 0;
-    let iva = 0;
-    let total = 0;
-
-    if (ivaIncluido) {
-        total = sumPrecios;
-        subtotal = total / 1.16;
-        iva = total - subtotal;
-    } else {
-        subtotal = sumPrecios;
-        iva = subtotal * 0.16;
-        total = subtotal + iva;
-    }
+    const { subtotal, iva, total } = calculateTotals(items as any[], ivaPct, ivaIncluido);
 
     useEffect(() => {
         context.onAnalyticsEvent?.('QUOTE_BUILDER_MOUNTED', { items: items.length });
@@ -327,8 +357,9 @@ export function CordBuilder({ onQuoteCreated, className, style, catalog, clients
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setSubmitError(null);
         if (items.some(i => !i.descripcion)) {
-            alert(t.errorDesc);
+            setSubmitError(t.errorDesc);
             return;
         }
         
@@ -388,7 +419,7 @@ export function CordBuilder({ onQuoteCreated, className, style, catalog, clients
         notas, setNotas, terminos, setTerminos, vigenciaDias, setVigenciaDias,
         moneda, setMoneda, ivaIncluido, setIvaIncluido,
         items, setItems, products, clients, subtotal, iva, total, isLoading, t,
-        handleSubmit, updateItem, removeItem
+        handleSubmit, updateItem, removeItem, submitError
     };
 
     return (
@@ -402,7 +433,12 @@ export function CordBuilder({ onQuoteCreated, className, style, catalog, clients
                             <CordBuilder.Items />
                             <CordBuilder.Notes />
                             <CordBuilder.Summary />
-                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
+                                {submitError && (
+                                    <div style={{ color: '#dc2626', fontSize: '13px', backgroundColor: '#fef2f2', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(220, 38, 38, 0.2)', fontWeight: 500 }}>
+                                        {submitError}
+                                    </div>
+                                )}
                                 <CordBuilder.SubmitButton />
                             </div>
                         </>
@@ -617,8 +653,12 @@ CordBuilder.Items = function CordBuilderItems({ className, style }: { className?
                             <input required type="number" min="0" step="0.01" style={inputStyles} value={item.precio_unitario} onChange={e => updateItem(idx, { precio_unitario: Number(e.target.value) })} />
                         </div>
                         <button type="button" disabled={items.length === 1} onClick={() => removeItem(idx)}
-                            style={{ background: 'transparent', border: 'none', color: '#dc2626', cursor: items.length === 1 ? 'not-allowed' : 'pointer', padding: '10px', opacity: items.length === 1 ? 0.3 : 1 }}>
-                            ✕
+                            style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: items.length === 1 ? 'not-allowed' : 'pointer', padding: '10px', opacity: items.length === 1 ? 0.3 : 0.8, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color 0.2s ease, opacity 0.2s ease' }}
+                            onMouseEnter={(e) => { if (items.length > 1) { e.currentTarget.style.color = '#dc2626'; e.currentTarget.style.opacity = '1'; } }}
+                            onMouseLeave={(e) => { if (items.length > 1) { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.opacity = '0.8'; } }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                            </svg>
                         </button>
                     </div>
                 ))}
@@ -697,6 +737,7 @@ export function CordCotizador(props: CordCotizadorProps) {
             token,
             baseUrl,
             minHeight: props.minHeight,
+            appearance: context?.appearance,
             onReady: () => cbs.current.onReady?.(),
             onApproved: (d) => cbs.current.onApproved?.(d),
             onRejected: (d) => cbs.current.onRejected?.(d),
