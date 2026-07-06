@@ -821,7 +821,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
             closeClientModal();
             if (typeof showToast !== 'undefined') showToast('Cliente creado ✓', 2000);
         } catch (err) {
-            (window as any).cordToast?.(err.message || 'No se pudo guardar la cotización', 'error');
+            if (window.cordToast) window.cordToast(err.message || 'No se pudo guardar la cotización', 'error');
         } finally {
             $ncSubmit.disabled = false;
             $ncSubmit.innerHTML = prevHTML;
