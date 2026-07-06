@@ -54,6 +54,17 @@
      inset), no reinventar un dropdown plano. Si se necesita una señal de estado (activo/
      alerta) en un trigger con espacio angosto, preferir anillo/color de texto sobre un
      badge/pill que compite por espacio horizontal.
+   • **Toggle "Entorno de prueba" — proporciones reales de iOS:** el `.toggle-switch`
+     inicial (28×16px, wash ámbar translúcido al 35%, thumb sin sombra del color del
+     track) se veía plano y el estado OFF era casi invisible. Reescrito con las MISMAS
+     proporciones/easing que `.s-toggle` (el toggle global de Ajustes, 44×24 con thumb
+     blanco+sombra): track 38×24, `border-radius:100px`, OFF = gris sólido
+     `rgba(10,25,47,0.13)` (dark: `rgba(255,255,255,0.16)`), ON = ámbar **sólido** `#f59e0b`
+     (no translúcido), thumb 18px **siempre blanco** con `box-shadow` de dos capas
+     (`0 1px 3px rgba(0,0,0,0.3), 0 1px 1px rgba(0,0,0,0.16)`) que se desliza
+     `translateX(16px)`. Transiciones con `var(--ease-ios)`/`var(--ease-spring)` iguales a
+     `.s-toggle`. Regla: cualquier toggle nuevo fuera de Ajustes debe copiar estas
+     proporciones (no reinventar tamaños de 16-20px con washes translúcidos).
 
 ✅ **Entorno de prueba REAL tipo Stripe + fixes de guardado/cableado (jul 2026)** — el toggle
    "Entorno de prueba" dejó de ser cosmético. Diseño elegido: **org SANDBOX espejo**

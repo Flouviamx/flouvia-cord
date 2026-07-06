@@ -515,39 +515,40 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
         }
         html[data-theme="dark"] .dev-mode-toggle.active .orgd-label { color: #fbbf24; }
 
+        /* Toggle estilo iOS — mismas proporciones/easing que .s-toggle
+           (AppLayout.astro), sólido en ambos estados, thumb blanco con sombra
+           real (no un punto plano de color). */
         .toggle-switch {
-          width: 28px;
-          height: 16px;
-          background: var(--sb-badge-bg);
-          border-radius: 8px;
+          width: 38px;
+          height: 22px;
+          border-radius: 100px;
+          background: rgba(10,25,47,0.13);
           position: relative;
-          transition: background 0.2s;
+          transition: background 0.3s var(--ease-ios, cubic-bezier(0.25,1,0.5,1));
           flex-shrink: 0;
         }
+        html[data-theme="dark"] .toggle-switch { background: rgba(255,255,255,0.16); }
 
         .toggle-thumb {
-          width: 12px;
-          height: 12px;
-          background: var(--sb-menu-muted);
+          width: 18px;
+          height: 18px;
+          background: #ffffff;
           border-radius: 50%;
           position: absolute;
           top: 2px;
           left: 2px;
-          transition: transform 0.2s, background 0.2s;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 1px rgba(0,0,0,0.16);
+          transition: transform 0.3s var(--ease-spring, cubic-bezier(0.22,1,0.36,1));
         }
 
-        /* Ámbar tipo Stripe: el color universal de "modo de prueba" */
+        /* Ámbar tipo Stripe: el color universal de "modo de prueba" — sólido,
+           no un wash translúcido, para que el estado ON se lea inequívoco. */
         .toggle-switch.on {
-          background: rgba(245, 158, 11, 0.35);
-        }
-
-        .toggle-switch.on .toggle-thumb {
-          transform: translateX(12px);
           background: #f59e0b;
         }
 
-        .dropdown-action-btn:hover .toggle-thumb {
-          background: var(--sb-menu-text);
+        .toggle-switch.on .toggle-thumb {
+          transform: translateX(16px);
         }
 
         .dropdown-action-btn.text-red {
