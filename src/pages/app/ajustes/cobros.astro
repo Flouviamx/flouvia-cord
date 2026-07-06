@@ -1,0 +1,120 @@
+---
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getOrg } from '../../../lib/queries';
+const ORG = await getOrg();
+---
+
+<SettingsShell title="Cobros — Ajustes" tab="cobros" perm="ajustes"
+    intro="Configura cómo tus clientes pueden pagar sus cotizaciones. Acepta tarjetas vía Stripe Connect o transferencias bancarias directas." save>
+    <div class="s-block">
+        <h3>Pago con Tarjeta (Stripe)</h3>
+        <div class="s-body">
+            <div class="s-field">
+                <label>Estado de la cuenta</label>
+                <div style="display:flex; gap:12px; align-items:center; margin-bottom: 16px;">
+                    {ORG.stripeAccountId ? (
+                        <>
+                            <span class="bm-badge bm-badge--green">Conectado</span>
+                            <span class="s-hint">{ORG.stripeChargesEnabled ? 'Cobros habilitados' : 'Requiere acción en Stripe'} ({ORG.stripeAccountType})</span>
+                            <button type="button" class="s-btn s-btn--secondary" id="btnDisconnect" style="margin-left: auto;">Desconectar</button>
+                        </>
+                    ) : (
+                        <>
+                            <span class="bm-badge">No conectado</span>
+                            <span class="s-hint">El dinero va directo a tu cuenta bancaria (Cord no toca tus fondos).</span>
+                        </>
+                    )}
+                </div>
+                {!ORG.stripeAccountId && (
+                    <div style="display:flex; gap: 12px; margin-bottom: 16px;">
+                        <button type="button" class="s-btn" id="btnConnectStd">Conectar cuenta Standard</button>
+                        <button type="button" class="s-btn s-btn--secondary" id="btnConnectExp">Conectar cuenta Express</button>
+                    </div>
+                )}
+            </div>
+
+            <div class="s-field">
+                <label class="s-toggle">
+                    <input type="checkbox" data-field="acepta_tarjeta" checked={ORG.aceptaTarjeta} disabled={!ORG.stripeAccountId || !ORG.stripeChargesEnabled} />
+                    <span>Aceptar pagos con tarjeta en el link público</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="s-block">
+        <h3>Transferencia Bancaria</h3>
+        <div class="s-body">
+            <div class="s-field">
+                <label class="s-toggle">
+                    <input type="checkbox" data-field="acepta_transferencia" checked={ORG.aceptaTransferencia} />
+                    <span>Mostrar datos bancarios en el link público (pago manual)</span>
+                </label>
+                <span class="s-hint">Tus clientes verán los datos y tú deberás confirmar el cobro manualmente.</span>
+            </div>
+
+            <div class="s-row">
+                <div class="s-field">
+                    <label for="oBanco">Banco</label>
+                    <input class="s-input" id="oBanco" data-field="banco_nombre" value={ORG.bancoNombre} placeholder="Ej. BBVA" />
+                </div>
+                <div class="s-field">
+                    <label for="oClabe">CLABE interbancaria (18 dígitos)</label>
+                    <input class="s-input" id="oClabe" data-field="banco_clabe" value={ORG.bancoClabe} placeholder="012..." maxlength="18" />
+                </div>
+            </div>
+            <div class="s-field">
+                <label for="oBen">Nombre del beneficiario</label>
+                <input class="s-input" id="oBen" data-field="banco_beneficiario" value={ORG.bancoBeneficiario} placeholder="Razón social o nombre" />
+            </div>
+
+            <div class="s-field" style="margin-top: 16px;">
+                <label class="s-toggle">
+                    <input type="checkbox" data-field="cobro_spei_auto" checked={ORG.cobroSpeiAuto} disabled={!ORG.stripeAccountId || !ORG.stripeChargesEnabled} />
+                    <span>Conciliación automática vía SPEI (Stripe Connect)</span>
+                </label>
+                <span class="s-hint">Stripe generará una CLABE única por cotización. Requiere que tu cuenta de Stripe tenga habilitado <code style="font-size:0.85em">customer_balance</code> / Transferencias bancarias MX.</span>
+            </div>
+        </div>
+    </div>
+</SettingsShell>
+
+<script>
+    document.getElementById('btnConnectStd')?.addEventListener('click', async () => {
+        try {
+            const res = await fetch('/api/billing/connect/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'standard' })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al conectar');
+            if (data.url) window.location.href = data.url;
+        } catch (e: any) { alert(e.message); }
+    });
+
+    document.getElementById('btnConnectExp')?.addEventListener('click', async () => {
+        try {
+            const res = await fetch('/api/billing/connect/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'express' })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al conectar');
+            if (data.url) window.location.href = data.url;
+        } catch (e: any) { alert(e.message); }
+    });
+
+    document.getElementById('btnDisconnect')?.addEventListener('click', async () => {
+        if (!confirm('¿Seguro que deseas desconectar tu cuenta de Stripe? Dejarás de recibir pagos en línea.')) return;
+        try {
+            const res = await fetch('/api/billing/connect/disconnect', { method: 'POST' });
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Error al desconectar');
+            }
+            window.location.reload();
+        } catch (e: any) { alert(e.message); }
+    });
+</script>

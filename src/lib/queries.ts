@@ -112,6 +112,15 @@ export async function getOrg() {
         emailReplyTo: (o.email_reply_to as string) ?? '',
         emailIntro: (o.email_intro as string) ?? '',
         emailFirma: (o.email_firma as string) ?? '',
+        stripeAccountId: (o.stripe_account_id as string) || null,
+        stripeAccountType: (o.stripe_account_type as string) || null,
+        stripeChargesEnabled: !!o.stripe_charges_enabled,
+        aceptaTarjeta: o.acepta_tarjeta !== false,
+        aceptaTransferencia: !!o.acepta_transferencia,
+        cobroSpeiAuto: !!o.cobro_spei_auto,
+        bancoNombre: (o.banco_nombre as string) || '',
+        bancoClabe: (o.banco_clabe as string) || '',
+        bancoBeneficiario: (o.banco_beneficiario as string) || '',
     };
 }
 
@@ -461,7 +470,15 @@ export async function getCotizacionByToken(token: string) {
                o.email_contacto as org_email, o.telefono as org_tel, o.whatsapp as org_wa,
                o.portal_banner as org_portal_banner, o.portal_bienvenida as org_portal_bienvenida,
                o.portal_mostrar_chat as org_portal_chat, o.portal_powered as org_portal_powered,
-               (o.sandbox_of is not null) as org_es_prueba
+               (o.sandbox_of is not null) as org_es_prueba,
+               o.stripe_account_id as org_stripe_account_id,
+               o.stripe_charges_enabled as org_stripe_charges_enabled,
+               o.acepta_tarjeta as org_acepta_tarjeta,
+               o.acepta_transferencia as org_acepta_transferencia,
+               o.cobro_spei_auto as org_cobro_spei_auto,
+               o.banco_nombre as org_banco_nombre,
+               o.banco_clabe as org_banco_clabe,
+               o.banco_beneficiario as org_banco_beneficiario
             from cotizaciones c
             left join clientes cl on cl.id = c.cliente_id
             join orgs o on o.id = c.org_id
@@ -540,6 +557,14 @@ export async function getCotizacionByToken(token: string) {
             // Entorno de PRUEBA: la página pública marca la cotización como de
             // prueba (cinta ámbar) — nadie debe confundirla con una real.
             esPrueba: (rows[0].org_es_prueba as boolean) ?? false,
+            stripeAccountId: (rows[0].org_stripe_account_id as string) || null,
+            stripeChargesEnabled: !!rows[0].org_stripe_charges_enabled,
+            aceptaTarjeta: rows[0].org_acepta_tarjeta !== false,
+            aceptaTransferencia: !!rows[0].org_acepta_transferencia,
+            cobroSpeiAuto: !!rows[0].org_cobro_spei_auto,
+            bancoNombre: (rows[0].org_banco_nombre as string) || '',
+            bancoClabe: (rows[0].org_banco_clabe as string) || '',
+            bancoBeneficiario: (rows[0].org_banco_beneficiario as string) || '',
         },
     };
 }

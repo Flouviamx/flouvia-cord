@@ -16,4 +16,4 @@ Esta cuota incluye:
 *Los excedentes de CFDI o IA se cobran a un costo fijo por folio/uso según tu plan.*
 
 ### Comisiones de Procesamiento (Stripe)
-Cord utiliza **Stripe** para cobrar las cotizaciones con tarjeta de crédito. Cord NO te cobra ninguna comisión porcentual adicional. Toda transacción que pase por el botón de pago está sujeta **exclusivamente a las tarifas de tu propia cuenta de Stripe** (ej. 3.6% + $3 MXN en México). Ese cobro lo realiza Stripe directamente antes de depositarte, no Cord.
+Cord utiliza **Stripe Connect** para rutear los cobros en línea directo a tu cuenta bancaria. Cord NO te cobra ninguna comisión porcentual adicional. Toda transacción que pase por el botón de pago está sujeta **exclusivamente a las tarifas de tu propia cuenta de Stripe** (ej. 3.6% + $3 MXN en México). Ese cobro lo realiza Stripe directamente antes de depositarte, no Cord. Si habilitas el pago por **transferencia bancaria manual** en tus ajustes, Cord mostrará tu CLABE y banco a tus clientes, y ese método de cobro tiene un costo del 0% (es completamente gratis).

@@ -5,7 +5,7 @@ category: "Developers"
 order: 5
 ---
 
-An important clarification: **Cord does not replace Stripe — it uses it.** Card payments for your quotes are processed by **your own Stripe account** (Cord never touches the funds). What Cord adds on top is what Stripe doesn't do in Mexico: interactive B2B quotes, price lists, credit, collections, and CFDI 4.0 stamping.
+An important clarification: **Cord does not replace Stripe — it uses it.** Online payments for your quotes are processed by **your own Stripe account** via Stripe Connect (Cord never touches the funds). What Cord adds on top is what Stripe doesn't do in Mexico: interactive B2B quotes, price lists, credit, collections, and CFDI 4.0 stamping.
 
 That's why there is no "migration" in the sense of moving cards or subscriptions. What you do is **connect your Stripe and bring your catalog over**.
 

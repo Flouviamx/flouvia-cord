@@ -5,7 +5,7 @@ category: "Desarrolladores"
 order: 5
 ---
 
-Una aclaración importante: **Cord no reemplaza a Stripe — lo usa.** Los cobros con tarjeta de tus cotizaciones los procesa **tu propia cuenta de Stripe** (Cord no toca los fondos). Lo que Cord agrega encima es lo que Stripe no hace en México: cotizaciones B2B interactivas, listas de precios, crédito, cobranza y timbrado CFDI 4.0.
+Una aclaración importante: **Cord no reemplaza a Stripe — lo usa.** Los cobros en línea de tus cotizaciones los procesa **tu propia cuenta de Stripe** vía Stripe Connect (Cord nunca toca los fondos). Lo que Cord agrega encima es lo que Stripe no hace en México: cotizaciones B2B interactivas, listas de precios, crédito, cobranza y timbrado CFDI 4.0.
 
 Por eso no hay una "migración" en el sentido de mover tarjetas o suscripciones. Lo que haces es **conectar tu Stripe y traer tu catálogo**.
 

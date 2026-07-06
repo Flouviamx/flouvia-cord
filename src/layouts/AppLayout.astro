@@ -415,7 +415,10 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
             inset 0 -6px 14px rgba(255,255,255,0.18),
             0 12px 36px -8px rgba(10,25,47,0.14),
             0 2px 6px rgba(10,25,47,0.06);
-        --sb-sheen: radial-gradient(135% 50% at 50% -10%, rgba(10,25,47,0.045), transparent 60%);
+        /* Sin sheen oscuro: el sidebar usa EXACTAMENTE el mismo material glass que la
+           pill de la topbar (mismo --sb-bg + blur + borde + --sb-shadow). El brillo
+           superior lo da el inset highlight de --sb-shadow, igual que la topbar. */
+        --sb-sheen: transparent;
         --sb-text: var(--color-text-muted);
         --sb-text-strong: var(--color-text);
         --sb-text-active: var(--color-blue-deep);
@@ -477,9 +480,8 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
             inset 0 0 0 0.5px rgba(255,255,255,0.05),
             inset 0 -6px 14px rgba(0,0,0,0.2),
             0 16px 44px -10px rgba(0,0,0,0.55);
-        --sb-sheen:
-            radial-gradient(135% 55% at 50% -12%, rgba(255,255,255,0.12), transparent 62%),
-            radial-gradient(90% 40% at 18% 0%, rgba(120,160,230,0.10), transparent 70%);
+        /* Igual que la topbar oscura: sin sheen extra, solo el material glass compartido. */
+        --sb-sheen: transparent;
         --sb-text: rgba(255,255,255,0.55);
         --sb-text-strong: rgba(255,255,255,0.92);
         --sb-text-active: #ffffff;

@@ -116,6 +116,14 @@ export const PATCH: APIRoute = async ({ request }) => {
     const emailIntro = body.email_intro !== undefined ? str(body.email_intro, 500) : actual.email_intro;
     const emailFirma = body.email_firma !== undefined ? str(body.email_firma, 300) : actual.email_firma;
 
+    // ── Pagos y Cobranza (Stripe Connect / Transferencias) ──
+    const aceptaTarjeta = body.acepta_tarjeta !== undefined ? Boolean(body.acepta_tarjeta) : actual.acepta_tarjeta;
+    const aceptaTransf = body.acepta_transferencia !== undefined ? Boolean(body.acepta_transferencia) : actual.acepta_transferencia;
+    const cobroSpeiAuto = body.cobro_spei_auto !== undefined ? Boolean(body.cobro_spei_auto) : actual.cobro_spei_auto;
+    const bancoNombre = body.banco_nombre !== undefined ? str(body.banco_nombre, 100) : actual.banco_nombre;
+    const bancoClabe = body.banco_clabe !== undefined ? (String(body.banco_clabe) === '' ? null : String(body.banco_clabe).replace(/\D/g, '').slice(0, 18) || null) : actual.banco_clabe;
+    const bancoBen = body.banco_beneficiario !== undefined ? str(body.banco_beneficiario, 150) : actual.banco_beneficiario;
+
     await withOrgTx(orgId, sql`
         update orgs set
             nombre = ${nombre}, rfc = ${rfc}, razon_social = ${razon},
@@ -133,7 +141,9 @@ export const PATCH: APIRoute = async ({ request }) => {
             require_2fa = ${require2fa}, session_timeout_min = ${sessionTimeout}, invite_domains = ${inviteDomains},
             embed_domains = ${embedDomains},
             portal_banner = ${portalBanner}, portal_mostrar_chat = ${portalChat}, portal_powered = ${portalPowered},
-            email_from_name = ${emailFromName}, email_reply_to = ${emailReplyTo}, email_intro = ${emailIntro}, email_firma = ${emailFirma}
+            email_from_name = ${emailFromName}, email_reply_to = ${emailReplyTo}, email_intro = ${emailIntro}, email_firma = ${emailFirma},
+            acepta_tarjeta = ${aceptaTarjeta}, acepta_transferencia = ${aceptaTransf}, cobro_spei_auto = ${cobroSpeiAuto},
+            banco_nombre = ${bancoNombre}, banco_clabe = ${bancoClabe}, banco_beneficiario = ${bancoBen}
         where id = ${orgId}`);
     await logAudit(orgId, { accion: 'org.actualizada', entidad: 'org', entidad_id: orgId, detalle: 'Se actualizaron los ajustes del negocio', ip: reqIp(request) });
     return json({ ok: true });

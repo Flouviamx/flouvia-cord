@@ -243,14 +243,17 @@ export async function createAccountLink(accountId: string, returnUrl: string, re
     return link.url;
 }
 
-export function getConnectOAuthUrl(orgId: string, redirectUri: string): string {
+// `state` DEBE ser un nonce aleatorio (anti-CSRF), guardado en cookie httpOnly y
+// verificado en el callback — NUNCA el orgId (es un valor conocido/adivinable, lo
+// que permitiría a un atacante enganchar SU Stripe a la org de una víctima).
+export function getConnectOAuthUrl(state: string, redirectUri: string): string {
     const clientId = import.meta.env.STRIPE_CONNECT_CLIENT_ID || process.env.STRIPE_CONNECT_CLIENT_ID;
     if (!clientId) throw new Error('STRIPE_CONNECT_CLIENT_ID no configurada');
     const u = new URL('https://connect.stripe.com/oauth/authorize');
     u.searchParams.set('response_type', 'code');
     u.searchParams.set('client_id', clientId);
     u.searchParams.set('scope', 'read_write');
-    u.searchParams.set('state', orgId);
+    u.searchParams.set('state', state);
     u.searchParams.set('redirect_uri', redirectUri);
     return u.toString();
 }

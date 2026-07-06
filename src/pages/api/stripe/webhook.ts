@@ -14,28 +14,33 @@ import { dispatchQuoteEvent } from '../../../lib/webhooks';
 import { PRICE_TO_PLAN, isPaidPlan } from '../../../lib/billing';
 
 const WH_SECRET = import.meta.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
+const CONNECT_WH_SECRET = import.meta.env.STRIPE_CONNECT_WEBHOOK_SECRET || process.env.STRIPE_CONNECT_WEBHOOK_SECRET;
+
+function verifySig(raw: string, sig: string, secret: string) {
+    if (!secret) return false;
+    try {
+        const parts = Object.fromEntries(sig.split(',').map((p) => p.split('=')));
+        const expected = crypto.createHmac('sha256', secret).update(`${parts.t}.${raw}`).digest('hex');
+        const a = Buffer.from(parts.v1 || '', 'hex');
+        const b = Buffer.from(expected, 'hex');
+        return a.length === b.length && crypto.timingSafeEqual(a, b);
+    } catch {
+        return false;
+    }
+}
 
 export const POST: APIRoute = async ({ request }) => {
     const raw = await request.text();
 
-    // En producción (Vercel) el secreto es OBLIGATORIO: sin él, cualquiera podría
-    // POSTear un evento falso (p.ej. marcar una cotización como pagada). Fail-closed.
-    // En dev/local (sin VERCEL) se permite correr sin verificar para pruebas.
-    if (!WH_SECRET && process.env.VERCEL) {
-        return new Response('webhook mal configurado (falta STRIPE_WEBHOOK_SECRET)', { status: 500 });
+    if ((!WH_SECRET && !CONNECT_WH_SECRET) && process.env.VERCEL) {
+        return new Response('webhook mal configurado (falta secret)', { status: 500 });
     }
-    // Verificación de firma (si hay secreto configurado).
-    if (WH_SECRET) {
-        try {
-            const sig = request.headers.get('stripe-signature') || '';
-            const parts = Object.fromEntries(sig.split(',').map((p) => p.split('=')));
-            const expected = crypto.createHmac('sha256', WH_SECRET).update(`${parts.t}.${raw}`).digest('hex');
-            const a = Buffer.from(parts.v1 || '', 'hex');
-            const b = Buffer.from(expected, 'hex');
-            if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-                return new Response('firma inválida', { status: 400 });
-            }
-        } catch {
+    if (WH_SECRET || CONNECT_WH_SECRET) {
+        const sig = request.headers.get('stripe-signature') || '';
+        let valid = false;
+        if (WH_SECRET && verifySig(raw, sig, WH_SECRET as string)) valid = true;
+        if (!valid && CONNECT_WH_SECRET && verifySig(raw, sig, CONNECT_WH_SECRET as string)) valid = true;
+        if (!valid) {
             return new Response('firma inválida', { status: 400 });
         }
     }
@@ -54,11 +59,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     switch (event.type) {
         // ── Pago de una cotización individual (Checkout mode=payment) ──────────
-        case 'checkout.session.completed': {
+        case 'checkout.session.completed':
+        case 'checkout.session.async_payment_succeeded': {
             if (obj.mode === 'subscription') {
                 await linkSubscription(obj);
             } else {
-                await markQuotePaid(obj);
+                await markQuotePaid(obj, event.account);
             }
             break;
         }
@@ -87,10 +93,23 @@ export const POST: APIRoute = async ({ request }) => {
 };
 
 // Marca la cotización como pagada (flujo de pago en línea por link público).
-async function markQuotePaid(session: any) {
+// `account` = event.account de Stripe (la cuenta CONECTADA del dueño en charges
+// directas). Se valida contra la org de la cotización para que un merchant
+// conectado no pueda marcar pagada una cotización de OTRA org.
+async function markQuotePaid(session: any, account?: string) {
     const cid = session?.metadata?.cotizacion_id;
     if (!cid) return;
-    const rows = await sql`select id, org_id, status from cotizaciones where id = ${cid}`;
+    // Métodos diferidos (SPEI/customer_balance): `checkout.session.completed`
+    // llega con payment_status 'unpaid' cuando el cliente termina el checkout y
+    // recibe la CLABE, pero AÚN NO transfiere. Solo marcar pagado cuando el dinero
+    // realmente llegó (payment_status 'paid' — el card es síncrono; el SPEI lo
+    // confirma después vía checkout.session.async_payment_succeeded).
+    const ps = session?.payment_status;
+    if (ps && ps !== 'paid' && ps !== 'no_payment_required') return;
+    const rows = await sql`select id, org_id, status, (select stripe_account_id from orgs where id = c.org_id) as acct from cotizaciones c where c.id = ${cid}`;
+    // Defensa en profundidad: el evento debe provenir de la cuenta conectada de la
+    // org dueña de la cotización (o de la plataforma, si aún no hay Connect).
+    if (rows.length && account && rows[0].acct && rows[0].acct !== account) return;
     if (rows.length && ['approved', 'invoiced'].includes(rows[0].status as string)) {
         await sql`update cotizaciones set status = 'paid' where id = ${cid}`;
         await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)

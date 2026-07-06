@@ -16,4 +16,4 @@ This fee includes:
 *CFDI or AI overages are charged at a fixed cost per folio/usage depending on your plan.*
 
 ### Processing Fees (Stripe)
-Cord uses **Stripe** to process credit card payments for quotes. Cord DOES NOT charge you any additional percentage fee. Any transaction that passes through the payment button is **exclusively subject to the rates of your own Stripe account** (e.g., 3.6% + $3 MXN in Mexico). Stripe deducts this fee directly before depositing to you, not Cord.
+Cord uses **Stripe Connect** to route online payments directly to your bank account. Cord DOES NOT charge you any additional percentage fee. Any transaction that passes through the payment button is **exclusively subject to the rates of your own Stripe account** (e.g., 3.6% + $3 MXN in Mexico). Stripe deducts this fee directly before depositing to you, not Cord. If you offer **manual bank transfer** to your customers via Cord, processing that payment is 100% free.

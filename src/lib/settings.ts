@@ -53,6 +53,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         icon: '<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>',
         tabs: [
             { id: 'plan', label: 'Suscripción', href: '/app/ajustes/plan' },
+            { id: 'cobros', label: 'Cobros', href: '/app/ajustes/cobros' },
         ],
     },
     {
