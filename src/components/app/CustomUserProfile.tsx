@@ -93,7 +93,11 @@ export default function CustomUserProfile() {
     const session = sessions?.find((s: any) => s.id === sessionId);
     if (!session) return;
     
-    if (!confirm('¿Estás seguro de que deseas cerrar sesión en este dispositivo?')) return;
+    const cc = (window as any).cordConfirm;
+    const ok = cc
+      ? await cc({ title: 'Cerrar sesión', body: '¿Cerrar la sesión en este dispositivo?', danger: true, confirmText: 'Cerrar sesión' })
+      : confirm('¿Estás seguro de que deseas cerrar sesión en este dispositivo?');
+    if (!ok) return;
     
     try {
       await session.revoke();

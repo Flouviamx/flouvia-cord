@@ -155,7 +155,7 @@ const VARS = ['{cliente}', '{empresa}', '{folio}', '{total}', '{link}', '{vigenc
         }));
 
         document.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => {
-            if (!confirm('¿Eliminar esta plantilla?')) return;
+            if (!await (window as any).cordConfirm({ title: 'Eliminar plantilla', body: '¿Eliminar esta plantilla de mensaje?', danger: true, confirmText: 'Eliminar' })) return;
             const id = (b as HTMLElement).dataset.del!;
             try {
                 const res = await fetch('/api/plantillas', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });

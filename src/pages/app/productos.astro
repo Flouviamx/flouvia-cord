@@ -591,7 +591,8 @@ const canEdit = memberCan(ME, 'productos');
         });
 
         btnDelete.addEventListener('click', async () => {
-            if (!editId || !confirm('¿Eliminar este producto del catálogo?')) return;
+            if (!editId) return;
+            if (!await (window as any).cordConfirm({ title: 'Eliminar producto', body: '¿Eliminar este producto del catálogo? Esta acción no se puede deshacer.', danger: true, confirmText: 'Eliminar' })) return;
             const delId = editId;
             const res = await fetch('/api/productos', {
                 method: 'DELETE',

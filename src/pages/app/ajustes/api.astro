@@ -244,7 +244,7 @@ const AT_LIMIT = ACTIVAS >= LIMITE;
         document.querySelectorAll('[data-revoke]').forEach((btn) => {
             btn.addEventListener('click', async () => {
                 const id = (btn as HTMLElement).dataset.revoke!;
-                if (!confirm('¿Revocar esta API key? Dejará de funcionar de inmediato y no se puede deshacer.')) return;
+                if (!await (window as any).cordConfirm({ title: 'Revocar API key', body: 'Dejará de funcionar de inmediato y no se puede deshacer. ¿Revocar esta clave?', danger: true, confirmText: 'Revocar' })) return;
                 try {
                     const res = await fetch('/api/keys', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
                     if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'No se pudo revocar'); }

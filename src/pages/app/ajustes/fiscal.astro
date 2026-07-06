@@ -210,7 +210,7 @@ const ORG = await getOrg();
         });
 
         rmBtn?.addEventListener('click', async () => {
-            if (!confirm('¿Quitar el CSD? Dejarás de poder timbrar hasta subir uno nuevo.')) return;
+            if (!await (window as any).cordConfirm({ title: 'Quitar CSD', body: 'Dejarás de poder timbrar CFDI hasta subir uno nuevo. ¿Quitar el certificado?', danger: true, confirmText: 'Quitar CSD' })) return;
             rmBtn.disabled = true;
             try {
                 const res = await fetch('/api/fiscal/csd', { method: 'DELETE' });

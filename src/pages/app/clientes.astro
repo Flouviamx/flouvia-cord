@@ -558,7 +558,8 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
         });
 
         btnDelete.addEventListener('click', async () => {
-            if (!editId || !confirm('¿Eliminar este cliente? Sus cotizaciones se conservan.')) return;
+            if (!editId) return;
+            if (!await (window as any).cordConfirm({ title: 'Eliminar cliente', body: 'Sus cotizaciones se conservan. ¿Eliminar este cliente del directorio?', danger: true, confirmText: 'Eliminar' })) return;
             const delId = editId;
             const res = await fetch('/api/clientes', {
                 method: 'DELETE',

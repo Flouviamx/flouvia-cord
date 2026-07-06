@@ -8,6 +8,53 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Org Switcher rediseñado — estilo Apple/Settings, "inset grouped list" (jul 2026)** —
+   `CustomOrgSwitcher.tsx` pasó de un dropdown plano genérico a un patrón Apple System
+   Settings, reusando el MISMO lenguaje visual que el drawer de Ayuda (`.help-inset-group`/
+   `.help-link` en `AppLayout.astro`) para consistencia entre menús de la app.
+   • **Trigger de dos líneas:** el botón del switcher ahora muestra un eyebrow tracked
+     ("Espacio de trabajo", 0.6rem uppercase) sobre el nombre de la org en bold — mismo
+     patrón que el selector de Apple ID en macOS/iOS Settings. Nuevo wrapper `.org-text`
+     (`flex-direction:column`).
+   • **Dropdown = 3 tarjetas "inset grouped"** en vez de una lista plana: (1) Espacios de
+     trabajo (avatar+nombre+rol, checkmark en badge circular navy para el seleccionado,
+     con un anillo azul alrededor de su avatar), (2) Acciones (Crear espacio · Configuración
+     del equipo con chevron de disclosure › · Entorno de prueba con su toggle), (3) Cuenta
+     (perfil + Cerrar sesión). Cada fila tiene un **icon badge squircle 26px** (`.orgd-icon`)
+     con fondo tintado — `orgd-icon-neutral` (gris/navy, mismo tono que `.help-link-ico`),
+     `orgd-icon-amber` (Entorno de prueba — reusa el ámbar semántico del test-mode),
+     `orgd-icon-red` (Cerrar sesión — reusa `--color-danger`). **Cero colores nuevos**: solo
+     los 3 acentos que ya existían en la app (navy, ámbar de test-mode, rojo de peligro) —
+     a propósito, para no romper la paleta "Quiet Luxury" con un arcoíris tipo iOS Settings.
+   • **Divisores inset** (`::after` que arranca en `left:46px`, después del icono/avatar —
+     no full-bleed) en vez de `<hr>`/borde completo, igual que el patrón de Ayuda.
+   • **Bug real encontrado y arreglado — el badge "Prueba" rompía el layout:** el pill ámbar
+     que se agregó junto al nombre en la sesión anterior (`.org-test-badge`) le robaba
+     ~50-60px al `org-name` dentro de un sidebar de 232px reales, causando un truncado
+     agresivo ("ESPACIO D...", "Materiales del V..." se cortaba aún más de lo normal).
+     Reemplazado por una señal que NO consume espacio horizontal: (1) un **anillo ámbar**
+     alrededor del avatar (`box-shadow`, visible también en modo colapsado 36×36 donde no
+     hay texto) y (2) el **eyebrow cambia de texto/color** ("Espacio de trabajo" →
+     "Entorno de prueba" en ámbar) — mismo patrón que iOS Settings usa subtítulos con color
+     para indicar estado en vez de agregar chrome. Verificado con un mock estático (mismos
+     tokens `--sb-*`/`--color-*` y CSS exacto del componente, renderizado con Playwright) en
+     light/dark/colapsado/nombre-largo — 0 regresiones de truncado vs. el comportamiento
+     anterior sin badge.
+   • **`title={nombre}`** agregado en `.org-name`/`.org-item-name` — con sidebar angosto
+     (232px) los nombres largos truncan por diseño (ellipsis); el tooltip nativo permite
+     leer el nombre completo al pasar el cursor, sin costo.
+   • ⚠️ **Se preservaron intactos** los classnames que `AppLayout.astro` fuerza vía
+     `<style is:inline>` (bypass anti-translucidez, ver comentario "ASTRO OPTIMIZATION
+     BYPASS" ahí): `.custom-org-switcher`, `.org-switcher-btn`, `.org-dropdown`,
+     `.org-list-item`. Esas reglas fuerzan `background-color`/`box-shadow`/`z-index`/
+     `backdrop-filter` con `!important` — **no pisar esas propiedades específicas** en el
+     componente; el resto (`border-radius`, `padding`, contenido interno) es libre.
+   • **Regla a futuro:** cualquier menú/dropdown nuevo de la app que quiera sentirse "Apple
+     Settings" debe reusar este patrón (`.orgd-group` tarjeta + `.orgd-icon` badge + divisor
+     inset), no reinventar un dropdown plano. Si se necesita una señal de estado (activo/
+     alerta) en un trigger con espacio angosto, preferir anillo/color de texto sobre un
+     badge/pill que compite por espacio horizontal.
+
 ✅ **Entorno de prueba REAL tipo Stripe + fixes de guardado/cableado (jul 2026)** — el toggle
    "Entorno de prueba" dejó de ser cosmético. Diseño elegido: **org SANDBOX espejo**
    (`orgs.sandbox_of uuid → org padre`, índice único parcial `idx_orgs_sandbox_of`) — la sandbox
@@ -63,9 +110,19 @@
      `datos.astro` se dejó). Los `confirm()` de acciones destructivas se conservan (pendiente:
      modal propio).
    • ✅ **Migración YA CORRIDA contra la BD de prod** (columna + índice, aditivo).
-   ⬜ Pendientes del track test-mode: badge "Prueba" junto al nombre de la org en el switcher;
-     ocultar botones de upgrade en `/app/ajustes/plan` cuando `isTestEnv`; botón "vaciar datos de
-     prueba" (Stripe lo tiene); excluir sandboxes de KPIs si algún día hay métricas cross-org.
+   ✅ **Follow-ups del track test-mode COMPLETADOS (jul 2026):** (1) **badge ámbar "Prueba"** junto
+     al nombre de la org en `CustomOrgSwitcher` cuando el entorno de prueba está activo; (2) **botón
+     "Vaciar datos de prueba"** en el banner (tipo Stripe "delete all test data") →
+     `POST /api/test-mode/reset` borra la org sandbox por completo (guard `sandbox_of is not null` +
+     cascade limpia hijos; se recrea fresca + reseed al recargar — probado E2E: el guard jamás toca
+     una org real, el cascade deja 0 huérfanos); (3) **`/app/ajustes/plan` oculta los botones de
+     cobro** (subscribe/portal) cuando `isTestEnv` y muestra un aviso ámbar; (4) **`confirm()` nativo
+     ELIMINADO de toda la app** → nuevo **modal global `window.cordConfirm(opts): Promise<boolean>`**
+     en AppLayout (markup + CSS con variante `danger` + `initConfirm`; Esc=cancelar, Enter=confirmar,
+     foco en cancelar si es destructivo). Se reemplazaron los 12 `confirm()` de páginas + el de
+     `CustomUserProfile.tsx` (este con fallback a `confirm()` nativo por si el island monta antes).
+     ⚠️ Regla a futuro: nunca usar `confirm()`/`alert()` nativos en la app — usar `cordConfirm`/`cordToast`.
+   ⬜ Pendiente menor: excluir sandboxes de KPIs si algún día hay métricas cross-org.
 
 ✅ **Rediseño Apple-style en Sidebar y Fix de Logo de Branding (jul 2026)** —
    Se limpió la interfaz del `Sidebar.astro` para alinearse a las reglas de "Quiet Luxury" y estética Apple:

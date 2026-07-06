@@ -111,7 +111,10 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
                             Entorno de prueba
                         </span>
                         <span class="test-banner-desc">Todo lo que hagas aquí es de prueba — tus datos reales no se tocan.</span>
-                        <button class="test-banner-exit" id="testEnvExit" type="button">Salir del modo de prueba</button>
+                        <div class="test-banner-actions">
+                            <button class="test-banner-reset" id="testEnvReset" type="button">Vaciar datos de prueba</button>
+                            <button class="test-banner-exit" id="testEnvExit" type="button">Salir del modo de prueba</button>
+                        </div>
                     </div>
                 )}
                 <header class="topbar">
@@ -318,6 +321,22 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
 
         <!-- Contenedor de toasts globales (window.cordToast) -->
         <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="false"></div>
+
+        <!-- Modal de confirmación global (window.cordConfirm) — reemplaza confirm() nativo -->
+        <div class="cconf" id="cordConfirm" hidden role="dialog" aria-modal="true" aria-labelledby="cconfTitle">
+            <div class="cconf-backdrop" id="cconfBackdrop"></div>
+            <div class="cconf-panel" role="document">
+                <div class="cconf-icon" id="cconfIcon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <h3 class="cconf-title" id="cconfTitle">¿Confirmar?</h3>
+                <p class="cconf-body" id="cconfBody"></p>
+                <div class="cconf-actions">
+                    <button class="cconf-btn cconf-cancel" id="cconfCancel" type="button">Cancelar</button>
+                    <button class="cconf-btn cconf-ok" id="cconfOk" type="button">Confirmar</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Overlay de atajos de teclado (se abre con ?) -->
         <div class="kbd-help" id="kbdHelp" hidden>
@@ -773,6 +792,38 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
     .toast-close:hover { color: #fff; }
     .toast-close svg { width: 14px; height: 14px; }
 
+    /* ════════ Modal de confirmación global (window.cordConfirm) ════════ */
+    .cconf { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1.2rem; }
+    .cconf[hidden] { display: none; }
+    .cconf-backdrop { position: absolute; inset: 0; background: rgba(10,25,47,0.42); backdrop-filter: blur(3px) saturate(1.1); -webkit-backdrop-filter: blur(3px) saturate(1.1); animation: cconf-fade 0.2s ease; }
+    .cconf-panel {
+        position: relative; width: min(400px, 100%);
+        background: var(--surface, #fff); border-radius: 22px;
+        padding: 1.7rem 1.7rem 1.4rem;
+        box-shadow: 0 30px 70px -18px rgba(10,25,47,0.45), 0 2px 8px rgba(10,25,47,0.08), inset 0 0 0 0.5px rgba(255,255,255,0.5);
+        animation: cconf-pop 0.32s var(--ease-spring);
+        text-align: left;
+    }
+    html[data-theme="dark"] .cconf-panel { box-shadow: 0 30px 70px -18px rgba(0,0,0,0.7), inset 0 0 0 0.5px rgba(255,255,255,0.08); }
+    .cconf-icon { width: 46px; height: 46px; border-radius: 13px; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;
+        background: rgba(245,158,11,0.12); color: #d97706; }
+    .cconf-icon svg { width: 23px; height: 23px; }
+    .cconf.danger .cconf-icon { background: rgba(239,68,68,0.12); color: var(--color-danger); }
+    .cconf-title { font-size: 1.06rem; font-weight: 700; margin: 0 0 0.4rem; color: var(--color-text); letter-spacing: -0.02em; }
+    .cconf-body { font-size: 0.88rem; line-height: 1.55; color: var(--color-text-muted); margin: 0 0 1.5rem; }
+    .cconf-actions { display: flex; gap: 0.6rem; justify-content: flex-end; }
+    .cconf-btn { font-family: var(--font-sans); font-size: 0.86rem; font-weight: 600; border-radius: 999px; padding: 10px 22px; cursor: pointer; border: 1px solid transparent; transition: transform 0.2s var(--ease-spring), background 0.2s, box-shadow 0.2s; }
+    .cconf-btn:active { transform: scale(0.96); }
+    .cconf-cancel { background: var(--color-bg-soft, #f5f5f7); color: var(--color-text); border-color: var(--color-border); }
+    .cconf-cancel:hover { background: var(--color-border); }
+    .cconf-ok { background: var(--color-blue-deep); color: #fff; box-shadow: 0 8px 20px -10px rgba(10,25,47,0.5); }
+    .cconf-ok:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -10px rgba(10,25,47,0.55); }
+    .cconf.danger .cconf-ok { background: var(--color-danger); box-shadow: 0 8px 20px -10px rgba(239,68,68,0.5); }
+    .cconf.danger .cconf-ok:hover { background: #dc2626; }
+    @keyframes cconf-fade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes cconf-pop { from { opacity: 0; transform: translateY(16px) scale(0.96); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .cconf-panel, .cconf-backdrop { animation: none; } }
+
     /* ════════ Skeletons reutilizables ════════ */
     .skeleton { position: relative; overflow: hidden; background: rgba(10,25,47,0.06); border-radius: 8px; }
     .skeleton::after {
@@ -1005,8 +1056,9 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
         font-size: 0.78rem; font-weight: 500; color: rgba(255,255,255,0.92);
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
+    .test-banner-actions { margin-left: auto; flex-shrink: 0; display: flex; align-items: center; gap: 0.5rem; }
     .test-banner-exit {
-        margin-left: auto; flex-shrink: 0; cursor: pointer;
+        flex-shrink: 0; cursor: pointer;
         font-size: 0.74rem; font-weight: 700; color: #92400e;
         background: #ffffff; border: none; border-radius: 999px;
         padding: 6px 14px;
@@ -1015,8 +1067,18 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
     }
     .test-banner-exit:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(120,53,15,0.3); }
     .test-banner-exit:active { transform: scale(0.96); }
+    .test-banner-reset {
+        flex-shrink: 0; cursor: pointer;
+        font-size: 0.74rem; font-weight: 700; color: #ffffff;
+        background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.35); border-radius: 999px;
+        padding: 5px 13px;
+        transition: transform 0.18s cubic-bezier(0.16,1,0.3,1), background 0.18s;
+    }
+    .test-banner-reset:hover { background: rgba(255,255,255,0.26); transform: translateY(-1px); }
+    .test-banner-reset:active { transform: scale(0.96); }
     @media (max-width: 700px) {
         .test-banner-desc { display: none; }
+        .test-banner-reset { display: none; }
     }
     /* Iconos globales empujados a la derecha (el buscador queda pegado a la izquierda) */
     .tb-right { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; }
@@ -1257,6 +1319,27 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
         window.location.assign('/app');
     });
 
+    // Vaciar datos de prueba (tipo Stripe "delete all test data"): borra la org
+    // sandbox por completo; se recrea fresca + reseed al recargar.
+    document.getElementById('testEnvReset')?.addEventListener('click', async () => {
+        const cc = (window as any).cordConfirm;
+        const ok = cc ? await cc({
+            title: 'Vaciar datos de prueba',
+            body: 'Se borrarán TODAS las cotizaciones, clientes y productos de prueba. Tus datos reales no se tocan. El entorno de prueba arrancará limpio.',
+            danger: true,
+            confirmText: 'Vaciar todo',
+        }) : true;
+        if (!ok) return;
+        try {
+            const res = await fetch('/api/test-mode/reset', { method: 'POST' });
+            if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'No se pudo vaciar'); }
+            try { sessionStorage.setItem('cord.flash', JSON.stringify({ msg: 'Datos de prueba vaciados', type: 'ok' })); } catch {}
+            window.location.assign('/app');
+        } catch (e: any) {
+            (window as any).cordToast?.(e.message || 'No se pudo vaciar los datos de prueba', 'error');
+        }
+    });
+
     // ── Menú de comandos (Cmd+K) ── buscador global + navegación rápida.
     function initCmdk() {
         const cmdk = document.getElementById('cmdk');
@@ -1423,6 +1506,52 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
             const flash = sessionStorage.getItem('cord.flash');
             if (flash) { sessionStorage.removeItem('cord.flash'); const f = JSON.parse(flash); (window as any).cordToast(f.msg, f.type); }
         } catch (e) {}
+    }
+
+    // ── Confirmación global — window.cordConfirm(opts): Promise<boolean> ──
+    // Reemplaza confirm() nativo con un modal con estética Cord. Uso:
+    //   if (!await cordConfirm({ title, body, danger, confirmText })) return;
+    //   cordConfirm('¿Texto simple?')  → también acepta un string.
+    function initConfirm() {
+        const modal = document.getElementById('cordConfirm');
+        if (!modal) return;
+        const backdrop = document.getElementById('cconfBackdrop');
+        const titleEl = document.getElementById('cconfTitle')!;
+        const bodyEl = document.getElementById('cconfBody')!;
+        const okBtn = document.getElementById('cconfOk') as HTMLButtonElement;
+        const cancelBtn = document.getElementById('cconfCancel') as HTMLButtonElement;
+
+        let resolver: ((v: boolean) => void) | null = null;
+        const close = (result: boolean) => {
+            if (!resolver) return;
+            const r = resolver; resolver = null;
+            modal.setAttribute('hidden', '');
+            document.removeEventListener('keydown', onKey);
+            r(result);
+        };
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') { e.preventDefault(); close(false); }
+            else if (e.key === 'Enter') { e.preventDefault(); close(true); }
+        };
+        okBtn.addEventListener('click', () => close(true));
+        cancelBtn.addEventListener('click', () => close(false));
+        backdrop?.addEventListener('click', () => close(false));
+
+        (window as any).cordConfirm = (opts: any): Promise<boolean> => {
+            const o = typeof opts === 'string' ? { body: opts } : (opts || {});
+            titleEl.textContent = o.title || '¿Estás seguro?';
+            bodyEl.textContent = o.body || '';
+            bodyEl.style.display = o.body ? '' : 'none';
+            okBtn.textContent = o.confirmText || 'Confirmar';
+            cancelBtn.textContent = o.cancelText || 'Cancelar';
+            modal.classList.toggle('danger', !!o.danger);
+            modal.removeAttribute('hidden');
+            // Foco en cancelar por defecto (acción no destructiva) para evitar
+            // confirmar sin querer al presionar Enter apurado.
+            setTimeout(() => (o.danger ? cancelBtn : okBtn).focus(), 20);
+            document.addEventListener('keydown', onKey);
+            return new Promise<boolean>((resolve) => { resolver = resolve; });
+        };
     }
 
     // ── Barra de progreso al navegar (feedback de carga) ──
@@ -1662,7 +1791,7 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
         });
     }
 
-    function initApp() { initCmdk(); initTheme(); initToasts(); initNavProgress(); initNotifs(); initHelp(); initShortcuts(); initCreateMenu('tbCreate', 'tbCreateMenu'); initQuickTask(); }
+    function initApp() { initCmdk(); initTheme(); initToasts(); initConfirm(); initNavProgress(); initNotifs(); initHelp(); initShortcuts(); initCreateMenu('tbCreate', 'tbCreateMenu'); initQuickTask(); }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initApp);
     else initApp();
 </script>

@@ -161,7 +161,7 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
 
         document.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => {
             const id = (b as HTMLElement).dataset.del!;
-            if (!confirm('¿Eliminar este impuesto?')) return;
+            if (!await (window as any).cordConfirm({ title: 'Eliminar impuesto', body: '¿Eliminar este impuesto de tu configuración?', danger: true, confirmText: 'Eliminar' })) return;
             try {
                 const res = await fetch('/api/impuestos', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
                 if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'No se pudo eliminar'); }

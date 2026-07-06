@@ -562,7 +562,7 @@ const dotColor = (tipo: string) =>
             } catch (e: any) { errorEl.textContent = e.message; btn.disabled = false; }
         };
         document.getElementById('apApprove')?.addEventListener('click', (e) => apAction('approve_request', e.currentTarget as HTMLButtonElement));
-        document.getElementById('apReject')?.addEventListener('click', (e) => { if (confirm('¿Rechazar esta solicitud de aprobación?')) apAction('reject_request', e.currentTarget as HTMLButtonElement); });
+        document.getElementById('apReject')?.addEventListener('click', async (e) => { const b = e.currentTarget as HTMLButtonElement; if (await (window as any).cordConfirm({ title: 'Rechazar solicitud', body: '¿Rechazar esta solicitud de aprobación?', danger: true, confirmText: 'Rechazar' })) apAction('reject_request', b); });
 
         const CONFIRM: Record<string, string> = {
             reject: '¿Marcar esta cotización como rechazada?',
@@ -572,7 +572,7 @@ const dotColor = (tipo: string) =>
         panel.querySelectorAll<HTMLButtonElement>('.act-do').forEach((btn) => {
             btn.addEventListener('click', async () => {
                 const action = btn.dataset.action!;
-                if (CONFIRM[action] && !confirm(CONFIRM[action])) return;
+                if (CONFIRM[action] && !await (window as any).cordConfirm({ title: 'Confirmar acción', body: CONFIRM[action], confirmText: 'Continuar' })) return;
                 btn.disabled = true;
                 errorEl.textContent = '';
                 try {
@@ -645,7 +645,7 @@ const dotColor = (tipo: string) =>
         });
 
         document.getElementById('btnDelete')?.addEventListener('click', async () => {
-            if (!confirm('¿Eliminar este borrador? Esta acción no se puede deshacer.')) return;
+            if (!await (window as any).cordConfirm({ title: 'Eliminar borrador', body: 'Esta acción no se puede deshacer. ¿Eliminar este borrador?', danger: true, confirmText: 'Eliminar' })) return;
             const res = await fetch(`/api/cotizaciones/${qid}`, { method: 'DELETE' });
             if (res.ok) location.href = '/app/cotizaciones';
             else errorEl.textContent = (await res.json()).error || 'No se pudo eliminar';

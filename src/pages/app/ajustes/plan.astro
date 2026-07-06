@@ -10,6 +10,11 @@ const ORG = await getOrg();
 const USAGE = await getPlanUsage();
 const BILL = await getBillingUsage();
 
+// Entorno de PRUEBA: la facturación (Stripe) nunca opera sobre la org sandbox.
+// Ocultamos los botones de cobro y mostramos un aviso — el servidor los bloquea
+// igual (409), pero la UI no debe ofrecerlos siquiera.
+const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
+
 const planRaw = ORG.plan_raw;
 const esPago = planRaw !== 'free';
 const PAID = PLANES.filter((p) => p.id !== 'free');
@@ -23,6 +28,13 @@ const planActual = PLANES.find((p) => p.id === planRaw);
 
 <SettingsShell title="Plan y facturación — Ajustes" tab="plan" perm="ajustes"
     intro="Tu suscripción de Cord, uso del plan y comprobantes.">
+
+    {isTestEnv && (
+        <div class="plan-test-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 12h4l-1.5 8L17 9h-4.5z"/></svg>
+            <span>Estás en el <b>entorno de prueba</b>. La facturación no aplica aquí — sal del modo de prueba para cambiar de plan o abrir el portal de pagos.</span>
+        </div>
+    )}
 
     <div class="s-block">
         <h3>Suscripción actual</h3>
@@ -38,7 +50,7 @@ const planActual = PLANES.find((p) => p.id === planRaw);
                     {BILL.periodFin && <i class="plan-renews"> · renueva {BILL.periodFin}</i>}
                 </span>
             </div>
-            {esPago && <button class="plan-btn solid" data-portal>Gestionar suscripción</button>}
+            {esPago && !isTestEnv && <button class="plan-btn solid" data-portal>Gestionar suscripción</button>}
         </div>
     </div>
 
@@ -65,6 +77,8 @@ const planActual = PLANES.find((p) => p.id === planRaw);
                         </div>
                         {actual ? (
                             <span class="pick-current">Plan actual</span>
+                        ) : isTestEnv ? (
+                            <span class="pick-current" title="Sal del modo de prueba para cambiar de plan">No disponible en prueba</span>
                         ) : (
                             <button class="plan-btn solid" data-subscribe={p.id}>Elegir</button>
                         )}
@@ -115,7 +129,9 @@ const planActual = PLANES.find((p) => p.id === planRaw);
 
     <div class="s-block">
         <h3>Método de pago y comprobantes</h3>
-        {esPago ? (
+        {isTestEnv ? (
+            <p class="plan-empty">Los pagos no aplican en el entorno de prueba.</p>
+        ) : esPago ? (
             <p class="plan-empty">Tu tarjeta, recibos y facturas se gestionan en el portal seguro de Stripe. <button class="link-btn" data-portal>Abrir portal →</button></p>
         ) : (
             <p class="plan-empty">Agrega un método de pago al subir de plan. Se cobra de forma segura vía Stripe.</p>
@@ -163,6 +179,16 @@ const planActual = PLANES.find((p) => p.id === planRaw);
 </script>
 
 <style>
+    .plan-test-note {
+        display: flex; align-items: center; gap: 0.65rem;
+        padding: 0.85rem 1.1rem; margin-bottom: 1.4rem;
+        background: rgba(245,158,11,0.09); border: 1px solid rgba(245,158,11,0.28);
+        border-radius: 14px; color: #b45309; font-size: 0.83rem; line-height: 1.5;
+    }
+    .plan-test-note svg { width: 17px; height: 17px; flex-shrink: 0; color: #d97706; }
+    .plan-test-note b { color: #92400e; }
+    html[data-theme="dark"] .plan-test-note { background: rgba(245,158,11,0.12); color: #fbbf24; }
+    html[data-theme="dark"] .plan-test-note b { color: #fcd34d; }
     .plan-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1.1rem 0.4rem; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
     .plan-meta { display: flex; flex-direction: column; gap: 4px; }
     .plan-name { font-size: 1.05rem; font-weight: 700; display: flex; align-items: center; gap: 9px; }

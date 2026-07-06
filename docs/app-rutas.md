@@ -31,7 +31,7 @@ habilitar Organizations es config del dashboard de Clerk (no codeable aquí); la
 identidad sigue siendo Clerk (userId), solo la membresía/permiso es nuestra.
 
 **Tablas** (`db/schema.sql`):
-- `orgs` — el negocio (nombre, logo, datos fiscales en `fiscal_metadata`, `country_code`, `quote_prefix`, plan, Stripe IDs, `clerk_org_id`)
+- `orgs` — el negocio (nombre, logo, datos fiscales en `fiscal_metadata`, `country_code`, `quote_prefix`, plan, Stripe IDs, `clerk_org_id`). **`sandbox_of uuid`** (jul 2026, índice único parcial): si no es null, esta fila ES la org SANDBOX espejo de otra — ver "Entorno de prueba REAL tipo Stripe" en `historial.md`. `getActiveOrgId()` resuelve la sandbox del padre cuando la cookie `cord_test_mode` está activa (`resolveSandboxOrgId()` en `db.ts`, find-or-create idempotente).
 - `productos` — catálogo de cada org
 - `clientes` — a quién se cotiza (con `terminos_default` y `limite_credito`)
 - `cotizaciones` — status `draft|sent|viewed|approved|rejected|expired|paid|invoiced` + `public_token` + `base_currency` y `fiscal_currency` para coberturas FX.
@@ -154,6 +154,13 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
 /api/mcp             → MCP JSON-RPC 2.0: initialize/ping/tools/list/tools/call
 /api/webhooks        → CRUD webhooks salientes (POST crea y devuelve secret 1 vez)
 
+# Entorno de PRUEBA (jul 2026 — ver "Entorno de prueba REAL tipo Stripe" en historial.md)
+/api/test-mode/reset → POST "Vaciar datos de prueba" (interna, requiere sesión). Solo opera si
+                   getActiveOrgId() resuelve a una org SANDBOX (guard `sandbox_of is not null`
+                   antes de cualquier DELETE — nunca toca una org real); borra la sandbox entera
+                   (cascade limpia cotizaciones/clientes/productos/etc.) y se recrea fresca +
+                   reseed la próxima vez que se resuelva en modo prueba.
+
 # Legales
 /privacidad      → Aviso de Privacidad Integral (LFPDPPP + DPA estándares internacionales):
                    responsable/encargado, datos recabados, finalidades, datos anonimizados,
@@ -207,8 +214,12 @@ Props: `title`, `page`, `heading?`, `crumbs?` (breadcrumbs). Slots: `topbar-acti
 Topbar: buscador izquierda → tb-right (onb-pill, campana/notificaciones, ajustes).
 Page-head: breadcrumbs → `h1.ph-title` + botón pin → ph-actions → ph-tabs-row.
 Clases globales reutilizables: `.card`, `.status-pill`, `.editorial`, `.skeleton`,
-`.skeleton-line`, `.ph-tab`. API JS global: `window.cordToast(msg, type, ms)`.
-`sessionStorage 'cord.flash'` para flash post-navegación. Entradas con CSS `app-fadein`
+`.skeleton-line`, `.ph-tab`. API JS global: `window.cordToast(msg, type, ms)` y
+**`window.cordConfirm(opts): Promise<boolean>`** (jul 2026 — modal de confirmación,
+reemplaza `confirm()` nativo en toda la app; ver detalle en `sistema-de-diseno.md`
+→ "Modal de confirmación global"). `sessionStorage 'cord.flash'` para flash post-navegación.
+Banner sticky de **entorno de prueba** (`#testEnvExit`/`#testEnvReset`) montado aquí,
+gated por la cookie `cord_test_mode` (ver historial.md). Entradas con CSS `app-fadein`
 escalonado (NO GSAP). Mobile: sidebar → drawer (ocupa 80vw, tab bar inferior ELIMINADA jun 2026).
 En móvil la topbar muestra burger + crear (círculo) + lupa (ícono) + campana. Ayuda y config
 viven en la sección `.sb-mobile-actions` dentro del drawer (oculta en desktop).

@@ -318,3 +318,50 @@ El roadmap público (`/roadmap` y `/en/roadmap`) fue rediseñado para alcanzar u
      partir de `SupportCoverBg.jsx`/`RoadmapCoverBg.jsx` (motor FBM sin overlay de título) en vez
      de `BlogCover.jsx` directo — y forzar el texto en `!important` si convive con `masked-title`
      de `PageAnims` (los `.m-line-in` se inyectan sin `data-astro-cid`).
+
+### Feedback global de la app: toasts + modal de confirmación (AppLayout)
+
+La app tiene DOS primitivas de feedback montadas una sola vez en `AppLayout.astro` y
+expuestas como API global en `window` — ninguna página debe reimplementar su propio
+toast/modal ni usar `alert()`/`confirm()` nativos.
+
+- **`window.cordToast(msg, type?, ms?)`** — toast centrado abajo (`#toastStack`), tipos
+  `'ok' | 'error' | 'info'` (navy default, verde ok, rojo error), auto-dismiss + botón X,
+  se pausa en `mouseenter`. Flash post-navegación vía `sessionStorage['cord.flash']`.
+- **`window.cordConfirm(opts): Promise<boolean>`** (jul 2026) — modal de confirmación que
+  reemplaza `confirm()` nativo en TODA la app (12 sitios migrados: eliminar producto/
+  cliente/impuesto/plantilla/webhook/servidor MCP, revocar API key, quitar CSD, registrar
+  pago, rechazar/eliminar cotización, cerrar sesión). Markup fijo `#cordConfirm` (backdrop
+  blur + panel squircle `border-radius:22px`, sombra compuesta multicapa, icono de alerta
+  ámbar por default). Acepta un string (`cordConfirm('¿Seguro?')`) o un objeto
+  `{ title?, body?, danger?, confirmText?, cancelText? }` — `danger:true` recolorea el
+  icono/botón OK a rojo (`.cconf.danger`) y mueve el foco inicial a "Cancelar" (fricción a
+  propósito antes de una acción destructiva). Esc = cancelar, Enter = confirmar. Uso desde
+  un handler `async`:
+  ```js
+  if (!await cordConfirm({ title: 'Eliminar cliente', body: '…', danger: true, confirmText: 'Eliminar' })) return;
+  ```
+  ⚠️ **Regla a futuro:** nunca `confirm()`/`alert()` nativos en `/app/**` — siempre
+  `cordConfirm`/`cordToast`. Los islands de React (fuera del árbol de Astro) deben acceder
+  vía `(window as any).cordConfirm` con fallback a `confirm()` nativo por si el island
+  monta antes que el script de `AppLayout` (patrón en `CustomUserProfile.tsx`).
+
+### Color semántico "Entorno de prueba" = ámbar (como Stripe)
+
+Todo indicador de que la sesión está en el **entorno de prueba** (sandbox, ver
+`historial.md` → "Entorno de prueba REAL tipo Stripe") usa el MISMO ámbar en toda la app
+— nunca verde ni azul, para no confundirlo con estados "ok"/normales:
+- Gradiente base: `linear-gradient(135deg, #f59e0b 0%, #d97706 100%)`.
+- Texto sobre fondo claro: `#92400e` (light) / `#fcd34d` (dark).
+- Superficies: banner sticky en `AppLayout` (`.test-banner`, con botones "Vaciar datos de
+  prueba" y "Salir del modo de prueba"), toggle del org switcher (`.toggle-switch.on`),
+  cinta en el link público `/q/[token]` (`.q-test-ribbon`), y el aviso en
+  `/app/ajustes/plan` cuando la facturación está deshabilitada (`.plan-test-note`). Reusar
+  esta paleta para cualquier superficie nueva de test-mode; no inventar un ámbar distinto.
+- ⚠️ **En el trigger del org switcher NO se usa badge/pill** (se intentó y se revirtió —
+  ver "Org Switcher rediseñado" en `historial.md`): un pill horizontal junto al nombre le
+  roba espacio al `org-name` y agrava el truncado en el sidebar de 232px. Ahí el estado de
+  prueba se comunica con un **anillo ámbar en el avatar** (`box-shadow`, sin costo de
+  layout, visible incluso colapsado) + el **eyebrow que cambia de texto/color**
+  ("Espacio de trabajo" → "Entorno de prueba"). Regla general: en cualquier trigger de
+  espacio angosto, preferir anillo/color de texto sobre un badge que compite por ancho.

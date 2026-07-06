@@ -166,7 +166,7 @@ const AT_LIMIT = USADOS >= LIMITE;
         document.querySelectorAll('[data-del]').forEach((btn) => {
             btn.addEventListener('click', async () => {
                 const id = (btn as HTMLElement).dataset.del!;
-                if (!confirm('¿Eliminar este endpoint? Dejará de recibir eventos.')) return;
+                if (!await (window as any).cordConfirm({ title: 'Eliminar endpoint', body: 'Dejará de recibir eventos de inmediato. ¿Eliminar este webhook?', danger: true, confirmText: 'Eliminar' })) return;
                 try {
                     const res = await fetch('/api/webhooks', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
                     if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'No se pudo eliminar'); }

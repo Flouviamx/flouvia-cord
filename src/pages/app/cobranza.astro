@@ -465,7 +465,7 @@ const hay = (C?.items.length ?? 0) > 0;
 
             row.querySelector('.cob-paid')?.addEventListener('click', async (e) => {
                 const btn = e.currentTarget as HTMLButtonElement;
-                if (!confirm(`¿Registrar el pago de ${d.folio} (${d.total})?`)) return;
+                if (!await (window as any).cordConfirm({ title: 'Registrar pago', body: `¿Registrar el pago de ${d.folio} por ${d.total}?`, confirmText: 'Registrar pago' })) return;
                 btn.disabled = true;
                 if (err) err.textContent = '';
                 try {

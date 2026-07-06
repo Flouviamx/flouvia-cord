@@ -164,7 +164,7 @@ const servers = await listMcpServers(orgId);
                 else if (!res.ok) { activo.checked = !activo.checked; toast('No se pudo guardar', 'error'); }
             });
             del?.addEventListener('click', async () => {
-                if (!confirm('¿Eliminar este servidor MCP?')) return;
+                if (!await (window as any).cordConfirm({ title: 'Eliminar servidor MCP', body: '¿Eliminar este servidor MCP? Los agentes dejarán de usar sus herramientas.', danger: true, confirmText: 'Eliminar' })) return;
                 const res = await post({ action: 'delete', id });
                 if (res.ok) { row.remove(); toast('Servidor eliminado'); }
                 else toast('No se pudo eliminar', 'error');
