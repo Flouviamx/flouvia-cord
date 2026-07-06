@@ -678,8 +678,6 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     const $aiBtn = document.getElementById('aiBtn');
     const $aiText = document.getElementById('aiText');
     const $aiStatus = document.getElementById('aiStatus');
-    const $linesBody = document.getElementById('linesBody');
-    if ($linesBody) $linesBody.addEventListener('click', onLinesClick);
     const $ivaIncluido = document.getElementById('ivaIncluido');
     if ($ivaIncluido) $ivaIncluido.addEventListener('change', recalc);
     
@@ -730,6 +728,9 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     // ── Modal Nuevo Cliente ──
     const $ncOverlay = document.getElementById('clientModal');
     const $ncForm = document.getElementById('clientForm');
+    const $ncSubmit = document.getElementById('mSave');
+    const $ncContacto = document.getElementById('fContacto');
+    const $ncEmail = document.getElementById('fEmail');
 
     // Manejo de chips y estado local del form
     let terminos = 'contado';
@@ -785,13 +786,15 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         $ncSubmit.textContent = 'Creando…';
 
         try {
+            const contactoVal = $ncContacto ? $ncContacto.value.trim() : '';
+            const emailVal = $ncEmail ? $ncEmail.value.trim() : '';
             const res = await fetch('/api/clientes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     empresa,
-                    contacto: $ncContacto.value.trim(),
-                    email: $ncEmail.value.trim()
+                    contacto: contactoVal,
+                    email: emailVal
                 })
             });
             const data = await res.json();
@@ -801,7 +804,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
             opt.value = data.id;
             opt.dataset.desc = "0";
             opt.dataset.nivel = "estandar";
-            opt.textContent = `${empresa} — ${$ncContacto.value.trim()}`;
+            opt.textContent = `${empresa} — ${contactoVal}`;
             
             const newOpt = $client.querySelector('option[value="__NEW__"]');
             if (newOpt) {
@@ -853,13 +856,13 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     
     .lr-input {
         font-family: var(--font-sans); font-size: 0.85rem; font-weight: 500;
-        color: var(--color-text); background: transparent;
-        border: 1px solid transparent; border-radius: 6px;
-        padding: 6px 8px; width: 100%;
-        transition: border-color 0.2s, background-color 0.2s;
+        color: var(--color-text); background: #f5f5f7;
+        border: 1.5px solid transparent; border-radius: 8px;
+        padding: 7px 10px; width: 100%;
+        transition: border-color 0.3s var(--ease-ios), background 0.2s, box-shadow 0.3s var(--ease-ios);
     }
-    .lr-input:hover { background: var(--color-bg-soft); }
-    .lr-input:focus { outline: none; border-color: var(--color-blue-deep); background: var(--surface); box-shadow: 0 0 0 2px rgba(10,25,47,0.05); }
+    .lr-input:hover { background: #ececee; }
+    .lr-input:focus { outline: none; border-color: var(--color-blue-deep); background: #fff; box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
     
     .lr-desc-input { border-color: var(--color-border); }
     
@@ -1046,23 +1049,29 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     .client-row { display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; }
     .ed-select {
         font-family: var(--font-sans); font-size: 0.85rem; font-weight: 400;
-        color: var(--color-text); background: transparent;
-        border: 1px solid var(--color-border); border-radius: 6px;
-        padding: 8px 12px; min-width: 260px; cursor: pointer;
-        transition: border-color 0.2s, box-shadow 0.2s;
+        color: var(--color-text); background: #f5f5f7;
+        border: 1.5px solid transparent; border-radius: 10px;
+        padding: 10px 14px; min-width: 260px; cursor: pointer;
+        transition: border-color 0.3s var(--ease-ios), box-shadow 0.3s var(--ease-ios), background 0.2s;
+        -webkit-appearance: none; appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2399a2af' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 32px;
     }
-    .ed-select:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 2px rgba(10,25,47,0.05); }
+    .ed-select:hover { background: #ececee; }
+    .ed-select:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px rgba(10,25,47,0.08); background: #fff; }
 
-    .term-chips { display: flex; gap: 0.4rem; }
+    .term-chips { display: flex; gap: 0.35rem; }
     .chip {
-        font-family: var(--font-sans); font-size: 0.78rem; font-weight: 500;
-        color: var(--color-text-muted); background: transparent;
-        border: 1px solid var(--color-border); border-radius: 6px;
-        padding: 6px 12px; cursor: pointer;
-        transition: all 0.2s;
+        font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600;
+        color: var(--color-text-muted); background: #f5f5f7;
+        border: 1.5px solid transparent; border-radius: 999px;
+        padding: 7px 16px; cursor: pointer;
+        transition: all 0.3s var(--ease-ios);
     }
-    .chip:hover { border-color: #cbd5e1; }
-    .chip.active { background: var(--color-text); color: #fff; border-color: var(--color-text); }
+    .chip:hover { background: #e8e8ec; }
+    .chip.active { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); box-shadow: 0 2px 8px -2px rgba(10,25,47,0.3); }
     .desc-note { font-size: 0.76rem; font-weight: 500; color: #059669; margin: 0.6rem 0 0; }
     .desc-note[hidden] { display: none; }
 
@@ -1074,27 +1083,28 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         padding: 0 0 0.5rem; border-bottom: 1px solid var(--color-border);
     }
     .lh-right { text-align: right; }
-    .lines-empty { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: var(--color-text-muted); padding: 2.2rem 0; text-align: center; border-bottom: 1px solid var(--color-border); line-height: 1.5; }
-    .lines-empty svg { width: 30px; height: 30px; color: #cbd5e1; }
+    .lines-empty { display: flex; flex-direction: column; align-items: center; gap: 0.7rem; font-size: 0.82rem; color: var(--color-text-muted); padding: 2.8rem 1.5rem; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.05); line-height: 1.5; background: #fafafa; border-radius: 12px; margin: 0.5rem 0; }
+    .lines-empty svg { width: 36px; height: 36px; color: #d1d5db; }
     .lines-empty b { color: var(--color-text); font-weight: 600; }
     .lines-empty[hidden] { display: none; }
     
-    .add-actions { display: flex; gap: 0.8rem; margin-top: 1rem; align-items: center; }
+    .add-actions { display: flex; gap: 0.6rem; margin-top: 1rem; align-items: center; }
     .btn-free-line {
         font-family: var(--font-sans); font-size: 0.82rem; font-weight: 500; cursor: pointer;
-        background: transparent; color: var(--color-text-muted); border: 1px dashed var(--color-border); border-radius: 6px; padding: 7px 12px;
-        transition: all 0.2s;
+        background: #f5f5f7; color: var(--color-text-muted); border: none; border-radius: 10px; padding: 9px 16px;
+        transition: all 0.3s var(--ease-ios);
     }
-    .btn-free-line:hover { color: var(--color-text); border-color: #cbd5e1; background: var(--color-bg-soft); }
+    .btn-free-line:hover { color: var(--color-text); background: #e8e8ec; }
 
     .ed-textarea {
         font-family: var(--font-sans); font-size: 0.85rem; width: 100%;
-        color: var(--color-text); background: transparent;
-        border: 1px solid var(--color-border); border-radius: 8px;
-        padding: 10px 12px; resize: vertical; line-height: 1.5;
-        transition: border-color 0.2s, box-shadow 0.2s;
+        color: var(--color-text); background: #f5f5f7;
+        border: 1.5px solid transparent; border-radius: 10px;
+        padding: 10px 14px; resize: vertical; line-height: 1.5;
+        transition: border-color 0.3s var(--ease-ios), box-shadow 0.3s var(--ease-ios), background 0.2s;
     }
-    .ed-textarea:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 2px rgba(10,25,47,0.05); }
+    .ed-textarea:hover { background: #ececee; }
+    .ed-textarea:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px rgba(10,25,47,0.08); background: #fff; }
 
     /* Pasos numerados (guía visual del flujo) */
     .step-head { display: flex; align-items: flex-start; gap: 0.7rem; margin-bottom: 1.1rem; }
@@ -1137,51 +1147,66 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     .fx-lock-row { display: flex; align-items: center; gap: 6px; font-size: 0.68rem; color: var(--color-text-muted); }
     .fx-lock-ic { font-size: 0.7rem; }
 
-    /* Sidebar summary */
+    /* Sidebar summary — Apple checkout style */
     .ed-side { position: sticky; top: 76px; }
-    .ed-summary { padding: 1.5rem; background: var(--color-bg-soft); border-radius: 12px; border: 1px solid var(--color-border); display: flex; flex-direction: column; gap: 0.8rem; }
+    .ed-summary {
+        padding: 1.6rem; background: #fff; border-radius: 20px;
+        border: none;
+        box-shadow:
+            0 0 0 0.5px rgba(0,0,0,0.04),
+            0 4px 12px -2px rgba(0,0,0,0.06),
+            0 16px 40px -8px rgba(10,25,47,0.1);
+        display: flex; flex-direction: column; gap: 0.8rem;
+    }
     .ed-summary .section-head { margin-bottom: 0.2rem; }
+    .ed-summary .section-head h2 { font-size: 0.92rem; font-weight: 700; letter-spacing: -0.02em; }
     .sum-line { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--color-text-muted); }
     .sum-line .editorial { color: var(--color-text); font-size: 0.95rem; }
-    .sum-divider { height: 1px; background: var(--color-border); margin: 0.4rem 0; }
-    .sum-total { font-weight: 600; color: var(--color-text); }
-    .sum-total .editorial { font-size: 1.4rem; }
+    .sum-divider { height: 1px; background: rgba(0,0,0,0.06); margin: 0.5rem 0; }
+    .sum-total { font-weight: 700; color: var(--color-text); }
+    .sum-total .editorial { font-size: 1.6rem; letter-spacing: -0.03em; }
 
     .sum-field { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.5rem; }
     .sum-field label { font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted); }
 
     .btn-send {
         display: flex; align-items: center; justify-content: center; gap: 8px;
-        font-family: var(--font-sans); font-size: 0.88rem; font-weight: 500;
-        background: var(--color-text); color: #fff;
-        border: none; border-radius: 8px; padding: 10px; cursor: pointer;
-        transition: background 0.2s;
+        font-family: var(--font-sans); font-size: 0.88rem; font-weight: 600;
+        background: var(--color-blue-deep); color: #fff;
+        border: none; border-radius: 999px; padding: 12px 20px; cursor: pointer;
+        transition: transform 0.25s var(--ease-spring), box-shadow 0.25s var(--ease-ios), background 0.2s;
         margin-top: 0.8rem;
+        box-shadow: 0 4px 14px -4px rgba(10,25,47,0.4);
     }
     .btn-send svg { width: 16px; height: 16px; }
-    .btn-send:hover { background: #334155; }
+    .btn-send:hover { transform: translateY(-1px); box-shadow: 0 8px 24px -6px rgba(10,25,47,0.5); }
+    .btn-send:active { transform: translateY(0) scale(0.97); }
     .btn-draft {
-        font-family: var(--font-sans); font-size: 0.85rem; font-weight: 500;
-        color: var(--color-text); background: var(--surface);
-        border: 1px solid var(--color-border); border-radius: 8px;
-        padding: 9px; cursor: pointer;
-        transition: background 0.2s;
+        font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;
+        color: var(--color-text); background: #f5f5f7;
+        border: none; border-radius: 999px;
+        padding: 11px 20px; cursor: pointer;
+        transition: all 0.25s var(--ease-ios);
     }
-    .btn-draft:hover { background: var(--color-bg-soft); }
+    .btn-draft:hover { background: #e8e8ec; }
+    .btn-draft:active { transform: scale(0.97); }
     .sum-note { font-size: 0.75rem; color: var(--color-text-muted); margin: 0.4rem 0 0; line-height: 1.4; text-align: center; }
 
     .toast {
         position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
         display: flex; align-items: center; gap: 10px;
-        background: var(--color-text); color: #fff;
+        background: rgba(5,5,5,0.85); backdrop-filter: blur(16px) saturate(1.8); -webkit-backdrop-filter: blur(16px) saturate(1.8);
+        color: #fff;
         font-size: 0.85rem; font-weight: 500;
-        padding: 10px 16px; border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        padding: 11px 20px; border-radius: 999px;
+        box-shadow:
+            0 0 0 0.5px rgba(255,255,255,0.08),
+            0 8px 24px -6px rgba(0,0,0,0.35);
         z-index: 200;
-        animation: toast-in 0.3s var(--ease-spring);
+        animation: toast-in 0.4s var(--ease-spring);
     }
-    @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
-    .toast-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-ok); }
+    @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 12px) scale(0.95); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+    .toast-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-ok); box-shadow: 0 0 6px rgba(16,185,129,0.5); }
 
     @media (max-width: 980px) {
         .editor-grid { grid-template-columns: 1fr; gap: 2rem; }
