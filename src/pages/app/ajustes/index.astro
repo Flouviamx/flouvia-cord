@@ -13,11 +13,11 @@ const hasAccess = memberCan(ME, 'ajustes');
 const R = 26, C = 2 * Math.PI * R;
 const dash = C * (SETUP.pct / 100);
 
-// Esenciales vs Avanzado: lo que todos tocan arriba; lo técnico/poco frecuente,
-// plegado abajo. (Developers vive en Avanzado y además está gateado por el toggle.)
-const ADVANCED = new Set(['equipo', 'api_webhooks', 'mcp', 'agentes', 'elements', 'avanzado']);
-const esenciales = SETTINGS_CATEGORIES.filter((c) => !ADVANCED.has(c.id));
-const avanzados = SETTINGS_CATEGORIES.filter((c) => ADVANCED.has(c.id));
+const catMap = Object.fromEntries(SETTINGS_CATEGORIES.map(c => [c.id, c]));
+const sPersonal = [catMap.cuenta];
+const sCuenta = [catMap.general, catMap.branding, catMap.equipo, catMap.notificaciones, catMap.planes, catMap.avanzado];
+const sProducto = [catMap.cotizaciones, catMap.facturacion, catMap.cobros, catMap.integraciones];
+const sDev = [catMap.api_webhooks, catMap.mcp, catMap.agentes, catMap.elements];
 ---
 
 <AppLayout title="Configuración — Cord" page="ajustes" heading="Ajustes">
@@ -56,9 +56,9 @@ const avanzados = SETTINGS_CATEGORIES.filter((c) => ADVANCED.has(c.id));
             </a>
         )}
 
-        <h3 class="idx-section-label">Esenciales</h3>
+        <h3 class="idx-section-label">Configuración personal</h3>
         <div class="idx-rows">
-            {esenciales.map((c) => (
+            {sPersonal.map((c) => (
                 <a href={c.tabs[0].href} class="idx-row" data-cat={c.id}>
                     <svg class="idx-row-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={c.icon} />
                     <span class="idx-row-body">
@@ -70,9 +70,9 @@ const avanzados = SETTINGS_CATEGORIES.filter((c) => ADVANCED.has(c.id));
             ))}
         </div>
 
-        <h3 class="idx-section-label idx-section-adv">Avanzado</h3>
-        <div class="idx-rows" id="idxRowsAdv">
-            {avanzados.map((c) => (
+        <h3 class="idx-section-label idx-section-adv">Ajustes de la cuenta</h3>
+        <div class="idx-rows">
+            {sCuenta.map((c) => (
                 <a href={c.tabs[0].href} class="idx-row" data-cat={c.id}>
                     <svg class="idx-row-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={c.icon} />
                     <span class="idx-row-body">
@@ -82,6 +82,36 @@ const avanzados = SETTINGS_CATEGORIES.filter((c) => ADVANCED.has(c.id));
                     <svg class="idx-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </a>
             ))}
+        </div>
+
+        <h3 class="idx-section-label idx-section-adv">Configuración del producto</h3>
+        <div class="idx-rows">
+            {sProducto.map((c) => (
+                <a href={c.tabs[0].href} class="idx-row" data-cat={c.id}>
+                    <svg class="idx-row-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={c.icon} />
+                    <span class="idx-row-body">
+                        <span class="idx-row-title">{c.label}</span>
+                        <span class="idx-row-desc">{c.desc}</span>
+                    </span>
+                    <svg class="idx-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </a>
+            ))}
+        </div>
+
+        <div id="idxDevSection" style="display:none;">
+            <h3 class="idx-section-label idx-section-adv">Desarrolladores</h3>
+            <div class="idx-rows">
+                {sDev.map((c) => (
+                    <a href={c.tabs[0].href} class="idx-row" data-cat={c.id}>
+                        <svg class="idx-row-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={c.icon} />
+                        <span class="idx-row-body">
+                            <span class="idx-row-title">{c.label}</span>
+                            <span class="idx-row-desc">{c.desc}</span>
+                        </span>
+                        <svg class="idx-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </a>
+                ))}
+            </div>
         </div>
 
         <div class="idx-devmode">
@@ -100,11 +130,11 @@ const avanzados = SETTINGS_CATEGORIES.filter((c) => ADVANCED.has(c.id));
     // vendedor típico sin bloquear el acceso directo por URL.
     (function () {
         const KEY = 'cord.devmode';
-        const rows = document.getElementById('idxRowsAdv');
+        const devSec = document.getElementById('idxDevSection');
         const toggle = document.getElementById('devModeToggle');
-        if (!rows || !toggle) return;
+        if (!devSec || !toggle) return;
         const apply = (on: boolean) => {
-            rows.classList.toggle('dm-on', on);
+            devSec.style.display = on ? 'block' : 'none';
             toggle.classList.toggle('on', on);
             toggle.setAttribute('aria-checked', on ? 'true' : 'false');
         };
@@ -168,12 +198,7 @@ const avanzados = SETTINGS_CATEGORIES.filter((c) => ADVANCED.has(c.id));
     @media (min-width: 561px) { .idx-row-desc { display: block; } }
     .idx-row-arrow { display: none; }
 
-    /* Modo desarrollador: la categoría "Developers" queda oculta salvo que se active
-       (default off, sin flash porque se oculta vía CSS desde el render). */
-    .idx-rows:not(.dm-on) [data-cat="api_webhooks"],
-    .idx-rows:not(.dm-on) [data-cat="mcp"],
-    .idx-rows:not(.dm-on) [data-cat="agentes"],
-    .idx-rows:not(.dm-on) [data-cat="elements"] { display: none; }
+    /* Eliminado: CSS oculto para Desarrolladores, ahora se hace vía inline style display:none/block */
 
     .idx-devmode { display: flex; align-items: center; gap: 1rem; max-width: 720px; padding: 1.3rem 0.4rem 0; margin-top: 0.4rem; }
     .idx-dm-body { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
