@@ -68,6 +68,10 @@ void main() {
   float dist = length(uv - (u_mouse * 0.5 + 0.5));
   col += u_cc * smoothstep(0.8, 0.0, dist) * 0.3;
   
+  // Film grain (noise)
+  float grain = fract(sin(dot(gl_FragCoord.xy + u_time * 100.0, vec2(12.9898, 78.233))) * 43758.5453);
+  col += (grain - 0.5) * 0.08;
+  
   gl_FragColor = vec4(col, 1.0);
 }
 `;
@@ -119,10 +123,9 @@ export default function HelpAiShader() {
     const uCc    = gl.getUniformLocation(prog, 'u_cc');
 
     // Azul Claro palette (Sky/Cyan/Blue)
-    // Darker base to contrast with white text, but definitely blue/cyan
-    gl.uniform3fv(uCa, [0.03, 0.5, 0.8]); // Base blue
-    gl.uniform3fv(uCb, [0.1, 0.7, 0.9]); // Cyan
-    gl.uniform3fv(uCc, [0.3, 0.9, 1.0]); // Light cyan
+    gl.uniform3fv(uCa, [0.4, 0.8, 0.95]); // Lighter base blue
+    gl.uniform3fv(uCb, [0.5, 0.85, 1.0]); // Lighter cyan
+    gl.uniform3fv(uCc, [0.7, 0.95, 1.0]); // Almost white cyan
 
     function resize() {
       const wrap = wrapRef.current;
@@ -176,7 +179,7 @@ export default function HelpAiShader() {
   }, []);
 
   return (
-    <div ref={wrapRef} style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', borderRadius: 'inherit' }}>
+    <div ref={wrapRef} style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', borderRadius: 'inherit', zIndex: 0 }}>
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />
     </div>
   );
