@@ -15,7 +15,7 @@ const dash = C * (SETUP.pct / 100);
 
 // Esenciales vs Avanzado: lo que todos tocan arriba; lo técnico/poco frecuente,
 // plegado abajo. (Developers vive en Avanzado y además está gateado por el toggle.)
-const ADVANCED = new Set(['equipo', 'developers', 'avanzado']);
+const ADVANCED = new Set(['equipo', 'api_webhooks', 'mcp', 'agentes', 'elements', 'avanzado']);
 const esenciales = SETTINGS_CATEGORIES.filter((c) => !ADVANCED.has(c.id));
 const avanzados = SETTINGS_CATEGORIES.filter((c) => ADVANCED.has(c.id));
 ---
@@ -170,7 +170,10 @@ const avanzados = SETTINGS_CATEGORIES.filter((c) => ADVANCED.has(c.id));
 
     /* Modo desarrollador: la categoría "Developers" queda oculta salvo que se active
        (default off, sin flash porque se oculta vía CSS desde el render). */
-    .idx-rows:not(.dm-on) [data-cat="developers"] { display: none; }
+    .idx-rows:not(.dm-on) [data-cat="api_webhooks"],
+    .idx-rows:not(.dm-on) [data-cat="mcp"],
+    .idx-rows:not(.dm-on) [data-cat="agentes"],
+    .idx-rows:not(.dm-on) [data-cat="elements"] { display: none; }
 
     .idx-devmode { display: flex; align-items: center; gap: 1rem; max-width: 720px; padding: 1.3rem 0.4rem 0; margin-top: 0.4rem; }
     .idx-dm-body { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }

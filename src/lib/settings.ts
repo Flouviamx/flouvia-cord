@@ -83,15 +83,43 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         ],
     },
     {
-        id: 'developers', label: 'Developers',
-        desc: 'API, webhooks, MCP e integraciones con tus plataformas.',
+        id: 'integraciones', label: 'Integraciones',
+        desc: 'Conecta Cord con tus aplicaciones y plataformas favoritas.',
+        icon: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+        tabs: [
+            { id: 'integraciones', label: 'Integraciones', href: '/app/ajustes/integraciones' },
+        ],
+    },
+    {
+        id: 'api_webhooks', label: 'API y Webhooks',
+        desc: 'Endpoints REST y notificaciones en tiempo real para tu sistema.',
         icon: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
         tabs: [
             { id: 'api',           label: 'API',                 href: '/app/ajustes/api' },
             { id: 'webhooks',      label: 'Webhooks',            href: '/app/ajustes/webhooks' },
+        ],
+    },
+    {
+        id: 'mcp', label: 'MCP',
+        desc: 'Configura el Model Context Protocol para tus asistentes.',
+        icon: '<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
+        tabs: [
             { id: 'mcp',           label: 'MCP',                 href: '/app/ajustes/mcp' },
-            { id: 'integraciones', label: 'Integraciones',       href: '/app/ajustes/integraciones' },
+        ],
+    },
+    {
+        id: 'agentes', label: 'Agentes IA',
+        desc: 'Configura agentes autónomos de inteligencia artificial.',
+        icon: '<path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M21.18 8.02c-1-2.3-2.85-4.17-5.16-5.18"/>',
+        tabs: [
             { id: 'agentes',       label: 'Agentes IA',          href: '/app/ajustes/agentes' },
+        ],
+    },
+    {
+        id: 'elements', label: 'Cotizador embebible',
+        desc: 'Integra el cotizador directamente en tu sitio web.',
+        icon: '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>',
+        tabs: [
             { id: 'elements',      label: 'Cotizador embebible', href: '/app/ajustes/elements' },
         ],
     },
