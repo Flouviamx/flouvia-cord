@@ -1918,31 +1918,47 @@
    `npm audit` de bajo riesgo (esbuild dev-Windows / path-to-regexp build-time) cuyo fix exige
    downgrade breaking de `@astrojs/vercel`.
 
-⬜ **Pendiente de IMPLEMENTAR — migrar Connect a Embedded Components, luego a Custom/API (decisión de
-   André, jul 2026, revisada — ya NO se difiere):** en el wizard de configuración de Connect (dashboard
-   de Stripe) André decidió **NO usar ningún flujo con redirect a `connect.stripe.com`** — ni para el
-   alta del vendedor ni para la gestión de su cuenta. Plan en dos pasos:
-   1. **AHORA — Embedded Components:** tanto el onboarding (alta) como la gestión de cuenta
-      (pagos/transferencias/identidad/payouts) viven DENTRO de Cord, con colores/tipografía propios vía
-      la API `appearance` de Stripe — Stripe sigue validando los campos de KYC y manejando payouts por
-      dentro (Cord no construye esa lógica), pero el vendedor JAMÁS sale de `cord.flouvia.com`.
-   2. **DESPUÉS — Custom accounts + onboarding/gestión 100% propios vía API:** blanqueo total; Cord
-      construye su propio formulario de KYC (razón social, RFC, representante legal, documentos, CLABE,
-      aceptación de términos con IP/timestamp) y su propia máquina de estados de verificación de Stripe
-      (`requirements.currently_due/past_due/disabled_reason`). Riesgo a vigilar cuando se llegue a este
-      paso: si un estado se maneja mal, el vendedor se queda con la cuenta restringida sin saber por
-      qué — fuente #1 de tickets de soporte en integraciones Custom.
-   **Trabajo de código pendiente para el paso 1 (NO implementado todavía, solo configurado en el
-   dashboard de Stripe):** reemplazar en `src/lib/billing.ts` las funciones `createAccountLink()`
-   (redirect a `account_onboarding`) y el flujo de "Dashboard de cuentas Express" por:
-   `@stripe/connect-js` + `@stripe/react-connect-js` en el cliente (`/app/ajustes/cobros.astro`), un
-   endpoint nuevo `POST /v1/account_sessions` en el servidor (uno por componente embebido montado:
-   onboarding, gestión de cuenta, payouts, notificaciones), y probablemente migrar la creación de cuenta
-   (`createConnectAccount` en `billing.ts`) al patrón `controller` de cuentas v2 en vez del parámetro
-   legado `type: 'express'`. `src/pages/api/billing/connect/callback.ts` deja de tener sentido tal cual
-   (ya no hay redirect de vuelta) — su lógica de guardar `stripe_account_id`/`charges_enabled` se movería
-   a donde se cree la cuenta / al webhook `account.updated`.
-   Casi siempre queda un disclosure mínimo tipo "Powered by Stripe" en Embedded Components (requerido
-   por el acuerdo de plataforma de Stripe, no removible) — el blanqueo 100% solo llega con el paso 2.
-   Standard (OAuth) queda descartado en ambos pasos: con Standard el vendedor administra su cuenta desde
-   el dashboard de Stripe de por vida — no es solo el onboarding, es inherente al modelo.
+⬜ **Pendiente de IMPLEMENTAR — Connect con Embedded Components AHORA, Custom/API queda como upgrade
+   futuro (decisión FINAL de André, jul 2026, re-revisada):** en el wizard de Connect, Stripe NO dejó
+   seleccionar "Crea tu propio onboarding"/"Haz tus propias creaciones con nuestra API" (Custom
+   accounts) — Stripe gatea esa integración, su de mayor riesgo/soporte, hasta revisar el perfil de la
+   plataforma (más aún en México). André decidió seguir con **Embedded Components** ahora (satisface el
+   requisito real: el vendedor NUNCA sale de `cord.flouvia.com`, ni redirect a `connect.stripe.com`) y
+   dejar Custom como upgrade futuro para cuando Stripe lo habilite o se decida invertir el tiempo.
+   Diferencia real entre ambos (para no repetir la conversación): Embedded deja un disclosure mínimo
+   "Powered by Stripe" (no removible) y Stripe sigue construyendo el formulario de KYC y manejando su
+   propia máquina de estados de verificación (Cord solo lo viste con sus colores vía la API
+   `appearance`) — Custom da blanqueo 100% pero Cord tendría que construir y mantener esa máquina de
+   estados él mismo (el punto de mayor riesgo de soporte). Nota importante: el wizard del dashboard es
+   más una configuración de conveniencia que un candado técnico duro — no bloquea necesariamente crear
+   cuentas `type: custom` por API más adelante si se retoma esa vía.
+   **Trabajo de código pendiente (NO empezado todavía) para migrar de account_link/redirect a Embedded:**
+   • Instalar `@stripe/connect-js` (+ `@stripe/react-connect-js` si se monta como island React, patrón
+     ya usado en el repo para Clerk).
+   • Endpoint nuevo `POST /api/billing/connect/account-session` — crea un `Account Session`
+     (`POST /v1/account_sessions`) para el `stripe_account_id` de la org, especificando qué componentes
+     se montan (`account_onboarding` para el alta, `account_management`/`payouts`/`notification_banner`
+     para la gestión que hoy resuelve el Express Dashboard) y devuelve el `client_secret` al cliente.
+   • `cobros.astro` monta los componentes embebidos (`loadConnectAndInitialize` + publishable key +
+     `fetchClientSecret` apuntando al endpoint nuevo) en vez de redirigir con `createAccountLink()`.
+     `createConnectAccount()` (creación de la cuenta Express vía API) SIGUE usándose tal cual — Embedded
+     Components funciona con cuentas Express, no requiere Custom.
+   • **Webhook nuevo `account.updated`** en `src/pages/api/stripe/webhook.ts` — hoy `charges_enabled` solo
+     se refresca bajo demanda (`GET /connect/status`); con Embedded conviene mantenerlo sincronizado en
+     tiempo real vía este evento (llega en la cuenta conectada, mismo patrón que `event.account` ya
+     manejado para `markQuotePaid`).
+   • `src/pages/api/billing/connect/{start,callback}.ts` quedan OBSOLETOS (eran para el flujo con
+     redirect/OAuth) — se retiran cuando el punto anterior esté migrado.
+   • Revisar **Connect → Settings → Branding** en el dashboard de Stripe (specific de Connect, distinto
+     del branding general del wizard) para que los componentes embebidos hereden colores/tipografía de
+     Cord desde el lado de Stripe también, además de la API `appearance` en el cliente.
+   **Carga legal — MÁS LIGERA que con Custom (aplica igual, pero menor alcance):** como el formulario de
+   KYC sigue siendo de Stripe (Cord nunca ve documentos crudos ni construye `tos_acceptance` — eso lo
+   captura el propio componente de Stripe), NO se necesita el flujo de consentimiento pesado que sí
+   exigiría Custom. Sigue haciendo falta: (1) cláusula nueva en `/terminos` aclarando que Stripe (vía
+   Connect) es el procesador real de los pagos de los CLIENTES del vendedor, Cord es solo facilitador
+   tecnológico y no retiene fondos; (2) entrada nueva en `/privacidad` sobre esta finalidad. Sigue
+   pendiente la confirmación legal (Ley Fintech/IFPE) de que actuar como plataforma de Connect no
+   requiere licencia — aplica igual para Embedded que para Custom.
+   Standard (OAuth) sigue descartado en ambos casos: con Standard el vendedor administra su cuenta desde
+   el dashboard de Stripe de por vida.

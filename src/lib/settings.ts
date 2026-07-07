@@ -48,12 +48,19 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         ],
     },
     {
-        id: 'planes', label: 'Planes y cobranza',
-        desc: 'Tu suscripción de Cord, uso del plan y método de pago.',
+        id: 'cobros', label: 'Cobros',
+        desc: 'Recibe pagos de tus clientes: tarjeta vía Stripe y transferencia bancaria.',
+        icon: '<path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" fill="currentColor" fill-opacity="0.12"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z" fill="currentColor" fill-opacity="0.12"/>',
+        tabs: [
+            { id: 'cobros', label: 'Cobros', href: '/app/ajustes/cobros' },
+        ],
+    },
+    {
+        id: 'planes', label: 'Planes y suscripción',
+        desc: 'Tu suscripción de Cord, uso del plan y tu método de pago.',
         icon: '<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>',
         tabs: [
             { id: 'plan', label: 'Suscripción', href: '/app/ajustes/plan' },
-            { id: 'cobros', label: 'Cobros', href: '/app/ajustes/cobros' },
         ],
     },
     {

@@ -18,13 +18,7 @@ export const POST: APIRoute = async () => {
 
     if (org?.stripe_account_id) {
         try {
-            const clientId = import.meta.env.STRIPE_CONNECT_CLIENT_ID || process.env.STRIPE_CONNECT_CLIENT_ID;
-            if (clientId) {
-                await stripe('/oauth/deauthorize', {
-                    client_id: clientId,
-                    stripe_user_id: org.stripe_account_id as string,
-                });
-            }
+            await stripe(`/v1/accounts/${org.stripe_account_id}`, undefined, 'DELETE');
         } catch (e) {
             // ignore if it fails
         }

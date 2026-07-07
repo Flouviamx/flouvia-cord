@@ -87,6 +87,11 @@ export const POST: APIRoute = async ({ request }) => {
             await setStatusByCustomer(obj.customer, 'past_due');
             break;
         }
+        // ── Actualización de cuenta Connect ───────────────────────────────────
+        case 'account.updated': {
+            await updateAccountStatus(obj);
+            break;
+        }
     }
 
     return ok();
@@ -192,6 +197,12 @@ async function downgradeToFree(sub: any) {
 async function setStatusByCustomer(customer: string | undefined, status: string) {
     if (!customer) return;
     await sql`update orgs set subscription_status = ${status} where stripe_customer_id = ${customer}`;
+}
+
+async function updateAccountStatus(account: any) {
+    if (!account.id) return;
+    const chargesEnabled = !!account.charges_enabled;
+    await sql`update orgs set stripe_charges_enabled = ${chargesEnabled} where stripe_account_id = ${account.id}`;
 }
 
 function ok() {

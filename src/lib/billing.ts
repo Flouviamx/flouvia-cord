@@ -132,7 +132,7 @@ export const isPaidPlan = (p: string): p is PaidPlan => p in PLAN_PRICES;
 export async function stripe(
     path: string,
     params?: Record<string, string>,
-    method: 'GET' | 'POST' = 'POST',
+    method: 'GET' | 'POST' | 'DELETE' = 'POST',
     opts?: { version?: string; stripeAccount?: string },
 ): Promise<any> {
     if (!STRIPE_KEY) throw new Error('STRIPE_SECRET_KEY no configurada');
@@ -231,43 +231,4 @@ export async function createConnectAccount(orgId: string, type: 'standard' | 'ex
         'metadata[org_id]': orgId,
     });
     return acc.id;
-}
-
-export async function createAccountLink(accountId: string, returnUrl: string, refreshUrl: string): Promise<string> {
-    const link = await stripe('/v1/account_links', {
-        account: accountId,
-        refresh_url: refreshUrl,
-        return_url: returnUrl,
-        type: 'account_onboarding',
-    });
-    return link.url;
-}
-
-// `state` DEBE ser un nonce aleatorio (anti-CSRF), guardado en cookie httpOnly y
-// verificado en el callback — NUNCA el orgId (es un valor conocido/adivinable, lo
-// que permitiría a un atacante enganchar SU Stripe a la org de una víctima).
-export function getConnectOAuthUrl(state: string, redirectUri: string): string {
-    const clientId = import.meta.env.STRIPE_CONNECT_CLIENT_ID || process.env.STRIPE_CONNECT_CLIENT_ID;
-    if (!clientId) throw new Error('STRIPE_CONNECT_CLIENT_ID no configurada');
-    const u = new URL('https://connect.stripe.com/oauth/authorize');
-    u.searchParams.set('response_type', 'code');
-    u.searchParams.set('client_id', clientId);
-    u.searchParams.set('scope', 'read_write');
-    u.searchParams.set('state', state);
-    u.searchParams.set('redirect_uri', redirectUri);
-    return u.toString();
-}
-
-export async function exchangeOAuthCode(code: string): Promise<string> {
-    const res = await stripe('/oauth/token', {
-        grant_type: 'authorization_code',
-        code,
-    });
-    if (!res.stripe_user_id) throw new Error('No se pudo obtener el account id');
-    return res.stripe_user_id;
-}
-
-export async function getAccountStatus(accountId: string): Promise<{ charges_enabled: boolean }> {
-    const acc = await stripe(`/v1/accounts/${accountId}`, undefined, 'GET');
-    return { charges_enabled: !!acc.charges_enabled };
 }
