@@ -270,12 +270,12 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
                     </div>
                 </div>
                 <footer class="help-ai">
-                    <div class="help-ai-box" aria-disabled="false">
+                    <div class="help-ai-box" id="helpAiBox" aria-disabled="false" onclick="window.openCordAi && window.openCordAi(event)">
                         <div class="help-ai-bg" aria-hidden="true">
                             <SupportCoverBg client:only="react" />
                         </div>
                         <div class="help-ai-content">
-                            <button type="button" class="help-ai-back" id="helpAiBack" aria-label="Volver al menú">
+                            <button type="button" class="help-ai-back" id="helpAiBack" aria-label="Volver al menú" onclick="window.closeCordAi && window.closeCordAi(event)">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
                                 Atrás
                             </button>
@@ -1092,6 +1092,17 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
     
     .chat-bubble.user { background: var(--color-text); color: var(--color-bg); align-self: flex-end; border-bottom-right-radius: 4px; box-shadow: 0 4px 12px rgba(10,25,47,0.15); }
     html[data-theme="dark"] .chat-bubble.user { box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+
+    .typing-dots { display: inline-flex; gap: 4px; padding: 4px 2px; align-items: center; }
+    .typing-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--color-text-muted); animation: help-typing 1.4s infinite both; }
+    .typing-dots span:nth-child(1) { animation-delay: 0s; }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes help-typing { 0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+    
+    .help-panel:not(.ai-active) .help-ai-box { cursor: pointer; transition: transform 0.3s var(--ease-spring), box-shadow 0.3s; }
+    .help-panel:not(.ai-active) .help-ai-box:hover { transform: translateY(-4px); box-shadow: 0 16px 40px -10px rgba(0,0,0,0.4); }
+    .help-panel:not(.ai-active) .help-ai-input { cursor: pointer; }
     
     .chat-input-row { display: flex; gap: 10px; margin-top: auto; padding-top: 10px; }
     .chat-real-input { flex: 1; padding: 12px 16px; border-radius: 20px; border: none; background: rgba(118, 118, 128, 0.12); font-family: var(--font-sans); font-size: 0.95rem; color: var(--color-text); outline: none; transition: background 0.25s, box-shadow 0.25s; }
@@ -1701,9 +1712,21 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
     }
 
     // ── "Fijados" en el sidebar (localStorage) + botón de fijar en el page-head ──
+    // ── Utilidades Globales ──
 
+    // Helpers para IA Chat
+    window.openCordAi = function(e) {
+        const drawer = document.getElementById('helpDrawer');
+        if (!drawer || drawer.classList.contains('ai-active')) return;
+        drawer.classList.add('ai-active');
+        setTimeout(() => document.getElementById('chatRealInput')?.focus(), 400);
+    };
+    window.closeCordAi = function(e) {
+        if (e) e.stopPropagation();
+        const drawer = document.getElementById('helpDrawer');
+        if (drawer) drawer.classList.remove('ai-active');
+    };
 
-    // ── Notificaciones (campana) ──
     function initNotifs() {
         const btn = document.getElementById('notifBtn');
         const panel = document.getElementById('notifPanel');
@@ -1861,20 +1884,9 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !(drawer as HTMLElement).hidden) close(); });
 
         // AI Chat UI Logic
-        const aiInputBtn = document.getElementById('helpAiInput');
-        const aiBack = document.getElementById('helpAiBack');
         const aiChatInput = document.getElementById('chatRealInput');
         const aiChatSend = document.getElementById('chatSendBtn');
         const chatHistory = document.getElementById('chatHistory');
-
-        aiInputBtn?.addEventListener('click', () => {
-            drawer.classList.add('ai-active');
-            setTimeout(() => (aiChatInput as HTMLInputElement)?.focus(), 400);
-        });
-        
-        aiBack?.addEventListener('click', () => {
-            drawer.classList.remove('ai-active');
-        });
 
         aiChatInput?.addEventListener('input', () => {
             if ((aiChatInput as HTMLInputElement).value.trim()) aiChatSend?.classList.add('active');
@@ -1895,13 +1907,29 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
             aiChatSend?.classList.remove('active');
             chatHistory.scrollTop = chatHistory.scrollHeight;
             
+            // Mostrar estado "pensando..."
+            const thinkingB = document.createElement('div');
+            thinkingB.className = 'chat-bubble bot thinking';
+            thinkingB.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+            chatHistory.appendChild(thinkingB);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+            
             setTimeout(() => {
+                thinkingB.remove();
+                
                 const botB = document.createElement('div');
                 botB.className = 'chat-bubble bot';
-                botB.textContent = 'En este entorno demo, Cord AI aún está conectándose con tus datos. ¡Pronto podré ayudarte con tu requerimiento!';
                 chatHistory.appendChild(botB);
-                chatHistory.scrollTop = chatHistory.scrollHeight;
-            }, 800);
+                
+                const reply = "He analizado tus métricas. En este entorno demo, Cord AI aún se está conectando a tu base de datos principal, pero muy pronto podré redactar cotizaciones automáticas y generar reportes predictivos para ti.";
+                let i = 0;
+                const typeWriter = setInterval(() => {
+                    botB.textContent += reply.charAt(i);
+                    i++;
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                    if (i >= reply.length) clearInterval(typeWriter);
+                }, 20);
+            }, 1200);
         };
         
         aiChatInput?.addEventListener('keydown', (e) => {
