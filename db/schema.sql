@@ -147,6 +147,7 @@ create index if not exists idx_doc_fiscales_org on documentos_fiscales(org_id, c
 
 -- ── Personalización de marca y PDF (jun 2026) ──
 -- Se aplican con `alter ... if not exists` para que db:migrate siga siendo re-ejecutable.
+alter table orgs add column if not exists parent_org_id uuid references orgs(id) on delete set null;
 alter table orgs add column if not exists color_marca text not null default '#0a192f';
 alter table orgs add column if not exists email_contacto text;
 alter table orgs add column if not exists telefono text;

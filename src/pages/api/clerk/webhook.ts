@@ -118,6 +118,16 @@ export const POST: APIRoute = async ({ request }) => {
     // ── organization.created/updated: upsert de la org en Neon ──────────────
     if (type === 'organization.created' || type === 'organization.updated') {
         const orgId = await upsertOrg(data.id as string, data.name as string | undefined);
+        
+        const parentClerkOrgId = data.public_metadata?.parentOrgId as string | undefined;
+        if (parentClerkOrgId) {
+            await sql`
+                update orgs
+                set parent_org_id = (select id from orgs where clerk_org_id = ${parentClerkOrgId} limit 1)
+                where id = ${orgId}
+            `;
+        }
+
         // En 'created', el creador queda como miembro 'owner' (override total).
         if (type === 'organization.created' && data.created_by) {
             await sql`

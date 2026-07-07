@@ -43,7 +43,66 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
     if (!clerk?.setActive) return;
     await clerk.setActive({ organization: organizationId });
     setIsOpen(false);
+    
+    const path = window.location.pathname;
+    const hasEntityId = /\/[0-9a-f]{8}-[0-9a-f]{4}-.../i.test(path);
+    window.location.assign(hasEntityId || !path.startsWith('/app') ? '/app' : path);
   };
+
+  const handleCreateSubaccount = async (parentOrgId: string) => {
+    const name = prompt('Nombre de la nueva cuenta:');
+    if (!name) return;
+    
+    try {
+      const newOrg = await clerk?.createOrganization({ name });
+      if (!newOrg) return;
+
+      const res = await fetch('/api/orgs/subaccount', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ childOrgId: newOrg.id, parentOrgId })
+      });
+
+      // Si el ligado falla, la org SÍ se creó (es usable) — no la perdemos, pero
+      // avisamos que quedó como espacio independiente, no anidada bajo el padre.
+      if (!res.ok) {
+        const cc = (window as any).cordToast;
+        const msg = 'La cuenta se creó pero no se pudo anidar bajo la principal.';
+        if (cc) cc(msg, 'error'); else alert(msg);
+      }
+
+      await handleSwitch(newOrg.id);
+    } catch (e) {
+      console.error(e);
+      const cc = (window as any).cordToast;
+      if (cc) cc('Error al crear la cuenta', 'error');
+      else alert('Error al crear la cuenta');
+    }
+  };
+
+  const membershipsByParent: Record<string, any[]> = {};
+  const rootMemberships: any[] = [];
+
+  memberships.forEach((mem: any) => {
+    const parentId = mem.organization.publicMetadata?.parentOrgId;
+    if (parentId) {
+      if (!membershipsByParent[parentId]) membershipsByParent[parentId] = [];
+      membershipsByParent[parentId].push(mem);
+    } else {
+      rootMemberships.push(mem);
+    }
+  });
+
+  // Fallback anti-desaparición: si una sub-cuenta apunta a un padre del que el
+  // usuario NO es miembro, su padre nunca se renderiza como raíz → quedaría oculta.
+  // La promovemos a raíz para que siga siendo accesible en el switcher.
+  const rootOrgIds = new Set(rootMemberships.map((m: any) => m.organization.id));
+  Object.keys(membershipsByParent).forEach((pid) => {
+    if (!rootOrgIds.has(pid)) {
+      rootMemberships.push(...membershipsByParent[pid]);
+      delete membershipsByParent[pid];
+    }
+  });
 
   const handleCreate = () => {
     window.location.href = '/onboarding/workspace';
@@ -88,35 +147,84 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
             {memberships.length === 0 && (
               <p className="orgd-empty">Aún no tienes otros espacios de equipo — estás en tu workspace personal.</p>
             )}
-            {memberships.map((mem: any) => {
+            {rootMemberships.map((mem: any) => {
               const selected = organization?.id === mem.organization.id;
+              const hasChildren = membershipsByParent[mem.organization.id] && membershipsByParent[mem.organization.id].length > 0;
+              const isCurrentParent = organization?.id === mem.organization.id || organization?.publicMetadata?.parentOrgId === mem.organization.id;
+              
               return (
-                <button
-                  key={mem.id}
-                  className={`org-list-item ${selected ? 'selected' : ''}`}
-                  onClick={() => handleSwitch(mem.organization.id)}
-                  role="menuitemradio"
-                  aria-checked={selected}
-                >
-                  <div className="org-avatar small" style={{ overflow: 'hidden' }}>
-                    {orgLogoUrl && selected ? (
-                      <img src={orgLogoUrl} alt={mem.organization.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                    ) : (
-                      mem.organization.name.charAt(0).toUpperCase()
+                <React.Fragment key={mem.id}>
+                  <button
+                    className={`org-list-item ${selected ? 'selected' : ''}`}
+                    onClick={() => handleSwitch(mem.organization.id)}
+                    role="menuitemradio"
+                    aria-checked={selected}
+                  >
+                    <div className="org-avatar small" style={{ overflow: 'hidden' }}>
+                      {orgLogoUrl && selected ? (
+                        <img src={orgLogoUrl} alt={mem.organization.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      ) : (
+                        mem.organization.name.charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <div className="org-details">
+                      <span className="org-item-name" title={mem.organization.name}>{mem.organization.name}</span>
+                      <span className="org-item-role">{mem.role === 'org:admin' ? 'Admin' : 'Miembro'}</span>
+                    </div>
+                    {selected && (
+                      <span className="orgd-check" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </span>
                     )}
-                  </div>
-                  <div className="org-details">
-                    <span className="org-item-name" title={mem.organization.name}>{mem.organization.name}</span>
-                    <span className="org-item-role">{mem.role === 'org:admin' ? 'Admin' : 'Miembro'}</span>
-                  </div>
-                  {selected && (
-                    <span className="orgd-check" aria-hidden="true">
-                      <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                    </span>
+                  </button>
+                  
+                  {/* Render children sub-accounts */}
+                  {(hasChildren || isCurrentParent) && (
+                    <div className="org-children-container" style={{ paddingLeft: '24px', borderLeft: '1px solid var(--sb-divider)', marginLeft: '18px' }}>
+                      {membershipsByParent[mem.organization.id]?.map((childMem: any) => {
+                        const childSelected = organization?.id === childMem.organization.id;
+                        return (
+                          <button
+                            key={childMem.id}
+                            className={`org-list-item ${childSelected ? 'selected' : ''}`}
+                            onClick={() => handleSwitch(childMem.organization.id)}
+                            role="menuitemradio"
+                            aria-checked={childSelected}
+                          >
+                            <div className="org-avatar small" style={{ overflow: 'hidden', width: '20px', height: '20px', fontSize: '0.6rem', borderRadius: '6px' }}>
+                              {childMem.organization.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="org-details">
+                              <span className="org-item-name" title={childMem.organization.name} style={{ fontSize: '0.8rem' }}>{childMem.organization.name}</span>
+                            </div>
+                            {childSelected && (
+                              <span className="orgd-check" aria-hidden="true" style={{ width: '14px', height: '14px' }}>
+                                <svg viewBox="0 0 24 24" width="8" height="8" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                      
+                      {/* Create sub-account button */}
+                      {isCurrentParent && (
+                        <button className="dropdown-action-btn" onClick={() => handleCreateSubaccount(mem.organization.id)} style={{ padding: '0.4rem 0.65rem' }}>
+                          <span className="orgd-icon orgd-icon-neutral" aria-hidden="true" style={{ width: '20px', height: '20px' }}>
+                            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" strokeWidth="2.1" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="12" y1="5" x2="12" y2="19"></line>
+                              <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                          </span>
+                          <span className="orgd-label" style={{ fontSize: '0.75rem' }}>+ Crear cuenta</span>
+                        </button>
+                      )}
+                    </div>
                   )}
-                </button>
+                </React.Fragment>
               );
             })}
           </div>

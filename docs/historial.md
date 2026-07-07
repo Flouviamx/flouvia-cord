@@ -8,6 +8,78 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Cobros v2 — Stripe Connect EMBEDDED (no OAuth), UI premium, y 3 bugs del link público (jul 2026)** —
+   evolución grande del feature de cobros. Reemplaza el approach OAuth Standard/Express de la entrada
+   "Cobros directos a la cuenta del dueño" (más abajo, ahora **parcialmente obsoleta** — ver ⚠️ ahí).
+   Contexto: Custom accounts (white-label 100% por API) se **exploró y se DESCARTÓ** — la propia IA de
+   Stripe confirmó que Custom exige **$250K USD de volumen en 12 meses + plataforma activada**, e André
+   está en fase inicial, así que no califica. El trabajo de Custom se dejó **guardado en un `git stash`**
+   (`connect-custom-wip`) por si algún día califican. La ruta sancionada (por Stripe) es **Embedded
+   Components**, que es lo que quedó.
+   • **Migración a Embedded Components:** se eliminó todo el flujo OAuth
+     (`connect/{start,callback,status}.ts` + `getConnectOAuthUrl`/`exchangeOAuthCode`/`createAccountLink`
+     de `billing.ts`). Ahora: endpoint `POST /api/billing/connect/account-session.ts` (crea la cuenta
+     Express lazy con `createConnectAccount` + un Stripe **Account Session** con los componentes
+     `account_onboarding`/`account_management`/`payouts`/`notification_banner`, devuelve `client_secret`);
+     island `src/components/app/ConnectOnboarding.tsx` (`client:only="react"`, deps `@stripe/connect-js` +
+     `@stripe/react-connect-js`) que monta el formulario de Stripe DENTRO de Cord — el vendedor NUNCA
+     sale a `connect.stripe.com`. `disconnect.ts` ahora hace `DELETE /v1/accounts/{id}` (Express es
+     platform-owned). Webhook `account.updated` (`webhook.ts` → `updateAccountStatus`) sincroniza
+     `stripe_charges_enabled`. Único disclosure no removible: un "Powered by Stripe" chico (blanqueo
+     total sería Custom).
+   • **Theming completo + dark mode (Appearance API):** `ConnectOnboarding.tsx` construye el objeto
+     `appearance` completo (navy Cord, Inter, squircles, botones píldora) vía `buildConnectAppearance(theme)`,
+     y un `MutationObserver` sobre `<html data-theme>` re-tematiza el formulario EN VIVO con
+     `instance.update()` cuando el usuario cambia claro/oscuro (el default de Stripe ignora el dark mode
+     de la app). ⚠️ **Límite honesto:** la Appearance API tematiza colores/tipografía/bordes/botones pero
+     NO reestructura los campos (ese layout lo controla Stripe en Embedded).
+   • **Manejo de error de la isla:** pre-fetch del `account-session` + `onLoadError` en los componentes →
+     si algo falla (cuenta no activa, componentes no habilitados, pk/sk de distinto modo) se muestra el
+     **error real en rojo** en vez de dejar la caja en blanco (el bug "nada" que André reportó en live).
+   • **Página `/app/ajustes/cobros` premium:** hero de onboarding navy con value-props (Directo a tu
+     cuenta · 0% comisión · Tarjeta y SPEI), **stepper macro de 3 pasos REALES** (Conecta → Verificación
+     → Listo, derivado de `stripeAccountId`+`stripeChargesEnabled` — el detalle fino del KYC lo muestra el
+     propio componente de Stripe; NO se inventan sub-pasos), estado "¡Todo listo!" celebratorio, métodos
+     de pago como filas iOS (tarjeta/SPEI/transferencia manual con `.s-toggle` — se corrigió que los
+     toggles estaban ROTOS: les faltaba la estructura `track`/`thumb`), y un **preview en vivo "así lo
+     verá tu cliente"** con la marca real del negocio (logo/color) que reacciona a los toggles.
+   • **Cobros = categoría propia de Ajustes** (`settings.ts`): se sacó de "Planes y cobranza" (que es la
+     suscripción DEL negocio A Cord — dinero que sale) a su propia categoría **"Cobros"** (dinero que
+     entra de los clientes). "Planes" quedó como "Planes y suscripción" con solo la pestaña Suscripción.
+   • **Aviso único para usuarios existentes** (`src/pages/app/index.astro`): banner navy dismissible en
+     el dashboard que invita a activar cobros a quien aún no conecta (`!ORG.stripeAccountId`), con botón a
+     Ajustes › Cobros y una X que persiste en `localStorage cord.cobros.nudge.dismissed`.
+   • **Documentación de soporte:** artículo NUEVO `activar-cobros.md` (ES+EN) sobre cómo activar cobros
+     (0% comisión, los 3 métodos, SPEI/CLABE, tiempos de payout de Stripe); `migracion-stripe.md` (ES+EN)
+     corregido — el "Paso 1" decía *"Configura tu llave de Stripe"* (modelo viejo de pegar llave,
+     inexacto) → ahora manda a Ajustes › Cobros a completar el onboarding embebido; `tiempos-de-deposito.md`
+     actualizado. Las cláusulas Connect en `/terminos` y `/privacidad` ya existían (Cord facilitador, no
+     banco, no retiene fondos, link al Connected Account Agreement) — se conservan.
+   • **3 bugs del link público de cotización (`QuoteCard.astro`, reusado por `/q` y `/embed`):**
+     (1) **Aprobar no revelaba el pago sin recargar** — `puedePagar` en `q/[token].astro` y
+     `embed/[token].astro` exigía `status ∈ {approved,invoiced}`, así que en una cotización en review el
+     bloque de pago (dentro del paso `stepApproved`) NO se renderizaba al DOM → al aprobar del lado cliente
+     no había nada que mostrar. Fix: `puedePagar` ahora solo depende de que el negocio tenga un método
+     configurado (`aceptaTransferencia` o `(aceptaTarjeta||cobroSpeiAuto)&&stripeAccountId&&
+     stripeChargesEnabled`), no del status — el bloque vive oculto dentro de `stepApproved` y aparece solo
+     al firmar, sin recargar. (2) **Mensajes del chat sin CSS** + (3) **"holaahora"** (mismo root cause):
+     el `<style>` de `QuoteCard` es SCOPEADO (Astro le pone `data-astro-cid`); los mensajes que el JS crea
+     en runtime (`appendMsg`, reply por línea) no llevan ese atributo → las reglas `.q-msg*`/`.qi-msg*` no
+     les aplicaban → burbuja sin estilo y texto+timestamp ("ahora") pegados inline. Fix: mover los
+     selectores de burbuja a un `<style is:global>` (patrón documentado del repo para DOM inyectado). Con
+     `.q-msg` global como `flex-direction:column`, "hola" queda arriba y "ahora" abajo, tenue.
+   ⚠️ **Único pendiente REAL (no código): la plataforma de Stripe en live sigue en estado "submitted"**
+     (enviada a revisión). Hasta que Stripe la ACTIVE, el onboarding embebido no monta en live (ESA es la
+     causa del "nada" que André veía en producción — no es bug de código). En **test mode todo funciona**
+     y se puede probar ya. También pendiente de config manual: el webhook de "eventos en cuentas
+     conectadas" con `account.updated` + `STRIPE_CONNECT_WEBHOOK_SECRET`, y habilitar Embedded Components
+     en live. ⚠️ Correr `npm run db:migrate` (columnas Connect en `orgs`).
+   ⚠️ **Reglas reforzadas esta sesión:** (a) CSS que estilice DOM inyectado por JS (mensajes, Cmd+K,
+     toasts) SIEMPRE va en `<style is:global>` — Astro scopea con `[data-astro-cid]` y el DOM dinámico no
+     lo lleva. (b) El bloque de pago del link público se gatea por CONFIG de pago del negocio, no por el
+     status de la cotización (vive oculto en el paso aprobado). (c) Los `.s-toggle` requieren la estructura
+     `<input>` + `.s-toggle-track` (con `.s-toggle-thumb`) + `.s-toggle-text` — sin ella el switch no se ve.
+
 ✅ **Refresh visual de la app → más Apple/iOS/Stripe (jul 2026)** — André pidió que la app
    interna (`/app/**`) se sintiera más Apple/iOS y más profesional/Stripe (referencias: los
    dashboards de Stripe), **conservando** el layout hairline/sin-tarjetas que ya le gustaba. El
@@ -66,6 +138,11 @@
    llave de PLATAFORMA de Cord (`STRIPE_SECRET_KEY`) → el dinero caía a Flouvia, no al negocio. Esto
    contradecía lo que YA prometían 2 artículos de soporte (`comisiones-tarifas.md`/`migracion-stripe.md`:
    "tu propia cuenta de Stripe, Cord nunca toca los fondos"). Se implementó Stripe Connect de verdad:
+   ⚠️ **SUPERADO (jul 2026):** el flujo OAuth Standard/Express de abajo se MIGRÓ a **Embedded Components**
+   — ver la entrada "Cobros v2 — Stripe Connect EMBEDDED" al inicio de este archivo. Lo de OAuth
+   (`connect/{start,callback,status}.ts`, `getConnectOAuthUrl`, el nonce anti-CSRF, `STRIPE_CONNECT_CLIENT_ID`)
+   YA NO EXISTE. Lo que SÍ sigue vigente de esta entrada: el modelo de charge directa con header
+   `Stripe-Account` (cero comisión), las columnas de `orgs`, el SPEI dinámico, y los fixes de dinero.
    • **Connect Standard + Express** (`src/pages/api/billing/connect/{start,callback,status,disconnect}.ts`)
      — el dueño conecta SU Stripe existente (OAuth, `state`=nonce aleatorio en cookie httpOnly anti-CSRF,
      verificado en el callback — NUNCA el orgId, que sería adivinable) o crea una cuenta ligera vía
@@ -1918,47 +1995,13 @@
    `npm audit` de bajo riesgo (esbuild dev-Windows / path-to-regexp build-time) cuyo fix exige
    downgrade breaking de `@astrojs/vercel`.
 
-⬜ **Pendiente de IMPLEMENTAR — Connect con Embedded Components AHORA, Custom/API queda como upgrade
-   futuro (decisión FINAL de André, jul 2026, re-revisada):** en el wizard de Connect, Stripe NO dejó
-   seleccionar "Crea tu propio onboarding"/"Haz tus propias creaciones con nuestra API" (Custom
-   accounts) — Stripe gatea esa integración, su de mayor riesgo/soporte, hasta revisar el perfil de la
-   plataforma (más aún en México). André decidió seguir con **Embedded Components** ahora (satisface el
-   requisito real: el vendedor NUNCA sale de `cord.flouvia.com`, ni redirect a `connect.stripe.com`) y
-   dejar Custom como upgrade futuro para cuando Stripe lo habilite o se decida invertir el tiempo.
-   Diferencia real entre ambos (para no repetir la conversación): Embedded deja un disclosure mínimo
-   "Powered by Stripe" (no removible) y Stripe sigue construyendo el formulario de KYC y manejando su
-   propia máquina de estados de verificación (Cord solo lo viste con sus colores vía la API
-   `appearance`) — Custom da blanqueo 100% pero Cord tendría que construir y mantener esa máquina de
-   estados él mismo (el punto de mayor riesgo de soporte). Nota importante: el wizard del dashboard es
-   más una configuración de conveniencia que un candado técnico duro — no bloquea necesariamente crear
-   cuentas `type: custom` por API más adelante si se retoma esa vía.
-   **Trabajo de código pendiente (NO empezado todavía) para migrar de account_link/redirect a Embedded:**
-   • Instalar `@stripe/connect-js` (+ `@stripe/react-connect-js` si se monta como island React, patrón
-     ya usado en el repo para Clerk).
-   • Endpoint nuevo `POST /api/billing/connect/account-session` — crea un `Account Session`
-     (`POST /v1/account_sessions`) para el `stripe_account_id` de la org, especificando qué componentes
-     se montan (`account_onboarding` para el alta, `account_management`/`payouts`/`notification_banner`
-     para la gestión que hoy resuelve el Express Dashboard) y devuelve el `client_secret` al cliente.
-   • `cobros.astro` monta los componentes embebidos (`loadConnectAndInitialize` + publishable key +
-     `fetchClientSecret` apuntando al endpoint nuevo) en vez de redirigir con `createAccountLink()`.
-     `createConnectAccount()` (creación de la cuenta Express vía API) SIGUE usándose tal cual — Embedded
-     Components funciona con cuentas Express, no requiere Custom.
-   • **Webhook nuevo `account.updated`** en `src/pages/api/stripe/webhook.ts` — hoy `charges_enabled` solo
-     se refresca bajo demanda (`GET /connect/status`); con Embedded conviene mantenerlo sincronizado en
-     tiempo real vía este evento (llega en la cuenta conectada, mismo patrón que `event.account` ya
-     manejado para `markQuotePaid`).
-   • `src/pages/api/billing/connect/{start,callback}.ts` quedan OBSOLETOS (eran para el flujo con
-     redirect/OAuth) — se retiran cuando el punto anterior esté migrado.
-   • Revisar **Connect → Settings → Branding** en el dashboard de Stripe (specific de Connect, distinto
-     del branding general del wizard) para que los componentes embebidos hereden colores/tipografía de
-     Cord desde el lado de Stripe también, además de la API `appearance` en el cliente.
-   **Carga legal — MÁS LIGERA que con Custom (aplica igual, pero menor alcance):** como el formulario de
-   KYC sigue siendo de Stripe (Cord nunca ve documentos crudos ni construye `tos_acceptance` — eso lo
-   captura el propio componente de Stripe), NO se necesita el flujo de consentimiento pesado que sí
-   exigiría Custom. Sigue haciendo falta: (1) cláusula nueva en `/terminos` aclarando que Stripe (vía
-   Connect) es el procesador real de los pagos de los CLIENTES del vendedor, Cord es solo facilitador
-   tecnológico y no retiene fondos; (2) entrada nueva en `/privacidad` sobre esta finalidad. Sigue
-   pendiente la confirmación legal (Ley Fintech/IFPE) de que actuar como plataforma de Connect no
-   requiere licencia — aplica igual para Embedded que para Custom.
-   Standard (OAuth) sigue descartado en ambos casos: con Standard el vendedor administra su cuenta desde
-   el dashboard de Stripe de por vida.
+✅ **COMPLETADO — Connect migrado a Embedded Components (jul 2026)** — lo que aquí estaba planeado YA se
+   implementó; ver la entrada "Cobros v2 — Stripe Connect EMBEDDED" al inicio del archivo para el detalle
+   final (endpoint `account-session`, island `ConnectOnboarding.tsx`, theming, webhook `account.updated`,
+   OAuth `start/callback/status` eliminados). **Custom/API quedó DESCARTADO** (no solo "gateado"): la IA
+   de Stripe confirmó que Custom exige **$250K USD de volumen en 12 meses + plataforma activada**, y Cord
+   está en fase inicial → no califica. El código de Custom que se llegó a escribir se **guardó en `git
+   stash` (`connect-custom-wip`)** por si algún día califican. Las cláusulas legales de `/terminos` y
+   `/privacidad` (Cord facilitador, no banco, Connected Account Agreement) ya se agregaron. Sigue pendiente
+   solo la confirmación legal Ley Fintech/IFPE (aplica igual para Embedded) y la **activación de la
+   plataforma en live por parte de Stripe** (está en "submitted" — es la causa del "nada" en producción).

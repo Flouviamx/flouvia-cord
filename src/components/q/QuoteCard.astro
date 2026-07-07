@@ -995,12 +995,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
 }
 .q-thread::-webkit-scrollbar { width: 3px; }
 .q-thread::-webkit-scrollbar-thumb { background: rgba(10,25,47,0.1); border-radius: 2px; }
-.q-msg { display: flex; flex-direction: column; gap: 3px; max-width: 80%; padding: 0.65rem 0.9rem; font-size: 0.86rem; }
-.q-msg.theirs { align-self: flex-start; background: #f3f4f6; color: #111; border-radius: 14px 14px 14px 3px; }
-.q-msg.mine { align-self: flex-end; background: #0a192f; color: #fff; border-radius: 14px 14px 3px 14px; }
-.q-msg.counter { background: rgba(245,158,11,0.09); border: 1px solid rgba(245,158,11,0.25); color: #111; border-radius: 14px 14px 3px 14px; align-self: flex-end; }
-.q-msg-text { line-height: 1.5; }
-.q-msg-time { font-size: 0.58rem; opacity: 0.42; margin-top: 2px; }
+
 
 /* Compose */
 .q-compose {
@@ -1105,10 +1100,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
     background: #fafafa; border-radius: 10px; border: 1px solid rgba(10,25,47,0.05);
     padding: 0.8rem; display: flex; flex-direction: column; gap: 0.5rem;
 }
-.qi-msg { display: inline-flex; flex-direction: column; gap: 2px; font-size: 0.78rem; max-width: 90%; padding: 0.5rem 0.7rem; border-radius: 10px; }
-.qi-msg.mine { align-self: flex-end; background: #0a192f; color: #fff; border-bottom-right-radius: 4px; }
-.qi-msg.theirs { align-self: flex-start; background: #fff; border: 1px solid rgba(10,25,47,0.08); border-bottom-left-radius: 4px; }
-.qi-msg-time { font-size: 0.55rem; opacity: 0.6; }
+
 .qi-reply-box { display: flex; gap: 6px; margin-top: 0.3rem; }
 .qi-reply-input { font-size: 0.78rem; padding: 7px 10px; flex: 1; }
 .qi-reply-btn { font-size: 0.75rem; padding: 6px 12px; border-radius: 8px; }
@@ -1191,4 +1183,18 @@ const hayContacto = !!(vEmail || vWa || vTel);
     .q-card { box-shadow: none; border-radius: 0; max-width: none; padding: 0; animation: none; }
     @page { margin: 1.4cm 1.6cm; }
 }
+</style>
+
+<style is:global>
+.q-msg { display: flex; flex-direction: column; gap: 3px; max-width: 80%; padding: 0.65rem 0.9rem; font-size: 0.86rem; }
+.q-msg.theirs { align-self: flex-start; background: #f3f4f6; color: #111; border-radius: 14px 14px 14px 3px; }
+.q-msg.mine { align-self: flex-end; background: #0a192f; color: #fff; border-radius: 14px 14px 3px 14px; }
+.q-msg.counter { background: rgba(245,158,11,0.09); border: 1px solid rgba(245,158,11,0.25); color: #111; border-radius: 14px 14px 3px 14px; align-self: flex-end; }
+.q-msg-text { line-height: 1.5; }
+.q-msg-time { font-size: 0.58rem; opacity: 0.42; margin-top: 2px; }
+
+.qi-msg { display: inline-flex; flex-direction: column; gap: 2px; font-size: 0.78rem; max-width: 90%; padding: 0.5rem 0.7rem; border-radius: 10px; }
+.qi-msg.mine { align-self: flex-end; background: #0a192f; color: #fff; border-bottom-right-radius: 4px; }
+.qi-msg.theirs { align-self: flex-start; background: #fff; border: 1px solid rgba(10,25,47,0.08); border-bottom-left-radius: 4px; }
+.qi-msg-time { font-size: 0.55rem; opacity: 0.6; }
 </style>

@@ -87,7 +87,10 @@ Astro.response.headers.set('Content-Security-Policy', frameAncestors);
 const yaAprobada = ['approved', 'paid', 'invoiced'].includes(q.status);
 const yaRechazada = q.status === 'rejected';
 const pagoActivo = !!(import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY);
-const puedePagar = pagoActivo && ['approved', 'invoiced'].includes(q.status);
+const puedePagar = pagoActivo && (
+    ORG.aceptaTransferencia ||
+    ((ORG.aceptaTarjeta || ORG.cobroSpeiAuto) && ORG.stripeAccountId && ORG.stripeChargesEnabled)
+);
 ---
 
 <EmbedLayout title={`Cotización ${q.folio}`}>
