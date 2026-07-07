@@ -177,7 +177,7 @@ const NAV_GROUPS = [
         position: absolute; left: 0; right: 0; top: 0; height: 0;
         border-radius: 10px; opacity: 0; pointer-events: none; z-index: 0;
         background: var(--sb-active-bg);
-        box-shadow: 0 2px 4px rgba(10,25,47,0.03);
+        /* Apple style: solid tint without drop shadows for selection */
         transition: top 0.42s var(--ease-spring), height 0.42s var(--ease-spring), opacity 0.3s var(--ease-ios);
         will-change: top, height;
     }
@@ -216,7 +216,9 @@ const NAV_GROUPS = [
     
     .sb-item svg { width: 16px; height: 16px; opacity: var(--sb-icon-op, 0.8); flex-shrink: 0; transition: opacity 0.2s var(--ease-ios), transform 0.2s var(--ease-ios); }
     .sb-item:hover svg { opacity: 1; }
-    .sb-item:active svg { transform: scale(0.95); }
+    
+    /* Apple Style Active (Press) State: Scale the whole row, not just the icon */
+    .sb-item:active { transform: scale(0.97); }
     
     /* Active Item */
     .sb-item.active svg { opacity: 1; }
@@ -439,15 +441,15 @@ const NAV_GROUPS = [
     /* Hover state for icons */
     :global(.sb-collapsed) .sb-item:hover svg { opacity: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
     
-    /* Active icon gets a glowing blue shadow inside the glass pill */
-    :global(.sb-collapsed) .sb-item.active { box-shadow: inset 0 1px 1px rgba(255,255,255,0.06); }
-    :global(.sb-collapsed) .sb-item.active svg { opacity: 1; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.2)); }
+    /* Active icon gets a super clean iOS-style selection */
+    :global(.sb-collapsed) .sb-item.active { background: transparent; }
+    :global(.sb-collapsed) .sb-item.active svg { opacity: 1; }
     
     /* Center the Account Avatar perfectly */
     :global(.sb-collapsed) .sb-org-avatar { width: 42px; height: 42px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     
-    /* Indicador de vidrio → cuadrado perfecto detrás del ícono activo */
-    :global(.sb-collapsed) .sb-indicator { left: 50%; right: auto; width: 42px; margin-left: -21px; border-radius: 12px; box-shadow: inset 0 1px 1px rgba(255,255,255,0.26), inset 0 0 0 0.5px rgba(255,255,255,0.14), 0 8px 16px -4px rgba(0,0,0,0.2); }
+    /* Indicador de vidrio → cuadrado perfecto detrás del ícono activo (estilo iPadOS Dock) */
+    :global(.sb-collapsed) .sb-indicator { left: 50%; right: auto; width: 42px; margin-left: -21px; border-radius: 12px; background: var(--sb-active-bg); box-shadow: none; }
     
     :global(.sb-collapsed) .sb-pin-row { justify-content: center; }
     :global(.sb-collapsed) .sb-pin-row .sb-item { width: 42px; height: 42px; border-radius: 12px; }
