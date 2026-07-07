@@ -8,6 +8,14 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Refactor de Ajustes: Layout "Quiet Luxury", Separación de Modo Developer e Integraciones (jul 2026)** —
+   Se aplicó la estética "Quiet Luxury" consistentemente a todas las páginas de configuración y se reestructuró la jerarquía de navegación.
+   • **Settings Layout Amplio:** `SettingsShell.astro` se refactorizó para utilizar un grid de 2 columnas (`260px` sidebar, `640px` content max-width) dentro de un contenedor amplio de `1040px`. Esto resolvió el problema de que los campos estuvieran demasiado pegados a la izquierda, ocupando mejor el espacio estilo Stripe.
+   • **Fondo de Onboarding:** Se arregló el aspecto visual y el clipping del shader `SupportCoverBg` en `/ajustes/index.astro` para que coincida perfectamente con el fondo de la página de soporte.
+   • **Iconos de Integraciones SVG:** En `ajustes/integraciones.astro` se reemplazaron las letras de texto iniciales por los logos SVG oficiales de las marcas (Shopify, WooCommerce, Mercado Libre, Zapier, Slack, CONTPAQi). Se corrigió un cruce en los SVGs donde WooCommerce y Mercado Libre estaban invertidos.
+   • **Extracción de Integraciones:** "Integraciones" dejó de estar oculta bajo el toggle técnico y ahora es una categoría principal de primer nivel visible para cualquier usuario (en `SETTINGS_CATEGORIES`), porque cualquier persona puede integrar aplicaciones.
+   • **Separación del Modo Desarrollador:** Se eliminó la súper-tarjeta monolítica de "Developers" que contenía todas las opciones. Ahora, al encender el toggle de **Modo desarrollador**, aparecen múltiples filas independientes en la sección de Avanzado: **API y Webhooks**, **MCP**, **Agentes IA**, y **Cotizador embebible**, permitiendo una navegación más directa y modular.
+
 ✅ **Cobros v2 — Stripe Connect EMBEDDED (no OAuth), UI premium, y 3 bugs del link público (jul 2026)** —
    evolución grande del feature de cobros. Reemplaza el approach OAuth Standard/Express de la entrada
    "Cobros directos a la cuenta del dueño" (más abajo, ahora **parcialmente obsoleta** — ver ⚠️ ahí).
