@@ -116,14 +116,14 @@ const avanzados = SETTINGS_CATEGORIES.filter((c) => ADVANCED.has(c.id));
     .access-denied-idx svg { width: 32px; height: 32px; color: #c9d2de; }
     .access-denied-idx h3 { font-size: 1rem; font-weight: 700; margin: 0; }
     .access-denied-idx p { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; line-height: 1.55; }
-    .idx { max-width: 720px; }
-    .idx-head { margin-bottom: 1.8rem; }
+    .idx { max-width: 1040px; }
+    .idx-head { margin-bottom: 2.5rem; }
     .idx-head h2 { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.6px; margin: 0; }
     .idx-head p { font-size: 0.88rem; color: var(--color-text-muted); margin: 0.4rem 0 0; }
 
     /* Health-score de configuración */
     .idx-health { display: flex; align-items: center; gap: 1.1rem; text-decoration: none; color: inherit;
-        background: var(--color-blue-deep); border-radius: 16px; padding: 1.2rem 1.4rem; margin-bottom: 2rem;
+        background: var(--color-blue-deep); border-radius: 16px; padding: 1.2rem 1.4rem; margin-bottom: 3rem;
         box-shadow: 0 24px 50px -32px rgba(10,25,47,0.6); transition: transform 0.4s var(--ease-spring); }
     .idx-health:hover { transform: translateY(-2px); }
     .idx-ring { position: relative; width: 60px; height: 60px; flex-shrink: 0; }
@@ -138,24 +138,26 @@ const avanzados = SETTINGS_CATEGORIES.filter((c) => ADVANCED.has(c.id));
     .idx-health-cta { font-size: 0.82rem; font-weight: 600; color: #fff; white-space: nowrap; opacity: 0.9; }
 
     .idx-section-label { font-size: 0.66rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
-        color: var(--color-text-muted); margin: 0 0 0.7rem; }
-    .idx-section-adv { margin-top: 2.2rem; }
-    .idx-rows { display: flex; flex-direction: column; }
-    .idx-row {
-        display: flex; align-items: center; gap: 1rem;
-        padding: 1.15rem 0.4rem; text-decoration: none; color: inherit;
-        border-bottom: 1px solid var(--color-border);
-        transition: padding-left 0.25s var(--ease-spring);
+        color: var(--color-text-muted); margin: 0 0 1.2rem; }
+    .idx-section-adv { margin-top: 3.5rem; }
+    .idx-rows { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+        gap: 2rem 2.5rem; 
     }
-    .idx-row:first-child { border-top: 1px solid var(--color-border); }
-    .idx-row:hover { padding-left: 0.9rem; }
-    .idx-row-ico { width: 20px; height: 20px; color: var(--color-blue-deep); flex-shrink: 0; }
-    .idx-row-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-    .idx-row-title { font-size: 0.98rem; font-weight: 600; color: var(--color-text); }
-    .idx-row-desc { display: none; font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.45; }
+    .idx-row {
+        display: flex; align-items: flex-start; gap: 1rem;
+        text-decoration: none; color: inherit;
+        transition: transform 0.25s var(--ease-spring);
+    }
+    .idx-row:hover { transform: translateY(-2px); }
+    .idx-row-ico { width: 20px; height: 20px; color: var(--color-blue-deep); flex-shrink: 0; margin-top: 2px; }
+    .idx-row-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+    .idx-row-title { font-size: 0.98rem; font-weight: 600; color: var(--color-text); transition: color 0.2s ease; }
+    .idx-row:hover .idx-row-title { color: var(--color-blue-deep); }
+    .idx-row-desc { display: none; font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.5; }
     @media (min-width: 561px) { .idx-row-desc { display: block; } }
-    .idx-row-arrow { width: 16px; height: 16px; color: #c4cad3; flex-shrink: 0; opacity: 0; transform: translateX(-4px); transition: opacity 0.25s, transform 0.25s var(--ease-spring); }
-    .idx-row:hover .idx-row-arrow { opacity: 1; transform: translateX(0); color: var(--color-blue-deep); }
+    .idx-row-arrow { display: none; }
 
     /* Modo desarrollador: la categoría "Developers" queda oculta salvo que se active
        (default off, sin flash porque se oculta vía CSS desde el render). */
