@@ -13,7 +13,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     {
         id: 'general', label: 'General',
         desc: 'Nombre del negocio, moneda base, contacto y localización.',
-        icon: '<rect x="3" y="3" width="7" height="18" rx="1.5"/><path d="M10 9h7a2 2 0 0 1 2 2v10H10"/><line x1="14" y1="13" x2="15" y2="13"/><line x1="14" y1="17" x2="15" y2="17"/><line x1="6" y1="7" x2="7" y2="7"/><line x1="6" y1="11" x2="7" y2="11"/>',
+        icon: '<line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/>',
         tabs: [
             { id: 'general', label: 'General', href: '/app/ajustes/general' },
         ],
@@ -21,7 +21,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     {
         id: 'branding', label: 'Branding',
         desc: 'Logo, colores de marca y portal de tus clientes.',
-        icon: '<circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.012 17.5 2 12 2z"/>',
+        icon: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>',
         tabs: [
             { id: 'branding', label: 'Branding',          href: '/app/ajustes/branding' },
             { id: 'portal',   label: 'Portal del cliente', href: '/app/ajustes/portal' },
@@ -30,7 +30,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     {
         id: 'cotizaciones', label: 'Cotizaciones',
         desc: 'Folio, impuestos, documento PDF y reglas de aprobación.',
-        icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/>',
+        icon: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/>',
         tabs: [
             { id: 'cotizaciones', label: 'Folio e IVA',         href: '/app/ajustes/cotizaciones' },
             { id: 'impuestos',    label: 'Impuestos',           href: '/app/ajustes/impuestos' },
@@ -42,7 +42,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     {
         id: 'facturacion', label: 'Facturación y CFDI',
         desc: 'Datos fiscales, certificado de sello (CSD) y timbrado.',
-        icon: '<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="12" y2="15"/>',
+        icon: '<line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/>',
         tabs: [
             { id: 'fiscal', label: 'Datos fiscales', href: '/app/ajustes/fiscal' },
         ],
@@ -50,7 +50,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     {
         id: 'cobros', label: 'Cobros',
         desc: 'Recibe pagos de tus clientes: tarjeta vía Stripe y transferencia bancaria.',
-        icon: '<path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" fill="currentColor" fill-opacity="0.12"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z" fill="currentColor" fill-opacity="0.12"/>',
+        icon: '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
         tabs: [
             { id: 'cobros', label: 'Cobros', href: '/app/ajustes/cobros' },
         ],
@@ -58,7 +58,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     {
         id: 'planes', label: 'Planes y suscripción',
         desc: 'Tu suscripción de Cord, uso del plan y tu método de pago.',
-        icon: '<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>',
+        icon: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
         tabs: [
             { id: 'plan', label: 'Suscripción', href: '/app/ajustes/plan' },
         ],
@@ -66,7 +66,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     {
         id: 'notificaciones', label: 'Notificaciones',
         desc: 'Qué eventos te avisan y por qué canal (correo, Slack…).',
-        icon: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+        icon: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M4 2C2.8 3.7 2 5.7 2 8"/><path d="M22 8c0-2.3-.8-4.3-2-6"/>',
         tabs: [
             { id: 'notificaciones', label: 'Notificaciones', href: '/app/ajustes/notificaciones' },
             { id: 'correo',         label: 'Correo',         href: '/app/ajustes/correo' },
@@ -75,7 +75,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     {
         id: 'equipo', label: 'Equipo y permisos',
         desc: 'Invita a tu equipo, define permisos y la seguridad de acceso.',
-        icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+        icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
         tabs: [
             { id: 'equipo',    label: 'Equipo y Roles',  href: '/app/ajustes/equipo' },
             { id: 'sso',       label: 'SSO',             href: '/app/ajustes/sso' },
@@ -85,7 +85,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     {
         id: 'integraciones', label: 'Integraciones',
         desc: 'Conecta Cord con tus aplicaciones y plataformas favoritas.',
-        icon: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+        icon: '<rect width="7" height="7" x="14" y="3" rx="1"/><path d="M10 21V8a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1H3"/>',
         tabs: [
             { id: 'integraciones', label: 'Integraciones', href: '/app/ajustes/integraciones' },
         ],
@@ -93,7 +93,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     {
         id: 'api_webhooks', label: 'API y Webhooks',
         desc: 'Endpoints REST y notificaciones en tiempo real para tu sistema.',
-        icon: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+        icon: '<polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/>',
         tabs: [
             { id: 'api',           label: 'API',                 href: '/app/ajustes/api' },
             { id: 'webhooks',      label: 'Webhooks',            href: '/app/ajustes/webhooks' },
@@ -102,7 +102,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     {
         id: 'mcp', label: 'MCP',
         desc: 'Configura el Model Context Protocol para tus asistentes.',
-        icon: '<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
+        icon: '<rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/>',
         tabs: [
             { id: 'mcp',           label: 'MCP',                 href: '/app/ajustes/mcp' },
         ],
@@ -110,7 +110,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     {
         id: 'agentes', label: 'Agentes IA',
         desc: 'Configura agentes autónomos de inteligencia artificial.',
-        icon: '<path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M21.18 8.02c-1-2.3-2.85-4.17-5.16-5.18"/>',
+        icon: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
         tabs: [
             { id: 'agentes',       label: 'Agentes IA',          href: '/app/ajustes/agentes' },
         ],
@@ -118,7 +118,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     {
         id: 'elements', label: 'Cotizador embebible',
         desc: 'Integra el cotizador directamente en tu sitio web.',
-        icon: '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>',
+        icon: '<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><rect width="9" height="8" x="3" y="3"/><rect width="18" height="5" x="3" y="16"/>',
         tabs: [
             { id: 'elements',      label: 'Cotizador embebible', href: '/app/ajustes/elements' },
         ],
@@ -126,7 +126,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     {
         id: 'avanzado', label: 'Avanzado',
         desc: 'Exportar tus datos, zona de peligro y registro de auditoría.',
-        icon: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+        icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
         tabs: [
             { id: 'datos',     label: 'Datos y privacidad', href: '/app/ajustes/datos' },
             { id: 'auditoria', label: 'Auditoría',          href: '/app/ajustes/auditoria' },
@@ -135,7 +135,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     {
         id: 'cuenta', label: 'Tu cuenta',
         desc: 'Tu perfil, sesiones activas, seguridad y autenticación.',
-        icon: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',
+        icon: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/>',
         tabs: [
             { id: 'cuenta', label: 'Perfil y seguridad', href: '/app/ajustes/cuenta' },
         ],
