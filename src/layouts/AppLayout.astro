@@ -514,13 +514,13 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
     html[data-theme="dark"] body { background: #0b1018; }
     /* Topbar: en oscuro, vidrio navy translúcido (en claro es blanco) */
     html[data-theme="dark"] .topbar {
-        background: linear-gradient(180deg, rgba(22,30,44,0.85) 0%, rgba(13,19,29,0.72) 100%);
-        border-color: rgba(255,255,255,0.1);
+        background: rgba(24, 30, 40, 0.75);
+        border: none;
         box-shadow:
-            inset 0 1px 0 rgba(255,255,255,0.12),
-            inset 0 0 0 0.5px rgba(255,255,255,0.05),
-            inset 0 -6px 14px rgba(0,0,0,0.2),
-            0 16px 44px -10px rgba(0,0,0,0.55);
+            0 16px 44px -10px rgba(0,0,0,0.55),
+            0 4px 12px -2px rgba(0,0,0,0.25),
+            inset 0 0 0 1px rgba(255,255,255,0.1),
+            inset 0 1px 1px rgba(255,255,255,0.15);
     }
     /* Buscador y kbd de la topbar */
     html[data-theme="dark"] .tb-kbd, html[data-theme="dark"] .cmdk-esc { background: rgba(255,255,255,0.06); color: var(--color-text-muted); }
@@ -1045,17 +1045,16 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
         display: flex; align-items: center; gap: 0.75rem;
         margin: 1rem 1rem 0;
         padding: 0.5rem 0.6rem 0.5rem 0.85rem;
-        border-radius: 17px;
-        background: linear-gradient(180deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.6) 100%);
-        backdrop-filter: blur(24px) saturate(1.4);
-        -webkit-backdrop-filter: blur(24px) saturate(1.4);
-        border: 1px solid rgba(255,255,255,0.6);
+        border-radius: 22px; /* iOS Squircle */
+        background: rgba(255, 255, 255, 0.72);
+        backdrop-filter: blur(40px) saturate(1.8);
+        -webkit-backdrop-filter: blur(40px) saturate(1.8);
+        border: none;
         box-shadow:
-            inset 0 1px 1px rgba(255,255,255,0.95),
-            inset 0 0 0 0.5px rgba(255,255,255,0.5),
-            inset 0 -6px 14px rgba(255,255,255,0.18),
-            0 12px 36px -8px rgba(10,25,47,0.14),
-            0 2px 6px rgba(10,25,47,0.06);
+            0 8px 32px -8px rgba(0,0,0,0.06),
+            0 4px 12px -2px rgba(0,0,0,0.03),
+            inset 0 0 0 1px rgba(255,255,255,0.5),
+            inset 0 1px 1px rgba(255,255,255,0.9);
         position: sticky; top: 1rem; z-index: 50;
     }
     .tb-demo {
