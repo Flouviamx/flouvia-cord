@@ -405,7 +405,7 @@ const NAV_GROUPS = [
     
     /* Relleno interno animado por GSAP */
     .sb-toggle-fill {
-        opacity: 0.85;
+        opacity: 1;
     }
     :global(.sb-collapsed) .sb-toggle { margin-left: 0; }
 
@@ -766,13 +766,13 @@ const NAV_GROUPS = [
         if (!toggle || !fill) return;
 
         // Estados del cuadrito relleno
-        // Open: Sidebar expandido (cuadrito chiquito, al centro)
+        // Open: Sidebar expandido (cuadrito chiquito, al centro tipo "tab")
         // Closed: Sidebar colapsado (cuadrito grande, ocupando todo el alto)
         const states = {
-            open: { attr: { x: 4.5, y: 10, width: 4, height: 4, rx: 1.5 }, opacity: 0.5, ease: "back.out(2.5)", duration: 0.5 },
-            openHover: { attr: { x: 4.5, y: 8.5, width: 5, height: 7, rx: 2 }, opacity: 0.9, ease: "power2.out", duration: 0.2 },
-            closed: { attr: { x: 4, y: 5, width: 7, height: 14, rx: 2.5 }, opacity: 0.85, ease: "back.out(1.5)", duration: 0.5 },
-            closedHover: { attr: { x: 4, y: 5, width: 8.5, height: 14, rx: 2.5 }, opacity: 1, ease: "power2.out", duration: 0.2 },
+            open: { attr: { x: 3.5, y: 8, width: 5.5, height: 8, rx: 1.5 }, opacity: 1, ease: "back.out(2.5)", duration: 0.5 },
+            openHover: { attr: { x: 3.5, y: 7.5, width: 6.5, height: 9, rx: 1.8 }, opacity: 1, ease: "power2.out", duration: 0.2 },
+            closed: { attr: { x: 3.5, y: 5, width: 8, height: 14, rx: 2.5 }, opacity: 1, ease: "back.out(1.5)", duration: 0.5 },
+            closedHover: { attr: { x: 3.5, y: 5, width: 9.5, height: 14, rx: 2.5 }, opacity: 1, ease: "power2.out", duration: 0.2 },
         };
 
         const updateState = (isHover) => {
