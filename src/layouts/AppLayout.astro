@@ -1059,8 +1059,8 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
     }
     html[data-theme="dark"] .help-panel.ai-active .help-ai-box { background: transparent; box-shadow: none; }
 
-    .help-ai-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; transition: opacity 0.4s ease; }
-    .help-panel.ai-active .help-ai-bg { opacity: 0; }
+    .help-ai-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; transition: all 0.8s cubic-bezier(0.2, 1, 0.3, 1); transform-origin: top center; }
+    .help-panel.ai-active .help-ai-bg { opacity: 0.12; transform: scale(1.5) translateY(20px); filter: invert(1) hue-rotate(180deg) brightness(2) contrast(1.2); }
     
     .help-ai-content { position: relative; z-index: 1; flex: 1 1 0; display: flex; flex-direction: column; transition: transform 0.4s var(--ease-spring); }
     
@@ -1068,8 +1068,8 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
     .help-ai-back:hover { color: var(--color-text); }
     .help-panel.ai-active .help-ai-back { display: inline-flex; }
 
-    .help-panel.ai-active .help-ai-badge,
-    .help-panel.ai-active .help-ai-title { display: none; }
+    .help-ai-badge, .help-ai-title { transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1); }
+    .help-panel.ai-active .help-ai-badge, .help-panel.ai-active .help-ai-title { opacity: 0; transform: translateY(-10px); pointer-events: none; position: absolute; visibility: hidden; }
     
     .help-ai-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: rgba(148, 187, 233, 0.9); margin-bottom: 12px; }
     .help-ai-title { margin: 0 0 12px; font-size: 0.95rem; font-weight: 600; color: #ffffff; letter-spacing: -0.2px; }
@@ -1081,7 +1081,7 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
     
     .chat-history { flex: 1 1 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-bottom: 20px; -webkit-overflow-scrolling: touch; }
     .help-panel:not(.ai-active) .chat-history { display: none; }
-    .help-panel.ai-active .chat-history { animation: help-fadein 0.4s 0.1s both; }
+    .help-panel.ai-active .chat-history { animation: help-fadein 0.4s 0.2s both; }
     .chat-history::-webkit-scrollbar { display: none; }
     .chat-history { scrollbar-width: none; }
     
@@ -1101,7 +1101,7 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
     
     .help-panel:not(.ai-active) .help-ai-box { transition: transform 0.3s var(--ease-spring), box-shadow 0.3s; }
     .help-panel:not(.ai-active) .help-ai-box:hover { transform: translateY(-4px); box-shadow: 0 16px 40px -10px rgba(0,0,0,0.4); }
-    .help-panel:not(.ai-active) .help-ai-input { cursor: pointer; }
+    
     
     .chat-input-row { display: flex; gap: 10px; margin-top: auto; padding-top: 10px; }
         .help-panel:not(.ai-active) .chat-real-input {
