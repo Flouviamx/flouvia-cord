@@ -100,13 +100,36 @@ Sin SplitText, sin blur/scale en reveals de contenido.
 
 ## UI Components & Aesthetics
 
+### App dashboards — estética Apple/iOS/Stripe (tokens compartidos, jul 2026)
+Refresh de la app interna (`/app/**`) hacia un look Apple/iOS/Stripe **conservando** el layout
+hairline/sin-tarjetas. Reglas permanentes (ver changelog "Refresh visual de la app" en
+`historial.md`):
+- **Lienzo gris Apple:** el `body` usa `--app-canvas: #f5f5f7` (definido en `:root` de
+  `AppLayout.astro`). ⚠️ **NO usar `--color-bg-soft` para el fondo del body** — ese token se
+  reserva como tinte de track/hover y sobre el gris lee como receso casi-blanco (efecto Apple).
+- **Gráficas SIN degradado:** todo relleno de barra/riel usa **tono plano** con tokens:
+  `var(--chart-fill)` (navy neutro), `var(--color-ok)` (verde positivo), `var(--color-danger)`
+  (rojo negativo/over); rieles con `var(--chart-track)`. NUNCA `linear-gradient` en barras
+  (`.flow-fill`, `.rank-fill`, `.week-fill`, `.margin-fill`, `.expo-fill`, `.bar-cer`, etc.).
+- **Títulos de sección legibles (sentence-case), NO eyebrows uppercase:** usar las clases
+  globales `.sec-head`/`.sec-title`/`.sec-link` (`.sec-title` = 0.98rem, weight 600,
+  `var(--color-text)`, `text-transform:none`). Prohibido el patrón viejo de título de sección
+  uppercase diminuto (`0.7rem; weight 800; letter-spacing 1.6px; #99a2af`). Las `.kpi-label`/
+  `.health-label` (etiquetas de DATO dentro de una celda, no títulos) sí pueden seguir uppercase.
+- **Heroes navy = navy PLANO, sin degradado:** el navy de marca (`var(--color-blue-deep)`) se
+  permite como acento de hero, pero **sin `linear-gradient`** (el degradado es lo que lee
+  "no-Stripe"). Aplica a heroes de Ajustes/SSO/equipo, el hero "Armar con IA" del editor, etc.
+- **Glass del shell calmado:** `.topbar` y `.sidebar` usan `blur(24px) saturate(1.4)` (sin
+  `brightness`) — cristal "quieto" tipo macOS, no espejo. `.card` usa `--radius-card` (16px).
+
 ### Sidebar Navigation (AppLayout)
 El componente `Sidebar.astro` es el menú principal de la app y presenta un diseño "Linear-style" / "macOS Dock".
 - **Acordeones de Grupo:** Las cabeceras de los grupos (ej. "Principal", "Dinero") utilizan `grid-template-rows: 0fr/1fr` para lograr un colapso ultra-fluido impulsado puramente por CSS.
 - **Dock Mode (Collapsed):** El modo colapsado funciona como una "isla flotante" o "Dock de iPad". Los iconos se escalan a cuadrados de 42x42px perfectamente centrados.
-- **Normal Mode (Expanded):** Sigue la misma filosofía limpia que el modo Dock. Utiliza hover elástico sutil (sin físicas excesivas) y textos sólidos. El indicador de ítem activo es un cuadro de cristal líquido (`backdrop-filter`) idéntico en ambos modos, asegurando cohesión visual.
-- **Microinteracciones:** Las tooltips en modo colapsado utilizan `transform-origin: left center` para brotar elásticamente desde el ícono. El indicador de ítem activo es una "pastilla de cristal" calculada matemáticamente en JS mediante `getBoundingClientRect()` para evitar bugs de offsetTop en anidamientos CSS.
-- **Sombra Premium:** `--sb-shadow` iguala de forma idéntica la sombra doble de la `topbar` (`0 12px 36px -8px rgba(10,25,47,0.14)`) para asegurar que la sidebar no luzca plana frente al resto de los paneles, creando un volumen 3D ultra-premium.
+- **Normal Mode (Expanded):** Sigue la misma filosofía limpia que el modo Dock. Utiliza hover elástico sutil (sin físicas excesivas) y textos sólidos.
+- **Selección estilo iOS Settings (jul 2026):** el `.sb-indicator` de ítem activo es un **relleno tintado** `var(--sb-active-bg)` (radius 10px, sombra mínima, **sin `backdrop-filter`**) — dejó de ser la "pastilla de cristal" con blur. Se posiciona en JS con `getBoundingClientRect()` (evita bugs de offsetTop en anidamientos). Las filas (`.sb-item`) son radius 10px con `padding: 9px 11px`.
+- **Microinteracciones:** Las tooltips en modo colapsado usan `transform-origin: left center` para brotar elásticamente desde el ícono.
+- **MISMO material glass que la pill de la topbar (regla, jul 2026):** la sidebar y la `.topbar` comparten fondo (`--sb-bg`), `blur(24px) saturate(1.4)`, borde y sombra (`--sb-shadow` == box-shadow de la topbar, `0 12px 36px -8px rgba(10,25,47,0.14)`), y el mismo radio (17px). El brillo superior lo da SOLO el inset highlight de `--sb-shadow` (compartido). ⚠️ `--sb-sheen` está en `transparent` a propósito — **no re-introducir un sheen/tinte propio en la sidebar** (un radial navy oscuro la apagaba y la hacía ver más gris que la topbar); el material debe quedar idéntico al de la topbar en light y dark.
 
 ### Blog Aesthetics (WebGL GLSL — ElevenLabs Pattern)
 El blog público (`/blog`) usa portadas generadas por **WebGL puro** (`BlogCover.jsx`, `client:only="react"`), no CSS ni fotografías.

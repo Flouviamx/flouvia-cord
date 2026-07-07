@@ -8,6 +8,110 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Refresh visual de la app → más Apple/iOS/Stripe (jul 2026)** — André pidió que la app
+   interna (`/app/**`) se sintiera más Apple/iOS y más profesional/Stripe (referencias: los
+   dashboards de Stripe), **conservando** el layout hairline/sin-tarjetas que ya le gustaba. El
+   problema no era la estructura (ya era cardless) sino: gradientes en las gráficas, eyebrows
+   uppercase diminutos como títulos, fondo casi-blanco, heroes navy con degradado y glass del
+   shell muy cargado. Se atacó por una **capa compartida de tokens/clases en `AppLayout.astro`**
+   para que la mayoría de páginas heredara el cambio.
+   • **Tokens nuevos en `:root` (+ contraparte dark):** `--app-canvas: #f5f5f7` (gris Apple, usado
+     SOLO en `html,body` — NO se tocó `--color-bg-soft`, que se sigue usando como track/hover y
+     ahora lee como receso casi-blanco sobre el gris), `--chart-fill: #0a192f`, `--chart-fill-2`,
+     `--chart-track: rgba(10,25,47,0.05)`, `--row-hover`, `--radius-card: 16px`. Dark intacto
+     (`#0b1018`).
+   • **Fondo lienzo → gris Apple `#f5f5f7`** vía `--app-canvas` (antes `--color-bg-soft` #fafbfc).
+   • **CERO degradados en gráficas:** todos los rellenos de barra (`.flow-fill`, `.rank-fill`,
+     `.week-fill`, `.margin-fill`, `.expo-fill`, `.bar-cer`, `.rank-bar` y las rayas del
+     `.margin-bar`) pasaron de `linear-gradient(azul→navy / verde)` a **tono plano** con tokens:
+     navy `var(--chart-fill)` para neutro, `var(--color-ok)` verde para positivo,
+     `var(--color-danger)` rojo para over/negativo; rieles a `var(--chart-track)`. Archivos:
+     `index.astro`, `cfo.astro`, `analitica.astro`, `cobranza.astro`.
+   • **Títulos de sección legibles (sentence-case) tipo Stripe:** clases globales nuevas en
+     `AppLayout` `.sec-head`/`.sec-title`/`.sec-link` (0.98rem, weight 600, `var(--color-text)`,
+     `text-transform:none`) reemplazan el patrón viejo `.section-head h2 { 0.7rem; 800; uppercase;
+     #99a2af }`. Migrados TODOS los dashboards (index/cfo/analitica/cobranza/tesorería) + las
+     páginas de lista/detalle que conservan su `.section-head` local (clientes, productos,
+     cotizaciones/[id], editar) — a estas se les restiló el `.section-head h2` local a
+     sentence-case (el texto del markup ya estaba en caja normal; solo el CSS lo ponía uppercase).
+     Barrido final: 0 eyebrows uppercase como título de sección en toda la app.
+   • **Heroes navy sin degradado:** los `linear-gradient(135deg,#0d2038/#112240,#0a192f)` de
+     `ajustes/index` (card salud), `ajustes/sso`, `ajustes/sso/configuracion`, `ajustes/equipo`,
+     el hero "Armar con IA" de `cotizaciones/nueva`, los tabs de test-mode y el `.tf-insight`
+     (radial) → **navy plano `var(--color-blue-deep)`** (se conserva el navy de marca, se elimina
+     SOLO el degradado, que es lo que leía "no-Stripe").
+   • **Shell glass calmado (Apple, no espejo):** `.topbar` y `.sidebar` bajaron de
+     `blur(34px) saturate(1.9) brightness(1.03/1.04)` → `blur(24px) saturate(1.4)` (sin
+     brightness). `.card` → `border-radius: var(--radius-card)` (16px).
+   • **Selección de sidebar estilo iOS Settings:** el `.sb-indicator` (antes píldora de vidrio con
+     blur) pasó a **relleno tintado** `var(--sb-active-bg)` radius 10px sin `backdrop-filter`,
+     sombra mínima; filas más altas (`padding: 9px 11px`, radius 10px) e íconos un pelín más
+     presentes.
+   • **Sidebar = MISMO material que la pill de la topbar (André lo pidió explícito):** el material
+     ya era casi idéntico (mismo `--sb-bg`, blur, borde, y `--sb-shadow` == sombra del topbar); lo
+     que divergía era el `::before` con **`--sb-sheen`** (en claro un radial navy OSCURO que
+     apagaba el sidebar y lo hacía ver más gris que el topbar; en oscuro un brillo azul que el
+     topbar no tiene). Se puso **`--sb-sheen: transparent`** en ambos temas → el sidebar brilla
+     solo con el inset highlight compartido, idéntico a la topbar. Radio del sidebar igualado a la
+     topbar: **22px → 17px**. ⚠️ Regla: sidebar y topbar deben mantenerse como el MISMO material
+     glass — no re-introducir un sheen/tinte propio en el sidebar; el brillo viene del inset de
+     `--sb-shadow` (compartido con la topbar).
+   • Verificado con `npm run build` (compila limpio). Todo es CSS/markup de clases — cero cambios
+     de lógica, backend ni queries.
+   ⬜ Pendiente (André lo pidió "más radical", se hablará después): cambios más profundos de UX de
+     la app (no solo estética de tokens). Esto fue la pasada rápida de estética.
+
+✅ **Cobros directos a la cuenta del dueño — Stripe Connect + transferencia + SPEI dinámico (jul 2026)** —
+   hasta ahora, cuando un cliente pagaba una cotización desde `/q/[token]`, el cargo se creaba con la
+   llave de PLATAFORMA de Cord (`STRIPE_SECRET_KEY`) → el dinero caía a Flouvia, no al negocio. Esto
+   contradecía lo que YA prometían 2 artículos de soporte (`comisiones-tarifas.md`/`migracion-stripe.md`:
+   "tu propia cuenta de Stripe, Cord nunca toca los fondos"). Se implementó Stripe Connect de verdad:
+   • **Connect Standard + Express** (`src/pages/api/billing/connect/{start,callback,status,disconnect}.ts`)
+     — el dueño conecta SU Stripe existente (OAuth, `state`=nonce aleatorio en cookie httpOnly anti-CSRF,
+     verificado en el callback — NUNCA el orgId, que sería adivinable) o crea una cuenta ligera vía
+     Express (`account_link` hosted onboarding). Columnas nuevas en `orgs`: `stripe_account_id`,
+     `stripe_account_type`, `stripe_charges_enabled`, más `acepta_tarjeta`/`acepta_transferencia`/
+     `cobro_spei_auto`/`banco_nombre`/`banco_clabe`/`banco_beneficiario`. Página nueva
+     `/app/ajustes/cobros` (toggles gated a `charges_enabled`).
+   • **Charge directa, CERO comisión de Cord:** `checkout.ts` ahora agrega el header `Stripe-Account:
+     acct_...` a la Checkout Session (sin `application_fee`/`transfer_data` — el comerciante de
+     registro es el dueño). Rechaza el cobro con 403 si la org no tiene Connect activo o no acepta
+     pagos en línea; sigue bloqueado en sandbox (409).
+   • **SPEI dinámico (CLABE única por cotización) vía `customer_balance`/`mx_bank_transfer` de Stripe**
+     — la misma cuenta conectada, sin que Cord retenga fondos (evita terreno regulado tipo Ley
+     Fintech/IFPE). El webhook escucha también `checkout.session.async_payment_succeeded` (evento de
+     liquidación diferida).
+   • **3 bugs de dinero reales encontrados y corregidos en la misma pasada (auditoría antes de dar por
+     bueno el flujo):** (1) `markQuotePaid` marcaba `paid` con solo `checkout.session.completed`, pero
+     para SPEI ese evento llega con `payment_status:'unpaid'` en cuanto el cliente ve la CLABE — **antes
+     de transferir**; ahora exige `payment_status === 'paid'` (el evento real de liquidación SPEI es
+     `async_payment_succeeded`). (2) El checkout de SPEI no creaba ningún `customer`, que
+     `customer_balance` exige para asignar la CLABE — Stripe rechazaba la sesión; ahora se crea un
+     customer en la CUENTA CONECTADA (mismo header `Stripe-Account`) antes de armar la sesión. (3) El
+     link público mostraba la CLABE ESTÁTICA de transferencia manual con la leyenda "se marcará pagada
+     automáticamente" — falso, esa CLABE fija no se concilia sola; se separó el copy (transferencia
+     manual = "envía tu comprobante", SPEI-auto = botón de pago en línea que genera la CLABE dinámica
+     de Stripe) y el botón de pago ahora también aparece cuando solo hay SPEI (antes exigía tarjeta).
+   • **Hardening adicional:** `markQuotePaid` valida `event.account` contra el `stripe_account_id` de
+     la org dueña de la cotización — defensa en profundidad para que un merchant conectado no pueda
+     marcar pagada una cotización ajena.
+   • **Bug de nombre de variable de entorno encontrado y corregido:** `.env.example` declaraba
+     `CONNECT_CLIENT_ID`/`CONNECT_WEBHOOK_SECRET` pero el código (`billing.ts`, `webhook.ts`,
+     `connect/disconnect.ts`) lee `STRIPE_CONNECT_CLIENT_ID`/`STRIPE_CONNECT_WEBHOOK_SECRET` — con los
+     nombres viejos configurados en Vercel, el código NUNCA las habría leído (OAuth Standard tronaría
+     con "STRIPE_CONNECT_CLIENT_ID no configurada" y la firma de eventos Connect jamás verificaría).
+     `.env.example` ya corregido a los nombres reales que usa el código.
+   • **El webhook verifica DOS secretos** (`webhook.ts`): `WH_SECRET` (plataforma) y `CONNECT_WH_SECRET`
+     (endpoint de eventos de cuentas conectadas) — la firma es válida si CUALQUIERA de los dos matchea,
+     porque Stripe firma los eventos de Connect con el secreto de SU PROPIO endpoint (uno nuevo, no el
+     de plataforma).
+   ⚠️ **Pendiente de configuración manual en el dashboard de Stripe (no es código):** (1) crear un
+     SEGUNDO endpoint de webhook (misma URL, "eventos en cuentas conectadas") y setear su secreto en
+     `STRIPE_CONNECT_WEBHOOK_SECRET` — sin esto el dinero cae al dueño pero Cord nunca marca la
+     cotización pagada; (2) confirmar que SPEI/bank-transfer esté habilitado para cuentas conectadas
+     MX; (3) `STRIPE_CONNECT_CLIENT_ID` (Settings → Connect → OAuth settings). ⚠️ Correr
+     `npm run db:migrate` (7 columnas nuevas en `orgs`).
+
 ✅ **Cord Elements — llaves publishable/secret + engine compartido + fixes de seguridad y dinero (jul 2026)** —
    pasada grande sobre `@flouviahq/elements` (`packages/elements/`) para acercarlo al nivel
    Stripe/Clerk Elements, hecha por André y verificada/corregida por auditoría.
@@ -1813,3 +1917,32 @@
    in-memory por instancia (para escala multi-réplica usar Upstash Redis); y 5 vulnerabilidades de
    `npm audit` de bajo riesgo (esbuild dev-Windows / path-to-regexp build-time) cuyo fix exige
    downgrade breaking de `@astrojs/vercel`.
+
+⬜ **Pendiente de IMPLEMENTAR — migrar Connect a Embedded Components, luego a Custom/API (decisión de
+   André, jul 2026, revisada — ya NO se difiere):** en el wizard de configuración de Connect (dashboard
+   de Stripe) André decidió **NO usar ningún flujo con redirect a `connect.stripe.com`** — ni para el
+   alta del vendedor ni para la gestión de su cuenta. Plan en dos pasos:
+   1. **AHORA — Embedded Components:** tanto el onboarding (alta) como la gestión de cuenta
+      (pagos/transferencias/identidad/payouts) viven DENTRO de Cord, con colores/tipografía propios vía
+      la API `appearance` de Stripe — Stripe sigue validando los campos de KYC y manejando payouts por
+      dentro (Cord no construye esa lógica), pero el vendedor JAMÁS sale de `cord.flouvia.com`.
+   2. **DESPUÉS — Custom accounts + onboarding/gestión 100% propios vía API:** blanqueo total; Cord
+      construye su propio formulario de KYC (razón social, RFC, representante legal, documentos, CLABE,
+      aceptación de términos con IP/timestamp) y su propia máquina de estados de verificación de Stripe
+      (`requirements.currently_due/past_due/disabled_reason`). Riesgo a vigilar cuando se llegue a este
+      paso: si un estado se maneja mal, el vendedor se queda con la cuenta restringida sin saber por
+      qué — fuente #1 de tickets de soporte en integraciones Custom.
+   **Trabajo de código pendiente para el paso 1 (NO implementado todavía, solo configurado en el
+   dashboard de Stripe):** reemplazar en `src/lib/billing.ts` las funciones `createAccountLink()`
+   (redirect a `account_onboarding`) y el flujo de "Dashboard de cuentas Express" por:
+   `@stripe/connect-js` + `@stripe/react-connect-js` en el cliente (`/app/ajustes/cobros.astro`), un
+   endpoint nuevo `POST /v1/account_sessions` en el servidor (uno por componente embebido montado:
+   onboarding, gestión de cuenta, payouts, notificaciones), y probablemente migrar la creación de cuenta
+   (`createConnectAccount` en `billing.ts`) al patrón `controller` de cuentas v2 en vez del parámetro
+   legado `type: 'express'`. `src/pages/api/billing/connect/callback.ts` deja de tener sentido tal cual
+   (ya no hay redirect de vuelta) — su lógica de guardar `stripe_account_id`/`charges_enabled` se movería
+   a donde se cree la cuenta / al webhook `account.updated`.
+   Casi siempre queda un disclosure mínimo tipo "Powered by Stripe" en Embedded Components (requerido
+   por el acuerdo de plataforma de Stripe, no removible) — el blanqueo 100% solo llega con el paso 2.
+   Standard (OAuth) queda descartado en ambos pasos: con Standard el vendedor administra su cuenta desde
+   el dashboard de Stripe de por vida — no es solo el onboarding, es inherente al modelo.

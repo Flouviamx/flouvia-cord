@@ -112,9 +112,9 @@ const NAV_GROUPS = [
         <img class="sb-foot-logo sb-foot-logo-white" src="/imgs/logo-cord-white.png" alt="Cord" />
         <!-- Toggle estilo panel (Linear/VSCode) — colapsar/expandir -->
         <button class="sb-toggle" id="sbToggleFloating" type="button" aria-label="Alternar menú">
-            <svg class="sb-toggle-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="4.5" width="18" height="15" rx="2.6"></rect>
-                <line class="sb-toggle-div" x1="9.5" y1="4.5" x2="9.5" y2="19.5"></line>
+            <svg class="sb-toggle-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="5" width="16" height="14" rx="2.5"></rect>
+                <rect class="sb-toggle-fill" x="4" y="5" width="7" height="14" rx="2.5" fill="currentColor" stroke="none"></rect>
             </svg>
         </button>
     </div>
@@ -387,7 +387,7 @@ const NAV_GROUPS = [
     html[data-theme="dark"] .sb-foot-logo-navy { display: none; }
     html[data-theme="dark"] .sb-foot-logo-white { display: inline-block; opacity: 0.5; }
 
-    /* ── Toggle estilo panel (Linear/VSCode), abajo a la derecha junto al logo ── */
+    /* ── Toggle estilo panel (Linear) ── */
     .sb-toggle {
         margin-left: auto; flex-shrink: 0;
         width: 30px; height: 30px; border-radius: 9px;
@@ -397,15 +397,32 @@ const NAV_GROUPS = [
         color: var(--sb-text);
         transition: background 0.22s var(--ease-ios), color 0.22s var(--ease-ios), box-shadow 0.22s var(--ease-ios), transform 0.2s var(--ease-spring);
     }
-    .sb-toggle:hover { background: var(--sb-toggle-hover-bg); color: var(--sb-text-strong); }
-    .sb-toggle:active { transform: scale(0.9); }
+    .sb-toggle:hover { background: var(--sb-toggle-hover-bg, rgba(0,0,0,0.05)); color: var(--sb-text-strong); }
+    .sb-toggle:active { transform: scale(0.92); }
     .sb-toggle:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--sb-text-active); }
-    .sb-toggle-ico { width: 17px; height: 17px; transition: transform 0.4s var(--ease-spring); }
-    /* La divisoria (el "panel") se desliza sutil al hover = sensación de abrir/cerrar */
-    .sb-toggle-div { transition: transform 0.35s var(--ease-spring); transform-origin: center; }
-    .sb-toggle:hover .sb-toggle-div { transform: translateX(1.6px); }
-    /* Colapsado: el ícono se voltea (el panel mira al otro lado = "expandir") */
-    :global(.sb-collapsed) .sb-toggle-ico { transform: scaleX(-1); }
+    
+    .sb-toggle-ico { width: 18px; height: 18px; transition: transform 0.4s var(--ease-spring); }
+    
+    /* Relleno interno animado */
+    .sb-toggle-fill {
+        /* Estado abierto: línea delgada (chiquito) */
+        width: 2px;
+        transform: translateX(5.5px);
+        transition: width 0.35s var(--ease-spring), transform 0.35s var(--ease-spring), opacity 0.25s var(--ease-ios);
+        opacity: 0.6;
+    }
+    .sb-toggle:hover .sb-toggle-fill { opacity: 1; transform: translateX(4.5px); }
+    
+    /* Estado colapsado: bloque sólido (grande) */
+    :global(.sb-collapsed) .sb-toggle-fill {
+        width: 7px;
+        transform: translateX(0px);
+        opacity: 0.85;
+    }
+    :global(.sb-collapsed) .sb-toggle:hover .sb-toggle-fill {
+        width: 8.5px;
+        opacity: 1;
+    }
     :global(.sb-collapsed) .sb-toggle { margin-left: 0; }
 
     @media (min-width: 881px) {
