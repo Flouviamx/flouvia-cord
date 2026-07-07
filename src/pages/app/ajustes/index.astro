@@ -5,6 +5,7 @@ import AppLayout from '../../../layouts/AppLayout.astro';
 import { getOrg, getSetupProgress, getMyMembership } from '../../../lib/queries';
 import { memberCan } from '../../../lib/permissions';
 import { SETTINGS_CATEGORIES } from '../../../lib/settings';
+import SupportCoverBg from '../../../components/support/SupportCoverBg.jsx';
 
 const [ORG, SETUP, ME] = await Promise.all([getOrg(), getSetupProgress(), getMyMembership()]);
 const hasAccess = memberCan(ME, 'ajustes');
@@ -35,6 +36,11 @@ const avanzados = SETTINGS_CATEGORIES.filter((c) => ADVANCED.has(c.id));
 
         {!SETUP.complete && (
             <a href="/app?guia=1" class="idx-health">
+                <div class="idx-health-bg" aria-hidden="true">
+                    <div class="idx-shader-wrap">
+                        <SupportCoverBg client:only="react" />
+                    </div>
+                </div>
                 <span class="idx-ring" style={`--c:${C}; --dash:${dash}`}>
                     <svg viewBox="0 0 60 60">
                         <circle class="idx-ring-bg" cx="30" cy="30" r="26" />
@@ -122,11 +128,14 @@ const avanzados = SETTINGS_CATEGORIES.filter((c) => ADVANCED.has(c.id));
     .idx-head p { font-size: 0.88rem; color: var(--color-text-muted); margin: 0.4rem 0 0; }
 
     /* Health-score de configuración */
-    .idx-health { display: flex; align-items: center; gap: 1.1rem; text-decoration: none; color: inherit;
-        background: var(--color-blue-deep); border-radius: 16px; padding: 1.2rem 1.4rem; margin-bottom: 3rem;
+    .idx-health { position: relative; overflow: hidden; display: flex; align-items: center; gap: 1.1rem; text-decoration: none; color: inherit;
+        background: #020610; border-radius: 16px; padding: 1.2rem 1.4rem; margin-bottom: 3rem; max-width: 800px;
         box-shadow: 0 24px 50px -32px rgba(10,25,47,0.6); transition: transform 0.4s var(--ease-spring); }
     .idx-health:hover { transform: translateY(-2px); }
-    .idx-ring { position: relative; width: 60px; height: 60px; flex-shrink: 0; }
+    .idx-health-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+    .idx-shader-wrap { position: absolute; top: 50%; left: 0; width: 100%; height: 500px; transform: translateY(-50%); }
+    .idx-ring, .idx-health-body, .idx-health-cta { position: relative; z-index: 1; }
+    .idx-ring { width: 60px; height: 60px; flex-shrink: 0; }
     .idx-ring svg { width: 60px; height: 60px; transform: rotate(-90deg); }
     .idx-ring-bg { fill: none; stroke: rgba(255,255,255,0.14); stroke-width: 5; }
     .idx-ring-fg { fill: none; stroke: var(--color-ok); stroke-width: 5; stroke-linecap: round;
