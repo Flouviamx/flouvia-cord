@@ -21,7 +21,7 @@ That's why there is no "migration" in the sense of moving cards or subscriptions
 
 ### Step 1: Connect your Stripe
 
-Configure your Stripe key so the public link's pay button charges your account. Without Stripe connected, the public link still works but without online payment.
+Go to **Settings › Payments** (Ajustes › Cobros) and complete the embedded onboarding to connect your account. Without Stripe connected, the public link still works but without online payment.
 
 ### Step 2: Import your catalog
 

@@ -21,7 +21,7 @@ Por eso no hay una "migración" en el sentido de mover tarjetas o suscripciones.
 
 ### Paso 1: Conecta tu Stripe
 
-Configura tu llave de Stripe para que el botón de pago del link público cobre a tu cuenta. Sin Stripe conectado, el link público funciona pero sin cobro en línea.
+Ve a **Ajustes › Cobros** y completa el onboarding embebido para conectar tu cuenta. Sin Stripe conectado, el link público de tus cotizaciones sigue funcionando, pero no permitirá el cobro en línea.
 
 ### Paso 2: Importa tu catálogo
 

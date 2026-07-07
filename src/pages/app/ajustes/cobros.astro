@@ -10,6 +10,15 @@ const activo = conectado && ORG.stripeChargesEnabled;
 const estado = !conectado ? 'nuevo' : activo ? 'activo' : 'pendiente';
 const puedeCobrar = activo; // habilita tarjeta / SPEI (transferencia manual no depende de Stripe)
 const marca = ORG.colorMarca || '#0a192f';
+
+// Stepper macro derivado del estado REAL (los únicos datos ciertos que tenemos de
+// Stripe son: si existe la cuenta y si ya puede cobrar). El detalle granular del
+// KYC lo muestra el propio componente embebido de Stripe abajo.
+const pasos = [
+    { label: 'Conecta tu cuenta',      done: estado !== 'nuevo',  active: estado === 'nuevo' },
+    { label: 'Verificación de Stripe', done: estado === 'activo', active: estado === 'pendiente' },
+    { label: 'Listo para cobrar',      done: estado === 'activo', active: false },
+];
 ---
 
 <SettingsShell title="Cobros — Ajustes" tab="cobros" perm="ajustes"
@@ -39,6 +48,11 @@ const marca = ORG.colorMarca || '#0a192f';
                 </div>
             </div>
         </div>
+        <div class="c-stepper">
+            {pasos.map((p, i) => (
+                <span class={`cs-step ${p.done ? 'is-complete' : ''} ${p.active ? 'is-active' : ''}`}>{i + 1}. {p.label}</span>
+            ))}
+        </div>
         <div class="connect-frame">
             <ConnectOnboarding client:only="react" chargesEnabled={ORG.stripeChargesEnabled} />
         </div>
@@ -47,17 +61,35 @@ const marca = ORG.colorMarca || '#0a192f';
         <div class="s-block">
             <h3>Estado de tu cuenta</h3>
             <div class="s-body">
-                <div class={`cobros-status cobros-status--${estado}`}>
-                    <span class="cs-dot"></span>
-                    <div class="cs-text">
-                        <strong>{estado === 'activo' ? 'Cobros activos' : 'Verificación pendiente'}</strong>
-                        <span>{estado === 'activo'
-                            ? 'Tu cuenta está lista. Tus clientes ya pueden pagar sus cotizaciones.'
-                            : 'Stripe necesita algunos datos más para habilitar tus cobros. Complétalos abajo.'}</span>
+                {estado === 'activo' ? (
+                    <div class="cobros-celebration">
+                        <div class="cc-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        </div>
+                        <div class="cc-text">
+                            <strong>¡Todo listo, ya puedes cobrar!</strong>
+                            <span>Tu cuenta está verificada y activa. El dinero de tus cobros se enviará automáticamente a tu banco. A continuación puedes administrar tu información bancaria.</span>
+                        </div>
+                        <button type="button" class="cs-disconnect" id="btnDisconnect">Desconectar</button>
                     </div>
-                    <button type="button" class="cs-disconnect" id="btnDisconnect">Desconectar</button>
-                </div>
-                <div class="connect-frame">
+                ) : (
+                    <>
+                        <div class="cobros-status cobros-status--pendiente">
+                            <span class="cs-dot"></span>
+                            <div class="cs-text">
+                                <strong>Verificación pendiente</strong>
+                                <span>Stripe necesita algunos datos más para habilitar tus cobros. Complétalos en el formulario de abajo.</span>
+                            </div>
+                            <button type="button" class="cs-disconnect" id="btnDisconnect">Desconectar</button>
+                        </div>
+                        <div class="c-stepper">
+                            {pasos.map((p, i) => (
+                                <span class={`cs-step ${p.done ? 'is-complete' : ''} ${p.active ? 'is-active' : ''}`}>{i + 1}. {p.label}</span>
+                            ))}
+                        </div>
+                    </>
+                )}
+                <div class={`connect-frame ${estado === 'activo' ? 'is-active' : ''}`}>
                     <ConnectOnboarding client:only="react" chargesEnabled={ORG.stripeChargesEnabled} />
                 </div>
             </div>
@@ -220,11 +252,54 @@ const marca = ORG.colorMarca || '#0a192f';
     }
     .cobros-status .cs-disconnect:hover { background: rgba(239,68,68,0.06); }
 
+    /* ── Stepper ── */
+    .c-stepper { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .cs-step {
+        font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted);
+        padding: 5px 12px; border-radius: 999px; background: var(--color-bg-soft);
+        border: 1px solid var(--color-border);
+    }
+    .cs-step.is-active {
+        color: var(--color-blue-deep); background: rgba(59,130,246,0.08);
+        border-color: rgba(59,130,246,0.25); font-weight: 600;
+    }
+    .cs-step.is-complete {
+        color: var(--color-ok); background: rgba(16,185,129,0.08);
+        border-color: rgba(16,185,129,0.25);
+    }
+
+    /* ── Estado Activo Celebratorio ── */
+    .cobros-celebration {
+        display: flex; align-items: center; gap: 16px;
+        padding: 20px 22px; border-radius: var(--radius-card, 16px);
+        background: linear-gradient(to right, rgba(16,185,129,0.08), rgba(16,185,129,0.02));
+        border: 1px solid rgba(16,185,129,0.2);
+    }
+    .cc-icon {
+        flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%;
+        background: var(--color-ok); color: #fff;
+        display: grid; place-items: center;
+        box-shadow: 0 4px 12px -2px rgba(16,185,129,0.3);
+    }
+    .cc-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .cc-text strong { font-size: 0.95rem; font-weight: 600; color: var(--color-text); letter-spacing: -0.01em; }
+    .cc-text span { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.45; }
+    .cobros-celebration .cs-disconnect {
+        flex-shrink: 0; margin-left: auto; align-self: flex-start;
+        font-size: 0.76rem; font-weight: 600; color: var(--color-text-muted);
+        background: transparent; border: 1px solid var(--color-border); border-radius: 999px;
+        padding: 7px 14px; cursor: pointer; transition: all 0.2s ease;
+    }
+    .cobros-celebration .cs-disconnect:hover { background: rgba(239,68,68,0.06); color: var(--color-danger); border-color: rgba(239,68,68,0.25); }
+
     /* ── Marco del componente embebido de Stripe ── */
     .connect-frame {
-        border: 1px solid var(--color-border); border-radius: var(--radius-card, 16px);
-        padding: 6px; background: var(--surface, #fff);
+        border: 1px solid var(--color-border); border-radius: 20px;
+        padding: 10px; background: var(--surface, #fff);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 12px 24px -8px rgba(0, 0, 0, 0.04);
+        margin-top: 16px;
     }
+    .connect-frame.is-active { margin-top: 24px; padding: 14px; }
 
     /* ── Métodos + preview (2 columnas) ── */
     .methods-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; align-items: start; }
