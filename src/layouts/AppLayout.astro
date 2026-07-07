@@ -273,6 +273,7 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
                     <div class="help-ai-box" id="helpAiBox" aria-disabled="false">
                         <div class="help-ai-bg" aria-hidden="true">
                             <SupportCoverBg client:only="react" />
+                            <div class="ai-flare"></div>
                         </div>
                         <div class="help-ai-content">
                             <button type="button" class="help-ai-back" id="helpAiBack" aria-label="Volver al menú" onclick="window.closeCordAi && window.closeCordAi(event)">
@@ -291,7 +292,7 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
                                     <div class="chat-bubble bot">Hola, soy Cord AI. Puedo ayudarte a crear cotizaciones, analizar tus ventas o resolver dudas sobre la plataforma. ¿En qué te ayudo hoy?</div>
                                 </div>
                                 <div class="chat-input-row">
-                                    <input type="text" class="chat-real-input" id="chatRealInput" placeholder="Pregúntale a la IA sobre tu negocio..." autocomplete="off" onfocus="window.openCordAi && window.openCordAi()">
+                                    <input type="text" class="chat-real-input" id="chatRealInput" placeholder="Pregúntale a la IA sobre tu negocio..." autocomplete="off">
                                     <button type="button" class="chat-send" id="chatSendBtn" aria-label="Enviar mensaje">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                                     </button>
@@ -1060,7 +1061,11 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
     html[data-theme="dark"] .help-panel.ai-active .help-ai-box { background: transparent; box-shadow: none; }
 
     .help-ai-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; transition: all 0.8s cubic-bezier(0.2, 1, 0.3, 1); transform-origin: top center; }
-    .help-panel.ai-active .help-ai-bg { opacity: 0.12; transform: scale(1.5) translateY(20px); filter: invert(1) hue-rotate(180deg) brightness(2) contrast(1.2); }
+    .help-panel.ai-active .help-ai-bg { opacity: 0.8; transform: scale(1.1) translateY(10px); -webkit-filter: invert(1) hue-rotate(180deg) brightness(1.5); filter: invert(1) hue-rotate(180deg) brightness(1.5); }
+    
+    .ai-flare { position: absolute; inset: -50%; background: radial-gradient(circle at center, rgba(255,255,255,1) 0%, rgba(255,255,255,0.7) 40%, rgba(255,255,255,0) 70%); opacity: 0; transform: scale(0.5); pointer-events: none; z-index: 10; transition: all 0.7s cubic-bezier(0.2, 1, 0.3, 1); }
+    .help-panel.ai-active .ai-flare { opacity: 1; transform: scale(1.5); }
+    html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     
     .help-ai-content { position: relative; z-index: 1; flex: 1 1 0; display: flex; flex-direction: column; transition: transform 0.4s var(--ease-spring); }
     
@@ -1068,8 +1073,8 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
     .help-ai-back:hover { color: var(--color-text); }
     .help-panel.ai-active .help-ai-back { display: inline-flex; }
 
-    .help-ai-badge, .help-ai-title { transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1); }
-    .help-panel.ai-active .help-ai-badge, .help-panel.ai-active .help-ai-title { opacity: 0; transform: translateY(-10px); pointer-events: none; position: absolute; visibility: hidden; }
+    .help-ai-badge, .help-ai-title { transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1); overflow: hidden; max-height: 40px; margin-bottom: 12px; }
+    .help-panel.ai-active .help-ai-badge, .help-panel.ai-active .help-ai-title { opacity: 0; transform: translateY(-10px); max-height: 0; margin-bottom: 0; pointer-events: none; }
     
     .help-ai-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: rgba(148, 187, 233, 0.9); margin-bottom: 12px; }
     .help-ai-title { margin: 0 0 12px; font-size: 0.95rem; font-weight: 600; color: #ffffff; letter-spacing: -0.2px; }
@@ -1902,6 +1907,13 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
         const aiChatInput = document.getElementById('chatRealInput');
         const aiChatSend = document.getElementById('chatSendBtn');
         const chatHistory = document.getElementById('chatHistory');
+        
+        if (aiChatInput) {
+            const triggerAi = () => { if (window.openCordAi) window.openCordAi(); };
+            aiChatInput.addEventListener('focus', triggerAi);
+            aiChatInput.addEventListener('click', triggerAi);
+            aiChatInput.addEventListener('touchstart', triggerAi, {passive: true});
+        }
 
         aiChatInput?.addEventListener('input', () => {
             if ((aiChatInput as HTMLInputElement).value.trim()) aiChatSend?.classList.add('active');
