@@ -270,7 +270,7 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
                     </div>
                 </div>
                 <footer class="help-ai">
-                    <div class="help-ai-box" id="helpAiBox" aria-disabled="false" onclick="window.openCordAi && window.openCordAi(event)">
+                    <div class="help-ai-box" id="helpAiBox" aria-disabled="false">
                         <div class="help-ai-bg" aria-hidden="true">
                             <SupportCoverBg client:only="react" />
                         </div>
@@ -284,7 +284,7 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
                                 Inteligencia Artificial
                             </span>
                             <p class="help-ai-title">Cord AI</p>
-                            <div class="help-ai-input" id="helpAiInput" role="button" tabindex="0">Pregúntale a la IA sobre tu negocio…</div>
+                            <div class="help-ai-input" id="helpAiInput" role="button" tabindex="0" onclick="window.openCordAi && window.openCordAi(event)">Pregúntale a la IA sobre tu negocio…</div>
                             
                             <div class="help-ai-chat" id="helpAiChat" onclick="event.stopPropagation()">
                                 <div class="chat-history" id="chatHistory">
@@ -1104,8 +1104,8 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
     .help-panel:not(.ai-active) .help-ai-box:hover { transform: translateY(-4px); box-shadow: 0 16px 40px -10px rgba(0,0,0,0.4); }
     .help-panel:not(.ai-active) .help-ai-input { cursor: pointer; }
     
-    .chat-input-row { display: flex; gap: 10px; margin-top: auto; padding-top: 10px; }
-    .chat-real-input { flex: 1; padding: 12px 16px; border-radius: 20px; border: none; background: rgba(118, 118, 128, 0.12); font-family: var(--font-sans); font-size: 0.95rem; color: var(--color-text); outline: none; transition: background 0.25s, box-shadow 0.25s; }
+    .chat-input-row { display: flex; gap: 10px; margin-top: auto; padding-top: 10px; position: relative; z-index: 20; pointer-events: auto; }
+    .chat-real-input { flex: 1; padding: 12px 16px; border-radius: 20px; border: none; background: rgba(118, 118, 128, 0.12); font-family: var(--font-sans); font-size: 0.95rem; color: var(--color-text); outline: none; transition: background 0.25s, box-shadow 0.25s; position: relative; z-index: 20; pointer-events: auto !important; user-select: auto !important; }
     html[data-theme="dark"] .chat-real-input { background: rgba(118, 118, 128, 0.24); }
     .chat-real-input:focus { background: rgba(118, 118, 128, 0.16); box-shadow: 0 0 0 2px rgba(10,25,47,0.1); }
     html[data-theme="dark"] .chat-real-input:focus { background: rgba(118, 118, 128, 0.32); box-shadow: 0 0 0 2px rgba(255,255,255,0.1); }
