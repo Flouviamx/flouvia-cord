@@ -1102,7 +1102,7 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
     
     .help-panel:not(.ai-active) .help-ai-box { cursor: pointer; transition: transform 0.3s var(--ease-spring), box-shadow 0.3s; }
     .help-panel:not(.ai-active) .help-ai-box:hover { transform: translateY(-4px); box-shadow: 0 16px 40px -10px rgba(0,0,0,0.4); }
-    .help-panel:not(.ai-active) .help-ai-input { cursor: pointer; }
+    .help-panel:not(.ai-active) .help-ai-input { cursor: text; }
     
     .chat-input-row { display: flex; gap: 10px; margin-top: auto; padding-top: 10px; position: relative; z-index: 20; pointer-events: auto; }
     .chat-real-input { flex: 1; padding: 12px 16px; border-radius: 20px; border: none; background: rgba(118, 118, 128, 0.12); font-family: var(--font-sans); font-size: 0.95rem; color: var(--color-text); outline: none; transition: background 0.25s, box-shadow 0.25s; position: relative; z-index: 20; pointer-events: auto !important; user-select: auto !important; }
@@ -1719,7 +1719,8 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
         const drawer = document.getElementById('helpDrawer');
         if (!drawer || drawer.classList.contains('ai-active')) return;
         drawer.classList.add('ai-active');
-        setTimeout(() => document.getElementById('chatRealInput')?.focus(), 400);
+        const input = document.getElementById('chatRealInput');
+        if (input) input.focus();
     };
     window.closeCordAi = function(e) {
         if (e) e.stopPropagation();
