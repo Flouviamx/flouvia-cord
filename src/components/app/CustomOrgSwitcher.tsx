@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '@nanostores/react';
 import { $clerkStore, $userStore, $organizationStore, $isLoadedStore } from '@clerk/astro/client';
 import { $isTestMode, toggleTestMode } from '../../store/testMode';
+import CreateWorkspaceModal from './CreateWorkspaceModal';
 
 export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: string }) {
   const isLoaded = useStore($isLoadedStore);
@@ -12,6 +13,10 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
 
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Create Modal State
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createModalParentOrg, setCreateModalParentOrg] = useState<{ id: string, name: string } | null>(null);
 
   // Cerrar al hacer clic afuera
   useEffect(() => {
@@ -49,29 +54,33 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
     window.location.assign(hasEntityId || !path.startsWith('/app') ? '/app' : path);
   };
 
-  const handleCreateSubaccount = async (parentOrgId: string) => {
-    const name = prompt('Nombre de la nueva cuenta:');
-    if (!name) return;
-    
+  const handleCreateSubaccount = (parentOrgId: string, parentOrgName: string) => {
+    setCreateModalParentOrg({ id: parentOrgId, name: parentOrgName });
+    setCreateModalOpen(true);
+    setIsOpen(false);
+  };
+
+  const handleModalSubmit = async (type: 'nested' | 'separate', name: string) => {
     try {
       const newOrg = await clerk?.createOrganization({ name });
       if (!newOrg) return;
 
-      const res = await fetch('/api/orgs/subaccount', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ childOrgId: newOrg.id, parentOrgId })
-      });
+      if (type === 'nested' && createModalParentOrg) {
+        const res = await fetch('/api/orgs/subaccount', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ childOrgId: newOrg.id, parentOrgId: createModalParentOrg.id })
+        });
 
-      // Si el ligado falla, la org SÍ se creó (es usable) — no la perdemos, pero
-      // avisamos que quedó como espacio independiente, no anidada bajo el padre.
-      if (!res.ok) {
-        const cc = (window as any).cordToast;
-        const msg = 'La cuenta se creó pero no se pudo anidar bajo la principal.';
-        if (cc) cc(msg, 'error'); else alert(msg);
+        if (!res.ok) {
+          const cc = (window as any).cordToast;
+          const msg = 'La cuenta se creó pero no se pudo anidar bajo la principal.';
+          if (cc) cc(msg, 'error'); else alert(msg);
+        }
       }
 
       await handleSwitch(newOrg.id);
+      setCreateModalOpen(false);
     } catch (e) {
       console.error(e);
       const cc = (window as any).cordToast;
@@ -212,7 +221,7 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
                       
                       {/* Create sub-account button */}
                       {isCurrentParent && (
-                        <button className="dropdown-action-btn" onClick={() => handleCreateSubaccount(mem.organization.id)}>
+                        <button className="dropdown-action-btn" onClick={() => handleCreateSubaccount(mem.organization.id, mem.organization.name)}>
                           <span className="orgd-icon orgd-icon-neutral" aria-hidden="true">
                             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
                               <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -296,6 +305,144 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
         .custom-org-switcher {
           position: relative;
           font-family: var(--font-sans, system-ui, sans-serif);
+        }
+
+        /* Create Modal CSS */
+        .cm-overlay {
+          position: fixed; inset: 0; z-index: 9999;
+          background: rgba(0, 0, 0, 0.4);
+          backdrop-filter: blur(4px);
+          display: flex; align-items: center; justify-content: center;
+          animation: cmFadeIn 0.2s ease-out;
+        }
+
+        .cm-dialog {
+          background: var(--sb-menu-solid-bg, #fff);
+          border-radius: 16px;
+          width: 100%; max-width: 680px;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+          display: flex; flex-direction: column;
+          animation: cmZoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          border: 1px solid var(--sb-menu-border);
+        }
+        html[data-theme="dark"] .cm-dialog { background: #1c1c1e; }
+
+        .cm-header {
+          position: relative;
+          padding: 24px 32px 16px;
+        }
+        .cm-close {
+          position: absolute; top: 20px; right: 24px;
+          background: transparent; border: none; cursor: pointer;
+          color: var(--sb-menu-muted); padding: 4px; border-radius: 8px;
+        }
+        .cm-close:hover { background: var(--sb-hover-bg); }
+        .cm-title {
+          font-size: 1.4rem; font-weight: 600; color: var(--sb-text-strong);
+          margin: 0 0 8px 0;
+        }
+        .cm-subtitle {
+          font-size: 0.95rem; color: var(--sb-menu-muted); margin: 0;
+        }
+
+        .cm-body {
+          padding: 16px 32px 32px;
+          display: flex; gap: 24px;
+        }
+
+        .cm-card {
+          flex: 1;
+          border: 2px solid var(--sb-divider);
+          border-radius: 12px;
+          padding: 24px;
+          cursor: pointer;
+          transition: all 0.2s;
+          background: transparent;
+          display: flex; flex-direction: column; text-align: left;
+        }
+        .cm-card:hover {
+          border-color: rgba(99, 102, 241, 0.4); 
+        }
+        .cm-card.selected {
+          border-color: var(--color-blue-deep, #6366f1);
+          background: rgba(99, 102, 241, 0.02);
+        }
+
+        .cm-card-graphic {
+          background: #f8f9fa;
+          border-radius: 12px;
+          padding: 20px;
+          margin-bottom: 24px;
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          min-height: 160px;
+          border: 1px solid var(--sb-divider);
+        }
+        html[data-theme="dark"] .cm-card-graphic { background: rgba(0,0,0,0.2); }
+
+        .cm-card-title {
+          font-size: 1.05rem; font-weight: 600; color: var(--sb-text-strong); margin: 0 0 8px 0;
+        }
+        .cm-card.selected .cm-card-title {
+          color: var(--color-blue-deep, #6366f1);
+        }
+        .cm-card-desc {
+          font-size: 0.85rem; color: var(--sb-menu-muted); margin: 0; line-height: 1.5;
+        }
+
+        .cm-footer {
+          padding: 16px 32px;
+          border-top: 1px solid var(--sb-divider);
+          display: flex; justify-content: space-between; align-items: center;
+          background: rgba(0,0,0,0.015);
+          border-radius: 0 0 16px 16px;
+        }
+        .cm-footer-text {
+          font-size: 0.85rem; color: var(--sb-menu-muted);
+        }
+        .cm-footer-text a { color: var(--color-blue-deep, #6366f1); text-decoration: none; font-weight: 500;}
+        .cm-btn {
+          background: var(--color-blue-deep, #6366f1);
+          color: #fff; border: none; padding: 10px 20px; border-radius: 8px;
+          font-weight: 500; font-size: 0.95rem; cursor: pointer; transition: opacity 0.2s;
+        }
+        .cm-btn:hover { opacity: 0.9; }
+        .cm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .cm-btn-secondary {
+          background: transparent; color: var(--sb-text-strong);
+          border: 1px solid var(--sb-divider);
+        }
+        .cm-btn-secondary:hover { background: var(--sb-hover-bg); opacity: 1; }
+
+        .cm-input-group { margin-top: 16px; }
+        .cm-label { display: block; font-size: 0.9rem; font-weight: 500; margin-bottom: 8px; color: var(--sb-text-strong); }
+        .cm-input {
+          width: 100%; padding: 12px 16px; border-radius: 8px;
+          border: 1px solid var(--sb-divider); background: transparent;
+          color: var(--sb-text-strong); font-size: 1rem;
+        }
+        .cm-input:focus { outline: none; border-color: var(--color-blue-deep, #6366f1); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15); }
+
+        .cg-box {
+          background: var(--sb-menu-solid-bg, #fff);
+          border: 1px solid var(--sb-divider);
+          border-radius: 8px; padding: 10px 14px;
+          display: flex; align-items: center; gap: 8px;
+          font-size: 0.85rem; font-weight: 500; color: var(--sb-text-strong);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        html[data-theme="dark"] .cg-box { background: #2c2c2e; }
+        .cg-box.child { background: transparent; border-style: dashed; box-shadow: none; }
+        .cg-box.muted { opacity: 0.6; box-shadow: none; border-color: transparent; background: transparent; justify-content: center; }
+
+        .cg-row { display: flex; gap: 16px; width: 100%; justify-content: center; align-items: center; }
+
+        @keyframes cmFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes cmZoomIn {
+          from { opacity: 0; transform: scale(0.96) translateY(8px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
         }
 
         .org-switcher-skeleton {
@@ -702,6 +849,13 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
           background: var(--sb-menu-muted);
         }
       `}</style>
+      
+      <CreateWorkspaceModal 
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        parentOrg={createModalParentOrg}
+        onSubmit={handleModalSubmit}
+      />
     </div>
   );
 }
