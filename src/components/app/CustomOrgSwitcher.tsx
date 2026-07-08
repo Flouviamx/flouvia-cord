@@ -173,7 +173,7 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
                     </div>
                     {selected && (
                       <span className="orgd-check" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
                       </span>
@@ -182,7 +182,7 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
                   
                   {/* Render children sub-accounts */}
                   {(hasChildren || isCurrentParent) && (
-                    <div className="org-children-container" style={{ paddingLeft: '24px', borderLeft: '1px solid var(--sb-divider)', marginLeft: '18px' }}>
+                    <div className="org-children-container" style={{ paddingLeft: '8px', borderLeft: '1px solid var(--sb-divider)', marginLeft: '16px', marginTop: '2px', marginBottom: '4px' }}>
                       {membershipsByParent[mem.organization.id]?.map((childMem: any) => {
                         const childSelected = organization?.id === childMem.organization.id;
                         return (
@@ -193,15 +193,15 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
                             role="menuitemradio"
                             aria-checked={childSelected}
                           >
-                            <div className="org-avatar small" style={{ overflow: 'hidden', width: '20px', height: '20px', fontSize: '0.6rem', borderRadius: '6px' }}>
+                            <div className="org-avatar small" style={{ overflow: 'hidden', width: '20px', height: '20px', fontSize: '0.6rem', borderRadius: '4px' }}>
                               {childMem.organization.name.charAt(0).toUpperCase()}
                             </div>
                             <div className="org-details">
-                              <span className="org-item-name" title={childMem.organization.name} style={{ fontSize: '0.8rem' }}>{childMem.organization.name}</span>
+                              <span className="org-item-name" title={childMem.organization.name} style={{ fontSize: '0.75rem' }}>{childMem.organization.name}</span>
                             </div>
                             {childSelected && (
-                              <span className="orgd-check" aria-hidden="true" style={{ width: '14px', height: '14px' }}>
-                                <svg viewBox="0 0 24 24" width="8" height="8" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <span className="orgd-check" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                   <polyline points="20 6 9 17 4 12"></polyline>
                                 </svg>
                               </span>
@@ -212,14 +212,14 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
                       
                       {/* Create sub-account button */}
                       {isCurrentParent && (
-                        <button className="dropdown-action-btn" onClick={() => handleCreateSubaccount(mem.organization.id)} style={{ padding: '0.4rem 0.65rem' }}>
-                          <span className="orgd-icon orgd-icon-neutral" aria-hidden="true" style={{ width: '20px', height: '20px' }}>
-                            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" strokeWidth="2.1" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                        <button className="dropdown-action-btn" onClick={() => handleCreateSubaccount(mem.organization.id)}>
+                          <span className="orgd-icon orgd-icon-neutral" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
                               <line x1="12" y1="5" x2="12" y2="19"></line>
                               <line x1="5" y1="12" x2="19" y2="12"></line>
                             </svg>
                           </span>
-                          <span className="orgd-label" style={{ fontSize: '0.75rem' }}>+ Crear cuenta</span>
+                          <span className="orgd-label" style={{ fontSize: '0.75rem', color: 'var(--sb-menu-muted)' }}>Crear cuenta</span>
                         </button>
                       )}
                     </div>
@@ -430,59 +430,61 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
           position: absolute;
           top: calc(100% + 0.5rem);
           left: 0;
-          width: 300px;
+          width: 280px;
           overflow: hidden;
-          /* background/box-shadow/z-index sólidos: forzados en AppLayout.astro
-             (bypass anti-translucidez). No pisar esas propiedades aquí. */
+          background: var(--sb-menu-solid-bg, #ffffff);
           border: 1px solid var(--sb-menu-border);
-          border-radius: 20px;
-          padding: 0.6rem;
+          border-radius: 12px;
+          padding: 6px;
           display: flex;
           flex-direction: column;
-          gap: 0.7rem;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0,0,0,0.1);
           transform-origin: top left;
-          animation: dropdownFade 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+          animation: dropdownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .sb-collapsed .org-dropdown { width: 272px; }
 
-        html[data-theme="dark"] .org-dropdown { border-color: var(--sb-menu-border); }
+        html[data-theme="dark"] .org-dropdown { 
+          border-color: var(--sb-menu-border);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), 0 0 1px rgba(0,0,0,0.4);
+        }
 
-        /* Rim light falso (sheen) — da el efecto "vidrio" sin transparencia real,
-           que fue la causa del bug de translucidez ya documentado. */
         .orgd-sheen {
           position: absolute; inset: 0; z-index: 0; pointer-events: none;
           border-radius: inherit;
-          background: linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 38%);
+          background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 25%);
         }
         html[data-theme="dark"] .orgd-sheen {
-          background: linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0) 38%);
+          background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0) 25%);
         }
 
         @keyframes dropdownFade {
-          from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+          from { opacity: 0; transform: translateY(-4px) scale(0.98); }
           to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .orgd-section-label {
           position: relative; z-index: 1;
-          font-size: 0.63rem;
-          font-weight: 800;
+          font-size: 0.65rem;
+          font-weight: 500;
           color: var(--sb-menu-muted);
           text-transform: uppercase;
-          letter-spacing: 0.08em;
-          padding: 0.15rem 0.4rem 0;
+          letter-spacing: 0.04em;
+          padding: 0.4rem 0.6rem 0.2rem;
         }
 
-        /* Tarjeta "inset grouped list" — mismo patrón que el drawer de Ayuda */
         .orgd-group {
           position: relative; z-index: 1;
-          background: #f5f5f7;
-          border-radius: 14px;
-          overflow: hidden;
           display: flex;
           flex-direction: column;
+          gap: 2px;
         }
-        html[data-theme="dark"] .orgd-group { background: rgba(255,255,255,0.05); }
+        
+        .orgd-group:not(:last-child) {
+          padding-bottom: 6px;
+          margin-bottom: 6px;
+          border-bottom: 1px solid var(--sb-divider);
+        }
 
         .org-list {
           max-height: 208px;
@@ -491,9 +493,9 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
 
         .orgd-empty {
           margin: 0;
-          padding: 0.75rem 0.7rem;
-          font-size: 0.78rem;
-          line-height: 1.45;
+          padding: 0.5rem 0.6rem;
+          font-size: 0.75rem;
+          line-height: 1.4;
           color: var(--sb-menu-muted);
         }
 
@@ -501,44 +503,42 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
           position: relative;
           display: flex;
           align-items: center;
-          gap: 0.65rem;
-          padding: 0.55rem 0.65rem;
+          gap: 0.6rem;
+          padding: 0.4rem 0.5rem;
+          margin: 0 2px;
+          border-radius: 6px;
           background: transparent;
           border: none;
           cursor: pointer;
           text-align: left;
-          width: 100%;
           color: var(--sb-menu-text);
+          transition: background 0.15s;
         }
-        .org-list-item::after {
-          content: '';
-          position: absolute; bottom: 0; left: 46px; right: 0; height: 1px;
-          background: var(--sb-divider);
-        }
-        .org-list-item:last-child::after { display: none; }
 
         .org-list-item:hover {
-          background: rgba(10,25,47,0.045);
+          background: rgba(10,25,47,0.04);
         }
         html[data-theme="dark"] .org-list-item:hover { background: rgba(255,255,255,0.06); }
 
         .org-list-item.selected {
-          background: rgba(10,25,47,0.05);
+          background: rgba(10,25,47,0.03);
         }
-        html[data-theme="dark"] .org-list-item.selected { background: rgba(255,255,255,0.07); }
+        html[data-theme="dark"] .org-list-item.selected { background: rgba(255,255,255,0.04); }
+        
+        /* Remove the heavy border on selected small avatar */
         .org-list-item.selected .org-avatar.small {
-          box-shadow: inset 0 1px 1px rgba(255,255,255,0.25), 0 0 0 2px var(--sb-menu-solid-bg), 0 0 0 3.5px var(--color-blue-deep);
+          box-shadow: inset 0 1px 1px rgba(255,255,255,0.1);
         }
 
         .org-details {
           display: flex;
           flex-direction: column;
           flex: 1;
-          min-width: 0; /* CRITICAL FOR TRUNCATION */
+          min-width: 0;
         }
 
         .org-item-name {
-          font-size: 0.85rem;
+          font-size: 0.8rem;
           font-weight: 500;
           color: var(--sb-menu-text);
           white-space: nowrap;
@@ -554,40 +554,37 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
           text-overflow: ellipsis;
         }
 
+        /* Clean checkmark without blue background circle */
         .orgd-check {
           flex-shrink: 0;
-          width: 16px; height: 16px;
-          border-radius: 50%;
-          background: var(--color-blue-deep);
           display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 1px 3px rgba(10,25,47,0.4);
+          color: var(--color-blue-deep);
+        }
+        html[data-theme="dark"] .orgd-check {
+          color: #fff;
         }
 
         .dropdown-action-btn {
           position: relative;
           display: flex;
           align-items: center;
-          gap: 0.65rem;
-          padding: 0.55rem 0.65rem;
-          width: 100%;
+          gap: 0.6rem;
+          padding: 0.4rem 0.5rem;
+          margin: 0 2px;
+          border-radius: 6px;
           background: transparent;
           border: none;
-          font-size: 0.85rem;
+          font-size: 0.8rem;
           font-weight: 500;
           color: var(--sb-menu-text);
           cursor: pointer;
           text-align: left;
           text-decoration: none;
+          transition: background 0.15s;
         }
-        .dropdown-action-btn::after {
-          content: '';
-          position: absolute; bottom: 0; left: 46px; right: 0; height: 1px;
-          background: var(--sb-divider);
-        }
-        .dropdown-action-btn:last-child::after { display: none; }
 
         .dropdown-action-btn:hover {
-          background: rgba(10,25,47,0.045);
+          background: rgba(10,25,47,0.04);
         }
         html[data-theme="dark"] .dropdown-action-btn:hover { background: rgba(255,255,255,0.06); }
 
@@ -595,22 +592,22 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
 
         .orgd-icon {
           flex-shrink: 0;
-          width: 26px; height: 26px;
-          border-radius: 8px;
+          width: 20px; height: 20px;
           display: flex; align-items: center; justify-content: center;
         }
-        .orgd-icon-neutral { background: rgba(10,25,47,0.06); color: var(--color-blue-deep); }
-        html[data-theme="dark"] .orgd-icon-neutral { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85); }
+        
+        .orgd-icon-neutral { color: var(--sb-menu-muted); }
+        .dropdown-action-btn:hover .orgd-icon-neutral { color: var(--sb-menu-text); }
 
-        .orgd-icon-amber { background: rgba(245,158,11,0.13); color: #d97706; }
-        html[data-theme="dark"] .orgd-icon-amber { background: rgba(245,158,11,0.16); color: #fbbf24; }
+        .orgd-icon-amber { color: #d97706; }
+        html[data-theme="dark"] .orgd-icon-amber { color: #fbbf24; }
 
-        .orgd-icon-red { background: rgba(239,68,68,0.1); color: var(--color-danger); }
-        html[data-theme="dark"] .orgd-icon-red { background: rgba(239,68,68,0.15); }
+        .orgd-icon-red { color: var(--color-danger); }
 
         .orgd-chevron {
           flex-shrink: 0;
           color: var(--sb-label);
+          opacity: 0.5;
         }
 
         .flex-1 {
@@ -619,16 +616,13 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
 
         .dev-mode-toggle.active .orgd-label {
           color: #d97706;
-          font-weight: 600;
+          font-weight: 500;
         }
         html[data-theme="dark"] .dev-mode-toggle.active .orgd-label { color: #fbbf24; }
 
-        /* Toggle estilo iOS — mismas proporciones/easing que .s-toggle
-           (AppLayout.astro), sólido en ambos estados, thumb blanco con sombra
-           real (no un punto plano de color). */
         .toggle-switch {
-          width: 38px;
-          height: 22px;
+          width: 32px;
+          height: 18px;
           border-radius: 100px;
           background: rgba(10,25,47,0.13);
           position: relative;
@@ -638,8 +632,8 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
         html[data-theme="dark"] .toggle-switch { background: rgba(255,255,255,0.16); }
 
         .toggle-thumb {
-          width: 18px;
-          height: 18px;
+          width: 14px;
+          height: 14px;
           background: #ffffff;
           border-radius: 50%;
           position: absolute;
@@ -649,14 +643,12 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
           transition: transform 0.3s var(--ease-spring, cubic-bezier(0.22,1,0.36,1));
         }
 
-        /* Ámbar tipo Stripe: el color universal de "modo de prueba" — sólido,
-           no un wash translúcido, para que el estado ON se lea inequívoco. */
         .toggle-switch.on {
           background: #f59e0b;
         }
 
         .toggle-switch.on .toggle-thumb {
-          transform: translateX(16px);
+          transform: translateX(14px);
         }
 
         .dropdown-action-btn.text-red {
@@ -666,24 +658,24 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
         .dropdown-action-btn.text-red:hover {
           background: rgba(239, 68, 68, 0.08);
         }
+        
+        .dropdown-action-btn.text-red .orgd-icon-red {
+          color: var(--color-danger);
+        }
 
         .user-profile-section {
           position: relative;
           display: flex;
           align-items: center;
-          gap: 0.65rem;
-          padding: 0.55rem 0.65rem;
-          min-width: 0; /* Fix overflow for long emails */
-        }
-        .user-profile-section::after {
-          content: '';
-          position: absolute; bottom: 0; left: 46px; right: 0; height: 1px;
-          background: var(--sb-divider);
+          gap: 0.6rem;
+          padding: 0.4rem 0.5rem;
+          margin: 0 2px;
+          min-width: 0;
         }
 
         .user-avatar {
-          width: 26px;
-          height: 26px;
+          width: 24px;
+          height: 24px;
           border-radius: 50%;
           background: var(--sb-hover-bg);
           color: var(--sb-menu-text);
@@ -691,12 +683,11 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
           align-items: center;
           justify-content: center;
           font-weight: 600;
-          font-size: 0.72rem;
+          font-size: 0.7rem;
           flex-shrink: 0;
           border: 1px solid var(--sb-divider);
         }
 
-        /* Custom Scrollbar for org-list */
         .org-list::-webkit-scrollbar {
           width: 4px;
         }
