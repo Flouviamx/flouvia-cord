@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { STRIPE_MX_STATES, STRIPE_COMPANY_STRUCTURES, STRIPE_MCC_B2B, translateRequirement } from '../../lib/stripe-catalogs';
+import LiveCapture from './LiveCapture';
 
 interface ConnectCustomOnboardingProps {
     org?: any;
@@ -11,6 +12,8 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
     const [error, setError] = useState<string | null>(null);
     const [requirements, setRequirements] = useState<any>(null);
     const [accountId, setAccountId] = useState<string | null>(null);
+    const [chargesEnabled, setChargesEnabled] = useState(false);
+    const [detailsSubmitted, setDetailsSubmitted] = useState(false);
     
     // State
     const [businessType, setBusinessType] = useState<'company' | 'individual' | ''>('');
@@ -51,6 +54,9 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
     // Document
     const [docFront, setDocFront] = useState<File | null>(null);
     const [docBack, setDocBack] = useState<File | null>(null);
+    const [captureSide, setCaptureSide] = useState<'front' | 'back' | 'selfie' | null>(null);
+    const [previewFront, setPreviewFront] = useState<string | null>(null);
+    const [previewBack, setPreviewBack] = useState<string | null>(null);
     
     // Bank
     const [clabe, setClabe] = useState(org?.bancoClabe || '');
@@ -67,6 +73,8 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
             if (data.ok && data.account) {
                 setAccountId(data.account.id);
                 setRequirements(data.account.requirements);
+                setChargesEnabled(data.account.charges_enabled);
+                setDetailsSubmitted(data.account.details_submitted);
                 if (data.account.details_submitted) {
                     setStep(8); // Completed or Pending Review
                 }
@@ -94,6 +102,9 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                 setStep(1);
             } else if (step === 1) {
                 if (!name || !taxId || !mcc) throw new Error('Faltan datos obligatorios');
+                const rfcRegex = /^[A-Z&Ñ]{3,4}\d{6}[A-Z0-9]{3}$/i;
+                if (!rfcRegex.test(taxId)) throw new Error('El RFC no tiene un formato válido (12 o 13 caracteres, formato oficial)');
+                
                 const payload: any = {
                     business_profile: { mcc, url, support_phone: phone, support_email: email },
                 };
@@ -261,6 +272,13 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
     };
 
     if (step === 8) {
+        if (chargesEnabled) {
+            return (
+                <div style={{ padding: '0.5rem 0' }}>
+                     <button type="button" className="co-btn co-btn-ghost" onClick={() => setStep(6)}>Editar cuenta bancaria (CLABE)</button>
+                </div>
+            );
+        }
         return (
             <div className="co-success">
                 {renderRequirements()}
@@ -319,14 +337,16 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                         <div className="s-row">
                             <div className="s-field">
                                 <label>RFC</label>
-                                <input className="s-input" value={taxId} onChange={e => setTaxId(e.target.value)} maxLength={13} />
+                                <input className="s-input" value={taxId} onChange={e => setTaxId(e.target.value)} maxLength={13} style={{ textTransform: 'uppercase' }} />
+                                <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '4px' }}>Lo usamos para verificar tu identidad ante el SAT.</span>
                             </div>
                             <div className="s-field">
                                 <label>Giro del negocio (MCC)</label>
-                                <select className="s-input" value={mcc} onChange={e => setMcc(e.target.value)}>
-                                    <option value="">Selecciona una categoría...</option>
+                                <input className="s-input" list="mcc-list" value={mcc} onChange={e => setMcc(e.target.value)} placeholder="Busca tu giro..." />
+                                <datalist id="mcc-list">
                                     {STRIPE_MCC_B2B.map(m => <option key={m.codigo} value={m.codigo}>{m.nombre}</option>)}
-                                </select>
+                                </datalist>
+                                <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '4px' }}>Selecciona el código que más se acerque a tu actividad principal.</span>
                             </div>
                         </div>
                         {businessType === 'company' && (
@@ -341,11 +361,11 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                         <div className="s-row">
                             <div className="s-field">
                                 <label>Sitio web o Link social</label>
-                                <input className="s-input" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://" />
+                                <input className="s-input" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://" type="url" />
                             </div>
                             <div className="s-field">
                                 <label>Teléfono de soporte</label>
-                                <input className="s-input" value={phone} onChange={e => setPhone(e.target.value)} />
+                                <input className="s-input" value={phone} onChange={e => setPhone(e.target.value)} type="tel" />
                             </div>
                         </div>
                     </div>
@@ -409,11 +429,11 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                         <div className="s-row">
                             <div className="s-field">
                                 <label>Email personal</label>
-                                <input className="s-input" value={person.email} onChange={e => setPerson({...person, email: e.target.value})} />
+                                <input className="s-input" value={person.email} onChange={e => setPerson({...person, email: e.target.value})} type="email" />
                             </div>
                             <div className="s-field">
                                 <label>Teléfono</label>
-                                <input className="s-input" value={person.phone} onChange={e => setPerson({...person, phone: e.target.value})} />
+                                <input className="s-input" value={person.phone} onChange={e => setPerson({...person, phone: e.target.value})} type="tel" />
                             </div>
                         </div>
                         <hr style={{ margin: '1rem 0', border: 'none', borderTop: '1px dashed #e2e8f0' }} />
@@ -460,15 +480,66 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                 {step === 5 && (
                     <div className="co-step">
                         <h4>Verificación de Identidad</h4>
-                        <p className="co-sub">Sube una foto clara de una identificación oficial vigente (INE o Pasaporte).</p>
+                        <p className="co-sub">Necesitamos una foto clara de una identificación oficial vigente (INE o Pasaporte).</p>
+                        
                         <div className="s-field">
                             <label>Frente de la identificación</label>
-                            <input type="file" accept="image/jpeg,image/png,application/pdf" className="s-input" style={{ paddingTop: '8px' }} onChange={e => setDocFront(e.target.files?.[0] || null)} />
+                            {previewFront ? (
+                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                    <img src={previewFront} style={{ width: '60px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} alt="Frente" />
+                                    <button type="button" className="co-btn co-btn-ghost" onClick={() => { setDocFront(null); setPreviewFront(null); }} style={{ padding: '4px 10px' }}>Quitar</button>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <button type="button" className="co-btn co-btn-primary" onClick={() => setCaptureSide('front')} style={{ flex: 1 }}>Tomar Foto</button>
+                                    <div style={{ position: 'relative', flex: 1 }}>
+                                        <input type="file" accept="image/jpeg,image/png,application/pdf" style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} onChange={e => {
+                                            const file = e.target.files?.[0];
+                                            if (file) { setDocFront(file); setPreviewFront(URL.createObjectURL(file)); }
+                                        }} />
+                                        <button type="button" className="co-btn co-btn-ghost" style={{ width: '100%', pointerEvents: 'none' }}>Subir archivo</button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
+
                         <div className="s-field">
                             <label>Reverso (solo INE, omite si es Pasaporte)</label>
-                            <input type="file" accept="image/jpeg,image/png,application/pdf" className="s-input" style={{ paddingTop: '8px' }} onChange={e => setDocBack(e.target.files?.[0] || null)} />
+                            {previewBack ? (
+                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                    <img src={previewBack} style={{ width: '60px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} alt="Reverso" />
+                                    <button type="button" className="co-btn co-btn-ghost" onClick={() => { setDocBack(null); setPreviewBack(null); }} style={{ padding: '4px 10px' }}>Quitar</button>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <button type="button" className="co-btn co-btn-primary" onClick={() => setCaptureSide('back')} style={{ flex: 1 }}>Tomar Foto</button>
+                                    <div style={{ position: 'relative', flex: 1 }}>
+                                        <input type="file" accept="image/jpeg,image/png,application/pdf" style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} onChange={e => {
+                                            const file = e.target.files?.[0];
+                                            if (file) { setDocBack(file); setPreviewBack(URL.createObjectURL(file)); }
+                                        }} />
+                                        <button type="button" className="co-btn co-btn-ghost" style={{ width: '100%', pointerEvents: 'none' }}>Subir archivo</button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
+                        
+                        {captureSide && (
+                            <LiveCapture 
+                                side={captureSide} 
+                                onCancel={() => setCaptureSide(null)} 
+                                onCapture={(file) => {
+                                    if (captureSide === 'front') {
+                                        setDocFront(file);
+                                        setPreviewFront(URL.createObjectURL(file));
+                                    } else if (captureSide === 'back') {
+                                        setDocBack(file);
+                                        setPreviewBack(URL.createObjectURL(file));
+                                    }
+                                    setCaptureSide(null);
+                                }} 
+                            />
+                        )}
                     </div>
                 )}
 
@@ -478,7 +549,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                         <p className="co-sub">Ingresa la cuenta CLABE donde recibirás los cobros. Debe estar a nombre del negocio o representante.</p>
                         <div className="s-field">
                             <label>CLABE Interbancaria (18 dígitos)</label>
-                            <input className="s-input" value={clabe} onChange={e => setClabe(e.target.value)} maxLength={18} inputMode="numeric" />
+                            <input className="s-input" value={clabe} onChange={e => setClabe(e.target.value.replace(/\D/g, ''))} maxLength={18} inputMode="numeric" />
                         </div>
                         <div className="s-field">
                             <label>Nombre del Titular de la cuenta</label>

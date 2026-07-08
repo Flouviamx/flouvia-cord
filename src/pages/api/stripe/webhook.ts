@@ -5,6 +5,7 @@
 //   • checkout.session.completed
 //   • customer.subscription.created / .updated / .deleted
 //   • invoice.paid / invoice.payment_failed
+//   • payment_intent.succeeded / .payment_failed
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
@@ -58,7 +59,7 @@ export const POST: APIRoute = async ({ request }) => {
     const obj = event.data?.object ?? {};
 
     switch (event.type) {
-        // ── Pago de una cotización individual (Checkout mode=payment) ──────────
+        // ── Pago de una cotización individual ──────────
         case 'checkout.session.completed':
         case 'checkout.session.async_payment_succeeded': {
             if (obj.mode === 'subscription') {
@@ -66,6 +67,10 @@ export const POST: APIRoute = async ({ request }) => {
             } else {
                 await markQuotePaid(obj, event.account, event.type);
             }
+            break;
+        }
+        case 'payment_intent.succeeded': {
+            await markQuotePaid(obj, event.account, event.type);
             break;
         }
         // ── Alta / cambio de plan / renovación ────────────────────────────────
@@ -97,26 +102,38 @@ export const POST: APIRoute = async ({ request }) => {
     return ok();
 };
 
-// Marca la cotización como pagada (flujo de pago en línea por link público).
+// Marca la cotización como pagada (flujo de pago en línea por link público o Payment Intent directo).
 // `account` = event.account de Stripe (la cuenta CONECTADA del dueño en charges
 // directas). Se valida contra la org de la cotización para que un merchant
 // conectado no pueda marcar pagada una cotización de OTRA org.
-async function markQuotePaid(session: any, account?: string, eventType?: string) {
-    const cid = session?.metadata?.cotizacion_id;
+async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?: string) {
+    const cid = sessionOrIntent?.metadata?.cotizacion_id;
     if (!cid) return;
-    // Métodos diferidos (SPEI/customer_balance): `checkout.session.completed`
-    // llega con payment_status 'unpaid' cuando el cliente termina el checkout y
-    // recibe la CLABE, pero AÚN NO transfiere. Solo marcar pagado cuando el dinero
-    // realmente llegó (payment_status 'paid' — el card es síncrono; el SPEI lo
-    // confirma después vía checkout.session.async_payment_succeeded).
-    const ps = session?.payment_status;
-    if (ps && ps !== 'paid' && ps !== 'no_payment_required') return;
+
+    // Diferenciar entre CheckoutSession y PaymentIntent
+    if (eventType === 'payment_intent.succeeded') {
+        if (sessionOrIntent.status !== 'succeeded') return;
+    } else {
+        // CheckoutSession: Métodos diferidos (SPEI/customer_balance) llegan con payment_status 'unpaid'
+        const ps = sessionOrIntent?.payment_status;
+        if (ps && ps !== 'paid' && ps !== 'no_payment_required') return;
+    }
+
     const rows = await sql`select id, org_id, status, (select stripe_account_id from orgs where id = c.org_id) as acct from cotizaciones c where c.id = ${cid}`;
     // Defensa en profundidad: el evento debe provenir de la cuenta conectada de la
     // org dueña de la cotización (o de la plataforma, si aún no hay Connect).
     if (rows.length && account && rows[0].acct && rows[0].acct !== account) return;
     if (rows.length && ['approved', 'invoiced'].includes(rows[0].status as string)) {
-        const paymentMethod = eventType === 'checkout.session.async_payment_succeeded' ? 'spei' : 'tarjeta';
+        let paymentMethod = 'tarjeta';
+        if (eventType === 'checkout.session.async_payment_succeeded') {
+            paymentMethod = 'spei';
+        } else if (eventType === 'payment_intent.succeeded') {
+            const type = sessionOrIntent?.charges?.data?.[0]?.payment_method_details?.type;
+            if (type === 'customer_balance') paymentMethod = 'spei';
+        } else if (sessionOrIntent?.payment_method_types?.length === 1 && sessionOrIntent?.payment_method_types?.[0] === 'customer_balance') {
+            paymentMethod = 'spei';
+        }
+        
         await sql`update cotizaciones set status = 'paid', paid_at = now(), payment_method = ${paymentMethod} where id = ${cid}`;
         await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                   values (${rows[0].org_id}, ${cid}, 'paid', 'Pago recibido vía Stripe')`;

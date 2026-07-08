@@ -583,11 +583,9 @@ const hayContacto = !!(vEmail || vWa || vTel);
         btn.disabled = true;
         btn.textContent = 'Redirigiendo…';
         try {
-            const res = await fetch(`/api/q/${token}/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-            const d = await res.json();
-            if (!res.ok || !d.url) throw new Error(d.error || 'El pago no está disponible ahora.');
-            emit('cord:pay', { url: d.url });
-            window.location.href = d.url;
+            const url = `/q/${token}/pay`;
+            emit('cord:pay', { url });
+            window.location.href = url;
         } catch (err: any) {
             alert((err as Error).message);
             btn.disabled = false;

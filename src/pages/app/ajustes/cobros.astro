@@ -26,12 +26,12 @@ const pasos = [
 
     {estado === 'nuevo' ? (
         <>
-        <div style="margin-bottom: 2rem;">
+        <div style="margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border);">
             <span style="font-size: 0.65rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--color-text-muted);">COBROS EN LÍNEA</span>
             <h2 class="editorial" style="font-size: 1.8rem; margin: 0.5rem 0 1rem; color: var(--color-text);">Deja que tus clientes te paguen con un clic</h2>
             <p style="font-size: 0.95rem; color: var(--color-text-muted); line-height: 1.6; max-width: 60ch; margin: 0 0 1.5rem;">Conecta tu cuenta en un par de minutos y empieza a cobrar tus cotizaciones con tarjeta o transferencia. Sin mensualidades extra, sin comisiones de Cord.</p>
             
-            <div style="display: flex; flex-direction: column; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border);">
+            <div style="display: flex; flex-direction: column;">
                 <div style="display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--color-border);">
                     <svg style="width: 20px; height: 20px; color: var(--color-blue-deep);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                     <div style="display: flex; flex-direction: column; gap: 2px;">
@@ -121,7 +121,7 @@ const pasos = [
                         <span>Visa, Mastercard y Amex. Se procesa al instante vía Stripe.</span>
                     </div>
                     <label class="s-toggle pm-toggle">
-                        <input type="checkbox" data-field="acepta_tarjeta" data-pv="tarjeta" checked={ORG.aceptaTarjeta} disabled={!puedeCobrar} />
+                        <input type="checkbox" data-field="acepta_tarjeta" data-pv="tarjeta" checked={puedeCobrar && ORG.aceptaTarjeta} disabled={!puedeCobrar} />
                         <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
                     </label>
                 </div>
@@ -136,7 +136,7 @@ const pasos = [
                         <span>Stripe genera una CLABE única por cotización y la marca pagada sola.</span>
                     </div>
                     <label class="s-toggle pm-toggle">
-                        <input type="checkbox" data-field="cobro_spei_auto" data-pv="spei" checked={ORG.cobroSpeiAuto} disabled={!puedeCobrar} />
+                        <input type="checkbox" data-field="cobro_spei_auto" data-pv="spei" checked={puedeCobrar && ORG.cobroSpeiAuto} disabled={!puedeCobrar} />
                         <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
                     </label>
                 </div>
@@ -189,7 +189,7 @@ const pasos = [
     /* ── Estado (conectado) ── */
     .cobros-status {
         display: flex; align-items: center; gap: 14px;
-        padding: 16px 0; border-radius: 0;
+        padding: 0 0 16px 0; border-radius: 0;
         border: none; border-bottom: 1px solid var(--color-border); background: transparent;
     }
     .cobros-status .cs-dot { flex-shrink: 0; width: 10px; height: 10px; border-radius: 50%; }
@@ -222,12 +222,11 @@ const pasos = [
 
     /* ── Marco del componente embebido de Stripe ── */
     .connect-frame {
-        border-top: 1px solid var(--color-border);
         padding: 1.5rem 0 0; background: transparent;
         box-shadow: none;
-        margin-top: 20px;
+        margin-top: 10px;
     }
-    .connect-frame.is-active { margin-top: 24px; }
+    .connect-frame.is-active { margin-top: 24px; padding-top: 0; }
 
     /* ── Métodos ── */
     .methods-locked {
@@ -254,7 +253,7 @@ const pasos = [
     .pm-toggle { margin-left: auto; }
     .pm-bank {
         display: flex; flex-direction: column; gap: 1rem;
-        margin: 14px 0 4px 52px; padding-top: 14px; border-top: 1px dashed var(--color-border);
+        margin: 14px 0 4px 52px; padding-top: 14px; border-top: 1px solid var(--color-border);
     }
     @media (max-width: 640px) { .pm-bank { margin-left: 0; } }
 
@@ -295,7 +294,7 @@ const pasos = [
     .connect-custom-onboarding .co-radio-list { display: flex; flex-direction: column; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
     .connect-custom-onboarding .co-card-radio {
         display: flex; align-items: center; gap: 14px; cursor: pointer;
-        padding: 16px 0; border-bottom: 1px solid var(--color-border);
+        padding: 14px 0; border-bottom: 1px solid var(--color-border);
         transition: opacity 0.2s ease;
     }
     .connect-custom-onboarding .co-card-radio:last-child { border-bottom: none; }

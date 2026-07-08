@@ -1,0 +1,43 @@
+---
+export const prerender = false;
+import Layout from '../../../layouts/Layout.astro';
+import PaymentIsland from '../../../components/q/PaymentIsland';
+import { sql } from '../../../lib/db';
+
+const token = Astro.params.token ?? '';
+const rows = await sql`
+    select c.folio, c.total, o.nombre, o.color_marca, o.logo_url
+    from cotizaciones c
+    join orgs o on o.id = c.org_id
+    where c.public_token = ${token}`;
+
+if (!rows.length) {
+    return Astro.redirect('/404');
+}
+
+const q = rows[0];
+const amount = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(Number(q.total));
+const color = (q.color_marca as string) || '#0f172a';
+---
+
+<Layout title={`Pagar Cotización ${q.folio}`} noindex={true}>
+    <main style="min-height: 100vh; background: #f8fafc; display: flex; flex-direction: column; align-items: center; padding: 2rem 1rem;">
+        <div style="width: 100%; max-width: 480px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+            <a href={`/q/${token}`} style="color: #64748b; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Volver a la cotización
+            </a>
+            {q.logo_url && <img src={q.logo_url as string} alt={q.nombre as string} style="height: 32px; border-radius: 4px;" />}
+        </div>
+
+        <div style="width: 100%; max-width: 480px; margin-bottom: 24px;">
+            <h1 style="font-size: 1.5rem; font-weight: 600; margin: 0 0 8px; color: #0f172a;">Cotización {q.folio}</h1>
+            <div style="font-size: 2rem; font-weight: 700; color: #0f172a; margin-bottom: 8px;">{amount}</div>
+            <p style="color: #64748b; margin: 0;">Para {q.nombre}</p>
+        </div>
+
+        <div style={`width: 100%; max-width: 480px; --theme-color: ${color};`}>
+            <PaymentIsland client:only="react" token={token} color={color} />
+        </div>
+    </main>
+</Layout>
