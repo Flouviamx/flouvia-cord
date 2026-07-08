@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 // Using inline styles/classes that map to standard Flouvia CSS variables
 export default function CreateWorkspaceModal({ 
@@ -17,6 +18,12 @@ export default function CreateWorkspaceModal({
   const [accountName, setAccountName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
       setStep(1);
@@ -26,7 +33,7 @@ export default function CreateWorkspaceModal({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const handleNext = () => {
     setStep(2);
@@ -46,7 +53,7 @@ export default function CreateWorkspaceModal({
 
   const parentName = parentOrg?.name || 'Tu Organización';
 
-  return (
+  return createPortal(
     <div className="cm-overlay" onClick={onClose}>
       <div className="cm-dialog" onClick={e => e.stopPropagation()}>
         <div className="cm-header">
@@ -153,6 +160,7 @@ export default function CreateWorkspaceModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

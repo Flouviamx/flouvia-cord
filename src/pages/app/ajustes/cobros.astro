@@ -1,6 +1,6 @@
 ---
 import SettingsShell from '../../../components/app/SettingsShell.astro';
-import ConnectOnboarding from '../../../components/app/ConnectOnboarding';
+import ConnectCustomOnboarding from '../../../components/app/ConnectCustomOnboarding';
 import { getOrg } from '../../../lib/queries';
 const ORG = await getOrg();
 
@@ -54,7 +54,7 @@ const pasos = [
             ))}
         </div>
         <div class="connect-frame">
-            <ConnectOnboarding client:only="react" chargesEnabled={ORG.stripeChargesEnabled} />
+            <ConnectCustomOnboarding client:only="react" org={ORG} />
         </div>
     ) : (
         <!-- ── Estado (conectado) ──────────────────────────────────────── -->
@@ -90,7 +90,7 @@ const pasos = [
                     </>
                 )}
                 <div class={`connect-frame ${estado === 'activo' ? 'is-active' : ''}`}>
-                    <ConnectOnboarding client:only="react" chargesEnabled={ORG.stripeChargesEnabled} />
+                    <ConnectCustomOnboarding client:only="react" org={ORG} />
                 </div>
             </div>
         </div>
@@ -369,6 +369,75 @@ const pasos = [
     /* ── Pie ── */
     .cobros-foot { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; color: var(--color-text-muted); margin: 1.4rem 0 0; }
     .cobros-foot svg { flex-shrink: 0; opacity: 0.7; }
+</style>
+
+<!-- CSS del wizard Custom: GLOBAL porque el island React (client:only) NO lleva el
+     data-astro-cid, así que las reglas scopeadas (incl. las .s-* de SettingsShell) no
+     le aplican. Se scopea bajo .connect-custom-onboarding para no pisar nada global. -->
+<style is:global>
+    .connect-custom-onboarding { display: flex; flex-direction: column; }
+    .connect-custom-onboarding .co-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; }
+    .connect-custom-onboarding .co-header h3 { font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; color: var(--color-text); margin: 0; }
+    .connect-custom-onboarding .co-account-id { font-size: 0.66rem; color: var(--color-text-muted); font-family: ui-monospace, monospace; background: var(--color-bg-soft); padding: 3px 8px; border-radius: 6px; }
+    .connect-custom-onboarding .co-error { font-size: 0.8rem; color: var(--color-danger); background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); border-radius: 10px; padding: 10px 14px; margin-bottom: 1rem; }
+
+    .connect-custom-onboarding .co-step-content { min-height: 180px; }
+    .connect-custom-onboarding .co-step { display: flex; flex-direction: column; gap: 1rem; }
+    .connect-custom-onboarding .co-step h4 { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.02em; color: var(--color-text); margin: 0; }
+    .connect-custom-onboarding .co-sub { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.5; margin: -0.4rem 0 0.2rem; }
+
+    /* Inputs (redefinidos aquí porque las .s-* de SettingsShell son scopeadas) */
+    .connect-custom-onboarding .s-row { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+    @media (min-width: 560px) { .connect-custom-onboarding .s-row { grid-template-columns: 1fr 1fr; } }
+    .connect-custom-onboarding .s-field { display: flex; flex-direction: column; gap: 0.45rem; min-width: 0; }
+    .connect-custom-onboarding .s-field label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #99a2af; }
+    .connect-custom-onboarding .s-input {
+        width: 100%; box-sizing: border-box; font: inherit; font-size: 0.9rem; color: var(--color-text);
+        background: var(--color-bg-soft); border: 1px solid transparent; border-radius: 12px; padding: 11px 13px;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .connect-custom-onboarding .s-input:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px rgba(10,25,47,0.08); background: var(--surface, #fff); }
+    .connect-custom-onboarding select.s-input { appearance: none; -webkit-appearance: none; cursor: pointer; }
+
+    /* Tarjetas de selección (tipo de entidad) */
+    .connect-custom-onboarding .co-card-radio {
+        display: flex; flex-direction: column; gap: 3px; cursor: pointer;
+        border: 1px solid var(--color-border); border-radius: 14px; padding: 16px;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .connect-custom-onboarding .co-card-radio input { position: absolute; opacity: 0; pointer-events: none; }
+    .connect-custom-onboarding .co-card-radio.active { border-color: var(--color-blue-deep); background: rgba(10,25,47,0.03); box-shadow: 0 0 0 3px rgba(10,25,47,0.06); }
+    .connect-custom-onboarding .co-card-radio strong { font-size: 0.9rem; font-weight: 600; color: var(--color-text); }
+    .connect-custom-onboarding .co-card-radio span { font-size: 0.74rem; color: var(--color-text-muted); }
+
+    /* Toggle (reusa proporciones iOS) */
+    .connect-custom-onboarding .s-toggle { position: relative; }
+    .connect-custom-onboarding .s-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+    .connect-custom-onboarding .s-toggle-track { width: 44px; height: 24px; border-radius: 100px; flex-shrink: 0; background: rgba(10,25,47,0.15); position: relative; transition: background 0.3s ease; }
+    .connect-custom-onboarding .s-toggle-thumb { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.25); transition: transform 0.3s ease; }
+    .connect-custom-onboarding .s-toggle input:checked + .s-toggle-track { background: var(--color-blue-deep); }
+    .connect-custom-onboarding .s-toggle input:checked + .s-toggle-track .s-toggle-thumb { transform: translateX(20px); }
+
+    /* Footer / botones */
+    .connect-custom-onboarding .co-footer { display: flex; align-items: center; gap: 10px; margin-top: 1.6rem; padding-top: 1.2rem; border-top: 1px solid var(--color-border); }
+    .connect-custom-onboarding .co-btn { font: inherit; font-size: 0.86rem; font-weight: 600; border-radius: 999px; padding: 10px 20px; cursor: pointer; border: 1px solid transparent; transition: transform 0.15s ease, background 0.2s ease, opacity 0.2s ease; }
+    .connect-custom-onboarding .co-btn:disabled { opacity: 0.55; cursor: default; }
+    .connect-custom-onboarding .co-btn-primary { background: var(--color-blue-deep); color: #fff; }
+    .connect-custom-onboarding .co-btn-primary:not(:disabled):hover { transform: scale(1.02); }
+    .connect-custom-onboarding .co-btn-primary:not(:disabled):active { transform: scale(0.98); }
+    .connect-custom-onboarding .co-btn-ghost { background: transparent; border-color: var(--color-border); color: var(--color-text); }
+    .connect-custom-onboarding .co-btn-ghost:not(:disabled):hover { background: var(--color-bg-soft); }
+
+    /* Panel de requisitos pendientes */
+    .connect-custom-onboarding .co-requirements, .co-success .co-requirements { background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.25); border-radius: 14px; padding: 14px 16px; margin-bottom: 1.2rem; }
+    .co-requirements .co-req-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: #92400e; }
+    .co-requirements .co-req-header svg { width: 18px; height: 18px; }
+    .co-requirements .co-req-header strong { font-size: 0.86rem; }
+    .co-requirements .co-req-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+    .co-requirements .co-req-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.8rem; color: var(--color-text); background: var(--surface, #fff); border: 1px solid var(--color-border); border-radius: 10px; padding: 8px 12px; cursor: pointer; transition: border-color 0.2s ease; }
+    .co-requirements .co-req-item:hover { border-color: var(--color-blue-deep); }
+    .co-requirements .co-req-action { font-size: 0.72rem; font-weight: 600; color: var(--color-blue-deep); white-space: nowrap; }
+    .co-success h3 { font-size: 1.1rem; font-weight: 600; color: var(--color-text); }
 </style>
 
 <script>

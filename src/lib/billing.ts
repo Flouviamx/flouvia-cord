@@ -222,13 +222,130 @@ export async function reportUsage(orgId: string, dim: MeterDim, value = 1): Prom
     } catch { /* best-effort: Stripe reintenta vía dashboard si hace falta */ }
 }
 
-// ── Stripe Connect (Pagos directos a la cuenta del dueño) ─────────────────────
+// ── Stripe Connect Custom (Pagos directos a la cuenta del dueño) ────────────────
 
-export async function createConnectAccount(orgId: string, type: 'standard' | 'express'): Promise<string> {
+export async function createConnectAccount(orgId: string, businessType: 'company' | 'individual'): Promise<string> {
+    // `type: 'custom'` ya implica control TOTAL de la plataforma (plataforma
+    // responsable de pérdidas, sin dashboard de Stripe, la plataforma recolecta el
+    // KYC). NO se combina con `controller[...]` — Stripe rechaza pasar ambos.
     const acc = await stripe('/v1/accounts', {
-        type,
-        country: 'MX', // default a MX por ahora
+        type: 'custom',
+        country: 'MX',
+        business_type: businessType,
+        'capabilities[card_payments][requested]': 'true',
+        'capabilities[transfers][requested]': 'true',
+        'capabilities[mx_bank_transfer_payments][requested]': 'true',
         'metadata[org_id]': orgId,
     });
     return acc.id;
+}
+
+export async function updateConnectAccount(id: string, fields: Record<string, string>): Promise<any> {
+    return stripe(`/v1/accounts/${id}`, fields, 'POST');
+}
+
+export async function retrieveAccount(id: string): Promise<any> {
+    return stripe(`/v1/accounts/${id}`, undefined, 'GET');
+}
+
+export async function getBalance(id: string): Promise<any> {
+    return stripe('/v1/balance', undefined, 'GET', { stripeAccount: id });
+}
+
+export async function listPayouts(id: string): Promise<any> {
+    return stripe('/v1/payouts', undefined, 'GET', { stripeAccount: id });
+}
+
+// ── Helpers de Personas (Dueños, Representantes, Directores) ──────────────────
+
+export async function createPerson(accountId: string, fields: Record<string, string>): Promise<any> {
+    return stripe(`/v1/accounts/${accountId}/persons`, fields, 'POST');
+}
+
+export async function updatePerson(accountId: string, personId: string, fields: Record<string, string>): Promise<any> {
+    return stripe(`/v1/accounts/${accountId}/persons/${personId}`, fields, 'POST');
+}
+
+export async function deletePerson(accountId: string, personId: string): Promise<any> {
+    return stripe(`/v1/accounts/${accountId}/persons/${personId}`, undefined, 'DELETE');
+}
+
+export async function listPersons(accountId: string): Promise<any> {
+    return stripe(`/v1/accounts/${accountId}/persons`, undefined, 'GET');
+}
+
+// ── Cuentas Externas (CLABE) ──────────────────────────────────────────────────
+
+export async function createExternalAccount(accountId: string, fields: Record<string, string>): Promise<any> {
+    return stripe(`/v1/accounts/${accountId}/external_accounts`, fields, 'POST');
+}
+
+// ── Subida de Archivos Multipart (Files API) ──────────────────────────────────
+
+/**
+ * Sube un archivo a Stripe usando multipart/form-data.
+ * Requerido para documentos de identidad de Connect.
+ */
+export async function stripeUpload(
+    bytes: Buffer | ArrayBuffer | Uint8Array,
+    filename: string,
+    purpose: 'identity_document' | 'additional_verification',
+    stripeAccount: string
+): Promise<any> {
+    if (!STRIPE_KEY) throw new Error('STRIPE_SECRET_KEY no configurada');
+
+    const boundary = '----StripeBoundary' + Math.random().toString(16).substring(2);
+    let body = Buffer.alloc(0);
+
+    const appendText = (name: string, value: string) => {
+        body = Buffer.concat([
+            body,
+            Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`)
+        ]);
+    };
+
+    const appendFile = (name: string, fname: string, fileBytes: Buffer | ArrayBuffer | Uint8Array) => {
+        let mime = 'application/octet-stream';
+        if (fname.toLowerCase().endsWith('.jpg') || fname.toLowerCase().endsWith('.jpeg')) mime = 'image/jpeg';
+        else if (fname.toLowerCase().endsWith('.png')) mime = 'image/png';
+        else if (fname.toLowerCase().endsWith('.pdf')) mime = 'application/pdf';
+
+        body = Buffer.concat([
+            body,
+            Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"; filename="${fname}"\r\nContent-Type: ${mime}\r\n\r\n`),
+            Buffer.from(fileBytes),
+            Buffer.from('\r\n')
+        ]);
+    };
+
+    appendText('purpose', purpose);
+    appendFile('file', filename, bytes);
+    
+    // Cerrar boundary
+    body = Buffer.concat([body, Buffer.from(`--${boundary}--\r\n`)]);
+
+    const res = await fetch('https://files.stripe.com/v1/files', {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${STRIPE_KEY}`,
+            'Content-Type': `multipart/form-data; boundary=${boundary}`,
+            'Stripe-Account': stripeAccount
+        },
+        body
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error?.message || `Stripe File Upload Error: ${res.status}`);
+    return data;
+}
+
+export async function attachPersonDocument(
+    accountId: string,
+    personId: string,
+    fileId: string,
+    side: 'front' | 'back'
+): Promise<any> {
+    return stripe(`/v1/accounts/${accountId}/persons/${personId}`, {
+        [`verification[document][${side}]`]: fileId
+    }, 'POST');
 }

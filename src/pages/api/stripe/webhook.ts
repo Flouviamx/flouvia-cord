@@ -202,7 +202,17 @@ async function setStatusByCustomer(customer: string | undefined, status: string)
 async function updateAccountStatus(account: any) {
     if (!account.id) return;
     const chargesEnabled = !!account.charges_enabled;
-    await sql`update orgs set stripe_charges_enabled = ${chargesEnabled} where stripe_account_id = ${account.id}`;
+    const payoutsEnabled = !!account.payouts_enabled;
+    const detailsSubmitted = !!account.details_submitted;
+    const disabledReason = account.requirements?.disabled_reason || null;
+    const requirements = JSON.stringify(account.requirements || {});
+    await sql`update orgs set 
+        stripe_charges_enabled = ${chargesEnabled},
+        stripe_payouts_enabled = ${payoutsEnabled},
+        stripe_details_submitted = ${detailsSubmitted},
+        stripe_disabled_reason = ${disabledReason},
+        stripe_requirements = ${requirements}
+        where stripe_account_id = ${account.id}`;
 }
 
 function ok() {
