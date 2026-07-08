@@ -64,7 +64,7 @@ export const POST: APIRoute = async ({ request }) => {
             if (obj.mode === 'subscription') {
                 await linkSubscription(obj);
             } else {
-                await markQuotePaid(obj, event.account);
+                await markQuotePaid(obj, event.account, event.type);
             }
             break;
         }
@@ -101,7 +101,7 @@ export const POST: APIRoute = async ({ request }) => {
 // `account` = event.account de Stripe (la cuenta CONECTADA del dueño en charges
 // directas). Se valida contra la org de la cotización para que un merchant
 // conectado no pueda marcar pagada una cotización de OTRA org.
-async function markQuotePaid(session: any, account?: string) {
+async function markQuotePaid(session: any, account?: string, eventType?: string) {
     const cid = session?.metadata?.cotizacion_id;
     if (!cid) return;
     // Métodos diferidos (SPEI/customer_balance): `checkout.session.completed`
@@ -116,7 +116,8 @@ async function markQuotePaid(session: any, account?: string) {
     // org dueña de la cotización (o de la plataforma, si aún no hay Connect).
     if (rows.length && account && rows[0].acct && rows[0].acct !== account) return;
     if (rows.length && ['approved', 'invoiced'].includes(rows[0].status as string)) {
-        await sql`update cotizaciones set status = 'paid' where id = ${cid}`;
+        const paymentMethod = eventType === 'checkout.session.async_payment_succeeded' ? 'spei' : 'tarjeta';
+        await sql`update cotizaciones set status = 'paid', paid_at = now(), payment_method = ${paymentMethod} where id = ${cid}`;
         await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                   values (${rows[0].org_id}, ${cid}, 'paid', 'Pago recibido vía Stripe')`;
         await logAudit(rows[0].org_id as string, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea (Stripe)' });

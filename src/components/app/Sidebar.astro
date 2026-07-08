@@ -37,6 +37,7 @@ const NAV_GROUPS = [
     {
         label: 'Mi dinero',
         items: [
+            { id: 'cobros',   href: '/app/cobros',             label: 'Cobros',         icon: '<path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>' },
             { id: 'cobranza', href: '/app/cobranza',           label: 'Cobranza',       icon: '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>', badge: badges.vencidas, tone: 'danger' },
             { id: 'ai-ar',    href: '/app/tesoreria/cobranza', label: 'Cobranza con IA', icon: '<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>' },
             { id: 'flujo-caja', href: '/app/tesoreria/flujo',  label: 'Flujo de caja',   icon: '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>' },

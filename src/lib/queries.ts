@@ -1052,11 +1052,67 @@ export async function requirePerm(key: PermKey): Promise<Response | null> {
     });
 }
 
+// ── DASHBOARD DE COBROS (/app/cobros) ──────────────────────────────────────────
+export async function getCobros() {
+    const orgId = await getActiveOrgId();
+    // "Cobrado" = dinero REALMENTE recibido. `paid_at` solo se escribe al cobrar
+    // (webhook o pago manual). NO usar status='invoiced' como cobrado: una cotización
+    // puede facturarse SIN estar pagada (approved→invoiced). Se incluye status='paid'
+    // para cubrir pagos legacy previos a la columna paid_at. (La condición se inlinea
+    // en cada query porque el sql de neon-serverless no compone fragmentos.)
+    const [c] = await sql`
+        select coalesce(sum(total),0) as total_cobrado
+        from cotizaciones
+        where org_id = ${orgId} and (status = 'paid' or paid_at is not null)
+    `;
+
+    const methods = await sql`
+        select coalesce(payment_method, 'otro') as method,
+               sum(total) as monto, count(*) as txs
+        from cotizaciones
+        where org_id = ${orgId} and (status = 'paid' or paid_at is not null)
+        group by coalesce(payment_method, 'otro')
+        order by sum(total) desc
+    `;
+
+    const monthly = await sql`
+        select to_char(date_trunc('month', coalesce(paid_at, created_at)), 'YYYY-MM') as ym, sum(total) as monto
+        from cotizaciones
+        where org_id = ${orgId} and (status = 'paid' or paid_at is not null)
+        group by 1 order by 1
+    `;
+
+    const recent = await sql`
+        select c.id, c.folio, c.total, coalesce(c.payment_method, 'otro') as payment_method, coalesce(c.paid_at, c.created_at) as paid_at, cl.empresa
+        from cotizaciones c left join clientes cl on cl.id = c.cliente_id
+        where c.org_id = ${orgId} and (c.status = 'paid' or c.paid_at is not null)
+        order by coalesce(c.paid_at, c.created_at) desc limit 15
+    `;
+
+    return {
+        totalCobrado: Number(c?.total_cobrado || 0),
+        methods: methods.map((m: any) => ({
+            method: m.method as string,
+            monto: Number(m.monto),
+            txs: Number(m.txs),
+        })),
+        monthly: monthly.map((m: any) => ({ ym: m.ym as string, monto: Number(m.monto) })),
+        recent: recent.map((r: any) => ({
+            id: r.id as string,
+            folio: r.folio as string,
+            empresa: (r.empresa as string) || 'Sin cliente',
+            total: Number(r.total),
+            method: r.payment_method as string,
+            paidAt: fmtDate(r.paid_at),
+        })),
+    };
+}
+
 // ── GUÍA DE CONFIGURACIÓN ─────────────────────────────────────────────────────
 export async function getSetupProgress() {
     const orgId = await getActiveOrgId();
     const [o] = await sql`select logo_url, email_contacto, telefono, rfc, color_marca,
-        pdf_mensaje, pdf_condiciones, portal_bienvenida from orgs where id = ${orgId}`;
+        pdf_mensaje, pdf_condiciones, portal_bienvenida, stripe_charges_enabled from orgs where id = ${orgId}`;
     // Señales de avance en un solo batch (mismas tablas multi-tenant → seguras bajo RLS).
     const [[{ np }], [{ nc }], [{ nq }], [{ nsent }], [{ ncobro }], [{ nmem }]] = await withOrgTx(orgId,
         sql`select count(*)::int as np from productos where org_id = ${orgId}`,
@@ -1076,6 +1132,7 @@ export async function getSetupProgress() {
         { id: 'clientes',   label: 'Agrega tus clientes',         desc: 'A quién le cotizas, con sus términos de pago, nivel de precios y límite de crédito.', href: '/app/clientes',           done: Number(nc) > 0 },
         { id: 'cotizacion', label: 'Crea tu primera cotización',  desc: 'El corazón de Cord — elige un cliente, agrega líneas y guarda. Te toma 2 minutos.', href: '/app/cotizaciones/nueva', done: Number(nq) > 0 },
         { id: 'enviar',     label: 'Envía tu primera cotización', desc: 'Compártela por link, correo o WhatsApp y mira EN VIVO cuándo tu cliente la abre y la aprueba con firma.', href: '/app/cotizaciones',       done: Number(nsent) > 0 },
+        { id: 'online_cobros', label: 'Activa los cobros en línea', desc: 'Conecta tu cuenta bancaria de forma segura para recibir pagos por tarjeta o SPEI.', href: '/app/ajustes/cobros', done: !!o?.stripe_charges_enabled },
         { id: 'documento',  label: 'Personaliza tu PDF y portal', desc: 'Elige plantilla de PDF, escribe tu mensaje y condiciones, y ajusta el portal que ve tu cliente. Todo con vista previa.', href: '/app/ajustes/pdf',        done: !!(o?.pdf_mensaje || o?.pdf_condiciones || o?.portal_bienvenida) },
         { id: 'cobro',      label: 'Cobra y factura',             desc: 'Cobra en línea con Stripe o márcala como pagada, factura el CFDI 4.0 y cierra el ciclo de venta en Cobranza.', href: '/app/cobranza',           done: Number(ncobro) > 0 },
         { id: 'equipo',     label: 'Invita a tu equipo',          desc: 'Suma vendedores y define permisos por rol (cotizar, aprobar, cobranza…) para trabajar en conjunto.', href: '/app/ajustes/equipo',     done: Number(nmem) > 1 },

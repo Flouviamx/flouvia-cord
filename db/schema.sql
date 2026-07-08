@@ -724,9 +724,9 @@ create policy "rls_cotizacion_firmas" on cotizacion_firmas
 -- FASE 5 — AI Agent Workflows (Cobranza y Flujo de Caja)
 -- ════════════════════════════════════════════════════════════════════════════
 
--- 1) Fecha de pago para predicciones
+-- 1) Fecha y método de pago
 alter table cotizaciones add column if not exists paid_at timestamptz;
-
+alter table cotizaciones add column if not exists payment_method text;
 -- 2) Hilos de negociación del agente de cobranza
 create table if not exists cobranza_conversaciones (
   id              uuid        default gen_random_uuid() primary key,

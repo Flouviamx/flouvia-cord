@@ -146,9 +146,11 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         await sql`update cotizaciones set status = 'sent', sent_at = coalesce(sent_at, ${now}) where id = ${id}`;
     } else if (action.to === 'approved') {
         await sql`update cotizaciones set status = 'approved', approved_at = ${now} where id = ${id}`;
+    } else if (action.to === 'paid') {
+        const method = body.payment_method || 'transferencia';
+        await sql`update cotizaciones set status = 'paid', paid_at = coalesce(paid_at, ${now}), payment_method = coalesce(payment_method, ${method}) where id = ${id}`;
     } else {
         await sql`update cotizaciones set status = ${action.to} where id = ${id}`;
-
     }
 
     await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)

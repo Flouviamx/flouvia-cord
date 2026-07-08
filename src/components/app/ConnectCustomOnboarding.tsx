@@ -246,10 +246,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
         if (!requirements || !requirements.currently_due || requirements.currently_due.length === 0) return null;
         return (
             <div className="co-requirements">
-                <div className="co-req-header">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <strong>Requisitos pendientes</strong>
-                </div>
+                <div className="co-req-header">REQUISITOS PENDIENTES</div>
                 <ul className="co-req-list">
                     {requirements.currently_due.map((req: string) => {
                         const tr = translateRequirement(req);
@@ -293,16 +290,20 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                     <div className="co-step">
                         <h4>Tipo de entidad</h4>
                         <p className="co-sub">¿Cómo está registrado legalmente tu negocio ante el SAT?</p>
-                        <div className="s-row">
+                        <div className="co-radio-list">
                             <label className={`co-card-radio ${businessType === 'company' ? 'active' : ''}`}>
                                 <input type="radio" name="btype" checked={businessType === 'company'} onChange={() => setBusinessType('company')} />
-                                <strong>Persona Moral</strong>
-                                <span>Empresa, S.A. de C.V., S. de R.L., Asociación</span>
+                                <div className="cr-text">
+                                    <strong>Persona Moral</strong>
+                                    <span>Empresa, S.A. de C.V., S. de R.L., Asociación</span>
+                                </div>
                             </label>
                             <label className={`co-card-radio ${businessType === 'individual' ? 'active' : ''}`}>
                                 <input type="radio" name="btype" checked={businessType === 'individual'} onChange={() => setBusinessType('individual')} />
-                                <strong>Persona Física</strong>
-                                <span>Propietario único, RESICO, PFAE</span>
+                                <div className="cr-text">
+                                    <strong>Persona Física</strong>
+                                    <span>Propietario único, RESICO, PFAE</span>
+                                </div>
                             </label>
                         </div>
                     </div>

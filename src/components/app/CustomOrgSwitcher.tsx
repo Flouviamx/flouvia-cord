@@ -303,7 +303,8 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
 
         /* Create Modal CSS */
         .cm-overlay {
-          position: fixed; inset: 0; z-index: 9999;
+          position: fixed; top: 0; left: 0; z-index: 99999;
+          width: 100vw; height: 100vh;
           background: rgba(0, 0, 0, 0.4);
           backdrop-filter: blur(4px);
           display: flex; align-items: center; justify-content: center;
@@ -342,6 +343,7 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
         .cm-body {
           padding: 16px 32px 32px;
           display: flex; gap: 24px;
+          flex-wrap: wrap;
         }
 
         .cm-card {
