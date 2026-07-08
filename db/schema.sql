@@ -465,6 +465,15 @@ create table if not exists stripe_events (
   received_at timestamptz not null default now()
 );
 
+-- ── Stripe Connect Custom (Onboarding API MX) ────────────────────────────────
+alter table orgs add column if not exists stripe_payouts_enabled boolean not null default false;
+alter table orgs add column if not exists stripe_details_submitted boolean not null default false;
+alter table orgs add column if not exists stripe_disabled_reason text;
+alter table orgs add column if not exists stripe_requirements jsonb;
+alter table orgs add column if not exists stripe_person_id text;
+alter table orgs add column if not exists stripe_business_type text;
+
+
 -- ── Interés moratorio mensual (jun 2026) ──────────────────────────────────────
 -- El cron /api/cron/intereses corre el día 1 de cada mes. Por cada cotización
 -- vencida cuya org tenga interes_moratorio_pct > 0, registra el cargo mensual.
