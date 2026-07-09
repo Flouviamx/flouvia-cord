@@ -8,6 +8,80 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Auditoría de Stripe Connect Custom + checkout in-house + Clerk `/sso-callback` faltante (jul 2026)** —
+   André pidió que "todo lo relacionado con Stripe Connect esté bien" (formulario de cobros, el
+   checkout del link público) y reportó que alguien SIN cuenta que le da a "Entrar" en vez de
+   "Crear cuenta" veía un error en lugar de que lo mandara a registrarse. Auditoría completa +
+   rediseño "Apple" del formulario de cobros y del checkout, y fix del bug de Clerk.
+   • **Bug de dinero — SPEI se generaba con una CLABE distinta en cada recarga:**
+     `payment-intent.ts` creaba un `PaymentIntent` + `customer` NUEVOS en cada visita a
+     `/q/[token]/pay`. Columna nueva `cotizaciones.stripe_payment_intent_id`: el endpoint ahora
+     reutiliza el PI existente (y actualiza el monto si la cotización se re-versionó) en vez de
+     duplicar — corrige tanto la CLABE inestable como el riesgo de PaymentIntents huérfanos.
+   • **Bug de dinero — tarjeta se forzaba a SPEI:** el endpoint mandaba
+     `payment_method_data[type]=customer_balance` en la creación del PI, lo que forzaba TODO pago
+     (incluso con tarjeta activa) al flujo de transferencia. Quitado: el método lo decide el
+     Payment Element al confirmar (`payment_method_types` sigue reflejando lo que el vendedor
+     activó en Ajustes).
+   • **Bug crítico — el webhook de pago tronaba después de marcar `paid`:** `webhook.ts` llamaba a
+     `after(dispatchQuoteEvent(...))`, una función que **no existe** en el archivo — el handler
+     lanzaba `ReferenceError` justo después del `UPDATE`, así que el pago sí quedaba marcado en BD
+     pero el webhook saliente `quote.paid` (integraciones de terceros, Slack) nunca se disparaba.
+     Corregido a fire-and-forget sin `after`.
+   • **Bug de datos — el método de pago (tarjeta vs SPEI) se perdía en producción:** el webhook
+     leía `sessionOrIntent.charges.data[0].payment_method_details.type`, campo que las versiones
+     nuevas de la API de Stripe ya NO incluyen embebido en el PaymentIntent (solo `latest_charge`
+     como id). Se agregó un fetch del charge en la cuenta conectada para resolver el método real.
+   • **Bug — subir el reverso de la INE pisaba el frente:** `document.ts` escribía SIEMPRE en
+     `[verification][document][front]` sin importar el `side` recibido. Corregido a usar el side
+     real (aplica al doc a nivel cuenta de persona física; el de personas ya estaba bien).
+   • **Hardening de `create.ts`/`status.ts`:** una cuenta guardada solo se desconecta cuando
+     Stripe CONFIRMA que ya no existe (antes cualquier error transitorio de red la borraba);
+     `status.ts` ya no responde 400 cuando aún no hay cuenta creada (el wizard arrancaba con un
+     error en consola en vez de simplemente mostrar el paso 0).
+   • **`ConnectCustomOnboarding.tsx` reescrito** — reanudación real (retoma en el primer requisito
+     `currently_due` que reporta Stripe en vez de forzar los 8 pasos desde cero cada vez que se
+     recarga la página), actualiza el representante existente en vez de duplicarlo si ya se había
+     creado antes, valida la CLABE con el dígito de control real (pesos 3-7-1, no solo longitud),
+     valida la fecha de nacimiento (mayor de 18), exige que se marque el checkbox de dueños
+     beneficiarios antes de continuar, y hace polling cada 6s mientras la cuenta está "en
+     revisión" (se recarga sola al activarse `charges_enabled`, sin que el usuario tenga que
+     refrescar a mano). Rediseño visual: barra de progreso hairline animada, "Paso X de 8" con
+     título dinámico, transiciones de entrada por paso, spinners en botones, preview de documento
+     con palomita verde, panel de dueños/TOS recesado, estado activo con banco + terminación de
+     CLABE + botón "Cambiar".
+   • **Checkout in-house (`/q/[token]/pay` + `PaymentIsland.tsx`) rediseñado estilo Apple:**
+     lienzo `#f5f5f7`, tarjeta blanca flotante `border-radius:28px` con sombras compuestas
+     multicapa (mismo lenguaje visual que el resto del sitio), marca del vendedor (logo real o
+     avatar con su color), total en `.editorial`, estados server-side correctos (cotización ya
+     pagada → confirmación con palomita en vez de intentar cobrar de nuevo; no pagable → redirect
+     al link público en vez de un formulario roto). `PaymentIsland` usa la Appearance API de Stripe
+     (inputs gris `#f5f5f7` sin borde, anillo navy al foco, tabs tipo segmented control, locale
+     `es-419`) y `redirect: 'if_required'` (tarjeta confirma sin salir de la página; SPEI redirige
+     a las instrucciones con la CLABE y regresa a `/q/[token]?pagado=1`, donde el link público
+     muestra un aviso verde de "pago en camino" mientras el webhook confirma).
+   • **Bug de Clerk — `/sso-callback` no existía:** los botones "Google" de `CustomSignIn.tsx`/
+     `CustomSignUp.tsx` (`authenticateWithRedirect({ redirectUrl: '/sso-callback' })`) apuntaban a
+     una ruta que nunca se creó → 404 tras volver de Google. Página nueva
+     `src/pages/sso-callback.astro` + `SsoCallback.tsx` (`clerk.handleRedirectCallback({
+     transferable: true, ... })`) — con `transferable: true`, si alguien SIN cuenta entra por
+     "Iniciar sesión con Google" Clerk convierte el intento en un registro automáticamente (y
+     viceversa) en vez de fallar.
+   • **Fix del bug reportado — login con correo inexistente ya no da error genérico:**
+     `CustomSignIn.tsx` detecta el código `form_identifier_not_found` de Clerk y redirige a
+     `/sign-up?email=...&desde=login` con el correo precargado y un aviso ("No encontramos una
+     cuenta con ese correo. Créala aquí"); en sentido inverso, `CustomSignUp.tsx` detecta
+     `form_identifier_exists` y redirige a `/sign-in?email=...&desde=registro`. Se agregó un
+     diccionario `ERROR_ES` en ambos componentes para traducir los códigos de error más comunes de
+     Clerk (contraseña incorrecta, contraseña filtrada, demasiados intentos, etc.) — antes se
+     mostraba el `message` crudo de Clerk (en inglés, poco accionable).
+   ⚠️ Correr `npm run db:migrate` (columna `cotizaciones.stripe_payment_intent_id`) — **ya corrida
+     contra la BD local en esta sesión.**
+   ⚠️ **Pendiente de configuración manual (no es código, ya documentado antes):** el SEGUNDO
+     endpoint de webhook de Stripe para "eventos en cuentas conectadas" con
+     `STRIPE_CONNECT_WEBHOOK_SECRET` — sin esto el dinero cae al vendedor pero Cord no marca la
+     cotización pagada.
+
 ✅ **Org switcher con sub-cuentas anidadas (estilo Stripe) + refresh real al cambiar + "Tu cuenta" rediseñada con 2FA/Passkeys/cuentas conectadas (jul 2026)** —
    André pidió que el org switcher soportara una jerarquía "org principal + cuentas dentro" (como
    Stripe), que cambiar de cuenta recargara la data real (antes se quedaba con la data de la org
