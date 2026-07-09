@@ -6,7 +6,9 @@ import { sql } from '../../../lib/db';
 
 const token = Astro.params.token ?? '';
 const rows = await sql`
-    select c.folio, c.total, o.nombre, o.color_marca, o.logo_url
+    select c.folio, c.total, c.status,
+           o.nombre, o.color_marca, o.logo_url,
+           o.stripe_account_id, o.stripe_charges_enabled, o.acepta_tarjeta, o.cobro_spei_auto, o.sandbox_of
     from cotizaciones c
     join orgs o on o.id = c.org_id
     where c.public_token = ${token}`;
@@ -16,28 +18,154 @@ if (!rows.length) {
 }
 
 const q = rows[0];
+const yaPagada = q.status === 'paid';
+const pagable = ['approved', 'invoiced'].includes(q.status as string)
+    && !q.sandbox_of
+    && !!q.stripe_account_id && !!q.stripe_charges_enabled
+    && (q.acepta_tarjeta || q.cobro_spei_auto);
+
+// Si la cotización no está lista para pago (ni pagada), regresar al link público
+// en vez de mostrar un formulario que solo va a fallar.
+if (!yaPagada && !pagable) {
+    return Astro.redirect(`/q/${token}`);
+}
+
 const amount = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(Number(q.total));
-const color = (q.color_marca as string) || '#0f172a';
+const color = (q.color_marca as string) || '#0a192f';
+const inicial = ((q.nombre as string) || 'C').trim().charAt(0).toUpperCase();
+const metodos = [q.acepta_tarjeta ? 'Tarjeta' : null, q.cobro_spei_auto ? 'Transferencia SPEI' : null].filter(Boolean).join(' · ');
 ---
 
-<Layout title={`Pagar Cotización ${q.folio}`} noindex={true}>
-    <main style="min-height: 100vh; background: #f8fafc; display: flex; flex-direction: column; align-items: center; padding: 2rem 1rem;">
-        <div style="width: 100%; max-width: 480px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
-            <a href={`/q/${token}`} style="color: #64748b; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                Volver a la cotización
-            </a>
-            {q.logo_url && <img src={q.logo_url as string} alt={q.nombre as string} style="height: 32px; border-radius: 4px;" />}
-        </div>
+<Layout title={`Pagar ${q.folio} — ${q.nombre}`} noindex={true}>
+    <main class="payp">
+        <div class="payp-col">
+            <header class="payp-head">
+                <a href={`/q/${token}`} class="payp-back">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    Volver a la cotización
+                </a>
+            </header>
 
-        <div style="width: 100%; max-width: 480px; margin-bottom: 24px;">
-            <h1 style="font-size: 1.5rem; font-weight: 600; margin: 0 0 8px; color: #0f172a;">Cotización {q.folio}</h1>
-            <div style="font-size: 2rem; font-weight: 700; color: #0f172a; margin-bottom: 8px;">{amount}</div>
-            <p style="color: #64748b; margin: 0;">Para {q.nombre}</p>
-        </div>
+            <section class="payp-card">
+                <div class="payp-brand">
+                    {q.logo_url
+                        ? <img class="payp-logo" src={q.logo_url as string} alt={q.nombre as string} />
+                        : <span class="payp-avatar" style={`background:${color}`}>{inicial}</span>}
+                    <div class="payp-brand-text">
+                        <span class="payp-org">{q.nombre}</span>
+                        <span class="payp-folio">Cotización {q.folio}</span>
+                    </div>
+                </div>
 
-        <div style={`width: 100%; max-width: 480px; --theme-color: ${color};`}>
-            <PaymentIsland client:only="react" token={token} color={color} />
+                <div class="payp-amount-block">
+                    <span class="payp-amount-label">Total a pagar</span>
+                    <span class="editorial payp-amount">{amount} <small>MXN</small></span>
+                    {!yaPagada && metodos && <span class="payp-methods">{metodos}</span>}
+                </div>
+
+                {yaPagada ? (
+                    <div class="payp-paid">
+                        <span class="payp-paid-ring">
+                            <svg viewBox="0 0 52 52" width="58" height="58">
+                                <circle cx="26" cy="26" r="23" fill="none" stroke={color} stroke-width="2"/>
+                                <polyline points="14,27 22,35 38,18" fill="none" stroke={color} stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </span>
+                        <strong>Esta cotización ya está pagada</strong>
+                        <p>No hay nada más que hacer aquí. {q.nombre} ya recibió tu pago.</p>
+                        <a class="payp-paid-link" href={`/q/${token}`}>Ver la cotización →</a>
+                    </div>
+                ) : (
+                    <div class="payp-element" style={`--theme-color: ${color};`}>
+                        <PaymentIsland client:only="react" token={token} color={color} amountLabel={amount} />
+                    </div>
+                )}
+            </section>
+
+            <footer class="payp-foot">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Pago cifrado y procesado por Stripe. {q.nombre} nunca ve los datos de tu tarjeta.
+            </footer>
         </div>
     </main>
 </Layout>
+
+<style is:global>
+    /* La página de pago es standalone — sin navbar/footer de la landing */
+    body:has(.payp) #navbar,
+    body:has(.payp) footer:not(.payp-foot) { display: none !important; }
+
+    .payp {
+        min-height: 100vh;
+        min-height: 100dvh;
+        background: #f5f5f7;
+        display: flex;
+        justify-content: center;
+        padding: 2.2rem 1.25rem 3rem;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    }
+    .payp-col { width: 100%; max-width: 470px; display: flex; flex-direction: column; }
+
+    .payp-head { margin-bottom: 1.4rem; }
+    .payp-back {
+        display: inline-flex; align-items: center; gap: 7px;
+        font-size: 0.85rem; font-weight: 500; color: #6b7686; text-decoration: none;
+        transition: color 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .payp-back:hover { color: #0a192f; }
+    .payp-back:hover svg { transform: translateX(-2px); }
+    .payp-back svg { transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+
+    .payp-card {
+        background: #ffffff;
+        border-radius: 28px;
+        padding: 2rem 1.9rem 1.9rem;
+        box-shadow:
+            0 2px 4px rgba(10,25,47,0.04),
+            0 28px 56px -14px rgba(10,25,47,0.12),
+            inset 0 1px 0 rgba(255,255,255,0.6);
+        border: 1px solid rgba(10,25,47,0.05);
+        animation: payp-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    @keyframes payp-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) { .payp-card { animation: none; } }
+
+    .payp-brand { display: flex; align-items: center; gap: 13px; margin-bottom: 1.6rem; }
+    .payp-logo { height: 34px; max-width: 130px; object-fit: contain; border-radius: 7px; }
+    .payp-avatar {
+        width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
+        display: grid; place-items: center;
+        color: #fff; font-weight: 700; font-size: 1rem;
+    }
+    .payp-brand-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .payp-org { font-size: 0.92rem; font-weight: 600; color: #050505; letter-spacing: -0.01em; }
+    .payp-folio { font-size: 0.74rem; color: #6b7686; }
+
+    .payp-amount-block {
+        display: flex; flex-direction: column; gap: 4px;
+        padding: 1.1rem 1.2rem; margin-bottom: 1.6rem;
+        background: #f5f5f7; border-radius: 16px;
+    }
+    .payp-amount-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #8a93a2; }
+    .payp-amount { font-size: 1.9rem; line-height: 1.15; color: #050505; }
+    .payp-amount small { font-size: 0.85rem; font-weight: 600; color: #8a93a2; }
+    .payp-methods { font-size: 0.72rem; color: #8a93a2; margin-top: 2px; }
+
+    .payp-paid { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.7rem; padding: 1.4rem 0 0.6rem; }
+    .payp-paid strong { font-size: 1.02rem; font-weight: 600; color: #050505; letter-spacing: -0.01em; }
+    .payp-paid p { font-size: 0.84rem; color: #6b7686; line-height: 1.55; margin: 0; max-width: 34ch; }
+    .payp-paid-link { font-size: 0.85rem; font-weight: 600; color: #0a192f; text-decoration: none; margin-top: 0.4rem; }
+    .payp-paid-link:hover { text-decoration: underline; }
+
+    .payp-foot {
+        display: flex; align-items: center; justify-content: center; gap: 7px;
+        font-size: 0.72rem; color: #9aa2af; margin-top: 1.5rem; text-align: center;
+    }
+    .payp-foot svg { flex-shrink: 0; opacity: 0.7; }
+
+    @media (max-width: 480px) {
+        .payp { padding: 1.4rem 1rem 2.2rem; }
+        .payp-card { padding: 1.5rem 1.25rem 1.4rem; border-radius: 22px; }
+        .payp-amount { font-size: 1.65rem; }
+    }
+</style>

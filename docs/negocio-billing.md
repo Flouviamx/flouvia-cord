@@ -68,5 +68,27 @@ Flujo:
 - Los price_id/meter_id NO son secretos (viven en `billing.ts`); el secreto es
   `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (env).
 
----
 
+### Stripe Connect Custom (Cobros B2B directos) — jul 2026, auditado y endurecido jul 2026
+
+Implementación nativa ("Quiet Luxury") para que los clientes cobren sus cotizaciones directamente a su banco, sin salir de la experiencia de la app. Reemplaza el esquema viejo de cuentas Express y Hosted Checkout.
+
+Flujo y Arquitectura:
+- **Onboarding In-House (`/app/ajustes/cobros`)**:
+  - Usa cuentas de tipo `custom` (`createConnectAccount` en `billing.ts`).
+  - La recolección de KYC, identidad bancaria (CLABE) y estructura de la empresa se hace con el componente React `ConnectCustomOnboarding.tsx`, con **reanudación** (retoma en el primer requisito pendiente que reporta Stripe, no desde cero), **validación real de CLABE** (dígito de control, pesos 3-7-1), validación de fecha de nacimiento (mayor de 18) y polling automático (cada 6s) mientras la cuenta está "en revisión" — recarga sola al activarse `charges_enabled`.
+  - El escaneo de identificación (INE/Pasaporte) y Selfie se hace *en tiempo real* en el navegador usando la cámara web (`LiveCapture.tsx`), enviando la evidencia como `multipart/form-data` (`stripeUpload`) hacia el endpoint `POST /api/billing/connect/document`. El reverso ya no pisa el frente (bug corregido: ambos se guardaban en `[front]`).
+- **Checkout In-House (`/q/[token]/pay`)**:
+  - Ya no hay redirección al Hosted Checkout de Stripe. Ahora se incrusta el `<PaymentElement>` (`PaymentIsland.tsx`) tematizado con Appearance API (inputs gris `#f5f5f7` sin borde, anillo navy al foco — mismo lenguaje visual que el resto de la app) y `redirect: 'if_required'` (tarjeta confirma sin salir de la página; SPEI redirige a las instrucciones de Stripe y regresa con `?pagado=1`, que el link público muestra como aviso "pago en camino").
+  - La ruta `/api/q/[token]/payment-intent.ts` crea un `PaymentIntent` en el servidor (header `Stripe-Account: acct_...`, fondos directo a la cuenta conectada, cero comisión de Cord) y **lo reutiliza** en visitas repetidas (columna `cotizaciones.stripe_payment_intent_id`) — antes cada recarga creaba un PI + customer nuevos, lo que le daba a SPEI una CLABE distinta cada vez. Si el total cambió (re-versión) actualiza el monto del PI existente en vez de crear otro.
+  - Soporta pagos con Tarjeta de crédito/débito y Transferencia Bancaria (SPEI / `customer_balance`); ya NO fuerza `payment_method_data[type]=customer_balance` (ese bug forzaba TODO pago a SPEI aunque tarjeta estuviera activa) — el método lo decide el Payment Element al confirmar.
+- **Webhooks y Conciliación (`/api/stripe/webhook`)**:
+  - Escucha `payment_intent.succeeded` proveniente del nuevo flujo de Stripe Elements.
+  - Extrae el método de pago real vía `latest_charge` (consulta el charge en la cuenta conectada) — el `charges.data[0]` embebido ya no existe en las versiones nuevas de la API, así que el método real (tarjeta vs SPEI) se perdía silenciosamente en producción.
+  - Marca la cotización como `paid` en la DB, guarda el `evento` y dispara los webhooks salientes (`dispatchQuoteEvent`) — antes moría con un `ReferenceError` (`after(...)` no existe) justo después del `UPDATE`, así que el evento `quote.paid` nunca se disparaba a integraciones de terceros aunque el pago sí quedara marcado.
+- **Gestión de la cuenta**:
+  - Al ser Custom, la plataforma es responsable. Endpoints en `/api/billing/connect/*` exponen la creación de cuentas bancarias (external_accounts), representantes (persons), subida de documentos y revisión de estado (status). `create.ts` solo desconecta la cuenta guardada cuando Stripe confirma que ya no existe (antes cualquier error de red la borraba); `status.ts` ya no truena con 400 cuando aún no hay cuenta (el wizard arranca en cero sin error en consola).
+
+⚠️ **Pendiente de configuración manual (no es código):** falta el SEGUNDO endpoint de webhook en el dashboard de Stripe ("eventos en cuentas conectadas", misma URL, evento `payment_intent.succeeded`) con su secreto en `STRIPE_CONNECT_WEBHOOK_SECRET` — sin esto el dinero cae al vendedor pero Cord nunca marca la cotización pagada.
+
+---

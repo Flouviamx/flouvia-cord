@@ -727,6 +727,10 @@ create policy "rls_cotizacion_firmas" on cotizacion_firmas
 -- 1) Fecha y método de pago
 alter table cotizaciones add column if not exists paid_at timestamptz;
 alter table cotizaciones add column if not exists payment_method text;
+-- 1b) PaymentIntent reutilizable del pago en línea (Connect Custom, jul 2026).
+--     Evita crear un PI + customer nuevos (y una CLABE SPEI distinta) en cada
+--     recarga de /q/[token]/pay: el endpoint payment-intent lo reutiliza.
+alter table cotizaciones add column if not exists stripe_payment_intent_id text;
 -- 2) Hilos de negociación del agente de cobranza
 create table if not exists cobranza_conversaciones (
   id              uuid        default gen_random_uuid() primary key,

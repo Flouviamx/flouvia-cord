@@ -8,6 +8,75 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Org switcher con sub-cuentas anidadas (estilo Stripe) + refresh real al cambiar + "Tu cuenta" rediseñada con 2FA/Passkeys/cuentas conectadas (jul 2026)** —
+   André pidió que el org switcher soportara una jerarquía "org principal + cuentas dentro" (como
+   Stripe), que cambiar de cuenta recargara la data real (antes se quedaba con la data de la org
+   anterior), y que `/app/ajustes/cuenta` se sintiera "super pro".
+   • **Jerarquía de sub-cuentas:** columna nueva `orgs.parent_org_id uuid references orgs(id) on
+     delete set null` (`db/schema.sql`, `alter table … if not exists`). La fuente de verdad para
+     AGRUPAR en el switcher es `organization.publicMetadata.parentOrgId` de Clerk (disponible
+     client-side sin roundtrip a Neon); el webhook de Clerk (`organization.created`/`updated`) lo
+     lee y sincroniza `orgs.parent_org_id` resolviendo el `org_xxx` del padre → uuid interno.
+     Endpoint nuevo `POST /api/orgs/subaccount` (`clerkClient(context).organizations
+     .updateOrganization({ organizationId, publicMetadata })`, mismo patrón BAPI que
+     `equipo.ts`) liga hijo→padre, validando primero que el usuario sea miembro **activo** del
+     padre en `org_members` (403 si no). Cada cuenta hija sigue siendo una org de Cord normal —
+     **datos 100% aislados** (multi-tenant por `org_id`, sin excepción); la jerarquía es solo de
+     agrupación visual/organizativa en el switcher, no comparte config ni datos.
+   • **`CustomOrgSwitcher.tsx` — árbol principal→hijos:** las membresías se agrupan por
+     `publicMetadata.parentOrgId`; las orgs raíz (sin padre) se listan con sus hijas anidadas
+     debajo (indent + hairline). **Fallback anti-desaparición:** si una sub-cuenta apunta a un
+     padre del que el usuario ya no es miembro, se promueve a la lista raíz en vez de quedar
+     oculta.
+   • **`CreateWorkspaceModal.tsx` (nuevo) — flujo de creación tipo Stripe:** reemplaza el
+     `prompt()` nativo original por un modal de 2 pasos (portal a `document.body`): paso 1 elige
+     entre "Crea una cuenta en tu organización" (nested, bajo la org activa) o "Crea una cuenta
+     separada" (independiente), con mini-diagramas ilustrando la jerarquía; paso 2 pide el
+     nombre. Al confirmar: `clerk.createOrganization()` → si es `nested`, POST a
+     `/api/orgs/subaccount` para ligar al padre (si falla el ligado, la org igual queda creada y
+     usable — se avisa con `cordToast` que quedó como espacio independiente) → `handleSwitch()`.
+   • **Refresh real al cambiar de org/cuenta:** `handleSwitch` hacía `clerk.setActive(...)` y solo
+     cerraba el dropdown — como toda la data de `/app` se resuelve server-side con
+     `getActiveOrgId()` (lee `auth().orgId`), la UI se quedaba con la data de la org anterior
+     hasta que el usuario navegaba manualmente. Ahora, tras `setActive`, se hace
+     `window.location.assign(...)` (mismo patrón ya probado por `toggleTestMode` en
+     `src/store/testMode.ts`): si la URL actual trae un UUID de entidad (cotización/cliente
+     concreto que no existe en la otra cuenta) redirige a `/app`; si no, recarga la misma ruta.
+   • **`/app/ajustes/cuenta` (`CustomUserProfile.tsx`/`.css`) rediseñada:**
+     - CSS migrado de una paleta slate hardcodeada (`#cbd5e1`/`#334155`/`#64748b`) a los
+       **tokens de Cord** (`--surface`, `--color-bg-soft`, `--color-border`, `--color-text`,
+       `--color-blue-deep`, `--ease-spring`/`--ease-ios`) — arregla el **dark mode**, que antes
+       pintaba tarjetas blancas con texto oscuro sobre fondo oscuro.
+     - Skeleton de carga real (antes referenciaba clases `.cup-card`/`.cup-card-body`
+       inexistentes → texto plano sin estilo).
+     - Avatar con **cambio de foto** (`user.setProfileImage({ file })`, overlay al hover).
+     - **Secciones nuevas:** Autenticación de 2 pasos (TOTP vía `user.createTOTP()` →
+       `verifyTOTP()`, con **códigos de respaldo** mostrados una sola vez tras habilitar —
+       `createBackupCode()` — porque Clerk no los vuelve a revelar; clave secreta copiable en
+       vez de prometer un QR que no se implementó, ya que mandar la secret TOTP a un servicio
+       externo de generación de QR la filtraría), **Passkeys** (`createPasskey()`/
+       `passkey.delete()`), y **Cuentas conectadas** (Google vía
+       `user.createExternalAccount({ strategy: 'oauth_google', redirectUrl })` — el botón
+       "Conectar" redirige a `verification.externalVerificationRedirectURL`, la URL de OAuth
+       que Clerk devuelve; sin ese redirect el botón no iniciaba el flujo).
+     - `alert()`/`confirm()` nativos reemplazados por `window.cordToast`/`window.cordConfirm`
+       (con fallback si el island monta antes que el script de `AppLayout`).
+     - Botones destructivos (Revocar sesión, Desactivar 2FA, Eliminar passkey, Desconectar
+       cuenta) corregidos de `var(--color-warn)` (ámbar) a `var(--color-danger)` (rojo) — antes
+       se veían ámbar por usar el token equivocado.
+   • **Bug real corregido en el endpoint nuevo:** `const [rows] = await sql\`...\`` destructuraba
+     mal el resultado del driver de Neon (`sql\`\`` devuelve un ARRAY de filas, no una fila) —
+     `rows.length` era `undefined` y la validación de membresía del padre **siempre** devolvía
+     403, así que ninguna sub-cuenta se ligaba nunca. Corregido a `const rows = await sql\`...\``.
+   ⚠️ Correr `npm run db:migrate` (1 columna nueva en `orgs`).
+   ⚠️ **Nota de copy pendiente de revisar:** el modal de creación (`CreateWorkspaceModal.tsx`)
+     describe la opción "nested" como que la sub-cuenta "comparte datos, miembros del equipo e
+     informes" con la org principal — eso NO es cierto en el modelo actual (el multi-tenant por
+     `org_id` aísla 100% los datos entre cualquier par de orgs, padres o hijas); la jerarquía es
+     puramente organizativa/visual en el switcher. Ajustar el copy si se quiere evitar confundir
+     al usuario, o implementar de verdad algún nivel de dato compartido si eso es lo que se
+     busca.
+
 ✅ **Refactor de Ajustes: Layout "Quiet Luxury", Separación de Modo Developer e Integraciones (jul 2026)** —
    Se aplicó la estética "Quiet Luxury" consistentemente a todas las páginas de configuración y se reestructuró la jerarquía de navegación.
    • **Settings Layout Amplio:** `SettingsShell.astro` se refactorizó para utilizar un grid de 2 columnas (`260px` sidebar, `640px` content max-width) dentro de un contenedor amplio de `1040px`. Esto resolvió el problema de que los campos estuvieran demasiado pegados a la izquierda, ocupando mejor el espacio estilo Stripe.
@@ -16,77 +85,62 @@
    • **Extracción de Integraciones:** "Integraciones" dejó de estar oculta bajo el toggle técnico y ahora es una categoría principal de primer nivel visible para cualquier usuario (en `SETTINGS_CATEGORIES`), porque cualquier persona puede integrar aplicaciones.
    • **Separación del Modo Desarrollador:** Se eliminó la súper-tarjeta monolítica de "Developers" que contenía todas las opciones. Ahora, al encender el toggle de **Modo desarrollador**, aparecen múltiples filas independientes en la sección de Avanzado: **API y Webhooks**, **MCP**, **Agentes IA**, y **Cotizador embebible**, permitiendo una navegación más directa y modular.
 
-✅ **Cobros v2 — Stripe Connect EMBEDDED (no OAuth), UI premium, y 3 bugs del link público (jul 2026)** —
-   evolución grande del feature de cobros. Reemplaza el approach OAuth Standard/Express de la entrada
-   "Cobros directos a la cuenta del dueño" (más abajo, ahora **parcialmente obsoleta** — ver ⚠️ ahí).
-   Contexto: Custom accounts (white-label 100% por API) se **exploró y se DESCARTÓ** — la propia IA de
-   Stripe confirmó que Custom exige **$250K USD de volumen en 12 meses + plataforma activada**, e André
-   está en fase inicial, así que no califica. El trabajo de Custom se dejó **guardado en un `git stash`**
-   (`connect-custom-wip`) por si algún día califican. La ruta sancionada (por Stripe) es **Embedded
-   Components**, que es lo que quedó.
-   • **Migración a Embedded Components:** se eliminó todo el flujo OAuth
-     (`connect/{start,callback,status}.ts` + `getConnectOAuthUrl`/`exchangeOAuthCode`/`createAccountLink`
-     de `billing.ts`). Ahora: endpoint `POST /api/billing/connect/account-session.ts` (crea la cuenta
-     Express lazy con `createConnectAccount` + un Stripe **Account Session** con los componentes
-     `account_onboarding`/`account_management`/`payouts`/`notification_banner`, devuelve `client_secret`);
-     island `src/components/app/ConnectOnboarding.tsx` (`client:only="react"`, deps `@stripe/connect-js` +
-     `@stripe/react-connect-js`) que monta el formulario de Stripe DENTRO de Cord — el vendedor NUNCA
-     sale a `connect.stripe.com`. `disconnect.ts` ahora hace `DELETE /v1/accounts/{id}` (Express es
-     platform-owned). Webhook `account.updated` (`webhook.ts` → `updateAccountStatus`) sincroniza
-     `stripe_charges_enabled`. Único disclosure no removible: un "Powered by Stripe" chico (blanqueo
-     total sería Custom).
-   • **Theming completo + dark mode (Appearance API):** `ConnectOnboarding.tsx` construye el objeto
-     `appearance` completo (navy Cord, Inter, squircles, botones píldora) vía `buildConnectAppearance(theme)`,
-     y un `MutationObserver` sobre `<html data-theme>` re-tematiza el formulario EN VIVO con
-     `instance.update()` cuando el usuario cambia claro/oscuro (el default de Stripe ignora el dark mode
-     de la app). ⚠️ **Límite honesto:** la Appearance API tematiza colores/tipografía/bordes/botones pero
-     NO reestructura los campos (ese layout lo controla Stripe en Embedded).
-   • **Manejo de error de la isla:** pre-fetch del `account-session` + `onLoadError` en los componentes →
-     si algo falla (cuenta no activa, componentes no habilitados, pk/sk de distinto modo) se muestra el
-     **error real en rojo** en vez de dejar la caja en blanco (el bug "nada" que André reportó en live).
-   • **Página `/app/ajustes/cobros` premium:** hero de onboarding navy con value-props (Directo a tu
-     cuenta · 0% comisión · Tarjeta y SPEI), **stepper macro de 3 pasos REALES** (Conecta → Verificación
-     → Listo, derivado de `stripeAccountId`+`stripeChargesEnabled` — el detalle fino del KYC lo muestra el
-     propio componente de Stripe; NO se inventan sub-pasos), estado "¡Todo listo!" celebratorio, métodos
-     de pago como filas iOS (tarjeta/SPEI/transferencia manual con `.s-toggle` — se corrigió que los
-     toggles estaban ROTOS: les faltaba la estructura `track`/`thumb`), y un **preview en vivo "así lo
-     verá tu cliente"** con la marca real del negocio (logo/color) que reacciona a los toggles.
-   • **Cobros = categoría propia de Ajustes** (`settings.ts`): se sacó de "Planes y cobranza" (que es la
-     suscripción DEL negocio A Cord — dinero que sale) a su propia categoría **"Cobros"** (dinero que
-     entra de los clientes). "Planes" quedó como "Planes y suscripción" con solo la pestaña Suscripción.
-   • **Aviso único para usuarios existentes** (`src/pages/app/index.astro`): banner navy dismissible en
-     el dashboard que invita a activar cobros a quien aún no conecta (`!ORG.stripeAccountId`), con botón a
-     Ajustes › Cobros y una X que persiste en `localStorage cord.cobros.nudge.dismissed`.
-   • **Documentación de soporte:** artículo NUEVO `activar-cobros.md` (ES+EN) sobre cómo activar cobros
-     (0% comisión, los 3 métodos, SPEI/CLABE, tiempos de payout de Stripe); `migracion-stripe.md` (ES+EN)
-     corregido — el "Paso 1" decía *"Configura tu llave de Stripe"* (modelo viejo de pegar llave,
-     inexacto) → ahora manda a Ajustes › Cobros a completar el onboarding embebido; `tiempos-de-deposito.md`
-     actualizado. Las cláusulas Connect en `/terminos` y `/privacidad` ya existían (Cord facilitador, no
-     banco, no retiene fondos, link al Connected Account Agreement) — se conservan.
-   • **3 bugs del link público de cotización (`QuoteCard.astro`, reusado por `/q` y `/embed`):**
-     (1) **Aprobar no revelaba el pago sin recargar** — `puedePagar` en `q/[token].astro` y
-     `embed/[token].astro` exigía `status ∈ {approved,invoiced}`, así que en una cotización en review el
-     bloque de pago (dentro del paso `stepApproved`) NO se renderizaba al DOM → al aprobar del lado cliente
-     no había nada que mostrar. Fix: `puedePagar` ahora solo depende de que el negocio tenga un método
-     configurado (`aceptaTransferencia` o `(aceptaTarjeta||cobroSpeiAuto)&&stripeAccountId&&
-     stripeChargesEnabled`), no del status — el bloque vive oculto dentro de `stepApproved` y aparece solo
-     al firmar, sin recargar. (2) **Mensajes del chat sin CSS** + (3) **"holaahora"** (mismo root cause):
-     el `<style>` de `QuoteCard` es SCOPEADO (Astro le pone `data-astro-cid`); los mensajes que el JS crea
-     en runtime (`appendMsg`, reply por línea) no llevan ese atributo → las reglas `.q-msg*`/`.qi-msg*` no
-     les aplicaban → burbuja sin estilo y texto+timestamp ("ahora") pegados inline. Fix: mover los
-     selectores de burbuja a un `<style is:global>` (patrón documentado del repo para DOM inyectado). Con
-     `.q-msg` global como `flex-direction:column`, "hola" queda arriba y "ahora" abajo, tenue.
-   ⚠️ **Único pendiente REAL (no código): la plataforma de Stripe en live sigue en estado "submitted"**
-     (enviada a revisión). Hasta que Stripe la ACTIVE, el onboarding embebido no monta en live (ESA es la
-     causa del "nada" que André veía en producción — no es bug de código). En **test mode todo funciona**
-     y se puede probar ya. También pendiente de config manual: el webhook de "eventos en cuentas
-     conectadas" con `account.updated` + `STRIPE_CONNECT_WEBHOOK_SECRET`, y habilitar Embedded Components
-     en live. ⚠️ Correr `npm run db:migrate` (columnas Connect en `orgs`).
+✅ **Cobros v3 — Stripe Connect CUSTOM + Stripe Elements In-House (jul 2026)** —
+   evolución definitiva del feature de cobros. Reemplaza por completo el approach OAuth Standard/Express y también el intento de Embedded Components (v2).
+   Contexto: Aunque inicialmente se pensó que Custom exigía volumen alto, André solicitó la implementación Custom para lograr el nivel de integración "Quiet Luxury" y marca blanca al 100%. Todo el flujo ahora ocurre 100% in-house.
+   • **Migración a Cuentas Custom:** se eliminó todo el flujo OAuth y Embedded (`ConnectOnboarding.tsx`).
+     Ahora se utiliza la API nativa de Stripe (`createConnectAccount` con `type: 'custom'`). La recolección de datos (KYC, empresa, personas, banco) se hace mediante el nuevo componente `ConnectCustomOnboarding.tsx` totalmente nativo.
+   • **LiveCapture (Verificación de Identidad In-House):** En lugar de subir un archivo mediante un input básico, o usar el onboarding externo, se construyó `LiveCapture.tsx`. Esto pide acceso a la cámara del navegador y toma fotos de la INE/Pasaporte y selfie en tiempo real. Se envía a Stripe vía la API `Files` (`stripeUpload` multipart/form-data) asociado al `person_id`.
+   • **Checkout In-House (Stripe Elements):** Se eliminó la redirección al Hosted Checkout. Ahora el link público tiene un flujo interno en `/q/[token]/pay.astro`. Este carga un PaymentIntent (`/api/q/[token]/payment-intent.ts`) que rutea fondos a la cuenta conectada (`Stripe-Account` header) y muestra la UI in-house con `@stripe/react-stripe-js` (`PaymentIsland.tsx`).
+   • **Tematización Dinámica:** El `<PaymentElement>` se instanció usando la Appearance API para heredar exactamente el color primario (`--theme-color`) del merchant, removiendo todo rastro estético de Stripe.
+   • **Webhooks Mejorados (`/api/stripe/webhook`):** Ahora escucha `payment_intent.succeeded` generado por el Payment Element. Se agregó lógica matemática para leer `charges.data[0].payment_method_details.type` y distinguir pagos con `tarjeta` versus `customer_balance` (SPEI), sin depender de `payment_method_types` genéricos.
+   • **Gestión In-House:** Endpoints completos en `/api/billing/connect/*` para manejar `external-account`, `persons`, `document`, y `status`. Se cuenta con un botón para **Desconectar** la cuenta desde `/app/ajustes/cobros` (ideal para limpiar cuentas viejas Express durante el desarrollo).
+   • **Dashboard `/app/cobros` (NUEVO, sidebar "Mi dinero"):** página separada de Ajustes que muestra el
+     DINERO QUE ENTRA (Ajustes › Cobros sigue siendo la CONFIGURACIÓN). `getCobros()` en `queries.ts`
+     agrega total cobrado, desglose por método (tarjeta/spei/otro), serie mensual y cobros recientes —
+     filtrando por `status='paid' OR paid_at IS NOT NULL` (NUNCA `status='invoiced'` solo, que puede
+     estar sin pagar). Incluye sección de **Depósitos** (balance disponible/pendiente + payouts recientes
+     vía `getBalance()`/`listPayouts()` de `billing.ts`). Gated por permiso `cobranza`
+     (`memberCan(ME,'cobranza')`).
+   • **Nueva columna `cotizaciones.payment_method`** + `paid_at` ahora SÍ se escribe (antes existía la
+     columna pero nunca se llenaba). Se setea en `markQuotePaid` (webhook) y en el PATCH manual de pago.
+   • **Paso nuevo en el onboarding de Cord:** "Activa los cobros en línea" en `getSetupProgress()`
+     (`id: 'online_cobros'`, `done: !!stripe_charges_enabled`) — aparece en el `OnboardingWidget` de todo
+     usuario nuevo o existente que no haya conectado cobros.
+   • **Rediseño borderless "nivel Apple" completo:** se eliminaron TODAS las cards del flujo Connect
+     (`.cobros-hero` navy con glow, `.connect-frame` con borde/sombra, `.cobros-celebration`,
+     `.pay-preview`) → todo hairline/plano, consistente con el resto de Ajustes. El wizard
+     (`ConnectCustomOnboarding.tsx`) pasó de tiles `.co-card-radio` con borde a filas hairline tipo iOS;
+     `.co-requirements` de panel encajonado a lista hairline.
+   • **Formulario nivel Stripe:** catálogo MCC ampliado (`stripe-catalogs.ts`, ~67 giros) con buscador
+     (`<input list>` + `<datalist>`); validación de RFC con regex oficial MX ANTES de enviar a Stripe
+     (bloquea el submit con mensaje claro en vez de esperar el error de la API); autorrelleno completo
+     desde `getOrg()` (razón social, RFC, CP, dirección, teléfono, CLABE).
+   • **El paso final del wizard distingue estado real:** si `charges_enabled` → "Todo listo, tu cuenta
+     está activa" + botón para editar CLABE; si no → requisitos pendientes o "en revisión" — antes SIEMPRE
+     mostraba "en revisión" aunque la cuenta ya estuviera 100% activa (bug de UX confuso).
+   • **6 bugs reales encontrados y corregidos en auditoría (antes de dar por bueno el flujo):**
+     (1) `pay.astro` importaba un layout inexistente (`QuoteLayout.astro`) — rompía el build entero;
+     corregido a `Layout.astro` (el mismo que usa `/q/[token]`). (2) `pay.astro` seleccionaba
+     `o.color_brand` (columna que no existe) en vez de `o.color_marca` — habría tronado en runtime con
+     un 500 al abrir la página de pago. (3) La interpolación `style="...--theme-color: {color}"` no
+     funciona en Astro (necesita `style={\`...${color}\`}`) — el color de marca nunca llegaba al CSS.
+     (4) `payment-intent.ts` leía la variable de entorno `PUBLIC_STRIPE_KEY` (no existe) en vez de
+     `PUBLIC_STRIPE_PUBLISHABLE_KEY` — Stripe.js nunca cargaba, la página de pago quedaba en blanco.
+     (5) Los toggles de tarjeta/SPEI se mostraban ENCENDIDOS aunque la cuenta no tuviera Stripe conectado
+     (`checked={ORG.aceptaTarjeta}` sin considerar `puedeCobrar`) — corregido a
+     `checked={puedeCobrar && ORG.aceptaTarjeta}`. (6) `getCobros()` inicialmente contaba
+     `status IN ('paid','invoiced')` como "cobrado" — INCORRECTO en ambos sentidos: una cotización puede
+     facturarse (`invoiced`) SIN estar pagada, y una ya pagada puede facturarse después
+     (`paid→invoiced`, perdiendo el filtro). Corregido a `status='paid' OR paid_at IS NOT NULL`.
    ⚠️ **Reglas reforzadas esta sesión:** (a) CSS que estilice DOM inyectado por JS (mensajes, Cmd+K,
      toasts) SIEMPRE va en `<style is:global>` — Astro scopea con `[data-astro-cid]` y el DOM dinámico no
      lo lleva. (b) El bloque de pago del link público se gatea por CONFIG de pago del negocio, no por el
      status de la cotización (vive oculto en el paso aprobado). (c) Los `.s-toggle` requieren la estructura
      `<input>` + `.s-toggle-track` (con `.s-toggle-thumb`) + `.s-toggle-text` — sin ella el switch no se ve.
+     (d) "Cobrado" ≠ `status IN (...)` con `invoiced` — siempre filtrar por `paid_at IS NOT NULL` o
+     `status='paid'` explícito para montos de dinero real. (e) El `sql` de neon-serverless NO compone
+     fragmentos (`sql\`...${otroFragmentoSql}...\``) — inlinear la condición completa en cada query.
 
 ✅ **Refresh visual de la app → más Apple/iOS/Stripe (jul 2026)** — André pidió que la app
    interna (`/app/**`) se sintiera más Apple/iOS y más profesional/Stripe (referencias: los
@@ -146,9 +200,8 @@
    llave de PLATAFORMA de Cord (`STRIPE_SECRET_KEY`) → el dinero caía a Flouvia, no al negocio. Esto
    contradecía lo que YA prometían 2 artículos de soporte (`comisiones-tarifas.md`/`migracion-stripe.md`:
    "tu propia cuenta de Stripe, Cord nunca toca los fondos"). Se implementó Stripe Connect de verdad:
-   ⚠️ **SUPERADO (jul 2026):** el flujo OAuth Standard/Express de abajo se MIGRÓ a **Embedded Components**
-   — ver la entrada "Cobros v2 — Stripe Connect EMBEDDED" al inicio de este archivo. Lo de OAuth
-   (`connect/{start,callback,status}.ts`, `getConnectOAuthUrl`, el nonce anti-CSRF, `STRIPE_CONNECT_CLIENT_ID`)
+   ⚠️ **SUPERADO (jul 2026):** el flujo OAuth Standard/Express detallado aquí abajo se MIGRÓ definitivamente a **Stripe Connect Custom + Stripe Elements In-House** (ver entrada "Cobros v3" arriba).
+   Lo de OAuth (`connect/{start,callback,status}.ts`, `getConnectOAuthUrl`, el nonce anti-CSRF, `STRIPE_CONNECT_CLIENT_ID`)
    YA NO EXISTE. Lo que SÍ sigue vigente de esta entrada: el modelo de charge directa con header
    `Stripe-Account` (cero comisión), las columnas de `orgs`, el SPEI dinámico, y los fixes de dinero.
    • **Connect Standard + Express** (`src/pages/api/billing/connect/{start,callback,status,disconnect}.ts`)
@@ -2006,10 +2059,16 @@
 ✅ **COMPLETADO — Connect migrado a Embedded Components (jul 2026)** — lo que aquí estaba planeado YA se
    implementó; ver la entrada "Cobros v2 — Stripe Connect EMBEDDED" al inicio del archivo para el detalle
    final (endpoint `account-session`, island `ConnectOnboarding.tsx`, theming, webhook `account.updated`,
-   OAuth `start/callback/status` eliminados). **Custom/API quedó DESCARTADO** (no solo "gateado"): la IA
-   de Stripe confirmó que Custom exige **$250K USD de volumen en 12 meses + plataforma activada**, y Cord
-   está en fase inicial → no califica. El código de Custom que se llegó a escribir se **guardó en `git
-   stash` (`connect-custom-wip`)** por si algún día califican. Las cláusulas legales de `/terminos` y
-   `/privacidad` (Cord facilitador, no banco, Connected Account Agreement) ya se agregaron. Sigue pendiente
-   solo la confirmación legal Ley Fintech/IFPE (aplica igual para Embedded) y la **activación de la
-   plataforma en live por parte de Stripe** (está en "submitted" — es la causa del "nada" en producción).
+   OAuth `start/callback/status` eliminados).
+   ⚠️ **SUPERADO otra vez (jul 2026) — ver "Cobros v3 — Stripe Connect CUSTOM" al inicio del archivo:** esta
+   nota originalmente decía que Custom quedaba descartado porque exige **$250K USD de volumen en 12 meses
+   + plataforma activada**, y Cord (fase inicial) no calificaba. André pidió construirlo de todos modos
+   para llegar al white-label 100% ("Quiet Luxury" sin ninguna marca de Stripe visible) — se implementó
+   Custom completo (KYC in-house, `LiveCapture` con cámara, Stripe Elements para el checkout). El código
+   funciona en TEST mode sin problema; el requisito de volumen solo bloquea activar cuentas Custom en
+   **LIVE** — eso sigue pendiente de que Stripe apruebe la plataforma. ⚠️ El `git stash connect-custom-wip`
+   mencionado abajo NO contiene ningún trabajo de Custom real (se verificó: solo tenía un cambio ajeno de
+   27 líneas en `cotizaciones/index.astro`) — el Custom real que quedó en producción se construyó desde
+   cero directo en el código, no vino de ese stash. Seguro hacer `git stash drop` de ese stash si estorba.
+   Sigue pendiente la confirmación legal Ley Fintech/IFPE y la **activación de la plataforma en live por
+   parte de Stripe** (estaba en "submitted").

@@ -33,9 +33,12 @@ export const POST: APIRoute = async ({ request }) => {
         );
 
         if (isCompanyDoc) {
+            // El doc a nivel cuenta también distingue frente/reverso — antes se
+            // escribía SIEMPRE en [front] y subir el reverso pisaba el frente.
             const prefix = org.stripe_business_type === 'individual' ? 'individual' : 'company';
+            const docSide = side === 'back' ? 'back' : 'front';
             await updateConnectAccount(org.stripe_account_id as string, {
-                [`${prefix}[verification][document][front]`]: uploadedFile.id
+                [`${prefix}[verification][document][${docSide}]`]: uploadedFile.id
             });
         } else {
             await attachPersonDocument(org.stripe_account_id as string, personId, uploadedFile.id, side);

@@ -12,7 +12,7 @@ import type { APIRoute } from 'astro';
 import crypto from 'node:crypto';
 import { sql, logAudit } from '../../../lib/db';
 import { dispatchQuoteEvent } from '../../../lib/webhooks';
-import { PRICE_TO_PLAN, isPaidPlan } from '../../../lib/billing';
+import { PRICE_TO_PLAN, isPaidPlan, stripe } from '../../../lib/billing';
 
 const WH_SECRET = import.meta.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
 const CONNECT_WH_SECRET = import.meta.env.STRIPE_CONNECT_WEBHOOK_SECRET || process.env.STRIPE_CONNECT_WEBHOOK_SECRET;
@@ -128,18 +128,34 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
         if (eventType === 'checkout.session.async_payment_succeeded') {
             paymentMethod = 'spei';
         } else if (eventType === 'payment_intent.succeeded') {
-            const type = sessionOrIntent?.charges?.data?.[0]?.payment_method_details?.type;
+            // En versiones nuevas de la API el PaymentIntent ya NO trae `charges`
+            // embebido (solo `latest_charge` como id) — se consulta el charge en la
+            // cuenta conectada para saber el método real. Fallback: 'tarjeta'.
+            let type = sessionOrIntent?.charges?.data?.[0]?.payment_method_details?.type;
+            const latest = sessionOrIntent?.latest_charge;
+            if (!type && latest) {
+                try {
+                    const chargeId = typeof latest === 'string' ? latest : latest?.id;
+                    if (chargeId) {
+                        const ch = await stripe(`/v1/charges/${chargeId}`, undefined, 'GET',
+                            account ? { stripeAccount: account } : undefined);
+                        type = ch?.payment_method_details?.type;
+                    }
+                } catch { /* best-effort: se queda 'tarjeta' */ }
+            }
             if (type === 'customer_balance') paymentMethod = 'spei';
         } else if (sessionOrIntent?.payment_method_types?.length === 1 && sessionOrIntent?.payment_method_types?.[0] === 'customer_balance') {
             paymentMethod = 'spei';
         }
-        
+
         await sql`update cotizaciones set status = 'paid', paid_at = now(), payment_method = ${paymentMethod} where id = ${cid}`;
         await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                   values (${rows[0].org_id}, ${cid}, 'paid', 'Pago recibido vía Stripe')`;
         await logAudit(rows[0].org_id as string, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea (Stripe)' });
-        // Fondo: no demorar el 200 a Stripe con nuestro webhook saliente (evita reintentos).
-        after(dispatchQuoteEvent(rows[0].org_id as string, cid, 'quote.paid'));
+        // Fire-and-forget: no demorar el 200 a Stripe con nuestro webhook saliente
+        // (dispatchQuoteEvent nunca lanza, pero por si acaso se traga el error —
+        // antes aquí se llamaba a un `after()` inexistente que tronaba el handler).
+        dispatchQuoteEvent(rows[0].org_id as string, cid, 'quote.paid').catch(() => {});
     }
 }
 

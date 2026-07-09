@@ -10,9 +10,10 @@ export const GET: APIRoute = async () => {
     if (denied) return denied;
 
     const orgId = await getActiveOrgId();
-    const [org] = await sql`select stripe_account_id from orgs where id = ${orgId}`;
+    const [org] = await sql`select stripe_account_id, stripe_person_id from orgs where id = ${orgId}`;
     if (!org?.stripe_account_id) {
-        return new Response(JSON.stringify({ error: 'No account' }), { status: 400 });
+        // No es un error: simplemente aún no hay cuenta (el wizard arranca en cero).
+        return new Response(JSON.stringify({ ok: true, account: null }), { headers: { 'Content-Type': 'application/json' } });
     }
 
     try {
@@ -31,10 +32,16 @@ export const GET: APIRoute = async () => {
             ok: true, 
             account: {
                 id: account.id,
+                business_type: account.business_type,
                 charges_enabled: account.charges_enabled,
                 payouts_enabled: account.payouts_enabled,
                 details_submitted: account.details_submitted,
-                requirements: account.requirements
+                disabled_reason: account.requirements?.disabled_reason || null,
+                requirements: account.requirements,
+                person_id: (org.stripe_person_id as string) || null,
+                external_accounts: (account.external_accounts?.data || []).map((ea: any) => ({
+                    bank_name: ea.bank_name, last4: ea.last4
+                }))
             }
         }), { headers: { 'Content-Type': 'application/json' } });
     } catch (e: any) {

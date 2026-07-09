@@ -1,18 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '@nanostores/react';
 import { $clerkStore, $isLoadedStore } from '@clerk/astro/client';
+
+// Errores de Clerk → mensajes en español, accionables.
+const ERROR_ES: Record<string, string> = {
+  form_password_length_too_short: 'La contraseña es muy corta — usa al menos 8 caracteres.',
+  form_password_pwned: 'Esa contraseña apareció en una filtración de datos. Elige otra más segura.',
+  form_password_not_strong_enough: 'Esa contraseña es muy débil. Combina letras, números y símbolos.',
+  form_identifier_invalid: 'Ese correo no parece válido — revísalo.',
+  too_many_requests: 'Demasiados intentos. Espera un momento e inténtalo de nuevo.',
+  captcha_invalid: 'No pudimos verificar que eres humano. Recarga la página e inténtalo de nuevo.',
+};
 
 export default function CustomSignUp() {
   const clerk = useStore($clerkStore);
   const isLoaded = useStore($isLoadedStore);
   const signUp = clerk?.client.signUp;
-  
+
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Prefill desde ?email= — p. ej. cuando el sign-in detectó que la cuenta no
+  // existe y rebotó aquí (?desde=login) para que solo falte elegir contraseña.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const em = params.get('email');
+    if (em) setEmail(em);
+    if (params.get('desde') === 'login') {
+      setNotice('No encontramos una cuenta con ese correo. Créala aquí en menos de un minuto.');
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,20 +43,30 @@ export default function CustomSignUp() {
     setLoading(true);
 
     try {
-      await signUp.create({ 
-        emailAddress: email, 
+      await signUp.create({
+        emailAddress: email,
         password,
         firstName,
         lastName
       });
-      
+
       await signUp.prepareVerification({ strategy: 'email_code' });
-      
+
       // Redirect to the OTP page as requested
       window.location.href = '/verify-email';
     } catch (err: any) {
-      if (err.errors && err.errors.length > 0) {
-        setError(err.errors[0].message);
+      const first = err?.errors?.[0];
+      const code = first?.code as string | undefined;
+
+      // La cuenta YA existe → llevar directo al login con el correo precargado.
+      if (code === 'form_identifier_exists') {
+        window.location.href = `/sign-in?email=${encodeURIComponent(email)}&desde=registro`;
+        return;
+      }
+      if (code && ERROR_ES[code]) {
+        setError(ERROR_ES[code]);
+      } else if (first?.longMessage || first?.message) {
+        setError(first.longMessage || first.message);
       } else {
         setError('Ocurrió un error inesperado al registrarte.');
       }
@@ -114,6 +146,7 @@ export default function CustomSignUp() {
           />
         </div>
 
+        {notice && !error && <div className="auth-notice">{notice}</div>}
         {error && <div className="auth-error">{error}</div>}
 
         <button type="submit" disabled={loading} className="btn-primary" style={{ marginTop: '1rem' }}>

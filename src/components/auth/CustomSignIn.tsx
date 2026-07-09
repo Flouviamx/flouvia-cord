@@ -1,17 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '@nanostores/react';
 import { $clerkStore, $isLoadedStore } from '@clerk/astro/client';
+
+// Errores de Clerk → mensajes en español, accionables.
+const ERROR_ES: Record<string, string> = {
+  form_password_incorrect: 'La contraseña no es correcta. Inténtalo de nuevo o restablécela.',
+  form_identifier_invalid: 'Ese correo no parece válido — revísalo.',
+  form_password_pwned: 'Esa contraseña apareció en una filtración de datos. Por seguridad, restablécela.',
+  too_many_requests: 'Demasiados intentos. Espera un momento e inténtalo de nuevo.',
+  session_exists: 'Ya tienes una sesión activa. Te llevamos a tu dashboard…',
+  strategy_for_user_invalid: 'Esta cuenta se creó con Google. Usa el botón "Google" para entrar.',
+  identifier_not_allowed: 'Este correo no está permitido en Cord.',
+};
 
 export default function CustomSignIn() {
   const clerk = useStore($clerkStore);
   const isLoaded = useStore($isLoadedStore);
   const signIn = clerk?.client.signIn;
   const setActive = clerk?.setActive;
-  
+
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Prefill desde ?email= (p. ej. al rebotar desde sign-up) y aviso si el
+  // callback de Google falló (?sso_error=1).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const em = params.get('email');
+    if (em) setIdentifier(em);
+    if (params.get('sso_error')) setNotice('No pudimos completar el acceso con Google. Inténtalo de nuevo.');
+    if (params.get('desde') === 'registro') setNotice('Ya existe una cuenta con ese correo — inicia sesión aquí.');
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,8 +51,23 @@ export default function CustomSignIn() {
         window.location.href = '/verify-email';
       }
     } catch (err: any) {
-      if (err.errors && err.errors.length > 0) {
-        setError(err.errors[0].message);
+      const first = err?.errors?.[0];
+      const code = first?.code as string | undefined;
+
+      // La cuenta NO existe → en vez de mostrar un error críptico, llevamos a la
+      // persona directo a crear su cuenta con el correo ya precargado.
+      if (code === 'form_identifier_not_found') {
+        window.location.href = `/sign-up?email=${encodeURIComponent(identifier)}&desde=login`;
+        return;
+      }
+      if (code === 'session_exists') {
+        window.location.href = '/app';
+        return;
+      }
+      if (code && ERROR_ES[code]) {
+        setError(ERROR_ES[code]);
+      } else if (first?.longMessage || first?.message) {
+        setError(first.longMessage || first.message);
       } else {
         setError('Ocurrió un error inesperado al iniciar sesión.');
       }
@@ -93,6 +130,7 @@ export default function CustomSignIn() {
           <label htmlFor="remember">Recuérdame en este dispositivo</label>
         </div>
 
+        {notice && !error && <div className="auth-notice">{notice}</div>}
         {error && <div className="auth-error">{error}</div>}
 
         <button type="submit" disabled={loading} className="btn-primary">

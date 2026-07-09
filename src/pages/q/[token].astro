@@ -96,6 +96,9 @@ if (token !== 'demo') {
 
 const yaAprobada = ['approved', 'paid', 'invoiced'].includes(q.status);
 const yaRechazada = q.status === 'rejected';
+// Regreso del flujo de pago (Stripe Elements): el webhook confirma en segundos
+// (tarjeta) o al liquidar el SPEI — mientras, se avisa que el pago va en camino.
+const regresoDePago = Astro.url.searchParams.get('pagado') === '1' && q.status !== 'paid';
 const pagoActivo = !!(import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY);
 const puedePagar = pagoActivo && (
     ORG.aceptaTransferencia ||
@@ -112,6 +115,12 @@ const color = ORG.colorMarca || '#0a192f';
     </div>
 
     <main class="qp-main">
+        {regresoDePago && (
+            <div class="qp-payback" role="status">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.1"/><polyline points="8 12.5 11 15.5 16 9.5"/></svg>
+                <span>Recibimos tu pago. La cotización se marcará como pagada automáticamente en cuanto Stripe lo confirme — con tarjeta toma segundos; por SPEI, al liquidarse la transferencia.</span>
+            </div>
+        )}
         <QuoteCard
             quote={q}
             org={ORG}
@@ -153,6 +162,20 @@ const color = ORG.colorMarca || '#0a192f';
         gap: 1.8rem; padding: 3.5rem 5% 4rem;
     }
 
+    .qp-payback {
+        display: flex; align-items: flex-start; gap: 10px;
+        max-width: 560px; width: 100%;
+        background: #ffffff; border-radius: 16px;
+        padding: 13px 16px;
+        font-size: 0.82rem; color: #065f46; line-height: 1.5;
+        box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 18px 40px -14px rgba(10,25,47,0.12);
+        border: 1px solid rgba(16,185,129,0.2);
+        animation: qp-payback-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .qp-payback svg { flex-shrink: 0; margin-top: 1px; color: #10b981; }
+    @keyframes qp-payback-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) { .qp-payback { animation: none; } }
+
     .qp-via {
         display: inline-flex; align-items: center; gap: 6px;
         font-size: 0.76rem; font-weight: 500;
@@ -165,7 +188,7 @@ const color = ORG.colorMarca || '#0a192f';
     .qp-via:hover img { opacity: 0.8; }
 
     @media print {
-        .qp-bg, .qp-via { display: none !important; }
+        .qp-bg, .qp-via, .qp-payback { display: none !important; }
         .qp-main { min-height: 0; padding: 0; display: block; }
     }
 </style>

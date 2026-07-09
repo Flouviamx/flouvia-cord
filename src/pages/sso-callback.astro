@@ -1,0 +1,58 @@
+---
+// Página de aterrizaje del OAuth (Google) de Clerk. ANTES NO EXISTÍA: los botones
+// de Google de sign-in/sign-up redirigían aquí y caían en un 404 — y un usuario
+// nuevo que entraba por "Iniciar sesión" veía un error en vez de crear su cuenta.
+export const prerender = false;
+import Layout from '../layouts/Layout.astro';
+import SsoCallback from '../components/auth/SsoCallback';
+---
+
+<Layout title="Conectando… — Cord" noindex={true}>
+    <div class="auth-page">
+        <a href="/" class="auth-logo">
+            <img src="/imgs/logo-cord-navy.png" alt="Cord" height="26" />
+        </a>
+
+        <SsoCallback client:only="react" />
+
+        <p class="auth-page-footer">Hecho en México &nbsp;&middot;&nbsp; Datos cifrados</p>
+    </div>
+</Layout>
+
+<style is:global>
+    body:has(.auth-page) #navbar,
+    body:has(.auth-page) footer { display: none !important; }
+
+    .auth-page {
+        min-height: 100vh;
+        background: #ffffff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2.25rem;
+        padding: 2.5rem 1.5rem;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    }
+    .auth-logo { display: block; opacity: 0.95; }
+    .auth-logo img { display: block; }
+    .auth-page-footer { font-size: 0.72rem; color: #b4bcc7; font-weight: 500; letter-spacing: 0.02em; margin: 0; }
+
+    .sso-cb {
+        display: flex; flex-direction: column; align-items: center; gap: 1rem;
+        text-align: center; min-height: 90px; justify-content: center;
+    }
+    .sso-cb-spinner {
+        width: 26px; height: 26px; border-radius: 50%;
+        border: 2.5px solid rgba(10,25,47,0.12);
+        border-top-color: #0a192f;
+        animation: sso-spin 0.7s linear infinite;
+    }
+    @keyframes sso-spin { to { transform: rotate(360deg); } }
+    .sso-cb-sub { font-size: 0.88rem; color: #6b7686; margin: 0; }
+    .sso-cb-error {
+        font-size: 0.84rem; color: #dc2626; margin: 0;
+        background: #fef2f2; border: 1px solid #fecaca;
+        padding: 0.7rem 1rem; border-radius: 10px; max-width: 380px;
+    }
+</style>

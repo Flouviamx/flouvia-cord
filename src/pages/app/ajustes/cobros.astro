@@ -267,19 +267,84 @@ const pasos = [
      le aplican. Se scopea bajo .connect-custom-onboarding para no pisar nada global. -->
 <style is:global>
     .connect-custom-onboarding { display: flex; flex-direction: column; }
-    .connect-custom-onboarding .co-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; }
-    .connect-custom-onboarding .co-header h3 { font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; color: var(--color-text); margin: 0; }
-    .connect-custom-onboarding .co-account-id { font-size: 0.66rem; color: var(--color-text-muted); font-family: ui-monospace, monospace; background: var(--color-bg-soft); padding: 3px 8px; border-radius: 6px; }
+    .connect-custom-onboarding .co-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 0.9rem; }
+    .connect-custom-onboarding .co-header-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .connect-custom-onboarding .co-header h3 { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.02em; color: var(--color-text); margin: 0; }
+    .connect-custom-onboarding .co-step-count { font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted); }
+    .connect-custom-onboarding .co-account-id { flex-shrink: 0; font-size: 0.66rem; color: var(--color-text-muted); font-family: ui-monospace, monospace; background: var(--color-bg-soft); padding: 3px 8px; border-radius: 6px; }
     .connect-custom-onboarding .co-error { font-size: 0.8rem; color: var(--color-danger); background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); border-radius: 10px; padding: 10px 14px; margin-bottom: 1rem; }
 
+    /* Barra de progreso (hairline, estilo Apple) */
+    .connect-custom-onboarding .co-progress { height: 3px; border-radius: 999px; background: rgba(10,25,47,0.07); overflow: hidden; margin-bottom: 1.5rem; }
+    .connect-custom-onboarding .co-progress-fill { display: block; height: 100%; border-radius: 999px; background: var(--color-blue-deep); transition: width 0.55s cubic-bezier(0.16, 1, 0.3, 1); }
+
     .connect-custom-onboarding .co-step-content { min-height: 180px; }
-    .connect-custom-onboarding .co-step { display: flex; flex-direction: column; gap: 1rem; }
-    .connect-custom-onboarding .co-step h4 { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.02em; color: var(--color-text); margin: 0; }
+    .connect-custom-onboarding .co-step { display: flex; flex-direction: column; gap: 1rem; animation: co-step-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    @keyframes co-step-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) { .connect-custom-onboarding .co-step { animation: none; } }
     .connect-custom-onboarding .co-sub { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.5; margin: -0.4rem 0 0.2rem; }
+    .connect-custom-onboarding .co-sub-strong { font-weight: 600; color: var(--color-text); margin-top: 0; }
+    .connect-custom-onboarding .co-divider { border-top: 1px solid var(--color-border); margin: 0.4rem 0 0; }
+
+    /* Spinner */
+    .co-spinner { width: 15px; height: 15px; border-radius: 50%; border: 2px solid rgba(10,25,47,0.15); border-top-color: var(--color-blue-deep); animation: co-spin 0.7s linear infinite; flex-shrink: 0; display: inline-block; }
+    .co-spinner-btn { width: 12px; height: 12px; border-color: rgba(255,255,255,0.3); border-top-color: #fff; margin-right: 7px; vertical-align: -2px; }
+    .co-spinner-lg { width: 26px; height: 26px; border-width: 2.5px; }
+    @keyframes co-spin { to { transform: rotate(360deg); } }
+    .co-boot { display: flex; align-items: center; gap: 10px; padding: 1.6rem 0; font-size: 0.82rem; color: var(--color-text-muted); }
 
     /* Inputs (redefinidos aquí porque las .s-* de SettingsShell son scopeadas) */
     .connect-custom-onboarding .s-row { display: grid; grid-template-columns: 1fr; gap: 1rem; }
     @media (min-width: 560px) { .connect-custom-onboarding .s-row { grid-template-columns: 1fr 1fr; } }
+    @media (min-width: 560px) { .connect-custom-onboarding .s-row-3 { grid-template-columns: 1fr 1fr 90px; } }
+    .connect-custom-onboarding .s-hint { font-size: 0.7rem; color: var(--color-text-muted); line-height: 1.4; }
+    .connect-custom-onboarding .co-hint-ok { color: var(--color-ok); font-weight: 600; }
+    .connect-custom-onboarding .co-hint-bad { color: var(--color-danger); font-weight: 600; }
+    .connect-custom-onboarding .co-clabe { font-family: ui-monospace, 'SF Mono', monospace; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
+
+    /* Fecha de nacimiento */
+    .connect-custom-onboarding .co-dob { display: flex; align-items: center; gap: 6px; }
+    .connect-custom-onboarding .co-dob .s-input { text-align: center; padding-left: 6px; padding-right: 6px; }
+    .connect-custom-onboarding .co-dob .s-input:nth-child(1) { width: 56px; }
+    .connect-custom-onboarding .co-dob .s-input:nth-child(3) { width: 56px; }
+    .connect-custom-onboarding .co-dob .s-input:nth-child(5) { width: 78px; }
+    .connect-custom-onboarding .co-dob-sep { color: var(--color-text-muted); opacity: 0.5; }
+
+    /* Attestation de dueños */
+    .connect-custom-onboarding .co-attest { display: flex; align-items: flex-start; gap: 14px; cursor: pointer; padding: 16px 0; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+    .connect-custom-onboarding .co-attest-text { display: flex; flex-direction: column; gap: 3px; }
+    .connect-custom-onboarding .co-attest-text strong { font-size: 0.85rem; font-weight: 600; color: var(--color-text); }
+    .connect-custom-onboarding .co-attest-text span { font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.45; }
+
+    /* Documentos de identidad */
+    .connect-custom-onboarding .co-doc-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .connect-custom-onboarding .co-doc-actions .co-btn { flex: 1; min-width: 140px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .connect-custom-onboarding .co-upload { position: relative; overflow: hidden; text-align: center; }
+    .connect-custom-onboarding .co-upload input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .connect-custom-onboarding .co-doc-preview { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+    .connect-custom-onboarding .co-doc-preview img { width: 64px; height: 42px; object-fit: cover; border-radius: 8px; box-shadow: 0 1px 4px rgba(10,25,47,0.18); }
+    .connect-custom-onboarding .co-doc-ok { display: inline-flex; align-items: center; gap: 5px; font-size: 0.76rem; font-weight: 600; color: var(--color-ok); }
+    .connect-custom-onboarding .co-btn-sm { padding: 5px 12px; font-size: 0.76rem; margin-left: auto; }
+
+    /* TOS */
+    .connect-custom-onboarding .co-tos { background: var(--color-bg-soft); padding: 1.1rem 1.2rem; border-radius: 14px; font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.6; max-height: 220px; overflow-y: auto; }
+    .connect-custom-onboarding .co-tos p { margin: 0 0 0.7rem; }
+    .connect-custom-onboarding .co-tos p:last-child { margin-bottom: 0; }
+    .connect-custom-onboarding .co-tos a { color: var(--color-blue-deep); font-weight: 600; }
+    .connect-custom-onboarding .co-tos-note { font-size: 0.82rem; font-weight: 600; color: var(--color-text); margin: 0; }
+
+    /* Estado "en revisión" / activo */
+    .co-review { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.9rem; padding: 2.4rem 1rem; }
+    .co-review h3 { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; color: var(--color-text); margin: 0; }
+    .co-review p { font-size: 0.84rem; color: var(--color-text-muted); line-height: 1.6; max-width: 44ch; margin: 0; }
+    .co-review-reason { font-size: 0.72rem !important; font-family: ui-monospace, monospace; opacity: 0.7; }
+    .co-active { padding: 0.3rem 0; }
+    .co-bank-row { display: flex; align-items: center; gap: 13px; padding: 12px 0; }
+    .co-bank-ico { flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: rgba(16,185,129,0.1); color: var(--color-ok); }
+    .co-bank-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .co-bank-text strong { font-size: 0.85rem; font-weight: 600; color: var(--color-text); }
+    .co-bank-text span { font-size: 0.75rem; color: var(--color-text-muted); }
+    .co-bank-row .co-btn { margin-left: auto; flex-shrink: 0; }
     .connect-custom-onboarding .s-field { display: flex; flex-direction: column; gap: 0.45rem; min-width: 0; }
     .connect-custom-onboarding .s-field label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #99a2af; }
     .connect-custom-onboarding .s-input {
@@ -341,6 +406,8 @@ const pasos = [
     .co-requirements .co-req-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.8rem; color: var(--color-text); background: transparent; border: none; border-bottom: 1px solid var(--color-border); border-radius: 0; padding: 14px 0; cursor: pointer; transition: opacity 0.2s ease; }
     .co-requirements .co-req-item:last-child { border-bottom: none; }
     .co-requirements .co-req-item:hover { opacity: 0.7; }
+    .co-requirements .co-req-msg { display: inline-flex; align-items: center; gap: 9px; min-width: 0; }
+    .co-requirements .co-req-msg svg { flex-shrink: 0; color: var(--color-warn); }
     .co-requirements .co-req-action { font-size: 0.72rem; font-weight: 600; color: var(--color-blue-deep); white-space: nowrap; }
     .co-success h3 { font-size: 1.1rem; font-weight: 600; color: var(--color-text); }
 </style>
