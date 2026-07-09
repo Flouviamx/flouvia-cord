@@ -372,9 +372,11 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
 
     if (booting) {
         return (
-            <div className="co-boot">
-                <span className="co-spinner" aria-hidden="true"></span>
-                <span>Consultando el estado de tu cuenta…</span>
+            <div className="connect-custom-onboarding">
+                <div className="co-boot">
+                    <span className="co-spinner" aria-hidden="true"></span>
+                    <span>Consultando el estado de tu cuenta…</span>
+                </div>
             </div>
         );
     }
@@ -382,41 +384,45 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
     if (step === 8) {
         if (chargesEnabled) {
             return (
-                <div className="co-active">
-                    {bankInfo?.last4 && (
-                        <div className="co-bank-row">
-                            <div className="co-bank-ico">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11" fill="currentColor" fillOpacity="0.1"/><path d="M9 21v-6h6v6"/></svg>
+                <div className="connect-custom-onboarding">
+                    <div className="co-active">
+                        {bankInfo?.last4 && (
+                            <div className="co-bank-row">
+                                <div className="co-bank-ico">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11" fill="currentColor" fillOpacity="0.1"/><path d="M9 21v-6h6v6"/></svg>
+                                </div>
+                                <div className="co-bank-text">
+                                    <strong>{bankInfo.bank_name || 'Cuenta bancaria'}</strong>
+                                    <span>CLABE terminación •••• {bankInfo.last4} — aquí llegan tus depósitos.</span>
+                                </div>
+                                <button type="button" className="co-btn co-btn-ghost" onClick={() => setStep(6)}>Cambiar</button>
                             </div>
-                            <div className="co-bank-text">
-                                <strong>{bankInfo.bank_name || 'Cuenta bancaria'}</strong>
-                                <span>CLABE terminación •••• {bankInfo.last4} — aquí llegan tus depósitos.</span>
-                            </div>
-                            <button type="button" className="co-btn co-btn-ghost" onClick={() => setStep(6)}>Cambiar</button>
-                        </div>
-                    )}
-                    {!bankInfo?.last4 && (
-                        <button type="button" className="co-btn co-btn-ghost" onClick={() => setStep(6)}>Editar cuenta bancaria (CLABE)</button>
-                    )}
+                        )}
+                        {!bankInfo?.last4 && (
+                            <button type="button" className="co-btn co-btn-ghost" onClick={() => setStep(6)}>Editar cuenta bancaria (CLABE)</button>
+                        )}
+                    </div>
                 </div>
             );
         }
         return (
-            <div className="co-success">
-                {renderRequirements()}
-                {dueList.length === 0 ? (
-                    <div className="co-review">
-                        <span className="co-spinner co-spinner-lg" aria-hidden="true"></span>
-                        <h3>Tus datos están en revisión</h3>
-                        <p>
-                            Stripe está verificando tu información — normalmente toma un par de minutos.
-                            Esta página se actualizará sola en cuanto tus cobros estén activos.
-                        </p>
-                        {disabledReason && disabledReason !== 'requirements.pending_verification' && (
-                            <p className="co-review-reason">Detalle de Stripe: {disabledReason}</p>
-                        )}
-                    </div>
-                ) : null}
+            <div className="connect-custom-onboarding">
+                <div className="co-success">
+                    {renderRequirements()}
+                    {dueList.length === 0 ? (
+                        <div className="co-review">
+                            <span className="co-spinner co-spinner-lg" aria-hidden="true"></span>
+                            <h3>Tus datos están en revisión</h3>
+                            <p>
+                                Stripe está verificando tu información — normalmente toma un par de minutos.
+                                Esta página se actualizará sola en cuanto tus cobros estén activos.
+                            </p>
+                            {disabledReason && disabledReason !== 'requirements.pending_verification' && (
+                                <p className="co-review-reason">Detalle de Stripe: {disabledReason}</p>
+                            )}
+                        </div>
+                    ) : null}
+                </div>
             </div>
         );
     }
