@@ -476,10 +476,10 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                             </div>
                             <div className="s-field">
                                 <label>Giro del negocio (MCC)</label>
-                                <input className="s-input" list="mcc-list" value={mcc} onChange={e => setMcc(e.target.value)} placeholder="Busca tu giro..." />
-                                <datalist id="mcc-list">
+                                <select className="s-input" value={mcc} onChange={e => setMcc(e.target.value)}>
+                                    <option value="">Selecciona...</option>
                                     {STRIPE_MCC_B2B.map(m => <option key={m.codigo} value={m.codigo}>{m.nombre}</option>)}
-                                </datalist>
+                                </select>
                                 <span className="s-hint">Selecciona el código que más se acerque a tu actividad principal.</span>
                             </div>
                         </div>
