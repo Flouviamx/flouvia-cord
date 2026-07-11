@@ -354,6 +354,15 @@ export async function attachPersonDocument(
 // No siempre es un requisito explícito de currently_due, pero recolectarlo de
 // entrada adelanta el caso en que Stripe lo pida por una discrepancia (fraude/
 // coincidencia facial) y eleva la diligencia KYC de la plataforma.
+// Stripe bloquea reemplazar campos de verification (documento, datos legales…)
+// una vez que la identidad ya quedó "verified" — protección anti-fraude, para
+// que nadie pueda canjear la identificación después de verificado. En modo
+// TEST esto pasa casi al instante (Stripe auto-verifica cuentas de prueba),
+// así que es un caso normal a manejar, no un error real de la integración.
+export function isAlreadyVerifiedError(message: string): boolean {
+    return /cannot change/i.test(message) && /verifi/i.test(message);
+}
+
 export async function attachPersonAdditionalDocument(
     accountId: string,
     personId: string,

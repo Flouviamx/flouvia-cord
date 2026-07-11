@@ -8,6 +8,54 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Editor de cotizaciones + detalle: pasada de intuitividad y funcionalidad (jul 2026)** —
+   André pidió que crear una cotización fuera "super intuitivo" y reportó que en el modal de
+   "Crear nuevo cliente" (que él mismo agregó al editor) las letras chicas de ayuda no se veían
+   chicas. Mejoras en `/app/cotizaciones/nueva` y `/app/cotizaciones/[id]`:
+   • **Bug reportado — `.m-hint` sin definir:** el modal de cliente se copió de `clientes.astro`
+     pero la clase `.m-hint` (texto de ayuda chiquito) nunca se definió en el `<style>` scoped de
+     `nueva.astro` (Astro scopea por archivo) → el texto salía en tamaño normal. Definida + el
+     modal completo se restiló al lenguaje Apple del editor (inputs `#f5f5f7` sin borde, foco
+     navy con anillo, radius 22px, sombra compuesta). ⚠️ Regla ya conocida reconfirmada: al
+     copiar markup entre páginas Astro hay que copiar también sus clases scoped.
+   • **Bug de datos — el modal de cliente DESCARTABA campos:** capturaba RFC, límite de crédito,
+     nivel, descuento, términos y datos fiscales CFDI pero solo enviaba empresa/contacto/email al
+     `POST /api/clientes` (que ya aceptaba todo). Ahora manda el payload completo, la opción nueva
+     del select hereda `data-desc`/`data-nivel`/`data-term` reales y el descuento del nivel se
+     aplica al instante a las líneas ya agregadas. Errores del API ahora salen inline en `#mError`.
+   • **Buscador de productos (combobox):** el `<select>` nativo se reemplazó por un input de
+     búsqueda con dropdown (filtra por nombre y SKU, acentos-insensible, ↑/↓ + Enter, Escape,
+     click fuera cierra; tras agregar conserva el foco para agregar varios seguidos; fila nueva
+     hace flash verde). Los items del dropdown son DOM inyectado → sus estilos (`.prod-*`,
+     `.line-added`) viven en `<style is:global>` (regla del proyecto).
+   • **Términos del cliente auto-aplicados:** las opciones del select de cliente llevan
+     `data-term` (label "Contado"/"Net 30"/"Net 60" desde `terminos_default`); al elegir cliente
+     se activa su chip de términos solo.
+   • **Vigencia de borradores arreglada:** `parseInt(draftQuote.vigencia)` parseaba "10 jul 2026"
+     → 10 y nunca matcheaba una opción. Campo nuevo aditivo `vigenciaDias` en `rowToQuote`
+     (días RESTANTES) + `MockQuote`; el select (`#vigSelect`, ahora con `value`) pre-selecciona
+     ese valor y lo agrega a la lista si no es estándar.
+   • **Bug pre-existente — `ORG.aprobMargenMin` no existía:** `getOrg()` nunca mapeó
+     `aprob_margen_min` → el badge de margen bajo del editor NUNCA se encendía (el Auditor
+     Silencioso del backend sí funcionaba; era solo la señal visual en vivo). Mapeado.
+   • **Validaciones con guía:** enviar sin cliente bloquea con toast + scroll/focus al paso 1
+     (guardar borrador sin cliente sigue permitido); línea libre sin descripción bloquea el
+     guardado; "+ Línea libre" enfoca la descripción recién creada. ⌘/Ctrl+Enter envía (guard:
+     no dispara con el modal de cliente abierto). En modo borrador los botones dicen
+     "Guardar y enviar"/"Guardar cambios".
+   • **Detalle `[id]` — bug del botón copiar:** al copiar el link se hacía `btn.textContent = '✓
+     Link copiado'`, lo que DESTRUÍA el `<svg>` interior para siempre (el botón quedaba sin
+     ícono). Ahora el feedback es cambiar el label + `cordToast`, sin tocar el SVG.
+   • **Detalle `[id]` — acciones legibles:** los 4 botones de ícono (Abrir link · Copiar link ·
+     PDF · WhatsApp) ahora llevan etiqueta debajo (`.act-util-lbl`); "Continuar editando" subió
+     junto al CTA primario en borradores; emojis ⏳/⚠️/🧾 reemplazados por SVG duotone (Regla 1);
+     "IVA 16%" hardcodeado → `ORG.ivaPct`; confirm de facturar ya no menciona el plan "Negocio"
+     (no existe); "Registrar pago" ahora pide confirmación.
+   • Verificado: `npm run build` limpio + harness de Playwright con el script `is:inline` REAL
+     contra DOM equivalente y `fetch` stub (8/8 pruebas: buscador, precio por volumen, descuento
+     y términos por cliente, validaciones, payload completo del cliente, POST del borrador) +
+     `node --check` del bloque inline (regla de sintaxis TS prohibida en `is:inline`).
+
 ✅ **Auditoría de Stripe Connect Custom + checkout in-house + Clerk `/sso-callback` faltante (jul 2026)** —
    André pidió que "todo lo relacionado con Stripe Connect esté bien" (formulario de cobros, el
    checkout del link público) y reportó que alguien SIN cuenta que le da a "Entrar" en vez de

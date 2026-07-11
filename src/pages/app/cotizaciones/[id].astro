@@ -43,7 +43,10 @@ const dotColor = (tipo: string) =>
     {q.aprobEstado === 'pendiente' && (
         <div class="approval-banner">
             <div class="ap-info">
-                <span class="ap-title">⏳ Pendiente de aprobación</span>
+                <span class="ap-title">
+                    <svg class="ap-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12"/><polyline points="12 7 12 12 15.5 14"/></svg>
+                    Pendiente de aprobación
+                </span>
                 <span class="ap-motivo">{q.aprobMotivo}</span>
             </div>
             {canAprobar && (
@@ -113,13 +116,14 @@ const dotColor = (tipo: string) =>
                 ))}
                 {q.items.some((it) => it.aprobado === false) && (
                     <div class="di-partial-note">
-                        ⚠️ Aprobación parcial — el cliente firmó solo las líneas incluidas
+                        <svg class="dp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" fill="currentColor" fill-opacity="0.12"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        Aprobación parcial — el cliente firmó solo las líneas incluidas
                         (<b class="editorial">{money(q.items.filter((it) => it.aprobado !== false).reduce((s, it) => s + lineTotal(it), 0))}</b> de <span class="editorial">{money(quoteSubtotal(q))}</span> + IVA).
                     </div>
                 )}
                 <div class="di-totals">
                     <div class="dt-line"><span>Subtotal</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
-                    <div class="dt-line"><span>IVA 16%</span><span class="editorial">{money(quoteIva(q))}</span></div>
+                    <div class="dt-line"><span>IVA {ORG.ivaPct ?? 16}%</span><span class="editorial">{money(quoteIva(q))}</span></div>
                     <div class="dt-line dt-grand">
                         <span>Total {q.iva_incluido && <span style="font-size: 0.7em; font-weight: 500; color: var(--color-text-muted); margin-left: 0.4rem; background: var(--color-bg-soft); padding: 2px 6px; border-radius: 4px;">Precios con IVA incluido</span>}</span>
                         <span class="editorial">{money(quoteTotal(q))}</span>
@@ -157,7 +161,11 @@ const dotColor = (tipo: string) =>
                     <div class="df-list">
                         {docsFiscales.map((d) => (
                             <div class="df-row" data-status={d.status}>
-                                <span class="df-icon">{d.status === 'issued' ? '🧾' : '⚠️'}</span>
+                                <span class="df-icon" data-ok={d.status === 'issued' ? '1' : ''}>
+                                    {d.status === 'issued'
+                                        ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12"/><polyline points="14 2 14 8 20 8"/><path d="M9 14.5l2 2 4-4.5"/></svg>
+                                        : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" fill="currentColor" fill-opacity="0.12"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
+                                </span>
                                 <div class="df-body">
                                     <div class="df-top">
                                         <span class="df-type">{DOC_LABEL[d.tipo] || d.tipo}</span>
@@ -210,27 +218,36 @@ const dotColor = (tipo: string) =>
                     <button class="act-cfdi act-do" data-action="invoiced">Timbrar CFDI 4.0</button>
                 )}
 
+                {q.status === 'draft' && canCotizar && (
+                    <a href={`/app/cotizaciones/nueva?draft=${q.id}`} class="act-secondary act-link" style="text-align: center; text-decoration: none; display: block;">Continuar editando</a>
+                )}
+
                 <!-- SECONDARY ACTIONS GRID -->
                 {q.status !== 'draft' && (
                     <div class="act-grid">
-                        <a href={`/q/${q.token}`} class="act-util" target="_blank" title="Ver link público">
+                        <a href={`/q/${q.token}`} class="act-util" target="_blank" title="Abrir el link público que ve tu cliente">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            <span class="act-util-lbl">Abrir link</span>
                         </a>
-                        <button class="act-util" id="btnCopy" title="Copiar link">
+                        <button class="act-util" id="btnCopy" title="Copiar el link público al portapapeles">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            <span class="act-util-lbl">Copiar link</span>
                         </button>
-                        <a href={`/app/cotizaciones/${q.id}/imprimir`} target="_blank" class="act-util" title="Descargar PDF">
+                        <a href={`/app/cotizaciones/${q.id}/imprimir`} target="_blank" class="act-util" title="Descargar o imprimir el PDF">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            <span class="act-util-lbl">PDF</span>
                         </a>
-                        <button class="act-util" id="btnWhats" title="Enviar por WhatsApp" style="color: #0b7a4b;">
+                        <button class="act-util act-util-wa" id="btnWhats" title="Compartir el link por WhatsApp">
                             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
+                            <span class="act-util-lbl">WhatsApp</span>
                         </button>
                     </div>
                 )}
                 {q.status === 'draft' && (
                     <div class="act-grid">
-                        <a href={`/q/${q.token}`} class="act-util" target="_blank" title="Ver previsualización">
+                        <a href={`/q/${q.token}`} class="act-util" target="_blank" title="Ver cómo la verá tu cliente antes de enviarla">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <span class="act-util-lbl">Vista previa</span>
                         </a>
                     </div>
                 )}
@@ -238,10 +255,7 @@ const dotColor = (tipo: string) =>
                 <button class="act-secondary" id="btnDuplicate" style="width: 100%; margin-top: 0.5rem;">Duplicar cotización</button>
 
                 {q.status === 'draft' && canCotizar && (
-                    <>
-                        <a href={`/app/cotizaciones/nueva?draft=${q.id}`} class="act-secondary act-link" style="text-align: center; text-decoration: none; display: block; margin-top: 0.5rem; margin-bottom: 0.5rem;">Continuar editando</a>
-                        <button class="act-delete" id="btnDelete" style="width: 100%;">Eliminar borrador</button>
-                    </>
+                    <button class="act-delete" id="btnDelete" style="width: 100%; margin-top: 0.5rem;">Eliminar borrador</button>
                 )}
                 <p class="act-error" id="actError"></p>
             </section>
@@ -452,16 +466,27 @@ const dotColor = (tipo: string) =>
     
     .act-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-top: 0.5rem; }
     .act-util {
-        display: flex; align-items: center; justify-content: center;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+        font-family: var(--font-sans);
         background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(252,252,253,0.6));
         color: var(--color-text-muted);
         border: 1px solid var(--color-border); border-radius: 11px;
         box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 1px 2px rgba(10,25,47,0.04);
-        height: 42px; cursor: pointer; text-decoration: none;
+        padding: 9px 4px 7px; cursor: pointer; text-decoration: none;
         transition: transform 0.25s var(--ease-spring), box-shadow 0.25s var(--ease-spring), color 0.2s, border-color 0.2s;
     }
     .act-util:hover { color: var(--color-blue-deep); border-color: rgba(10,25,47,0.18); transform: translateY(-2px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), 0 10px 22px -10px rgba(10,25,47,0.3); }
     .act-util svg { width: 18px; height: 18px; }
+    .act-util-lbl { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.1px; line-height: 1; white-space: nowrap; }
+    .act-util-wa { color: #0b7a4b; }
+    .act-util-wa:hover { color: #0b7a4b; border-color: rgba(11,122,75,0.3); }
+    .act-util.act-copied { color: var(--color-ok); border-color: rgba(16,185,129,0.35); }
+
+    /* Íconos SVG de banners/documentos (reemplazan emojis) */
+    .ap-ic { width: 16px; height: 16px; vertical-align: -3px; margin-right: 4px; }
+    .dp-ic { width: 15px; height: 15px; vertical-align: -3px; margin-right: 4px; }
+    .df-icon svg { width: 20px; height: 20px; color: var(--color-text-muted); display: block; }
+    .df-icon[data-ok="1"] svg { color: var(--color-ok); }
 
     .act-danger {
         font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600;
@@ -566,7 +591,8 @@ const dotColor = (tipo: string) =>
 
         const CONFIRM: Record<string, string> = {
             reject: '¿Marcar esta cotización como rechazada?',
-            invoiced: 'El timbrado real ante el SAT llega con el plan Negocio. Por ahora la cotización se marcará como facturada. ¿Continuar?',
+            paid: '¿Registrar el pago? La cotización quedará marcada como pagada.',
+            invoiced: 'Se marcará como facturada y se emitirá el documento fiscal (CFDI real si tienes tu facturación conectada; si no, queda registrado como simulado). ¿Continuar?',
         };
 
         panel.querySelectorAll<HTMLButtonElement>('.act-do').forEach((btn) => {
@@ -602,10 +628,19 @@ const dotColor = (tipo: string) =>
 
         document.getElementById('btnCopy')?.addEventListener('click', async (e) => {
             const btn = e.currentTarget as HTMLButtonElement;
-            await navigator.clipboard.writeText(`${location.origin}/q/${token}`);
-            const prev = btn.textContent;
-            btn.textContent = '✓ Link copiado';
-            setTimeout(() => { btn.textContent = prev; }, 1800);
+            try {
+                await navigator.clipboard.writeText(`${location.origin}/q/${token}`);
+            } catch {
+                errorEl.textContent = 'No se pudo copiar el link';
+                return;
+            }
+            // Feedback sin destruir el ícono SVG (antes textContent lo borraba).
+            const lbl = btn.querySelector<HTMLElement>('.act-util-lbl');
+            const prev = lbl?.textContent || '';
+            btn.classList.add('act-copied');
+            if (lbl) lbl.textContent = 'Copiado';
+            (window as any).cordToast?.('Link copiado al portapapeles', 'ok', 1800);
+            setTimeout(() => { btn.classList.remove('act-copied'); if (lbl) lbl.textContent = prev; }, 1800);
         });
 
         document.getElementById('btnReply')?.addEventListener('click', async (e) => {

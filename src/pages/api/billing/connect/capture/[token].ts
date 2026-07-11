@@ -2,7 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql } from '../../../../../lib/db';
-import { stripeUpload, attachPersonDocument, attachPersonAdditionalDocument, retrieveAccount, updateConnectAccount } from '../../../../../lib/billing';
+import { stripeUpload, attachPersonDocument, attachPersonAdditionalDocument, retrieveAccount, updateConnectAccount, isAlreadyVerifiedError } from '../../../../../lib/billing';
 
 // Ruta PÚBLICA (sin sesión de Clerk) — el celular la abre al escanear el QR
 // generado en /api/billing/connect/capture-session. El token es la única
@@ -58,24 +58,30 @@ export const POST: APIRoute = async ({ params, request }) => {
         // doc va a nivel cuenta — y se reutiliza para el refresh de requisitos
         // de abajo en vez de pedirla dos veces.
         let account: any = null;
-        if (row.is_company_doc) {
-            account = await retrieveAccount(stripeAccountId);
-            const prefix = account.business_type === 'individual' ? 'individual' : 'company';
-            const field = part === 'selfie'
-                ? `${prefix}[verification][additional_document][front]`
-                : `${prefix}[verification][document][${part}]`;
-            await updateConnectAccount(stripeAccountId, { [field]: uploaded.id });
-        } else if (part === 'selfie') {
-            await attachPersonAdditionalDocument(stripeAccountId, row.person_id as string, uploaded.id);
-        } else {
-            await attachPersonDocument(stripeAccountId, row.person_id as string, uploaded.id, part as 'front' | 'back');
+        try {
+            if (row.is_company_doc) {
+                account = await retrieveAccount(stripeAccountId);
+                const prefix = account.business_type === 'individual' ? 'individual' : 'company';
+                const field = part === 'selfie'
+                    ? `${prefix}[verification][additional_document][front]`
+                    : `${prefix}[verification][document][${part}]`;
+                await updateConnectAccount(stripeAccountId, { [field]: uploaded.id });
+            } else if (part === 'selfie') {
+                await attachPersonAdditionalDocument(stripeAccountId, row.person_id as string, uploaded.id);
+            } else {
+                await attachPersonDocument(stripeAccountId, row.person_id as string, uploaded.id, part as 'front' | 'back');
+            }
+        } catch (attachErr: any) {
+            if (!isAlreadyVerifiedError(attachErr?.message || '')) throw attachErr;
+            // Ya estaba verificado en Stripe — no había nada que actualizar, se
+            // acepta esta parte como completada de todas formas.
         }
 
         // Merge atómico en la BD (no read-modify-write en JS) — evita perder una
         // parte si dos subidas llegaran casi al mismo tiempo.
         const [merged] = await sql`
             update identity_capture_sessions
-            set captured = captured || jsonb_build_object(${part}, true)
+            set captured = captured || jsonb_build_object(${part}::text, true)
             where token = ${token}
             returning captured
         `;

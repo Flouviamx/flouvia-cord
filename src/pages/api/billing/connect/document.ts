@@ -3,7 +3,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
-import { stripeUpload, attachPersonDocument, retrieveAccount, updateConnectAccount } from '../../../../lib/billing';
+import { stripeUpload, attachPersonDocument, retrieveAccount, updateConnectAccount, isAlreadyVerifiedError } from '../../../../lib/billing';
 
 export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('ajustes');
@@ -32,16 +32,21 @@ export const POST: APIRoute = async ({ request }) => {
             org.stripe_account_id as string
         );
 
-        if (isCompanyDoc) {
-            // El doc a nivel cuenta también distingue frente/reverso — antes se
-            // escribía SIEMPRE en [front] y subir el reverso pisaba el frente.
-            const prefix = org.stripe_business_type === 'individual' ? 'individual' : 'company';
-            const docSide = side === 'back' ? 'back' : 'front';
-            await updateConnectAccount(org.stripe_account_id as string, {
-                [`${prefix}[verification][document][${docSide}]`]: uploadedFile.id
-            });
-        } else {
-            await attachPersonDocument(org.stripe_account_id as string, personId, uploadedFile.id, side);
+        try {
+            if (isCompanyDoc) {
+                // El doc a nivel cuenta también distingue frente/reverso — antes se
+                // escribía SIEMPRE en [front] y subir el reverso pisaba el frente.
+                const prefix = org.stripe_business_type === 'individual' ? 'individual' : 'company';
+                const docSide = side === 'back' ? 'back' : 'front';
+                await updateConnectAccount(org.stripe_account_id as string, {
+                    [`${prefix}[verification][document][${docSide}]`]: uploadedFile.id
+                });
+            } else {
+                await attachPersonDocument(org.stripe_account_id as string, personId, uploadedFile.id, side);
+            }
+        } catch (attachErr: any) {
+            if (!isAlreadyVerifiedError(attachErr?.message || '')) throw attachErr;
+            // Ya estaba verificado en Stripe — no había nada que actualizar.
         }
 
         const account = await retrieveAccount(org.stripe_account_id as string);

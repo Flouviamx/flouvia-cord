@@ -43,6 +43,7 @@ export interface MockQuote {
     versiones?: { version: number; total: number; fecha: string; items: any[] }[];
     firma?: { nombre: string; ip: string; hash: string; cuando: string } | null;
     iva_incluido?: boolean;
+    vigenciaDias?: number | null; // días restantes de vigencia (pre-llenar el editor al editar borradores)
 }
 
 export const ORG = {

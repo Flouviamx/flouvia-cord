@@ -24,7 +24,11 @@ const TERM_DEFAULT_LABEL = draftQuote ? draftQuote.terminos : (({ contado: 'Cont
 // moneda default de la org (Ajustes → General). FIX jul 2026: antes MXN estaba
 // hardcodeado y el ajuste "moneda" era placebo.
 const DEFAULT_CURRENCY = ((draftQuote as any)?.baseCurrency ?? (draftQuote as any)?.base_currency ?? ORG.moneda ?? 'MXN') as string;
-const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b) => a - b);
+// Vigencia pre-seleccionada: los días RESTANTES del borrador (vigenciaDias) o el
+// default de la org. Si el valor del borrador no es una opción estándar, se agrega.
+const DRAFT_VIG = draftQuote?.vigenciaDias ?? null;
+const SELECTED_VIG = DRAFT_VIG ?? ORG.vigenciaDefaultDias;
+const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias, ...(DRAFT_VIG ? [DRAFT_VIG] : [])])].sort((a, b) => a - b);
 
 ---
 
@@ -67,7 +71,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
                     <select class="ed-select" id="clientSelect">
                         <option value="" disabled selected>— Selecciona un cliente —</option>
                         {CLIENTES.map((c) => (
-                            <option value={c.id} data-desc={String(c.descuentoPct)} data-nivel={c.nivel}>{c.empresa} — {c.contacto}</option>
+                            <option value={c.id} data-desc={String(c.descuentoPct)} data-nivel={c.nivel} data-term={c.terminos}>{c.empresa}{c.contacto ? ` — ${c.contacto}` : ''}</option>
                         ))}
                         <option value="__NEW__" class="opt-action">+ Crear nuevo cliente…</option>
                     </select>
@@ -97,18 +101,18 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
 
                 <div class="lines-empty" id="linesEmpty">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v4H3z"/><path d="M3 7v14h18V7"/><path d="M9 12h6"/></svg>
-                    <p><b>Aún no agregas productos</b> Elige uno de tu catálogo abajo o agrega una línea libre.</p>
+                    <p><b>Aún no agregas productos</b> Búscalos en tu catálogo aquí abajo o agrega una línea libre.</p>
                 </div>
 
                 <div class="add-actions">
-                    <select class="ed-select" id="productSelect">
-                        <option value="" disabled selected>+ Producto del catálogo…</option>
-                        {catalogo.map((p) => (
-                            <option value={p.id}>{p.nombre} — ${p.precio.toFixed(2)} / {p.unidad}</option>
-                        ))}
-                    </select>
-                    <button class="btn-free-line" id="btnFreeLine">+ Agregar línea libre</button>
+                    <div class="prod-search">
+                        <svg class="prod-search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+                        <input type="text" class="prod-input" id="prodInput" placeholder="Busca un producto de tu catálogo… (nombre o SKU)" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="prodDrop" />
+                        <div class="prod-drop" id="prodDrop" hidden role="listbox"></div>
+                    </div>
+                    <button class="btn-free-line" id="btnFreeLine">+ Línea libre</button>
                 </div>
+                <p class="add-hint">Escribe para buscar y presiona <kbd>Enter</kbd> para agregar. Puedes agregar varios seguidos.</p>
             </section>
 
             <!-- Notas -->
@@ -139,8 +143,8 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
 
                 <div class="sum-field">
                     <label>Vigencia</label>
-                    <select class="ed-select">
-                        {VIGENCIAS.map((n) => <option selected={n === (draftQuote ? parseInt(draftQuote.vigencia) : ORG.vigenciaDefaultDias)}>{n} días</option>)}
+                    <select class="ed-select" id="vigSelect">
+                        {VIGENCIAS.map((n) => <option value={n} selected={n === SELECTED_VIG}>{n} días</option>)}
                     </select>
                 </div>
 
@@ -181,11 +185,12 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
                 </div>
 
                 <button class="btn-send" id="btnSend">
-                    <span>Crear y enviar</span>
+                    <span>{draftQuote ? 'Guardar y enviar' : 'Crear y enviar'}</span>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                 </button>
-                <button class="btn-draft" id="btnDraft">Guardar borrador</button>
-                <p class="sum-note">Al enviar se generará la V1 y se creará el link público.</p>
+                <button class="btn-draft" id="btnDraft">{draftQuote ? 'Guardar cambios' : 'Guardar borrador'}</button>
+                <p class="sum-note">{draftQuote ? 'Los cambios se guardan sobre este borrador; al enviar se crea el link público.' : 'Al enviar se generará la V1 y se creará el link público.'}</p>
+                <p class="sum-kbd"><kbd>⌘</kbd><kbd>Enter</kbd> para enviar</p>
             </section>
         </aside>
     </div>
@@ -325,7 +330,6 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     }
     const $lines = document.getElementById('lines');
     const $empty = document.getElementById('linesEmpty');
-    const $select = document.getElementById('productSelect');
     const fmt = (n) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
     const fmtPct = (n) => Number.isFinite(n) ? Math.round(n) + '%' : '—';
     const margenPct = (costo, precio) => (costo > 0 && precio > 0) ? (precio - costo) / precio * 100 : null;
@@ -427,21 +431,102 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         recalc();
     }
 
-    $select.addEventListener('change', () => {
-        const p = catMap[$select.value];
-        if (!p) return;
+    // ── Buscador de productos (combobox con teclado) ──
+    const $prodInput = document.getElementById('prodInput');
+    const $prodDrop = document.getElementById('prodDrop');
+    let prodResults = [];
+    let prodActive = -1;
+
+    function addProduct(p) {
         lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: applyDesc(p.precio), cantidad: 1, negoTouched: false });
-        $select.selectedIndex = 0;
         render();
-    });
+        // Micro-feedback: la fila nueva parpadea suave para ubicarla.
+        const rows = $lines.querySelectorAll('.line-row');
+        const last = rows[rows.length - 1];
+        if (last) { last.classList.add('line-added'); setTimeout(() => last.classList.remove('line-added'), 900); }
+    }
+
+    const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    function searchProds(q) {
+        const n = norm(q);
+        const pool = catalogo;
+        if (!n) return pool.slice(0, 8);
+        return pool.filter(p => norm(p.nombre).includes(n) || norm(p.sku).includes(n)).slice(0, 8);
+    }
+
+    function renderDrop() {
+        if (!$prodDrop) return;
+        if (!prodResults.length) {
+            $prodDrop.innerHTML = '<div class="prod-empty">No hay coincidencias en tu catálogo.<br/><small>Usa "+ Línea libre" para cotizar algo fuera del catálogo.</small></div>';
+        } else {
+            $prodDrop.innerHTML = prodResults.map((p, i) => `
+                <button type="button" class="prod-item ${i === prodActive ? 'is-active' : ''}" data-pid="${p.id}" role="option">
+                    <span class="prod-item-name">${p.nombre}${p.sku ? `<small>${p.sku}</small>` : ''}</span>
+                    <span class="prod-item-price editorial">${fmt(p.precio)} <small>/ ${p.unidad}</small></span>
+                </button>`).join('');
+        }
+        $prodDrop.hidden = false;
+        if ($prodInput) $prodInput.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeDrop() {
+        if ($prodDrop) $prodDrop.hidden = true;
+        prodActive = -1;
+        if ($prodInput) $prodInput.setAttribute('aria-expanded', 'false');
+    }
+
+    function pickProd(idx) {
+        const p = prodResults[idx];
+        if (!p) return;
+        addProduct(p);
+        if ($prodInput) { $prodInput.value = ''; $prodInput.focus(); }
+        prodResults = searchProds('');
+        prodActive = -1;
+        renderDrop();
+    }
+
+    if ($prodInput && $prodDrop) {
+        $prodInput.addEventListener('input', () => { prodResults = searchProds($prodInput.value); prodActive = prodResults.length ? 0 : -1; renderDrop(); });
+        $prodInput.addEventListener('focus', () => { prodResults = searchProds($prodInput.value); prodActive = prodResults.length ? 0 : -1; renderDrop(); });
+        $prodInput.addEventListener('keydown', (e) => {
+            if ($prodDrop.hidden && (e.key === 'ArrowDown' || e.key === 'Enter')) { prodResults = searchProds($prodInput.value); renderDrop(); }
+            if (e.key === 'ArrowDown') { e.preventDefault(); prodActive = Math.min(prodActive + 1, prodResults.length - 1); renderDrop(); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); prodActive = Math.max(prodActive - 1, 0); renderDrop(); }
+            else if (e.key === 'Enter') { e.preventDefault(); if (prodActive >= 0) pickProd(prodActive); }
+            else if (e.key === 'Escape') { closeDrop(); $prodInput.blur(); }
+        });
+        $prodDrop.addEventListener('mousedown', (e) => {
+            const btn = e.target.closest('.prod-item');
+            if (!btn) return;
+            e.preventDefault(); // no perder el foco del input
+            const idx = prodResults.findIndex(p => p.id === btn.dataset.pid);
+            if (idx >= 0) pickProd(idx);
+        });
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.prod-search')) closeDrop();
+        });
+    }
 
     document.getElementById('btnFreeLine')?.addEventListener('click', () => {
         lines.push({ id: null, nombre: '', unidad: 'pieza', baseLista: 0, lista: 0, vol: [], costo: 0, negociado: 0, cantidad: 1, negoTouched: false });
         render();
+        // Foco directo a la descripción de la línea recién creada.
+        const inputs = $lines.querySelectorAll('.lr-desc-input');
+        const lastInput = inputs[inputs.length - 1];
+        if (lastInput) lastInput.focus();
     });
 
+    // Activa el chip de términos que coincida con la etiqueta ("Contado"/"Net 30"/"Net 60").
+    function setTermChip(label) {
+        if (!label) return;
+        const chips = Array.from(document.querySelectorAll('#termChips .chip'));
+        if (!chips.some(c => c.dataset.term === label)) return;
+        chips.forEach(c => c.classList.toggle('active', c.dataset.term === label));
+    }
+
     // Al cambiar de cliente, reaplica el descuento a las líneas del catálogo
-    // (sobre el precio de volumen vigente) y reactiva el auto-tracking.
+    // (sobre el precio de volumen vigente), reactiva el auto-tracking y
+    // pre-selecciona los términos de pago default de ese cliente.
     $client?.addEventListener('change', () => {
         if ($client.value === '__NEW__') {
             $client.value = lastClientVal; // Revertir visualmente temporalmente
@@ -456,6 +541,8 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
                 l.negociado = d > 0 ? Math.round(l.lista * (1 - d / 100) * 100) / 100 : null;
             }
         });
+        const opt = $client.options[$client.selectedIndex];
+        if (opt && !opt.disabled) setTermChip(opt.dataset.term);
         reflectDesc();
         render();
     });
@@ -535,7 +622,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     function buildPayload(send) {
         const clientSel = document.getElementById('clientSelect');
         const activeChip = document.querySelector('#termChips .chip.active');
-        const vigSel = document.querySelector('.sum-field .ed-select');
+        const vigSel = document.getElementById('vigSelect');
         const notas = document.getElementById('notasText');
         
         // Validación del cliente
@@ -570,7 +657,28 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     }
 
     async function save(send, btn) {
-        if (!lines.length) { showToast('Agrega al menos un producto', 2200); return; }
+        if (!lines.length) {
+            showToast('Agrega al menos un producto en el paso 2', 2600);
+            if ($prodInput) $prodInput.focus();
+            return;
+        }
+        // Líneas libres sin descripción: pedir que se completen antes de guardar.
+        const emptyFree = lines.findIndex(l => !l.id && !(l.nombre || '').trim());
+        if (emptyFree >= 0) {
+            showToast('Describe la línea libre (o quítala) antes de continuar', 2800);
+            const inputs = $lines.querySelectorAll('.lr-desc-input');
+            if (inputs[0]) inputs[0].focus();
+            return;
+        }
+        // Para ENVIAR se necesita un cliente (el link y el correo van dirigidos a él).
+        if (send && (!$client || !$client.value || $client.value === '__NEW__')) {
+            showToast('Elige un cliente en el paso 1 para poder enviar', 2800);
+            if ($client) {
+                $client.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => $client.focus(), 350);
+            }
+            return;
+        }
         const original = btn.innerHTML;
         btn.disabled = true; btn.style.opacity = '0.7';
         showToast(send ? 'Enviando…' : 'Guardando…');
@@ -610,6 +718,17 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
 
     document.getElementById('btnSend')?.addEventListener('click', (e) => save(true, e.currentTarget));
     document.getElementById('btnDraft')?.addEventListener('click', (e) => save(false, e.currentTarget));
+
+    // ⌘/Ctrl + Enter = enviar (fluido con teclado, estándar de composers).
+    // No aplica con el modal de cliente abierto (ahí Enter pertenece al form).
+    document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+            const modal = document.getElementById('clientModal');
+            if (modal && modal.open) return;
+            const b = document.getElementById('btnSend');
+            if (b && !b.disabled) { e.preventDefault(); b.click(); }
+        }
+    });
 
     // ── Multi-divisa: tipo de cambio en lenguaje simple + colchón visual ──
     const $fxBase = document.getElementById('fxBase');
@@ -763,7 +882,11 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         $ncForm.reset();
         setNivel('estandar', false);
         setTerm('contado');
+        const err = document.getElementById('mError');
+        if (err) err.textContent = '';
         $ncOverlay.showModal();
+        const emp = document.getElementById('fEmpresa');
+        if (emp) setTimeout(() => emp.focus(), 60);
     }
     
     function closeClientModal() {
@@ -776,10 +899,18 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         if (e.target === $ncOverlay) closeClientModal();
     });
 
+    const TERM_LABEL = { contado: 'Contado', net30: 'Net 30', net60: 'Net 60' };
+    const $mError = document.getElementById('mError');
+
     $ncForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if ($mError) $mError.textContent = '';
         const empresa = document.getElementById('fEmpresa').value.trim();
-        if (!empresa) return;
+        if (!empresa) {
+            if ($mError) $mError.textContent = 'El nombre de la empresa es obligatorio.';
+            document.getElementById('fEmpresa').focus();
+            return;
+        }
 
         const prevHTML = $ncSubmit.innerHTML;
         $ncSubmit.disabled = true;
@@ -788,13 +919,25 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
         try {
             const contactoVal = $ncContacto ? $ncContacto.value.trim() : '';
             const emailVal = $ncEmail ? $ncEmail.value.trim() : '';
+            const nivelVal = document.getElementById('fNivel').value || 'estandar';
+            const descVal = Number(document.getElementById('fDescuento').value || 0);
+            // Payload COMPLETO: antes solo se mandaban empresa/contacto/email y el
+            // resto del formulario (RFC, crédito, nivel, descuento, fiscal) se perdía.
             const res = await fetch('/api/clientes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     empresa,
                     contacto: contactoVal,
-                    email: emailVal
+                    email: emailVal,
+                    rfc: document.getElementById('fRfc').value.trim(),
+                    limite: document.getElementById('fLimite').value,
+                    terminos,
+                    nivel: nivelVal,
+                    descuento_pct: descVal,
+                    regimen_fiscal: document.getElementById('fRegimen').value,
+                    uso_cfdi: document.getElementById('fUso').value,
+                    cp_fiscal: document.getElementById('fCp').value,
                 })
             });
             const data = await res.json();
@@ -802,26 +945,29 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
 
             const opt = document.createElement('option');
             opt.value = data.id;
-            opt.dataset.desc = "0";
-            opt.dataset.nivel = "estandar";
-            opt.textContent = `${empresa} — ${contactoVal}`;
-            
+            opt.dataset.desc = String(descVal || 0);
+            opt.dataset.nivel = nivelVal;
+            opt.dataset.term = TERM_LABEL[terminos] || 'Contado';
+            opt.textContent = contactoVal ? `${empresa} — ${contactoVal}` : empresa;
+
             const newOpt = $client.querySelector('option[value="__NEW__"]');
             if (newOpt) {
                 $client.insertBefore(opt, newOpt);
             } else {
                 $client.appendChild(opt);
             }
-            
+
             $client.value = data.id;
             lastClientVal = data.id;
-            
+
+            // Dispara el flujo normal de selección: aplica descuento por nivel
+            // a las líneas ya agregadas y pre-selecciona sus términos de pago.
             $client.dispatchEvent(new Event('change'));
-            
+
             closeClientModal();
-            if (typeof showToast !== 'undefined') showToast('Cliente creado ✓', 2000);
+            showToast(`Cliente "${empresa}" creado y seleccionado ✓`, 2400);
         } catch (err) {
-            if (window.cordToast) window.cordToast(err.message || 'No se pudo guardar la cotización', 'error');
+            if ($mError) $mError.textContent = err.message || 'No se pudo crear el cliente.';
         } finally {
             $ncSubmit.disabled = false;
             $ncSubmit.innerHTML = prevHTML;
@@ -887,6 +1033,51 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     }
     .lr-del:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
 
+    /* Flash suave sobre la fila recién agregada (feedback de "ya se agregó") */
+    .line-row.line-added { animation: line-added-flash 0.9s var(--ease-ios); }
+    @keyframes line-added-flash {
+        0% { background: rgba(16,185,129,0.12); }
+        100% { background: transparent; }
+    }
+
+    /* ── Buscador de productos (combobox) — hijos inyectados por JS → is:global ── */
+    .prod-search { position: relative; flex: 1; min-width: 240px; max-width: 460px; }
+    .prod-search-ic { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: #99a2af; pointer-events: none; }
+    .prod-input {
+        font-family: var(--font-sans); font-size: 0.85rem; font-weight: 400;
+        color: var(--color-text); background: #f5f5f7;
+        border: 1.5px solid transparent; border-radius: 10px;
+        padding: 10px 14px 10px 36px; width: 100%;
+        transition: border-color 0.3s var(--ease-ios), box-shadow 0.3s var(--ease-ios), background 0.2s;
+    }
+    .prod-input:hover { background: #ececee; }
+    .prod-input:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px rgba(10,25,47,0.08); background: #fff; }
+    .prod-input::placeholder { color: #99a2af; }
+    .prod-drop {
+        position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 60;
+        background: #fff; border-radius: 14px; overflow: hidden;
+        box-shadow: 0 0 0 0.5px rgba(0,0,0,0.05), 0 12px 32px -8px rgba(10,25,47,0.18), 0 4px 12px -4px rgba(10,25,47,0.08);
+        max-height: 320px; overflow-y: auto;
+        animation: prod-drop-in 0.18s var(--ease-ios);
+    }
+    .prod-drop::-webkit-scrollbar { display: none; }
+    @keyframes prod-drop-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+    .prod-drop[hidden] { display: none; }
+    .prod-item {
+        display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+        width: 100%; text-align: left; cursor: pointer;
+        font-family: var(--font-sans); background: none; border: none;
+        padding: 10px 14px;
+        transition: background 0.15s;
+    }
+    .prod-item:hover, .prod-item.is-active { background: #f5f5f7; }
+    .prod-item-name { font-size: 0.84rem; font-weight: 500; color: var(--color-text); display: flex; flex-direction: column; min-width: 0; }
+    .prod-item-name small { font-size: 0.66rem; color: #99a2af; font-weight: 500; }
+    .prod-item-price { font-size: 0.82rem; color: var(--color-text); white-space: nowrap; flex-shrink: 0; }
+    .prod-item-price small { font-size: 0.68rem; color: #99a2af; font-weight: 400; }
+    .prod-empty { padding: 14px; font-size: 0.8rem; color: var(--color-text-muted); text-align: center; line-height: 1.5; }
+    .prod-empty small { font-size: 0.72rem; color: #99a2af; }
+
     @media (max-width: 720px) {
         .line-row { grid-template-columns: 1fr 60px 90px auto; }
         .lr-lista, .lr-importe, .lr-margen, .lh-margen { display: none; }
@@ -894,21 +1085,29 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
 </style>
 
 <style>
-    /* ── Modal ── */
+    /* ── Modal (mismo lenguaje Apple del editor: inputs grises, foco navy) ── */
     .modal {
-        border: none; border-radius: 18px; padding: 0;
-        width: min(520px, calc(100vw - 2rem));
-        box-shadow: 0 40px 90px -30px rgba(10,25,47,0.45);
+        border: none; border-radius: 22px; padding: 0;
+        width: min(540px, calc(100vw - 2rem));
+        background: #fff;
+        box-shadow:
+            0 0 0 0.5px rgba(0,0,0,0.05),
+            0 24px 60px -16px rgba(10,25,47,0.35),
+            0 8px 20px -8px rgba(10,25,47,0.15);
     }
     .modal::backdrop { background: rgba(10,25,47,0.38); backdrop-filter: blur(4px); }
-    .m-form { display: flex; flex-direction: column; gap: 0.95rem; padding: 1.5rem 1.6rem 1.4rem; }
+    .m-form { display: flex; flex-direction: column; gap: 1rem; padding: 1.6rem 1.7rem 1.5rem; }
     .m-head { display: flex; align-items: center; justify-content: space-between; }
-    .m-head h2 { font-size: 1.05rem; font-weight: 700; margin: 0; letter-spacing: -0.3px; }
+    .m-head h2 { font-size: 1.08rem; font-weight: 700; margin: 0; letter-spacing: -0.02em; }
     .m-close {
-        background: var(--color-bg-soft); border: 1px solid var(--color-border);
-        width: 30px; height: 30px; border-radius: 9px; cursor: pointer;
-        font-size: 0.8rem; color: var(--color-text-muted);
+        background: #f5f5f7; border: none;
+        width: 30px; height: 30px; border-radius: 999px; cursor: pointer;
+        font-size: 0.78rem; color: var(--color-text-muted);
+        display: flex; align-items: center; justify-content: center;
+        transition: background 0.2s, color 0.2s, transform 0.2s var(--ease-spring);
     }
+    .m-close:hover { background: #e8e8ec; color: var(--color-text); }
+    .m-close:active { transform: scale(0.92); }
     .m-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.95rem; }
     .m-fiscal { border-top: 1px solid var(--color-border); padding-top: 0.95rem; display: flex; flex-direction: column; gap: 0.95rem; }
     .m-fiscal > summary { cursor: pointer; font-size: 0.78rem; font-weight: 700; color: var(--color-text); list-style: none; user-select: none; }
@@ -919,11 +1118,17 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     .m-field label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
     .m-input {
         font-family: var(--font-sans); font-size: 0.88rem; font-weight: 500;
-        color: var(--color-text); background: var(--color-bg-soft);
-        border: 1px solid var(--color-border); border-radius: 9px;
-        padding: 10px 12px; transition: border-color 0.25s;
+        color: var(--color-text); background: #f5f5f7;
+        border: 1.5px solid transparent; border-radius: 10px;
+        padding: 10px 12px;
+        transition: border-color 0.3s var(--ease-ios), box-shadow 0.3s var(--ease-ios), background 0.2s;
     }
-    .m-input:focus { outline: none; border-color: var(--color-blue-deep); }
+    .m-input:hover { background: #ececee; }
+    .m-input:focus { outline: none; border-color: var(--color-blue-deep); background: #fff; box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
+    /* La "letra chiquita" de ayuda bajo un campo (antes esta clase no existía en
+       esta página y el texto salía en tamaño normal — se veía roto). */
+    .m-hint { font-size: 0.72rem; color: var(--color-text-muted); line-height: 1.5; margin: 0; }
+    .m-hint b { color: var(--color-text); font-weight: 600; }
 
     .m-chips { display: flex; gap: 0.5rem; }
     .m-tiers { flex-wrap: wrap; }
@@ -970,17 +1175,6 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     .m-save:disabled { opacity: 0.6; cursor: wait; }
 
     @media (max-width: 880px) {
-        .t-head { display: none; }
-        /* Fila tipo lista: empresa arriba, contacto debajo, límite a la derecha */
-        .t-row {
-            grid-template-columns: 1fr auto;
-            grid-template-areas: "name amount" "contact amount";
-            gap: 0.15rem 1rem; align-items: center; padding: 0.8rem 0.3rem;
-        }
-        .t-client { grid-area: name; }
-        .t-contact { grid-area: contact; display: flex; }
-        .t-amount { grid-area: amount; align-self: center; }
-        .t-muted, .t-term { display: none; }
         .m-row { grid-template-columns: 1fr; }
     }
 
@@ -1086,7 +1280,9 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     .lines-empty b { color: var(--color-text); font-weight: 600; }
     .lines-empty[hidden] { display: none; }
     
-    .add-actions { display: flex; gap: 0.6rem; margin-top: 1rem; align-items: center; }
+    .add-actions { display: flex; gap: 0.6rem; margin-top: 1rem; align-items: center; flex-wrap: wrap; }
+    .add-hint { font-size: 0.72rem; color: #99a2af; margin: 0.5rem 0 0; }
+    .add-hint kbd { font-family: var(--font-sans); font-size: 0.64rem; font-weight: 600; color: var(--color-text-muted); background: #f5f5f7; border-radius: 5px; padding: 2px 6px; box-shadow: inset 0 -1px 0 rgba(0,0,0,0.06); }
     .btn-free-line {
         font-family: var(--font-sans); font-size: 0.82rem; font-weight: 500; cursor: pointer;
         background: #f5f5f7; color: var(--color-text-muted); border: none; border-radius: 10px; padding: 9px 16px;
@@ -1189,6 +1385,8 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b
     .btn-draft:hover { background: #e8e8ec; }
     .btn-draft:active { transform: scale(0.97); }
     .sum-note { font-size: 0.75rem; color: var(--color-text-muted); margin: 0.4rem 0 0; line-height: 1.4; text-align: center; }
+    .sum-kbd { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 0.68rem; color: #99a2af; margin: 0.1rem 0 0; }
+    .sum-kbd kbd { font-family: var(--font-sans); font-size: 0.62rem; font-weight: 600; color: var(--color-text-muted); background: #f5f5f7; border-radius: 5px; padding: 2px 6px; box-shadow: inset 0 -1px 0 rgba(0,0,0,0.06); }
 
     .toast {
         position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
