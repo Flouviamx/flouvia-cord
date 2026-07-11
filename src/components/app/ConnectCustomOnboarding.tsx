@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { STRIPE_MX_STATES, STRIPE_COMPANY_STRUCTURES, STRIPE_MCC_B2B, translateRequirement } from '../../lib/stripe-catalogs';
-import LiveCapture from './LiveCapture';
 
 interface ConnectCustomOnboardingProps {
     org?: any;
@@ -77,12 +76,22 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
     const [personId, setPersonId] = useState<string | null>(null);
     const [ownersProvided, setOwnersProvided] = useState(false);
 
-    // Document
+    // Document (modo "Subir archivo" — fallback cuando no hay teléfono a la mano)
     const [docFront, setDocFront] = useState<File | null>(null);
     const [docBack, setDocBack] = useState<File | null>(null);
-    const [captureSide, setCaptureSide] = useState<'front' | 'back' | 'selfie' | null>(null);
     const [previewFront, setPreviewFront] = useState<string | null>(null);
     const [previewBack, setPreviewBack] = useState<string | null>(null);
+
+    // Verificación de identidad "continúa en tu teléfono" — QR + polling (estilo
+    // Stripe Identity). El celular sube frente/reverso/selfie directo a Stripe vía
+    // /api/billing/connect/capture/[token]; el escritorio solo espera y refresca.
+    const [uploadMode, setUploadMode] = useState<'phone' | 'file'>('phone');
+    const [captureToken, setCaptureToken] = useState<string | null>(null);
+    const [captureUrl, setCaptureUrl] = useState<string | null>(null);
+    const [captureQr, setCaptureQr] = useState<string | null>(null);
+    const [captureStatus, setCaptureStatus] = useState<'idle' | 'creating' | 'waiting' | 'completed' | 'expired'>('idle');
+    const [capturedParts, setCapturedParts] = useState<{ front?: boolean; back?: boolean; selfie?: boolean }>({});
+    const capturePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // Bank
     const [clabe, setClabe] = useState(org?.bancoClabe || '');
@@ -114,6 +123,61 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
             pollRef.current = null;
         }
     }, [step, detailsSubmitted, chargesEnabled, requirements]);
+
+    // Sondea la sesión de captura por teléfono cada 2.5s mientras espera — cuando
+    // el celular termina (frente + selfie subidos), se refleja solo en el escritorio
+    // sin que nadie tenga que refrescar la página.
+    useEffect(() => {
+        if (captureStatus !== 'waiting' || !captureToken) return;
+        const poll = async () => {
+            try {
+                const res = await fetch(`/api/billing/connect/capture/${captureToken}`);
+                const data = await res.json();
+                if (!data.ok) return;
+                if (data.expired) { setCaptureStatus('expired'); return; }
+                setCapturedParts(data.captured || {});
+                if (data.status === 'completed') setCaptureStatus('completed');
+            } catch { /* reintenta en el próximo tick */ }
+        };
+        poll();
+        capturePollRef.current = setInterval(poll, 2500);
+        return () => { if (capturePollRef.current) clearInterval(capturePollRef.current); };
+    }, [captureStatus, captureToken]);
+
+    // Al completarse desde el teléfono: refresca los requisitos reales de Stripe
+    // y avanza solo, con una pausa breve para que se vea la confirmación.
+    useEffect(() => {
+        if (captureStatus !== 'completed') return;
+        fetchStatus();
+        const t = setTimeout(() => setStep(6), 1100);
+        return () => clearTimeout(t);
+    }, [captureStatus]);
+
+    const startPhoneCapture = async () => {
+        setError(null);
+        if (businessType === 'company' && !personId) {
+            setError('Primero completa los datos del representante (paso 4 del asistente)');
+            return;
+        }
+        setCaptureStatus('creating');
+        try {
+            const res = await fetch('/api/billing/connect/capture-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ personId, isCompanyDoc: businessType === 'individual' }),
+            });
+            const data = await res.json();
+            if (!data.ok) throw new Error(data.error || 'No se pudo generar el enlace');
+            setCaptureToken(data.token);
+            setCaptureUrl(data.url);
+            setCaptureQr(data.qrSvg || null);
+            setCapturedParts({});
+            setCaptureStatus('waiting');
+        } catch (e: any) {
+            setError(e.message);
+            setCaptureStatus('idle');
+        }
+    };
 
     const fetchStatus = async (): Promise<any | null> => {
         try {
@@ -290,30 +354,38 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                 setRequirements(data.requirements);
                 setStep(5);
             } else if (step === 5) { // Identificación
-                if (!docFront) throw new Error('Sube al menos el frente de tu identificación');
-                if (businessType === 'company' && !personId) throw new Error('Primero completa los datos del representante (paso 4 del asistente)');
+                if (uploadMode === 'phone') {
+                    // El teléfono ya subió las fotos directo a Stripe (ver polling arriba);
+                    // aquí solo refrescamos requisitos y avanzamos.
+                    if (captureStatus !== 'completed') throw new Error('Espera a que termines la verificación desde tu teléfono, o cambia a "Subir archivo".');
+                    await fetchStatus();
+                    setStep(6);
+                } else {
+                    if (!docFront) throw new Error('Sube al menos el frente de tu identificación');
+                    if (businessType === 'company' && !personId) throw new Error('Primero completa los datos del representante (paso 4 del asistente)');
 
-                const uploadDoc = async (file: File, side: string) => {
-                    const fd = new FormData();
-                    fd.append('file', file);
-                    fd.append('side', side);
-                    if (businessType === 'company') {
-                        fd.append('personId', personId!);
-                        fd.append('isCompanyDoc', 'false');
-                    } else {
-                        fd.append('isCompanyDoc', 'true');
-                    }
-                    const res = await fetch('/api/billing/connect/document', { method: 'POST', body: fd });
-                    const data = await res.json();
-                    if (!data.ok) throw new Error(data.error || 'Error al subir el documento');
-                    return data;
-                };
+                    const uploadDoc = async (file: File, side: string) => {
+                        const fd = new FormData();
+                        fd.append('file', file);
+                        fd.append('side', side);
+                        if (businessType === 'company') {
+                            fd.append('personId', personId!);
+                            fd.append('isCompanyDoc', 'false');
+                        } else {
+                            fd.append('isCompanyDoc', 'true');
+                        }
+                        const res = await fetch('/api/billing/connect/document', { method: 'POST', body: fd });
+                        const data = await res.json();
+                        if (!data.ok) throw new Error(data.error || 'Error al subir el documento');
+                        return data;
+                    };
 
-                await uploadDoc(docFront, 'front');
-                if (docBack) await uploadDoc(docBack, 'back');
+                    await uploadDoc(docFront, 'front');
+                    if (docBack) await uploadDoc(docBack, 'back');
 
-                await fetchStatus();
-                setStep(6);
+                    await fetchStatus();
+                    setStep(6);
+                }
             } else if (step === 6) { // Cuenta Bancaria
                 const cl = String(clabe).replace(/\D/g, '');
                 if (cl.length !== 18) throw new Error('La CLABE debe tener 18 dígitos');
@@ -620,79 +692,111 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
 
                 {step === 5 && (
                     <div className="co-step">
-                        <p className="co-sub">Necesitamos una foto clara de una identificación oficial vigente (INE o Pasaporte).</p>
+                        <p className="co-sub">Necesitamos una foto clara de una identificación oficial vigente (INE o Pasaporte) y una selfie de verificación.</p>
 
-                        <div className="s-field">
-                            <label>Frente de la identificación</label>
-                            {previewFront ? (
-                                <div className="co-doc-preview">
-                                    <img src={previewFront} alt="Frente" />
-                                    <span className="co-doc-ok">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                        Lista
-                                    </span>
-                                    <button type="button" className="co-btn co-btn-ghost co-btn-sm" onClick={() => { setDocFront(null); setPreviewFront(null); }}>Quitar</button>
-                                </div>
-                            ) : (
-                                <div className="co-doc-actions">
-                                    <button type="button" className="co-btn co-btn-primary" onClick={() => setCaptureSide('front')}>
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" fill="currentColor" fillOpacity="0.12"/><circle cx="12" cy="13" r="4"/></svg>
-                                        Tomar foto
-                                    </button>
-                                    <label className="co-btn co-btn-ghost co-upload">
-                                        Subir archivo
-                                        <input type="file" accept="image/jpeg,image/png,application/pdf" onChange={e => {
-                                            const file = e.target.files?.[0];
-                                            if (file) { setDocFront(file); setPreviewFront(file.type.startsWith('image/') ? URL.createObjectURL(file) : '/imgs/logo-cord-navy.png'); }
-                                        }} />
-                                    </label>
-                                </div>
-                            )}
+                        <div className="co-mode-tabs" role="tablist">
+                            <button type="button" role="tab" aria-selected={uploadMode === 'phone'} className={`co-mode-tab ${uploadMode === 'phone' ? 'active' : ''}`} onClick={() => setUploadMode('phone')}>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.5" fill="currentColor" fillOpacity="0.12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+                                Con tu teléfono
+                                <span className="co-mode-tab-tag">Recomendado</span>
+                            </button>
+                            <button type="button" role="tab" aria-selected={uploadMode === 'file'} className={`co-mode-tab ${uploadMode === 'file' ? 'active' : ''}`} onClick={() => setUploadMode('file')}>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12" /><path d="m7 8 5-5 5 5" fill="currentColor" fillOpacity="0.12"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" /></svg>
+                                Subir archivo
+                            </button>
                         </div>
 
-                        <div className="s-field">
-                            <label>Reverso (solo INE, omite si es Pasaporte)</label>
-                            {previewBack ? (
-                                <div className="co-doc-preview">
-                                    <img src={previewBack} alt="Reverso" />
-                                    <span className="co-doc-ok">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                        Lista
-                                    </span>
-                                    <button type="button" className="co-btn co-btn-ghost co-btn-sm" onClick={() => { setDocBack(null); setPreviewBack(null); }}>Quitar</button>
-                                </div>
-                            ) : (
-                                <div className="co-doc-actions">
-                                    <button type="button" className="co-btn co-btn-primary" onClick={() => setCaptureSide('back')}>
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" fill="currentColor" fillOpacity="0.12"/><circle cx="12" cy="13" r="4"/></svg>
-                                        Tomar foto
-                                    </button>
-                                    <label className="co-btn co-btn-ghost co-upload">
-                                        Subir archivo
-                                        <input type="file" accept="image/jpeg,image/png,application/pdf" onChange={e => {
-                                            const file = e.target.files?.[0];
-                                            if (file) { setDocBack(file); setPreviewBack(file.type.startsWith('image/') ? URL.createObjectURL(file) : '/imgs/logo-cord-navy.png'); }
-                                        }} />
-                                    </label>
-                                </div>
-                            )}
-                        </div>
+                        {uploadMode === 'phone' ? (
+                            <div className="co-phone-capture">
+                                {(captureStatus === 'idle' || captureStatus === 'creating') && (
+                                    <div className="co-phone-intro">
+                                        <div className="co-phone-ico">
+                                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.5" fill="currentColor" fillOpacity="0.1"/><circle cx="12" cy="11" r="2.6" /><line x1="11" y1="17.3" x2="13" y2="17.3" /></svg>
+                                        </div>
+                                        <p>Escanea el código con tu celular y toma las fotos con su cámara — mejor luz, mejor enfoque, y también te pedimos una selfie para reforzar la verificación.</p>
+                                        <button type="button" className="co-btn co-btn-primary" onClick={startPhoneCapture} disabled={captureStatus === 'creating'}>
+                                            {captureStatus === 'creating' ? (<><span className="co-spinner co-spinner-btn" aria-hidden="true"></span> Generando…</>) : 'Generar código QR'}
+                                        </button>
+                                    </div>
+                                )}
 
-                        {captureSide && (
-                            <LiveCapture
-                                side={captureSide}
-                                onCancel={() => setCaptureSide(null)}
-                                onCapture={(file) => {
-                                    if (captureSide === 'front') {
-                                        setDocFront(file);
-                                        setPreviewFront(URL.createObjectURL(file));
-                                    } else if (captureSide === 'back') {
-                                        setDocBack(file);
-                                        setPreviewBack(URL.createObjectURL(file));
-                                    }
-                                    setCaptureSide(null);
-                                }}
-                            />
+                                {(captureStatus === 'waiting' || captureStatus === 'completed') && (
+                                    <div className="co-phone-active">
+                                        {captureQr && <div className="co-phone-qr" dangerouslySetInnerHTML={{ __html: captureQr }} />}
+                                        <div className="co-phone-link">
+                                            <input readOnly value={captureUrl || ''} onFocus={(e) => e.currentTarget.select()} />
+                                            <button type="button" onClick={() => { if (captureUrl) navigator.clipboard?.writeText(captureUrl); }}>Copiar</button>
+                                        </div>
+                                        <ul className="co-phone-steps">
+                                            <li className={capturedParts.front ? 'done' : ''}><span className="co-phone-step-dot"></span>Frente</li>
+                                            <li className={capturedParts.back ? 'done' : ''}><span className="co-phone-step-dot"></span>Reverso</li>
+                                            <li className={capturedParts.selfie ? 'done' : ''}><span className="co-phone-step-dot"></span>Selfie</li>
+                                        </ul>
+                                        {captureStatus === 'waiting' ? (
+                                            <span className="co-phone-waiting"><span className="co-spinner co-spinner-btn" aria-hidden="true"></span> Esperando a que termines desde tu teléfono…</span>
+                                        ) : (
+                                            <span className="co-phone-done">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                Identidad verificada desde tu teléfono — continuando…
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+
+                                {captureStatus === 'expired' && (
+                                    <div className="co-phone-intro">
+                                        <p>El código expiró por seguridad (duran 10 minutos).</p>
+                                        <button type="button" className="co-btn co-btn-primary" onClick={startPhoneCapture}>Generar uno nuevo</button>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <>
+                                <div className="s-field">
+                                    <label>Frente de la identificación</label>
+                                    {previewFront ? (
+                                        <div className="co-doc-preview">
+                                            <img src={previewFront} alt="Frente" />
+                                            <span className="co-doc-ok">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                Lista
+                                            </span>
+                                            <button type="button" className="co-btn co-btn-ghost co-btn-sm" onClick={() => { setDocFront(null); setPreviewFront(null); }}>Quitar</button>
+                                        </div>
+                                    ) : (
+                                        <label className="co-btn co-btn-ghost co-upload co-upload-block">
+                                            Subir archivo
+                                            <input type="file" accept="image/jpeg,image/png,application/pdf" onChange={e => {
+                                                const file = e.target.files?.[0];
+                                                if (file) { setDocFront(file); setPreviewFront(file.type.startsWith('image/') ? URL.createObjectURL(file) : '/imgs/logo-cord-navy.png'); }
+                                            }} />
+                                        </label>
+                                    )}
+                                </div>
+
+                                <div className="s-field">
+                                    <label>Reverso (solo INE, omite si es Pasaporte)</label>
+                                    {previewBack ? (
+                                        <div className="co-doc-preview">
+                                            <img src={previewBack} alt="Reverso" />
+                                            <span className="co-doc-ok">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                Lista
+                                            </span>
+                                            <button type="button" className="co-btn co-btn-ghost co-btn-sm" onClick={() => { setDocBack(null); setPreviewBack(null); }}>Quitar</button>
+                                        </div>
+                                    ) : (
+                                        <label className="co-btn co-btn-ghost co-upload co-upload-block">
+                                            Subir archivo
+                                            <input type="file" accept="image/jpeg,image/png,application/pdf" onChange={e => {
+                                                const file = e.target.files?.[0];
+                                                if (file) { setDocBack(file); setPreviewBack(file.type.startsWith('image/') ? URL.createObjectURL(file) : '/imgs/logo-cord-navy.png'); }
+                                            }} />
+                                        </label>
+                                    )}
+                                </div>
+                                <p className="co-hint">¿Quieres agregar también tu selfie de verificación? Usa la opción "Con tu teléfono" de arriba.</p>
+                            </>
                         )}
                     </div>
                 )}
@@ -731,10 +835,12 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
             <div className="co-footer">
                 {step > 0 && <button type="button" className="co-btn co-btn-ghost" onClick={goBack} disabled={loading}>Atrás</button>}
                 <div style={{ flex: 1 }}></div>
-                <button type="button" className="co-btn co-btn-primary" onClick={handleNext} disabled={loading}>
-                    {loading && <span className="co-spinner co-spinner-btn" aria-hidden="true"></span>}
-                    {loading ? 'Guardando…' : step === 7 ? 'Aceptar y finalizar' : 'Continuar'}
-                </button>
+                {!(step === 5 && uploadMode === 'phone' && captureStatus !== 'completed') && (
+                    <button type="button" className="co-btn co-btn-primary" onClick={handleNext} disabled={loading}>
+                        {loading && <span className="co-spinner co-spinner-btn" aria-hidden="true"></span>}
+                        {loading ? 'Guardando…' : step === 7 ? 'Aceptar y finalizar' : 'Continuar'}
+                    </button>
+                )}
             </div>
         </div>
     );

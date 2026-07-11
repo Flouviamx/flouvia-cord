@@ -410,6 +410,37 @@ const pasos = [
     .co-requirements .co-req-msg svg { flex-shrink: 0; color: var(--color-warn); }
     .co-requirements .co-req-action { font-size: 0.72rem; font-weight: 600; color: var(--color-blue-deep); white-space: nowrap; }
     .co-success h3 { font-size: 1.1rem; font-weight: 600; color: var(--color-text); }
+
+    /* Verificación de identidad "continúa en tu teléfono" (QR + polling) */
+    .connect-custom-onboarding .co-mode-tabs { display: flex; gap: 6px; padding: 4px; background: var(--color-bg-soft); border-radius: 999px; margin-bottom: 0.4rem; }
+    .connect-custom-onboarding .co-mode-tab { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; font: inherit; font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); background: transparent; border: none; border-radius: 999px; padding: 9px 12px; cursor: pointer; transition: background 0.2s ease, color 0.2s ease; }
+    .connect-custom-onboarding .co-mode-tab.active { background: var(--surface); color: var(--color-text); box-shadow: 0 1px 3px rgba(10,25,47,0.1); }
+    .connect-custom-onboarding .co-mode-tab-tag { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: var(--color-ok); background: rgba(16,185,129,0.12); border-radius: 999px; padding: 2px 7px; }
+    .connect-custom-onboarding .co-upload-block { display: block; width: 100%; }
+    .connect-custom-onboarding .co-hint { font-size: 0.76rem; color: var(--color-text-muted); margin: 0.2rem 0 0; }
+
+    .connect-custom-onboarding .co-phone-capture { display: flex; flex-direction: column; }
+    .connect-custom-onboarding .co-phone-intro { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.85rem; padding: 1.6rem 1rem; }
+    .connect-custom-onboarding .co-phone-ico { width: 48px; height: 48px; border-radius: 14px; background: rgba(10,25,47,0.06); color: var(--color-blue-deep); display: flex; align-items: center; justify-content: center; }
+    .connect-custom-onboarding .co-phone-intro p { font-size: 0.84rem; color: var(--color-text-muted); line-height: 1.5; margin: 0; max-width: 340px; }
+
+    .connect-custom-onboarding .co-phone-active { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 1.4rem 1rem; }
+    .connect-custom-onboarding .co-phone-qr { width: 168px; height: 168px; padding: 10px; background: #fff; border-radius: 16px; box-shadow: 0 1px 3px rgba(10,25,47,0.08), 0 12px 28px -10px rgba(10,25,47,0.16); }
+    .connect-custom-onboarding .co-phone-qr svg { display: block; width: 100%; height: 100%; }
+    .connect-custom-onboarding .co-phone-link { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 360px; }
+    .connect-custom-onboarding .co-phone-link input { flex: 1; min-width: 0; font: inherit; font-size: 0.76rem; color: var(--color-text-muted); background: var(--color-bg-soft); border: none; border-radius: 10px; padding: 8px 10px; }
+    .connect-custom-onboarding .co-phone-link button { font: inherit; font-size: 0.76rem; font-weight: 600; color: var(--color-blue-deep); background: var(--color-bg-soft); border: none; border-radius: 10px; padding: 8px 12px; cursor: pointer; white-space: nowrap; }
+    .connect-custom-onboarding .co-phone-link button:hover { opacity: 0.75; }
+
+    .connect-custom-onboarding .co-phone-steps { list-style: none; display: flex; gap: 18px; margin: 0; padding: 0; }
+    .connect-custom-onboarding .co-phone-steps li { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted); }
+    .connect-custom-onboarding .co-phone-step-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-border); transition: background 0.25s ease; }
+    .connect-custom-onboarding .co-phone-steps li.done { color: var(--color-ok); }
+    .connect-custom-onboarding .co-phone-steps li.done .co-phone-step-dot { background: var(--color-ok); }
+
+    .connect-custom-onboarding .co-phone-waiting { display: inline-flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--color-text-muted); }
+    .connect-custom-onboarding .co-phone-waiting .co-spinner-btn { border-color: rgba(10,25,47,0.18); border-top-color: var(--color-blue-deep); }
+    .connect-custom-onboarding .co-phone-done { display: inline-flex; align-items: center; gap: 7px; font-size: 0.8rem; font-weight: 600; color: var(--color-ok); }
 </style>
 
 <script>

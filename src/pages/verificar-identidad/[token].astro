@@ -1,0 +1,165 @@
+---
+export const prerender = false;
+
+import Layout from '../../layouts/Layout.astro';
+import IdentityCaptureMobile from '../../components/app/IdentityCaptureMobile';
+import { sql } from '../../lib/db';
+
+const { token } = Astro.params;
+
+const [row] = token
+    ? await sql`select org_id, expires_at from identity_capture_sessions where token = ${token}`
+    : [null];
+
+let org: { nombre?: string; logo_url?: string; color_marca?: string } = {};
+if (row) {
+    [org] = await sql`select nombre, logo_url, color_marca from orgs where id = ${row.org_id}`;
+}
+---
+
+<Layout title="Verificación de identidad — Cord" noindex={true}>
+    <div class="idcap-page">
+        {token && (
+            <IdentityCaptureMobile
+                client:only="react"
+                token={token}
+                orgNombre={org?.nombre}
+                orgLogo={org?.logo_url}
+                orgColor={org?.color_marca}
+            />
+        )}
+    </div>
+</Layout>
+
+<style is:global>
+    /* Página standalone: sin nav/footer de la landing (mismo patrón que /sign-in). */
+    body:has(.idcap-page) #navbar,
+    body:has(.idcap-page) footer {
+        display: none !important;
+    }
+
+    .idcap-page {
+        min-height: 100vh;
+        background: #f5f5f7;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    }
+
+    .idcap-shell {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5rem;
+        padding: 2rem 1.25rem calc(2rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .idcap-org {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-bottom: -0.25rem;
+    }
+    .idcap-org-logo { height: 26px; width: auto; display: block; }
+    .idcap-org-avatar {
+        width: 30px; height: 30px; border-radius: 9px;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-weight: 700; font-size: 0.9rem;
+    }
+    .idcap-org-name { font-weight: 600; color: #0a192f; font-size: 0.95rem; }
+
+    .idcap-dots { display: flex; gap: 6px; margin-bottom: -0.5rem; }
+    .idcap-dot { width: 22px; height: 4px; border-radius: 999px; background: rgba(10,25,47,0.12); transition: background 0.3s ease; }
+    .idcap-dot-done { background: #16a34a; }
+    .idcap-dot-active { background: #0a192f; }
+
+    .idcap-card {
+        width: 100%;
+        max-width: 400px;
+        background: #ffffff;
+        border-radius: 28px;
+        padding: 2.25rem 1.75rem 2rem;
+        box-shadow:
+            0 2px 4px rgba(10,25,47,0.04),
+            0 28px 56px -14px rgba(10,25,47,0.14),
+            inset 0 1px 0 rgba(255,255,255,0.6);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    .idcap-card.idcap-center { padding: 2.75rem 1.75rem; gap: 1rem; }
+
+    .idcap-icon {
+        width: 68px; height: 68px; border-radius: 20px;
+        background: rgba(10,25,47,0.05);
+        display: flex; align-items: center; justify-content: center;
+        color: #0a192f;
+        margin-bottom: 0.25rem;
+    }
+
+    .idcap-card h1 {
+        font-size: 1.3rem; font-weight: 700; color: #050505;
+        letter-spacing: -0.03em; line-height: 1.2; margin: 0;
+    }
+    .idcap-card p { font-size: 0.92rem; color: #555556; line-height: 1.5; margin: 0; }
+
+    .idcap-list {
+        text-align: left; width: 100%; margin: 0.25rem 0 0; padding: 0;
+        list-style: none; display: flex; flex-direction: column; gap: 0.65rem;
+    }
+    .idcap-list li {
+        font-size: 0.88rem; color: #0a192f; font-weight: 500;
+        padding-left: 1.6rem; position: relative;
+    }
+    .idcap-list li::before {
+        content: ''; position: absolute; left: 0; top: 0.35rem;
+        width: 7px; height: 7px; border-radius: 50%; background: #0a192f; opacity: 0.35;
+    }
+
+    .idcap-cta {
+        width: 100%; margin-top: 0.75rem;
+        padding: 0.95rem 1.5rem;
+        border-radius: 999px; border: none;
+        background: #0a192f; color: #fff;
+        font-size: 0.98rem; font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+    .idcap-cta:active { transform: scale(0.97); }
+
+    .idcap-skip {
+        background: none; border: none; margin-top: 0.35rem;
+        color: #555556; font-size: 0.85rem; font-weight: 500;
+        text-decoration: underline; text-underline-offset: 2px;
+        cursor: pointer; padding: 0.4rem;
+    }
+
+    .idcap-error {
+        width: 100%; padding: 0.7rem 0.9rem; border-radius: 12px;
+        background: rgba(239,68,68,0.08); color: #b91c1c;
+        font-size: 0.82rem; font-weight: 500; text-align: left;
+    }
+
+    .idcap-check {
+        width: 56px; height: 56px; border-radius: 50%;
+        background: #16a34a;
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 0.25rem;
+    }
+
+    .idcap-spinner {
+        width: 30px; height: 30px; border-radius: 50%;
+        border: 3px solid rgba(10,25,47,0.12);
+        border-top-color: #0a192f;
+        animation: idcap-spin 0.8s linear infinite;
+    }
+    @keyframes idcap-spin { to { transform: rotate(360deg); } }
+
+    .idcap-uploading-text { font-size: 0.88rem; color: #555556; font-weight: 500; }
+
+    .idcap-foot {
+        font-size: 0.72rem; color: #b4bcc7; font-weight: 500; letter-spacing: 0.02em;
+    }
+</style>

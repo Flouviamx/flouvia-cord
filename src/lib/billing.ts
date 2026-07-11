@@ -349,3 +349,17 @@ export async function attachPersonDocument(
         [`verification[document][${side}]`]: fileId
     }, 'POST');
 }
+
+// Selfie / documento adicional — Stripe lo guarda como "additional_document".
+// No siempre es un requisito explícito de currently_due, pero recolectarlo de
+// entrada adelanta el caso en que Stripe lo pida por una discrepancia (fraude/
+// coincidencia facial) y eleva la diligencia KYC de la plataforma.
+export async function attachPersonAdditionalDocument(
+    accountId: string,
+    personId: string,
+    fileId: string
+): Promise<any> {
+    return stripe(`/v1/accounts/${accountId}/persons/${personId}`, {
+        'verification[additional_document][front]': fileId
+    }, 'POST');
+}

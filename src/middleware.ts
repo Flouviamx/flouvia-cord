@@ -20,7 +20,12 @@ import { reqContext } from "./lib/context";
 // del handler (ya implementado) para que no quede abierto.
 // /api/contacto/* → formulario público de ventas (lead capture, sin sesión; el
 // handler valida honeypot + rate limit propio, ya que aquí salta el limiter interno).
-const PUBLIC_API_PREFIXES = ["/api/q/", "/api/stripe/", "/api/cron/", "/api/v1/", "/api/mcp/sse", "/api/mcp/message", "/api/clerk/", "/api/contacto/"];
+// /api/billing/connect/capture/[token] → verificación de identidad "continúa en
+// tu teléfono" (sin sesión Clerk en el celular; el token aleatorio de 10 min es
+// la credencial — ver identity_capture_sessions). OJO: el prefijo exige la barra
+// final para NO alcanzar /api/billing/connect/capture-session (esa SÍ requiere
+// sesión — la crea el escritorio autenticado).
+const PUBLIC_API_PREFIXES = ["/api/q/", "/api/stripe/", "/api/cron/", "/api/v1/", "/api/mcp/sse", "/api/mcp/message", "/api/clerk/", "/api/contacto/", "/api/billing/connect/capture/"];
 const PUBLIC_API_EXACT = ["/api/mcp"];
 
 // ── Rate limiting (in-memory, por IP) ────────────────────────────────────────

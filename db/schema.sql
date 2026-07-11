@@ -877,3 +877,31 @@ alter table orgs add column if not exists banco_nombre text;
 alter table orgs add column if not exists banco_clabe text;
 alter table orgs add column if not exists banco_beneficiario text;
 alter table orgs add column if not exists cobro_spei_auto boolean not null default false;
+
+-- ── Verificación de identidad "continúa en tu teléfono" (jul 2026) ──────────
+-- Sesión efímera que vincula un dispositivo móvil (sin sesión de Clerk) a la
+-- cuenta de Stripe Connect de una org, para tomar fotos de identificación +
+-- selfie con la cámara REAL del teléfono en vez de la webcam de escritorio
+-- (mejor calidad, cámara trasera, patrón "escanea el QR y sigue en tu celular"
+-- de Stripe Identity). El token es la única credencial: aleatorio, expira a
+-- los 10 minutos, y no es reutilizable una vez completado.
+create table if not exists identity_capture_sessions (
+  id                uuid        default gen_random_uuid() primary key,
+  token             text        not null unique,
+  org_id            uuid        not null references orgs(id) on delete cascade,
+  stripe_account_id text        not null,
+  person_id         text,                                    -- null = doc a nivel cuenta (persona física)
+  is_company_doc    boolean     not null default false,
+  captured          jsonb       not null default '{}'::jsonb, -- {front:true, back:true, selfie:true}
+  status            text        not null default 'pending',   -- pending | completed
+  created_at        timestamptz not null default now(),
+  expires_at        timestamptz not null
+);
+create index if not exists idx_ics_org on identity_capture_sessions(org_id, created_at desc);
+
+alter table identity_capture_sessions enable row level security;
+create policy "rls_identity_capture_sessions" on identity_capture_sessions
+  using (
+    org_id = nullif(current_setting('app.org_id', true), '')::uuid
+    or token = nullif(current_setting('app.capture_token', true), '')
+  );
