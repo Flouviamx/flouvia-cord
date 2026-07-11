@@ -4,6 +4,7 @@ import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
 import { stripeUpload, attachPersonDocument, retrieveAccount, updateConnectAccount, isAlreadyVerifiedError } from '../../../../lib/billing';
+import { translateStripeError } from '../../../../lib/stripe-catalogs';
 
 export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('ajustes');
@@ -54,6 +55,6 @@ export const POST: APIRoute = async ({ request }) => {
 
         return new Response(JSON.stringify({ ok: true, fileId: uploadedFile.id, requirements: account.requirements }), { headers: { 'Content-Type': 'application/json' } });
     } catch (e: any) {
-        return new Response(JSON.stringify({ error: e.message }), { status: 400 });
+        return new Response(JSON.stringify({ error: translateStripeError(e) }), { status: 400 });
     }
 };

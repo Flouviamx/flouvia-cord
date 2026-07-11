@@ -864,16 +864,20 @@ const canEdit = memberCan(ME, 'productos');
     .ph-search-clear svg { width: 12px; height: 12px; display: block; }
     .ph-search-clear:hover { color: var(--color-blue-deep, #0a192f); background: rgba(10,25,47,0.07); }
     .t-row[hidden] { display: none !important; }
+    @media (max-width: 700px) {
+        .ph-search { width: 160px; }
+        .ph-search:focus-within { width: 220px; }
+    }
+</style>
+<style is:global>
+    /* .search-no-results se crea con document.createElement en runtime — Astro scopea
+       por [data-astro-cid] y el DOM inyectado no lo lleva, así que esta regla debe ser global. */
     .search-no-results {
         text-align: center;
         padding: 3rem 1rem;
         color: var(--color-text-muted, #999);
         font-size: 0.9rem;
         display: none;
-    }
-    @media (max-width: 700px) {
-        .ph-search { width: 160px; }
-        .ph-search:focus-within { width: 220px; }
     }
 </style>
 

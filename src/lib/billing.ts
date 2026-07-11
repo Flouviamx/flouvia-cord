@@ -150,8 +150,23 @@ export async function stripe(
         body: isGet ? undefined : body,
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data?.error?.message || `Stripe ${res.status}`);
+    if (!res.ok) throw stripeError(data?.error, res.status);
     return data;
+}
+
+// Los errores de Stripe traen `type`/`code`/`param`/`doc_url` además del
+// `message` en inglés — se adjuntan al Error (sin tocar `.message`, así que
+// todo el código existente que solo lee `e.message` sigue funcionando igual)
+// para que translateStripeError() (stripe-catalogs.ts) los pueda traducir por
+// código en vez de andar adivinando por texto libre.
+function stripeError(err: any, status: number): Error {
+    const e = new Error(err?.message || `Stripe ${status}`);
+    (e as any).stripeStatus = status;
+    (e as any).type = err?.type;
+    (e as any).code = err?.code;
+    (e as any).param = err?.param;
+    (e as any).docUrl = err?.doc_url;
+    return e;
 }
 
 // Crea (o reutiliza) el customer de Stripe de la org. Guarda el id en Neon.
@@ -335,7 +350,7 @@ export async function stripeUpload(
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data?.error?.message || `Stripe File Upload Error: ${res.status}`);
+    if (!res.ok) throw stripeError(data?.error, res.status);
     return data;
 }
 

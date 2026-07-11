@@ -3,6 +3,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql } from '../../../../../lib/db';
 import { stripeUpload, attachPersonDocument, attachPersonAdditionalDocument, retrieveAccount, updateConnectAccount, isAlreadyVerifiedError } from '../../../../../lib/billing';
+import { translateStripeError } from '../../../../../lib/stripe-catalogs';
 
 // Ruta PÚBLICA (sin sesión de Clerk) — el celular la abre al escanear el QR
 // generado en /api/billing/connect/capture-session. El token es la única
@@ -96,6 +97,6 @@ export const POST: APIRoute = async ({ params, request }) => {
 
         return new Response(JSON.stringify({ ok: true, captured, status }), { headers: { 'Content-Type': 'application/json' } });
     } catch (e: any) {
-        return new Response(JSON.stringify({ error: e.message || 'Error al subir el documento' }), { status: 400 });
+        return new Response(JSON.stringify({ error: translateStripeError(e) || 'No se pudo subir el documento.' }), { status: 400 });
     }
 };

@@ -4,6 +4,7 @@ import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
 import { createPerson, updatePerson, deletePerson, retrieveAccount } from '../../../../lib/billing';
+import { translateStripeError } from '../../../../lib/stripe-catalogs';
 
 export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('ajustes');
@@ -48,7 +49,7 @@ export const POST: APIRoute = async ({ request }) => {
 
         return new Response(JSON.stringify({ ok: true, personId: person.id, requirements: account.requirements }), { headers: { 'Content-Type': 'application/json' } });
     } catch (e: any) {
-        return new Response(JSON.stringify({ error: e.message }), { status: 400 });
+        return new Response(JSON.stringify({ error: translateStripeError(e) }), { status: 400 });
     }
 };
 
@@ -90,7 +91,7 @@ export const PATCH: APIRoute = async ({ request }) => {
         await sql`update orgs set stripe_requirements = ${JSON.stringify(account.requirements)} where id = ${orgId}`;
         return new Response(JSON.stringify({ ok: true, requirements: account.requirements }), { headers: { 'Content-Type': 'application/json' } });
     } catch (e: any) {
-        return new Response(JSON.stringify({ error: e.message }), { status: 400 });
+        return new Response(JSON.stringify({ error: translateStripeError(e) }), { status: 400 });
     }
 };
 
@@ -115,6 +116,6 @@ export const DELETE: APIRoute = async ({ request }) => {
         await sql`update orgs set stripe_requirements = ${JSON.stringify(account.requirements)} where id = ${orgId}`;
         return new Response(JSON.stringify({ ok: true, requirements: account.requirements }), { headers: { 'Content-Type': 'application/json' } });
     } catch (e: any) {
-        return new Response(JSON.stringify({ error: e.message }), { status: 400 });
+        return new Response(JSON.stringify({ error: translateStripeError(e) }), { status: 400 });
     }
 };

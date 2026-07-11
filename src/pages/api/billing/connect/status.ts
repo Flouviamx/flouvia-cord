@@ -4,6 +4,7 @@ import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
 import { retrieveAccount } from '../../../../lib/billing';
+import { translateStripeError } from '../../../../lib/stripe-catalogs';
 
 export const GET: APIRoute = async () => {
     const denied = await requirePerm('ajustes');
@@ -45,6 +46,6 @@ export const GET: APIRoute = async () => {
             }
         }), { headers: { 'Content-Type': 'application/json' } });
     } catch (e: any) {
-        return new Response(JSON.stringify({ error: e.message }), { status: 400 });
+        return new Response(JSON.stringify({ error: translateStripeError(e) }), { status: 400 });
     }
 };

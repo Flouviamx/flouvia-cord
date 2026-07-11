@@ -4,6 +4,7 @@ import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, reqIp } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
 import { updateConnectAccount } from '../../../../lib/billing';
+import { translateStripeError } from '../../../../lib/stripe-catalogs';
 
 export const PATCH: APIRoute = async ({ request }) => {
     const denied = await requirePerm('ajustes');
@@ -63,6 +64,6 @@ export const PATCH: APIRoute = async ({ request }) => {
         const res = await updateConnectAccount(org.stripe_account_id as string, fields);
         return new Response(JSON.stringify({ ok: true, requirements: res.requirements }), { headers: { 'Content-Type': 'application/json' } });
     } catch (e: any) {
-        return new Response(JSON.stringify({ error: e.message }), { status: 400 });
+        return new Response(JSON.stringify({ error: translateStripeError(e) }), { status: 400 });
     }
 };

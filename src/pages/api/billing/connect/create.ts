@@ -4,6 +4,7 @@ import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
 import { createConnectAccount, retrieveAccount, updateConnectAccount } from '../../../../lib/billing';
+import { translateStripeError } from '../../../../lib/stripe-catalogs';
 
 export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('ajustes');
@@ -36,7 +37,7 @@ export const POST: APIRoute = async ({ request }) => {
                 accountId = '';
                 await sql`update orgs set stripe_account_id = null, stripe_charges_enabled = false where id = ${orgId}`;
             } else {
-                return new Response(JSON.stringify({ error: msg || 'No se pudo consultar la cuenta de Stripe' }), { status: 502 });
+                return new Response(JSON.stringify({ error: translateStripeError(e) || 'No se pudo consultar la cuenta de Stripe' }), { status: 502 });
             }
         }
     }
