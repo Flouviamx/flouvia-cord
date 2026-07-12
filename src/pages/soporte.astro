@@ -42,7 +42,7 @@ const breadcrumbSchema = {
 >
     <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
     <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
-    <Nav />
+    <Nav darkHero={true} />
     <main>
         <SupportHero isEn={isEn} />
         <SupportCards isEn={isEn} />

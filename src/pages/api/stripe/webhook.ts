@@ -271,7 +271,11 @@ async function syncSubscription(sub: any) {
     const plan = planOf(sub);
     const status = (sub.status as string) || 'active';
     const cycle = sub?.metadata?.cycle || (sub?.items?.data?.[0]?.price?.recurring?.interval === 'year' ? 'anual' : 'mensual');
-    const periodEnd = sub.current_period_end ? Number(sub.current_period_end) : null;
+    // En la API "Basil" (2025-06-30+) Stripe MOVIÓ current_period_end del objeto
+    // Subscription raíz a cada item — se lee del item como fallback para que la
+    // fecha de renovación no quede en null según la versión con que llegue el evento.
+    const rawPeriodEnd = sub.current_period_end ?? sub?.items?.data?.[0]?.current_period_end;
+    const periodEnd = rawPeriodEnd ? Number(rawPeriodEnd) : null;
 
     // Localiza la org por subscription_id o por customer_id.
     const rows = await sql`select id from orgs where stripe_subscription_id = ${sub.id} or stripe_customer_id = ${sub.customer} limit 1`;

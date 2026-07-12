@@ -23,31 +23,31 @@ const NAV_GROUPS = [
     {
         label: 'Principal',
         items: [
-            { id: 'dashboard',    href: '/app',              label: 'Inicio',       icon: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>' },
-            { id: 'cotizaciones', href: '/app/cotizaciones', label: 'Cotizaciones', icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>', badge: badges.seguimiento, tone: 'neutral' },
+            { id: 'dashboard',    href: '/app',              label: 'Inicio',       icon: '<rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>' },
+            { id: 'cotizaciones', href: '/app/cotizaciones', label: 'Cotizaciones', icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8" stroke-opacity="0.5"/><line x1="16" y1="13" x2="8" y2="13" stroke-opacity="0.5"/><line x1="16" y1="17" x2="8" y2="17" stroke-opacity="0.5"/><polyline points="10 9 9 9 8 9" stroke-opacity="0.5"/>', badge: badges.seguimiento, tone: 'neutral' },
         ],
     },
     {
         label: 'Clientes y productos',
         items: [
-            { id: 'clientes',  href: '/app/clientes',  label: 'Clientes',  icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
-            { id: 'productos', href: '/app/productos', label: 'Productos', icon: '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>' },
+            { id: 'clientes',  href: '/app/clientes',  label: 'Clientes',  icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity="0.25" stroke="none"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87" stroke-opacity="0.5"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-opacity="0.5"/>' },
+            { id: 'productos', href: '/app/productos', label: 'Productos', icon: '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m7.5 4.27 9 5.15" stroke-opacity="0.5"/><path d="m3.3 7 8.7 5 8.7-5" stroke-opacity="0.5"/><path d="M12 22V12" stroke-opacity="0.5"/>' },
         ],
     },
     {
         label: 'Mi dinero',
         items: [
-            { id: 'cobros',   href: '/app/cobros',             label: 'Cobros',         icon: '<path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>' },
-            { id: 'cobranza', href: '/app/cobranza',           label: 'Cobranza',       icon: '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>', badge: badges.vencidas, tone: 'danger' },
-            { id: 'ai-ar',    href: '/app/tesoreria/cobranza', label: 'Cobranza con IA', icon: '<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>' },
-            { id: 'flujo-caja', href: '/app/tesoreria/flujo',  label: 'Flujo de caja',   icon: '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>' },
+            { id: 'cobros',   href: '/app/cobros',             label: 'Cobros',         icon: '<circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.1" stroke="none"/><path d="M12 2v20" stroke-opacity="0.5"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>' },
+            { id: 'cobranza', href: '/app/cobranza',           label: 'Cobranza',       icon: '<rect width="20" height="14" x="2" y="5" rx="2" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10" stroke-opacity="0.5"/>', badge: badges.vencidas, tone: 'danger' },
+            { id: 'ai-ar',    href: '/app/tesoreria/cobranza', label: 'Cobranza con IA', icon: '<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M6 9H4M6 15H4M18 9h2M18 15h2M9 6V4M15 6V4M9 18v2M15 18v2" stroke-opacity="0.6"/>' },
+            { id: 'flujo-caja', href: '/app/tesoreria/flujo',  label: 'Flujo de caja',   icon: '<path d="M22 7 L13.5 15.5 L8.5 10.5 L2 17 L2 22 L22 22 Z" fill="currentColor" fill-opacity="0.1" stroke="none"/><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13" stroke-opacity="0.5"/>' },
         ],
     },
     {
         label: 'Inteligencia',
         items: [
-            { id: 'cfo',       href: '/app/cfo',       label: 'Finanzas',  icon: '<line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/>' },
-            { id: 'analitica', href: '/app/analitica', label: 'Analítica', icon: '<path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>' },
+            { id: 'cfo',       href: '/app/cfo',       label: 'Finanzas',  icon: '<path d="M4 20h16" stroke-opacity="0.4"/><rect x="5" y="13" width="4" height="7" rx="1" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect x="10" y="7" width="4" height="13" rx="1" fill="currentColor" fill-opacity="0.3" stroke="none"/><rect x="15" y="11" width="4" height="9" rx="1" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect x="5" y="13" width="4" height="7" rx="1" /><rect x="10" y="7" width="4" height="13" rx="1" /><rect x="15" y="11" width="4" height="9" rx="1" />' },
+            { id: 'analitica', href: '/app/analitica', label: 'Analítica', icon: '<path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H12V3" fill="currentColor" fill-opacity="0.1" stroke="none" /><path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H12V3"/>' },
         ],
     },
 ];
@@ -88,7 +88,7 @@ const NAV_GROUPS = [
                     <div class="sb-group-inner">
                         {group.items.map((item) => (
                             <a href={item.href} data-id={item.id} class:list={['sb-item', { active: page === item.id }]} title={item.label}>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={item.icon}></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={item.icon}></svg>
                                 <span class="sb-item-label">{item.label}</span>
                                 {!!(item as any).shortcut && (
                                     <kbd class="sb-shortcut">{(item as any).shortcut}</kbd>

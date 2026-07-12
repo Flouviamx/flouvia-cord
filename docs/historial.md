@@ -8,6 +8,70 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Auditoría de conexiones custom + go-live listo (jul 2026)** — André pidió verificar que TODO
+   lo custom (Stripe Billing mensual/anual/excedentes, Stripe Connect Custom, Clerk custom) conecte
+   sin errores y un mapa de qué faltaba para operar con usuarios reales. Resultado de la auditoría
+   (read-only sobre billing.ts, subscribe/portal, webhook de Stripe, connect/*, payment-intent,
+   cobros, middleware, clerk/webhook, resolución de org + build limpio):
+   • **Todo verificado OK:** suscripciones (Payment Element custom + Checkout fallback → webhook
+     `syncSubscription` otorga plan solo en `active`), excedentes por uso cableados en las 4
+     dimensiones (ia/timbrado/api/usuario, con `checkQuota` + `reportUsage` + techo anti-runaway
+     10×), Connect Custom (PI por cobro, CLABE SPEI estable, conciliación por `cobro_id`, flip
+     atómico idempotente, defensa multi-tenant por `event.account`), Clerk (middleware, webhook de
+     sync sin degradar owner, `getActiveOrgId` con carriles API-key/Clerk-org/membresía/sandbox).
+   • **1 bug real corregido — `current_period_end`:** `subscribe.ts` fija la API `2025-06-30.basil`,
+     versión en la que Stripe MOVIÓ `current_period_end`/`current_period_start` del objeto
+     Subscription raíz a cada ITEM. El webhook `syncSubscription` lo leía del nivel raíz → llegaba
+     `undefined` → la fecha de renovación del plan se guardaba `null` (el plan sí se otorgaba bien;
+     solo la fecha en Ajustes › Plan salía en blanco). Fix: `sub.current_period_end ??
+     sub.items.data[0].current_period_end`. ⚠️ Regla a futuro: al pinnear una versión nueva de la
+     API de Stripe en las llamadas salientes, considerar que los eventos del webhook pueden llegar
+     con OTRA versión (la default del endpoint en el dashboard) — leer campos que se movieron entre
+     versiones de forma defensiva.
+   • **Config de go-live COMPLETADA por André** (era todo config manual, no código): 2º webhook de
+     Stripe "eventos en cuentas conectadas" + `STRIPE_CONNECT_WEBHOOK_SECRET` (sin él el dinero de
+     Connect caía al vendedor pero Cord no marcaba el cobro pagado — era EL gap crítico), llaves
+     live de Stripe/Clerk en Vercel, Customer Portal, Resend/CRON_SECRET/Facturapi/Anthropic, y el
+     **`DATABASE_URL` de Vercel apuntando al endpoint POOLED de Neon** (`-pooler` en el host —
+     necesario para no agotar conexiones con usuarios concurrentes). Pendiente de producto (no
+     bloquea MX): `USInvoiceProvider` sigue stub (facturación US no real); activación LIVE de la
+     plataforma Connect Custom depende de aprobación de Stripe.
+
+✅ **Modal "Crear cuenta nueva" rediseñado estilo Stripe + país cableado de punta a punta (jul 2026)** —
+   André pidió llevar el modal de creación de sub-cuentas (`CreateWorkspaceModal.tsx`, abierto desde
+   `CustomOrgSwitcher`) a nivel Stripe/Apple y reportó que **el país nunca se guardaba en ningún
+   lado** — necesario para la expansión internacional y el ruteo fiscal futuro (`FiscalFactory`/
+   `orgs.country_code`, ya usado por `emit.ts` para CFDI vs. proveedor internacional).
+   • **Rediseño completo del modal (2 pasos):** paso 1 = tarjetas de elección (anidar bajo la org
+     activa vs. cuenta independiente) con check circular navy y gráfico de árbol; paso 2 = nombre +
+     **selector de país** (7 países: MX default, US, CO, AR, CL, PE, ES) a la izquierda, con un
+     **árbol de preview en vivo** a la derecha (bandera + badge "NUEVA" + hermanas atenuadas + "+N
+     más") que refleja exactamente dónde caerá la cuenta — mismo patrón que el flujo real de Stripe
+     Connect. Dialog squircle, acento navy de marca (antes usaba `#6366f1` indigo genérico, ajeno a
+     la paleta de Cord), CTA píldora con `scale(0.97)`, inputs gris Apple con anillo navy al foco.
+     Funciona en claro y oscuro (tokens `--sb-*`/`--app-canvas`).
+   • **Copy corregido (era falso):** el modal decía que una cuenta anidada "comparte datos, miembros
+     del equipo e informes" con la org principal — **falso**, el multi-tenant por `org_id` aísla
+     100% los datos entre cualquier par de orgs (ver hallazgo pendiente en la entrada "Org switcher
+     con sub-cuentas anidadas" más abajo, ahora resuelto aquí). Nuevo copy: la anidación es
+     puramente organizativa/visual en el selector; cada cuenta conserva sus propios datos, equipo y
+     reportes.
+   • **`/api/orgs/provision` (nuevo, reemplaza a `/api/orgs/subaccount`):** se llama SIEMPRE tras
+     `clerk.createOrganization()` (anidada o separada, no solo anidada como antes). Valida
+     membresía activa del padre, escribe `countryCode`(+`parentOrgId` si aplica) al
+     `publicMetadata` de Clerk (fuente de la agrupación visual del switcher) y además persiste
+     `orgs.country_code`/`parent_org_id` en Neon **al vuelo** (upsert por `clerk_org_id`) sin
+     esperar al webhook async.
+   • **Webhook de Clerk reconcilia el país:** `organization.created`/`.updated` en
+     `src/pages/api/clerk/webhook.ts` ahora también lee `public_metadata.countryCode` y actualiza
+     `orgs.country_code` — doble escritura a propósito (al vuelo + reconciliación async) para que
+     el país nunca quede en blanco aunque el fetch inicial falle.
+   • Sin migración: `country_code` y `parent_org_id` ya existían en `orgs` (schema base +
+     `alter table … if not exists`).
+   • Verificado: `npm run build` limpio + Playwright renderizando el componente aislado (bundle con
+     esbuild) contra los 4 estados (paso 1/paso 2 × claro/oscuro) — árbol de preview, banderas,
+     badge, foco navy y CTA confirmados visualmente en ambos temas.
+
 ✅ **Rediseño Premium de ProductAccordion (jul 2026)** — André pidió refinar la plantilla de producto para hacerla sentir "Apple super premium" y menos vacía. 
    • **Iconografía "Glass Duotone":** Se reescribieron los 14 iconos SVG (`ICONS` en `ProductAccordion.jsx`) cumpliendo la Regla 9 (figuras intrincadas, `strokeWidth=1.75`, capas superpuestas de `fillOpacity`).
    • **Etiquetas verticales enriquecidas:** Las tarjetas inactivas ahora muestran `{label} · {title}` verticalmente, eliminando el espacio vacío que dejaba solo el número.
