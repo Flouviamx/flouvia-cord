@@ -8,6 +8,63 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Rediseño Premium de ProductAccordion (jul 2026)** — André pidió refinar la plantilla de producto para hacerla sentir "Apple super premium" y menos vacía. 
+   • **Iconografía "Glass Duotone":** Se reescribieron los 14 iconos SVG (`ICONS` en `ProductAccordion.jsx`) cumpliendo la Regla 9 (figuras intrincadas, `strokeWidth=1.75`, capas superpuestas de `fillOpacity`).
+   • **Etiquetas verticales enriquecidas:** Las tarjetas inactivas ahora muestran `{label} · {title}` verticalmente, eliminando el espacio vacío que dejaba solo el número.
+   • **Coreografía fluida (GSAP):** Animación de apertura cambiada de `hover` a `clic`. Se reemplazó el easing por `power4.out` con delays escalonados para emular la elasticidad y fluidez de iOS.
+   • **Equilibrio de proporciones:** Se mantuvo el `max-width: 1260px` global pero se rebalancearon los flex-grow (`ACTIVE_GROW=5.0`, `RESTING=[1.5, 2.2, 1.8, 2.5]`). La tarjeta activa concentra mejor la tipografía (`max-width: 600px`), eliminando el exceso de espacio en blanco lateral sin romper la cuadrícula.
+
+
+✅ **Onboarding "Stripe-style" (grupos con sub-pasos anidados) + actualización de legales/roadmap/
+   soporte con el feature de cobros (jul 2026)** — André pidió mejorar el onboarding de la app
+   ("en Stripe hay varios mini puntos dentro de un punto, sería increíble") y refrescar Términos,
+   Privacidad, el Plan de Desarrollo y el Centro de Ayuda con todo lo construido en la sesión de
+   cobros por términos/anticipo/cobranza IA (ver entrada inmediata siguiente).
+   • **`getSetupProgress()` reestructurado a SECCIONES con sub-pasos** (`src/lib/queries.ts`): los
+     10 pasos existentes se agruparon en 5 secciones con la secuencia real del ciclo de venta —
+     **Prepara tu negocio** (marca·fiscal·PDF) → **Arma tu catálogo** (productos·clientes) →
+     **Cierra tu primera venta** (crear·enviar) → **Recibe tu dinero** (activar cobros·cobrar y
+     facturar) → **Crece tu operación** (equipo). Cada `task` ganó un campo `group`; la función
+     devuelve `groups` (con su propio `doneN`/`total`/`done`) ADEMÁS de la `tasks` plana original
+     — compat total con `/api/onboarding/progress`, que no cambió de forma.
+   • **`OnboardingWidget.astro` reescrito** al patrón "checklist de Stripe": acordeón de GRUPOS
+     (no de pasos sueltos) — cada grupo es un ícono squircle duotone (Regla 9) + título + su
+     propio sub-progreso ("1/2 completados") + puntitos de mini-progreso (uno por sub-paso,
+     verde = hecho) a la derecha cuando está colapsado. Al expandir un grupo se revelan sus
+     sub-pasos con checkbox, descripción y botón "Configurar". Al completarse TODOS los sub-pasos
+     de un grupo: el ícono se anima a check verde, el grupo se colapsa solo y abre el siguiente
+     grupo pendiente automáticamente (mismo patrón de "guía viva" que ya tenía, ahora a dos
+     niveles). El polling a `/api/onboarding/progress` (15s + focus/visibilitychange) sigue
+     marcando sub-pasos Y recalculando el estado de su grupo padre sin recargar. Verificado con
+     una captura Playwright del componente aislado (grupo completo colapsado con check verde +
+     grupo "Cierra tu primera venta" expandido mostrando sus 2 sub-pasos).
+   • **Roadmap actualizado con las features de la sesión de cobros:** `cobranza-ia` pasó de
+     `beta` a `live` con copy real (link de pago en cada correo + negociación de 2-3 cuotas);
+     item nuevo `anticipos-pagos-parciales` (`live`) describiendo el desglose anticipo+saldo.
+   • **Términos de servicio (ES+EN, `terminos.astro`):** dos subsecciones nuevas en la cláusula
+     04 (Condiciones de Pago) — *Anticipos, Pagos Parciales y Planes en Cuotas* (el usuario
+     controla los términos comerciales y el tratamiento fiscal; Cord no genera el REP
+     automáticamente) y *Cobranza Autónoma con IA* (el usuario autoriza a Cord a contactar a sus
+     clientes en su nombre al activarla; deslinde sobre tono/contenido generado por IA).
+   • **Aviso de privacidad (ES+EN, `privacidad.astro`):** finalidad nueva en la cláusula 03 —
+     *Cobranza Autónoma con IA (opcional)*: qué datos de cartera se procesan, que está
+     desactivada por defecto y solo corre tras activación explícita, y que el texto lo genera
+     Anthropic bajo la misma garantía de no-entrenamiento ya documentada para el resto de la IA.
+   • **Centro de Ayuda:** `terminos-de-credito.md` (ES+EN) reescrito — ya no promete un horario
+     de recordatorios inventado ("días 25, 29 y 31") ni el flujo PPD viejo; ahora explica el
+     gating real (el botón de pago se oculta hasta el vencimiento) y enlaza a los dos artículos
+     nuevos. `facturacion-anticipos.md` (ES+EN) corregido para dejar de prometer REP automático
+     y explicar el flujo real de Cord (dividir el cobro con `anticipo_pct`, timbrar tú el CFDI).
+     Dos artículos nuevos (ES+EN): **`cobrar-anticipo.md`** (cómo pedir el % y qué ve el cliente)
+     y **`cobranza-automatica.md`** (cuándo actúa el agente, qué hace, cómo activarla/desactivarla).
+   ⚠️ **Pendiente de exactitud (no resuelto esta pasada):** varios artículos de Facturación/CFDI
+     (no solo los tocados aquí) siguen usando terminología `PUE`/`PPD` de forma más prescriptiva
+     de lo que el timbrado real de Cord garantiza — vale una pasada de auditoría de exactitud
+     fiscal dedicada a esa categoría completa en el futuro (fuera de alcance de esta sesión).
+   • Verificado: `npm run build` limpio con todos los cambios de contenido + el nuevo
+     `OnboardingWidget.astro`; captura Playwright del widget confirmando el patrón visual de
+     grupos/sub-pasos antes de dar por bueno el rediseño.
+
 ✅ **Cobros por términos de crédito + Anticipo/Saldo + Cobranza IA con link de pago (jul 2026)** —
    feature de 3 piezas pedido por André ("pagar solo tiene sentido al contado… que la cotización
    pueda cobrar el anticipo y luego el otro %… y al vencer el crédito el agente de cobranza mande

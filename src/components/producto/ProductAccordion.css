@@ -11,7 +11,7 @@
 .pac-container {
   display: flex;
   gap: 12px;
-  height: 560px;
+  height: 520px;
   max-width: 1260px;
   margin: 0 auto;
 }

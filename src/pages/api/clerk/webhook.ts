@@ -128,6 +128,13 @@ export const POST: APIRoute = async ({ request }) => {
             `;
         }
 
+        // País (moneda / facturación). Lo fija /api/orgs/provision en el metadata al
+        // crear la cuenta; aquí lo reconciliamos hacia orgs.country_code.
+        const countryCode = data.public_metadata?.countryCode as string | undefined;
+        if (countryCode && /^[A-Z]{2}$/.test(countryCode)) {
+            await sql`update orgs set country_code = ${countryCode} where id = ${orgId}`;
+        }
+
         // En 'created', el creador queda como miembro 'owner' (override total).
         if (type === 'organization.created' && data.created_by) {
             await sql`

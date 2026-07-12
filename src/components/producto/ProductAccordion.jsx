@@ -68,8 +68,8 @@ const CARD_PALS = [
 ];
 
 // ── Tamaños en reposo distintos por posición ─────────────────────────────────
-const RESTING     = [0.85, 1.55, 1.10, 1.75];
-const ACTIVE_GROW = 6.5;
+const RESTING     = [1.5, 2.2, 1.8, 2.5];
+const ACTIVE_GROW = 5.0;
 
 // ── CardShader — canvas FIJO para eliminar el flash negro ────────────────────
 // Renderiza a 480×560px siempre. CSS lo estira con width/height 100%.
