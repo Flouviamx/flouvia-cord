@@ -23,6 +23,20 @@ export function dueDateFor(baseDate: string | Date, terminos: string | null): Da
 
 export const isoDay = (d: Date) => d.toISOString().slice(0, 10);
 
+// Normaliza una columna `date` leída de Neon a 'YYYY-MM-DD'. ⚠️ El driver
+// devuelve DATE como objeto Date (medianoche LOCAL) — `String(v).slice(0,10)`
+// da "Sun Jul 12", que comparado lexicográficamente contra un ISO SIEMPRE es
+// mayor → bloqueaba todos los pagos (bug jul 2026). Usar SIEMPRE este helper
+// para comparar/mostrar fechas de vencimiento leídas de la BD.
+export function venceDia(v: unknown): string {
+    if (!v) return '';
+    if (v instanceof Date) {
+        const p = (n: number) => String(n).padStart(2, '0');
+        return `${v.getFullYear()}-${p(v.getMonth() + 1)}-${p(v.getDate())}`;
+    }
+    return String(v).slice(0, 10);
+}
+
 // Reparte total en anticipo + saldo sin perder centavos.
 export function splitAnticipo(total: number, pct: number) {
     const totalCents = Math.round(total * 100);

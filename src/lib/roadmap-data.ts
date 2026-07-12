@@ -208,27 +208,62 @@ Many distributors in Mexico buy inventory in dollars but sell to end clients in 
             en: 'AI Collections'
         },
         shortDesc: {
-            es: 'Un agente inteligente que envía recordatorios cordiales de pago por correo y WhatsApp a tu cartera vencida, usando un tono adaptado a la relación con cada cliente.',
-            en: 'An intelligent agent that sends polite payment reminders via email and WhatsApp to your overdue accounts, adapting its tone to the relationship with each client.'
+            es: 'Un agente inteligente que, al vencer el crédito, escribe recordatorios cordiales por correo con el link de pago real, y si el cliente no puede pagar de golpe, negocia un plan de 2 o 3 cuotas mensuales.',
+            en: 'An intelligent agent that, once credit terms lapse, writes polite email reminders with the real payment link — and if the client can\'t pay in full, negotiates a plan of 2 or 3 monthly installments.'
         },
         content: {
             es: `## Recupera tu dinero sin dañar la relación
-Perseguir la cartera vencida es incómodo para los equipos de ventas y consume tiempo valioso del equipo administrativo. Nuestro agente de cobranza con Inteligencia Artificial lo hace por ti.
+Perseguir la cartera vencida es incómodo para los equipos de ventas y consume tiempo valioso del equipo administrativo. Nuestro agente de cobranza con Inteligencia Artificial lo hace por ti, y solo entra en acción cuando el crédito realmente venció.
 
 ### Beneficios clave:
 - **Tono adaptativo:** La IA sabe si el cliente se retrasó por primera vez (tono amable y recordatorio) o si lleva 60 días vencido (tono más firme).
-- **Multicanal:** Envía notificaciones a través de correo electrónico o WhatsApp, dependiendo de las preferencias del cliente.
-- **Vínculos de pago directo:** Los mensajes incluyen un link directo para saldar la factura mediante transferencia o tarjeta, reduciendo la fricción para que te paguen rápido.`,
+- **Link de pago real en cada correo:** Cuando tienes cobros en línea activos, el recordatorio incluye un botón que lleva directo al pago del monto exacto pendiente (tarjeta o SPEI), directo a tu banco.
+- **Negocia cuotas por ti:** Si el cliente no puede saldar de golpe, el agente puede acordar un plan de 2 o 3 cuotas mensuales que suman exactamente el adeudo (sin descuentos), y crea automáticamente los cobros pagables de cada cuota.
+- **Control total (opt-in):** La cobranza autónoma se activa manualmente por negocio. Tú decides cuándo tu cartera queda en manos del agente.`,
             en: `## Recover your money without damaging relationships
-Chasing overdue invoices is awkward for sales teams and consumes valuable time from administrative staff. Our AI collections agent does it for you.
+Chasing overdue invoices is awkward for sales teams and consumes valuable admin time. Our AI collections agent does it for you, and only steps in once the credit terms have actually lapsed.
 
 ### Key benefits:
 - **Adaptive tone:** The AI knows if a client is late for the first time (polite reminder tone) or if they are 60 days overdue (firmer tone).
-- **Omnichannel:** Sends notifications via email or WhatsApp, depending on the client's preferences.
-- **Direct payment links:** Messages include a direct link to settle the invoice via bank transfer or card, reducing friction so you get paid faster.`
+- **A real payment link in every email:** When you have online payments active, the reminder includes a button that goes straight to paying the exact outstanding amount (card or SPEI), directly to your bank.
+- **Negotiates installments for you:** If the client can't pay in full, the agent can agree to a plan of 2 or 3 monthly installments that add up to the exact amount owed (no discounts), automatically creating the payable charges for each one.
+- **Full control (opt-in):** Autonomous collections is enabled manually per business. You decide when your receivables go to the agent.`
         },
         area: 'finanzas',
-        status: 'beta',
+        status: 'live',
+        api: false
+    },
+    {
+        id: '11',
+        slug: 'anticipos-pagos-parciales',
+        title: {
+            es: 'Anticipos y pagos parciales',
+            en: 'Deposits and Partial Payments'
+        },
+        shortDesc: {
+            es: 'Pide un anticipo al aprobar y el saldo según los términos. El cliente ve el desglose claro y paga cada parte en línea, cada una a tu banco.',
+            en: 'Ask for a deposit on approval and the balance per terms. The client sees a clear breakdown and pays each part online, straight to your bank.'
+        },
+        content: {
+            es: `## Cobra como realmente operas en B2B
+No todas las ventas se pagan de una sola vez. Muchos negocios cobran un porcentaje por adelantado para arrancar el pedido y el resto contra entrega. Cord lo hace nativo.
+
+### Beneficios clave:
+- **% de anticipo por cotización o por default:** Define un anticipo (ej. 50%) en el editor, o configúralo como default de tu negocio para que se pre-llene solo. El editor te muestra en vivo cuánto paga tu cliente al aprobar y cuánto queda de saldo.
+- **Desglose claro para el cliente:** El link público muestra "total $X · hoy pagas $Y de anticipo, saldo $Z". Nada de sorpresas.
+- **El pago se abre cuando tiene sentido:** Una cotización a contado se paga de inmediato; una a crédito (Net 30/60) no pide dinero hasta que llega la fecha de vencimiento. El anticipo, si lo hay, siempre es pagable al aprobar.
+- **Cada parte, un cobro real:** Anticipo, saldo y cuotas son cobros independientes con su propio link, cada uno directo a tu banco vía Stripe. La cotización se marca pagada solo cuando no queda ningún cobro pendiente.`,
+            en: `## Charge the way B2B actually works
+Not every sale is paid all at once. Many businesses collect a percentage up front to kick off the order and the rest on delivery. Cord makes it native.
+
+### Key benefits:
+- **Deposit % per quote or as a default:** Set a deposit (e.g. 50%) in the editor, or configure it as your business default so it pre-fills. The editor shows you live how much your client pays on approval and how much is left as balance.
+- **A clear breakdown for the client:** The public link shows "total $X · today you pay $Y as a deposit, balance $Z." No surprises.
+- **Payment opens when it makes sense:** A cash quote is payable right away; a credit quote (Net 30/60) doesn't ask for money until the due date arrives. The deposit, if any, is always payable on approval.
+- **Each part is a real charge:** Deposit, balance and installments are independent charges each with their own link, all straight to your bank via Stripe. The quote is marked paid only once no charge remains pending.`
+        },
+        area: 'finanzas',
+        status: 'live',
         api: false
     },
     {

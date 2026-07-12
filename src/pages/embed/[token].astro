@@ -91,7 +91,11 @@ const pagoActivo = !!(import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SE
 // Con cobros parciales mandan LOS COBROS; sin ellos, los términos de crédito.
 const cobrosQ: any[] = Array.isArray((q as any).cobros) ? (q as any).cobros : [];
 const hayCobroPagable = cobrosQ.some((co: any) => co.status === 'pendiente' && !co.venceEnFuturo);
-const pagoDisponible = cobrosQ.length > 0 ? hayCobroPagable : (q as any).pagoDisponible !== false;
+// Con anticipo configurado, el anticipo es pagable en cuanto se aprueba.
+const anticipoPagable = Number((q as any).anticipoPct) >= 1 && q.status !== 'paid';
+const pagoDisponible = cobrosQ.length > 0
+    ? hayCobroPagable
+    : ((q as any).pagoDisponible !== false || anticipoPagable);
 const puedePagar = pagoActivo && pagoDisponible && (
     ORG.aceptaTransferencia ||
     ((ORG.aceptaTarjeta || ORG.cobroSpeiAuto) && ORG.stripeAccountId && ORG.stripeChargesEnabled)

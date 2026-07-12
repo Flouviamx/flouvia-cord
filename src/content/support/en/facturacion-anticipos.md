@@ -1,21 +1,26 @@
 ---
 title: "Invoice advance payments"
-description: "Issue the advance CFDI and its remainder."
+description: "The tax treatment of charging a percentage up front and the rest later."
 category: "Billing & CFDI"
 ---
 
-Invoicing large projects where you charge a percentage upfront and the rest upon delivery requires special handling with the SAT.
+Charging a percentage up front and the rest on delivery is common in B2B projects, but it requires careful tax handling with the SAT.
 
-### Tax Rule for Advances
+### Tax rule for advances
 
-According to the SAT's filling guide, an advance payment only exists when **the good or service, or its final price, is not known or has not been determined**. If you already sent a detailed quote for $100,000 MXN and ask for a 50% deposit, for accounting purposes **it is not an advance**, it is an installment payment.
+According to the SAT's filing guide, an advance payment only exists when **the good or service, or its final price, is not known or has not been determined**. If you already sent a detailed quote for $100,000 MXN and ask for a 50% deposit, for accounting purposes **it is not an advance**: it is a payment in installments.
 
-### How to charge in installments in Cord
+### How you collect it in Cord
 
-1. Create your Quote for the total amount ($100,000).
-2. In the *Payments and Advances* section, select **Require partial initial payment**.
-3. Define the percentage (e.g., 50%).
-4. When the client accepts and pays those $50,000 with a card, Cord will issue an Invoice for the total amount in `PPD` (Payment in Installments) method.
-5. At that very moment, Cord will automatically stamp an **Electronic Payment Receipt (REP) Complement** covering the deposit of the initial $50,000.
+Cord splits the charge for you with the deposit feature (see [Collect a deposit](/en/support/cobrar-anticipo)):
 
-When the final delivery arrives, you just have to enter the invoice and generate a payment link for the remaining balance. Once paid, Cord will issue the second and final REP.
+1. Create your quote for the total amount ($100,000).
+2. Set the **deposit %** (e.g. 50%) in the editor's sidebar.
+3. When the client approves, the deposit ($50,000) is immediately payable by card or SPEI, and the balance is collected per the terms.
+
+### The tax side is up to you
+
+> [!NOTE]
+> Cord handles the split **collection**, but stamping each installment is not automatic. Cord does not by itself generate the Payment Receipt Complement (REP) for each payment.
+
+For the CFDI, stamp the invoice for the total amount with the appropriate method (`PUE` if cash, `PPD` if credit or installments) from the quote detail, and coordinate with your accountant to issue the REP for each payment received based on your actual operation. Automatic REP generation is on our roadmap.

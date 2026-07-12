@@ -91,4 +91,52 @@ Flujo y Arquitectura:
 
 ⚠️ **Pendiente de configuración manual (no es código):** falta el SEGUNDO endpoint de webhook en el dashboard de Stripe ("eventos en cuentas conectadas", misma URL, evento `payment_intent.succeeded`) con su secreto en `STRIPE_CONNECT_WEBHOOK_SECRET` — sin esto el dinero cae al vendedor pero Cord nunca marca la cotización pagada.
 
+### Cobros por términos de crédito + Anticipo/Saldo + Cuotas (jul 2026)
+
+Evolución del cobro simple (1 cotización = 1 PaymentIntent) a **cobros por "rebanadas"**.
+Fuente única de la lógica de reparto/fechas: **`src/lib/cobros.ts`**.
+
+- **Gating por términos de crédito:** una cotización a crédito (`net30`/`net60`) NO se puede
+  pagar en línea hasta su fecha de vencimiento (`coalesce(approved_at, created_at) + días del
+  término` — el MISMO cálculo canónico que `getCobranza()`/cron de intereses/recordatorios). A
+  crédito el link muestra "Pedido confirmado con crédito Net 30 — vence el [fecha]" en vez del
+  botón de pago. `contado` es pagable desde la aprobación. Gateado en 4 capas: `q/[token].astro`,
+  `embed/[token].astro`, `pay.astro` (redirect) y `payment-intent.ts` (409 server-side, defensa
+  en profundidad).
+- **Tabla `cotizacion_cobros`** (`tipo`: `total` | `anticipo` | `saldo` | `cuota`): cada fila es
+  una rebanada pagable con su PROPIO PaymentIntent (SPEI: cada cobro conserva su CLABE estable; un
+  **customer POR COBRO** a propósito — la CLABE se asigna por customer). El webhook resuelve el
+  cobro por `metadata.cobro_id`, NUNCA por la columna legacy `cotizaciones.stripe_payment_intent_id`
+  (que queda de solo-lectura). `numero_cuota NOT NULL DEFAULT 0` para que el unique
+  `(cotizacion_id, tipo, numero_cuota)` aplique de verdad. RLS: acceso por `org_id` O `public_token`
+  (como `cotizacion_items`) + FORCE.
+- **Anticipo:** `cotizaciones.anticipo_pct` (1–99, null = sin anticipo) + `orgs.anticipo_default_pct`
+  (default del negocio que pre-llena el editor, guardado vía `/api/org`). Al aprobar (cliente en /q
+  o vendedor en PATCH) se materializan anticipo (pagable ya) + saldo (vence según términos) en UNA
+  transacción (`materializeAnticipoCobros`). Montos por RESTA de centavos (`splitAnticipo`/
+  `splitCuotas`) — jamás redondear ambos lados. El link público muestra desde el primer render el
+  desglose "total X · hoy pagas Y de anticipo" (QuoteCard lo SINTETIZA desde `anticipo_pct` antes de
+  que existan los cobros reales).
+- **`payment-intent.ts` cobro-based:** crea la fila `total` de forma perezosa para el pago simple,
+  reutiliza el PI POR COBRO, gatea por `vence`, y si el total cambió sin pagos regenera los cobros
+  (cancelando ANTES sus PIs en Stripe; si uno no se puede cancelar, ABORTA — mejor desglose viejo
+  que pago huérfano).
+- **Webhook `markQuotePaid` por-cobro:** marca el cobro pagado (acepta también `cancelado` — un SPEI
+  en vuelo puede liquidarse tras un pago manual o un plan que lo reemplazó; el dinero llegó y se
+  registra), y hace el flip a `paid` con un UPDATE atómico idempotente (`NOT EXISTS pendiente`). El
+  pago PARCIAL ya NO dispara `quote.paid` a las integraciones (evento informativo). Cobro inexistente
+  → evento de conciliación + audit, sin flip.
+- **Cobranza IA v2** (`cron/cobranza.ts` + `ar-agent.ts`): due-date canónico (antes usaba
+  `c.vigencia`, la validez de la cotización), 3 días de gracia, saldo real = total − cobros pagados,
+  link de pago determinista en el correo. Escalación a 15+ días: `propose_payment_plan` con
+  validación server-side (cuotas 2-3, suma ≈ saldo ±1%, sin plan duplicado) materializa cuotas REALES
+  pagables (cancela el saldo pendiente y sus PIs). El agente ahora es un loop de 2 turnos (tool_result
+  real). Guards: `ai_cobranza_activa` + `sandbox_of IS NULL` + `demo-user` + CRON_SECRET; sigue SIN
+  agendar en vercel.json (disparo manual).
+
+⚠️ **Regla de dinero permanente (jul 2026):** el driver de Neon devuelve columnas `date` como
+OBJETO Date. Comparar `String(v).slice(0,10)` da `"Sun Jul 12"` → lexicográficamente SIEMPRE mayor
+que un ISO → bloquea todo pago. Usar SIEMPRE el helper **`venceDia()`** de `cobros.ts` (getFullYear/
+getMonth/getDate) para comparar/mostrar fechas `date` leídas de la BD.
+
 ---

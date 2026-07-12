@@ -8,6 +8,80 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Cobros por términos de crédito + Anticipo/Saldo + Cobranza IA con link de pago (jul 2026)** —
+   feature de 3 piezas pedido por André ("pagar solo tiene sentido al contado… que la cotización
+   pueda cobrar el anticipo y luego el otro %… y al vencer el crédito el agente de cobranza mande
+   el link de pago"). Diseño validado por el agente billing-fiscal-specialist antes de codificar.
+   • **Gating por términos:** una cotización Net 30/60 aprobada YA NO muestra el botón de pago —
+     el cliente ve "Pedido confirmado con crédito Net 30 — vence el [fecha]" y el pago se habilita
+     al llegar la fecha (cálculo canónico `coalesce(approved_at, created_at) + días del término`,
+     el mismo de getCobranza/intereses/recordatorios). Gateado en 4 capas: `q/[token].astro`,
+     `embed/[token].astro`, `pay.astro` (redirect) y `payment-intent.ts` (409 server-side).
+     `getCotizacionByToken` expone `pagoDisponible`/`saldoVence`/`cobros`/`anticipoPct`.
+   • **Tabla nueva `cotizacion_cobros`** (anticipo | saldo | cuota | total): cada cotización se
+     cobra en "rebanadas", cada una con su PROPIO PaymentIntent (SPEI conserva su CLABE estable
+     por cobro; un customer POR COBRO a propósito — la CLABE se asigna por customer). RLS con
+     acceso por `org_id` O `public_token` (como `cotizacion_items`) + FORCE. `numero_cuota NOT
+     NULL DEFAULT 0` para que el unique `(cotizacion_id, tipo, numero_cuota)` aplique de verdad
+     (NULLs serían distintos entre sí). Columnas nuevas: `cotizaciones.anticipo_pct`,
+     `orgs.anticipo_default_pct`. La columna legacy `cotizaciones.stripe_payment_intent_id` queda
+     de solo-lectura (el webhook resuelve por `metadata.cobro_id`, NUNCA por esa columna).
+   • **Anticipo:** campo "% de anticipo" en el editor (preview en vivo "tu cliente paga $X al
+     aprobar y $Y según términos") + default en Ajustes › Cotizaciones (`anticipo_default_pct`,
+     agregado a PATCH /api/org por la regla de guardado). Al aprobar (ambas rutas: cliente en /q
+     y vendedor en PATCH) se materializan anticipo (pagable ya) + saldo (vence según términos) en
+     UNA transacción (dos inserts sueltos podían dejar solo el anticipo → flip prematuro a paid).
+     Montos por RESTA de centavos (`splitAnticipo`/`splitCuotas` en `src/lib/cobros.ts`) — jamás
+     redondear ambos lados. `payment-intent.ts` reescrito cobro-based: fila 'total' perezosa para
+     el pago simple, PI reutilizable POR COBRO, gate por `vence`, regeneración si el total cambió
+     sin pagos (cancelando ANTES los PIs en Stripe; si uno no se puede cancelar se ABORTA — mejor
+     desglose viejo que pago huérfano).
+   • **Webhook (`markQuotePaid`) por-cobro:** marca el cobro pagado (acepta también 'cancelado' —
+     un SPEI en vuelo puede liquidarse tras un pago manual o un plan que lo reemplazó; el dinero
+     llegó y SE REGISTRA, incluso si la cotización ya está 'paid'), cancela pendientes si lo
+     pagado cubre el total, y hace el flip a 'paid' con un UPDATE atómico idempotente (`NOT
+     EXISTS pendiente`) — el pago PARCIAL ya NO dispara `quote.paid` a las integraciones (sería
+     mentirles); dispara evento informativo. Cobro inexistente → evento de conciliación + audit,
+     sin flip. El pago manual del vendedor y el plan de cuotas cancelan sus PIs en Stripe
+     (best-effort) para que una pestaña de checkout abierta no sobre-cobre.
+   • **Cobranza IA v2:** el cron usaba `c.vigencia` (validez de la cotización, NO la fecha de
+     pago) → corregido al cálculo canónico; status ampliado a `approved+invoiced` con 3 días de
+     gracia; saldo REAL = total − cobros pagados; TODO correo lleva el link de pago determinista
+     (botón "Pagar $X en línea" con el monto del cobro exigible, no del saldo total; sin cobro
+     online activo el botón dice "Ver cotización y opciones de pago" → /q). Escalación a los 15+
+     días: `propose_payment_plan` con validación SERVER-SIDE (cuotas 2-3, suma ≈ saldo ±1%, sin
+     plan duplicado) materializa cuotas REALES pagables (cancela el saldo pendiente y sus PIs);
+     `ar-agent.ts` ahora es un loop de 2 turnos (tool_result real de vuelta al modelo — adiós al
+     "[Sistema:…]" sintético). Cliente al corriente de su plan NO recibe cobranza. Guards
+     intactos: `ai_cobranza_activa` + `sandbox_of IS NULL` + `demo-user` + CRON_SECRET; sigue
+     SIN agendar en vercel.json (disparo manual, decisión de André).
+   • **3 bugs reportados por André en su prueba real, corregidos y verificados:** (1) ⚠️ REGLA
+     NUEVA — el driver de Neon devuelve columnas `date` como OBJETO Date; `String(v).slice(0,10)`
+     da "Sun Jul 12" que comparado lexicográficamente contra un ISO siempre es mayor → TODO pago
+     quedaba "no disponible" (409) y /pay caía en redirect-loop ("solo recargaba la página").
+     Helper `venceDia()` en `cobros.ts` (getFullYear/getMonth/getDate — NO toISOString, que puede
+     correrse un día según TZ) usado en payment-intent/pay/queries. SIEMPRE usar `venceDia` para
+     comparar fechas `date` leídas de la BD. (2) El sello de firma salía SIN formato al aprobar
+     en vivo hasta recargar: el JS inyectaba innerHTML sin `data-astro-cid` → los estilos scoped
+     no aplicaban (regla conocida). El JS ahora inyecta el MISMO markup `.ql-audit-stamp` del
+     server (con escape XSS) y sus estilos viven en `<style is:global>` prefijados `.q-card`.
+     (3) Con anticipo, el link mostraba el TOTAL como "a pagar" hasta recargar (los cobros se
+     materializan al aprobar, DESPUÉS del render): QuoteCard ahora SINTETIZA el preview
+     anticipo+saldo desde `anticipo_pct` (mismo `splitAnticipo`, mismo `q.total` de BD) → desde
+     el primer render se ve la píldora bajo el total ("Hoy pagas $X de anticipo (N%) · Saldo: $Y
+     — vence el [fecha]"), el desglose "Plan de pago" y el botón con el monto del anticipo,
+     también inmediatamente tras la aprobación EN VIVO sin recargar.
+   • Verificado: migración corrida en Neon, `npm run build` limpio, lógica de gating replicada
+     contra las filas reales de la BD (Date objects), Playwright contra dev server (sello
+     inyectado recibe estilos; /pay renderiza "Anticipo a pagar $506.50 · del total de $1,013.00";
+     net30 redirige a /q; captura visual del link completo). Auditoría de correctness
+     (code-correctness-reviewer) encontró 4 bugs de dinero pre-release (pagos huérfanos,
+     materialización no atómica, botón muerto con cuotas futuras, monto equivocado en el correo)
+     — todos corregidos antes de entregar.
+   ⚠️ Sigue pendiente (config manual, ya documentado): el 2º endpoint de webhook de Stripe
+     ("eventos en cuentas conectadas") con `STRIPE_CONNECT_WEBHOOK_SECRET` — sin él el dinero
+     cae al vendedor pero Cord no marca los cobros pagados.
+
 ✅ **Editor de cotizaciones + detalle: pasada de intuitividad y funcionalidad (jul 2026)** —
    André pidió que crear una cotización fuera "super intuitivo" y reportó que en el modal de
    "Crear nuevo cliente" (que él mismo agregó al editor) las letras chicas de ayuda no se veían

@@ -1,18 +1,17 @@
 ---
-// OnboardingWidget — guía de configuración interactiva (Fase 3).
+// OnboardingWidget — guía de configuración interactiva, estilo Stripe.
 //
 // • Tarjeta FLOTANTE tipo acordeón, fijada abajo-derecha (estado por defecto).
+// • Estructura ANIDADA: SECCIONES (grupos) → SUB-PASOS. Cada grupo muestra su
+//   propio sub-progreso (ej. 2/3) y se expande para revelar sus pasos. Un grupo
+//   se marca completo cuando todos sus sub-pasos lo están. Mismo patrón que el
+//   checklist de onboarding de Stripe ("varios mini puntos dentro de un punto").
 // • Estado MINIMIZADO → píldora anidada en la topbar (#onbPill, vive en AppLayout)
 //   con anillo de progreso SVG radial.
 // • Los pasos se AUTO-MARCAN como completados al detectar cambios en la BD
 //   (polling a /api/onboarding/progress + refresco al volver a la pestaña).
-// • Estado GLOBAL persistente entre páginas: como Astro no usa React, el
-//   equivalente de Zustand/Context es un store vanilla en `window.__cordOnb`
+// • Estado GLOBAL persistente entre páginas: store vanilla en `window.__cordOnb`
 //   respaldado por localStorage + un CustomEvent para sincronizar la UI.
-//
-// El server resuelve el avance inicial (getSetupProgress) y lo pasa por props;
-// el script lo refresca en vivo. Si la cuenta ya está 100% configurada, AppLayout
-// no monta este componente.
 
 import type { getSetupProgress } from '../../lib/queries';
 
@@ -21,9 +20,18 @@ interface Props {
 }
 const { progress } = Astro.props;
 
-// Primer paso pendiente abierto por defecto (acordeón).
-const firstOpen = progress.tasks.find((t) => !t.done)?.id ?? '';
+// Primer grupo incompleto abierto por defecto (acordeón).
+const firstOpen = progress.groups.find((g) => !g.done)?.id ?? '';
 const dash = (pct: number) => `${(pct * 0.9739).toFixed(2)} 100`;
+
+// Íconos duotone (Glass Duotone, Regla 9) por grupo — trazo currentColor + relleno sutil.
+const ICONS: Record<string, string> = {
+    store:  '<path d="M3 9.5 4.6 4.5A1.5 1.5 0 0 1 6 3.5h12a1.5 1.5 0 0 1 1.4 1L21 9.5" fill="currentColor" fill-opacity="0.12"/><path d="M3 9.5h18v9.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" fill="currentColor" fill-opacity="0.12"/><path d="M3 9.5 4.6 4.5A1.5 1.5 0 0 1 6 3.5h12a1.5 1.5 0 0 1 1.4 1L21 9.5m0 0v9.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5m0 0h18M8 9.5a2 2 0 1 1-4 0m8 0a2 2 0 1 1-4 0m8 0a2 2 0 1 1-4 0m8 0a2 2 0 1 1-4 0"/>',
+    box:    '<path d="M12 3 3.5 7.5v9L12 21l8.5-4.5v-9z" fill="currentColor" fill-opacity="0.12"/><path d="M12 3 3.5 7.5v9L12 21l8.5-4.5v-9L12 3zM3.5 7.5 12 12m0 0 8.5-4.5M12 12v9"/>',
+    send:   '<path d="M21 3 3 10.5l7 2.5 2.5 7z" fill="currentColor" fill-opacity="0.12"/><path d="M21 3 3 10.5l7 2.5m11-10L10.5 13.5m10.5-10.5-2.5 18-6-6.5"/>',
+    wallet: '<rect x="3" y="6" width="18" height="13" rx="2.5" fill="currentColor" fill-opacity="0.12"/><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6H18a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H5.5A2.5 2.5 0 0 1 3 16.5z"/><path d="M16.5 12.5h.01M15 10.5h5a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-5a2 2 0 0 1 0-4z" fill="currentColor" fill-opacity="0.2"/>',
+    users:  '<circle cx="9" cy="8" r="3.2" fill="currentColor" fill-opacity="0.14"/><path d="M9 11.2A3.2 3.2 0 1 0 9 4.8a3.2 3.2 0 0 0 0 6.4zM3.5 19.5a5.5 5.5 0 0 1 11 0M16.5 5.2a3 3 0 0 1 0 5.8M17.5 14.4a5.2 5.2 0 0 1 3 5.1"/>',
+};
 ---
 
 <aside class="onb" id="onbCard" aria-label="Guía de configuración">
@@ -45,20 +53,39 @@ const dash = (pct: number) => `${(pct * 0.9739).toFixed(2)} 100`;
             </button>
         </header>
 
-        <div class="onb-steps" id="onbSteps">
-            {progress.tasks.map((t) => (
-                <div class="onb-step" data-id={t.id} data-done={t.done ? 'true' : 'false'} data-open={t.id === firstOpen ? 'true' : 'false'}>
-                    <button class="onb-step-head" type="button" data-toggle>
-                        <span class="onb-check" aria-hidden="true">
-                            <svg class="onb-check-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <div class="onb-groups" id="onbGroups">
+            {progress.groups.map((g) => (
+                <div class="onb-group" data-group={g.id} data-done={g.done ? 'true' : 'false'} data-open={g.id === firstOpen ? 'true' : 'false'}>
+                    <button class="onb-group-head" type="button" data-toggle>
+                        <span class="onb-gicon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS[g.icon]} />
+                            <span class="onb-gcheck" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            </span>
                         </span>
-                        <span class="onb-step-title">{t.label}</span>
+                        <span class="onb-group-text">
+                            <span class="onb-group-title">{g.label}</span>
+                            <span class="onb-group-sub" data-gsub>{g.doneN}/{g.total} completados</span>
+                        </span>
+                        <span class="onb-gcount" data-gcount aria-hidden="true">
+                            {g.tasks.map((t) => <i class="onb-dot" data-dot={t.id} data-done={t.done ? 'true' : 'false'}></i>)}
+                        </span>
                         <svg class="onb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                     </button>
-                    <div class="onb-step-body">
-                        <div class="onb-step-inner">
-                            <p>{t.desc}</p>
-                            <a href={t.href} class="onb-step-cta">Configurar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></a>
+                    <div class="onb-group-body">
+                        <div class="onb-group-inner">
+                            {g.tasks.map((t) => (
+                                <div class="onb-step" data-id={t.id} data-done={t.done ? 'true' : 'false'}>
+                                    <span class="onb-check" aria-hidden="true">
+                                        <svg class="onb-check-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    </span>
+                                    <div class="onb-step-main">
+                                        <span class="onb-step-title">{t.label}</span>
+                                        <p class="onb-step-desc">{t.desc}</p>
+                                        <a href={t.href} class="onb-step-cta">Configurar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></a>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -80,8 +107,6 @@ const dash = (pct: number) => `${(pct * 0.9739).toFixed(2)} 100`;
         const LS_KEY = 'cord.onb.v1';
 
         // ── Store global (equivalente vanilla de Zustand/Context) ──
-        // Estado compartido por toda la app, persistido en localStorage para que
-        // sobreviva a la navegación SSR (cada página es una recarga completa).
         const store = (window.__cordOnb = window.__cordOnb || (() => {
             let saved = {};
             try { saved = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch {}
@@ -99,10 +124,8 @@ const dash = (pct: number) => `${(pct * 0.9739).toFixed(2)} 100`;
         const pill = document.getElementById('onbPill');   // vive en la topbar (AppLayout)
         if (!card) return;
 
-        // ?guia=1 → forzar que se vuelva a mostrar (resetea minimizado/descartado).
         if (new URLSearchParams(location.search).has('guia')) store.set({ view: 'card', dismissed: false });
 
-        // ── Render según el store ──
         function applyView(s) {
             if (s.dismissed) { card.classList.remove('show'); pill && (pill.hidden = true); return; }
             const asPill = s.view === 'pill';
@@ -110,20 +133,18 @@ const dash = (pct: number) => `${(pct * 0.9739).toFixed(2)} 100`;
             if (pill) pill.hidden = !asPill;
         }
         store.subscribe(applyView);
-        // Pequeño delay para la animación de entrada de la tarjeta.
         requestAnimationFrame(() => applyView(store.get()));
 
-        // ── Controles de vista ──
         document.getElementById('onbMin')?.addEventListener('click', () => store.set({ view: 'pill' }));
         pill?.addEventListener('click', () => store.set({ view: 'card' }));
 
-        // ── Acordeón (uno abierto a la vez) ──
+        // ── Acordeón de grupos (uno abierto a la vez) ──
         card.querySelectorAll('[data-toggle]').forEach((btn) => {
             btn.addEventListener('click', () => {
-                const step = btn.closest('.onb-step');
-                const open = step.getAttribute('data-open') === 'true';
-                card.querySelectorAll('.onb-step').forEach((s) => s.setAttribute('data-open', 'false'));
-                step.setAttribute('data-open', open ? 'false' : 'true');
+                const group = btn.closest('.onb-group');
+                const open = group.getAttribute('data-open') === 'true';
+                card.querySelectorAll('.onb-group').forEach((g) => g.setAttribute('data-open', 'false'));
+                group.setAttribute('data-open', open ? 'false' : 'true');
             });
         });
 
@@ -144,45 +165,64 @@ const dash = (pct: number) => `${(pct * 0.9739).toFixed(2)} 100`;
             }
         }
 
-        // ── Aplica un avance (marca pasos done con animación) ──
+        // ── Aplica un avance (marca sub-pasos + recalcula grupos) ──
         let done = false;
         function applyProgress(p) {
             if (!p || !Array.isArray(p.tasks)) return;
+            // 1) Sub-pasos individuales (con animación de flash al completarse).
             p.tasks.forEach((t) => {
                 const el = card.querySelector(`.onb-step[data-id="${t.id}"]`);
-                if (!el) return;
-                const was = el.getAttribute('data-done') === 'true';
-                if (t.done && !was) {
-                    el.setAttribute('data-done', 'true');
-                    el.setAttribute('data-open', 'false');
-                    el.classList.add('just-done');
-                    setTimeout(() => el.classList.remove('just-done'), 900);
-                } else if (!t.done && was) {
-                    el.setAttribute('data-done', 'false');
+                if (el) {
+                    const was = el.getAttribute('data-done') === 'true';
+                    if (t.done && !was) {
+                        el.setAttribute('data-done', 'true');
+                        el.classList.add('just-done');
+                        setTimeout(() => el.classList.remove('just-done'), 900);
+                    } else if (!t.done && was) {
+                        el.setAttribute('data-done', 'false');
+                    }
+                }
+                const dot = card.querySelector(`.onb-dot[data-dot="${t.id}"]`);
+                if (dot) dot.setAttribute('data-done', t.done ? 'true' : 'false');
+            });
+            // 2) Estado de cada grupo (desde p.groups o recalculado de los pasos).
+            const groups = Array.isArray(p.groups) ? p.groups : null;
+            card.querySelectorAll('.onb-group').forEach((gEl) => {
+                const gid = gEl.getAttribute('data-group');
+                let doneN = 0, total = 0, wasDone = gEl.getAttribute('data-done') === 'true';
+                if (groups) {
+                    const g = groups.find((x) => x.id === gid);
+                    if (g) { doneN = g.doneN; total = g.total; }
+                } else {
+                    const steps = gEl.querySelectorAll('.onb-step');
+                    total = steps.length;
+                    doneN = gEl.querySelectorAll('.onb-step[data-done="true"]').length;
+                }
+                const isDone = total > 0 && doneN === total;
+                gEl.setAttribute('data-done', isDone ? 'true' : 'false');
+                const sub = gEl.querySelector('[data-gsub]');
+                if (sub) sub.textContent = `${doneN}/${total} completados`;
+                // Al completar un grupo, se colapsa y abre el siguiente pendiente.
+                if (isDone && !wasDone && gEl.getAttribute('data-open') === 'true') {
+                    gEl.setAttribute('data-open', 'false');
+                    const next = card.querySelector('.onb-group[data-done="false"]');
+                    if (next) next.setAttribute('data-open', 'true');
                 }
             });
             paintProgress(p);
-            if (p.complete && !done) {
-                done = true;
-                celebrate();
-            }
+            if (p.complete && !done) { done = true; celebrate(); }
         }
 
-        // ── Celebración + auto-descartar al completar ──
         function celebrate() {
-            const steps = document.getElementById('onbSteps');
+            const groups = document.getElementById('onbGroups');
             const doneCard = document.getElementById('onbDone');
-            // Si está minimizado, lo abrimos un momento para mostrar el cierre.
             if (store.get().view === 'pill') store.set({ view: 'card' });
-            if (steps) steps.style.display = 'none';
+            if (groups) groups.style.display = 'none';
             if (doneCard) doneCard.hidden = false;
             setTimeout(() => store.set({ dismissed: true }), 2800);
         }
 
         // ── Detección de cambios en la BD ──
-        // Polling ligero + refresco al volver a la pestaña: si el usuario crea un
-        // producto, sube su logo, etc. (aquí o en otra pestaña), el paso se marca
-        // solo sin recargar.
         let busy = false;
         async function refresh() {
             if (busy || done) return;
@@ -201,10 +241,10 @@ const dash = (pct: number) => `${(pct * 0.9739).toFixed(2)} 100`;
 </script>
 
 <style>
-    /* ════════ Tarjeta flotante (acordeón) ════════ */
+    /* ════════ Tarjeta flotante (acordeón de grupos) ════════ */
     .onb {
         position: fixed; right: 24px; bottom: 24px; z-index: 120;
-        width: 340px; max-width: calc(100vw - 32px);
+        width: 356px; max-width: calc(100vw - 32px);
         opacity: 0; transform: translateY(16px) scale(0.98);
         pointer-events: none;
         transition: opacity 0.4s var(--ease-spring), transform 0.4s var(--ease-spring);
@@ -212,7 +252,7 @@ const dash = (pct: number) => `${(pct * 0.9739).toFixed(2)} 100`;
     .onb.show { opacity: 1; transform: none; pointer-events: auto; }
 
     .onb-card {
-        background: #fff; border: 1px solid var(--color-border); border-radius: 18px;
+        background: #fff; border: 1px solid var(--color-border); border-radius: 20px;
         box-shadow: 0 30px 70px -28px rgba(10,25,47,0.5), 0 4px 14px -8px rgba(10,25,47,0.25);
         overflow: hidden;
     }
@@ -220,7 +260,7 @@ const dash = (pct: number) => `${(pct * 0.9739).toFixed(2)} 100`;
     .onb-head {
         display: flex; align-items: center; gap: 12px;
         padding: 16px 16px 14px;
-        background: linear-gradient(180deg, #0c1d37 0%, #0a192f 100%);
+        background: var(--color-blue-deep);
         color: #fff;
     }
     .onb-ring { position: relative; width: 44px; height: 44px; flex-shrink: 0; }
@@ -240,46 +280,88 @@ const dash = (pct: number) => `${(pct * 0.9739).toFixed(2)} 100`;
     .onb-min svg { width: 16px; height: 16px; }
     .onb-min:hover { background: rgba(255,255,255,0.16); color: #fff; }
 
-    /* ── Pasos (acordeón) ── */
-    .onb-steps { padding: 6px 8px 8px; max-height: min(56vh, 420px); overflow-y: auto; }
-    .onb-step { border-radius: 11px; transition: background 0.25s var(--ease-ios); }
-    .onb-step[data-open="true"] { background: var(--color-bg-soft); }
-    .onb-step.just-done { animation: onb-flash 0.9s var(--ease-ios); }
-    @keyframes onb-flash { 0%, 100% { background: var(--color-bg-soft); } 30% { background: rgba(16,185,129,0.14); } }
+    /* ── Grupos (secciones colapsables) ── */
+    .onb-groups { padding: 8px; max-height: min(62vh, 480px); overflow-y: auto; }
+    .onb-group { border-radius: 13px; transition: background 0.25s var(--ease-ios); }
+    .onb-group + .onb-group { margin-top: 2px; }
+    .onb-group[data-open="true"] { background: var(--color-bg-soft); }
 
-    .onb-step-head {
+    .onb-group-head {
         display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
-        padding: 11px 10px; border: none; background: none; cursor: pointer;
+        padding: 11px 11px; border: none; background: none; cursor: pointer;
         font-family: var(--font-sans); color: var(--color-text);
     }
+    /* Ícono squircle duotone del grupo (Regla 9) — se vuelve check verde al completar */
+    .onb-gicon {
+        position: relative; width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(10,25,47,0.05); color: var(--color-blue-deep);
+        transition: background 0.35s var(--ease-spring), color 0.35s var(--ease-spring);
+    }
+    .onb-gicon > svg { width: 19px; height: 19px; transition: opacity 0.3s, transform 0.3s var(--ease-spring); }
+    .onb-gcheck {
+        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        opacity: 0; transform: scale(0.5); transition: opacity 0.3s, transform 0.3s var(--ease-spring); color: #fff;
+    }
+    .onb-gcheck svg { width: 16px; height: 16px; }
+    .onb-group[data-done="true"] .onb-gicon { background: var(--color-ok); color: #fff; }
+    .onb-group[data-done="true"] .onb-gicon > svg { opacity: 0; transform: scale(0.5); }
+    .onb-group[data-done="true"] .onb-gcheck { opacity: 1; transform: scale(1); }
+
+    .onb-group-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .onb-group-title { font-size: 0.88rem; font-weight: 650; letter-spacing: -0.2px; }
+    .onb-group[data-done="true"] .onb-group-title { color: var(--color-text-muted); }
+    .onb-group-sub { font-size: 0.7rem; color: var(--color-text-muted); font-weight: 500; }
+    .onb-group[data-done="true"] .onb-group-sub { color: var(--color-ok); }
+
+    /* Micro-progreso: puntitos por sub-paso (verde = hecho) */
+    .onb-gcount { display: flex; gap: 3px; flex-shrink: 0; }
+    .onb-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(10,25,47,0.16); transition: background 0.35s var(--ease-spring); }
+    .onb-dot[data-done="true"] { background: var(--color-ok); }
+    .onb-group[data-open="true"] .onb-gcount { display: none; }
+
+    .onb-chev { width: 15px; height: 15px; color: #b3bac4; flex-shrink: 0; transition: transform 0.3s var(--ease-spring); }
+    .onb-group[data-open="true"] .onb-chev { transform: rotate(180deg); }
+
+    /* Cuerpo del grupo (grid 0fr→1fr, sin medir alturas) */
+    .onb-group-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.34s var(--ease-spring); }
+    .onb-group[data-open="true"] .onb-group-body { grid-template-rows: 1fr; }
+    .onb-group-inner { overflow: hidden; padding: 0 6px; }
+    .onb-group[data-open="true"] .onb-group-inner { padding-bottom: 6px; }
+
+    /* ── Sub-pasos ── */
+    .onb-step {
+        display: flex; align-items: flex-start; gap: 10px;
+        padding: 9px 9px 9px 6px; border-radius: 10px;
+        transition: background 0.25s var(--ease-ios);
+    }
+    .onb-step + .onb-step { border-top: 1px solid rgba(10,25,47,0.05); }
+    .onb-step.just-done { animation: onb-flash 0.9s var(--ease-ios); }
+    @keyframes onb-flash { 0%, 100% { background: transparent; } 30% { background: rgba(16,185,129,0.14); } }
+
     .onb-check {
-        width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+        width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
         display: flex; align-items: center; justify-content: center;
         background: #fff; border: 1.5px solid var(--color-border); color: #fff;
         transition: background 0.3s var(--ease-spring), border-color 0.3s var(--ease-spring);
     }
-    .onb-check-tick { width: 12px; height: 12px; opacity: 0; transform: scale(0.5); transition: opacity 0.3s, transform 0.3s var(--ease-spring); }
+    .onb-check-tick { width: 11px; height: 11px; opacity: 0; transform: scale(0.5); transition: opacity 0.3s, transform 0.3s var(--ease-spring); }
     .onb-step[data-done="true"] .onb-check { background: var(--color-ok); border-color: var(--color-ok); }
     .onb-step[data-done="true"] .onb-check-tick { opacity: 1; transform: scale(1); }
-    .onb-step-title { flex: 1; min-width: 0; font-size: 0.86rem; font-weight: 600; }
-    .onb-step[data-done="true"] .onb-step-title { color: var(--color-text-muted); text-decoration: line-through; text-decoration-color: rgba(91,100,114,0.4); }
-    .onb-chev { width: 15px; height: 15px; color: #b3bac4; flex-shrink: 0; transition: transform 0.3s var(--ease-spring); }
-    .onb-step[data-open="true"] .onb-chev { transform: rotate(180deg); }
-    .onb-step[data-done="true"] .onb-chev { display: none; }
 
-    /* Cuerpo expandible (grid 0fr→1fr, sin medir alturas) */
-    .onb-step-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.32s var(--ease-spring); }
-    .onb-step[data-open="true"] .onb-step-body { grid-template-rows: 1fr; }
-    .onb-step-inner { overflow: hidden; padding: 0 10px 2px 43px; }
-    .onb-step[data-open="true"] .onb-step-inner { padding-bottom: 12px; }
-    .onb-step-body p { font-size: 0.78rem; line-height: 1.5; color: var(--color-text-muted); margin: 0 0 10px; }
+    .onb-step-main { flex: 1; min-width: 0; }
+    .onb-step-title { display: block; font-size: 0.82rem; font-weight: 600; color: var(--color-text); }
+    .onb-step[data-done="true"] .onb-step-title { color: var(--color-text-muted); text-decoration: line-through; text-decoration-color: rgba(91,100,114,0.4); }
+    .onb-step-desc { font-size: 0.75rem; line-height: 1.5; color: var(--color-text-muted); margin: 3px 0 0; }
+    .onb-step[data-done="true"] .onb-step-desc,
+    .onb-step[data-done="true"] .onb-step-cta { display: none; }
     .onb-step-cta {
-        display: inline-flex; align-items: center; gap: 5px;
-        font-size: 0.78rem; font-weight: 600; color: #fff; text-decoration: none;
-        background: var(--color-blue-deep); padding: 7px 13px; border-radius: 8px;
+        display: inline-flex; align-items: center; gap: 5px; margin-top: 9px;
+        font-size: 0.76rem; font-weight: 600; color: #fff; text-decoration: none;
+        background: var(--color-blue-deep); padding: 6px 12px; border-radius: 8px;
         transition: transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-spring);
     }
-    .onb-step-cta svg { width: 13px; height: 13px; }
+    .onb-step-cta svg { width: 12px; height: 12px; }
     .onb-step-cta:hover { transform: translateY(-1px); box-shadow: 0 7px 18px -8px rgba(10,25,47,0.5); }
 
     /* ── Estado completado ── */
@@ -296,11 +378,10 @@ const dash = (pct: number) => `${(pct * 0.9739).toFixed(2)} 100`;
     .onb-done p { font-size: 0.82rem; color: var(--color-text-muted); margin: 4px 0 0; }
 
     @media (max-width: 880px) {
-        /* Sobre la tab bar inferior móvil */
         .onb { right: 12px; bottom: calc(64px + env(safe-area-inset-bottom)); width: calc(100vw - 24px); }
     }
     @media (prefers-reduced-motion: reduce) {
-        .onb, .onb-step-body, .onb-ring-fg, .onb-check, .onb-check-tick, .onb-chev { transition: none; }
+        .onb, .onb-group-body, .onb-ring-fg, .onb-check, .onb-check-tick, .onb-chev, .onb-gicon, .onb-gcheck, .onb-dot { transition: none; }
         .onb.show { opacity: 1; transform: none; }
     }
 </style>

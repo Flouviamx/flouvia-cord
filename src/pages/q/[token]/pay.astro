@@ -3,7 +3,7 @@ export const prerender = false;
 import Layout from '../../../layouts/Layout.astro';
 import PaymentIsland from '../../../components/q/PaymentIsland';
 import { sql } from '../../../lib/db';
-import { materializeAnticipoCobros } from '../../../lib/cobros';
+import { materializeAnticipoCobros, venceDia } from '../../../lib/cobros';
 
 const token = Astro.params.token ?? '';
 const rows = await sql`
@@ -51,7 +51,7 @@ if (!cobros.length && Number(q.anticipo_pct) > 0 && Number(q.anticipo_pct) < 100
 }
 const hoyISO = new Date().toISOString().slice(0, 10);
 const pendientes = cobros.filter((co: any) => co.status === 'pendiente');
-const nextCobro = pendientes.find((co: any) => !co.vence || String(co.vence).slice(0, 10) <= hoyISO) || null;
+const nextCobro = pendientes.find((co: any) => !co.vence || venceDia(co.vence) <= hoyISO) || null;
 
 const DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
 const termDias = DAYS[(q.terminos as string) || 'contado'] ?? 0;

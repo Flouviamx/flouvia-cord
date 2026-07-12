@@ -3,7 +3,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql } from '../../../../lib/db';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
-import { dueDateFor, isoDay, materializeAnticipoCobros } from '../../../../lib/cobros';
+import { dueDateFor, isoDay, venceDia, materializeAnticipoCobros } from '../../../../lib/cobros';
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
@@ -131,12 +131,12 @@ export const POST: APIRoute = async ({ params, request }) => {
     } else {
         const pendientes = cobros.filter((co: any) => co.status === 'pendiente');
         if (!pendientes.length) return json({ alreadyPaid: true });
-        cobro = pendientes.find((co: any) => !co.vence || String(co.vence).slice(0, 10) <= hoyISO) || null;
+        cobro = pendientes.find((co: any) => !co.vence || venceDia(co.vence) <= hoyISO) || null;
         if (!cobro) cobro = pendientes[0]; // el gate de fecha de abajo responde con el 409
     }
     // Gate por fecha de vencimiento (aplica también con cobro explícito).
-    if (cobro.vence && String(cobro.vence).slice(0, 10) > hoyISO) {
-        return json({ error: `Este pago aún no está disponible — se habilita el ${String(cobro.vence).slice(0, 10)}.` }, 409);
+    if (cobro.vence && venceDia(cobro.vence) > hoyISO) {
+        return json({ error: `Este pago aún no está disponible — se habilita el ${venceDia(cobro.vence)}.` }, 409);
     }
 
     const amount = Math.round(Number(cobro.monto) * 100); // centavos

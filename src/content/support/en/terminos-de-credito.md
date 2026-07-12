@@ -1,19 +1,26 @@
 ---
 title: "Add credit terms (Net 30/60)"
-description: "Guide to issuing invoices with trade credit to recurring clients."
+description: "How to sell on trade credit and how payment is collected once the term lapses."
 category: "Quotes"
 order: 3
 ---
 
-Not all transactions are paid upfront. In the corporate B2B environment, providing short-term financing facilities (e.g., Net 30 days) is an industry standard. Cord automates the management of these agreements.
+Not all transactions are paid upfront. In the corporate B2B environment, offering short-term financing (e.g. Net 30) is an industry standard. Cord automates the management of these agreements.
 
-### Configure Payment Terms (Net 30/60/90)
+### Configure payment terms
 
-When creating a quote, in the right sidebar you will see the **Payment Terms** section.
-1. Change the selector from "Upfront (PUE)" to "On Credit (PPD)".
-2. Enter the credit validity (e.g., Net 30, which means 30 calendar days from the invoice issuance).
+When creating a quote, in the right sidebar you'll see the **payment terms**. Choose between:
 
-**What happens under the hood:**
-- The quote will clearly indicate to the buyer their payment deadlines.
-- When the client accepts, the CFDI is stamped with the `PPD` (Payment in Installments) method.
-- Cord's intelligent collection system will schedule the due date and send automatic collection reminder emails on days 25, 29, and 31 to ensure collection without your finance team lifting a finger.
+- **Cash (Contado):** payment can be made immediately as soon as the client approves.
+- **Net 30 / Net 60:** the client has 30 or 60 calendar days from approval to pay.
+
+You can also set default terms per client on their record, so they're preselected automatically.
+
+### What happens with a credit sale
+
+- The public link shows the client their terms and the exact due date.
+- **The online payment button does not appear until the due date arrives.** It makes no sense to ask a client you granted 30-day credit to for money on the same day they approve: while the term runs, they'll see "Order confirmed with Net 30 credit — due on [date]."
+- When the due date arrives, the payment button is automatically enabled in the same link, and —if you have autonomous collections active— the collections agent starts sending reminders with the payment link. See [Automatic AI collections](/en/support/cobranza-automatica).
+
+> [!NOTE]
+> If you also want to ask for a percentage up front (which *is* payable on approval) and the rest on credit, use the **deposit** feature. See [Collect a deposit](/en/support/cobrar-anticipo).

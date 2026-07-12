@@ -1,21 +1,26 @@
 ---
 title: "Facturar anticipos"
-description: "Emite el CFDI de anticipo y su remanente."
+description: "El tratamiento fiscal de cobrar un porcentaje por adelantado y el resto después."
 category: "Facturación y CFDI"
 ---
 
-Facturar proyectos grandes donde cobras un porcentaje por adelantado y el resto a la entrega requiere un manejo especial ante el SAT.
+Cobrar un porcentaje por adelantado y el resto a la entrega es común en proyectos B2B, pero requiere un manejo fiscal cuidadoso ante el SAT.
 
-### Regla Fiscal para Anticipos
+### Regla fiscal para anticipos
 
-Según la guía de llenado del SAT, un anticipo solo existe cuando **no se conoce o no se ha determinado el bien o servicio, o su precio final**. Si ya enviaste una cotización detallada de $100,000 MXN y pides el 50% de entrada, contablemente **no es un anticipo**, es un pago en parcialidades.
+Según la guía de llenado del SAT, un anticipo solo existe cuando **no se conoce o no se ha determinado el bien o servicio, o su precio final**. Si ya enviaste una cotización detallada de $100,000 MXN y pides el 50% de entrada, contablemente **no es un anticipo**: es un pago en parcialidades.
 
-### Cómo cobrar en parcialidades en Cord
+### Cómo lo cobras en Cord
 
-1. Crea tu Cotización por el monto total ($100,000).
-2. En la sección *Pagos y Anticipos*, selecciona **Requerir pago inicial parcial**.
-3. Define el porcentaje (ej. 50%).
-4. Cuando el cliente acepta y paga esos $50,000 con tarjeta, Cord emitirá una Factura por el monto total en método `PPD` (Pago en Parcialidades).
-5. En ese mismo instante, Cord timbrará automáticamente un **Complemento de Recepción de Pagos (REP)** amparando el depósito de los $50,000 iniciales.
+Cord divide el cobro por ti con la función de anticipo (ver [Cobrar un anticipo](/soporte/cobrar-anticipo)):
 
-Cuando llegue la entrega final, solo tienes que entrar a la factura y generar un link de cobro por el saldo restante. Al pagarse, Cord emitirá el segundo y último REP.
+1. Crea tu cotización por el monto total ($100,000).
+2. Define el **% de anticipo** (ej. 50%) en la barra lateral del editor.
+3. Cuando el cliente aprueba, el anticipo ($50,000) queda pagable de inmediato con tarjeta o SPEI, y el saldo se cobra según los términos.
+
+### La parte fiscal la controlas tú
+
+> [!NOTE]
+> Cord se encarga del **cobro** dividido, pero el timbrado de cada parcialidad no es automático. Cord no genera por sí solo el Complemento de Recepción de Pagos (REP) de cada pago.
+
+Para el CFDI, timbra la factura del monto total con el método que corresponda (`PUE` si es de contado, `PPD` si es a crédito o en parcialidades) desde el detalle de la cotización, y coordina con tu contador la emisión del REP de cada pago recibido según tu operación real. La generación automática de REP está en nuestro roadmap.

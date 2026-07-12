@@ -95,6 +95,19 @@ Sin SplitText, sin blur/scale en reveals de contenido.
   `?.` y `??` SÍ son JS válido. Para auditar: extraer cada bloque `is:inline` y correrlo
   por `node --check` (valida sintaxis sin importar referencias). Los `<script>` normales
   (productos/clientes tienen ambos) sí admiten TS — el bug es exclusivo de `is:inline`.
+- ⚠️ **Neon devuelve columnas `date` como OBJETO Date, NO string (jul 2026):** comparar
+  `String(fecha).slice(0,10)` da `"Sun Jul 12 2026"` (formato `toString()` de JS), que
+  comparado lexicográficamente contra un ISO `"2026-07-12"` SIEMPRE resulta mayor → hacía
+  que TODO cobro pareciera "no disponible aún" (409) y la página de pago cayera en un
+  redirect-loop ("solo recargaba la página"). Usar SIEMPRE el helper **`venceDia()`** de
+  `src/lib/cobros.ts` (getFullYear/getMonth/getDate, NO `toISOString` que puede correrse un
+  día según la zona horaria) para comparar/mostrar cualquier fecha `date` leída de la BD.
+- ⚠️ **DOM inyectado por JS necesita estilos en `<style is:global>` (reconfirmado jul 2026):**
+  cuando un `<script>` inyecta HTML en runtime (ej. el sello de firma en `QuoteCard.astro`
+  tras aprobar en vivo), ese DOM NO lleva el atributo `data-astro-cid` → los estilos scoped
+  de Astro no le aplican y sale SIN formato hasta recargar. Los estilos de ese markup deben
+  vivir en `<style is:global>` (prefijados con un contenedor propio para no filtrarse), y el
+  markup inyectado debe ser IDÉNTICO al que renderiza el servidor.
 
 ---
 

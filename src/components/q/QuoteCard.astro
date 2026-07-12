@@ -3,6 +3,7 @@
 // Flujo de aprobación en 3 pasos: revisar → firmar digitalmente → confirmado/pagar.
 // Reutilizado por /q/[token] (página pública) y /embed/[token] (CORD Elements).
 import { money, lineTotal, quoteSubtotal, quoteIva, quoteTotal } from '../../lib/queries';
+import { splitAnticipo } from '../../lib/cobros';
 
 interface Props {
     quote: any;
@@ -35,7 +36,22 @@ const vigenciaTexto = vigenciaVencida ? 'Vigencia expirada'
 
 // Cobros parciales (anticipo/saldo/cuotas) + gating por términos de crédito.
 // q.cobros y q.pagoDisponible vienen de getCotizacionByToken.
-const cobros: any[] = Array.isArray(q.cobros) ? q.cobros : [];
+const cobrosReales: any[] = Array.isArray(q.cobros) ? q.cobros : [];
+// PREVIEW del plan anticipo+saldo ANTES de materializarse (los cobros reales se
+// crean al aprobar): el link muestra desde el inicio "total X · hoy pagas Y", y
+// la aprobación EN VIVO (sin recargar) ya enseña el monto correcto del anticipo.
+const anticipoPct = Number(q.anticipoPct) || 0;
+// q.total = total de BD — el MISMO que usa materializeAnticipoCobros, para que
+// el preview coincida al centavo con los cobros reales que se crean al aprobar.
+const totalNum = Number(q.total) || quoteTotal(q);
+let cobros = cobrosReales;
+if (!cobrosReales.length && anticipoPct >= 1 && anticipoPct <= 99 && q.status !== 'paid' && !yaRechazada) {
+    const { anticipo, saldo } = splitAnticipo(totalNum, anticipoPct);
+    cobros = [
+        { id: '', tipo: 'anticipo', numeroCuota: 0, monto: anticipo, status: 'pendiente', vence: '', venceEnFuturo: false, pagado: false },
+        { id: '', tipo: 'saldo', numeroCuota: 0, monto: saldo, status: 'pendiente', vence: q.saldoVence || '', venceEnFuturo: q.pagoDisponible === false, pagado: false },
+    ];
+}
 const nextCobro = cobros.find((co: any) => co.status === 'pendiente' && !co.venceEnFuturo) || null;
 const cobroTipoLabel = (co: any) =>
     co.tipo === 'anticipo' ? 'Anticipo'
@@ -51,6 +67,20 @@ const esCreditoPendiente = q.pagoDisponible === false && cobros.length === 0 && 
 // o cuota con fecha futura): mostrar cuándo es el siguiente pago.
 const proxCobro = cobros.find((co: any) => co.status === 'pendiente') || null;
 const esperaCobro = cobros.length > 0 && !nextCobro && !!proxCobro;
+
+// Nota bajo el total hero: deja claro que el total es X pero HOY se paga Y.
+const pagadoSum = cobros.filter((co: any) => co.pagado).reduce((s: number, co: any) => s + co.monto, 0);
+const pendSum = cobros.filter((co: any) => co.status === 'pendiente').reduce((s: number, co: any) => s + co.monto, 0);
+let splitNote = '';
+if (cobros.length && q.status !== 'paid') {
+    const ant = cobros.find((co: any) => co.tipo === 'anticipo');
+    const sal = cobros.find((co: any) => co.tipo === 'saldo');
+    if (pagadoSum > 0) {
+        splitNote = `Pagado: ${money(pagadoSum)} · Pendiente: ${money(pendSum)}`;
+    } else if (anticipoPct >= 1 && ant && sal) {
+        splitNote = `${viva ? 'Al aprobar pagas' : 'Hoy pagas'} ${money(ant.monto)} de anticipo (${anticipoPct}%) · Saldo: ${money(sal.monto)}${sal.vence ? ` — vence el ${sal.vence}` : ''}`;
+    }
+}
 
 // Contacto del vendedor
 const vEmail = (ORG.emailContacto ?? '').trim();
@@ -120,6 +150,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
             <span class="q-total-eyebrow">TOTAL A PAGAR</span>
             <span class="editorial q-total-amount" style={`color:${color}`} data-countup={quoteTotal(q)}>{total}</span>
             <span class="q-total-note">MXN · IVA incluido</span>
+            {splitNote && <span class="q-total-split">{splitNote}</span>}
         </div>
     </div>
 
@@ -589,8 +620,16 @@ const hayContacto = !!(vEmail || vWa || vTel);
             const res = await api('approve', { signed_by: signedBy, email, accepted_items: acceptedIds() });
             const stamp = document.getElementById('qSignedStamp');
             if (stamp && signedBy) {
+                // MISMO markup que el render del servidor (.ql-audit-stamp). Sus
+                // estilos viven en <style is:global> porque este DOM se inyecta
+                // en runtime y no lleva data-astro-cid (regla del proyecto).
                 const now = new Date().toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' });
-                stamp.innerHTML = `<strong>Firmante:</strong> ${signedBy} <strong>Sello:</strong> <span class="ql-hash">${res.hash}</span> <strong>Fecha:</strong> ${now}`;
+                const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                stamp.outerHTML = `<div class="ql-audit-stamp">
+                    <div class="ql-audit-row"><strong>Firmante:</strong> ${esc(signedBy)}</div>
+                    <div class="ql-audit-row"><strong>Fecha:</strong> ${esc(now)}</div>
+                    <div class="ql-audit-row"><strong>Sello:</strong> <span class="ql-hash">${esc(String(res.hash ?? ''))}</span></div>
+                </div>`;
             }
             showStep('stepApproved');
             emit('cord:approved', { signed_by: signedBy, hash: res.hash });
@@ -904,6 +943,11 @@ const hayContacto = !!(vEmail || vWa || vTel);
 .q-total-eyebrow { font-size: 0.5rem; font-weight: 800; letter-spacing: 2.5px; color: #d1d5db; }
 .q-total-amount { font-size: clamp(2.5rem, 8vw, 3.4rem); line-height: 1; letter-spacing: -0.04em; }
 .q-total-note { font-size: 0.7rem; font-weight: 500; color: #9ca3af; }
+.q-total-split {
+    display: inline-block; margin-top: 8px; padding: 5px 13px;
+    font-size: 0.76rem; font-weight: 600; color: #0a192f;
+    background: rgba(10,25,47,0.05); border-radius: 999px;
+}
 
 /* ── Items ────────────────────────────────────── */
 .q-items { display: flex; flex-direction: column; }
@@ -1109,16 +1153,9 @@ const hayContacto = !!(vEmail || vWa || vTel);
 }
 .ql-legal-box svg { flex-shrink: 0; margin-top: 1px; }
 
-.ql-audit-stamp {
-    background: #f9fafb; border: 1px dashed rgba(10,25,47,0.15);
-    border-radius: 12px; padding: 12px 14px; text-align: left;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 0.65rem; color: #6b7280; line-height: 1.6;
-    margin-top: 0.5rem; width: 100%; word-break: break-all;
-}
-.ql-audit-row { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; }
-.ql-audit-row strong { color: #374151; font-weight: 600; }
-.ql-hash { color: #059669; font-weight: 600; }
+/* .ql-audit-stamp / .ql-audit-row / .ql-hash viven en <style is:global> (abajo):
+   la firma en vivo los inyecta por JS sin data-astro-cid — con estilos scoped
+   el sello salía SIN formato hasta recargar (bug jul 2026). */
 
 /* ── Elementos Hilos por Línea ───────────────────── */
 .qi-row-wrapper { border-bottom: 1px solid rgba(10,25,47,0.045); }
@@ -1271,4 +1308,17 @@ const hayContacto = !!(vEmail || vWa || vTel);
 .qi-msg.mine { align-self: flex-end; background: #0a192f; color: #fff; border-bottom-right-radius: 4px; }
 .qi-msg.theirs { align-self: flex-start; background: #fff; border: 1px solid rgba(10,25,47,0.08); border-bottom-left-radius: 4px; }
 .qi-msg-time { font-size: 0.55rem; opacity: 0.6; }
+
+/* Sello de firma legal — GLOBAL a propósito: la firma en vivo lo inyecta por JS
+   (sin data-astro-cid) y con estilos scoped salía sin formato hasta recargar. */
+.q-card .ql-audit-stamp {
+    background: #f9fafb; border: 1px dashed rgba(10,25,47,0.15);
+    border-radius: 12px; padding: 12px 14px; text-align: left;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.65rem; color: #6b7280; line-height: 1.6;
+    margin-top: 0.5rem; width: 100%; word-break: break-all;
+}
+.q-card .ql-audit-row { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; }
+.q-card .ql-audit-row strong { color: #374151; font-weight: 600; }
+.q-card .ql-hash { color: #059669; font-weight: 600; }
 </style>

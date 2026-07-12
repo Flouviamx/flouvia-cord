@@ -10,6 +10,7 @@ import { memberCan, type Membership, type PermKey, type PermMap } from './permis
 import { INCLUDED } from './billing';
 import { cached } from './cache';
 import { after } from './after';
+import { venceDia } from './cobros';
 import {
     STATUS_META, IVA, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal,
     type QuoteStatus, type MockItem, type MockEvent, type MockQuote,
@@ -550,7 +551,9 @@ export async function getCotizacionByToken(token: string) {
     // cotizacion_cobros, el link público muestra el desglose y el botón de pago
     // apunta al siguiente cobro pendiente (no al total completo).
     if (cobrosRows.length) {
-        const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+        // ⚠️ Neon devuelve DATE como objeto Date — comparar SIEMPRE vía venceDia
+        // (día 'YYYY-MM-DD'), nunca String(v).slice ni getTime contra medianoche.
+        const hoyDia = venceDia(new Date());
         (quote as any).cobros = cobrosRows.map((co: any) => ({
             id: co.id as string,
             tipo: co.tipo as string,
@@ -558,7 +561,7 @@ export async function getCotizacionByToken(token: string) {
             monto: num(co.monto),
             status: co.status as string,
             vence: co.vence ? fmtDate(co.vence) : '',
-            venceEnFuturo: co.vence ? new Date(co.vence as string).getTime() > hoy.getTime() : false,
+            venceEnFuturo: co.vence ? venceDia(co.vence) > hoyDia : false,
             pagado: co.status === 'pagado',
         }));
     }
@@ -1164,23 +1167,40 @@ export async function getSetupProgress() {
         sql`select count(*)::int as ncobro from cotizaciones where org_id = ${orgId} and status in ('paid','invoiced')`,
         sql`select count(*)::int as nmem from org_members where org_id = ${orgId} and estado in ('activo','invitado')`,
     );
-    // Flujo de aprendizaje (orden = secuencia recomendada; el widget abre el primer
-    // paso pendiente). Más pasos y más específicos para que la gente aprenda a usar
-    // Cord de punta a punta: configurar → cotizar → enviar → cobrar → escalar.
+    // Onboarding tipo Stripe: SECCIONES (grupos) con sub-pasos anidados. Cada
+    // grupo representa una etapa del ciclo (preparar → catálogo → vender → cobrar
+    // → escalar); el widget muestra el sub-progreso de cada grupo y abre el
+    // primero incompleto. `group` etiqueta a qué sección pertenece cada paso.
+    const groupsDef = [
+        { id: 'negocio',  label: 'Prepara tu negocio',      icon: 'store',   desc: 'Deja tu marca y tus datos fiscales listos para verte profesional en cada cotización.' },
+        { id: 'catalogo', label: 'Arma tu catálogo',        icon: 'box',     desc: 'Carga lo que vendes y a quién se lo vendes para cotizar en segundos.' },
+        { id: 'venta',    label: 'Cierra tu primera venta',  icon: 'send',    desc: 'Crea, envía y mira en vivo cómo tu cliente abre y aprueba con firma.' },
+        { id: 'dinero',   label: 'Recibe tu dinero',         icon: 'wallet',  desc: 'Cobra en línea, factura el CFDI y cierra el ciclo completo.' },
+        { id: 'equipo',   label: 'Crece tu operación',       icon: 'users',   desc: 'Suma a tu equipo con permisos por rol cuando estés listo para escalar.' },
+    ] as const;
+
     const tasks = [
-        { id: 'marca',      label: 'Personaliza tu marca',        desc: 'Sube tu logo, elige tu color y agrega tus datos de contacto — aparecen en cada cotización, PDF y en el link de tu cliente.', href: '/app/ajustes/branding',    done: !!(o?.logo_url || o?.email_contacto || o?.telefono) },
-        { id: 'fiscal',     label: 'Completa tus datos fiscales', desc: 'RFC, régimen fiscal y código postal: necesarios para timbrar CFDI 4.0 válidos ante el SAT.', href: '/app/ajustes/fiscal',     done: !!o?.rfc },
-        { id: 'productos',  label: 'Crea tu catálogo',            desc: 'Agrega los productos o servicios que vendes. Puedes importarlos en lote por CSV.', href: '/app/productos',          done: Number(np) > 0 },
-        { id: 'clientes',   label: 'Agrega tus clientes',         desc: 'A quién le cotizas, con sus términos de pago, nivel de precios y límite de crédito.', href: '/app/clientes',           done: Number(nc) > 0 },
-        { id: 'cotizacion', label: 'Crea tu primera cotización',  desc: 'El corazón de Cord — elige un cliente, agrega líneas y guarda. Te toma 2 minutos.', href: '/app/cotizaciones/nueva', done: Number(nq) > 0 },
-        { id: 'enviar',     label: 'Envía tu primera cotización', desc: 'Compártela por link, correo o WhatsApp y mira EN VIVO cuándo tu cliente la abre y la aprueba con firma.', href: '/app/cotizaciones',       done: Number(nsent) > 0 },
-        { id: 'online_cobros', label: 'Activa los cobros en línea', desc: 'Conecta tu cuenta bancaria de forma segura para recibir pagos por tarjeta o SPEI.', href: '/app/ajustes/cobros', done: !!o?.stripe_charges_enabled },
-        { id: 'documento',  label: 'Personaliza tu PDF y portal', desc: 'Elige plantilla de PDF, escribe tu mensaje y condiciones, y ajusta el portal que ve tu cliente. Todo con vista previa.', href: '/app/ajustes/pdf',        done: !!(o?.pdf_mensaje || o?.pdf_condiciones || o?.portal_bienvenida) },
-        { id: 'cobro',      label: 'Cobra y factura',             desc: 'Cobra en línea con Stripe o márcala como pagada, factura el CFDI 4.0 y cierra el ciclo de venta en Cobranza.', href: '/app/cobranza',           done: Number(ncobro) > 0 },
-        { id: 'equipo',     label: 'Invita a tu equipo',          desc: 'Suma vendedores y define permisos por rol (cotizar, aprobar, cobranza…) para trabajar en conjunto.', href: '/app/ajustes/equipo',     done: Number(nmem) > 1 },
+        { group: 'negocio',  id: 'marca',         label: 'Personaliza tu marca',        desc: 'Sube tu logo, elige tu color y agrega tus datos de contacto — aparecen en cada cotización, PDF y en el link de tu cliente.', href: '/app/ajustes/branding',    done: !!(o?.logo_url || o?.email_contacto || o?.telefono) },
+        { group: 'negocio',  id: 'fiscal',        label: 'Completa tus datos fiscales', desc: 'RFC, régimen fiscal y código postal: necesarios para timbrar CFDI 4.0 válidos ante el SAT.', href: '/app/ajustes/fiscal',     done: !!o?.rfc },
+        { group: 'negocio',  id: 'documento',     label: 'Personaliza tu PDF y portal', desc: 'Elige plantilla de PDF, escribe tu mensaje y condiciones, y ajusta el portal que ve tu cliente. Todo con vista previa.', href: '/app/ajustes/pdf',        done: !!(o?.pdf_mensaje || o?.pdf_condiciones || o?.portal_bienvenida) },
+        { group: 'catalogo', id: 'productos',     label: 'Crea tu catálogo',            desc: 'Agrega los productos o servicios que vendes, con su costo para ver el margen. Puedes importarlos en lote por CSV.', href: '/app/productos',          done: Number(np) > 0 },
+        { group: 'catalogo', id: 'clientes',      label: 'Agrega tus clientes',         desc: 'A quién le cotizas, con sus términos de pago (contado o crédito), nivel de precios y límite de crédito.', href: '/app/clientes',           done: Number(nc) > 0 },
+        { group: 'venta',    id: 'cotizacion',    label: 'Crea tu primera cotización',  desc: 'El corazón de Cord — elige un cliente, agrega líneas y guarda. Puedes armarla con IA pegando el pedido. Te toma 2 minutos.', href: '/app/cotizaciones/nueva', done: Number(nq) > 0 },
+        { group: 'venta',    id: 'enviar',        label: 'Envía tu primera cotización', desc: 'Compártela por link, correo o WhatsApp y mira EN VIVO cuándo tu cliente la abre y la aprueba con firma electrónica.', href: '/app/cotizaciones',       done: Number(nsent) > 0 },
+        { group: 'dinero',   id: 'online_cobros', label: 'Activa los cobros en línea',  desc: 'Conecta tu cuenta bancaria de forma segura para recibir pagos con tarjeta o SPEI directo a tu banco — incluye anticipos.', href: '/app/ajustes/cobros',     done: !!o?.stripe_charges_enabled },
+        { group: 'dinero',   id: 'cobro',         label: 'Cobra y factura',             desc: 'Cobra en línea con Stripe o márcala como pagada, factura el CFDI 4.0 y cierra el ciclo de venta en Cobranza.', href: '/app/cobranza',           done: Number(ncobro) > 0 },
+        { group: 'equipo',   id: 'equipo',        label: 'Invita a tu equipo',          desc: 'Suma vendedores y define permisos por rol (cotizar, aprobar, cobranza…) para trabajar en conjunto.', href: '/app/ajustes/equipo',     done: Number(nmem) > 1 },
     ];
+
+    // Agrupa los pasos y calcula el sub-progreso de cada sección.
+    const groups = groupsDef.map((g) => {
+        const gTasks = tasks.filter((t) => t.group === g.id);
+        const gDone = gTasks.filter((t) => t.done).length;
+        return { ...g, tasks: gTasks, doneN: gDone, total: gTasks.length, done: gDone === gTasks.length };
+    });
+
     const doneN = tasks.filter((t) => t.done).length;
-    return { tasks, doneN, total: tasks.length, pct: Math.round((doneN / tasks.length) * 100), complete: doneN === tasks.length };
+    return { groups, tasks, doneN, total: tasks.length, pct: Math.round((doneN / tasks.length) * 100), complete: doneN === tasks.length };
 }
 
 // ── BADGES DE LA SIDEBAR ──────────────────────────────────────────────────────
