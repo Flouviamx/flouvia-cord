@@ -8,6 +8,22 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Estandarización de Iconografía a Duotone Glass Minimalista (jul 2026)** — André solicitó
+   refinar la estética de los íconos de la aplicación completa, rechazando SVGs complejos o
+   abstractos (como "estrellas mágicas" para IA) en favor de una iconografía súper corporativa,
+   geométrica y minimalista estilo Apple/Stripe.
+   • **Regla 9 (CLAUDE.md) actualizada:** El estándar de iconos "Glass Duotone" cambió. El grosor de
+     trazo bajó de `1.75`-`2.5px` a un estricto `1.5px`. Se prohibieron las figuras hiper-intricadas
+     a favor de geometría limpia (ej. icono de CPU para IA, puertas de login minimalistas, gráficas
+     de barras precisas).
+   • **Landing Page / Navbar:** Se actualizaron todos los íconos del megamenú (Armado con IA, Cobranza,
+     Finanzas, etc.) y el botón "Entrar" a la nueva estética. Se eliminaron bordes de foco azules
+     (`focus-visible`) para favorecer transiciones limpias y sombras compuestas.
+   • **Sidebar de la App (`/app`):** Se reemplazaron los 10 íconos de la navegación interna de la
+     aplicación (`NAV_GROUPS` en `Sidebar.astro`) para adoptar el mismo stroke de `1.5px` y los
+     rellenos `fill-opacity="0.12"`, unificando por completo el ecosistema visual desde la landing
+     hasta dentro del SaaS.
+
 ✅ **Auditoría de conexiones custom + go-live listo (jul 2026)** — André pidió verificar que TODO
    lo custom (Stripe Billing mensual/anual/excedentes, Stripe Connect Custom, Clerk custom) conecte
    sin errores y un mapa de qué faltaba para operar con usuarios reales. Resultado de la auditoría

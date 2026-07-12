@@ -685,14 +685,32 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                     <!-- Right Column: Resources Sidebar -->
                     <div class="stripe-fg-sidebar">
                         <div class="stripe-resource-card reveal">
-                            <div class="stripe-resource-visual stripe-bg-purple">
-                                <svg width="100%" height="100%" viewBox="0 0 400 200" fill="none">
-                                    <path d="M0,100 Q100,50 200,100 T400,100" stroke="rgba(255,255,255,0.2)" stroke-width="2" fill="none"/>
-                                    <path d="M0,120 Q100,70 200,120 T400,120" stroke="rgba(255,255,255,0.2)" stroke-width="2" fill="none"/>
-                                    <circle cx="300" cy="80" r="40" stroke="rgba(255,255,255,0.2)" stroke-width="2" fill="none"/>
-                                    <circle cx="300" cy="80" r="20" stroke="rgba(255,255,255,0.2)" stroke-width="2" fill="none"/>
-                                    <rect x="50" y="50" width="100" height="100" stroke="rgba(255,255,255,0.2)" stroke-width="2" fill="none"/>
-                                </svg>
+                            <div class="stripe-resource-visual stripe-bg-purple" style="position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 20px;">
+                                <!-- Abstract mesh background simulation -->
+                                <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.15), transparent 60%); pointer-events: none;"></div>
+                                <div style="position: absolute; top: 0; right: 0; width: 150px; height: 150px; background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%); filter: blur(20px); pointer-events: none;"></div>
+                                
+                                <!-- Floating B2B Cards -->
+                                <div style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                                    <div style="position: absolute; width: 120px; height: 70px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transform: rotate(-8deg) translateX(-20px) translateY(10px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; padding: 10px; gap: 6px; z-index: 1;">
+                                        <div style="width: 30px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.6);"></div>
+                                        <div style="width: 80%; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.3);"></div>
+                                        <div style="width: 60%; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.3);"></div>
+                                    </div>
+                                    
+                                    <div style="position: absolute; width: 130px; height: 85px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 12px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); transform: rotate(5deg) translateX(25px) translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.15); display: flex; flex-direction: column; padding: 12px; gap: 8px; z-index: 2;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                            <div style="width: 40px; height: 6px; border-radius: 3px; background: #fff;"></div>
+                                            <div style="width: 16px; height: 16px; border-radius: 8px; background: rgba(255,255,255,0.3);"></div>
+                                        </div>
+                                        <div style="display: flex; gap: 4px; align-items: flex-end; height: 35px; margin-top: 5px;">
+                                            <div style="width: 14px; height: 40%; background: rgba(255,255,255,0.4); border-radius: 2px;"></div>
+                                            <div style="width: 14px; height: 70%; background: rgba(255,255,255,0.6); border-radius: 2px;"></div>
+                                            <div style="width: 14px; height: 50%; background: rgba(255,255,255,0.5); border-radius: 2px;"></div>
+                                            <div style="width: 14px; height: 100%; background: #fff; border-radius: 2px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="stripe-resource-content">
                                 <span class="stripe-resource-eyebrow">Blog</span>
@@ -855,11 +873,43 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                     <!-- Right Column: Resources Sidebar (Duplicated with different info) -->
                     <div class="stripe-fg-sidebar">
                         <div class="stripe-resource-card reveal">
-                            <div class="stripe-resource-visual stripe-bg-gray" style="background: #0f172a;">
-                                <svg width="100%" height="100%" viewBox="0 0 200 100" fill="none">
-                                    <rect x="20" y="20" width="160" height="60" rx="8" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
-                                    <path d="M40 50 l 20 0 M70 50 l 40 0" stroke="var(--stripe-cyan)" stroke-width="4" stroke-linecap="round" />
-                                </svg>
+                            <div class="stripe-resource-visual stripe-bg-gray" style="background: #0f172a; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 24px;">
+                                <!-- Background Glow -->
+                                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 80% 20%, rgba(97, 175, 239, 0.15) 0%, transparent 60%); pointer-events: none; z-index: 1;"></div>
+                                <div style="position: absolute; bottom: 0; left: 20%; width: 60%; height: 50%; background: radial-gradient(circle at 50% 100%, rgba(198, 120, 221, 0.1) 0%, transparent 70%); pointer-events: none; z-index: 1;"></div>
+                                
+                                <!-- Code Window Mockup -->
+                                <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; width: 100%; height: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.4); display: flex; flex-direction: column; overflow: hidden; z-index: 2; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);">
+                                    <!-- Window Header -->
+                                    <div style="height: 20px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; padding: 0 10px; gap: 5px;">
+                                        <div style="width: 6px; height: 6px; border-radius: 50%; background: #ef4444;"></div>
+                                        <div style="width: 6px; height: 6px; border-radius: 50%; background: #eab308;"></div>
+                                        <div style="width: 6px; height: 6px; border-radius: 50%; background: #22c55e;"></div>
+                                    </div>
+                                    <!-- Code Content -->
+                                    <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 9px;">
+                                        <div style="display: flex; gap: 6px;">
+                                            <span style="color: #c678dd;">const</span>
+                                            <span style="color: #e5c07b;">api</span>
+                                            <span style="color: #56b6c2;">=</span>
+                                            <span style="color: #61afef;">new</span>
+                                            <span style="color: #e5c07b;">CordAPI</span><span style="color: #abb2bf;">(</span><span style="color: #98c379;">'sk_test...'</span><span style="color: #abb2bf;">);</span>
+                                        </div>
+                                        <div style="display: flex; gap: 6px; margin-top: 2px;">
+                                            <span style="color: #c678dd;">await</span>
+                                            <span style="color: #e5c07b;">api</span><span style="color: #abb2bf;">.</span><span style="color: #61afef;">quotes</span><span style="color: #abb2bf;">.</span><span style="color: #61afef;">create</span><span style="color: #abb2bf;">({</span>
+                                        </div>
+                                        <div style="display: flex; gap: 6px; padding-left: 10px;">
+                                            <span style="color: #d19a66;">amount</span><span style="color: #abb2bf;">:</span> <span style="color: #d19a66;">50000</span><span style="color: #abb2bf;">,</span>
+                                        </div>
+                                        <div style="display: flex; gap: 6px; padding-left: 10px;">
+                                            <span style="color: #d19a66;">currency</span><span style="color: #abb2bf;">:</span> <span style="color: #98c379;">'MXN'</span>
+                                        </div>
+                                        <div style="display: flex; gap: 6px;">
+                                            <span style="color: #abb2bf;">});</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="stripe-resource-content">
                                 <span class="stripe-resource-eyebrow">Documentación</span>
@@ -1281,31 +1331,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
             </div>
         </section>
 
-        <!-- ── SECURITY / TRUST CENTER ── -->
-        {solucion.security && (
-            <section class="stripe-security-section">
-                <div class="stripe-security-bg"></div>
-                <div class="stripe-container" style="position:relative; z-index:10;">
-                    <div class="stripe-security-header reveal">
-                        <span class="stripe-section-eyebrow stripe-eyebrow-light">{solucion.security.eyebrow}</span>
-                        <h2 class="stripe-h2 text-white">{solucion.security.titulo}</h2>
-                        <p class="stripe-p text-white-muted">{solucion.security.copy}</p>
-                    </div>
 
-                    <div class="stripe-security-grid">
-                        {solucion.security.features.map(f => (
-                            <div class="stripe-security-card reveal">
-                                <div class="stripe-sec-icon">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M8 11l3 3 5-5"/></svg>
-                                </div>
-                                <h4 class="stripe-sec-title">{f.title}</h4>
-                                <p class="stripe-sec-desc">{f.desc}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-        )}
 
 
         <!-- ── FAQ ── -->
@@ -2489,77 +2515,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         transform: translateY(2px);
     }
 
-    /* ── SECURITY ── */
-    .stripe-security-section {
-        position: relative;
-        padding: 8rem 0;
-        margin: 4rem 0;
-        overflow: hidden;
-    }
-    
-    .stripe-security-bg {
-        position: absolute;
-        inset: 0;
-        background: #0a192f;
-        transform: skewY(-4deg);
-        transform-origin: top left;
-        z-index: 0;
-    }
-    
-    .stripe-security-bg::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(circle at 80% 20%, rgba(99, 102, 241, 0.2) 0%, transparent 60%);
-    }
-    
-    .stripe-security-header {
-        margin-bottom: 4rem;
-        max-width: 600px;
-    }
-    
-    .stripe-security-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 2rem;
-    }
-    
-    .stripe-security-card {
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 16px;
-        padding: 2rem;
-        backdrop-filter: blur(10px);
-    }
-    
-    .stripe-sec-icon {
-        color: var(--stripe-cyan);
-        width: 32px; height: 32px;
-        margin-bottom: 1.5rem;
-    }
-    
-    .stripe-sec-title {
-        color: #fff;
-        font-size: 1.2rem;
-        font-weight: 600;
-        margin-bottom: 0.75rem;
-    }
-    
-    .stripe-sec-desc {
-        color: rgba(255,255,255,0.7);
-        font-size: 0.95rem;
-        line-height: 1.5;
-    }
-    
-    @media (max-width: 992px) {
-        .stripe-pillars-grid { grid-template-columns: 1fr; gap: 1.5rem; }
-        .stripe-security-grid { grid-template-columns: 1fr; }
-        .stripe-fg-layout { grid-template-columns: 1fr; }
-        .stripe-fg-card { grid-template-columns: 1fr; }
-        .stripe-fg-sidebar { position: static; }
-        .stripe-fg-card-visual { min-height: 300px; }
-    }
-    
+
 
     /* ==========================================================
        STARTUP USE CASES (Stripe Horizontal Layout)
@@ -3157,7 +3113,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     /* ── CORD APPS MARQUEE ── */
     .cord-apps-section {
         padding: 4rem 0;
-        background: #f6f9fc;
+        background: #ffffff;
         overflow: hidden;
     }
     .cord-apps-header {
@@ -3723,24 +3679,24 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     // Reactive Parallax Effect for Startups Hero Blobs
     document.addEventListener('DOMContentLoaded', () => {
         const hero = document.querySelector('.startup-hero');
-        if (!hero) return;
-        
-        hero.addEventListener('mousemove', (e) => {
-            // Calculate mouse position relative to center of screen
-            // Values range from roughly -20px to +20px
-            const x = (e.clientX / window.innerWidth - 0.5) * 40; 
-            const y = (e.clientY / window.innerHeight - 0.5) * 40;
+        if (hero) {
+            hero.addEventListener('mousemove', (e) => {
+                // Calculate mouse position relative to center of screen
+                // Values range from roughly -20px to +20px
+                const x = (e.clientX / window.innerWidth - 0.5) * 40; 
+                const y = (e.clientY / window.innerHeight - 0.5) * 40;
+                
+                // Set CSS variables on the hero container
+                hero.style.setProperty('--mouse-x', `${x}px`);
+                hero.style.setProperty('--mouse-y', `${y}px`);
+            });
             
-            // Set CSS variables on the hero container
-            hero.style.setProperty('--mouse-x', `${x}px`);
-            hero.style.setProperty('--mouse-y', `${y}px`);
-        });
-        
-        // Reset when mouse leaves the hero
-        hero.addEventListener('mouseleave', () => {
-            hero.style.setProperty('--mouse-x', `0px`);
-            hero.style.setProperty('--mouse-y', `0px`);
-        });
+            // Reset when mouse leaves the hero
+            hero.addEventListener('mouseleave', () => {
+                hero.style.setProperty('--mouse-x', `0px`);
+                hero.style.setProperty('--mouse-y', `0px`);
+            });
+        }
         
         // ── Aurora card mouse tracking ─────────────────────────────────────
         // Each .aurora-card-content gets its own mouse tracker.
