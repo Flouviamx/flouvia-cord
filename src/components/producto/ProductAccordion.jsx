@@ -162,192 +162,192 @@ function CardShader({ palette }) {
 // ── Iconos Apple SF Symbols — Duotone glass premium ──────────────────────────
 const ICONS = {
   sparkle: (
-    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M16 3 L17.9 12.4 L27 16 L17.9 19.6 L16 29 L14.1 19.6 L5 16 L14.1 12.4 Z"
-        fill="currentColor" fillOpacity="0.18"/>
-      <path d="M16 3 L17.9 12.4 L27 16 L17.9 19.6 L16 29 L14.1 19.6 L5 16 L14.1 12.4 Z"/>
-      <circle cx="16" cy="16" r="2.8" fill="currentColor" fillOpacity="0.60"/>
-      <path d="M25 5.5 L25.7 7.8 L28 8.5 L25.7 9.2 L25 11.5 L24.3 9.2 L22 8.5 L24.3 7.8 Z"
-        fill="currentColor" fillOpacity="0.50" stroke="none"/>
+    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 3 L18.4 11.6 L27 14 L18.4 16.4 L16 25 L13.6 16.4 L5 14 L13.6 11.6 Z" fill="currentColor" fillOpacity="0.12"/>
+      <path d="M16 3 L18.4 11.6 L27 14 L18.4 16.4 L16 25 L13.6 16.4 L5 14 L13.6 11.6 Z" />
+      <path d="M16 8 L17.2 12.8 L22 14 L17.2 15.2 L16 20 L14.8 15.2 L10 14 L14.8 12.8 Z" fill="currentColor" fillOpacity="0.4"/>
+      <path d="M25 4 L25.8 6.2 L28 7 L25.8 7.8 L25 10 L24.2 7.8 L22 7 L24.2 6.2 Z" fill="currentColor" fillOpacity="0.6" stroke="none"/>
+      <path d="M7 23 L7.6 24.6 L9.2 25.2 L7.6 25.8 L7 27.4 L6.4 25.8 L4.8 25.2 L6.4 24.6 Z" fill="currentColor" fillOpacity="0.4" stroke="none"/>
+      <circle cx="16" cy="14" r="1.5" fill="currentColor" stroke="none"/>
     </svg>
   ),
   tag: (
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 4 H15 L28 17 A2.8 2.8 0 0 1 28 21 L21 28 A2.8 2.8 0 0 1 17 28 L4 15 Z"
-        fill="currentColor" fillOpacity="0.16"/>
-      <path d="M4 4 H15 L28 17 A2.8 2.8 0 0 1 28 21 L21 28 A2.8 2.8 0 0 1 17 28 L4 15 Z"/>
-      <circle cx="10.5" cy="10.5" r="2.2" fill="currentColor" fillOpacity="0.55"/>
-      <line x1="18" y1="15" x2="23.5" y2="20.5" strokeOpacity="0.45" strokeWidth="1.4"/>
-      <line x1="14" y1="19" x2="19.5" y2="24.5" strokeOpacity="0.28" strokeWidth="1.2"/>
+      <path d="M5 5 H14 L27.5 18.5 C28.3 19.3 28.3 20.6 27.5 21.4 L21.4 27.5 C20.6 28.3 19.3 28.3 18.5 27.5 L5 14 V5 Z" fill="currentColor" fillOpacity="0.12"/>
+      <path d="M5 5 H14 L27.5 18.5 C28.3 19.3 28.3 20.6 27.5 21.4 L21.4 27.5 C20.6 28.3 19.3 28.3 18.5 27.5 L5 14 V5 Z" />
+      <circle cx="10.5" cy="10.5" r="2.5" fill="currentColor" fillOpacity="0.3"/>
+      <line x1="16" y1="14" x2="22" y2="20" strokeWidth="2" strokeOpacity="0.8"/>
+      <line x1="13" y1="17" x2="19" y2="23" strokeWidth="2" strokeOpacity="0.4"/>
+      <path d="M7 8 H10.5" strokeWidth="1.5" strokeOpacity="0.3"/>
     </svg>
   ),
   layers: (
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="16,20 29,14.5 16,9 3,14.5" fill="currentColor" fillOpacity="0.12"/>
-      <polygon points="16,14 29,8.5 16,3 3,8.5" fill="currentColor" fillOpacity="0.24"/>
-      <polyline points="3,20 16,26 29,20"/>
-      <polyline points="3,14.5 16,20.5 29,14.5"/>
-      <polyline points="3,8.5 16,3 29,8.5"/>
+      <polygon points="16,13 28,7 16,1 4,7" fill="currentColor" fillOpacity="0.25"/>
+      <polygon points="16,13 28,7 16,1 4,7" />
+      <polyline points="4,13 16,19 28,13" fill="currentColor" fillOpacity="0.15"/>
+      <polyline points="4,13 16,19 28,13" />
+      <polyline points="4,19 16,25 28,19" fill="currentColor" fillOpacity="0.08"/>
+      <polyline points="4,19 16,25 28,19" />
+      <line x1="16" y1="13" x2="16" y2="25" strokeOpacity="0.4" strokeDasharray="2 2"/>
+      <circle cx="16" cy="7" r="2" fill="currentColor" fillOpacity="0.8" stroke="none"/>
     </svg>
   ),
   calculator: (
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="5" y="3" width="22" height="26" rx="3.5" fill="currentColor" fillOpacity="0.13"/>
-      <rect x="5" y="3" width="22" height="26" rx="3.5"/>
-      <rect x="9" y="7" width="14" height="5.5" rx="1.5" fill="currentColor" fillOpacity="0.30"/>
-      <circle cx="10.5" cy="18.5" r="1.5" fill="currentColor" fillOpacity="0.50"/>
-      <circle cx="16"   cy="18.5" r="1.5" fill="currentColor" fillOpacity="0.50"/>
-      <circle cx="21.5" cy="18.5" r="1.5" fill="currentColor" fillOpacity="0.50"/>
-      <circle cx="10.5" cy="24"   r="1.5" fill="currentColor" fillOpacity="0.35"/>
-      <circle cx="16"   cy="24"   r="1.5" fill="currentColor" fillOpacity="0.35"/>
-      <rect x="19.5" y="22.5" width="4" height="3" rx="1" fill="currentColor" fillOpacity="0.55"/>
+      <rect x="4" y="2" width="24" height="28" rx="5" fill="currentColor" fillOpacity="0.12"/>
+      <rect x="4" y="2" width="24" height="28" rx="5"/>
+      <rect x="8" y="6" width="16" height="7" rx="2" fill="currentColor" fillOpacity="0.25"/>
+      <path d="M10 10 H22" strokeOpacity="0.5"/>
+      <circle cx="10" cy="17" r="1.5" fill="currentColor" stroke="none"/>
+      <circle cx="16" cy="17" r="1.5" fill="currentColor" stroke="none"/>
+      <circle cx="22" cy="17" r="1.5" fill="currentColor" stroke="none"/>
+      <circle cx="10" cy="23" r="1.5" fill="currentColor" stroke="none" fillOpacity="0.5"/>
+      <circle cx="16" cy="23" r="1.5" fill="currentColor" stroke="none" fillOpacity="0.5"/>
+      <rect x="20.5" y="21.5" width="3" height="3" rx="1" fill="currentColor" stroke="none"/>
     </svg>
   ),
   check_circle: (
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="16" cy="16" r="13" fill="currentColor" fillOpacity="0.13"/>
-      <circle cx="16" cy="16" r="13"/>
-      <circle cx="16" cy="16" r="9" fill="currentColor" fillOpacity="0.10"/>
-      <polyline points="9.5,16.5 14,21 22.5,11" strokeWidth="2.2"/>
+      <circle cx="16" cy="16" r="14" fill="currentColor" fillOpacity="0.12"/>
+      <circle cx="16" cy="16" r="14"/>
+      <circle cx="16" cy="16" r="10" fill="currentColor" fillOpacity="0.15"/>
+      <polyline points="10,16.5 14,20.5 22,11.5" strokeWidth="2.5" strokeLinecap="round"/>
     </svg>
   ),
   eye: (
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 16 C6 8 11 5 16 5 C21 5 26 8 30 16 C26 24 21 27 16 27 C11 27 6 24 2 16 Z"
-        fill="currentColor" fillOpacity="0.14"/>
-      <path d="M2 16 C6 8 11 5 16 5 C21 5 26 8 30 16 C26 24 21 27 16 27 C11 27 6 24 2 16 Z"/>
-      <circle cx="16" cy="16" r="5.5" fill="currentColor" fillOpacity="0.22"/>
-      <circle cx="16" cy="16" r="5.5"/>
-      <circle cx="16" cy="16" r="2.5" fill="currentColor" fillOpacity="0.65"/>
-      <circle cx="18.2" cy="13.8" r="1.0" fill="currentColor" fillOpacity="0.55" stroke="none"/>
+      <path d="M2 16 C6 7 11 4 16 4 C21 4 26 7 30 16 C26 25 21 28 16 28 C11 28 6 25 2 16 Z" fill="currentColor" fillOpacity="0.12"/>
+      <path d="M2 16 C6 7 11 4 16 4 C21 4 26 7 30 16 C26 25 21 28 16 28 C11 28 6 25 2 16 Z"/>
+      <circle cx="16" cy="16" r="6" fill="currentColor" fillOpacity="0.25"/>
+      <circle cx="16" cy="16" r="6"/>
+      <circle cx="16" cy="16" r="2.5" fill="currentColor" stroke="none"/>
+      <circle cx="18" cy="14" r="1" fill="currentColor" fillOpacity="0.8" stroke="none"/>
     </svg>
   ),
   receipt: (
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 3 V29 L9.3 26.5 L12.7 29 L16 26.5 L19.3 29 L22.7 26.5 L26 29 V3 Z"
-        fill="currentColor" fillOpacity="0.13"/>
-      <path d="M6 3 V29 L9.3 26.5 L12.7 29 L16 26.5 L19.3 29 L22.7 26.5 L26 29 V3 Z"/>
-      <line x1="10" y1="10"   x2="22" y2="10"   strokeOpacity="0.55"/>
-      <line x1="10" y1="14.5" x2="22" y2="14.5" strokeOpacity="0.40"/>
-      <line x1="10" y1="19"   x2="18" y2="19"   strokeOpacity="0.30"/>
-      <line x1="10" y1="23"   x2="22" y2="23"   strokeWidth="2.2" strokeOpacity="0.70"/>
+      <path d="M6 3 V29 L9.5 26 L13 29 L16.5 26 L20 29 L23.5 26 L27 29 V3 Z" fill="currentColor" fillOpacity="0.12"/>
+      <path d="M6 3 V29 L9.5 26 L13 29 L16.5 26 L20 29 L23.5 26 L27 29 V3 Z"/>
+      <line x1="11" y1="10" x2="22" y2="10" strokeWidth="2"/>
+      <line x1="11" y1="15" x2="19" y2="15" strokeWidth="1.5" strokeOpacity="0.6"/>
+      <line x1="11" y1="20" x2="22" y2="20" strokeWidth="1.5" strokeOpacity="0.3"/>
+      <circle cx="20" cy="15" r="1" fill="currentColor" stroke="none"/>
     </svg>
   ),
   users: (
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="10" r="5" fill="currentColor" fillOpacity="0.22"/>
-      <circle cx="12" cy="10" r="5"/>
-      <path d="M3 28 V25 A7 7 0 0 1 21 25 V28" fill="currentColor" fillOpacity="0.14"/>
-      <path d="M3 28 V25 A7 7 0 0 1 21 25 V28"/>
-      <circle cx="23" cy="9" r="3.5" fill="currentColor" fillOpacity="0.18"/>
-      <circle cx="23" cy="9" r="3.5"/>
-      <path d="M22 28 C22 23 26 20 29 20" strokeOpacity="0.55"/>
+      <circle cx="13" cy="10" r="5" fill="currentColor" fillOpacity="0.2"/>
+      <circle cx="13" cy="10" r="5"/>
+      <path d="M4 27 V24 A7 7 0 0 1 18 24 V27" fill="currentColor" fillOpacity="0.12"/>
+      <path d="M4 27 V24 A7 7 0 0 1 18 24 V27"/>
+      <circle cx="23" cy="12" r="3.5" fill="currentColor" fillOpacity="0.1"/>
+      <circle cx="23" cy="12" r="3.5" strokeOpacity="0.7"/>
+      <path d="M22 27 V25 A5 5 0 0 1 27 20 H28" strokeOpacity="0.7"/>
+      <circle cx="13" cy="10" r="1.5" fill="currentColor" stroke="none" fillOpacity="0.5"/>
     </svg>
   ),
   robot: (
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="4" y="11" width="24" height="17" rx="4" fill="currentColor" fillOpacity="0.14"/>
-      <rect x="4" y="11" width="24" height="17" rx="4"/>
-      <rect x="12" y="3" width="8" height="8" rx="2" fill="currentColor" fillOpacity="0.20"/>
-      <rect x="12" y="3" width="8" height="8" rx="2"/>
-      <line x1="16" y1="3" x2="16" y2="1.5" strokeWidth="2"/>
-      <circle cx="16" cy="1.5" r="1.2" fill="currentColor"/>
-      <rect x="9.5" y="16" width="4.5" height="4" rx="1.5" fill="currentColor" fillOpacity="0.50"/>
-      <rect x="18"   y="16" width="4.5" height="4" rx="1.5" fill="currentColor" fillOpacity="0.50"/>
-      <path d="M11.5 24 H20.5" strokeWidth="2.2" strokeLinecap="round"/>
-      <line x1="1.5" y1="17" x2="4"    y2="17" strokeOpacity="0.55"/>
-      <line x1="28"  y1="17" x2="30.5" y2="17" strokeOpacity="0.55"/>
+      <rect x="4" y="10" width="24" height="18" rx="4" fill="currentColor" fillOpacity="0.15"/>
+      <rect x="4" y="10" width="24" height="18" rx="4"/>
+      <rect x="11" y="2" width="10" height="8" rx="2" fill="currentColor" fillOpacity="0.25"/>
+      <rect x="11" y="2" width="10" height="8" rx="2"/>
+      <line x1="16" y1="2" x2="16" y2="0"/>
+      <rect x="10" y="16" width="4" height="4" rx="2" fill="currentColor" stroke="none"/>
+      <rect x="18" y="16" width="4" height="4" rx="2" fill="currentColor" stroke="none"/>
+      <path d="M12 24 H20" strokeWidth="2" strokeLinecap="round"/>
     </svg>
   ),
   currency: (
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="16" cy="16" r="13" fill="currentColor" fillOpacity="0.12"/>
-      <circle cx="16" cy="16" r="13"/>
-      <path d="M21 10.5 H12.5 A4 4 0 0 0 12.5 18.5 H19.5 A4 4 0 0 1 19.5 26.5 H10"
-        strokeWidth="2" strokeLinecap="round"/>
-      <line x1="16" y1="7"    x2="16" y2="10.5" strokeWidth="2"/>
-      <line x1="16" y1="24.5" x2="16" y2="28"   strokeWidth="2"/>
+      <circle cx="16" cy="16" r="14" fill="currentColor" fillOpacity="0.12"/>
+      <circle cx="16" cy="16" r="14"/>
+      <path d="M21 11 H13 A3.5 3.5 0 0 0 13 18 H19 A3.5 3.5 0 0 1 19 25 H11" strokeWidth="2"/>
+      <line x1="16" y1="6" x2="16" y2="11" strokeWidth="2"/>
+      <line x1="16" y1="25" x2="16" y2="30" strokeWidth="2"/>
+      <circle cx="16" cy="16" r="9" strokeOpacity="0.15" strokeWidth="1"/>
     </svg>
   ),
   chart: (
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="4"  y="17" width="6" height="11" rx="1.5" fill="currentColor" fillOpacity="0.22"/>
-      <rect x="13" y="10" width="6" height="18" rx="1.5" fill="currentColor" fillOpacity="0.22"/>
-      <rect x="22" y="4"  width="6" height="24" rx="1.5" fill="currentColor" fillOpacity="0.22"/>
-      <rect x="4"  y="17" width="6" height="11" rx="1.5"/>
-      <rect x="13" y="10" width="6" height="18" rx="1.5"/>
-      <rect x="22" y="4"  width="6" height="24" rx="1.5"/>
-      <polyline points="7,17 16,10 25,4" strokeWidth="2" strokeOpacity="0.65"/>
-      <circle cx="25" cy="4" r="2.5" fill="currentColor" fillOpacity="0.60" stroke="none"/>
+      <rect x="4" y="18" width="6" height="12" rx="1.5" fill="currentColor" fillOpacity="0.15"/>
+      <rect x="13" y="10" width="6" height="20" rx="1.5" fill="currentColor" fillOpacity="0.25"/>
+      <rect x="22" y="2" width="6" height="28" rx="1.5" fill="currentColor" fillOpacity="0.4"/>
+      <rect x="4" y="18" width="6" height="12" rx="1.5"/>
+      <rect x="13" y="10" width="6" height="20" rx="1.5"/>
+      <rect x="22" y="2" width="6" height="28" rx="1.5"/>
+      <path d="M7 14 L16 6 L25 -2" strokeWidth="2" strokeOpacity="0.6"/>
+      <circle cx="25" cy="2" r="2.5" fill="currentColor" stroke="none"/>
     </svg>
   ),
   shield: (
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M16 3 L28 8 V16 C28 23.5 16 29 16 29 C16 29 4 23.5 4 16 V8 Z"
-        fill="currentColor" fillOpacity="0.15"/>
-      <path d="M16 3 L28 8 V16 C28 23.5 16 29 16 29 C16 29 4 23.5 4 16 V8 Z"/>
-      <path d="M16 9 L22 11.5 V16 C22 19.5 16 22 16 22 C16 22 10 19.5 10 16 V11.5 Z"
-        fill="currentColor" fillOpacity="0.18"/>
-      <polyline points="12,15.5 15,19 20,12.5" strokeWidth="2"/>
+      <path d="M16 2 L28 7 V15 C28 23 16 29 16 29 C16 29 4 23 4 15 V7 Z" fill="currentColor" fillOpacity="0.12"/>
+      <path d="M16 2 L28 7 V15 C28 23 16 29 16 29 C16 29 4 23 4 15 V7 Z"/>
+      <path d="M16 8 L22 10.5 V15 C22 19 16 22 16 22 C16 22 10 19 10 15 V10.5 Z" fill="currentColor" fillOpacity="0.25"/>
+      <polyline points="12,15 15,18 20,12" strokeWidth="2"/>
     </svg>
   ),
   git_branch: (
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="8"  cy="6.5"  r="3.5" fill="currentColor" fillOpacity="0.28"/>
-      <circle cx="8"  cy="6.5"  r="3.5"/>
-      <circle cx="24" cy="6.5"  r="3.5" fill="currentColor" fillOpacity="0.28"/>
-      <circle cx="24" cy="6.5"  r="3.5"/>
-      <circle cx="8"  cy="25.5" r="3.5" fill="currentColor" fillOpacity="0.28"/>
-      <circle cx="8"  cy="25.5" r="3.5"/>
-      <line x1="8" y1="10" x2="8" y2="22"/>
-      <path d="M24 10 C24 17 15 20 8 22"/>
-      <line x1="8" y1="6.5" x2="24" y2="6.5" strokeOpacity="0.35" strokeDasharray="2 2.5"/>
+      <circle cx="8" cy="7" r="4" fill="currentColor" fillOpacity="0.25"/>
+      <circle cx="8" cy="7" r="4"/>
+      <circle cx="24" cy="7" r="4" fill="currentColor" fillOpacity="0.25"/>
+      <circle cx="24" cy="7" r="4"/>
+      <circle cx="8" cy="25" r="4" fill="currentColor" fillOpacity="0.25"/>
+      <circle cx="8" cy="25" r="4"/>
+      <line x1="8" y1="11" x2="8" y2="21"/>
+      <path d="M24 11 C24 18 15 21 8 23" strokeWidth="1.75"/>
+      <line x1="12" y1="7" x2="20" y2="7" strokeOpacity="0.4" strokeDasharray="2 2"/>
+      <circle cx="16" cy="19" r="1.5" fill="currentColor" stroke="none"/>
     </svg>
   ),
   globe: (
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="16" cy="16" r="13" fill="currentColor" fillOpacity="0.12"/>
-      <circle cx="16" cy="16" r="13"/>
-      <ellipse cx="16" cy="16" rx="5.5" ry="13" fill="currentColor" fillOpacity="0.10"/>
-      <ellipse cx="16" cy="16" rx="5.5" ry="13"/>
-      <line x1="3" y1="16" x2="29" y2="16" strokeOpacity="0.55"/>
-      <path d="M5 10 Q16 12 27 10" strokeOpacity="0.40"/>
-      <path d="M5 22 Q16 20 27 22" strokeOpacity="0.40"/>
+      <circle cx="16" cy="16" r="14" fill="currentColor" fillOpacity="0.12"/>
+      <circle cx="16" cy="16" r="14"/>
+      <ellipse cx="16" cy="16" rx="6" ry="14" fill="currentColor" fillOpacity="0.1"/>
+      <ellipse cx="16" cy="16" rx="6" ry="14"/>
+      <line x1="2" y1="16" x2="30" y2="16" strokeOpacity="0.5"/>
+      <path d="M4 10 Q16 12 28 10" strokeOpacity="0.4"/>
+      <path d="M4 22 Q16 20 28 22" strokeOpacity="0.4"/>
+      <circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none"/>
     </svg>
   ),
   lock: (
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="5" y="14" width="22" height="15" rx="3.5" fill="currentColor" fillOpacity="0.15"/>
-      <rect x="5" y="14" width="22" height="15" rx="3.5"/>
-      <path d="M10 14 V10 A6 6 0 0 1 22 10 V14"/>
-      <circle cx="16" cy="20.5" r="3" fill="currentColor" fillOpacity="0.40"/>
-      <circle cx="16" cy="20.5" r="3"/>
-      <line x1="16" y1="23.5" x2="16" y2="26.5" strokeWidth="2"/>
+      <rect x="5" y="13" width="22" height="16" rx="4" fill="currentColor" fillOpacity="0.15"/>
+      <rect x="5" y="13" width="22" height="16" rx="4"/>
+      <path d="M9 13 V9 A7 7 0 0 1 23 9 V13" strokeWidth="2"/>
+      <circle cx="16" cy="21" r="3" fill="currentColor" fillOpacity="0.4"/>
+      <line x1="16" y1="21" x2="16" y2="25" strokeWidth="2"/>
     </svg>
   ),
   trending: (
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="3,25 12,14.5 18,20.5 29,7 22,7" fill="currentColor" fillOpacity="0.15"/>
-      <path d="M3 25 L12 14.5 L18 20.5 L29 7" strokeWidth="2"/>
-      <polyline points="22,7 29,7 29,14"/>
-      <circle cx="29" cy="7" r="2.5" fill="currentColor" fillOpacity="0.55" stroke="none"/>
+      <polygon points="3,26 12,15 18,21 29,8 22,8" fill="currentColor" fillOpacity="0.15"/>
+      <path d="M3 26 L12 15 L18 21 L29 8" strokeWidth="2"/>
+      <polyline points="21,8 29,8 29,16" strokeWidth="2"/>
+      <circle cx="29" cy="8" r="2.5" fill="currentColor" stroke="none"/>
+      <circle cx="18" cy="21" r="1.5" fill="currentColor" stroke="none"/>
+      <circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/>
     </svg>
   ),
   bell: (
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M25 12 A9 9 0 0 0 7 12 C7 21 3 24 3 24 H29 C29 24 25 21 25 12 Z"
-        fill="currentColor" fillOpacity="0.14"/>
-      <path d="M25 12 A9 9 0 0 0 7 12 C7 21 3 24 3 24 H29 C29 24 25 21 25 12 Z"/>
-      <path d="M13 24 A3 3 0 0 0 19 24"/>
-      <circle cx="24" cy="8" r="4.5" fill="currentColor" fillOpacity="0.80"/>
-      <circle cx="24" cy="8" r="4.5" strokeWidth="1.5"/>
+      <path d="M26 12 A10 10 0 0 0 6 12 C6 21 2 25 2 25 H30 C30 25 26 21 26 12 Z" fill="currentColor" fillOpacity="0.15"/>
+      <path d="M26 12 A10 10 0 0 0 6 12 C6 21 2 25 2 25 H30 C30 25 26 21 26 12 Z"/>
+      <path d="M12 25 A4 4 0 0 0 20 25"/>
+      <circle cx="25" cy="7" r="4" fill="currentColor" stroke="none"/>
+      <circle cx="25" cy="7" r="2" fill="#ffffff" stroke="none"/>
     </svg>
   ),
   zap: (
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="18,3 5,18.5 15,18.5 14,29 27,13.5 17,13.5"
-        fill="currentColor" fillOpacity="0.22"/>
-      <polygon points="18,3 5,18.5 15,18.5 14,29 27,13.5 17,13.5"/>
+      <polygon points="18,2 4,18 15,18 14,30 28,14 17,14" fill="currentColor" fillOpacity="0.25"/>
+      <polygon points="18,2 4,18 15,18 14,30 28,14 17,14"/>
+      <circle cx="16" cy="16" r="2.5" fill="currentColor" stroke="none"/>
     </svg>
   ),
 };
@@ -583,7 +583,9 @@ export default function ProductAccordion({ slug = 'editor' }) {
               className="pac-vlabel"
               aria-hidden="true"
             >
-              {slide.label}
+              <span className="pac-vlabel-num">{slide.label}</span>
+              <span className="pac-vlabel-sep">·</span>
+              <span className="pac-vlabel-txt">{slide.title}</span>
             </div>
 
             {/* Texto completo — solo visible en tarjeta activa */}

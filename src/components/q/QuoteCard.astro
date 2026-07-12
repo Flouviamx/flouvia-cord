@@ -33,6 +33,25 @@ const vigenciaTexto = vigenciaVencida ? 'Vigencia expirada'
     : typeof dias === 'number' && dias > 0 ? `Vence en ${dias} día${dias === 1 ? '' : 's'}`
     : '';
 
+// Cobros parciales (anticipo/saldo/cuotas) + gating por términos de crédito.
+// q.cobros y q.pagoDisponible vienen de getCotizacionByToken.
+const cobros: any[] = Array.isArray(q.cobros) ? q.cobros : [];
+const nextCobro = cobros.find((co: any) => co.status === 'pendiente' && !co.venceEnFuturo) || null;
+const cobroTipoLabel = (co: any) =>
+    co.tipo === 'anticipo' ? 'Anticipo'
+    : co.tipo === 'saldo' ? 'Saldo'
+    : co.tipo === 'cuota' ? `Cuota ${co.numeroCuota}`
+    : 'Total';
+const montoAPagar = nextCobro ? money(nextCobro.monto) : total;
+const orgCobraOnline = (ORG.aceptaTarjeta || ORG.cobroSpeiAuto) && ORG.stripeAccountId && ORG.stripeChargesEnabled;
+// Crédito (Net 30/60) SIN cobros parciales y sin nada pagable todavía: en vez
+// del botón de pago se muestra la fecha en la que vence el saldo.
+const esCreditoPendiente = q.pagoDisponible === false && cobros.length === 0 && !!q.saldoVence;
+// Hay plan de cobros pero ninguno pagable hoy (p. ej. anticipo cubierto y saldo
+// o cuota con fecha futura): mostrar cuándo es el siguiente pago.
+const proxCobro = cobros.find((co: any) => co.status === 'pendiente') || null;
+const esperaCobro = cobros.length > 0 && !nextCobro && !!proxCobro;
+
 // Contacto del vendedor
 const vEmail = (ORG.emailContacto ?? '').trim();
 const vWa = (ORG.whatsapp ?? '').trim();
@@ -262,6 +281,44 @@ const hayContacto = !!(vEmail || vWa || vTel);
                     {ORG.nombre} recibió tu confirmación y se pondrá en contacto contigo en breve.
                 </span>
                 <div class="ql-done-actions">
+                    {esperaCobro && (
+                        <div class="ql-credit-note">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3" fill="currentColor" fill-opacity="0.08"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 15l2 2 4-4"/></svg>
+                            <div class="ql-credit-text">
+                                <strong>No tienes pagos pendientes por ahora</strong>
+                                <span>
+                                    Tu siguiente pago es el {cobroTipoLabel(proxCobro).toLowerCase()} de {money(proxCobro.monto)}{proxCobro.vence ? `, el ${proxCobro.vence}` : ''}.
+                                    {orgCobraOnline ? ' Podrás pagarlo en línea desde este mismo link cuando llegue la fecha.' : ''}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                    {esCreditoPendiente && (
+                        <div class="ql-credit-note">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3" fill="currentColor" fill-opacity="0.08"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 15l2 2 4-4"/></svg>
+                            <div class="ql-credit-text">
+                                <strong>Pedido confirmado con crédito {q.terminos}</strong>
+                                <span>
+                                    El pago de {total} MXN vence el {q.saldoVence}.
+                                    {orgCobraOnline ? ' Cuando llegue la fecha podrás pagar en línea desde este mismo link.' : ' Coordina el pago directamente con el vendedor.'}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                    {cobros.length > 0 && (
+                        <div class="ql-cobros">
+                            <div class="ql-cobros-title">Plan de pago</div>
+                            {cobros.map((co: any) => (
+                                <div class:list={['ql-cobro-row', { paid: co.pagado, cancelled: co.status === 'cancelado' }]}>
+                                    <span class="ql-cobro-tipo">{cobroTipoLabel(co)}</span>
+                                    <span class="editorial ql-cobro-monto">{money(co.monto)}</span>
+                                    <span class="ql-cobro-status">
+                                        {co.pagado ? 'Pagado' : co.status === 'cancelado' ? 'Cancelado' : co.venceEnFuturo ? `Vence el ${co.vence}` : 'Por pagar'}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                     {puedePagar && (
                         <div class="ql-pay-options">
                             {ORG.aceptaTransferencia && (
@@ -283,8 +340,8 @@ const hayContacto = !!(vEmail || vWa || vTel);
                             {(ORG.aceptaTarjeta || ORG.cobroSpeiAuto) && ORG.stripeAccountId && ORG.stripeChargesEnabled && (
                                 <div class="ql-pay">
                                     <div class="ql-pay-amount">
-                                        <span class="ql-pay-label">A PAGAR AHORA</span>
-                                        <span class="editorial ql-pay-total" style={`color:${color}`}>{total} <small>MXN</small></span>
+                                        <span class="ql-pay-label">{nextCobro && nextCobro.tipo !== 'total' ? `A PAGAR AHORA · ${cobroTipoLabel(nextCobro).toUpperCase()}` : 'A PAGAR AHORA'}</span>
+                                        <span class="editorial ql-pay-total" style={`color:${color}`}>{montoAPagar} <small>MXN</small></span>
                                     </div>
                                     <button class="ql-cta" id="qPayBtn" style={`background:${color}`}>
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -1118,6 +1175,25 @@ const hayContacto = !!(vEmail || vWa || vTel);
 /* ── Pago pulido ── */
 .ql-pay-options { display: flex; flex-direction: column; gap: 1.5rem; width: 100%; margin-bottom: 0.5rem; }
 .ql-pay { display: flex; flex-direction: column; gap: 0.65rem; padding: 1.2rem; background: #fafafa; border: 1px solid rgba(10,25,47,0.06); border-radius: 16px; }
+
+/* Crédito Net 30/60: pedido confirmado, el pago se habilita al vencer el plazo */
+.ql-credit-note { display: flex; align-items: flex-start; gap: 12px; padding: 1.1rem 1.2rem; background: #f5f5f7; border-radius: 16px; text-align: left; }
+.ql-credit-note svg { flex-shrink: 0; color: #0a192f; margin-top: 2px; }
+.ql-credit-text { display: flex; flex-direction: column; gap: 3px; }
+.ql-credit-text strong { font-size: 0.88rem; font-weight: 600; color: #0a192f; letter-spacing: -0.01em; }
+.ql-credit-text span { font-size: 0.8rem; color: #6b7686; line-height: 1.55; }
+
+/* Desglose de cobros parciales (anticipo / saldo / cuotas) */
+.ql-cobros { display: flex; flex-direction: column; padding: 0.4rem 1.2rem 0.6rem; background: #fff; border: 1px solid rgba(10,25,47,0.07); border-radius: 16px; text-align: left; }
+.ql-cobros-title { font-size: 0.68rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #8a93a2; padding: 0.7rem 0 0.35rem; }
+.ql-cobro-row { display: flex; align-items: center; gap: 10px; padding: 0.6rem 0; border-top: 1px solid rgba(10,25,47,0.06); }
+.ql-cobro-tipo { font-size: 0.84rem; font-weight: 600; color: #0a192f; flex: 1; }
+.ql-cobro-monto { font-size: 0.86rem; color: #0a192f; }
+.ql-cobro-status { font-size: 0.72rem; font-weight: 600; color: #8a93a2; min-width: 88px; text-align: right; }
+.ql-cobro-row.paid .ql-cobro-status { color: #047857; }
+.ql-cobro-row.paid .ql-cobro-tipo, .ql-cobro-row.paid .ql-cobro-monto { color: #6b7686; }
+.ql-cobro-row.cancelled { opacity: 0.5; }
+.ql-cobro-row.cancelled .ql-cobro-tipo, .ql-cobro-row.cancelled .ql-cobro-monto { text-decoration: line-through; }
 .ql-pay-amount { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
 .ql-pay-label { font-size: 0.52rem; font-weight: 800; letter-spacing: 2px; color: #9ca3af; }
 .ql-pay-total { font-size: 1.55rem; line-height: 1; }

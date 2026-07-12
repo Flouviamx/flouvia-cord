@@ -94,7 +94,7 @@ function CheckoutForm({ token, color, amountLabel, onSuccess }: { token: string;
     );
 }
 
-export default function PaymentIsland({ token, color, amountLabel }: { token: string; color?: string; amountLabel?: string }) {
+export default function PaymentIsland({ token, color, amountLabel, cobroId }: { token: string; color?: string; amountLabel?: string; cobroId?: string }) {
     const [clientSecret, setClientSecret] = useState<string | null>(null);
     const [stripePromise, setStripePromise] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
@@ -108,7 +108,11 @@ export default function PaymentIsland({ token, color, amountLabel }: { token: st
             setLoading(true);
             setError(null);
             try {
-                const res = await fetch(`/api/q/${token}/payment-intent`, { method: 'POST' });
+                const res = await fetch(`/api/q/${token}/payment-intent`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cobroId ? { cobro_id: cobroId } : {}),
+                });
                 const data = await res.json();
                 if (!alive) return;
 

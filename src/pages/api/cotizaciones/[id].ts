@@ -13,6 +13,7 @@ import { after } from '../../../lib/after';
 import { reportUsage } from '../../../lib/billing';
 import { emitFiscalDocument } from '../../../lib/fiscal/emit';
 import { MAX_ITEMS } from '../../../lib/cotizaciones';
+import { materializeAnticipoCobros } from '../../../lib/cobros';
 import { sanitizeItem } from '../../../../packages/elements/src/engine';
 
 // Evento interno (eventos.tipo) → evento público de webhook.
@@ -109,6 +110,9 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
         if (body.action === 'update_draft' || (body.action === 'send' && actual === 'draft')) {
             const vigDias = Number(body.vigencia_dias) || 30;
+            // Anticipo: % válido 1–99; cualquier otro valor = sin anticipo.
+            const antRaw = Number(body.anticipo_pct);
+            const anticipoPct = Number.isFinite(antRaw) && antRaw >= 1 && antRaw <= 99 ? Math.round(antRaw * 100) / 100 : null;
             await sql`update cotizaciones set
                         cliente_id = ${body.cliente_id || null},
                         terminos = ${body.terminos || 'contado'},
@@ -117,7 +121,8 @@ export const PATCH: APIRoute = async ({ params, request }) => {
                         base_currency = ${body.base_currency || 'MXN'},
                         fiscal_currency = ${body.fiscal_currency || 'MXN'},
                         subtotal = ${realSubtotal}, iva = ${iva}, total = ${total},
-                        version = ${nextVersion}, iva_incluido = ${iva_incluido}
+                        version = ${nextVersion}, iva_incluido = ${iva_incluido},
+                        anticipo_pct = ${anticipoPct}
                       where id = ${id}`;
         } else {
             await sql`update cotizaciones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total}, version = ${nextVersion}, iva_incluido = ${iva_incluido} where id = ${id}`;
@@ -146,9 +151,38 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         await sql`update cotizaciones set status = 'sent', sent_at = coalesce(sent_at, ${now}) where id = ${id}`;
     } else if (action.to === 'approved') {
         await sql`update cotizaciones set status = 'approved', approved_at = ${now} where id = ${id}`;
+        // Anticipo: materializa anticipo + saldo (idempotente; no-op sin anticipo_pct).
+        try { await materializeAnticipoCobros(id); } catch { /* fallback en payment-intent */ }
     } else if (action.to === 'paid') {
         const method = body.payment_method || 'transferencia';
         await sql`update cotizaciones set status = 'paid', paid_at = coalesce(paid_at, ${now}), payment_method = coalesce(payment_method, ${method}) where id = ${id}`;
+        // Pago registrado a mano = la cotización quedó saldada: los cobros parciales
+        // que sigan pendientes se cancelan (que el desglose no muestre "por pagar")
+        // y sus PaymentIntents en Stripe también (best-effort) — un checkout abierto
+        // en el navegador del cliente podría cobrar de más después del pago manual.
+        const stripeKey = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+        const pendientesPI = await sql`
+            select co.stripe_payment_intent_id, o.stripe_account_id
+            from cotizacion_cobros co
+            join cotizaciones c on c.id = co.cotizacion_id
+            join orgs o on o.id = c.org_id
+            where co.cotizacion_id = ${id} and co.status = 'pendiente'
+              and co.stripe_payment_intent_id is not null`;
+        if (stripeKey) {
+            for (const p of pendientesPI) {
+                try {
+                    await fetch(`https://api.stripe.com/v1/payment_intents/${p.stripe_payment_intent_id}/cancel`, {
+                        method: 'POST',
+                        headers: {
+                            Authorization: `Bearer ${stripeKey}`,
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            ...(p.stripe_account_id ? { 'Stripe-Account': p.stripe_account_id as string } : {}),
+                        },
+                    });
+                } catch { /* best-effort: el webhook concilia si aun así se paga */ }
+            }
+        }
+        await sql`update cotizacion_cobros set status = 'cancelado' where cotizacion_id = ${id} and status = 'pendiente'`;
     } else {
         await sql`update cotizaciones set status = ${action.to} where id = ${id}`;
     }

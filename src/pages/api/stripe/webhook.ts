@@ -123,7 +123,12 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
     // Defensa en profundidad: el evento debe provenir de la cuenta conectada de la
     // org dueña de la cotización (o de la plataforma, si aún no hay Connect).
     if (rows.length && account && rows[0].acct && rows[0].acct !== account) return;
-    if (rows.length && ['approved', 'invoiced'].includes(rows[0].status as string)) {
+    // La conciliación de cobros parciales corre INCLUSO si la cotización ya está
+    // 'paid' (un SPEI en vuelo puede liquidarse después de un pago manual — el
+    // dinero llegó y debe quedar registrado); el flip a 'paid' solo aplica desde
+    // approved/invoiced (el UPDATE de abajo ya lo garantiza).
+    const puedeConciliarCobro = !!(sessionOrIntent?.metadata?.cobro_id) && rows.length && rows[0].status === 'paid';
+    if (rows.length && (['approved', 'invoiced'].includes(rows[0].status as string) || puedeConciliarCobro)) {
         let paymentMethod = 'tarjeta';
         if (eventType === 'checkout.session.async_payment_succeeded') {
             paymentMethod = 'spei';
@@ -148,14 +153,95 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
             paymentMethod = 'spei';
         }
 
-        await sql`update cotizaciones set status = 'paid', paid_at = now(), payment_method = ${paymentMethod} where id = ${cid}`;
-        await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                  values (${rows[0].org_id}, ${cid}, 'paid', 'Pago recibido vía Stripe')`;
-        await logAudit(rows[0].org_id as string, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea (Stripe)' });
-        // Fire-and-forget: no demorar el 200 a Stripe con nuestro webhook saliente
-        // (dispatchQuoteEvent nunca lanza, pero por si acaso se traga el error —
-        // antes aquí se llamaba a un `after()` inexistente que tronaba el handler).
-        dispatchQuoteEvent(rows[0].org_id as string, cid, 'quote.paid').catch(() => {});
+        const orgId = rows[0].org_id as string;
+        const cobroId = sessionOrIntent?.metadata?.cobro_id as string | undefined;
+
+        if (cobroId) {
+            // ── Cobros parciales (anticipo/saldo/cuota/total v2) ──────────────
+            // 1) Marcar este cobro como pagado. Acepta también 'cancelado': un PI
+            // en vuelo (CLABE SPEI ya emitida) puede liquidarse DESPUÉS de que el
+            // cobro se canceló (pago manual del vendedor, plan de cuotas que lo
+            // reemplazó) — el dinero llegó de todos modos y hay que registrarlo.
+            const marked = await sql`
+                update cotizacion_cobros
+                set status = 'pagado', paid_at = now(), payment_method = ${paymentMethod}
+                where id = ${cobroId} and cotizacion_id = ${cid} and status in ('pendiente', 'cancelado')
+                returning tipo, numero_cuota, monto`;
+
+            if (!marked.length) {
+                // Cobro inexistente o ya pagado. Si ya está 'pagado' es una
+                // redelivery de Stripe (idempotente, nada que hacer). Si la fila
+                // no existe, el dinero llegó sin cobro que lo respalde: dejar
+                // rastro para conciliación manual, sin flip automático.
+                const existe = await sql`select 1 from cotizacion_cobros where id = ${cobroId}`;
+                if (!existe.length) {
+                    const monto = Number(sessionOrIntent?.amount ?? 0) / 100;
+                    await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                              values (${orgId}, ${cid}, 'paid', ${`Pago de $${monto.toFixed(2)} recibido vía Stripe para un cobro ya no vigente — revisar conciliación`})`;
+                    await logAudit(orgId, { accion: 'cotizacion.pago_no_conciliado', entidad: 'cotizacion', entidad_id: cid, detalle: `PI ${sessionOrIntent?.id ?? ''} sin cobro vigente` });
+                }
+                return;
+            }
+
+            // 2) Si lo pagado ya cubre el total (p. ej. se liquidó el saldo
+            // original después de que un plan de cuotas lo había reemplazado),
+            // los cobros pendientes restantes se cancelan — ya no hay nada que deber.
+            const [sums] = await sql`
+                select (select coalesce(sum(monto), 0) from cotizacion_cobros
+                        where cotizacion_id = ${cid} and status = 'pagado') as pagado,
+                       total
+                from cotizaciones where id = ${cid}`;
+            if (sums && Number(sums.pagado) >= Number(sums.total) - 0.01) {
+                await sql`update cotizacion_cobros set status = 'cancelado'
+                          where cotizacion_id = ${cid} and status = 'pendiente'`;
+            }
+
+            // 3) Flip atómico e idempotente: la cotización pasa a 'paid' SOLO si ya
+            // no queda ningún cobro pendiente. Se corre en cada pago de cobro; el
+            // que caiga al último (por orden de commit) es el que la salda.
+            const flipped = await sql`
+                update cotizaciones
+                set status = 'paid', paid_at = now(), payment_method = ${paymentMethod}
+                where id = ${cid} and status in ('approved', 'invoiced')
+                  and not exists (
+                      select 1 from cotizacion_cobros
+                      where cotizacion_id = ${cid} and status = 'pendiente')
+                returning id`;
+
+            if (flipped.length) {
+                await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                          values (${orgId}, ${cid}, 'paid', 'Pago recibido vía Stripe — cotización saldada')`;
+                await logAudit(orgId, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea (Stripe)' });
+                dispatchQuoteEvent(orgId, cid, 'quote.paid').catch(() => {});
+            } else if (marked.length) {
+                // Pago PARCIAL: evento informativo, sin quote.paid (avisar a las
+                // integraciones que "se pagó todo" cuando solo cayó el anticipo
+                // sería mentirles).
+                const co = marked[0];
+                const label = co.tipo === 'anticipo' ? 'Anticipo'
+                    : co.tipo === 'saldo' ? 'Saldo'
+                    : co.tipo === 'cuota' ? `Cuota ${co.numero_cuota}`
+                    : 'Pago';
+                const monto = Number(co.monto).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+                const sufijo = rows[0].status === 'paid' ? ' (la cotización ya estaba marcada como pagada — verificar)' : ' — saldo pendiente';
+                await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                          values (${orgId}, ${cid}, 'paid', ${`${label} de ${monto} pagado vía Stripe${sufijo}`})`;
+                await logAudit(orgId, { accion: 'cotizacion.cobro_pagado', entidad: 'cotizacion', entidad_id: cid, detalle: `${label} pagado en línea (Stripe)` });
+            }
+        } else {
+            // ── Legacy: PaymentIntent/Checkout creado antes de los cobros parciales ──
+            await sql`update cotizaciones set status = 'paid', paid_at = now(), payment_method = ${paymentMethod} where id = ${cid}`;
+            // Higiene: si existieran cobros pendientes (no debería en el flujo legacy),
+            // se cancelan para que el desglose no muestre "por pagar" en una pagada.
+            await sql`update cotizacion_cobros set status = 'cancelado' where cotizacion_id = ${cid} and status = 'pendiente'`;
+            await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                      values (${orgId}, ${cid}, 'paid', 'Pago recibido vía Stripe')`;
+            await logAudit(orgId, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea (Stripe)' });
+            // Fire-and-forget: no demorar el 200 a Stripe con nuestro webhook saliente
+            // (dispatchQuoteEvent nunca lanza, pero por si acaso se traga el error —
+            // antes aquí se llamaba a un `after()` inexistente que tronaba el handler).
+            dispatchQuoteEvent(orgId, cid, 'quote.paid').catch(() => {});
+        }
     }
 }
 

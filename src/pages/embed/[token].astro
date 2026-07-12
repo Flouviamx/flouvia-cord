@@ -87,7 +87,12 @@ Astro.response.headers.set('Content-Security-Policy', frameAncestors);
 const yaAprobada = ['approved', 'paid', 'invoiced'].includes(q.status);
 const yaRechazada = q.status === 'rejected';
 const pagoActivo = !!(import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY);
-const puedePagar = pagoActivo && (
+// Términos de crédito: mismo gating que /q/[token] (ver getCotizacionByToken).
+// Con cobros parciales mandan LOS COBROS; sin ellos, los términos de crédito.
+const cobrosQ: any[] = Array.isArray((q as any).cobros) ? (q as any).cobros : [];
+const hayCobroPagable = cobrosQ.some((co: any) => co.status === 'pendiente' && !co.venceEnFuturo);
+const pagoDisponible = cobrosQ.length > 0 ? hayCobroPagable : (q as any).pagoDisponible !== false;
+const puedePagar = pagoActivo && pagoDisponible && (
     ORG.aceptaTransferencia ||
     ((ORG.aceptaTarjeta || ORG.cobroSpeiAuto) && ORG.stripeAccountId && ORG.stripeChargesEnabled)
 );

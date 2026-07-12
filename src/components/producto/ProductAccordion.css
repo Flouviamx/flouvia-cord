@@ -20,7 +20,7 @@
 .pac-card {
   position: relative;
   overflow: hidden;
-  border-radius: 26px;
+  border-radius: 32px;
   cursor: pointer;
   flex-shrink: 0;
   min-width: 54px;
@@ -145,19 +145,32 @@
 /* ── Vertical label (inactive cards) ──────────────────────── */
 .pac-vlabel {
   position: absolute;
-  bottom: 1.8rem;
+  bottom: 2.2rem;
   left: 50%;
-  transform: translateX(-50%) rotate(-90deg);
-  transform-origin: center center;
+  transform: translateX(-50%) rotate(180deg);
+  writing-mode: vertical-rl;
   white-space: nowrap;
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 2.6px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.48);
+  color: rgba(255, 255, 255, 0.45);
   z-index: 5;
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   /* opacity animated by GSAP */
+}
+
+.pac-vlabel-num {
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.75rem;
+}
+
+.pac-vlabel-sep {
+  opacity: 0.4;
 }
 
 /* ── Text block (active card only) ────────────────────────── */
@@ -240,8 +253,13 @@
     top: 50%;
     left: 70px;
     transform: translateY(-50%) rotate(0deg);
+    writing-mode: horizontal-tb;
     letter-spacing: 2px;
     font-size: 0.6rem;
+  }
+  
+  .pac-vlabel-txt {
+    display: none; /* Hide title on mobile horizontal tabs to save space */
   }
 
   .pac-text {

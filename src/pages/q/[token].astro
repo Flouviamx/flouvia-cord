@@ -21,6 +21,7 @@ if (token === 'demo') {
             creada: '10 jul 2026',
             token: 'demo',
             diasVigencia: 2,
+            pagoDisponible: true,
             items: [
                 {
                     id: 'b5a98cbe',
@@ -100,7 +101,14 @@ const yaRechazada = q.status === 'rejected';
 // (tarjeta) o al liquidar el SPEI — mientras, se avisa que el pago va en camino.
 const regresoDePago = Astro.url.searchParams.get('pagado') === '1' && q.status !== 'paid';
 const pagoActivo = !!(import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY);
-const puedePagar = pagoActivo && (
+// Términos de crédito (Net 30/60): el pago NO se pide al aprobar — se habilita
+// cuando llega la fecha de vencimiento (getCotizacionByToken calcula pagoDisponible).
+// Con cobros parciales (anticipo/cuotas), mandan LOS COBROS: hay botón de pago
+// solo si existe un cobro pendiente cuya fecha ya llegó.
+const cobrosQ: any[] = Array.isArray((q as any).cobros) ? (q as any).cobros : [];
+const hayCobroPagable = cobrosQ.some((co: any) => co.status === 'pendiente' && !co.venceEnFuturo);
+const pagoDisponible = cobrosQ.length > 0 ? hayCobroPagable : (q as any).pagoDisponible !== false;
+const puedePagar = pagoActivo && pagoDisponible && (
     ORG.aceptaTransferencia ||
     ((ORG.aceptaTarjeta || ORG.cobroSpeiAuto) && ORG.stripeAccountId && ORG.stripeChargesEnabled)
 );

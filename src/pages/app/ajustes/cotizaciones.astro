@@ -70,6 +70,13 @@ const TERMS = [
                     <span class="s-hint">Preseleccionado al crear una cotización.</span>
                 </div>
             </div>
+            <div class="s-row">
+                <div class="s-field">
+                    <label for="oAnticipo">Anticipo por default (%)</label>
+                    <input class="s-input" id="oAnticipo" data-field="anticipo_default_pct" type="number" min="0" max="99" step="1" value={ORG.anticipoDefaultPct || ''} placeholder="0" />
+                    <span class="s-hint">Al aprobarse una cotización, el cliente paga este % de inmediato y el resto según los términos. Déjalo en 0 si no pides anticipo.</span>
+                </div>
+            </div>
         </div>
     </div>
 

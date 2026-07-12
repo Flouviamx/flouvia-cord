@@ -68,6 +68,10 @@ export const PATCH: APIRoute = async ({ request }) => {
 
     const vigDias = body.vigencia_default_dias !== undefined ? clamp(Math.round(Number(body.vigencia_default_dias) || 0), 1, 365) : actual.vigencia_default_dias;
     const termDef = body.terminos_default !== undefined ? (TERMS.has(String(body.terminos_default)) ? String(body.terminos_default) : 'contado') : actual.terminos_default;
+    // % de anticipo por defecto (pre-llena el editor): 0/vacío = sin anticipo.
+    const anticipoDef = body.anticipo_default_pct !== undefined
+        ? (Number(body.anticipo_default_pct) >= 1 ? clamp(Math.round(Number(body.anticipo_default_pct)), 1, 99) : null)
+        : actual.anticipo_default_pct;
     const retIsr = body.retencion_isr_pct !== undefined ? clamp(Number(body.retencion_isr_pct) || 0, 0, 100) : actual.retencion_isr_pct;
     const retIva = body.retencion_iva_pct !== undefined ? clamp(Number(body.retencion_iva_pct) || 0, 0, 100) : actual.retencion_iva_pct;
     const textoLegal = body.texto_legal !== undefined ? str(body.texto_legal, 600) : actual.texto_legal;
@@ -132,7 +136,7 @@ export const PATCH: APIRoute = async ({ request }) => {
             logo_url = ${logoUrl}, pdf_template = ${pdfTemplate},
             pdf_mensaje = ${pdfMensaje}, pdf_condiciones = ${pdfCond}, pdf_mostrar_lista = ${pdfLista},
             aprob_descuento_max = ${aprobDesc}, aprob_monto_max = ${aprobMonto}, aprob_margen_min = ${aprobMargen}, interes_moratorio_pct = ${interes},
-            vigencia_default_dias = ${vigDias}, terminos_default = ${termDef},
+            vigencia_default_dias = ${vigDias}, terminos_default = ${termDef}, anticipo_default_pct = ${anticipoDef},
             retencion_isr_pct = ${retIsr}, retencion_iva_pct = ${retIva}, texto_legal = ${textoLegal},
             sitio_web = ${sitioWeb}, whatsapp = ${whatsapp},
             regimen_fiscal = ${regimen}, uso_cfdi = ${usoCfdi}, cp_fiscal = ${cpFiscal}, serie_folio = ${serieFolio},

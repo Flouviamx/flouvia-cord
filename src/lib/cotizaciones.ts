@@ -40,6 +40,9 @@ export interface NewQuoteInput {
     fiscal_currency?: string | null;
     fx_buffer_pct?: number | null;
     iva_incluido?: boolean;
+    // % de anticipo requerido (1–99). Al aprobarse la cotización se materializan
+    // dos cobros: anticipo (pagable ya) + saldo (vence según los términos).
+    anticipo_pct?: number | null;
 }
 
 export interface CreateQuoteResult {
@@ -125,6 +128,10 @@ export async function createCotizacion(
     }
 
     const terminos = ['contado', 'net30', 'net60'].includes(input.terminos ?? '') ? input.terminos! : 'contado';
+    // Anticipo: % válido entre 1 y 99; cualquier otro valor = sin anticipo.
+    const anticipoPctRaw = Number(input.anticipo_pct);
+    const anticipoPct = Number.isFinite(anticipoPctRaw) && anticipoPctRaw >= 1 && anticipoPctRaw <= 99
+        ? Math.round(anticipoPctRaw * 100) / 100 : null;
     const dias = Number(input.vigencia_dias) || 30;
     const vigencia = new Date(); vigencia.setDate(vigencia.getDate() + dias);
     const clienteId = input.cliente_id || null;
@@ -152,11 +159,11 @@ export async function createCotizacion(
     const [cot] = await sql`
         insert into cotizaciones
             (org_id, cliente_id, folio, status, subtotal, iva, total, terminos, vigencia, notas, sent_at, aprob_estado, aprob_motivo,
-             moneda, base_currency, fiscal_currency, fx_rate, fx_rate_source, fx_locked_until, iva_incluido)
+             moneda, base_currency, fiscal_currency, fx_rate, fx_rate_source, fx_locked_until, iva_incluido, anticipo_pct)
         values
             (${orgId}, ${clienteId}, ${folio}, ${status}, ${realSubtotal}, ${iva}, ${total},
              ${terminos}, ${vigencia.toISOString()}, ${input.notas || null}, ${sentAt}, ${aprobEstado}, ${aprobMotivo},
-             ${baseCurrency}, ${baseCurrency}, ${fiscalCurrency}, ${fxRate}, ${fxSource}, ${fxLockedUntil}, ${iva_incluido})
+             ${baseCurrency}, ${baseCurrency}, ${fiscalCurrency}, ${fxRate}, ${fxSource}, ${fxLockedUntil}, ${iva_incluido}, ${anticipoPct})
         returning id, public_token`;
 
     let orden = 0;

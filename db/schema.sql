@@ -905,3 +905,45 @@ create policy "rls_identity_capture_sessions" on identity_capture_sessions
     org_id = nullif(current_setting('app.org_id', true), '')::uuid
     or token = nullif(current_setting('app.capture_token', true), '')
   );
+
+-- ── Cobros parciales: anticipo / saldo / cuotas (jul 2026) ──────────────────
+-- Una cotización puede cobrarse en varias "rebanadas": anticipo + saldo (si el
+-- vendedor pidió un % de anticipo), cuotas negociadas por el agente de cobranza,
+-- o una sola fila tipo 'total' (creada de forma perezosa por payment-intent.ts
+-- para el pago simple). Cada fila = un cobro pagable con su PROPIO PaymentIntent
+-- de Stripe (crucial para SPEI: cada cobro conserva su CLABE estable).
+-- La cotización pasa a 'paid' solo cuando NO quedan cobros 'pendiente'.
+create table if not exists cotizacion_cobros (
+  id            uuid        default gen_random_uuid() primary key,
+  org_id        uuid        not null references orgs(id) on delete cascade,
+  cotizacion_id uuid        not null references cotizaciones(id) on delete cascade,
+  tipo          text        not null,             -- 'total' | 'anticipo' | 'saldo' | 'cuota'
+  numero_cuota  int         not null default 0,   -- > 0 solo para tipo='cuota' (NOT NULL para que el unique aplique)
+  monto         numeric     not null,
+  status        text        not null default 'pendiente', -- 'pendiente' | 'pagado' | 'cancelado'
+  stripe_payment_intent_id text,
+  payment_method text,                            -- 'tarjeta' | 'spei' (al pagarse)
+  paid_at       timestamptz,
+  vence         date,                             -- null = pagable de inmediato
+  created_at    timestamptz default now(),
+  unique (cotizacion_id, tipo, numero_cuota)
+);
+create index if not exists idx_cotizacion_cobros_cot on cotizacion_cobros(cotizacion_id);
+create index if not exists idx_cotizacion_cobros_org on cotizacion_cobros(org_id);
+create index if not exists idx_cotizacion_cobros_pi on cotizacion_cobros(stripe_payment_intent_id);
+
+alter table cotizacion_cobros enable row level security;
+create policy "rls_cotizacion_cobros" on cotizacion_cobros
+  using (
+    org_id = nullif(current_setting('app.org_id', true), '')::uuid
+    or cotizacion_id in (
+      select id from cotizaciones
+      where public_token = nullif(current_setting('app.public_token', true), '')
+    )
+  );
+alter table cotizacion_cobros force row level security;
+
+-- % de anticipo requerido por cotización (null = sin anticipo, pago normal).
+alter table cotizaciones add column if not exists anticipo_pct numeric;
+-- Default del negocio: pre-llena el editor en cotizaciones nuevas (Ajustes › Cotizaciones).
+alter table orgs add column if not exists anticipo_default_pct numeric;

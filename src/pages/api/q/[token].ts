@@ -11,6 +11,7 @@ import { sql } from '../../../lib/db';
 import { dispatchQuoteEvent } from '../../../lib/webhooks';
 import { after } from '../../../lib/after';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
+import { materializeAnticipoCobros } from '../../../lib/cobros';
 
 const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n);
 
@@ -99,6 +100,11 @@ export const POST: APIRoute = async ({ params, request }) => {
         txQueries.push(sql`insert into cotizacion_firmas (org_id, cotizacion_id, firmante_nombre, firmante_email, firmante_ip, user_agent, snapshot_hash)
                   values (${c.org_id}, ${c.id}, ${signedBy || 'Anónimo'}, ${email || null}, ${ip}, ${ua}, ${snapshotHash})`);
         await (sql as any).transaction(txQueries);
+        // Anticipo: materializa las filas anticipo + saldo DESPUÉS de que el total
+        // quedó final (la aprobación parcial lo recalcula arriba). Idempotente;
+        // no hace nada si la cotización no pide anticipo. Best-effort: si falla,
+        // payment-intent.ts las crea al primer intento de pago.
+        try { await materializeAnticipoCobros(c.id as string); } catch { /* fallback en payment-intent */ }
         // Fondo: el webhook/Slack jamás debe hacer esperar al cliente que aprueba.
         after(dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.approved'));
         return json({ ok: true, status: 'approved', hash: snapshotHash, partial: isPartial });

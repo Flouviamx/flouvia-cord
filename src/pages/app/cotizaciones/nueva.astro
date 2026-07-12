@@ -29,6 +29,9 @@ const DEFAULT_CURRENCY = ((draftQuote as any)?.baseCurrency ?? (draftQuote as an
 const DRAFT_VIG = draftQuote?.vigenciaDias ?? null;
 const SELECTED_VIG = DRAFT_VIG ?? ORG.vigenciaDefaultDias;
 const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias, ...(DRAFT_VIG ? [DRAFT_VIG] : [])])].sort((a, b) => a - b);
+// Anticipo pre-llenado: el del borrador si se está editando; si no, el default
+// del negocio (Ajustes › Cotizaciones). 0/null = sin anticipo.
+const DEFAULT_ANTICIPO = Number((draftQuote as any)?.anticipoPct ?? ORG.anticipoDefaultPct) || 0;
 
 ---
 
@@ -146,6 +149,12 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias, ...(DRAFT_VI
                     <select class="ed-select" id="vigSelect">
                         {VIGENCIAS.map((n) => <option value={n} selected={n === SELECTED_VIG}>{n} días</option>)}
                     </select>
+                </div>
+
+                <div class="sum-field">
+                    <label>Anticipo (%) <span class="opt">(opcional)</span></label>
+                    <input class="ed-select" id="anticipoPct" type="number" min="0" max="99" step="1" placeholder="0" value={DEFAULT_ANTICIPO || ''} />
+                    <p class="sum-anticipo-note" id="anticipoNote" hidden></p>
                 </div>
 
                 <div class="sum-field">
@@ -388,6 +397,20 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias, ...(DRAFT_VI
         const $save = document.getElementById('sumSaveLine');
         const $saveV = document.getElementById('sumSave');
         if ($save && $saveV) { $save.hidden = saved <= 0; $saveV.textContent = '−' + fmt(saved); }
+
+        // Anticipo: preview en pesos de cuánto paga el cliente al aprobar.
+        const antEl = document.getElementById('anticipoPct');
+        const antNote = document.getElementById('anticipoNote');
+        if (antEl && antNote) {
+            const pct = Math.min(99, Math.max(0, parseInt(antEl.value, 10) || 0));
+            if (pct >= 1 && total > 0) {
+                const ant = Math.round(total * pct) / 100;
+                antNote.textContent = `Al aprobar, tu cliente paga ${fmt(ant)} de anticipo y el resto (${fmt(total - ant)}) según los términos.`;
+                antNote.hidden = false;
+            } else {
+                antNote.hidden = true;
+            }
+        }
 
         // Si cotiza en divisa extranjera, el monto cambió → refrescar el FX
         const cov = document.getElementById('fxCover');
@@ -635,11 +658,16 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias, ...(DRAFT_VI
         const fiscal_currency = base_currency === 'MXN' ? 'MXN' : 'MXN';
         const fx_buffer_pct = base_currency === 'MXN' ? 0 : (fxBufferEl ? parseFloat(fxBufferEl.value) || 0 : 0);
 
+        // Anticipo: % que el cliente paga de inmediato al aprobar (0 = sin anticipo).
+        const antEl = document.getElementById('anticipoPct');
+        const anticipo_pct = antEl ? Math.min(99, Math.max(0, parseInt(antEl.value, 10) || 0)) : 0;
+
         return {
             send,
             cliente_id,
             terminos: TERM_MAP[activeChip ? activeChip.dataset.term : 'Contado'] || 'contado',
             vigencia_dias: vigSel ? parseInt(vigSel.value, 10) || 30 : 30,
+            anticipo_pct: anticipo_pct >= 1 ? anticipo_pct : null,
             notas: notas ? notas.value.trim() : '',
             base_currency,
             fiscal_currency,
@@ -799,6 +827,8 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias, ...(DRAFT_VI
     const $aiStatus = document.getElementById('aiStatus');
     const $ivaIncluido = document.getElementById('ivaIncluido');
     if ($ivaIncluido) $ivaIncluido.addEventListener('change', recalc);
+    const $anticipoPct = document.getElementById('anticipoPct');
+    if ($anticipoPct) $anticipoPct.addEventListener('input', recalc);
     
     if ($aiBtn) {
         $aiBtn.addEventListener('click', async () => {
@@ -1362,6 +1392,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias, ...(DRAFT_VI
 
     .sum-field { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.5rem; }
     .sum-field label { font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted); }
+    .sum-anticipo-note { font-size: 0.74rem; color: var(--color-text-muted); line-height: 1.5; margin: 0.35rem 0 0; }
 
     .btn-send {
         display: flex; align-items: center; justify-content: center; gap: 8px;

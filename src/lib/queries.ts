@@ -82,6 +82,7 @@ export async function getOrg() {
         plan_raw: (o.plan as string) || 'free',
         vigenciaDefaultDias: num(o.vigencia_default_dias) || 30,
         terminosDefault: (o.terminos_default as string) || 'contado',
+        anticipoDefaultPct: num(o.anticipo_default_pct),
         retencionIsrPct: num(o.retencion_isr_pct),
         retencionIvaPct: num(o.retencion_iva_pct),
         textoLegal: (o.texto_legal as string) ?? '',
@@ -379,6 +380,7 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [])
         total: num(c.total),
         version: num(c.version) || 1,
         iva_incluido: Boolean(c.iva_incluido),
+        anticipoPct: c.anticipo_pct != null ? num(c.anticipo_pct) : null,
         items: items.map((it): MockItem => ({
             id: it.id,
             producto_id: it.producto_id,
@@ -463,7 +465,7 @@ export async function getDocumentosFiscales(cotizacionId: string) {
 // Link público — usa withPublicToken para satisfacer la política RLS de cotizaciones/items.
 // Tres queries en un solo batch con el token como contexto de RLS.
 export async function getCotizacionByToken(token: string) {
-    const [rows, items, conv, comentarios, firmas] = await withPublicToken(token,
+    const [rows, items, conv, comentarios, firmas, cobrosRows] = await withPublicToken(token,
         sql`select c.*, cl.empresa, coalesce(c.terminos, cl.terminos_default) as terminos,
                o.nombre as org_nombre, o.rfc as org_rfc, o.color_marca as org_color,
                o.logo_url as org_logo_url,
@@ -497,7 +499,12 @@ export async function getCotizacionByToken(token: string) {
             where c.public_token = ${token} order by cc.created_at asc`,
         sql`select f.* from cotizacion_firmas f
             join cotizaciones c on c.id = f.cotizacion_id
-            where c.public_token = ${token} order by f.firmado_en desc limit 1`
+            where c.public_token = ${token} order by f.firmado_en desc limit 1`,
+        sql`select co.id, co.tipo, co.numero_cuota, co.monto, co.status, co.vence, co.paid_at
+            from cotizacion_cobros co
+            join cotizaciones c on c.id = co.cotizacion_id
+            where c.public_token = ${token}
+            order by co.vence asc nulls last, co.created_at asc`,
     );
     if (!rows.length) return null;
     
@@ -521,6 +528,39 @@ export async function getCotizacionByToken(token: string) {
         const venc = new Date(rows[0].vigencia as string);
         const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
         (quote as any).diasVigencia = Math.ceil((venc.getTime() - hoy.getTime()) / 86400000);
+    }
+
+    // Disponibilidad del pago en línea según los términos de crédito (contado =
+    // pagable desde la aprobación; net30/net60 = pagable hasta que llega la fecha
+    // de vencimiento). Mismo cálculo canónico que getCobranza()/cron de intereses:
+    // vence = coalesce(approved_at, created_at) + días del término.
+    {
+        const DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
+        const termRaw = (rows[0].terminos as string) || 'contado';
+        const termDias = DAYS[termRaw] ?? 0;
+        const base = new Date((rows[0].approved_at as string) || (rows[0].created_at as string) || Date.now());
+        const due = new Date(base); due.setDate(due.getDate() + termDias); due.setHours(0, 0, 0, 0);
+        const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+        (quote as any).pagoDisponible = termDias === 0 || due.getTime() <= hoy.getTime();
+        (quote as any).saldoVence = termDias > 0 ? fmtDate(due) : '';
+        (quote as any).saldoVenceDias = termDias > 0 ? Math.max(0, Math.ceil((due.getTime() - hoy.getTime()) / 86400000)) : 0;
+    }
+
+    // Cobros parciales (anticipo/saldo/cuotas). Si la cotización tiene filas en
+    // cotizacion_cobros, el link público muestra el desglose y el botón de pago
+    // apunta al siguiente cobro pendiente (no al total completo).
+    if (cobrosRows.length) {
+        const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+        (quote as any).cobros = cobrosRows.map((co: any) => ({
+            id: co.id as string,
+            tipo: co.tipo as string,
+            numeroCuota: num(co.numero_cuota),
+            monto: num(co.monto),
+            status: co.status as string,
+            vence: co.vence ? fmtDate(co.vence) : '',
+            venceEnFuturo: co.vence ? new Date(co.vence as string).getTime() > hoy.getTime() : false,
+            pagado: co.status === 'pagado',
+        }));
     }
 
     if (firmas.length > 0) {
