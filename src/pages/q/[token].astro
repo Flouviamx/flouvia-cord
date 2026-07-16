@@ -76,7 +76,8 @@ if (token === 'demo') {
             portalBanner: '',
             portalBienvenida: '',
             portalMostrarChat: true,
-            portalPowered: true
+            portalPowered: true,
+            paisCode: 'MX'
         },
         conversacion: [
             { tipo: 'vendedor', detalle: '¡Hola Alejandro! Te comparto la cotización de los materiales para la obra. Cualquier duda sigo a tus órdenes por aquí o por WhatsApp.', cuando: 'hace 1 hora', mine: false },
@@ -144,14 +145,6 @@ const color = ORG.colorMarca || '#0a192f';
             puedePagar={puedePagar}
             standalone={true}
         />
-
-        {ORG.portalPowered !== false && (
-            <a href="/" class="qp-via">
-                Cotización enviada vía
-                <img src="/imgs/logo-cord-navy.png" alt="Cord" />
-                — crea las tuyas gratis →
-            </a>
-        )}
     </main>
 </Layout>
 
@@ -190,19 +183,8 @@ const color = ORG.colorMarca || '#0a192f';
     @keyframes qp-payback-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
     @media (prefers-reduced-motion: reduce) { .qp-payback { animation: none; } }
 
-    .qp-via {
-        display: inline-flex; align-items: center; gap: 6px;
-        font-size: 0.76rem; font-weight: 500;
-        color: rgba(10,25,47,0.3); text-decoration: none;
-        letter-spacing: 0.01em;
-        transition: color 0.3s;
-    }
-    .qp-via img { height: 11px; width: auto; opacity: 0.45; transition: opacity 0.3s; }
-    .qp-via:hover { color: rgba(10,25,47,0.65); }
-    .qp-via:hover img { opacity: 0.8; }
-
     @media print {
-        .qp-bg, .qp-via, .qp-payback { display: none !important; }
+        .qp-bg, .qp-payback { display: none !important; }
         .qp-main { min-height: 0; padding: 0; display: block; }
     }
 </style>

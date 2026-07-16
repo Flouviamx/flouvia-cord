@@ -90,7 +90,7 @@ const waDigits = vWa.replace(/\D/g, '');
 const hayContacto = !!(vEmail || vWa || vTel);
 ---
 
-<div class="q-card" data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'}>
+<div class="q-card" data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-pais={ORG.paisCode || 'MX'} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'}>
     {ORG.esPrueba && (
         <div class="q-test-ribbon" role="status">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 12h4l-1.5 8L17 9h-4.5z"/></svg>
@@ -220,7 +220,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
             <span class="q-trust-live"><span class="q-live-dot"></span> Conectado en tiempo real</span>
             <span class="q-trust-secure">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                Cifrado · firma con validez legal
+                Cifrado · firma con validez legal{ORG.paisCode === 'MX' ? ' · CFDI 4.0' : ''}
             </span>
         </div>
     )}
@@ -394,6 +394,10 @@ const hayContacto = !!(vEmail || vWa || vTel);
                 </div>
                 {q.firma ? (
                     <div class="ql-audit-stamp">
+                        <div class="ql-audit-header">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                            <span>Documento verificado{ORG.paisCode === 'MX' ? ' · Listo para CFDI 4.0' : ''}</span>
+                        </div>
                         <div class="ql-audit-row"><strong>Firmante:</strong> {q.firma.nombre} (IP: {q.firma.ip})</div>
                         <div class="ql-audit-row"><strong>Fecha:</strong> {q.firma.cuando}</div>
                         <div class="ql-audit-row"><strong>Sello:</strong> <span class="ql-hash">{q.firma.hash}</span></div>
@@ -483,6 +487,18 @@ const hayContacto = !!(vEmail || vWa || vTel);
                     </a>
                 )}
             </div>
+        </div>
+    )}
+
+    {ORG.portalPowered !== false && (
+        <div class="q-cord-badge">
+            <span class="q-cord-badge-trust">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                Firma con validez legal{ORG.paisCode === 'MX' ? ' · Listo para CFDI 4.0' : ''}
+            </span>
+            <a href="https://cord.flouvia.com" class="q-cord-badge-cta" target="_blank" rel="noopener">
+                Verificado por <img src="/imgs/logo-cord-navy.png" alt="Cord" /> — crea las tuyas gratis →
+            </a>
         </div>
     )}
 </div>
@@ -625,7 +641,12 @@ const hayContacto = !!(vEmail || vWa || vTel);
                 // en runtime y no lleva data-astro-cid (regla del proyecto).
                 const now = new Date().toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' });
                 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                const pais = card?.dataset.pais || 'MX';
                 stamp.outerHTML = `<div class="ql-audit-stamp">
+                    <div class="ql-audit-header">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                        <span>Documento verificado${pais === 'MX' ? ' · Listo para CFDI 4.0' : ''}</span>
+                    </div>
                     <div class="ql-audit-row"><strong>Firmante:</strong> ${esc(signedBy)}</div>
                     <div class="ql-audit-row"><strong>Fecha:</strong> ${esc(now)}</div>
                     <div class="ql-audit-row"><strong>Sello:</strong> <span class="ql-hash">${esc(String(res.hash ?? ''))}</span></div>
@@ -1258,6 +1279,28 @@ const hayContacto = !!(vEmail || vWa || vTel);
 .q-contact-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 600; color: #374151; text-decoration: none; background: #fafafa; border: 1px solid rgba(10,25,47,0.08); border-radius: 10px; padding: 7px 12px; transition: transform 0.35s cubic-bezier(0.22,1,0.36,1), border-color 0.25s, background 0.25s; }
 .q-contact-link:hover { transform: translateY(-2px); border-color: rgba(10,25,47,0.2); background: #fff; }
 
+/* Sello de confianza + atribución — comparte esta tarjeta con /q Y con el embed
+   de Cord Elements (ambos renderizan QuoteCard), a diferencia del watermark
+   viejo que solo vivía en /q/[token].astro y nunca llegaba a los embeds. */
+.q-cord-badge {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    padding-top: 1.1rem; margin-top: 0.25rem; border-top: 1px solid rgba(10,25,47,0.06);
+}
+.q-cord-badge-trust {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.72rem; font-weight: 500; color: #059669;
+}
+.q-cord-badge-trust svg { flex-shrink: 0; }
+.q-cord-badge-cta {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.76rem; font-weight: 500; color: rgba(10,25,47,0.35);
+    text-decoration: none; letter-spacing: 0.01em;
+    transition: color 0.3s;
+}
+.q-cord-badge-cta img { height: 11px; width: auto; opacity: 0.45; transition: opacity 0.3s; }
+.q-cord-badge-cta:hover { color: rgba(10,25,47,0.7); }
+.q-cord-badge-cta:hover img { opacity: 0.85; }
+
 /* ── Barra de acción flotante (sticky, solo /q standalone) ── */
 .q-sticky { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: flex; justify-content: center; padding: 0 1rem 1rem; pointer-events: none; opacity: 0; transform: translateY(130%); transition: opacity 0.35s cubic-bezier(0.22,1,0.36,1), transform 0.45s cubic-bezier(0.22,1,0.36,1); }
 .q-sticky.q-sticky-show { opacity: 1; transform: none; }
@@ -1290,7 +1333,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
 
 /* ── Print ─────────────────────────────────────── */
 @media print {
-    .q-actions-area, .q-chat, .q-trust, .q-contact, .q-sticky { display: none !important; }
+    .q-actions-area, .q-chat, .q-trust, .q-contact, .q-sticky, .q-cord-badge { display: none !important; }
     .q-card { box-shadow: none; border-radius: 0; max-width: none; padding: 0; animation: none; }
     @page { margin: 1.4cm 1.6cm; }
 }
@@ -1321,4 +1364,12 @@ const hayContacto = !!(vEmail || vWa || vTel);
 .q-card .ql-audit-row { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; }
 .q-card .ql-audit-row strong { color: #374151; font-weight: 600; }
 .q-card .ql-hash { color: #059669; font-weight: 600; }
+.q-card .ql-audit-header {
+    display: flex; align-items: center; gap: 6px;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    font-size: 0.72rem; font-weight: 600; color: #059669;
+    margin-bottom: 8px; padding-bottom: 8px;
+    border-bottom: 1px dashed rgba(5,150,105,0.2);
+}
+.q-card .ql-audit-header svg { flex-shrink: 0; color: #059669; }
 </style>

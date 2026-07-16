@@ -8,6 +8,119 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Sello de confianza + promesa CFDI en QuoteCard — llega a `/q` Y al embed de Cord
+   Elements (jul 2026)** — parte de una sesión de estrategia sobre qué hace que Cord
+   Elements sea "necesario" (no solo bonito) para un negocio B2B, y no opcional. De 4
+   ángulos explorados (firma legal, candado de datos, sello visible, CFDI ligado al
+   flujo), una auditoría de código confirmó que **la firma SHA-256 y el catálogo/CRM
+   vivo ya llegaban a ambas rutas sin tocar nada** (Cord Elements reutiliza el MISMO
+   `QuoteCard.astro` que `/q/[token]`, vía `/embed/[token]`) — pero el watermark
+   "Powered by Cord" y cualquier promesa de CFDI **nunca llegaban al embed**, porque
+   vivían como un bloque aparte en `src/pages/q/[token].astro`, fuera del componente
+   compartido. Se corrigió moviendo ese bloque adentro de `QuoteCard.astro`:
+   • **Pie de confianza compartido (`.q-cord-badge`)** — nuevo bloque al final de la
+     tarjeta (visible en TODOS los pasos: revisar, firmar, aprobada, rechazada), gated
+     por `ORG.portalPowered !== false` (mismo flag de siempre — los planes de paga
+     pueden seguir quitándolo). Combina: ícono de escudo + "Firma con validez legal ·
+     Listo para CFDI 4.0" (el CFDI solo se menciona si `org.paisCode === 'MX'`) + el
+     link "Verificado por [logo Cord] — crea las tuyas gratis →" que antes vivía
+     SOLO en `/q/[token].astro` y por eso nunca aparecía en un iframe de terceros.
+   • **Línea de confianza pre-aprobación enriquecida** — la línea sutil que ya existía
+     ("Cifrado · firma con validez legal", visible mientras la cotización sigue viva)
+     ahora agrega "· CFDI 4.0" para orgs mexicanas, sin duplicar mensaje con el pie nuevo.
+   • **Sello de auditoría post-aprobación con encabezado** — el bloque `.ql-audit-stamp`
+     (Firmante/Fecha/Sello-hash, ya existente) ahora lleva un header con ícono de
+     escudo + "Documento verificado · Listo para CFDI 4.0" (MX). Se actualizó en LOS
+     DOS lugares donde existe este markup — el render del servidor (`QuoteCard.astro`)
+     Y la inyección por JS tras firmar en vivo (regla ya documentada del proyecto:
+     el DOM inyectado por JS debe ser idéntico al que renderiza el servidor) — para
+     eso, el país de la org ahora viaja en `data-pais` sobre `.q-card`.
+   • **`getCotizacionByToken` expone `org.paisCode`** (`src/lib/queries.ts`, nueva
+     columna seleccionada `o.country_code as org_country_code`, default `'MX'`) —
+     antes esta función no traía el país de la org en absoluto.
+   • **Verificado con Playwright contra el dev server**: `/q/demo` (revisión, org
+     "Mi negocio") muestra la línea "Cifrado · firma con validez legal · CFDI 4.0" y
+     el pie "Verificado por CORD — crea las tuyas gratis →"; `/embed/demo` (cotización
+     YA aprobada de la org semilla "Materiales del Valle", vista a través de la ruta
+     de Cord Elements) muestra el MISMO pie y línea de confianza — confirma que el
+     fix llega de verdad al embed, que era el bug real.
+   • Se eliminó el bloque `.qp-via` (y su CSS) de `src/pages/q/[token].astro`, que
+     quedó redundante al moverse a `QuoteCard.astro`.
+   ⚠️ Los otros 2 ángulos de la sesión de estrategia (candado de datos por catálogo
+     vivo, firma legal) no requirieron código — ya eran ciertos por arquitectura;
+     quedan pendientes de convertirse en mensaje de venta (landing/roadmap).
+
+✅ **Cord Elements v1.0.0 — rediseño mayor del SDK al nivel Stripe/Clerk (jul 2026)** —
+   motivado por una integración real (cliente "El Zarco") que reveló que la mitad del
+   contrato entre el SDK y la app no estaba conectado: 3 `@ts-ignore` por tipos
+   incompletos, `CordBuilder.Items` reescrito a mano (286 líneas) porque los estilos
+   inline no se podían sobreescribir, un botón "Abrir en pestaña nueva" porque el
+   iframe perdía la marca sin `<CordProvider>`, datos de cliente perdidos en silencio,
+   y `result.folio`/`result.token` siempre `undefined`. Mismo paquete de npm
+   (`@flouviahq/elements`), mismo nombre — versiones sucesivas, no un paquete nuevo.
+   Seis fases:
+   • **Fase 0 — Tipos generados, no escritos:** `tsc --emitDeclarationOnly` reemplaza
+     los `types/*.d.ts` escritos a mano (10 de 11 exports de `./react` no tenían tipo).
+     Anti-deriva: `scripts/check-exports.mjs` + `api-report.json` committeado, comparan
+     los exports reales del bundle contra un snapshot — falla si divergen. CI nueva en
+     `.github/workflows/elements.yml` (`tsc` → build → check-exports → `attw` → `publint`).
+     Bug de SSR encontrado y corregido: `class CordCotizadorElement extends HTMLElement`
+     a nivel de módulo tronaba con `ReferenceError` al importar el paquete desde Node
+     (sin DOM) — afectaba el entrypoint `.` completo.
+   • **Fase 1 — Appearance de punta a punta:** nuevo `configureCord()` (config global
+     estilo `loadStripe`), `theme: 'dark'/'auto'` real (antes tipado pero sin efecto),
+     `<CordCotizador>` ya no truena sin `<CordProvider>` en el árbol (antes
+     `useCordTranslations()` llamaba `useCordContext()`, que lanza sin Provider),
+     appearance rancia corregida (el iframe no reaccionaba a cambios tras el primer
+     render), 5 `baseUrl` hardcodeados unificados en `resolveOrigin()`/`resolveApiBase()`.
+   • **Fase 2 — Clases estables + headless real:** inline styles reemplazados por
+     clases `.cord-*` inyectadas dentro de `@layer cord` (Tailwind del consumidor
+     siempre gana, sin `!important`); `appearance.elements` (override por elemento,
+     patrón Clerk) y `appearance.baseTheme: 'none'` (headless total). Nuevo
+     `useQuoteBuilder()` — el estado del Builder como hook standalone; `<CordBuilder>`
+     pasa a ser un consumidor delgado de él (el patrón que El Zarco reconstruyó a
+     mano ahora es de primera clase).
+   • **Fase 3 — Contrato de datos:** el sobre `{ data }` que envuelve TODA respuesta
+     de `/api/v1/*` nunca se desenvolvía — `result.folio` era SIEMPRE `undefined`, en
+     el hook Y en el Server SDK, corregido. `CreateQuoteInput.cliente` — cotizar a un
+     cliente nuevo con find-or-create acotado (solo crea, nunca actualiza; marca
+     `origen: 'embed'` en la fila — nueva columna en `clientes`). Errores tipados
+     (`CordError` con `.status`/`.code`). Eventos como unión discriminada (`CordEvent`)
+     + `onViewed`/`onSigned`/`onItemComment` nuevos; el relay del embed omitía
+     `cord:item_comment` (se perdía en silencio, corregido). `engine.ts`: `ivaPct`
+     fuera de `[0,1]` ahora lanza `RangeError` en vez de un total silenciosamente
+     incorrecto (este motor lo importa el servidor para dinero real).
+   • **Fase 4 — pk_ vs proxy resuelto por tipos:** `CordProviderProps` es ahora una
+     unión discriminada — pasar `publishableKey` y `proxyUrl` a la vez (el bug real de
+     El Zarco: una `pk_` de prueba pegada junto a un proxy real) es error de
+     compilación. `useCordClients()` es solo-proxy con error tipado y ruidoso
+     (`code: 'clients_require_proxy'`) en modo publishable — antes hacía un fetch real
+     que el servidor rechazaba con 403 en silencio. Los dos 404 de El Zarco (adivinar
+     endpoints de catálogo/clientes cortando la URL de creación) desaparecieron.
+   • **Fase 5 — Webhooks:** `constructEvent` devolvía `{ type, data, created }`
+     (mentira — `evt.type`/`evt.created` SIEMPRE `undefined`; la forma real es
+     `{ event, created_at, data }`, corregido). Doble firma anti-replay: header nuevo
+     `X-Cord-Signature-V1` con timestamp, sin romper verificadores legacy que ya
+     validan `X-Cord-Signature`. `constructEventAsync` con WebCrypto para runtimes
+     edge (limitación documentada: el módulo entero sigue important `node:crypto`,
+     así que un runtime sin ese built-in puede fallar al importar).
+   • **Fase 6 — DX:** README reescrito contra el código real (el viejo documentaba
+     `<CordEmbed />`, que no existe), CHANGELOG con tabla de migración a 1.0.0,
+     ejemplo de referencia en `examples/nextjs-app-router/`. `'use client'` agregado a
+     `react.tsx` (faltaba — rompía en Next.js App Router, Server Components por
+     default). `postMessage(..., '*')` del embed ahora usa el `parentOrigin` real
+     cuando coincide con la allowlist de `orgs.embed_domains` (mismo gate que ya
+     protege `frame-ancestors`); `data-cord-cotizador`+`data-token` de `embed.js`
+     unificado a `data-cord-token` (mismo vocabulario que Webflow), el par viejo
+     queda como alias legacy.
+   • **Publicado en npm** como `@flouviahq/elements@1.0.0` (login vía `npm login`,
+     confirmación 2FA por navegador — la sesión CLI de esta conversación no pudo ver
+     la URL de auth completa, quedó redactada por un filtro de seguridad del entorno).
+   ⚠️ Para El Zarco (y cualquier otro consumidor): `npm update @flouviahq/elements`,
+     borrar los 3 `@ts-ignore`, y revisar la tabla de migración del CHANGELOG del
+     paquete — hay varios breaking changes documentados (`onEvent` de un solo
+     argumento, sobre de respuesta, unión pk_/proxy).
+
 ✅ **Chat cliente↔vendedor rediseñado a orgánico + chat por producto para el vendedor
    (jul 2026)** — André reportó que responder desde el detalle de una cotización se
    veía como bitácora ("el cliente escribió... y respondiste...") en vez de un chat

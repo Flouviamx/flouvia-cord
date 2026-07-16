@@ -115,8 +115,8 @@ Knowing exactly when your client is evaluating your proposal completely changes 
             en: 'Cord Elements'
         },
         shortDesc: {
-            es: 'Embebe nuestro motor de cotizaciones directamente en el portal de tu empresa o sitio web B2B. Tus clientes cotizan solos desde tu propio entorno.',
-            en: 'Embed our quoting engine directly into your company portal or B2B website. Let your clients build quotes on their own.'
+            es: 'Embebe nuestro motor de cotizaciones directamente en el portal de tu empresa o sitio web B2B. SDK estable (React, Vue, Web Component) con hooks headless para construir tu propia experiencia.',
+            en: 'Embed our quoting engine directly into your company portal or B2B website. Stable SDK (React, Vue, Web Component) with headless hooks to build your own experience.'
         },
         content: {
             es: `## Cotizaciones en piloto automático
@@ -125,18 +125,51 @@ Con Cord Elements, puedes ofrecer una experiencia de "autoservicio" a tus client
 ### Beneficios clave:
 - **Menor carga operativa:** Tus agentes de ventas no tienen que armar cotizaciones repetitivas para clientes habituales.
 - **Precios dinámicos respetados:** Elements lee la lista de precios específica asignada a ese cliente y muestra sus descuentos negociados automáticamente.
-- **UI personalizable:** Los componentes se mimetizan con el diseño de tu sitio web para una experiencia de marca unificada.`,
+- **UI personalizable de verdad:** Usa el cotizador con tu marca tal cual, o construye tu propia interfaz por completo con los hooks headless (\`useQuoteBuilder\`) — el SDK nunca te obliga a pelear con estilos que no puedes sobreescribir.
+- **Tipado end-to-end:** Los tipos de TypeScript se generan del código real, no se escriben a mano — tu editor siempre sabe qué existe.`,
             en: `## Quotes on autopilot
 With Cord Elements, you can offer a "self-service" experience to your recurring wholesale clients. By embedding a few lines of code into your existing portal or B2B site, you enable a specialized shopping cart for complex commercial deals.
 
 ### Key benefits:
 - **Lower operational load:** Your sales agents don't have to build repetitive quotes for regular clients.
 - **Dynamic pricing respected:** Elements reads the specific price list assigned to that client and automatically displays their negotiated discounts.
-- **Customizable UI:** The components blend with your website's design for a unified brand experience.`
+- **Real customizable UI:** Use the quoter with your brand as-is, or build your entire own interface with the headless hooks (\`useQuoteBuilder\`) — the SDK never forces you to fight styles you can't override.
+- **End-to-end typed:** TypeScript types are generated from the real code, never hand-written — your editor always knows what's there.`
         },
         area: 'cotizaciones',
-        status: 'beta',
+        status: 'live',
         api: true
+    },
+    {
+        id: '12',
+        slug: 'sello-de-confianza',
+        title: {
+            es: 'Sello de confianza y firma verificable',
+            en: 'Trust seal & verifiable signature'
+        },
+        shortDesc: {
+            es: 'Cada cotización que aprueba tu cliente queda firmada con un hash SHA-256, su IP y la fecha exacta. Un sello visible se lo confirma, y le confirma que ese documento está listo para facturarse con CFDI 4.0.',
+            en: 'Every quote your client approves gets signed with a SHA-256 hash, their IP, and the exact date. A visible seal confirms it — and confirms the document is ready to be invoiced with CFDI 4.0.'
+        },
+        content: {
+            es: `## El respaldo que evita el "yo nunca aprobé eso"
+Cotizar por WhatsApp o PDF suelto no deja ninguna prueba de que tu cliente aceptó los términos. Cord firma cada aprobación con un hash criptográfico inmutable — nombre, IP, fecha y hora — y lo muestra en un sello visible dentro de la misma cotización.
+
+### Beneficios clave:
+- **Evidencia real, no solo un "aprobado":** El sello de auditoría queda ligado a la versión exacta de la cotización que tu cliente vio y aceptó.
+- **Listo para facturar:** Para negocios en México, el sello indica que ese documento está preparado para timbrarse con CFDI 4.0 sin recapturar nada.
+- **Visible en todos lados:** El mismo sello aparece tanto en el link público (\`/q\`) como en cualquier cotizador embebido con Cord Elements en tu propio sitio — no es exclusivo de un canal.`,
+            en: `## The backup that ends "I never approved that"
+Quoting over WhatsApp or a loose PDF leaves no proof your client accepted the terms. Cord signs every approval with an immutable cryptographic hash — name, IP, date, and time — and shows it in a visible seal right inside the quote.
+
+### Key benefits:
+- **Real evidence, not just an "approved" flag:** The audit seal is tied to the exact version of the quote your client saw and accepted.
+- **Ready to invoice:** For Mexican businesses, the seal signals the document is prepared to be stamped with CFDI 4.0 with zero retyping.
+- **Visible everywhere:** The same seal shows up on the public link (\`/q\`) and on any quote embedded via Cord Elements on your own site — it isn't exclusive to one channel.`
+        },
+        area: 'cotizaciones',
+        status: 'live',
+        api: false
     },
     {
         id: '5',
