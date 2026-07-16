@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { addPropertyControls, ControlType } from 'framer';
-import { CordCotizador } from './react';
+import { CordCotizador } from './react.js';
 
 export interface FramerCordCotizadorProps {
     token: string;

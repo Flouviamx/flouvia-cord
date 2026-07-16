@@ -122,22 +122,30 @@ export const POST: APIRoute = async ({ params, request }) => {
     }
 
     // ── Comentario / pregunta (no cambia estado) ──
+    // NOTA: `detalle` es el texto TAL CUAL se muestra en la burbuja del chat (tanto
+    // en /q como en la vista de detalle del vendedor) — no narrar en tercera persona
+    // ("El cliente escribió...") porque la burbuja ya comunica quién habla por su
+    // posición/color. Narrarlo aquí se veía como una bitácora, no como un chat real.
     if (action === 'comment') {
         const mensaje = String(body.mensaje ?? '').trim().slice(0, 800);
         if (!mensaje) return json({ error: 'Escribe un mensaje' }, 400);
         if (c.status === 'draft') return json({ error: 'Cotización no disponible' }, 409);
         await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                  values (${c.org_id}, ${c.id}, 'comment', ${`El cliente escribió: "${mensaje}"`})`;
+                  values (${c.org_id}, ${c.id}, 'comment', ${mensaje})`;
         return json({ ok: true });
     }
 
     // ── Contraoferta (no cambia estado; avisa al vendedor) ──
+    // La burbuja se pinta distinta (ámbar) vía el tipo 'counter', así que el monto
+    // propuesto puede ir como un rótulo corto ("Propuesta: $X") sin sonar a bitácora.
     if (action === 'counter') {
         if (!alive) return json({ error: 'Esta cotización ya no admite contraofertas', status: c.status }, 409);
         const mensaje = String(body.mensaje ?? '').trim().slice(0, 800);
         const propuesta = Number(body.propuesta) > 0 ? Number(body.propuesta) : null;
         if (!mensaje && !propuesta) return json({ error: 'Indica tu propuesta o escribe un mensaje' }, 400);
-        const detalle = `Contraoferta del cliente${propuesta ? ` (${money(propuesta)})` : ''}${mensaje ? `: "${mensaje}"` : ''}`;
+        const detalle = propuesta
+            ? `Propuesta: ${money(propuesta)}${mensaje ? ` — ${mensaje}` : ''}`
+            : mensaje;
         await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                   values (${c.org_id}, ${c.id}, 'counter', ${detalle})`;
         return json({ ok: true });

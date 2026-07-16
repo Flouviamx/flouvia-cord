@@ -2,9 +2,9 @@
 // /embed/{token}) con skeleton, auto-altura (postMessage) y relay de eventos.
 // Es la MISMA mecánica que public/embed.js, pero como módulo: cada instancia tiene
 // su propio listener (scoped por contentWindow) y se limpia con destroy().
-import type { CordElementOptions, CordController, CordEventDetail } from './types';
+import type { CordElementOptions, CordController, CordEvent } from './types.js';
+import { resolveOrigin } from './config.js';
 
-const DEFAULT_BASE = 'https://cord.flouvia.com';
 const STYLE_ID = 'cord-elements-style';
 
 const REDUCED =
@@ -13,14 +13,14 @@ const REDUCED =
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** Eventos que re-emitimos. El catch-all (onEvent) recibe todos. */
-const RELAYED = ['cord:ready', 'cord:approved', 'cord:rejected', 'cord:message', 'cord:pay'] as const;
+const RELAYED = ['cord:ready', 'cord:viewed', 'cord:approved', 'cord:signed', 'cord:rejected', 'cord:message', 'cord:item_comment', 'cord:pay'] as const;
 
 function injectStyles() {
     if (typeof document === 'undefined' || document.getElementById(STYLE_ID)) return;
     const css =
         '.cord-embed{position:relative;width:100%;}' +
         '.cord-embed iframe{width:100%;border:0;display:block;background:transparent;' +
-        'opacity:0;transition:opacity .35s ease,height .2s ease;color-scheme:normal;}' +
+        'opacity:0;transition:opacity .35s ease,height .2s ease;}' +
         '.cord-embed.is-ready iframe{opacity:1;}' +
         '.cord-embed-skeleton{position:absolute;inset:0;border-radius:18px;overflow:hidden;' +
         'background:#fcfcfc;box-shadow:inset 0 0 0 1px rgba(10,25,47,.06);}' +
@@ -42,7 +42,7 @@ export function mountCotizador(target: HTMLElement, opts: CordElementOptions): C
     if (!target) throw new Error('[Cord] target inválido');
     if (!opts || !opts.token) throw new Error('[Cord] falta opts.token');
 
-    const base = (opts.baseUrl || DEFAULT_BASE).replace(/\/$/, '');
+    const base = resolveOrigin(opts.baseUrl);
     const origin = (() => { try { return new URL(base).origin; } catch { return base; } })();
     const minH = typeof opts.minHeight === 'number' && opts.minHeight > 0 ? opts.minHeight : 420;
 
@@ -54,15 +54,26 @@ export function mountCotizador(target: HTMLElement, opts: CordElementOptions): C
     skeleton.innerHTML = '<div class="cord-embed-shimmer"></div>';
     target.appendChild(skeleton);
 
-    const appearanceQuery = opts.appearance ? '?appearance=' + encodeURIComponent(JSON.stringify(opts.appearance)) : '';
+    // `parentOrigin` deja que /embed/[token] use un targetOrigin real en su
+    // postMessage (en vez de '*' siempre) cuando el origen matchea la
+    // allowlist de orgs.embed_domains — mismo gate que ya protege frame-ancestors.
+    const params = new URLSearchParams();
+    if (opts.appearance) params.set('appearance', JSON.stringify(opts.appearance));
+    if (typeof window !== 'undefined' && window.location?.origin) params.set('parentOrigin', window.location.origin);
+    const query = params.toString();
 
     const iframe = document.createElement('iframe');
-    iframe.src = base + '/embed/' + encodeURIComponent(opts.token) + appearanceQuery;
+    iframe.src = base + '/embed/' + encodeURIComponent(opts.token) + (query ? '?' + query : '');
     iframe.title = 'Cotización';
     iframe.setAttribute('loading', 'lazy');
     iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
     iframe.setAttribute('allow', 'payment; clipboard-write');
     iframe.style.height = minH + 'px';
+    // El outer <iframe> refleja el theme (chrome del elemento — scrollbar/UA
+    // widgets DESDE afuera); el contenido de adentro lo decide /embed/[token]
+    // mismo con la misma appearance (ver theme en el query param arriba).
+    iframe.style.colorScheme = opts.appearance?.theme === 'dark' ? 'dark'
+        : opts.appearance?.theme === 'auto' ? 'light dark' : 'light';
     target.appendChild(iframe);
 
     let ready = false;
@@ -85,14 +96,20 @@ export function mountCotizador(target: HTMLElement, opts: CordElementOptions): C
         }
         if (data.type === 'cord:ready') reveal();
 
-        const detail: CordEventDetail = data.detail || {};
-        if (opts.onEvent) opts.onEvent(data.type, detail);
-        switch (data.type) {
-            case 'cord:ready':    opts.onReady?.(); break;
-            case 'cord:approved': opts.onApproved?.(detail); break;
-            case 'cord:rejected': opts.onRejected?.(detail); break;
-            case 'cord:message':  opts.onMessage?.(detail); break;
-            case 'cord:pay':      opts.onPay?.(detail); break;
+        // El payload viaja por postMessage sin garantía estática de forma —
+        // se castea a CordEvent (la unión discriminada documentada) en el
+        // único punto donde cruza la frontera no tipada.
+        const evt = { type: data.type, detail: data.detail || {} } as CordEvent;
+        if (opts.onEvent) opts.onEvent(evt);
+        switch (evt.type) {
+            case 'cord:ready':        opts.onReady?.(); break;
+            case 'cord:viewed':       opts.onViewed?.(evt.detail); break;
+            case 'cord:approved':     opts.onApproved?.(evt.detail); break;
+            case 'cord:signed':       opts.onSigned?.(evt.detail); break;
+            case 'cord:rejected':     opts.onRejected?.(evt.detail); break;
+            case 'cord:message':      opts.onMessage?.(evt.detail); break;
+            case 'cord:item_comment': opts.onItemComment?.(evt.detail); break;
+            case 'cord:pay':          opts.onPay?.(evt.detail); break;
         }
     };
     window.addEventListener('message', onMessage);

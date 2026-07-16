@@ -104,14 +104,44 @@ const dotColor = (tipo: string) =>
                 <div class="section-head"><h2>Detalle</h2></div>
                 <div class="di-head"><span>Producto</span><span>Cant.</span><span>Precio</span><span class="di-right">Importe</span></div>
                 {q.items.map((it) => (
-                    <div class:list={['di-row', { 'di-excluida': it.aprobado === false }]}>
-                        <span class="di-name">{it.descripcion}<small>{it.unidad}</small>{it.aprobado === false && <span class="di-excluida-tag">No incluida</span>}</span>
-                        <span class="di-qty">{it.cantidad.toLocaleString('es-MX')}</span>
-                        <span class="di-price">
-                            {it.precioNegociado !== null && <s>{money(it.precioLista)}</s>}
-                            <span class="editorial">{money(it.precioNegociado ?? it.precioLista)}</span>
-                        </span>
-                        <span class="editorial di-amount di-right">{money(lineTotal(it))}</span>
+                    <div class="di-row-wrap" data-item-id={it.id}>
+                        <div class:list={['di-row', { 'di-excluida': it.aprobado === false }]}>
+                            <span class="di-name">
+                                {it.descripcion}<small>{it.unidad}</small>
+                                {it.aprobado === false && <span class="di-excluida-tag">No incluida</span>}
+                                <button class="di-chat-toggle" data-item-toggle={it.id} aria-label="Comentarios de esta línea">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                    {it.comentarios && it.comentarios.length > 0 ? it.comentarios.length : ''}
+                                </button>
+                            </span>
+                            <span class="di-qty">{it.cantidad.toLocaleString('es-MX')}</span>
+                            <span class="di-price">
+                                {it.precioNegociado !== null && <s>{money(it.precioLista)}</s>}
+                                <span class="editorial">{money(it.precioNegociado ?? it.precioLista)}</span>
+                            </span>
+                            <span class="editorial di-amount di-right">{money(lineTotal(it))}</span>
+                        </div>
+                        <div class="di-thread" id={`di-thread-${it.id}`} hidden>
+                            <div class="di-thread-msgs">
+                                {(it.comentarios || []).map((c) => (
+                                    <div class:list={['di-msg', c.mine ? 'mine' : 'theirs']}>
+                                        <span class="di-msg-text">{c.contenido}</span>
+                                        <span class="di-msg-time">{c.cuando}</span>
+                                    </div>
+                                ))}
+                                {(!it.comentarios || it.comentarios.length === 0) && (
+                                    <p class="di-thread-empty">Sin comentarios en esta línea todavía.</p>
+                                )}
+                            </div>
+                            {canCotizar && (
+                                <div class="di-thread-reply">
+                                    <input type="text" class="di-thread-input" placeholder="Responder sobre esta línea…" />
+                                    <button class="di-thread-send" data-item-reply={it.id} aria-label="Enviar">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 ))}
                 {q.items.some((it) => it.aprobado === false) && (
@@ -262,9 +292,6 @@ const dotColor = (tipo: string) =>
 
             <section class="d-timeline">
                 <div class="section-head"><h2>Actividad</h2></div>
-                <button class="tl-new" id="tlNew" hidden>
-                    <span class="tl-new-dot"></span> Hay mensajes nuevos · actualizar
-                </button>
                 <div class="tl">
                     {q.eventos.map((e) => (
                         <div class="tl-item">
@@ -276,10 +303,35 @@ const dotColor = (tipo: string) =>
                         </div>
                     ))}
                 </div>
-                <div class="tl-reply">
-                    <textarea id="replyMsg" rows="2" placeholder="Responder al cliente (aparece en su link)…"></textarea>
-                    <button class="tl-reply-btn" id="btnReply">Enviar respuesta</button>
+            </section>
+
+            <section class="d-chat">
+                <div class="section-head">
+                    <h2>Conversación</h2>
+                    <button class="tl-new" id="tlNew" hidden>
+                        <span class="tl-new-dot"></span> Nuevo
+                    </button>
                 </div>
+                <div class="dc-thread" id="dcThread">
+                    {(q.conversacion ?? []).map((m) => (
+                        <div class:list={['dc-msg', m.mine ? 'mine' : 'theirs', { counter: m.tipo === 'counter' }]}>
+                            <span class="dc-msg-text">{m.detalle}</span>
+                            <span class="dc-msg-time">{m.cuando}</span>
+                        </div>
+                    ))}
+                    {(!q.conversacion || q.conversacion.length === 0) && (
+                        <p class="dc-thread-empty">Aún no hay mensajes con tu cliente.</p>
+                    )}
+                </div>
+                {canCotizar && (
+                    <div class="dc-compose">
+                        <textarea id="replyMsg" rows="1" placeholder="Responder al cliente (aparece en su link)…"></textarea>
+                        <button class="dc-send" id="btnReply" aria-label="Enviar">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        </button>
+                    </div>
+                )}
+                <p class="dc-error" id="dcError"></p>
             </section>
         </aside>
     </div>
@@ -444,7 +496,7 @@ const dotColor = (tipo: string) =>
     .d-side { display: flex; flex-direction: column; gap: 2.6rem; position: sticky; top: 76px; }
     .d-actions { display: flex; flex-direction: column; gap: 0.5rem; }
     /* el .section-head ocupa el ancho completo de la columna de acciones */
-    .d-actions .section-head, .d-timeline .section-head { margin-bottom: 1rem; }
+    .d-actions .section-head, .d-timeline .section-head, .d-chat .section-head { margin-bottom: 1rem; }
     .act-primary {
         display: flex; align-items: center; justify-content: center; gap: 8px;
         font-size: 0.86rem; font-weight: 600; text-decoration: none;
@@ -507,32 +559,76 @@ const dotColor = (tipo: string) =>
     button:disabled { opacity: 0.55; cursor: wait; }
 
     .d-timeline { display: flex; flex-direction: column; }
-    .tl-new { display: flex; align-items: center; gap: 7px; width: 100%; font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; color: var(--color-blue-deep); background: rgba(10,25,47,0.05); border: 1px solid var(--color-border); border-radius: 9px; padding: 8px 12px; margin-bottom: 0.9rem; cursor: pointer; transition: background 0.2s; }
-    .tl-new:hover { background: rgba(10,25,47,0.09); }
-    .tl-new-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-blue-deep); animation: tlPulse 1.6s ease-in-out infinite; }
-    @keyframes tlPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
     .tl { display: flex; flex-direction: column; gap: 1rem; position: relative; }
     .tl::before { content: ''; position: absolute; left: 3.5px; top: 8px; bottom: 8px; width: 1px; background: var(--color-border); }
     .tl-item { display: flex; gap: 13px; position: relative; }
-    .tl-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; box-shadow: 0 0 0 3px #fff; z-index: 1; }
+    .tl-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; box-shadow: 0 0 0 3px var(--surface); z-index: 1; }
     .tl-body { display: flex; flex-direction: column; gap: 1px; }
     .tl-text { font-size: 0.8rem; font-weight: 500; color: var(--color-text); }
     .tl-time { font-size: 0.68rem; color: var(--color-text-muted); }
 
-    .tl-reply { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border); display: flex; flex-direction: column; gap: 0.5rem; }
-    .tl-reply textarea {
-        font-family: var(--font-sans); font-size: 0.82rem; color: var(--color-text);
-        background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px;
-        padding: 9px 11px; resize: vertical;
+    /* ── Conversación (chat real, separado de la bitácora de Actividad) ── */
+    .d-chat { display: flex; flex-direction: column; }
+    .tl-new { display: flex; align-items: center; gap: 6px; font-family: var(--font-sans); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.3px; color: var(--color-blue-deep); background: rgba(10,25,47,0.06); border-radius: 100px; padding: 3px 9px 3px 7px; cursor: pointer; border: none; transition: background 0.2s; }
+    .tl-new:hover { background: rgba(10,25,47,0.1); }
+    .tl-new-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-blue-deep); animation: tlPulse 1.6s ease-in-out infinite; }
+    @keyframes tlPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .dc-thread { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; padding-right: 2px; margin-bottom: 0.8rem; }
+    .dc-thread::-webkit-scrollbar { width: 0; height: 0; }
+    .dc-thread-empty { font-size: 0.8rem; color: var(--color-text-muted); margin: 0; }
+    .dc-msg { display: flex; flex-direction: column; gap: 2px; max-width: 88%; padding: 8px 12px; font-size: 0.82rem; line-height: 1.45; border-radius: 14px 14px 14px 3px; background: var(--color-bg-soft); color: var(--color-text); align-self: flex-start; }
+    .dc-msg.mine { align-self: flex-end; background: var(--color-blue-deep); color: #fff; border-radius: 14px 14px 3px 14px; }
+    .dc-msg.counter { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.28); color: var(--color-text); }
+    .dc-msg-text { white-space: pre-wrap; }
+    .dc-msg-time { font-size: 0.6rem; opacity: 0.55; }
+
+    .dc-compose { display: flex; align-items: flex-end; gap: 7px; background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 12px; padding: 6px 6px 6px 12px; }
+    .dc-compose textarea {
+        flex: 1; font-family: var(--font-sans); font-size: 0.83rem; color: var(--color-text);
+        background: transparent; border: none; resize: none; padding: 6px 0; max-height: 90px;
     }
-    .tl-reply textarea:focus { outline: none; border-color: var(--color-blue-deep); }
-    .tl-reply-btn {
-        font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; cursor: pointer;
-        color: var(--color-text); background: var(--color-bg-soft);
-        border: 1px solid var(--color-border); border-radius: 9px; padding: 8px; transition: border-color 0.25s;
+    .dc-compose textarea:focus { outline: none; }
+    .dc-compose textarea::placeholder { color: var(--color-text-muted); }
+    .dc-send {
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer;
+        background: var(--color-blue-deep); color: #fff; transition: transform 0.25s var(--ease-spring);
     }
-    .tl-reply-btn:hover { border-color: rgba(10,25,47,0.25); }
-    .tl-reply-btn:disabled { opacity: 0.55; cursor: wait; }
+    .dc-send:hover { transform: scale(1.08); }
+    .dc-send:disabled { opacity: 0.5; cursor: wait; transform: none; }
+    .dc-error { font-size: 0.74rem; color: var(--color-danger); margin: 0.5rem 0 0; min-height: 0; }
+
+    /* ── Chat por línea/producto ── */
+    .di-row-wrap { border-bottom: 1px solid var(--color-border); }
+    .di-row { border-bottom: none; }
+    .di-chat-toggle {
+        display: inline-flex; align-items: center; gap: 3px; align-self: flex-start; margin-top: 4px;
+        font-family: var(--font-sans); font-size: 0.65rem; font-weight: 700; cursor: pointer;
+        color: var(--color-text-muted); background: transparent; border: none; padding: 2px 0;
+        transition: color 0.2s;
+    }
+    .di-chat-toggle:hover { color: var(--color-blue-deep); }
+    .di-chat-toggle svg { flex-shrink: 0; }
+    .di-thread { padding: 0.9rem 0.6rem 1rem; background: var(--color-bg-soft); border-radius: 0 0 10px 10px; }
+    .di-thread-msgs { display: flex; flex-direction: column; gap: 6px; margin-bottom: 0.7rem; }
+    .di-thread-empty { font-size: 0.76rem; color: var(--color-text-muted); margin: 0 0 0.7rem; }
+    .di-msg { display: flex; flex-direction: column; gap: 2px; max-width: 85%; padding: 6px 10px; font-size: 0.78rem; line-height: 1.4; border-radius: 12px 12px 12px 3px; background: var(--surface); color: var(--color-text); align-self: flex-start; }
+    .di-msg.mine { align-self: flex-end; background: var(--color-blue-deep); color: #fff; border-radius: 12px 12px 3px 12px; }
+    .di-msg-time { font-size: 0.58rem; opacity: 0.55; }
+    .di-thread-reply { display: flex; gap: 6px; }
+    .di-thread-input {
+        flex: 1; font-family: var(--font-sans); font-size: 0.78rem; color: var(--color-text);
+        background: var(--surface); border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 10px;
+    }
+    .di-thread-input:focus { outline: none; border-color: var(--color-blue-deep); }
+    .di-thread-send {
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        width: 28px; height: 28px; border-radius: 8px; border: none; cursor: pointer;
+        background: var(--color-blue-deep); color: #fff; transition: transform 0.2s var(--ease-spring);
+    }
+    .di-thread-send:hover { transform: scale(1.08); }
+    .di-thread-send:disabled { opacity: 0.5; cursor: wait; }
 
     @media (max-width: 980px) {
         .detail-grid { grid-template-columns: 1fr; }
@@ -643,12 +739,36 @@ const dotColor = (tipo: string) =>
             setTimeout(() => { btn.classList.remove('act-copied'); if (lbl) lbl.textContent = prev; }, 1800);
         });
 
-        document.getElementById('btnReply')?.addEventListener('click', async (e) => {
-            const btn = e.currentTarget as HTMLButtonElement;
-            const ta = document.getElementById('replyMsg') as HTMLTextAreaElement;
-            const mensaje = (ta?.value || '').trim();
-            if (!mensaje) { errorEl.textContent = 'Escribe una respuesta.'; return; }
-            btn.disabled = true; errorEl.textContent = '';
+        // ── Chat general (Conversación) — envío optimista, sin recargar la página ──
+        const dcThread = document.getElementById('dcThread');
+        const dcError = document.getElementById('dcError') as HTMLElement | null;
+        const replyTa = document.getElementById('replyMsg') as HTMLTextAreaElement | null;
+        const btnReply = document.getElementById('btnReply') as HTMLButtonElement | null;
+
+        const appendBubble = (thread: HTMLElement, text: string, mine: boolean, small = false) => {
+            thread.querySelector('.dc-thread-empty, .di-thread-empty')?.remove();
+            const div = document.createElement('div');
+            div.className = (small ? 'di-msg' : 'dc-msg') + (mine ? ' mine' : '');
+            const t = document.createElement('span'); t.className = small ? 'di-msg-text' : 'dc-msg-text'; t.textContent = text;
+            const time = document.createElement('span'); time.className = small ? 'di-msg-time' : 'dc-msg-time'; time.textContent = 'ahora';
+            div.append(t, time);
+            thread.appendChild(div);
+            thread.scrollTop = thread.scrollHeight;
+        };
+
+        // Auto-resize + Enter para enviar (Shift+Enter = salto de línea) — se siente como chat real.
+        replyTa?.addEventListener('input', () => { replyTa.style.height = 'auto'; replyTa.style.height = Math.min(replyTa.scrollHeight, 90) + 'px'; });
+        replyTa?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); btnReply?.click(); }
+        });
+
+        const sendReply = async () => {
+            if (!btnReply || !replyTa || !dcThread) return;
+            const mensaje = replyTa.value.trim();
+            if (!mensaje) return;
+            btnReply.disabled = true; if (dcError) dcError.textContent = '';
+            appendBubble(dcThread, mensaje, true);
+            replyTa.value = ''; replyTa.style.height = 'auto';
             try {
                 const res = await fetch(`/api/cotizaciones/${qid}`, {
                     method: 'PATCH',
@@ -657,11 +777,46 @@ const dotColor = (tipo: string) =>
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'No se pudo enviar');
-                location.reload();
             } catch (err: any) {
-                errorEl.textContent = err.message;
-                btn.disabled = false;
+                if (dcError) dcError.textContent = err.message;
+            } finally {
+                btnReply.disabled = false;
             }
+        };
+        btnReply?.addEventListener('click', sendReply);
+
+        // ── Chat por línea/producto — abrir/cerrar hilo + responder ──
+        document.querySelectorAll<HTMLButtonElement>('.di-chat-toggle').forEach((toggle) => {
+            toggle.addEventListener('click', () => {
+                const wrap = document.getElementById(`di-thread-${toggle.dataset.itemToggle}`);
+                if (wrap) wrap.hidden = !wrap.hidden;
+            });
+        });
+        document.querySelectorAll<HTMLButtonElement>('.di-thread-send').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const itemId = btn.dataset.itemReply!;
+                const wrap = document.getElementById(`di-thread-${itemId}`);
+                const input = wrap?.querySelector<HTMLInputElement>('.di-thread-input');
+                const msgs = wrap?.querySelector<HTMLElement>('.di-thread-msgs');
+                const mensaje = (input?.value || '').trim();
+                if (!mensaje || !msgs) return;
+                btn.disabled = true;
+                appendBubble(msgs, mensaje, true, true);
+                if (input) input.value = '';
+                try {
+                    const res = await fetch(`/api/cotizaciones/${qid}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'item_reply', item_id: itemId, mensaje }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'No se pudo enviar');
+                } catch (err: any) {
+                    errorEl.textContent = err.message;
+                } finally {
+                    btn.disabled = false;
+                }
+            });
         });
 
         document.getElementById('btnDuplicate')?.addEventListener('click', async (e) => {

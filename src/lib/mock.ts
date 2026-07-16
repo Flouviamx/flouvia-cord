@@ -15,7 +15,7 @@ export interface MockItem {
     precioLista: number;
     precioNegociado: number | null;
     aprobado?: boolean;   // false = el cliente NO incluyó esta línea al aprobar (aprobación parcial)
-    comentarios?: { autor: string; tipo: string; contenido: string; cuando: string }[];
+    comentarios?: { autor: string; tipo: string; contenido: string; cuando: string; mine?: boolean }[];
 }
 
 export interface MockEvent {
@@ -37,6 +37,7 @@ export interface MockQuote {
     token: string;
     items: MockItem[];
     eventos: MockEvent[];
+    conversacion?: { tipo: string; detalle: string; cuando: string; mine: boolean }[];
     notas?: string;
     total?: number;   // total de la columna DB (la lista no carga items; usa esto)
     version?: number;

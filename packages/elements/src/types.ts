@@ -1,8 +1,14 @@
 import type * as React from 'react';
+import type { CordElements } from './elements.js';
 
 // Tipos públicos de @flouviahq/elements. Superficie mínima a propósito.
 
-/** Payload que viaja con cada evento del cotizador. */
+/**
+ * Payload que viaja con cada evento del cotizador. Se mantiene como fallback
+ * ancho para los callbacks nombrados (`onApproved`, `onRejected`…); para
+ * manejo exhaustivo usa `onEvent` con `CordEvent` (unión discriminada) — ver
+ * abajo.
+ */
 export interface CordEventDetail {
     /** token público de la cotización */
     token?: string;
@@ -11,6 +17,29 @@ export interface CordEventDetail {
     /** campos extra según el evento (comentario, propuesta, url de pago…) */
     [key: string]: unknown;
 }
+
+// ==== Eventos del cotizador (unión discriminada) ====
+// Payloads reales tal como los emite QuoteCard.astro. `approved` y `signed`
+// se disparan AMBOS por una sola acción del cliente (aprobar = firmar) — no
+// los cuentes como dos eventos de negocio distintos si agregas métricas.
+export interface CordReadyDetail { }
+export interface CordViewedDetail { token?: string }
+export interface CordApprovedDetail { signed_by: string; hash: string }
+export interface CordSignedDetail { signed_by: string; hash: string }
+export interface CordRejectedDetail { comentario: string }
+export interface CordPayDetail { url: string }
+export interface CordMessageDetail { action: string; mensaje: string; propuesta?: unknown }
+export interface CordItemCommentDetail { item_id: string; mensaje: string }
+
+export type CordEvent =
+    | { type: 'cord:ready'; detail: CordReadyDetail }
+    | { type: 'cord:viewed'; detail: CordViewedDetail }
+    | { type: 'cord:approved'; detail: CordApprovedDetail }
+    | { type: 'cord:signed'; detail: CordSignedDetail }
+    | { type: 'cord:rejected'; detail: CordRejectedDetail }
+    | { type: 'cord:pay'; detail: CordPayDetail }
+    | { type: 'cord:message'; detail: CordMessageDetail }
+    | { type: 'cord:item_comment'; detail: CordItemCommentDetail };
 
 export interface CordElementOptions {
     /** Token público de la cotización (de /q/{token} o la API). REQUERIDO. */
@@ -21,16 +50,22 @@ export interface CordElementOptions {
     minHeight?: number;
     /** El cotizador terminó de cargar. */
     onReady?: () => void;
+    /** El cliente abrió/vio la cotización. */
+    onViewed?: (detail: CordViewedDetail) => void;
     /** El cliente aprobó la cotización. */
-    onApproved?: (detail: CordEventDetail) => void;
+    onApproved?: (detail: CordApprovedDetail) => void;
+    /** Firma legal capturada (se dispara junto con `onApproved`, mismo evento de negocio). */
+    onSigned?: (detail: CordSignedDetail) => void;
     /** El cliente rechazó la cotización. */
-    onRejected?: (detail: CordEventDetail) => void;
-    /** El cliente envió un comentario o contraoferta. */
-    onMessage?: (detail: CordEventDetail) => void;
+    onRejected?: (detail: CordRejectedDetail) => void;
+    /** El cliente envió un comentario o contraoferta general. */
+    onMessage?: (detail: CordMessageDetail) => void;
+    /** El cliente comentó una línea/partida específica. */
+    onItemComment?: (detail: CordItemCommentDetail) => void;
     /** El cliente inició el pago en línea. */
-    onPay?: (detail: CordEventDetail) => void;
-    /** Catch-all: cualquier evento `cord:*` (incluye los anteriores). */
-    onEvent?: (type: string, detail: CordEventDetail) => void;
+    onPay?: (detail: CordPayDetail) => void;
+    /** Catch-all tipado: cualquier evento `cord:*` (incluye los anteriores). Habilita `switch` exhaustivo sobre `event.type`. */
+    onEvent?: (event: CordEvent) => void;
     /** Configuración de branding para inyectar al iframe */
     appearance?: CordAppearance;
 }
@@ -63,6 +98,20 @@ export interface CreateQuoteInput {
     notas?: string;
     /** ID del cliente (requerido si `send` es true o si se quieren tomar los términos por defecto del cliente). */
     cliente_id?: string;
+    /**
+     * Datos de un cliente NUEVO (sin `cliente_id`): se busca primero por
+     * `empresa` o `email` dentro de tu organización y, si no existe, se CREA
+     * (nunca actualiza uno existente — una publishable key solo puede
+     * agregar clientes, no alterarlos). El cliente creado así queda marcado
+     * `origen: 'embed'` para tu revisión en el CRM.
+     */
+    cliente?: {
+        empresa: string;
+        email?: string;
+        contacto?: string;
+        telefono?: string;
+        rfc?: string;
+    };
     /** Términos de pago (ej. 'contado', 'net30'). Sobrescribe los del cliente. */
     terminos?: Terminos;
     /** Cuántos días es válida la cotización. Por defecto toma el valor de los ajustes de la organización (ej. 30). */
@@ -159,36 +208,81 @@ export interface CordAppearanceVariables {
 export interface CordAppearance {
     /** Fuerza el tema claro, oscuro, o usa la preferencia del sistema. */
     theme?: 'light' | 'dark' | 'auto';
-    /** 
+    /**
+     * 'none' desactiva la hoja de estilos default de los componentes NATIVOS
+     * (CordBuilder y sus slots) — headless real: las clases `.cord-*` se
+     * siguen emitiendo en el markup para que puedas estilizarlas tú mismo,
+     * pero sin ningún CSS de Cord de por medio. No afecta al iframe.
+     */
+    baseTheme?: 'default' | 'none';
+    /**
      * Variables CSS. Modifican colores, tipografías y bordes globales de los componentes.
      * Soporta valores como '#fff', 'hsl(210 100% 50%)', '12px', 'Inter, sans-serif'.
      */
     variables?: CordAppearanceVariables;
-    /** (Avanzado) Reglas para selectores específicos dentro del iframe. */
-    rules?: Record<string, any>;
+    /**
+     * (Solo componentes NATIVOS — CordBuilder y sus slots, NO el iframe)
+     * className/estilo extra por elemento interno. La clase base `.cord-<key>`
+     * SIEMPRE se conserva — ver CordElementKey en './elements'.
+     */
+    elements?: CordElements;
     /** Fuentes externas a cargar (ej. Google Fonts). */
     fonts?: Array<{ cssSrc: string }>;
 }
+// Nota: `rules` (selectores CSS arbitrarios dentro del iframe) NUNCA se
+// implementó — el servidor los elimina por seguridad desde que se agregó el
+// campo. Un tipo que promete algo que el runtime descarta es peor que no
+// tener el campo: se quitó a propósito. Para estilizar los componentes
+// NATIVOS (no el iframe) usa `appearance.elements` (ver CordElements).
 
-/**
- * Propiedades del CordProvider para envolver aplicaciones React/Next.js.
- * Todas las llamadas de los hooks hijos heredarán esta configuración.
- */
-export interface CordProviderProps {
-    /** (Opcional) URL absoluta hacia tu Backend for Frontend que hace de proxy a la API de Cord. */
-    proxyUrl?: string;
-    /** 
-     * Llave pública (`pk_live_...` o `pk_test_...`) para interactuar con la API de Cord
-     * directamente desde el navegador sin necesidad de un backend. 
-     */
-    publishableKey?: string;
-    /** Token público de una cotización (`cot_...`). Configura el contexto para un Iframe de Cotizador. */
+interface CordProviderCommonProps {
+    /** Origen de Cord. Default: https://cord.flouvia.com (self-host/staging). */
+    baseUrl?: string;
+    /** Token público de una cotización (el mismo de `/q/{token}`). Configura el contexto para un Iframe de Cotizador. */
     token?: string;
     /** Idioma de la interfaz y formateos. Por defecto es 'es'. */
     locale?: 'en' | 'es';
+    /**
+     * % de IVA de tu organización (0.16 = 16%), usado por `<CordBuilder>`/
+     * `useQuoteBuilder` para mostrar el total EN VIVO. Configúralo aquí (no
+     * por instancia) para que coincida con el `iva_pct` real de tu org en
+     * Cord — si difieren, el total que ve el usuario en el Builder no
+     * coincide con el de la cotización que el servidor termina guardando.
+     */
+    ivaPct?: number;
     /** Estilos inyectados a todos los componentes o iframes renderizados en el Provider. */
     appearance?: CordAppearance;
     /** Callback global para interceptar eventos de telemetría o acciones (ej. CHECKOUT_STARTED). */
     onAnalyticsEvent?: (event: string, payload?: unknown) => void;
     children: React.ReactNode;
 }
+
+/**
+ * Propiedades del CordProvider para envolver aplicaciones React/Next.js.
+ * Todas las llamadas de los hooks hijos heredarán esta configuración.
+ *
+ * Unión discriminada A PROPÓSITO: `publishableKey` y `proxyUrl` son
+ * mutuamente excluyentes. Pasar los dos a la vez (el error real que tenía El
+ * Zarco: una `pk_test_...` de prueba pegada junto a un `proxyUrl` real) hoy
+ * es un error de compilación, no un bug silencioso en producción donde la
+ * llave falsa se manda como `Authorization` a tu propio proxy.
+ */
+export type CordProviderProps =
+    | ({
+          /** Interactúas con la API de Cord directo desde el navegador con una llave pública. */
+          mode?: 'publishable';
+          publishableKey: string;
+          proxyUrl?: undefined;
+      } & CordProviderCommonProps)
+    | ({
+          /** Interactúas vía tu propio backend (recomendado para escribir en el CRM o crear cotizaciones). */
+          mode?: 'proxy';
+          proxyUrl: string;
+          publishableKey?: undefined;
+      } & CordProviderCommonProps)
+    | ({
+          /** Ninguno de los dos — uso "solo visor" (ej. un <CordCotizador> que únicamente muestra/aprueba una cotización). */
+          mode?: undefined;
+          publishableKey?: undefined;
+          proxyUrl?: undefined;
+      } & CordProviderCommonProps);

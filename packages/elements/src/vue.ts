@@ -1,6 +1,6 @@
 import { defineComponent, h, ref, onMounted, onUnmounted, watch } from 'vue';
-import { mountCotizador } from './core';
-import type { CordElementOptions, CordEventDetail, CordController } from './types';
+import { mountCotizador } from './core.js';
+import type { CordElementOptions, CordEvent, CordController } from './types.js';
 
 export const CordCotizador = defineComponent({
   name: 'CordCotizador',
@@ -18,7 +18,7 @@ export const CordCotizador = defineComponent({
       required: false,
     },
   },
-  emits: ['ready', 'approved', 'rejected', 'message', 'pay', 'event'],
+  emits: ['ready', 'viewed', 'approved', 'signed', 'rejected', 'message', 'item-comment', 'pay', 'event'],
   setup(props, { emit, attrs }) {
     const rootEl = ref<HTMLDivElement | null>(null);
     let controller: CordController | null = null;
@@ -34,11 +34,14 @@ export const CordCotizador = defineComponent({
         baseUrl: props.baseUrl,
         minHeight: props.minHeight,
         onReady: () => emit('ready'),
-        onApproved: (d: CordEventDetail) => emit('approved', d),
-        onRejected: (d: CordEventDetail) => emit('rejected', d),
-        onMessage: (d: CordEventDetail) => emit('message', d),
-        onPay: (d: CordEventDetail) => emit('pay', d),
-        onEvent: (t: string, d: CordEventDetail) => emit('event', t, d),
+        onViewed: (d) => emit('viewed', d),
+        onApproved: (d) => emit('approved', d),
+        onSigned: (d) => emit('signed', d),
+        onRejected: (d) => emit('rejected', d),
+        onMessage: (d) => emit('message', d),
+        onItemComment: (d) => emit('item-comment', d),
+        onPay: (d) => emit('pay', d),
+        onEvent: (event: CordEvent) => emit('event', event.type, event.detail),
       };
 
       controller = mountCotizador(rootEl.value, opts);
@@ -64,4 +67,4 @@ export const CordCotizador = defineComponent({
 });
 
 export default CordCotizador;
-export type { CordEventDetail } from './types';
+export type { CordEvent } from './types.js';

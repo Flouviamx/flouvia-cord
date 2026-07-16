@@ -1,6 +1,6 @@
 {
   "name": "@flouviahq/elements",
-  "version": "0.6.3",
+  "version": "1.0.0",
   "description": "Embebe el cotizador B2B de Cord en cualquier sitio — Web Component + wrappers de React, Vue, Framer y Webflow. Tu marca, aprobación y pago en línea.",
   "type": "module",
   "license": "MIT",
@@ -59,8 +59,14 @@
     },
     "./webflow": {
       "browser": "./dist/webflow.js",
-      "import": "./dist/webflow.mjs",
-      "require": "./dist/webflow.cjs"
+      "import": {
+        "types": "./dist/types/webflow.d.ts",
+        "default": "./dist/webflow.mjs"
+      },
+      "require": {
+        "types": "./dist/types/webflow.d.cts",
+        "default": "./dist/webflow.cjs"
+      }
     },
     "./server": {
       "import": {
@@ -80,6 +86,16 @@
   "files": [
     "dist",
     "src",
+    "react.js",
+    "react.d.ts",
+    "vue.js",
+    "vue.d.ts",
+    "framer.js",
+    "framer.d.ts",
+    "webflow.js",
+    "webflow.d.ts",
+    "server.js",
+    "server.d.ts",
     "README.md",
     "CHANGELOG.md"
   ],
@@ -87,12 +103,12 @@
     "build": "tsc -p tsconfig.json && node build.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "check-exports": "node scripts/check-exports.mjs",
-    "prepublishOnly": "npm run build && npm run check-exports"
+    "prepublishOnly": "npm run build && npm run check-exports && npx attw --pack . && npx publint"
   },
   "peerDependencies": {
+    "framer": "*",
     "react": ">=17",
-    "vue": ">=3",
-    "framer": "*"
+    "vue": ">=3"
   },
   "peerDependenciesMeta": {
     "react": {
@@ -106,14 +122,14 @@
     }
   },
   "devDependencies": {
-    "esbuild": "*",
-    "typescript": "^5.6.0",
-    "@types/react": "^18.3.0",
+    "@arethetypeswrong/cli": "^0.18.5",
     "@types/node": "^22.0.0",
-    "vue": "^3.5.0",
+    "@types/react": "^18.3.0",
+    "esbuild": "*",
     "framer": "^2.4.0",
-    "@arethetypeswrong/cli": "^0.16.0",
-    "publint": "^0.2.0"
+    "publint": "^0.2.0",
+    "typescript": "^5.6.0",
+    "vue": "^3.5.0"
   },
   "publishConfig": {
     "access": "public"

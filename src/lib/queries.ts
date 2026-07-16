@@ -362,7 +362,7 @@ export async function getClientes() {
 }
 
 // ── COTIZACIONES ──────────────────────────────────────────────────────────────
-function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = []): MockQuote {
+function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [], conversacion: any[] = []): MockQuote {
     return {
         id: c.id,
         folio: c.folio,
@@ -398,6 +398,12 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [])
             detalle: e.detalle ?? '',
             cuando: fmtRelative(e.created_at),
         })),
+        conversacion: conversacion.map((e) => ({
+            tipo: e.tipo as string,
+            detalle: (e.detalle as string) ?? '',
+            cuando: fmtRelative(e.created_at),
+            mine: e.tipo === 'reply',   // desde la perspectiva del vendedor: "reply" = tú, comment/counter = el cliente
+        })),
         versiones: versiones.map((v) => ({
             version: num(v.version),
             total: num(v.total),
@@ -429,16 +435,34 @@ export async function getCotizaciones(opts?: { limit?: number; offset?: number }
 // Detalle con items y timeline. Cuatro queries en un solo batch.
 export async function getCotizacion(id: string): Promise<MockQuote | null> {
     const orgId = await getActiveOrgId();
-    const [rows, items, eventos, versiones] = await withOrgTx(orgId,
+    const [rows, items, eventos, versiones, conv, comentarios] = await withOrgTx(orgId,
         sql`select c.*, cl.empresa, coalesce(c.terminos, cl.terminos_default) as terminos
             from cotizaciones c left join clientes cl on cl.id = c.cliente_id
             where c.id = ${id} and c.org_id = ${orgId}`,
         sql`select * from cotizacion_items where cotizacion_id = ${id} order by orden`,
-        sql`select * from eventos where cotizacion_id = ${id} order by created_at desc`,
+        // Bitácora de auditoría — SOLO cambios de estado del sistema. Los mensajes
+        // (comment/counter/reply) viven en `conv` y se pintan como chat, no como log.
+        sql`select * from eventos where cotizacion_id = ${id} and tipo not in ('comment', 'counter', 'reply') order by created_at desc`,
         sql`select * from cotizacion_versiones where cotizacion_id = ${id} order by version desc`,
+        sql`select tipo, detalle, created_at from eventos where cotizacion_id = ${id} and tipo in ('comment', 'counter', 'reply') order by created_at asc`,
+        sql`select * from cotizacion_comentarios where cotizacion_id = ${id} order by created_at asc`,
     );
     if (!rows.length) return null;
-    return rowToQuote(rows[0], items, eventos, versiones);
+
+    const itemsWithComments = items.map((it: any) => ({
+        ...it,
+        comentarios: comentarios
+            .filter((c: any) => c.item_id === it.id)
+            .map((c: any) => ({
+                autor: c.autor_nombre,
+                tipo: c.autor_tipo,
+                contenido: c.contenido,
+                cuando: fmtRelative(c.created_at),
+                mine: c.autor_tipo === 'usuario',   // desde la perspectiva del vendedor
+            })),
+    }));
+
+    return rowToQuote(rows[0], itemsWithComments, eventos, versiones, conv);
 }
 
 // Documentos fiscales emitidos para una cotización (CFDI / invoice). Plain sql

@@ -1,0 +1,45 @@
+{
+  ".": [
+    "CordAPI",
+    "CordCotizadorElement",
+    "CordError",
+    "calculateTotals",
+    "configureCord",
+    "defineCordElements",
+    "getCordConfig",
+    "mountCotizador",
+    "num",
+    "roundMoney",
+    "sanitizeItem"
+  ],
+  "./react": [
+    "CordBuilder",
+    "CordCotizador",
+    "CordError",
+    "CordProvider",
+    "configureCord",
+    "default",
+    "getCordConfig",
+    "useBuilderContext",
+    "useCord",
+    "useCordCatalog",
+    "useCordClients",
+    "useCordContext",
+    "useCordTranslations",
+    "useCreateQuote",
+    "useQuoteBuilder"
+  ],
+  "./vue": [
+    "CordCotizador",
+    "default"
+  ],
+  "./framer": [
+    "FramerCordCotizador",
+    "default"
+  ],
+  "./server": [
+    "CordAPI",
+    "CordError",
+    "CordWebhooks"
+  ]
+}

@@ -1,4 +1,4 @@
-import { mountCotizador } from './core';
+import { mountCotizador } from './core.js';
 
 /**
  * Auto-initialization script designed for Webflow and Vanilla sites.
@@ -33,11 +33,16 @@ function initWebflow() {
     });
 }
 
-// Run immediately if DOM is ready, or wait for DOMContentLoaded
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initWebflow);
-} else {
-    initWebflow();
+// `document` no existe en SSR/Node (Next.js puede importar este módulo desde
+// server components sin querer, o un bundler puede evaluarlo al analizar el
+// árbol) — sin este guard, el simple `import` de este archivo tronaba con
+// ReferenceError antes de que nadie llamara a nada.
+if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initWebflow);
+    } else {
+        initWebflow();
+    }
 }
 
 export { initWebflow };

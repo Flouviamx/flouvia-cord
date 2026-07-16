@@ -188,6 +188,14 @@ alter table clientes add column if not exists regimen_fiscal text; -- c_RegimenF
 alter table clientes add column if not exists uso_cfdi text;       -- c_UsoCFDI (ej. G03)
 alter table clientes add column if not exists cp_fiscal text;      -- código postal del domicilio fiscal del receptor
 
+-- Origen del cliente: 'app' (alta manual) | 'embed' (find-or-create desde
+-- Cord Elements con una publishable key — ver createCotizacion en
+-- src/lib/cotizaciones.ts). Los creados por 'embed' NUNCA se actualizan
+-- automáticamente después (una pk_ solo puede CREAR, jamás alterar un
+-- cliente existente) — este campo es para que el negocio los identifique y
+-- revise en su CRM, no un gate funcional.
+alter table clientes add column if not exists origen text not null default 'app';
+
 -- 2) Flujos de aprobación: umbrales por org + estado de aprobación por cotización.
 alter table orgs add column if not exists aprob_descuento_max numeric not null default 0; -- % de descuento que dispara aprobación (0 = sin tope)
 alter table orgs add column if not exists aprob_monto_max numeric not null default 0;     -- total que dispara aprobación (0 = sin tope)

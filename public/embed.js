@@ -4,21 +4,27 @@
  * Uso en el sitio de un tercero (una sola línea + un div):
  *
  *   <script src="https://cord.flouvia.com/embed.js" async></script>
- *   <div data-cord-cotizador data-token="abc123"></div>
+ *   <div data-cord-token="abc123"></div>
  *
  * El loader inyecta un <iframe> a /embed/{token}, muestra un skeleton mientras
  * carga, ajusta la altura sola (postMessage 'cord:resize') y re-emite los
  * eventos del cotizador como CustomEvents sobre el <div> anfitrión:
  *
- *   document.querySelector('[data-cord-cotizador]')
+ *   document.querySelector('[data-cord-token]')
  *     .addEventListener('cord:approved', (e) => console.log(e.detail));
  *
  * Atributos opcionales del <div>:
- *   data-token   (requerido) token público de la cotización
- *   data-base    origen alterno (self-host / staging)
- *   data-min-height  alto inicial del skeleton en px (default 420)
+ *   data-cord-token       (requerido) token público de la cotización
+ *   data-cord-base-url    origen alterno (self-host / staging)
+ *   data-cord-min-height  alto inicial del skeleton en px (default 420)
  *
- * Eventos: cord:ready · cord:approved · cord:rejected · cord:message · cord:pay
+ * Mismo vocabulario `data-cord-*` que usa el loader de Webflow (src/webflow.ts).
+ *
+ * ⚠️ Vocabulario LEGACY (sigue funcionando, no lo uses en integraciones nuevas):
+ *   data-cord-cotizador (marcador) + data-token / data-base / data-min-height
+ *
+ * Eventos: cord:ready · cord:viewed · cord:approved · cord:signed ·
+ *          cord:rejected · cord:message · cord:item_comment · cord:pay
  * ========================================================================== */
 (function () {
     'use strict';
@@ -63,16 +69,19 @@
         if (el.__cordMounted) return;
         el.__cordMounted = true;
 
-        var token = el.getAttribute('data-token');
+        // data-cord-token es el vocabulario canónico (igual que webflow.ts);
+        // data-token (sin el marcador data-cord-cotizador) queda como alias
+        // legacy para no romper embeds ya publicados en sitios de clientes.
+        var token = el.getAttribute('data-cord-token') || el.getAttribute('data-token');
         if (!token) {
-            console.warn('[Cord] Falta data-token en', el);
+            console.warn('[Cord] Falta data-cord-token en', el);
             return;
         }
         injectStyles();
 
-        // Permite apuntar a otro origen (self-host / staging) con data-base.
-        var base = el.getAttribute('data-base') || ORIGIN;
-        var minH = parseInt(el.getAttribute('data-min-height') || '420', 10);
+        // Permite apuntar a otro origen (self-host / staging).
+        var base = el.getAttribute('data-cord-base-url') || el.getAttribute('data-base') || ORIGIN;
+        var minH = parseInt(el.getAttribute('data-cord-min-height') || el.getAttribute('data-min-height') || '420', 10);
 
         el.classList.add('cord-embed');
 
@@ -82,8 +91,12 @@
         skeleton.innerHTML = '<div class="cord-embed-shimmer"></div>';
         el.appendChild(skeleton);
 
+        // parentOrigin: deja que /embed/{token} use un targetOrigin real en su
+        // postMessage (no siempre '*') cuando coincide con la allowlist de
+        // orgs.embed_domains — mismo gate que ya protege frame-ancestors.
+        var iframeQuery = '?parentOrigin=' + encodeURIComponent(window.location.origin);
         var iframe = document.createElement('iframe');
-        iframe.src = base + '/embed/' + encodeURIComponent(token);
+        iframe.src = base + '/embed/' + encodeURIComponent(token) + iframeQuery;
         iframe.setAttribute('title', 'Cotización');
         iframe.setAttribute('loading', 'lazy');
         iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
@@ -132,8 +145,13 @@
         host.dispatchEvent(new CustomEvent(data.type, { detail: data.detail || {}, bubbles: true }));
     });
 
+    // Selector combinado: vocabulario canónico [data-cord-token] + el legacy
+    // [data-cord-cotizador] (sin data-cord-token propio, para no montar dos
+    // veces un mismo elemento que ya tenga ambos por error de copiar-pegar).
+    var MOUNT_SELECTOR = '[data-cord-token], [data-cord-cotizador]';
+
     function init() {
-        var els = document.querySelectorAll('[data-cord-cotizador]');
+        var els = document.querySelectorAll(MOUNT_SELECTOR);
         for (var i = 0; i < els.length; i++) mount(els[i]);
     }
 
@@ -151,9 +169,9 @@
                 for (var j = 0; j < added.length; j++) {
                     var n = added[j];
                     if (n.nodeType !== 1) continue;
-                    if (n.matches && n.matches('[data-cord-cotizador]')) mount(n);
+                    if (n.matches && n.matches(MOUNT_SELECTOR)) mount(n);
                     if (n.querySelectorAll) {
-                        var inner = n.querySelectorAll('[data-cord-cotizador]');
+                        var inner = n.querySelectorAll(MOUNT_SELECTOR);
                         for (var k = 0; k < inner.length; k++) mount(inner[k]);
                     }
                 }

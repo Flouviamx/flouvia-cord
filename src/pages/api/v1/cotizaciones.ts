@@ -25,15 +25,22 @@ export const POST = withApiAuth('write', async ({ request }, auth) => {
 
     const orgId = await getActiveOrgId();
     try {
+        const origin = new URL(request.url).origin;
         const r = await createCotizacion(orgId, body, {
-            origin: new URL(request.url).origin,
+            origin,
             ip: reqIp(request),
             actor: `api:${auth.keyId}`,
         });
         return ok({
             id: r.id,
+            // El token siempre estuvo disponible en `r` — no devolverlo obligaba
+            // a los consumidores (ver El Zarco) a parsearlo a mano de
+            // `link_publico.split('/q/')[1]`.
+            token: r.token,
             folio: r.folio,
-            link_publico: `/q/${r.token}`,
+            // Absoluto: relativo obligaba al mismo parseo manual para construir
+            // un link que enviar por correo/WhatsApp.
+            link_publico: `${origin}/q/${r.token}`,
             needs_approval: r.needsApproval,
             motivo: r.motivo,
             email: r.email,

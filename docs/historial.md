@@ -8,6 +8,52 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Chat cliente↔vendedor rediseñado a orgánico + chat por producto para el vendedor
+   (jul 2026)** — André reportó que responder desde el detalle de una cotización se
+   veía como bitácora ("el cliente escribió... y respondiste...") en vez de un chat
+   real. Causa raíz: el chat general y la bitácora de auditoría del vendedor
+   compartían la MISMA tabla (`eventos`), pensada para log de sistema, y el texto se
+   guardaba narrado en tercera persona (`El cliente escribió: "..."`, `Respondiste:
+   "..."`, `Contraoferta del cliente (...)`) — eso es justo lo que se pintaba dentro
+   de la burbuja del chat.
+   • **Fix de raíz:** `eventos.detalle` para los tipos `comment`/`counter`/`reply` ya
+     NO narra — guarda el mensaje tal cual (`src/pages/api/q/[token].ts`,
+     `src/pages/api/cotizaciones/[id].ts`). La burbuja ya comunica quién habla por
+     posición/color (patrón ya usado en `/q`), así que la narración sobraba. Las
+     contraofertas con monto usan un rótulo corto y consistente ("Propuesta: $X —
+     mensaje") en vez de la frase completa en tercera persona — igual en el insert
+     del servidor y en el append optimista del cliente (`QuoteCard.astro`).
+   • **Vista de detalle del vendedor (`/app/cotizaciones/[id]`) — separada en dos
+     secciones** (antes todo vivía junto en "Actividad" con la caja de respuesta
+     pegada al fondo del log):
+     - **Actividad**: SOLO bitácora de sistema (enviada/vista/aprobada/pagada...) —
+       `getCotizacion()` ahora filtra `tipo not in ('comment','counter','reply')`.
+     - **Conversación** (nueva): burbujas estilo chat (`.dc-msg`/`.dc-thread`,
+       mismo lenguaje visual que `.q-msg` de `/q` pero con tokens `var(--color-*)`
+       para dark-mode) + compose con auto-resize, Enter para enviar (Shift+Enter =
+       salto de línea), y **envío optimista** (la burbuja aparece al instante sin
+       `location.reload()`).
+   • **Chat por línea/producto para el vendedor (gap real, no existía):** antes,
+     si un cliente comentaba sobre una línea específica desde `/q`
+     (`cotizacion_comentarios`), el vendedor JAMÁS lo veía en la app — `getCotizacion()`
+     no traía esa tabla. Ahora cada fila del detalle tiene un ícono de comentarios con
+     contador (`.di-chat-toggle`); al abrirlo se ve el hilo y el vendedor puede
+     responder (acción nueva `item_reply` en `/api/cotizaciones/[id].ts`, inserta en
+     `cotizacion_comentarios` con `autor_tipo='usuario'` — misma tabla que ya usaba el
+     cliente, validando que la línea pertenezca a esa cotización/org).
+   • **`queries.ts` — `getCotizacion()` ahora trae 6 queries en el mismo batch**
+     (antes 4): eventos de auditoría, versiones, conversación (comment/counter/reply)
+     y comentarios por línea. `rowToQuote()` gana un 5º parámetro `conversacion` y
+     expone `q.conversacion` (`MockQuote.conversacion`, nuevo campo) con `mine` desde
+     la perspectiva del vendedor (`reply` = tú). Cada `item.comentarios` gana `mine`
+     (`autor_tipo === 'usuario'`).
+   ⚠️ **Regla a futuro:** el texto guardado en un evento/comentario que se vaya a
+     pintar dentro de una burbuja de chat debe ser el mensaje TAL CUAL — nunca
+     narrarlo en tercera persona pensando en cómo se vería en un log de auditoría.
+     Si una tabla sirve dos propósitos (auditoría + chat), filtrar por `tipo` en la
+     query en vez de intentar que un solo texto sirva para ambos casos.
+   • Verificado con `npm run build` (limpio, sin cambios de tipos rotos).
+
 ✅ **Landing de Cord en flouvia.com — acordeón de FAQ + tarjetas con shader físico +
    push a main (jul 2026, repo hermano `~/Desktop/flouvia` — NO este repo)** — segunda
    pasada sobre el rewrite descrito en la entrada inmediata siguiente, ya en `main` de

@@ -53,7 +53,24 @@ export interface EngineTotals {
     ivaPct: number;
 }
 
+/** Redondeo a `dp` decimales — SOLO para mostrar en pantalla. Nunca se aplica
+ * dentro de `calculateTotals` (cambiar el redondeo ahí reescribiría en
+ * silencio la aritmética de cotizaciones ya guardadas en producción). */
+export function roundMoney(n: number, dp = 2): number {
+    const f = 10 ** dp;
+    return Math.round(n * f) / f;
+}
+
 export function calculateTotals(items: EngineItemInput[], ivaPct: number, ivaIncluido: boolean): EngineTotals {
+    // `num(ivaPct, 0.16)` NO es la solución aquí: caer en silencio a 16% para
+    // una org con IVA 0% (o cualquier NaN/fuera de rango) es un bug PEOR que
+    // el que reemplaza — un 500 explícito le gana a un total incorrecto que
+    // nadie audita. Este motor lo importa el servidor directamente
+    // (src/lib/cotizaciones.ts) para escribir totales reales en producción.
+    if (!Number.isFinite(ivaPct) || ivaPct < 0 || ivaPct > 1) {
+        throw new RangeError(`calculateTotals: ivaPct debe ser un número entre 0 y 1 (recibido: ${ivaPct}).`);
+    }
+
     const sanitized = items.map(sanitizeItem);
     
     let sumPrecios = 0;

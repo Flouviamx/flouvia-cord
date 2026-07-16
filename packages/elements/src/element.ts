@@ -2,10 +2,18 @@
 // Astro… cualquier framework que renderice DOM. Envuelve el core y re-emite los
 // eventos del cotizador como CustomEvents NATIVOS (sin el prefijo `cord:`), para
 // que en Vue sea `@approved`, en HTML `addEventListener('approved', …)`.
-import { mountCotizador } from './core';
-import type { CordController, CordEventDetail } from './types';
+import { mountCotizador } from './core.js';
+import type { CordController } from './types.js';
 
-export class CordCotizadorElement extends HTMLElement {
+// `extends HTMLElement` se evalúa al DEFINIR la clase, no al instanciarla —
+// en Node (SSR, scripts, este mismo check-exports) `HTMLElement` no existe y
+// el import de este módulo tronaría con un ReferenceError. Base segura: en
+// Node cae a una clase vacía (nunca se instancia fuera del navegador, porque
+// `defineCordElements()` ya no-opea sin `customElements`).
+const ElementBase: typeof HTMLElement =
+    typeof HTMLElement !== 'undefined' ? HTMLElement : (class {} as unknown as typeof HTMLElement);
+
+export class CordCotizadorElement extends ElementBase {
     private controller: CordController | null = null;
 
     static get observedAttributes() {
@@ -35,7 +43,7 @@ export class CordCotizadorElement extends HTMLElement {
         this.controller?.destroy();
 
         const minAttr = this.getAttribute('min-height');
-        const emit = (name: string, detail: CordEventDetail) =>
+        const emit = (name: string, detail: unknown) =>
             this.dispatchEvent(new CustomEvent(name, { detail, bubbles: true, composed: true }));
 
         this.controller = mountCotizador(this, {
@@ -43,7 +51,7 @@ export class CordCotizadorElement extends HTMLElement {
             baseUrl: this.getAttribute('base-url') || undefined,
             minHeight: minAttr ? parseInt(minAttr, 10) : undefined,
             // Re-emite cada evento sin el prefijo: cord:approved → 'approved'.
-            onEvent: (type, detail) => emit(type.replace(/^cord:/, ''), detail),
+            onEvent: (event) => emit(event.type.replace(/^cord:/, ''), event.detail),
         });
     }
 }

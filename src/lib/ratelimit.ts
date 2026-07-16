@@ -68,8 +68,11 @@ export async function rateLimit(key: string, limit: number, windowSec = 60): Pro
 }
 
 // Helper: arma un Response 429 estándar con Retry-After.
+// `code: 'rate_limited'` — antes esta era la única respuesta 4xx de /api/v1/*
+// SIN `code` (el resto usa `fail()` en apiv1.ts), así que el SDK no podía
+// distinguir "me rate-limitaron" de cualquier otro error por código.
 export function tooMany(retryAfter: number, msg = 'Demasiadas peticiones. Intenta de nuevo en un momento.'): Response {
-    return new Response(JSON.stringify({ error: msg }), {
+    return new Response(JSON.stringify({ error: msg, code: 'rate_limited' }), {
         status: 429,
         headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfter) },
     });

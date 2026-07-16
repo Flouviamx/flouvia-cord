@@ -728,8 +728,8 @@ const hayContacto = !!(vEmail || vWa || vTel);
         btn.disabled = true;
         try {
             await api(action, { mensaje, propuesta });
-            const label = action === 'counter'
-                ? `Contraoferta${propuesta ? ` ($${propuesta.toLocaleString('es-MX')})` : ''}${mensaje ? ': ' + mensaje : ''}`
+            const label = action === 'counter' && propuesta
+                ? `Propuesta: $${propuesta.toLocaleString('es-MX')}${mensaje ? ` — ${mensaje}` : ''}`
                 : mensaje;
             appendMsg(label, action);
             if (msgEl) msgEl.value = '';

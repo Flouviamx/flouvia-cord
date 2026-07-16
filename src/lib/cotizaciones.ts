@@ -29,6 +29,19 @@ export interface NewQuoteItem {
 
 export interface NewQuoteInput {
     cliente_id?: string | null;
+    /**
+     * Datos de un cliente NUEVO (sin `cliente_id`) — usado por Cord Elements
+     * cuando el usuario escribe un cliente que no está en el datalist. Se
+     * busca primero por empresa/email dentro de la org y, si no existe, se
+     * CREA (ver resolveOrCreateCliente abajo) — nunca actualiza uno existente.
+     */
+    cliente?: {
+        empresa: string;
+        email?: string | null;
+        contacto?: string | null;
+        telefono?: string | null;
+        rfc?: string | null;
+    } | null;
     terminos?: string;
     vigencia_dias?: number;
     notas?: string | null;
@@ -57,6 +70,36 @@ export interface CreateQuoteResult {
 export class QuoteError extends Error {
     status: number;
     constructor(message: string, status = 400) { super(message); this.status = status; }
+}
+
+/**
+ * Resuelve el cliente de la cotización: si viene `cliente_id`, lo usa tal
+ * cual. Si no, y viene un bloque `cliente` (Cord Elements con un cliente que
+ * no está en el datalist), busca por empresa/email DENTRO de la org y, si no
+ * hay match, lo CREA — marcado `origen='embed'` para cola de revisión.
+ *
+ * Regla de seguridad: esto SOLO puede crear, NUNCA actualizar una fila
+ * existente — una publishable key (pk_) puede llegar hasta aquí vía
+ * `POST /api/v1/cotizaciones` (scope permitido), y dejarla escribir sobre un
+ * cliente ya dado de alta la volvería un vector de alteración del CRM.
+ */
+async function resolveOrCreateCliente(orgId: string, input: NewQuoteInput): Promise<string | null> {
+    if (input.cliente_id) return input.cliente_id;
+
+    const empresa = input.cliente?.empresa?.trim();
+    if (!empresa) return null;
+    const email = input.cliente?.email?.trim() || null;
+
+    const [existing] = email
+        ? await sql`select id from clientes where org_id = ${orgId} and (lower(empresa) = lower(${empresa}) or email = ${email}) limit 1`
+        : await sql`select id from clientes where org_id = ${orgId} and lower(empresa) = lower(${empresa}) limit 1`;
+    if (existing) return existing.id as string;
+
+    const [created] = await sql`
+        insert into clientes (org_id, empresa, email, contacto, telefono, rfc, origen)
+        values (${orgId}, ${empresa}, ${email}, ${input.cliente?.contacto || null}, ${input.cliente?.telefono || null}, ${input.cliente?.rfc || null}, 'embed')
+        returning id`;
+    return created.id as string;
 }
 
 /**
@@ -134,7 +177,7 @@ export async function createCotizacion(
         ? Math.round(anticipoPctRaw * 100) / 100 : null;
     const dias = Number(input.vigencia_dias) || 30;
     const vigencia = new Date(); vigencia.setDate(vigencia.getDate() + dias);
-    const clienteId = input.cliente_id || null;
+    const clienteId = await resolveOrCreateCliente(orgId, input);
     const status = needsApproval ? 'draft' : (input.send ? 'sent' : 'draft');
     const sentAt = (!needsApproval && input.send) ? new Date().toISOString() : null;
 

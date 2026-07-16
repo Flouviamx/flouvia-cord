@@ -47,7 +47,9 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     const denied = await requirePerm(APROBAR_ACTIONS.has(String(body.action)) ? 'aprobar' : 'cotizar');
     if (denied) return denied;
 
-    // Respuesta del vendedor al cliente (no cambia estado; alimenta la conversación de /q)
+    // Respuesta del vendedor al cliente (no cambia estado; alimenta la conversación
+    // de /q). `detalle` es el texto TAL CUAL de la burbuja — sin narrarlo en tercera
+    // persona ("Respondiste: ..."), la posición/color de la burbuja ya dice quién habla.
     if (body.action === 'reply') {
         const orgId = await getActiveOrgId();
         const mensaje = String(body.mensaje ?? '').trim().slice(0, 800);
@@ -55,7 +57,23 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         const rows = await sql`select id from cotizaciones where id = ${id} and org_id = ${orgId}`;
         if (!rows.length) return json({ error: 'Cotización no encontrada' }, 404);
         await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                  values (${orgId}, ${id}, 'reply', ${'Respondiste: "' + mensaje + '"'})`;
+                  values (${orgId}, ${id}, 'reply', ${mensaje})`;
+        return json({ ok: true });
+    }
+
+    // Respuesta del vendedor a un comentario de una LÍNEA/producto específico
+    // (tabla cotizacion_comentarios, la misma que usa el cliente desde /q).
+    if (body.action === 'item_reply') {
+        const orgId = await getActiveOrgId();
+        const mensaje = String(body.mensaje ?? '').trim().slice(0, 800);
+        const itemId = String(body.item_id ?? '').trim();
+        if (!mensaje || !itemId) return json({ error: 'Datos incompletos' }, 400);
+        const [item] = await sql`select ci.id from cotizacion_items ci
+                  join cotizaciones c on c.id = ci.cotizacion_id
+                  where ci.id = ${itemId} and c.id = ${id} and c.org_id = ${orgId}`;
+        if (!item) return json({ error: 'Línea no encontrada' }, 404);
+        await sql`insert into cotizacion_comentarios (org_id, cotizacion_id, item_id, autor_tipo, autor_nombre, contenido)
+                  values (${orgId}, ${id}, ${itemId}, 'usuario', 'Vendedor', ${mensaje})`;
         return json({ ok: true });
     }
 

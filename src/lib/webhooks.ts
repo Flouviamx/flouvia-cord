@@ -48,11 +48,21 @@ async function logDelivery(hook: any, evento: string, body: string, r: {
  * webhook_deliveries y actualiza el resumen (last_status/error) en webhooks.
  */
 async function deliver(hook: any, evento: string, body: string, prueba = false): Promise<void> {
+    const secret = hook.secret as string;
+    // Doble firma, a propósito NO reemplazando la legacy: los verificadores
+    // ya en producción hacen `header.replace('sha256=','')` + HMAC del body
+    // crudo — agregar `,v1=...` a ESE header los rompería a todos. La
+    // firma V1 (con timestamp, anti-replay real) vive en un header NUEVO,
+    // invisible para quien no la busca. Ventana de deprecación de la legacy:
+    // ~90 días desde que esto se publique (ver CHANGELOG).
+    const ts = Math.floor(Date.now() / 1000);
     const headers = {
         'Content-Type': 'application/json',
         'User-Agent': 'Cord-Webhooks/1.0',
         'X-Cord-Event': evento,
-        'X-Cord-Signature': `sha256=${sign(hook.secret as string, body)}`,
+        'X-Cord-Signature': `sha256=${sign(secret, body)}`,
+        'X-Cord-Timestamp': String(ts),
+        'X-Cord-Signature-V1': `t=${ts},v1=${sign(secret, `${ts}.${body}`)}`,
     };
 
     let status = 0;
@@ -124,6 +134,11 @@ export async function dispatchQuoteEvent(orgId: string, cotizacionId: string, ev
         });
         if (!subs.length) return;
 
+        // Absoluto: dispatchQuoteEvent corre también desde crons/background sin
+        // request en curso, así que no hay `origin` que leer — mismo fallback
+        // que ya usa dispatchSlack() abajo. Un link relativo obligaba a quien
+        // recibe el webhook a adivinar el dominio para armar el link real.
+        const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cord.flouvia.com';
         const body = JSON.stringify({
             event: evento,
             created_at: new Date().toISOString(),
@@ -133,7 +148,7 @@ export async function dispatchQuoteEvent(orgId: string, cotizacionId: string, ev
                 status: q.status,
                 total: Number(q.total ?? 0),
                 cliente: q.empresa ?? null,
-                link_publico: `/q/${q.public_token}`,
+                link_publico: `${base}/q/${q.public_token}`,
             },
         });
 
@@ -168,6 +183,7 @@ async function dispatchSlack(orgId: string, evento: string, q: any): Promise<voi
 export async function sendTestEvent(orgId: string, webhookId: string): Promise<{ ok: boolean; status: number; error: string | null }> {
     const [hook] = await sql`select * from webhooks where id = ${webhookId} and org_id = ${orgId}`;
     if (!hook) return { ok: false, status: 0, error: 'Endpoint no encontrado' };
+    const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cord.flouvia.com';
     const body = JSON.stringify({
         event: 'ping',
         created_at: new Date().toISOString(),
@@ -177,7 +193,7 @@ export async function sendTestEvent(orgId: string, webhookId: string): Promise<{
             status: 'sent',
             total: 12500,
             cliente: 'Cliente de prueba S.A. de C.V.',
-            link_publico: '/q/demo',
+            link_publico: `${base}/q/demo`,
             mensaje: 'Esta es una entrega de prueba enviada desde Ajustes › Developers.',
         },
     });

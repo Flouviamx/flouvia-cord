@@ -36,7 +36,29 @@ if (appearanceParam) {
         
         let vars = '';
         let fontImports = '';
-        
+
+        // Theme: paleta oscura por default para los tokens --cord-* que el
+        // resto de este documento consume (QuoteCard hereda de :root). Las
+        // `variables` del usuario SIEMPRE se emiten DESPUÉS en el mismo
+        // selector `:root` → en CSS, entre reglas de igual especificidad,
+        // gana la última declarada — así el usuario gana sin necesitar JS
+        // ni selectores con más peso.
+        const DARK_DEFAULTS = '--cord-color-text: #e5e7eb;\n--cord-color-background: #111827;\n';
+        const theme = parsed.theme === 'dark' || parsed.theme === 'light' || parsed.theme === 'auto'
+            ? parsed.theme : undefined;
+        let themeCSS = '';
+        let colorScheme = 'light';
+        if (theme === 'dark') {
+            themeCSS = `:root {\n${DARK_DEFAULTS}}\n`;
+            colorScheme = 'dark';
+        } else if (theme === 'auto') {
+            // No hay info del cliente en el render server-side: la decisión
+            // real la toma el navegador vía @media. Puesto ANTES del bloque
+            // de variables del usuario por la misma razón de orden-de-cascada.
+            themeCSS = `@media (prefers-color-scheme: dark) {\n:root {\n${DARK_DEFAULTS}}\n}\n`;
+            colorScheme = 'light dark';
+        }
+
         if (parsed.variables && typeof parsed.variables === 'object') {
             for (const [key, val] of Object.entries(parsed.variables)) {
                 if (key !== 'fontFamily' && isSafe(val as string)) {
@@ -47,7 +69,7 @@ if (appearanceParam) {
                 }
             }
         }
-        
+
         if (parsed.fonts && Array.isArray(parsed.fonts)) {
             // Allowlist de hosts de fuentes: sin esto, un @import podría cargar una
             // hoja de estilos externa arbitraria (redressing/UI-injection). Solo
@@ -63,8 +85,13 @@ if (appearanceParam) {
                 vars += `--cord-font-family: ${fontFamily.replace(/\+/g, ' ')};\n`;
             }
         }
-        
+
+        if (colorScheme !== 'light') {
+            vars += `color-scheme: ${colorScheme};\n`;
+        }
+
         // Se eliminó el soporte de `rules` (selectores CSS arbitrarios) por seguridad.
+        appearanceCSS += themeCSS;
         if (vars) {
             appearanceCSS += `:root {\n${vars}}\n`;
         }
@@ -83,6 +110,23 @@ const frameAncestors = dominios.length
     ? `frame-ancestors 'self' ${dominios.join(' ')}`
     : `frame-ancestors *`; // sin allowlist → abierto (modo demo / "Powered by Cord")
 Astro.response.headers.set('Content-Security-Policy', frameAncestors);
+
+// ── targetOrigin del postMessage saliente ──
+// Antes SIEMPRE '*' (cualquier ventana en la cadena de frames podía leer los
+// eventos). Si hay allowlist Y el `parentOrigin` que mandó el SDK matchea,
+// usamos ESE origen exacto — mismo gate que ya protege frame-ancestors arriba.
+// Sin match (o sin allowlist configurada) se queda en '*' — el SDK viejo o un
+// <iframe> de terceros directo sin el parámetro siguen funcionando igual que
+// antes (sin regresión), solo se AFINA cuando podemos validar.
+const parentOriginParam = Astro.url.searchParams.get('parentOrigin') || '';
+let targetOrigin = '*';
+if (dominios.length > 0 && parentOriginParam) {
+    try {
+        const poHost = new URL(parentOriginParam).hostname;
+        const matched = dominios.some((d: string) => d === poHost || poHost.endsWith('.' + d.replace(/^\*\./, '')));
+        if (matched) targetOrigin = parentOriginParam;
+    } catch { /* parentOrigin inválido → se queda en '*' */ }
+}
 
 const yaAprobada = ['approved', 'paid', 'invoiced'].includes(q.status);
 const yaRechazada = q.status === 'rejected';
@@ -116,10 +160,19 @@ const puedePagar = pagoActivo && pagoDisponible && (
     {appearanceCSS && <style set:html={appearanceCSS}></style>}
 </EmbedLayout>
 
+<script is:inline define:vars={{ targetOrigin }}>
+    // JS puro (sin sintaxis TS) — este bloque es is:inline vía define:vars,
+    // así que se manda VERBATIM al navegador. `targetOrigin` viaja
+    // JSON-serializado por Astro (seguro contra inyección).
+    window.__CORD_TARGET_ORIGIN__ = targetOrigin;
+</script>
 <script>
     // ── Puente iframe ↔ sitio anfitrión ──
     const post = (type: string, payload: Record<string, unknown> = {}) => {
-        try { window.parent.postMessage({ source: 'cord', type, ...payload }, '*'); } catch {}
+        try {
+            const to = (window as any).__CORD_TARGET_ORIGIN__ || '*';
+            window.parent.postMessage({ source: 'cord', type, ...payload }, to);
+        } catch {}
     };
 
     // 1) Auto-altura: mide el contenido y avisa al padre en cada cambio de tamaño.
@@ -144,7 +197,9 @@ const puedePagar = pagoActivo && pagoDisponible && (
     window.addEventListener('load', ready);
 
     // 2) Relay: cada evento del QuoteCard → postMessage al padre.
-    for (const name of ['cord:approved', 'cord:rejected', 'cord:message', 'cord:pay', 'cord:signed'] as const) {
+    //    `cord:item_comment` faltaba aquí — QuoteCard SÍ lo emite (comentario
+    //    por línea/partida), pero se perdía en silencio antes de llegar al SDK.
+    for (const name of ['cord:approved', 'cord:rejected', 'cord:message', 'cord:pay', 'cord:signed', 'cord:item_comment'] as const) {
         window.addEventListener(name, (e) => {
             post(name, { detail: (e as CustomEvent).detail });
             // tras aprobar/rechazar la altura cambia (aparece el estado final)
