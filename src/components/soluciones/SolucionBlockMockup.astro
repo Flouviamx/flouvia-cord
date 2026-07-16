@@ -1,7 +1,8 @@
 ---
 // Block-mockups motion-graphic por industria (/soluciones/[slug]).
 // Rediseñados para integrarse nativamente en el Bento Grid de estilo Stripe Enterprise.
-// Gráficos vectoriales abstractos con líneas neón y brillos sutiles.
+// Gráficos vectoriales abstractos con líneas neón, brillos sutiles y animaciones fluidas,
+// correspondiendo exactamente a cada caso de uso.
 export interface Props {
     slug: string;
     index: number;
@@ -9,7 +10,7 @@ export interface Props {
 const { slug, index } = Astro.props;
 
 // Helper param para internacionalización visual si se requiere en un futuro
-const lang = 'es'; // o inyectarlo por props
+const lang = 'es';
 ---
 
 <div class="stripe-mockup-wrapper">
@@ -18,102 +19,267 @@ const lang = 'es'; // o inyectarlo por props
     
     <!-- Renderizado condicional del gráfico SVG según la industria y el índice del bento -->
     <div class="stripe-mockup-svg">
+        
+        {/* EMPRESAS 0: CONTROL DE PRECIOS (Nodos y Aprobaciones) */}
         {slug === 'empresas' && index === 0 && (
             <svg viewBox="0 0 400 300" class="smk-svg">
-                <!-- Nodos conectados (Aprobaciones) -->
-                <circle cx="200" cy="150" r="40" fill="var(--stripe-card-bg)" stroke="var(--stripe-accent)" stroke-width="2"/>
-                <circle cx="200" cy="150" r="20" fill="var(--stripe-accent)"/>
+                <defs>
+                    <linearGradient id="emp0-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#0ea5e9"/>
+                        <stop offset="100%" stop-color="#3b82f6"/>
+                    </linearGradient>
+                    <filter id="emp0-glow">
+                        <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+                    </pattern>
+                </defs>
+                <rect width="400" height="300" fill="url(#grid)" />
                 
-                <path d="M100,80 L165,130" stroke="var(--stripe-cyan)" stroke-width="2" stroke-dasharray="4"/>
-                <circle cx="100" cy="80" r="15" fill="var(--stripe-card-bg)" stroke="var(--stripe-cyan)" stroke-width="2"/>
+                <path d="M 80,150 C 140,150 160,80 220,80" fill="none" stroke="url(#emp0-grad)" stroke-width="3" stroke-dasharray="6,6" class="anim-dash" />
+                <path d="M 80,150 C 140,150 160,220 220,220" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="3" />
+                <path d="M 220,80 C 280,80 300,150 340,150" fill="none" stroke="url(#emp0-grad)" stroke-width="3" stroke-dasharray="6,6" class="anim-dash" />
+
+                <!-- Nodo Inicial -->
+                <circle cx="80" cy="150" r="14" fill="#0f172a" stroke="#0ea5e9" stroke-width="3" class="anim-pulse" />
                 
-                <path d="M100,220 L165,170" stroke="var(--stripe-cyan)" stroke-width="2" stroke-dasharray="4"/>
-                <circle cx="100" cy="220" r="15" fill="var(--stripe-card-bg)" stroke="var(--stripe-cyan)" stroke-width="2"/>
+                <!-- Nodo Aprobado -->
+                <circle cx="220" cy="80" r="18" fill="url(#emp0-grad)" filter="url(#emp0-glow)" />
+                <path d="M 213,80 L 218,85 L 227,75" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
                 
-                <path d="M300,150 L240,150" stroke="var(--stripe-accent-light)" stroke-width="3"/>
-                <circle cx="300" cy="150" r="15" fill="var(--stripe-accent-light)"/>
-                <circle cx="300" cy="150" r="30" fill="none" stroke="var(--stripe-accent-light)" stroke-width="1" opacity="0.5"/>
+                <!-- Nodo Bloqueado -->
+                <circle cx="220" cy="220" r="14" fill="#0f172a" stroke="rgba(255,255,255,0.2)" stroke-width="3" />
+                <path d="M 215,215 L 225,225 M 225,215 L 215,225" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-linecap="round" />
                 
-                <!-- Animación pulsante del SVG principal -->
-                <style>
-                    .smk-svg circle:nth-child(2) { animation: pulse 2s infinite alternate; }
-                    @keyframes pulse { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 20px var(--stripe-accent); } }
-                </style>
+                <!-- Nodo Final (Enviado) -->
+                <circle cx="340" cy="150" r="22" fill="#10b981" filter="url(#emp0-glow)" />
+                <path d="M 331,150 L 337,156 L 349,144" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+
+                <!-- Text Mockups -->
+                <rect x="190" y="30" width="60" height="20" rx="4" fill="rgba(14, 165, 233, 0.1)" stroke="#0ea5e9" stroke-width="1" />
+                <rect x="200" y="38" width="40" height="4" rx="2" fill="#0ea5e9" />
+                
+                <rect x="190" y="250" width="60" height="20" rx="4" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+                <rect x="200" y="258" width="40" height="4" rx="2" fill="rgba(255,255,255,0.3)" />
+
+                <rect x="310" y="100" width="60" height="20" rx="4" fill="rgba(16, 185, 129, 0.1)" stroke="#10b981" stroke-width="1" />
+                <rect x="320" y="108" width="40" height="4" rx="2" fill="#10b981" />
             </svg>
         )}
-        
+
+        {/* EMPRESAS 1: INTEGRACIÓN EMPRESARIAL (ERP Sync Hub) */}
         {slug === 'empresas' && index === 1 && (
             <svg viewBox="0 0 400 300" class="smk-svg">
-                <!-- Gráfico de barras ascendente (Volumen) -->
-                <line x1="50" y1="250" x2="350" y2="250" stroke="var(--stripe-border)" stroke-width="2"/>
-                
-                <rect x="80" y="180" width="40" height="70" fill="rgba(10, 25, 47, 0.2)" stroke="var(--stripe-accent)" stroke-width="1" rx="4"/>
-                <rect x="150" y="130" width="40" height="120" fill="rgba(10, 25, 47, 0.4)" stroke="var(--stripe-accent)" stroke-width="1" rx="4"/>
-                <rect x="220" y="90" width="40" height="160" fill="rgba(10, 25, 47, 0.7)" stroke="var(--stripe-accent)" stroke-width="1" rx="4"/>
-                <rect x="290" y="40" width="40" height="210" fill="var(--stripe-cyan)" rx="4"/>
-                
-                <path d="M100,160 L170,110 L240,70 L310,20" stroke="var(--stripe-bg)" stroke-width="3" fill="none" />
-                <circle cx="310" cy="20" r="6" fill="var(--stripe-bg)"/>
+                <defs>
+                    <radialGradient id="emp1-glow" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="rgba(99, 102, 241, 0.3)"/>
+                        <stop offset="100%" stop-color="transparent"/>
+                    </radialGradient>
+                    <filter id="glow-purple">
+                        <feGaussianBlur stdDeviation="3" result="blur"/>
+                        <feMerge>
+                            <feMergeNode in="blur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+                <rect width="400" height="300" fill="url(#grid)" />
+                <circle cx="200" cy="150" r="120" fill="url(#emp1-glow)" class="anim-pulse" />
+
+                <!-- Sync Lines -->
+                <path d="M 200,110 L 200,60" fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="6,4" class="anim-dash-rev" />
+                <path d="M 240,150 L 290,150" fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="6,4" class="anim-dash" />
+                <path d="M 160,150 L 110,150" fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="6,4" class="anim-dash-rev" />
+                <path d="M 200,190 L 200,240" fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="6,4" class="anim-dash" />
+
+                <!-- Central ERP Node -->
+                <rect x="160" y="110" width="80" height="80" rx="16" fill="#0f172a" stroke="#6366f1" stroke-width="2" filter="url(#glow-purple)" />
+                <circle cx="200" cy="150" r="16" fill="rgba(99, 102, 241, 0.2)" stroke="#6366f1" stroke-width="2" />
+                <circle cx="200" cy="150" r="6" fill="#6366f1" />
+
+                <!-- Satellite Nodes (CRM, Billing, etc.) -->
+                <g class="anim-float">
+                    <rect x="175" y="20" width="50" height="40" rx="8" fill="#0f172a" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
+                    <circle cx="200" cy="40" r="6" fill="#10b981" />
+                </g>
+                <g class="anim-float-delay">
+                    <rect x="290" y="130" width="50" height="40" rx="8" fill="#0f172a" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
+                    <circle cx="315" cy="150" r="6" fill="#3b82f6" />
+                </g>
+                <g class="anim-float">
+                    <rect x="60" y="130" width="50" height="40" rx="8" fill="#0f172a" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
+                    <circle cx="85" cy="150" r="6" fill="#f59e0b" />
+                </g>
+                <g class="anim-float-delay">
+                    <rect x="175" y="240" width="50" height="40" rx="8" fill="#0f172a" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
+                    <circle cx="200" cy="260" r="6" fill="#ec4899" />
+                </g>
             </svg>
         )}
 
+        {/* EMPRESAS 2+: SEGURIDAD Y CUMPLIMIENTO (Isometric Shields) */}
         {slug === 'empresas' && index > 1 && (
             <svg viewBox="0 0 400 300" class="smk-svg">
-                <!-- Capas de seguridad (Compliance) -->
-                <path d="M200,60 L320,120 L200,180 L80,120 Z" fill="rgba(59, 130, 246, 0.1)" stroke="var(--stripe-cyan)" stroke-width="2"/>
-                <path d="M200,110 L320,170 L200,230 L80,170 Z" fill="rgba(10, 25, 47, 0.1)" stroke="var(--stripe-accent)" stroke-width="2"/>
-                <path d="M200,160 L320,220 L200,280 L80,220 Z" fill="none" stroke="var(--stripe-border)" stroke-width="2" stroke-dasharray="5"/>
+                <defs>
+                    <filter id="glow-green">
+                        <feGaussianBlur stdDeviation="4" result="blur"/>
+                        <feMerge>
+                            <feMergeNode in="blur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+                <rect width="400" height="300" fill="url(#grid)" />
                 
-                <line x1="200" y1="60" x2="200" y2="280" stroke="var(--stripe-border)" stroke-width="1" stroke-dasharray="4"/>
+                <g transform="translate(200, 160) rotate(-15) skewX(30)">
+                    <!-- Base Shadow Layer -->
+                    <rect x="-80" y="-80" width="160" height="160" rx="16" fill="transparent" stroke="rgba(16, 185, 129, 0.1)" stroke-width="1.5" transform="translate(0, 60)" />
+                    <!-- Middle Layer -->
+                    <rect x="-80" y="-80" width="160" height="160" rx="16" fill="rgba(16, 185, 129, 0.02)" stroke="rgba(16, 185, 129, 0.3)" stroke-width="2" transform="translate(0, 30)" />
+                    <!-- Top Active Layer -->
+                    <rect x="-80" y="-80" width="160" height="160" rx="16" fill="rgba(16, 185, 129, 0.08)" stroke="#10b981" stroke-width="2" filter="url(#glow-green)" class="anim-float" />
+                    
+                    <!-- Inner Grid on top layer -->
+                    <path d="M -60,-40 L 60,-40 M -60,0 L 60,0 M -60,40 L 60,40 M -40,-60 L -40,60 M 0,-60 L 0,60 M 40,-60 L 40,60" stroke="rgba(16, 185, 129, 0.2)" stroke-width="1" class="anim-float" />
+
+                    <!-- Lock icon in center -->
+                    <g transform="translate(0, -10)" class="anim-float">
+                        <rect x="-16" y="-6" width="32" height="24" rx="4" fill="#10b981" />
+                        <path d="M -8,-6 v -8 a 8,8 0 0 1 16,0 v 8" fill="none" stroke="#10b981" stroke-width="3" />
+                    </g>
+                </g>
+
+                <!-- Orbiting Data Rings -->
+                <g transform="translate(200, 140)">
+                    <ellipse cx="0" cy="0" rx="140" ry="60" fill="transparent" stroke="rgba(16, 185, 129, 0.1)" stroke-width="1" stroke-dasharray="4,8" class="anim-rotate" />
+                    <ellipse cx="0" cy="0" rx="110" ry="45" fill="transparent" stroke="rgba(16, 185, 129, 0.2)" stroke-width="1.5" stroke-dasharray="12,6" class="anim-rotate-rev" />
+                </g>
             </svg>
         )}
 
+        {/* STARTUPS 0: VELOCIDAD DE EJECUCIÓN (Editor Wireframe) */}
         {slug === 'startups' && index === 0 && (
             <svg viewBox="0 0 400 300" class="smk-svg">
-                <!-- Interfaz editor UI abstracta -->
-                <rect x="50" y="50" width="300" height="200" rx="12" fill="var(--stripe-card-bg)" stroke="var(--stripe-border)" stroke-width="2"/>
-                <rect x="70" y="70" width="80" height="12" rx="6" fill="var(--stripe-accent)"/>
-                <rect x="70" y="100" width="160" height="8" rx="4" fill="var(--stripe-muted)" opacity="0.5"/>
-                <rect x="70" y="120" width="120" height="8" rx="4" fill="var(--stripe-muted)" opacity="0.3"/>
+                <defs>
+                    <filter id="glow-blue">
+                        <feGaussianBlur stdDeviation="3" result="blur"/>
+                        <feMerge>
+                            <feMergeNode in="blur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+                <rect width="400" height="300" fill="url(#grid)" />
                 
-                <rect x="70" y="150" width="260" height="60" rx="8" fill="rgba(10,25,47,0.03)" stroke="var(--stripe-border)"/>
-                <rect x="90" y="170" width="30" height="20" rx="4" fill="var(--stripe-cyan)"/>
-                <rect x="130" y="176" width="100" height="8" rx="4" fill="var(--stripe-text)"/>
+                <!-- Main Editor Window -->
+                <rect x="50" y="40" width="300" height="220" rx="12" fill="#0f172a" stroke="rgba(255,255,255,0.15)" stroke-width="1" />
+                <rect x="50" y="40" width="300" height="36" rx="12" fill="rgba(255,255,255,0.03)" />
+                <path d="M 50,76 L 350,76" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
                 
-                <circle cx="310" cy="180" r="10" fill="var(--stripe-border)"/>
+                <!-- Mac Traffic Lights -->
+                <circle cx="70" cy="58" r="4" fill="#ef4444" />
+                <circle cx="85" cy="58" r="4" fill="#f59e0b" />
+                <circle cx="100" cy="58" r="4" fill="#10b981" />
+
+                <!-- Editor Content -->
+                <rect x="80" y="100" width="140" height="14" rx="4" fill="rgba(255,255,255,0.9)" />
+                <rect x="80" y="130" width="240" height="8" rx="4" fill="rgba(255,255,255,0.2)" />
+                <rect x="80" y="150" width="200" height="8" rx="4" fill="rgba(255,255,255,0.2)" />
+                <rect x="80" y="170" width="220" height="8" rx="4" fill="rgba(255,255,255,0.2)" />
+
+                <!-- Send/Approve Button -->
+                <rect x="80" y="210" width="100" height="32" rx="6" fill="#3b82f6" filter="url(#glow-blue)" />
+                <rect x="105" y="222" width="50" height="8" rx="4" fill="#ffffff" />
+                
+                <!-- Floating Magic Cursor -->
+                <g class="anim-float" transform="translate(140, 215)">
+                    <path d="M 0,0 L 15,35 L 22,22 L 35,15 Z" fill="#ffffff" filter="drop-shadow(0 8px 12px rgba(0,0,0,0.4))" />
+                    <circle cx="-5" cy="-5" r="3" fill="#f59e0b" class="anim-pulse" />
+                    <circle cx="35" cy="35" r="2" fill="#0ea5e9" class="anim-pulse" style="animation-delay: 0.5s" />
+                </g>
             </svg>
         )}
 
+        {/* STARTUPS 1: PRESENTACIÓN PREMIUM (Quiet Luxury Cards) */}
         {slug === 'startups' && index === 1 && (
             <svg viewBox="0 0 400 300" class="smk-svg">
-                <!-- Notificaciones / Velocidad -->
-                <rect x="100" y="60" width="240" height="50" rx="25" fill="var(--stripe-card-bg)" stroke="var(--stripe-border)" stroke-width="1"/>
-                <circle cx="125" cy="85" r="12" fill="var(--stripe-accent)"/>
-                <rect x="150" y="80" width="120" height="10" rx="5" fill="var(--stripe-text)"/>
+                <defs>
+                    <filter id="shadow-card">
+                        <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000" flood-opacity="0.4" />
+                    </filter>
+                    <linearGradient id="grad-lux" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="rgba(255,255,255,0.08)"/>
+                        <stop offset="100%" stop-color="rgba(255,255,255,0.01)"/>
+                    </linearGradient>
+                </defs>
+                <rect width="400" height="300" fill="url(#grid)" />
                 
-                <rect x="80" y="130" width="240" height="50" rx="25" fill="var(--stripe-card-bg)" stroke="var(--stripe-border)" stroke-width="1"/>
-                <circle cx="105" cy="155" r="12" fill="var(--stripe-cyan)"/>
-                <rect x="130" y="150" width="150" height="10" rx="5" fill="var(--stripe-text)"/>
+                <!-- Background ambient cards -->
+                <rect x="100" y="40" width="200" height="100" rx="16" fill="url(#grad-lux)" stroke="rgba(255,255,255,0.1)" stroke-width="1" class="anim-float-delay" />
+                <rect x="120" y="60" width="30" height="30" rx="8" fill="rgba(139, 92, 246, 0.3)" />
+                <rect x="165" y="65" width="100" height="8" rx="4" fill="rgba(255,255,255,0.6)" />
+                <rect x="165" y="80" width="60" height="6" rx="3" fill="rgba(255,255,255,0.3)" />
+
+                <!-- Foreground Hero Card -->
+                <rect x="80" y="120" width="260" height="140" rx="20" fill="#0f172a" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" filter="url(#shadow-card)" class="anim-float" />
                 
-                <rect x="120" y="200" width="240" height="50" rx="25" fill="var(--stripe-accent-light)"/>
-                <circle cx="145" cy="225" r="12" fill="var(--stripe-bg)"/>
-                <rect x="170" y="220" width="100" height="10" rx="5" fill="var(--stripe-bg)"/>
+                <circle cx="120" cy="160" r="18" fill="rgba(16, 185, 129, 0.15)" stroke="#10b981" stroke-width="2" />
+                <path d="M 113,160 L 118,165 L 128,155" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                
+                <rect x="155" y="150" width="140" height="10" rx="5" fill="rgba(255,255,255,0.9)" />
+                <rect x="155" y="168" width="80" height="6" rx="3" fill="rgba(255,255,255,0.4)" />
+                
+                <rect x="110" y="200" width="200" height="2" fill="rgba(255,255,255,0.05)" />
+                
+                <rect x="110" y="220" width="100" height="24" rx="12" fill="rgba(255,255,255,0.1)" />
+                <rect x="125" y="229" width="70" height="6" rx="3" fill="rgba(255,255,255,0.6)" />
+                <circle cx="230" cy="232" r="12" fill="rgba(255,255,255,0.05)" />
+                <circle cx="260" cy="232" r="12" fill="rgba(255,255,255,0.05)" />
             </svg>
         )}
 
+        {/* STARTUPS 2+: AUTOMATIZACIÓN PURA (CFDI / JSON Payload) */}
         {slug === 'startups' && index > 1 && (
             <svg viewBox="0 0 400 300" class="smk-svg">
-                <!-- Pagos / Checkout (Stripe style) -->
-                <rect x="120" y="50" width="160" height="200" rx="16" fill="var(--stripe-card-bg)" stroke="var(--stripe-border)" stroke-width="2"/>
-                <rect x="140" y="80" width="120" height="20" rx="4" fill="var(--stripe-accent)" opacity="0.2"/>
+                <defs>
+                    <filter id="glow-green-sm">
+                        <feGaussianBlur stdDeviation="2" result="blur"/>
+                        <feMerge>
+                            <feMergeNode in="blur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+                <rect width="400" height="300" fill="url(#grid)" />
                 
-                <rect x="140" y="120" width="120" height="30" rx="6" fill="rgba(10,25,47,0.03)" stroke="var(--stripe-border)"/>
-                <circle cx="155" cy="135" r="5" fill="var(--stripe-cyan)"/>
+                <!-- JSON Terminal -->
+                <rect x="40" y="60" width="160" height="180" rx="12" fill="rgba(0,0,0,0.4)" stroke="rgba(255,255,255,0.1)" stroke-width="1" class="anim-float-delay" />
+                <rect x="60" y="80" width="40" height="6" rx="3" fill="#3b82f6" />
+                <rect x="60" y="100" width="20" height="6" rx="3" fill="rgba(255,255,255,0.4)" />
+                <rect x="85" y="100" width="80" height="6" rx="3" fill="#10b981" />
+                <rect x="60" y="120" width="20" height="6" rx="3" fill="rgba(255,255,255,0.4)" />
+                <rect x="85" y="120" width="60" height="6" rx="3" fill="#f59e0b" />
+                <rect x="60" y="140" width="20" height="6" rx="3" fill="rgba(255,255,255,0.4)" />
+                <rect x="85" y="140" width="90" height="6" rx="3" fill="#10b981" />
+                <rect x="60" y="160" width="20" height="6" rx="3" fill="rgba(255,255,255,0.4)" />
+                <rect x="85" y="160" width="50" height="6" rx="3" fill="rgba(255,255,255,0.6)" />
+
+                <!-- Sync Connection -->
+                <path d="M 210,150 L 250,150" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="4,4" class="anim-dash" />
+                <polygon points="245,145 255,150 245,155" fill="#10b981" />
+
+                <!-- Official CFDI Shield/Document -->
+                <rect x="260" y="90" width="100" height="120" rx="12" fill="#0f172a" stroke="#10b981" stroke-width="2" class="anim-float" filter="drop-shadow(0 12px 20px rgba(16,185,129,0.15))" />
+                <circle cx="310" cy="130" r="20" fill="rgba(16, 185, 129, 0.2)" stroke="#10b981" stroke-width="1.5" filter="url(#glow-green-sm)" />
+                <path d="M 302,130 L 308,136 L 319,124" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
                 
-                <rect x="140" y="160" width="120" height="30" rx="6" fill="rgba(10,25,47,0.03)" stroke="var(--stripe-border)"/>
-                <circle cx="155" cy="175" r="5" fill="var(--stripe-muted)"/>
-                
-                <rect x="140" y="210" width="120" height="24" rx="12" fill="var(--stripe-accent)"/>
+                <rect x="285" y="170" width="50" height="6" rx="3" fill="#10b981" />
+                <rect x="285" y="185" width="30" height="4" rx="2" fill="rgba(255,255,255,0.3)" />
             </svg>
         )}
     </div>
@@ -133,7 +299,7 @@ const lang = 'es'; // o inyectarlo por props
         position: absolute;
         width: 60%;
         height: 60%;
-        background: radial-gradient(circle at center, rgba(10, 25, 47, 0.15) 0%, transparent 70%);
+        background: radial-gradient(circle at center, rgba(14, 165, 233, 0.15) 0%, transparent 70%);
         filter: blur(40px);
         z-index: 0;
         animation: float 6s ease-in-out infinite;
@@ -153,9 +319,39 @@ const lang = 'es'; // o inyectarlo por props
         overflow: visible;
     }
 
+    /* Shared Animations for the SVGs */
     @keyframes float {
-        0% { transform: translateY(0px) scale(1); }
-        50% { transform: translateY(-10px) scale(1.05); }
-        100% { transform: translateY(0px) scale(1); }
+        0%, 100% { transform: translateY(0px) scale(1); }
+        50% { transform: translateY(-12px) scale(1.02); }
     }
+    @keyframes float-delay {
+        0%, 100% { transform: translateY(0px) scale(1); }
+        50% { transform: translateY(12px) scale(1.02); }
+    }
+    @keyframes pulse-opacity {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.7; transform: scale(0.95); }
+    }
+    @keyframes dash {
+        to { stroke-dashoffset: -24; }
+    }
+    @keyframes dash-rev {
+        to { stroke-dashoffset: 24; }
+    }
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    @keyframes rotate-rev {
+        from { transform: rotate(360deg); }
+        to { transform: rotate(0deg); }
+    }
+
+    .anim-float { animation: float 6s ease-in-out infinite; }
+    .anim-float-delay { animation: float-delay 6s ease-in-out infinite; }
+    .anim-pulse { animation: pulse-opacity 3s ease-in-out infinite; }
+    .anim-dash { animation: dash 1s linear infinite; }
+    .anim-dash-rev { animation: dash-rev 1s linear infinite; }
+    .anim-rotate { transform-origin: center; animation: rotate 24s linear infinite; }
+    .anim-rotate-rev { transform-origin: center; animation: rotate-rev 24s linear infinite; }
 </style>

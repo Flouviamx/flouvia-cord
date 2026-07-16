@@ -8,6 +8,67 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Landing de Cord en flouvia.com — acordeón de FAQ + tarjetas con shader físico +
+   push a main (jul 2026, repo hermano `~/Desktop/flouvia` — NO este repo)** — segunda
+   pasada sobre el rewrite descrito en la entrada inmediata siguiente, ya en `main` de
+   flouvia (`git push origin main`, commit `5f6782c`).
+   • **FAQ convertido a acordeón estilo Cord:** el "Despejando dudas" de `cord.astro`/
+     `en/cord.astro` (antes una grilla estática de 2 columnas) se reemplazó por
+     `flouvia/src/components/cord/CordFaqAccordion.astro` — puerto 1:1 de
+     `src/components/landing/FaqAccordion.astro` de ESTE repo (mismo ícono +/− que
+     rota, `grid-template-rows` para la altura suave, uno-a-la-vez). El array `FAQS`
+     en el frontmatter de cada página es ahora la ÚNICA fuente: alimenta el acordeón
+     visible Y el `FAQPage` del JSON-LD (antes estaban duplicados a mano y podían
+     divergir) — mismo patrón que exige `docs/sistema-de-diseno.md` de este repo para
+     `FaqAccordion.astro`.
+   • **Shader del Centro de Ayuda llevado a las tarjetas de "capacidades adicionales":**
+     nuevo `flouvia/src/components/cord/CapAuroraBg.jsx`, el MISMO motor de
+     `src/components/support/BlueAuroraBg.jsx` de este repo (teal/cobalt/cyan, grano de
+     película), adaptado con el patrón de mouse LOCAL de `CardAuroraBg.jsx` (soluciones)
+     para vivir dentro de una tarjeta clara y solo activarse en hover/foco — a diferencia
+     de `CardAuroraBg`, que pinta SIEMPRE (tarjetas permanentemente oscuras), aquí el
+     canvas usa `frameloop: active ? 'always' : 'never'` + fade de opacidad, así que las
+     6 tarjetas no gastan GPU en reposo. Nuevo `CapCard.jsx` envuelve cada tarjeta,
+     maneja el estado de hover/foco y aplica la clase `.is-active` (texto/ícono/link a
+     blanco, definida en el `<style is:global>` de la página, no en el componente).
+   • **Físicas reales en el shader, no solo un lerp:** el cursor dentro de la tarjeta se
+     anima con un resorte masa-amortiguador (`F = -kx - cv`, constantes ajustadas para
+     underdamped — el aurora rebasa el punto de destino y regresa) en vez del lerp plano
+     que usan `BlueAuroraBg`/`CardAuroraBg` originales. La velocidad del resorte alimenta
+     un uniform nuevo `u_force` que infla el empuje (`mPush`) y dispara un chispazo cyan
+     adicional cuando el cursor se mueve rápido — es lo que da la sensación de "físicas"
+     pedida explícitamente. ⚠️ **Este patrón (spring físico + frameloop condicionado por
+     hover) no existe todavía en ESTE repo** — si se quiere el mismo efecto en una
+     tarjeta de Cord (no de flouvia.com), portar `CapAuroraBg.jsx` de vuelta en vez de
+     partir de `CardAuroraBg.jsx`, que solo tiene el lerp simple.
+   • Botón CTA del hero cambiado de "Crear cotización gratis"/"Create a quote for free"
+     a **"Empieza gratis"/"Start for free"**, uniforme con el resto de CTAs de Cord.
+
+✅ **Landing de Cord en flouvia.com reescrita para reflejar el alcance real del producto
+   (jul 2026, repo hermano `~/Desktop/flouvia` — NO este repo)** — `flouvia.com/cord` (y su
+   espejo `/en/cord`) llevaba desde el lanzamiento hablando solo de "cotizar + aprobar + CFDI",
+   sin mencionar nada construido después: cobranza autónoma con IA, pagos directos a la cuenta
+   del negocio (Stripe Connect, cero comisión de Cord), multi-divisa con cobertura cambiaria,
+   API/webhooks/MCP, Cord Elements o roles de equipo. Se reescribió `src/pages/cord.astro` +
+   `src/pages/en/cord.astro` en el repo de flouvia, conservando 100% la estética de Flouvia
+   (hero-grand con shader `fluid-target`, filas editoriales `service-row`, tarjetas navy) —
+   NO la estética "Apple gray" propia de este repo. Cambios: hero reposicionado de "cotizaciones
+   que se aprueban solas" a "cotiza, cobra y factura sin salir de un mismo link"; filas de "cómo
+   funciona" ampliadas de 3 a 6 (+ cobranza con IA, pagos directos, multi-divisa); grid nuevo de
+   6 capacidades avanzadas (CFO/analítica, roles de equipo, aprobaciones por margen, API+MCP,
+   Cord Elements, firma SHA-256); FAQ y schema JSON-LD ampliados de 4 a 8 preguntas en paralelo
+   exacto con el FAQ visible. **3 bugs de exactitud corregidos:** los 3 links de "cómo funciona"
+   apuntaban a `/caracteristicas/*` (namespace que nunca existió en este dominio — 404 silencioso
+   desde flouvia.com); el trust strip afirmaba "usado por docenas de empresas" (no verificable,
+   se cambió a un claim de seguridad respaldable); el copy prometía el plan Free "gratis para
+   siempre" con cotizaciones ilimitadas, pero el plan real tiene tope de 5 cotizaciones activas
+   (ver `billing.ts` / `negocio-billing.md` de este repo) — se ajustó a "gratis para empezar".
+   `CordPricing.astro` (componente compartido en flouvia) ya reflejaba la matriz real de 5 planes
+   y no se tocó. ⚠️ **Regla a futuro:** cualquier link nuevo que se agregue en
+   `flouvia/src/pages/cord.astro` hacia `cord.flouvia.com` debe verificarse contra los slugs
+   reales de `src/lib/producto.ts` / `desarrolladores.ts` de ESTE repo antes de escribirse —
+   inventar una ruta ahí reproduce el mismo bug de 404 silencioso que se acaba de corregir.
+
 ✅ **Estandarización de Iconografía a Duotone Glass Minimalista (jul 2026)** — André solicitó
    refinar la estética de los íconos de la aplicación completa, rechazando SVGs complejos o
    abstractos (como "estrellas mágicas" para IA) en favor de una iconografía súper corporativa,

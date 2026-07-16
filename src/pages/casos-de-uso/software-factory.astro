@@ -5,11 +5,11 @@ export const prerender = true;
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
-import MagneticNodes from '../../components/MagneticNodes.jsx';
 import QuantizedWaveBg from '../../components/soluciones/QuantizedWaveBg.jsx';
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
 import '../../styles/mockups.css';
+import TestimonialCarousel from '../../components/soluciones/TestimonialCarousel.jsx';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
@@ -59,6 +59,47 @@ const magneticNodes = [
     { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://gitlab.com&size=128", alt: "GitLab", top: "75%", left: "45%", width: 90, zIndex: 2 },
     { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128", alt: "Slack", top: "60%", left: "80%", width: 110, zIndex: 1 },
     { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://aws.amazon.com&size=128", alt: "AWS", top: "-5%", left: "75%", width: 70, zIndex: 1 }
+];
+
+const testimonialItems = [
+    {
+        id: 'github',
+        name: 'GitHub',
+        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://github.com&size=128',
+        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Octicons-mark-github.svg/512px-Octicons-mark-github.svg.png',
+        quote: '«El cobro por hitos ha transformado nuestra forma de ejecutar proyectos. Cobramos al terminar sprints sin burocracia administrativa.»',
+        author: 'Lead Developer',
+        bgGradient: 'linear-gradient(135deg, #1e293b, #0f172a)',
+        bgImage: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2000&auto=format&fit=crop'
+    },
+    {
+        id: 'jira',
+        name: 'Jira',
+        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://jira.com&size=128',
+        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Jira_%28Software%29_logo.svg/512px-Jira_%28Software%29_logo.svg.png',
+        quote: '«Ahora los cambios de alcance (change requests) se cotizan y aprueban desde el mismo ticket, acelerando el desarrollo.»',
+        author: 'Project Manager',
+        bgGradient: 'linear-gradient(135deg, #0369a1, #075985)'
+    },
+    {
+        id: 'linear',
+        name: 'Linear',
+        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://linear.app&size=128',
+        logoUrlLarge: 'https://pbs.twimg.com/profile_images/1121395911849062400/7exmJEg4_400x400.png',
+        quote: '«La velocidad para enviar una propuesta técnica y que se convierta en factura es clave para mantener el ciclo ágil de desarrollo.»',
+        author: 'CTO',
+        bgGradient: 'linear-gradient(135deg, #4f46e5, #312e81)',
+        bgImage: 'https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=2000&auto=format&fit=crop'
+    },
+    {
+        id: 'slack',
+        name: 'Slack',
+        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128',
+        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Slack_icon_2019.svg/512px-Slack_icon_2019.svg.png',
+        quote: '«Mantener a nuestros ingenieros enfocados en código y no persiguiendo pagos es el mayor valor que nos ha dado Cord.»',
+        author: 'VP of Engineering',
+        bgGradient: 'linear-gradient(135deg, #111827, #4a044e)'
+    }
 ];
 
 ---
@@ -114,104 +155,150 @@ const magneticNodes = [
             </div>
         </section>
 
-        <!-- STRIPE-LIKE SPLIT SECTION -->
-        <section class="uc-split-feature">
-            <div class="uc-container">
-                <div class="uc-split-grid">
-                    
-                    <div class="uc-split-text reveal">
-                        <span class="uc-split-label">Hitos y Entregables</span>
-                        <h2 class="uc-split-title">Presupuestos técnicos y pagos ágiles</h2>
-                        <p class="uc-split-desc">
-                            El desarrollo de software requiere claridad. Divide tus proyectos en entregables, define el pago de cada fase y comparte con tu cliente un link donde puede aprobar y pagar directamente.
-                        </p>
-                        
-                        <div class="uc-split-list">
-                            <div class="uc-feature-item">
-                                <div class="uc-feature-icon">
-                                    <svg viewBox="0 0 24 24" fill="none">
-                                        <defs>
-                                            <linearGradient id="cord-blue-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                <stop offset="0%" stop-color="#1e3a8a" />
-                                                <stop offset="100%" stop-color="#0f172a" />
-                                            </linearGradient>
-                                        </defs>
-                                        <polygon points="5 3 19 12 5 21 5 3" fill="url(#cord-blue-grad)" />
-                                    </svg>
-                                </div>
-                                <div class="uc-feature-content">
-                                    <h3>Hitos de Entrega (Milestones)</h3>
-                                    <p>No cobres todo al principio ni todo al final. Cobra automáticamente al cumplir cada <a href="#">fase del proyecto</a> y notifica al cliente para liberar el siguiente bloque.</p>
-                                </div>
+        <!-- LEYENDA STRIPE-LITERAL STRUCTURE -->
+        <div class="stripe-literal-wrapper">
+            <!-- Grid de fondo exacto -->
+            <div class="sl-grid-bg">
+                <div class="sl-col"></div>
+                <div class="sl-col"></div>
+                <div class="sl-col"></div>
+                <div class="sl-col"></div>
+            </div>
+
+            <div class="uc-container" style="position:relative; z-index:10; padding-top: 4rem;">
+                <!-- Header centrado (Captura 2) -->
+                <div class="sl-header reveal">
+                    <span class="sl-eyebrow">Para software factories</span>
+                    <h2>Cobros basados en hitos, sin fricción administrativa</h2>
+                    <p>Estructura tus proyectos por fases técnicas, comparte el presupuesto interactivo y desencadena facturas automáticas (CFDI 4.0) tan pronto como el cliente apruebe y pague un entregable.</p>
+                </div>
+
+                <!-- Split Layout (Captura 1) -->
+                <div class="sl-split reveal">
+                    <!-- Izquierda: Features -->
+                    <div class="sl-features">
+                        <div class="slf-item active">
+                            <div class="slf-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="currentColor" fill-opacity="0.15" stroke="none"/>
+                                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <line x1="4" y1="22" x2="4" y2="15" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
                             </div>
-                            
-                            <div class="uc-feature-item">
-                                <div class="uc-feature-icon">
-                                    <svg viewBox="0 0 24 24" fill="none">
-                                        <defs>
-                                            <linearGradient id="cord-slate-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                <stop offset="0%" stop-color="#334155" />
-                                                <stop offset="100%" stop-color="#94a3b8" />
-                                            </linearGradient>
-                                        </defs>
-                                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" fill="url(#cord-slate-grad)"/>
-                                        <circle cx="7" cy="7" r="2" fill="#fff"/>
-                                    </svg>
-                                </div>
-                                <div class="uc-feature-content">
-                                    <h3>Propuestas técnicas detalladas</h3>
-                                    <p>El editor de Cord permite líneas libres con descripción larga. Describe cada entregable con el detalle que requiere — tecnología, alcance, criterios de aceptación — y el cliente lo ve claramente antes de aprobar.</p>
-                                </div>
+                            <div class="slf-text">
+                                <h3>Hitos de Entrega (Milestones)</h3>
+                                <p>No cobres todo al principio ni todo al final. Cobra automáticamente al cumplir cada fase del proyecto y notifica al cliente para liberar el siguiente bloque.</p>
+                            </div>
+                        </div>
+
+                        <div class="slf-item">
+                            <div class="slf-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <polyline points="16 18 22 12 16 6" fill="currentColor" fill-opacity="0.15" stroke="none" />
+                                    <polyline points="16 18 22 12 16 6" stroke-linecap="round" stroke-linejoin="round" />
+                                    <polyline points="8 6 2 12 8 18" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </div>
+                            <div class="slf-text">
+                                <h3>Propuestas técnicas detalladas</h3>
+                                <p>El editor de Cord permite líneas libres con descripción larga. Describe cada entregable con el detalle que requiere y el cliente lo ve claramente antes de aprobar.</p>
+                            </div>
+                        </div>
+
+                        <div class="slf-item">
+                            <div class="slf-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" fill="currentColor" fill-opacity="0.15" stroke="none" />
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </div>
+                            <div class="slf-text">
+                                <h3>Bloqueo de desarrollo sin pago</h3>
+                                <p>El dashboard te avisa si un cliente se atrasa en el pago de un hito, dándote visibilidad para pausar el código hasta que el flujo de caja esté asegurado.</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="uc-split-mockup reveal">
-                        <div class="uc-cmk-window">
-                            <div class="cmk-nav">
-                                <div class="cmk-nav-l">
-                                    <span class="cmk-nav-title">Proyecto · MVP Fintech</span>
-                                    <span class="cmk-nav-sub">· Build &amp; Ship Inc.</span>
-                                </div>
-                                <span class="cmk-badge cmk-b-blue">35% cobrado</span>
+                    <!-- Derecha: Mockups con conectores -->
+                    <div class="sl-mockups mk-software-mockup">
+                        <!-- Card Principal -->
+                        <div class="slm-main" style="border-top: 4px solid #10b981;">
+                            <div class="slm-main-header">
+                                <div class="slm-mh-icon" style="background:#d1fae5; color:#047857;">P</div>
+                                <span>Control de Hitos</span>
                             </div>
-                            <div class="cmk-body">
-                                <div class="cmk-kv" style="border-bottom:none; padding-top:0;">
-                                    <span class="cmk-k">Avance de cobro del proyecto</span>
-                                    <span class="cmk-v editorial">$21,000 de $60,000</span>
+                            <div class="slm-main-body" style="padding: 16px;">
+                                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                                    <div>
+                                        <div style="font-weight:600; font-size:15px; color:#0f172a;">Build & Ship Inc.</div>
+                                        <div style="font-size:13px; color:#64748b;">Proyecto MVP Fintech</div>
+                                    </div>
+                                    <div class="cmk-badge cmk-b-blue">35% Cobrado</div>
                                 </div>
-                                <div style="width:100%; height:8px; background:#e2e8f0; border-radius:10px; overflow:hidden; margin:2px 0 10px;">
-                                    <div style="width:35%; height:100%; background:linear-gradient(90deg,#1e293b,#0f172a); border-radius:10px;"></div>
+                                
+                                <div style="width:100%; height:6px; background:#e2e8f0; border-radius:10px; overflow:hidden; margin-bottom:16px;">
+                                    <div style="width:35%; height:100%; background:#3b82f6; border-radius:10px;"></div>
                                 </div>
-                                <div class="cmk-th" style="grid-template-columns:1.9fr 76px 126px">
-                                    <span>Hito</span><span class="cmk-r">Monto</span><span>Estado</span>
-                                </div>
-                                <div class="cmk-tr" style="grid-template-columns:1.9fr 76px 126px">
-                                    <span class="cmk-t1">1 · UX/UI Prototipo</span>
-                                    <span class="cmk-amt editorial">$15,000</span>
-                                    <span class="cmk-badge cmk-b-green"><span class="cmk-dot cmk-dot-green"></span>Cobrado · CFDI</span>
-                                </div>
-                                <div class="cmk-tr hl" style="grid-template-columns:1.9fr 76px 126px">
-                                    <span class="cmk-t1">2 · Backend API</span>
-                                    <span class="cmk-amt editorial">$25,000</span>
-                                    <span class="cmk-badge cmk-b-blue"><span class="cmk-dot cmk-dot-blue"></span>Enviada · vista hoy</span>
-                                </div>
-                                <div class="cmk-tr" style="grid-template-columns:1.9fr 76px 126px; border-bottom:none;">
-                                    <span class="cmk-t1" style="color:#94a3b8;">3 · Frontend</span>
-                                    <span class="cmk-amt editorial" style="color:#94a3b8;">$20,000</span>
-                                    <span class="cmk-badge cmk-b-gray">Bloqueado · fase 2</span>
-                                </div>
-                                <div class="cmk-alert cmk-alert-green" style="margin-top:12px;">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                    El cliente aprueba cada hito con firma digital y el CFDI se timbra solo al pagar.
+                                
+                                <!-- Tabla de hitos -->
+                                <div style="border: 1px solid #e2e8f0; border-radius: 6px; overflow:hidden;">
+                                    <div style="display:flex; justify-content:space-between; background:#f8fafc; padding:8px 12px; font-size:12px; font-weight:600; color:#475569; border-bottom:1px solid #e2e8f0;">
+                                        <span>Fase / Entregable</span>
+                                        <span>Estado</span>
+                                    </div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; font-size:13px; border-bottom:1px solid #e2e8f0;">
+                                        <div style="font-weight:500; color:#0f172a;">1. UX/UI Prototipo</div>
+                                        <span class="cmk-badge cmk-b-green">Pagado</span>
+                                    </div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; font-size:13px; border-bottom:1px solid #e2e8f0; background:#f8fafc;">
+                                        <div style="font-weight:600; color:#0f172a; display:flex; align-items:center; gap:6px;">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" style="width:14px; height:14px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                            2. Backend API
+                                        </div>
+                                        <span class="cmk-badge cmk-b-blue">Enviada hoy</span>
+                                    </div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; font-size:13px; color:#94a3b8;">
+                                        <div style="font-weight:500;">3. Frontend + Testing</div>
+                                        <span class="cmk-badge cmk-b-gray">Bloqueado</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Conector SVG -->
+                        <svg class="slm-connector" viewBox="0 0 100 60" preserveAspectRatio="none">
+                            <path d="M 0,10 C 40,10 60,50 100,50" fill="none" stroke="var(--color-blue-deep)" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round" />
+                        </svg>
+
+                        <!-- Card Flotante -->
+                        <div class="slm-chat" style="top: 55%; left: 35%; width: 290px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 1px solid rgba(226, 232, 240, 0.8);">
+                            <div class="slm-chat-header" style="background:#eff6ff; border-bottom:1px solid #bfdbfe; color:#1d4ed8; display:flex; align-items:center; gap:8px;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                Hito 2 Liberado
+                            </div>
+                            <div class="slm-chat-body" style="padding:16px;">
+                                <p style="font-size:13px; color:#475569; margin:0 0 12px 0;">El cliente ha realizado el pago por el Hito 2.</p>
+                                <div style="display:flex; align-items:center; gap:12px; background:#f8fafc; padding:10px; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:12px;">
+                                    <div style="width:32px; height:32px; border-radius:50%; background:#d1fae5; color:#047857; display:flex; align-items:center; justify-content:center;">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><polyline points="20 6 9 17 4 12"/></svg>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:12px; font-weight:600; color:#0f172a;">Cobro Exitoso</div>
+                                        <div style="font-size:11px; color:#64748b;">Stripe • $25,000 MXN</div>
+                                    </div>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+                                    <span style="color:#64748b;">Factura CFDI 4.0</span>
+                                    <span style="font-weight:500; color:#10b981;">Enviada ✓</span>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
-                    
                 </div>
             </div>
-        </section>
+        </div>
 
                 <!-- SECONDARY BENEFITS SECTION -->
         <section class="uc-benefits">
@@ -315,31 +402,31 @@ const magneticNodes = [
                     <div class="uc-mf-grid">
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6" fill="currentColor" fill-opacity="0.12"></polyline><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
                             </div>
                             <h4>API REST nativa</h4>
                             <p>Integra Cord con tus herramientas internas vía nuestra <a href="/desarrolladores/api" class="uc-link-inline">API REST</a>. Crea cotizaciones, consulta clientes y gestiona productos directamente desde tu código.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" fill="currentColor" fill-opacity="0.12"></path><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
                             </div>
                             <h4>Webhooks con firma HMAC</h4>
                             <p>Escucha eventos reales — <code>quote.approved</code>, <code>quote.paid</code> — con firma <code>X-Cord-Signature: sha256=…</code>. Conecta tu backend, Zapier o Make al instante.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"></circle><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                             </div>
                             <h4>Cobros Internacionales</h4>
-                            <p>Factura a clientes en el extranjero en su <a href="#" class="uc-link-inline">moneda local</a>, mientras tú recibes pesos mexicanos de forma segura.</p>
+                            <p>Factura a clientes en el extranjero en su <a href="/producto/divisas" class="uc-link-inline">moneda local</a>, mientras tú recibes pesos mexicanos de forma segura.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"></circle><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                             </div>
                             <h4>Gestión de horas extras</h4>
-                            <p>Añade fácilmente registros de <a href="#" class="uc-link-inline">horas por soporte</a> o consultoría como partidas a la siguiente factura del mes.</p>
+                            <p>Añade fácilmente registros de <a href="/producto/equipo" class="uc-link-inline">horas por soporte</a> o consultoría como partidas a la siguiente factura del mes.</p>
                         </div>
                     </div>
                 </div>
@@ -349,21 +436,7 @@ const magneticNodes = [
     
 
         <!-- INTEGRATIONS SECTION -->
-        <section class="uc-integrations">
-            <div class="uc-container">
-                <div class="uc-int-grid">
-                    <div class="uc-int-text reveal">
-                        <h2>Conecta Cord con tu stack de desarrollo vía webhooks</h2>
-                        <p>
-                            Cord emite eventos reales — <code>quote.approved</code>, <code>quote.paid</code>, <code>quote.invoiced</code> — que puedes escuchar desde Zapier o Make para notificar a tu equipo en Slack, actualizar tickets en Jira o Linear, y disparar acciones en tu propio backend.
-                        </p>
-                    </div>
-                    <div class="uc-int-visual reveal">
-                        <MagneticNodes client:load nodes={magneticNodes} />
-                    </div>
-                </div>
-            </div>
-        </section>
+        
 
 
 
@@ -374,28 +447,29 @@ const magneticNodes = [
                 <h2 class="uc-power-title reveal">Cobra cada entregable con precisión y sin fricciones</h2>
                 <div class="uc-power-grid">
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-code">&lt;/&gt;</div></div>
                         <h3>CFDI 4.0 al cerrar cada hito</h3>
                         <p>Cuando tu cliente aprueba la cotización del hito, Cord timbra el CFDI 4.0 automáticamente vía PAC certificado. El XML y el PDF quedan disponibles de inmediato para descarga sin salir de Cord.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-doc"></div></div>
                         <h3>Propuestas con módulos opcionales</h3>
                         <p>Agrega partidas opcionales a tu cotización — "Soporte extendido 3 meses", "Setup de infraestructura" — y el cliente decide qué incluir antes de firmar. Tú controlas los márgenes con el Auditor Silencioso.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-card"></div></div>
                         <h3>Multi-divisa para clientes internacionales</h3>
                         <p>Cotiza en USD o EUR con tasa de cambio protegida (buffer configurable). Tu cliente ve el monto en su moneda, tú facturas y cobras en MXN con la tasa que bloqueaste al enviar la propuesta.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-chart"><span></span><span></span><span></span></div></div>
                         <h3>Analítica de margen por proyecto</h3>
                         <p>El Auditor Silencioso de Cord revisa el margen bruto de cada línea y bloquea cotizaciones que estén por debajo del mínimo que tú defines. Entiende qué tipos de proyecto son más rentables para tu equipo.</p>
                     </div>
                 </div>
             </div>
         </section>
+
+        <!-- TESTIMONIALS CAROUSEL -->
+        <TestimonialCarousel client:visible items={testimonialItems} isDarkMode={true} />
+
+        
 
         <FaqAccordion
             faqs={FAQS}
@@ -410,6 +484,87 @@ const magneticNodes = [
 
 <style>
     :global(.uc-faq-acc) { padding: 5rem 5% 7rem; }
+
+    .uc-int-card {
+        background: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2000'); background-size: cover; background-position: center;
+        border-radius: 24px;
+        padding: 4rem;
+        text-align: center;
+        max-width: 900px;
+        margin: 0 auto 3rem;
+        color: #fff;
+    }
+    .uc-int-card h2 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        letter-spacing: -0.02em;
+        color: #fff;
+    }
+    .uc-int-card p {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: #cbd5e1;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    .uc-int-card code {
+        background: rgba(255,255,255,0.1);
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.9em;
+    }
+    .uc-int-logos {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 2rem 0;
+    }
+    .uc-logo-badge {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #64748b;
+        letter-spacing: -0.02em;
+        transition: color 0.3s;
+    }
+    .uc-logo-badge:hover {
+        color: #0f172a;
+    }
+    
+    .uc-power-item h3 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #0a2540;
+        margin-bottom: 0.75rem;
+    }
+    .uc-power-item p {
+        font-size: 0.95rem;
+        color: #425466;
+        line-height: 1.5;
+    }
+    @media (max-width: 900px) {
+        .uc-power-grid { grid-template-columns: 1fr 1fr; }
+        .uc-int-card { padding: 3rem 1.5rem; }
+        .uc-int-card h2 { font-size: 2rem; }
+    }
+    @media (max-width: 600px) {
+        .uc-power-grid { grid-template-columns: 1fr; }
+    }
+    
+
+    .uc-logo-img {
+        height: 36px;
+        width: auto;
+        opacity: 0.7;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .uc-logo-badge:hover .uc-logo-img {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+    
 </style>
 
 <style>
@@ -957,6 +1112,9 @@ const magneticNodes = [
     .uc-bc-text {
         padding-right: 2rem;
         margin-bottom: 2.5rem;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
     }
     .uc-bc-text h3 {
         font-size: 1.6rem;
@@ -981,6 +1139,7 @@ const magneticNodes = [
         font-size: 0.95rem;
         text-decoration: none;
         transition: color 0.2s;
+        margin-top: auto;
     }
     .uc-link-arrow:hover {
         color: #334155;
@@ -1071,14 +1230,19 @@ const magneticNodes = [
         flex-direction: column;
     }
     .uc-mf-icon {
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
         margin-bottom: 1.5rem;
-        color: #0f172a;
+        border-radius: 10px;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-blue-deep);
     }
     .uc-mf-icon svg {
-        width: 100%;
-        height: 100%;
+        width: 20px;
+        height: 20px;
     }
     .uc-mf-item h4 {
         font-size: 1rem;
@@ -1127,119 +1291,12 @@ const magneticNodes = [
     }
 
     /* ── INTEGRATIONS SECTION ── */
-    .uc-integrations {
-        padding: 6rem 0 8rem;
-        background: transparent;
-        overflow: hidden;
-    }
-    .uc-int-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 4rem;
-        align-items: center;
-    }
-    .uc-int-text {
-        max-width: 480px;
-    }
-    .uc-int-text h2 {
-        font-size: 2.1rem;
-        font-weight: 800;
-        color: #0a2540;
-        margin-bottom: 1.5rem;
-        line-height: 1.2;
-        letter-spacing: -0.02em;
-    }
-    .uc-int-text p {
-        font-size: 1.1rem;
-        color: #425466;
-        line-height: 1.6;
-    }
-    .uc-int-text a {
-        color: #0f172a;
-        text-decoration: none;
-        font-weight: 700;
-        border-bottom: 1px solid rgba(15,23,42,0.2);
-        padding-bottom: 1px;
-        transition: border-color 0.2s;
-    }
-    .uc-int-text a:hover {
-        border-color: #0f172a;
-    }
-
-    .uc-int-visual {
-        position: relative;
-        height: 400px;
-        width: 100%;
-        perspective: 1000px;
-    }
-    
-    @keyframes floatBubble {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-12px); }
-    }
-    
-    .uc-bubble {
-        position: absolute;
-        animation: floatBubble 6s ease-in-out infinite;
-    }
-    .uc-bubble-inner {
-        width: 100%;
-        height: 100%;
-        background: #fff;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 15px 35px rgba(10,37,64,0.08), 0 5px 15px rgba(10,37,64,0.03);
-        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
-    }
-    .uc-bubble:hover .uc-bubble-inner {
-        transform: scale(1.1);
-        box-shadow: 0 20px 45px rgba(10,37,64,0.12), 0 10px 20px rgba(10,37,64,0.05);
-    }
-    .uc-bubble-inner img {
-        width: 45%;
-        height: 45%;
-        object-fit: contain;
-    }
-    .uc-bubble-inner span {
-        font-weight: 800;
-        font-size: 2.5rem;
-        color: #0a2540;
-    }
-
-    /* Posiciones y tamaños inspirados en Stripe */
-    .uc-b-1 { width: 100px; height: 100px; top: 10%; left: 30%; animation-delay: 0s; z-index: 2; }
-    .uc-b-2 { width: 140px; height: 140px; top: 25%; left: 65%; animation-delay: -2s; z-index: 3; }
-    .uc-b-3 { width: 120px; height: 120px; top: 50%; left: 15%; animation-delay: -4s; z-index: 1; }
-    .uc-b-4 { width: 90px; height: 90px; top: 75%; left: 45%; animation-delay: -1s; z-index: 2; }
-    .uc-b-5 { width: 110px; height: 110px; top: 60%; left: 80%; animation-delay: -3s; z-index: 1; }
-    .uc-b-6 { width: 70px; height: 70px; top: -5%; left: 75%; animation-delay: -5s; z-index: 1; }
-
-    @media (max-width: 900px) {
-        .uc-int-grid {
-            grid-template-columns: 1fr;
-            text-align: center;
-            gap: 3rem;
-        }
-        .uc-int-text {
-            max-width: 100%;
-            margin: 0 auto;
-        }
-        .uc-int-visual {
-            height: 350px;
-            max-width: 500px;
-            margin: 0 auto;
-        }
-    }
-
-    /* ── POWER SECTION (2x2 GRID) ── */
     .uc-power {
         padding: 6rem 0 8rem;
         background: transparent;
     }
     .uc-power-title {
-        font-size: 2.5rem;
+        font-size:  3rem; margin-bottom: 2rem; max-width: 800px; ;
         font-weight: 800;
         color: #0a2540;
         margin-bottom: 4rem;
@@ -1249,7 +1306,7 @@ const magneticNodes = [
     }
     .uc-power-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(4, 1fr);
         gap: 4rem 3rem;
     }
     .uc-power-item {
@@ -1411,6 +1468,87 @@ const magneticNodes = [
         }
     }
 
+
+    .uc-int-card {
+        background: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2000'); background-size: cover; background-position: center;
+        border-radius: 24px;
+        padding: 4rem;
+        text-align: center;
+        max-width: 900px;
+        margin: 0 auto 3rem;
+        color: #fff;
+    }
+    .uc-int-card h2 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        letter-spacing: -0.02em;
+        color: #fff;
+    }
+    .uc-int-card p {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: #cbd5e1;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    .uc-int-card code {
+        background: rgba(255,255,255,0.1);
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.9em;
+    }
+    .uc-int-logos {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 2rem 0;
+    }
+    .uc-logo-badge {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #64748b;
+        letter-spacing: -0.02em;
+        transition: color 0.3s;
+    }
+    .uc-logo-badge:hover {
+        color: #0f172a;
+    }
+    
+    .uc-power-item h3 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #0a2540;
+        margin-bottom: 0.75rem;
+    }
+    .uc-power-item p {
+        font-size: 0.95rem;
+        color: #425466;
+        line-height: 1.5;
+    }
+    @media (max-width: 900px) {
+        .uc-power-grid { grid-template-columns: 1fr 1fr; }
+        .uc-int-card { padding: 3rem 1.5rem; }
+        .uc-int-card h2 { font-size: 2rem; }
+    }
+    @media (max-width: 600px) {
+        .uc-power-grid { grid-template-columns: 1fr; }
+    }
+    
+
+    .uc-logo-img {
+        height: 36px;
+        width: auto;
+        opacity: 0.7;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .uc-logo-badge:hover .uc-logo-img {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+    
 </style>
 
 <script>

@@ -1,8 +1,17 @@
-// Build de @flouviahq/elements con esbuild (ESM + CJS para los entries `.` y `./react`).
-// Los tipos (.d.ts) están escritos a mano en types/ (superficie pequeña).
+// Build de @flouviahq/elements con esbuild (ESM + CJS para cada entry).
+// Los tipos (.d.ts) se GENERAN desde src/ vía `tsc --emitDeclarationOnly`
+// (ver tsconfig.json) — nunca se escriben a mano. Este script solo corre el
+// bundler; `npm run build` corre tsc primero (ver package.json).
+//
+// Dual-package hazard: TS resuelve tipos de un `require()` vía `.d.cts`. tsc
+// solo emite `.d.ts`, así que copiamos cada declaración a un `.d.cts` gemelo
+// (mismo contenido — no usamos sintaxis ESM-only en las declaraciones).
+//
 // En este monorepo esbuild se resuelve desde el node_modules de la raíz; como
 // paquete independiente, `npm i` lo trae vía devDependencies.
 import * as esbuild from 'esbuild';
+import { readdirSync, copyFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 const common = {
     bundle: true,
@@ -33,4 +42,18 @@ const targets = [
 for (const t of targets) {
     await esbuild.build({ ...common, ...t });
 }
+
+// Copia dist/types/*.d.ts → *.d.cts para satisfacer la resolución `require` de TS.
+const typesDir = 'dist/types';
+try {
+    for (const f of readdirSync(typesDir)) {
+        if (f.endsWith('.d.ts')) {
+            copyFileSync(join(typesDir, f), join(typesDir, f.replace(/\.d\.ts$/, '.d.cts')));
+        }
+    }
+    console.log('✓ .d.cts generados en dist/types/ (dual-package)');
+} catch (e) {
+    console.warn('⚠ No se encontró dist/types/ — corre `tsc -p tsconfig.json` antes de build.mjs (usa `npm run build`).');
+}
+
 console.log('✓ @flouviahq/elements compilado en dist/');

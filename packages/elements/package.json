@@ -18,24 +18,44 @@
   ],
   "exports": {
     ".": {
-      "types": "./types/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/types/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./react": {
-      "types": "./types/react.d.ts",
-      "import": "./dist/react.mjs",
-      "require": "./dist/react.cjs"
+      "import": {
+        "types": "./dist/types/react.d.ts",
+        "default": "./dist/react.mjs"
+      },
+      "require": {
+        "types": "./dist/types/react.d.cts",
+        "default": "./dist/react.cjs"
+      }
     },
     "./vue": {
-      "types": "./types/vue.d.ts",
-      "import": "./dist/vue.mjs",
-      "require": "./dist/vue.cjs"
+      "import": {
+        "types": "./dist/types/vue.d.ts",
+        "default": "./dist/vue.mjs"
+      },
+      "require": {
+        "types": "./dist/types/vue.d.cts",
+        "default": "./dist/vue.cjs"
+      }
     },
     "./framer": {
-      "types": "./types/framer.d.ts",
-      "import": "./dist/framer.mjs",
-      "require": "./dist/framer.cjs"
+      "import": {
+        "types": "./dist/types/framer.d.ts",
+        "default": "./dist/framer.mjs"
+      },
+      "require": {
+        "types": "./dist/types/framer.d.cts",
+        "default": "./dist/framer.cjs"
+      }
     },
     "./webflow": {
       "browser": "./dist/webflow.js",
@@ -43,23 +63,31 @@
       "require": "./dist/webflow.cjs"
     },
     "./server": {
-      "types": "./types/server.d.ts",
-      "import": "./dist/server.mjs",
-      "require": "./dist/server.cjs"
+      "import": {
+        "types": "./dist/types/server.d.ts",
+        "default": "./dist/server.mjs"
+      },
+      "require": {
+        "types": "./dist/types/server.d.cts",
+        "default": "./dist/server.cjs"
+      }
     },
     "./package.json": "./package.json"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
-  "types": "./types/index.d.ts",
+  "types": "./dist/types/index.d.ts",
   "files": [
     "dist",
-    "types",
-    "README.md"
+    "src",
+    "README.md",
+    "CHANGELOG.md"
   ],
   "scripts": {
-    "build": "node build.mjs",
-    "prepublishOnly": "node build.mjs"
+    "build": "tsc -p tsconfig.json && node build.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "check-exports": "node scripts/check-exports.mjs",
+    "prepublishOnly": "npm run build && npm run check-exports"
   },
   "peerDependencies": {
     "react": ">=17",
@@ -78,7 +106,14 @@
     }
   },
   "devDependencies": {
-    "esbuild": "*"
+    "esbuild": "*",
+    "typescript": "^5.6.0",
+    "@types/react": "^18.3.0",
+    "@types/node": "^22.0.0",
+    "vue": "^3.5.0",
+    "framer": "^2.4.0",
+    "@arethetypeswrong/cli": "^0.16.0",
+    "publint": "^0.2.0"
   },
   "publishConfig": {
     "access": "public"

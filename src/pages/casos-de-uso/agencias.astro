@@ -5,11 +5,11 @@ export const prerender = true;
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
-import MagneticNodes from '../../components/MagneticNodes.jsx';
 import QuantizedWaveBg from '../../components/soluciones/QuantizedWaveBg.jsx';
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
 import '../../styles/mockups.css';
+import TestimonialCarousel from '../../components/soluciones/TestimonialCarousel.jsx';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
@@ -58,6 +58,57 @@ const magneticNodes = [
     { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://ideo.com&size=128", alt: "IDEO", top: "50%", left: "15%", width: 120, zIndex: 1 },
     { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://pentagram.com&size=128", alt: "Pentagram", top: "75%", left: "45%", width: 90, zIndex: 2 },
     { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://flouvia.com&size=128", alt: "Flouvia", top: "60%", left: "80%", width: 110, zIndex: 1 }
+];
+
+const testimonialItems = [
+    {
+        id: 'ogilvy',
+        name: 'Ogilvy',
+        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://ogilvy.com&size=128',
+        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Ogilvy_Logo.svg/512px-Ogilvy_Logo.svg.png',
+        quote: '«Cord nos ha permitido unificar todas nuestras propuestas creativas y automatizar el cobro de igualas. Es el motor financiero perfecto para nuestra agencia.»',
+        author: 'Dirección de Operaciones',
+        bgGradient: 'linear-gradient(135deg, #e11d48, #9f1239)',
+        bgImage: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?q=80&w=2000&auto=format&fit=crop'
+    },
+    {
+        id: 'accenture',
+        name: 'Accenture',
+        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://accenture.com&size=128',
+        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Accenture.svg/512px-Accenture.svg.png',
+        quote: '«La capacidad de emitir CFDI 4.0 al instante y conectar nuestra facturación con nuestros sistemas internos nos ahorra cientos de horas al mes.»',
+        author: 'Finance Lead',
+        bgGradient: 'linear-gradient(135deg, #7c3aed, #4c1d95)',
+        bgImage: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?q=80&w=2000&auto=format&fit=crop'
+    },
+    {
+        id: 'ideo',
+        name: 'IDEO',
+        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://ideo.com&size=128',
+        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/IDEO_logo.svg/512px-IDEO_logo.svg.png',
+        quote: '«Tener una plataforma que entienda el flujo de diseño, donde el anticipo destraba el inicio del proyecto sin fricción administrativa, es invaluable.»',
+        author: 'Design Director',
+        bgGradient: 'linear-gradient(135deg, #ea580c, #9a3412)'
+    },
+    {
+        id: 'pentagram',
+        name: 'Pentagram',
+        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://pentagram.com&size=128',
+        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Pentagram_Logo.svg/512px-Pentagram_Logo.svg.png',
+        quote: '«Nuestros clientes corporativos aprecian la experiencia premium de los portales de pago de Cord. Es coherente con la calidad del trabajo que entregamos.»',
+        author: 'Partner',
+        bgGradient: 'linear-gradient(135deg, #0f172a, #020617)',
+        bgImage: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=2000&auto=format&fit=crop'
+    },
+    {
+        id: 'flouvia',
+        name: 'Flouvia',
+        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://flouvia.com&size=128',
+        logoUrlLarge: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://flouvia.com&size=256',
+        quote: '«Cord nos permite orquestar los cobros de todos nuestros proyectos interactivos con el mismo nivel de detalle y fluidez con la que diseñamos experiencias.»',
+        author: 'Design & Engineering Team',
+        bgGradient: 'linear-gradient(135deg, #18181b, #3f3f46)'
+    }
 ];
 
 ---
@@ -116,82 +167,167 @@ const magneticNodes = [
                     <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://flouvia.com&size=64" alt="Flouvia" width="24" height="24" loading="lazy" />
                     <span>Flouvia</span>
                 </div>
+           <!-- LEYENDA STRIPE-LITERAL STRUCTURE -->
+        <div class="stripe-literal-wrapper">
+            <!-- Grid de fondo exacto -->
+            <div class="sl-grid-bg">
+                <div class="sl-col"></div>
+                <div class="sl-col"></div>
+                <div class="sl-col"></div>
+                <div class="sl-col"></div>
             </div>
-        </section>
 
-        <!-- STRIPE-LIKE SPLIT SECTION -->
-        <section class="uc-split-feature">
-            <div class="uc-container">
-                <div class="uc-split-grid">
-                    
-                    <div class="uc-split-text reveal">
-                        <span class="uc-split-label">Automatización de Ingresos</span>
-                        <h2 class="uc-split-title">Transforma proyectos en flujo de caja predecible</h2>
-                        <p class="uc-split-desc">
-                            Estabiliza los ingresos de tu agencia mediante igualas recurrentes. Genera propuestas vinculantes que habilitan el cobro mensual y la facturación automática sin intervención manual.
-                        </p>
-                        
-                        <div class="uc-split-list">
-                            <div class="uc-feature-item">
-                                <div class="uc-feature-icon">
-                                    <svg viewBox="0 0 24 24" fill="none">
-                                        <path d="M4 6h16M4 12h16m-7 6h7" stroke="#0f172a" stroke-width="2" stroke-linecap="round"/>
-                                    </svg>
-                                </div>
-                                <div class="uc-feature-content">
-                                    <h3>Estructuración de servicios recurrentes</h3>
-                                    <p>Diseña diferentes niveles de servicio para tus clientes corporativos. Ofrece opciones escalables y logra que aprueben la propuesta interactiva con total validez legal.</p>
-                                </div>
-                            </div>
-                            
-                            <div class="uc-feature-item">
-                                <div class="uc-feature-icon">
-                                    <svg viewBox="0 0 24 24" fill="none">
-                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#0f172a" stroke-width="2" stroke-linejoin="round"/>
-                                    </svg>
-                                </div>
-                                <div class="uc-feature-content">
-                                    <h3>Conciliación y CFDI automático</h3>
-                                    <p>Al recibir la firma digital, el sistema agenda los cobros mensuales, procesa el pago y emite la factura (CFDI 4.0) automáticamente, eliminando la carga administrativa de tu equipo.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="uc-split-mockup reveal">
-                        <div class="uc-cmk-window">
-                            <div class="cmk-nav">
-                                <div class="cmk-nav-l">
-                                    <span class="cmk-nav-title">Iguala · Growth Marketing</span>
-                                    <span class="cmk-nav-sub">· Acme Corporation</span>
-                                </div>
-                                <span class="cmk-badge cmk-b-green"><span class="cmk-dot cmk-dot-green"></span>Vigente</span>
-                            </div>
-                            <div class="cmk-body">
-                                <div class="cmk-big editorial">$38,000 <span style="font-size:14px; font-weight:600; color:#64748b;">MXN / mes</span></div>
-                                <div class="cmk-big-sub">Acuerdo mensual · Net 15 · Renovación automática</div>
-                                <div class="cmk-divider"></div>
-                                <div class="cmk-kv">
-                                    <span class="cmk-t1">Acuerdo firmado<span class="cmk-t2" style="display:block; font-weight:500;">Firma electrónica con validez legal</span></span>
-                                    <span class="cmk-badge cmk-b-green">Completado</span>
-                                </div>
-                                <div class="cmk-kv">
-                                    <span class="cmk-t1">Método de pago asegurado<span class="cmk-t2" style="display:block; font-weight:500;">Cobro recurrente habilitado vía Stripe</span></span>
-                                    <span class="cmk-badge cmk-b-green">Completado</span>
-                                </div>
-                                <div class="cmk-kv" style="border-bottom:none;">
-                                    <span class="cmk-t1">CFDI 4.0 de junio<span class="cmk-t2" style="display:block; font-weight:500;">Timbrado y enviado sin intervención</span></span>
-                                    <span class="cmk-badge cmk-b-green">Emitido</span>
-                                </div>
-                                <div class="cmk-kv" style="border-top:1px solid #e2e8f0; border-bottom:none; margin-top:4px; padding-top:12px;">
-                                    <span class="cmk-k" style="font-weight:700; color:#0f172a;">Próximo cobro</span>
-                                    <span class="cmk-badge cmk-b-blue">01 jul 2026 · Programado</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
+            <div class="uc-container" style="position:relative; z-index:10; padding-top: 4rem;">
+                <!-- Header centrado (Captura 2) -->
+                <div class="sl-header reveal">
+                    <span class="sl-eyebrow">Para agencias</span>
+                    <h2>Automatiza tus ingresos a medida que cierras proyectos</h2>
+                    <p>Publica tus servicios mientras conservas el control sobre la experiencia del cliente. El motor de facturación de Cord hace que tus cobros sean predecibles, simplifica el seguimiento y te permite emitir CFDIs de forma autónoma.</p>
                 </div>
+
+                <!-- Split Layout (Captura 1) -->
+                <div class="sl-split reveal">
+                    <!-- Izquierda: Features -->
+                    <div class="sl-features">
+                        <div class="slf-item active">
+                            <div class="slf-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.15" stroke="none" />
+                                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </div>
+                            <div class="slf-text">
+                                <h3>Retainers Mensuales Automáticos</h3>
+                                <p>Cobra tus igualas de diseño o marketing sin perseguir clientes. Cord realiza el cargo automático cada mes y envía la factura CFDI 4.0 al instante.</p>
+                            </div>
+                        </div>
+
+                        <div class="slf-item">
+                            <div class="slf-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.15" stroke="none" />
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke-linecap="round" stroke-linejoin="round" />
+                                    <polyline points="14 2 14 8 20 8" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M16 13H8" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M16 17H8" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M10 9H8" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </div>
+                            <div class="slf-text">
+                                <h3>Contratos con Firma Digital</h3>
+                                <p>Tus clientes aprueban el alcance y términos desde un link. El documento firmado tiene plena validez jurídica (NOM-151), acelerando el cierre.</p>
+                            </div>
+                        </div>
+
+                        <div class="slf-item">
+                            <div class="slf-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.15" stroke="none" />
+                                </svg>
+                            </div>
+                            <div class="slf-text">
+                                <h3>Links de Pago para Proyectos Únicos</h3>
+                                <p>¿Un proyecto de branding o un sitio web? Genera un link de pago con tarjeta o transferencia (SPEI) y cobra el anticipo al momento de firmar.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Derecha: Mockups con conectores -->
+                    <div class="sl-mockups">
+                        <!-- Card Principal -->
+                        <div class="slm-main">
+                            <div class="slm-main-header">
+                                <div class="slm-mh-icon">C</div>
+                                <span>Igualas activas</span>
+                            </div>
+                            <div class="slm-main-body">
+                                <div class="slm-row">
+                                    <div class="slm-row-icon">AC</div>
+                                    <div class="slm-row-info">
+                                        <strong>Acme Corp</strong>
+                                        <span>Iguala Growth</span>
+                                    </div>
+                                    <div class="slm-row-tag">Vigente</div>
+                                </div>
+                                <!-- Highlighted Row -->
+                                <div class="slm-row slm-row-highlight" id="mockupRowHighlight">
+                                    <div class="slm-row-icon" style="background:#0f172a">SI</div>
+                                    <div class="slm-row-info">
+                                        <strong>Stark Ind.</strong>
+                                        <span>Social Media</span>
+                                    </div>
+                                    <div class="slm-row-tag" style="background:#e0e7ff; color:#3730a3;">Próx. 01 jul</div>
+                                </div>
+                                <div class="slm-row">
+                                    <div class="slm-row-icon" style="background:#10b981">NB</div>
+                                    <div class="slm-row-info">
+                                        <strong>Nimbus</strong>
+                                        <span>Branding</span>
+                                    </div>
+                                    <div class="slm-row-tag">Vigente</div>
+                                </div>
+                                <div class="slm-row" style="border-bottom:none">
+                                    <div class="slm-row-icon" style="background:#f59e0b">VF</div>
+                                    <div class="slm-row-info">
+                                        <strong>Vela Foods</strong>
+                                        <span>Media</span>
+                                    </div>
+                                    <div class="slm-row-tag">Vigente</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Conector SVG -->
+                        <svg class="slm-connector" viewBox="0 0 100 60" preserveAspectRatio="none">
+                            <path d="M 0,10 C 40,10 60,50 100,50" fill="none" stroke="var(--color-blue-deep)" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round" />
+                        </svg>
+
+                        <!-- Card Flotante (Chat) -->
+                        <div class="slm-chat">
+                            <div class="slm-chat-header">Cord AI</div>
+                            <div class="slm-chat-body">
+                                <div class="slmc-bubble slmc-user">
+                                    Estoy cerrando a Stark Ind. ¿Puedes generar la propuesta de $45,000 y programar el cobro automático mensual?
+                                </div>
+                                <div class="slmc-bubble slmc-ai">
+                                    Por supuesto. Aquí tienes la propuesta estructurada lista para enviar con la automatización del CFDI 4.0:
+                                </div>
+                                <!-- Grid de tarjetas dentro del chat (como ElementaraAI) -->
+                                <div class="slmc-cards-grid">
+                                    <div class="slmc-card">
+                                        <div class="slmcc-img" style="background:#e0e7ff; color:#3730a3;">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                        </div>
+                                        <div class="slmcc-info">
+                                            <strong>Iguala Stark Ind.</strong>
+                                            <span>$45,000 / mes</span>
+                                        </div>
+                                        <div class="slmcc-action">Enviar propuesta ↗</div>
+                                    </div>
+                                    <div class="slmc-card">
+                                        <div class="slmcc-img" style="background:#f1f5f9; color:#0f172a;">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                        </div>
+                                        <div class="slmcc-info">
+                                            <strong>Configuración CFDI</strong>
+                                            <span>Emisión automática</span>
+                                        </div>
+                                        <div class="slmcc-action">Ver detalles ↗</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slm-chat-input">
+                                <span>Escribe tu mensaje</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>             </div>
             </div>
         </section>
 
@@ -306,28 +442,28 @@ const magneticNodes = [
                     <div class="uc-mf-grid">
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5v14a2 2 0 0 0 2 2h16v-5" fill="currentColor" fill-opacity="0.12"></path><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>
                             </div>
                             <h4>Seguimiento en tiempo real</h4>
                             <p>Cord te notifica en cuanto tu cliente abre la propuesta. Marca manualmente cada iguala como cobrada y el sistema actualiza el estado en el historial de la cotización.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" fill="currentColor" fill-opacity="0.12"></path><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                             </div>
                             <h4>Recordatorios inteligentes</h4>
-                            <p>Si un cliente se retrasa, Cord le envía <a href="#" class="uc-link-inline">seguimientos por email</a> o WhatsApp de manera educada para que tú no tengas que hacerlo.</p>
+                            <p>Si un cliente se retrasa, Cord le envía <a href="/producto/cobranza-ia" class="uc-link-inline">seguimientos por email</a> o WhatsApp de manera educada para que tú no tengas que hacerlo.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"></circle><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                             </div>
                             <h4>Cobros internacionales</h4>
-                            <p><a href="#" class="uc-link-inline">Acepta dólares</a> y euros con tarjetas internacionales, perfecto para agencias con clientes en Estados Unidos o Europa.</p>
+                            <p><a href="/producto/divisas" class="uc-link-inline">Acepta dólares</a> y euros con tarjetas internacionales, perfecto para agencias con clientes en Estados Unidos o Europa.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" fill="currentColor" fill-opacity="0.12"></rect><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
                             </div>
                             <h4>Analítica de cartera</h4>
                             <p>Visualiza tu pipeline activo, el valor por cobrar, las igualas vencidas por cliente y el margen cedido en descuentos. Todo desde <a href="/app/analitica" class="uc-link-inline">el dashboard de Cord</a>.</p>
@@ -340,21 +476,7 @@ const magneticNodes = [
     
 
         <!-- INTEGRATIONS SECTION -->
-        <section class="uc-integrations">
-            <div class="uc-container">
-                <div class="uc-int-grid">
-                    <div class="uc-int-text reveal">
-                        <h2>Conecta Cord con tus herramientas vía webhooks y Slack</h2>
-                        <p>
-                            Cord emite eventos reales — <code>quote.approved</code>, <code>quote.paid</code>, <code>quote.invoiced</code> — que puedes escuchar desde Zapier o Make para disparar acciones en Asana, Notion o HubSpot. Las alertas en <a href="#">Slack</a> llegan de forma nativa: cada vez que un cliente aprueba o paga, tu equipo recibe la notificación al instante.
-                        </p>
-                    </div>
-                    <div class="uc-int-visual reveal">
-                        <MagneticNodes client:load nodes={magneticNodes} />
-                    </div>
-                </div>
-            </div>
-        </section>
+        
 
 
 
@@ -365,28 +487,27 @@ const magneticNodes = [
                 <h2 class="uc-power-title reveal">Escala tu agencia con el motor financiero de Cord</h2>
                 <div class="uc-power-grid">
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-toggle"></div></div>
                         <h3>Igualas mensuales sin perseguir pagos</h3>
                         <p>Envía la cotización de la iguala, tu cliente la aprueba con firma digital, el CFDI se timbra solo y Cord manda recordatorios automáticos si no ha pagado antes del vencimiento. Menos correos, más cobros.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-doc"></div></div>
                         <h3>Hitos y facturación por proyecto</h3>
-                        <p>Cobra anticipos o pagos contra entrega fácilmente. Las <a href="#">facturas por hitos</a> de Cord permiten programar fechas de cobro asociadas a las etapas de tus proyectos creativos.</p>
+                        <p>Cobra anticipos o pagos contra entrega fácilmente. Las <a href="/producto/cfdi">facturas por hitos</a> de Cord permiten programar fechas de cobro asociadas a las etapas de tus proyectos creativos.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-sync"></div></div>
                         <h3>Cartera y cobranza con IA</h3>
                         <p>El módulo de cobranza de Cord muestra el aging de cada cliente, las igualas vencidas y el saldo por cobrar. El agente de IA puede negociar planes de pago con deudores de forma autónoma cuando lo activas.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <div class="uc-power-icon"><div class="uc-pi-card"></div></div>
                         <h3>Portal de pagos para clientes</h3>
-                        <p>Ofrece una experiencia verdaderamente premium. Tus clientes tendrán un <a href="#">portal de facturación</a> propio donde podrán descargar sus facturas, revisar estados de cuenta y pagar en línea.</p>
+                        <p>Ofrece una experiencia verdaderamente premium. Tus clientes tendrán un <a href="/producto/cfdi">portal de facturación</a> propio donde podrán descargar sus facturas, revisar estados de cuenta y pagar en línea.</p>
                     </div>
                 </div>
             </div>
         </section>
+
+        <!-- TESTIMONIALS CAROUSEL -->
+        <TestimonialCarousel client:visible items={testimonialItems} />
 
         <FaqAccordion
             faqs={FAQS}
@@ -401,6 +522,87 @@ const magneticNodes = [
 
 <style>
     :global(.uc-faq-acc) { padding: 5rem 5% 7rem; }
+
+    .uc-int-card {
+        background: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2000'); background-size: cover; background-position: center;
+        border-radius: 24px;
+        padding: 4rem;
+        text-align: center;
+        max-width: 900px;
+        margin: 0 auto 3rem;
+        color: #fff;
+    }
+    .uc-int-card h2 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        letter-spacing: -0.02em;
+        color: #fff;
+    }
+    .uc-int-card p {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: #cbd5e1;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    .uc-int-card code {
+        background: rgba(255,255,255,0.1);
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.9em;
+    }
+    .uc-int-logos {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 2rem 0;
+    }
+    .uc-logo-badge {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #64748b;
+        letter-spacing: -0.02em;
+        transition: color 0.3s;
+    }
+    .uc-logo-badge:hover {
+        color: #0f172a;
+    }
+    
+    .uc-power-item h3 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #0a2540;
+        margin-bottom: 0.75rem;
+    }
+    .uc-power-item p {
+        font-size: 0.95rem;
+        color: #425466;
+        line-height: 1.5;
+    }
+    @media (max-width: 900px) {
+        .uc-power-grid { grid-template-columns: 1fr 1fr; }
+        .uc-int-card { padding: 3rem 1.5rem; }
+        .uc-int-card h2 { font-size: 2rem; }
+    }
+    @media (max-width: 600px) {
+        .uc-power-grid { grid-template-columns: 1fr; }
+    }
+    
+
+    .uc-logo-img {
+        height: 36px;
+        width: auto;
+        opacity: 0.7;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .uc-logo-badge:hover .uc-logo-img {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+    
 </style>
 
 <style>
@@ -968,6 +1170,9 @@ const magneticNodes = [
     .uc-bc-text {
         padding-right: 2rem;
         margin-bottom: 2.5rem;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
     }
     .uc-bc-text h3 {
         font-size: 1.6rem;
@@ -992,6 +1197,7 @@ const magneticNodes = [
         font-size: 0.95rem;
         text-decoration: none;
         transition: color 0.2s;
+        margin-top: auto;
     }
     .uc-link-arrow:hover {
         color: #334155;
@@ -1082,14 +1288,19 @@ const magneticNodes = [
         flex-direction: column;
     }
     .uc-mf-icon {
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
         margin-bottom: 1.5rem;
-        color: #0f172a;
+        border-radius: 10px;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-blue-deep);
     }
     .uc-mf-icon svg {
-        width: 100%;
-        height: 100%;
+        width: 20px;
+        height: 20px;
     }
     .uc-mf-item h4 {
         font-size: 1rem;
@@ -1138,119 +1349,12 @@ const magneticNodes = [
     }
 
     /* ── INTEGRATIONS SECTION ── */
-    .uc-integrations {
-        padding: 6rem 0 8rem;
-        background: transparent;
-        overflow: hidden;
-    }
-    .uc-int-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 4rem;
-        align-items: center;
-    }
-    .uc-int-text {
-        max-width: 480px;
-    }
-    .uc-int-text h2 {
-        font-size: 2.1rem;
-        font-weight: 800;
-        color: #0a2540;
-        margin-bottom: 1.5rem;
-        line-height: 1.2;
-        letter-spacing: -0.02em;
-    }
-    .uc-int-text p {
-        font-size: 1.1rem;
-        color: #425466;
-        line-height: 1.6;
-    }
-    .uc-int-text a {
-        color: #0f172a;
-        text-decoration: none;
-        font-weight: 700;
-        border-bottom: 1px solid rgba(15,23,42,0.2);
-        padding-bottom: 1px;
-        transition: border-color 0.2s;
-    }
-    .uc-int-text a:hover {
-        border-color: #0f172a;
-    }
-
-    .uc-int-visual {
-        position: relative;
-        height: 400px;
-        width: 100%;
-        perspective: 1000px;
-    }
-    
-    @keyframes floatBubble {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-12px); }
-    }
-    
-    .uc-bubble {
-        position: absolute;
-        animation: floatBubble 6s ease-in-out infinite;
-    }
-    .uc-bubble-inner {
-        width: 100%;
-        height: 100%;
-        background: #fff;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 15px 35px rgba(10,37,64,0.08), 0 5px 15px rgba(10,37,64,0.03);
-        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
-    }
-    .uc-bubble:hover .uc-bubble-inner {
-        transform: scale(1.1);
-        box-shadow: 0 20px 45px rgba(10,37,64,0.12), 0 10px 20px rgba(10,37,64,0.05);
-    }
-    .uc-bubble-inner img {
-        width: 45%;
-        height: 45%;
-        object-fit: contain;
-    }
-    .uc-bubble-inner span {
-        font-weight: 800;
-        font-size: 2.5rem;
-        color: #0a2540;
-    }
-
-    /* Posiciones y tamaños inspirados en Stripe */
-    .uc-b-1 { width: 100px; height: 100px; top: 10%; left: 30%; animation-delay: 0s; z-index: 2; }
-    .uc-b-2 { width: 140px; height: 140px; top: 25%; left: 65%; animation-delay: -2s; z-index: 3; }
-    .uc-b-3 { width: 120px; height: 120px; top: 50%; left: 15%; animation-delay: -4s; z-index: 1; }
-    .uc-b-4 { width: 90px; height: 90px; top: 75%; left: 45%; animation-delay: -1s; z-index: 2; }
-    .uc-b-5 { width: 110px; height: 110px; top: 60%; left: 80%; animation-delay: -3s; z-index: 1; }
-    .uc-b-6 { width: 70px; height: 70px; top: -5%; left: 75%; animation-delay: -5s; z-index: 1; }
-
-    @media (max-width: 900px) {
-        .uc-int-grid {
-            grid-template-columns: 1fr;
-            text-align: center;
-            gap: 3rem;
-        }
-        .uc-int-text {
-            max-width: 100%;
-            margin: 0 auto;
-        }
-        .uc-int-visual {
-            height: 350px;
-            max-width: 500px;
-            margin: 0 auto;
-        }
-    }
-
-    /* ── POWER SECTION (2x2 GRID) ── */
     .uc-power {
         padding: 6rem 0 8rem;
         background: transparent;
     }
     .uc-power-title {
-        font-size: 2.5rem;
+        font-size:  3rem; margin-bottom: 2rem; max-width: 800px; ;
         font-weight: 800;
         color: #0a2540;
         margin-bottom: 4rem;
@@ -1260,7 +1364,7 @@ const magneticNodes = [
     }
     .uc-power-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(4, 1fr);
         gap: 4rem 3rem;
     }
     .uc-power-item {
@@ -1422,6 +1526,87 @@ const magneticNodes = [
         }
     }
 
+
+    .uc-int-card {
+        background: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2000'); background-size: cover; background-position: center;
+        border-radius: 24px;
+        padding: 4rem;
+        text-align: center;
+        max-width: 900px;
+        margin: 0 auto 3rem;
+        color: #fff;
+    }
+    .uc-int-card h2 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        letter-spacing: -0.02em;
+        color: #fff;
+    }
+    .uc-int-card p {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: #cbd5e1;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    .uc-int-card code {
+        background: rgba(255,255,255,0.1);
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.9em;
+    }
+    .uc-int-logos {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 2rem 0;
+    }
+    .uc-logo-badge {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #64748b;
+        letter-spacing: -0.02em;
+        transition: color 0.3s;
+    }
+    .uc-logo-badge:hover {
+        color: #0f172a;
+    }
+    
+    .uc-power-item h3 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #0a2540;
+        margin-bottom: 0.75rem;
+    }
+    .uc-power-item p {
+        font-size: 0.95rem;
+        color: #425466;
+        line-height: 1.5;
+    }
+    @media (max-width: 900px) {
+        .uc-power-grid { grid-template-columns: 1fr 1fr; }
+        .uc-int-card { padding: 3rem 1.5rem; }
+        .uc-int-card h2 { font-size: 2rem; }
+    }
+    @media (max-width: 600px) {
+        .uc-power-grid { grid-template-columns: 1fr; }
+    }
+    
+
+    .uc-logo-img {
+        height: 36px;
+        width: auto;
+        opacity: 0.7;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .uc-logo-badge:hover .uc-logo-img {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+    
 </style>
 
 <script>
