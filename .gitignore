@@ -27,3 +27,4 @@ pnpm-debug.log*
 # Local Netlify folder
 .netlify
 .vercel
+.github/workflows/
