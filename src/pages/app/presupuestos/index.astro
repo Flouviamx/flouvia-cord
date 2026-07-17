@@ -90,6 +90,7 @@ const hasAccess = memberCan(ME, 'analitica');
     .pr-denied h3 { color:var(--color-text); font-size:1.05rem; }
 
     .pr-list { display:flex; flex-direction:column; }
+    .pr-list[hidden] { display:none; }
     .pr-row { display:grid; grid-template-columns: 1fr auto auto 28px; align-items:center; gap:1rem; padding:1rem 0; border-bottom:1px solid var(--color-border); cursor:pointer; }
     .pr-row:hover { background:var(--row-hover, var(--color-bg-soft)); }
     .pr-row:last-child { border-bottom:none; }
@@ -98,7 +99,7 @@ const hasAccess = memberCan(ME, 'analitica');
     .pr-badge { font-size:.68rem; font-weight:700; letter-spacing:.02em; padding:.2rem .55rem; border-radius:999px; background:var(--color-bg-soft); color:var(--color-text-muted); white-space:nowrap; }
     .pr-periodos { font-size:.8rem; color:var(--color-text-muted); white-space:nowrap; }
     .pr-updated { font-size:.78rem; color:var(--color-text-muted); white-space:nowrap; }
-    .pr-del { opacity:.35; padding:4px; border-radius:6px; }
+    .pr-del { all:unset; box-sizing:border-box; display:inline-flex; cursor:pointer; opacity:.35; padding:4px; border-radius:6px; }
     .pr-del:hover { opacity:1; color:var(--color-danger); background:var(--color-bg-soft); }
 
     .fld { display:flex; flex-direction:column; gap:.35rem; margin-bottom:1.1rem; }
@@ -108,7 +109,7 @@ const hasAccess = memberCan(ME, 'analitica');
     .m-hint { font-size:.72rem; color:var(--color-text-muted); }
     .m-err { color:var(--color-danger); font-size:.82rem; margin:0; }
     .periodo-presets { display:flex; gap:.4rem; margin-bottom:.35rem; }
-    .ppreset { font-size:.72rem; padding:.3rem .6rem; border-radius:999px; background:var(--color-bg-soft); color:var(--color-text-muted); }
+    .ppreset { all:unset; box-sizing:border-box; cursor:pointer; font-size:.72rem; padding:.3rem .6rem; border-radius:999px; background:var(--color-bg-soft); color:var(--color-text-muted); }
     .ppreset:hover { color:var(--color-text); }
 </style>
 

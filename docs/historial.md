@@ -67,8 +67,27 @@
      al DOM inyectado en runtime, los selectores scoped nunca matchean). Corregido a
      `<style is:global>` en ambos archivos y verificado contra el CSS del BUILD real
      (`.pr-row-head{...}` sin sufijo de cid).
+   • **2 bugs visuales más reportados por André con captura, corregidos:** (1) los botones
+     nuevos (`.pr-name-wrap`, `.pr-del`, `.pr-del-fila`, `.pr-type-opt`, `.pr-term-del`,
+     `.pr-add-term`, `.ppreset`) se veían con el recuadro nativo del navegador — se creó
+     `.pr-name-wrap` como `<button>` (para la edición inline del nombre) sin resetear el
+     `border`/`background` por defecto del elemento; corregido con `all:unset` + reset
+     explícito (mismo patrón que `.tb-icon` en `AppLayout.astro`). ⚠️ Regla a futuro: todo
+     `<button>` custom en la app necesita reset explícito, no basta con estilizar
+     `padding`/`border-radius` encima del default del navegador. (2) el estado vacío del grid
+     ("Esta cédula todavía no tiene filas") se veía AL MISMO TIEMPO que una fila real — el
+     atributo HTML `hidden` se anula cuando el CSS del autor define `display` explícito sobre
+     esa misma clase (`.pr-empty-grid{display:flex}` le gana en origen de cascada al
+     `[hidden]{display:none}` del navegador, sin importar especificidad). Corregido agregando
+     `.clase[hidden]{display:none}` explícito a cada clase que combina `display` propio con
+     toggle por atributo `hidden` (`.pr-empty-grid`, `.pr-name-wrap`, `.pr-list`). ⚠️ Regla a
+     futuro: cualquier elemento que se muestre/oculte con `el.setAttribute('hidden', '')` desde
+     JS y que ADEMÁS tenga una regla CSS con `display` propio (`flex`/`grid`/etc., no el
+     default del navegador) necesita su propio `[hidden]{display:none}` — si no, el `hidden`
+     se ve pisado en silencio.
    • Verificado: `npm run db:migrate` corrido contra Neon (3 tablas, RLS+FORCE confirmado
-     contra `pg_class`/`pg_policies`), `npm run build` limpio.
+     contra `pg_class`/`pg_policies`), `npm run build` limpio, CSS del build inspeccionado
+     directamente para confirmar que los resets/overrides quedaron compilados.
 
 ✅ **Desempeño por vendedor — ranking de cierre/cobro por miembro del equipo (jul 2026)** —
    primer feature del track "qué más se puede construir" (auditoría de oportunidades sobre

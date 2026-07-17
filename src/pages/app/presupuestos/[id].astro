@@ -88,7 +88,8 @@ const cedulaId = Astro.params.id;
     .pr-denied h3 { color:var(--color-text); font-size:1.05rem; }
 
     .pr-toolbar { display:flex; align-items:center; gap:.75rem; margin-bottom:1.25rem; }
-    .pr-name-wrap { display:flex; align-items:center; gap:.4rem; padding:.2rem .4rem; margin:-.2rem -.4rem; border-radius:8px; }
+    .pr-name-wrap { all:unset; box-sizing:border-box; cursor:pointer; display:flex; align-items:center; gap:.4rem; padding:.2rem .4rem; margin:-.2rem -.4rem; border-radius:8px; }
+    .pr-name-wrap[hidden] { display:none; }
     .pr-name-wrap:hover { background:var(--color-bg-soft); }
     .pr-name-wrap:hover .pr-pencil { opacity:.5; }
     .pr-cedula-name { font-size:1.15rem; font-weight:600; color:var(--color-text); letter-spacing:-0.01em; }
@@ -118,10 +119,12 @@ const cedulaId = Astro.params.id;
     .pr-cell input:focus { outline:none; border-color:rgba(10,25,47,0.2); background:var(--color-bg); }
     .pr-cell-computed { font-variant-numeric:tabular-nums; font-weight:600; color:var(--color-text); border-radius:6px; transition:background-color .15s; }
     .pr-cell-computed.pr-flash { background-color:rgba(10,25,47,0.09); }
-    .pr-del-fila { opacity:.3; padding:3px; border-radius:5px; flex-shrink:0; margin-top:2px; }
+    .pr-del-fila { all:unset; box-sizing:border-box; cursor:pointer; display:inline-flex; opacity:.3; padding:3px; border-radius:5px; flex-shrink:0; margin-top:2px; }
     .pr-del-fila:hover { opacity:1; color:var(--color-danger); background:var(--color-bg-soft); }
     .pr-legend { font-size:.78rem; color:var(--color-text-muted); margin-top:.75rem; }
     .pr-empty-grid { display:flex; flex-direction:column; align-items:center; gap:.75rem; padding:3.5rem 1rem; text-align:center; color:var(--color-text-muted); }
+    .pr-empty-grid[hidden] { display:none; }
+    table.pr-grid[hidden] { display:none; }
 
     .fld { display:flex; flex-direction:column; gap:.35rem; margin-bottom:1.1rem; }
     .fld span:first-child { font-size:.82rem; font-weight:600; color:var(--color-text); }
@@ -131,15 +134,15 @@ const cedulaId = Astro.params.id;
     .m-err { color:var(--color-danger); font-size:.82rem; margin:0; }
 
     .pr-type-toggle { display:flex; gap:.4rem; }
-    .pr-type-opt { flex:1; font-size:.82rem; padding:.5rem; border-radius:10px; background:var(--color-bg-soft); color:var(--color-text-muted); border:1px solid transparent; }
+    .pr-type-opt { all:unset; box-sizing:border-box; cursor:pointer; text-align:center; flex:1; font-size:.82rem; padding:.5rem; border-radius:10px; background:var(--color-bg-soft); color:var(--color-text-muted); border:1px solid transparent; }
     .pr-type-opt.is-active { background:var(--color-blue-deep); color:#fff; }
 
     .pr-term-row { display:grid; grid-template-columns: 1.3fr 1.3fr 70px 28px; gap:.4rem; align-items:center; margin-bottom:.5rem; }
     .pr-term-row select, .pr-term-row input { background:var(--color-bg-soft); border:1px solid transparent; border-radius:8px; padding:.4rem .5rem; font-size:.8rem; color:var(--color-text); }
     .pr-term-row select:focus, .pr-term-row input:focus { outline:none; border-color:rgba(10,25,47,0.15); }
-    .pr-term-del { opacity:.4; padding:2px; }
+    .pr-term-del { all:unset; box-sizing:border-box; cursor:pointer; display:inline-flex; opacity:.4; padding:2px; }
     .pr-term-del:hover { opacity:1; color:var(--color-danger); }
-    .pr-add-term { font-size:.78rem; color:var(--color-blue-deep); font-weight:600; }
+    .pr-add-term { all:unset; box-sizing:border-box; cursor:pointer; font-size:.78rem; color:var(--color-blue-deep); font-weight:600; }
 </style>
 
 <script define:vars={{ cedulaId }}>
