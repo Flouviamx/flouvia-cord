@@ -36,9 +36,9 @@ const cedulaId = Astro.params.id;
 
         <div class="pr-grid-wrap" id="gridWrap">
             <div class="skeleton-wrap" id="skel">
-                <div class="skeleton-line" style="width:100%;height:44px;margin-bottom:8px"></div>
-                <div class="skeleton-line" style="width:100%;height:44px;margin-bottom:8px"></div>
-                <div class="skeleton-line" style="width:100%;height:44px"></div>
+                <div class="skeleton skeleton-line" style="width:100%;height:44px;margin-bottom:8px"></div>
+                <div class="skeleton skeleton-line" style="width:100%;height:44px;margin-bottom:8px"></div>
+                <div class="skeleton skeleton-line" style="width:100%;height:44px"></div>
             </div>
             <table class="pr-grid" id="grid" hidden></table>
             <div class="pr-empty-grid" id="emptyGrid" hidden>
@@ -143,6 +143,49 @@ const cedulaId = Astro.params.id;
     .pr-term-del { all:unset; box-sizing:border-box; cursor:pointer; display:inline-flex; opacity:.4; padding:2px; }
     .pr-term-del:hover { opacity:1; color:var(--color-danger); }
     .pr-add-term { all:unset; box-sizing:border-box; cursor:pointer; font-size:.78rem; color:var(--color-blue-deep); font-weight:600; }
+
+    /* ── Estado vacío del grid (mismo botón que el resto de la app) ── */
+    .empty-cta { all:unset; box-sizing:border-box; display:inline-block; cursor:pointer; background:var(--color-blue-deep); color:#fff; font-size:.86rem; font-weight:600; padding:11px 20px; border-radius:10px; transition: transform .15s var(--ease-spring), box-shadow .15s; }
+    .empty-cta:hover { transform:translateY(-1px); box-shadow:0 10px 22px -10px rgba(10,25,47,0.5); }
+
+    /* ── Modal (dialog nativo, mismo lenguaje que clientes/productos) ── */
+    .modal {
+        border:none; border-radius:20px; padding:0; color:var(--color-text);
+        width:min(480px, calc(100vw - 2rem));
+        background:var(--surface);
+        box-shadow:0 40px 90px -30px rgba(10,25,47,0.45);
+    }
+    .modal-lg { width:min(700px, calc(100vw - 2rem)); }
+    .modal::backdrop { background:rgba(10,25,47,0.38); backdrop-filter:blur(4px); }
+    .modal[open] { animation: modIn .22s var(--ease-spring); }
+    @keyframes modIn { from { opacity:0; transform:scale(.97) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
+    .modal-card { display:flex; flex-direction:column; }
+    .modal-card header { display:flex; align-items:center; justify-content:space-between; padding:1.35rem 1.5rem; border-bottom:1px solid var(--color-border); }
+    .modal-card header h3 { margin:0; font-size:1.05rem; font-weight:700; letter-spacing:-0.01em; color:var(--color-text); }
+    .mclose { all:unset; box-sizing:border-box; cursor:pointer; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:8px; color:var(--color-text-muted); font-size:1.2rem; line-height:1; }
+    .mclose:hover { background:var(--color-bg-soft); color:var(--color-text); }
+    .modal-body { padding:1.5rem; max-height:70vh; overflow-y:auto; }
+    .modal-card footer { display:flex; align-items:center; justify-content:flex-end; gap:.6rem; padding:1.1rem 1.5rem; border-top:1px solid var(--color-border); }
+
+    .btn-primary { font-family:var(--font-sans); font-size:.85rem; font-weight:600; background:var(--color-blue-deep); color:#fff; border:none; border-radius:10px; padding:.6rem 1.15rem; cursor:pointer; box-shadow:0 6px 18px -8px rgba(10,25,47,0.5); transition: transform .15s var(--ease-spring), box-shadow .15s; }
+    .btn-primary:hover { transform:translateY(-1px); box-shadow:0 10px 22px -8px rgba(10,25,47,0.55); }
+    .btn-primary:active { transform:scale(.97); }
+    .btn-ghost { font-family:var(--font-sans); font-size:.85rem; font-weight:600; background:var(--color-bg-soft); color:var(--color-text); border:1px solid var(--color-border); border-radius:10px; padding:.6rem 1.15rem; cursor:pointer; }
+    .btn-ghost:hover { background:var(--color-border); }
+
+    /* En móvil el modal se vuelve un "bottom sheet" (mismo patrón que clientes/productos) */
+    @media (max-width: 560px) {
+        .modal {
+            width:100%; max-width:100%;
+            margin:0; top:auto; bottom:0; left:0; right:0;
+            border-radius:20px 20px 0 0;
+            max-height:92dvh;
+            animation: sheet-up .32s var(--ease-spring);
+        }
+        .modal-body { max-height: calc(92dvh - 130px); }
+    }
+    @keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) { .modal, .modal[open] { animation:none; } }
 </style>
 
 <script define:vars={{ cedulaId }}>
