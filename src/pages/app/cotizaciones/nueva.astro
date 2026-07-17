@@ -32,6 +32,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias, ...(DRAFT_VI
 // Anticipo pre-llenado: el del borrador si se está editando; si no, el default
 // del negocio (Ajustes › Cotizaciones). 0/null = sin anticipo.
 const DEFAULT_ANTICIPO = Number((draftQuote as any)?.anticipoPct ?? ORG.anticipoDefaultPct) || 0;
+const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
 
 ---
 
@@ -151,7 +152,18 @@ const DEFAULT_ANTICIPO = Number((draftQuote as any)?.anticipoPct ?? ORG.anticipo
                     </select>
                 </div>
 
-                <div class="sum-field">
+                <!-- Iguala recurrente: cobro automático mensual. Solo con términos de
+                     contado; excluyente con anticipo. -->
+                <div class="sum-field" id="recurrenteField" style="flex-direction: row; align-items: center; justify-content: space-between;">
+                    <label for="esRecurrente" style="margin:0; cursor: pointer; color: var(--color-text);">Cobro recurrente mensual <span class="opt">(iguala)</span></label>
+                    <label class="s-toggle" title="Cobra el total automáticamente cada mes">
+                        <input type="checkbox" id="esRecurrente" checked={DEFAULT_RECURRENTE} />
+                        <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                    </label>
+                </div>
+                <p class="sum-anticipo-note" id="recurrenteNote" hidden></p>
+
+                <div class="sum-field" id="anticipoField">
                     <label>Anticipo (%) <span class="opt">(opcional)</span></label>
                     <input class="ed-select" id="anticipoPct" type="number" min="0" max="99" step="1" placeholder="0" value={DEFAULT_ANTICIPO || ''} />
                     <p class="sum-anticipo-note" id="anticipoNote" hidden></p>
@@ -370,14 +382,17 @@ const DEFAULT_ANTICIPO = Number((draftQuote as any)?.anticipoPct ?? ORG.anticipo
         if ($descNote) { $descNote.textContent = d > 0 ? `Nivel del cliente: −${d}% aplicado automáticamente a los precios de lista.` : ''; $descNote.hidden = d <= 0; }
     };
 
+    let lastTotal = 0;
+    const currentTotal = () => lastTotal;
     function recalc() {
         const ivaPct = (Number((document.getElementById('cfgIva') || {}).value) || 0) / 100;
         const ivaIncluido = document.getElementById('ivaIncluido') ? document.getElementById('ivaIncluido').checked : false;
         const subtotal = lines.reduce((s, l) => s + (l.negociado ?? l.lista) * l.cantidad, 0);
-        
+
         const iva = ivaIncluido ? subtotal - (subtotal / (1 + ivaPct)) : subtotal * ivaPct;
         const realSubtotal = ivaIncluido ? subtotal / (1 + ivaPct) : subtotal;
         const total = ivaIncluido ? subtotal : subtotal + iva;
+        lastTotal = total;
 
         document.getElementById('sumSubtotal').textContent = fmt(realSubtotal);
         document.getElementById('sumIva').textContent = fmt(iva);
@@ -411,6 +426,9 @@ const DEFAULT_ANTICIPO = Number((draftQuote as any)?.anticipoPct ?? ORG.anticipo
                 antNote.hidden = true;
             }
         }
+
+        // Iguala recurrente: refrescar el preview del monto mensual.
+        if (typeof syncRecurrenteUI === 'function') syncRecurrenteUI();
 
         // Si cotiza en divisa extranjera, el monto cambió → refrescar el FX
         const cov = document.getElementById('fxCover');
@@ -630,8 +648,39 @@ const DEFAULT_ANTICIPO = Number((draftQuote as any)?.anticipoPct ?? ORG.anticipo
         chip.addEventListener('click', () => {
             document.querySelectorAll('#termChips .chip').forEach(c => c.classList.remove('active'));
             chip.classList.add('active');
+            syncRecurrenteUI();
         });
     });
+
+    // Iguala recurrente ⇄ anticipo/términos: son excluyentes. La iguala solo
+    // aplica a contado; al activarla se oculta el anticipo, y solo se muestra el
+    // toggle si el término es contado.
+    function syncRecurrenteUI() {
+        const recEl = document.getElementById('esRecurrente');
+        const recField = document.getElementById('recurrenteField');
+        const recNote = document.getElementById('recurrenteNote');
+        const antField = document.getElementById('anticipoField');
+        const activeTerm = document.querySelector('#termChips .chip.active');
+        const esContado = !activeTerm || activeTerm.dataset.term === 'Contado';
+        if (!recEl) return;
+        if (!esContado) { recEl.checked = false; if (recField) recField.hidden = true; }
+        else if (recField) recField.hidden = false;
+        const on = !!recEl.checked;
+        if (antField) antField.hidden = on;
+        if (recNote) {
+            if (on) {
+                const total = currentTotal();
+                recNote.textContent = total > 0
+                    ? `Al autorizar, tu cliente paga ${fmt(total)} hoy y se le cobra ese monto automáticamente cada mes con su tarjeta, hasta que se cancele.`
+                    : 'Se cobra el total automáticamente cada mes con tarjeta (requiere cuenta de cobros conectada).';
+                recNote.hidden = false;
+            } else {
+                recNote.hidden = true;
+            }
+        }
+    }
+    document.getElementById('esRecurrente')?.addEventListener('change', syncRecurrenteUI);
+    syncRecurrenteUI();
 
     // ── Guardado real (POST /api/cotizaciones → Neon) ──
     const toast = document.getElementById('toast');
@@ -658,16 +707,22 @@ const DEFAULT_ANTICIPO = Number((draftQuote as any)?.anticipoPct ?? ORG.anticipo
         const fiscal_currency = base_currency === 'MXN' ? 'MXN' : 'MXN';
         const fx_buffer_pct = base_currency === 'MXN' ? 0 : (fxBufferEl ? parseFloat(fxBufferEl.value) || 0 : 0);
 
+        // Iguala recurrente: cobra el total automáticamente cada mes (solo contado;
+        // excluyente con anticipo).
+        const recEl = document.getElementById('esRecurrente');
+        const es_recurrente = !!(recEl && recEl.checked);
         // Anticipo: % que el cliente paga de inmediato al aprobar (0 = sin anticipo).
         const antEl = document.getElementById('anticipoPct');
         const anticipo_pct = antEl ? Math.min(99, Math.max(0, parseInt(antEl.value, 10) || 0)) : 0;
+        const terminos = es_recurrente ? 'contado' : (TERM_MAP[activeChip ? activeChip.dataset.term : 'Contado'] || 'contado');
 
         return {
             send,
             cliente_id,
-            terminos: TERM_MAP[activeChip ? activeChip.dataset.term : 'Contado'] || 'contado',
+            terminos,
             vigencia_dias: vigSel ? parseInt(vigSel.value, 10) || 30 : 30,
-            anticipo_pct: anticipo_pct >= 1 ? anticipo_pct : null,
+            es_recurrente,
+            anticipo_pct: (!es_recurrente && anticipo_pct >= 1) ? anticipo_pct : null,
             notas: notas ? notas.value.trim() : '',
             base_currency,
             fiscal_currency,

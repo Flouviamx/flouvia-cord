@@ -66,6 +66,7 @@ export const GET: APIRoute = async ({ request }) => {
       JOIN clientes cl ON c.cliente_id = cl.id
       JOIN orgs o ON o.id = c.org_id
       WHERE c.status in ('approved', 'invoiced')
+        AND c.es_recurrente is not true
         AND c.paid_at IS NULL
         AND coalesce(c.approved_at, c.created_at)
             + make_interval(days => case coalesce(c.terminos, cl.terminos_default, 'contado')

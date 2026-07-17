@@ -38,6 +38,7 @@ export const GET: APIRoute = async ({ request }) => {
         join clientes cl on cl.id = c.cliente_id
         join orgs o on o.id = c.org_id
         where c.status in ('approved', 'invoiced')
+          and c.es_recurrente is not true
           and cl.email is not null and cl.email <> ''
           and o.sandbox_of is null
           and coalesce(o.clerk_user_id, '') <> 'demo-user'`;

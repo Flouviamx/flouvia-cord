@@ -82,6 +82,21 @@ if (cobros.length && q.status !== 'paid') {
     }
 }
 
+// Iguala recurrente (retainer): se cobra el total automáticamente cada mes vía
+// Stripe Subscription sobre la cuenta conectada del vendedor. Excluyente con
+// anticipo/cuotas y con SPEI (una iguala automática necesita tarjeta para renovar).
+const esRecurrente = !!q.esRecurrente;
+const sus = (q.suscripcion as any) || null;
+const susActiva = !!(sus && ['active', 'trialing', 'past_due'].includes(sus.estado));
+const montoMensual = money(totalNum);
+const orgCobraTarjeta = ORG.aceptaTarjeta && ORG.stripeAccountId && ORG.stripeChargesEnabled;
+const puedeAutorizarSus = esRecurrente && !susActiva && orgCobraTarjeta && q.status !== 'paid';
+if (esRecurrente && q.status !== 'paid') {
+    splitNote = susActiva
+        ? `Iguala activa · se cobra ${montoMensual} cada mes`
+        : `Iguala mensual · ${montoMensual} cada mes`;
+}
+
 // Contacto del vendedor
 const vEmail = (ORG.emailContacto ?? '').trim();
 const vWa = (ORG.whatsapp ?? '').trim();
@@ -350,7 +365,35 @@ const hayContacto = !!(vEmail || vWa || vTel);
                             ))}
                         </div>
                     )}
-                    {puedePagar && (
+                    {esRecurrente && susActiva && (
+                        <div class="ql-credit-note ql-sub-active">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.1"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                            <div class="ql-credit-text">
+                                <strong>Iguala activa</strong>
+                                <span>
+                                    Se te cobra {montoMensual} cada mes automáticamente con tu tarjeta{sus && sus.currentPeriodEnd ? ` — próximo cargo el ${sus.currentPeriodEnd}` : ''}. Para cancelar, contacta a {ORG.nombre}.
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                    {puedeAutorizarSus && (
+                        <div class="ql-pay">
+                            <div class="ql-sub-copy">
+                                <strong>Autoriza tu iguala mensual</strong>
+                                <span>Se cobrará <b>{montoMensual}</b> a tu tarjeta hoy y ese mismo monto automáticamente cada mes, hasta que se cancele. Puedes cancelar cuando quieras.</span>
+                            </div>
+                            <button class="ql-cta" id="qSubBtn" style={`background:${color}`}>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                Autorizar cobro mensual
+                            </button>
+                            <div class="ql-pay-secure">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                Suscripción con tarjeta · procesada por Stripe
+                                <span class="ql-pay-cards"><span>VISA</span><span>MASTERCARD</span><span>AMEX</span></span>
+                            </div>
+                        </div>
+                    )}
+                    {puedePagar && !esRecurrente && (
                         <div class="ql-pay-options">
                             {ORG.aceptaTransferencia && (
                                 <div class="ql-pay-transfer">
@@ -710,6 +753,16 @@ const hayContacto = !!(vEmail || vWa || vTel);
         }
     });
 
+    // ── Autorizar iguala recurrente (misma página de pago, modo suscripción) ──
+    document.getElementById('qSubBtn')?.addEventListener('click', (e) => {
+        const btn = e.currentTarget as HTMLButtonElement;
+        btn.disabled = true;
+        btn.textContent = 'Redirigiendo…';
+        const url = `/q/${token}/pay`;
+        emit('cord:pay', { url });
+        window.location.href = url;
+    });
+
     // ── Conversación / negociación ──
     const thread = document.getElementById('qThread');
     const negOk = document.getElementById('qNegOk');
@@ -722,6 +775,19 @@ const hayContacto = !!(vEmail || vWa || vTel);
         thread.hidden = false;
         const div = document.createElement('div');
         div.className = 'q-msg mine' + (kind === 'counter' ? ' counter' : '');
+        const t = document.createElement('span'); t.className = 'q-msg-text'; t.textContent = text;
+        const time = document.createElement('span'); time.className = 'q-msg-time'; time.textContent = 'ahora';
+        div.append(t, time);
+        thread.appendChild(div);
+        requestAnimationFrame(() => { thread.scrollTop = thread.scrollHeight; });
+    };
+
+    // Mensaje entrante del VENDEDOR (vía SSE) — burbuja izquierda, sin recargar.
+    const appendIncoming = (text: string) => {
+        if (!thread) return;
+        thread.hidden = false;
+        const div = document.createElement('div');
+        div.className = 'q-msg theirs';
         const t = document.createElement('span'); t.className = 'q-msg-text'; t.textContent = text;
         const time = document.createElement('span'); time.className = 'q-msg-time'; time.textContent = 'ahora';
         div.append(t, time);
@@ -822,6 +888,31 @@ const hayContacto = !!(vEmail || vWa || vTel);
         ping();
         setInterval(ping, 10000);
         document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') ping(); });
+    }
+
+    // ── Tiempo real: respuestas del vendedor en vivo (SSE, sin recargar) ──
+    if (token && typeof EventSource !== 'undefined') {
+        let es: EventSource | null = null;
+        const connect = () => {
+            es = new EventSource(`/api/q/${token}/stream`);
+            es.addEventListener('message', (e: MessageEvent) => {
+                try {
+                    const d = JSON.parse(e.data);
+                    if (d?.detalle) appendIncoming(d.detalle);
+                } catch { /* ignora */ }
+            });
+            es.addEventListener('status', () => {
+                // El estado cambió del lado del vendedor (ej. se marcó pagada) —
+                // el snapshot vivo de este script no cubre todos los estados,
+                // así que la forma segura de reflejarlo es recargar.
+                location.reload();
+            });
+            es.onerror = () => { es?.close(); setTimeout(connect, 4000); };
+        };
+        connect();
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && es?.readyState === EventSource.CLOSED) connect();
+        });
     }
 
     // ── Micro-lujo: count-up del total ──
@@ -1233,6 +1324,12 @@ const hayContacto = !!(vEmail || vWa || vTel);
 /* ── Pago pulido ── */
 .ql-pay-options { display: flex; flex-direction: column; gap: 1.5rem; width: 100%; margin-bottom: 0.5rem; }
 .ql-pay { display: flex; flex-direction: column; gap: 0.65rem; padding: 1.2rem; background: #fafafa; border: 1px solid rgba(10,25,47,0.06); border-radius: 16px; }
+
+/* Iguala recurrente: copy de autorización + nota de suscripción activa */
+.ql-sub-copy { display: flex; flex-direction: column; gap: 4px; text-align: left; margin-bottom: 0.35rem; }
+.ql-sub-copy strong { font-size: 0.95rem; font-weight: 600; color: #050505; letter-spacing: -0.01em; }
+.ql-sub-copy span { font-size: 0.82rem; color: #6b7686; line-height: 1.55; }
+.ql-sub-active svg { color: #059669; }
 
 /* Crédito Net 30/60: pedido confirmado, el pago se habilita al vencer el plazo */
 .ql-credit-note { display: flex; align-items: flex-start; gap: 12px; padding: 1.1rem 1.2rem; background: #f5f5f7; border-radius: 16px; text-align: left; }

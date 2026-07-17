@@ -1,0 +1,300 @@
+---
+// Editor de una Cédula Presupuestal — grid de filas (insumo o fórmula) ×
+// periodos. Las filas 'input' se teclean; las 'formula' se calculan en el
+// servidor (src/lib/cedulas.ts) contra otras filas, propias o de otra cédula.
+import AppLayout from '../../../layouts/AppLayout.astro';
+import { getMyMembership } from '../../../lib/queries';
+import { memberCan } from '../../../lib/permissions';
+
+const ME = await getMyMembership();
+const hasAccess = memberCan(ME, 'analitica');
+const cedulaId = Astro.params.id;
+---
+
+<AppLayout title="Cédula — Cord" page="presupuestos" heading="Cédula" crumbs={[{ label: 'Presupuestos', href: '/app/presupuestos' }]}>
+    <div slot="topbar-actions">
+        {hasAccess && <button class="btn-ghost" id="btnAddFila">+ Agregar fila</button>}
+    </div>
+
+    {!hasAccess && (
+        <div class="pr-denied">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <h3>Sin acceso</h3>
+            <p>Tu rol actual no tiene permiso para ver presupuestos. Contacta al administrador de tu organización.</p>
+        </div>
+    )}
+
+    {hasAccess && <>
+        <div class="pr-toolbar">
+            <div class="pr-name-wrap">
+                <span id="cName" class="pr-cedula-name">Cargando…</span>
+                <button id="btnRename" class="pr-icon-btn" title="Renombrar" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                </button>
+            </div>
+            <span id="cTipo" class="pr-badge"></span>
+        </div>
+
+        <div class="pr-grid-wrap">
+            <div class="skeleton-wrap" id="skel">
+                <div class="skeleton-line" style="width:100%;height:44px;margin-bottom:8px"></div>
+                <div class="skeleton-line" style="width:100%;height:44px;margin-bottom:8px"></div>
+                <div class="skeleton-line" style="width:100%;height:44px"></div>
+            </div>
+            <table class="pr-grid" id="grid" hidden></table>
+        </div>
+        <p class="pr-legend">Las filas en gris claro son <strong>calculadas</strong> (fórmula) — se actualizan solas cuando cambias un insumo del que dependen.</p>
+
+        <dialog class="modal modal-lg" id="filaModal">
+            <form method="dialog" class="modal-card">
+                <header>
+                    <h3>Agregar fila</h3>
+                    <button type="button" class="mclose" id="fmClose" aria-label="Cerrar">&times;</button>
+                </header>
+                <div class="modal-body">
+                    <label class="fld">
+                        <span>Concepto</span>
+                        <input type="text" id="fmConcepto" placeholder="Ej. Consumo de acero por unidad" maxlength="160" />
+                    </label>
+                    <div class="fld">
+                        <span>Tipo de fila</span>
+                        <div class="pr-type-toggle">
+                            <button type="button" class="pr-type-opt is-active" data-tipo="input">Insumo (lo tecleas)</button>
+                            <button type="button" class="pr-type-opt" data-tipo="formula">Fórmula (se calcula)</button>
+                        </div>
+                    </div>
+                    <div id="formulaBuilder" hidden>
+                        <p class="m-hint">Cada término suma (coeficiente positivo) o resta (negativo) el valor de una fila, propia o de otra cédula.</p>
+                        <div id="terms"></div>
+                        <button type="button" id="btnAddTerm" class="pr-add-term">+ Agregar término</button>
+                    </div>
+                    <p class="m-err" id="fmErr" hidden></p>
+                </div>
+                <footer>
+                    <button type="button" id="fmCancel" class="btn-ghost">Cancelar</button>
+                    <button type="button" id="fmSave" class="btn-primary">Agregar fila</button>
+                </footer>
+            </form>
+        </dialog>
+    </>}
+</AppLayout>
+
+<style>
+    .pr-denied { display:flex; flex-direction:column; align-items:center; text-align:center; gap:.75rem; padding:5rem 1rem; color:var(--color-text-muted); }
+    .pr-denied svg { width:40px; height:40px; opacity:.5; }
+    .pr-denied h3 { color:var(--color-text); font-size:1.05rem; }
+
+    .pr-toolbar { display:flex; align-items:center; gap:.75rem; margin-bottom:1.25rem; }
+    .pr-name-wrap { display:flex; align-items:center; gap:.4rem; }
+    .pr-cedula-name { font-size:1.15rem; font-weight:600; color:var(--color-text); letter-spacing:-0.01em; }
+    .pr-icon-btn { opacity:.4; padding:4px; border-radius:6px; }
+    .pr-icon-btn:hover { opacity:1; background:var(--color-bg-soft); }
+    .pr-badge { font-size:.7rem; font-weight:700; letter-spacing:.02em; padding:.22rem .6rem; border-radius:999px; background:var(--color-bg-soft); color:var(--color-text-muted); }
+
+    .pr-grid-wrap { overflow-x:auto; border:1px solid var(--color-border); border-radius:14px; }
+    table.pr-grid { border-collapse:collapse; width:100%; font-size:.86rem; }
+    .pr-grid th, .pr-grid td { padding:.7rem .9rem; text-align:right; white-space:nowrap; border-bottom:1px solid var(--color-border); }
+    .pr-grid th { font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; color:var(--color-text-muted); font-weight:700; background:var(--color-bg-soft); }
+    .pr-grid tr:last-child td { border-bottom:none; }
+    .pr-row-head { text-align:left !important; position:sticky; left:0; background:var(--surface, #fff); min-width:220px; }
+    .pr-grid th.pr-row-head { background:var(--color-bg-soft); }
+    .pr-concepto-cell { display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
+    .pr-concepto-txt { font-weight:500; color:var(--color-text); }
+    .pr-row-formula .pr-row-head, .pr-row-formula td.pr-cell { background:var(--color-bg-soft); }
+    .pr-row-formula .pr-concepto-txt { color:var(--color-text); }
+    .pr-cell input { width:96px; text-align:right; background:transparent; border:1px solid transparent; border-radius:8px; padding:.3rem .4rem; font:inherit; color:var(--color-text); font-variant-numeric:tabular-nums; }
+    .pr-cell input:hover { border-color:var(--color-border); }
+    .pr-cell input:focus { outline:none; border-color:rgba(10,25,47,0.2); background:var(--color-bg); }
+    .pr-cell-computed { font-variant-numeric:tabular-nums; font-weight:600; color:var(--color-text); }
+    .pr-del-fila { opacity:.3; padding:3px; border-radius:5px; flex-shrink:0; }
+    .pr-del-fila:hover { opacity:1; color:var(--color-danger); background:var(--color-bg-soft); }
+    .pr-legend { font-size:.78rem; color:var(--color-text-muted); margin-top:.75rem; }
+
+    .fld { display:flex; flex-direction:column; gap:.35rem; margin-bottom:1.1rem; }
+    .fld span:first-child { font-size:.82rem; font-weight:600; color:var(--color-text); }
+    .fld input[type="text"] { background:var(--color-bg-soft); border:1px solid transparent; border-radius:10px; padding:.6rem .75rem; font-size:.9rem; color:var(--color-text); }
+    .fld input:focus { outline:none; border-color:rgba(10,25,47,0.15); }
+    .m-hint { font-size:.72rem; color:var(--color-text-muted); margin:0 0 .5rem; }
+    .m-err { color:var(--color-danger); font-size:.82rem; margin:0; }
+
+    .pr-type-toggle { display:flex; gap:.4rem; }
+    .pr-type-opt { flex:1; font-size:.82rem; padding:.5rem; border-radius:10px; background:var(--color-bg-soft); color:var(--color-text-muted); border:1px solid transparent; }
+    .pr-type-opt.is-active { background:var(--color-blue-deep); color:#fff; }
+
+    .pr-term-row { display:grid; grid-template-columns: 1.3fr 1.3fr 70px 28px; gap:.4rem; align-items:center; margin-bottom:.5rem; }
+    .pr-term-row select, .pr-term-row input { background:var(--color-bg-soft); border:1px solid transparent; border-radius:8px; padding:.4rem .5rem; font-size:.8rem; color:var(--color-text); }
+    .pr-term-row select:focus, .pr-term-row input:focus { outline:none; border-color:rgba(10,25,47,0.15); }
+    .pr-term-del { opacity:.4; padding:2px; }
+    .pr-term-del:hover { opacity:1; color:var(--color-danger); }
+    .pr-add-term { font-size:.78rem; color:var(--color-blue-deep); font-weight:600; }
+</style>
+
+<script define:vars={{ cedulaId }}>
+    let STATE = null; // última respuesta de GET /api/cedulas/[id]
+
+    const money = (n) => Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    async function load() {
+        const res = await fetch(`/api/cedulas/${cedulaId}`);
+        if (!res.ok) { document.getElementById('cName').textContent = 'Cédula no encontrada'; return; }
+        STATE = await res.json();
+        document.title = `${STATE.cedula.nombre} — Cord`;
+        document.getElementById('cName').textContent = STATE.cedula.nombre;
+        document.getElementById('cTipo').textContent = STATE.cedula.periodos.length + ' periodos';
+        renderGrid();
+        buildTermCedulaOptions();
+    }
+
+    function renderGrid() {
+        const skel = document.getElementById('skel');
+        const grid = document.getElementById('grid');
+        skel.setAttribute('hidden', '');
+        grid.removeAttribute('hidden');
+        const periodos = STATE.cedula.periodos;
+        const filas = STATE.cedula.filas;
+
+        let thead = '<thead><tr><th class="pr-row-head">Concepto</th>' + periodos.map((p) => `<th>${escapeHtml(p)}</th>`).join('') + '</tr></thead>';
+        let tbody = '<tbody>' + filas.map((f) => {
+            const vals = STATE.valores[f.id] || [];
+            const cells = periodos.map((_, i) => {
+                if (f.tipo === 'input') {
+                    return `<td class="pr-cell"><input type="number" step="any" inputmode="decimal" data-fila="${f.id}" data-idx="${i}" value="${vals[i] ?? 0}" /></td>`;
+                }
+                return `<td class="pr-cell pr-cell-computed">${money(vals[i] ?? 0)}</td>`;
+            }).join('');
+            return `<tr class="${f.tipo === 'formula' ? 'pr-row-formula' : ''}">
+                <td class="pr-row-head">
+                    <div class="pr-concepto-cell">
+                        <span class="pr-concepto-txt">${escapeHtml(f.concepto)}</span>
+                        <button class="pr-del-fila" data-del-fila="${f.id}" title="Eliminar fila" type="button">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                        </button>
+                    </div>
+                </td>
+                ${cells}
+            </tr>`;
+        }).join('') + '</tbody>';
+
+        grid.innerHTML = thead + tbody;
+
+        grid.querySelectorAll('input[data-fila]').forEach((inp) => {
+            inp.addEventListener('change', async () => {
+                const filaId = inp.dataset.fila;
+                const idx = Number(inp.dataset.idx);
+                const valor = Number(inp.value) || 0;
+                const r = await fetch(`/api/cedulas/${cedulaId}`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'set_valor', fila_id: filaId, periodo_idx: idx, valor }),
+                });
+                if (r.ok) load(); else window.cordToast?.('No se pudo guardar el valor', 'error');
+            });
+        });
+        grid.querySelectorAll('[data-del-fila]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const filaId = btn.dataset.delFila;
+                if (!await window.cordConfirm({ title: 'Eliminar fila', body: 'Se borrarán sus valores. Si otra fórmula la referencia, esa fórmula pasará a calcular 0 para esta fila.', danger: true, confirmText: 'Eliminar' })) return;
+                const r = await fetch(`/api/cedulas/${cedulaId}`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'delete_fila', fila_id: filaId }),
+                });
+                if (r.ok) load(); else window.cordToast?.('No se pudo eliminar la fila', 'error');
+            });
+        });
+    }
+
+    // ── Renombrar ────────────────────────────────────────────────────
+    document.getElementById('btnRename')?.addEventListener('click', async () => {
+        const nuevo = prompt('Nuevo nombre de la cédula', STATE?.cedula.nombre || '');
+        if (nuevo == null) return;
+        const nombre = nuevo.trim();
+        if (!nombre) return;
+        const r = await fetch(`/api/cedulas/${cedulaId}`, {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'rename', nombre }),
+        });
+        if (r.ok) load(); else window.cordToast?.('No se pudo renombrar', 'error');
+    });
+
+    // ── Modal "Agregar fila" ─────────────────────────────────────────
+    const filaModal = document.getElementById('filaModal');
+    const builder = document.getElementById('formulaBuilder');
+    const termsWrap = document.getElementById('terms');
+    let currentTipo = 'input';
+
+    function openFilaModal() {
+        document.getElementById('fmConcepto').value = '';
+        document.getElementById('fmErr').setAttribute('hidden', '');
+        termsWrap.innerHTML = '';
+        setTipo('input');
+        filaModal.showModal();
+    }
+    document.getElementById('btnAddFila')?.addEventListener('click', openFilaModal);
+    document.getElementById('fmClose')?.addEventListener('click', () => filaModal.close());
+    document.getElementById('fmCancel')?.addEventListener('click', () => filaModal.close());
+
+    function setTipo(tipo) {
+        currentTipo = tipo;
+        document.querySelectorAll('.pr-type-opt').forEach((b) => b.classList.toggle('is-active', b.dataset.tipo === tipo));
+        if (tipo === 'formula') { builder.removeAttribute('hidden'); if (!termsWrap.children.length) addTermRow(); }
+        else builder.setAttribute('hidden', '');
+    }
+    document.querySelectorAll('.pr-type-opt').forEach((b) => b.addEventListener('click', () => setTipo(b.dataset.tipo)));
+
+    function cedulaOptionsHtml() {
+        if (!STATE) return '';
+        let opts = `<option value="">${escapeHtml(STATE.cedula.nombre)} (esta cédula)</option>`;
+        for (const o of STATE.otras) opts += `<option value="${o.id}">${escapeHtml(o.nombre)}</option>`;
+        return opts;
+    }
+    function filaOptionsHtml(cedulaSel) {
+        const filas = !cedulaSel ? STATE.cedula.filas : (STATE.otras.find((o) => o.id === cedulaSel)?.filas || []);
+        return filas.map((f) => `<option value="${f.id}">${escapeHtml(f.concepto)}</option>`).join('');
+    }
+    function buildTermCedulaOptions() { /* no-op: se calcula on-demand por fila de término */ }
+
+    function addTermRow() {
+        const row = document.createElement('div');
+        row.className = 'pr-term-row';
+        row.innerHTML = `
+            <select class="term-cedula">${cedulaOptionsHtml()}</select>
+            <select class="term-fila"></select>
+            <input type="number" class="term-coef" value="1" step="any" title="Coeficiente" />
+            <button type="button" class="pr-term-del" title="Quitar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>`;
+        termsWrap.appendChild(row);
+        const cedulaSel = row.querySelector('.term-cedula');
+        const filaSel = row.querySelector('.term-fila');
+        const refresh = () => { filaSel.innerHTML = filaOptionsHtml(cedulaSel.value); };
+        cedulaSel.addEventListener('change', refresh);
+        refresh();
+        row.querySelector('.pr-term-del').addEventListener('click', () => row.remove());
+    }
+    document.getElementById('btnAddTerm')?.addEventListener('click', addTermRow);
+
+    document.getElementById('fmSave')?.addEventListener('click', async () => {
+        const concepto = document.getElementById('fmConcepto').value.trim();
+        const errEl = document.getElementById('fmErr');
+        if (!concepto) { errEl.textContent = 'Escribe un concepto.'; errEl.removeAttribute('hidden'); return; }
+        const body = { action: 'add_fila', concepto, tipo: currentTipo };
+        if (currentTipo === 'formula') {
+            const terms = Array.from(termsWrap.querySelectorAll('.pr-term-row')).map((row) => ({
+                cedula_id: row.querySelector('.term-cedula').value || null,
+                fila_id: row.querySelector('.term-fila').value,
+                coef: Number(row.querySelector('.term-coef').value) || 0,
+            })).filter((t) => t.fila_id && t.coef !== 0);
+            if (!terms.length) { errEl.textContent = 'Agrega al menos un término con coeficiente distinto de 0.'; errEl.removeAttribute('hidden'); return; }
+            body.formula = { terms };
+        }
+        const r = await fetch(`/api/cedulas/${cedulaId}`, {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+        });
+        const data = await r.json();
+        if (!r.ok) { errEl.textContent = data.error || 'No se pudo agregar la fila.'; errEl.removeAttribute('hidden'); return; }
+        filaModal.close();
+        load();
+    });
+
+    load();
+</script>

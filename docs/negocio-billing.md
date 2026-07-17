@@ -91,6 +91,33 @@ Flujo y Arquitectura:
 
 ⚠️ **Pendiente de configuración manual (no es código):** falta el SEGUNDO endpoint de webhook en el dashboard de Stripe ("eventos en cuentas conectadas", misma URL, evento `payment_intent.succeeded`) con su secreto en `STRIPE_CONNECT_WEBHOOK_SECRET` — sin esto el dinero cae al vendedor pero Cord nunca marca la cotización pagada.
 
+### Cobros recurrentes — igualas/retainers vía Stripe Subscriptions (jul 2026)
+
+Feature de dinero real construido sobre Connect Custom para que las agencias/consultoras
+(`casos-de-uso/agencias.astro`) puedan de verdad "cobrar la iguala automáticamente cada mes" —
+antes esa era una promesa de copy sin código detrás. Detalle completo del diseño, los bugs
+encontrados en auditoría y su fix en `docs/historial.md` → "Cobros recurrentes reales para
+igualas/retainers vía Stripe Subscriptions". Resumen rápido:
+
+- `cotizaciones.es_recurrente` (solo con `terminos='contado'`, excluyente con anticipo) +
+  tabla nueva **`cotizacion_suscripciones`** (una por cotización) — el cliente autoriza tarjeta
+  una vez en `/q`, Stripe cobra el total cada mes directo a la cuenta conectada del vendedor.
+- `POST /api/q/[token]/subscription-intent.ts` crea/reutiliza la Subscription con
+  Idempotency-Key determinística (anti condición-de-carrera); `POST
+  /api/cotizaciones/[id]/subscription.ts` cancela (`requirePerm('cobranza')`).
+- El webhook de Stripe ramifica `invoice.paid`/`invoice.payment_failed`/
+  `customer.subscription.*` de cuentas CONECTADAS a handlers de iguala, separados de los
+  handlers de suscripción de PLAN de Cord (son dos sistemas de suscripción distintos sobre el
+  mismo endpoint).
+- ⚠️ Una cotización recurrente **nunca se marca `paid`** (es continua, no tiene evento
+  terminal) — por eso `getCobranza()`, el cron de intereses, el cron de recordatorios y el
+  agente de cobranza IA **excluyen `es_recurrente`** explícitamente (si no, tratan una iguala
+  al corriente como cartera vencida). El ingreso mensual real se ve en `getCobros()` vía una
+  unión aparte sobre los cobros `'cuota'` que el webhook registra en `cotizacion_cobros`.
+- ⚠️ Pendiente de configuración manual: el mismo webhook de "eventos en cuentas conectadas" de
+  arriba necesita suscribirse ADEMÁS a `invoice.paid`, `invoice.payment_failed`,
+  `customer.subscription.updated` y `customer.subscription.deleted`.
+
 ### Cobros por términos de crédito + Anticipo/Saldo + Cuotas (jul 2026)
 
 Evolución del cobro simple (1 cotización = 1 PaymentIntent) a **cobros por "rebanadas"**.

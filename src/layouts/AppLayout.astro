@@ -1518,6 +1518,8 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         const NAV: any[] = [
             ['Inicio', '/app', I.dashboard, 'Resumen y actividad'], ['Cotizaciones', '/app/cotizaciones', I.doc, 'Lista y pipeline'], ['Cobranza', '/app/cobranza', I.card, 'Cuentas por cobrar'],
             ['Finanzas', '/app/cfo', I.chart, 'Proyección de flujo de caja (CFO)'], ['Analítica', '/app/analitica', I.chart, 'Métricas y forecast'],
+            ['Presupuestos', '/app/presupuestos', I.doc, 'Cédulas presupuestales: ventas, producción, compras, cobranza'],
+            ['Equipo (desempeño)', '/app/desempeno', I.users, 'Ranking de cierre y cobro por vendedor'],
             ['Flujo de caja', '/app/tesoreria/flujo', I.chart, 'Flujo predictivo (tesorería)'], ['Cobranza con IA', '/app/tesoreria/cobranza', I.users, 'Agentes de cobranza (tesorería)'],
             ['Clientes', '/app/clientes', I.users, 'Directorio de clientes'], ['Productos', '/app/productos', I.box, 'Catálogo'], ['Ajustes', '/app/ajustes', I.gear, 'Marca, fiscal, PDF…'],
         ].map(([title, href, icon, hint]) => ({ group: 'Ir a', title, href, icon, hint }));

@@ -955,3 +955,137 @@ alter table cotizacion_cobros force row level security;
 alter table cotizaciones add column if not exists anticipo_pct numeric;
 -- Default del negocio: pre-llena el editor en cotizaciones nuevas (Ajustes › Cotizaciones).
 alter table orgs add column if not exists anticipo_default_pct numeric;
+
+-- ── Cobros recurrentes: igualas / retainers mensuales (jul 2026) ─────────────
+-- Una cotización marcada `es_recurrente` (solo términos = contado, mutuamente
+-- excluyente con anticipo) NO se materializa como un cobro único: al autorizarla
+-- el cliente, se crea una Subscription de Stripe sobre la CUENTA CONECTADA del
+-- vendedor (dinero directo a su banco, cero comisión de Cord) que cobra el total
+-- automáticamente cada mes con la tarjeta guardada. Cada suscripción vive en
+-- cotizacion_suscripciones (una por cotización).
+alter table cotizaciones add column if not exists es_recurrente boolean default false;
+
+create table if not exists cotizacion_suscripciones (
+  id            uuid        default gen_random_uuid() primary key,
+  org_id        uuid        not null references orgs(id) on delete cascade,
+  cotizacion_id uuid        not null references cotizaciones(id) on delete cascade,
+  cliente_id    uuid        references clientes(id) on delete set null,
+  -- Todos los objetos de Stripe viven en la cuenta CONECTADA del vendedor.
+  stripe_account_id      text not null,
+  stripe_subscription_id text,
+  stripe_customer_id     text,
+  stripe_price_id        text,
+  stripe_product_id      text,
+  monto        numeric     not null,               -- monto mensual (misma escala que cotizacion_cobros.monto: unidades, no centavos)
+  moneda       text        not null default 'MXN',
+  intervalo    text        not null default 'month',
+  -- 'incomplete' (creada, aún sin autorizar) | 'active' | 'past_due' | 'canceled'
+  estado       text        not null default 'incomplete',
+  current_period_end   timestamptz,
+  cancel_at_period_end boolean not null default false,
+  created_at   timestamptz default now(),
+  unique (cotizacion_id)                            -- una suscripción por cotización
+);
+create index if not exists idx_cotizacion_suscripciones_cot on cotizacion_suscripciones(cotizacion_id);
+create index if not exists idx_cotizacion_suscripciones_org on cotizacion_suscripciones(org_id);
+create index if not exists idx_cotizacion_suscripciones_sub on cotizacion_suscripciones(stripe_subscription_id);
+
+alter table cotizacion_suscripciones enable row level security;
+create policy "rls_cotizacion_suscripciones" on cotizacion_suscripciones
+  using (
+    org_id = nullif(current_setting('app.org_id', true), '')::uuid
+    or cotizacion_id in (
+      select id from cotizaciones
+      where public_token = nullif(current_setting('app.public_token', true), '')
+    )
+  );
+alter table cotizacion_suscripciones force row level security;
+
+-- ── Desempeño por vendedor (jul 2026) ─────────────────────────────────────
+-- Quién creó cada cotización (clerk_user_id) — antes no se guardaba, así que
+-- no había forma de atribuir cierres/cobros a un miembro del equipo. Nullable:
+-- las cotizaciones creadas vía API key (M2M, sin sesión) o de antes de este
+-- campo simplemente no tienen vendedor asignado ("Sin asignar" en el reporte).
+alter table cotizaciones add column if not exists creado_por text;
+create index if not exists idx_cotizaciones_creado_por on cotizaciones(org_id, creado_por) where creado_por is not null;
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Cédulas Presupuestales (budget schedules) — planeación financiera (jul 2026)
+-- ════════════════════════════════════════════════════════════════════════════
+-- Motor de planeación clásico de contabilidad de costos: Presupuesto de Ventas →
+-- Producción → Compras de MP → Cobranza, etc. Es una herramienta de PLANEACIÓN
+-- (no un ERP de inventario en vivo): el "inventario inicial/final deseado" es un
+-- SUPUESTO que el usuario teclea por periodo, no un saldo rastreado por
+-- movimientos reales.
+--
+-- Una cédula = grid de (filas de concepto) × (periodos, ej. Ene/Feb/Mar…). Cada
+-- fila es 'input' (el usuario teclea el valor por periodo) o 'formula' (se calcula
+-- desde otras filas — incluso de OTRA cédula, por referencia de fila_id). Esto da
+-- la cascada Ventas→Producción→Compras sin un grafo genérico, solo refs por id.
+--
+-- org_id se DENORMALIZA en las tablas hijas (cedula_filas / cedula_valores) para
+-- que RLS filtre sin JOIN a la tabla padre — mismo patrón que cotizacion_cobros
+-- y promesas_pago (política directa `org_id = current_setting('app.org_id')`).
+
+-- 1) El documento.
+create table if not exists cedulas (
+  id          uuid        default gen_random_uuid() primary key,
+  org_id      uuid        not null references orgs(id) on delete cascade,
+  tipo        text        not null,             -- ventas | produccion | compras_mp | mano_obra | cif | cobranza | custom
+  nombre      text        not null,
+  periodos    jsonb       not null default '[]'::jsonb, -- ["Ene 2026","Feb 2026",…] (el usuario define cuántos y sus nombres)
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+create index if not exists idx_cedulas_org on cedulas(org_id, updated_at desc);
+
+-- 2) Cada renglón del grid.
+create table if not exists cedula_filas (
+  id          uuid        default gen_random_uuid() primary key,
+  cedula_id   uuid        not null references cedulas(id) on delete cascade,
+  org_id      uuid        not null references orgs(id) on delete cascade, -- denormalizado para RLS sin JOIN
+  concepto    text        not null,
+  tipo        text        not null check (tipo in ('input','formula')),
+  -- null si es input; si es formula, estructura simple validada por la app (no por CHECK):
+  --   {"op":"suma","refs":[{"cedula_id":null,"fila_id":"uuid-A"},{"cedula_id":null,"fila_id":"uuid-B"}]}
+  --   {"op":"resta","refs":[...]}
+  --   {"op":"escala","ref":{"fila_id":"uuid-A"},"factor":2.5}
+  formula     jsonb,
+  orden       int         not null default 0,
+  created_at  timestamptz not null default now()
+);
+create index if not exists idx_cedula_filas_org on cedula_filas(org_id);
+create index if not exists idx_cedula_filas_cedula on cedula_filas(cedula_id, orden);
+
+-- 3) Las celdas reales (SOLO filas tipo 'input'; las 'formula' se calculan
+--    on-the-fly en la app, no se persisten). periodo_idx = índice 0-based dentro
+--    del array `periodos` de la cédula.
+create table if not exists cedula_valores (
+  id          uuid        default gen_random_uuid() primary key,
+  cedula_id   uuid        not null references cedulas(id) on delete cascade,
+  fila_id     uuid        not null references cedula_filas(id) on delete cascade,
+  org_id      uuid        not null references orgs(id) on delete cascade, -- denormalizado para RLS sin JOIN
+  periodo_idx int         not null,             -- índice dentro de cedulas.periodos (0-based)
+  valor       numeric     not null default 0,
+  updated_at  timestamptz not null default now(),
+  unique (fila_id, periodo_idx)
+);
+create index if not exists idx_cedula_valores_org on cedula_valores(org_id);
+create index if not exists idx_cedula_valores_cedula on cedula_valores(cedula_id);
+
+-- RLS — política directa por org_id (mismo patrón que cotizacion_cobros/promesas_pago).
+-- Sin dual public_token: las cédulas son herramienta interna (no hay vista pública /q).
+alter table cedulas        enable row level security;
+alter table cedula_filas   enable row level security;
+alter table cedula_valores enable row level security;
+
+create policy "rls_cedulas" on cedulas
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+create policy "rls_cedula_filas" on cedula_filas
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+create policy "rls_cedula_valores" on cedula_valores
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+
+alter table cedulas        force row level security;
+alter table cedula_filas   force row level security;
+alter table cedula_valores force row level security;

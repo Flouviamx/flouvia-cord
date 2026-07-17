@@ -34,7 +34,7 @@ identidad sigue siendo Clerk (userId), solo la membresía/permiso es nuestra.
 - `orgs` — el negocio (nombre, logo, datos fiscales en `fiscal_metadata`, `country_code`, `quote_prefix`, plan, Stripe IDs, `clerk_org_id`). **`sandbox_of uuid`** (jul 2026, índice único parcial): si no es null, esta fila ES la org SANDBOX espejo de otra — ver "Entorno de prueba REAL tipo Stripe" en `historial.md`. `getActiveOrgId()` resuelve la sandbox del padre cuando la cookie `cord_test_mode` está activa (`resolveSandboxOrgId()` en `db.ts`, find-or-create idempotente).
 - `productos` — catálogo de cada org
 - `clientes` — a quién se cotiza (con `terminos_default` y `limite_credito`)
-- `cotizaciones` — status `draft|sent|viewed|approved|rejected|expired|paid|invoiced` + `public_token` + `base_currency` y `fiscal_currency` para coberturas FX.
+- `cotizaciones` — status `draft|sent|viewed|approved|rejected|expired|paid|invoiced` + `public_token` + `base_currency` y `fiscal_currency` para coberturas FX. `creado_por` (jul 2026, nullable) = clerk_user_id de quien la creó/duplicó — alimenta `/app/desempeno`.
 - `cotizacion_items` — líneas (permite línea libre sin producto; `precio_negociado` opcional)
 - `eventos` — timeline + "tu cliente vio la cotización" (**feature estrella**)
 - `documentos_fiscales` — registro global de emisiones fiscales por país (reemplaza a la tabla legado `facturas_cfdi`)
@@ -46,6 +46,7 @@ identidad sigue siendo Clerk (userId), solo la membresía/permiso es nuestra.
 - `intereses_moratorios` — cargos mensuales de interés moratorio por cotización (cron día 1; idempotente por cotizacion_id+periodo)
 - `promesas_pago` — promesa de pago del cliente para una fecha (cobranza; seguimiento manual, no automatiza). `productos.precios_volumen jsonb` = matriz de precios por volumen `[{min,precio}]`
 - `cotizacion_cobros` (jul 2026) — cobros por "rebanadas" de una cotización (`tipo`: total|anticipo|saldo|cuota), cada uno con su propio PaymentIntent de Stripe. RLS por `org_id` O `public_token` + FORCE. Columnas nuevas relacionadas: `cotizaciones.anticipo_pct` (% de anticipo, null = sin anticipo) y `orgs.anticipo_default_pct` (default del negocio). Ver "Cobros por términos de crédito + Anticipo/Saldo + Cuotas" en `negocio-billing.md`. ⚠️ Fechas `date` de la BD se comparan SIEMPRE con `venceDia()` (`src/lib/cobros.ts`), nunca `String(v).slice(0,10)` (Neon devuelve DATE como objeto Date).
+- `cotizacion_suscripciones` (jul 2026) — una fila por cotización marcada `cotizaciones.es_recurrente` (iguala/retainer mensual). Guarda `stripe_subscription_id/customer_id/price_id/product_id` (todos en la cuenta CONECTADA del vendedor, no en la de plataforma), `estado` (incomplete|active|past_due|canceled), `current_period_end`. RLS por `org_id` O `public_token` + FORCE. La cotización recurrente **nunca** llega a `status='paid'` — su ingreso mensual se registra como fila `'cuota'` en `cotizacion_cobros` y se refleja aparte en `getCobros()`. Ver "Cobros recurrentes — igualas/retainers vía Stripe Subscriptions" en `negocio-billing.md` e "Historial" para el detalle completo (incluye 2 bugs de auditoría ya corregidos: igualas tratadas como cartera vencida, y condición de carrera al crear la Subscription).
 
 Patrón RLS: `org_id = current_setting('app.org_id', TRUE)::uuid` — activo a nivel de
 base de datos (jun 2026). El backend usa `withOrgTx(orgId, ...queries)` en `db.ts`
@@ -98,6 +99,11 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
                    gráfica cotizado vs cerrado por mes, embudo de conversión, margen
                    cedido (lista vs negociado), top clientes y top productos. Charts en
                    CSS puro; datos de getAnalytics() en queries.ts.
+/app/desempeno   → desempeño del equipo (jul 2026, 3ra pestaña junto a Finanzas/Analítica):
+                   ranking por vendedor (cotizaciones creadas/enviadas/cerradas, tasa de
+                   cierre, monto cerrado, cobrado, ticket promedio, días a cierre) vía
+                   getDesempeno() en queries.ts. Atribución por cotizaciones.creado_por
+                   (clerk_user_id); gateado por el permiso 'analitica'.
 /app/cobranza    → cuentas por cobrar (jun 2026): cartera total, vencido, aging por
                    antigüedad, exposición por cliente (saldo vs límite) y tabla con
                    "marcar cobrada" + recordatorio por WhatsApp. getCobranza() en
@@ -109,7 +115,10 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
                            DUPLICAR → POST /api/cotizaciones/[id]/duplicate,
                            ENVIAR POR WHATSAPP → wa.me con mensaje + link pre-armado)
                            via PATCH/DELETE /api/cotizaciones/[id]. (paid acepta desde
-                           'approved' o 'invoiced')
+                           'approved' o 'invoiced'). Presencia ("viendo ahora") + aviso de
+                           mensajes nuevos EN VIVO (jul 2026, SSE) via GET
+                           /api/cotizaciones/[id]/stream — reemplazó el polling de 8s a
+                           /presence; ver "API Pública" abajo.
 /app/cotizaciones/[id]/imprimir → PDF imprimible (window.print) personalizado con
                            la marca de la org: PLANTILLA (clasico|minimal|detallado vía
                            data-template en .sheet), LOGO real (ORG.logoUrl) o inicial,
@@ -138,7 +147,8 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
 /q/[token]       → vista PÚBLICA — aprobar/rechazar REALES via POST /api/q/[token]
                    (token = secreto, sin auth); muestra estado si ya se decidió;
                    "Descargar PDF" = window.print con @media print; color de marca
-                   de la org. Token demo: /q/demo
+                   de la org. Token demo: /q/demo. Chat en VIVO (jul 2026, SSE) via
+                   GET /api/q/[token]/stream — ver "API Pública" abajo.
 /desarrolladores/[slug] → páginas de desarrolladores (jun 2026, prerender, mismo
                    sistema que /producto/*): api (terminal curl + JSON response) y
                    mcp (chat UI con tool call). Contenido en src/lib/desarrolladores.ts.
@@ -146,6 +156,15 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
 
 # API Pública (REST + MCP)
 /api/notificaciones  → GET feed de actividad reciente (reusa tabla eventos; último ts para punto rojo)
+/api/q/[token]/stream        → SSE público (jul 2026, sin auth — token = secreto). Empuja
+                   respuestas del vendedor (event:message) y cambios de estado
+                   (event:status) al chat de /q/[token] en vivo, sin recargar. Ver
+                   "Tiempo real de verdad vía SSE" en historial.md.
+/api/cotizaciones/[id]/stream → SSE con sesión (jul 2026). Empuja presencia
+                   (event:presence {online,convCount}) y mensajes nuevos del cliente
+                   (event:message) al detalle del vendedor — reemplaza el polling de 8s
+                   a /api/cotizaciones/[id]/presence (endpoint que sigue vivo como
+                   fallback si el navegador no abre SSE).
 /api/v1/me           → whoami (scope any)
 /api/v1/cotizaciones → GET list (filtros status/limit/offset) + POST crear
 /api/v1/cotizaciones/[id] → GET detalle (items + eventos)

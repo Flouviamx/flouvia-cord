@@ -4,16 +4,20 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 
 const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
 
-function SuccessView({ token, color }: { token: string; color?: string }) {
+function SuccessView({ token, color, subscription }: { token: string; color?: string; subscription?: boolean }) {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '0.7rem', padding: '1.6rem 0 0.6rem' }}>
             <svg viewBox="0 0 52 52" width="58" height="58" aria-hidden="true">
                 <circle cx="26" cy="26" r="23" fill="none" stroke={color || '#0a192f'} strokeWidth="2" />
                 <polyline points="14,27 22,35 38,18" fill="none" stroke={color || '#0a192f'} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <strong style={{ fontSize: '1.02rem', fontWeight: 600, color: '#050505', letterSpacing: '-0.01em' }}>Pago recibido</strong>
+            <strong style={{ fontSize: '1.02rem', fontWeight: 600, color: '#050505', letterSpacing: '-0.01em' }}>
+                {subscription ? 'Iguala activada' : 'Pago recibido'}
+            </strong>
             <p style={{ fontSize: '0.84rem', color: '#6b7686', lineHeight: 1.55, margin: 0, maxWidth: '36ch' }}>
-                Tu pago se procesó correctamente. La confirmación puede tardar unos segundos en reflejarse en la cotización.
+                {subscription
+                    ? 'Tu primer cobro se procesó y el cargo se repetirá automáticamente cada mes con esta tarjeta. Puedes cancelar cuando quieras.'
+                    : 'Tu pago se procesó correctamente. La confirmación puede tardar unos segundos en reflejarse en la cotización.'}
             </p>
             <a href={`/q/${token}?pagado=1`} style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0a192f', textDecoration: 'none', marginTop: '0.4rem' }}>
                 Volver a la cotización →
@@ -22,7 +26,7 @@ function SuccessView({ token, color }: { token: string; color?: string }) {
     );
 }
 
-function CheckoutForm({ token, color, amountLabel, onSuccess }: { token: string; color?: string; amountLabel?: string; onSuccess: () => void }) {
+function CheckoutForm({ token, color, amountLabel, subscription, onSuccess }: { token: string; color?: string; amountLabel?: string; subscription?: boolean; onSuccess: () => void }) {
     const stripe = useStripe();
     const elements = useElements();
     const [ready, setReady] = useState(false);
@@ -88,13 +92,13 @@ function CheckoutForm({ token, color, amountLabel, onSuccess }: { token: string;
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
             >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                {loading ? 'Procesando…' : amountLabel ? `Pagar ${amountLabel}` : 'Pagar ahora'}
+                {loading ? 'Procesando…' : subscription ? (amountLabel ? `Autorizar ${amountLabel} / mes` : 'Autorizar cobro mensual') : amountLabel ? `Pagar ${amountLabel}` : 'Pagar ahora'}
             </button>
         </form>
     );
 }
 
-export default function PaymentIsland({ token, color, amountLabel, cobroId }: { token: string; color?: string; amountLabel?: string; cobroId?: string }) {
+export default function PaymentIsland({ token, color, amountLabel, cobroId, subscription }: { token: string; color?: string; amountLabel?: string; cobroId?: string; subscription?: boolean }) {
     const [clientSecret, setClientSecret] = useState<string | null>(null);
     const [stripePromise, setStripePromise] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
@@ -108,7 +112,8 @@ export default function PaymentIsland({ token, color, amountLabel, cobroId }: { 
             setLoading(true);
             setError(null);
             try {
-                const res = await fetch(`/api/q/${token}/payment-intent`, {
+                const endpoint = subscription ? 'subscription-intent' : 'payment-intent';
+                const res = await fetch(`/api/q/${token}/${endpoint}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(cobroId ? { cobro_id: cobroId } : {}),
@@ -116,7 +121,7 @@ export default function PaymentIsland({ token, color, amountLabel, cobroId }: { 
                 const data = await res.json();
                 if (!alive) return;
 
-                if (data.alreadyPaid) { setPaid(true); return; }
+                if (data.alreadyPaid || data.alreadyActive) { setPaid(true); return; }
                 if (!res.ok) throw new Error(data.error || 'Error al iniciar el pago');
 
                 setClientSecret(data.clientSecret);
@@ -131,7 +136,7 @@ export default function PaymentIsland({ token, color, amountLabel, cobroId }: { 
         return () => { alive = false; };
     }, [token, retry]);
 
-    if (paid) return <SuccessView token={token} color={color} />;
+    if (paid) return <SuccessView token={token} color={color} subscription={subscription} />;
 
     if (loading) {
         return (
@@ -220,7 +225,7 @@ export default function PaymentIsland({ token, color, amountLabel, cobroId }: { 
     return (
         <div>
             <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
-                <CheckoutForm token={token} color={color} amountLabel={amountLabel} onSuccess={() => setPaid(true)} />
+                <CheckoutForm token={token} color={color} amountLabel={amountLabel} subscription={subscription} onSuccess={() => setPaid(true)} />
             </Elements>
         </div>
     );

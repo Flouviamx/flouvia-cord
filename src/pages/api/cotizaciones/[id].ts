@@ -128,19 +128,24 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
         if (body.action === 'update_draft' || (body.action === 'send' && actual === 'draft')) {
             const vigDias = Number(body.vigencia_dias) || 30;
+            // Iguala recurrente: fuerza términos de contado y anula el anticipo
+            // (modelos de pago único excluyentes).
+            const esRecurrente = !!body.es_recurrente;
+            const terminos = esRecurrente ? 'contado' : (body.terminos || 'contado');
             // Anticipo: % válido 1–99; cualquier otro valor = sin anticipo.
             const antRaw = Number(body.anticipo_pct);
-            const anticipoPct = Number.isFinite(antRaw) && antRaw >= 1 && antRaw <= 99 ? Math.round(antRaw * 100) / 100 : null;
+            const anticipoPct = esRecurrente ? null
+                : (Number.isFinite(antRaw) && antRaw >= 1 && antRaw <= 99 ? Math.round(antRaw * 100) / 100 : null);
             await sql`update cotizaciones set
                         cliente_id = ${body.cliente_id || null},
-                        terminos = ${body.terminos || 'contado'},
+                        terminos = ${terminos},
                         vigencia = (current_date + (${vigDias} * interval '1 day'))::date,
                         notas = ${body.notas || null},
                         base_currency = ${body.base_currency || 'MXN'},
                         fiscal_currency = ${body.fiscal_currency || 'MXN'},
                         subtotal = ${realSubtotal}, iva = ${iva}, total = ${total},
                         version = ${nextVersion}, iva_incluido = ${iva_incluido},
-                        anticipo_pct = ${anticipoPct}
+                        anticipo_pct = ${anticipoPct}, es_recurrente = ${esRecurrente}
                       where id = ${id}`;
         } else {
             await sql`update cotizaciones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total}, version = ${nextVersion}, iva_incluido = ${iva_incluido} where id = ${id}`;

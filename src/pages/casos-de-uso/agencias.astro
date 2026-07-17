@@ -23,7 +23,7 @@ const metaDesc = "Envía propuestas con firma digital, cobra tus igualas (retain
 const FAQS = [
     {
         q: '¿Cord cobra mis igualas (retainers) de forma automática cada mes?',
-        a: 'Cord no hace cargos recurrentes automáticos a la tarjeta del cliente. Lo que sí hace: te avisa cuándo se acerca el vencimiento, manda recordatorios automáticos por correo y WhatsApp, y genera un link de pago (tarjeta o SPEI) que tu cliente usa cada mes — con CFDI 4.0 timbrado al aprobarse el cobro.',
+        a: 'Sí. Marca la cotización como "iguala mensual" y, cuando tu cliente la aprueba, autoriza su tarjeta una sola vez desde el mismo link; a partir de ahí Cord le cobra ese monto automáticamente cada mes —directo a tu cuenta bancaria vía Stripe Connect, sin comisión de Cord— hasta que tú o el cliente cancelen. Requiere tener conectados los cobros con tarjeta. Para pagos únicos o a crédito, Cord también genera links de pago (tarjeta o SPEI) con recordatorios automáticos. El CFDI 4.0 lo timbras desde Cord cuando lo necesitas.',
     },
     {
         q: '¿La firma digital de la propuesta tiene validez legal?',
@@ -198,7 +198,7 @@ const testimonialItems = [
                             </div>
                             <div class="slf-text">
                                 <h3>Retainers Mensuales Automáticos</h3>
-                                <p>Cobra tus igualas de diseño o marketing sin perseguir clientes. Cord realiza el cargo automático cada mes y envía la factura CFDI 4.0 al instante.</p>
+                                <p>Cobra tus igualas de diseño o marketing sin perseguir clientes. Tu cliente autoriza su tarjeta una vez al aprobar y Cord le cobra ese monto automáticamente cada mes, directo a tu cuenta. Timbra el CFDI 4.0 desde Cord cuando lo necesites.</p>
                             </div>
                         </div>
 
@@ -445,7 +445,7 @@ const testimonialItems = [
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5v14a2 2 0 0 0 2 2h16v-5" fill="currentColor" fill-opacity="0.12"></path><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>
                             </div>
                             <h4>Seguimiento en tiempo real</h4>
-                            <p>Cord te notifica en cuanto tu cliente abre la propuesta. Marca manualmente cada iguala como cobrada y el sistema actualiza el estado en el historial de la cotización.</p>
+                            <p>Cord te notifica en cuanto tu cliente abre la propuesta. Cada cobro mensual de la iguala se registra solo en el historial de la cotización, y ves el estado de la suscripción (activa, próximo cargo) sin intervenir.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">

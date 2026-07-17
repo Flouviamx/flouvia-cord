@@ -382,6 +382,7 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [],
         version: num(c.version) || 1,
         iva_incluido: Boolean(c.iva_incluido),
         anticipoPct: c.anticipo_pct != null ? num(c.anticipo_pct) : null,
+        esRecurrente: Boolean(c.es_recurrente),
         items: items.map((it): MockItem => ({
             id: it.id,
             producto_id: it.producto_id,
@@ -487,10 +488,28 @@ export async function getDocumentosFiscales(cotizacionId: string) {
     }));
 }
 
+// Suscripción recurrente (iguala) de una cotización, para el detalle del vendedor.
+export async function getSuscripcionByCotizacion(cotizacionId: string) {
+    const orgId = await getActiveOrgId();
+    const [rows] = await withOrgTx(orgId,
+        sql`select estado, monto, current_period_end, cancel_at_period_end, stripe_subscription_id
+            from cotizacion_suscripciones
+            where cotizacion_id = ${cotizacionId} and org_id = ${orgId} limit 1`);
+    const row = rows?.[0];
+    if (!row) return null;
+    return {
+        estado: row.estado as string,
+        monto: num(row.monto),
+        currentPeriodEnd: row.current_period_end ? fmtDate(row.current_period_end as string) : '',
+        cancelAtPeriodEnd: !!row.cancel_at_period_end,
+        activa: ['active', 'trialing', 'past_due'].includes(row.estado as string),
+    };
+}
+
 // Link público — usa withPublicToken para satisfacer la política RLS de cotizaciones/items.
 // Tres queries en un solo batch con el token como contexto de RLS.
 export async function getCotizacionByToken(token: string) {
-    const [rows, items, conv, comentarios, firmas, cobrosRows] = await withPublicToken(token,
+    const [rows, items, conv, comentarios, firmas, cobrosRows, susRows] = await withPublicToken(token,
         sql`select c.*, cl.empresa, coalesce(c.terminos, cl.terminos_default) as terminos,
                o.nombre as org_nombre, o.rfc as org_rfc, o.color_marca as org_color,
                o.logo_url as org_logo_url,
@@ -531,6 +550,10 @@ export async function getCotizacionByToken(token: string) {
             join cotizaciones c on c.id = co.cotizacion_id
             where c.public_token = ${token}
             order by co.vence asc nulls last, co.created_at asc`,
+        sql`select s.estado, s.monto, s.current_period_end
+            from cotizacion_suscripciones s
+            join cotizaciones c on c.id = s.cotizacion_id
+            where c.public_token = ${token} limit 1`,
     );
     if (!rows.length) return null;
     
@@ -575,7 +598,10 @@ export async function getCotizacionByToken(token: string) {
     // Cobros parciales (anticipo/saldo/cuotas). Si la cotización tiene filas en
     // cotizacion_cobros, el link público muestra el desglose y el botón de pago
     // apunta al siguiente cobro pendiente (no al total completo).
-    if (cobrosRows.length) {
+    // ⚠️ En igualas recurrentes, cotizacion_cobros guarda el HISTORIAL de cobros
+    // mensuales (para getCobros/"Mi dinero") — no es un plan de pago que el cliente
+    // deba ver, así que se OMITE del link público (la iguala tiene su propia UI).
+    if (cobrosRows.length && !rows[0].es_recurrente) {
         // ⚠️ Neon devuelve DATE como objeto Date — comparar SIEMPRE vía venceDia
         // (día 'YYYY-MM-DD'), nunca String(v).slice ni getTime contra medianoche.
         const hoyDia = venceDia(new Date());
@@ -589,6 +615,15 @@ export async function getCotizacionByToken(token: string) {
             venceEnFuturo: co.vence ? venceDia(co.vence) > hoyDia : false,
             pagado: co.status === 'pagado',
         }));
+    }
+
+    // Iguala recurrente: estado de la suscripción de Stripe (para el copy del link).
+    if (susRows.length) {
+        (quote as any).suscripcion = {
+            estado: susRows[0].estado as string,
+            monto: num(susRows[0].monto),
+            currentPeriodEnd: susRows[0].current_period_end ? fmtDate(susRows[0].current_period_end) : '',
+        };
     }
 
     if (firmas.length > 0) {
@@ -766,12 +801,16 @@ export async function getCobranza() {
             join (select cotizacion_id, max(created_at) as paid_at from eventos where org_id = ${orgId} and tipo = 'paid' group by cotizacion_id) e
               on e.cotizacion_id = c.id
             where c.org_id = ${orgId} and c.status = 'paid'`,
+        // Las igualas recurrentes (es_recurrente) se EXCLUYEN: su status se queda
+        // en 'approved' para siempre pero se cobran solas cada mes vía Stripe
+        // Subscription — no son cartera vencida ni acumulan aging.
         sql`select c.id, c.folio, c.total, c.terminos, c.status, c.public_token,
                    coalesce(c.approved_at, c.created_at) as base_date,
                    cl.empresa, cl.limite_credito, cl.telefono
             from cotizaciones c
             left join clientes cl on cl.id = c.cliente_id
             where c.org_id = ${orgId} and c.status in ('approved','invoiced')
+              and c.es_recurrente is not true
             order by coalesce(c.approved_at, c.created_at) asc`,
         // Promesas de pago vigentes (pendientes) — la más reciente por cotización.
         sql`select cotizacion_id, id, fecha_promesa, monto, nota
@@ -1161,22 +1200,170 @@ export async function getCobros() {
         order by coalesce(c.paid_at, c.created_at) desc limit 15
     `;
 
-    return {
-        totalCobrado: Number(c?.total_cobrado || 0),
-        methods: methods.map((m: any) => ({
-            method: m.method as string,
-            monto: Number(m.monto),
-            txs: Number(m.txs),
-        })),
-        monthly: monthly.map((m: any) => ({ ym: m.ym as string, monto: Number(m.monto) })),
-        recent: recent.map((r: any) => ({
-            id: r.id as string,
-            folio: r.folio as string,
+    // Ingreso de IGUALAS recurrentes: cada cobro mensual es una fila 'pagado' en
+    // cotizacion_cobros de una cotización es_recurrente (que NUNCA marca
+    // cotizaciones.paid_at, así que las queries de arriba no lo cuentan). Se suma
+    // aparte y se fusiona — sin doble conteo, porque ambos universos son disjuntos.
+    const recRows = await sql`
+        select co.id, co.monto, coalesce(co.payment_method, 'tarjeta') as payment_method,
+               coalesce(co.paid_at, co.created_at) as paid_at,
+               to_char(date_trunc('month', coalesce(co.paid_at, co.created_at)), 'YYYY-MM') as ym,
+               c.folio, cl.empresa
+        from cotizacion_cobros co
+        join cotizaciones c on c.id = co.cotizacion_id
+        left join clientes cl on cl.id = c.cliente_id
+        where co.org_id = ${orgId} and co.status = 'pagado' and c.es_recurrente is true
+    `;
+
+    const recTotal = recRows.reduce((s: number, r: any) => s + Number(r.monto), 0);
+
+    // Fusiona métodos.
+    const methodMap = new Map<string, { monto: number; txs: number }>();
+    for (const m of methods) methodMap.set(m.method as string, { monto: Number(m.monto), txs: Number(m.txs) });
+    for (const r of recRows) {
+        const key = (r.payment_method as string) || 'otro';
+        const cur = methodMap.get(key) ?? { monto: 0, txs: 0 };
+        cur.monto += Number(r.monto); cur.txs += 1;
+        methodMap.set(key, cur);
+    }
+
+    // Fusiona serie mensual.
+    const monthlyMap = new Map<string, number>();
+    for (const m of monthly) monthlyMap.set(m.ym as string, Number(m.monto));
+    for (const r of recRows) monthlyMap.set(r.ym as string, (monthlyMap.get(r.ym as string) ?? 0) + Number(r.monto));
+
+    // Fusiona recientes (los 15 más nuevos entre one-time e igualas).
+    const recentMerged = [
+        ...recent.map((r: any) => ({
+            id: r.id as string, folio: r.folio as string,
             empresa: (r.empresa as string) || 'Sin cliente',
-            total: Number(r.total),
-            method: r.payment_method as string,
-            paidAt: fmtDate(r.paid_at),
+            total: Number(r.total), method: r.payment_method as string, paidAtRaw: r.paid_at,
         })),
+        ...recRows.map((r: any) => ({
+            id: r.id as string, folio: `${r.folio} · iguala`,
+            empresa: (r.empresa as string) || 'Sin cliente',
+            total: Number(r.monto), method: r.payment_method as string, paidAtRaw: r.paid_at,
+        })),
+    ].sort((a, b) => new Date(b.paidAtRaw as any).getTime() - new Date(a.paidAtRaw as any).getTime()).slice(0, 15);
+
+    return {
+        totalCobrado: Number(c?.total_cobrado || 0) + recTotal,
+        methods: [...methodMap.entries()]
+            .map(([method, v]) => ({ method, monto: v.monto, txs: v.txs }))
+            .sort((a, b) => b.monto - a.monto),
+        monthly: [...monthlyMap.entries()]
+            .map(([ym, monto]) => ({ ym, monto }))
+            .sort((a, b) => a.ym.localeCompare(b.ym)),
+        recent: recentMerged.map((r) => ({
+            id: r.id, folio: r.folio, empresa: r.empresa,
+            total: r.total, method: r.method, paidAt: fmtDate(r.paidAtRaw),
+        })),
+    };
+}
+
+// ── DESEMPEÑO DEL EQUIPO (/app/desempeno) ──────────────────────────────────────
+export interface VendedorDesempeno {
+    clerkUserId: string;
+    nombre: string;
+    inicial: string;
+    rol: string;
+    esYo: boolean;
+    creadas: number;
+    enviadas: number;
+    cerradas: number;
+    tasaCierre: number;
+    cerradoTotal: number;
+    cobradoTotal: number;
+    diasCierre: number;
+    ticketPromedio: number;
+}
+
+export async function getDesempeno() {
+    const orgId = await getActiveOrgId();
+    const me = currentUserId();
+
+    const [members, cierreRows, cobradoRows, recRows, sinCreadorRows] = await withOrgTx(orgId,
+        sql`select clerk_user_id, coalesce(nombre, email, 'Sin nombre') as nombre, rol
+            from org_members where org_id = ${orgId} and estado = 'activo' and clerk_user_id is not null
+            order by case when rol = 'owner' then 0 else 1 end`,
+        // Creadas / enviadas / cerradas + tiempo a cierre, por vendedor.
+        sql`select creado_por,
+                count(*) filter (where status <> 'draft') as creadas,
+                count(*) filter (where status in ('sent','viewed','approved','paid','invoiced')) as enviadas,
+                count(*) filter (where status in ('approved','paid','invoiced')) as cerradas,
+                coalesce(sum(total) filter (where status in ('approved','paid','invoiced')),0) as cerrado_total,
+                coalesce(avg(extract(epoch from (approved_at - created_at))/86400)
+                         filter (where status in ('approved','paid','invoiced') and approved_at is not null),0) as dias_cierre
+            from cotizaciones
+            where org_id = ${orgId} and creado_por is not null
+            group by creado_por`,
+        // Cobrado directo (pago único/anticipo/saldo/cuotas) — misma semántica que getCobros().
+        sql`select creado_por, coalesce(sum(total),0) as cobrado
+            from cotizaciones
+            where org_id = ${orgId} and creado_por is not null and (status = 'paid' or paid_at is not null)
+            group by creado_por`,
+        // Cobrado de igualas recurrentes — nunca marca la cotización 'paid' (ver
+        // getCobros()), así que se suma aparte desde cotizacion_cobros.
+        sql`select c.creado_por, coalesce(sum(co.monto),0) as cobrado
+            from cotizacion_cobros co
+            join cotizaciones c on c.id = co.cotizacion_id
+            where co.org_id = ${orgId} and co.status = 'pagado' and c.es_recurrente is true and c.creado_por is not null
+            group by c.creado_por`,
+        // Cerrado sin vendedor asignado (creado antes de este campo, o vía API key).
+        sql`select coalesce(sum(total) filter (where status in ('approved','paid','invoiced')),0) as sin_creador
+            from cotizaciones where org_id = ${orgId} and creado_por is null and status <> 'draft'`,
+    );
+
+    type Agg = { creadas: number; enviadas: number; cerradas: number; cerradoTotal: number; diasCierre: number; cobradoTotal: number };
+    const aggMap = new Map<string, Agg>();
+    const getAgg = (id: string): Agg => {
+        let a = aggMap.get(id);
+        if (!a) { a = { creadas: 0, enviadas: 0, cerradas: 0, cerradoTotal: 0, diasCierre: 0, cobradoTotal: 0 }; aggMap.set(id, a); }
+        return a;
+    };
+    for (const r of cierreRows) {
+        const a = getAgg(r.creado_por as string);
+        a.creadas = num(r.creadas); a.enviadas = num(r.enviadas); a.cerradas = num(r.cerradas);
+        a.cerradoTotal = num(r.cerrado_total); a.diasCierre = num(r.dias_cierre);
+    }
+    for (const r of cobradoRows) getAgg(r.creado_por as string).cobradoTotal += num(r.cobrado);
+    for (const r of recRows) getAgg(r.creado_por as string).cobradoTotal += num(r.cobrado);
+
+    const seen = new Set<string>();
+    const vendedores: VendedorDesempeno[] = members.map((m) => {
+        const id = m.clerk_user_id as string;
+        seen.add(id);
+        const a = aggMap.get(id) ?? { creadas: 0, enviadas: 0, cerradas: 0, cerradoTotal: 0, diasCierre: 0, cobradoTotal: 0 };
+        const nombre = m.nombre as string;
+        return {
+            clerkUserId: id, nombre, inicial: initials(nombre), rol: m.rol as string, esYo: !!me && id === me,
+            creadas: a.creadas, enviadas: a.enviadas, cerradas: a.cerradas,
+            tasaCierre: a.enviadas ? Math.round((a.cerradas / a.enviadas) * 100) : 0,
+            cerradoTotal: a.cerradoTotal, cobradoTotal: a.cobradoTotal,
+            diasCierre: Math.round(a.diasCierre * 10) / 10,
+            ticketPromedio: a.cerradas ? a.cerradoTotal / a.cerradas : 0,
+        };
+    }).sort((a, b) => b.cerradoTotal - a.cerradoTotal);
+
+    // Cotizaciones de miembros que ya no están activos (revocados/eliminados) o de
+    // antes de existir este campo (creado_por null) — se agrupan aparte para no
+    // perder el dinero de la vista general sin atribuírselo a alguien equivocado.
+    let sinAsignar: Agg = { creadas: 0, enviadas: 0, cerradas: 0, cerradoTotal: 0, diasCierre: 0, cobradoTotal: 0 };
+    for (const [id, a] of aggMap) {
+        if (seen.has(id)) continue;
+        sinAsignar.creadas += a.creadas; sinAsignar.enviadas += a.enviadas; sinAsignar.cerradas += a.cerradas;
+        sinAsignar.cerradoTotal += a.cerradoTotal; sinAsignar.cobradoTotal += a.cobradoTotal;
+    }
+    sinAsignar.cerradoTotal += num(sinCreadorRows[0]?.sin_creador);
+
+    return {
+        vendedores,
+        sinAsignar: {
+            cerradoTotal: sinAsignar.cerradoTotal, cobradoTotal: sinAsignar.cobradoTotal,
+            n: sinAsignar.creadas,
+        },
+        totalCerrado: vendedores.reduce((s, v) => s + v.cerradoTotal, 0) + sinAsignar.cerradoTotal,
+        hayDatos: vendedores.some((v) => v.creadas > 0) || sinAsignar.creadas > 0,
     };
 }
 
@@ -1252,4 +1439,166 @@ export async function getSidebarBadges() {
             porAprobar: Number(a?.n ?? 0),
         };
     } catch { return zero; }
+}
+
+// ── CÉDULAS PRESUPUESTALES (planeación financiera) ──────────────────────────────
+// Tablas multi-tenant con FORCE RLS: cedulas / cedula_filas / cedula_valores.
+// Toda query pasa por withOrgTx(orgId, ...) — jamás sql directo (fail-closed).
+// Las tres hijas denormalizan org_id, así que las políticas RLS filtran sin JOIN.
+
+export interface CedulaListItem {
+    id: string;
+    tipo: string;
+    nombre: string;
+    periodos: number;
+    updatedAt: string;
+}
+
+export interface CedulaFilaRow {
+    id: string;
+    concepto: string;
+    tipo: 'input' | 'formula';
+    formula: unknown | null;
+    orden: number;
+}
+
+export interface CedulaFull {
+    id: string;
+    tipo: string;
+    nombre: string;
+    periodos: string[];
+    filas: CedulaFilaRow[];
+    // valores[fila_id][periodo_idx] = valor (solo filas 'input').
+    valores: Record<string, Record<number, number>>;
+    createdAt: string;
+    updatedAt: string;
+}
+
+// Lista todas las cédulas de la org (para el índice).
+export async function getCedulas(orgId: string): Promise<CedulaListItem[]> {
+    const [rows] = await withOrgTx(orgId, sql`
+        select id, tipo, nombre, jsonb_array_length(periodos) as periodos, updated_at
+        from cedulas where org_id = ${orgId}
+        order by updated_at desc`);
+    return rows.map((r) => ({
+        id: r.id as string,
+        tipo: r.tipo as string,
+        nombre: r.nombre as string,
+        periodos: Number(r.periodos ?? 0),
+        updatedAt: r.updated_at as string,
+    }));
+}
+
+// Una cédula completa: cabecera + filas (ordenadas) + valores agrupados
+// fila_id → periodo_idx → valor. Devuelve null si no existe (o no es de la org).
+export async function getCedula(orgId: string, cedulaId: string): Promise<CedulaFull | null> {
+    const [ced, filas, valores] = await withOrgTx(orgId,
+        sql`select id, tipo, nombre, periodos, created_at, updated_at
+            from cedulas where id = ${cedulaId} and org_id = ${orgId} limit 1`,
+        sql`select id, concepto, tipo, formula, orden
+            from cedula_filas where cedula_id = ${cedulaId} and org_id = ${orgId}
+            order by orden asc, created_at asc`,
+        sql`select fila_id, periodo_idx, valor
+            from cedula_valores where cedula_id = ${cedulaId} and org_id = ${orgId}`,
+    );
+    const c = ced[0];
+    if (!c) return null;
+
+    const valMap: Record<string, Record<number, number>> = {};
+    for (const v of valores) {
+        const fid = v.fila_id as string;
+        (valMap[fid] ??= {})[Number(v.periodo_idx)] = Number(v.valor);
+    }
+
+    return {
+        id: c.id as string,
+        tipo: c.tipo as string,
+        nombre: c.nombre as string,
+        periodos: (c.periodos as string[]) ?? [],
+        filas: filas.map((f) => ({
+            id: f.id as string,
+            concepto: f.concepto as string,
+            tipo: f.tipo as 'input' | 'formula',
+            formula: (f.formula as unknown) ?? null,
+            orden: Number(f.orden ?? 0),
+        })),
+        valores: valMap,
+        createdAt: c.created_at as string,
+        updatedAt: c.updated_at as string,
+    };
+}
+
+// Crea una cédula VACÍA (sin filas — la capa de API agrega filas o siembra una
+// plantilla aparte). Devuelve el id nuevo.
+export async function createCedula(
+    orgId: string,
+    data: { tipo: string; nombre: string; periodos: string[] },
+): Promise<string> {
+    const [[row]] = await withOrgTx(orgId, sql`
+        insert into cedulas (org_id, tipo, nombre, periodos)
+        values (${orgId}, ${data.tipo}, ${data.nombre}, ${JSON.stringify(data.periodos ?? [])}::jsonb)
+        returning id`);
+    return row.id as string;
+}
+
+// Agrega una fila a una cédula. `formula` = null para filas 'input'. Devuelve el
+// id de la fila. Valida (vía la cláusula where del select de guarda) que la
+// cédula pertenezca a la org antes de insertar — RLS también lo garantiza.
+export async function addCedulaFila(
+    orgId: string,
+    cedulaId: string,
+    data: { concepto: string; tipo: 'input' | 'formula'; formula?: unknown | null; orden?: number },
+): Promise<string> {
+    const [[row]] = await withOrgTx(orgId,
+        sql`insert into cedula_filas (cedula_id, org_id, concepto, tipo, formula, orden)
+            select ${cedulaId}, ${orgId}, ${data.concepto}, ${data.tipo},
+                   ${data.formula == null ? null : JSON.stringify(data.formula)}::jsonb,
+                   ${data.orden ?? 0}
+            where exists (select 1 from cedulas where id = ${cedulaId} and org_id = ${orgId})
+            returning id`,
+        sql`update cedulas set updated_at = now() where id = ${cedulaId} and org_id = ${orgId}`,
+    );
+    if (!row) throw new Error('Cédula no encontrada');
+    return row.id as string;
+}
+
+// Inserta o actualiza una celda (solo para filas 'input'). Upsert por el unique
+// (fila_id, periodo_idx). El org_id denormalizado se escribe en el insert.
+export async function upsertCedulaValor(
+    orgId: string,
+    filaId: string,
+    cedulaId: string,
+    periodoIdx: number,
+    valor: number,
+): Promise<void> {
+    await withOrgTx(orgId,
+        sql`insert into cedula_valores (cedula_id, fila_id, org_id, periodo_idx, valor)
+            values (${cedulaId}, ${filaId}, ${orgId}, ${periodoIdx}, ${valor})
+            on conflict (fila_id, periodo_idx)
+            do update set valor = excluded.valor, updated_at = now()`,
+        sql`update cedulas set updated_at = now() where id = ${cedulaId} and org_id = ${orgId}`,
+    );
+}
+
+// Borra la cédula completa (cascade limpia filas y valores). RLS + el where por
+// org_id garantizan que no se borre una cédula ajena.
+export async function deleteCedula(orgId: string, cedulaId: string): Promise<void> {
+    await withOrgTx(orgId, sql`
+        delete from cedulas where id = ${cedulaId} and org_id = ${orgId}`);
+}
+
+// Renombra una cédula.
+export async function renameCedula(orgId: string, cedulaId: string, nombre: string): Promise<void> {
+    await withOrgTx(orgId, sql`
+        update cedulas set nombre = ${nombre}, updated_at = now()
+        where id = ${cedulaId} and org_id = ${orgId}`);
+}
+
+// Borra una fila (cascade limpia sus valores). Cualquier fórmula de otra fila
+// que la referencie simplemente resolverá a 0 (defensivo, no falla).
+export async function deleteCedulaFila(orgId: string, cedulaId: string, filaId: string): Promise<void> {
+    await withOrgTx(orgId,
+        sql`delete from cedula_filas where id = ${filaId} and cedula_id = ${cedulaId} and org_id = ${orgId}`,
+        sql`update cedulas set updated_at = now() where id = ${cedulaId} and org_id = ${orgId}`,
+    );
 }

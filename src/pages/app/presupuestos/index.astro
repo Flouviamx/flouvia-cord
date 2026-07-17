@@ -1,0 +1,229 @@
+---
+// Presupuestos — índice de Cédulas Presupuestales (planeación financiera).
+// Herramienta de PLANEACIÓN: cascada clásica Ventas → Producción → Compras de
+// MP → Cobranza. El inventario inicial/final es un SUPUESTO tecleado, no un
+// saldo rastreado en vivo — ver docs/historial.md si se documenta ahí.
+import AppLayout from '../../../layouts/AppLayout.astro';
+import { getMyMembership } from '../../../lib/queries';
+import { memberCan } from '../../../lib/permissions';
+
+const ME = await getMyMembership();
+const hasAccess = memberCan(ME, 'analitica');
+
+const TIPO_LABEL: Record<string, string> = {
+    ventas: 'Ventas', produccion: 'Producción', compras_mp: 'Compras de MP',
+    mano_obra: 'Mano de obra y CIF', cif: 'CIF', cobranza: 'Cobranza', custom: 'Personalizada',
+};
+---
+
+<AppLayout title="Presupuestos — Cord" page="presupuestos" heading="Presupuestos">
+    <div slot="topbar-actions">
+        {hasAccess && <button class="btn-primary" id="btnNueva">+ Nueva cédula</button>}
+    </div>
+    <div slot="page-sub">Cédulas presupuestales — ventas, producción, compras de materia prima y cobranza.</div>
+
+    {!hasAccess && (
+        <div class="pr-denied">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <h3>Sin acceso</h3>
+            <p>Tu rol actual no tiene permiso para ver presupuestos. Contacta al administrador de tu organización.</p>
+        </div>
+    )}
+
+    {hasAccess && (
+        <section id="listWrap">
+            <div class="skeleton-wrap" id="skel">
+                <div class="skeleton-line" style="width:100%;height:52px;margin-bottom:8px"></div>
+                <div class="skeleton-line" style="width:100%;height:52px;margin-bottom:8px"></div>
+                <div class="skeleton-line" style="width:100%;height:52px"></div>
+            </div>
+            <div id="emptyState" class="empty" hidden>
+                <h2>Aún no tienes cédulas presupuestales</h2>
+                <p>Arranca con una plantilla — Ventas, Producción, Compras de MP o Cobranza — y personalízala como necesites.</p>
+                <button class="empty-cta" id="emptyCta">+ Crear tu primera cédula</button>
+            </div>
+            <div id="rows" class="pr-list" hidden></div>
+        </section>
+    )}
+
+    {hasAccess && <dialog class="modal" id="newModal">
+        <form method="dialog" class="modal-card">
+            <header>
+                <h3>Nueva cédula presupuestal</h3>
+                <button type="button" class="mclose" id="mClose" aria-label="Cerrar">&times;</button>
+            </header>
+            <div class="modal-body">
+                <label class="fld">
+                    <span>Tipo</span>
+                    <select id="fTipo">
+                        <option value="ventas">Presupuesto de Ventas</option>
+                        <option value="produccion">Presupuesto de Producción</option>
+                        <option value="compras_mp">Presupuesto de Compras de Materia Prima</option>
+                        <option value="mano_obra">Presupuesto de Mano de Obra y CIF</option>
+                        <option value="cobranza">Presupuesto de Cobranza</option>
+                        <option value="custom">Cédula personalizada (en blanco)</option>
+                    </select>
+                    <span class="m-hint" id="tipoHint">Producción = Ventas + Inventario final deseado − Inventario inicial, calculado automáticamente.</span>
+                </label>
+                <label class="fld">
+                    <span>Nombre</span>
+                    <input type="text" id="fNombre" placeholder="Ej. Producción 2026" maxlength="120" />
+                </label>
+                <label class="fld">
+                    <span>Periodos</span>
+                    <div class="periodo-presets">
+                        <button type="button" class="ppreset" data-n="3">Trimestre</button>
+                        <button type="button" class="ppreset" data-n="6">6 meses</button>
+                        <button type="button" class="ppreset" data-n="12">12 meses</button>
+                    </div>
+                    <input type="text" id="fPeriodos" placeholder="Ene,Feb,Mar,Abr,May,Jun" />
+                    <span class="m-hint">Separados por coma. Usa los mismos nombres en cédulas que se van a referenciar entre sí (ej. Producción y Compras de MP).</span>
+                </label>
+                <p class="m-err" id="fErr" hidden></p>
+            </div>
+            <footer>
+                <button type="button" id="mCancel" class="btn-ghost">Cancelar</button>
+                <button type="button" id="mSave" class="btn-primary">Crear cédula</button>
+            </footer>
+        </form>
+    </dialog>}
+</AppLayout>
+
+<style>
+    .pr-denied { display:flex; flex-direction:column; align-items:center; text-align:center; gap:.75rem; padding:5rem 1rem; color:var(--color-text-muted); }
+    .pr-denied svg { width:40px; height:40px; opacity:.5; }
+    .pr-denied h3 { color:var(--color-text); font-size:1.05rem; }
+
+    .pr-list { display:flex; flex-direction:column; }
+    .pr-row { display:grid; grid-template-columns: 1fr auto auto 28px; align-items:center; gap:1rem; padding:1rem 0; border-bottom:1px solid var(--color-border); cursor:pointer; }
+    .pr-row:hover { background:var(--row-hover, var(--color-bg-soft)); }
+    .pr-row:last-child { border-bottom:none; }
+    .pr-name { font-weight:600; color:var(--color-text); }
+    .pr-tipo { font-size:.78rem; color:var(--color-text-muted); }
+    .pr-badge { font-size:.68rem; font-weight:700; letter-spacing:.02em; padding:.2rem .55rem; border-radius:999px; background:var(--color-bg-soft); color:var(--color-text-muted); white-space:nowrap; }
+    .pr-periodos { font-size:.8rem; color:var(--color-text-muted); white-space:nowrap; }
+    .pr-updated { font-size:.78rem; color:var(--color-text-muted); white-space:nowrap; }
+    .pr-del { opacity:.35; padding:4px; border-radius:6px; }
+    .pr-del:hover { opacity:1; color:var(--color-danger); background:var(--color-bg-soft); }
+
+    .fld { display:flex; flex-direction:column; gap:.35rem; margin-bottom:1.1rem; }
+    .fld span:first-child { font-size:.82rem; font-weight:600; color:var(--color-text); }
+    .fld select, .fld input[type="text"] { background:var(--color-bg-soft); border:1px solid transparent; border-radius:10px; padding:.6rem .75rem; font-size:.9rem; color:var(--color-text); }
+    .fld select:focus, .fld input:focus { outline:none; border-color:rgba(10,25,47,0.15); }
+    .m-hint { font-size:.72rem; color:var(--color-text-muted); }
+    .m-err { color:var(--color-danger); font-size:.82rem; margin:0; }
+    .periodo-presets { display:flex; gap:.4rem; margin-bottom:.35rem; }
+    .ppreset { font-size:.72rem; padding:.3rem .6rem; border-radius:999px; background:var(--color-bg-soft); color:var(--color-text-muted); }
+    .ppreset:hover { color:var(--color-text); }
+</style>
+
+<script>
+    const TIPO_LABEL: Record<string, string> = {
+        ventas: 'Ventas', produccion: 'Producción', compras_mp: 'Compras de MP',
+        mano_obra: 'Mano de obra y CIF', cif: 'CIF', cobranza: 'Cobranza', custom: 'Personalizada',
+    };
+    const TIPO_HINT: Record<string, string> = {
+        ventas: 'Fila de unidades a vender por periodo — la base de la cascada.',
+        produccion: 'Producción = Ventas + Inventario final deseado − Inventario inicial, calculado automáticamente.',
+        compras_mp: 'Compras de MP = Consumo requerido + Inventario final deseado − Inventario inicial, calculado automáticamente.',
+        mano_obra: 'Filas de insumo (horas, costo por hora, CIF fijo) para que agregues tu propia fórmula de costo total.',
+        cobranza: 'Ventas a crédito distribuidas por % cobrado en el mes y el siguiente — edítalo a tu patrón real.',
+        custom: 'Cédula vacía — agrega tus propias filas de insumo y fórmula desde el editor.',
+    };
+
+    const rowsEl = document.getElementById('rows')!;
+    const emptyEl = document.getElementById('emptyState')!;
+    const skelEl = document.getElementById('skel')!;
+
+    async function load() {
+        const res = await fetch('/api/cedulas');
+        if (!res.ok) return;
+        const data = await res.json();
+        skelEl.setAttribute('hidden', '');
+        const cedulas = data.cedulas || [];
+        if (!cedulas.length) { emptyEl.removeAttribute('hidden'); rowsEl.setAttribute('hidden', ''); return; }
+        emptyEl.setAttribute('hidden', '');
+        rowsEl.removeAttribute('hidden');
+        rowsEl.innerHTML = cedulas.map((c: any) => `
+            <div class="pr-row" data-id="${c.id}">
+                <div>
+                    <div class="pr-name">${escapeHtml(c.nombre)}</div>
+                    <div class="pr-tipo">${TIPO_LABEL[c.tipo] || c.tipo}</div>
+                </div>
+                <span class="pr-badge">${c.periodos} periodo${c.periodos === 1 ? '' : 's'}</span>
+                <span class="pr-updated">${new Date(c.updatedAt).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}</span>
+                <button class="pr-del" data-del="${c.id}" title="Eliminar" type="button">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                </button>
+            </div>
+        `).join('');
+        rowsEl.querySelectorAll('.pr-row').forEach((el) => {
+            el.addEventListener('click', (e) => {
+                if ((e.target as HTMLElement).closest('[data-del]')) return;
+                window.location.href = `/app/presupuestos/${(el as HTMLElement).dataset.id}`;
+            });
+        });
+        rowsEl.querySelectorAll('[data-del]').forEach((btn) => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const id = (btn as HTMLElement).dataset.del;
+                if (!await (window as any).cordConfirm({ title: 'Eliminar cédula', body: 'Se borrarán todas sus filas y valores. Esta acción no se puede deshacer.', danger: true, confirmText: 'Eliminar' })) return;
+                const r = await fetch(`/api/cedulas/${id}`, { method: 'DELETE' });
+                if (r.ok) { (window as any).cordToast?.('Cédula eliminada', 'ok'); load(); }
+                else (window as any).cordToast?.('No se pudo eliminar', 'error');
+            });
+        });
+    }
+    function escapeHtml(s: string) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    // ── Modal de creación ────────────────────────────────────────────
+    const modal = document.getElementById('newModal') as HTMLDialogElement | null;
+    const openModal = () => {
+        if (!modal) return;
+        (document.getElementById('fErr') as HTMLElement).setAttribute('hidden', '');
+        (document.getElementById('fNombre') as HTMLInputElement).value = '';
+        (document.getElementById('fPeriodos') as HTMLInputElement).value = '';
+        modal.showModal();
+    };
+    document.getElementById('btnNueva')?.addEventListener('click', openModal);
+    document.getElementById('emptyCta')?.addEventListener('click', openModal);
+    document.getElementById('mClose')?.addEventListener('click', () => modal?.close());
+    document.getElementById('mCancel')?.addEventListener('click', () => modal?.close());
+
+    const tipoSel = document.getElementById('fTipo') as HTMLSelectElement;
+    tipoSel?.addEventListener('change', () => {
+        (document.getElementById('tipoHint') as HTMLElement).textContent = TIPO_HINT[tipoSel.value] || '';
+    });
+
+    const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    document.querySelectorAll('.ppreset').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const n = Number((btn as HTMLElement).dataset.n) || 6;
+            const now = new Date();
+            const labels: string[] = [];
+            for (let i = 0; i < n; i++) {
+                const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+                labels.push(`${MESES[d.getMonth()]} ${d.getFullYear()}`);
+            }
+            (document.getElementById('fPeriodos') as HTMLInputElement).value = labels.join(', ');
+        });
+    });
+
+    document.getElementById('mSave')?.addEventListener('click', async () => {
+        const tipo = tipoSel.value;
+        const nombre = (document.getElementById('fNombre') as HTMLInputElement).value.trim();
+        const periodos = (document.getElementById('fPeriodos') as HTMLInputElement).value
+            .split(',').map((s) => s.trim()).filter(Boolean);
+        const errEl = document.getElementById('fErr') as HTMLElement;
+        if (!periodos.length) { errEl.textContent = 'Agrega al menos un periodo (ej. Ene, Feb, Mar).'; errEl.removeAttribute('hidden'); return; }
+        const res = await fetch('/api/cedulas', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tipo, nombre, periodos }),
+        });
+        const data = await res.json();
+        if (!res.ok) { errEl.textContent = data.error || 'No se pudo crear la cédula.'; errEl.removeAttribute('hidden'); return; }
+        window.location.href = `/app/presupuestos/${data.id}`;
+    });
+
+    load();
+</script>

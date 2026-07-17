@@ -8,6 +8,137 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Desempeño por vendedor — ranking de cierre/cobro por miembro del equipo (jul 2026)** —
+   primer feature del track "qué más se puede construir" (auditoría de oportunidades sobre
+   `org_members`/roles ya existentes). Antes `cotizaciones` no guardaba quién la creó, así que
+   no había forma de atribuir cierres o cobros a un vendedor específico — solo existían métricas
+   agregadas a nivel org (`getAnalytics()`/`getCFO()`).
+   • **Columna nueva `cotizaciones.creado_por`** (clerk_user_id, nullable) + índice parcial
+     `(org_id, creado_por)`. Se stampea en los DOS lugares donde nace una cotización con sesión
+     de usuario: `createCotizacion()` (`src/lib/cotizaciones.ts`, vía `currentUserId()` del
+     contexto por-request) y `POST /api/cotizaciones/[id]/duplicate`. Las cotizaciones creadas
+     vía API key (M2M, sin sesión) o de antes de este campo quedan `null` — se agrupan aparte
+     como "Sin asignar" en el reporte, nunca se pierden ni se atribuyen a alguien equivocado.
+   • **`getDesempeno()`** (`src/lib/queries.ts`): agrega por `creado_por` — cotizaciones
+     creadas/enviadas/cerradas, tasa de cierre, monto cerrado (`approved|paid|invoiced`), tiempo
+     promedio a cierre y ticket promedio (mismo criterio que `getAnalytics()`, para que los
+     números no diverjan entre páginas). El "cobrado" suma DOS fuentes — pago único/anticipo/
+     saldo/cuotas (`cotizaciones.status='paid' or paid_at is not null`) y cobros de igualas
+     recurrentes (`cotizacion_cobros` tipo `'cuota'` de una cotización `es_recurrente`, que nunca
+     llega a `status='paid'`) — mismo patrón de unión ya usado en `getCobros()` para no repetir
+     el bug de invisibilidad de ingreso recurrente que se corrigió en esa misma sesión.
+   • **`/app/desempeno`** (nuevo, tercera pestaña de "Inteligencia" junto a Finanzas/Analítica):
+     KPIs de equipo (cerrado total, tasa de cierre promedio, líder del periodo, vendedores
+     activos) + tabla de ranking (posición, avatar con iniciales, cotizaciones, tasa de cierre,
+     barra de monto cerrado, cobrado, ticket promedio, días a cierre) — mismo lenguaje visual
+     hairline/`.editorial` que `/app/analitica`. Gateado por el permiso `analitica` (mismo que
+     el resto de reportes — el owner y cualquier miembro con acceso a analítica ve el ranking
+     completo del equipo, no solo su propia fila). Fila "Sin asignar" aparte, atenuada, cuando
+     hay cotizaciones sin vendedor identificable.
+   • Cableado en el sidebar (grupo "Inteligencia", ícono podio duotone), Cmd+K, y las pestañas
+     cruzadas de `/app/cfo` y `/app/analitica` (ahora las 3 páginas comparten las mismas 3 tabs).
+   • Verificado: `npm run db:migrate` corrido (columna + índice aditivos), `npm run build`
+     limpio (los 2 warnings de CSS del build son preexistentes — `--sb-bg` de `AppLayout.astro`
+     y contenido de un post del blog, no relacionados a este cambio).
+   ⬜ Pendiente natural de una siguiente pasada (no bloqueante): comisiones en $/% configurables
+     por vendedor sobre lo cerrado/cobrado — hoy el reporte es de VISIBILIDAD (ranking), no
+     calcula pagos de comisión.
+
+✅ **Cobros recurrentes reales para igualas/retainers vía Stripe Subscriptions (jul 2026)** —
+   auditoría de "promesas que el código hace pero no cumple": `casos-de-uso/agencias.astro`
+   prometía "cargo automático cada mes" para igualas de agencias/consultoras, pero el sistema
+   real solo generaba un link de pago manual + recordatorios — una FAQ de la misma página ya
+   lo admitía honestamente, contradiciendo al resto del copy. Se construyó el feature real
+   sobre **Stripe Subscriptions + Stripe Connect Custom**: el cliente autoriza su tarjeta UNA
+   sola vez desde el link público y Stripe cobra el total automáticamente cada mes, **directo
+   a la cuenta bancaria del vendedor** (mismo patrón `Stripe-Account: acct_...` que los cobros
+   directos, cero comisión de Cord).
+   • **Tabla nueva `cotizacion_suscripciones`** (una por cotización, `unique(cotizacion_id)`):
+     `stripe_subscription_id/customer_id/price_id/product_id` (todos en la cuenta CONECTADA),
+     `monto`, `moneda`, `intervalo`, `estado` (incomplete|active|past_due|canceled),
+     `current_period_end`, `cancel_at_period_end`. RLS por `org_id` O `public_token` (mismo
+     patrón que `cotizacion_cobros`) + FORCE. Columna nueva `cotizaciones.es_recurrente`
+     (solo con `terminos='contado'`, mutuamente excluyente con anticipo — forzado server-side
+     en `createCotizacion` y en el PATCH de `update_draft`, no solo en el cliente).
+   • **`POST /api/q/[token]/subscription-intent.ts`** (nuevo, espejo de `payment-intent.ts`):
+     crea/reutiliza **perezosamente** (no en el momento de aprobación, para no dejar
+     suscripciones huérfanas si el cliente nunca autoriza) Product+Price(mensual)+Customer+
+     Subscription (`payment_behavior=default_incomplete`, solo `card` — `customer_balance`/SPEI
+     no puede auto-cobrar, obligaría a fondear el balance cada mes, así que una iguala
+     "automática" no puede correr sobre SPEI) en la cuenta conectada, devuelve el
+     `client_secret` de la primera factura. Protegido con **Idempotency-Key determinística**
+     (derivada del `cotizacion_id`) contra condiciones de carrera (doble clic/doble pestaña/
+     retry de red no crean una segunda Subscription en Stripe).
+   • **`POST /api/cotizaciones/[id]/subscription.ts`** (nuevo): el vendedor cancela con
+     `cancel_at_period_end: true`, gated por `requirePerm('cobranza')`.
+   • **Webhook (`stripe/webhook.ts`) ramificado por `event.account`:** los eventos de
+     suscripción/factura de una cuenta CONECTADA (`invoice.paid`/`invoice.payment_failed`/
+     `customer.subscription.updated`/`.deleted`) van a handlers nuevos de IGUALA
+     (`recurringInvoicePaid`/`recurringInvoiceFailed`/`syncQuoteSubscription`/
+     `cancelQuoteSubscription`), completamente separados de los handlers de SUSCRIPCIÓN DE
+     PLAN de Cord (`syncSubscription`/`downgradeToFree` — el billing SaaS de la plataforma).
+     Son dos sistemas de suscripción distintos compartiendo el mismo endpoint; `findQuoteSub()`
+     valida que `stripe_account_id` de la fila coincida con `event.account` (defensa
+     multi-tenant). Cada cobro mensual pagado se registra como fila `'cuota'` en
+     `cotizacion_cobros` (para que el historial de pagos del vendedor lo muestre) — la
+     cotización recurrente **nunca** se marca `paid` (una iguala nunca está "totalmente
+     pagada", es continua).
+   • **UI:** toggle "Cobro recurrente mensual (iguala)" en el editor (`nueva.astro`, solo con
+     términos=contado, oculta/anula anticipo); nota + botón "Autorizar cobro mensual" en el
+     link público (`QuoteCard.astro`/`pay.astro`, `PaymentIsland.tsx` en modo `subscription`);
+     tarjeta de estado + botón "Cancelar iguala" (`cordConfirm` danger) en el detalle del
+     vendedor (`cotizaciones/[id].astro`).
+   • **2 bugs reales encontrados y corregidos por una auditoría de correctness antes de dar el
+     feature por bueno:** (1) **igualas activas tratadas como deuda vencida** en 4 sitios que
+     ya asumían "`status='approved'` desde hace mucho = cartera sin cobrar" y nunca excluían
+     `es_recurrente` — `getCobranza()` (aging sin tope), el cron de intereses moratorios
+     (cargaba interés mensual sobre una cuenta que se cobraba puntual), el cron de
+     recordatorios (avisaba "tu pago vence" a clientes al corriente), y el agente de cobranza
+     con IA (le reclamaba a un cliente una deuda que no existía, porque `saldo = total −
+     cotizacion_cobros pagados` siempre daba el total completo). Los 4 ahora excluyen
+     `es_recurrente is not true`. Además el ingreso real de las igualas era invisible en
+     `getCobros()` (dashboard "Mi dinero", filtraba por `status='paid'`, que una iguala nunca
+     alcanza) — se agregó una unión aparte que suma los cobros `'cuota'` de cotizaciones
+     recurrentes, sin doble conteo (los dos universos son disjuntos). Se auditó también
+     `getCFO()`/`getAnalytics()` por el mismo patrón — **no aplica**: `getCFO()` solo cuenta
+     como "pipeline abierto" `status in ('sent','viewed')` (nunca `approved`), y
+     `getAnalytics()`/`getDashboard()` tratan `approved` como "cerrado/ganado" (semántica
+     correcta para una iguala aprobada, no es lo mismo que "dinero pendiente de cobrar"). (2)
+     **condición de carrera** en `subscription-intent.ts` que podía crear DOS Subscriptions
+     activas en Stripe (huérfana + no cancelable desde Cord) si dos requests llegaban
+     concurrentes — corregido con Idempotency-Key determinística.
+   • **Copy de `agencias.astro` corregido** (FAQ, tarjeta "Retainers Mensuales Automáticos",
+     "Seguimiento en tiempo real") para describir el flujo real: autorización única de tarjeta
+     → cobro automático mensual directo a la cuenta del vendedor, requiere cobros con tarjeta
+     conectados. No existe `/en/casos-de-uso` (solo ES), así que no hubo versión EN que tocar.
+   ⚠️ **Pendiente de configuración manual en Stripe (no es código):** el webhook de "eventos en
+     cuentas conectadas" (el mismo segundo endpoint que ya deben tener los cobros directos, con
+     `STRIPE_CONNECT_WEBHOOK_SECRET`) necesita suscribirse ADEMÁS a `invoice.paid`,
+     `invoice.payment_failed`, `customer.subscription.updated` y `customer.subscription.deleted`
+     — sin esos eventos las igualas se autorizan y cobran bien en Stripe, pero Cord no
+     reflejaría los cobros mensuales ni el estado de la suscripción. No se requiere un tercer
+     endpoint ni env vars nuevas.
+   ⚠️ **Limitación conocida (no es bug de dinero):** si el vendedor marca una cotización como
+     recurrente sin tener los cobros con tarjeta conectados, el cliente ve la nota de la iguala
+     pero no aparece el botón de autorizar (`subscription-intent` responde 403). Sin pérdida de
+     dinero, solo un callejón suave — falta un aviso proactivo en el editor.
+   • Verificado: `npm run db:migrate` corrido contra Neon (tabla + columna aditivas), 2 pasadas
+     de `npm run build` limpias (antes y después de las correcciones de la auditoría).
+
+✅ **Fix de copy fiscal falso — `/desarrolladores/fiscal` ya no promete IRS/EIN/Sales Tax
+   (jul 2026)** — misma auditoría de "promesas rotas" de la entrada anterior. La página
+   afirmaba "100% cumplimiento normativo SAT **e IRS**", exponía un endpoint ficticio
+   `cord.tax.calculate()`, y prometía validación de EIN, cálculo dinámico de Sales Tax vs IVA,
+   soporte de pedimentos y múltiples entidades legales bajo una misma cuenta — **nada de eso
+   existe**: `USInvoiceProvider` sigue siendo un stub, y el patrón `FiscalFactory` solo tiene un
+   proveedor real en producción (`MexicoSatProvider` vía Facturapi). Reescrita en ES y EN
+   (`src/lib/desarrolladores.ts`/`.en.ts`) para vender honestamente lo que sí es real (CFDI 4.0
+   real ante el SAT, arquitectura de adaptador-por-país lista para crecer) y dejar EE.UU.
+   explícitamente en el roadmap — las FAQs ya no dicen "contacta a ventas para confirmar el
+   alcance" (insinúa que tal vez ya funciona) sino "todavía no" + invitación a priorizarlo.
+   Verificado contra el HTML del build: 0 ocurrencias de "IRS", `cord.tax.calculate`, o "EIN" en
+   `.vercel/output/static/desarrolladores/fiscal` y su espejo `/en/desarrolladores/fiscal`.
+
 ✅ **Pasada de "hacerlo super top" — SEO/GEO tras la migración a dominio propio (jul 2026)** —
    André pidió aprovechar que Cord ya no vive bajo un subdominio de flouvia.com para
    reforzar SEO/AI-SEO de punta a punta.
@@ -58,27 +189,39 @@
      fallaron con "session limit") — el resultado no tiene ningún claim verificado, solo
      extracciones sin confirmar. Se descartó como fuente; el resto de esta pasada se hizo
      con conocimiento ya establecido del proyecto, no con ese research.
-   ⚠️ **Checklist pendiente para André (dashboards, no es código):**
-     1. **Vercel:** re-agregar `cord.flouvia.com` como dominio del proyecto de Cord
-        (Project Settings → Domains) para que el redirect 301 ya en `vercel.json` tome
-        efecto — sin este paso, el dominio viejo sigue en 404.
-     2. **Google Search Console:** dar de alta `cordhq.app` como property nueva (tipo
-        Domain, verificación por DNS TXT — fácil, DNS ya vive en nameservers de Vercel),
-        enviar `sitemap.xml`, y pedir indexación manual de home + `/precios` + 2-3
-        páginas de producto vía "Inspección de URLs" para acelerar el crawl inicial. Si
-        `cord.flouvia.com` alguna vez se verificó como property propia ahí, correr la
-        herramienta de "Cambio de dirección" (Change of Address) DESPUÉS del paso 1
-        (necesita el redirect activo primero).
-     3. **Bing Webmaster Tools:** mismo alta + sitemap para `cordhq.app` (Bing alimenta
-        Copilot/ChatGPT vía Bing Search en algunos casos).
-     4. **Backlink desde flouvia.com:** ahora que Cord es dominio independiente, un link
-        real desde flouvia.com/cord (o el footer del sitio) hacia `cordhq.app` es la
-        señal de autoridad más rápida y legítima disponible (dominio hermano real, no
-        granja de links).
-     5. **og:image** (ver arriba) — subir el archivo real a `public/og-cord.png` cuando
-        esté listo.
-   • **Documentado en memoria** ([[cord-domain-migration-cordhq]] actualizada) para que
-     el checklist pendiente no se pierda entre sesiones.
+   ✅ **Punto 1 del checklist COMPLETADO y verificado:** André re-agregó `cord.flouvia.com`
+     al proyecto de Vercel; el push a `main` se había quedado atorado en silencio (el
+     commit local incluía `.github/workflows/elements.yml`, reaparecido de la nada, y
+     GitHub lo rechazaba por falta del scope `workflow` en el PAT — mismo bug ya resuelto
+     una vez antes en este repo, mismo fix: `git rm --cached` + `.gitignore`). Tras el
+     push, deployment `dpl_6XLSt2...` a `READY` y verificado con `curl -I`:
+     `cord.flouvia.com/producto/editor` → `308` con `location:
+     https://cordhq.app/producto/editor`. El redirect está LIVE.
+   ✅ **Checklist de autoridad de dominio — COMPLETADO (jul 2026):**
+     1. ~~Vercel: re-agregar `cord.flouvia.com`~~ hecho y verificado (redirect 301 en
+        vivo, confirmado con `curl`).
+     2. ~~Google Search Console~~ hecho: `cordhq.app` alta como property de Dominio,
+        verificado por DNS TXT (⚠️ primer intento falló — el registro se creó en
+        `gsc.cordhq.app` en vez de la raíz por poner "gsc" como Name en vez de "@";
+        corregido), `sitemap.xml` enviado correctamente (⚠️ primer intento también
+        falló — se mandaron páginas HTML sueltas una por una como si fueran sitemaps
+        en vez de la URL completa `https://cordhq.app/sitemap.xml`; corregido), e
+        indexación manual solicitada para home + `/precios` + `/producto/editor` +
+        `/soluciones/empresas` vía "Inspección de URLs".
+     3. ~~Bing Webmaster Tools~~ hecho — importado directo desde la cuenta de Google
+        Search Console (sin reverificar DNS).
+     4. ~~Backlink real desde flouvia.com~~ hecho: se encontraron y corrigieron ~30
+        referencias a `cord.flouvia.com` en el repo hermano `~/Desktop/flouvia`
+        (imágenes de logo, los 10 CTAs de `CordPricing.astro`, `canonicalOverride` y
+        JSON-LD de `src/pages/cord.astro`/`en/cord.astro`) — todas apuntaban al
+        dominio viejo, que aunque ya redirige (301), le restaba fuerza a la señal de
+        backlink directo. Commit `5b1729f` en el repo `flouvia` (solo esos 8 archivos;
+        se dejaron intactos 2 cambios sueltos preexistentes de André en ese repo —
+        `PlantillaContacto 2.astro`/`WhatsApp.astro` — sin comitear por error).
+     5. **og:image** — sigue pendiente, André lo diseña él mismo (ver nota arriba, no
+        se generó nada por IA a petición explícita suya).
+   • **Documentado en memoria** ([[cord-domain-migration-cordhq]] actualizada) — checklist
+     completo salvo el `og:image`.
 
 ✅ **Migración de dominio: `cord.flouvia.com` → `cordhq.app` (jul 2026)** — André compró
    `cordhq.app` (dominio propio, ya no subdominio de flouvia.com) y decidió migrar Cord ahí
@@ -2738,9 +2881,45 @@
    y capturar en varios timestamps tras un clic para verificar transiciones, no solo el estado
    final.
 
+✅ **Tiempo real de verdad vía SSE (jul 2026)** — el chat/presencia dejó de ser polling
+   puro; se agregaron 2 endpoints SSE de larga duración (internamente siguen consultando
+   Postgres, pero por PUSH en vez de por intervalo del cliente — sin infra nueva, viable
+   con Fluid Compute):
+   • **`GET /api/q/[token]/stream`** (público, sin auth — mismo patrón que el resto de
+     `/api/q/[token]`, protegido por rate limit) — empuja `event: message` cuando el
+     vendedor responde (eventos `tipo='reply'`, antes el cliente en `/q` NUNCA se enteraba
+     de una respuesta sin recargar — hueco real, no solo lentitud) y `event: status`
+     cuando la cotización cambia de estado del lado del vendedor (dispara
+     `location.reload()` en el cliente, ya que cubrir todos los estados en vivo en el
+     snapshot del script sería mucho riesgo para poco beneficio).
+   • **`GET /api/cotizaciones/[id]/stream`** (requiere sesión, protegido por el
+     middleware como el resto de `/api/cotizaciones/*`) — reemplaza el polling de 8s a
+     `/presence` en el detalle del vendedor: empuja `event: presence {online,convCount}`
+     y `event: message` (nuevo comentario/contraoferta del cliente) por push.
+   • **Mecánica interna (misma en ambos):** `ReadableStream` con un loop que consulta la
+     BD cada 2.5–3s, heartbeat `event: ping` cada ~20s (mantiene vivos los proxies/CDN),
+     auto-cierre a los ~4.5 min (`MAX_MS`) — el cliente reconecta solo vía `EventSource`
+     (reconexión nativa del navegador). `request.signal` (abort) corta el loop apenas el
+     cliente se desconecta, para no dejar conexiones colgadas consumiendo el compute.
+   • **Cliente:** `QuoteCard.astro` agregó `appendIncoming()` (burbuja izquierda "theirs",
+     hermana de `appendMsg()` que ya existía para mensajes propios) + un `EventSource` que
+     reconecta con backoff fijo de 4s en `onerror`. `[id].astro` reemplazó el
+     `setInterval(poll, 8000)` por `EventSource`, con **fallback real a polling** si la
+     conexión SSE nunca logra abrir (`openedOnce` — evita reintentar SSE indefinidamente
+     en un entorno donde esté bloqueado, ej. algún proxy corporativo raro).
+   • **Sin cambios de schema/infra:** no se tocó Redis/Upstash ni pub-sub; es polling del
+     SERVIDOR hacia la BD (antes era polling del CLIENTE hacia el servidor) — el ahorro
+     real es de latencia percibida (push instantáneo en vez de esperar el próximo tick del
+     intervalo) y de round-trips HTTP redundantes, no de carga a la BD (sigue siendo
+     consultas periódicas, solo que ahora viven en el servidor).
+   ⚠️ **Regla a futuro:** si se agrega un tercer punto con esta necesidad (ej. el badge de
+     notificaciones de la topbar, hoy también polling), replicar este mismo patrón
+     (`ReadableStream` + loop + heartbeat + `MAX_MS` + fallback a polling) en vez de meter
+     WebSockets o un pub-sub nuevo — no hace falta esa complejidad para esta escala.
+
 ⬜ Pendiente (no bloquea lanzamiento): `FACTURAPI_API_KEY` live en prod;
    `USInvoiceProvider` real (US); publicar `@flouviahq/elements` v0.2.0 (`npm login && npm
-   publish`); "tiempo real" full vía SSE/WebSocket (hoy es polling). Deuda menor: `/api/*` aún no migra a
+   publish`). Deuda menor: `/api/*` aún no migra a
    `withOrgTx` (pendiente para activar `FORCE ROW LEVEL SECURITY`); rate-limit del middleware es
    in-memory por instancia (para escala multi-réplica usar Upstash Redis); y 5 vulnerabilidades de
    `npm audit` de bajo riesgo (esbuild dev-Windows / path-to-regexp build-time) cuyo fix exige

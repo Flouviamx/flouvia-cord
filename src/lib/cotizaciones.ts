@@ -8,6 +8,7 @@ import { sql, logAudit } from './db';
 import { notifyQuoteSent } from './email';
 import { dispatchQuoteEvent } from './webhooks';
 import { FXService } from './fx/FXService';
+import { currentUserId } from './context';
 
 import { num, sanitizeItem, calculateTotals } from '../../packages/elements/src/engine';
 
@@ -56,6 +57,9 @@ export interface NewQuoteInput {
     // % de anticipo requerido (1–99). Al aprobarse la cotización se materializan
     // dos cobros: anticipo (pagable ya) + saldo (vence según los términos).
     anticipo_pct?: number | null;
+    // Iguala / retainer: se cobra el total automáticamente cada mes vía Stripe
+    // Subscription (solo con términos de contado; excluyente con anticipo/cuotas).
+    es_recurrente?: boolean;
 }
 
 export interface CreateQuoteResult {
@@ -170,11 +174,17 @@ export async function createCotizacion(
         aprobMotivo = reasons.join(' y ');
     }
 
-    const terminos = ['contado', 'net30', 'net60'].includes(input.terminos ?? '') ? input.terminos! : 'contado';
+    // Iguala recurrente: solo tiene sentido con términos de contado (se autoriza y
+    // cobra desde el alta) y es EXCLUYENTE con anticipo/cuotas (modelos de pago único).
+    const esRecurrente = !!input.es_recurrente;
+    const terminos = esRecurrente
+        ? 'contado'
+        : (['contado', 'net30', 'net60'].includes(input.terminos ?? '') ? input.terminos! : 'contado');
     // Anticipo: % válido entre 1 y 99; cualquier otro valor = sin anticipo.
     const anticipoPctRaw = Number(input.anticipo_pct);
-    const anticipoPct = Number.isFinite(anticipoPctRaw) && anticipoPctRaw >= 1 && anticipoPctRaw <= 99
-        ? Math.round(anticipoPctRaw * 100) / 100 : null;
+    const anticipoPct = esRecurrente ? null
+        : (Number.isFinite(anticipoPctRaw) && anticipoPctRaw >= 1 && anticipoPctRaw <= 99
+            ? Math.round(anticipoPctRaw * 100) / 100 : null);
     const dias = Number(input.vigencia_dias) || 30;
     const vigencia = new Date(); vigencia.setDate(vigencia.getDate() + dias);
     const clienteId = await resolveOrCreateCliente(orgId, input);
@@ -199,14 +209,18 @@ export async function createCotizacion(
         fxLockedUntil = fx.lockedUntil ? fx.lockedUntil.toISOString() : null;
     }
 
+    // Quién la creó (clerk_user_id de la sesión) — null en creación vía API key
+    // (M2M, sin sesión de usuario); ver "Desempeño por vendedor" en historial.md.
+    const creadoPor = currentUserId();
+
     const [cot] = await sql`
         insert into cotizaciones
             (org_id, cliente_id, folio, status, subtotal, iva, total, terminos, vigencia, notas, sent_at, aprob_estado, aprob_motivo,
-             moneda, base_currency, fiscal_currency, fx_rate, fx_rate_source, fx_locked_until, iva_incluido, anticipo_pct)
+             moneda, base_currency, fiscal_currency, fx_rate, fx_rate_source, fx_locked_until, iva_incluido, anticipo_pct, es_recurrente, creado_por)
         values
             (${orgId}, ${clienteId}, ${folio}, ${status}, ${realSubtotal}, ${iva}, ${total},
              ${terminos}, ${vigencia.toISOString()}, ${input.notas || null}, ${sentAt}, ${aprobEstado}, ${aprobMotivo},
-             ${baseCurrency}, ${baseCurrency}, ${fiscalCurrency}, ${fxRate}, ${fxSource}, ${fxLockedUntil}, ${iva_incluido}, ${anticipoPct})
+             ${baseCurrency}, ${baseCurrency}, ${fiscalCurrency}, ${fxRate}, ${fxSource}, ${fxLockedUntil}, ${iva_incluido}, ${anticipoPct}, ${esRecurrente}, ${creadoPor})
         returning id, public_token`;
 
     let orden = 0;

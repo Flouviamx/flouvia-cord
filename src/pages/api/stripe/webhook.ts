@@ -74,22 +74,30 @@ export const POST: APIRoute = async ({ request }) => {
             break;
         }
         // ── Alta / cambio de plan / renovación ────────────────────────────────
+        // ⚠️ `event.account` presente = evento de una CUENTA CONECTADA (iguala
+        // recurrente de una cotización, cobrada directo al vendedor). Sin él es un
+        // evento de la PLATAFORMA (la suscripción de plan de la propia org en Cord).
+        // Nunca confundir ambos: los IDs viven en cuentas de Stripe distintas.
         case 'customer.subscription.created':
         case 'customer.subscription.updated': {
-            await syncSubscription(obj);
+            if (event.account) await syncQuoteSubscription(obj, event.account);
+            else await syncSubscription(obj);
             break;
         }
         case 'customer.subscription.deleted': {
-            await downgradeToFree(obj);
+            if (event.account) await cancelQuoteSubscription(obj, event.account);
+            else await downgradeToFree(obj);
             break;
         }
         // ── Cobros (incluye el excedente medido del periodo) ──────────────────
         case 'invoice.paid': {
-            await setStatusByCustomer(obj.customer, 'active');
+            if (event.account) await recurringInvoicePaid(obj, event.account);
+            else await setStatusByCustomer(obj.customer, 'active');
             break;
         }
         case 'invoice.payment_failed': {
-            await setStatusByCustomer(obj.customer, 'past_due');
+            if (event.account) await recurringInvoiceFailed(obj, event.account);
+            else await setStatusByCustomer(obj.customer, 'past_due');
             break;
         }
         // ── Actualización de cuenta Connect ───────────────────────────────────
@@ -337,6 +345,99 @@ async function updateAccountStatus(account: any) {
         stripe_disabled_reason = ${disabledReason},
         stripe_requirements = ${requirements}
         where stripe_account_id = ${account.id}`;
+}
+
+// ── Igualas recurrentes (Subscriptions sobre cuentas CONECTADAS) ─────────────
+// Estos handlers SOLO corren para eventos con `event.account` (cuenta conectada).
+// La fila dueña se resuelve por stripe_subscription_id; se valida que el evento
+// provenga de la MISMA cuenta conectada (defensa multi-tenant, como markQuotePaid).
+
+const money = (n: number) => Number(n).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+
+// El id de la suscripción en una factura: `invoice.subscription` (API clásica) o
+// `invoice.parent.subscription_details.subscription` (Basil 2025-06-30+, donde se movió).
+function invoiceSubId(invoice: any): string {
+    const s = invoice?.subscription ?? invoice?.parent?.subscription_details?.subscription;
+    return typeof s === 'string' ? s : (s?.id ?? '');
+}
+
+async function findQuoteSub(subId: string, account: string) {
+    if (!subId) return null;
+    const rows = await sql`select * from cotizacion_suscripciones where stripe_subscription_id = ${subId}`;
+    if (!rows.length) return null;
+    // El evento debe venir de la cuenta conectada dueña de la suscripción.
+    if (rows[0].stripe_account_id && account && rows[0].stripe_account_id !== account) return null;
+    return rows[0];
+}
+
+// Factura mensual pagada (primera autorización + cada renovación). Marca la
+// suscripción activa, registra el pago en la bitácora y avisa a integraciones.
+async function recurringInvoicePaid(invoice: any, account: string) {
+    const subId = invoiceSubId(invoice);
+    const row = await findQuoteSub(subId, account);
+    if (!row) return;
+    const periodEnd = invoice?.lines?.data?.[0]?.period?.end;
+    await sql`update cotizacion_suscripciones set
+                estado = 'active',
+                current_period_end = ${periodEnd ? new Date(periodEnd * 1000).toISOString() : null}
+              where id = ${row.id}`;
+    const montoNum = Number(invoice?.amount_paid ?? 0) / 100;
+    const monto = money(montoNum);
+
+    // Registra el cobro mensual como fila 'pagado' en cotizacion_cobros para que
+    // el dinero SÍ aparezca en el dashboard "Mi dinero" (getCobros). No dispara el
+    // flip a 'paid' de la cotización (eso solo ocurre vía markQuotePaid, que aquí
+    // no corre) y se OCULTA del link público (getCotizacionByToken lo excluye para
+    // igualas). Idempotente: dedup por el PaymentIntent de la factura.
+    const pi = invoice?.payment_intent;
+    const piId = (typeof pi === 'string' ? pi : pi?.id) || (invoice?.id as string) || '';
+    if (piId && montoNum > 0) {
+        try {
+            await sql`
+                insert into cotizacion_cobros (org_id, cotizacion_id, tipo, numero_cuota, monto, status, payment_method, paid_at, stripe_payment_intent_id, vence)
+                select ${row.org_id}, ${row.cotizacion_id}, 'cuota',
+                       coalesce((select max(numero_cuota) from cotizacion_cobros where cotizacion_id = ${row.cotizacion_id} and tipo = 'cuota'), 0) + 1,
+                       ${montoNum}, 'pagado', 'tarjeta', now(), ${piId}, current_date
+                where not exists (select 1 from cotizacion_cobros where cotizacion_id = ${row.cotizacion_id} and stripe_payment_intent_id = ${piId})`;
+        } catch { /* best-effort: la visibilidad del cobro no debe tronar el webhook */ }
+    }
+
+    await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+              values (${row.org_id}, ${row.cotizacion_id}, 'paid', ${`Cobro mensual de ${monto} recibido (iguala)`})`;
+    await logAudit(row.org_id as string, { accion: 'cotizacion.iguala_cobrada', entidad: 'cotizacion', entidad_id: row.cotizacion_id as string, detalle: `Cobro recurrente ${monto} (Stripe)` });
+    // Cada cobro mensual exitoso es un "Pago recibido" real para las integraciones.
+    dispatchQuoteEvent(row.org_id as string, row.cotizacion_id as string, 'quote.paid').catch(() => {});
+}
+
+async function recurringInvoiceFailed(invoice: any, account: string) {
+    const subId = invoiceSubId(invoice);
+    const row = await findQuoteSub(subId, account);
+    if (!row) return;
+    await sql`update cotizacion_suscripciones set estado = 'past_due' where id = ${row.id}`;
+    await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+              values (${row.org_id}, ${row.cotizacion_id}, 'comment', 'El cobro mensual de la iguala falló — Stripe reintentará automáticamente')`;
+}
+
+// customer.subscription.updated/created → sincroniza estado y fin de ciclo.
+async function syncQuoteSubscription(sub: any, account: string) {
+    const row = await findQuoteSub(sub?.id, account);
+    if (!row) return;
+    const periodEnd = sub?.current_period_end ?? sub?.items?.data?.[0]?.current_period_end;
+    await sql`update cotizacion_suscripciones set
+                estado = ${sub.status || 'active'},
+                cancel_at_period_end = ${!!sub.cancel_at_period_end},
+                current_period_end = ${periodEnd ? new Date(Number(periodEnd) * 1000).toISOString() : null}
+              where id = ${row.id}`;
+}
+
+// customer.subscription.deleted → la iguala terminó.
+async function cancelQuoteSubscription(sub: any, account: string) {
+    const row = await findQuoteSub(sub?.id, account);
+    if (!row) return;
+    await sql`update cotizacion_suscripciones set estado = 'canceled', cancel_at_period_end = false where id = ${row.id}`;
+    await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+              values (${row.org_id}, ${row.cotizacion_id}, 'comment', 'La iguala recurrente se canceló — no habrá más cobros mensuales')`;
+    await logAudit(row.org_id as string, { accion: 'cotizacion.iguala_cancelada', entidad: 'cotizacion', entidad_id: row.cotizacion_id as string, detalle: 'Suscripción recurrente cancelada' });
 }
 
 function ok() {

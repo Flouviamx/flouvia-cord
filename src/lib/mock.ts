@@ -45,6 +45,8 @@ export interface MockQuote {
     firma?: { nombre: string; ip: string; hash: string; cuando: string } | null;
     iva_incluido?: boolean;
     vigenciaDias?: number | null; // días restantes de vigencia (pre-llenar el editor al editar borradores)
+    anticipoPct?: number | null;
+    esRecurrente?: boolean; // iguala/retainer: se cobra el total automáticamente cada mes vía Stripe Subscription
 }
 
 export const ORG = {

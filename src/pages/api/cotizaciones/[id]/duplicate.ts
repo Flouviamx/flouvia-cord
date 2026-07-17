@@ -5,6 +5,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId } from '../../../../lib/db';
+import { currentUserId } from '../../../../lib/context';
 
 export const POST: APIRoute = async ({ params }) => {
     const id = params.id ?? '';
@@ -25,10 +26,10 @@ export const POST: APIRoute = async ({ params }) => {
 
     const [cot] = await sql`
         insert into cotizaciones
-            (org_id, cliente_id, folio, status, subtotal, iva, total, terminos, vigencia, notas)
+            (org_id, cliente_id, folio, status, subtotal, iva, total, terminos, vigencia, notas, creado_por)
         values
             (${orgId}, ${src.cliente_id}, ${folio}, 'draft', ${src.subtotal}, ${src.iva}, ${src.total},
-             ${src.terminos}, ${vigencia.toISOString()}, ${src.notas})
+             ${src.terminos}, ${vigencia.toISOString()}, ${src.notas}, ${currentUserId()})
         returning id`;
 
     let orden = 0;

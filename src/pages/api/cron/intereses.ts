@@ -51,7 +51,8 @@ export const GET: APIRoute = async ({ request }) => {
             from cotizaciones c
             left join clientes cl on cl.id = c.cliente_id
             where c.org_id = ${orgId}
-              and c.status in ('approved', 'invoiced')`;
+              and c.status in ('approved', 'invoiced')
+              and c.es_recurrente is not true`; // igualas se cobran solas cada mes — no acumulan interés moratorio
 
         const cargos: { folio: string; empresa: string; monto: number; diasVencido: number }[] = [];
 
