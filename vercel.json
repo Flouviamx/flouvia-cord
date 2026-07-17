@@ -4,5 +4,13 @@
     { "path": "/api/cron/recordatorios", "schedule": "0 15 * * *" },
     { "path": "/api/cron/intereses",     "schedule": "0 6 1 * *"  },
     { "path": "/api/cron/cobranza",      "schedule": "0 16 * * *" }
+  ],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "cord.flouvia.com" }],
+      "destination": "https://cordhq.app/:path*",
+      "permanent": true
+    }
   ]
 }

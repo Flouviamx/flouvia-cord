@@ -145,7 +145,7 @@ export const MCP_TOOLS: McpToolDef[] = [
                     notas: args?.notas || null,
                     items: Array.isArray(args?.items) ? args.items : [],
                     send: false,
-                }, { origin: 'https://cord.flouvia.com', ip: ctx.ip, actor: `mcp:${ctx.keyId}` });
+                }, { origin: 'https://cordhq.app', ip: ctx.ip, actor: `mcp:${ctx.keyId}` });
                 return { id: r.id, folio: r.folio, link_publico: `/q/${r.token}`, estado: 'borrador' };
             } catch (e) {
                 if (e instanceof QuoteError) throw new McpToolError(e.message);

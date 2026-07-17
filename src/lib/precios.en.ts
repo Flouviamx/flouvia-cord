@@ -261,6 +261,6 @@ export const FAQ_PRECIOS_EN: { q: string; a: string }[] = [
     },
     {
         q: 'Do I need to be a Flouvia customer to sign up for a plan?',
-        a: 'No. Cord is independent software: any B2B business in Mexico can sign up directly at cord.flouvia.com and choose a plan, with no prior relationship with Flouvia or any other product required.',
+        a: 'No. Cord is independent software: any B2B business in Mexico can sign up directly at cordhq.app and choose a plan, with no prior relationship with Flouvia or any other product required.',
     },
 ];

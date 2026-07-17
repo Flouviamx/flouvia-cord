@@ -46,7 +46,7 @@ export async function sendEmail(opts: { to: string; subject: string; html: strin
 /**
  * Notifica al cliente que tiene una cotización lista para revisar. Busca el
  * folio/total/token + correo del cliente + nombre/color de la org y arma el
- * correo. `origin` = base URL (https://cord.flouvia.com) para el link público.
+ * correo. `origin` = base URL (https://cordhq.app) para el link público.
  */
 export async function notifyQuoteSent(orgId: string, cotizacionId: string, origin: string): Promise<SendResult> {
     const rows = await sql`
@@ -79,7 +79,7 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, origi
     const html = `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
         <div style="max-width:540px;margin:0 auto;">
             <div style="margin-bottom:32px;">
-                <img src="https://cord.flouvia.com/imgs/logo-cord-navy.png" width="90" height="auto" alt="Cord Logo" style="display:block;">
+                <img src="https://cordhq.app/imgs/logo-cord-navy.png" width="90" height="auto" alt="Cord Logo" style="display:block;">
             </div>
             
             <p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">Estimado equipo de ${esc(r.empresa || 'cliente')},</p>

@@ -11,7 +11,7 @@ The `cotizaciones` (quotes) resource lets you generate dynamic proposals from yo
 Make a `POST` to `/api/v1/cotizaciones` with at least one item (requires **write** scope):
 
 ```bash
-curl -X POST https://cord.flouvia.com/api/v1/cotizaciones \
+curl -X POST https://cordhq.app/api/v1/cotizaciones \
   -H "Authorization: Bearer sk_live_your_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -45,12 +45,12 @@ Response:
 **Important:**
 - All amounts are in **pesos** (`15000` = $15,000.00 MXN), not cents.
 - Tax (IVA) and totals are computed server-side based on your organization's settings.
-- `link_publico` is the path of the link your customer sees (`/q/{token}`); prefix it with `https://cord.flouvia.com`.
+- `link_publico` is the path of the link your customer sees (`/q/{token}`); prefix it with `https://cordhq.app`.
 
 ### List quotes
 
 ```bash
-curl "https://cord.flouvia.com/api/v1/cotizaciones?status=sent&limit=50" \
+curl "https://cordhq.app/api/v1/cotizaciones?status=sent&limit=50" \
   -H "Authorization: Bearer sk_live_your_key"
 ```
 

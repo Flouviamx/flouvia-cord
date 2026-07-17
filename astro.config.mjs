@@ -7,7 +7,7 @@ import { esMX } from '@clerk/localizations';
 import react from '@astrojs/react';
 
 export default defineConfig({
-  site: 'https://cord.flouvia.com',
+  site: 'https://cordhq.app',
   output: 'server',
 
   i18n: {

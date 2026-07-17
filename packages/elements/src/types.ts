@@ -44,7 +44,7 @@ export type CordEvent =
 export interface CordElementOptions {
     /** Token público de la cotización (de /q/{token} o la API). REQUERIDO. */
     token: string;
-    /** Origen de Cord. Default: https://cord.flouvia.com (cambiar para self-host/staging). */
+    /** Origen de Cord. Default: https://cordhq.app (cambiar para self-host/staging). */
     baseUrl?: string;
     /** Alto inicial del skeleton en px mientras carga. Default 420. */
     minHeight?: number;
@@ -236,7 +236,7 @@ export interface CordAppearance {
 // NATIVOS (no el iframe) usa `appearance.elements` (ver CordElements).
 
 interface CordProviderCommonProps {
-    /** Origen de Cord. Default: https://cord.flouvia.com (self-host/staging). */
+    /** Origen de Cord. Default: https://cordhq.app (self-host/staging). */
     baseUrl?: string;
     /** Token público de una cotización (el mismo de `/q/{token}`). Configura el contexto para un Iframe de Cotizador. */
     token?: string;

@@ -75,7 +75,7 @@ const AT_LIMIT = ACTIVAS >= LIMITE;
     <div class="dev-card">
         <h3 class="dev-card-title">Endpoints disponibles</h3>
         <p class="dev-note" style="margin: 0.4rem 0 1.2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
-            <span>Base: <code>https://cord.flouvia.com/api/v1</code> · autentícate con <code>Authorization: Bearer &lt;tu_clave&gt;</code>.</span>
+            <span>Base: <code>https://cordhq.app/api/v1</code> · autentícate con <code>Authorization: Bearer &lt;tu_clave&gt;</code>.</span>
             <span style="display:flex; gap: 0.8rem; font-size: 0.75rem;">
                 <a href="/openapi.yaml" target="_blank" rel="noopener" style="color: var(--color-blue-deep); text-decoration: none; font-weight: 600;">Spec OpenAPI ↗</a>
                 <a href="/llms.txt" target="_blank" rel="noopener" style="color: var(--color-blue-deep); text-decoration: none; font-weight: 600;">llms.txt (IA Docs) ↗</a>
@@ -94,7 +94,7 @@ const AT_LIMIT = ACTIVAS >= LIMITE;
         </div>
         <div class="dev-terminal">
             <span class="ep-code-label">Ejemplo</span>
-            <pre><code>curl https://cord.flouvia.com/api/v1/cotizaciones \
+            <pre><code>curl https://cordhq.app/api/v1/cotizaciones \
   -H "Authorization: Bearer sk_live_xxxxxxxxxxxx"</code></pre>
         </div>
         <div style="margin-top: 1.5rem;">
@@ -287,7 +287,7 @@ const AT_LIMIT = ACTIVAS >= LIMITE;
 Tu tarea es implementar la integración con la API REST de Flouvia Cord (un SaaS B2B) para mi aplicación.
 
 == CONTEXTO TÉCNICO ==
-- Base URL: https://cord.flouvia.com/api/v1
+- Base URL: https://cordhq.app/api/v1
 - Autenticación: Header "Authorization: Bearer <TU_API_KEY>"
 - Content-Type: application/json
 

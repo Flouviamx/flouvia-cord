@@ -1,6 +1,6 @@
 # Cord — CLAUDE.md
 
-SaaS de cotizaciones B2B standalone de Flouvia. Dominio: **cord.flouvia.com**.
+SaaS de cotizaciones B2B standalone de Flouvia. Dominio: **cordhq.app**.
 Es la versión independiente de la app de Shopify "Flouvia Cotizaciones B2B"
 (repo hermano: `../flouvia/src/data/apps.ts`), dirigida a **cualquier negocio B2B
 en México** — no solo Shopify.
@@ -8,12 +8,12 @@ en México** — no solo Shopify.
 > **Repo:** `~/Desktop/flouvia-cord` (carpeta HERMANA de `~/Desktop/flouvia`, NO
 > anidada — son dos repos git y dos proyectos Vercel independientes).
 > GitHub: `github.com/Flouviamx/flouvia-cord`. Deploy automático en Vercel a
-> `cord.flouvia.com` con cada push a `main`.
+> `cordhq.app` con cada push a `main`.
 >
 > ⚠️ **Rebrand Trato → Cord (jun 2026):** el código ya está renombrado a Cord. Lo
 > que sigue siendo "trato" y debe renombrarse MANUALMENTE fuera del repo: el repo de
 > GitHub (`flouvia-trato` → `flouvia-cord`), la carpeta local (`~/Desktop/flouvia-trato`),
-> el proyecto en Vercel y el subdominio DNS (`trato.flouvia.com` → `cord.flouvia.com`).
+> el proyecto en Vercel y el subdominio DNS (`trato.flouvia.com` → `cordhq.app`).
 > Los logos (`public/imgs/logo-cord-{navy,white}.png`) conservan el arte de Trato hasta
 > que André pase los nuevos. El paquete npm sigue siendo `@flouviahq/elements` (no
 > contiene "trato"), pero el Web Component ahora es `<cord-cotizador>`; re-publicar para
@@ -80,7 +80,7 @@ que el webhook), (1) membresía activa en `org_members`, (2) org propia legacy,
 webhook registrado en `/api/clerk/webhook`. ✅ **Stripe Billing CONECTADO + EN PROD
 (jun 2026):** suscripciones de 5 planes + medidores de excedente (ver "Stripe Billing"
 abajo); llaves `sk_live`, `STRIPE_WEBHOOK_SECRET` seteado, webhook apuntando a
-`cord.flouvia.com/api/stripe/webhook` y Customer Portal configurado en el dashboard.
+`cordhq.app/api/stripe/webhook` y Customer Portal configurado en el dashboard.
 Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cableado en
 `ai-draft`; CFDI/API/usuario también miden uso (ver "Stripe Billing"). ✅ **Clerk Organizations HÍBRIDO
 (jun 2026):** código completamente implementado + **config manual COMPLETADA en prod**
@@ -143,7 +143,7 @@ de Vercel de Cord (auto-inyecta `DATABASE_URL` en todos los environments).
 ## Deployment
 
 - **Plataforma:** Vercel (proyecto independiente del de flouvia.com).
-- **Dominio:** `cord.flouvia.com` (movido al proyecto de Cord en Vercel; DNS ya
+- **Dominio:** `cordhq.app` (movido al proyecto de Cord en Vercel; DNS ya
   apunta a Vercel).
 - **Modo:** SSR (`output: 'server'`). La landing es `prerender: true`.
 - Todas las API routes futuras necesitan `export const prerender = false`.

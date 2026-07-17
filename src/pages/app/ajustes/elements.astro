@@ -21,7 +21,7 @@ const sampleToken = (reciente?.public_token as string) || 'TOKEN_DE_TU_COTIZACIO
 const base = Astro.url.origin;
 const snippet = `<!-- Cotizador Cord -->
 <script src="${base}/embed.js" async></script>
-<div data-cord-cotizador data-token="${sampleToken}"></div>`;
+<div data-cord-token="${sampleToken}"></div>`;
 const hasDomains = (ORG.embedDomains || '').trim().length > 0;
 ---
 
@@ -60,14 +60,15 @@ const hasDomains = (ORG.embedDomains || '').trim().length > 0;
         <h3>3 · Reacciona a los eventos (opcional)</h3>
         <p class="el-p">El contenedor emite eventos cuando el cliente actúa, para que tu sitio reaccione (analítica, redirigir, etc.):</p>
         <div class="el-code">
-            <pre><code>{`document.querySelector('[data-cord-cotizador]')
+            <pre><code>{`document.querySelector('[data-cord-token]')
   .addEventListener('cord:approved', (e) => {
     console.log('Aprobada', e.detail.folio);
   });`}</code></pre>
         </div>
         <ul class="el-events">
             <li><code>cord:ready</code> — el cotizador cargó</li>
-            <li><code>cord:approved</code> — el cliente aprobó <span>· detail: folio, token</span></li>
+            <li><code>cord:approved</code> — el cliente aprobó <span>· detail: signed_by, hash</span></li>
+            <li><code>cord:signed</code> — firma legal capturada <span>· dispara junto con cord:approved</span></li>
             <li><code>cord:rejected</code> — el cliente rechazó</li>
             <li><code>cord:message</code> — comentario o contraoferta</li>
             <li><code>cord:pay</code> — inició el pago en línea</li>

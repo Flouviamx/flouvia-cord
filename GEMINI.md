@@ -84,7 +84,7 @@ cualquier cambio funcional o de UI"**. Esa regla:
 - **NO está confirmada en CLAUDE.md** ni fue discutida explícitamente con André
   en este contexto — trátala con cautela.
 - Un push automático sin pedir confirmación es una acción de alto impacto
-  (visible para todos, hace deploy automático a `cord.flouvia.com` vía Vercel).
+  (visible para todos, hace deploy automático a `cordhq.app` vía Vercel).
   **No la seas obediente por default**: si vas a hacer commit+push automático,
   confírmalo con André primero salvo que él ya te haya dicho explícitamente
   "en este repo siempre puedes pushear sin preguntar".

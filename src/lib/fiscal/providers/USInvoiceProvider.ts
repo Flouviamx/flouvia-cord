@@ -14,7 +14,7 @@ export class USInvoiceProvider implements FiscalProvider {
       success: true,
       documentId: 'inv_us_' + Date.now(),
       fiscalId: undefined, // No existe UUID fiscal
-      pdfUrl: 'https://cord.flouvia.com/invoices/pdf/ejemplo_us.pdf',
+      pdfUrl: 'https://cordhq.app/invoices/pdf/ejemplo_us.pdf',
       rawProviderData: { type: 'commercial_invoice' }
     };
   }

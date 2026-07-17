@@ -25,8 +25,8 @@ const CODES = [
     {
         id: 'html', label: 'HTML', file: 'index.html',
         code: `<!-- En cualquier sitio HTML -->
-<script src="https://cord.flouvia.com/embed.js" async></script>
-<div data-cord-cotizador data-token="abc123"></div>`,
+<script src="https://cordhq.app/embed.js" async></script>
+<div data-cord-token="abc123"></div>`,
     },
     {
         id: 'react', label: 'React', file: 'Cotizacion.jsx',
@@ -85,8 +85,8 @@ defineProps({ token: String });
     {
         id: 'wordpress', label: 'WordPress', file: 'Bloque HTML',
         code: `<!-- Pega esto en un bloque "HTML personalizado" -->
-<script src="https://cord.flouvia.com/embed.js" async></script>
-<div data-cord-cotizador data-token="abc123"></div>`,
+<script src="https://cordhq.app/embed.js" async></script>
+<div data-cord-token="abc123"></div>`,
     },
 ];
 
@@ -95,7 +95,7 @@ const isEn = lang === 'en';
 const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 const devPage = elementsData(isEn);
 
-const EVENTS = `document.querySelector('[data-cord-cotizador]')
+const EVENTS = `document.querySelector('[data-cord-token]')
   .addEventListener('cord:approved', (e) => {
     // tu cliente aprobó — registra la venta, redirige, etc.
     analytics.track('cotizacion_aprobada', e.detail);
@@ -112,7 +112,7 @@ const faqSchema = {
         acceptedAnswer: { '@type': 'Answer', text: f.a },
     })),
 };
-const SITE = 'https://cord.flouvia.com';
+const SITE = 'https://cordhq.app';
 const base = isEn ? `${SITE}/en` : SITE;
 const breadcrumbSchema = {
     '@context': 'https://schema.org',
@@ -291,6 +291,14 @@ const breadcrumbSchema = {
                     <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
                     <div><b>{isEn ? 'Real-time events' : 'Eventos en tiempo real'}</b><span>{isEn ? <Fragment>Your site listens to <code>cord:approved</code>, <code>cord:pay</code>, and more — to trigger your analytics, CRM, or whatever you need.</Fragment> : <Fragment>Tu sitio escucha <code>cord:approved</code>, <code>cord:pay</code> y más — para disparar tu analítica, CRM o lo que sea.</Fragment>}</span></div>
                 </div>
+                <div class="el-feat reveal">
+                    <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg></span>
+                    <div><b>{isEn ? 'Legally verifiable approval' : 'Aprobación con validez legal'}</b><span>{isEn ? <Fragment>Every approval is signed with a SHA-256 hash, IP, and timestamp — with a visible trust seal on the quote itself. In Mexico, it's also ready for CFDI 4.0 stamping.</Fragment> : <Fragment>Cada aprobación queda firmada con un hash SHA-256, IP y fecha — con un sello de confianza visible en la misma cotización. En México, además queda lista para timbrarse con CFDI 4.0.</Fragment>}</span></div>
+                </div>
+                <div class="el-feat reveal">
+                    <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="14" y1="4" x2="10" y2="20"/></svg></span>
+                    <div><b>{isEn ? 'Typed SDK, or fully headless' : 'SDK tipado, o 100% headless'}</b><span>{isEn ? <Fragment>Use the quote builder as-is, or drop it entirely and build your own UI with <code>useQuoteBuilder()</code> — TypeScript types generated from the real code, not hand-written.</Fragment> : <Fragment>Usa el cotizador tal cual, o descártalo por completo y construye tu propia interfaz con <code>useQuoteBuilder()</code> — tipos de TypeScript generados del código real, no escritos a mano.</Fragment>}</span></div>
+                </div>
             </div>
         </section>
 
@@ -302,7 +310,8 @@ const breadcrumbSchema = {
                 <p class="el-copy reveal">{isEn ? <Fragment>The container emits <code>CustomEvents</code> on your own <code>&lt;div&gt;</code>. Connect them to your analytics, redirect after approval, or sync your CRM — you keep control on your page.</Fragment> : <Fragment>El contenedor emite <code>CustomEvents</code> sobre tu propio <code>&lt;div&gt;</code>. Conéctalos a tu analítica, redirige tras la aprobación o sincroniza tu CRM — el control queda en tu página.</Fragment>}</p>
                 <ul class="el-events-list">
                     <li class="reveal"><code>cord:ready</code><span>{isEn ? 'the quote builder loaded' : 'el cotizador cargó'}</span></li>
-                    <li class="reveal"><code>cord:approved</code><span>{isEn ? <Fragment>the client approved · <i>detail: folio, token</i></Fragment> : <Fragment>el cliente aprobó · <i>detail: folio, token</i></Fragment>}</span></li>
+                    <li class="reveal"><code>cord:approved</code><span>{isEn ? <Fragment>the client approved · <i>detail: signed_by, hash</i></Fragment> : <Fragment>el cliente aprobó · <i>detail: signed_by, hash</i></Fragment>}</span></li>
+                    <li class="reveal"><code>cord:signed</code><span>{isEn ? 'legal signature captured (fires together with cord:approved)' : 'firma legal capturada (dispara junto con cord:approved)'}</span></li>
                     <li class="reveal"><code>cord:rejected</code><span>{isEn ? 'the client rejected' : 'el cliente rechazó'}</span></li>
                     <li class="reveal"><code>cord:message</code><span>{isEn ? 'comment or counteroffer' : 'comentario o contraoferta'}</span></li>
                     <li class="reveal"><code>cord:pay</code><span>{isEn ? 'online payment started' : 'inició el pago en línea'}</span></li>

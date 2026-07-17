@@ -34,7 +34,7 @@ Si vas a usar Cord programáticamente:
 - Verifica que funciona con la llamada más simple:
 
 ```bash
-curl https://cord.flouvia.com/api/v1/me -H "Authorization: Bearer sk_test_tu_llave"
+curl https://cordhq.app/api/v1/me -H "Authorization: Bearer sk_test_tu_llave"
 ```
 
 ## ¿Qué sigue?

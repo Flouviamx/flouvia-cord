@@ -11,7 +11,7 @@ El recurso `cotizaciones` te permite generar propuestas dinámicas desde tu back
 Haz un `POST` a `/api/v1/cotizaciones` con al menos un ítem (requiere alcance de **escritura**):
 
 ```bash
-curl -X POST https://cord.flouvia.com/api/v1/cotizaciones \
+curl -X POST https://cordhq.app/api/v1/cotizaciones \
   -H "Authorization: Bearer sk_live_tu_llave" \
   -H "Content-Type: application/json" \
   -d '{
@@ -45,12 +45,12 @@ Respuesta:
 **Importante:**
 - Todos los montos van en **pesos** (`15000` = $15,000.00 MXN), no en centavos.
 - El IVA y los totales se calculan en el servidor según la configuración de tu organización.
-- `link_publico` es la ruta del link que ve tu cliente (`/q/{token}`); antepón `https://cord.flouvia.com`.
+- `link_publico` es la ruta del link que ve tu cliente (`/q/{token}`); antepón `https://cordhq.app`.
 
 ### Listar cotizaciones
 
 ```bash
-curl "https://cord.flouvia.com/api/v1/cotizaciones?status=sent&limit=50" \
+curl "https://cordhq.app/api/v1/cotizaciones?status=sent&limit=50" \
   -H "Authorization: Bearer sk_live_tu_llave"
 ```
 

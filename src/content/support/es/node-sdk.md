@@ -11,7 +11,7 @@ category: "Desarrolladores"
 Centraliza la URL base, la llave y el manejo de errores en una función:
 
 ```typescript
-const BASE = 'https://cord.flouvia.com/api/v1';
+const BASE = 'https://cordhq.app/api/v1';
 
 async function cord(path: string, init: RequestInit = {}) {
   const res = await fetch(`${BASE}${path}`, {
@@ -49,5 +49,5 @@ console.log(data.folio, data.link_publico); // ej. COT-0149  /q/abc123
 
 **Recuerda:**
 - Los montos van en **pesos** (`1500` = $1,500.00), no en centavos.
-- `link_publico` es la ruta del link que ve tu cliente (`/q/{token}`); antepón `https://cord.flouvia.com`.
+- `link_publico` es la ruta del link que ve tu cliente (`/q/{token}`); antepón `https://cordhq.app`.
 - Crear cotizaciones requiere una llave con alcance de **escritura**.

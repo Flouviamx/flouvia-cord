@@ -138,7 +138,7 @@ export async function dispatchQuoteEvent(orgId: string, cotizacionId: string, ev
         // request en curso, así que no hay `origin` que leer — mismo fallback
         // que ya usa dispatchSlack() abajo. Un link relativo obligaba a quien
         // recibe el webhook a adivinar el dominio para armar el link real.
-        const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cord.flouvia.com';
+        const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cordhq.app';
         const body = JSON.stringify({
             event: evento,
             created_at: new Date().toISOString(),
@@ -165,7 +165,7 @@ async function dispatchSlack(orgId: string, evento: string, q: any): Promise<voi
         const [o] = await sql`select slack_webhook_url from orgs where id = ${orgId}`;
         const url = o?.slack_webhook_url as string | null;
         if (!url) return;
-        const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cord.flouvia.com';
+        const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cordhq.app';
         await postToSlack(url, evento, {
             folio: q.folio as string,
             cliente: (q.empresa as string) ?? null,
@@ -183,7 +183,7 @@ async function dispatchSlack(orgId: string, evento: string, q: any): Promise<voi
 export async function sendTestEvent(orgId: string, webhookId: string): Promise<{ ok: boolean; status: number; error: string | null }> {
     const [hook] = await sql`select * from webhooks where id = ${webhookId} and org_id = ${orgId}`;
     if (!hook) return { ok: false, status: 0, error: 'Endpoint no encontrado' };
-    const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cord.flouvia.com';
+    const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cordhq.app';
     const body = JSON.stringify({
         event: 'ping',
         created_at: new Date().toISOString(),

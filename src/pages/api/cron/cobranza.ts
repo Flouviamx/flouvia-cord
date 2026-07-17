@@ -153,7 +153,7 @@ export const GET: APIRoute = async ({ request }) => {
         const bodyHtml = `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
         <div style="max-width:540px;margin:0 auto;">
             <div style="margin-bottom:32px;">
-                <img src="https://cord.flouvia.com/imgs/logo-cord-navy.png" width="90" height="auto" alt="Cord Logo" style="display:block;">
+                <img src="https://cordhq.app/imgs/logo-cord-navy.png" width="90" height="auto" alt="Cord Logo" style="display:block;">
             </div>
 
             <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:0;font-weight:400;margin-top:0;white-space:pre-wrap;">${cuerpo}</p>

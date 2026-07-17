@@ -11,7 +11,7 @@ import { SOLUCIONES } from '../lib/solucion';
 import { DEV_PAGES } from '../lib/desarrolladores';
 import { roadmapData } from '../lib/roadmap-data';
 
-const SITE = 'https://cord.flouvia.com';
+const SITE = 'https://cordhq.app';
 
 const STATIC_PATHS = [
     { path: '/', priority: '1.0', changefreq: 'weekly' },

@@ -7,7 +7,7 @@
 import type { CordAppearance } from './types.js';
 
 export interface CordGlobalConfig {
-    /** Origen de Cord. Default: https://cord.flouvia.com (self-host/staging). */
+    /** Origen de Cord. Default: https://cordhq.app (self-host/staging). */
     baseUrl?: string;
     /** Appearance aplicada cuando ni el componente ni el Provider la traen. */
     appearance?: CordAppearance;
@@ -15,7 +15,7 @@ export interface CordGlobalConfig {
     publishableKey?: string;
 }
 
-const DEFAULT_ORIGIN = 'https://cord.flouvia.com';
+const DEFAULT_ORIGIN = 'https://cordhq.app';
 
 let globalConfig: CordGlobalConfig = {};
 

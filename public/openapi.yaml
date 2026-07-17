@@ -4,7 +4,7 @@ info:
   description: API REST oficial para automatizar cotizaciones, clientes y productos.
   version: "1.0.0"
 servers:
-  - url: https://cord.flouvia.com/api/v1
+  - url: https://cordhq.app/api/v1
     description: Servidor de Producción
 components:
   securitySchemes:

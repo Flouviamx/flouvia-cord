@@ -5,7 +5,7 @@
 // Las tools (src/lib/mcp.ts) operan sobre la org resuelta por la llave.
 //
 // Configúralo en un cliente MCP como servidor HTTP:
-//   url: https://cord.flouvia.com/api/mcp
+//   url: https://cordhq.app/api/mcp
 //   header: Authorization: Bearer sk_live_xxxxxxxx
 export const prerender = false;
 

@@ -16,7 +16,7 @@ Entra a **Ajustes > Developers > API** (`/app/ajustes/api`). Ahí creas llaves n
 La API es REST sobre HTTPS. Cada petición lleva tu llave en el header `Authorization`:
 
 ```bash
-curl https://cord.flouvia.com/api/v1/me \
+curl https://cordhq.app/api/v1/me \
   -H "Authorization: Bearer sk_live_tu_llave"
 ```
 

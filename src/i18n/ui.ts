@@ -241,7 +241,7 @@ export const ui = {
     'faq.eyebrow': 'PREGUNTAS FRECUENTES',
     'faq.title': 'Lo que más nos preguntan.',
     'faq.1.q': '¿Qué es Cord?',
-    'faq.1.a': 'Cord es un software B2B independiente para cotizaciones, pedidos y facturación — no necesitas ser cliente de Flouvia ni de ningún otro producto para usarlo. Cualquier negocio B2B en México puede crear una cuenta gratis en cord.flouvia.com y empezar a cotizar el mismo día. Permite gestionar precios negociados por cliente, términos de crédito Net 30/60 y timbrar CFDI 4.0 automáticamente ante el SAT.',
+    'faq.1.a': 'Cord es un software B2B independiente para cotizaciones, pedidos y facturación — no necesitas ser cliente de Flouvia ni de ningún otro producto para usarlo. Cualquier negocio B2B en México puede crear una cuenta gratis en cordhq.app y empezar a cotizar el mismo día. Permite gestionar precios negociados por cliente, términos de crédito Net 30/60 y timbrar CFDI 4.0 automáticamente ante el SAT.',
     'faq.2.q': '¿Necesito tener una tienda en línea para usar Cord?',
     'faq.2.a': 'No. Cord es independiente — funciona para cualquier negocio B2B: distribuidoras, mayoristas, manufactura o servicios. Subes tu catálogo (o cotizas líneas libres) y empiezas a mandar cotizaciones. Si además vendes en Shopify, tenemos una app que se integra.',
     'faq.3.q': '¿Cómo funciona el plan gratis?',
@@ -255,7 +255,7 @@ export const ui = {
     'faq.7.q': '¿Puedo cancelar cuando quiera?',
     'faq.7.a': 'Cuando quieras, desde tu panel. Sin contratos ni penalizaciones. Si cancelas un plan de pago, bajas al gratis y conservas tu información.',
     'faq.8.q': '¿Cord es lo mismo que la app de Flouvia para Shopify?',
-    'faq.8.a': 'No. Flouvia también tiene una app de cotizaciones B2B dentro del ecosistema Shopify, pero Cord es un producto separado, con su propio dominio (cord.flouvia.com) y su propia cuenta: no depende de Shopify ni de ser cliente previo de Flouvia. Cualquier negocio B2B en México puede registrarse directamente en Cord, sin pasar por Flouvia.',
+    'faq.8.a': 'No. Flouvia también tiene una app de cotizaciones B2B dentro del ecosistema Shopify, pero Cord es un producto separado, con su propio dominio (cordhq.app) y su propia cuenta: no depende de Shopify ni de ser cliente previo de Flouvia. Cualquier negocio B2B en México puede registrarse directamente en Cord, sin pasar por Flouvia.',
 
 
   },
@@ -490,7 +490,7 @@ export const ui = {
     'faq.eyebrow': 'FREQUENTLY ASKED QUESTIONS',
     'faq.title': 'What they ask us the most.',
     'faq.1.q': 'What is Cord?',
-    'faq.1.a': 'Cord is independent B2B software for quotes, orders, and invoicing — you don\'t need to be a Flouvia customer or use any other product to sign up. Any B2B business in Mexico can create a free account at cord.flouvia.com and start quoting the same day. It lets you manage negotiated prices per client, Net 30/60 credit terms, and automatically stamp CFDI 4.0 invoices with the SAT.',
+    'faq.1.a': 'Cord is independent B2B software for quotes, orders, and invoicing — you don\'t need to be a Flouvia customer or use any other product to sign up. Any B2B business in Mexico can create a free account at cordhq.app and start quoting the same day. It lets you manage negotiated prices per client, Net 30/60 credit terms, and automatically stamp CFDI 4.0 invoices with the SAT.',
     'faq.2.q': 'Do I need an online store to use Cord?',
     'faq.2.a': 'No. Cord is independent — it works for any B2B business: distributors, wholesalers, manufacturing, or services. You upload your catalog (or quote free lines) and start sending quotes. If you also sell on Shopify, we have an app that integrates.',
     'faq.3.q': 'How does the free plan work?',
@@ -504,7 +504,7 @@ export const ui = {
     'faq.7.q': 'Can I cancel anytime?',
     'faq.7.a': 'Anytime, from your dashboard. No contracts or penalties. If you cancel a paid plan, you drop to the free plan and keep your information.',
     'faq.8.q': 'Is Cord the same as Flouvia\'s Shopify app?',
-    'faq.8.a': 'No. Flouvia also has a B2B quoting app inside the Shopify ecosystem, but Cord is a separate product with its own domain (cord.flouvia.com) and its own account — it doesn\'t depend on Shopify or on being an existing Flouvia customer. Any B2B business in Mexico can sign up for Cord directly, without going through Flouvia.',
+    'faq.8.a': 'No. Flouvia also has a B2B quoting app inside the Shopify ecosystem, but Cord is a separate product with its own domain (cordhq.app) and its own account — it doesn\'t depend on Shopify or on being an existing Flouvia customer. Any B2B business in Mexico can sign up for Cord directly, without going through Flouvia.',
 
 
   },

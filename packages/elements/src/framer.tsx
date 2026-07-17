@@ -52,8 +52,8 @@ addPropertyControls(FramerCordCotizador, {
     baseUrl: {
         type: ControlType.String,
         title: 'Base URL',
-        defaultValue: 'https://cord.flouvia.com',
-        placeholder: 'https://cord.flouvia.com',
+        defaultValue: 'https://cordhq.app',
+        placeholder: 'https://cordhq.app',
         hidden(props) {
             return false; // Show for advanced cases like staging
         }

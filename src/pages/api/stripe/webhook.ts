@@ -1,7 +1,7 @@
 // POST /api/stripe/webhook — Stripe avisa de pagos, altas y CAMBIOS DE PLAN.
 // Verifica la firma con STRIPE_WEBHOOK_SECRET (HMAC, sin SDK) y sincroniza Neon
 // en tiempo real. Configura el endpoint en el dashboard de Stripe apuntando a
-// https://cord.flouvia.com/api/stripe/webhook con estos eventos:
+// https://cordhq.app/api/stripe/webhook con estos eventos:
 //   • checkout.session.completed
 //   • customer.subscription.created / .updated / .deleted
 //   • invoice.paid / invoice.payment_failed

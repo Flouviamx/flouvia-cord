@@ -33,7 +33,7 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
 // Datos estructurados (jul 2026, auditoría SEO/AI-SEO): el blog no tenía
 // ningún JSON-LD — BlogPosting es lo que Google/IA usan para citar autor,
 // fecha y portada en resultados enriquecidos y AI Overviews.
-const SITE = 'https://cord.flouvia.com';
+const SITE = 'https://cordhq.app';
 const base = isEn ? `${SITE}/en` : SITE;
 const postUrl = `${base}/blog/${entry.id.replace(/^(es|en)\//, '')}`;
 const parsedDate = new Date(entry.data.date);
@@ -159,13 +159,13 @@ const breadcrumbSchema = {
                         </div>
                         <span class="share-text" id="copy-text">Copiar link</span>
                     </button>
-                    <a href={`https://www.linkedin.com/sharing/share-offsite/?url=https://cord.flouvia.com/blog/${entry.id}`} target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en LinkedIn">
+                    <a href={`https://www.linkedin.com/sharing/share-offsite/?url=https://cordhq.app/blog/${entry.id}`} target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en LinkedIn">
                         <div class="share-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
                         </div>
                         <span class="share-text">LinkedIn</span>
                     </a>
-                    <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(entry.data.title)}&url=https://cord.flouvia.com/blog/${entry.id}`} target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en X">
+                    <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(entry.data.title)}&url=https://cordhq.app/blog/${entry.id}`} target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en X">
                         <div class="share-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l11.733 16h4.267l-11.733 -16z"></path><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path></svg>
                         </div>

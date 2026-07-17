@@ -2,7 +2,7 @@
 // API key es válida y ver a qué negocio pertenece. Es el más simple de todos:
 // ejercita el carril completo (Bearer → authApiKey → org en contexto → query).
 //
-//   curl https://cord.flouvia.com/api/v1/me -H "Authorization: Bearer sk_live_..."
+//   curl https://cordhq.app/api/v1/me -H "Authorization: Bearer sk_live_..."
 //   → { data: { org: { id, nombre, plan }, scope, mode } }
 export const prerender = false;
 

@@ -9,7 +9,7 @@ The `clientes` (customers) resource lets you read and create your organization's
 ### List customers
 
 ```bash
-curl "https://cord.flouvia.com/api/v1/clientes?limit=50&offset=0" \
+curl "https://cordhq.app/api/v1/clientes?limit=50&offset=0" \
   -H "Authorization: Bearer sk_live_your_key"
 ```
 
@@ -20,7 +20,7 @@ Returns `{ "data": [ ... ], "meta": { "limit": 50, "offset": 0, "total": 128 } }
 Make a `POST` to `/api/v1/clientes` (requires a key with **write** scope):
 
 ```bash
-curl -X POST https://cord.flouvia.com/api/v1/clientes \
+curl -X POST https://cordhq.app/api/v1/clientes \
   -H "Authorization: Bearer sk_live_your_key" \
   -H "Content-Type: application/json" \
   -d '{

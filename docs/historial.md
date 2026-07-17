@@ -8,6 +8,143 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Pasada de "hacerlo super top" — SEO/GEO tras la migración a dominio propio (jul 2026)** —
+   André pidió aprovechar que Cord ya no vive bajo un subdominio de flouvia.com para
+   reforzar SEO/AI-SEO de punta a punta.
+   • **Bug crítico encontrado — `cord.flouvia.com` tirando 404:** al haber movido el
+     dominio primario del proyecto de Vercel a `cordhq.app`, el subdominio viejo quedó
+     con un alias de DNS huérfano (`x-vercel-error: DEPLOYMENT_NOT_FOUND`) — cualquier
+     backlink, bookmark o link viejo compartido perdía toda la señal de autoridad y le
+     pegaba a un 404. Fix: redirect 301 agregado en `vercel.json`
+     (`{source: '/:path*', has: [{type:'host', value:'cord.flouvia.com'}], destination:
+     'https://cordhq.app/:path*', permanent: true}`) — preserva el path completo.
+     ⚠️ **Solo funciona si `cord.flouvia.com` está re-agregado como dominio del proyecto
+     de Cord en Vercel** (Project Settings → Domains) — el código ya está listo, falta
+     ese paso manual (ver checklist abajo).
+   • **`robots.txt` — directivas explícitas para crawlers de IA:** antes solo existía el
+     bloque `User-agent: *`, que los bots de IA heredaban implícitamente. Se agregó un
+     segundo bloque explícito (mismo Allow/Disallow) nombrando 14 user-agents reales:
+     `GPTBot`/`OAI-SearchBot`/`ChatGPT-User` (OpenAI), `ClaudeBot`/`Claude-Web`/
+     `anthropic-ai` (Anthropic), `PerplexityBot`/`Perplexity-User`, `Google-Extended`/
+     `GoogleOther`, `CCBot` (Common Crawl), `meta-externalagent`, `Amazonbot`,
+     `Applebot-Extended` — mismo comportamiento efectivo, pero explícito y a prueba de
+     futuro (si algún día se quiere bloquear uno solo, es una línea, no reestructurar).
+   • **`llms.txt` reescrito — tenía un hueco real:** el archivo anterior se titulaba
+     "Flouvia Cord" y era 100% documentación de API (duplicando `openapi.yaml`) — **nunca
+     mencionaba que Cord es independiente de Flouvia**, justo la señal que motivó la
+     auditoría SEO original (ver [[cord-seo-ai-seo-audit-pattern]]). Reescrito siguiendo
+     el spec real de llms.txt (título + resumen en blockquote + links, no la API inline):
+     el resumen ahora dice explícitamente "not exclusive to Shopify or to clients of its
+     parent company, Flouvia", con secciones de Documentación/Producto/Soporte enlazando
+     a las páginas reales. **Verificado con el agente `copy-accuracy-auditor` — cero
+     hallazgos**, cada capability listada (pagos con tarjeta/SPEI, cobranza IA opt-in,
+     anticipo/saldo/cuotas, roles y audit log, multi-divisa con FX lock, MCP, Cord
+     Elements) se contrastó contra el código real y es 100% precisa.
+   • **JSON-LD evaluado, sin cambios:** se consideró agregar un `Organization` propio
+     para Cord (separado del de Flouvia) ahora que tiene dominio propio, pero el patrón
+     actual (`SoftwareApplication` con `creator`/`provider` apuntando a la `Organization`
+     de Flouvia) ya es el modelado correcto de schema.org — Cord no es una entidad legal
+     separada, es un producto/marca de Flouvia, así que un segundo `Organization` sería
+     una señal de identidad conflictiva, no una mejora. Se dejó intacto.
+   • **`og:image` roto (encontrado, NO arreglado esta pasada):** `Layout.astro` referencia
+     `/og-cord.png` como imagen por default de Open Graph/Twitter Card en TODAS las
+     páginas, pero ese archivo **no existe** en `public/` — cualquier link de Cord
+     compartido en WhatsApp/LinkedIn/Slack/X sale sin vista previa. André prefirió hacer
+     el diseño él mismo en vez de que se generara — queda pendiente, él lo sube cuando
+     esté listo.
+   • **Investigación GEO 2026 — infraestructura falló, sin hallazgos verificados:** se
+     lanzó un `deep-research` sobre prácticas 2026 de GEO/AI-SEO específicas a migración
+     de dominio, pero pegó con un rate-limit de sesión a media corrida (92 de 105 agentes
+     fallaron con "session limit") — el resultado no tiene ningún claim verificado, solo
+     extracciones sin confirmar. Se descartó como fuente; el resto de esta pasada se hizo
+     con conocimiento ya establecido del proyecto, no con ese research.
+   ⚠️ **Checklist pendiente para André (dashboards, no es código):**
+     1. **Vercel:** re-agregar `cord.flouvia.com` como dominio del proyecto de Cord
+        (Project Settings → Domains) para que el redirect 301 ya en `vercel.json` tome
+        efecto — sin este paso, el dominio viejo sigue en 404.
+     2. **Google Search Console:** dar de alta `cordhq.app` como property nueva (tipo
+        Domain, verificación por DNS TXT — fácil, DNS ya vive en nameservers de Vercel),
+        enviar `sitemap.xml`, y pedir indexación manual de home + `/precios` + 2-3
+        páginas de producto vía "Inspección de URLs" para acelerar el crawl inicial. Si
+        `cord.flouvia.com` alguna vez se verificó como property propia ahí, correr la
+        herramienta de "Cambio de dirección" (Change of Address) DESPUÉS del paso 1
+        (necesita el redirect activo primero).
+     3. **Bing Webmaster Tools:** mismo alta + sitemap para `cordhq.app` (Bing alimenta
+        Copilot/ChatGPT vía Bing Search en algunos casos).
+     4. **Backlink desde flouvia.com:** ahora que Cord es dominio independiente, un link
+        real desde flouvia.com/cord (o el footer del sitio) hacia `cordhq.app` es la
+        señal de autoridad más rápida y legítima disponible (dominio hermano real, no
+        granja de links).
+     5. **og:image** (ver arriba) — subir el archivo real a `public/og-cord.png` cuando
+        esté listo.
+   • **Documentado en memoria** ([[cord-domain-migration-cordhq]] actualizada) para que
+     el checklist pendiente no se pierda entre sesiones.
+
+✅ **Migración de dominio: `cord.flouvia.com` → `cordhq.app` (jul 2026)** — André compró
+   `cordhq.app` (dominio propio, ya no subdominio de flouvia.com) y decidió migrar Cord ahí
+   de forma completa e inmediata.
+   • **Código (83 archivos, hecho por el agente):** reemplazo mecánico de
+     `cord.flouvia.com` → `cordhq.app` en TODO el repo — `astro.config.mjs` (`site`),
+     `.env.example`, `public/robots.txt`/`llms.txt`/`openapi.yaml`, `src/pages/sitemap.xml.ts`,
+     CLAUDE.md + los 5 `docs/*.md`, README.md, GEMINI.md, todas las páginas/componentes/API
+     routes de `src/`, los 132 artículos de soporte ES/EN, y el paquete `@flouviahq/elements`
+     (`config.ts` `DEFAULT_ORIGIN`, `package.json` `homepage`). Se dejaron intactas
+     deliberadamente las referencias reales a `flouvia.com` (footer "hecho por Flouvia",
+     `hola@/soporte@/legal@flouvia.com`, JSON-LD `Organization` de Flouvia) — esas siguen
+     siendo el dominio correcto de la empresa matriz, no de Cord.
+   • **Verificación SEO/AI-SEO:** `npm run build` limpio + grep sobre el **HTML generado**
+     en `.vercel/output/static` (no solo el código fuente) confirmó **0 referencias** al
+     dominio viejo en ninguna de las ~230+ páginas estáticas — canonical, `og:url`,
+     hreflang ES/EN, JSON-LD y `sitemap.xml` ya leen `cordhq.app` en el 100% del sitio.
+     Sigue el patrón de auditoría ya documentado (ver [[cord-seo-ai-seo-audit-pattern]]).
+   • **Clerk (config manual de André, completada):** dominio de producción reconfigurado a
+     `cordhq.app` en el dashboard — nuevo publishable key `pk_live_...Y29yZGhxLmFwcCQ`
+     (verificado por API: `clerk.cordhq.app`/`accounts.cordhq.app` con DNS y SSL OK). El
+     agente actualizó `PUBLIC_CLERK_PUBLISHABLE_KEY` en `.env` local (el `CLERK_SECRET_KEY`
+     NO cambia — es el mismo instance, solo cambia el Frontend API domain). André completó
+     el resto: la misma env var en Vercel + redeploy, y el webhook de Clerk
+     (`/api/clerk/webhook`) reapuntado a `cordhq.app` en el dashboard (Svix).
+   • **Stripe (config manual de André, completada):** los DOS webhooks (el de plataforma y
+     el de "eventos en cuentas conectadas") reapuntados a `https://cordhq.app/api/stripe/webhook`
+     en el dashboard. `STRIPE_CONNECT_WEBHOOK_SECRET` confirmado presente en Vercel (vivía
+     solo ahí, nunca se había bajado al `.env` local — por eso una auditoría rápida del
+     `.env` local no lo veía). Las URLs de éxito/cancelación de Checkout (`subscribe.ts`,
+     `portal.ts`, `checkout.ts`) NO necesitaron tocarse — ya se construyen dinámicamente
+     desde `new URL(request.url).origin`, nunca hardcodeadas.
+   • **Vercel:** dominio de producción del proyecto movido a `cordhq.app` + env vars
+     sincronizadas — hecho por André.
+   • **Sin cambios en Neon/BD:** se confirmó que ninguna tabla almacena el dominio propio de
+     Cord — `orgs.embed_domains` es la allowlist de dominios DE CADA CLIENTE (para el CSP
+     del embed de Cord Elements), no el dominio de Cord. Cero migraciones.
+   • **Facturapi/Resend:** sin cambios — Facturapi es solo integración saliente (sin webhook
+     de vuelta a Cord) y el dominio remitente verificado en Resend sigue siendo
+     `flouvia.com` (correos transaccionales), no se vio afectado.
+   Los ajustes cosméticos de Stripe (Customer Portal, Branding, Business → Public details,
+   Connect → Platform profile) también quedaron actualizados a `cordhq.app`.
+   • **Bug encontrado tras el cambio — login con Google roto (`redirect_uri_mismatch`):**
+     el botón "Continuar con Google" usa credenciales OAuth PROPIAS de Cord (Google Cloud
+     Client ID `478617056813-nqstalbgn3sa8lij1i5ht0t4jaa3j1ie...`, confirmado vía
+     `clerk config pull --instance prod` → `connection_oauth_google`), no las credenciales
+     compartidas de Clerk — por eso el chequeo `clerk deploy status` (que solo valida que
+     Clerk tenga credenciales configuradas) reportaba `oauth.complete: true` aunque el login
+     real estaba roto: Google seguía teniendo registrado el redirect URI del dominio viejo
+     (`clerk.cord.flouvia.com/v1/oauth_callback`) y rechazaba la solicitud. Fix: en Google
+     Cloud Console (cuenta `hola@flouvia.com`) → Credentials → ese OAuth Client → se agregó
+     `https://clerk.cordhq.app/v1/oauth_callback` a "Authorized redirect URIs" y
+     `https://cordhq.app`/`https://clerk.cordhq.app` a "Authorized JavaScript origins".
+     Sin cambios en Clerk (mismo client_id/secret). **Migración 100% completa**, sin
+     pendientes.
+   ⚠️ **Regla a futuro:** si Cord usa credenciales OAuth propias para un proveedor social
+     (no las compartidas de Clerk), un cambio de dominio SIEMPRE requiere actualizar el
+     redirect URI en la consola de ese proveedor (Google/GitHub/etc.) — `clerk deploy
+     status` NO detecta esto, solo confirma que existan credenciales, no que el redirect
+     URI esté vigente. Verificar el `client_id` real vía `clerk config pull` para saber si
+     es custom (requiere este paso) o compartido de Clerk (no lo requiere). si el dominio vuelve a cambiar, repetir este mismo patrón — grep
+     mecánico del dominio viejo en TODO el repo (no solo `src/`), verificar contra el HTML
+     del BUILD (no el código fuente ni `npm run dev`), y los 3 sistemas externos a
+     reconfigurar manualmente son siempre los mismos: Clerk (dominio + webhook), Stripe
+     (2 webhooks + branding/portal), Vercel (dominio del proyecto + env vars).
+
 ✅ **Sello de confianza + promesa CFDI en QuoteCard — llega a `/q` Y al embed de Cord
    Elements (jul 2026)** — parte de una sesión de estrategia sobre qué hace que Cord
    Elements sea "necesario" (no solo bonito) para un negocio B2B, y no opcional. De 4
@@ -224,7 +361,7 @@
    (ver `billing.ts` / `negocio-billing.md` de este repo) — se ajustó a "gratis para empezar".
    `CordPricing.astro` (componente compartido en flouvia) ya reflejaba la matriz real de 5 planes
    y no se tocó. ⚠️ **Regla a futuro:** cualquier link nuevo que se agregue en
-   `flouvia/src/pages/cord.astro` hacia `cord.flouvia.com` debe verificarse contra los slugs
+   `flouvia/src/pages/cord.astro` hacia `cordhq.app` debe verificarse contra los slugs
    reales de `src/lib/producto.ts` / `desarrolladores.ts` de ESTE repo antes de escribirse —
    inventar una ruta ahí reproduce el mismo bug de 404 silencioso que se acaba de corregir.
 
@@ -841,7 +978,7 @@
      ya normaliza ambos casos). (2) **XSS reflejado en `/embed/[token]`:** el query
      param `appearance` se parseaba a CSS e inyectaba con `<style set:html={...}>`
      sin sanitizar — un valor con `</style><script>` rompía la etiqueta y ejecutaba JS
-     en `cord.flouvia.com`, alcanzable sin auth vía `/embed/demo?appearance=...`. Fix:
+     en `cordhq.app`, alcanzable sin auth vía `/embed/demo?appearance=...`. Fix:
      whitelist de caracteres (`isSafe()` rechaza `< > { } ;`/`expression`/`javascript`/
      `vbscript`), nombres de propiedad saneados, soporte de `rules` (selectores CSS
      arbitrarios) eliminado, y las fuentes (`@import`) ahora solo cargan desde una
@@ -1619,7 +1756,7 @@
    • **API/SDK real:** los artículos de Desarrolladores citaban un SDK inexistente (`cord-node`/
      `@flouviamx/cord`/`@cord/*`), montos en **centavos**, `customer_id`/`line_items`/`hosted_url`,
      `/v1/charges`, `/v1/invoices`, formato de error anidado y rate-limits "100 req/s". Se reescribieron
-     contra la API REAL: `cord.flouvia.com/api/v1`, Bearer `sk_test_`/`sk_live_`, montos en **pesos**,
+     contra la API REAL: `cordhq.app/api/v1`, Bearer `sk_test_`/`sk_live_`, montos en **pesos**,
      endpoints reales (`me`/`cotizaciones`/`clientes`/`productos`/`cobranza`), error plano `{error,code}`,
      y rate-limit real (~500/min por IP, ventana de 60s; el público v1 solo tiene el piso global del
      middleware). No hay SDK oficial → `node-sdk` ahora enseña REST con `fetch`; `react-sdk` apunta al
@@ -2284,7 +2421,7 @@
      crea Organization en Clerk por cada org Neon sin `clerk_org_id`, guarda el mapeo
      y agrega miembros activos. Re-ejecutable.
    ✅ **Config manual COMPLETADA en prod (jun 2026):** Organizations activado en el
-     Dashboard, webhook en `https://cord.flouvia.com/api/clerk/webhook` con los 8 eventos
+     Dashboard, webhook en `https://cordhq.app/api/clerk/webhook` con los 8 eventos
      (`user.*` + `organization.*` + `organizationMembership.*`) y `CLERK_WEBHOOK_SECRET`
      seteado; migración + `clerk:backfill-orgs` corridos. (Si se quiere B2B-only: cambiar
      Membership de `optional` a `required` en el Dashboard.)

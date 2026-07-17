@@ -9,4 +9,30 @@ Disallow: /forgot-password
 Disallow: /verify-email
 Disallow: /onboarding/
 
-Sitemap: https://cord.flouvia.com/sitemap.xml
+# AI crawlers — allowed explicitly so answer engines (ChatGPT, Claude, Perplexity,
+# Gemini) can read and cite public pages. Same disallow list as above.
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-Web
+User-agent: anthropic-ai
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: GoogleOther
+User-agent: CCBot
+User-agent: meta-externalagent
+User-agent: Amazonbot
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /app/
+Disallow: /api/
+Disallow: /embed/
+Disallow: /sign-in
+Disallow: /sign-up
+Disallow: /forgot-password
+Disallow: /verify-email
+Disallow: /onboarding/
+
+Sitemap: https://cordhq.app/sitemap.xml

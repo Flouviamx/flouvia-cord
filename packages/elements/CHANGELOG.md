@@ -25,7 +25,7 @@ silencio, y una respuesta de API cuyo campo `folio`/`token` siempre llegaba `und
 | `useCordClients()` intentaba fetch en modo publishable (y recibía 403 en silencio) | Falla ruidoso y tipado (`CordError` con `code: 'clients_require_proxy'`), sin red | Pasa `clients` como prop, o usa `proxyUrl`. |
 | `CordProviderProps` aceptaba `publishableKey` y `proxyUrl` a la vez | Unión discriminada — pasar ambos es error de compilación | Elige uno. Si tenías los dos "por si acaso" (como El Zarco), quita el que no usas de verdad. |
 | `result.folio`/`result.token` de `useCreateQuote()`/`CordAPI.quotes.create()` | Desenvuelven `{ data }` — ya no son `undefined` | Si tenías un workaround leyendo `result.data.folio`, quítalo. |
-| `CreateQuoteResponse.link_publico` relativo (`/q/abc`) | Absoluto (`https://cord.flouvia.com/q/abc`) | Si concatenabas tu propio dominio, ya no hace falta. |
+| `CreateQuoteResponse.link_publico` relativo (`/q/abc`) | Absoluto (`https://cordhq.app/q/abc`) | Si concatenabas tu propio dominio, ya no hace falta. |
 | `CordWebhooks#constructEvent` devolvía `{ type, data, created }` (mentira — `evt.type`/`evt.created` SIEMPRE `undefined`) | `{ event, created_at, data }` (la forma real) | `evt.type` → `evt.event`; `evt.created` → `evt.created_at`. |
 | Un solo `X-Cord-Signature` sin timestamp (sin protección anti-replay) | Doble firma: `X-Cord-Signature` (intacta) + `X-Cord-Signature-V1` (con timestamp) | Nada si usas `constructEvent` del SDK. Si verificabas a mano, sigue funcionando con la legacy — considera migrar a V1. |
 | `data-cord-cotizador` + `data-token` en `embed.js` | `data-cord-token` (mismo vocabulario que Webflow) | El par legacy sigue funcionando (embeds ya publicados no se rompen). |
@@ -76,7 +76,7 @@ silencio, y una respuesta de API cuyo campo `folio`/`token` siempre llegaba `und
 - `<CordProvider appearance>` no tenía `baseUrl` en sus props — imposible apuntar a
   self-host/staging desde el Provider (línea muerta: `props.baseUrl || (context?.proxyUrl ?
   undefined : undefined)` siempre daba `undefined`).
-- 5 `baseUrl` hardcodeados a `https://cord.flouvia.com` en distintos archivos — unificados
+- 5 `baseUrl` hardcodeados a `https://cordhq.app` en distintos archivos — unificados
   en `resolveOrigin()`/`resolveApiBase()` (`config.ts`).
 - `CordProduct.categoria` — referencia a un campo que el backend nunca devuelve (dead code
   en el dropdown de productos, eliminado).

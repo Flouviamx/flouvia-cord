@@ -57,7 +57,7 @@ const catSlug = slugifyCategory(entry.data.category);
 // soporte (66 ES + 66 EN) no tenían ningún JSON-LD. Article (no BlogPosting:
 // son documentación de producto, no editorial) + BreadcrumbList con la
 // jerarquía real Home > Centro de ayuda > Categoría > Artículo.
-const SITE = 'https://cord.flouvia.com';
+const SITE = 'https://cordhq.app';
 const base = isEn ? `${SITE}/en` : SITE;
 const supportBase = isEn ? `${SITE}/en/support` : `${SITE}/soporte`;
 const articleSlug = entry.id.replace(/^(es|en)\//, '');

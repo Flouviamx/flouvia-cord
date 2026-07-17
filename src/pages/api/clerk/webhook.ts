@@ -3,7 +3,7 @@
 // Requiere CLERK_WEBHOOK_SECRET en las env vars.
 //
 // Configurar en: Clerk Dashboard → Webhooks → Add endpoint
-//   URL: https://cord.flouvia.com/api/clerk/webhook
+//   URL: https://cordhq.app/api/clerk/webhook
 //   Eventos:
 //     • user.created, user.deleted
 //     • organization.created, organization.updated, organization.deleted

@@ -120,7 +120,7 @@ export const POST: APIRoute = async ({ request }) => {
 <div style="max-width:560px;margin:0 auto;">
 
   <div style="margin-bottom:36px;">
-    <img src="https://cord.flouvia.com/imgs/logo-cord-navy.png" width="86" height="auto" alt="Cord" style="display:block;" />
+    <img src="https://cordhq.app/imgs/logo-cord-navy.png" width="86" height="auto" alt="Cord" style="display:block;" />
   </div>
 
   <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#9CA3AF;margin:0 0 6px;">Nuevo Lead de Ventas</p>
@@ -177,12 +177,12 @@ export const POST: APIRoute = async ({ request }) => {
 <div style="max-width:520px;margin:0 auto;">
 
   <div style="margin-bottom:36px;">
-    <img src="https://cord.flouvia.com/imgs/logo-cord-navy.png" width="86" height="auto" alt="Cord" style="display:block;" />
+    <img src="https://cordhq.app/imgs/logo-cord-navy.png" width="86" height="auto" alt="Cord" style="display:block;" />
   </div>
 
   <p style="font-size:16px;color:#111827;font-weight:500;margin:0 0 16px;">Hola ${esc(firstName)},</p>
   <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 16px;">Recibimos tu solicitud de forma segura. Un especialista de Cord se pondrá en contacto contigo en menos de <strong>24 horas hábiles</strong> para preparar una demo personalizada para <strong>${esc(company)}</strong>.</p>
-  <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 40px;">Mientras tanto, puedes explorar los planes en <a href="https://cord.flouvia.com/precios" style="color:#0a192f;font-weight:600;text-decoration:none;">cord.flouvia.com/precios</a>.</p>
+  <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 40px;">Mientras tanto, puedes explorar los planes en <a href="https://cordhq.app/precios" style="color:#0a192f;font-weight:600;text-decoration:none;">cordhq.app/precios</a>.</p>
 
   <div style="background:#F9FAFB;border-radius:12px;padding:24px 28px;margin-bottom:40px;">
     <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#9CA3AF;margin:0 0 14px;">Resumen de tu solicitud</p>

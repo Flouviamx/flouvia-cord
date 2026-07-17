@@ -3,7 +3,7 @@
  *
  * Uso en el sitio de un tercero (una sola línea + un div):
  *
- *   <script src="https://cord.flouvia.com/embed.js" async></script>
+ *   <script src="https://cordhq.app/embed.js" async></script>
  *   <div data-cord-token="abc123"></div>
  *
  * El loader inyecta un <iframe> a /embed/{token}, muestra un skeleton mientras
@@ -40,7 +40,7 @@
             })();
             return new URL(s.src).origin;
         } catch (e) {
-            return 'https://cord.flouvia.com';
+            return 'https://cordhq.app';
         }
     })();
 

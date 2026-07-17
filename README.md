@@ -4,7 +4,7 @@
 con precios negociados, términos de crédito (Contado / Net 30 / Net 60), PDF con tu
 marca y CFDI 4.0. Un producto de [Flouvia](https://flouvia.com).
 
-🌐 **cord.flouvia.com**
+🌐 **cordhq.app**
 
 ## Desarrollo
 

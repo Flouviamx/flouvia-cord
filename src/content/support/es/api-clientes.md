@@ -9,7 +9,7 @@ El recurso `clientes` te permite leer y crear el directorio de clientes de tu or
 ### Listar clientes
 
 ```bash
-curl "https://cord.flouvia.com/api/v1/clientes?limit=50&offset=0" \
+curl "https://cordhq.app/api/v1/clientes?limit=50&offset=0" \
   -H "Authorization: Bearer sk_live_tu_llave"
 ```
 
@@ -20,7 +20,7 @@ Devuelve `{ "data": [ ... ], "meta": { "limit": 50, "offset": 0, "total": 128 } 
 Haz un `POST` a `/api/v1/clientes` (requiere una llave con alcance de **escritura**):
 
 ```bash
-curl -X POST https://cord.flouvia.com/api/v1/clientes \
+curl -X POST https://cordhq.app/api/v1/clientes \
   -H "Authorization: Bearer sk_live_tu_llave" \
   -H "Content-Type: application/json" \
   -d '{

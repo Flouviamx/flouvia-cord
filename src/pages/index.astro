@@ -41,7 +41,7 @@ const howToSchema = {
             text: isEn 
                 ? 'Choose the client from the directory, add catalog products, and negotiate line prices. Define credit terms (Cash, Net 30/60), apply volume discounts, and set validity. The total with tax recalculates in real-time. All done in minutes.'
                 : 'Elige al cliente desde el directorio, agrega productos del catálogo y negocia el precio de cada línea. Define los términos de crédito (Contado, Net 30 o Net 60), aplica descuentos por volumen y establece la vigencia. El total con IVA se recalcula en tiempo real. Todo listo en minutos.',
-            url: isEn ? 'https://cord.flouvia.com/en/producto/editor' : 'https://cord.flouvia.com/producto/editor',
+            url: isEn ? 'https://cordhq.app/en/producto/editor' : 'https://cordhq.app/producto/editor',
         },
         {
             '@type': 'HowToStep',
@@ -50,7 +50,7 @@ const howToSchema = {
             text: isEn 
                 ? 'Cord generates a branded link (logo, colors, and tax details) that the client can open from any device. You also get a PDF. Receive a notification the exact moment your client opens the quote.'
                 : 'Cord genera un link con tu marca (logo, colores y datos fiscales) que el cliente puede abrir desde cualquier dispositivo. También puedes descargar un PDF. Recibes una notificación en el instante exacto en que tu cliente abre la cotización.',
-            url: isEn ? 'https://cord.flouvia.com/en/producto/link-publico' : 'https://cord.flouvia.com/producto/link-publico',
+            url: isEn ? 'https://cordhq.app/en/producto/link-publico' : 'https://cordhq.app/producto/link-publico',
         },
         {
             '@type': 'HowToStep',
@@ -59,7 +59,7 @@ const howToSchema = {
             text: isEn 
                 ? 'The client approves with one click and pays online, or the quote stays on credit based on defined terms. The quote automatically turns into an order and the CFDI 4.0 is stamped with the SAT with no data re-entry needed.'
                 : 'El cliente aprueba con un clic y paga en línea, o la cotización queda a crédito según los términos definidos. La cotización se convierte automáticamente en pedido y el CFDI 4.0 se timbra ante el SAT sin necesidad de recapturar datos en otro portal.',
-            url: isEn ? 'https://cord.flouvia.com/en/producto/cfdi' : 'https://cord.flouvia.com/producto/cfdi',
+            url: isEn ? 'https://cordhq.app/en/producto/cfdi' : 'https://cordhq.app/producto/cfdi',
         },
     ],
 };
@@ -92,7 +92,7 @@ const orgSchema = {
     '@id': 'https://flouvia.com/#organization',
     name: 'Flouvia',
     url: 'https://flouvia.com',
-    logo: 'https://cord.flouvia.com/imgs/logo-cord-navy.png',
+    logo: 'https://cordhq.app/imgs/logo-cord-navy.png',
     sameAs: [
         'https://instagram.com/flouvia',
         'https://tiktok.com/@flouvia',
@@ -103,9 +103,9 @@ const orgSchema = {
 const softwareSchema = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
-    '@id': 'https://cord.flouvia.com/#software',
+    '@id': 'https://cordhq.app/#software',
     name: 'Cord',
-    url: 'https://cord.flouvia.com',
+    url: 'https://cordhq.app',
     applicationCategory: 'BusinessApplication',
     applicationSubCategory: isEn ? 'B2B Quoting & Invoicing Software' : 'Software de Cotizaciones y Facturación B2B',
     operatingSystem: 'Web',

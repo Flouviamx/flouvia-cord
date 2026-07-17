@@ -21,7 +21,7 @@ const {
     ogType = 'website',
 } = Astro.props;
 
-const SITE      = Astro.site ?? new URL('https://cord.flouvia.com');
+const SITE      = Astro.site ?? new URL('https://cordhq.app');
 const canonical = new URL(Astro.url.pathname, SITE).href;
 const ogImage   = new URL(image, SITE).href;
 

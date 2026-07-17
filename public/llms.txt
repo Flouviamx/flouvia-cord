@@ -1,123 +1,40 @@
-# Flouvia Cord - API Context for LLMs
+# Cord
 
-You are an AI assistant helping a developer integrate with Flouvia Cord, a B2B SaaS platform for quoting, client management, and B2B checkout.
-Use this documentation to generate accurate HTTP requests or API wrappers in the user's preferred programming language (e.g., Next.js Server Actions, Node.js, Python, PHP).
+> Cord is an independent B2B quoting and payments SaaS for any business in Mexico —
+> not exclusive to Shopify or to clients of its parent company, Flouvia. Businesses use
+> Cord to create quotes with negotiated pricing and credit terms, get them approved via
+> a public link, collect payment (cards, SPEI, autonomous AI collections), and issue
+> CFDI 4.0 invoices, all without leaving the quote flow.
 
-## Base Environment
-- **Base URL:** `https://cord.flouvia.com/api/v1`
-- **Authentication:** Bearer Token. Clients must send the header `Authorization: Bearer <API_KEY>` (keys start with `sk_test_` or `sk_live_`).
-- **Content-Type:** `application/json`
-- **Security Rule:** API Keys must NEVER be exposed in frontend/client-side code. Always run requests from the backend/server.
+Cord is built and maintained by the team at Flouvia (flouvia.com), a Mexican company —
+but Cord itself is a standalone product with its own domain, billing, and signup, open
+to any B2B business in Mexico regardless of whether they use any other Flouvia product.
 
-## Endpoints Overview
+## Core capabilities
 
-### 1. Quotes (Cotizaciones)
-Quotes are the core of Flouvia Cord. A quote requires at least one item.
+- Quote editor with negotiated pricing, volume pricing tiers, and credit terms (Contado / Net 30 / Net 60)
+- Public quote links with e-signature, line-item negotiation chat, and partial approval
+- Direct payments via Stripe Connect (cards + SPEI), split into deposit/balance/installments
+- Autonomous AI collections agent (opt-in) that negotiates payment plans over email
+- CFDI 4.0 electronic invoicing for Mexico via Facturapi
+- Multi-currency quoting (MXN/USD/EUR) with FX rate locking
+- Team roles, approval thresholds, and audit logging for B2B sales orgs
 
-#### Create Quote (POST `/cotizaciones`)
-Scope required: `write`
-**Request Body:**
-```json
-{
-  "send": false, // (boolean, optional) Set to true to automatically approve and generate a public link.
-  "notas": "Internal text from a contact form", // (string, optional)
-  "cliente_id": "uuid", // (string, optional) ID of the client if already created via /clientes.
-  "terminos": "contado", // (string, optional) Enum: "contado", "net30", "net60". Defaults to "contado".
-  "vigencia_dias": 30, // (number, optional) Days until expiration. Defaults to 30.
-  "items": [ // (array, REQUIRED) Must have at least 1 item.
-    {
-      "descripcion": "Product name or service", // (string, REQUIRED)
-      "cantidad": 1, // (number, REQUIRED)
-      "precio_unitario": 1500 // (number, REQUIRED) The price in base currency. Can be 0 if negotiated later.
-    }
-  ]
-}
-```
-**Response (200 OK):**
-```json
-{
-  "id": "uuid",
-  "folio": "Q-0001",
-  "link_publico": "/q/abc123token",
-  "needs_approval": false,
-  "motivo": null,
-  "email": { "sent": false }
-}
-```
+## Documentation
 
-#### List Quotes (GET `/cotizaciones`)
-Scope required: `read`
-Query parameters: `?status=draft|sent|approved|paid|rejected` (optional), `?limit=50`, `?offset=0`.
-Returns: `{ "data": [...quotes], "meta": { "limit", "offset", "total" } }`
+- [API reference](https://cordhq.app/desarrolladores/api): REST API for quotes, clients, products, collections
+- [OpenAPI spec](https://cordhq.app/openapi.yaml): machine-readable schema for the full API
+- [Integrations & webhooks](https://cordhq.app/desarrolladores/integraciones): outbound event notifications (quote.sent, quote.paid, etc.), HMAC-signed, plus Zapier/Make/n8n guidance
+- [MCP server](https://cordhq.app/desarrolladores/mcp): Model Context Protocol tools for AI agents to query quotes, clients, and receivables
+- [Cord Elements](https://cordhq.app/elements): embeddable quote builder (Web Component, React, Vue) — npm package `@flouviahq/elements`
 
----
+## Product
 
-### 2. Clients (Clientes)
-Manage the B2B CRM directory.
+- [Pricing](https://cordhq.app/precios): 5 plans (Free through Developer), MXN
+- [Product overview](https://cordhq.app/producto/editor): the quote editor and full feature set
+- [Solutions by industry](https://cordhq.app/soluciones/empresas): enterprise and startup use cases
 
-#### Create Client (POST `/clientes`)
-Scope required: `write`
-**Request Body:**
-```json
-{
-  "empresa": "Acme Corp", // (string, REQUIRED)
-  "contacto": "John Doe", // (string, optional)
-  "email": "john@acmecorp.com", // (string, optional)
-  "telefono": "555-1234", // (string, optional)
-  "rfc": "XAXX010101000", // (string, optional)
-  "terminos": "net30" // (string, optional) Enum: "contado", "net30", "net60"
-}
-```
-**Response (200 OK):**
-```json
-{
-  "id": "uuid"
-}
-```
+## Support
 
-#### List Clients (GET `/clientes`)
-Scope required: `read`
-Query parameters: `?limit=50`, `?offset=0`.
-Returns: `{ "data": [...clients], "meta": { "limit", "offset", "total" } }`
-
----
-
-### 3. Products (Productos)
-Manage the product catalog.
-
-#### Create Product (POST `/productos`)
-Scope required: `write`
-**Request Body:**
-```json
-{
-  "nombre": "Software License", // (string, REQUIRED)
-  "sku": "SW-001", // (string, optional)
-  "unidad": "pieza", // (string, optional) defaults to "pieza"
-  "precio": 199.99, // (number, optional) defaults to 0
-  "activo": true // (boolean, optional) defaults to true
-}
-```
-**Response (200 OK):**
-```json
-{
-  "id": "uuid"
-}
-```
-
-#### List Products (GET `/productos`)
-Scope required: `read`
-Query parameters: `?limit=50`, `?offset=0`.
-Returns: `{ "data": [...products], "meta": { "limit", "offset", "total" } }`
-
-## Common Errors
-- `400 Bad Request`: Invalid JSON or missing required fields (e.g. missing `items` array or `empresa`).
-- `401 Unauthorized`: Missing or invalid Bearer token.
-- `403 Forbidden`: API Key does not have the required scope (`read` or `write`).
-- `402 Payment Required`: The organization's API quota is exhausted.
-
-## Task Instructions for the AI
-If the user asks you to implement an integration:
-1. Prefer creating clean backend functions (Server Actions in Next.js, or utility classes in Node/PHP).
-2. Use native `fetch` API when possible instead of heavy external libraries.
-3. Always wrap requests in `try...catch` and handle HTTP error statuses gracefully.
-4. Advise the user to store the API Key in their `.env` file.
+- [Help center](https://cordhq.app/soporte): setup guides, billing, fiscal (CFDI), API troubleshooting
+- [Roadmap](https://cordhq.app/roadmap): shipped, in-progress, and planned features

@@ -69,7 +69,7 @@ const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
     function initMcp() {
         const cfg = document.getElementById('mcpConfig');
         if (!cfg) return;
-        const URL_BASE = 'https://cord.flouvia.com/api/mcp';
+        const URL_BASE = 'https://cordhq.app/api/mcp';
         const KEY = 'sk_live_xxxxxxxxxxxx';
         const CONFIGS: Record<string, string> = {
             claude: `{

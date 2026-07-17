@@ -41,7 +41,7 @@ const faqSchema = {
         acceptedAnswer: { '@type': 'Answer', text: f.a },
     })),
 };
-const SITE = 'https://cord.flouvia.com';
+const SITE = 'https://cordhq.app';
 const base = isEn ? `${SITE}/en` : SITE;
 const breadcrumbSchema = {
     '@context': 'https://schema.org',
@@ -87,7 +87,7 @@ const breadcrumbSchema = {
                                     <span class="dv-term-stat" id="apiStat">{isEn ? 'sending…' : 'enviando…'}</span>
                                 </div>
                                 <div class="dv-term-body">
-                                    <pre class="dv-req"><code><span class="dv-line"><span class="c-prompt">$</span> curl -X POST <span class="c-path">cord.flouvia.com/api/v1/cotizaciones</span> \</span>
+                                    <pre class="dv-req"><code><span class="dv-line"><span class="c-prompt">$</span> curl -X POST <span class="c-path">cordhq.app/api/v1/cotizaciones</span> \</span>
 <span class="dv-line">  -H <span class="c-str">"Authorization: Bearer </span><span class="c-key2">sk_live_8f2a••••</span><span class="c-str">"</span> \</span>
 <span class="dv-line">  -H <span class="c-str">"Content-Type: application/json"</span> \</span>
 <span class="dv-line">  -d <span class="c-str">'{`{`} "cliente_id": "c_8f2a", "vigencia_dias": 15,</span></span>
@@ -111,7 +111,7 @@ const breadcrumbSchema = {
                         {page.slug === 'mcp' && (
                             <div class="dv-term dv-mcp">
                                 <div class="dv-term-bar">
-                                    <span class="dv-term-title">tools/call · cord.flouvia.com/api/mcp</span>
+                                    <span class="dv-term-title">tools/call · cordhq.app/api/mcp</span>
                                     <span class="dv-term-stat dv-stat-ok" id="mcpStat">JSON-RPC 2.0</span>
                                 </div>
                                 <div class="dv-term-body">
@@ -142,7 +142,7 @@ const breadcrumbSchema = {
                                 <div class="dv-term-body">
                                     <pre class="dv-req"><code><span class="dv-line"><span class="c-mut">// {isEn ? 'one line — mount it anywhere' : 'una línea — móntalo donde sea'}</span></span>
 <span class="dv-line"><span class="c-tag">&lt;script src=</span><span class="c-str">"cord.mx/embed.js"</span><span class="c-tag">&gt;&lt;/script&gt;</span></span>
-<span class="dv-line"><span class="c-tag">&lt;div</span> <span class="c-key">data-cord-cotizador</span> <span class="c-key">data-token</span>=<span class="c-str">"8f2a…"</span><span class="c-tag">&gt;&lt;/div&gt;</span></span></code></pre>
+<span class="dv-line"><span class="c-tag">&lt;div</span> <span class="c-key">data-cord-token</span>=<span class="c-str">"8f2a…"</span><span class="c-tag">&gt;&lt;/div&gt;</span></span></code></pre>
                                     <div class="dv-req-div"></div>
                                     <pre class="dv-res"><code><span class="dv-line"><span class="c-mut">→</span> {`{`} <span class="c-key">"event"</span>: <span class="c-str">"ready"</span>, <span class="c-key">"height"</span>: <span class="c-num">412</span> {`}`}</span>
 <span class="dv-line"><span class="c-mut">→</span> {`{`} <span class="c-key">"event"</span>: <span class="c-str">"viewed"</span>, <span class="c-key">"folio"</span>: <span class="c-str">"COT-0149"</span> {`}`}</span>

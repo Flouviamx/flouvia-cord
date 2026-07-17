@@ -38,7 +38,7 @@ export const DEV_PAGES_EN: DevPage[] = [
                 ],
                 code: {
                     label: 'Create a quote',
-                    body: `curl -X POST https://cord.flouvia.com/api/v1/cotizaciones \
+                    body: `curl -X POST https://cordhq.app/api/v1/cotizaciones \
   -H "Authorization: Bearer sk_live_xxxx" \
   -H "Content-Type: application/json" \
   -d '{
@@ -79,7 +79,7 @@ export const DEV_PAGES_EN: DevPage[] = [
         ],
         steps: [
             { titulo: 'Generate your key', copy: 'In Settings › Developers › API. Copy it once — it\'s only shown when created.' },
-            { titulo: 'Authenticate', copy: 'Send Authorization: Bearer in every request to https://cord.flouvia.com/api/v1.' },
+            { titulo: 'Authenticate', copy: 'Send Authorization: Bearer in every request to https://cordhq.app/api/v1.' },
             { titulo: 'Read and create', copy: 'Query JSON or create quotes from your ERP, CRM, or automation.' },
         ],
         faqs: [
@@ -172,7 +172,7 @@ await mcpManager.disconnectAll();`,
         ],
         steps: [
             { titulo: 'Generate your key', copy: 'The same API key from Settings › Developers › API. One key works for the REST API and inbound MCP.' },
-            { titulo: 'Connect the server', copy: 'Add https://cord.flouvia.com/api/mcp in your AI client with the authorization header. For session streaming, use the SSE channel.' },
+            { titulo: 'Connect the server', copy: 'Add https://cordhq.app/api/mcp in your AI client with the authorization header. For session streaming, use the SSE channel.' },
             { titulo: 'Register and allow', copy: 'Add your CRM or ERP\'s MCP server URL and grant your agent access to them. The AI now queries your systems before quoting.' },
         ],
         faqs: [
@@ -228,8 +228,8 @@ await mcpManager.disconnectAll();`,
                 code: {
                     label: 'On any HTML site',
                     body: `<!-- One line + one div -->
-<script src="https://cord.flouvia.com/embed.js" async></script>
-<div data-cord-cotizador data-token="abc123"></div>`,
+<script src="https://cordhq.app/embed.js" async></script>
+<div data-cord-token="abc123"></div>`,
                 },
             },
             {

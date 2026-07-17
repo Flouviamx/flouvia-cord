@@ -39,7 +39,7 @@ lugar que no viste.
   `node-sdk`/`react-sdk` deben describir REST puro con `fetch`, o el paquete
   REAL `@flouviahq/elements` (Web Component `<cord-cotizador>`). Cualquier
   mención de `cord-node`, `@flouviamx/cord`, `@cord/*` o similar es falsa.
-- **Formato de API incorrecto.** La API real es `cord.flouvia.com/api/v1`,
+- **Formato de API incorrecto.** La API real es `cordhq.app/api/v1`,
   Bearer `sk_test_`/`sk_live_`, montos en **pesos** (NO centavos), endpoints
   reales (`me`, `cotizaciones`, `clientes`, `productos`, `cobranza`), error
   plano `{error, code}` (NO anidado), rate-limit real ~500/min por IP (ventana

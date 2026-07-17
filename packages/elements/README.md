@@ -1,6 +1,6 @@
 # @flouviahq/elements
 
-SDK oficial de [Cord](https://cord.flouvia.com) para integrar cotizaciones interactivas B2B
+SDK oficial de [Cord](https://cordhq.app) para integrar cotizaciones interactivas B2B
 en cualquier aplicación: Web Component nativo, wrappers de React/Vue/Framer/Webflow, hooks
 headless, y un Server SDK para verificar webhooks.
 
@@ -126,7 +126,7 @@ configureCord({ baseUrl: 'https://staging.tudominio.com' });
 ```
 
 Precedencia en todo el SDK: **prop del componente > `<CordProvider>` > `configureCord()` >
-`https://cord.flouvia.com`**.
+`https://cordhq.app`**.
 
 ---
 
@@ -283,7 +283,7 @@ import { CordCotizador } from '@flouviahq/elements/vue';
 <script type="module" src="https://unpkg.com/@flouviahq/elements/dist/index.mjs"></script>
 
 <div style="height: 800px;">
-  <cord-cotizador token="TU_TOKEN" base-url="https://cord.flouvia.com" min-height="500"></cord-cotizador>
+  <cord-cotizador token="TU_TOKEN" base-url="https://cordhq.app" min-height="500"></cord-cotizador>
 </div>
 
 <script>
@@ -298,7 +298,7 @@ Atributos: `token` (requerido), `base-url`, `min-height`. Los eventos llegan SIN
 ## Loader de una línea (`embed.js`) — sitios sin bundler
 
 ```html
-<script src="https://cord.flouvia.com/embed.js" async></script>
+<script src="https://cordhq.app/embed.js" async></script>
 <div data-cord-token="TU_TOKEN"></div>
 ```
 

@@ -16,7 +16,7 @@ Go to **Settings > Developers > API** (`/app/ajustes/api`). There you create new
 The API is REST over HTTPS. Every request carries your key in the `Authorization` header:
 
 ```bash
-curl https://cord.flouvia.com/api/v1/me \
+curl https://cordhq.app/api/v1/me \
   -H "Authorization: Bearer sk_live_your_key"
 ```
 

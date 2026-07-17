@@ -31,7 +31,7 @@ export async function seedDemoData(orgId: string, clerkUserId: string) {
                 precio_unitario: 15000
             }]
         }, {
-            origin: 'https://cord.flouvia.com',
+            origin: 'https://cordhq.app',
             ip: '127.0.0.1',
             actor: 'onboarding'
         });

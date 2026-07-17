@@ -94,7 +94,7 @@ export const DEV_PAGES: DevPage[] = [
                 ],
                 code: {
                     label: 'Crear una cotización',
-                    body: `curl -X POST https://cord.flouvia.com/api/v1/cotizaciones \\
+                    body: `curl -X POST https://cordhq.app/api/v1/cotizaciones \\
   -H "Authorization: Bearer sk_live_xxxx" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -135,7 +135,7 @@ export const DEV_PAGES: DevPage[] = [
         ],
         steps: [
             { titulo: 'Genera tu llave', copy: 'En Ajustes › Developers › API. Cópiala una vez — solo se muestra al crearla.' },
-            { titulo: 'Autentícate', copy: 'Manda Authorization: Bearer en cada petición a https://cord.flouvia.com/api/v1.' },
+            { titulo: 'Autentícate', copy: 'Manda Authorization: Bearer en cada petición a https://cordhq.app/api/v1.' },
             { titulo: 'Lee y crea', copy: 'Consulta JSON o crea cotizaciones desde tu ERP, CRM o automatización.' },
         ],
         faqs: [
@@ -228,7 +228,7 @@ await mcpManager.disconnectAll();`,
         ],
         steps: [
             { titulo: 'Genera tu llave', copy: 'La misma API key de Ajustes › Developers › API. Una llave sirve para la API REST y para el MCP entrante.' },
-            { titulo: 'Conecta el servidor', copy: 'Agrega https://cord.flouvia.com/api/mcp en tu cliente de IA con el header de autorización. Para streaming con sesión, usa el canal SSE.' },
+            { titulo: 'Conecta el servidor', copy: 'Agrega https://cordhq.app/api/mcp en tu cliente de IA con el header de autorización. Para streaming con sesión, usa el canal SSE.' },
             { titulo: 'Registra y permite', copy: 'Suma la URL de los servidores MCP de tu CRM o ERP y otorga a tu agente acceso a ellos. La IA ya consulta tus sistemas antes de cotizar.' },
         ],
         faqs: [
@@ -284,8 +284,8 @@ await mcpManager.disconnectAll();`,
                 code: {
                     label: 'En cualquier sitio HTML',
                     body: `<!-- Una línea + un div -->
-<script src="https://cord.flouvia.com/embed.js" async></script>
-<div data-cord-cotizador data-token="abc123"></div>`,
+<script src="https://cordhq.app/embed.js" async></script>
+<div data-cord-token="abc123"></div>`,
                 },
             },
             {

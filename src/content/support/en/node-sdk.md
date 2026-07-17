@@ -11,7 +11,7 @@ category: "Developers"
 Centralize the base URL, key, and error handling in one helper:
 
 ```typescript
-const BASE = 'https://cord.flouvia.com/api/v1';
+const BASE = 'https://cordhq.app/api/v1';
 
 async function cord(path: string, init: RequestInit = {}) {
   const res = await fetch(`${BASE}${path}`, {
@@ -49,5 +49,5 @@ console.log(data.folio, data.link_publico); // e.g. COT-0149  /q/abc123
 
 **Remember:**
 - Amounts are in **pesos** (`1500` = $1,500.00), not cents.
-- `link_publico` is the path of the link your customer sees (`/q/{token}`); prefix it with `https://cord.flouvia.com`.
+- `link_publico` is the path of the link your customer sees (`/q/{token}`); prefix it with `https://cordhq.app`.
 - Creating quotes requires a key with **write** scope.

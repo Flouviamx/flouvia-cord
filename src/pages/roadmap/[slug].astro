@@ -36,9 +36,9 @@ const breadcrumbSchema = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Cord', item: 'https://cord.flouvia.com/' },
-        { '@type': 'ListItem', position: 2, name: 'Roadmap', item: 'https://cord.flouvia.com/roadmap' },
-        { '@type': 'ListItem', position: 3, name: item.title.es, item: `https://cord.flouvia.com/roadmap/${item.slug}` },
+        { '@type': 'ListItem', position: 1, name: 'Cord', item: 'https://cordhq.app/' },
+        { '@type': 'ListItem', position: 2, name: 'Roadmap', item: 'https://cordhq.app/roadmap' },
+        { '@type': 'ListItem', position: 3, name: item.title.es, item: `https://cordhq.app/roadmap/${item.slug}` },
     ],
 };
 ---
@@ -103,7 +103,7 @@ const breadcrumbSchema = {
             <footer class="rd-doc-footer reveal">
                 <div class="rd-doc-share">
                     <span>¿Te parece útil?</span>
-                    <a href={`https://twitter.com/intent/tweet?text=Mira%20esta%20nueva%20función%20de%20Cord:%20${item.title.es}&url=https://cord.flouvia.com/roadmap/${item.slug}`} target="_blank" rel="noopener noreferrer">Compartir en Twitter</a>
+                    <a href={`https://twitter.com/intent/tweet?text=Mira%20esta%20nueva%20función%20de%20Cord:%20${item.title.es}&url=https://cordhq.app/roadmap/${item.slug}`} target="_blank" rel="noopener noreferrer">Compartir en Twitter</a>
                 </div>
                 <div class="rd-doc-next">
                     <a href="/roadmap" class="rd-btn-ghost">Ver todas las funciones</a>
