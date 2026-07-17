@@ -47,6 +47,7 @@ identidad sigue siendo Clerk (userId), solo la membresía/permiso es nuestra.
 - `promesas_pago` — promesa de pago del cliente para una fecha (cobranza; seguimiento manual, no automatiza). `productos.precios_volumen jsonb` = matriz de precios por volumen `[{min,precio}]`
 - `cotizacion_cobros` (jul 2026) — cobros por "rebanadas" de una cotización (`tipo`: total|anticipo|saldo|cuota), cada uno con su propio PaymentIntent de Stripe. RLS por `org_id` O `public_token` + FORCE. Columnas nuevas relacionadas: `cotizaciones.anticipo_pct` (% de anticipo, null = sin anticipo) y `orgs.anticipo_default_pct` (default del negocio). Ver "Cobros por términos de crédito + Anticipo/Saldo + Cuotas" en `negocio-billing.md`. ⚠️ Fechas `date` de la BD se comparan SIEMPRE con `venceDia()` (`src/lib/cobros.ts`), nunca `String(v).slice(0,10)` (Neon devuelve DATE como objeto Date).
 - `cotizacion_suscripciones` (jul 2026) — una fila por cotización marcada `cotizaciones.es_recurrente` (iguala/retainer mensual). Guarda `stripe_subscription_id/customer_id/price_id/product_id` (todos en la cuenta CONECTADA del vendedor, no en la de plataforma), `estado` (incomplete|active|past_due|canceled), `current_period_end`. RLS por `org_id` O `public_token` + FORCE. La cotización recurrente **nunca** llega a `status='paid'` — su ingreso mensual se registra como fila `'cuota'` en `cotizacion_cobros` y se refleja aparte en `getCobros()`. Ver "Cobros recurrentes — igualas/retainers vía Stripe Subscriptions" en `negocio-billing.md` e "Historial" para el detalle completo (incluye 2 bugs de auditoría ya corregidos: igualas tratadas como cartera vencida, y condición de carrera al crear la Subscription).
+- `cedulas` / `cedula_filas` / `cedula_valores` (jul 2026) — Cédulas Presupuestales (planeación financiera: Ventas→Producción→Compras de MP→Cobranza). RLS `FORCE` con `org_id` denormalizado en las 3 (sin carril `public_token` — no hay vista pública). `cedula_filas.formula` es jsonb flexible (primitivo "combo": suma ponderada de referencias a otras filas, propias o de otra cédula); `cedula_valores` solo guarda filas `tipo='input'` — las `formula` se calculan on-the-fly en `src/lib/cedulas.ts` (`computeCedula`). Ver "Cédulas Presupuestales — motor de planeación financiera" en `historial.md`.
 
 Patrón RLS: `org_id = current_setting('app.org_id', TRUE)::uuid` — activo a nivel de
 base de datos (jun 2026). El backend usa `withOrgTx(orgId, ...queries)` en `db.ts`
@@ -108,6 +109,14 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
                    antigüedad, exposición por cliente (saldo vs límite) y tabla con
                    "marcar cobrada" + recordatorio por WhatsApp. getCobranza() en
                    queries.ts (por cobrar = status approved|invoiced; vence según términos).
+/app/presupuestos        → Cédulas Presupuestales (jul 2026, sidebar → Inteligencia):
+                   índice en lista hairline + modal de creación (tipo/plantilla, nombre,
+                   periodos). Gateado por permiso 'analitica'. Ver historial.md.
+/app/presupuestos/[id]   → editor de una cédula: grid de filas (input editable inline /
+                   fórmula calculada de solo lectura) × periodos. Motor de fórmulas en
+                   src/lib/cedulas.ts (computeCedula). API en /api/cedulas y
+                   /api/cedulas/[id] (GET calcula, PATCH add_fila|set_valor|delete_fila|
+                   rename, DELETE borra cascade).
 /app/cotizaciones        → tabla con filtros por estado (client-side)
 /app/cotizaciones/nueva  → EL EDITOR — POST /api/cotizaciones (real)
 /app/cotizaciones/[id]   → detalle + timeline + ACCIONES REALES (enviar, aprobar,

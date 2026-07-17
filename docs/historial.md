@@ -8,6 +8,68 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Cédulas Presupuestales — motor de planeación financiera (jul 2026)** — feature nuevo
+   pedido por André: la cascada clásica de contabilidad de costos (Presupuesto de Ventas →
+   Producción → Compras de Materia Prima → Cobranza), como herramienta propia de Cord en vez
+   de la hoja de Excel que usan hoy distribuidoras/manufactureras.
+   • **Decisión de diseño explícita para NO caer en mini-ERP:** es una herramienta de
+     PLANEACIÓN, no un sistema de inventario en vivo. El "inventario inicial/final deseado" es
+     un SUPUESTO que el usuario teclea por periodo (una fila `input` más), NUNCA un saldo
+     rastreado por movimientos reales de almacén — no hay kardex, no hay lotes, no hay
+     entradas/salidas. Las fórmulas usan un solo primitivo genérico ("combo": suma ponderada de
+     referencias a otras filas, coeficiente positivo suma / negativo resta) en vez de un
+     lenguaje de fórmulas libre tipo Excel — cubre suma/resta/escala con una sola forma.
+   • **3 tablas nuevas** (`db/schema.sql`, RLS `FORCE` con `org_id` denormalizado en las 3,
+     mismo patrón que `cotizacion_cobros`/`promesas_pago`, sin carril `public_token` — no hay
+     vista pública de una cédula): `cedulas` (documento: tipo/nombre/periodos jsonb),
+     `cedula_filas` (renglones: tipo `input`|`formula`, `formula` jsonb flexible sin CHECK — la
+     validación de forma vive en la app), `cedula_valores` (las celdas reales, solo para filas
+     `input`; las `formula` se calculan on-the-fly, nunca se persisten).
+   • **Motor de fórmulas** (`src/lib/cedulas.ts`, función `computeCedula`): resuelve cada fila
+     `formula` contra sus referencias — propias o de OTRA cédula (esto da la cascada
+     Ventas→Producción→Compras de MP sin necesitar un grafo genérico, solo referencias por
+     `fila_id`+`cedula_id` opcional) — con memoización entre cédulas hermanas y corte de ciclos
+     en dos niveles (entre cédulas vía `stack`, dentro de la misma cédula vía `evaluating`) para
+     que una referencia circular resuelva a 0 en vez de colgar el request.
+   • **5 plantillas precableadas** (`CEDULA_TEMPLATES`) que siembran filas al crear: Ventas,
+     Producción (`= Ventas + Inv. final deseado − Inv. inicial`, la fórmula clásica ya cableada),
+     Compras de MP (mismo patrón sobre consumo de MP), Mano de Obra y CIF, Cobranza — más
+     `custom` (cédula vacía). El usuario puede editar/borrar/agregar filas libremente después;
+     la plantilla es solo el punto de partida.
+   • **UI** (`/app/presupuestos`, sidebar → grupo "Inteligencia", gated por permiso
+     `analitica`): índice en lista hairline (sin cards, regla de diseño) con modal de creación
+     (tipo + nombre + periodos, con presets de 3/6/12 meses); editor (`/app/presupuestos/[id]`)
+     con grid de filas × periodos — filas `input` editables inline, filas `formula` de solo
+     lectura resaltadas con **descripción legible de la fórmula** debajo del concepto (ej. "=
+     Ventas + Inv. final deseado − Inv. inicial", resuelta por nombre de fila, no por id) y
+     **flash verde/rojo** al recalcular tras un cambio (mismo patrón ya usado en el editor de
+     cotizaciones); nombre de la cédula editable inline (clic → input, Enter/blur guarda — sin
+     `prompt()` nativo); modal "Agregar fila" con constructor de fórmula por términos (cédula +
+     fila + coeficiente, con picker que cruza a cualquier otra cédula de la org).
+   • **Endpoints** `/api/cedulas` (GET lista + POST crea con plantilla opcional) y
+     `/api/cedulas/[id]` (GET calcula y devuelve valores resueltos + catálogo de las demás
+     cédulas de la org para el picker de referencias cruzadas; PATCH `add_fila`/`set_valor`
+     `delete_fila`/`rename`; DELETE borra cascade). `set_valor` valida server-side que la fila
+     sea `tipo='input'` antes de escribir — nunca se puede pisar una fórmula desde el cliente.
+   ⚠️ **Fuera de alcance del v1 (a propósito, para no inflar el scope antes de validar con
+     uso real):** no se pueden agregar periodos a una cédula ya creada (hay que recrearla);
+     no hay "presupuestado vs. real" jalando datos de cotizaciones/ventas reales — quedó como
+     posible fase 2 si el v1 se valida útil.
+   • **Pasada "pro" (auditoría de diseño):** nombre editable inline (clic → input, sin
+     `prompt()` nativo), descripción legible de la fórmula bajo cada fila calculada (ej. "=
+     Ventas + Inv. final deseado − Inv. inicial", resuelta por nombre de fila, no por id),
+     flash de recálculo en las celdas calculadas al editar un insumo (sin reconstruir el DOM
+     ni robar el foco de la celda donde el usuario esté escribiendo — `refreshValues()` vs.
+     `renderGrid()`), sombra en la columna fija al hacer scroll horizontal, estado vacío del
+     grid. **Bug real encontrado y corregido por el `design-reviewer`:** ambos `<style>`
+     (índice y editor) eran scoped normales, pero TODO el grid/lista se inyecta por JS vía
+     `innerHTML` — mismo patrón de bug ya documentado del proyecto (`data-astro-cid` no llega
+     al DOM inyectado en runtime, los selectores scoped nunca matchean). Corregido a
+     `<style is:global>` en ambos archivos y verificado contra el CSS del BUILD real
+     (`.pr-row-head{...}` sin sufijo de cid).
+   • Verificado: `npm run db:migrate` corrido contra Neon (3 tablas, RLS+FORCE confirmado
+     contra `pg_class`/`pg_policies`), `npm run build` limpio.
+
 ✅ **Desempeño por vendedor — ranking de cierre/cobro por miembro del equipo (jul 2026)** —
    primer feature del track "qué más se puede construir" (auditoría de oportunidades sobre
    `org_members`/roles ya existentes). Antes `cotizaciones` no guardaba quién la creó, así que
