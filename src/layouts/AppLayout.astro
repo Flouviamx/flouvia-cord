@@ -807,19 +807,27 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     .ph-crumbs a::after, .ph-crumbs > span:not(.ph-crumb-here)::after { content: '/'; margin-left: 6px; color: #c4cad3; }
     .ph-crumb-here { color: var(--color-text); font-weight: 600; }
     .ph-tabs-row { max-width: var(--content-max); }
-    .ph-tabs-row:not(:empty) { margin-top: 1rem; border-bottom: 1px solid var(--color-border); display: flex; gap: 2px;
-        overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    /* Segmented control estilo iOS/Apple (jul 2026) — reemplaza el subrayado plano */
+    .ph-tabs-row:not(:empty) {
+        margin-top: 1.1rem; display: inline-flex; align-items: center; gap: 2px;
+        max-width: 100%; padding: 3px; background: rgba(10,25,47,0.05); border-radius: 13px;
+        overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    }
     .ph-tabs-row::-webkit-scrollbar { display: none; }
-    .ph-tab { flex-shrink: 0; }
     /* Helper para que las páginas pinten tabs consistentes (slot page-tabs) */
     .ph-tab {
-        position: relative; padding: 9px 12px; font-size: 0.85rem; font-weight: 550;
+        position: relative; flex-shrink: 0; padding: 7px 15px; font-size: 0.83rem; font-weight: 560;
         color: var(--color-text-muted); text-decoration: none; background: none; border: none;
-        cursor: pointer; font-family: var(--font-sans); white-space: nowrap;
+        border-radius: 10px; cursor: pointer; font-family: var(--font-sans); white-space: nowrap;
+        transition: color 0.2s ease, background-color 0.22s ease, box-shadow 0.22s ease;
     }
     .ph-tab:hover { color: var(--color-text); }
-    .ph-tab.active { color: var(--color-blue-deep); font-weight: 650; }
-    .ph-tab.active::after { content: ''; position: absolute; left: 8px; right: 8px; bottom: -1px; height: 2px; border-radius: 2px 2px 0 0; background: var(--color-blue-deep); }
+    .ph-tab.active {
+        color: var(--color-text); font-weight: 650; background: var(--surface);
+        box-shadow: 0 1px 3px rgba(10,25,47,0.10), 0 1px 1px rgba(10,25,47,0.05);
+    }
+    html[data-theme="dark"] .ph-tabs-row:not(:empty) { background: rgba(255,255,255,0.06); }
+    html[data-theme="dark"] .ph-tab.active { background: rgba(255,255,255,0.09); box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
 
     /* ════════ Barra de progreso de navegación ════════ */
     .nav-progress {
