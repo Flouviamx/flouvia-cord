@@ -16,6 +16,12 @@ const hasAccess = memberCan(ME, 'analitica');
         {hasAccess && <button class="btn-primary" id="btnNueva">+ Nueva cédula</button>}
     </div>
     <div slot="page-sub">Cédulas presupuestales — ventas, producción, compras de materia prima y cobranza.</div>
+    {hasAccess && (
+        <div slot="page-tabs">
+            <a href="/app/presupuestos" class="ph-tab active">Cédulas</a>
+            <a href="/app/presupuestos/herramientas" class="ph-tab">Herramientas</a>
+        </div>
+    )}
 
     {!hasAccess && (
         <div class="pr-denied">
@@ -52,10 +58,12 @@ const hasAccess = memberCan(ME, 'analitica');
                     <span>Tipo</span>
                     <select id="fTipo">
                         <option value="ventas">Presupuesto de Ventas</option>
+                        <option value="ventas_factores">Presupuesto de Ventas con factores de ajuste</option>
                         <option value="produccion">Presupuesto de Producción</option>
                         <option value="compras_mp">Presupuesto de Compras de Materia Prima</option>
                         <option value="mano_obra">Presupuesto de Mano de Obra y CIF</option>
                         <option value="cobranza">Presupuesto de Cobranza</option>
+                        <option value="efectivo">Presupuesto de Efectivo</option>
                         <option value="custom">Cédula personalizada (en blanco)</option>
                     </select>
                     <span class="m-hint" id="tipoHint">Producción = Ventas + Inventario final deseado − Inventario inicial, calculado automáticamente.</span>
@@ -162,15 +170,17 @@ const hasAccess = memberCan(ME, 'analitica');
 
 <script>
     const TIPO_LABEL: Record<string, string> = {
-        ventas: 'Ventas', produccion: 'Producción', compras_mp: 'Compras de MP',
-        mano_obra: 'Mano de obra y CIF', cif: 'CIF', cobranza: 'Cobranza', custom: 'Personalizada',
+        ventas: 'Ventas', ventas_factores: 'Ventas con factores', produccion: 'Producción', compras_mp: 'Compras de MP',
+        mano_obra: 'Mano de obra y CIF', cif: 'CIF', cobranza: 'Cobranza', efectivo: 'Efectivo', custom: 'Personalizada',
     };
     const TIPO_HINT: Record<string, string> = {
         ventas: 'Fila de unidades a vender por periodo — la base de la cascada.',
+        ventas_factores: 'Ventas base + ajustes en unidades, luego factores % encadenados (ej. económico, distribución) y el monto final en pesos — listo para editar.',
         produccion: 'Producción = Ventas + Inventario final deseado − Inventario inicial, calculado automáticamente.',
         compras_mp: 'Compras de MP = Consumo requerido + Inventario final deseado − Inventario inicial, calculado automáticamente.',
         mano_obra: 'Filas de insumo (horas, costo por hora, CIF fijo) para que agregues tu propia fórmula de costo total.',
         cobranza: 'Ventas a crédito distribuidas por % cobrado en el mes y el siguiente — edítalo a tu patrón real.',
+        efectivo: 'Cobranza y pagos escalonados por periodo (ej. 40/30/30) + saldo inicial/final — el saldo inicial de cada mes se teclea copiando el saldo final del anterior.',
         custom: 'Cédula vacía — agrega tus propias filas de insumo y fórmula desde el editor.',
     };
 
@@ -224,9 +234,12 @@ const hasAccess = memberCan(ME, 'analitica');
     const openModal = () => {
         if (!modal) return;
         (document.getElementById('fErr') as HTMLElement).setAttribute('hidden', '');
-        (document.getElementById('fNombre') as HTMLInputElement).value = '';
+        const nombreInput = document.getElementById('fNombre') as HTMLInputElement;
+        nombreInput.value = '';
+        nombreInput.dataset.touched = '';
         (document.getElementById('fPeriodos') as HTMLInputElement).value = '';
         document.querySelectorAll('.ppreset').forEach((b) => b.classList.remove('is-active'));
+        syncTipo();
         modal.showModal();
     };
     document.getElementById('btnNueva')?.addEventListener('click', openModal);
@@ -235,8 +248,18 @@ const hasAccess = memberCan(ME, 'analitica');
     document.getElementById('mCancel')?.addEventListener('click', () => modal?.close());
 
     const tipoSel = document.getElementById('fTipo') as HTMLSelectElement;
-    tipoSel?.addEventListener('change', () => {
+    // Sincroniza la ayuda del tipo Y sugiere un nombre (solo mientras el usuario no lo haya tecleado).
+    function syncTipo() {
         (document.getElementById('tipoHint') as HTMLElement).textContent = TIPO_HINT[tipoSel.value] || '';
+        const nombreInput = document.getElementById('fNombre') as HTMLInputElement;
+        if (nombreInput.dataset.touched !== '1') {
+            nombreInput.value = tipoSel.value === 'custom' ? '' : `Presupuesto de ${TIPO_LABEL[tipoSel.value] || ''}`.trim();
+        }
+    }
+    tipoSel?.addEventListener('change', syncTipo);
+    document.getElementById('fNombre')?.addEventListener('input', (e) => {
+        const t = e.target as HTMLInputElement;
+        t.dataset.touched = t.value.trim() ? '1' : '';
     });
 
     const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];

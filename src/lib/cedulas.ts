@@ -13,6 +13,17 @@ export interface ComboTerm {
     fila_id: string;
     cedula_id?: string | null; // null/omitido = la misma cédula
     coef: number;
+    // 'suma' (default): running += coef × valor. 'pct': running *= (1 + valor/100) —
+    // valor referenciado se interpreta como un % (ej. una fila input con "1" = 1%).
+    // 'producto': running *= valor — multiplica el acumulado por otra fila completa.
+    // Los términos se evalúan EN ORDEN (no como una suma sin orden) para poder encadenar
+    // ajustes aditivos seguidos de factores multiplicativos (ver docs/historial.md).
+    kind?: 'suma' | 'pct' | 'producto';
+    // Desplazamiento de periodo (default 0 = mismo periodo). offset=1 lee el valor de la
+    // fila referenciada UN periodo ANTES (ej. "cobranza de abril = 30% de ventas de marzo").
+    // Fuera de rango (periodo-offset < 0) resuelve a 0 — no hay "periodo -1" implícito.
+    // Ortogonal a `kind`: aplica igual a suma/pct/producto.
+    offset?: number;
 }
 export interface ComboFormula {
     op: 'combo';
@@ -56,15 +67,20 @@ export async function computeCedula(
 
         async function resolveRef(ref: ComboTerm): Promise<number[]> {
             const targetId = ref.cedula_id && ref.cedula_id !== cedulaId ? ref.cedula_id : cedulaId;
+            let vals: number[];
             if (targetId === cedulaId) {
                 const fila = cedula!.filas.find((f) => f.id === ref.fila_id);
-                if (!fila) return zeros(n);
-                return await evalFila(fila);
+                vals = fila ? await evalFila(fila) : zeros(n);
+            } else {
+                const other = await computeCedula(orgId, targetId, cache, stack);
+                const v = other ? (other.valores[ref.fila_id] ?? zeros(other.cedula.periodos.length)) : zeros(n);
+                vals = Array.from({ length: n }, (_, i) => v[i] ?? 0);
             }
-            const other = await computeCedula(orgId, targetId, cache, stack);
-            if (!other) return zeros(n);
-            const v = other.valores[ref.fila_id] ?? zeros(other.cedula.periodos.length);
-            return Array.from({ length: n }, (_, i) => v[i] ?? 0);
+            const offset = Number(ref.offset) || 0;
+            if (!offset) return vals;
+            // Desplaza N periodos atrás: el periodo i lee vals[i - offset]. Fuera de rango
+            // (no hay periodo previo) resuelve a 0 — no se inventa un "periodo -1".
+            return Array.from({ length: n }, (_, i) => vals[i - offset] ?? 0);
         }
 
         async function evalFila(fila: CedulaFilaRow): Promise<number[]> {
@@ -80,11 +96,29 @@ export async function computeCedula(
             let vals = zeros(n);
             const f = fila.formula as ComboFormula | null;
             if (f && f.op === 'combo' && Array.isArray(f.terms) && f.terms.length) {
+                // Fold SECUENCIAL (no una suma sin orden): cada término se aplica en el
+                // orden en que el usuario lo agregó, sobre un acumulado por periodo. Los
+                // términos 'suma' (default, retrocompatible) siguen dando el mismo
+                // resultado que la suma ponderada de antes; 'pct'/'producto' operan sobre
+                // lo acumulado hasta ese punto, permitiendo cascadas tipo "+ajustes → ×(1+
+                // FE%) → ×(1+FA%)" o "unidades × precio" en una sola fila.
                 const resolved = await Promise.all(
-                    f.terms.map(async (t) => ({ coef: Number(t.coef) || 0, vals: await resolveRef(t) })),
+                    f.terms.map(async (t) => ({
+                        kind: t.kind || 'suma',
+                        coef: Number(t.coef) || 0,
+                        vals: await resolveRef(t),
+                    })),
                 );
-                vals = Array.from({ length: n }, (_, i) =>
-                    round2(resolved.reduce((s, r) => s + r.coef * (r.vals[i] ?? 0), 0)));
+                const running = zeros(n);
+                for (const r of resolved) {
+                    for (let i = 0; i < n; i++) {
+                        const v = r.vals[i] ?? 0;
+                        if (r.kind === 'pct') running[i] = running[i] * (1 + v / 100);
+                        else if (r.kind === 'producto') running[i] = running[i] * v;
+                        else running[i] = running[i] + r.coef * v;
+                    }
+                }
+                vals = running.map(round2);
             }
             evaluating.delete(fila.id);
             out[fila.id] = vals;
@@ -118,6 +152,60 @@ export const CEDULA_TEMPLATES: Record<string, { nombre: string; filas: TemplateR
         nombre: 'Presupuesto de Ventas',
         filas: [
             { key: 'ventas', concepto: 'Ventas (unidades)', tipo: 'input' },
+        ],
+    },
+    ventas_factores: {
+        nombre: 'Presupuesto de Ventas con factores de ajuste',
+        filas: [
+            { key: 'base', concepto: 'Ventas año anterior (unidades)', tipo: 'input' },
+            { key: 'ajuste1', concepto: 'Ajuste 1 — evento puntual (unidades)', tipo: 'input' },
+            { key: 'ajuste2', concepto: 'Ajuste 2 — evento puntual (unidades)', tipo: 'input' },
+            {
+                key: 'ventas_ajustadas', concepto: 'Ventas ajustadas (unidades)', tipo: 'formula',
+                formula: (ids) => ({
+                    op: 'combo',
+                    terms: [
+                        { fila_id: ids.base, coef: 1 },
+                        { fila_id: ids.ajuste1, coef: 1 },
+                        { fila_id: ids.ajuste2, coef: 1 },
+                    ],
+                }),
+            },
+            { key: 'factor1', concepto: 'Factor de ajuste 1 (%)', tipo: 'input' },
+            { key: 'factor2', concepto: 'Factor de ajuste 2 (%)', tipo: 'input' },
+            {
+                key: 'ventas_finales', concepto: 'Ventas finales (unidades)', tipo: 'formula',
+                formula: (ids) => ({
+                    op: 'combo',
+                    terms: [
+                        { fila_id: ids.ventas_ajustadas, coef: 1 },
+                        { fila_id: ids.factor1, coef: 1, kind: 'pct' },
+                        { fila_id: ids.factor2, coef: 1, kind: 'pct' },
+                    ],
+                }),
+            },
+            { key: 'precio', concepto: 'Precio unitario', tipo: 'input' },
+            { key: 'crecimiento_precio', concepto: 'Crecimiento de precio (%)', tipo: 'input' },
+            {
+                key: 'precio_ajustado', concepto: 'Precio ajustado', tipo: 'formula',
+                formula: (ids) => ({
+                    op: 'combo',
+                    terms: [
+                        { fila_id: ids.precio, coef: 1 },
+                        { fila_id: ids.crecimiento_precio, coef: 1, kind: 'pct' },
+                    ],
+                }),
+            },
+            {
+                key: 'monto_total', concepto: 'Monto total de ventas ($)', tipo: 'formula',
+                formula: (ids) => ({
+                    op: 'combo',
+                    terms: [
+                        { fila_id: ids.ventas_finales, coef: 1 },
+                        { fila_id: ids.precio_ajustado, coef: 1, kind: 'producto' },
+                    ],
+                }),
+            },
         ],
     },
     produccion: {
@@ -173,6 +261,65 @@ export const CEDULA_TEMPLATES: Record<string, { nombre: string; filas: TemplateR
             { key: 'ventas_credito', concepto: 'Ventas a crédito del periodo ($)', tipo: 'input' },
             { key: 'pct_mes', concepto: '% cobrado el mismo mes', tipo: 'input' },
             { key: 'pct_siguiente', concepto: '% cobrado el mes siguiente', tipo: 'input' },
+        ],
+    },
+    efectivo: {
+        nombre: 'Presupuesto de Efectivo',
+        filas: [
+            { key: 'saldo_inicial', concepto: 'Saldo inicial de caja', tipo: 'input' },
+            { key: 'ventas', concepto: 'Ventas del periodo ($)', tipo: 'input' },
+            { key: 'compras', concepto: 'Compras del periodo ($)', tipo: 'input' },
+            { key: 'gastos_fijos', concepto: 'Gastos fijos del periodo ($)', tipo: 'input' },
+            {
+                // Ejemplo 40/30/30 — edítalo a tu propio patrón de cobranza real.
+                key: 'cobranza', concepto: 'Cobranza esperada ($)', tipo: 'formula',
+                formula: (ids) => ({
+                    op: 'combo',
+                    terms: [
+                        { fila_id: ids.ventas, coef: 0.4, offset: 0 },
+                        { fila_id: ids.ventas, coef: 0.3, offset: 1 },
+                        { fila_id: ids.ventas, coef: 0.3, offset: 2 },
+                    ],
+                }),
+            },
+            {
+                // Ejemplo 30/70 — edítalo a tu propio patrón de pago real.
+                key: 'pagos', concepto: 'Pagos a proveedores ($)', tipo: 'formula',
+                formula: (ids) => ({
+                    op: 'combo',
+                    terms: [
+                        { fila_id: ids.compras, coef: 0.3, offset: 0 },
+                        { fila_id: ids.compras, coef: 0.7, offset: 1 },
+                    ],
+                }),
+            },
+            { key: 'prestamo', concepto: 'Préstamo recibido ($) — captúralo si falta efectivo', tipo: 'input' },
+            { key: 'inversion', concepto: 'Inversión retirada ($) — captúralo si sobra efectivo', tipo: 'input' },
+            {
+                key: 'flujo_neto', concepto: 'Flujo neto del periodo ($)', tipo: 'formula',
+                formula: (ids) => ({
+                    op: 'combo',
+                    terms: [
+                        { fila_id: ids.cobranza, coef: 1 },
+                        { fila_id: ids.pagos, coef: -1 },
+                        { fila_id: ids.gastos_fijos, coef: -1 },
+                        { fila_id: ids.prestamo, coef: 1 },
+                        { fila_id: ids.inversion, coef: 1 },
+                    ],
+                }),
+            },
+            {
+                // Saldo inicial es un supuesto tecleado (mismo patrón que "Inventario
+                // inicial" en Producción) — cópialo del saldo final del periodo anterior.
+                key: 'saldo_final', concepto: 'Saldo final de caja', tipo: 'formula',
+                formula: (ids) => ({
+                    op: 'combo',
+                    terms: [
+                        { fila_id: ids.saldo_inicial, coef: 1 },
+                        { fila_id: ids.flujo_neto, coef: 1 },
+                    ],
+                }),
+            },
         ],
     },
     custom: { nombre: 'Cédula personalizada', filas: [] },

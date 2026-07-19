@@ -300,6 +300,55 @@ Not every sale is paid all at once. Many businesses collect a percentage up fron
         api: false
     },
     {
+        id: '13',
+        slug: 'presupuestos-cedulas',
+        title: {
+            es: 'Presupuestos y cédulas',
+            en: 'Budgets & schedules'
+        },
+        shortDesc: {
+            es: 'Planea tu año con cédulas presupuestales encadenadas (ventas → producción → compras → efectivo) y evalúa decisiones con calculadoras de VPN/TIR, inventario óptimo (EOQ) y variaciones estándar vs. real.',
+            en: 'Plan your year with chained budget schedules (sales → production → purchases → cash) and evaluate decisions with NPV/IRR, optimal inventory (EOQ), and standard-vs-actual variance calculators.'
+        },
+        content: {
+            es: `## Planeación financiera dentro de Cord
+La mayoría de los negocios arman su presupuesto anual en una hoja de Excel que se desconecta de la operación. Cord trae esa planeación adentro, con dos herramientas complementarias en la sección **Presupuestos**.
+
+### Cédulas presupuestales
+Arma la cascada clásica de contabilidad de costos con plantillas listas para editar: Ventas, Ventas con factores de ajuste, Producción, Compras de Materia Prima, Mano de Obra y CIF, Cobranza y Efectivo. Cada cédula es una tabla de conceptos por periodo (3, 6 o 12 meses):
+- **Filas de insumo** que tú tecleas y **filas de fórmula** que se recalculan solas.
+- Una fórmula puede referenciar otras filas de la misma cédula **o de otra** — así "Producción" jala de "Ventas" sin recapturar nada.
+- El constructor de fórmulas soporta sumas/restas, factores en cadena (ej. +1% económico, luego +3% de distribución), multiplicación entre filas (unidades × precio) y referencias a periodos anteriores (para cobranza escalonada 40/30/30).
+
+### Herramientas de análisis
+Calculadoras de decisión con escenarios que puedes guardar y volver a abrir:
+- **Evaluación de proyecto:** Valor Presente Neto (VPN), Tasa Interna de Retorno (TIR) y periodo de recuperación, con un asistente que deriva el flujo anual desde utilidad, depreciación e ISR.
+- **Punto óptimo de inventario (EOQ):** cantidad económica de pedido, costo total mínimo y punto de reorden.
+- **Análisis de variaciones:** compara el costo estándar contra el real y descompone la diferencia en variación de precio y de cantidad (favorable / desfavorable).
+
+Todo vive bajo el permiso de analítica y es una herramienta de **planeación** — no un sistema de inventario en vivo.`,
+            en: `## Financial planning inside Cord
+Most businesses build their annual budget in a spreadsheet that ends up disconnected from operations. Cord brings that planning in-house, with two complementary tools under the **Budgets** section.
+
+### Budget schedules
+Build the classic cost-accounting cascade with ready-to-edit templates: Sales, Sales with adjustment factors, Production, Raw Material Purchases, Labor & Overhead, Collections, and Cash. Each schedule is a table of line items by period (3, 6, or 12 months):
+- **Input rows** you type and **formula rows** that recalculate on their own.
+- A formula can reference other rows in the same schedule **or in another one** — so "Production" pulls from "Sales" with zero retyping.
+- The formula builder supports add/subtract, chained factors (e.g. +1% economic, then +3% distribution), row-by-row multiplication (units × price), and references to prior periods (for staggered 40/30/30 collections).
+
+### Analysis tools
+Decision calculators with scenarios you can save and reopen:
+- **Project evaluation:** Net Present Value (NPV), Internal Rate of Return (IRR), and payback period, with an assistant that derives the annual cash flow from profit, depreciation, and income tax.
+- **Optimal inventory (EOQ):** economic order quantity, minimum total cost, and reorder point.
+- **Variance analysis:** compares standard cost against actual and breaks the difference into price and quantity variances (favorable / unfavorable).
+
+It all lives under the analytics permission and is a **planning** tool — not a live inventory system.`
+        },
+        area: 'finanzas',
+        status: 'live',
+        api: false
+    },
+    {
         id: '8',
         slug: 'cfdi-automatico',
         title: {

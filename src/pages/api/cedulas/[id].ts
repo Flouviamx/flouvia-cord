@@ -67,9 +67,16 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         let formula: ComboFormula | null = null;
         if (tipo === 'formula') {
             const terms = Array.isArray(body.formula?.terms) ? body.formula.terms : [];
+            const VALID_KINDS = new Set(['suma', 'pct', 'producto']);
             const cleanTerms = terms
-                .map((t: any) => ({ fila_id: String(t.fila_id ?? ''), cedula_id: t.cedula_id ? String(t.cedula_id) : null, coef: Number(t.coef) || 0 }))
-                .filter((t: any) => t.fila_id && t.coef !== 0);
+                .map((t: any) => {
+                    const kind = VALID_KINDS.has(t.kind) ? t.kind : 'suma';
+                    const offset = Number(t.offset) || 0;
+                    return { fila_id: String(t.fila_id ?? ''), cedula_id: t.cedula_id ? String(t.cedula_id) : null, coef: Number(t.coef) || 0, kind, offset };
+                })
+                // 'pct'/'producto' operan sobre la fila referenciada, no sobre un coeficiente
+                // — solo 'suma' exige coef distinto de 0 para ser un término útil.
+                .filter((t: any) => t.fila_id && (t.kind !== 'suma' || t.coef !== 0));
             if (!cleanTerms.length) return json({ error: 'La fórmula necesita al menos una referencia con coeficiente' }, 400);
             formula = { op: 'combo', terms: cleanTerms };
         }

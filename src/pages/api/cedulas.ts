@@ -9,7 +9,7 @@ import { getActiveOrgId, logAudit, reqIp } from '../../lib/db';
 import { requirePerm, getCedulas, createCedula } from '../../lib/queries';
 import { applyTemplate, CEDULA_TEMPLATES } from '../../lib/cedulas';
 
-const TIPOS = new Set(['ventas', 'produccion', 'compras_mp', 'mano_obra', 'cif', 'cobranza', 'custom']);
+const TIPOS = new Set(['ventas', 'ventas_factores', 'produccion', 'compras_mp', 'mano_obra', 'cif', 'cobranza', 'efectivo', 'custom']);
 
 export const GET: APIRoute = async () => {
     const denied = await requirePerm('analitica'); if (denied) return denied;

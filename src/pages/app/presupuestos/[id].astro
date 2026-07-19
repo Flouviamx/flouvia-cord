@@ -67,7 +67,15 @@ const cedulaId = Astro.params.id;
                         </div>
                     </div>
                     <div id="formulaBuilder" hidden>
-                        <p class="m-hint">Cada término suma (coeficiente positivo) o resta (negativo) el valor de una fila, propia o de otra cédula.</p>
+                        <p class="m-hint">Los términos se aplican en el orden en que los agregas: "Suma/resta" acumula un valor (positivo o negativo); "% de otra fila" aplica un porcentaje de cambio sobre lo acumulado hasta ese punto (ej. +1% económico, luego +3% de distribución); "× otra fila" multiplica lo acumulado por otra fila completa (ej. unidades × precio). El campo <strong>Atrás</strong> toma el valor de un periodo anterior (0 = mismo periodo, 1 = el periodo pasado) — útil para cobranza escalonada.</p>
+                        <div class="pr-term-head">
+                            <span>Operación</span>
+                            <span>Cédula</span>
+                            <span>Fila</span>
+                            <span class="pr-th-c">Coef.</span>
+                            <span class="pr-th-c">Atrás</span>
+                            <span></span>
+                        </div>
                         <div id="terms"></div>
                         <button type="button" id="btnAddTerm" class="pr-add-term">+ Agregar término</button>
                     </div>
@@ -137,7 +145,12 @@ const cedulaId = Astro.params.id;
     .pr-type-opt { all:unset; box-sizing:border-box; cursor:pointer; text-align:center; flex:1; font-size:.82rem; padding:.5rem; border-radius:10px; background:var(--color-bg-soft); color:var(--color-text-muted); border:1px solid transparent; }
     .pr-type-opt.is-active { background:var(--color-blue-deep); color:#fff; }
 
-    .pr-term-row { display:grid; grid-template-columns: 1.3fr 1.3fr 70px 28px; gap:.4rem; align-items:center; margin-bottom:.5rem; }
+    .pr-term-head { display:grid; grid-template-columns: 122px 1.1fr 1.1fr 54px 54px 28px; gap:.35rem; margin-bottom:.45rem; padding:0 .1rem; }
+    .pr-term-head span { font-size:.6rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--color-text-muted); }
+    .pr-term-head .pr-th-c { text-align:center; }
+    .pr-term-row { display:grid; grid-template-columns: 122px 1.1fr 1.1fr 54px 54px 28px; gap:.35rem; align-items:center; margin-bottom:.5rem; }
+    .pr-term-row[data-kind="pct"] .term-coef, .pr-term-row[data-kind="producto"] .term-coef { visibility:hidden; }
+    .term-offset { text-align:center; }
     .pr-term-row select, .pr-term-row input { background:var(--color-bg-soft); border:1px solid transparent; border-radius:8px; padding:.4rem .5rem; font-size:.8rem; color:var(--color-text); }
     .pr-term-row select:focus, .pr-term-row input:focus { outline:none; border-color:rgba(10,25,47,0.15); }
     .pr-term-del { all:unset; box-sizing:border-box; cursor:pointer; display:inline-flex; opacity:.4; padding:2px; }
@@ -207,16 +220,23 @@ const cedulaId = Astro.params.id;
         return `${f.concepto} · ${otra.nombre}`;
     }
 
-    // "= Ventas + Inv. final deseado − Inv. inicial" — legible, sin ids.
+    // "= Ventas + Inv. final deseado − Inv. inicial" o "= Ventas × (1 + Factor1 %) × Precio"
+    // o "= 0.4× Ventas + 0.3× Ventas (t−1) + 0.3× Ventas (t−2)" según el kind/offset de cada
+    // término — legible, sin ids.
     function describeFormula(formula) {
         if (!formula || !Array.isArray(formula.terms) || !formula.terms.length) return '';
         return '= ' + formula.terms.map((t, i) => {
-            const coef = Number(t.coef) || 0;
+            const kind = t.kind || 'suma';
             const nombre = filaNombre(t.fila_id, t.cedula_id);
+            const offset = Number(t.offset) || 0;
+            const desfase = offset ? ` (t−${offset})` : '';
+            if (kind === 'pct') return (i === 0 ? '' : ' ') + `× (1 + ${nombre}${desfase} %)`;
+            if (kind === 'producto') return (i === 0 ? '' : ' ') + `× ${nombre}${desfase}`;
+            const coef = Number(t.coef) || 0;
             const abs = Math.abs(coef);
             const factor = abs !== 1 ? `${abs}× ` : '';
             const sign = coef < 0 ? '−' : '+';
-            return (i === 0 ? (coef < 0 ? '−' : '') : ` ${sign} `) + factor + nombre;
+            return (i === 0 ? (coef < 0 ? '−' : '') : ` ${sign} `) + factor + nombre + desfase;
         }).join('');
     }
 
@@ -412,18 +432,27 @@ const cedulaId = Astro.params.id;
     function addTermRow() {
         const row = document.createElement('div');
         row.className = 'pr-term-row';
+        row.dataset.kind = 'suma';
         row.innerHTML = `
+            <select class="term-kind" title="Tipo de término">
+                <option value="suma">Suma / resta</option>
+                <option value="pct">% de otra fila</option>
+                <option value="producto">× otra fila</option>
+            </select>
             <select class="term-cedula">${cedulaOptionsHtml()}</select>
             <select class="term-fila"></select>
             <input type="number" class="term-coef" value="1" step="any" title="Coeficiente" />
+            <input type="number" class="term-offset" value="0" step="1" min="0" title="Periodos atrás (0 = mismo periodo, 1 = un periodo antes…)" />
             <button type="button" class="pr-term-del" title="Quitar">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>`;
         termsWrap.appendChild(row);
+        const kindSel = row.querySelector('.term-kind');
         const cedulaSel = row.querySelector('.term-cedula');
         const filaSel = row.querySelector('.term-fila');
         const refresh = () => { filaSel.innerHTML = filaOptionsHtml(cedulaSel.value); };
         cedulaSel.addEventListener('change', refresh);
+        kindSel.addEventListener('change', () => { row.dataset.kind = kindSel.value; });
         refresh();
         row.querySelector('.pr-term-del').addEventListener('click', () => row.remove());
     }
@@ -435,12 +464,17 @@ const cedulaId = Astro.params.id;
         if (!concepto) { errEl.textContent = 'Escribe un concepto.'; errEl.removeAttribute('hidden'); return; }
         const body = { action: 'add_fila', concepto, tipo: currentTipo };
         if (currentTipo === 'formula') {
-            const terms = Array.from(termsWrap.querySelectorAll('.pr-term-row')).map((row) => ({
-                cedula_id: row.querySelector('.term-cedula').value || null,
-                fila_id: row.querySelector('.term-fila').value,
-                coef: Number(row.querySelector('.term-coef').value) || 0,
-            })).filter((t) => t.fila_id && t.coef !== 0);
-            if (!terms.length) { errEl.textContent = 'Agrega al menos un término con coeficiente distinto de 0.'; errEl.removeAttribute('hidden'); return; }
+            const terms = Array.from(termsWrap.querySelectorAll('.pr-term-row')).map((row) => {
+                const kind = row.querySelector('.term-kind').value;
+                return {
+                    kind,
+                    cedula_id: row.querySelector('.term-cedula').value || null,
+                    fila_id: row.querySelector('.term-fila').value,
+                    coef: Number(row.querySelector('.term-coef').value) || 0,
+                    offset: Number(row.querySelector('.term-offset').value) || 0,
+                };
+            }).filter((t) => t.fila_id && (t.kind !== 'suma' || t.coef !== 0));
+            if (!terms.length) { errEl.textContent = 'Agrega al menos un término válido (suma con coeficiente distinto de 0, o una referencia de % / ×).'; errEl.removeAttribute('hidden'); return; }
             body.formula = { terms };
         }
         const r = await fetch(`/api/cedulas/${cedulaId}`, {

@@ -8,6 +8,87 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Presupuestos "curso completo" — 4 fases sobre Cédulas + herramientas de análisis (jul 2026)** —
+   André compartió un examen real de su universidad (presupuestos en México) y pidió llevar todo
+   ese temario a Cord, por fases, validando cada una contra el examen antes de seguir. Se
+   implementaron 4 fases; el problema de kardex PEPS se dejó FUERA a propósito (rompería la
+   decisión de diseño "no ERP de inventario en vivo" de las Cédulas, ver entrada siguiente).
+   • **Fase 1 — Fórmulas con % y multiplicación entre filas.** El primitivo `combo` de
+     `src/lib/cedulas.ts` solo sumaba (`Σ coef·valor`). Se agregó `kind?: 'suma'|'pct'|'producto'`
+     a `ComboTerm` (default `'suma'`, 100% retrocompatible) y `evalFila` pasó de un `reduce` sin
+     orden a un **fold SECUENCIAL**: `suma` acumula, `pct` multiplica por `(1 + valor/100)`,
+     `producto` multiplica por otra fila completa — permite cascadas "+ajustes → ×(1+FE%) →
+     ×(1+FA%)" y "unidades × precio" en una sola fila. Plantilla nueva `ventas_factores`. Los
+     términos `pct`/`producto` SIEMPRE referencian una fila (nunca una constante escondida en el
+     JSON). Verificado contra Cía. Pass: 5,310.73 uds / $189,593.06 (el examen redondeó a enteros
+     por paso en Excel → 5,311 / $189,593.11; el motor mantiene 2 decimales, es lo correcto).
+   • **Fase 2 — Referencias cruzadas de periodo (presupuesto de efectivo).** `ComboTerm` ganó
+     `offset?: number` (default 0). `resolveRef` desplaza el array resuelto: `shifted[i] =
+     vals[i-offset] ?? 0` (fuera de rango = 0, no hay "periodo −1"). Con esto "cobranza = 40% de
+     ventas del mes + 30% del mes pasado + 30% del anterior" es 3 términos suma con offset 0/1/2.
+     Plantilla `efectivo`. ⚠️ El saldo NO se arrastra automático entre periodos (el motor calcula
+     cada fila completa con guard de ciclos a nivel de fila → una auto-referencia saldo_inicial↔
+     saldo_final se corta a 0 en TODOS los periodos; arreglarlo exige rediseñar el motor a
+     resolución periodo-por-periodo). Decisión validada con André: saldo inicial/préstamo/
+     inversión son filas `input` tecleadas (mismo patrón que "Inventario inicial"). Verificado
+     contra Cía. Team (cobranza 40/30/30).
+   • **Fase 3 — Herramientas de análisis guardables (VPN/TIR/payback + EOQ).** Calculadoras de
+     resultado único que NO caben en el grid por-periodos → **tabla nueva `analisis`**
+     (`id, org_id, tipo, nombre, inputs jsonb`), RLS directa por `org_id` + FORCE, sin
+     `public_token` (mismo patrón que Cédulas; solo persiste INPUTS, resultados on-the-fly).
+     Matemática PURA en **`src/lib/analisis.ts`** (sin imports de DB → se bundlea también en el
+     `<script>` del cliente, single source of truth): `computeProyecto` (VPN, TIR por bisección,
+     periodo de recuperación con año fraccionario, factor de anualidad), `deriveFlujoAnual`
+     (asistente que replica el examen: `(ganancia−dep)·(1−ISR)+dep`), `computeInventario`
+     (CEP=√(2·D·co/cm), punto de reorden, costos). API `/api/analisis`(+`/[id]`) CRUD gated por
+     `analitica` con `sanitizeInputs` (whitelist de campos, anti-jsonb-arbitrario). Pestaña nueva
+     **"Herramientas"** en `/app/presupuestos` (`herramientas.astro`) con las calculadoras vivas +
+     lista de escenarios guardados (guardar sobre uno cargado = PATCH, "guardar como nuevo" =
+     POST). Verificado: New Chance VPN $55,163.79 / payback 2.44; Cía. Fácil CEP 200 / reorden
+     10.96 / total $400.
+   • **Fase 4 — Análisis de variaciones (presupuesto flexible).** Tercer tipo de `analisis`
+     (`variaciones`), reusa tabla/página/motor de Fase 3 (sin migración). `computeVariaciones`
+     compara costo estándar vs. real de una producción y descompone la diferencia: `varPrecio =
+     (pReal−pStd)·qRealTotal`, `varCantidad = (qRealTotal−qStdTotal)·pStd` (identidad garantizada
+     `precio+cantidad=total`). Lista dinámica de conceptos + tabla de resultados con pills F/D
+     (favorable/desfavorable). Verificado contra Bene, SA: MP total +$1,020 D (precio −$480 F,
+     cantidad +$1,500 D); MO total +$4,500 D (precio +$7,200 D, cantidad −$2,700 F).
+   • **Whitelist de tipos:** `TIPOS` en `/api/cedulas.ts` amplió a `ventas_factores`/`efectivo`;
+     `TIPOS_ANALISIS` en `analisis.ts` = `proyecto`/`inventario`/`variaciones`. ⚠️ Cada tipo nuevo
+     de cédula/análisis DEBE agregarse a su whitelist (se olvidó una vez en Fase 1, corregido).
+   • **`npm run db:migrate` corrido** contra Neon (tabla `analisis` + RLS/FORCE confirmados vs.
+     `pg_class`/`pg_policies`). Las 4 fases con `npm run build` limpio y cada fórmula verificada
+     con un harness Node aislado que importa/replica el motor real (no se dio por buena ninguna
+     sin cuadrar el número del examen). ⚠️ No hubo verificación visual (sin Playwright en el
+     entorno + páginas tras el login de Clerk) — el CSS reusa patrones ya verificados pero la
+     revisión visual final queda pendiente de André.
+   • **Pasada de intuición + cableado externo (jul 2026, sesión posterior):** (1) **UX** — el
+     modal "Nueva cédula" mostraba la ayuda de *Producción* aunque el tipo default es *Ventas*
+     (nunca coincidían al abrir); ahora la ayuda se sincroniza al abrir/cambiar y **sugiere el
+     nombre** ("Presupuesto de Ventas"…) mientras el usuario no lo teclee. El constructor de
+     fórmulas ganó una **fila de encabezados** (Operación · Cédula · Fila · Coef. · Atrás) — antes
+     eran 5 controles sin etiqueta, solo tooltips — y la ayuda ahora explica el campo "Atrás"
+     (offset de periodo). La calculadora de variaciones ganó **leyenda F/D** (Favorable/Desfavorable).
+     (2) **Onboarding** — paso nuevo `presupuestos` en el grupo "Crece tu operación" de
+     `getSetupProgress()` (`done` si la org tiene ≥1 cédula o ≥1 análisis; se agregaron 2 counts
+     al batch de `withOrgTx`), con la descripción del grupo ampliada a incluir planeación. (3)
+     **Soporte** — categoría NUEVA "Presupuestos y análisis"/"Budgets & Analysis" (slug
+     `presupuestos`) en `SupportCards.astro` + ambas `category/[categoria].astro` (ES/EN), con 2
+     artículos ES + 2 EN (`presupuestos-cedulas`, `herramientas-analisis`) escritos con copy 100%
+     preciso vs. lo implementado (sin overpromising; documentan los límites reales). (4) **Roadmap**
+     — item nuevo `presupuestos-cedulas` (id 13, área finanzas, `status: live`, `api: false`) en
+     `roadmap-data.ts` (ES+EN). `npm run build` limpio; las páginas nuevas de roadmap/soporte/
+     categoría se generan (ES+EN).
+   • **Bug de UI previo corregido en la misma sesión (antes de las fases):** las páginas de
+     Presupuestos (`presupuestos/index.astro` y `[id].astro`) usaban clases (`.modal`,
+     `.modal-card`, `.btn-primary`, `.btn-ghost`, `.empty*`) que **nunca se definieron** — el
+     `<dialog>` salía como popup nativo sin estilo y los botones sin diseño. Cada página Astro
+     define sus propias clases scoped (no hay hoja global compartida para estas); se copió el CSS
+     del mismo patrón de `clientes.astro`/`productos.astro` + estados vacíos de `analitica.astro`.
+     También faltaba la clase `skeleton` (solo tenían `skeleton-line` → sin shimmer). ⚠️ Regla
+     reconfirmada: al crear una página de app nueva con modal/botones, copiar el bloque CSS
+     completo del patrón existente — no basta con usar los classnames.
+
 ✅ **Cédulas Presupuestales — motor de planeación financiera (jul 2026)** — feature nuevo
    pedido por André: la cascada clásica de contabilidad de costos (Presupuesto de Ventas →
    Producción → Compras de Materia Prima → Cobranza), como herramienta propia de Cord en vez

@@ -1,0 +1,617 @@
+---
+// Herramientas de análisis — calculadoras de decisión con escenarios guardables:
+//   • Evaluación de proyecto: VPN, TIR y periodo de recuperación (+ asistente que
+//     deriva el flujo anual desde utilidad/depreciación/impuestos).
+//   • Punto óptimo de inventario: EOQ/CEP + punto de reorden.
+// La matemática vive en src/lib/analisis.ts (importada en el <script>, single source
+// of truth). Solo se persisten los inputs (tabla `analisis`), gated por permiso `analitica`.
+import AppLayout from '../../../layouts/AppLayout.astro';
+import { getMyMembership } from '../../../lib/queries';
+import { memberCan } from '../../../lib/permissions';
+
+const ME = await getMyMembership();
+const hasAccess = memberCan(ME, 'analitica');
+---
+
+<AppLayout title="Herramientas de análisis — Cord" page="presupuestos" heading="Presupuestos">
+    <div slot="page-sub">Calculadoras de decisión — evaluación de proyectos y punto óptimo de inventario.</div>
+    {hasAccess && (
+        <div slot="page-tabs">
+            <a href="/app/presupuestos" class="ph-tab">Cédulas</a>
+            <a href="/app/presupuestos/herramientas" class="ph-tab active">Herramientas</a>
+        </div>
+    )}
+
+    {!hasAccess && (
+        <div class="pr-denied">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <h3>Sin acceso</h3>
+            <p>Tu rol actual no tiene permiso para ver herramientas de análisis. Contacta al administrador de tu organización.</p>
+        </div>
+    )}
+
+    {hasAccess && <>
+        <!-- ── Escenarios guardados ─────────────────────────────────── -->
+        <section class="tl-saved">
+            <div class="sec-head"><h2 class="sec-title">Escenarios guardados</h2></div>
+            <div class="skeleton-wrap" id="savedSkel">
+                <div class="skeleton skeleton-line" style="width:100%;height:44px;margin-bottom:8px"></div>
+                <div class="skeleton skeleton-line" style="width:100%;height:44px"></div>
+            </div>
+            <div id="savedEmpty" class="tl-saved-empty" hidden>
+                Aún no guardas ningún escenario. Usa una calculadora abajo y presiona “Guardar escenario”.
+            </div>
+            <div id="savedRows" class="pr-list" hidden></div>
+        </section>
+
+        <!-- ── Calculadora 1: Evaluación de proyecto ─────────────────── -->
+        <section class="tl-tool" id="toolProyecto">
+            <div class="sec-head">
+                <h2 class="sec-title">Evaluación de proyecto (VPN)</h2>
+                <span class="tl-loaded" id="proyLoaded" hidden></span>
+            </div>
+            <p class="tl-desc">Valor presente neto, tasa interna de retorno y periodo de recuperación de una inversión.</p>
+
+            <div class="tl-grid">
+                <label class="fld"><span>Inversión inicial ($)</span>
+                    <input type="number" step="any" id="p_inversion" value="100000" /></label>
+                <label class="fld"><span>Tasa de descuento (%)</span>
+                    <input type="number" step="any" id="p_tasa" value="15" /></label>
+                <label class="fld"><span>Número de años</span>
+                    <input type="number" step="1" min="1" max="60" id="p_anios" value="6" /></label>
+            </div>
+
+            <div class="tl-flux">
+                <label class="tl-switch">
+                    <input type="checkbox" id="p_uniforme" checked />
+                    <span class="tl-switch-track"><span class="tl-switch-thumb"></span></span>
+                    <span class="tl-switch-txt">El flujo es igual cada año</span>
+                </label>
+                <div id="p_uniformeWrap">
+                    <label class="fld"><span>Flujo neto anual ($)</span>
+                        <input type="number" step="any" id="p_flujo" value="41000" /></label>
+                </div>
+                <div id="p_porAnioWrap" class="tl-grid" hidden></div>
+            </div>
+
+            <details class="tl-asst">
+                <summary>Asistente: derivar el flujo anual desde la utilidad</summary>
+                <p class="m-hint">Calcula el flujo neto = (ganancia antes de depreciación e impuestos − depreciación) × (1 − ISR) + depreciación, y lo copia al flujo anual de arriba.</p>
+                <div class="tl-grid">
+                    <label class="fld"><span>Ganancia anual antes de dep. e imp. ($)</span>
+                        <input type="number" step="any" id="a_ganancia" value="50000" /></label>
+                    <label class="fld"><span>Depreciación anual ($)</span>
+                        <input type="number" step="any" id="a_dep" value="20000" /></label>
+                    <label class="fld"><span>Tasa de ISR (%)</span>
+                        <input type="number" step="any" id="a_isr" value="30" /></label>
+                </div>
+                <button type="button" class="btn-ghost" id="a_aplicar">Calcular y aplicar flujo</button>
+            </details>
+
+            <div class="tl-out" id="p_out"></div>
+            <div class="tl-actions">
+                <button type="button" class="btn-primary" id="p_save">Guardar escenario</button>
+                <button type="button" class="tl-save-new" id="p_saveNew" hidden>Guardar como nuevo</button>
+            </div>
+        </section>
+
+        <!-- ── Calculadora 2: Punto óptimo de inventario ─────────────── -->
+        <section class="tl-tool" id="toolInventario">
+            <div class="sec-head">
+                <h2 class="sec-title">Punto óptimo de inventario (EOQ)</h2>
+                <span class="tl-loaded" id="invLoaded" hidden></span>
+            </div>
+            <p class="tl-desc">Cantidad económica de pedido (CEP), costo total mínimo y punto de reorden.</p>
+
+            <div class="tl-grid">
+                <label class="fld"><span>Demanda anual (unidades)</span>
+                    <input type="number" step="any" id="i_demanda" value="800" /></label>
+                <label class="fld"><span>Costo de ordenar ($ por orden)</span>
+                    <input type="number" step="any" id="i_ordenar" value="50" /></label>
+                <label class="fld"><span>Costo de mantener ($ por unidad/año)</span>
+                    <input type="number" step="any" id="i_mantener" value="2" /></label>
+                <label class="fld"><span>Tiempo de entrega (días)</span>
+                    <input type="number" step="any" id="i_entrega" value="5" /></label>
+                <label class="fld"><span>Días hábiles al año</span>
+                    <input type="number" step="any" id="i_dias" value="365" /></label>
+            </div>
+
+            <div class="tl-out" id="i_out"></div>
+            <div class="tl-actions">
+                <button type="button" class="btn-primary" id="i_save">Guardar escenario</button>
+                <button type="button" class="tl-save-new" id="i_saveNew" hidden>Guardar como nuevo</button>
+            </div>
+        </section>
+
+        <!-- ── Calculadora 3: Análisis de variaciones ────────────────── -->
+        <section class="tl-tool" id="toolVariaciones">
+            <div class="sec-head">
+                <h2 class="sec-title">Análisis de variaciones (presupuesto flexible)</h2>
+                <span class="tl-loaded" id="varLoaded" hidden></span>
+            </div>
+            <p class="tl-desc">Compara el costo estándar contra el real de tu producción y descompone la diferencia en variación de precio y de cantidad (eficiencia).</p>
+
+            <div class="tl-grid" style="max-width:320px">
+                <label class="fld"><span>Unidades producidas</span>
+                    <input type="number" step="any" id="v_unidades" value="300" /></label>
+            </div>
+
+            <div class="tl-vhead">
+                <span class="tl-vhead-c">Concepto</span>
+                <span>Cant. estándar</span>
+                <span>Precio estándar</span>
+                <span>Cant. real</span>
+                <span>Precio real</span>
+                <span></span>
+            </div>
+            <div id="v_conceptos"></div>
+            <button type="button" id="v_addConcepto" class="tl-add-concepto">+ Agregar concepto</button>
+
+            <div class="tl-vout" id="v_out"></div>
+            <p class="tl-fd-legend"><span class="tl-fd F">F</span> Favorable (costó menos de lo estándar) · <span class="tl-fd D">D</span> Desfavorable (costó más de lo estándar)</p>
+            <div class="tl-actions">
+                <button type="button" class="btn-primary" id="v_save">Guardar escenario</button>
+                <button type="button" class="tl-save-new" id="v_saveNew" hidden>Guardar como nuevo</button>
+            </div>
+        </section>
+
+        <!-- ── Modal: nombrar escenario al guardar ───────────────────── -->
+        <dialog class="modal" id="saveModal">
+            <form method="dialog" class="modal-card">
+                <header>
+                    <h3>Guardar escenario</h3>
+                    <button type="button" class="mclose" id="sm_close" aria-label="Cerrar">&times;</button>
+                </header>
+                <div class="modal-body">
+                    <label class="fld">
+                        <span>Nombre</span>
+                        <input type="text" id="sm_nombre" placeholder="Ej. Proyecto restaurante Vallarta" maxlength="120" />
+                    </label>
+                    <p class="m-err" id="sm_err" hidden></p>
+                </div>
+                <footer>
+                    <button type="button" id="sm_cancel" class="btn-ghost">Cancelar</button>
+                    <button type="button" id="sm_save" class="btn-primary">Guardar</button>
+                </footer>
+            </form>
+        </dialog>
+    </>}
+</AppLayout>
+
+<style is:global>
+    .pr-denied { display:flex; flex-direction:column; align-items:center; text-align:center; gap:.75rem; padding:5rem 1rem; color:var(--color-text-muted); }
+    .pr-denied svg { width:40px; height:40px; opacity:.5; }
+    .pr-denied h3 { color:var(--color-text); font-size:1.05rem; }
+
+    /* Escenarios guardados */
+    .tl-saved { margin-bottom:2.5rem; }
+    .tl-saved-empty { font-size:.86rem; color:var(--color-text-muted); padding:1.5rem 0; }
+    .tl-saved-empty[hidden] { display:none; }
+    .pr-list { display:flex; flex-direction:column; }
+    .pr-list[hidden] { display:none; }
+    .pr-row { display:grid; grid-template-columns: 1fr auto auto 28px; align-items:center; gap:1rem; padding:.9rem 0; border-bottom:1px solid var(--color-border); cursor:pointer; }
+    .pr-row:hover { background:var(--row-hover, var(--color-bg-soft)); }
+    .pr-row:last-child { border-bottom:none; }
+    .pr-name { font-weight:600; color:var(--color-text); }
+    .pr-tipo { font-size:.78rem; color:var(--color-text-muted); }
+    .pr-updated { font-size:.78rem; color:var(--color-text-muted); white-space:nowrap; }
+    .pr-badge { font-size:.68rem; font-weight:700; letter-spacing:.02em; padding:.2rem .55rem; border-radius:999px; background:var(--color-bg-soft); color:var(--color-text-muted); white-space:nowrap; }
+    .pr-del { all:unset; box-sizing:border-box; display:inline-flex; cursor:pointer; opacity:.35; padding:4px; border-radius:6px; }
+    .pr-del:hover { opacity:1; color:var(--color-danger); background:var(--color-bg-soft); }
+
+    /* Herramienta (sección hairline) */
+    .tl-tool { padding:2rem 0; border-top:1px solid var(--color-border); }
+    .tl-desc { font-size:.86rem; color:var(--color-text-muted); margin:.25rem 0 1.5rem; }
+    .tl-loaded { font-size:.72rem; font-weight:600; color:var(--color-blue-deep); background:var(--color-bg-soft); padding:.22rem .6rem; border-radius:999px; }
+    .tl-loaded[hidden] { display:none; }
+    .sec-head { display:flex; align-items:center; gap:.75rem; }
+
+    .tl-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:1rem 1.25rem; }
+    .fld { display:flex; flex-direction:column; gap:.35rem; }
+    .fld span:first-child { font-size:.82rem; font-weight:600; color:var(--color-text); }
+    .fld input[type="text"], .fld input[type="number"] { background:var(--color-bg-soft); border:1px solid transparent; border-radius:10px; padding:.6rem .75rem; font-size:.9rem; color:var(--color-text); font-variant-numeric:tabular-nums; }
+    .fld input:focus { outline:none; border-color:rgba(10,25,47,0.15); }
+    .m-hint { font-size:.72rem; color:var(--color-text-muted); margin:.2rem 0 .6rem; }
+    .m-err { color:var(--color-danger); font-size:.82rem; margin:0; }
+
+    /* Flujo: toggle uniforme / por año */
+    .tl-flux { margin-top:1.25rem; }
+    #p_uniformeWrap, #p_porAnioWrap { margin-top:1rem; max-width:320px; }
+    #p_porAnioWrap { max-width:none; }
+    #p_uniformeWrap[hidden], #p_porAnioWrap[hidden] { display:none; }
+    .tl-switch { display:inline-flex; align-items:center; gap:.6rem; cursor:pointer; user-select:none; }
+    .tl-switch input { position:absolute; opacity:0; width:0; height:0; }
+    .tl-switch-track { position:relative; width:40px; height:24px; border-radius:999px; background:rgba(10,25,47,0.13); transition:background .2s var(--ease-ios); flex-shrink:0; }
+    .tl-switch-thumb { position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.3), 0 1px 1px rgba(0,0,0,.16); transition:transform .2s var(--ease-spring); }
+    .tl-switch input:checked + .tl-switch-track { background:var(--color-blue-deep); }
+    .tl-switch input:checked + .tl-switch-track .tl-switch-thumb { transform:translateX(16px); }
+    .tl-switch-txt { font-size:.85rem; font-weight:600; color:var(--color-text); }
+
+    /* Asistente colapsable */
+    .tl-asst { margin-top:1.5rem; border:1px solid var(--color-border); border-radius:14px; padding:1rem 1.25rem; }
+    .tl-asst > summary { cursor:pointer; font-size:.85rem; font-weight:600; color:var(--color-text); list-style:none; user-select:none; }
+    .tl-asst > summary::-webkit-details-marker { display:none; }
+    .tl-asst > summary::before { content:'+ '; color:var(--color-text-muted); font-weight:700; }
+    .tl-asst[open] > summary::before { content:'− '; }
+    .tl-asst[open] > summary { margin-bottom:.75rem; }
+
+    /* Resultados */
+    .tl-out { margin-top:1.75rem; display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:1.25rem 1.5rem; padding:1.5rem; background:var(--color-bg-soft); border-radius:16px; }
+    .tl-metric { display:flex; flex-direction:column; gap:.3rem; }
+    .tl-metric-label { font-size:.72rem; font-weight:600; color:var(--color-text-muted); }
+    .tl-metric-val { font-size:1.35rem; }
+    .tl-metric-val.editorial { letter-spacing:-0.02em; }
+    .tl-metric-sub { font-size:.7rem; color:var(--color-text-muted); }
+    .tl-pill { display:inline-flex; align-self:flex-start; align-items:center; gap:.35rem; font-size:.78rem; font-weight:700; padding:.25rem .7rem; border-radius:999px; }
+    .tl-pill.ok { color:#047857; background:rgba(16,185,129,.12); }
+    .tl-pill.bad { color:#b91c1c; background:rgba(239,68,68,.12); }
+
+    /* Variaciones: lista dinámica de conceptos */
+    .tl-vhead, .tl-vrow { display:grid; grid-template-columns: 1.4fr repeat(4, 1fr) 28px; gap:.5rem; align-items:center; }
+    .tl-vhead { margin-top:1.5rem; padding:0 .1rem .5rem; }
+    .tl-vhead span { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--color-text-muted); }
+    .tl-vhead-c { text-align:left; }
+    .tl-vrow { margin-bottom:.5rem; }
+    .tl-vrow input { background:var(--color-bg-soft); border:1px solid transparent; border-radius:8px; padding:.5rem .6rem; font-size:.85rem; color:var(--color-text); font-variant-numeric:tabular-nums; width:100%; box-sizing:border-box; }
+    .tl-vrow input:focus { outline:none; border-color:rgba(10,25,47,0.15); }
+    .tl-vdel { all:unset; box-sizing:border-box; cursor:pointer; display:inline-flex; opacity:.4; padding:3px; border-radius:5px; }
+    .tl-vdel:hover { opacity:1; color:var(--color-danger); background:var(--color-bg-soft); }
+    .tl-add-concepto { all:unset; box-sizing:border-box; cursor:pointer; font-size:.8rem; font-weight:600; color:var(--color-blue-deep); margin-top:.4rem; display:inline-block; }
+    .tl-add-concepto:hover { text-decoration:underline; }
+
+    /* Variaciones: tabla de resultados */
+    .tl-vout { margin-top:1.75rem; overflow-x:auto; }
+    .tl-vout[hidden] { display:none; }
+    .tl-vtable { width:100%; border-collapse:collapse; font-size:.85rem; min-width:640px; }
+    .tl-vtable th, .tl-vtable td { padding:.7rem .8rem; text-align:right; white-space:nowrap; border-bottom:1px solid var(--color-border); }
+    .tl-vtable th { font-size:.68rem; text-transform:uppercase; letter-spacing:.03em; color:var(--color-text-muted); font-weight:700; }
+    .tl-vtable th:first-child, .tl-vtable td:first-child { text-align:left; }
+    .tl-vtable tfoot td { font-weight:700; border-top:2px solid var(--color-border); border-bottom:none; }
+    .tl-var { display:inline-flex; align-items:center; gap:.4rem; justify-content:flex-end; }
+    .tl-fd { font-size:.62rem; font-weight:800; padding:.1rem .4rem; border-radius:5px; }
+    .tl-fd.F { color:#047857; background:rgba(16,185,129,.12); }
+    .tl-fd.D { color:#b91c1c; background:rgba(239,68,68,.12); }
+    .tl-fd-legend { font-size:.72rem; color:var(--color-text-muted); margin:.85rem 0 0; display:flex; align-items:center; gap:.4rem; flex-wrap:wrap; }
+
+    .tl-actions { margin-top:1.75rem; display:flex; align-items:center; gap:1rem; }
+    .tl-save-new { all:unset; box-sizing:border-box; cursor:pointer; font-size:.82rem; font-weight:600; color:var(--color-blue-deep); }
+    .tl-save-new:hover { text-decoration:underline; }
+    .tl-save-new[hidden] { display:none; }
+
+    /* Botones + modal (mismo lenguaje que el resto de Presupuestos) */
+    .btn-primary { font-family:var(--font-sans); font-size:.85rem; font-weight:600; background:var(--color-blue-deep); color:#fff; border:none; border-radius:10px; padding:.6rem 1.15rem; cursor:pointer; box-shadow:0 6px 18px -8px rgba(10,25,47,0.5); transition: transform .15s var(--ease-spring), box-shadow .15s; }
+    .btn-primary:hover { transform:translateY(-1px); box-shadow:0 10px 22px -8px rgba(10,25,47,0.55); }
+    .btn-primary:active { transform:scale(.97); }
+    .btn-ghost { font-family:var(--font-sans); font-size:.85rem; font-weight:600; background:var(--color-bg-soft); color:var(--color-text); border:1px solid var(--color-border); border-radius:10px; padding:.6rem 1.15rem; cursor:pointer; }
+    .btn-ghost:hover { background:var(--color-border); }
+
+    .modal { border:none; border-radius:20px; padding:0; color:var(--color-text); width:min(440px, calc(100vw - 2rem)); background:var(--surface); box-shadow:0 40px 90px -30px rgba(10,25,47,0.45); }
+    .modal::backdrop { background:rgba(10,25,47,0.38); backdrop-filter:blur(4px); }
+    .modal[open] { animation: modIn .22s var(--ease-spring); }
+    @keyframes modIn { from { opacity:0; transform:scale(.97) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
+    .modal-card { display:flex; flex-direction:column; }
+    .modal-card header { display:flex; align-items:center; justify-content:space-between; padding:1.35rem 1.5rem; border-bottom:1px solid var(--color-border); }
+    .modal-card header h3 { margin:0; font-size:1.05rem; font-weight:700; letter-spacing:-0.01em; color:var(--color-text); }
+    .mclose { all:unset; box-sizing:border-box; cursor:pointer; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:8px; color:var(--color-text-muted); font-size:1.2rem; line-height:1; }
+    .mclose:hover { background:var(--color-bg-soft); color:var(--color-text); }
+    .modal-body { padding:1.5rem; }
+    .modal-body .fld input[type="text"] { width:100%; box-sizing:border-box; }
+    .modal-card footer { display:flex; align-items:center; justify-content:flex-end; gap:.6rem; padding:1.1rem 1.5rem; border-top:1px solid var(--color-border); }
+
+    @media (max-width: 560px) {
+        .modal { width:100%; max-width:100%; margin:0; top:auto; bottom:0; left:0; right:0; border-radius:20px 20px 0 0; max-height:92dvh; animation: sheet-up .32s var(--ease-spring); }
+    }
+    @keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) { .modal, .modal[open] { animation:none; } }
+</style>
+
+<script>
+    import { computeProyecto, computeInventario, deriveFlujoAnual, computeVariaciones, sentidoVariacion } from '../../../lib/analisis';
+
+    const $ = (id: string) => document.getElementById(id) as HTMLInputElement;
+    const el = (id: string) => document.getElementById(id)!;
+    const num = (id: string) => Number($(id)?.value) || 0;
+    const money = (n: number) => n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const dec = (n: number, d = 2) => n.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: d });
+    const esc = (s: string) => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+
+    const TIPO_LABEL: Record<string, string> = { proyecto: 'Evaluación de proyecto', inventario: 'Inventario (EOQ)', variaciones: 'Variaciones' };
+
+    // Escenario cargado por herramienta (para PATCH vs POST).
+    const loaded: Record<string, { id: string; nombre: string } | null> = { proyecto: null, inventario: null, variaciones: null };
+
+    // ── Flujos por año (cuando el flujo NO es uniforme) ──────────────
+    function renderPorAnio(prefill: number[] | null = null) {
+        const n = Math.max(1, Math.min(60, Math.floor(num('p_anios')) || 1));
+        const wrap = el('p_porAnioWrap');
+        const existing = Array.from(wrap.querySelectorAll('input')).map((i) => Number((i as HTMLInputElement).value) || 0);
+        let html = '';
+        for (let i = 0; i < n; i++) {
+            const v = prefill ? (prefill[i] ?? 0) : (existing[i] ?? (Number($('p_flujo').value) || 0));
+            html += `<label class="fld"><span>Flujo año ${i + 1} ($)</span><input type="number" step="any" class="p_flujo_anio" value="${v}" /></label>`;
+        }
+        wrap.innerHTML = html;
+        wrap.querySelectorAll('.p_flujo_anio').forEach((i) => i.addEventListener('input', computeP));
+    }
+
+    function flujosActuales(): number[] {
+        const n = Math.max(1, Math.min(60, Math.floor(num('p_anios')) || 1));
+        if ($('p_uniforme').checked) return Array(n).fill(Number($('p_flujo').value) || 0);
+        return Array.from(el('p_porAnioWrap').querySelectorAll('.p_flujo_anio')).map((i) => Number((i as HTMLInputElement).value) || 0);
+    }
+
+    // ── Cálculo: proyecto ────────────────────────────────────────────
+    function computeP() {
+        const r = computeProyecto({ inversionInicial: num('p_inversion'), tasa: num('p_tasa'), anios: Math.floor(num('p_anios')), flujos: flujosActuales() });
+        const okPill = r.decision === 'acepta'
+            ? '<span class="tl-pill ok">Se acepta</span>'
+            : '<span class="tl-pill bad">Se rechaza</span>';
+        const paybackTxt = r.payback == null ? 'No se recupera' : `${dec(r.payback)} años`;
+        const tirTxt = r.tir == null ? '—' : `${dec(r.tir)} %`;
+        const factorTxt = r.factorAnualidad == null ? '—' : dec(r.factorAnualidad, 4);
+        el('p_out').innerHTML = `
+            <div class="tl-metric"><span class="tl-metric-label">Valor presente neto (VPN)</span><span class="tl-metric-val editorial">$${money(r.vpn)}</span>${okPill}</div>
+            <div class="tl-metric"><span class="tl-metric-label">Tasa interna de retorno (TIR)</span><span class="tl-metric-val editorial">${tirTxt}</span><span class="tl-metric-sub">se compara contra tu tasa de descuento</span></div>
+            <div class="tl-metric"><span class="tl-metric-label">Periodo de recuperación</span><span class="tl-metric-val editorial">${paybackTxt}</span></div>
+            <div class="tl-metric"><span class="tl-metric-label">Factor de anualidad</span><span class="tl-metric-val editorial">${factorTxt}</span><span class="tl-metric-sub">solo con flujo uniforme</span></div>`;
+    }
+
+    // ── Cálculo: inventario ──────────────────────────────────────────
+    function computeI() {
+        const r = computeInventario({ demandaAnual: num('i_demanda'), costoOrdenar: num('i_ordenar'), costoMantener: num('i_mantener'), tiempoEntrega: num('i_entrega'), diasAnio: num('i_dias') });
+        el('i_out').innerHTML = `
+            <div class="tl-metric"><span class="tl-metric-label">Cantidad económica de pedido (CEP)</span><span class="tl-metric-val editorial">${dec(r.cep)} u</span></div>
+            <div class="tl-metric"><span class="tl-metric-label">Punto de reorden</span><span class="tl-metric-val editorial">${dec(r.puntoReorden)} u</span><span class="tl-metric-sub">demanda diaria: ${dec(r.demandaDiaria)} u</span></div>
+            <div class="tl-metric"><span class="tl-metric-label">Órdenes al año</span><span class="tl-metric-val editorial">${dec(r.numOrdenes)}</span></div>
+            <div class="tl-metric"><span class="tl-metric-label">Costo total anual</span><span class="tl-metric-val editorial">$${money(r.costoTotal)}</span><span class="tl-metric-sub">ordenar $${money(r.costoOrdenar)} · mantener $${money(r.costoMantener)}</span></div>`;
+    }
+
+    // ── Variaciones (presupuesto flexible) ───────────────────────────
+    const CONCEPTOS_DEMO = [
+        { nombre: 'Materia prima', qStd: 3, pStd: 5, qReal: 4, pReal: 4.6 },
+        { nombre: 'Mano de obra', qStd: 5, pStd: 45, qReal: 4.8, pReal: 50 },
+    ];
+    function addConceptoRow(c: any = { nombre: '', qStd: 0, pStd: 0, qReal: 0, pReal: 0 }) {
+        const row = document.createElement('div');
+        row.className = 'tl-vrow';
+        row.innerHTML = `
+            <input type="text" class="vc-nombre" placeholder="Concepto" maxlength="80" value="${(c.nombre ?? '').toString().replace(/"/g, '&quot;')}" />
+            <input type="number" step="any" class="vc-qStd" value="${c.qStd ?? 0}" />
+            <input type="number" step="any" class="vc-pStd" value="${c.pStd ?? 0}" />
+            <input type="number" step="any" class="vc-qReal" value="${c.qReal ?? 0}" />
+            <input type="number" step="any" class="vc-pReal" value="${c.pReal ?? 0}" />
+            <button type="button" class="tl-vdel" title="Quitar concepto">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>`;
+        el('v_conceptos').appendChild(row);
+        row.querySelectorAll('input').forEach((i) => i.addEventListener('input', computeV));
+        row.querySelector('.tl-vdel')!.addEventListener('click', () => { row.remove(); computeV(); });
+    }
+    function conceptosActuales() {
+        return Array.from(el('v_conceptos').querySelectorAll('.tl-vrow')).map((row) => ({
+            nombre: (row.querySelector('.vc-nombre') as HTMLInputElement).value,
+            qStd: Number((row.querySelector('.vc-qStd') as HTMLInputElement).value) || 0,
+            pStd: Number((row.querySelector('.vc-pStd') as HTMLInputElement).value) || 0,
+            qReal: Number((row.querySelector('.vc-qReal') as HTMLInputElement).value) || 0,
+            pReal: Number((row.querySelector('.vc-pReal') as HTMLInputElement).value) || 0,
+        }));
+    }
+    function varCell(v: number): string {
+        const s = sentidoVariacion(v);
+        const fd = s === '—' ? '' : `<span class="tl-fd ${s}">${s}</span>`;
+        return `<span class="tl-var">$${money(Math.abs(v))} ${fd}</span>`;
+    }
+    function computeV() {
+        const r = computeVariaciones({ unidades: num('v_unidades'), conceptos: conceptosActuales() });
+        if (!r.filas.length) { el('v_out').innerHTML = ''; (el('v_out') as HTMLElement).hidden = true; return; }
+        (el('v_out') as HTMLElement).hidden = false;
+        const body = r.filas.map((f) => `
+            <tr>
+                <td>${esc(f.nombre)}</td>
+                <td>$${money(f.costoStd)}</td>
+                <td>$${money(f.costoReal)}</td>
+                <td>${varCell(f.varTotal)}</td>
+                <td>${varCell(f.varPrecio)}</td>
+                <td>${varCell(f.varCantidad)}</td>
+            </tr>`).join('');
+        const t = r.totales;
+        el('v_out').innerHTML = `
+            <table class="tl-vtable">
+                <thead><tr><th>Concepto</th><th>Costo estándar</th><th>Costo real</th><th>Var. total</th><th>Var. precio</th><th>Var. cantidad</th></tr></thead>
+                <tbody>${body}</tbody>
+                <tfoot><tr>
+                    <td>Total</td><td class="editorial">$${money(t.costoStd)}</td><td class="editorial">$${money(t.costoReal)}</td>
+                    <td>${varCell(t.varTotal)}</td><td>${varCell(t.varPrecio)}</td><td>${varCell(t.varCantidad)}</td>
+                </tr></tfoot>
+            </table>`;
+    }
+
+    // ── Recolectar/aplicar inputs (para guardar/cargar) ──────────────
+    function inputsVariaciones() {
+        return { unidades: num('v_unidades'), conceptos: conceptosActuales() };
+    }
+    function applyVariaciones(inp: any) {
+        $('v_unidades').value = inp.unidades ?? 0;
+        el('v_conceptos').innerHTML = '';
+        const cs = Array.isArray(inp.conceptos) && inp.conceptos.length ? inp.conceptos : CONCEPTOS_DEMO;
+        cs.forEach((c: any) => addConceptoRow(c));
+        computeV();
+    }
+    function inputsProyecto() {
+        return {
+            inversionInicial: num('p_inversion'), tasa: num('p_tasa'), anios: Math.floor(num('p_anios')),
+            usarFlujoUniforme: $('p_uniforme').checked, flujoUniforme: Number($('p_flujo').value) || 0,
+            flujos: flujosActuales(),
+            gananciaAntesDepImp: num('a_ganancia'), depreciacion: num('a_dep'), tasaImp: num('a_isr'),
+        };
+    }
+    function inputsInventario() {
+        return { demandaAnual: num('i_demanda'), costoOrdenar: num('i_ordenar'), costoMantener: num('i_mantener'), tiempoEntrega: num('i_entrega'), diasAnio: num('i_dias') };
+    }
+    function applyProyecto(inp: any) {
+        $('p_inversion').value = inp.inversionInicial ?? 0;
+        $('p_tasa').value = inp.tasa ?? 0;
+        $('p_anios').value = inp.anios ?? 1;
+        $('a_ganancia').value = inp.gananciaAntesDepImp ?? 0;
+        $('a_dep').value = inp.depreciacion ?? 0;
+        $('a_isr').value = inp.tasaImp ?? 0;
+        const uniforme = inp.usarFlujoUniforme !== false;
+        $('p_uniforme').checked = uniforme;
+        $('p_flujo').value = inp.flujoUniforme ?? (Array.isArray(inp.flujos) ? inp.flujos[0] : 0) ?? 0;
+        toggleUniforme(uniforme ? null : (Array.isArray(inp.flujos) ? inp.flujos : null));
+        computeP();
+    }
+    function applyInventario(inp: any) {
+        $('i_demanda').value = inp.demandaAnual ?? 0;
+        $('i_ordenar').value = inp.costoOrdenar ?? 0;
+        $('i_mantener').value = inp.costoMantener ?? 0;
+        $('i_entrega').value = inp.tiempoEntrega ?? 0;
+        $('i_dias').value = inp.diasAnio ?? 365;
+        computeI();
+    }
+
+    function toggleUniforme(prefillPorAnio: number[] | null) {
+        const uniforme = $('p_uniforme').checked;
+        el('p_uniformeWrap').hidden = !uniforme;
+        el('p_porAnioWrap').hidden = uniforme;
+        if (!uniforme) renderPorAnio(prefillPorAnio);
+    }
+
+    // ── Marcar herramienta con el escenario cargado ──────────────────
+    type Tool = 'proyecto' | 'inventario' | 'variaciones';
+    const BADGE: Record<Tool, string> = { proyecto: 'proyLoaded', inventario: 'invLoaded', variaciones: 'varLoaded' };
+    const SAVE_BTN: Record<Tool, string> = { proyecto: 'p_save', inventario: 'i_save', variaciones: 'v_save' };
+    const SAVE_NEW: Record<Tool, string> = { proyecto: 'p_saveNew', inventario: 'i_saveNew', variaciones: 'v_saveNew' };
+    function setLoaded(tipo: Tool, item: { id: string; nombre: string } | null) {
+        loaded[tipo] = item;
+        const badge = el(BADGE[tipo]);
+        const saveBtn = el(SAVE_BTN[tipo]);
+        const saveNew = el(SAVE_NEW[tipo]);
+        if (item) {
+            badge.textContent = `Editando: ${item.nombre}`;
+            badge.hidden = false;
+            saveBtn.textContent = 'Guardar cambios';
+            saveNew.hidden = false;
+        } else {
+            badge.hidden = true;
+            saveBtn.textContent = 'Guardar escenario';
+            saveNew.hidden = true;
+        }
+    }
+
+    // ── Lista de escenarios guardados ────────────────────────────────
+    async function loadSaved() {
+        const res = await fetch('/api/analisis');
+        if (!res.ok) return;
+        const data = await res.json();
+        el('savedSkel').setAttribute('hidden', '');
+        const list = data.analisis || [];
+        if (!list.length) { el('savedEmpty').removeAttribute('hidden'); el('savedRows').setAttribute('hidden', ''); return; }
+        el('savedEmpty').setAttribute('hidden', '');
+        el('savedRows').removeAttribute('hidden');
+        el('savedRows').innerHTML = list.map((a: any) => `
+            <div class="pr-row" data-id="${a.id}" data-tipo="${a.tipo}">
+                <div class="pr-name">${esc(a.nombre)}</div>
+                <span class="pr-badge">${esc(TIPO_LABEL[a.tipo] || a.tipo)}</span>
+                <span class="pr-updated">${new Date(a.updatedAt).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}</span>
+                <button class="pr-del" data-del="${a.id}" title="Eliminar" type="button">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                </button>
+            </div>`).join('');
+        el('savedRows').querySelectorAll('.pr-row').forEach((row) => {
+            row.addEventListener('click', async (e) => {
+                if ((e.target as HTMLElement).closest('[data-del]')) return;
+                const id = (row as HTMLElement).dataset.id!;
+                const r = await fetch(`/api/analisis/${id}`);
+                if (!r.ok) { (window as any).cordToast?.('No se pudo abrir el escenario', 'error'); return; }
+                const { analisis } = await r.json();
+                if (analisis.tipo === 'proyecto') { applyProyecto(analisis.inputs); setLoaded('proyecto', { id, nombre: analisis.nombre }); el('toolProyecto').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+                else if (analisis.tipo === 'variaciones') { applyVariaciones(analisis.inputs); setLoaded('variaciones', { id, nombre: analisis.nombre }); el('toolVariaciones').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+                else { applyInventario(analisis.inputs); setLoaded('inventario', { id, nombre: analisis.nombre }); el('toolInventario').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+            });
+        });
+        el('savedRows').querySelectorAll('[data-del]').forEach((btn) => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const id = (btn as HTMLElement).dataset.del!;
+                if (!await (window as any).cordConfirm({ title: 'Eliminar escenario', body: 'Se borrará este escenario guardado. Esta acción no se puede deshacer.', danger: true, confirmText: 'Eliminar' })) return;
+                const r = await fetch(`/api/analisis/${id}`, { method: 'DELETE' });
+                if (r.ok) {
+                    (['proyecto', 'inventario', 'variaciones'] as Tool[]).forEach((t) => { if (loaded[t]?.id === id) setLoaded(t, null); });
+                    (window as any).cordToast?.('Escenario eliminado', 'ok'); loadSaved();
+                } else (window as any).cordToast?.('No se pudo eliminar', 'error');
+            });
+        });
+    }
+
+    // ── Guardar (PATCH si hay escenario cargado, POST si es nuevo) ────
+    let pendingTipo: Tool = 'proyecto';
+    const saveModal = document.getElementById('saveModal') as HTMLDialogElement;
+
+    function inputsDe(tipo: Tool) {
+        if (tipo === 'proyecto') return inputsProyecto();
+        if (tipo === 'variaciones') return inputsVariaciones();
+        return inputsInventario();
+    }
+    async function doSave(tipo: Tool, forceNew: boolean) {
+        const inputs = inputsDe(tipo);
+        const current = loaded[tipo];
+        if (current && !forceNew) {
+            const r = await fetch(`/api/analisis/${current.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ inputs }) });
+            if (r.ok) { (window as any).cordToast?.('Cambios guardados', 'ok'); loadSaved(); }
+            else (window as any).cordToast?.('No se pudo guardar', 'error');
+            return;
+        }
+        // Nuevo escenario → pide nombre en el modal.
+        pendingTipo = tipo;
+        $('sm_nombre').value = current?.nombre ? `${current.nombre} (copia)` : '';
+        el('sm_err').setAttribute('hidden', '');
+        saveModal.showModal();
+        $('sm_nombre').focus();
+    }
+
+    document.getElementById('sm_save')?.addEventListener('click', async () => {
+        const nombre = $('sm_nombre').value.trim();
+        const errEl = el('sm_err');
+        if (!nombre) { errEl.textContent = 'Escribe un nombre para el escenario.'; errEl.removeAttribute('hidden'); return; }
+        const inputs = inputsDe(pendingTipo);
+        const r = await fetch('/api/analisis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tipo: pendingTipo, nombre, inputs }) });
+        const data = await r.json();
+        if (!r.ok) { errEl.textContent = data.error || 'No se pudo guardar.'; errEl.removeAttribute('hidden'); return; }
+        setLoaded(pendingTipo, { id: data.id, nombre });
+        saveModal.close();
+        (window as any).cordToast?.('Escenario guardado', 'ok');
+        loadSaved();
+    });
+    document.getElementById('sm_close')?.addEventListener('click', () => saveModal.close());
+    document.getElementById('sm_cancel')?.addEventListener('click', () => saveModal.close());
+
+    // ── Cableado ─────────────────────────────────────────────────────
+    ['p_inversion', 'p_tasa', 'p_flujo'].forEach((id) => $(id)?.addEventListener('input', computeP));
+    $('p_anios')?.addEventListener('input', () => { if (!$('p_uniforme').checked) renderPorAnio(); computeP(); });
+    $('p_uniforme')?.addEventListener('change', () => { toggleUniforme(null); computeP(); });
+    document.getElementById('a_aplicar')?.addEventListener('click', () => {
+        const flujo = deriveFlujoAnual({ gananciaAntesDepImp: num('a_ganancia'), depreciacion: num('a_dep'), tasaImp: num('a_isr') });
+        $('p_uniforme').checked = true; toggleUniforme(null);
+        $('p_flujo').value = String(flujo);
+        computeP();
+        (window as any).cordToast?.(`Flujo anual calculado: $${money(flujo)}`, 'ok');
+    });
+    document.getElementById('p_save')?.addEventListener('click', () => doSave('proyecto', false));
+    document.getElementById('p_saveNew')?.addEventListener('click', () => doSave('proyecto', true));
+
+    ['i_demanda', 'i_ordenar', 'i_mantener', 'i_entrega', 'i_dias'].forEach((id) => $(id)?.addEventListener('input', computeI));
+    document.getElementById('i_save')?.addEventListener('click', () => doSave('inventario', false));
+    document.getElementById('i_saveNew')?.addEventListener('click', () => doSave('inventario', true));
+
+    $('v_unidades')?.addEventListener('input', computeV);
+    document.getElementById('v_addConcepto')?.addEventListener('click', () => addConceptoRow());
+    document.getElementById('v_save')?.addEventListener('click', () => doSave('variaciones', false));
+    document.getElementById('v_saveNew')?.addEventListener('click', () => doSave('variaciones', true));
+    CONCEPTOS_DEMO.forEach((c) => addConceptoRow(c)); // siembra las 2 filas de ejemplo
+
+    computeP();
+    computeI();
+    computeV();
+    loadSaved();
+</script>

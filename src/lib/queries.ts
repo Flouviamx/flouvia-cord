@@ -1373,13 +1373,15 @@ export async function getSetupProgress() {
     const [o] = await sql`select logo_url, email_contacto, telefono, rfc, color_marca,
         pdf_mensaje, pdf_condiciones, portal_bienvenida, stripe_charges_enabled from orgs where id = ${orgId}`;
     // Señales de avance en un solo batch (mismas tablas multi-tenant → seguras bajo RLS).
-    const [[{ np }], [{ nc }], [{ nq }], [{ nsent }], [{ ncobro }], [{ nmem }]] = await withOrgTx(orgId,
+    const [[{ np }], [{ nc }], [{ nq }], [{ nsent }], [{ ncobro }], [{ nmem }], [{ ncedula }], [{ nanalisis }]] = await withOrgTx(orgId,
         sql`select count(*)::int as np from productos where org_id = ${orgId}`,
         sql`select count(*)::int as nc from clientes where org_id = ${orgId}`,
         sql`select count(*)::int as nq from cotizaciones where org_id = ${orgId}`,
         sql`select count(*)::int as nsent from cotizaciones where org_id = ${orgId} and status <> 'draft'`,
         sql`select count(*)::int as ncobro from cotizaciones where org_id = ${orgId} and status in ('paid','invoiced')`,
         sql`select count(*)::int as nmem from org_members where org_id = ${orgId} and estado in ('activo','invitado')`,
+        sql`select count(*)::int as ncedula from cedulas where org_id = ${orgId}`,
+        sql`select count(*)::int as nanalisis from analisis where org_id = ${orgId}`,
     );
     // Onboarding tipo Stripe: SECCIONES (grupos) con sub-pasos anidados. Cada
     // grupo representa una etapa del ciclo (preparar → catálogo → vender → cobrar
@@ -1390,7 +1392,7 @@ export async function getSetupProgress() {
         { id: 'catalogo', label: 'Arma tu catálogo',        icon: 'box',     desc: 'Carga lo que vendes y a quién se lo vendes para cotizar en segundos.' },
         { id: 'venta',    label: 'Cierra tu primera venta',  icon: 'send',    desc: 'Crea, envía y mira en vivo cómo tu cliente abre y aprueba con firma.' },
         { id: 'dinero',   label: 'Recibe tu dinero',         icon: 'wallet',  desc: 'Cobra en línea, factura el CFDI y cierra el ciclo completo.' },
-        { id: 'equipo',   label: 'Crece tu operación',       icon: 'users',   desc: 'Suma a tu equipo con permisos por rol cuando estés listo para escalar.' },
+        { id: 'equipo',   label: 'Crece tu operación',       icon: 'users',   desc: 'Suma a tu equipo con permisos por rol y planea tus números con presupuestos cuando estés listo para escalar.' },
     ] as const;
 
     const tasks = [
@@ -1404,6 +1406,7 @@ export async function getSetupProgress() {
         { group: 'dinero',   id: 'online_cobros', label: 'Activa los cobros en línea',  desc: 'Conecta tu cuenta bancaria de forma segura para recibir pagos con tarjeta o SPEI directo a tu banco — incluye anticipos.', href: '/app/ajustes/cobros',     done: !!o?.stripe_charges_enabled },
         { group: 'dinero',   id: 'cobro',         label: 'Cobra y factura',             desc: 'Cobra en línea con Stripe o márcala como pagada, factura el CFDI 4.0 y cierra el ciclo de venta en Cobranza.', href: '/app/cobranza',           done: Number(ncobro) > 0 },
         { group: 'equipo',   id: 'equipo',        label: 'Invita a tu equipo',          desc: 'Suma vendedores y define permisos por rol (cotizar, aprobar, cobranza…) para trabajar en conjunto.', href: '/app/ajustes/equipo',     done: Number(nmem) > 1 },
+        { group: 'equipo',   id: 'presupuestos',  label: 'Explora tus presupuestos',    desc: 'Planea tu flujo con cédulas presupuestales (ventas, producción, efectivo) y evalúa proyectos, inventario y variaciones desde Herramientas.', href: '/app/presupuestos',       done: Number(ncedula) > 0 || Number(nanalisis) > 0 },
     ];
 
     // Agrupa los pasos y calcula el sub-progreso de cada sección.
@@ -1601,4 +1604,83 @@ export async function deleteCedulaFila(orgId: string, cedulaId: string, filaId: 
         sql`delete from cedula_filas where id = ${filaId} and cedula_id = ${cedulaId} and org_id = ${orgId}`,
         sql`update cedulas set updated_at = now() where id = ${cedulaId} and org_id = ${orgId}`,
     );
+}
+
+// ── ANÁLISIS (herramientas de decisión: proyecto VPN/TIR y inventario EOQ) ──────
+// Tabla multi-tenant con FORCE RLS. Solo se persisten los INPUTS; los resultados se
+// calculan on-the-fly en src/lib/analisis.ts. Toda query pasa por withOrgTx (fail-closed).
+
+export interface AnalisisListItem {
+    id: string;
+    tipo: string;
+    nombre: string;
+    updatedAt: string;
+}
+
+export interface AnalisisFull {
+    id: string;
+    tipo: string;
+    nombre: string;
+    inputs: Record<string, unknown>;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export async function getAnalisisList(orgId: string): Promise<AnalisisListItem[]> {
+    const [rows] = await withOrgTx(orgId, sql`
+        select id, tipo, nombre, updated_at
+        from analisis where org_id = ${orgId}
+        order by updated_at desc`);
+    return rows.map((r) => ({
+        id: r.id as string,
+        tipo: r.tipo as string,
+        nombre: r.nombre as string,
+        updatedAt: r.updated_at as string,
+    }));
+}
+
+export async function getAnalisis(orgId: string, id: string): Promise<AnalisisFull | null> {
+    const [rows] = await withOrgTx(orgId, sql`
+        select id, tipo, nombre, inputs, created_at, updated_at
+        from analisis where id = ${id} and org_id = ${orgId} limit 1`);
+    const a = rows[0];
+    if (!a) return null;
+    return {
+        id: a.id as string,
+        tipo: a.tipo as string,
+        nombre: a.nombre as string,
+        inputs: (a.inputs as Record<string, unknown>) ?? {},
+        createdAt: a.created_at as string,
+        updatedAt: a.updated_at as string,
+    };
+}
+
+export async function createAnalisis(
+    orgId: string,
+    data: { tipo: string; nombre: string; inputs: Record<string, unknown> },
+): Promise<string> {
+    const [[row]] = await withOrgTx(orgId, sql`
+        insert into analisis (org_id, tipo, nombre, inputs)
+        values (${orgId}, ${data.tipo}, ${data.nombre}, ${JSON.stringify(data.inputs ?? {})}::jsonb)
+        returning id`);
+    return row.id as string;
+}
+
+export async function updateAnalisis(
+    orgId: string,
+    id: string,
+    data: { nombre?: string; inputs?: Record<string, unknown> },
+): Promise<void> {
+    // Actualiza solo lo provisto (nombre y/o inputs), sin pisar el otro campo con null.
+    await withOrgTx(orgId, sql`
+        update analisis set
+            nombre = coalesce(${data.nombre ?? null}, nombre),
+            inputs = coalesce(${data.inputs != null ? JSON.stringify(data.inputs) : null}::jsonb, inputs),
+            updated_at = now()
+        where id = ${id} and org_id = ${orgId}`);
+}
+
+export async function deleteAnalisis(orgId: string, id: string): Promise<void> {
+    await withOrgTx(orgId, sql`
+        delete from analisis where id = ${id} and org_id = ${orgId}`);
 }

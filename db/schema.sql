@@ -1089,3 +1089,26 @@ create policy "rls_cedula_valores" on cedula_valores
 alter table cedulas        force row level security;
 alter table cedula_filas   force row level security;
 alter table cedula_valores force row level security;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- ANÁLISIS (herramientas de decisión: evaluación de proyecto VPN/TIR/payback y
+-- punto óptimo de inventario EOQ). A diferencia de las cédulas (grid por periodos),
+-- cada análisis es una calculadora de RESULTADO ÚNICO. Solo se persisten los INPUTS;
+-- los resultados se calculan on-the-fly en src/lib/analisis.ts (misma filosofía que
+-- las filas 'formula' de una cédula). Herramienta interna: RLS directa por org_id +
+-- FORCE, sin carril public_token.
+create table if not exists analisis (
+  id          uuid        default gen_random_uuid() primary key,
+  org_id      uuid        not null references orgs(id) on delete cascade,
+  tipo        text        not null,             -- proyecto | inventario
+  nombre      text        not null,
+  inputs      jsonb       not null default '{}'::jsonb,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+create index if not exists idx_analisis_org on analisis(org_id, updated_at desc);
+
+alter table analisis enable row level security;
+create policy "rls_analisis" on analisis
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+alter table analisis force row level security;
