@@ -6,7 +6,7 @@
 import { sql, getActiveOrgId, withOrgTx, withPublicToken } from './db';
 import { currentUserId, currentOrgIdOverride } from './context';
 import { dispatchQuoteEvent } from './webhooks';
-import { memberCan, type Membership, type PermKey, type PermMap } from './permissions';
+import { memberCan, planTienePresupuestos, type Membership, type PermKey, type PermMap } from './permissions';
 import { INCLUDED } from './billing';
 import { cached } from './cache';
 import { after } from './after';
@@ -1163,6 +1163,25 @@ export async function requirePerm(key: PermKey): Promise<Response | null> {
     });
 }
 
+// Gate de PLAN (no de permiso) para las features PRO de Presupuestos — vs. Real,
+// wizard de plan completo y herramientas de análisis requieren Profesional en
+// adelante. Las cédulas básicas son freemium (todos los planes, con límite de
+// cantidad — ver cedulasLimit). Mismo patrón que planTieneEquipo: 402, no 403
+// (es un límite de plan, no de rol).
+export async function requirePresupuestosPlan(): Promise<Response | null> {
+    if (planTienePresupuestos(await getOrgPlan())) return null;
+    return new Response(JSON.stringify({ error: 'Esta función de Presupuestos requiere el plan Profesional o superior.' }), {
+        status: 402, headers: { 'Content-Type': 'application/json' },
+    });
+}
+
+// Plan crudo de la org activa (para límites freemium de Presupuestos).
+export async function getOrgPlan(): Promise<string> {
+    const orgId = await getActiveOrgId();
+    const [[org]] = await withOrgTx(orgId, sql`select coalesce(plan, 'free') as plan from orgs where id = ${orgId}`);
+    return (org?.plan as string) || 'free';
+}
+
 // ── DASHBOARD DE COBROS (/app/cobros) ──────────────────────────────────────────
 export async function getCobros() {
     const orgId = await getActiveOrgId();
@@ -1463,6 +1482,9 @@ export interface CedulaFilaRow {
     tipo: 'input' | 'formula';
     formula: unknown | null;
     orden: number;
+    // 'ventas_monto' | 'ventas_unidades' | 'cobranza_monto' | null — fila
+    // conectada a datos REALES de la org ("Presupuesto vs. Real", jul 2026).
+    fuenteReal: string | null;
 }
 
 export interface CedulaFull {
@@ -1498,7 +1520,7 @@ export async function getCedula(orgId: string, cedulaId: string): Promise<Cedula
     const [ced, filas, valores] = await withOrgTx(orgId,
         sql`select id, tipo, nombre, periodos, created_at, updated_at
             from cedulas where id = ${cedulaId} and org_id = ${orgId} limit 1`,
-        sql`select id, concepto, tipo, formula, orden
+        sql`select id, concepto, tipo, formula, orden, fuente_real
             from cedula_filas where cedula_id = ${cedulaId} and org_id = ${orgId}
             order by orden asc, created_at asc`,
         sql`select fila_id, periodo_idx, valor
@@ -1524,6 +1546,7 @@ export async function getCedula(orgId: string, cedulaId: string): Promise<Cedula
             tipo: f.tipo as 'input' | 'formula',
             formula: (f.formula as unknown) ?? null,
             orden: Number(f.orden ?? 0),
+            fuenteReal: (f.fuente_real as string) ?? null,
         })),
         valores: valMap,
         createdAt: c.created_at as string,
@@ -1604,6 +1627,84 @@ export async function deleteCedulaFila(orgId: string, cedulaId: string, filaId: 
         sql`delete from cedula_filas where id = ${filaId} and cedula_id = ${cedulaId} and org_id = ${orgId}`,
         sql`update cedulas set updated_at = now() where id = ${cedulaId} and org_id = ${orgId}`,
     );
+}
+
+// Reemplaza la fórmula de una fila 'formula' (usado al duplicar una cédula,
+// donde las referencias internas se remapean a los ids de las filas nuevas).
+export async function upsertCedulaFilaFormula(orgId: string, cedulaId: string, filaId: string, formula: unknown): Promise<void> {
+    await withOrgTx(orgId, sql`
+        update cedula_filas set formula = ${JSON.stringify(formula)}::jsonb
+        where id = ${filaId} and cedula_id = ${cedulaId} and org_id = ${orgId} and tipo = 'formula'`);
+}
+
+// Conecta (o desconecta, fuente = null) una fila a una fuente de datos reales
+// ("Presupuesto vs. Real"). La validación de la fuente vive en la capa de API.
+export async function setCedulaFilaFuente(orgId: string, cedulaId: string, filaId: string, fuente: string | null): Promise<void> {
+    await withOrgTx(orgId,
+        sql`update cedula_filas set fuente_real = ${fuente}
+            where id = ${filaId} and cedula_id = ${cedulaId} and org_id = ${orgId}`,
+        sql`update cedulas set updated_at = now() where id = ${cedulaId} and org_id = ${orgId}`,
+    );
+}
+
+// Agrega un periodo al FINAL de una cédula existente. Los valores se guardan por
+// periodo_idx (0-based), así que anexar al final nunca desalinea celdas previas.
+export async function appendCedulaPeriodo(orgId: string, cedulaId: string, label: string): Promise<void> {
+    await withOrgTx(orgId, sql`
+        update cedulas set periodos = periodos || to_jsonb(${label}::text), updated_at = now()
+        where id = ${cedulaId} and org_id = ${orgId} and jsonb_array_length(periodos) < 36`);
+}
+
+// ── Presupuesto vs. Real ──────────────────────────────────────────────────────
+// Serie mensual REAL de la org, para comparar contra las celdas presupuestadas:
+//  · ventasMonto    = $ de cotizaciones cerradas (approved|paid|invoiced) por mes
+//                     de cierre (coalesce(approved_at, created_at) — el MISMO
+//                     criterio que getAnalytics, para que los números no diverjan).
+//  · ventasUnidades = unidades de las líneas aceptadas de esas cotizaciones.
+//  · cobranzaMonto  = $ realmente cobrado por mes: cobros 'pagado' (anticipo/
+//                     saldo/cuotas/total) + cotizaciones pagadas sin desglose de
+//                     cobros (pago manual legacy) — mismo patrón de unión disjunta
+//                     que getCobros, sin doble conteo.
+export interface RealMes { ventasMonto: number; ventasUnidades: number; cobranzaMonto: number }
+export async function getRealPorMes(orgId: string, desdeISO: string, hastaExclISO: string): Promise<Record<string, RealMes>> {
+    const [ventas, unidades, cobranza] = await withOrgTx(orgId,
+        sql`select to_char(date_trunc('month', coalesce(approved_at, created_at)), 'YYYY-MM') as mes,
+                   coalesce(sum(total), 0) as monto
+            from cotizaciones
+            where org_id = ${orgId} and status in ('approved', 'paid', 'invoiced')
+              and coalesce(approved_at, created_at) >= ${desdeISO}::timestamptz
+              and coalesce(approved_at, created_at) <  ${hastaExclISO}::timestamptz
+            group by 1`,
+        sql`select to_char(date_trunc('month', coalesce(c.approved_at, c.created_at)), 'YYYY-MM') as mes,
+                   coalesce(sum(i.cantidad), 0) as unidades
+            from cotizacion_items i
+            join cotizaciones c on c.id = i.cotizacion_id
+            where c.org_id = ${orgId} and c.status in ('approved', 'paid', 'invoiced')
+              and i.aprobado is not false
+              and coalesce(c.approved_at, c.created_at) >= ${desdeISO}::timestamptz
+              and coalesce(c.approved_at, c.created_at) <  ${hastaExclISO}::timestamptz
+            group by 1`,
+        sql`select mes, coalesce(sum(monto), 0) as monto from (
+                select to_char(date_trunc('month', cb.paid_at), 'YYYY-MM') as mes, cb.monto
+                from cotizacion_cobros cb
+                where cb.org_id = ${orgId} and cb.status = 'pagado' and cb.paid_at is not null
+                  and cb.paid_at >= ${desdeISO}::timestamptz and cb.paid_at < ${hastaExclISO}::timestamptz
+                union all
+                select to_char(date_trunc('month', coalesce(c.paid_at, c.approved_at, c.created_at)), 'YYYY-MM') as mes, c.total
+                from cotizaciones c
+                where c.org_id = ${orgId} and (c.status = 'paid' or c.paid_at is not null)
+                  and c.es_recurrente is not true
+                  and not exists (select 1 from cotizacion_cobros cb2 where cb2.cotizacion_id = c.id and cb2.status = 'pagado')
+                  and coalesce(c.paid_at, c.approved_at, c.created_at) >= ${desdeISO}::timestamptz
+                  and coalesce(c.paid_at, c.approved_at, c.created_at) <  ${hastaExclISO}::timestamptz
+            ) t group by mes`,
+    );
+    const out: Record<string, RealMes> = {};
+    const ensure = (mes: string) => (out[mes] ??= { ventasMonto: 0, ventasUnidades: 0, cobranzaMonto: 0 });
+    for (const r of ventas) ensure(r.mes as string).ventasMonto = Number(r.monto || 0);
+    for (const r of unidades) ensure(r.mes as string).ventasUnidades = Number(r.unidades || 0);
+    for (const r of cobranza) ensure(r.mes as string).cobranzaMonto = Number(r.monto || 0);
+    return out;
 }
 
 // ── ANÁLISIS (herramientas de decisión: proyecto VPN/TIR y inventario EOQ) ──────

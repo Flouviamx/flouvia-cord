@@ -1057,6 +1057,13 @@ create table if not exists cedula_filas (
 create index if not exists idx_cedula_filas_org on cedula_filas(org_id);
 create index if not exists idx_cedula_filas_cedula on cedula_filas(cedula_id, orden);
 
+-- "Presupuesto vs. Real" (jul 2026): una fila puede conectarse a una fuente de
+-- datos REALES de la propia org — 'ventas_monto' | 'ventas_unidades' |
+-- 'cobranza_monto' — y el editor muestra el real + la variación bajo cada celda
+-- presupuestada. null = fila sin conectar (comportamiento original). El real se
+-- calcula on-the-fly (getRealPorMes en queries.ts), nunca se persiste aquí.
+alter table cedula_filas add column if not exists fuente_real text;
+
 -- 3) Las celdas reales (SOLO filas tipo 'input'; las 'formula' se calculan
 --    on-the-fly en la app, no se persisten). periodo_idx = índice 0-based dentro
 --    del array `periodos` de la cédula.

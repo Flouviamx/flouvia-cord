@@ -7,7 +7,11 @@
 // referencias a otras filas, propias o de otra cédula) — que cubre suma, resta
 // y escala sin necesitar un lenguaje de fórmulas libre tipo Excel.
 
-import { getCedula, addCedulaFila, type CedulaFull, type CedulaFilaRow } from './queries';
+import {
+    getCedula, addCedulaFila, createCedula, upsertCedulaValor, getRealPorMes,
+    setCedulaFilaFuente, upsertCedulaFilaFormula,
+    type CedulaFull, type CedulaFilaRow,
+} from './queries';
 
 export interface ComboTerm {
     fila_id: string;
@@ -324,6 +328,224 @@ export const CEDULA_TEMPLATES: Record<string, { nombre: string; filas: TemplateR
     },
     custom: { nombre: 'Cédula personalizada', filas: [] },
 };
+
+// ── Presupuesto vs. Real ─────────────────────────────────────────────────
+// Fuentes de datos reales a las que puede conectarse una fila. La etiqueta se
+// muestra en el editor; la serie la resuelve getRealPorMes (queries.ts).
+export const FUENTES_REAL: Record<string, string> = {
+    ventas_monto: 'Ventas cerradas ($)',
+    ventas_unidades: 'Unidades vendidas',
+    cobranza_monto: 'Cobranza recibida ($)',
+};
+
+// Intenta leer un mes calendario de la etiqueta de un periodo ("Ene 2026",
+// "Enero 2026", "2026-01", "01/2026", "Ene 26"…). Devuelve null si la etiqueta
+// no nombra un mes reconocible (ej. "Q1", "Semana 3") — en ese caso esa columna
+// simplemente no muestra dato real. Sin año explícito se asume el año en curso.
+const MES_NOMBRES: Record<string, number> = {
+    ene: 1, enero: 1, jan: 1, feb: 2, febrero: 2, mar: 3, marzo: 3, abr: 4, abril: 4, apr: 4,
+    may: 5, mayo: 5, jun: 6, junio: 6, jul: 7, julio: 7, ago: 8, agosto: 8, aug: 8,
+    sep: 9, sept: 9, septiembre: 9, oct: 10, octubre: 10, nov: 11, noviembre: 11, dic: 12, diciembre: 12, dec: 12,
+};
+export function parsePeriodoMes(label: string, hoy: Date = new Date()): { y: number; m: number } | null {
+    const norm = String(label || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    if (!norm) return null;
+    let match = norm.match(/^(\d{4})[-\/.](\d{1,2})$/);
+    if (match) { const m = Number(match[2]); return m >= 1 && m <= 12 ? { y: Number(match[1]), m } : null; }
+    match = norm.match(/^(\d{1,2})[-\/.](\d{4})$/);
+    if (match) { const m = Number(match[1]); return m >= 1 && m <= 12 ? { y: Number(match[2]), m } : null; }
+    const nombre = norm.match(/^([a-z]+)/)?.[1] ?? '';
+    const m = MES_NOMBRES[nombre] ?? MES_NOMBRES[nombre.slice(0, 3)];
+    if (!m) return null;
+    const y4 = norm.match(/(\d{4})/);
+    if (y4) return { y: Number(y4[1]), m };
+    const y2 = norm.match(/[^0-9](\d{2})$/) ?? norm.match(/^[a-z]+\s*'?(\d{2})$/);
+    if (y2) return { y: 2000 + Number(y2[1]), m };
+    return { y: hoy.getFullYear(), m };
+}
+
+// Serie real por fila conectada: reales[fila_id][periodo_idx] = número o null.
+// null = la etiqueta del periodo no nombra un mes, o el mes todavía no llega
+// (mostrar "real $0 · −100%" de meses futuros sería ruido, no información).
+export async function realesParaCedula(
+    orgId: string,
+    cedula: CedulaFull,
+): Promise<Record<string, (number | null)[]>> {
+    const conectadas = cedula.filas.filter((f) => f.fuenteReal && FUENTES_REAL[f.fuenteReal]);
+    if (!conectadas.length) return {};
+
+    const hoy = new Date();
+    const mesActual = hoy.getFullYear() * 12 + hoy.getMonth(); // meses absolutos, 0-based
+    const meses = cedula.periodos.map((label) => {
+        const p = parsePeriodoMes(label, hoy);
+        if (!p) return null;
+        const abs = p.y * 12 + (p.m - 1);
+        return abs > mesActual ? null : p; // futuro → sin dato real
+    });
+    const usables = meses.filter(Boolean) as { y: number; m: number }[];
+    if (!usables.length) {
+        // Filas conectadas pero ningún periodo parseable/pasado → todo null.
+        return Object.fromEntries(conectadas.map((f) => [f.id, cedula.periodos.map(() => null)]));
+    }
+    const abs = usables.map((p) => p.y * 12 + (p.m - 1));
+    const min = Math.min(...abs), max = Math.max(...abs);
+    const desde = new Date(Math.floor(min / 12), min % 12, 1);
+    const hasta = new Date(Math.floor(max / 12), (max % 12) + 1, 1); // exclusivo
+    const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+    const serie = await getRealPorMes(orgId, iso(desde), iso(hasta));
+
+    const out: Record<string, (number | null)[]> = {};
+    for (const f of conectadas) {
+        out[f.id] = meses.map((p) => {
+            if (!p) return null;
+            const mes = `${p.y}-${String(p.m).padStart(2, '0')}`;
+            const r = serie[mes];
+            if (!r) return 0; // mes pasado sin actividad = real 0 (dato válido)
+            if (f.fuenteReal === 'ventas_unidades') return r.ventasUnidades;
+            if (f.fuenteReal === 'cobranza_monto') return r.cobranzaMonto;
+            return r.ventasMonto;
+        });
+    }
+    return out;
+}
+
+// ── Duplicar cédula ──────────────────────────────────────────────────────
+// Copia filas + valores a una cédula nueva ("copia 2026 → 2027"). Las fórmulas
+// que referencian filas de la MISMA cédula se remapean a las filas nuevas; las
+// referencias cruzadas a OTRAS cédulas se conservan tal cual.
+export async function duplicateCedula(orgId: string, cedulaId: string, nombre?: string): Promise<string | null> {
+    const src = await getCedula(orgId, cedulaId);
+    if (!src) return null;
+    const nuevoId = await createCedula(orgId, {
+        tipo: src.tipo,
+        nombre: (nombre || `${src.nombre} (copia)`).slice(0, 120),
+        periodos: src.periodos,
+    });
+    const idMap: Record<string, string> = {};
+    // 1ª pasada: crear todas las filas (las fórmulas se remapean después, cuando
+    // ya existen los ids nuevos de TODAS las filas — una fórmula puede referenciar
+    // una fila que aparece más adelante en el orden).
+    let orden = 0;
+    for (const f of src.filas) {
+        idMap[f.id] = await addCedulaFila(orgId, nuevoId, {
+            concepto: f.concepto, tipo: f.tipo, formula: null, orden: orden++,
+        });
+    }
+    // 2ª pasada: fórmulas remapeadas + fuente_real + valores de filas input.
+    for (const f of src.filas) {
+        if (f.tipo === 'formula' && f.formula && (f.formula as ComboFormula).op === 'combo') {
+            const formula: ComboFormula = {
+                op: 'combo',
+                terms: ((f.formula as ComboFormula).terms || []).map((t) => ({
+                    ...t,
+                    // Referencia interna → fila nueva; cruzada → intacta.
+                    fila_id: (!t.cedula_id || t.cedula_id === cedulaId) ? (idMap[t.fila_id] ?? t.fila_id) : t.fila_id,
+                    cedula_id: (!t.cedula_id || t.cedula_id === cedulaId) ? null : t.cedula_id,
+                })),
+            };
+            await upsertCedulaFilaFormula(orgId, nuevoId, idMap[f.id], formula);
+        }
+        if (f.fuenteReal) await setCedulaFilaFuente(orgId, nuevoId, idMap[f.id], f.fuenteReal);
+        if (f.tipo === 'input') {
+            const vals = src.valores[f.id] ?? {};
+            for (const [idx, valor] of Object.entries(vals)) {
+                if (Number(valor)) await upsertCedulaValor(orgId, idMap[f.id], nuevoId, Number(idx), Number(valor));
+            }
+        }
+    }
+    return nuevoId;
+}
+
+// ── Wizard "Plan financiero completo" ────────────────────────────────────
+// Crea en un clic la cascada de dinero universal — Ventas → Cobranza → Efectivo
+// — ya CABLEADA entre cédulas (las referencias cruzadas que a mano exigirían
+// dominar el constructor de fórmulas), sembrada con el promedio real de ventas
+// de los últimos meses de la org, y con las filas clave ya conectadas a
+// "Presupuesto vs. Real". Con `incluirProduccion` agrega además las cédulas de
+// Producción y Compras de MP (plantillas estándar, en unidades).
+export async function createPlanCompleto(
+    orgId: string,
+    periodos: string[],
+    opts: { incluirProduccion?: boolean } = {},
+): Promise<{ ventasId: string; ids: string[] }> {
+    // Seed: promedio mensual de ventas cerradas de los últimos 6 meses (si hay).
+    let seedVentas = 0;
+    try {
+        const hoy = new Date();
+        const desde = new Date(hoy.getFullYear(), hoy.getMonth() - 6, 1);
+        const hasta = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
+        const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+        const serie = await getRealPorMes(orgId, iso(desde), iso(hasta));
+        const montos = Object.values(serie).map((r) => r.ventasMonto).filter((v) => v > 0);
+        if (montos.length) seedVentas = Math.round(montos.reduce((a, b) => a + b, 0) / montos.length);
+    } catch { /* sin historial → arranca en 0, no es error */ }
+
+    const ids: string[] = [];
+
+    // 1) Ventas — la base. Conectada a ventas reales desde el día uno.
+    const ventasId = await createCedula(orgId, { tipo: 'ventas', nombre: 'Presupuesto de Ventas', periodos });
+    ids.push(ventasId);
+    const filaVentas = await addCedulaFila(orgId, ventasId, { concepto: 'Ventas del periodo ($)', tipo: 'input', orden: 0 });
+    await setCedulaFilaFuente(orgId, ventasId, filaVentas, 'ventas_monto');
+    if (seedVentas > 0) {
+        for (let i = 0; i < periodos.length; i++) await upsertCedulaValor(orgId, filaVentas, ventasId, i, seedVentas);
+    }
+
+    // 2) Cobranza — 40/30/30 sobre Ventas (referencia CRUZADA + offsets), editable.
+    const cobranzaId = await createCedula(orgId, { tipo: 'cobranza', nombre: 'Presupuesto de Cobranza', periodos });
+    ids.push(cobranzaId);
+    const filaCobranza = await addCedulaFila(orgId, cobranzaId, {
+        concepto: 'Cobranza esperada ($)', tipo: 'formula', orden: 0,
+        formula: {
+            op: 'combo',
+            terms: [
+                { fila_id: filaVentas, cedula_id: ventasId, coef: 0.4, offset: 0 },
+                { fila_id: filaVentas, cedula_id: ventasId, coef: 0.3, offset: 1 },
+                { fila_id: filaVentas, cedula_id: ventasId, coef: 0.3, offset: 2 },
+            ],
+        } satisfies ComboFormula,
+    });
+    await setCedulaFilaFuente(orgId, cobranzaId, filaCobranza, 'cobranza_monto');
+
+    // 3) Efectivo — entradas = Cobranza (cruzada); salidas tecleadas; saldo final.
+    const efectivoId = await createCedula(orgId, { tipo: 'efectivo', nombre: 'Presupuesto de Efectivo', periodos });
+    ids.push(efectivoId);
+    let o = 0;
+    const fSaldoIni = await addCedulaFila(orgId, efectivoId, { concepto: 'Saldo inicial de caja', tipo: 'input', orden: o++ });
+    const fEntradas = await addCedulaFila(orgId, efectivoId, {
+        concepto: 'Entradas — cobranza esperada ($)', tipo: 'formula', orden: o++,
+        formula: { op: 'combo', terms: [{ fila_id: filaCobranza, cedula_id: cobranzaId, coef: 1 }] } satisfies ComboFormula,
+    });
+    const fGastos = await addCedulaFila(orgId, efectivoId, { concepto: 'Gastos fijos del periodo ($)', tipo: 'input', orden: o++ });
+    const fPagos = await addCedulaFila(orgId, efectivoId, { concepto: 'Pagos a proveedores ($)', tipo: 'input', orden: o++ });
+    const fFlujo = await addCedulaFila(orgId, efectivoId, {
+        concepto: 'Flujo neto del periodo ($)', tipo: 'formula', orden: o++,
+        formula: {
+            op: 'combo',
+            terms: [
+                { fila_id: fEntradas, coef: 1 },
+                { fila_id: fGastos, coef: -1 },
+                { fila_id: fPagos, coef: -1 },
+            ],
+        } satisfies ComboFormula,
+    });
+    await addCedulaFila(orgId, efectivoId, {
+        concepto: 'Saldo final de caja', tipo: 'formula', orden: o++,
+        formula: { op: 'combo', terms: [{ fila_id: fSaldoIni, coef: 1 }, { fila_id: fFlujo, coef: 1 }] } satisfies ComboFormula,
+    });
+
+    // 4) Opcional: Producción + Compras de MP (plantillas estándar, en unidades).
+    if (opts.incluirProduccion) {
+        const prodId = await createCedula(orgId, { tipo: 'produccion', nombre: 'Presupuesto de Producción', periodos });
+        await applyTemplate(orgId, prodId, 'produccion');
+        ids.push(prodId);
+        const mpId = await createCedula(orgId, { tipo: 'compras_mp', nombre: 'Presupuesto de Compras de MP', periodos });
+        await applyTemplate(orgId, mpId, 'compras_mp');
+        ids.push(mpId);
+    }
+
+    return { ventasId, ids };
+}
 
 // Siembra las filas de la plantilla del `tipo` dado sobre una cédula recién
 // creada (vacía). No falla si el tipo no tiene plantilla — simplemente no

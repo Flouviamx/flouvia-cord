@@ -201,6 +201,9 @@ export const COMPARATIVA: CompareGroup[] = [
             { label: 'Top clientes y top productos', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'CFO Dashboard (DSO, concentración de riesgo)', free: false, starter: false, pro: true, scale: true, developer: true },
             { label: 'Ranking ponderado de clientes', free: false, starter: false, pro: true, scale: true, developer: true },
+            { label: 'Presupuestos (cédulas presupuestales)', free: '1 cédula', starter: '3 cédulas', pro: 'Ilimitadas', scale: 'Ilimitadas', developer: 'Ilimitadas' },
+            { label: 'Presupuesto vs. Real (contra tus ventas y cobranza)', free: false, starter: false, pro: true, scale: true, developer: true },
+            { label: 'Plan financiero completo en un clic + herramientas de análisis', free: false, starter: false, pro: true, scale: true, developer: true },
         ],
     },
     {

@@ -8,8 +8,9 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
-import { requirePerm, getCedula, getCedulas, deleteCedula, renameCedula, deleteCedulaFila, upsertCedulaValor, addCedulaFila } from '../../../lib/queries';
-import { computeCedula, type ComboFormula } from '../../../lib/cedulas';
+import { requirePerm, requirePresupuestosPlan, getCedula, getCedulas, deleteCedula, renameCedula, deleteCedulaFila, upsertCedulaValor, addCedulaFila, setCedulaFilaFuente, appendCedulaPeriodo, getOrgPlan } from '../../../lib/queries';
+import { computeCedula, realesParaCedula, FUENTES_REAL, type ComboFormula } from '../../../lib/cedulas';
+import { planTienePresupuestos } from '../../../lib/permissions';
 
 export const GET: APIRoute = async ({ params }) => {
     const denied = await requirePerm('analitica'); if (denied) return denied;
@@ -33,6 +34,12 @@ export const GET: APIRoute = async ({ params }) => {
         });
     }
 
+    // Presupuesto vs. Real: serie real por fila conectada (Pro+; en planes sin
+    // Pro las filas conectadas no traen serie — el control de conexión hace upsell).
+    const plan = await getOrgPlan();
+    const isPro = planTienePresupuestos(plan);
+    const reales = isPro ? await realesParaCedula(orgId, computed.cedula) : {};
+
     return json({
         cedula: {
             id: computed.cedula.id, tipo: computed.cedula.tipo, nombre: computed.cedula.nombre,
@@ -40,6 +47,9 @@ export const GET: APIRoute = async ({ params }) => {
             filas: computed.cedula.filas,
         },
         valores: computed.valores,
+        reales,
+        fuentes: FUENTES_REAL,
+        isPro,
         otras,
     });
 };
@@ -52,6 +62,28 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
 
     const action = String(body.action ?? '');
+
+    // Conectar/desconectar una fila a datos reales ("Presupuesto vs. Real") — Pro+.
+    if (action === 'set_fuente') {
+        const planDenied = await requirePresupuestosPlan(); if (planDenied) return planDenied;
+        const filaId = String(body.fila_id ?? '');
+        const fuente = body.fuente == null || body.fuente === '' ? null : String(body.fuente);
+        if (!filaId) return json({ error: 'Falta fila_id' }, 400);
+        if (fuente !== null && !FUENTES_REAL[fuente]) return json({ error: 'Fuente de datos inválida' }, 400);
+        await setCedulaFilaFuente(orgId, id, filaId, fuente);
+        return json({ ok: true });
+    }
+
+    // Agregar un periodo al final (los valores van por índice — anexar es seguro).
+    if (action === 'add_periodo') {
+        const label = String(body.label ?? '').trim().slice(0, 40);
+        if (!label) return json({ error: 'Escribe el nombre del periodo (ej. Ene 2027)' }, 400);
+        const full = await getCedula(orgId, id);
+        if (!full) return json({ error: 'Cédula no encontrada' }, 404);
+        if (full.periodos.length >= 36) return json({ error: 'Máximo 36 periodos por cédula' }, 400);
+        await appendCedulaPeriodo(orgId, id, label);
+        return json({ ok: true });
+    }
 
     if (action === 'rename') {
         const nombre = String(body.nombre ?? '').trim().slice(0, 120);

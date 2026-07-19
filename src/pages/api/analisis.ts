@@ -5,11 +5,12 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getActiveOrgId, logAudit, reqIp } from '../../lib/db';
-import { requirePerm, getAnalisisList, createAnalisis } from '../../lib/queries';
+import { requirePerm, requirePresupuestosPlan, getAnalisisList, createAnalisis } from '../../lib/queries';
 import { sanitizeInputs, TIPOS_ANALISIS } from '../../lib/analisis';
 
 export const GET: APIRoute = async () => {
     const denied = await requirePerm('analitica'); if (denied) return denied;
+    const planDenied = await requirePresupuestosPlan(); if (planDenied) return planDenied;
     const orgId = await getActiveOrgId();
     const analisis = await getAnalisisList(orgId);
     return json({ analisis });
@@ -17,6 +18,7 @@ export const GET: APIRoute = async () => {
 
 export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('analitica'); if (denied) return denied;
+    const planDenied = await requirePresupuestosPlan(); if (planDenied) return planDenied;
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
 

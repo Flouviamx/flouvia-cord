@@ -58,6 +58,17 @@ export const planTieneEquipo = (plan: string) => TEAM_PLANS.includes(plan);
 export const API_PLANS = ['starter', 'pro', 'scale', 'developer', 'business', 'negocio'];
 export const planTieneApi = (plan: string) => API_PLANS.includes(plan);
 
+// Presupuestos (jul 2026) — modelo FREEMIUM, no bloqueo total: todos los planes
+// pueden probar la magia con un límite de cédulas; Profesional en adelante
+// desbloquea cédulas ilimitadas + las features "pro" (Presupuesto vs. Real,
+// wizard de plan completo, herramientas de análisis VPN/EOQ/variaciones —
+// mismo umbral que "CFO Dashboard" en /precios).
+export const PRESUPUESTOS_PLANS = ['pro', 'scale', 'developer', 'business', 'negocio'];
+export const planTienePresupuestos = (plan: string) => PRESUPUESTOS_PLANS.includes(plan);
+// Máximo de cédulas por plan (Infinity = sin tope).
+export const cedulasLimit = (plan: string): number =>
+    planTienePresupuestos(plan) ? Infinity : plan === 'starter' ? 3 : 1;
+
 // ── Límites por plan: API pública + webhooks (jun 2026) ──
 // Decisión de André: la API y los webhooks YA NO se bloquean por plan. TODOS los
 // planes (incluido free) los tienen, pero LIMITADOS por cantidad — free = prueba

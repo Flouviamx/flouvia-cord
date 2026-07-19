@@ -6,27 +6,38 @@
 // La matemática vive en src/lib/analisis.ts (importada en el <script>, single source
 // of truth). Solo se persisten los inputs (tabla `analisis`), gated por permiso `analitica`.
 import AppLayout from '../../../layouts/AppLayout.astro';
-import { getMyMembership } from '../../../lib/queries';
-import { memberCan } from '../../../lib/permissions';
+import { getMyMembership, getOrg } from '../../../lib/queries';
+import { memberCan, planTienePresupuestos } from '../../../lib/permissions';
 
 const ME = await getMyMembership();
-const hasAccess = memberCan(ME, 'analitica');
+const ORG = await getOrg();
+const hasPerm = memberCan(ME, 'analitica');
+const hasPlan = planTienePresupuestos(ORG.plan_raw);
+const hasAccess = hasPerm && hasPlan;
 ---
 
 <AppLayout title="Herramientas de análisis — Cord" page="presupuestos" heading="Presupuestos">
     <div slot="page-sub">Calculadoras de decisión — evaluación de proyectos y punto óptimo de inventario.</div>
-    {hasAccess && (
+    {hasPerm && (
         <div slot="page-tabs">
             <a href="/app/presupuestos" class="ph-tab">Cédulas</a>
             <a href="/app/presupuestos/herramientas" class="ph-tab active">Herramientas</a>
         </div>
     )}
 
-    {!hasAccess && (
+    {!hasPerm && (
         <div class="pr-denied">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             <h3>Sin acceso</h3>
             <p>Tu rol actual no tiene permiso para ver herramientas de análisis. Contacta al administrador de tu organización.</p>
+        </div>
+    )}
+    {hasPerm && !hasPlan && (
+        <div class="pr-denied">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <h3>Disponible desde el plan Profesional</h3>
+            <p>Las herramientas de análisis (VPN/TIR, inventario, variaciones) son una función de planeación financiera avanzada. Actualiza tu plan para desbloquearla.</p>
+            <a href="/app/ajustes/plan" class="empty-cta">Ver planes</a>
         </div>
     )}
 
@@ -182,6 +193,9 @@ const hasAccess = memberCan(ME, 'analitica');
     .pr-denied { display:flex; flex-direction:column; align-items:center; text-align:center; gap:.75rem; padding:5rem 1rem; color:var(--color-text-muted); }
     .pr-denied svg { width:40px; height:40px; opacity:.5; }
     .pr-denied h3 { color:var(--color-text); font-size:1.05rem; }
+    .pr-denied p { max-width:460px; font-size:.88rem; line-height:1.6; }
+    .empty-cta { all:unset; box-sizing:border-box; display:inline-block; cursor:pointer; background:var(--color-blue-deep); color:#fff; font-size:.86rem; font-weight:600; padding:11px 20px; border-radius:10px; margin-top:.25rem; transition: transform .15s var(--ease-spring), box-shadow .15s; }
+    .empty-cta:hover { transform:translateY(-1px); box-shadow:0 10px 22px -10px rgba(10,25,47,0.5); }
 
     /* Escenarios guardados */
     .tl-saved { margin-bottom:2.5rem; }

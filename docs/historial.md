@@ -62,6 +62,34 @@
      sin cuadrar el número del examen). ⚠️ No hubo verificación visual (sin Playwright en el
      entorno + páginas tras el login de Clerk) — el CSS reusa patrones ya verificados pero la
      revisión visual final queda pendiente de André.
+   • **Gate de plan + sidebar menos "divisorio" (jul 2026, sesión posterior):** André
+     comparó el sidebar con el de Stripe (lista plana arriba, sin tanto encabezado por
+     sección) y preguntó si Presupuestos debía requerir plan de pago. Dos cambios:
+     (1) **Sidebar (`Sidebar.astro`)** — los grupos "Principal" y "Clientes y productos"
+     (4 ítems: Inicio, Cotizaciones, Clientes, Productos) se fusionaron en un solo grupo
+     **sin encabezado** (`label: null`, sin botón de acordeón — siempre expandido), como
+     la lista plana de accesos diarios de Stripe; "Mi dinero" e "Inteligencia" siguen
+     como grupos con título/acordeón debajo, igual que la sección "Productos" colapsable
+     de Stripe. Menos secciones tituladas = menos sensación de estar "cortado en
+     pedazos", sin tocar el resto de la mecánica (indicador deslizante, colapso, pins).
+     (2) **Presupuestos ahora SÍ requiere plan Profesional en adelante** — hallazgo real:
+     `/precios` YA prometía "CFO Dashboard: Pro en adelante" en la comparativa, pero
+     ningún endpoint ni página lo enforce — cualquier org en Free con el permiso
+     `analitica` (que trae el preset "Vendedor" por defecto) tenía acceso completo. Se
+     corrigió SOLO para Presupuestos (no se tocó el gating de CFO/Analítica/Auditor
+     silencioso, que ya estaban en producción — cambiar su acceso retroactivo es
+     decisión de André, no algo para hacer en silencio). Nuevo `PRESUPUESTOS_PLANS`/
+     `planTienePresupuestos()` en `permissions.ts` (mismo umbral que CFO: pro/scale/
+     developer). Nuevo `requirePresupuestosPlan()` en `queries.ts` (mismo patrón que
+     `planTieneEquipo` en `/api/equipo.ts`: 402, no 403 — es límite de plan, no de rol),
+     cableado en los 4 endpoints (`/api/cedulas`, `/api/cedulas/[id]`, `/api/analisis`,
+     `/api/analisis/[id]`, las 3 páginas Astro de Presupuestos muestran un estado
+     "Disponible desde el plan Profesional" (distinto de "Sin acceso" por permiso) con
+     CTA a `/app/ajustes/plan`. Fila nueva en la comparativa de `/precios` (ES+EN):
+     "Presupuestos: cédulas y herramientas de análisis" = Pro en adelante. El nav del
+     sidebar y el paso del onboarding se dejan siempre visibles (mismo patrón que
+     "Invita a tu equipo", que también lleva a una pantalla con upsell si el plan no
+     alcanza) — la discoverability no se oculta, el gate vive en la página/API.
    • **Pasada de intuición + cableado externo (jul 2026, sesión posterior):** (1) **UX** — el
      modal "Nueva cédula" mostraba la ayuda de *Producción* aunque el tipo default es *Ventas*
      (nunca coincidían al abrir); ahora la ayuda se sincroniza al abrir/cambiar y **sugiere el

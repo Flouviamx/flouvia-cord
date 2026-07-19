@@ -2,6 +2,8 @@
 // Editor de una Cédula Presupuestal — grid de filas (insumo o fórmula) ×
 // periodos. Las filas 'input' se teclean; las 'formula' se calculan en el
 // servidor (src/lib/cedulas.ts) contra otras filas, propias o de otra cédula.
+// "Presupuesto vs. Real" (jul 2026): una fila conectada a una fuente real
+// (ventas/cobranza de la org) muestra el real + la variación bajo cada celda.
 import AppLayout from '../../../layouts/AppLayout.astro';
 import { getMyMembership } from '../../../lib/queries';
 import { memberCan } from '../../../lib/permissions';
@@ -13,6 +15,7 @@ const cedulaId = Astro.params.id;
 
 <AppLayout title="Cédula — Cord" page="presupuestos" heading="Cédula" crumbs={[{ label: 'Presupuestos', href: '/app/presupuestos' }]}>
     <div slot="topbar-actions">
+        {hasAccess && <button class="btn-ghost" id="btnAddPeriodo">+ Periodo</button>}
         {hasAccess && <button class="btn-ghost" id="btnAddFila">+ Agregar fila</button>}
     </div>
 
@@ -32,6 +35,7 @@ const cedulaId = Astro.params.id;
             </button>
             <input id="cNameInput" class="pr-cedula-name-input" type="text" maxlength="120" hidden />
             <span id="cTipo" class="pr-badge"></span>
+            <span id="cReal" class="pr-badge pr-badge-real" hidden>Conectada a datos reales</span>
         </div>
 
         <div class="pr-grid-wrap" id="gridWrap">
@@ -46,8 +50,9 @@ const cedulaId = Astro.params.id;
                 <button type="button" class="empty-cta" id="emptyGridCta">+ Agregar la primera fila</button>
             </div>
         </div>
-        <p class="pr-legend">Las filas en gris claro son <strong>calculadas</strong> — se recalculan solas cuando cambias un insumo del que dependen.</p>
+        <p class="pr-legend">Las filas con <span class="pr-fx-badge">ƒx</span> son <strong>calculadas</strong> — se recalculan solas al cambiar un insumo. Las filas con el ícono de enlace <strong>se comparan contra tus datos reales</strong> (ventas y cobranza de Cord) mes a mes.</p>
 
+        <!-- ── Modal: agregar fila ── -->
         <dialog class="modal modal-lg" id="filaModal">
             <form method="dialog" class="modal-card">
                 <header>
@@ -87,6 +92,60 @@ const cedulaId = Astro.params.id;
                 </footer>
             </form>
         </dialog>
+
+        <!-- ── Modal: conectar fila a datos reales (Presupuesto vs. Real) ── -->
+        <dialog class="modal" id="fuenteModal">
+            <form method="dialog" class="modal-card">
+                <header>
+                    <h3>Comparar contra datos reales</h3>
+                    <button type="button" class="mclose" id="rmClose" aria-label="Cerrar">&times;</button>
+                </header>
+                <div class="modal-body" id="rmBody">
+                    <p class="m-hint" style="margin-bottom:.9rem">Conecta esta fila a los datos reales de tu negocio en Cord. Debajo de cada mes presupuestado verás lo que realmente pasó y si vas arriba o abajo del plan — sin capturar nada.</p>
+                    <label class="fld">
+                        <span>Fuente de datos</span>
+                        <select id="rmFuente">
+                            <option value="">Sin conexión</option>
+                            <option value="ventas_monto">Ventas cerradas ($) — cotizaciones aprobadas, pagadas o facturadas</option>
+                            <option value="ventas_unidades">Unidades vendidas — líneas aceptadas de esas cotizaciones</option>
+                            <option value="cobranza_monto">Cobranza recibida ($) — pagos realmente cobrados</option>
+                        </select>
+                    </label>
+                    <p class="m-hint">Cord empata cada columna por su mes (ej. "Ene 2026"). Los meses futuros no muestran real todavía.</p>
+                    <p class="m-err" id="rmErr" hidden></p>
+                </div>
+                <div class="modal-body" id="rmUpsell" hidden>
+                    <p class="rm-upsell-txt">Comparar tu presupuesto contra las ventas y la cobranza reales de tu negocio — automáticamente, mes a mes — es parte del plan <strong>Profesional</strong>.</p>
+                    <a href="/app/ajustes/plan" class="empty-cta">Ver planes</a>
+                </div>
+                <footer id="rmFooter">
+                    <button type="button" id="rmCancel" class="btn-ghost">Cancelar</button>
+                    <button type="button" id="rmSave" class="btn-primary">Guardar</button>
+                </footer>
+            </form>
+        </dialog>
+
+        <!-- ── Modal: agregar periodo ── -->
+        <dialog class="modal" id="periodoModal">
+            <form method="dialog" class="modal-card">
+                <header>
+                    <h3>Agregar periodo</h3>
+                    <button type="button" class="mclose" id="pmClose" aria-label="Cerrar">&times;</button>
+                </header>
+                <div class="modal-body">
+                    <label class="fld">
+                        <span>Nombre del periodo</span>
+                        <input type="text" id="pmLabel" maxlength="40" placeholder="Ej. Ene 2027" />
+                    </label>
+                    <p class="m-hint">Se agrega al final. Usa "Mes Año" para que se compare contra tus datos reales.</p>
+                    <p class="m-err" id="pmErr" hidden></p>
+                </div>
+                <footer>
+                    <button type="button" id="pmCancel" class="btn-ghost">Cancelar</button>
+                    <button type="button" id="pmSave" class="btn-primary">Agregar</button>
+                </footer>
+            </form>
+        </dialog>
     </>}
 </AppLayout>
 
@@ -94,6 +153,7 @@ const cedulaId = Astro.params.id;
     .pr-denied { display:flex; flex-direction:column; align-items:center; text-align:center; gap:.75rem; padding:5rem 1rem; color:var(--color-text-muted); }
     .pr-denied svg { width:40px; height:40px; opacity:.5; }
     .pr-denied h3 { color:var(--color-text); font-size:1.05rem; }
+    .pr-denied p { max-width:460px; font-size:.88rem; line-height:1.6; }
 
     .pr-toolbar { display:flex; align-items:center; gap:.75rem; margin-bottom:1.25rem; }
     .pr-name-wrap { all:unset; box-sizing:border-box; cursor:pointer; display:flex; align-items:center; gap:.4rem; padding:.2rem .4rem; margin:-.2rem -.4rem; border-radius:8px; }
@@ -105,6 +165,9 @@ const cedulaId = Astro.params.id;
     .pr-cedula-name-input { font-size:1.15rem; font-weight:600; color:var(--color-text); letter-spacing:-0.01em; background:var(--color-bg-soft); border:1px solid rgba(10,25,47,0.15); border-radius:8px; padding:.15rem .5rem; font-family:inherit; }
     .pr-cedula-name-input:focus { outline:none; border-color:rgba(10,25,47,0.3); }
     .pr-badge { font-size:.7rem; font-weight:700; letter-spacing:.02em; padding:.22rem .6rem; border-radius:999px; background:var(--color-bg-soft); color:var(--color-text-muted); }
+    .pr-badge-real { background:rgba(16,185,129,0.12); color:#047857; }
+    html[data-theme="dark"] .pr-badge-real { color:#34d399; }
+    .pr-badge-real[hidden] { display:none; }
 
     .pr-grid-wrap { overflow-x:auto; border:1px solid var(--color-border); border-radius:14px; position:relative; }
     table.pr-grid { border-collapse:collapse; width:100%; font-size:.86rem; }
@@ -120,6 +183,11 @@ const cedulaId = Astro.params.id;
     .pr-concepto-main { min-width:0; }
     .pr-concepto-txt { font-weight:500; color:var(--color-text); display:block; white-space:normal; }
     .pr-concepto-formula { font-size:.72rem; color:var(--color-text-muted); font-variant-numeric:tabular-nums; margin-top:.15rem; white-space:normal; }
+    .pr-concepto-real { display:inline-flex; align-items:center; gap:.3rem; font-size:.68rem; font-weight:600; color:#047857; margin-top:.2rem; }
+    html[data-theme="dark"] .pr-concepto-real { color:#34d399; }
+    .pr-concepto-real svg { width:11px; height:11px; }
+    .pr-fx-badge { display:inline-block; font-size:.62rem; font-weight:700; font-style:normal; padding:.08rem .38rem; border-radius:6px; background:rgba(10,25,47,0.08); color:var(--color-blue-deep); margin-right:.4rem; vertical-align:1px; font-variant-numeric:normal; }
+    html[data-theme="dark"] .pr-fx-badge { background:rgba(255,255,255,0.1); color:#9db8e8; }
     .pr-row-formula .pr-row-head, .pr-row-formula td.pr-cell { background:var(--color-bg-soft); }
     .pr-row-formula .pr-concepto-txt { color:var(--color-text); }
     .pr-cell input { width:96px; text-align:right; background:transparent; border:1px solid transparent; border-radius:8px; padding:.3rem .4rem; font:inherit; color:var(--color-text); font-variant-numeric:tabular-nums; }
@@ -127,8 +195,23 @@ const cedulaId = Astro.params.id;
     .pr-cell input:focus { outline:none; border-color:rgba(10,25,47,0.2); background:var(--color-bg); }
     .pr-cell-computed { font-variant-numeric:tabular-nums; font-weight:600; color:var(--color-text); border-radius:6px; transition:background-color .15s; }
     .pr-cell-computed.pr-flash { background-color:rgba(10,25,47,0.09); }
-    .pr-del-fila { all:unset; box-sizing:border-box; cursor:pointer; display:inline-flex; opacity:.3; padding:3px; border-radius:5px; flex-shrink:0; margin-top:2px; }
+    .pr-total { font-variant-numeric:tabular-nums; font-weight:700; color:var(--color-text); border-left:1px solid var(--color-border); background:var(--color-bg-soft); }
+    .pr-grid th.pr-total-h { border-left:1px solid var(--color-border); }
+
+    /* vs. Real: el real + variación bajo la celda presupuestada */
+    .pr-real-cell { display:block; font-size:.68rem; font-weight:500; color:var(--color-text-muted); margin-top:.2rem; font-variant-numeric:tabular-nums; }
+    .pr-real-pill { display:inline-block; font-weight:700; padding:.04rem .34rem; border-radius:999px; margin-left:.25rem; }
+    .pr-real-pill.ok { background:rgba(16,185,129,0.12); color:#047857; }
+    .pr-real-pill.bad { background:rgba(239,68,68,0.1); color:#b91c1c; }
+    html[data-theme="dark"] .pr-real-pill.ok { color:#34d399; }
+    html[data-theme="dark"] .pr-real-pill.bad { color:#f87171; }
+
+    .pr-del-fila, .pr-link-fila { all:unset; box-sizing:border-box; cursor:pointer; display:inline-flex; opacity:.3; padding:3px; border-radius:5px; flex-shrink:0; margin-top:2px; }
     .pr-del-fila:hover { opacity:1; color:var(--color-danger); background:var(--color-bg-soft); }
+    .pr-link-fila:hover { opacity:1; color:var(--color-blue-deep); background:var(--color-bg-soft); }
+    .pr-link-fila.is-on { opacity:1; color:#047857; }
+    html[data-theme="dark"] .pr-link-fila.is-on { color:#34d399; }
+    .pr-row-actions { display:flex; flex-direction:column; gap:.15rem; align-items:center; }
     .pr-legend { font-size:.78rem; color:var(--color-text-muted); margin-top:.75rem; }
     .pr-empty-grid { display:flex; flex-direction:column; align-items:center; gap:.75rem; padding:3.5rem 1rem; text-align:center; color:var(--color-text-muted); }
     .pr-empty-grid[hidden] { display:none; }
@@ -136,10 +219,11 @@ const cedulaId = Astro.params.id;
 
     .fld { display:flex; flex-direction:column; gap:.35rem; margin-bottom:1.1rem; }
     .fld span:first-child { font-size:.82rem; font-weight:600; color:var(--color-text); }
-    .fld input[type="text"] { background:var(--color-bg-soft); border:1px solid transparent; border-radius:10px; padding:.6rem .75rem; font-size:.9rem; color:var(--color-text); }
-    .fld input:focus { outline:none; border-color:rgba(10,25,47,0.15); }
+    .fld input[type="text"], .fld select { background:var(--color-bg-soft); border:1px solid transparent; border-radius:10px; padding:.6rem .75rem; font-size:.9rem; color:var(--color-text); }
+    .fld input:focus, .fld select:focus { outline:none; border-color:rgba(10,25,47,0.15); }
     .m-hint { font-size:.72rem; color:var(--color-text-muted); margin:0 0 .5rem; }
     .m-err { color:var(--color-danger); font-size:.82rem; margin:0; }
+    .rm-upsell-txt { font-size:.88rem; color:var(--color-text); line-height:1.6; margin:0 0 1.1rem; }
 
     .pr-type-toggle { display:flex; gap:.4rem; }
     .pr-type-opt { all:unset; box-sizing:border-box; cursor:pointer; text-align:center; flex:1; font-size:.82rem; padding:.5rem; border-radius:10px; background:var(--color-bg-soft); color:var(--color-text-muted); border:1px solid transparent; }
@@ -178,6 +262,7 @@ const cedulaId = Astro.params.id;
     .mclose { all:unset; box-sizing:border-box; cursor:pointer; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:8px; color:var(--color-text-muted); font-size:1.2rem; line-height:1; }
     .mclose:hover { background:var(--color-bg-soft); color:var(--color-text); }
     .modal-body { padding:1.5rem; max-height:70vh; overflow-y:auto; }
+    .modal-body[hidden] { display:none; }
     .modal-card footer { display:flex; align-items:center; justify-content:flex-end; gap:.6rem; padding:1.1rem 1.5rem; border-top:1px solid var(--color-border); }
 
     .btn-primary { font-family:var(--font-sans); font-size:.85rem; font-weight:600; background:var(--color-blue-deep); color:#fff; border:none; border-radius:10px; padding:.6rem 1.15rem; cursor:pointer; box-shadow:0 6px 18px -8px rgba(10,25,47,0.5); transition: transform .15s var(--ease-spring), box-shadow .15s; }
@@ -240,6 +325,37 @@ const cedulaId = Astro.params.id;
         }).join('');
     }
 
+    const FUENTE_LABEL = {
+        ventas_monto: 'Ventas cerradas ($)',
+        ventas_unidades: 'Unidades vendidas',
+        cobranza_monto: 'Cobranza recibida ($)',
+    };
+
+    // "real 142,300 · −8%" — la celda real bajo la presupuestada. Verde si el
+    // real alcanza o supera el presupuesto (para ventas/cobranza más = mejor).
+    function realCellHtml(filaId, idx, presupuesto) {
+        const serie = (STATE.reales || {})[filaId];
+        if (!serie) return '';
+        const r = serie[idx];
+        if (r == null) return '';
+        const b = Number(presupuesto || 0);
+        let pill = '';
+        if (b > 0) {
+            const pct = Math.round(((r - b) / b) * 100);
+            const cls = r >= b ? 'ok' : 'bad';
+            pill = `<span class="pr-real-pill ${cls}">${pct >= 0 ? '+' : ''}${pct}%</span>`;
+        } else if (r > 0) {
+            pill = `<span class="pr-real-pill ok">real</span>`;
+        }
+        return `<span class="pr-real-cell" data-real-fila="${filaId}" data-real-idx="${idx}">real ${money(r)}${pill}</span>`;
+    }
+
+    function rowTotal(vals, n) {
+        let t = 0;
+        for (let i = 0; i < n; i++) t += Number(vals[i] ?? 0);
+        return t;
+    }
+
     async function load() {
         const res = await fetch(`/api/cedulas/${cedulaId}`);
         if (!res.ok) { document.getElementById('cName').textContent = 'Cédula no encontrada'; return; }
@@ -247,6 +363,8 @@ const cedulaId = Astro.params.id;
         document.title = `${STATE.cedula.nombre} — Cord`;
         document.getElementById('cName').textContent = STATE.cedula.nombre;
         document.getElementById('cTipo').textContent = STATE.cedula.periodos.length + ' periodos';
+        const anyReal = STATE.cedula.filas.some((f) => f.fuenteReal);
+        document.getElementById('cReal').toggleAttribute('hidden', !anyReal);
         renderGrid();
     }
 
@@ -265,31 +383,46 @@ const cedulaId = Astro.params.id;
         grid.removeAttribute('hidden');
 
         const periodos = STATE.cedula.periodos;
+        const n = periodos.length;
         const filas = STATE.cedula.filas;
 
-        let thead = '<thead><tr><th class="pr-row-head">Concepto</th>' + periodos.map((p) => `<th>${escapeHtml(p)}</th>`).join('') + '</tr></thead>';
+        let thead = '<thead><tr><th class="pr-row-head">Concepto</th>'
+            + periodos.map((p) => `<th>${escapeHtml(p)}</th>`).join('')
+            + '<th class="pr-total-h">Total</th></tr></thead>';
         let tbody = '<tbody>' + filas.map((f) => {
             const vals = STATE.valores[f.id] || [];
             const cells = periodos.map((_, i) => {
+                const real = realCellHtml(f.id, i, vals[i]);
                 if (f.tipo === 'input') {
-                    return `<td class="pr-cell"><input class="editorial" type="number" step="any" inputmode="decimal" data-fila="${f.id}" data-idx="${i}" value="${vals[i] ?? 0}" /></td>`;
+                    return `<td class="pr-cell"><input class="editorial" type="number" step="any" inputmode="decimal" data-fila="${f.id}" data-idx="${i}" value="${vals[i] ?? 0}" />${real}</td>`;
                 }
-                return `<td class="pr-cell pr-cell-computed editorial" data-computed-fila="${f.id}" data-computed-idx="${i}">${money(vals[i] ?? 0)}</td>`;
+                return `<td class="pr-cell"><span class="pr-cell-computed editorial" data-computed-fila="${f.id}" data-computed-idx="${i}">${money(vals[i] ?? 0)}</span>${real}</td>`;
             }).join('');
             const formulaTxt = f.tipo === 'formula' ? describeFormula(f.formula) : '';
+            const fxBadge = f.tipo === 'formula' ? '<span class="pr-fx-badge">ƒx</span>' : '';
+            const realTag = f.fuenteReal
+                ? `<span class="pr-concepto-real"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>vs. ${escapeHtml(FUENTE_LABEL[f.fuenteReal] || 'datos reales')}</span>`
+                : '';
             return `<tr class="${f.tipo === 'formula' ? 'pr-row-formula' : ''}">
                 <td class="pr-row-head">
                     <div class="pr-concepto-cell">
                         <div class="pr-concepto-main">
-                            <span class="pr-concepto-txt">${escapeHtml(f.concepto)}</span>
+                            <span class="pr-concepto-txt">${fxBadge}${escapeHtml(f.concepto)}</span>
                             ${formulaTxt ? `<span class="pr-concepto-formula">${escapeHtml(formulaTxt)}</span>` : ''}
+                            ${realTag}
                         </div>
-                        <button class="pr-del-fila" data-del-fila="${f.id}" title="Eliminar fila" type="button">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-                        </button>
+                        <div class="pr-row-actions">
+                            <button class="pr-link-fila ${f.fuenteReal ? 'is-on' : ''}" data-fuente-fila="${f.id}" title="${f.fuenteReal ? 'Conectada a datos reales — clic para cambiar' : 'Comparar contra datos reales'}" type="button">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+                            </button>
+                            <button class="pr-del-fila" data-del-fila="${f.id}" title="Eliminar fila" type="button">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                            </button>
+                        </div>
                     </div>
                 </td>
                 ${cells}
+                <td class="pr-total editorial" data-total-fila="${f.id}">${money(rowTotal(vals, n))}</td>
             </tr>`;
         }).join('') + '</tbody>';
 
@@ -321,6 +454,9 @@ const cedulaId = Astro.params.id;
                 if (r.ok) load(); else window.cordToast?.('No se pudo eliminar la fila', 'error');
             });
         });
+        grid.querySelectorAll('[data-fuente-fila]').forEach((btn) => {
+            btn.addEventListener('click', () => openFuenteModal(btn.dataset.fuenteFila));
+        });
     }
 
     // Tras editar un insumo: refresca solo los VALORES (sin reconstruir el DOM
@@ -332,6 +468,7 @@ const cedulaId = Astro.params.id;
         if (!res.ok) return;
         STATE = await res.json();
         const grid = document.getElementById('grid');
+        const n = STATE.cedula.periodos.length;
         STATE.cedula.filas.forEach((f) => {
             const vals = STATE.valores[f.id] || [];
             const prevVals = prevValores[f.id] || [];
@@ -353,6 +490,19 @@ const cedulaId = Astro.params.id;
                     setTimeout(() => cell.classList.remove('pr-flash'), 700);
                 }
             });
+            // Columna Total de la fila + pills de variación (el % depende del presupuesto).
+            const totalCell = grid.querySelector(`[data-total-fila="${f.id}"]`);
+            if (totalCell) totalCell.textContent = money(rowTotal(vals, n));
+            const serie = (STATE.reales || {})[f.id];
+            if (serie) {
+                STATE.cedula.periodos.forEach((_, i) => {
+                    const realEl = grid.querySelector(`[data-real-fila="${f.id}"][data-real-idx="${i}"]`);
+                    if (!realEl) return;
+                    const tmp = document.createElement('div');
+                    tmp.innerHTML = realCellHtml(f.id, i, vals[i]);
+                    if (tmp.firstChild) realEl.replaceWith(tmp.firstChild);
+                });
+            }
         });
     }
 
@@ -391,6 +541,83 @@ const cedulaId = Astro.params.id;
     const gridWrap = document.getElementById('gridWrap');
     gridWrap?.addEventListener('scroll', () => {
         gridWrap.classList.toggle('is-scrolled', gridWrap.scrollLeft > 2);
+    });
+
+    // ── Modal "Comparar contra datos reales" ──────────────────────────
+    const fuenteModal = document.getElementById('fuenteModal');
+    let fuenteFilaId = null;
+    function openFuenteModal(filaId) {
+        if (!STATE) return;
+        fuenteFilaId = filaId;
+        const isPro = !!STATE.isPro;
+        document.getElementById('rmBody').toggleAttribute('hidden', !isPro);
+        document.getElementById('rmUpsell').toggleAttribute('hidden', isPro);
+        document.getElementById('rmFooter').style.display = isPro ? '' : 'none';
+        if (isPro) {
+            const fila = STATE.cedula.filas.find((f) => f.id === filaId);
+            document.getElementById('rmFuente').value = (fila && fila.fuenteReal) || '';
+            document.getElementById('rmErr').setAttribute('hidden', '');
+        }
+        fuenteModal.showModal();
+    }
+    document.getElementById('rmClose')?.addEventListener('click', () => fuenteModal.close());
+    document.getElementById('rmCancel')?.addEventListener('click', () => fuenteModal.close());
+    document.getElementById('rmSave')?.addEventListener('click', async () => {
+        const fuente = document.getElementById('rmFuente').value || null;
+        const r = await fetch(`/api/cedulas/${cedulaId}`, {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'set_fuente', fila_id: fuenteFilaId, fuente }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+            const errEl = document.getElementById('rmErr');
+            errEl.textContent = data.error || 'No se pudo guardar';
+            errEl.removeAttribute('hidden');
+            return;
+        }
+        fuenteModal.close();
+        window.cordToast?.(fuente ? 'Fila conectada a datos reales' : 'Fila desconectada', 'ok');
+        load();
+    });
+
+    // ── Modal "Agregar periodo" ───────────────────────────────────────
+    const periodoModal = document.getElementById('periodoModal');
+    const MESES_ES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const MESES_LBL = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    // Sugiere el siguiente mes a partir de la última etiqueta ("Jun 2026" → "Jul 2026").
+    function nextPeriodoSuggestion() {
+        if (!STATE || !STATE.cedula.periodos.length) return '';
+        const last = String(STATE.cedula.periodos[STATE.cedula.periodos.length - 1]);
+        const m = last.toLowerCase().match(/^([a-záéíóú]+)\.?\s*(\d{4})$/);
+        if (!m) return '';
+        const idx = MESES_ES.indexOf(m[1].slice(0, 3));
+        if (idx < 0) return '';
+        const y = Number(m[2]);
+        const ni = (idx + 1) % 12;
+        return `${MESES_LBL[ni]} ${ni === 0 ? y + 1 : y}`;
+    }
+    document.getElementById('btnAddPeriodo')?.addEventListener('click', () => {
+        if (!STATE) return;
+        document.getElementById('pmErr').setAttribute('hidden', '');
+        document.getElementById('pmLabel').value = nextPeriodoSuggestion();
+        periodoModal.showModal();
+        document.getElementById('pmLabel').focus();
+    });
+    document.getElementById('pmClose')?.addEventListener('click', () => periodoModal.close());
+    document.getElementById('pmCancel')?.addEventListener('click', () => periodoModal.close());
+    document.getElementById('pmSave')?.addEventListener('click', async () => {
+        const label = document.getElementById('pmLabel').value.trim();
+        const errEl = document.getElementById('pmErr');
+        if (!label) { errEl.textContent = 'Escribe el nombre del periodo.'; errEl.removeAttribute('hidden'); return; }
+        const r = await fetch(`/api/cedulas/${cedulaId}`, {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'add_periodo', label }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) { errEl.textContent = data.error || 'No se pudo agregar'; errEl.removeAttribute('hidden'); return; }
+        periodoModal.close();
+        window.cordToast?.('Periodo agregado', 'ok');
+        load();
     });
 
     // ── Modal "Agregar fila" ─────────────────────────────────────────

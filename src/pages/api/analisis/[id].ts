@@ -6,11 +6,12 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
-import { requirePerm, getAnalisis, updateAnalisis, deleteAnalisis } from '../../../lib/queries';
+import { requirePerm, requirePresupuestosPlan, getAnalisis, updateAnalisis, deleteAnalisis } from '../../../lib/queries';
 import { sanitizeInputs } from '../../../lib/analisis';
 
 export const GET: APIRoute = async ({ params }) => {
     const denied = await requirePerm('analitica'); if (denied) return denied;
+    const planDenied = await requirePresupuestosPlan(); if (planDenied) return planDenied;
     const id = String(params.id ?? '');
     const orgId = await getActiveOrgId();
     const a = await getAnalisis(orgId, id);
@@ -20,6 +21,7 @@ export const GET: APIRoute = async ({ params }) => {
 
 export const PATCH: APIRoute = async ({ params, request }) => {
     const denied = await requirePerm('analitica'); if (denied) return denied;
+    const planDenied = await requirePresupuestosPlan(); if (planDenied) return planDenied;
     const id = String(params.id ?? '');
     const orgId = await getActiveOrgId();
     let body: any;
@@ -42,6 +44,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
 export const DELETE: APIRoute = async ({ params, request }) => {
     const denied = await requirePerm('analitica'); if (denied) return denied;
+    const planDenied = await requirePresupuestosPlan(); if (planDenied) return planDenied;
     const id = String(params.id ?? '');
     const orgId = await getActiveOrgId();
     const a = await getAnalisis(orgId, id);
