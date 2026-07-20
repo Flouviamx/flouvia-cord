@@ -277,7 +277,7 @@ const canEdit = memberCan(ME, 'productos');
                     ${it.productoId
                         ? `<span class="kii-name">${esc(it.descripcion)}${it.sku ? `<small>${esc(it.sku)}</small>` : ''}</span>`
                         : `<input type="text" class="kii-desc-input" data-idx="${idx}" data-field="descripcion" value="${esc(it.descripcion)}" placeholder="Descripción de la línea libre…" />`}
-                    <input type="number" min="0.01" step="1" class="kii-qty" data-idx="${idx}" data-field="cantidad" value="${it.cantidad}" />
+                    <input type="number" min="0.01" step="0.01" class="kii-qty" data-idx="${idx}" data-field="cantidad" value="${it.cantidad}" />
                     <span class="kii-unit">${esc(it.unidad || '')}</span>
                     <button type="button" class="kii-del" data-del="${idx}" aria-label="Quitar">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
