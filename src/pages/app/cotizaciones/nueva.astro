@@ -44,17 +44,15 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         <div class="ed-main">
             <!-- Armar con IA — la forma rápida (puerta de entrada) -->
             <section class="ed-block ai-block">
-                <div class="ai-head">
-                    <span class="ai-spark" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5 13.9 11.4 12 16l-1.9-4.6L5.5 9.5l4.6-1.9L12 3z"/><path d="M19 14.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8z"/></svg>
-                    </span>
-                    <div>
-                        <h2 class="ai-title">Arma la cotización con IA</h2>
-                        <p class="ai-sub">La forma más rápida. Pega el pedido del cliente (WhatsApp, correo…) o adjunta la foto/PDF de su orden de compra y la IA arma las líneas con tu catálogo.</p>
-                    </div>
+                <h2 class="ai-title">Arma la cotización con IA</h2>
+                <p class="ai-sub">Pega el pedido del cliente o adjunta la foto/PDF de su orden de compra.</p>
+                <div class="ai-textarea-wrap">
+                    <textarea id="aiText" class="ed-textarea ai-textarea" rows="3" placeholder="Ej. Hola, necesito 200 sacos de cemento gris, 50 varillas de 3/8 y 2 m³ de arena. ¿Me pasas precio?"></textarea>
+                    <input type="file" id="aiFile" accept="application/pdf,image/jpeg,image/png,image/webp" hidden />
+                    <button type="button" class="ai-attach-btn" id="aiAttachBtn" aria-label="Adjuntar foto o PDF de una orden de compra" title="Adjuntar foto o PDF">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                    </button>
                 </div>
-                <textarea id="aiText" class="ed-textarea ai-textarea" rows="3" placeholder="Ej. Hola, necesito 200 sacos de cemento gris, 50 varillas de 3/8 y 2 m³ de arena. ¿Me pasas precio?"></textarea>
-                <input type="file" id="aiFile" accept="application/pdf,image/jpeg,image/png,image/webp" hidden />
                 <div class="ai-file-chip" id="aiFileChip" hidden>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
                     <span id="aiFileName"></span>
@@ -64,10 +62,6 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 </div>
                 <div class="ai-actions">
                     <button class="ai-btn" id="aiBtn"><span class="ai-btn-label">Armar cotización con IA</span></button>
-                    <button type="button" class="ai-attach-btn" id="aiAttachBtn" title="Adjuntar foto o PDF de una orden de compra">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-                        Adjuntar foto o PDF
-                    </button>
                     <span class="ai-status" id="aiStatus"></span>
                 </div>
             </section>
@@ -1439,19 +1433,16 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
 
     /* AI Block */
     /* Hero IA: la puerta de entrada del editor (card navy premium) */
-    .ai-block { padding: 1.5rem; border: none; border-radius: 16px; position: relative; overflow: hidden;
+    .ai-block { padding: 1.25rem 1.4rem; border: none; border-radius: 16px; position: relative; overflow: hidden;
         background: var(--color-blue-deep);
         box-shadow: 0 24px 50px -30px rgba(10,25,47,0.65), inset 0 1px 0 rgba(255,255,255,0.06); }
-    .ai-head { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 0.9rem; }
-    .ai-spark { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-        color: #fff; background: rgba(255,255,255,0.1); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14); }
-    .ai-spark svg { width: 19px; height: 19px; }
-    .ai-title { font-size: 1.02rem; font-weight: 650; margin: 0 0 3px; color: #fff; letter-spacing: -0.01em; }
-    .ai-sub { font-size: 0.82rem; color: rgba(255,255,255,0.62); margin: 0; line-height: 1.45; }
-    .ai-block .ed-textarea.ai-textarea { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.14); color: #fff; }
+    .ai-title { font-size: 0.96rem; font-weight: 650; margin: 0 0 2px; color: #fff; letter-spacing: -0.01em; }
+    .ai-sub { font-size: 0.79rem; color: rgba(255,255,255,0.55); margin: 0 0 0.75rem; line-height: 1.4; }
+    .ai-textarea-wrap { position: relative; }
+    .ai-block .ed-textarea.ai-textarea { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.14); color: #fff; padding-right: 42px; }
     .ai-block .ed-textarea.ai-textarea::placeholder { color: rgba(255,255,255,0.4); }
     .ai-block .ed-textarea.ai-textarea:focus { border-color: rgba(255,255,255,0.5); box-shadow: 0 0 0 2px rgba(255,255,255,0.1); }
-    .ai-actions { display: flex; align-items: center; gap: 1rem; margin-top: 0.8rem; flex-wrap: wrap; }
+    .ai-actions { display: flex; align-items: center; gap: 1rem; margin-top: 0.7rem; flex-wrap: wrap; }
     .ai-btn {
         font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600; cursor: pointer;
         background: #fff; color: #0a192f; border: none; border-radius: 9px; padding: 9px 18px;
@@ -1460,23 +1451,24 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     .ai-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 24px -10px rgba(0,0,0,0.5); }
     .ai-btn:disabled { opacity: 0.6; cursor: wait; }
     .ai-status { font-size: 0.78rem; color: rgba(255,255,255,0.7); font-weight: 400; }
+    /* Clip discreto, sin texto, anclado dentro del textarea (estilo iMessage/Apple) */
     .ai-attach-btn {
-        all: unset; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
-        font-family: var(--font-sans); font-size: 0.8rem; font-weight: 500; color: rgba(255,255,255,0.72);
-        padding: 8px 12px; border-radius: 9px; background: rgba(255,255,255,0.06);
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12); transition: background 0.2s, color 0.2s;
+        all: unset; position: absolute; top: 9px; right: 9px; width: 26px; height: 26px;
+        display: flex; align-items: center; justify-content: center; cursor: pointer;
+        color: rgba(255,255,255,0.45); border-radius: 7px; transition: background 0.15s, color 0.15s;
     }
-    .ai-attach-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
-    .ai-attach-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .ai-attach-btn svg { width: 15px; height: 15px; }
+    .ai-attach-btn:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85); }
     .ai-file-chip {
-        display: flex; align-items: center; gap: 8px; margin-top: 0.7rem; padding: 7px 10px;
-        background: rgba(255,255,255,0.08); border-radius: 9px; color: #fff; font-size: 0.8rem;
+        display: flex; align-items: center; gap: 7px; margin-top: 0.55rem; padding: 5px 9px;
+        background: rgba(255,255,255,0.07); border-radius: 8px; color: rgba(255,255,255,0.85); font-size: 0.76rem;
     }
-    .ai-file-chip svg { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.75; }
+    .ai-file-chip[hidden] { display: none; }
+    .ai-file-chip svg { width: 13px; height: 13px; flex-shrink: 0; opacity: 0.6; }
     .ai-file-chip span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .ai-file-chip button { all: unset; cursor: pointer; display: flex; opacity: 0.65; padding: 2px; }
+    .ai-file-chip button { all: unset; cursor: pointer; display: flex; opacity: 0.55; padding: 2px; }
     .ai-file-chip button:hover { opacity: 1; }
-    .ai-file-chip button svg { width: 12px; height: 12px; opacity: 1; }
+    .ai-file-chip button svg { width: 11px; height: 11px; opacity: 1; }
 
     /* Divisor "o créala manualmente" */
     .ed-or { display: flex; align-items: center; gap: 1rem; margin: 0.3rem 0; color: var(--color-text-muted); }
