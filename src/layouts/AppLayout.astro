@@ -292,7 +292,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
                             <p class="help-ai-title">Cord AI</p>
                             <div class="help-ai-chat" id="helpAiChat">
                                 <div class="chat-history" id="chatHistory">
-                                    <div class="chat-bubble bot">Hola, soy Cord AI. Puedo ayudarte a crear cotizaciones, analizar tus ventas o resolver dudas sobre la plataforma. ¿En qué te ayudo hoy?</div>
+                                    <div class="chat-bubble bot">Hola, soy Cord AI. Estoy aquí para resolver tus dudas sobre cómo usar la plataforma — cotizaciones, cobranza, facturación y más. ¿En qué te ayudo?</div>
                                 </div>
                                 <div class="chat-quick" id="chatQuick"></div>
                                 <div class="chat-input-row">
@@ -1941,7 +1941,14 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         });
 
         const open = () => { (drawer as HTMLElement).hidden = false; btn.setAttribute('aria-expanded', 'true'); document.body.style.overflow = 'hidden'; setTimeout(() => search?.focus(), 60); };
-        const close = () => { (drawer as HTMLElement).hidden = true; btn.setAttribute('aria-expanded', 'false'); document.body.style.overflow = ''; setTimeout(() => { const p = drawer.querySelector('.help-panel'); if (p) p.classList.remove('ai-active'); }, 350); };
+        const close = () => {
+            (drawer as HTMLElement).hidden = true; btn.setAttribute('aria-expanded', 'false'); document.body.style.overflow = '';
+            setTimeout(() => {
+                const p = drawer.querySelector('.help-panel');
+                if (p) p.classList.remove('ai-active');
+                resetChat();
+            }, 350);
+        };
 
         btn.addEventListener('click', () => { (drawer as HTMLElement).hidden ? open() : close(); });
         closeBtn?.addEventListener('click', close);
@@ -1984,6 +1991,16 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
 
         const hideQuick = () => { if (chatQuick) (chatQuick as HTMLElement).hidden = true; };
 
+        const CHAT_GREETING = 'Hola, soy Cord AI. Estoy aquí para resolver tus dudas sobre cómo usar la plataforma — cotizaciones, cobranza, facturación y más. ¿En qué te ayudo?';
+        // El chat NO persiste entre sesiones ni acciones: es solo consulta/ayuda,
+        // no ejecuta nada dentro de la app. Se reinicia cada vez que se cierra el drawer.
+        const resetChat = () => {
+            if (chatHistory) chatHistory.innerHTML = `<div class="chat-bubble bot">${CHAT_GREETING}</div>`;
+            if (chatQuick) (chatQuick as HTMLElement).hidden = false;
+            if (aiChatInput) (aiChatInput as HTMLInputElement).value = '';
+            aiChatSend?.classList.remove('active');
+        };
+
         const sendAiMessage = () => {
             const input = aiChatInput as HTMLInputElement;
             const text = input.value.trim();
@@ -2003,7 +2020,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
 
             setTimeout(() => {
                 thinkingB.remove();
-                const reply = "He analizado tus métricas. En este entorno demo, Cord AI aún se está conectando a tu base de datos principal, pero muy pronto podré redactar cotizaciones automáticas y generar reportes predictivos para ti.";
+                const reply = "Buena pregunta. En este entorno de demostración Cord AI todavía no puede responder dudas específicas fuera de las preguntas frecuentes — pero es solo para resolver consultas, nunca ejecuta acciones dentro de tu cuenta. Si no encuentras tu respuesta arriba, escríbenos desde el Centro de ayuda.";
                 appendBotMsg(reply);
             }, 1200);
         };
