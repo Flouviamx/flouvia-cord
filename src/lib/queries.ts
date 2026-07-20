@@ -1386,6 +1386,100 @@ export async function getDesempeno() {
     };
 }
 
+// ── INTELIGENCIA DE PRICING (precio sugerido por historial real) ──────────────
+// Win-rate por banda de descuento (0/5/10/15/20/25+%) sobre el historial YA
+// decidido de la org (aprobada/pagada/facturada = ganada; rechazada/vencida =
+// perdida; sent/viewed/draft se excluyen por no tener veredicto). Prioriza el
+// historial del PRODUCTO exacto; si no hay suficiente muestra cae al historial
+// del CLIENTE (cualquier producto); si tampoco alcanza, cae a la org completa.
+// Solo lectura — no escribe nada ni afecta el flujo de cotizar.
+export type PricingBand = { band: number; winRate: number; sample: number };
+export type PricingSuggestion = {
+    scope: 'producto' | 'cliente' | 'org' | null;
+    confidence: 'alta' | 'media' | null;
+    sampleSize: number;
+    bands: PricingBand[];
+    suggestedDiscountPct: number | null;
+    suggestedPrice: number | null;
+};
+
+const PRICING_MIN_SCOPE_SAMPLE = 3; // mínimo de cotizaciones decididas para confiar en un scope
+const PRICING_TARGET_WIN_RATE = 0.6; // banda mínima aceptable al elegir el descuento sugerido
+
+export async function getPricingSuggestion(opts: { productoId?: string | null; clienteId?: string | null; precioLista: number }): Promise<PricingSuggestion> {
+    const orgId = await getActiveOrgId();
+    const productoId = opts.productoId || null;
+    const clienteId = opts.clienteId || null;
+    const key = `pricing:${orgId}:${productoId ?? '-'}:${clienteId ?? '-'}`;
+    const rows = await cached(key, 60, () => getPricingRowsUncached(orgId, productoId, clienteId));
+    return buildPricingSuggestion(rows, opts.precioLista);
+}
+
+async function getPricingRowsUncached(orgId: string, productoId: string | null, clienteId: string | null) {
+    const [rows] = await withOrgTx(orgId,
+        sql`select
+                band,
+                count(*) filter (where won) as won_all, count(*) as total_all,
+                count(*) filter (where won and producto_match) as won_prod,
+                count(*) filter (where producto_match) as total_prod,
+                count(*) filter (where won and cliente_match) as won_cli,
+                count(*) filter (where cliente_match) as total_cli
+            from (
+                select
+                    least(50, greatest(0, floor(
+                        (it.precio_unitario - coalesce(it.precio_negociado, it.precio_unitario))
+                        / nullif(it.precio_unitario, 0) * 100 / 5
+                    ) * 5)) as band,
+                    (c.status in ('approved','paid','invoiced') and coalesce(it.aprobado, true)) as won,
+                    (${productoId}::uuid is not null and it.producto_id = ${productoId}::uuid) as producto_match,
+                    (${clienteId}::uuid is not null and c.cliente_id = ${clienteId}::uuid) as cliente_match
+                from cotizacion_items it
+                join cotizaciones c on c.id = it.cotizacion_id
+                where c.org_id = ${orgId}
+                  and c.status in ('approved','paid','invoiced','rejected','expired')
+                  and it.precio_unitario > 0
+            ) x
+            group by band
+            order by band`,
+    );
+    return rows as any[];
+}
+
+function buildPricingSuggestion(rows: any[], precioLista: number): PricingSuggestion {
+    const mk = (wonKey: string, totalKey: string): PricingBand[] =>
+        rows
+            .map(r => ({ band: num(r.band), winRate: num(r[totalKey]) ? num(r[wonKey]) / num(r[totalKey]) : 0, sample: num(r[totalKey]) }))
+            .filter(b => b.sample > 0);
+
+    const scopes: Array<{ name: 'producto' | 'cliente' | 'org'; bands: PricingBand[] }> = [
+        { name: 'producto', bands: mk('won_prod', 'total_prod') },
+        { name: 'cliente', bands: mk('won_cli', 'total_cli') },
+        { name: 'org', bands: mk('won_all', 'total_all') },
+    ];
+
+    for (const scope of scopes) {
+        const sampleSize = scope.bands.reduce((s, b) => s + b.sample, 0);
+        if (sampleSize < PRICING_MIN_SCOPE_SAMPLE) continue;
+
+        const sorted = [...scope.bands].sort((a, b) => a.band - b.band);
+        let pick = sorted.find(b => b.winRate >= PRICING_TARGET_WIN_RATE);
+        if (!pick) {
+            pick = sorted.reduce((best, b) => (b.winRate > best.winRate || (b.winRate === best.winRate && b.band < best.band)) ? b : best, sorted[0]);
+        }
+
+        return {
+            scope: scope.name,
+            confidence: sampleSize >= 10 ? 'alta' : 'media',
+            sampleSize,
+            bands: sorted,
+            suggestedDiscountPct: pick.band,
+            suggestedPrice: Math.round(precioLista * (1 - pick.band / 100) * 100) / 100,
+        };
+    }
+
+    return { scope: null, confidence: null, sampleSize: 0, bands: [], suggestedDiscountPct: null, suggestedPrice: null };
+}
+
 // ── GUÍA DE CONFIGURACIÓN ─────────────────────────────────────────────────────
 export async function getSetupProgress() {
     const orgId = await getActiveOrgId();

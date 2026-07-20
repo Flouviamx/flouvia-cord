@@ -1,7 +1,10 @@
-// POST /api/cotizaciones/ai-draft — arma una cotización desde texto libre con IA.
-// Recibe { text } (el pedido del cliente en lenguaje natural, p. ej. de WhatsApp),
-// le da a Claude el catálogo de la org y devuelve las líneas ya emparejadas en el
-// shape que usa el editor: { items: [{ id, nombre, unidad, lista, negociado, cantidad }] }.
+// POST /api/cotizaciones/ai-draft — arma una cotización desde texto libre y/o un
+// documento (PDF/foto de una orden de compra, requisición, cotización de un
+// tercero, etc.) con IA. Recibe { text?, file?: { mediaType, data, name } } — al
+// menos uno de los dos. `file.data` es el contenido en base64 (sin el prefijo
+// data:...;base64,). Le da a Claude el catálogo de la org + el documento/imagen
+// (visión nativa de Claude, sin OCR aparte) y devuelve las líneas ya emparejadas
+// en el shape que usa el editor: { items: [{ id, nombre, unidad, lista, negociado, cantidad }] }.
 //
 // Usa el SDK oficial @anthropic-ai/sdk con tool_choice forzado (salida estructurada).
 // Necesita ANTHROPIC_API_KEY en el entorno. Modelo configurable con AI_MODEL
@@ -21,7 +24,17 @@ import { getDefaultAgentId } from '../../../lib/agents/governance';
 const API_KEY = import.meta.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
 const MODEL = import.meta.env.AI_MODEL || process.env.AI_MODEL || 'claude-haiku-4-5-20251001';
 
-const SYSTEM = `Eres un extractor de pedidos B2B en México. ÚNICA tarea: convertir el mensaje del cliente en líneas de cotización usando el catálogo dado.
+// Tipos soportados por la visión nativa de Claude (documentos e imágenes).
+const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const DOC_TYPES = new Set(['application/pdf']);
+// Tope defensivo del lado del servidor (el cliente ya recomprime/limita antes de
+// subir) — un base64 de ~6M chars ≈ 4.5MB decodificados, el límite práctico del
+// body de una función de Vercel.
+const MAX_B64_CHARS = 6_000_000;
+
+const SYSTEM = `Eres un extractor de pedidos B2B en México. ÚNICA tarea: convertir el pedido del cliente (texto, y/o una foto o PDF de una orden de compra, requisición o cotización de un tercero) en líneas de cotización usando el catálogo dado.
+
+Si recibes un documento o imagen: léelo como leerías una orden de compra real — extrae cada renglón (producto/concepto, cantidad, precio si aparece). Ignora encabezados, sellos, folios internos del cliente y firmas; esos no son líneas de cotización. Si el documento trae varias páginas o secciones, cubre todas.
 
 CATÁLOGO: formato id|nombre|unidad|precio (una línea por producto).
 
@@ -92,8 +105,26 @@ export const POST: APIRoute = async ({ request }) => {
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
     const text = String(body.text ?? '').trim();
-    if (!text) return json({ error: 'Pega el pedido del cliente' }, 400);
+    const file = body.file && typeof body.file === 'object' ? body.file : null;
+
+    if (!text && !file) return json({ error: 'Pega el pedido del cliente o adjunta una foto/PDF' }, 400);
     if (text.length > 2000) return json({ error: 'El texto es demasiado largo (máx 2000 caracteres)' }, 400);
+
+    let fileBlock: any = null;
+    if (file) {
+        const mediaType = String(file.mediaType || '');
+        const data = String(file.data || '');
+        if (!data || data.length > MAX_B64_CHARS) {
+            return json({ error: 'El archivo es demasiado pesado. Intenta con una foto más ligera o un PDF más corto.' }, 400);
+        }
+        if (IMAGE_TYPES.has(mediaType)) {
+            fileBlock = { type: 'image', source: { type: 'base64', media_type: mediaType, data } };
+        } else if (DOC_TYPES.has(mediaType)) {
+            fileBlock = { type: 'document', source: { type: 'base64', media_type: mediaType, data } };
+        } else {
+            return json({ error: 'Formato no soportado. Sube una foto (JPG/PNG/WEBP) o un PDF.' }, 400);
+        }
+    }
 
     const productos = (await getProductos()).filter((p) => p.activo);
     const catalogoTexto = productos.length
@@ -116,9 +147,10 @@ export const POST: APIRoute = async ({ request }) => {
     const allTools = [TOOL, ...mcpTools];
     
     const client = new Anthropic({ apiKey: API_KEY });
+    const textBlock = { type: 'text', text: `Catálogo:\n${catalogoTexto}\n\nMensaje del cliente${file ? ' (puede acompañar el documento/foto adjunta)' : ''}:\n"""${text || '(sin texto — lee el documento/foto adjunta)'}"""` };
     let messages: any[] = [{
         role: 'user',
-        content: `Catálogo:\n${catalogoTexto}\n\nMensaje del cliente:\n"""${text}"""`,
+        content: fileBlock ? [fileBlock, textBlock] : textBlock.text,
     }];
 
     let aiItems: any[] = [];

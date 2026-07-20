@@ -6,6 +6,68 @@
 
 ---
 
+✅ **Armar cotización desde foto/PDF — visión nativa de Claude en `ai-draft` (jul 2026)** —
+   segundo feature del track "cotizar rentable" (ver `pricing-intelligence-feature.md` en
+   memoria): el bloque "Armar con IA" del editor solo aceptaba texto pegado; ahora también
+   acepta una FOTO o PDF de la orden de compra/requisición del cliente — el input real del
+   comprador B2B casi nunca es texto limpio.
+   • **`/api/cotizaciones/ai-draft.ts`** acepta `{ text?, file?: { mediaType, data, name } }`
+     (uno de los dos es obligatorio) — `file.data` es base64 sin el prefijo `data:...;base64,`.
+     Usa los bloques de contenido nativos de Claude (`type:'image'` para JPEG/PNG/WEBP/GIF,
+     `type:'document'` para PDF) — **sin OCR aparte**, es la misma llamada a
+     `messages.create` de siempre, solo con `content` como array de bloques en vez de string
+     cuando hay archivo. El SYSTEM prompt se amplió para instruir a leer el documento como una
+     orden de compra real (ignorar sellos/folios/firmas, cubrir todas las páginas). Mismo
+     `checkQuota('ia')`/`reportUsage('ia',1)` y rate-limit que ya existían — no se creó una
+     dimensión de cuota nueva. Tope defensivo server-side de 6M caracteres base64 (~4.5MB
+     decodificado, el límite práctico del body de una función de Vercel).
+   • **Editor (`nueva.astro`):** botón "Adjuntar foto o PDF" junto al textarea del bloque IA.
+     Las **fotos se recomprimen en el navegador** antes de subir (canvas: redimensiona al lado
+     mayor ≤1600px + reencode JPEG calidad 0.82) — una foto de celular puede pesar 5-10MB, muy
+     por encima del límite de body, y a esa resolución Claude lee el texto igual de bien. Los
+     **PDF se rechazan client-side sobre 3MB crudo** con mensaje claro (sugiere bajar la
+     resolución del escaneo o subir una foto en su lugar) — Anthropic soporta hasta 32MB/100
+     páginas, pero el límite real aquí es el body de la función, no la API. Chip con el nombre
+     del archivo + botón de quitar; se limpia solo tras un armado exitoso (el texto NO se
+     limpia, mismo comportamiento que ya tenía el flujo de solo-texto).
+   • Las líneas armadas desde el flujo de IA ahora también disparan `loadPricing(idx)` por
+     línea de catálogo (bug de alcance encontrado al tocar este archivo: el chip de precio
+     sugerido de la sesión anterior solo se cableó en `addProduct`/carga de borrador, no en el
+     resultado de `ai-draft` — corregido de paso).
+   ⬜ **Límite conocido de v1:** no hay OCR/extracción de tabla estructurada previa — se apoya
+     100% en la visión del modelo, que en documentos muy densos (tablas de 50+ renglones,
+     letra manuscrita ilegible) puede perder o fusionar líneas; el usuario revisa antes de
+     enviar (mismo disclaimer que ya existe para el flujo de texto: "Revisa cantidades y
+     precios"). Sin cambios de schema ni de billing.
+
+✅ **Inteligencia de pricing — precio sugerido por historial real (jul 2026)** — primer feature
+   del track "cotizar rentable" (ver `pricing-intelligence-feature.md` en memoria): usa el
+   historial YA decidido de la org (aprobada/pagada/facturada = ganada; rechazada/vencida =
+   perdida — `sent`/`viewed`/`draft` se excluyen por no tener veredicto) para sugerir el
+   descuento óptimo por línea, sin capturar ningún dato nuevo.
+   • **`getPricingSuggestion()`** (`queries.ts`) agrupa el win-rate por banda de descuento de
+     5 puntos (0/5/10/…/50+%) sobre `cotizacion_items` join `cotizaciones`, con 3 scopes en
+     cascada: **producto exacto** → **cliente** (cualquier producto) → **org completa** — usa
+     el primer scope con ≥3 cotizaciones decididas (umbral `PRICING_MIN_SCOPE_SAMPLE`).
+     Dentro del scope elegido, sugiere la banda de MENOR descuento cuyo win-rate ≥60%
+     (`PRICING_TARGET_WIN_RATE`); si ninguna banda alcanza ese umbral, cae a la de mayor
+     win-rate observado. `confianza` = 'alta' (≥10 muestras) / 'media' (3-9). Una sola query
+     agregada por `FILTER` (mismo patrón que `getAnalytics()`/`getDesempeno()`), cacheada 60s
+     por `(orgId, productoId, clienteId)` vía `cached()` — solo lectura, no escribe nada.
+   • **`GET /api/pricing/suggest?producto_id=&cliente_id=&precio_lista=`** (nuevo, protegido
+     por el middleware de sesión) — expone la sugerencia al editor.
+   • **Editor (`/app/cotizaciones/nueva`):** cada línea de catálogo agregada (o cargada de un
+     borrador) dispara `loadPricing(idx)` en segundo plano; si hay sugerencia y el precio
+     negociado actual difiere de ella, aparece un hint clicable bajo el nombre del producto
+     ("Sugerido: $X (72% cierra)", mismo lugar donde ya vivía la nota de precio por volumen)
+     — un clic aplica el precio y dispara el flash de margen existente. El hint desaparece
+     solo cuando el precio de la línea ya coincide con el sugerido. Sin cambios de schema.
+   ⬜ **Límite conocido de v1 (a propósito, para no sobre-construir antes de validar uso
+     real):** la sugerencia se calcula una vez al agregar la línea; si el vendedor cambia de
+     cliente después, NO se refresca automáticamente (recargar la línea sí lo haría). Fase 2
+     natural si se valida: refrescar al cambiar cliente, y ampliar el scope a "familia de
+     producto" cuando exista una noción de familia en el catálogo.
+
 ✅ **Fix de clipping en los page-tabs (`.ph-tab`) + pulido Apple (jul 2026)** — André reportó
    con captura que el segmented control de secciones (ej. "Cédulas · Herramientas" en
    `/app/presupuestos`, y el mismo patrón en CFO/Analítica/Desempeño y en el clúster de "Mi
