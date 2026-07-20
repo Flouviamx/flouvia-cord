@@ -361,6 +361,10 @@ export interface KitFull {
     nombre: string;
     descripcion: string;
     activo: boolean;
+    // Precio TOTAL fijo para una unidad del kit (null = sin precio de combo —
+    // cada línea conserva su precio de lista/descuento normal). Ver nueva.astro
+    // `insertKit` para cómo se prorratea entre las líneas al insertar.
+    precioCombo: number | null;
     items: KitItem[];
 }
 export interface KitListItem {
@@ -369,13 +373,14 @@ export interface KitListItem {
     descripcion: string;
     activo: boolean;
     itemCount: number;
+    precioCombo: number | null;
 }
 
 // Índice liviano (para /app/productos/kits).
 export async function getKits(): Promise<KitListItem[]> {
     const orgId = await getActiveOrgId();
     const [rows] = await withOrgTx(orgId, sql`
-        select k.id, k.nombre, k.descripcion, k.activo, count(ki.id)::int as item_count
+        select k.id, k.nombre, k.descripcion, k.activo, k.precio_combo, count(ki.id)::int as item_count
         from kits k
         left join kit_items ki on ki.kit_id = k.id
         where k.org_id = ${orgId}
@@ -387,6 +392,7 @@ export async function getKits(): Promise<KitListItem[]> {
         descripcion: (k.descripcion as string) ?? '',
         activo: k.activo as boolean,
         itemCount: Number(k.item_count ?? 0),
+        precioCombo: k.precio_combo != null ? num(k.precio_combo) : null,
     }));
 }
 
@@ -395,7 +401,7 @@ export async function getKits(): Promise<KitListItem[]> {
 export async function getKitsForEditor(): Promise<KitFull[]> {
     const orgId = await getActiveOrgId();
     const [kits, items] = await withOrgTx(orgId,
-        sql`select id, nombre, descripcion, activo from kits where org_id = ${orgId} and activo = true order by nombre`,
+        sql`select id, nombre, descripcion, activo, precio_combo from kits where org_id = ${orgId} and activo = true order by nombre`,
         sql`select ki.id, ki.kit_id, ki.producto_id, ki.descripcion, ki.cantidad, ki.orden,
                    p.unidad, p.precio_lista, p.sku, p.activo as producto_activo
             from kit_items ki
@@ -423,14 +429,15 @@ export async function getKitsForEditor(): Promise<KitFull[]> {
         nombre: k.nombre as string,
         descripcion: (k.descripcion as string) ?? '',
         activo: k.activo as boolean,
+        precioCombo: k.precio_combo != null ? num(k.precio_combo) : null,
         items: byKit[k.id as string] ?? [],
     }));
 }
 
-// Un kit completo (incl. inactivos) — para el editor de Ajustes › Kits.
+// Un kit completo (incl. inactivos) — para el editor de Productos › Kits.
 export async function getKit(orgId: string, kitId: string): Promise<KitFull | null> {
     const [kit, items] = await withOrgTx(orgId,
-        sql`select id, nombre, descripcion, activo from kits where id = ${kitId} and org_id = ${orgId} limit 1`,
+        sql`select id, nombre, descripcion, activo, precio_combo from kits where id = ${kitId} and org_id = ${orgId} limit 1`,
         sql`select ki.id, ki.producto_id, ki.descripcion, ki.cantidad, ki.orden,
                    p.unidad, p.precio_lista, p.sku
             from kit_items ki left join productos p on p.id = ki.producto_id
@@ -444,6 +451,7 @@ export async function getKit(orgId: string, kitId: string): Promise<KitFull | nu
         nombre: k.nombre as string,
         descripcion: (k.descripcion as string) ?? '',
         activo: k.activo as boolean,
+        precioCombo: k.precio_combo != null ? num(k.precio_combo) : null,
         items: items.map((it) => ({
             id: it.id as string,
             productoId: (it.producto_id as string) ?? null,
@@ -457,20 +465,21 @@ export async function getKit(orgId: string, kitId: string): Promise<KitFull | nu
     };
 }
 
-export async function createKit(orgId: string, data: { nombre: string; descripcion?: string }): Promise<string> {
+export async function createKit(orgId: string, data: { nombre: string; descripcion?: string; precioCombo?: number | null }): Promise<string> {
     const [[row]] = await withOrgTx(orgId, sql`
-        insert into kits (org_id, nombre, descripcion)
-        values (${orgId}, ${data.nombre}, ${data.descripcion ?? null})
+        insert into kits (org_id, nombre, descripcion, precio_combo)
+        values (${orgId}, ${data.nombre}, ${data.descripcion ?? null}, ${data.precioCombo ?? null})
         returning id`);
     return row.id as string;
 }
 
-// Los 3 campos van resueltos (el caller ya mezcló los valores actuales con los
+// Los 4 campos van resueltos (el caller ya mezcló los valores actuales con los
 // que llegaron en el PATCH — el `sql` de neon-serverless no compone fragmentos,
 // así que no se puede dejar "sin cambio" un campo desde aquí).
-export async function renameKit(orgId: string, kitId: string, data: { nombre: string; descripcion: string; activo: boolean }): Promise<void> {
+export async function renameKit(orgId: string, kitId: string, data: { nombre: string; descripcion: string; activo: boolean; precioCombo: number | null }): Promise<void> {
     await withOrgTx(orgId, sql`
-        update kits set nombre = ${data.nombre}, descripcion = ${data.descripcion || null}, activo = ${data.activo}, updated_at = now()
+        update kits set nombre = ${data.nombre}, descripcion = ${data.descripcion || null}, activo = ${data.activo},
+            precio_combo = ${data.precioCombo}, updated_at = now()
         where id = ${kitId} and org_id = ${orgId}`);
 }
 

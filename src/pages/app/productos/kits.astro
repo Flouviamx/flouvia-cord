@@ -43,6 +43,7 @@ const canEdit = memberCan(ME, 'productos');
                         {k.descripcion && <span class="ki-desc">{k.descripcion}</span>}
                     </span>
                     <span class="ki-count-pill">{k.itemCount} línea{k.itemCount === 1 ? '' : 's'}</span>
+                    {k.precioCombo != null && <span class="ki-combo-pill">Combo {money(k.precioCombo)}</span>}
                     {canEdit && (
                         <span class="ki-actions">
                             <button class="ki-btn" data-edit={k.id}>Editar</button>
@@ -86,6 +87,17 @@ const canEdit = memberCan(ME, 'productos');
                     </div>
                 </div>
 
+                <div class="kmod-field">
+                    <label class="kmod-check"><input type="checkbox" id="kitComboToggle" /> Vender el kit a un precio fijo <span class="kmod-opt">opcional — combo con descuento</span></label>
+                    <div class="kmod-combo-box" id="kitComboBox" hidden>
+                        <div class="kmod-combo-row">
+                            <span class="kmod-combo-pre">$</span>
+                            <input type="number" min="0.01" step="0.01" class="kmod-combo-input" id="kitComboPrice" placeholder="0.00" />
+                        </div>
+                        <p class="kmod-combo-hint" id="kitComboHint">Agrega productos de catálogo para calcular el ahorro.</p>
+                    </div>
+                </div>
+
                 <p class="kmod-error" id="kitError"></p>
 
                 <div class="kmod-actions">
@@ -121,6 +133,7 @@ const canEdit = memberCan(ME, 'productos');
     .ki-inactive { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: #99a2af; background: var(--color-bg-soft); border-radius: 100px; padding: 2px 8px; }
     .ki-desc { font-size: 0.78rem; color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .ki-count-pill { font-size: 0.74rem; font-weight: 600; color: var(--color-text-muted); background: var(--color-bg-soft); border-radius: 100px; padding: 4px 11px; flex-shrink: 0; }
+    .ki-combo-pill { font-size: 0.74rem; font-weight: 600; color: #059669; background: rgba(16,185,129,0.1); border-radius: 100px; padding: 4px 11px; flex-shrink: 0; }
     .ki-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
     .ki-btn { font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; background: none; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 12px; cursor: pointer; color: var(--color-text-muted); transition: border-color 0.25s, color 0.25s; }
     .ki-btn:hover { border-color: var(--color-blue-deep); color: var(--color-blue-deep); }
@@ -140,6 +153,18 @@ const canEdit = memberCan(ME, 'productos');
     .kmod-field { display: flex; flex-direction: column; gap: 0.4rem; }
     .kmod-field label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
     .kmod-opt { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.6px; color: #b3bcc9; text-transform: none; }
+    .kmod-check { display: flex; align-items: center; gap: 8px; font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; cursor: pointer; }
+    .kmod-check input { width: 15px; height: 15px; accent-color: var(--color-blue-deep); cursor: pointer; }
+    .kmod-combo-box { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.55rem; padding: 0.9rem; background: var(--color-bg-soft); border-radius: 12px; }
+    .kmod-combo-box[hidden] { display: none; }
+    .kmod-combo-row { display: flex; align-items: center; gap: 6px; background: #fff; border: 1px solid var(--color-border); border-radius: 9px; padding: 0 12px; }
+    .kmod-combo-pre { font-size: 0.9rem; font-weight: 600; color: var(--color-text-muted); }
+    .kmod-combo-input { flex: 1; font-family: var(--font-sans); font-size: 0.9rem; font-weight: 600; color: var(--color-text); background: transparent; border: none; outline: none; padding: 10px 0; -moz-appearance: textfield; }
+    .kmod-combo-input::-webkit-outer-spin-button, .kmod-combo-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .kmod-combo-row:focus-within { border-color: var(--color-blue-deep); }
+    .kmod-combo-hint { font-size: 0.76rem; color: var(--color-text-muted); margin: 0; line-height: 1.4; }
+    .kmod-combo-hint.good { color: #059669; }
+    .kmod-combo-hint.warn { color: #b45309; }
     .kmod-input {
         font-family: var(--font-sans); font-size: 0.88rem; font-weight: 500; color: var(--color-text);
         background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px;
@@ -239,7 +264,7 @@ const canEdit = memberCan(ME, 'productos');
         const $itemsEmpty = document.getElementById('kiItemsEmpty');
 
         let editId = null;
-        let items = []; // { id?, productoId, descripcion, cantidad, unidad, sku, persisted }
+        let items = []; // { id?, productoId, descripcion, cantidad, unidad, sku, precio, persisted }
         let removedIds = [];
 
         const money = (n) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n || 0);
@@ -258,7 +283,35 @@ const canEdit = memberCan(ME, 'productos');
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                 </div>`).join('');
+            updateComboHint();
         }
+
+        // ── Precio de combo: precio TOTAL fijo para una unidad del kit ──
+        const $comboToggle = document.getElementById('kitComboToggle');
+        const $comboBox = document.getElementById('kitComboBox');
+        const $comboPrice = document.getElementById('kitComboPrice');
+        const $comboHint = document.getElementById('kitComboHint');
+
+        function sumaListaKit() {
+            return items.reduce((s, it) => s + (it.productoId && it.precio ? it.precio * it.cantidad : 0), 0);
+        }
+        function updateComboHint() {
+            if (!$comboBox || $comboBox.hidden) return;
+            const suma = sumaListaKit();
+            if (suma <= 0) { $comboHint.textContent = 'Agrega productos de catálogo para calcular el ahorro.'; $comboHint.className = 'kmod-combo-hint'; return; }
+            const combo = parseFloat($comboPrice.value) || 0;
+            if (!combo) { $comboHint.textContent = `Suma de lista: ${money(suma)}`; $comboHint.className = 'kmod-combo-hint'; return; }
+            const ahorro = suma - combo;
+            const pct = Math.round((Math.abs(ahorro) / suma) * 100);
+            if (ahorro > 0.004) { $comboHint.textContent = `Suma de lista: ${money(suma)} · el kit ahorra ${money(ahorro)} (${pct}%)`; $comboHint.className = 'kmod-combo-hint good'; }
+            else if (ahorro < -0.004) { $comboHint.textContent = `Suma de lista: ${money(suma)} · este precio es ${money(Math.abs(ahorro))} más caro que comprar suelto (${pct}%)`; $comboHint.className = 'kmod-combo-hint warn'; }
+            else { $comboHint.textContent = `Suma de lista: ${money(suma)} · mismo precio que comprar suelto`; $comboHint.className = 'kmod-combo-hint'; }
+        }
+        $comboToggle?.addEventListener('change', () => {
+            $comboBox.hidden = !$comboToggle.checked;
+            if ($comboToggle.checked) { updateComboHint(); $comboPrice.focus(); }
+        });
+        $comboPrice?.addEventListener('input', updateComboHint);
 
         // Cualquier edición a un renglón YA GUARDADO se resuelve como "quitar el
         // viejo + agregar uno nuevo" al momento de Guardar (la API solo expone
@@ -274,7 +327,7 @@ const canEdit = memberCan(ME, 'productos');
             const idx = parseInt(t.closest('.kii-row').dataset.idx, 10);
             const it = items[idx];
             if (!it) return;
-            if (field === 'cantidad') { const v = Math.max(0.01, Number(t.value) || 1); if (v !== it.cantidad) { markDirty(it); it.cantidad = v; } }
+            if (field === 'cantidad') { const v = Math.max(0.01, Number(t.value) || 1); if (v !== it.cantidad) { markDirty(it); it.cantidad = v; updateComboHint(); } }
             else if (field === 'descripcion') { if (t.value !== it.descripcion) { markDirty(it); it.descripcion = t.value; } }
         });
         $items.addEventListener('click', (e) => {
@@ -288,7 +341,7 @@ const canEdit = memberCan(ME, 'productos');
         });
 
         function addItem(it) {
-            items.push({ productoId: it.productoId ?? null, descripcion: it.descripcion, cantidad: it.cantidad ?? 1, unidad: it.unidad ?? null, sku: it.sku ?? null, persisted: false });
+            items.push({ productoId: it.productoId ?? null, descripcion: it.descripcion, cantidad: it.cantidad ?? 1, unidad: it.unidad ?? null, sku: it.sku ?? null, precio: it.precio ?? null, persisted: false });
             renderItems();
         }
 
@@ -319,7 +372,7 @@ const canEdit = memberCan(ME, 'productos');
         function pickProd(idx) {
             const p = prodResults[idx];
             if (!p) return;
-            addItem({ productoId: p.id, descripcion: p.nombre, unidad: p.unidad, sku: p.sku, cantidad: 1 });
+            addItem({ productoId: p.id, descripcion: p.nombre, unidad: p.unidad, sku: p.sku, cantidad: 1, precio: p.precio });
             if ($prodInput) { $prodInput.value = ''; $prodInput.focus(); }
             prodResults = searchProds(''); prodActive = -1; renderDrop();
         }
@@ -352,6 +405,7 @@ const canEdit = memberCan(ME, 'productos');
         function openNew() {
             editId = null; items = []; removedIds = [];
             nombreInput.value = ''; descInput.value = '';
+            $comboToggle.checked = false; $comboBox.hidden = true; $comboPrice.value = '';
             title.textContent = 'Nuevo kit';
             btnDelete.hidden = true;
             errorEl.textContent = '';
@@ -360,8 +414,10 @@ const canEdit = memberCan(ME, 'productos');
         }
         function openEdit(kit) {
             editId = kit.id; removedIds = [];
-            items = kit.items.map((it) => ({ id: it.id, productoId: it.productoId, descripcion: it.descripcion, cantidad: it.cantidad, unidad: it.unidad, sku: it.sku, persisted: true }));
+            items = kit.items.map((it) => ({ id: it.id, productoId: it.productoId, descripcion: it.descripcion, cantidad: it.cantidad, unidad: it.unidad, sku: it.sku, precio: it.precio, persisted: true }));
             nombreInput.value = kit.nombre; descInput.value = kit.descripcion || '';
+            const hasCombo = kit.precioCombo != null;
+            $comboToggle.checked = hasCombo; $comboBox.hidden = !hasCombo; $comboPrice.value = hasCombo ? kit.precioCombo : '';
             title.textContent = 'Editar kit';
             btnDelete.hidden = false;
             btnDelete.dataset.id = kit.id;
@@ -408,16 +464,21 @@ const canEdit = memberCan(ME, 'productos');
                 errorEl.textContent = 'Completa la descripción de todas las líneas libres (o quítalas).';
                 return;
             }
+            let precioCombo = null;
+            if ($comboToggle.checked) {
+                precioCombo = parseFloat($comboPrice.value) || 0;
+                if (precioCombo <= 0) { errorEl.textContent = 'Ingresa un precio de combo válido, mayor a $0.'; $comboPrice.focus(); return; }
+            }
             btnSave.disabled = true;
             try {
                 let kitId = editId;
                 if (!kitId) {
-                    const res = await fetch('/api/kits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, descripcion: descInput.value }) });
+                    const res = await fetch('/api/kits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, descripcion: descInput.value, precio_combo: precioCombo }) });
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.error || 'No se pudo crear el kit');
                     kitId = data.id;
                 } else {
-                    const res = await fetch(`/api/kits/${kitId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'rename', nombre, descripcion: descInput.value }) });
+                    const res = await fetch(`/api/kits/${kitId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'rename', nombre, descripcion: descInput.value, precio_combo: precioCombo }) });
                     if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'No se pudo guardar'); }
                 }
                 for (const rid of removedIds) {

@@ -3,7 +3,7 @@
 // agregas productos del catálogo, negocias precio por línea, el total se recalcula
 // en vivo con IVA, y al enviar hace POST a /api/cotizaciones (inserta en Neon).
 import AppLayout from '../../../layouts/AppLayout.astro';
-import { getProductos, getClientes, getOrg, getCotizacion, getKitsForEditor } from '../../../lib/queries';
+import { getProductos, getClientes, getOrg, getCotizacion, getKitsForEditor, money } from '../../../lib/queries';
 import { REGIMENES_FISCALES, USOS_CFDI } from '../../../lib/sat';
 
 const draftId = Astro.url.searchParams.get('draft');
@@ -17,6 +17,9 @@ if (draftId) {
 
 const [productos, CLIENTES, ORG, kits] = await Promise.all([getProductos(), getClientes(), getOrg(), getKitsForEditor()]);
 const catalogo = productos.filter(p => p.activo);
+// Suma de lista de UN kit (sin multiplicador) — solo líneas de catálogo, las
+// líneas libres no tienen precio de catálogo contra qué prorratear.
+const kitSumaLista = (k: typeof kits[number]) => k.items.reduce((s, it) => s + (it.productoId && it.precio ? it.precio * it.cantidad : 0), 0);
 
 // Defaults reales desde Ajustes › Cotizaciones e impuestos.
 const TERM_DEFAULT_LABEL = draftQuote ? draftQuote.terminos : (({ contado: 'Contado', net30: 'Net 30', net60: 'Net 60' } as Record<string, string>)[ORG.terminosDefault] ?? 'Contado');
@@ -125,13 +128,23 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                         <div class="kit-insert-wrap">
                             <button type="button" class="btn-free-line" id="btnKitInsert" aria-expanded="false" aria-controls="kitInsertDrop">+ Insertar kit</button>
                             <div class="kit-insert-drop" id="kitInsertDrop" hidden>
-                                {kits.map((k) => (
-                                    <div class="kit-insert-row" data-kid={k.id}>
-                                        <span class="kit-insert-name">{k.nombre}<small>{k.items.length} línea{k.items.length === 1 ? '' : 's'}</small></span>
-                                        <input type="number" class="kit-insert-qty" min="1" step="1" value="1" aria-label={`Cuántas veces insertar ${k.nombre}`} />
-                                        <button type="button" class="kit-insert-add" data-kid-add={k.id}>Agregar</button>
-                                    </div>
-                                ))}
+                                {kits.map((k) => {
+                                    const suma = kitSumaLista(k);
+                                    const ahorro = k.precioCombo != null ? suma - k.precioCombo : 0;
+                                    return (
+                                        <div class="kit-insert-row" data-kid={k.id}>
+                                            <span class="kit-insert-name">{k.nombre}
+                                                <small>
+                                                    {k.items.length} línea{k.items.length === 1 ? '' : 's'}
+                                                    {k.precioCombo != null && ` · Combo ${money(k.precioCombo)}`}
+                                                    {ahorro > 0.004 && ` (ahorras ${money(ahorro)})`}
+                                                </small>
+                                            </span>
+                                            <input type="number" class="kit-insert-qty" min="1" step="1" value="1" aria-label={`Cuántas veces insertar ${k.nombre}`} />
+                                            <button type="button" class="kit-insert-add" data-kid-add={k.id}>Agregar</button>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
@@ -643,15 +656,36 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         const mult = Math.max(1, Math.floor(Number(row?.querySelector('.kit-insert-qty')?.value) || 1));
 
         const startLen = lines.length;
+        const catalogIdxs = []; // índices en `lines` de renglones con precio de catálogo (candidatos al prorrateo)
+        let sumaListaOne = 0;   // suma de lista de UN kit (sin multiplicador) — base del prorrateo
         kit.items.forEach((it) => {
             const qty = (Number(it.cantidad) || 1) * mult;
             const p = it.productoId ? catMap[it.productoId] : null;
             if (p) {
                 lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: applyDesc(p.precio), cantidad: qty, negoTouched: false });
+                catalogIdxs.push(lines.length - 1);
+                sumaListaOne += (Number(it.cantidad) || 1) * p.precio;
             } else {
                 lines.push({ id: null, nombre: it.descripcion, unidad: 'pieza', baseLista: 0, lista: 0, vol: [], costo: 0, negociado: 0, cantidad: qty, negoTouched: false });
             }
         });
+
+        // ── Precio de combo: prorratea el precio TOTAL fijo del kit entre las
+        // líneas de catálogo, sobreescribiendo su "negociado" (mismo mecanismo
+        // que un descuento manual — negoTouched:true evita que se pise al
+        // cambiar de cliente). Las líneas libres no participan (no tienen
+        // precio de catálogo contra qué repartir). ──
+        let ahorroTotal = 0;
+        if (kit.precioCombo && sumaListaOne > 0) {
+            const ratio = kit.precioCombo / sumaListaOne;
+            catalogIdxs.forEach((idx) => {
+                const l = lines[idx];
+                l.negociado = Math.round(l.lista * ratio * 100) / 100;
+                l.negoTouched = true;
+            });
+            ahorroTotal = (sumaListaOne - kit.precioCombo) * mult;
+        }
+
         render();
         // Flash de las líneas recién insertadas + precio sugerido por línea de catálogo.
         const rows = $lines.querySelectorAll('.line-row');
@@ -660,7 +694,12 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
             if (lines[i].id) loadPricing(i);
         }
         setTimeout(() => rows.forEach(r => r.classList.remove('line-added')), 900);
-        if (window.cordToast) window.cordToast(`Kit "${kit.nombre}" insertado — ${kit.items.length} línea${kit.items.length === 1 ? '' : 's'}`, 'ok');
+        if (window.cordToast) {
+            const msg = ahorroTotal > 0.004
+                ? `Kit "${kit.nombre}" insertado con precio de combo — ahorras ${fmt(ahorroTotal)}`
+                : `Kit "${kit.nombre}" insertado — ${kit.items.length} línea${kit.items.length === 1 ? '' : 's'}`;
+            window.cordToast(msg, 'ok');
+        }
         closeKitDrop();
     });
 

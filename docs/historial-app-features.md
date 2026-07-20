@@ -6,6 +6,67 @@
 
 ---
 
+✅ **Kits de cotización + precio de combo (jul 2026)** — feature nuevo pedido por André:
+   paquetes pre-armados de renglones (ej. "Kit de obra negra") que se insertan de un clic
+   en el editor, en vez de agregar producto por producto cada vez que se cotiza la misma
+   combinación. André pidió explícitamente que vivieran **dentro de Productos** (no en
+   Ajustes) como una sub-pestaña — se descartó el diseño inicial en `/app/ajustes/kits`.
+   • **2 tablas nuevas** (`db/schema.sql`, mismo patrón que `cedulas`/`cedula_filas`): `kits`
+     (nombre, descripción, activo, **`precio_combo` nullable** — ver abajo) y `kit_items`
+     (`producto_id` nullable = línea libre dentro del kit, `descripcion`, `cantidad`, `orden`,
+     `org_id` denormalizado). RLS directa por `org_id` + FORCE, sin carril `public_token` (no
+     hay vista pública de un kit). Un kit es pura conveniencia de captura: al insertarse se
+     vuelve `cotizacion_items` normales, indistinguibles de una línea agregada a mano — nunca
+     hay referencia de vuelta del lado de la cotización hacia el kit.
+   • **`/app/productos` se partió en `index.astro` (Catálogo) + `kits.astro` (Kits)**, unidas
+     por la barra de sub-pestañas `page-tabs` (mismo patrón `.ph-tab` que ya usan
+     Presupuestos/CFO — `git mv` de `productos.astro` a `productos/index.astro`, ajustando la
+     profundidad de los imports relativos). `/app/productos/kits`: lista hairline (nombre ·
+     descripción · "N líneas" · badge "Combo $X" si aplica · Editar/Eliminar) + modal de
+     creación/edición que reutiliza el MISMO combobox de búsqueda de catálogo que el editor
+     de cotizaciones (`.prod-search`/`.prod-drop`, CSS calcada, `is:global` porque el dropdown
+     se inyecta por JS) más "+ Línea libre". Todos los cambios de un kit (nombre, descripción,
+     precio de combo, renglones agregados/quitados) se acumulan en el cliente y se confirman
+     con un solo botón "Guardar" — la API solo expone `add_item`/`remove_item`/`rename` (sin
+     `update_item`), así que editar la cantidad/descripción de un renglón YA GUARDADO se
+     resuelve como "quitar el viejo + agregar uno nuevo" al momento de guardar.
+   • **API** `/api/kits` (GET lista, POST crea) + `/api/kits/[id]` (GET detalle con renglones,
+     PATCH `rename`/`add_item`/`remove_item`, DELETE) — gateados por el permiso `productos`
+     (`requirePerm`), mismo nivel que el resto del catálogo.
+   • **Insertar en el editor** (`/app/cotizaciones/nueva`): botón "+ Insertar kit" junto a
+     "+ Línea libre" con un dropdown por kit (multiplicador + botón Agregar). La inserción
+     reutiliza `addProduct`/`applyDesc`/`catMap`/`loadPricing` tal cual — los renglones de un
+     kit heredan gratis precio por volumen, descuento por nivel de cliente, badge de margen y
+     el chip de precio sugerido por historial, sin lógica de precio nueva.
+   • **Precio de combo (segunda pasada, mismo día)** — un kit puede vender un precio TOTAL
+     fijo para una unidad del kit, distinto a la suma de precios de lista de sus líneas
+     (`kits.precio_combo`, nullable = sin combo, comportamiento original). En el modal de
+     Kits: checkbox "Vender el kit a un precio fijo" + input de precio + hint en vivo ("Suma
+     de lista: $X · el kit ahorra $Y (Z%)", en rojo/ámbar si el combo sale MÁS caro que
+     comprar suelto — no se bloquea, solo se avisa). Al insertar un kit con combo en el
+     editor: se calcula `ratio = precioCombo / sumaListaDeUnKit` y se sobreescribe el
+     `negociado` de cada línea de CATÁLOGO con `lista × ratio` (mismo mecanismo que un
+     descuento manual — `negoTouched:true` para que no se pise si después cambian de
+     cliente); las líneas libres del kit NO participan del prorrateo (no tienen precio de
+     catálogo contra qué repartir, quedan en $0 como cualquier línea libre). El dropdown de
+     inserción y la fila de la lista de Kits muestran el precio de combo y el ahorro
+     calculado server-side (`kitSumaLista()` en `nueva.astro`, `sumaListaKit()` en
+     `kits.astro` — mismo cálculo, uno en frontmatter Astro y otro en el cliente).
+     ⚠️ **Limitación conocida (aceptada, no bloqueante):** el prorrateo redondea a centavos
+     por línea sin forzar que la suma total cuadre exacto al peso — puede haber un par de
+     centavos de deriva en kits con muchas líneas; el vendedor siempre puede afinar el
+     `negociado` de cualquier línea a mano después de insertar (es un campo editable normal).
+   • Verificado: `npm run db:migrate` corrido dos veces (tabla + índices, luego la columna
+     `precio_combo` vía `alter table ... add column if not exists` — nunca se editó el
+     `create table` ya aplicado, siguiendo la regla del proyecto), RLS/FORCE confirmado contra
+     `pg_class`/`pg_policies`, 2 pasadas de `npm run build` limpias, y los 2 bloques
+     `<script>` inline (`kits.astro` con `define:vars`, el bloque `is:inline` de `nueva.astro`)
+     verificados con `node --check` (sin sintaxis TS prohibida en scripts inline).
+   ⬜ Pendiente natural de una siguiente pasada (ideas que André aprobó explorar después):
+     detección automática de kits por co-ocurrencia real en `cotizacion_items` (sugerir
+     "guardar como kit" cuando el mismo combo de productos se repite en varias cotizaciones)
+     y un botón "Guardar como kit" directo desde una cotización ya armada en el editor.
+
 ✅ **Armar cotización desde foto/PDF — visión nativa de Claude en `ai-draft` (jul 2026)** —
    segundo feature del track "cotizar rentable" (ver `pricing-intelligence-feature.md` en
    memoria): el bloque "Armar con IA" del editor solo aceptaba texto pegado; ahora también

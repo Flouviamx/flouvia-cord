@@ -1138,6 +1138,15 @@ create table if not exists kits (
 );
 create index if not exists idx_kits_org on kits(org_id, activo, nombre);
 
+-- Precio de combo (opcional, jul 2026): precio TOTAL fijo para una unidad del
+-- kit, distinto a la suma de precios de lista de sus líneas. null = sin precio
+-- de combo (comportamiento original — cada línea conserva su precio de lista/
+-- descuento normal). Cuando se inserta un kit con precio de combo, el editor
+-- prorratea ese total entre las líneas de catálogo (ver `insertKit` en
+-- nueva.astro) y fija cada `negociado` como override — las líneas libres no
+-- participan del prorrateo (no tienen precio de catálogo contra qué repartir).
+alter table kits add column if not exists precio_combo numeric;
+
 -- producto_id nullable = renglón de línea libre dentro del kit (ej. "mano de
 -- obra de instalación"); org_id denormalizado para RLS sin JOIN (mismo patrón
 -- que cedula_filas/cedula_valores).
