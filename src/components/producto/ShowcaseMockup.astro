@@ -1018,6 +1018,116 @@ const { slug, index } = Astro.props as { slug: string; index: number };
     </div>
   )}
 
+  {/* ═══════════════════════════════ PRESUPUESTOS ═══════════════════════════════ */}
+  {slug === 'presupuestos' && index === 0 && (
+    <div class="shwm-frame">
+      <div class="shwm-app">
+        <div class="shwm-bar">
+          <span class="shwm-bar-t">Presupuesto de Ventas 2026 · vs. Real</span>
+          <span class="shwm-badge shwm-badge-green">● Conectada a datos reales</span>
+        </div>
+        <div class="shwm-presu-g shwm-presu-g-head">
+          <span>Concepto</span>
+          <span class="shwm-r">Ene 2026</span>
+          <span class="shwm-r">Feb 2026</span>
+          <span class="shwm-r">Mar 2026</span>
+        </div>
+        <div class="shwm-presu-g">
+          <div class="shwm-presu-concept"><b>Ventas base</b><span class="shwm-presu-tag">Insumo</span></div>
+          <div class="shwm-presu-c"><b class="editorial">$285,700</b></div>
+          <div class="shwm-presu-c"><b class="editorial">$303,800</b></div>
+          <div class="shwm-presu-c"><b class="editorial">$329,900</b></div>
+        </div>
+        <div class="shwm-presu-g shwm-presu-calc">
+          <div class="shwm-presu-concept"><b>Ventas proyectadas <span class="shwm-fx">ƒx</span></b><span class="shwm-presu-desc">= Ventas × (1 + Crecimiento 5%)</span></div>
+          <div class="shwm-presu-c"><b class="editorial">$300,000</b><span class="shwm-presu-real up"><span>real $338,325</span><span class="shwm-presu-rp">+13%</span></span></div>
+          <div class="shwm-presu-c"><b class="editorial">$319,000</b><span class="shwm-presu-real down"><span>real $293,000</span><span class="shwm-presu-rp">−8%</span></span></div>
+          <div class="shwm-presu-c"><b class="editorial">$346,400</b><span class="shwm-presu-real up"><span>real $372,400</span><span class="shwm-presu-rp">+8%</span></span></div>
+        </div>
+        <div class="shwm-foot"><span>La comparación ya está hecha cuando abres la página</span><b class="shwm-foot-ok">+4% arriba del plan</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'presupuestos' && index === 1 && (
+    <div class="shwm-frame">
+      <div class="shwm-app">
+        <div class="shwm-bar">
+          <span class="shwm-bar-t">Nuevo plan financiero · Asistente</span>
+          <span class="shwm-badge shwm-badge-blue">Plan completo recomendado</span>
+        </div>
+        <div class="shwm-presu-wiz">
+          <div class="shwm-presu-wcard">
+            <span class="shwm-presu-wnum">1</span>
+            <b>Presupuesto de Ventas</b>
+            <em>base del plan</em>
+            <span class="shwm-badge shwm-badge-green shwm-presu-wtag">Creada</span>
+          </div>
+          <div class="shwm-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+          <div class="shwm-presu-wcard">
+            <span class="shwm-presu-wnum">2</span>
+            <b>Cobranza 40/30/30</b>
+            <em>= Ventas escalonadas por mes</em>
+            <span class="shwm-badge shwm-badge-green shwm-presu-wtag">Creada</span>
+          </div>
+          <div class="shwm-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+          <div class="shwm-presu-wcard">
+            <span class="shwm-presu-wnum">3</span>
+            <b>Flujo de efectivo</b>
+            <em>= Cobranza − salidas</em>
+            <span class="shwm-badge shwm-badge-green shwm-presu-wtag">Creada</span>
+          </div>
+        </div>
+        <div class="shwm-presu-seed">
+          <span class="shwm-presu-seed-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v6" /><path d="M12 21c-4.5 0-7-3-7-7 3.9 0 7 2.5 7 7z" fill="currentColor" fill-opacity="0.12"/><path d="M12 14c0-3.5 2.5-6 7-6 0 3.5-2.5 6-7 6z" fill="currentColor" fill-opacity="0.12"/></svg></span>
+          <span>Sembrado con tu promedio real de ventas · últimos 6 meses en Cord</span>
+          <b class="editorial">$338,326/mes</b>
+        </div>
+        <div class="shwm-foot"><span>Tú solo ajustas los supuestos</span><b>Fórmulas cruzadas ya cableadas</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'presupuestos' && index === 2 && (
+    <div class="shwm-frame">
+      <div class="shwm-app">
+        <div class="shwm-bar">
+          <span class="shwm-bar-t">Junta de resultados · Marzo 2026</span>
+          <span class="shwm-badge shwm-badge-red">−12% vs. plan de ventas</span>
+        </div>
+        <div class="shwm-presu-mg shwm-presu-mg-head">
+          <span>Concepto</span>
+          <span class="shwm-r">Presupuesto</span>
+          <span class="shwm-r">Real</span>
+          <span class="shwm-r">Variación</span>
+        </div>
+        <div class="shwm-presu-mg">
+          <b>Ventas</b>
+          <span class="shwm-r editorial shwm-mut">$180,000</span>
+          <span class="shwm-r editorial">$158,400</span>
+          <span class="shwm-r"><span class="shwm-presu-real down"><span class="shwm-presu-rp">−12%</span></span></span>
+        </div>
+        <div class="shwm-presu-mg">
+          <b>Cobranza recibida</b>
+          <span class="shwm-r editorial shwm-mut">$150,000</span>
+          <span class="shwm-r editorial">$147,000</span>
+          <span class="shwm-r"><span class="shwm-presu-real down"><span class="shwm-presu-rp">−2%</span></span></span>
+        </div>
+        <div class="shwm-presu-mg">
+          <b>Nuevos clientes</b>
+          <span class="shwm-r editorial shwm-mut">8</span>
+          <span class="shwm-r editorial">11</span>
+          <span class="shwm-r"><span class="shwm-presu-real up"><span class="shwm-presu-rp">+38%</span></span></span>
+        </div>
+        <div class="shwm-alert-strip">
+          <span class="shwm-alert-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 20h20L12 3z" fill="currentColor" fill-opacity="0.12"/><path d="M12 10v4M12 17.5v.01" stroke-linecap="round"/></svg></span>
+          <span>Vamos 12% abajo en ventas — 2 obras se pospusieron a abril. <b>La cobranza aguanta y el pipeline nuevo crece 38%.</b></span>
+        </div>
+        <div class="shwm-foot"><span>Opiniones fuera · la junta decide con evidencia</span><b>Cada cifra con su real</b></div>
+      </div>
+    </div>
+  )}
+
 </div>
 
 <style>
@@ -1715,6 +1825,49 @@ const { slug, index } = Astro.props as { slug: string; index: number };
   .shwm-sign-hash-lbl { display: block; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: #a3adba; margin-bottom: 6px; }
   .shwm-sign-hash code { display: block; font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.74rem; color: #2563eb; word-break: break-all; line-height: 1.5; }
   .shwm-sign-verify { display: inline-flex; align-items: center; gap: 8px; font-size: 0.76rem; color: #059669; font-weight: 600; }
+
+  /* ══════════════════ PRESUPUESTOS (shwm-presu-*) ══════════════════ */
+  .shwm-presu-g { display: grid; grid-template-columns: 1.85fr 1fr 1fr 1fr; gap: 14px; align-items: start; padding: 14px 22px; border-bottom: 1px solid rgba(10,25,47,0.05); }
+  .shwm-presu-g:last-of-type { border-bottom: none; }
+  .shwm-presu-g-head { padding-top: 6px; padding-bottom: 9px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+  .shwm-presu-g-head span { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #a3adba; }
+  .shwm-presu-calc { background: rgba(37,99,235,0.035); border-radius: 10px; margin: 2px 8px; padding-left: 12px; padding-right: 12px; }
+  .shwm-presu-concept { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .shwm-presu-concept > b { font-size: 0.85rem; color: #0f172a; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+  .shwm-presu-tag { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #64748b; background: rgba(10,25,47,0.05); border: 1px solid rgba(10,25,47,0.09); padding: 2px 8px; border-radius: 100px; align-self: flex-start; }
+  .shwm-presu-desc { font-size: 0.64rem; color: #94a3b8; font-family: var(--font-mono, ui-monospace, monospace); letter-spacing: -0.2px; white-space: nowrap; }
+  .shwm-presu-real { font-size: 0.6rem; }
+  .shwm-fx { font-size: 0.58rem; font-weight: 800; color: #2563eb; background: rgba(37,99,235,0.09); border: 1px solid rgba(37,99,235,0.2); padding: 1px 6px; border-radius: 5px; font-style: italic; }
+  .shwm-presu-c { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; text-align: right; }
+  .shwm-presu-c > b { font-size: 0.85rem; color: #0f172a; font-weight: 600; }
+  .shwm-presu-real { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 0.62rem; font-weight: 700; padding: 3px 8px; border-radius: 100px; }
+  .shwm-presu-rp { font-weight: 800; }
+  .shwm-presu-real.up { background: rgba(16,185,129,0.09); border: 1px solid rgba(16,185,129,0.22); }
+  .shwm-presu-real.up span { color: #059669; }
+  .shwm-presu-real.down { background: rgba(220,38,38,0.07); border: 1px solid rgba(220,38,38,0.2); }
+  .shwm-presu-real.down span { color: #dc2626; }
+
+  /* tab 2 — asistente / cascada de 3 cédulas */
+  .shwm-presu-wiz { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: stretch; gap: 0; padding: 26px 20px 18px; }
+  .shwm-presu-wcard { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; background: #f8fafc; border: 1px solid rgba(10,25,47,0.07); border-radius: 14px; padding: 15px 16px; position: relative; }
+  .shwm-presu-wnum { width: 26px; height: 26px; border-radius: 8px; background: #0a192f; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.76rem; font-weight: 800; margin-bottom: 5px; }
+  .shwm-presu-wcard b { font-size: 0.88rem; color: #0f172a; font-weight: 700; }
+  .shwm-presu-wcard em { font-style: normal; font-size: 0.7rem; color: #94a3b8; font-family: var(--font-mono, ui-monospace, monospace); }
+  .shwm-presu-wtag { margin-top: 8px; }
+  .shwm-presu-seed { display: flex; align-items: center; gap: 12px; margin: 4px 20px 6px; padding: 13px 16px; background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.18); border-radius: 12px; font-size: 0.8rem; color: #475569; }
+  .shwm-presu-seed b { margin-left: auto; font-size: 0.92rem; color: #0f172a; font-weight: 700; white-space: nowrap; }
+  .shwm-presu-seed-ico { width: 30px; height: 30px; color: #059669; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+  .shwm-presu-seed-ico svg { width: 22px; height: 22px; }
+
+  /* tab 3 — junta con evidencia */
+  .shwm-presu-mg { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 14px; align-items: center; padding: 14px 20px; border-bottom: 1px solid rgba(10,25,47,0.05); }
+  .shwm-presu-mg:last-of-type { border-bottom: none; }
+  .shwm-presu-mg-head { padding-top: 8px; padding-bottom: 10px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+  .shwm-presu-mg-head span { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #a3adba; }
+  .shwm-presu-mg > b { font-size: 0.9rem; color: #0f172a; font-weight: 600; }
+  .shwm-presu-mg .shwm-r { justify-self: end; }
+  .shwm-presu-mg .editorial { font-size: 0.9rem; color: #0f172a; font-weight: 600; }
+  .shwm-presu-mg .editorial.shwm-mut { color: #94a3b8; font-weight: 500; }
 
   /* ══════════════════ RESPONSIVE ══════════════════ */
   @media (max-width: 960px) {

@@ -992,6 +992,89 @@ export const FEATURES: Feature[] = [
         ],
         cta: { titulo: 'Cierra acuerdos con total transparencia.', sub: 'Evita los "yo te dije" y formaliza tus ventas.' },
     },
+    {
+        slug: 'presupuestos',
+        nav: 'Presupuestos',
+        eyebrow: 'PLANEACIÓN FINANCIERA',
+        titulo: 'El presupuesto que se compara solo contra la realidad.',
+        sub: 'Planea tus ventas, cobranza y efectivo por mes — y Cord pone debajo de cada cifra lo que realmente vendiste y cobraste. Sabes si vas arriba o abajo del plan sin capturar nada.',
+        metaTitle: 'Presupuestos con comparación automática contra ventas reales — Cord',
+        metaDescription: 'Cédulas presupuestales conectadas a tus ventas y cobranza reales: presupuesto vs. real mes a mes, plan financiero completo en un clic y calculadoras de VPN, EOQ y variaciones.',
+        plan: 'Gratis para probar · completo desde Profesional',
+        stats: [
+            { valor: '1', countup: 1, suffix: ' clic', label: 'para crear tu plan Ventas → Cobranza → Efectivo conectado' },
+            { valor: '0', countup: 0, suffix: ' capturas', label: 'para comparar contra tus ventas y cobranza reales' },
+            { valor: '3', countup: 3, label: 'calculadoras de decisión: VPN/TIR, inventario (EOQ) y variaciones' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'PRESUPUESTO VS. REAL',
+                titulo: 'Excel no sabe cuánto vendiste. Cord sí.',
+                copy: 'Conecta una fila de tu presupuesto a tus datos reales — ventas cerradas, unidades o cobranza recibida — y debajo de cada mes aparece lo que realmente pasó, con la variación en verde o rojo. El presupuesto se audita solo.',
+                bullets: [
+                    'Ventas cerradas, unidades vendidas o cobranza recibida, por mes',
+                    'Variación contra el plan calculada automáticamente',
+                    'Cero captura doble: los datos ya viven en Cord',
+                ],
+            },
+            {
+                eyebrow: 'PLAN COMPLETO EN UN CLIC',
+                titulo: 'Ventas, cobranza y efectivo, ya conectados.',
+                copy: 'El asistente crea la cascada completa — cuánto vas a vender, cuándo te van a pagar de verdad y si te alcanza la caja — con las fórmulas cruzadas ya cableadas y sembrada con tu promedio real de ventas de los últimos meses.',
+                bullets: [
+                    'Cobranza escalonada (40/30/30) ajustable a tu patrón real',
+                    'Saldo de caja mes a mes con entradas y salidas',
+                    'Producción y compras de materia prima opcionales',
+                ],
+            },
+            {
+                eyebrow: 'DECISIONES CON NÚMEROS',
+                titulo: 'Calculadoras que responden preguntas caras.',
+                copy: '¿Conviene esta inversión? ¿Cuánto inventario pedir? ¿Por qué el costo real superó al estándar? VPN/TIR con periodo de recuperación, punto óptimo de inventario (EOQ) y análisis de variaciones — con escenarios que guardas y vuelves a abrir.',
+                bullets: [
+                    'VPN, TIR y periodo de recuperación con asistente de flujo',
+                    'Cantidad económica de pedido y punto de reorden',
+                    'Variación de precio y cantidad, favorable o desfavorable',
+                ],
+            },
+        ],
+        showcase: [
+            {
+                eyebrow: 'EL PLAN QUE NO SE ABANDONA',
+                titulo: 'Casi todos los presupuestos mueren en enero. El tuyo se revisa solo cada mes.',
+                copy: 'Un Excel de presupuesto se abandona porque compararlo contra la realidad cuesta horas. En Cord la comparación ya está hecha cuando abres la página.',
+            },
+            {
+                eyebrow: 'ARRANQUE SIN HOJA EN BLANCO',
+                titulo: 'Tu primer plan financiero completo, listo antes de que se enfríe el café.',
+                copy: 'El asistente arma Ventas → Cobranza → Efectivo con fórmulas cruzadas y tu historial real como punto de partida. Tú solo ajustas los supuestos.',
+            },
+            {
+                eyebrow: 'LA JUNTA CON EVIDENCIA',
+                titulo: '"Vamos 12% abajo del plan de ventas" — dicho con datos, no con corazonadas.',
+                copy: 'Cada celda presupuestada muestra el real del mes y su variación. La conversación del lunes pasa de opiniones a decisiones.',
+            },
+        ],
+        faqs: [
+            {
+                q: '¿Qué significa "Presupuesto vs. Real"?',
+                a: 'Conectas una fila de tu cédula a una fuente de datos real de tu cuenta — ventas cerradas, unidades vendidas o cobranza recibida — y Cord muestra debajo de cada mes presupuestado lo que realmente ocurrió, con el porcentaje de variación. Usa etiquetas de periodo como "Ene 2026" para que cada columna se empate con su mes.',
+            },
+            {
+                q: '¿Necesito saber de contabilidad de costos para usarlo?',
+                a: 'No. Las plantillas traen las fórmulas clásicas ya armadas (Producción = Ventas + Inventario final deseado − Inventario inicial, cobranza escalonada, saldo de caja) y el asistente de plan completo crea la cascada conectada por ti. Si sabes de costos, el constructor de fórmulas te da control total: sumas, factores en cadena, multiplicación entre filas y referencias a periodos anteriores.',
+            },
+            {
+                q: '¿Qué incluye el plan gratis?',
+                a: 'El plan Gratis incluye 1 cédula y Starter 3, para que pruebes el editor con tus números. Desde Profesional obtienes cédulas ilimitadas, el plan financiero completo en un clic, la comparación contra tus datos reales y las herramientas de análisis (VPN/TIR, EOQ y variaciones).',
+            },
+            {
+                q: '¿Es un sistema de inventarios?',
+                a: 'No — es una herramienta de planeación. Los inventarios inicial y final son supuestos que tú defines por periodo, no saldos rastreados por movimientos de almacén. Para decidir cuánto pedir y cuándo, la calculadora de punto óptimo de inventario (EOQ) te da la cantidad económica de pedido y el punto de reorden.',
+            },
+        ],
+        cta: { titulo: 'Deja de planear a ciegas.', sub: 'Crea tu primera cédula gratis — y conecta el plan a tu realidad desde Profesional.' },
+    },
 ];
 
 export const findFeature = (slug: string) => FEATURES.find(f => f.slug === slug);

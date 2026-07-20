@@ -648,6 +648,96 @@ const { slug, index } = Astro.props;
       </div>
     </div>
   )}
+
+  {slug === 'presupuestos' && index === 0 && (
+    <div class="bm-stage bm-presu-m0">
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Presupuesto de Ventas · vs. Real</span>
+          <span class="bm-app-badge bm-badge-green">Conectada</span>
+        </div>
+        <div class="bm-presu-body">
+          <div class="bm-g bm-presu-g4 bm-g-head"><span>Concepto</span><span class="bm-r">Ene</span><span class="bm-r">Feb</span><span class="bm-r">Mar</span></div>
+          <div class="bm-g bm-presu-g4">
+            <span class="bm-presu-name"><span class="bm-presu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></span><b>Ventas cerradas</b></span>
+            <div class="bm-presu-c"><b class="editorial">$300,000</b><span class="bm-presu-real up"><span>real $338,325</span><span class="bm-presu-rp">+13%</span></span></div>
+            <div class="bm-presu-c"><b class="editorial">$319,000</b><span class="bm-presu-real down"><span>real $310,000</span><span class="bm-presu-rp">−3%</span></span></div>
+            <div class="bm-presu-c"><b class="editorial">$346,400</b><span class="bm-presu-real up"><span>real $372,400</span><span class="bm-presu-rp">+8%</span></span></div>
+          </div>
+          <div class="bm-g bm-presu-g4">
+            <span class="bm-presu-name"><span class="bm-presu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></span><b>Cobranza recibida</b></span>
+            <div class="bm-presu-c"><b class="editorial">$270,000</b><span class="bm-presu-real up"><span>real $291,500</span><span class="bm-presu-rp">+8%</span></span></div>
+            <div class="bm-presu-c"><b class="editorial">$305,000</b><span class="bm-presu-real down"><span>real $298,000</span><span class="bm-presu-rp">−2%</span></span></div>
+            <div class="bm-presu-c"><b class="editorial">$330,000</b><span class="bm-presu-real up"><span>real $351,000</span><span class="bm-presu-rp">+6%</span></span></div>
+          </div>
+          <div class="bm-g bm-presu-g4">
+            <span class="bm-presu-name"><span class="bm-presu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></span><b>Unidades vendidas</b></span>
+            <div class="bm-presu-c"><b class="editorial">1,200 pz</b><span class="bm-presu-real up"><span>real 1,340</span><span class="bm-presu-rp">+12%</span></span></div>
+            <div class="bm-presu-c"><b class="editorial">1,280 pz</b><span class="bm-presu-real down"><span>real 1,255</span><span class="bm-presu-rp">−2%</span></span></div>
+            <div class="bm-presu-c"><b class="editorial">1,380 pz</b><span class="bm-presu-real up"><span>real 1,470</span><span class="bm-presu-rp">+7%</span></span></div>
+          </div>
+        </div>
+        <div class="bm-app-foot"><span>Los datos reales ya viven en Cord</span><b class="bm-tg bm-tg-green">+5.8% vs. plan</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'presupuestos' && index === 1 && (
+    <div class="bm-stage bm-presu-m1">
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Nuevo plan financiero</span>
+          <span class="bm-app-badge bm-badge-blue">Asistente</span>
+        </div>
+        <div class="bm-presu-opts">
+          <div class="bm-kv bm-presu-opt-sel">
+            <span class="bm-presu-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <div style="flex:1;min-width:0;"><b style="display:block;font-size:0.82rem;">Plan financiero completo <span class="bm-tg bm-tg-blue" style="margin-left:4px;">Recomendado</span></b><span class="bm-mut" style="font-size:0.68rem;">Ventas · Cobranza · Efectivo, ya conectados</span></div>
+          </div>
+          <div class="bm-kv">
+            <span class="bm-presu-check off"></span>
+            <div style="flex:1;min-width:0;"><b style="display:block;font-size:0.82rem;">Solo Presupuesto de Ventas</b><span class="bm-mut" style="font-size:0.68rem;">Empieza con una cédula</span></div>
+          </div>
+        </div>
+        <div class="bm-presu-cascade-h">Se crearán 3 cédulas conectadas</div>
+        <div class="bm-steps">
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Presupuesto de Ventas</b><span>base del plan</span></div></div>
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Cobranza (40/30/30)</b><span>= Ventas escalonadas por mes</span></div></div>
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Flujo de efectivo</b><span>= Cobranza − salidas</span></div></div>
+        </div>
+        <div class="bm-app-foot"><span>Sembrado con tu promedio real</span><b class="editorial">$338,326/mes</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'presupuestos' && index === 2 && (
+    <div class="bm-stage bm-presu-m2">
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Herramientas · Evaluación de proyecto</span>
+          <span class="bm-app-badge bm-badge-green">VPN / TIR</span>
+        </div>
+        <div class="bm-presu-sect">Supuestos</div>
+        <div class="bm-presu-tiles">
+          <div class="bm-stat"><span>Inversión</span><b class="editorial">$100,000</b></div>
+          <div class="bm-stat"><span>Tasa</span><b class="editorial">15%</b></div>
+          <div class="bm-stat"><span>Horizonte</span><b class="editorial">6 años</b></div>
+        </div>
+        <div class="bm-presu-sect">Resultados</div>
+        <div class="bm-presu-tiles">
+          <div class="bm-stat bm-presu-res"><span>VPN</span><b class="editorial">$55,163.79</b></div>
+          <div class="bm-stat bm-presu-res"><span>TIR</span><b class="editorial">32.7%</b></div>
+          <div class="bm-stat"><span>Recuperación</span><b class="editorial">2.44 años</b></div>
+        </div>
+        <div class="bm-kv bm-presu-var">
+          <div style="flex:1;min-width:0;"><b style="display:block;font-size:0.8rem;">Variación de costo · Materia prima</b><span class="bm-mut" style="font-size:0.68rem;">estándar vs. real</span></div>
+          <span class="bm-tg bm-tg-green" style="margin-right:8px;">Precio −$480 F</span>
+          <span class="bm-tg bm-tg-red">Cantidad +$1,500 D</span>
+        </div>
+        <div class="bm-app-foot"><span>Escenarios que guardas y vuelves a abrir</span><b>Total +$1,020 D</b></div>
+      </div>
+    </div>
+  )}
 </div>
 <style>
   /* 
@@ -1023,4 +1113,34 @@ const { slug, index } = Astro.props;
     .bm-float-top-left, .bm-float-bottom-left { left: 0; transform: translate(-5%, -35%); }
     .bm-float-bottom-right, .bm-float-bottom-left { transform: translate(5%, 35%); }
   }
+
+  /* ══════════════ PRESUPUESTOS (bm-presu-*) ══════════════ */
+  .bm-presu-body { padding: 4px 8px 8px; }
+  .bm-presu-g4 { grid-template-columns: 1.45fr 1fr 1fr 1fr; align-items: start; }
+  .bm-presu-name { display: flex; align-items: flex-start; gap: 7px; min-width: 0; padding-top: 1px; }
+  .bm-presu-name b { font-size: 0.73rem; color: #0f172a; font-weight: 600; white-space: normal; line-height: 1.25; }
+  .bm-presu-link { width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: #059669; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); }
+  .bm-presu-link svg { width: 11px; height: 11px; }
+  .bm-presu-c { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; text-align: right; }
+  .bm-presu-c > b { font-size: 0.78rem; color: #0f172a; font-weight: 600; }
+  .bm-presu-real { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 0.54rem; font-weight: 700; padding: 2px 5px; border-radius: 100px; }
+  .bm-presu-rp { font-weight: 800; }
+  .bm-presu-real.up { background: rgba(16,185,129,0.09); border: 1px solid rgba(16,185,129,0.22); }
+  .bm-presu-real.up span { color: #059669; }
+  .bm-presu-real.down { background: rgba(220,38,38,0.07); border: 1px solid rgba(220,38,38,0.2); }
+  .bm-presu-real.down span { color: #dc2626; }
+
+  /* m1 — asistente / plan completo */
+  .bm-presu-opts { padding: 4px 6px 2px; }
+  .bm-presu-opt-sel { background: rgba(37,99,235,0.05); border: 1px solid rgba(37,99,235,0.18); border-radius: 12px; margin-bottom: 6px; }
+  .bm-presu-check { width: 22px; height: 22px; border-radius: 7px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: #fff; background: #0a192f; }
+  .bm-presu-check svg { width: 13px; height: 13px; }
+  .bm-presu-check.off { background: transparent; border: 1.5px solid rgba(10,25,47,0.18); }
+  .bm-presu-cascade-h { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #a3adba; padding: 8px 16px 2px; }
+
+  /* m2 — calculadoras de decisión */
+  .bm-presu-sect { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #a3adba; padding: 8px 14px 4px; }
+  .bm-presu-tiles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 2px 12px 6px; }
+  .bm-presu-res { background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.18); }
+  .bm-presu-var { border-top: 1px solid rgba(10,25,47,0.05); margin-top: 2px; }
 </style>

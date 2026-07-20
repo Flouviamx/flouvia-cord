@@ -420,6 +420,12 @@ const SLIDES = {
     { label: '03', title: 'Login con Google o Microsoft', sub: 'Tu equipo entra con las credenciales del dominio corporativo. Si alguien sale de la empresa, lo desactivas en Google Workspace y pierde acceso a Cord de inmediato.', icon: 'shield' },
     { label: '04', title: '100% de las acciones registradas', sub: 'Audit log inmutable: quién cotizó, quién aprobó, quién modificó un precio y cuándo. Trazabilidad total para auditorías, disputas y cumplimiento.', icon: 'receipt' },
   ],
+  presupuestos: [
+    { label: '01', title: 'El presupuesto se audita solo', sub: 'Conecta una fila a tus ventas o cobranza reales y debajo de cada mes aparece lo que de verdad pasó, con la variación en verde o rojo. Sin capturar nada.', icon: 'chart' },
+    { label: '02', title: 'Plan completo en un clic', sub: 'Ventas → Cobranza → Efectivo, ya conectados con fórmulas cruzadas y sembrados con tu promedio real de ventas. Tú solo ajustas los supuestos.', icon: 'zap' },
+    { label: '03', title: 'Fórmulas de contador, sin serlo', sub: 'Plantillas con la cascada clásica de costos ya armada: producción, compras, cobranza escalonada 40/30/30 y saldo de caja. Editable fila por fila.', icon: 'calculator' },
+    { label: '04', title: 'Decisiones con números, no corazonadas', sub: 'VPN, TIR y periodo de recuperación para inversiones; EOQ para inventario; variaciones estándar vs. real. Escenarios que guardas y vuelves a abrir.', icon: 'trending' },
+  ],
   negociacion: [
     { label: '01', title: 'Negocia producto por producto', sub: 'El cliente aprueba 9 artículos y hace contraoferta solo en 1. Sin rechazar toda la cotización — tú aceptas, ajustas o contrapropones y la venta sigue activa.', icon: 'tag' },
     { label: '02', title: 'El historial que no miente', sub: 'Cada versión revisada genera un snapshot inmutable: v1, v2, v3. Si el cliente dice "yo aprobé otra cosa", tienes el registro exacto de quién, cuándo y qué aprobó.', icon: 'git_branch' },

@@ -361,7 +361,10 @@ export function parsePeriodoMes(label: string, hoy: Date = new Date()): { y: num
     if (y4) return { y: Number(y4[1]), m };
     const y2 = norm.match(/[^0-9](\d{2})$/) ?? norm.match(/^[a-z]+\s*'?(\d{2})$/);
     if (y2) return { y: 2000 + Number(y2[1]), m };
-    return { y: hoy.getFullYear(), m };
+    // Sin año explícito → null. Asumir el año en curso mostraría datos reales del
+    // año EQUIVOCADO en cédulas viejas ("Ene" creada en 2026, vista en 2027) sin
+    // ninguna advertencia — mejor no mostrar real que mostrar el real incorrecto.
+    return null;
 }
 
 // Serie real por fila conectada: reales[fila_id][periodo_idx] = número o null.
@@ -410,16 +413,35 @@ export async function realesParaCedula(
 }
 
 // ── Duplicar cédula ──────────────────────────────────────────────────────
-// Copia filas + valores a una cédula nueva ("copia 2026 → 2027"). Las fórmulas
-// que referencian filas de la MISMA cédula se remapean a las filas nuevas; las
-// referencias cruzadas a OTRAS cédulas se conservan tal cual.
-export async function duplicateCedula(orgId: string, cedulaId: string, nombre?: string): Promise<string | null> {
+// Copia filas + valores a una cédula nueva. Las fórmulas que referencian filas
+// de la MISMA cédula se remapean a las filas nuevas; las referencias cruzadas a
+// OTRAS cédulas se conservan tal cual. Con `shiftYears` (ej. 1, "copiar al año
+// siguiente") los años de 4 dígitos en periodos y nombre se recorren — crucial
+// para que "Presupuesto vs. Real" no empate la copia con los meses del año viejo.
+const shiftYearsInLabel = (label: string, n: number) =>
+    label.replace(/\b(\d{4})\b/g, (_, y) => String(Number(y) + n));
+
+export async function duplicateCedula(
+    orgId: string,
+    cedulaId: string,
+    nombre?: string,
+    opts: { shiftYears?: number } = {},
+): Promise<string | null> {
     const src = await getCedula(orgId, cedulaId);
     if (!src) return null;
+    const n = Math.max(0, Math.min(10, Number(opts.shiftYears) || 0));
+    const periodos = n ? src.periodos.map((p) => shiftYearsInLabel(p, n)) : src.periodos;
+    let base = nombre?.trim();
+    if (!base) {
+        // Con shift: "Presupuesto 2026" → "Presupuesto 2027"; sin año en el nombre
+        // (o sin shift) → "(copia)".
+        const shifted = n ? shiftYearsInLabel(src.nombre, n) : src.nombre;
+        base = shifted !== src.nombre ? shifted : `${src.nombre} (copia)`;
+    }
     const nuevoId = await createCedula(orgId, {
         tipo: src.tipo,
-        nombre: (nombre || `${src.nombre} (copia)`).slice(0, 120),
-        periodos: src.periodos,
+        nombre: base.slice(0, 120),
+        periodos,
     });
     const idMap: Record<string, string> = {};
     // 1ª pasada: crear todas las filas (las fórmulas se remapean después, cuando

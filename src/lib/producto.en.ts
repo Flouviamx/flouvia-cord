@@ -950,6 +950,89 @@ export const FEATURES_EN: Feature[] = [
         ],
         cta: { titulo: 'Close deals with full transparency.', sub: 'Prevent misunderstandings and formalize your sales.' },
     },
+    {
+        slug: 'presupuestos',
+        nav: 'Budgets',
+        eyebrow: 'FINANCIAL PLANNING',
+        titulo: 'The budget that checks itself against reality.',
+        sub: 'Plan your sales, collections and cash by month — and Cord puts what you actually sold and collected under every figure. You know if you are above or below plan without typing a thing.',
+        metaTitle: 'Budgets with automatic comparison against real sales — Cord',
+        metaDescription: 'Budget schedules connected to your real sales and collections: budget vs. actuals month by month, a one-click full financial plan, and NPV, EOQ and variance calculators.',
+        plan: 'Free to try · full from Professional',
+        stats: [
+            { valor: '1', countup: 1, suffix: ' click', label: 'to create your connected Sales → Collections → Cash plan' },
+            { valor: '0', countup: 0, suffix: ' data entry', label: 'to compare against your real sales and collections' },
+            { valor: '3', countup: 3, label: 'decision calculators: NPV/IRR, inventory (EOQ) and variances' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'BUDGET VS. ACTUALS',
+                titulo: "Excel doesn't know what you sold. Cord does.",
+                copy: 'Connect a budget row to your real data — closed sales, units or collections received — and under every month you see what actually happened, with the variance in green or red. The budget audits itself.',
+                bullets: [
+                    'Closed sales, units sold or collections received, by month',
+                    'Variance against plan calculated automatically',
+                    'Zero double entry: the data already lives in Cord',
+                ],
+            },
+            {
+                eyebrow: 'FULL PLAN IN ONE CLICK',
+                titulo: 'Sales, collections and cash, already connected.',
+                copy: 'The wizard builds the full cascade — how much you will sell, when you will actually get paid, and whether the cash holds up — with cross-schedule formulas pre-wired and seeded with your real average sales from recent months.',
+                bullets: [
+                    'Staggered collections (40/30/30) adjustable to your real pattern',
+                    'Month-by-month cash balance with inflows and outflows',
+                    'Optional production and raw-material purchase schedules',
+                ],
+            },
+            {
+                eyebrow: 'DECISIONS WITH NUMBERS',
+                titulo: 'Calculators that answer expensive questions.',
+                copy: 'Is this investment worth it? How much inventory should I order? Why did actual cost beat standard? NPV/IRR with payback period, economic order quantity (EOQ) and variance analysis — with scenarios you can save and reopen.',
+                bullets: [
+                    'NPV, IRR and payback period with a cash-flow assistant',
+                    'Economic order quantity and reorder point',
+                    'Price and quantity variance, favorable or unfavorable',
+                ],
+            },
+        ],
+        showcase: [
+            {
+                eyebrow: 'THE PLAN THAT DOES NOT DIE',
+                titulo: 'Most budgets are abandoned by February. Yours reviews itself every month.',
+                copy: 'A budget spreadsheet gets abandoned because comparing it to reality takes hours. In Cord the comparison is already done when you open the page.',
+            },
+            {
+                eyebrow: 'NO BLANK-SHEET START',
+                titulo: 'Your first full financial plan, ready before your coffee cools.',
+                copy: 'The wizard builds Sales → Collections → Cash with cross-wired formulas and your real history as the starting point. You just adjust the assumptions.',
+            },
+            {
+                eyebrow: 'MEETINGS WITH EVIDENCE',
+                titulo: '"We are 12% below the sales plan" — said with data, not hunches.',
+                copy: 'Every budgeted cell shows the actual for that month and its variance. Monday\'s conversation goes from opinions to decisions.',
+            },
+        ],
+        faqs: [
+            {
+                q: 'What does "Budget vs. Actuals" mean?',
+                a: 'You connect a row of your schedule to a real data source in your account — closed sales, units sold or collections received — and Cord shows under each budgeted month what actually happened, with the variance percentage. Use period labels like "Jan 2026" so each column matches its month.',
+            },
+            {
+                q: 'Do I need a cost-accounting background to use it?',
+                a: 'No. Templates ship with the classic formulas pre-built (Production = Sales + desired ending inventory − beginning inventory, staggered collections, cash balance) and the full-plan wizard creates the connected cascade for you. If you do know cost accounting, the formula builder gives you full control: sums, chained factors, row-by-row multiplication and references to prior periods.',
+            },
+            {
+                q: 'What does the free plan include?',
+                a: 'The Free plan includes 1 schedule and Starter 3, so you can try the editor with your numbers. From Professional you get unlimited schedules, the one-click full financial plan, the comparison against your real data, and the analysis tools (NPV/IRR, EOQ and variances).',
+            },
+            {
+                q: 'Is this an inventory system?',
+                a: 'No — it is a planning tool. Beginning and ending inventory are assumptions you set per period, not balances tracked from warehouse movements. To decide how much to order and when, the optimal inventory calculator (EOQ) gives you the economic order quantity and the reorder point.',
+            },
+        ],
+        cta: { titulo: 'Stop planning blind.', sub: 'Create your first schedule for free — and connect the plan to reality from Professional.' },
+    },
 ];
 
 export const findFeatureEn = (slug: string) => FEATURES_EN.find(f => f.slug === slug);

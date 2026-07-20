@@ -48,6 +48,8 @@ export const ui = {
     'nav.mega.prod.10.desc': 'Umbrales y aprobación gerencial',
     'nav.mega.prod.11.title': 'Roles y equipo',
     'nav.mega.prod.11.desc': 'Permisos B2B y multi-empresa',
+    'nav.mega.prod.12.title': 'Presupuestos',
+    'nav.mega.prod.12.desc': 'Plan vs. real contra tus ventas',
     'nav.mega.prod.foot': 'Lee nuestro Blog',
 
     'nav.mega.sol.1.title': 'Distribuidoras y mayoristas',
@@ -297,6 +299,8 @@ export const ui = {
     'nav.mega.prod.10.desc': 'Thresholds and approvals',
     'nav.mega.prod.11.title': 'Roles & team',
     'nav.mega.prod.11.desc': 'B2B permissions and multi-entity',
+    'nav.mega.prod.12.title': 'Budgets',
+    'nav.mega.prod.12.desc': 'Plan vs. actuals against your sales',
     'nav.mega.prod.foot': 'Read our Blog',
 
     'nav.mega.sol.1.title': 'Distributors & Wholesalers',

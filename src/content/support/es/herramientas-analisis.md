@@ -2,13 +2,13 @@
 title: "Herramientas de análisis: proyectos (VPN/TIR), inventario y variaciones"
 description: "Calculadoras de decisión con escenarios guardables: evaluación de proyecto, punto óptimo de inventario (EOQ) y análisis de variaciones estándar vs. real."
 category: "Presupuestos y análisis"
-order: 2
+order: 3
 ---
 
 Además de las cédulas presupuestales, la sección **Presupuestos** incluye una pestaña de **Herramientas**: tres calculadoras de decisión con resultados en vivo y escenarios que puedes guardar y volver a abrir.
 
 > [!NOTE]
-> Las Herramientas requieren el permiso de **analítica**, igual que las cédulas. Solo se guardan los datos que capturas; los resultados se calculan al momento.
+> Las Herramientas requieren el permiso de **analítica** y el plan **Profesional** o superior. Solo se guardan los datos que capturas; los resultados se calculan al momento.
 
 ## Evaluación de proyecto (VPN)
 

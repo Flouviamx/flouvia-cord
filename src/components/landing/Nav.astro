@@ -78,7 +78,11 @@ const { darkHero = false } = Astro.props;
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16" stroke-opacity="0.5" /><rect x="5" y="13" width="4" height="7" rx="1" fill="currentColor" fill-opacity="0.15" /><rect x="10" y="7" width="4" height="13" rx="1" fill="currentColor" fill-opacity="0.3" /><rect x="15" y="11" width="4" height="9" rx="1" fill="currentColor" fill-opacity="0.15" /><rect x="5" y="13" width="4" height="7" rx="1" /><rect x="10" y="7" width="4" height="13" rx="1" /><rect x="15" y="11" width="4" height="9" rx="1" /></svg></span>
                                     <span class="mega-copy"><b>{t("nav.mega.prod.9.title")}</b><i>{t("nav.mega.prod.9.desc")}</i></span>
                                 </a>
-                                
+                                <a href={l("/producto/presupuestos")} class="mega-item">
+                                    <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" fill="currentColor" fill-opacity="0.12" /><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18" stroke-opacity="0.5" /><path d="M9 9v11" stroke-opacity="0.5" /><path d="M12.5 16.5 15 14l2 1.5 2.5-3" /></svg></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.prod.12.title")}</b><i>{t("nav.mega.prod.12.desc")}</i></span>
+                                </a>
+
                                 <div class="mega-divider" style="margin-top: 8px;">{isEn ? 'Invoicing & Ops' : 'Facturación y Operación'}</div>
                                 <a href={l("/producto/cfdi")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12" /><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" stroke-opacity="0.5" /><line x1="16" y1="13" x2="8" y2="13" stroke-opacity="0.5" /><line x1="16" y1="17" x2="8" y2="17" stroke-opacity="0.5" /><polyline points="10 9 9 9 8 9" stroke-opacity="0.5" /></svg></span>
@@ -308,6 +312,10 @@ const { darkHero = false } = Astro.props;
                             <a href={l("/producto/finanzas")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16" stroke-opacity="0.5" /><rect x="5" y="13" width="4" height="7" rx="1" fill="currentColor" fill-opacity="0.15" /><rect x="10" y="7" width="4" height="13" rx="1" fill="currentColor" fill-opacity="0.3" /><rect x="15" y="11" width="4" height="9" rx="1" fill="currentColor" fill-opacity="0.15" /><rect x="5" y="13" width="4" height="7" rx="1" /><rect x="10" y="7" width="4" height="13" rx="1" /><rect x="15" y="11" width="4" height="9" rx="1" /></svg></span>
                                 <span class="m-sub-copy"><b>{t("nav.mega.prod.9.title")}</b><i>{t("nav.mega.prod.9.desc")}</i></span>
+                            </a>
+                            <a href={l("/producto/presupuestos")} class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" fill="currentColor" fill-opacity="0.12" /><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18" stroke-opacity="0.5" /><path d="M9 9v11" stroke-opacity="0.5" /><path d="M12.5 16.5 15 14l2 1.5 2.5-3" /></svg></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.prod.12.title")}</b><i>{t("nav.mega.prod.12.desc")}</i></span>
                             </a>
 
                             <div class="m-sub-divider" style="margin-top: 8px;">{isEn ? 'Invoicing & Ops' : 'Facturación y Operación'}</div>

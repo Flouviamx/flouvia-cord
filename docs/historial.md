@@ -8,6 +8,101 @@
 
 ## Estado actual (jun 2026)
 
+✅ **Presupuestos v2 — landing `/producto/presupuestos` + soporte + roadmap + onboarding (jul 2026,
+   sesión posterior a la entrada de abajo)** — cableado externo del feature:
+   • **Página de producto NUEVA `/producto/presupuestos` (ES + EN):** entrada completa en
+     `producto.ts`/`producto.en.ts` (hero "El presupuesto que se compara solo contra la realidad",
+     3 blocks, 3 showcase tabs, 4 FAQs con FAQPage JSON-LD automático, plan "Gratis para probar ·
+     completo desde Profesional"). Mockups por el agente `mockup-builder` (murió por límite de
+     sesión a media pasada de pulido; se terminó a mano): hero `mk-presu-*` (grid de cédula con
+     pills de vs. Real que hacen count-up + pop vía GSAP — se le agregó el guard `!reduced` que
+     faltaba), 3 bento `bm-presu-*` en `BlockMockup.astro` (vs. Real / asistente de plan completo /
+     calculadoras VPN — se corrigió el wrap del concepto que el agente dejó anotado:
+     `white-space:normal` + pills más chicas), 3 escenas showcase en `ShowcaseMockup.astro`
+     (cédula vs. Real / cascada del wizard / "junta con evidencia"). Slides nuevos del
+     `ProductAccordion` (key `presupuestos`). Auditoría de clases usadas-vs-definidas corrida
+     (regla §4.6.5): sin huecos nuevos (las `bm-presu-mN`/`mk-presu` son hook classes sin estilo,
+     mismo patrón que `bm-appr-mN`). Verificado con Playwright contra el BUILD (regla del
+     proyecto): hero con bleed derecho + pills animadas, bento limpio, showcase denso.
+   • **Navegación:** megamenú Producto (desktop + móvil) y Footer, sección "Pagos y Finanzas",
+     con ícono duotone de spreadsheet+tendencia; claves i18n nuevas `nav.mega.prod.12.*` (ES/EN).
+     El sitemap la recoge solo (enumera FEATURES).
+   • **Soporte:** `presupuestos-cedulas.md` (ES/EN) reescrito a v2 (wizard, freemium, ƒx, Total,
+     + Periodo, duplicar con shift de año, límites actualizados — ya se pueden agregar periodos);
+     artículo NUEVO **`presupuesto-vs-real.md`** (ES/EN, order 2 — herramientas pasó a order 3)
+     documentando conexión de filas, empate por mes, futuro/etiquetas ilegibles → sin real, y el
+     atajo del wizard; `herramientas-analisis.md` (ES/EN) ganó la nota de plan Profesional.
+   • **Roadmap:** entrada `presupuestos-cedulas` (id 13) reescrita con secciones de vs. Real y
+     plan completo + disponibilidad freemium (ES/EN, sigue `live`).
+   • **Onboarding:** el paso `presupuestos` de `getSetupProgress()` cambió a "Crea tu primer
+     presupuesto" con el gancho de vs. Real (la detección `done` ya era correcta: ≥1 cédula o
+     análisis).
+   • **Pasada de exactitud de copy (self-audit, sin agente por el límite de sesión):** se corrigió
+     un "El 90% de los presupuestos muere en enero" (estadística inventada → "Casi todos…") y
+     "cobranza 40/30/30 **editable**" → "**ajustable**" en producto/roadmap/soporte (las fórmulas
+     no se editan en sitio — se reemplaza la fila; "Límites actuales" del artículo lo dice).
+   • Verificado: 2 builds limpios (ES + EN generan `/producto/presupuestos`), capturas Playwright
+     del build de hero/bento/showcase.
+
+✅ **Presupuestos v2 — "Presupuesto vs. Real" + wizard de plan completo + freemium (jul 2026)** —
+   pasada de producto pedida por André ("que todas las empresas lo necesiten y sea indispensable +
+   intuitivo"). Diagnóstico: las cédulas eran una hoja de cálculo aislada (más limitada que Excel);
+   lo que Excel no puede copiar es que Cord YA tiene los datos reales del negocio. Cuatro piezas:
+   • **Presupuesto vs. Real (killer feature, Pro+):** columna nueva `cedula_filas.fuente_real`
+     (`ventas_monto` | `ventas_unidades` | `cobranza_monto`, null = sin conectar). Una fila conectada
+     muestra bajo cada celda presupuestada el REAL del mes + pill de variación (verde si real ≥
+     presupuesto, rojo si abajo). Serie real en `getRealPorMes()` (queries.ts): ventas cerradas =
+     `status in (approved,paid,invoiced)` por mes de `coalesce(approved_at, created_at)` (MISMO
+     criterio que getAnalytics, para no divergir); cobranza = unión DISJUNTA de `cotizacion_cobros`
+     pagados (por `paid_at`) + cotizaciones pagadas SIN ningún cobro pagado (pago manual legacy,
+     excluyendo `es_recurrente`) — mismo patrón anti-doble-conteo que getCobros. El mapeo columna→mes
+     lo hace `parsePeriodoMes()` (cedulas.ts): lee "Ene 2026"/"Enero 2026"/"2026-01"/"01/2026"/"Sep '26";
+     etiqueta sin mes reconocible (ej. "Q1") O SIN AÑO explícito → null (⚠️ decisión de auditoría: se
+     intentó asumir el año en curso para "Ene" y se revirtió — mostraría el real del año EQUIVOCADO en
+     cédulas viejas sin advertencia; mejor sin dato que dato incorrecto). Meses futuros → null (no
+     mostrar "real $0 · −100%" de un mes que no ha pasado). En planes sin Pro el GET devuelve
+     `reales={}` aunque haya filas conectadas (herencia de downgrade). UI: botón de enlace por fila
+     (verde cuando conectada) → modal de conexión (o upsell si no es Pro), tag "vs. Ventas cerradas ($)"
+     bajo el concepto, badge "Conectada a datos reales" en el toolbar.
+   • **Wizard "Plan financiero completo" (Pro+):** `createPlanCompleto()` (cedulas.ts) crea en un
+     clic la cascada de dinero universal — Ventas → Cobranza (40/30/30 con referencias CRUZADAS +
+     offsets, editable) → Efectivo (entradas = cobranza cruzada, gastos/pagos tecleados, flujo neto,
+     saldo final) — ya cableada entre cédulas (lo que a mano exigiría dominar el constructor de
+     fórmulas), **sembrada con el promedio real de ventas de los últimos 6 meses de la org** y con
+     las filas clave ya conectadas a vs. Real. Checkbox "mi negocio produce" agrega Producción +
+     Compras de MP (plantillas estándar). `POST /api/cedulas {plan_completo:true, periodos,
+     incluirProduccion}`; exige ≥3 periodos (la cobranza se escalona a 3 meses).
+   • **Freemium (decisión de André, reemplaza el gate total a Pro que había quedado sin commitear):**
+     las cédulas básicas están en TODOS los planes con límite de cantidad — `cedulasLimit()` en
+     permissions.ts: free 1 · starter 3 · pro+ ilimitadas (402 con mensaje claro al topar). Pro+
+     gatea: vs. Real (`set_fuente`), wizard y las herramientas de análisis (`/api/analisis` sigue
+     100% Pro; la página herramientas.astro conserva su bloqueo con CTA). `requirePresupuestosPlan()`
+     quedó como gate de FEATURES pro, ya no de todo el módulo. Comparativa de /precios (ES/EN):
+     "1 cédula / 3 cédulas / Ilimitadas" + filas nuevas de vs. Real y plan completo.
+   • **Rediseño intuitivo:** modal de creación en 2 PASOS con lenguaje humano — paso 1 = lista
+     hairline de tipos con íconos duotone y preguntas reales ("¿Cuánto voy a vender?", "¿Cuándo me
+     pagan de verdad?", "¿Me alcanza la caja?"), con "Plan financiero completo" destacado arriba
+     (chips Recomendado/Pro); paso 2 = periodos pre-llenados (6 meses desde el mes actual) + nombre
+     (oculto en el wizard — ⚠️ requirió `.fld[hidden]{display:none}`, la regla documentada del
+     `hidden` pisado por display propio, detectada en la verificación visual). Editor: columna
+     **Total** por fila, badge **ƒx** en filas calculadas, botón **"+ Periodo"** (nueva acción
+     `add_periodo` — anexar al final es seguro porque los valores van por índice; sugiere el mes
+     siguiente al último), y **Duplicar** desde el índice con mini-diálogo "Mismos periodos" vs.
+     "Recorrer al año siguiente" (`duplicateCedula()` con `shiftYears`: recorre los años de 4
+     dígitos en periodos y nombre — sin el shift, la copia empataría vs. Real contra los meses del
+     año viejo, hallazgo de la auditoría). El duplicado remapea fórmulas INTERNAS a las filas nuevas
+     y conserva intactas las referencias cruzadas + `fuente_real` + valores.
+   • **Verificado:** `npm run db:migrate` corrido (columna aditiva), 2 builds limpios, harness E2E
+     contra la BD real (org demo) importando el motor real vía esbuild (`--define:import.meta.env=
+     process.env`) — 21/21 checks (parseo de periodos, cascada 40/30/30 cruzada, seed histórico
+     real $338,326, reales vs. query directa, futuro→null, duplicado con/sin shift, remapeo de
+     refs), `node --check` del script `is:inline` del editor, y screenshots Playwright de harness
+     estático (markup+CSS reales, fetch stubeado) del grid con vs. Real, modal de conexión, modal
+     de creación paso 1/2 y sugerencia de periodo. Auditoría `code-correctness-reviewer`: 1 bug
+     real (el del año asumido) — corregido; 0 fugas multi-tenant, 0 XSS, 0 doble conteo.
+   ⬜ Pendiente natural (no bloqueante): resumen "plan vs. real del mes" en el índice de
+     /app/presupuestos (el loop de regreso mensual); artículos de soporte de vs. Real/wizard.
+
 ✅ **Presupuestos "curso completo" — 4 fases sobre Cédulas + herramientas de análisis (jul 2026)** —
    André compartió un examen real de su universidad (presupuestos en México) y pidió llevar todo
    ese temario a Cord, por fases, validando cada una contra el examen antes de seguir. Se

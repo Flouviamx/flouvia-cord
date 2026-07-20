@@ -65,9 +65,10 @@ export const POST: APIRoute = async ({ request }) => {
         }
     }
 
-    // ── Duplicar ─────────────────────────────────────────────────────────
+    // ── Duplicar (shift_years = 1 recorre "Ene 2026" → "Ene 2027") ───────
     if (body.duplicar_de) {
-        const nuevoId = await duplicateCedula(orgId, String(body.duplicar_de), body.nombre ? String(body.nombre) : undefined);
+        const nuevoId = await duplicateCedula(orgId, String(body.duplicar_de), body.nombre ? String(body.nombre) : undefined,
+            { shiftYears: Number(body.shift_years) || 0 });
         if (!nuevoId) return json({ error: 'Cédula no encontrada' }, 404);
         await logAudit(orgId, { accion: 'cedula.duplicada', entidad: 'cedula', entidad_id: nuevoId, detalle: `Duplicada de ${body.duplicar_de}`, ip: reqIp(request) });
         return json({ id: nuevoId });

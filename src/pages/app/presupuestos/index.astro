@@ -157,6 +157,33 @@ const isPro = planTienePresupuestos(ORG.plan_raw);
             </footer>
         </form>
     </dialog>}
+
+    {hasPerm && <dialog class="modal" id="dupModal">
+        <form method="dialog" class="modal-card">
+            <header>
+                <h3>Duplicar cédula</h3>
+                <button type="button" class="mclose" id="dmClose" aria-label="Cerrar">&times;</button>
+            </header>
+            <div class="modal-body">
+                <div class="dup-opts">
+                    <label class="dup-opt">
+                        <input type="radio" name="dupMode" value="0" checked />
+                        <span class="dup-opt-txt"><strong>Mismos periodos</strong><span>Una copia idéntica — para probar otro escenario del mismo año.</span></span>
+                    </label>
+                    <label class="dup-opt">
+                        <input type="radio" name="dupMode" value="1" />
+                        <span class="dup-opt-txt"><strong>Recorrer al año siguiente</strong><span>Ene 2026 → Ene 2027 — para arrancar el plan del próximo año con esta base.</span></span>
+                    </label>
+                </div>
+                <p class="m-err" id="dmErr" hidden></p>
+            </div>
+            <footer>
+                <span class="mfoot-spacer"></span>
+                <button type="button" id="dmCancel" class="btn-ghost">Cancelar</button>
+                <button type="button" id="dmSave" class="btn-primary">Duplicar</button>
+            </footer>
+        </form>
+    </dialog>}
 </AppLayout>
 
 <style is:global>
@@ -223,6 +250,16 @@ const isPro = planTienePresupuestos(ORG.plan_raw);
     .tpl-featured { border:1px solid rgba(10,25,47,0.12); border-radius:14px; margin-bottom:.6rem; background:var(--color-bg-soft); }
     html[data-theme="dark"] .tpl-featured { border-color:rgba(255,255,255,0.12); }
     .tpl-featured .tpl-ico { background:var(--color-blue-deep); color:#fff; }
+
+    /* Opciones de duplicado (radios hairline) */
+    .dup-opts { display:flex; flex-direction:column; }
+    .dup-opt { display:flex; align-items:flex-start; gap:.7rem; padding:.8rem .35rem; border-bottom:1px solid var(--color-border); cursor:pointer; border-radius:10px; }
+    .dup-opt:last-child { border-bottom:none; }
+    .dup-opt:hover { background:var(--color-bg-soft); }
+    .dup-opt input { margin-top:3px; accent-color: var(--color-blue-deep); }
+    .dup-opt-txt { display:flex; flex-direction:column; gap:.12rem; }
+    .dup-opt-txt strong { font-size:.88rem; font-weight:600; color:var(--color-text); }
+    .dup-opt-txt span { font-size:.76rem; color:var(--color-text-muted); line-height:1.45; }
 
     /* Toggle "incluye producción" (checkbox estilizado simple) */
     .tpl-toggle { display:flex; align-items:flex-start; gap:.6rem; cursor:pointer; margin-bottom:1.1rem; }
@@ -336,16 +373,9 @@ const isPro = planTienePresupuestos(ORG.plan_raw);
             });
         });
         rowsEl.querySelectorAll('[data-dup]').forEach((btn) => {
-            btn.addEventListener('click', async (e) => {
+            btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const id = (btn as HTMLElement).dataset.dup;
-                const r = await fetch('/api/cedulas', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ duplicar_de: id }),
-                });
-                const d = await r.json();
-                if (r.ok) { (window as any).cordToast?.('Cédula duplicada', 'ok'); window.location.href = `/app/presupuestos/${d.id}`; }
-                else (window as any).cordToast?.(d.error || 'No se pudo duplicar', 'error');
+                openDupModal((btn as HTMLElement).dataset.dup!);
             });
         });
         rowsEl.querySelectorAll('[data-del]').forEach((btn) => {
@@ -360,6 +390,40 @@ const isPro = planTienePresupuestos(ORG.plan_raw);
         });
     }
     function escapeHtml(s: string) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    // ── Modal de duplicado (mismos periodos vs. año siguiente) ───────
+    const dupModal = document.getElementById('dupModal') as HTMLDialogElement | null;
+    let dupId: string | null = null;
+    function openDupModal(id: string) {
+        if (!dupModal) return;
+        dupId = id;
+        (document.getElementById('dmErr') as HTMLElement).setAttribute('hidden', '');
+        (dupModal.querySelector('input[name="dupMode"][value="0"]') as HTMLInputElement).checked = true;
+        dupModal.showModal();
+    }
+    document.getElementById('dmClose')?.addEventListener('click', () => dupModal?.close());
+    document.getElementById('dmCancel')?.addEventListener('click', () => dupModal?.close());
+    document.getElementById('dmSave')?.addEventListener('click', async () => {
+        if (!dupId) return;
+        const shift = Number((dupModal!.querySelector('input[name="dupMode"]:checked') as HTMLInputElement)?.value) || 0;
+        const btn = document.getElementById('dmSave') as HTMLButtonElement;
+        btn.disabled = true;
+        const r = await fetch('/api/cedulas', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ duplicar_de: dupId, shift_years: shift }),
+        });
+        const d = await r.json();
+        btn.disabled = false;
+        if (r.ok) {
+            dupModal!.close();
+            (window as any).cordToast?.(shift ? 'Cédula duplicada con los periodos recorridos un año' : 'Cédula duplicada', 'ok');
+            window.location.href = `/app/presupuestos/${d.id}`;
+        } else {
+            const errEl = document.getElementById('dmErr') as HTMLElement;
+            errEl.textContent = d.error || 'No se pudo duplicar';
+            errEl.removeAttribute('hidden');
+        }
+    });
 
     // ── Modal de creación (2 pasos) ──────────────────────────────────
     const modal = document.getElementById('newModal') as HTMLDialogElement | null;

@@ -2,13 +2,13 @@
 title: "Analysis tools: projects (NPV/IRR), inventory, and variances"
 description: "Decision calculators with saveable scenarios: project evaluation, optimal inventory (EOQ), and standard-vs-actual variance analysis."
 category: "Budgets & Analysis"
-order: 2
+order: 3
 ---
 
 Beyond budget schedules, the **Budgets** section includes a **Tools** tab: three decision calculators with live results and scenarios you can save and reopen.
 
 > [!NOTE]
-> Tools require the **analytics** permission, just like schedules. Only the data you enter is saved; results are computed on the fly.
+> Tools require the **analytics** permission and the **Professional** plan or higher. Only the data you enter is saved; results are computed on the fly.
 
 ## Project evaluation (NPV)
 
