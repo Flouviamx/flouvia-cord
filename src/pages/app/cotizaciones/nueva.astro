@@ -3,7 +3,7 @@
 // agregas productos del catálogo, negocias precio por línea, el total se recalcula
 // en vivo con IVA, y al enviar hace POST a /api/cotizaciones (inserta en Neon).
 import AppLayout from '../../../layouts/AppLayout.astro';
-import { getProductos, getClientes, getOrg, getCotizacion } from '../../../lib/queries';
+import { getProductos, getClientes, getOrg, getCotizacion, getKitsForEditor } from '../../../lib/queries';
 import { REGIMENES_FISCALES, USOS_CFDI } from '../../../lib/sat';
 
 const draftId = Astro.url.searchParams.get('draft');
@@ -15,7 +15,7 @@ if (draftId) {
     }
 }
 
-const [productos, CLIENTES, ORG] = await Promise.all([getProductos(), getClientes(), getOrg()]);
+const [productos, CLIENTES, ORG, kits] = await Promise.all([getProductos(), getClientes(), getOrg(), getKitsForEditor()]);
 const catalogo = productos.filter(p => p.activo);
 
 // Defaults reales desde Ajustes › Cotizaciones e impuestos.
@@ -121,6 +121,20 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                         <div class="prod-drop" id="prodDrop" hidden role="listbox"></div>
                     </div>
                     <button class="btn-free-line" id="btnFreeLine">+ Línea libre</button>
+                    {kits.length > 0 && (
+                        <div class="kit-insert-wrap">
+                            <button type="button" class="btn-free-line" id="btnKitInsert" aria-expanded="false" aria-controls="kitInsertDrop">+ Insertar kit</button>
+                            <div class="kit-insert-drop" id="kitInsertDrop" hidden>
+                                {kits.map((k) => (
+                                    <div class="kit-insert-row" data-kid={k.id}>
+                                        <span class="kit-insert-name">{k.nombre}<small>{k.items.length} línea{k.items.length === 1 ? '' : 's'}</small></span>
+                                        <input type="number" class="kit-insert-qty" min="1" step="1" value="1" aria-label={`Cuántas veces insertar ${k.nombre}`} />
+                                        <button type="button" class="kit-insert-add" data-kid-add={k.id}>Agregar</button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
                 <p class="add-hint">Escribe para buscar y presiona <kbd>Enter</kbd> para agregar. Puedes agregar varios seguidos.</p>
             </section>
@@ -326,7 +340,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     </div>
 </AppLayout>
 
-<script is:inline define:vars={{ catalogo, aprobMargenMin: ORG.aprobMargenMin, draftQuote }}>
+<script is:inline define:vars={{ catalogo, kits, aprobMargenMin: ORG.aprobMargenMin, draftQuote }}>
     const lines = [];
     const catMap = Object.fromEntries(catalogo.map(p => [p.id, p]));
     const volUnit = (l) => {
@@ -595,6 +609,59 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         const inputs = $lines.querySelectorAll('.lr-desc-input');
         const lastInput = inputs[inputs.length - 1];
         if (lastInput) lastInput.focus();
+    });
+
+    // ── Insertar kit: agrega TODAS las líneas de un kit de un clic, multiplicando
+    // la cantidad de cada renglón por el multiplicador que elija el vendedor.
+    // Reutiliza catMap/applyDesc — los renglones heredan gratis precio por
+    // volumen, descuento por cliente, badge de margen y precio sugerido. ──
+    const kitMap = Object.fromEntries((kits || []).map(k => [k.id, k]));
+    const $kitBtn = document.getElementById('btnKitInsert');
+    const $kitDrop = document.getElementById('kitInsertDrop');
+
+    function closeKitDrop() {
+        if ($kitDrop) $kitDrop.hidden = true;
+        $kitBtn?.setAttribute('aria-expanded', 'false');
+    }
+    $kitBtn?.addEventListener('click', () => {
+        const willOpen = $kitDrop.hidden;
+        closeDrop(); // no dos dropdowns abiertos a la vez
+        $kitDrop.hidden = !willOpen;
+        $kitBtn.setAttribute('aria-expanded', String(willOpen));
+    });
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.kit-insert-wrap')) closeKitDrop();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeKitDrop(); });
+
+    $kitDrop?.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-kid-add]');
+        if (!btn) return;
+        const kit = kitMap[btn.dataset.kidAdd];
+        if (!kit || !kit.items.length) return;
+        const row = btn.closest('.kit-insert-row');
+        const mult = Math.max(1, Math.floor(Number(row?.querySelector('.kit-insert-qty')?.value) || 1));
+
+        const startLen = lines.length;
+        kit.items.forEach((it) => {
+            const qty = (Number(it.cantidad) || 1) * mult;
+            const p = it.productoId ? catMap[it.productoId] : null;
+            if (p) {
+                lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: applyDesc(p.precio), cantidad: qty, negoTouched: false });
+            } else {
+                lines.push({ id: null, nombre: it.descripcion, unidad: 'pieza', baseLista: 0, lista: 0, vol: [], costo: 0, negociado: 0, cantidad: qty, negoTouched: false });
+            }
+        });
+        render();
+        // Flash de las líneas recién insertadas + precio sugerido por línea de catálogo.
+        const rows = $lines.querySelectorAll('.line-row');
+        for (let i = startLen; i < lines.length; i++) {
+            rows[i]?.classList.add('line-added');
+            if (lines[i].id) loadPricing(i);
+        }
+        setTimeout(() => rows.forEach(r => r.classList.remove('line-added')), 900);
+        if (window.cordToast) window.cordToast(`Kit "${kit.nombre}" insertado — ${kit.items.length} línea${kit.items.length === 1 ? '' : 's'}`, 'ok');
+        closeKitDrop();
     });
 
     // Activa el chip de términos que coincida con la etiqueta ("Contado"/"Net 30"/"Net 60").
@@ -1527,6 +1594,33 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         transition: all 0.3s var(--ease-ios);
     }
     .btn-free-line:hover { color: var(--color-text); background: #e8e8ec; }
+
+    /* ── Insertar kit (dropdown de paquetes pre-armados) ── */
+    .kit-insert-wrap { position: relative; }
+    .kit-insert-drop {
+        position: absolute; bottom: calc(100% + 8px); left: 0; z-index: 60;
+        width: min(360px, 86vw);
+        background: #fff; border-radius: 14px; overflow: hidden;
+        box-shadow: 0 0 0 0.5px rgba(0,0,0,0.05), 0 12px 32px -8px rgba(10,25,47,0.18), 0 4px 12px -4px rgba(10,25,47,0.08);
+        max-height: 320px; overflow-y: auto;
+    }
+    .kit-insert-drop[hidden] { display: none; }
+    .kit-insert-row { display: flex; align-items: center; gap: 0.6rem; padding: 9px 12px; border-bottom: 1px solid var(--color-border); }
+    .kit-insert-row:last-child { border-bottom: none; }
+    .kit-insert-name { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 0.84rem; font-weight: 500; color: var(--color-text); }
+    .kit-insert-name small { font-size: 0.66rem; color: #99a2af; font-weight: 500; }
+    .kit-insert-qty {
+        width: 44px; text-align: center; font-family: var(--font-sans); font-size: 0.82rem; color: var(--color-text);
+        background: #f5f5f7; border: 1px solid transparent; border-radius: 8px; padding: 6px 2px; flex-shrink: 0;
+        -moz-appearance: textfield;
+    }
+    .kit-insert-qty::-webkit-outer-spin-button, .kit-insert-qty::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .kit-insert-qty:focus { outline: none; border-color: var(--color-blue-deep); background: #fff; }
+    .kit-insert-add {
+        font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; color: #fff; background: var(--color-blue-deep);
+        border: none; border-radius: 8px; padding: 7px 12px; cursor: pointer; flex-shrink: 0; transition: transform 0.25s var(--ease-spring);
+    }
+    .kit-insert-add:hover { transform: translateY(-1px); }
 
     .ed-textarea {
         font-family: var(--font-sans); font-size: 0.85rem; width: 100%;

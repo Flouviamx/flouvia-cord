@@ -78,10 +78,10 @@ const ICONS: Record<DevTrustIcon, string> = {
     /* ── Globo — absoluto, centrado verticalmente, anclado a la derecha ── */
     .dvt-bg-globe {
         position: absolute;
-        top: 38%; right: 0;
-        width: 58vw; max-width: 820px; min-width: 500px;
+        top: 28%; right: -2%;
+        width: 48vw; max-width: 640px; min-width: 420px;
         aspect-ratio: 1 / 1;
-        transform: translateY(-50%);
+        transform: translateY(-45%);
         z-index: 0;
         pointer-events: none;
     }
@@ -171,7 +171,7 @@ const ICONS: Record<DevTrustIcon, string> = {
 
     @media (max-width: 1000px) {
         .dvt-inner { max-width: 50%; margin-left: 5%; }
-        .dvt-bg-globe { width: 55vw; min-width: 400px; }
+        .dvt-bg-globe { width: 46vw; min-width: 340px; }
         .dvt-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 720px) {
@@ -179,8 +179,8 @@ const ICONS: Record<DevTrustIcon, string> = {
         .dvt-inner { max-width: 100%; margin: 0 5%; }
         .dvt-bg-globe {
             position: relative; top: auto; right: auto; transform: none;
-            width: 90vw; min-width: unset; max-width: 400px;
-            margin: 0 auto 2rem;
+            width: 80vw; min-width: unset; max-width: 340px;
+            margin: 0 auto 1.5rem;
         }
         .dvt-grid { grid-template-columns: 1fr; }
         .dvt-gitem { border-right: none; border-bottom: 1px solid var(--color-border, rgba(10,25,47,0.08)); }

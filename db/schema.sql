@@ -1119,3 +1119,47 @@ alter table analisis enable row level security;
 create policy "rls_analisis" on analisis
   using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
 alter table analisis force row level security;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- KITS DE COTIZACIÓN (jul 2026) — paquetes pre-armados de líneas para insertar de
+-- un clic en el editor. Pura conveniencia de captura: al insertarse se vuelven
+-- cotizacion_items normales, indistinguibles de las que se agregarían a mano
+-- (no hay ninguna referencia desde cotizacion_items hacia un kit). Mismo patrón
+-- que cédulas: RLS directa por org_id + FORCE, sin carril public_token (no hay
+-- vista pública de un kit).
+create table if not exists kits (
+  id          uuid        default gen_random_uuid() primary key,
+  org_id      uuid        not null references orgs(id) on delete cascade,
+  nombre      text        not null,
+  descripcion text,
+  activo      boolean     not null default true,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+create index if not exists idx_kits_org on kits(org_id, activo, nombre);
+
+-- producto_id nullable = renglón de línea libre dentro del kit (ej. "mano de
+-- obra de instalación"); org_id denormalizado para RLS sin JOIN (mismo patrón
+-- que cedula_filas/cedula_valores).
+create table if not exists kit_items (
+  id          uuid        default gen_random_uuid() primary key,
+  kit_id      uuid        not null references kits(id) on delete cascade,
+  org_id      uuid        not null references orgs(id) on delete cascade,
+  producto_id uuid        references productos(id) on delete set null,
+  descripcion text        not null,
+  cantidad    numeric     not null default 1,
+  orden       int         not null default 0
+);
+create index if not exists idx_kit_items_kit on kit_items(kit_id, orden);
+create index if not exists idx_kit_items_org on kit_items(org_id);
+
+alter table kits      enable row level security;
+alter table kit_items enable row level security;
+
+create policy "rls_kits" on kits
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+create policy "rls_kit_items" on kit_items
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+
+alter table kits      force row level security;
+alter table kit_items force row level security;

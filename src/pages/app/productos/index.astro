@@ -1,14 +1,18 @@
 ---
 // Productos — catálogo con precios de lista. CRUD real (Neon).
-import AppLayout from '../../layouts/AppLayout.astro';
-import { getProductos, getMyMembership, money } from '../../lib/queries';
-import { memberCan } from '../../lib/permissions';
+import AppLayout from '../../../layouts/AppLayout.astro';
+import { getProductos, getMyMembership, money } from '../../../lib/queries';
+import { memberCan } from '../../../lib/permissions';
 
 const [PRODUCTOS, ME] = await Promise.all([getProductos(), getMyMembership()]);
 const canEdit = memberCan(ME, 'productos');
 ---
 
 <AppLayout title="Productos — Cord" page="productos" heading="Productos">
+    <div slot="page-tabs">
+        <a href="/app/productos" class="ph-tab active">Catálogo</a>
+        <a href="/app/productos/kits" class="ph-tab">Kits</a>
+    </div>
     <div slot="topbar-actions" class="topbar-btns">
         <div class="ph-search">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>

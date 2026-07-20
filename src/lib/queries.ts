@@ -340,6 +340,168 @@ export function normVolumen(raw: unknown): { min: number; precio: number }[] {
         .sort((a, b) => a.min - b.min);
 }
 
+// ── KITS ─────────────────────────────────────────────────────────────────────
+// Paquetes pre-armados de líneas para insertar de un clic en el editor. Pura
+// conveniencia de captura: al insertarse se vuelven cotizacion_items normales
+// (nunca se referencian de vuelta a un kit).
+export interface KitItem {
+    id: string;
+    productoId: string | null;
+    descripcion: string;
+    cantidad: number;
+    orden: number;
+    // Snapshot en vivo del producto referenciado (para el combobox/preview del
+    // editor de kits). null si el renglón es línea libre o el producto se borró.
+    unidad: string | null;
+    precio: number | null;
+    sku: string | null;
+}
+export interface KitFull {
+    id: string;
+    nombre: string;
+    descripcion: string;
+    activo: boolean;
+    items: KitItem[];
+}
+export interface KitListItem {
+    id: string;
+    nombre: string;
+    descripcion: string;
+    activo: boolean;
+    itemCount: number;
+}
+
+// Índice liviano (para /app/productos/kits).
+export async function getKits(): Promise<KitListItem[]> {
+    const orgId = await getActiveOrgId();
+    const [rows] = await withOrgTx(orgId, sql`
+        select k.id, k.nombre, k.descripcion, k.activo, count(ki.id)::int as item_count
+        from kits k
+        left join kit_items ki on ki.kit_id = k.id
+        where k.org_id = ${orgId}
+        group by k.id
+        order by k.activo desc, k.nombre`);
+    return rows.map((k) => ({
+        id: k.id as string,
+        nombre: k.nombre as string,
+        descripcion: (k.descripcion as string) ?? '',
+        activo: k.activo as boolean,
+        itemCount: Number(k.item_count ?? 0),
+    }));
+}
+
+// Todos los kits ACTIVOS de la org con sus renglones — para insertar en el
+// editor de cotizaciones (server-side, igual que `catalogo`/`CLIENTES`).
+export async function getKitsForEditor(): Promise<KitFull[]> {
+    const orgId = await getActiveOrgId();
+    const [kits, items] = await withOrgTx(orgId,
+        sql`select id, nombre, descripcion, activo from kits where org_id = ${orgId} and activo = true order by nombre`,
+        sql`select ki.id, ki.kit_id, ki.producto_id, ki.descripcion, ki.cantidad, ki.orden,
+                   p.unidad, p.precio_lista, p.sku, p.activo as producto_activo
+            from kit_items ki
+            join kits k on k.id = ki.kit_id
+            left join productos p on p.id = ki.producto_id
+            where k.org_id = ${orgId} and k.activo = true
+            order by ki.orden asc`,
+    );
+    const byKit: Record<string, KitItem[]> = {};
+    for (const it of items) {
+        const kid = it.kit_id as string;
+        (byKit[kid] ??= []).push({
+            id: it.id as string,
+            productoId: it.producto_activo ? (it.producto_id as string) : null,
+            descripcion: it.descripcion as string,
+            cantidad: num(it.cantidad) || 1,
+            orden: Number(it.orden ?? 0),
+            unidad: it.producto_activo ? (it.unidad as string) : null,
+            precio: it.producto_activo ? num(it.precio_lista) : null,
+            sku: it.producto_activo ? ((it.sku as string) ?? '') : null,
+        });
+    }
+    return kits.map((k) => ({
+        id: k.id as string,
+        nombre: k.nombre as string,
+        descripcion: (k.descripcion as string) ?? '',
+        activo: k.activo as boolean,
+        items: byKit[k.id as string] ?? [],
+    }));
+}
+
+// Un kit completo (incl. inactivos) — para el editor de Ajustes › Kits.
+export async function getKit(orgId: string, kitId: string): Promise<KitFull | null> {
+    const [kit, items] = await withOrgTx(orgId,
+        sql`select id, nombre, descripcion, activo from kits where id = ${kitId} and org_id = ${orgId} limit 1`,
+        sql`select ki.id, ki.producto_id, ki.descripcion, ki.cantidad, ki.orden,
+                   p.unidad, p.precio_lista, p.sku
+            from kit_items ki left join productos p on p.id = ki.producto_id
+            where ki.kit_id = ${kitId} and ki.org_id = ${orgId}
+            order by ki.orden asc`,
+    );
+    const k = kit[0];
+    if (!k) return null;
+    return {
+        id: k.id as string,
+        nombre: k.nombre as string,
+        descripcion: (k.descripcion as string) ?? '',
+        activo: k.activo as boolean,
+        items: items.map((it) => ({
+            id: it.id as string,
+            productoId: (it.producto_id as string) ?? null,
+            descripcion: it.descripcion as string,
+            cantidad: num(it.cantidad) || 1,
+            orden: Number(it.orden ?? 0),
+            unidad: (it.unidad as string) ?? null,
+            precio: it.precio_lista != null ? num(it.precio_lista) : null,
+            sku: (it.sku as string) ?? null,
+        })),
+    };
+}
+
+export async function createKit(orgId: string, data: { nombre: string; descripcion?: string }): Promise<string> {
+    const [[row]] = await withOrgTx(orgId, sql`
+        insert into kits (org_id, nombre, descripcion)
+        values (${orgId}, ${data.nombre}, ${data.descripcion ?? null})
+        returning id`);
+    return row.id as string;
+}
+
+// Los 3 campos van resueltos (el caller ya mezcló los valores actuales con los
+// que llegaron en el PATCH — el `sql` de neon-serverless no compone fragmentos,
+// así que no se puede dejar "sin cambio" un campo desde aquí).
+export async function renameKit(orgId: string, kitId: string, data: { nombre: string; descripcion: string; activo: boolean }): Promise<void> {
+    await withOrgTx(orgId, sql`
+        update kits set nombre = ${data.nombre}, descripcion = ${data.descripcion || null}, activo = ${data.activo}, updated_at = now()
+        where id = ${kitId} and org_id = ${orgId}`);
+}
+
+export async function deleteKit(orgId: string, kitId: string): Promise<void> {
+    await withOrgTx(orgId, sql`delete from kits where id = ${kitId} and org_id = ${orgId}`);
+}
+
+// Agrega un renglón (producto del catálogo o línea libre). Devuelve el id nuevo.
+export async function addKitItem(
+    orgId: string,
+    kitId: string,
+    data: { productoId?: string | null; descripcion: string; cantidad: number; orden?: number },
+): Promise<string> {
+    const [[row]] = await withOrgTx(orgId,
+        sql`insert into kit_items (kit_id, org_id, producto_id, descripcion, cantidad, orden)
+            select ${kitId}, ${orgId}, ${data.productoId ?? null}, ${data.descripcion}, ${data.cantidad}, ${data.orden ?? 0}
+            where exists (select 1 from kits where id = ${kitId} and org_id = ${orgId})
+            returning id`,
+        sql`update kits set updated_at = now() where id = ${kitId} and org_id = ${orgId}`,
+    );
+    if (!row) throw new Error('Kit no encontrado');
+    return row.id as string;
+}
+
+export async function removeKitItem(orgId: string, kitId: string, itemId: string): Promise<void> {
+    await withOrgTx(orgId,
+        sql`delete from kit_items where id = ${itemId} and kit_id = ${kitId} and org_id = ${orgId}`,
+        sql`update kits set updated_at = now() where id = ${kitId} and org_id = ${orgId}`,
+    );
+}
+
 // ── CLIENTES ──────────────────────────────────────────────────────────────────
 export async function getClientes() {
     const orgId = await getActiveOrgId();

@@ -7,121 +7,231 @@ import { getCashFlowPrediction } from '../../../../lib/analytics/cashflow';
 const orgId = await getActiveOrgId();
 
 let predictions: any[] = [];
-let aiSummary = '';
 let total90Days = 0;
 
 if (orgId) {
   const data = await getCashFlowPrediction(orgId);
   predictions = data.predictions;
-  aiSummary = data.aiSummary;
   total90Days = predictions.reduce((acc, p) => acc + p.expectedAmount, 0);
 }
 
 const conIngreso = predictions.filter((p) => p.expectedAmount > 0);
+const hayDatos = conIngreso.length > 0;
+
+// KPIs de resumen
+const nCotizaciones = new Set(conIngreso.flatMap((p) => p.contributingQuotes.map((q: any) => q.id))).size;
+const proximo = conIngreso[0];
+
 const fmtFecha = (d: any) => new Date(d).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+const fmtFechaCorta = (d: any) => new Date(d).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+
+// Agrupar en semanas (7 días) para la gráfica — mismo lenguaje visual que /app/cfo
+const HOY = new Date();
+const semanas = Array.from({ length: 12 }, (_, i) => {
+  const inicio = new Date(HOY);
+  inicio.setDate(HOY.getDate() + i * 7);
+  const fin = new Date(inicio);
+  fin.setDate(inicio.getDate() + 6);
+  const iniStr = inicio.toISOString().split('T')[0];
+  const finStr = fin.toISOString().split('T')[0];
+  const enRango = predictions.filter((p) => p.date >= iniStr && p.date <= finStr);
+  const total = enRango.reduce((acc, p) => acc + p.expectedAmount, 0);
+  const n = enRango.reduce((acc, p) => acc + p.contributingQuotes.length, 0);
+  return {
+    label: i === 0 ? 'Esta semana' : 'Semana del ' + fmtFechaCorta(iniStr),
+    subLabel: n > 0 ? (n === 1 ? '1 cotización' : n + ' cotizaciones') : 'sin cobros esperados',
+    total,
+    n,
+  };
+});
+const maxSemana = Math.max(1, ...semanas.map((s) => s.total));
+const semanasConAncho = semanas.map((s) => ({
+  ...s,
+  ancho: s.total > 0 ? Math.max(2, Math.round((s.total / maxSemana) * 100)) : 0,
+}));
+
+const probTier = (p: number) => (p >= 0.7 ? 'ok' : p >= 0.4 ? 'mid' : 'low');
 ---
 
 <AppLayout title="Flujo de caja — Cord" page="flujo-caja" heading="Flujo de caja">
-  <p slot="page-sub">Estimación de ingresos a 90 días, cruzando tu pipeline con el historial real de pago de cada cliente.</p>
+  <p slot="page-sub">Cuándo vas a cobrar, cruzando el estado de tus cotizaciones con el historial real de pago de cada cliente.</p>
   <div slot="page-tabs">
     <a href="/app/cobranza" class="ph-tab">Cobranza</a>
     <a href="/app/tesoreria/cobranza" class="ph-tab">Cobranza con IA</a>
     <a href="/app/tesoreria/flujo" class="ph-tab active">Flujo de caja</a>
   </div>
 
-  <!-- KPI hero -->
-  <div class="tf-kpis">
-    <div class="card tf-kpi">
-      <span class="tf-eyebrow">Total esperado · 90 días</span>
-      <span class="editorial tf-big">{money(total90Days)}</span>
-    </div>
-    <div class="card tf-kpi">
-      <span class="tf-eyebrow">Fechas con ingreso</span>
-      <span class="editorial tf-big">{conIngreso.length}</span>
-    </div>
-  </div>
-
-  <!-- AI CFO Insight -->
-  {aiSummary && (
-    <div class="tf-insight">
-      <span class="tf-spark">✦</span>
-      <div>
-        <span class="tf-insight-label">AI CFO Insight</span>
-        <p class="tf-insight-text">{aiSummary}</p>
+  {!hayDatos && (
+    <section class="empty">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="m9 15 2 2 4-4"/></svg>
       </div>
-    </div>
+      <h2>Sin cobros por proyectar</h2>
+      <p>Cuando tengas cotizaciones enviadas, vistas, aprobadas o facturadas, aquí verás en qué fechas esperas cobrarlas.</p>
+      <a href="/app/cotizaciones/nueva" class="empty-cta">+ Crear cotización</a>
+    </section>
   )}
 
-  <!-- Desglose -->
-  <div class="card tf-table">
-    <div class="tf-thead">Proyección por fecha</div>
-    {conIngreso.length === 0 ? (
-      <div class="tf-empty">No hay proyecciones para los próximos 90 días. Crea o envía cotizaciones para ver el impacto aquí.</div>
-    ) : (
-      conIngreso.map((p) => (
-        <div class="tf-row">
-          <div class="tf-row-main">
-            <div class="tf-date">{fmtFecha(p.date)}</div>
-            <div class="tf-quotes">
-              {p.contributingQuotes.map((q: any) => (
-                <div class="tf-quote">
-                  <span class="tf-folio">{q.folio}</span>
-                  <span class="tf-empresa">{q.empresa}</span>
-                  <span class="tf-sep">·</span>
-                  <span class="editorial tf-monto">{money(q.amount)}</span>
-                  <span class="tf-prob">{Math.round(q.probability * 100)}%</span>
-                </div>
-              ))}
+  {hayDatos && (
+    <>
+    <!-- KPIs -->
+    <section class="kpis">
+      <div class="kpi">
+        <span class="kpi-label">TOTAL ESPERADO · 90 DÍAS</span>
+        <span class="editorial kpi-num kpi-ok">{money(total90Days, 0)}</span>
+        <span class="kpi-sub">suma de lo que aún no cobras, ponderado por probabilidad</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">PRÓXIMO COBRO ESPERADO</span>
+        <span class="editorial kpi-num">{proximo ? money(proximo.expectedAmount, 0) : '—'}</span>
+        <span class="kpi-sub">{proximo ? 'el ' + fmtFecha(proximo.date) : 'sin fecha próxima'}</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">COTIZACIONES EN PROYECCIÓN</span>
+        <span class="editorial kpi-num">{nCotizaciones}</span>
+        <span class="kpi-sub">enviadas, vistas, aprobadas o facturadas — aún sin cobrar</span>
+      </div>
+    </section>
+
+    <!-- Gráfica semanal -->
+    <section class="forecast-card">
+      <div class="sec-head">
+        <h2 class="sec-title">Próximas 12 semanas</h2>
+        <span class="section-note">monto esperado por semana</span>
+      </div>
+      <div class="weeks">
+        {semanasConAncho.map((s) => (
+          <div class="week-row">
+            <div class="week-meta">
+              <span class="week-label">{s.label}</span>
+              <span class="week-sub">{s.subLabel}</span>
+            </div>
+            <div class="week-track">
+              <span class="week-fill" style={'width:' + s.ancho + '%'}></span>
+            </div>
+            <span class="editorial week-val">
+              {s.total > 0 ? money(s.total, 0) : <span class="week-zero">—</span>}
+            </span>
+          </div>
+        ))}
+      </div>
+      <p class="forecast-note">
+        <b>Cómo se calcula:</b> cruzamos dos datos por cada cotización pendiente de cobro. Primero, qué tan
+        avanzada está (enviada, vista, aprobada o ya facturada — entre más avanzada, más probable que se
+        pague). Segundo, cuánto tarda en pagar ese cliente en particular, según su historial real con tu
+        negocio. Con eso ubicamos una fecha probable de cobro y calculamos 3 escenarios: conservador,
+        esperado y optimista.
+      </p>
+    </section>
+
+    <!-- Detalle por fecha -->
+    <section class="detail-card">
+      <div class="sec-head">
+        <h2 class="sec-title">Detalle por fecha</h2>
+        <span class="section-note">el % es la probabilidad de cobro de cada cotización</span>
+      </div>
+      <div class="tf-rows">
+        {conIngreso.map((p) => (
+          <div class="tf-row">
+            <div class="tf-row-main">
+              <div class="tf-date">{fmtFecha(p.date)}</div>
+              <div class="tf-quotes">
+                {p.contributingQuotes.map((q: any) => (
+                  <div class="tf-quote">
+                    <span class="tf-folio">{q.folio}</span>
+                    <span class="tf-empresa">{q.empresa}</span>
+                    <span class="editorial tf-monto">{money(q.amount, 0)}</span>
+                    <span class:list={['tasa-pill', 'tasa-' + probTier(q.probability)]}>
+                      {Math.round(q.probability * 100)}% prob.
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div class="tf-row-right">
+              <span class="editorial tf-expected">{money(p.expectedAmount, 0)}</span>
+              <span class="tf-expected-lbl">Escenario esperado</span>
+              <span class="tf-range">entre {money(p.conservativeAmount, 0)} y {money(p.optimisticAmount, 0)}</span>
             </div>
           </div>
-          <div class="tf-row-right">
-            <span class="editorial tf-expected">{money(p.expectedAmount)}</span>
-            <span class="tf-expected-lbl">Escenario esperado</span>
-            <div class="tf-scenarios">
-              <span><b style="color:var(--color-ok)">{money(p.optimisticAmount)}</b> optimista</span>
-              <span><b style="color:var(--color-warn)">{money(p.conservativeAmount)}</b> conservador</span>
-            </div>
-          </div>
-        </div>
-      ))
-    )}
-  </div>
+        ))}
+      </div>
+    </section>
+    </>
+  )}
 </AppLayout>
 
 <style>
-  .tf-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.2rem; }
-  .tf-kpi { padding: 1.2rem 1.4rem; display: flex; flex-direction: column; gap: 0.4rem; }
-  .tf-eyebrow { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--color-text-muted); }
-  .tf-big { font-size: 1.8rem; color: var(--color-text); }
+  /* KPIs — mismo patrón hairline que /app/cfo */
+  .kpis {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+    margin-bottom: 2.4rem;
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .kpi { padding: 1.5rem 1.7rem; display: flex; flex-direction: column; gap: 0.4rem; border-left: 1px solid var(--color-border); }
+  .kpi:first-child { border-left: none; padding-left: 0; }
+  .kpi-label { font-size: 0.6rem; font-weight: 800; letter-spacing: 1.6px; color: #99a2af; }
+  .kpi-num { font-size: 2rem; color: var(--color-blue-deep); line-height: 1; font-variant-numeric: tabular-nums; }
+  .kpi-ok { color: var(--color-ok); }
+  .kpi-sub { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.4; }
 
-  .tf-insight { display: flex; gap: 1rem; align-items: flex-start; padding: 1.2rem 1.4rem; border-radius: 16px; margin-bottom: 1.4rem;
-    background: var(--surface); border: 1px solid var(--color-border); }
-  .tf-spark { font-size: 1.1rem; color: var(--color-blue-deep); flex-shrink: 0; }
-  .tf-insight-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--color-blue-deep); }
-  .tf-insight-text { font-size: 0.98rem; line-height: 1.55; color: var(--color-text); margin: 0.3rem 0 0; }
+  .sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .section-note { font-size: 0.72rem; color: var(--color-text-muted); }
 
-  .tf-table { padding: 0; overflow: hidden; }
-  .tf-thead { font-size: 0.82rem; font-weight: 700; color: var(--color-text); padding: 1rem 1.4rem; border-bottom: 1px solid var(--color-border); background: var(--color-bg-soft); }
-  .tf-empty { padding: 2.5rem 1.4rem; text-align: center; color: var(--color-text-muted); font-size: 0.88rem; }
-  .tf-row { display: flex; justify-content: space-between; gap: 1.5rem; padding: 1.2rem 1.4rem; border-bottom: 1px solid var(--color-border); }
-  .tf-row:last-child { border-bottom: none; }
+  /* Gráfica semanal */
+  .forecast-card { margin-bottom: 2.4rem; }
+  .weeks { display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 1rem; }
+  .week-row { display: grid; grid-template-columns: 170px 1fr 130px; gap: 1rem; align-items: center; }
+  .week-meta { display: flex; flex-direction: column; gap: 2px; }
+  .week-label { font-size: 0.84rem; font-weight: 600; color: var(--color-text); }
+  .week-sub { font-size: 0.7rem; color: var(--color-text-muted); }
+  .week-track { height: 12px; background: var(--chart-track); border-radius: 100px; overflow: hidden; border: 1px solid var(--color-border); }
+  .week-fill { display: block; height: 100%; border-radius: 100px; background: var(--chart-fill); min-width: 0; transition: width 0.7s var(--ease-spring); }
+  .week-val { font-size: 0.9rem; color: var(--color-blue-deep); text-align: right; white-space: nowrap; }
+  .week-zero { color: #c4cdd8; font-size: 0.88rem; }
+  .forecast-note { font-size: 0.79rem; color: var(--color-text-muted); line-height: 1.6; padding-top: 1rem; border-top: 1px solid var(--color-border); margin: 0; }
+  .forecast-note b { color: var(--color-text); font-weight: 600; }
+
+  /* Detalle por fecha */
+  .detail-card { margin-bottom: 1rem; }
+  .tf-rows { display: flex; flex-direction: column; }
+  .tf-row { display: flex; justify-content: space-between; gap: 1.5rem; padding: 1.1rem 0; border-top: 1px solid var(--color-border); }
   .tf-row:hover { background: var(--color-bg-soft); }
-  .tf-date { font-size: 0.92rem; font-weight: 600; color: var(--color-text); text-transform: capitalize; margin-bottom: 0.6rem; }
-  .tf-quotes { display: flex; flex-direction: column; gap: 0.35rem; }
-  .tf-quote { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; flex-wrap: wrap; }
-  .tf-folio { font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem; color: var(--color-text-muted); }
-  .tf-empresa { font-weight: 600; color: var(--color-text); }
-  .tf-sep { color: var(--color-text-muted); }
-  .tf-monto { color: var(--color-text); }
-  .tf-prob { font-size: 0.66rem; font-weight: 700; padding: 2px 7px; border-radius: 100px; background: rgba(10,25,47,0.06); color: var(--color-text-muted); }
+  .tf-date { font-size: 0.92rem; font-weight: 600; color: var(--color-text); text-transform: capitalize; margin-bottom: 0.65rem; }
+  .tf-quotes { display: flex; flex-direction: column; gap: 0.4rem; }
+  .tf-quote { display: flex; align-items: center; gap: 0.6rem; font-size: 0.82rem; flex-wrap: wrap; }
+  .tf-folio { font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 0.72rem; color: var(--color-text-muted); }
+  .tf-empresa { font-weight: 500; color: var(--color-text); }
+  .tf-monto { color: var(--color-text); font-size: 0.84rem; }
   .tf-row-right { text-align: right; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; align-items: flex-end; }
-  .tf-expected { font-size: 1.25rem; color: var(--color-text); }
+  .tf-expected { font-size: 1.2rem; color: var(--color-text); }
   .tf-expected-lbl { font-size: 0.66rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
-  .tf-scenarios { display: flex; flex-direction: column; gap: 2px; margin-top: 0.5rem; font-size: 0.72rem; color: var(--color-text-muted); }
+  .tf-range { font-size: 0.72rem; color: var(--color-text-muted); margin-top: 0.35rem; }
 
+  /* Pills de probabilidad (mismo patrón que .tasa-pill de /app/cfo) */
+  .tasa-pill { display: inline-block; padding: 2px 9px; border-radius: 100px; font-size: 0.68rem; font-weight: 700; white-space: nowrap; }
+  .tasa-ok { background: #dcfce7; color: #15803d; }
+  .tasa-mid { background: #fef9c3; color: #a16207; }
+  .tasa-low { background: #fee2e2; color: #b91c1c; }
+
+  /* Empty state — mismo patrón que /app/cfo */
+  .empty { padding: 5rem 2rem; text-align: center; }
+  .empty-icon { width: 52px; height: 52px; margin: 0 auto 1.4rem; color: #c4cdd8; }
+  .empty-icon svg { width: 100%; height: 100%; }
+  .empty h2 { font-size: 1.1rem; font-weight: 700; margin: 0 0 0.5rem; }
+  .empty p { font-size: 0.88rem; color: var(--color-text-muted); max-width: 460px; margin: 0 auto 1.4rem; line-height: 1.6; }
+  .empty-cta { display: inline-block; background: var(--color-blue-deep); color: #fff; text-decoration: none; font-size: 0.86rem; font-weight: 600; padding: 11px 20px; border-radius: 10px; }
+
+  @media (max-width: 1100px) {
+    .kpis { grid-template-columns: repeat(3, 1fr); }
+  }
   @media (max-width: 720px) {
-    .tf-kpis { grid-template-columns: 1fr; }
-    .tf-row { flex-direction: column; gap: 0.8rem; }
+    .kpis { grid-template-columns: 1fr; }
+    .kpi { border-left: none; padding-left: 0; border-top: 1px solid var(--color-border); }
+    .kpi:first-child { border-top: none; }
+    .week-row { grid-template-columns: 120px 1fr 100px; }
+    .tf-row { flex-direction: column; gap: 0.9rem; }
     .tf-row-right { text-align: left; align-items: flex-start; }
   }
 </style>

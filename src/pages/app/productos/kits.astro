@@ -1,0 +1,441 @@
+---
+// Productos › Kits — paquetes pre-armados de renglones que se insertan de un
+// clic en el editor de cotizaciones (botón "+ Insertar kit" en nueva.astro).
+// Pura conveniencia de captura: al insertarse se vuelven cotizacion_items
+// normales, indistinguibles de las que se agregarían a mano. CRUD real vía
+// /api/kits (+/api/kits/[id]).
+import AppLayout from '../../../layouts/AppLayout.astro';
+import { getKits, getProductos, getMyMembership, money } from '../../../lib/queries';
+import { memberCan } from '../../../lib/permissions';
+
+const [KITS, productos, ME] = await Promise.all([getKits(), getProductos(), getMyMembership()]);
+const catalogo = productos.filter((p) => p.activo);
+const canEdit = memberCan(ME, 'productos');
+---
+
+<AppLayout title="Kits — Cord" page="productos" heading="Productos">
+    <div slot="page-tabs">
+        <a href="/app/productos" class="ph-tab">Catálogo</a>
+        <a href="/app/productos/kits" class="ph-tab active">Kits</a>
+    </div>
+    <div slot="topbar-actions">
+        {canEdit && <button class="btn-new" id="kitNew">+ Nuevo kit</button>}
+    </div>
+
+    <section class="kits-sec">
+        <div class="section-head">
+            <h2>Tus kits</h2>
+            <span class="kit-count">{KITS.length} kit{KITS.length === 1 ? '' : 's'}</span>
+        </div>
+
+        <div class="ki-list" id="kiList">
+            {KITS.length === 0 && (
+                <div class="ki-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    <p><b>Aún no tienes kits</b> Agrupa productos que sueles cotizar juntos (ej. un kit de obra negra) para insertarlos de un clic.</p>
+                    {canEdit && <button class="btn-new" id="kitNewEmpty">+ Nuevo kit</button>}
+                </div>
+            )}
+            {KITS.map((k) => (
+                <div class="ki-row" data-id={k.id}>
+                    <span class="ki-info">
+                        <span class="ki-name">{k.nombre}{!k.activo && <span class="ki-inactive">Inactivo</span>}</span>
+                        {k.descripcion && <span class="ki-desc">{k.descripcion}</span>}
+                    </span>
+                    <span class="ki-count-pill">{k.itemCount} línea{k.itemCount === 1 ? '' : 's'}</span>
+                    {canEdit && (
+                        <span class="ki-actions">
+                            <button class="ki-btn" data-edit={k.id}>Editar</button>
+                            <button class="ki-btn ki-btn-danger" data-del={k.id} data-del-name={k.nombre}>Eliminar</button>
+                        </span>
+                    )}
+                </div>
+            ))}
+        </div>
+    </section>
+
+    {canEdit && (
+        <dialog id="kitDlg" class="kmod">
+            <form class="kmod-inner" id="kitForm">
+                <div class="kmod-head">
+                    <h2 id="kitTitle">Nuevo kit</h2>
+                    <button type="button" class="kmod-close" id="kitClose" aria-label="Cerrar">✕</button>
+                </div>
+
+                <div class="kmod-field">
+                    <label for="kitNombre">Nombre *</label>
+                    <input class="kmod-input" id="kitNombre" required maxlength="120" placeholder="Kit de obra negra" />
+                </div>
+                <div class="kmod-field">
+                    <label for="kitDescripcion">Descripción <span class="kmod-opt">opcional</span></label>
+                    <input class="kmod-input" id="kitDescripcion" maxlength="300" placeholder="Cemento, varilla y block para 20 m² de muro" />
+                </div>
+
+                <div class="kmod-field">
+                    <label>Renglones del kit</label>
+                    <div class="ki-items" id="kiItems"></div>
+                    <div class="ki-items-empty" id="kiItemsEmpty">Agrega productos de tu catálogo o una línea libre.</div>
+
+                    <div class="ki-add-row">
+                        <div class="prod-search">
+                            <svg class="prod-search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+                            <input type="text" class="prod-input" id="kitProdInput" placeholder="Busca un producto de tu catálogo… (nombre o SKU)" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="kitProdDrop" />
+                            <div class="prod-drop" id="kitProdDrop" hidden role="listbox"></div>
+                        </div>
+                        <button type="button" class="btn-free-line" id="kitFreeLine">+ Línea libre</button>
+                    </div>
+                </div>
+
+                <p class="kmod-error" id="kitError"></p>
+
+                <div class="kmod-actions">
+                    <button type="button" class="kmod-delete" id="kitDelete" hidden>Eliminar kit</button>
+                    <span class="kmod-spacer"></span>
+                    <button type="button" class="kmod-cancel" id="kitCancel">Cancelar</button>
+                    <button type="submit" class="kmod-save" id="kitSave">Guardar kit</button>
+                </div>
+            </form>
+        </dialog>
+    )}
+</AppLayout>
+
+<style is:global>
+    /* ── Lista de kits (hairline, sin cards) ── */
+    .kits-sec { margin-bottom: 2.6rem; }
+    .kits-sec .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1.2rem; padding-bottom: 0.7rem; border-bottom: 1px solid var(--color-border); }
+    .kits-sec .section-head h2 { font-size: 0.98rem; font-weight: 600; letter-spacing: -0.01em; color: var(--color-text); margin: 0; }
+    .kit-count { font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted); }
+
+    .btn-new {
+        font-family: var(--font-sans); background: var(--color-blue-deep); color: #fff;
+        font-size: 0.82rem; font-weight: 600; border: none; cursor: pointer;
+        padding: 9px 16px; border-radius: 9px; box-shadow: 0 6px 18px -8px rgba(10,25,47,0.5);
+        transition: transform 0.4s var(--ease-spring);
+    }
+    .btn-new:hover { transform: translateY(-2px); }
+
+    .ki-list { display: flex; flex-direction: column; }
+    .ki-row { display: flex; align-items: center; gap: 1rem; padding: 0.95rem 0.3rem; border-bottom: 1px solid var(--color-border); }
+    .ki-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+    .ki-name { font-size: 0.9rem; font-weight: 600; color: var(--color-text); display: flex; align-items: center; gap: 8px; }
+    .ki-inactive { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: #99a2af; background: var(--color-bg-soft); border-radius: 100px; padding: 2px 8px; }
+    .ki-desc { font-size: 0.78rem; color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ki-count-pill { font-size: 0.74rem; font-weight: 600; color: var(--color-text-muted); background: var(--color-bg-soft); border-radius: 100px; padding: 4px 11px; flex-shrink: 0; }
+    .ki-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+    .ki-btn { font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; background: none; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 12px; cursor: pointer; color: var(--color-text-muted); transition: border-color 0.25s, color 0.25s; }
+    .ki-btn:hover { border-color: var(--color-blue-deep); color: var(--color-blue-deep); }
+    .ki-btn-danger:hover { border-color: var(--color-danger); color: var(--color-danger); }
+
+    .ki-empty { display: flex; flex-direction: column; align-items: center; gap: 0.7rem; padding: 3rem 0.6rem; font-size: 0.85rem; color: var(--color-text-muted); text-align: center; line-height: 1.5; }
+    .ki-empty svg { width: 34px; height: 34px; color: #cbd5e1; }
+    .ki-empty b { color: var(--color-text); font-weight: 600; }
+
+    /* ── Modal (mismo lenguaje que productos/plantillas) ── */
+    .kmod { border: none; border-radius: 18px; padding: 0; width: min(560px, calc(100vw - 2rem)); box-shadow: 0 40px 90px -30px rgba(10,25,47,0.45); }
+    .kmod::backdrop { background: rgba(10,25,47,0.38); backdrop-filter: blur(4px); }
+    .kmod-inner { display: flex; flex-direction: column; gap: 0.95rem; padding: 1.5rem 1.6rem 1.4rem; }
+    .kmod-head { display: flex; align-items: center; justify-content: space-between; }
+    .kmod-head h2 { font-size: 1.05rem; font-weight: 700; margin: 0; letter-spacing: -0.3px; }
+    .kmod-close { background: var(--color-bg-soft); border: 1px solid var(--color-border); width: 30px; height: 30px; border-radius: 9px; cursor: pointer; font-size: 0.8rem; color: var(--color-text-muted); }
+    .kmod-field { display: flex; flex-direction: column; gap: 0.4rem; }
+    .kmod-field label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
+    .kmod-opt { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.6px; color: #b3bcc9; text-transform: none; }
+    .kmod-input {
+        font-family: var(--font-sans); font-size: 0.88rem; font-weight: 500; color: var(--color-text);
+        background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px;
+        padding: 10px 12px; transition: border-color 0.25s;
+    }
+    .kmod-input:focus { outline: none; border-color: var(--color-blue-deep); }
+    .kmod-error { font-size: 0.78rem; color: var(--color-danger); margin: 0; min-height: 1em; }
+    .kmod-actions { display: flex; align-items: center; gap: 0.6rem; }
+    .kmod-spacer { flex: 1; }
+    .kmod-delete { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: var(--color-danger); background: none; border: none; cursor: pointer; padding: 9px 4px; }
+    .kmod-delete[hidden] { display: none; }
+    .kmod-cancel { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; }
+    .kmod-save { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; background: var(--color-blue-deep); color: #fff; border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; box-shadow: 0 6px 18px -8px rgba(10,25,47,0.5); }
+    .kmod-save:disabled { opacity: 0.6; cursor: wait; }
+
+    /* ── Renglones del kit (dentro del modal) ── */
+    .ki-items { display: flex; flex-direction: column; }
+    .ki-items:empty { display: none; }
+    .ki-items-empty { font-size: 0.78rem; color: var(--color-text-muted); padding: 0.4rem 0; }
+    .ki-items-empty[hidden] { display: none; }
+    .kii-row { display: grid; grid-template-columns: 1fr 74px auto 30px; gap: 0.6rem; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--color-border); }
+    .kii-name { font-size: 0.84rem; font-weight: 500; color: var(--color-text); display: flex; flex-direction: column; min-width: 0; }
+    .kii-name small { font-size: 0.66rem; color: #99a2af; font-weight: 500; }
+    .kii-desc-input {
+        font-family: var(--font-sans); font-size: 0.84rem; color: var(--color-text);
+        background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 8px;
+        padding: 7px 9px; min-width: 0;
+    }
+    .kii-desc-input:focus { outline: none; border-color: var(--color-blue-deep); }
+    .kii-qty {
+        font-family: var(--font-sans); font-size: 0.84rem; color: var(--color-text); text-align: center;
+        background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 8px; padding: 7px 4px;
+        -moz-appearance: textfield;
+    }
+    .kii-qty:focus { outline: none; border-color: var(--color-blue-deep); }
+    .kii-qty::-webkit-outer-spin-button, .kii-qty::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .kii-unit { font-size: 0.76rem; color: var(--color-text-muted); white-space: nowrap; }
+    .kii-del { background: none; border: none; cursor: pointer; color: #99a2af; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; transition: color 0.2s, background 0.2s; }
+    .kii-del:hover { color: var(--color-danger); background: rgba(239,68,68,0.08); }
+
+    .ki-add-row { display: flex; gap: 0.6rem; align-items: center; margin-top: 0.7rem; flex-wrap: wrap; }
+    .btn-free-line {
+        font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted);
+        background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 10px;
+        padding: 9px 14px; cursor: pointer; white-space: nowrap; transition: color 0.2s, background 0.2s;
+    }
+    .btn-free-line:hover { color: var(--color-text); background: #e8e8ec; }
+
+    /* ── Buscador de productos (combobox — mismo lenguaje que el editor) ── */
+    .prod-search { position: relative; flex: 1; min-width: 220px; }
+    .prod-search-ic { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: #99a2af; pointer-events: none; }
+    .prod-input {
+        font-family: var(--font-sans); font-size: 0.85rem; font-weight: 400; color: var(--color-text);
+        background: var(--color-bg-soft); border: 1.5px solid transparent; border-radius: 10px;
+        padding: 10px 14px 10px 36px; width: 100%;
+        transition: border-color 0.3s var(--ease-ios), box-shadow 0.3s var(--ease-ios), background 0.2s;
+    }
+    .prod-input:hover { background: #ececee; }
+    .prod-input:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px rgba(10,25,47,0.08); background: #fff; }
+    .prod-input::placeholder { color: #99a2af; }
+    .prod-drop {
+        position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 60;
+        background: #fff; border-radius: 14px; overflow: hidden;
+        box-shadow: 0 0 0 0.5px rgba(0,0,0,0.05), 0 12px 32px -8px rgba(10,25,47,0.18), 0 4px 12px -4px rgba(10,25,47,0.08);
+        max-height: 260px; overflow-y: auto;
+    }
+    .prod-drop::-webkit-scrollbar { display: none; }
+    .prod-drop[hidden] { display: none; }
+    .prod-item { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; text-align: left; cursor: pointer; font-family: var(--font-sans); background: none; border: none; padding: 10px 14px; transition: background 0.15s; }
+    .prod-item:hover, .prod-item.is-active { background: #f5f5f7; }
+    .prod-item-name { font-size: 0.84rem; font-weight: 500; color: var(--color-text); display: flex; flex-direction: column; min-width: 0; }
+    .prod-item-name small { font-size: 0.66rem; color: #99a2af; font-weight: 500; }
+    .prod-item-price { font-size: 0.82rem; color: var(--color-text); white-space: nowrap; flex-shrink: 0; }
+    .prod-item-price small { font-size: 0.68rem; color: #99a2af; font-weight: 400; }
+    .prod-empty { padding: 14px; font-size: 0.8rem; color: var(--color-text-muted); text-align: center; line-height: 1.5; }
+
+    @media (max-width: 560px) {
+        .kmod { width: 100%; max-width: 100%; margin: 0; top: auto; bottom: 0; left: 0; right: 0; border-radius: 20px 20px 0 0; max-height: 92dvh; }
+        .kmod-inner { padding: 1.3rem 1.2rem; padding-bottom: calc(1.3rem + env(safe-area-inset-bottom)); max-height: 92dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .kii-row { grid-template-columns: 1fr 60px 30px; }
+        .kii-unit { display: none; }
+    }
+</style>
+
+<script define:vars={{ catalogo }}>
+    function initKits() {
+        const dlg = document.getElementById('kitDlg');
+        if (!dlg) return; // sin permiso de edición
+        const form = document.getElementById('kitForm');
+        const title = document.getElementById('kitTitle');
+        const errorEl = document.getElementById('kitError');
+        const btnSave = document.getElementById('kitSave');
+        const btnDelete = document.getElementById('kitDelete');
+        const nombreInput = document.getElementById('kitNombre');
+        const descInput = document.getElementById('kitDescripcion');
+        const $items = document.getElementById('kiItems');
+        const $itemsEmpty = document.getElementById('kiItemsEmpty');
+
+        let editId = null;
+        let items = []; // { id?, productoId, descripcion, cantidad, unidad, sku, persisted }
+        let removedIds = [];
+
+        const money = (n) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n || 0);
+        const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+        function renderItems() {
+            $itemsEmpty.hidden = items.length > 0;
+            $items.innerHTML = items.map((it, idx) => `
+                <div class="kii-row" data-idx="${idx}">
+                    ${it.productoId
+                        ? `<span class="kii-name">${esc(it.descripcion)}${it.sku ? `<small>${esc(it.sku)}</small>` : ''}</span>`
+                        : `<input type="text" class="kii-desc-input" data-idx="${idx}" data-field="descripcion" value="${esc(it.descripcion)}" placeholder="Descripción de la línea libre…" />`}
+                    <input type="number" min="0.01" step="1" class="kii-qty" data-idx="${idx}" data-field="cantidad" value="${it.cantidad}" />
+                    <span class="kii-unit">${esc(it.unidad || '')}</span>
+                    <button type="button" class="kii-del" data-del="${idx}" aria-label="Quitar">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>`).join('');
+        }
+
+        // Cualquier edición a un renglón YA GUARDADO se resuelve como "quitar el
+        // viejo + agregar uno nuevo" al momento de Guardar (la API solo expone
+        // add_item/remove_item, no update_item — ver kits.astro / historial.md).
+        function markDirty(it) {
+            if (it.persisted) { removedIds.push(it.id); it.persisted = false; it.id = undefined; }
+        }
+
+        $items.addEventListener('input', (e) => {
+            const t = e.target;
+            const field = t.dataset.field;
+            if (!field) return;
+            const idx = parseInt(t.closest('.kii-row').dataset.idx, 10);
+            const it = items[idx];
+            if (!it) return;
+            if (field === 'cantidad') { const v = Math.max(0.01, Number(t.value) || 1); if (v !== it.cantidad) { markDirty(it); it.cantidad = v; } }
+            else if (field === 'descripcion') { if (t.value !== it.descripcion) { markDirty(it); it.descripcion = t.value; } }
+        });
+        $items.addEventListener('click', (e) => {
+            const btn = e.target.closest('.kii-del');
+            if (!btn) return;
+            const idx = parseInt(btn.dataset.del, 10);
+            const it = items[idx];
+            if (it && it.persisted && it.id) removedIds.push(it.id);
+            items.splice(idx, 1);
+            renderItems();
+        });
+
+        function addItem(it) {
+            items.push({ productoId: it.productoId ?? null, descripcion: it.descripcion, cantidad: it.cantidad ?? 1, unidad: it.unidad ?? null, sku: it.sku ?? null, persisted: false });
+            renderItems();
+        }
+
+        // ── Buscador de catálogo (mismo combobox que el editor de cotizaciones) ──
+        const $prodInput = document.getElementById('kitProdInput');
+        const $prodDrop = document.getElementById('kitProdDrop');
+        let prodResults = [];
+        let prodActive = -1;
+        const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        function searchProds(q) {
+            const n = norm(q);
+            if (!n) return catalogo.slice(0, 8);
+            return catalogo.filter((p) => norm(p.nombre).includes(n) || norm(p.sku).includes(n)).slice(0, 8);
+        }
+        function renderDrop() {
+            if (!$prodDrop) return;
+            $prodDrop.innerHTML = !prodResults.length
+                ? '<div class="prod-empty">No hay coincidencias en tu catálogo.</div>'
+                : prodResults.map((p, i) => `
+                    <button type="button" class="prod-item ${i === prodActive ? 'is-active' : ''}" data-pid="${p.id}" role="option">
+                        <span class="prod-item-name">${esc(p.nombre)}${p.sku ? `<small>${esc(p.sku)}</small>` : ''}</span>
+                        <span class="prod-item-price">${money(p.precio)} <small>/ ${esc(p.unidad)}</small></span>
+                    </button>`).join('');
+            $prodDrop.hidden = false;
+            $prodInput?.setAttribute('aria-expanded', 'true');
+        }
+        function closeDrop() { if ($prodDrop) $prodDrop.hidden = true; prodActive = -1; $prodInput?.setAttribute('aria-expanded', 'false'); }
+        function pickProd(idx) {
+            const p = prodResults[idx];
+            if (!p) return;
+            addItem({ productoId: p.id, descripcion: p.nombre, unidad: p.unidad, sku: p.sku, cantidad: 1 });
+            if ($prodInput) { $prodInput.value = ''; $prodInput.focus(); }
+            prodResults = searchProds(''); prodActive = -1; renderDrop();
+        }
+        if ($prodInput && $prodDrop) {
+            $prodInput.addEventListener('input', () => { prodResults = searchProds($prodInput.value); prodActive = prodResults.length ? 0 : -1; renderDrop(); });
+            $prodInput.addEventListener('focus', () => { prodResults = searchProds($prodInput.value); prodActive = prodResults.length ? 0 : -1; renderDrop(); });
+            $prodInput.addEventListener('keydown', (e) => {
+                if ($prodDrop.hidden && (e.key === 'ArrowDown' || e.key === 'Enter')) { prodResults = searchProds($prodInput.value); renderDrop(); }
+                if (e.key === 'ArrowDown') { e.preventDefault(); prodActive = Math.min(prodActive + 1, prodResults.length - 1); renderDrop(); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); prodActive = Math.max(prodActive - 1, 0); renderDrop(); }
+                else if (e.key === 'Enter') { e.preventDefault(); if (prodActive >= 0) pickProd(prodActive); }
+                else if (e.key === 'Escape') { closeDrop(); $prodInput.blur(); }
+            });
+            $prodDrop.addEventListener('mousedown', (e) => {
+                const btn = e.target.closest('.prod-item');
+                if (!btn) return;
+                e.preventDefault();
+                const idx = prodResults.findIndex((p) => p.id === btn.dataset.pid);
+                if (idx >= 0) pickProd(idx);
+            });
+            document.addEventListener('click', (e) => { if (!e.target.closest('.prod-search')) closeDrop(); });
+        }
+        document.getElementById('kitFreeLine')?.addEventListener('click', () => {
+            addItem({ productoId: null, descripcion: '', cantidad: 1 });
+            const inputs = $items.querySelectorAll('.kii-desc-input');
+            inputs[inputs.length - 1]?.focus();
+        });
+
+        // ── Abrir / cerrar el modal ──
+        function openNew() {
+            editId = null; items = []; removedIds = [];
+            nombreInput.value = ''; descInput.value = '';
+            title.textContent = 'Nuevo kit';
+            btnDelete.hidden = true;
+            errorEl.textContent = '';
+            renderItems();
+            dlg.showModal();
+        }
+        function openEdit(kit) {
+            editId = kit.id; removedIds = [];
+            items = kit.items.map((it) => ({ id: it.id, productoId: it.productoId, descripcion: it.descripcion, cantidad: it.cantidad, unidad: it.unidad, sku: it.sku, persisted: true }));
+            nombreInput.value = kit.nombre; descInput.value = kit.descripcion || '';
+            title.textContent = 'Editar kit';
+            btnDelete.hidden = false;
+            btnDelete.dataset.id = kit.id;
+            errorEl.textContent = '';
+            renderItems();
+            dlg.showModal();
+        }
+
+        document.getElementById('kitNew')?.addEventListener('click', openNew);
+        document.getElementById('kitNewEmpty')?.addEventListener('click', openNew);
+        document.getElementById('kitClose')?.addEventListener('click', () => dlg.close());
+        document.getElementById('kitCancel')?.addEventListener('click', () => dlg.close());
+
+        document.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', async () => {
+            try {
+                const res = await fetch(`/api/kits/${b.dataset.edit}`);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'No se pudo cargar el kit');
+                openEdit(data.kit);
+            } catch (err) { window.cordToast?.(err.message || 'No se pudo cargar el kit', 'error'); }
+        }));
+
+        async function deleteKit(id, nombre) {
+            if (!await window.cordConfirm({ title: 'Eliminar kit', body: `¿Eliminar el kit "${nombre}"? Esta acción no se puede deshacer.`, danger: true, confirmText: 'Eliminar' })) return false;
+            const res = await fetch(`/api/kits/${id}`, { method: 'DELETE' });
+            if (!res.ok) { const d = await res.json(); window.cordToast?.(d.error || 'No se pudo eliminar', 'error'); return false; }
+            return true;
+        }
+
+        document.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => {
+            if (await deleteKit(b.dataset.del, b.dataset.delName || '')) location.reload();
+        }));
+        btnDelete?.addEventListener('click', async () => {
+            if (!editId) return;
+            if (await deleteKit(editId, nombreInput.value)) location.reload();
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorEl.textContent = '';
+            const nombre = nombreInput.value.trim();
+            if (!nombre) { errorEl.textContent = 'El nombre del kit es obligatorio.'; return; }
+            if (items.some((it) => !it.productoId && !it.descripcion.trim())) {
+                errorEl.textContent = 'Completa la descripción de todas las líneas libres (o quítalas).';
+                return;
+            }
+            btnSave.disabled = true;
+            try {
+                let kitId = editId;
+                if (!kitId) {
+                    const res = await fetch('/api/kits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, descripcion: descInput.value }) });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'No se pudo crear el kit');
+                    kitId = data.id;
+                } else {
+                    const res = await fetch(`/api/kits/${kitId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'rename', nombre, descripcion: descInput.value }) });
+                    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'No se pudo guardar'); }
+                }
+                for (const rid of removedIds) {
+                    await fetch(`/api/kits/${kitId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remove_item', item_id: rid }) });
+                }
+                let orden = 0;
+                for (const it of items) {
+                    if (it.persisted) { orden++; continue; }
+                    const res = await fetch(`/api/kits/${kitId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add_item', producto_id: it.productoId, descripcion: it.descripcion, cantidad: it.cantidad, orden: orden++ }) });
+                    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'No se pudo guardar un renglón'); }
+                }
+                location.reload();
+            } catch (err) {
+                errorEl.textContent = err.message || 'No se pudo guardar el kit';
+                btnSave.disabled = false;
+            }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initKits);
+    else initKits();
+</script>

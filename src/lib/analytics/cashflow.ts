@@ -1,9 +1,4 @@
 import { sql } from '../db';
-import Anthropic from '@anthropic-ai/sdk';
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY || '',
-});
 
 export interface CashFlowPrediction {
   date: string;
@@ -14,8 +9,7 @@ export interface CashFlowPrediction {
 }
 
 export async function getCashFlowPrediction(orgId: string): Promise<{
-  predictions: CashFlowPrediction[],
-  aiSummary: string
+  predictions: CashFlowPrediction[]
 }> {
   // 1. Obtener historial de pagos por cliente para calcular el delay promedio
   const paymentHistory = await sql`
@@ -105,33 +99,5 @@ export async function getCashFlowPrediction(orgId: string): Promise<{
 
   const predictions = Object.values(predictionsMap).sort((a, b) => a.date.localeCompare(b.date));
 
-  // 4. Generar resumen con IA
-  let aiSummary = "No hay suficientes datos para generar un análisis predictivo.";
-  
-  if (pipeline.length > 0) {
-    const promptData = predictions.filter(p => p.expectedAmount > 0).map(p => ({
-      fecha: p.date,
-      esperado: p.expectedAmount,
-      facturas_clave: p.contributingQuotes.map(q => q.empresa)
-    }));
-
-    try {
-      const response = await anthropic.messages.create({
-        model: process.env.AI_MODEL || 'claude-haiku-4-5-20251001',
-        max_tokens: 300,
-        system: "Eres el CFO (Director Financiero) AI de la empresa. Analiza la proyección de flujo de caja y da 2-3 oraciones clave. Sé muy directo y profesional.",
-        messages: [{
-          role: 'user',
-          content: `Proyección de cobros: ${JSON.stringify(promptData.slice(0, 30))}`
-        }]
-      });
-      if (response.content[0].type === 'text') {
-         aiSummary = response.content[0].text;
-      }
-    } catch (e) {
-      console.error("AI Summary error", e);
-    }
-  }
-
-  return { predictions, aiSummary };
+  return { predictions };
 }

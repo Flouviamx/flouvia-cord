@@ -95,7 +95,6 @@ const breadcrumbSchema = {
                         <div class="fc-bar-right">
                             <div class="fc-avatar">{featuredAuthorName.charAt(0).toUpperCase()}</div>
                             <strong class="fc-author-name">{featuredAuthorName}</strong>
-                            <svg class="fc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         </div>
                     </div>
                 </a>
@@ -153,7 +152,6 @@ const breadcrumbSchema = {
                                     <h3 class="blog-card-title">{post.title}</h3>
                                     <span class="blog-read-link">
                                         {isEn ? 'Read' : 'Leer'}
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                                     </span>
                                 </div>
                             </a>
@@ -381,17 +379,7 @@ const breadcrumbSchema = {
         color: #374151;
     }
     :global(html[data-theme="dark"]) .fc-author-name { color: #d1d5db; }
-    .fc-arrow {
-        width: 16px;
-        height: 16px;
-        color: #9ca3af;
-        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s;
-    }
-    .fc-card:hover .fc-arrow {
-        transform: translateX(4px);
-        color: #0a192f;
-    }
-    :global(html[data-theme="dark"]) .fc-card:hover .fc-arrow { color: #fff; }
+
 
     /* ── Filters Bar ────────────────────────────────────────────── */
     .blog-filters-bar {
@@ -563,10 +551,8 @@ const breadcrumbSchema = {
         transition: gap 0.35s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s;
     }
     :global(html[data-theme="dark"]) .blog-read-link { color: #9ca3af; }
-    .blog-read-link svg { width: 13px; height: 13px; transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
-    .blog-card-link:hover .blog-read-link { gap: 8px; color: #0a192f; }
+    .blog-card-link:hover .blog-read-link { color: #0a192f; }
     :global(html[data-theme="dark"]) .blog-card-link:hover .blog-read-link { color: #fff; }
-    .blog-card-link:hover .blog-read-link svg { transform: translateX(2px); }
 
     /* ── Responsive ─────────────────────────────────────────────── */
     @media (max-width: 900px) {
