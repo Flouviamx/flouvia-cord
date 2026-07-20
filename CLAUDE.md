@@ -98,7 +98,14 @@ del final de este archivo (el contexto que recibe el agente es idéntico al de a
 | Archivo | Qué contiene | Léelo cuando… |
 |---------|--------------|---------------|
 | **`CLAUDE.md`** (este) | Comandos, las 9 Reglas de Diseño core, Stack, Variables de entorno, Deployment, este índice. | Siempre — lo esencial que aplica a TODO. |
-| **`docs/historial.md`** | "Estado actual" — el registro cronológico completo de features, decisiones y bugs resueltos (jun–jul 2026). Aquí viven también los patrones de **shaders/GLSL** (busca "GLSL"/"shader"/"aurora") y de **mockups**. | Para saber qué existe, qué se decidió y qué ya se descartó. |
+| **`docs/historial.md`** | **ÍNDICE** del changelog (jul 2026: se segmentó — ya no es un archivo monolítico). Apunta a los 7 archivos de tema de abajo. | Punto de entrada para saber en qué archivo de historial buscar. |
+| **`docs/historial-billing-cobros.md`** | Historial de dinero: Stripe Billing, Connect (Standard/Express/Custom), cobros por anticipo/saldo/cuotas, cobros recurrentes, CFDI/Facturapi, CSD, intereses moratorios, FX. | Tocas planes, cobros, facturación, Connect. |
+| **`docs/historial-presupuestos.md`** | Historial de Cédulas Presupuestales, Presupuesto vs. Real, wizard de plan completo, herramientas de análisis (VPN/TIR/EOQ), desempeño por vendedor. | Tocas `/app/presupuestos`, `cedulas.ts`, `analisis.ts`. |
+| **`docs/historial-landing-marketing.md`** | Historial de la landing pública completa (home/precios/producto/soluciones/casos de uso/blog/soporte/roadmap/legales), mockups, shaders GLSL/WebGL, SEO/AI-SEO. | Tocas cualquier página pública fuera de `/app`. |
+| **`docs/historial-app-features.md`** | Historial de la app interna (`/app/**`): shell, editor de cotizaciones, link público `/q`, dashboard, onboarding, dark mode, entorno de prueba, tiempo real. El más grande — la mayoría del producto vive aquí. | Tocas la app interna. |
+| **`docs/historial-auth-clerk.md`** | Historial de auth custom, Clerk Organizations, SSO, org switcher, equipo/roles. | Tocas auth, Clerk, org switcher, equipo. |
+| **`docs/historial-platform-api.md`** | Historial de la API REST v1, MCP, webhooks salientes, y el SDK `@flouviahq/elements`. | Tocas `/api/v1`, MCP, webhooks, el paquete npm. |
+| **`docs/historial-infra-hitos.md`** | Historial de migración de dominio, fixes de schema/RLS, auditorías de seguridad/escala, hitos fundacionales. | Tocas infraestructura, deploy, o quieres el panorama fundacional. |
 | **`docs/app-rutas.md`** | Cómo funciona la app: multi-tenant (tablas/RLS/`org_id`), mapa completo de rutas (landing, app, API pública/MCP, legales), AppLayout. | Tareas de backend, datos, rutas, endpoints, permisos. |
 | **`docs/negocio-billing.md`** | Modelo de negocio (planes freemium) y Stripe Billing (suscripciones + medidores de uso). | Tareas de planes, precios, cobros, límites, Stripe. |
 | **`docs/landing.md`** | Estructura de la landing (componentes, navbar, animaciones GSAP), fases de construcción y Support Hub. | Tareas en la landing pública, navbar, `/soporte`. |
@@ -109,11 +116,15 @@ del final de este archivo (el contexto que recibe el agente es idéntico al de a
 > recibe el agente es idéntico al de antes de dividir; solo está mejor organizado).
 > La columna "Léelo cuando…" es una guía de navegación para saber DÓNDE está cada cosa.
 
-> ⚠️ **Regla de mantenimiento:** al agregar features nuevas, la entrada de changelog
-> va en `docs/historial.md` (no aquí). Las reglas de diseño nuevas y permanentes sí
-> van en la sección "Reglas de Diseño y Estilo" de este archivo. Cada tema en su
-> archivo (rutas→app-rutas, billing→negocio-billing, landing→landing, UI→sistema-de-diseno)
-> para que CLAUDE.md no vuelva a crecer a 2000 líneas.
+> ⚠️ **Regla de mantenimiento:** al agregar features nuevas, la entrada de changelog va
+> en el archivo `docs/historial-<tema>.md` correspondiente (ver tabla de `docs/historial.md`),
+> NO en `docs/historial.md` (que es solo el índice) ni en este archivo. Si una sesión toca
+> varios temas, la entrada completa va en el archivo del tema DOMINANTE — no la partas a
+> mano entre archivos. Las reglas de diseño nuevas y permanentes sí van en la sección
+> "Reglas de Diseño y Estilo" de este archivo. Cada tema en su archivo (rutas→app-rutas,
+> billing→negocio-billing, landing→landing, UI→sistema-de-diseno) para que CLAUDE.md no
+> vuelva a crecer a 2000 líneas, y cada historial-*.md se mantenga en un tamaño manejable
+> (si uno vuelve a pasar de ~1500 líneas, vale la pena segmentarlo otra vez).
 
 ---
 
@@ -156,6 +167,13 @@ Los siguientes archivos se importan automáticamente y forman parte de estas
 instrucciones. Léelos como si estuvieran aquí:
 
 @docs/historial.md
+@docs/historial-billing-cobros.md
+@docs/historial-presupuestos.md
+@docs/historial-landing-marketing.md
+@docs/historial-app-features.md
+@docs/historial-auth-clerk.md
+@docs/historial-platform-api.md
+@docs/historial-infra-hitos.md
 @docs/app-rutas.md
 @docs/negocio-billing.md
 @docs/landing.md
