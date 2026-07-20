@@ -807,10 +807,10 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     .ph-crumbs a:hover { color: var(--color-blue-deep); }
     .ph-crumbs a::after, .ph-crumbs > span:not(.ph-crumb-here)::after { content: '/'; margin-left: 6px; color: #c4cad3; }
     .ph-crumb-here { color: var(--color-text); font-weight: 600; }
-    .ph-tabs-row { max-width: var(--content-max); }
-    /* Tabs de sección: segmented control estilo iOS — track gris, segmento activo blanco (jul 2026) */
+    .ph-tabs-row { max-width: var(--content-max); position: relative; z-index: 5; }
+    /* Tabs de sección: segmented control estilo iOS — track recesado, activo navy sólido (jul 2026) */
     .ph-tabs-row:not(:empty) {
-        margin: 1.15rem 0 0; display: inline-flex; align-items: center; gap: 2px;
+        margin: 1.15rem 0 1.6rem; display: inline-flex; align-items: center; gap: 2px;
         max-width: 100%; overflow-x: auto; overflow-y: visible;
         scrollbar-width: none; -webkit-overflow-scrolling: touch;
         background: var(--color-bg-soft);
@@ -832,14 +832,13 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     .ph-tab:hover { color: var(--color-text); }
     .ph-tab:active { transform: scale(0.96); }
     .ph-tab.active {
-        color: var(--color-blue-deep); background: var(--surface);
-        box-shadow: 0 1px 2px rgba(10,25,47,0.09), 0 1px 1px rgba(10,25,47,0.05), inset 0 0 0 1px rgba(10,25,47,0.03);
+        color: #fff; background: var(--color-blue-deep);
+        box-shadow: 0 1px 2px rgba(10,25,47,0.2), 0 4px 10px -3px rgba(10,25,47,0.35);
     }
-    .ph-tab.active:hover { color: var(--color-blue-deep); }
+    .ph-tab.active:hover { color: #fff; }
     .ph-tab.active:active { transform: scale(0.97); }
     html[data-theme="dark"] .ph-tab.active {
-        background: var(--surface-2);
-        box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 1px 1px rgba(0,0,0,0.2), inset 0 0 0 1px rgba(255,255,255,0.05);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 4px 10px -3px rgba(0,0,0,0.5);
     }
 
     /* ════════ Barra de progreso de navegación ════════ */
