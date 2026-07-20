@@ -1,7 +1,10 @@
 ---
-// /elements — CORD Elements: el cotizador embebible (landing estilo Stripe
-// Checkout). El hero monta un <iframe> EN VIVO de /embed/demo: la página se
-// demuestra a sí misma. Mismo lenguaje visual que /producto/* (PageAnims).
+// /elements — CORD Elements: el cotizador embebible. Landing con el MISMO
+// lenguaje visual que /desarrolladores/[slug] (hero pp-hero 100dvh, bento con
+// tarjeta oscura + aurora, TrustGrid, cross-link) para que se sienta parte de
+// la misma familia — con el añadido de un <iframe> EN VIVO de /embed/demo en
+// el hero (la página se demuestra a sí misma) y las secciones extra que
+// necesita un SDK: instalación por framework, lista de capacidades y eventos.
 export const prerender = true;
 
 import Layout from '../layouts/Layout.astro';
@@ -10,13 +13,14 @@ import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
 import FaqAccordion from '../components/landing/FaqAccordion.astro';
 import DevBlockMockup from '../components/desarrolladores/DevBlockMockup.astro';
+import TrustGrid from '../components/desarrolladores/TrustGrid.astro';
+import PriceAuroraBg from '../components/landing/PriceAuroraBg.jsx';
 import { getLangFromUrl, useTranslations } from '../i18n/utils';
 import { DEV_PAGES } from '../lib/desarrolladores';
 import { DEV_PAGES_EN } from '../lib/desarrolladores.en';
 
-// Reutiliza el copy de bloques/FAQ ya escrito para /desarrolladores/elements
-// (misma fuente, cero duplicación) — la grilla de 3 tarjetas y el FAQ de esta
-// página son el mismo contenido, no una copia a mano.
+// Reutiliza el copy de bloques/FAQ/trust ya escrito para 'elements' en
+// desarrolladores.ts (misma fuente, cero duplicación).
 const elementsData = (isEnPage: boolean) => (isEnPage ? DEV_PAGES_EN : DEV_PAGES).find((p) => p.slug === 'elements')!;
 
 // Snippets de instalación por framework (tabs estilo Stripe). El embed es el mismo
@@ -37,10 +41,22 @@ export function Cotizacion({ token }) {
   return (
     <CordCotizador
       token={token}
+      appearance={{ theme: 'auto' }}
       onApproved={(d) => console.log('Aprobada', d.folio)}
       onPay={() => location.assign('/gracias')}
     />
   );
+}`,
+    },
+    {
+        id: 'headless', label: 'Headless', file: 'useQuoteBuilder.tsx',
+        code: `// npm install @flouviahq/elements
+import { useQuoteBuilder } from '@flouviahq/elements/react';
+
+export function MiCotizador({ token }) {
+  const { items, total, addItem, submit } = useQuoteBuilder({ token });
+  // construyes tu propia UI — cero markup de Cord
+  return <MiPropioDiseno items={items} total={total} onSubmit={submit} />;
 }`,
     },
     {
@@ -94,6 +110,7 @@ const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
 const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 const devPage = elementsData(isEn);
+const crossPage = (isEn ? DEV_PAGES_EN : DEV_PAGES).find((p) => p.slug === 'api')!;
 
 const EVENTS = `document.querySelector('[data-cord-token]')
   .addEventListener('cord:approved', (e) => {
@@ -132,23 +149,23 @@ const breadcrumbSchema = {
     <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
     <Nav />
     <main>
-        <!-- ════════ HERO ════════ -->
-        <section class="pp-hero el-hero">
-            <div class="el-hero-mesh" aria-hidden="true"></div>
-            <div class="el-hero-grid">
-                <div class="el-hero-text">
-                    <p class="el-eyebrow reveal">CORD ELEMENTS</p>
-                    <h1 class="el-title masked-title" set:html={isEn ? 'Your quote builder, embedded anywhere.' : 'Tu cotizador, en cualquier sitio.'} />
-                    <p class="el-sub reveal">
+        <!-- ════════ HERO — split 100dvh, mismo patrón que /desarrolladores/[slug] ════════ -->
+        <section class="pp-hero">
+            <div class="pp-hero-mesh" aria-hidden="true"></div>
+            <div class="pp-hero-inner">
+                <div class="pp-hero-text">
+                    <h1 class="pp-title masked-title" set:html={isEn ? 'Your quote builder, embedded anywhere.' : 'Tu cotizador, en cualquier sitio.'} />
+                    <p class="pp-sub reveal">
                         {isEn ? <Fragment>Bring Cord's quote builder to your clients' portal with <b>one line of code</b>. Your brand, your catalog, approval and online payment — all inside their ecosystem, without leaving their site.</Fragment> : <Fragment>Lleva el cotizador de Cord al portal de tus clientes con <b>una línea de código</b>. Tu marca, tu catálogo, aprobación y pago en línea — todo dentro de su ecosistema, sin que salgan de su web.</Fragment>}
                     </p>
-                    <div class="el-actions reveal">
-                        <a href={l("/registro")} class="el-btn-primary">
+                    <div class="pp-actions reveal">
+                        <a href={l("/registro")} class="pp-btn-primary">
                             <span>{isEn ? 'Start for free' : 'Empezar gratis'}</span>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         </a>
-                        <a href="#instalar" class="el-btn-ghost">{isEn ? 'View code' : 'Ver el código'}</a>
+                        <a href="#instalar" class="pp-btn-ghost">{isEn ? 'View code' : 'Ver el código'}</a>
                     </div>
+                    <p class="pp-plan reveal">{devPage.plan}</p>
 
                     <div class="el-cmd reveal" data-install-cmd>
                         <code><span class="el-cmd-prompt">$</span>npm install @flouviahq/elements</code>
@@ -156,38 +173,42 @@ const breadcrumbSchema = {
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                         </button>
                     </div>
-                    <p class="el-plan reveal">
+                    <p class="el-npmline reveal">
                         <a href="https://www.npmjs.com/package/@flouviahq/elements" target="_blank" rel="noopener" class="el-npm">
                             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M0 7.334v8h6.666v1.332H12v-1.332h12v-8H0zm6.666 6.664H5.334v-4H3.999v4H1.335V8.667h5.331v5.331zm4 0v1.336H8.001V8.667h5.334v5.332h-2.669v-.001zm12.001 0h-1.33v-4h-1.336v4h-1.335v-4h-1.33v4h-2.671V8.667h8.002v5.331zM10.665 10H12v2.667h-1.335V10z"/></svg>
-                            {isEn ? 'Available on npm · @flouviahq/elements' : 'Disponible en npm · @flouviahq/elements'}
+                            {isEn ? 'Available on npm · @flouviahq/elements · v1.0.0' : 'Disponible en npm · @flouviahq/elements · v1.0.0'}
                         </a>
                     </p>
                 </div>
 
                 <!-- Demo EN VIVO: un sitio de tercero con el cotizador embebido -->
-                <div class="el-hero-demo reveal">
-                    <div class="el-demo-glow" aria-hidden="true"></div>
-                    <div class="el-browser">
-                        <div class="el-browser-bar">
-                            <span class="el-url">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                                portal.tucliente.com/cotizacion
-                            </span>
-                            <span class="el-live-badge"><i></i>{isEn ? 'live' : 'en vivo'}</span>
-                        </div>
-                        <div class="el-browser-body">
-                            <div class="el-host-chrome" aria-hidden="true">
-                                <span class="el-host-logo">ACME Industrial</span>
-                                <span class="el-host-nav"><i></i><i></i><i></i></span>
+                <div class="pp-hero-visual">
+                <div class="pp-mockup-wrap reveal-mockup">
+                    <div class="pp-glow" aria-hidden="true"></div>
+                    <div class="pp-mockup">
+                        <div class="el-browser">
+                            <div class="el-browser-bar">
+                                <span class="el-url">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    portal.tucliente.com/cotizacion
+                                </span>
+                                <span class="el-live-badge"><i></i>{isEn ? 'live' : 'en vivo'}</span>
                             </div>
-                            <p class="el-host-line" aria-hidden="true">{isEn ? 'Your quote is ready' : 'Tu cotización está lista'}</p>
-                            <!-- iframe REAL del producto -->
-                            <iframe class="el-demo-frame" src="/embed/demo" title={isEn ? "Cord Quote Builder (live demo)" : "Cotizador Cord (demo en vivo)"} loading="lazy"></iframe>
-                            <span class="el-host-foot" aria-hidden="true">{isEn ? '© ACME Industrial · client portal' : '© ACME Industrial · portal de clientes'}</span>
+                            <div class="el-browser-body">
+                                <div class="el-host-chrome" aria-hidden="true">
+                                    <span class="el-host-logo">ACME Industrial</span>
+                                    <span class="el-host-nav"><i></i><i></i><i></i></span>
+                                </div>
+                                <p class="el-host-line" aria-hidden="true">{isEn ? 'Your quote is ready' : 'Tu cotización está lista'}</p>
+                                <!-- iframe REAL del producto -->
+                                <iframe class="el-demo-frame" src="/embed/demo" title={isEn ? "Cord Quote Builder (live demo)" : "Cotizador Cord (demo en vivo)"} loading="lazy"></iframe>
+                                <span class="el-host-foot" aria-hidden="true">{isEn ? '© ACME Industrial · client portal' : '© ACME Industrial · portal de clientes'}</span>
+                            </div>
                         </div>
+                        <span class="el-demo-tag">{isEn ? '▲ Cord Quote Builder, embedded live' : '▲ Cotizador de Cord, embebido en vivo'}</span>
                     </div>
-                    <span class="el-demo-tag">{isEn ? '▲ Cord Quote Builder, embedded live' : '▲ Cotizador de Cord, embebido en vivo'}</span>
                 </div>
+                </div>{/* /pp-hero-visual */}
             </div>
         </section>
 
@@ -201,7 +222,7 @@ const breadcrumbSchema = {
             <div class="el-install-head">
                 <p class="el-eyebrow reveal">{isEn ? 'ONE LINE OF CODE' : 'UNA LÍNEA DE CÓDIGO'}</p>
                 <h2 class="el-h2 masked-title" set:html={isEn ? 'Paste. Done. No backend.' : 'Pegar. Listo. Sin backend.'} />
-                <p class="el-copy reveal">{isEn ? <Fragment>A script and a <code>&lt;div&gt;</code>. The quote builder appears with your brand, auto-adjusts its height, and inherits the host page's style.</Fragment> : <Fragment>Un script y un <code>&lt;div&gt;</code>. El cotizador aparece con tu marca, se ajusta solo a la altura del contenido y hereda el estilo de la página anfitriona.</Fragment>}</p>
+                <p class="el-copy reveal">{isEn ? <Fragment>A script and a <code>&lt;div&gt;</code>. The quote builder appears with your brand, auto-adjusts its height, and inherits the host page's style — or go fully <code>headless</code> and build your own UI on top of our state.</Fragment> : <Fragment>Un script y un <code>&lt;div&gt;</code>. El cotizador aparece con tu marca, se ajusta solo a la altura del contenido y hereda el estilo de la página anfitriona — o ve 100% <code>headless</code> y construye tu propia interfaz sobre nuestro estado.</Fragment>}</p>
             </div>
             <div class="el-code el-tabs reveal-mockup" data-el-tabs>
                 <div class="el-tabbar" role="tablist">
@@ -236,10 +257,13 @@ const breadcrumbSchema = {
             </div>
         </section>
 
-        <!-- ════════ BENTO (3 tarjetas, mismo patrón que /producto y /desarrolladores) ════════ -->
+        <!-- ════════ BENTO (3 tarjetas, mismo patrón que /producto y /desarrolladores — tarjeta 0 con aurora) ════════ -->
         <section class="pp-bento">
-            {devPage.blocks.map((b, i) => (
-                <article class={`pp-bcard pp-bcard-${i}`}>
+            {devPage.blocks.map((b, i) => {
+                const dark = i === 0;
+                return (
+                <article class={`pp-bcard pp-bcard-${i}${dark ? ' pp-bcard-dark' : ''}`}>
+                    {dark && <PriceAuroraBg client:only="react" />}
                     <div class="pp-bcard-text">
                         <p class="pp-bcard-eyebrow">{b.eyebrow}</p>
                         <h2 class="pp-bcard-h2 masked-title" set:html={b.titulo} />
@@ -253,11 +277,12 @@ const breadcrumbSchema = {
                             ))}
                         </ul>
                     </div>
-                    <div class="pp-bcard-visual reveal-mockup">
+                    <div class="pp-bcard-visual">
                         <DevBlockMockup slug="elements" index={i} />
                     </div>
                 </article>
-            ))}
+                );
+            })}
         </section>
 
         <!-- ════════ CARACTERÍSTICAS (lista, no tarjetas) ════════ -->
@@ -277,7 +302,7 @@ const breadcrumbSchema = {
                 </div>
                 <div class="el-feat reveal">
                     <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span>
-                    <div><b>{isEn ? 'Integrated online payment' : 'Pago en línea integrado'}</b><span>{isEn ? <Fragment>Stripe Checkout inside the iframe (<code>allow="payment"</code> attribute). Get paid without redirecting to another tab.</Fragment> : <Fragment>Stripe Checkout dentro del iframe (atributo <code>allow="payment"</code>). Cobras sin redirigir a otra pestaña.</Fragment>}</span></div>
+                    <div><b>{isEn ? 'Integrated online payment' : 'Pago en línea integrado'}</b><span>{isEn ? <Fragment>Card and SPEI checkout inside the iframe (<code>allow="payment"</code> attribute). Get paid without redirecting to another tab.</Fragment> : <Fragment>Checkout con tarjeta y SPEI dentro del iframe (atributo <code>allow="payment"</code>). Cobras sin redirigir a otra pestaña.</Fragment>}</span></div>
                 </div>
                 <div class="el-feat reveal">
                     <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
@@ -285,7 +310,7 @@ const breadcrumbSchema = {
                 </div>
                 <div class="el-feat reveal">
                     <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-                    <div><b>{isEn ? 'Secure by design' : 'Seguro por diseño'}</b><span>{isEn ? <Fragment>Domain allowlist per account (CSP <code>frame-ancestors</code>). Only YOU decide which sites can embed it — anti-clickjacking.</Fragment> : <Fragment>Allowlist de dominios por cuenta (CSP <code>frame-ancestors</code>). Solo TÚ decides en qué sitios puede embeberse — anti-clickjacking.</Fragment>}</span></div>
+                    <div><b>{isEn ? 'Secure by design' : 'Seguro por diseño'}</b><span>{isEn ? <Fragment>Domain allowlist per account (CSP <code>frame-ancestors</code>) plus scoped <code>pk_</code> publishable keys — only YOU decide which sites can embed it and what a browser-exposed key can touch.</Fragment> : <Fragment>Allowlist de dominios por cuenta (CSP <code>frame-ancestors</code>) y llaves públicas <code>pk_</code> de scope acotado — solo TÚ decides en qué sitios puede embeberse y qué puede tocar una llave expuesta en el navegador.</Fragment>}</span></div>
                 </div>
                 <div class="el-feat reveal">
                     <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
@@ -298,6 +323,14 @@ const breadcrumbSchema = {
                 <div class="el-feat reveal">
                     <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="14" y1="4" x2="10" y2="20"/></svg></span>
                     <div><b>{isEn ? 'Typed SDK, or fully headless' : 'SDK tipado, o 100% headless'}</b><span>{isEn ? <Fragment>Use the quote builder as-is, or drop it entirely and build your own UI with <code>useQuoteBuilder()</code> — TypeScript types generated from the real code, not hand-written.</Fragment> : <Fragment>Usa el cotizador tal cual, o descártalo por completo y construye tu propia interfaz con <code>useQuoteBuilder()</code> — tipos de TypeScript generados del código real, no escritos a mano.</Fragment>}</span></div>
+                </div>
+                <div class="el-feat reveal">
+                    <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6M7 17h4"/></svg></span>
+                    <div><b>{isEn ? 'Same engine as the app' : 'Mismo motor que la app'}</b><span>{isEn ? <Fragment>Totals and taxes run through the exact same <code>engine.ts</code> the rest of Cord uses — the total your embed shows can never drift from the one in your account.</Fragment> : <Fragment>Totales e impuestos corren por el MISMO <code>engine.ts</code> que usa el resto de Cord — el total que muestra tu embed jamás diverge del de tu cuenta.</Fragment>}</span></div>
+                </div>
+                <div class="el-feat reveal">
+                    <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M9 9h6v6H9z"/><path d="M4 9h2M4 15h2M18 9h2M18 15h2M9 4v2M15 4v2M9 18v2M15 18v2"/></svg></span>
+                    <div><b>{isEn ? 'Server SDK + verified webhooks' : 'Server SDK + webhooks verificados'}</b><span>{isEn ? <Fragment><code>@flouviahq/elements/server</code> for Node: read the same data from your backend and verify webhook signatures with <code>constructEvent</code> — no need to implement HMAC yourself.</Fragment> : <Fragment><code>@flouviahq/elements/server</code> para Node: lee los mismos datos desde tu backend y verifica firmas de webhooks con <code>constructEvent</code> — sin implementar HMAC a mano.</Fragment>}</span></div>
                 </div>
             </div>
         </section>
@@ -323,6 +356,8 @@ const breadcrumbSchema = {
             </div>
         </section>
 
+        {devPage.trust && <TrustGrid trust={devPage.trust} />}
+
         <!-- ════════ CTA secundario ════════ -->
         <section class="el-mid">
             <h2 class="el-mid-title masked-title" set:html={isEn ? 'Prefer not to embed? Share the link.' : '¿Prefieres no embeber? Comparte el link.'} />
@@ -336,6 +371,20 @@ const breadcrumbSchema = {
             title={isEn ? 'What developers ask about Elements.' : 'Lo que preguntan los developers sobre Elements.'}
             id="elements-faq"
         />
+
+        <!-- ════════ CROSS-LINK (estilo lista, no cards) — misma pieza que /desarrolladores/[slug] ════════ -->
+        <section class="dv-more">
+            <a href={l(`/desarrolladores/${crossPage.slug}`)} class="dv-more-row reveal">
+                <div>
+                    <span class="dv-more-eyebrow">{crossPage.eyebrow}</span>
+                    <b>{crossPage.nav}</b>
+                    <i>{crossPage.sub.split('.')[0]}.</i>
+                </div>
+                <span class="dv-more-arrow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </span>
+            </a>
+        </section>
     </main>
 
     <Footer
@@ -345,73 +394,209 @@ const breadcrumbSchema = {
     <PageAnims />
 </Layout>
 
+<script>
+    // Tabs de framework + copiar (sin dependencias).
+    function initElTabs() {
+        const wrap = document.querySelector('[data-el-tabs]');
+        if (!wrap) return;
+        const tabs = Array.from(wrap.querySelectorAll<HTMLElement>('.el-tab'));
+        const panels = Array.from(wrap.querySelectorAll<HTMLElement>('.el-panel'));
+
+        const show = (id: string) => {
+            tabs.forEach((t) => t.classList.toggle('active', t.dataset.tab === id));
+            panels.forEach((p) => {
+                const on = p.dataset.panel === id;
+                p.classList.toggle('active', on);
+                p.hidden = !on;
+            });
+        };
+        tabs.forEach((t) => t.addEventListener('click', () => show(t.dataset.tab!)));
+
+        const copyBtn = wrap.querySelector<HTMLButtonElement>('[data-copy]');
+        copyBtn?.addEventListener('click', async () => {
+            const active = wrap.querySelector<HTMLElement>('.el-panel.active code');
+            try {
+                await navigator.clipboard.writeText(active?.textContent || '');
+                const label = copyBtn.querySelector('span');
+                copyBtn.classList.add('done');
+                if (label) label.textContent = document.documentElement.lang === 'en' ? 'Copied!' : '¡Copiado!';
+                setTimeout(() => { copyBtn.classList.remove('done'); if (label) label.textContent = document.documentElement.lang === 'en' ? 'Copy' : 'Copiar'; }, 2000);
+            } catch {}
+        });
+    }
+    // Copiar el comando `npm install` del hero.
+    function initInstallCmd() {
+        const box = document.querySelector('[data-install-cmd]');
+        if (!box) return;
+        const btn = box.querySelector<HTMLButtonElement>('.el-cmd-copy');
+        btn?.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText('npm install @flouviahq/elements');
+                btn.classList.add('done');
+                setTimeout(() => btn.classList.remove('done'), 2000);
+            } catch {}
+        });
+    }
+
+    function init() { initElTabs(); initInstallCmd(); }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+</script>
+
+<script>
+    // Motion del bento (mismo patrón que /desarrolladores/[slug]): entrada
+    // fade+rise de la ventana + cascada de filas internas, y las 3 animaciones
+    // específicas de los mockups dbm-el-m0/m1/m2.
+    import { gsap } from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    gsap.registerPlugin(ScrollTrigger);
+
+    window.addEventListener('load', () => {
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const isEn = document.documentElement.lang === 'en';
+
+        if (!reduced) {
+            document.querySelectorAll('.pp-bcard-visual').forEach((block) => {
+                const win = block.querySelector('.dbm-app, .dbm-term');
+                if (!win) return;
+                gsap.set(win, { y: 26, opacity: 0 });
+                ScrollTrigger.create({ trigger: block, start: 'top 88%', once: true,
+                    onEnter: () => {
+                        gsap.to(win, { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', clearProps: 'transform' });
+                        const rows = win.querySelectorAll('.dbm-kv, .dbm-toolrow, .dbm-scope, .dbm-log > div:not([style]), .dbm-sync-row');
+                        gsap.from(rows, { opacity: 0, y: 8, duration: 0.5, stagger: 0.05, delay: 0.15, ease: 'power2.out' });
+                    } });
+            });
+        }
+
+        // ELEMENTS 0 — el skeleton de carga cede su lugar a la card mini con el total.
+        const elB0 = document.querySelector('.dbm-el-m0');
+        if (elB0 && !reduced) {
+            const skel = document.getElementById('elSkel');
+            const mini = document.getElementById('elMini');
+            if (skel) gsap.to(skel, { backgroundPosition: '-200% 0', duration: 1.2, ease: 'none', repeat: -1 });
+            ScrollTrigger.create({ trigger: elB0, start: 'top 88%', once: true,
+                onEnter: () => {
+                    gsap.timeline({ repeat: -1, repeatDelay: 1.6 })
+                      .set(skel, { opacity: 1 }).set(mini, { opacity: 0 })
+                      .to({}, { duration: 1.1 })
+                      .to(skel, { opacity: 0, duration: 0.3 })
+                      .to(mini, { opacity: 1, duration: 0.4, ease: 'power2.out' }, '<')
+                      .to({}, { duration: 1.4 });
+                } });
+        }
+        // ELEMENTS 1 — el snippet de código cambia de tab (HTML → React → Web Component).
+        const elB1 = document.querySelector('.dbm-el-m1');
+        if (elB1 && !reduced) {
+            const tabs = elB1.querySelectorAll('.dbm-el-tabs span');
+            const code = document.getElementById('elCode');
+            const snippets = [
+                '<span class="dbm-jtag">&lt;script src=</span><span class="dbm-jstr">"…/embed.js"</span><span class="dbm-jtag">&gt;</span>',
+                'import { CordCotizador } from <span class="dbm-jstr">\'@flouviahq/elements/react\'</span>',
+                '<span class="dbm-jtag">&lt;cord-cotizador</span> token=<span class="dbm-jstr">"…"</span><span class="dbm-jtag">&gt;</span>',
+            ];
+            let i = 0;
+            ScrollTrigger.create({ trigger: elB1, start: 'top 88%', once: true,
+                onEnter: () => {
+                    gsap.timeline({ repeat: -1, repeatDelay: 1.4 }).call(() => {
+                        tabs.forEach((t, k) => t.classList.toggle('dbm-seg-on', k === i));
+                        if (code) { code.style.opacity = '0'; setTimeout(() => { code.innerHTML = snippets[i]; code.style.opacity = '1'; }, 180); }
+                        i = (i + 1) % snippets.length;
+                    }).to({}, { duration: 1.4 });
+                } });
+        }
+        // ELEMENTS 2 — el cursor "clickea" Aprobar dentro del embed y dispara el evento.
+        const elB2 = document.querySelector('.dbm-el-m2');
+        if (elB2 && !reduced) {
+            const cursor = document.getElementById('elCursor');
+            const approve = document.getElementById('elApprove');
+            const badge = document.getElementById('elBadge');
+            const evt = elB2.querySelector('.dbm-el2-event');
+            ScrollTrigger.create({ trigger: elB2, start: 'top 88%', once: true,
+                onEnter: () => {
+                    gsap.timeline({ repeat: -1, repeatDelay: 1.8 })
+                      .set(cursor, { x: 14, y: 16, opacity: 0 })
+                      .set(evt, { opacity: 0.35 })
+                      .call(() => { if (badge) { badge.textContent = isEn ? 'Review' : 'Revisar'; badge.style.color = ''; badge.style.background = ''; } })
+                      .to(cursor, { opacity: 1, duration: 0.3 })
+                      .to(cursor, { x: 0, y: 0, duration: 0.6, ease: 'power2.inOut' })
+                      .to(approve, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 })
+                      .call(() => { if (badge) { badge.textContent = isEn ? 'Approved' : 'Aprobada'; badge.style.color = '#059669'; badge.style.background = 'rgba(16,185,129,0.12)'; } })
+                      .fromTo(approve, { boxShadow: '0 0 0 0 rgba(16,185,129,0.5)' }, { boxShadow: '0 0 0 8px rgba(16,185,129,0)', duration: 0.7 })
+                      .to(cursor, { opacity: 0, duration: 0.3 }, '<')
+                      .to(evt, { opacity: 1, duration: 0.4 }, '-=0.2')
+                      .to({}, { duration: 1.6 });
+                } });
+        }
+    });
+</script>
+
 <style>
-    /* ════════ HERO ════════ */
-    .el-hero {
+    /* ════════ HERO — split layout, llena 100dvh (mismo patrón que /desarrolladores/[slug]) ════════ */
+    .pp-hero {
         position: relative;
-        padding: 11rem 5% 5rem;
-        overflow: clip;
+        min-height: 100dvh;
+        display: flex; align-items: center;
+        overflow-x: clip;
         background: var(--color-bg);
     }
-    .el-hero-mesh {
-        position: absolute; inset: -25% -10% auto;
-        height: 90%;
+    .pp-hero-mesh {
+        position: absolute; inset: -20% -10% auto; height: 80%;
         background:
-            radial-gradient(ellipse 50% 60% at 22% 18%, rgba(10,25,47,0.06) 0%, transparent 60%),
-            radial-gradient(ellipse 46% 56% at 80% 8%, rgba(10,25,47,0.045) 0%, transparent 60%);
+            radial-gradient(ellipse 50% 60% at 28% 20%, rgba(10,25,47,0.05) 0%, transparent 60%),
+            radial-gradient(ellipse 44% 54% at 76% 12%, rgba(10,25,47,0.04) 0%, transparent 60%);
         pointer-events: none;
     }
-    .el-hero-grid {
-        position: relative; z-index: 1;
-        max-width: 1200px; margin: 0 auto;
-        display: grid; grid-template-columns: 1fr 1.05fr; gap: 4rem; align-items: center;
+    .pp-hero-inner {
+        position: relative; z-index: 1; width: 100%;
+        max-width: 1440px; margin: 0 auto;
+        padding: 7rem 5% 4rem 6%;
+        display: grid; grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.55fr);
+        gap: 2.6rem; align-items: center;
     }
-    .el-hero-text { max-width: 540px; }
-
-    .el-eyebrow {
-        font-size: 0.65rem; font-weight: 800; letter-spacing: 3px;
-        text-transform: uppercase; color: #888; margin: 0 0 1.3rem;
+    .pp-hero-text { text-align: left; min-width: 0; }
+    .pp-hero-visual {
+        position: relative; overflow: visible; min-width: 0;
+        margin-right: -12%;
+        display: flex; align-items: center; justify-content: center;
     }
-    /* El tamaño/peso real lo gobierna el estándar global h1.masked-title (Layout.astro);
-       aquí solo el color/margen propios de este hero + el override de alineación de abajo
-       (el layout es split izq/der, el título NO debe centrarse). */
-    .el-title { color: var(--color-text); margin: 0 0 1.5rem; }
-    .el-sub {
-        font-size: 1.1rem; line-height: 1.65; color: var(--color-text-muted);
-        margin: 0 0 2.1rem;
+    .pp-title { color: #050505; margin: 0 0 1.4rem; text-align: left; }
+    .pp-sub {
+        font-size: 1.08rem; line-height: 1.65; color: var(--color-text-muted);
+        max-width: 480px; margin: 0 0 2.1rem; text-align: left;
     }
-    .el-sub b { color: var(--color-text); font-weight: 600; }
-    .el-actions { display: flex; gap: 0.9rem; align-items: center; flex-wrap: wrap; }
-    .el-btn-primary {
+    .pp-sub b { color: var(--color-text); font-weight: 600; }
+    .pp-actions { display: flex; gap: 0.9rem; justify-content: flex-start; align-items: center; flex-wrap: wrap; }
+    .pp-btn-primary {
         display: inline-flex; align-items: center; gap: 10px; position: relative; overflow: hidden;
-        background: var(--color-blue-deep); color: #fff;
-        text-decoration: none; font-size: 0.98rem; font-weight: 600;
-        padding: 14px 30px; border-radius: 999px;
+        background: var(--color-blue-deep); color: #fff; text-decoration: none;
+        font-size: 0.98rem; font-weight: 600; padding: 14px 30px; border-radius: 999px;
         box-shadow: 0 18px 44px -16px rgba(10,25,47,0.55);
         transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
     }
-    .el-btn-primary::after {
+    .pp-btn-primary::after {
         content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
         background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.18) 50%, transparent 62%);
         transform: translateX(-110%); transition: transform 0.55s ease;
     }
-    .el-btn-primary:hover::after { transform: translateX(110%); }
-    .el-btn-primary svg { width: 15px; height: 15px; transition: transform 0.5s var(--ease-spring); }
-    .el-btn-primary:hover { transform: translateY(-3px); box-shadow: 0 26px 56px -16px rgba(10,25,47,0.6); }
-    .el-btn-primary:hover svg { transform: translateX(4px); }
-    .el-btn-primary:active { transform: scale(0.97); }
-    .el-btn-ghost {
+    .pp-btn-primary:hover::after { transform: translateX(110%); }
+    .pp-btn-primary svg { width: 15px; height: 15px; transition: transform 0.5s var(--ease-spring); }
+    .pp-btn-primary:hover { transform: translateY(-3px); box-shadow: 0 26px 56px -16px rgba(10,25,47,0.6); }
+    .pp-btn-primary:hover svg { transform: translateX(4px); }
+    .pp-btn-primary:active { transform: scale(0.97); }
+    .pp-btn-ghost {
         color: var(--color-text); text-decoration: none; font-weight: 600; font-size: 0.98rem;
         padding: 14px 22px; border-radius: 999px;
         border: 1px solid var(--color-border);
         transition: color 0.3s, border-color 0.3s, background 0.3s;
     }
-    .el-btn-ghost:hover { color: var(--color-blue-deep); border-color: rgba(10,25,47,0.2); background: rgba(10,25,47,0.03); }
+    .pp-btn-ghost:hover { color: var(--color-blue-deep); border-color: rgba(10,25,47,0.2); background: rgba(10,25,47,0.03); }
+    .pp-plan { font-size: 0.78rem; color: #99a2af; margin: 1.3rem 0 0; font-weight: 600; text-align: left; max-width: 480px; line-height: 1.55; }
 
     /* Comando de instalación copiable */
     .el-cmd {
         display: inline-flex; align-items: center; gap: 10px;
-        margin-top: 1.5rem; padding: 4px 4px 4px 16px;
+        margin-top: 1.1rem; padding: 4px 4px 4px 16px;
         background: var(--color-blue-deep); border-radius: 12px;
         box-shadow: 0 18px 44px -22px rgba(10,25,47,0.6);
         max-width: 100%;
@@ -433,7 +618,7 @@ const breadcrumbSchema = {
     .el-cmd-copy:hover { background: rgba(255,255,255,0.18); color: #fff; }
     .el-cmd-copy.done { color: #6ee7b7; }
 
-    .el-plan { font-size: 0.78rem; color: #99a2af; margin: 1.1rem 0 0; font-weight: 600; }
+    .el-npmline { font-size: 0.78rem; color: #99a2af; margin: 0.9rem 0 0; font-weight: 600; }
     .el-npm {
         display: inline-flex; align-items: center; gap: 7px;
         color: #99a2af; text-decoration: none; transition: color 0.2s;
@@ -441,13 +626,12 @@ const breadcrumbSchema = {
     .el-npm svg { width: 30px; height: 14px; color: #cb3837; }
     .el-npm:hover { color: var(--color-blue-deep); }
 
+    /* ── Mockup del hero: llena el espacio (estilo /desarrolladores) ── */
+    .pp-mockup-wrap { position: relative; max-width: 1000px; width: 100%; min-width: 0; margin: 0; }
+    .pp-glow { position: absolute; inset: -6% -4% 14%; background: radial-gradient(ellipse at center, rgba(10,25,47,0.06) 0%, transparent 72%); filter: blur(44px); z-index: 0; pointer-events: none; }
+    .pp-mockup { position: relative; }
+
     /* ── Demo en vivo (browser + iframe real) ── */
-    .el-hero-demo { position: relative; }
-    .el-demo-glow {
-        position: absolute; inset: 8% -6% -16%;
-        background: radial-gradient(ellipse at center, rgba(10,25,47,0.18) 0%, transparent 65%);
-        filter: blur(34px); pointer-events: none;
-    }
     .el-browser {
         position: relative;
         background: #fff;
@@ -518,6 +702,10 @@ const breadcrumbSchema = {
     .el-copy code, .el-feat code, .el-events-list code, .el-mid-sub code {
         font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.86em;
         background: rgba(10,25,47,0.06); padding: 1px 6px; border-radius: 5px; color: var(--color-blue-deep);
+    }
+    .el-eyebrow {
+        font-size: 0.65rem; font-weight: 800; letter-spacing: 3px;
+        text-transform: uppercase; color: #888; margin: 0 0 1.3rem;
     }
 
     /* Bloque de código (dark) */
@@ -628,17 +816,25 @@ const breadcrumbSchema = {
     .el-code-dev pre { padding: 1.5rem 1.6rem; }
 
     /* ════════ MID CTA ════════ */
-    .el-mid { max-width: 720px; margin: 0 auto; padding: 4rem 5% 7rem; text-align: center; }
+    .el-mid { max-width: 720px; margin: 0 auto; padding: 6rem 5% 5rem; text-align: center; }
     .el-mid-title {
         font-size: clamp(1.7rem, 3vw, 2.4rem); font-weight: 800; line-height: 1.12;
         letter-spacing: -0.03em; margin: 0 0 1rem;
     }
     .el-mid-sub { font-size: 1rem; line-height: 1.65; color: var(--color-text-muted); margin: 0 0 1.6rem; }
     .el-mid-sub i { font-style: normal; color: var(--color-text); font-weight: 600; }
+    .el-btn-ghost {
+        display: inline-block;
+        color: var(--color-text); text-decoration: none; font-weight: 600; font-size: 0.98rem;
+        padding: 14px 22px; border-radius: 999px;
+        border: 1px solid var(--color-border);
+        transition: color 0.3s, border-color 0.3s, background 0.3s;
+    }
+    .el-btn-ghost:hover { color: var(--color-blue-deep); border-color: rgba(10,25,47,0.2); background: rgba(10,25,47,0.03); }
 
     /* ════════ BENTO — 3 tarjetas (mismo patrón que /producto y /desarrolladores) ════════ */
     .pp-bento {
-        max-width: 1360px; margin: 0 auto; padding: 2rem 5% 6rem;
+        max-width: 1360px; margin: 0 auto; padding: 6rem 5% 5rem;
         display: grid; grid-template-columns: 5fr 7fr; gap: 1.5rem;
     }
     .pp-bcard-2, .pp-bcard-3 { grid-column: 1 / -1; }
@@ -659,29 +855,75 @@ const breadcrumbSchema = {
     .pp-bcard-bullets li { display: flex; align-items: flex-start; gap: 8px; font-size: 0.83rem; color: var(--color-text); font-weight: 500; line-height: 1.45; }
     .pp-bcard-bullets svg { width: 15px; height: 15px; color: var(--color-ok); flex-shrink: 0; margin-top: 1px; }
 
+    /* Tarjeta oscura con aurora GLSL (PriceAuroraBg, mismo shader del ROI de
+       /precios y de /desarrolladores/[slug]) — siempre la tarjeta 0. */
+    .pp-bcard-dark {
+        position: relative;
+        background: #08152a;
+        border-color: rgba(255,255,255,0.08);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 28px 60px -24px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .pp-bcard-dark .pp-bcard-text,
+    .pp-bcard-dark .pp-bcard-visual { position: relative; z-index: 2; background: transparent; }
+    .pp-bcard-dark .pp-bcard-eyebrow { color: rgba(255,255,255,0.45); }
+    .pp-bcard-dark .pp-bcard-h2 { color: #ffffff; }
+    .pp-bcard-dark .pp-bcard-copy { color: rgba(226,232,240,0.72); }
+    .pp-bcard-dark .pp-bcard-bullets li { color: rgba(255,255,255,0.92); }
+    .pp-bcard-dark .pp-bcard-bullets svg { color: #34d399; }
+
+    /* ════════ CROSS-LINK (última sección) ════════ */
+    .dv-more { max-width: 1080px; margin: 0 auto; padding: 2rem 5% 8rem; }
+    .dv-more-row {
+        display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
+        padding: 1.8rem 2rem; border-radius: 20px;
+        background: var(--color-bg-soft); border: 1px solid var(--color-border); text-decoration: none;
+        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring), border-color 0.4s;
+    }
+    .dv-more-row:hover { transform: translateY(-3px); box-shadow: 0 30px 70px -30px rgba(10,25,47,0.18); border-color: rgba(10,25,47,0.12); }
+    .dv-more-eyebrow { display: block; font-size: 0.6rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #99a2af; margin-bottom: 0.5rem; }
+    .dv-more-row b { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.3px; color: var(--color-text); }
+    .dv-more-row i { display: block; font-style: normal; font-size: 0.9rem; color: var(--color-text-muted); margin-top: 0.3rem; }
+    .dv-more-arrow {
+        flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%;
+        background: rgba(10,25,47,0.05); color: var(--color-blue-deep);
+        display: flex; align-items: center; justify-content: center;
+        transition: background 0.35s, color 0.35s, transform 0.5s var(--ease-spring);
+    }
+    .dv-more-arrow svg { width: 16px; height: 16px; }
+    .dv-more-row:hover .dv-more-arrow { background: var(--color-blue-deep); color: #fff; transform: translateX(3px); }
+
     /* ════════ RESPONSIVE ════════ */
-    @media (max-width: 920px) {
-        .el-hero { padding-top: 9rem; }
-        .el-hero-grid { grid-template-columns: 1fr; gap: 3rem; }
-        .el-hero-text { max-width: none; }
+    @media (max-width: 1000px) {
+        .pp-hero { align-items: flex-start; }
+        .pp-hero-inner { grid-template-columns: 1fr; gap: 0; padding: 6rem 6% 3rem; }
+        .pp-hero-text { padding-bottom: 2.5rem; }
+        .pp-hero-visual { margin-left: -6%; margin-right: -6%; justify-content: flex-start; }
+        .pp-mockup-wrap { max-width: 100%; }
         .el-dev { grid-template-columns: 1fr; gap: 2.5rem; }
         .el-dev-text { max-width: none; }
         .el-feat-list { grid-template-columns: 1fr; gap: 0; }
         .el-steps { grid-template-columns: 1fr; gap: 1.8rem; }
         .el-demo-frame { height: 480px; }
-        .pp-bento { grid-template-columns: 1fr; gap: 1.25rem; padding: 1.5rem 5% 3rem; }
+        .pp-bento { grid-template-columns: 1fr; gap: 1.25rem; padding: 4rem 5% 3rem; }
         .pp-bcard-2, .pp-bcard-3 { flex-direction: column; min-height: 500px; }
         .pp-bcard-2 .pp-bcard-text, .pp-bcard-3 .pp-bcard-text { flex: none; padding: 2.8rem 2.4rem 1.6rem; }
         .pp-bcard { min-height: 460px; }
     }
+    @media (max-width: 860px) {
+        .pp-hero { padding-top: 8.5rem; }
+        .dv-more-row { padding: 1.4rem 1.4rem; }
+    }
+</style>
 
-    /* El hero es un split izq/der (texto + demo) — el h1.masked-title global lo
-       centra por defecto para los heroes centrados del resto del sitio; este
-       título debe quedarse pegado a la izquierda, como en /producto y /desarrolladores. */
-    .el-hero-text .el-title { text-align: left !important; }
+<!-- Global override: GSAP wrapLines() inyecta .m-line/.m-line-in sin data-astro-cid,
+     por eso el override al título del hero DEBE ser is:global. Además aquí van los
+     overrides del bento (mismo patrón que /desarrolladores/[slug].astro) para que las
+     ventanas .dbm-app/.dbm-term llenen la tarjeta y sangren por abajo. -->
+<style is:global>
+    .pp-hero-text .pp-title { text-align: left !important; }
+    .pp-hero-text .m-line   { text-align: left !important; width: 100%; }
+    .pp-hero-text .m-line-in { display: block !important; text-align: left !important; }
 
-    /* Ventana del bento: llena el ancho, arriba, sangra por abajo (mismo patrón que
-       /desarrolladores/[slug] — DevBlockMockup se reutiliza tal cual). */
     .pp-bcard-visual .dbm-wrap {
         position: absolute; inset: 0;
         padding: 1.7rem 1.6rem 0;
@@ -689,56 +931,14 @@ const breadcrumbSchema = {
     }
     .pp-bcard-visual .dbm-app,
     .pp-bcard-visual .dbm-term { max-width: 560px; }
+
+    .pp-bcard-2 .pp-bcard-visual .dbm-wrap,
+    .pp-bcard-3 .pp-bcard-visual .dbm-wrap {
+        padding: 1.6rem;
+        align-items: center;
+    }
+
     @media (max-width: 960px) {
         .pp-bcard-visual .dbm-wrap { position: relative; inset: auto; padding: 1.4rem 1.4rem 0; }
     }
 </style>
-
-<script>
-    // Tabs de framework + copiar (sin dependencias).
-    function initElTabs() {
-        const wrap = document.querySelector('[data-el-tabs]');
-        if (!wrap) return;
-        const tabs = Array.from(wrap.querySelectorAll<HTMLElement>('.el-tab'));
-        const panels = Array.from(wrap.querySelectorAll<HTMLElement>('.el-panel'));
-
-        const show = (id: string) => {
-            tabs.forEach((t) => t.classList.toggle('active', t.dataset.tab === id));
-            panels.forEach((p) => {
-                const on = p.dataset.panel === id;
-                p.classList.toggle('active', on);
-                p.hidden = !on;
-            });
-        };
-        tabs.forEach((t) => t.addEventListener('click', () => show(t.dataset.tab!)));
-
-        const copyBtn = wrap.querySelector<HTMLButtonElement>('[data-copy]');
-        copyBtn?.addEventListener('click', async () => {
-            const active = wrap.querySelector<HTMLElement>('.el-panel.active code');
-            try {
-                await navigator.clipboard.writeText(active?.textContent || '');
-                const label = copyBtn.querySelector('span');
-                copyBtn.classList.add('done');
-                if (label) label.textContent = document.documentElement.lang === 'en' ? 'Copied!' : '¡Copiado!';
-                setTimeout(() => { copyBtn.classList.remove('done'); if (label) label.textContent = document.documentElement.lang === 'en' ? 'Copy' : 'Copiar'; }, 2000);
-            } catch {}
-        });
-    }
-    // Copiar el comando `npm install` del hero.
-    function initInstallCmd() {
-        const box = document.querySelector('[data-install-cmd]');
-        if (!box) return;
-        const btn = box.querySelector<HTMLButtonElement>('.el-cmd-copy');
-        btn?.addEventListener('click', async () => {
-            try {
-                await navigator.clipboard.writeText('npm install @flouviahq/elements');
-                btn.classList.add('done');
-                setTimeout(() => btn.classList.remove('done'), 2000);
-            } catch {}
-        });
-    }
-
-    function init() { initElTabs(); initInstallCmd(); }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-    else init();
-</script>

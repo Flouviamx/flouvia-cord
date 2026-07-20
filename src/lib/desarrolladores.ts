@@ -268,7 +268,7 @@ await mcpManager.disconnectAll();`,
         plan: 'Signup gratis. En el plan Gratis el link público lleva el discreto "vía Cord"; lo quitas y dejas solo tu marca desde Ajustes › Developers, donde también defines la allowlist de dominios autorizados para embeber.',
         stats: [
             { valor: '1', countup: 1, label: 'línea de código para montarlo en cualquier sitio' },
-            { valor: '5', countup: 5, label: 'formas de usarlo hoy: HTML (embed.js), React, y el Web Component en Vue, Astro y HTML' },
+            { valor: '6', countup: 6, label: 'formas de usarlo hoy: HTML (embed.js), React, Vue, Astro, Framer y Webflow' },
             { valor: '5', countup: 5, label: 'eventos en vivo: ready, approved, rejected, message y pay' },
         ],
         blocks: [
@@ -290,12 +290,12 @@ await mcpManager.disconnectAll();`,
             },
             {
                 eyebrow: 'NATIVO EN TU FRAMEWORK',
-                titulo: 'Un paquete de npm. React o Web Component.',
-                copy: 'Instala @flouviahq/elements y úsalo como un componente más. En React importas <CordCotizador> con callbacks tipados; en Vue, Astro o HTML usas el Web Component <cord-cotizador>, que re-emite los eventos como CustomEvents nativos sin prefijo. Mismo iframe por debajo, la integración que prefiera tu equipo.',
+                titulo: 'Un paquete de npm. Tipado, tematizable y headless si quieres.',
+                copy: 'Instala @flouviahq/elements 1.0 y úsalo como un componente más. En React importas <CordCotizador> con callbacks tipados; en Vue, Astro, Svelte o HTML usas el Web Component <cord-cotizador>. Los tipos de TypeScript se generan del build real (no se escriben a mano), así que nunca divergen del SDK. Y si prefieres construir tu propia interfaz, el hook useQuoteBuilder() te da el estado del cotizador sin una sola línea de nuestra UI.',
                 bullets: [
                     'import { CordCotizador } from \'@flouviahq/elements/react\'',
-                    'Web Component &lt;cord-cotizador token="…"&gt; para Vue, Astro, Svelte y HTML',
-                    'Callbacks tipados: onApproved, onRejected, onMessage, onPay y onReady',
+                    'Web Component &lt;cord-cotizador token="…"&gt; para Vue, Astro, Svelte y HTML — también SDKs para Framer y Webflow',
+                    'Appearance API real: tematiza el iframe (color, fuente, radios) o pasa appearance.baseTheme:"none" para 100% headless',
                 ],
                 code: {
                     label: 'React / Next.js',
@@ -306,6 +306,7 @@ export function Cotizacion({ token }) {
   return (
     <CordCotizador
       token={token}
+      appearance={{ theme: 'auto' }}
       onApproved={(d) => console.log('Aprobada', d.folio)}
       onPay={() => location.assign('/gracias')}
     />
@@ -316,10 +317,10 @@ export function Cotizacion({ token }) {
             {
                 eyebrow: 'TU MARCA · SEGURO POR DISEÑO',
                 titulo: 'El cotizador completo, no un widget de juguete.',
-                copy: 'Dentro del embed va el mismo cotizador de tu cuenta: tu color, tu logo y tus datos. El cliente aprueba, rechaza, negocia el precio o paga con Stripe sin salir de su portal, y tú decides en qué dominios puede embeberse con una allowlist por cuenta (CSP frame-ancestors) que blinda contra clickjacking.',
+                copy: 'Dentro del embed va el mismo cotizador de tu cuenta: tu color, tu logo y tus datos, calculados por el MISMO motor que usa el resto de Cord (nunca un total que diverja). El cliente aprueba, rechaza, negocia el precio o paga sin salir de su portal, y tú controlas el acceso con llaves separadas: una pública (pk_, solo para crear cotizaciones y leer catálogo) para el navegador, y una secreta (sk_) para tu backend — más la allowlist de dominios (CSP frame-ancestors) que blinda contra clickjacking.',
                 bullets: [
-                    'Tu marca, no la nuestra — color, logo y datos de tu cuenta de Cord',
-                    'Aprobación, contraoferta, chat y pago en línea, todos embebidos',
+                    'Llaves pk_ (públicas, de scope acotado) y sk_ (secretas) — nunca expongas tu CRM completo en el navegador',
+                    'Aprobación, contraoferta, chat, firma legal SHA-256 y pago en línea, todos embebidos',
                     'Allowlist de dominios por cuenta: solo tú decides dónde puede vivir',
                 ],
             },
@@ -330,9 +331,11 @@ export function Cotizacion({ token }) {
             { titulo: 'Reacciona al cliente', copy: 'Escucha cord:approved, cord:pay y los demás eventos en tu propia página para disparar tu analítica, redirigir o sincronizar tu CRM en tiempo real.' },
         ],
         faqs: [
-            { q: '¿Cord Elements requiere que monte un backend propio?', a: 'No. Es un iframe embebido (o el paquete @flouviahq/elements para React/Vue/Web Component) que habla directo con Cord — pegas el snippet y no necesitas servidor adicional.' },
+            { q: '¿Cord Elements requiere que monte un backend propio?', a: 'No. Es un iframe embebido (o el paquete @flouviahq/elements para React/Vue/Web Component) que habla directo con Cord — pegas el snippet y no necesitas servidor adicional. Si sí tienes backend, el Server SDK (@flouviahq/elements/server) te da acceso a los mismos datos y a webhooks verificados con firma HMAC.' },
+            { q: '¿Puedo usarlo 100% headless, sin la interfaz de Cord?', a: 'Sí. El hook useQuoteBuilder() expone todo el estado del cotizador (líneas, totales, cliente, envío) sin renderizar nuestra UI — construyes tu propia interfaz con tus componentes y solo usas la lógica.' },
+            { q: '¿Tiene tipos de TypeScript?', a: 'Sí, generados directo del código fuente del build (no escritos a mano) — si un tipo cambia en el SDK, tu editor lo refleja de inmediato, sin que el paquete y sus .d.ts se desincronicen.' },
             { q: '¿Puedo quitar la marca "vía Cord" del cotizador embebido?', a: 'Sí, desde un plan de pago puedes quitar el "vía Cord" y dejar solo tu marca desde Ajustes › Developers. En el plan Gratis se muestra ese aviso discreto.' },
-            { q: '¿En qué framework funciona Cord Elements?', a: 'El Web Component <cord-cotizador> funciona en cualquier HTML, Astro o Vue; hay un wrapper nativo de React (@flouviahq/elements/react) y un loader de una línea (embed.js) para WordPress o sitios sin framework.' },
+            { q: '¿En qué framework funciona Cord Elements?', a: 'El Web Component <cord-cotizador> funciona en cualquier HTML, Astro o Vue; hay un wrapper nativo de React (@flouviahq/elements/react), SDKs para Framer y Webflow, y un loader de una línea (embed.js) para WordPress o sitios sin framework.' },
         ],
         cta: { titulo: 'Lleva tu cotizador a donde están tus clientes.', sub: 'Crea tu cuenta gratis y embebe tu primer cotizador hoy mismo — una línea de código.' },
         trust: {
@@ -349,9 +352,9 @@ export function Cotizacion({ token }) {
             ],
             grid: [
                 { icon: 'globe', titulo: 'Funciona en cualquier stack: HTML, React, Vue, Astro', copy: 'El mismo iframe seguro se monta con un script, el paquete de npm o el Web Component — tú eliges según tu stack.' },
-                { icon: 'key', titulo: 'Autenticado por el token público de la cotización', copy: 'No hay sesión ni cuenta que compartir: el token de la cotización es todo lo que el embed necesita para funcionar.' },
+                { icon: 'key', titulo: 'Llaves pk_ públicas de scope acotado', copy: 'Una llave pk_ solo puede crear cotizaciones y leer catálogo — nunca tu cartera ni tu CRM completo, aunque quede expuesta en el navegador.' },
                 { icon: 'toggle', titulo: 'Quita el aviso "vía Cord" desde un plan de pago', copy: 'En el plan Gratis el cotizador muestra un discreto "vía Cord"; lo retiras en cualquier momento desde Ajustes.' },
-                { icon: 'route', titulo: 'Mismo iframe seguro, tres formas de integrarlo', copy: 'Cambias de HTML plano a React o Web Component sin perder nada — el iframe y sus eventos siguen siendo los mismos.' },
+                { icon: 'route', titulo: 'Mismo motor, seis formas de integrarlo', copy: 'Cambias de HTML plano a React, Vue, Framer o Webflow sin perder nada — el mismo cálculo de totales y los mismos eventos.' },
             ],
         },
     },
