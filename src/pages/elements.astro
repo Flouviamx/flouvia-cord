@@ -23,17 +23,19 @@ import { DEV_PAGES_EN } from '../lib/desarrolladores.en';
 // desarrolladores.ts (misma fuente, cero duplicación).
 const elementsData = (isEnPage: boolean) => (isEnPage ? DEV_PAGES_EN : DEV_PAGES).find((p) => p.slug === 'elements')!;
 
-// Snippets de instalación por framework (tabs estilo Stripe). El embed es el mismo
-// iframe en todos; cambia sólo cómo cargas el script según tu stack.
+// Snippets de instalación por framework — selector de logos reales (Google Favicon
+// V2, regla de diseño 8) en vez de tabs de texto. `highlight` marca la línea que se
+// resalta en el panel (siempre la línea que "conecta" Cord: el import o el <script>).
+// El embed es el mismo iframe en todos; cambia sólo cómo cargas el script.
 const CODES = [
     {
-        id: 'html', label: 'HTML', file: 'index.html',
+        id: 'html', label: 'HTML', file: 'index.html', icon: 'html', highlight: 1,
         code: `<!-- En cualquier sitio HTML -->
 <script src="https://cordhq.app/embed.js" async></script>
 <div data-cord-token="abc123"></div>`,
     },
     {
-        id: 'react', label: 'React', file: 'Cotizacion.jsx',
+        id: 'react', label: 'React', file: 'Cotizacion.jsx', domain: 'react.dev', highlight: 1,
         code: `// npm install @flouviahq/elements
 import { CordCotizador } from '@flouviahq/elements/react';
 
@@ -49,7 +51,7 @@ export function Cotizacion({ token }) {
 }`,
     },
     {
-        id: 'headless', label: 'Headless', file: 'useQuoteBuilder.tsx',
+        id: 'headless', label: 'Headless', file: 'useQuoteBuilder.tsx', icon: 'headless', highlight: 1,
         code: `// npm install @flouviahq/elements
 import { useQuoteBuilder } from '@flouviahq/elements/react';
 
@@ -60,7 +62,7 @@ export function MiCotizador({ token }) {
 }`,
     },
     {
-        id: 'next', label: 'Next.js', file: 'cotizacion.tsx',
+        id: 'next', label: 'Next.js', file: 'cotizacion.tsx', domain: 'nextjs.org', highlight: 2,
         code: `'use client';
 // npm install @flouviahq/elements
 import { CordCotizador } from '@flouviahq/elements/react';
@@ -75,7 +77,7 @@ export default function Cotizacion() {
 }`,
     },
     {
-        id: 'astro', label: 'Astro', file: 'Cotizacion.astro',
+        id: 'astro', label: 'Astro', file: 'Cotizacion.astro', domain: 'astro.build', highlight: 7,
         code: `---
 // npm install @flouviahq/elements
 const { token } = Astro.props;
@@ -87,7 +89,7 @@ const { token } = Astro.props;
 </script>`,
     },
     {
-        id: 'vue', label: 'Vue', file: 'Cotizacion.vue',
+        id: 'vue', label: 'Vue', file: 'Cotizacion.vue', domain: 'vuejs.org', highlight: 2,
         code: `<script setup>
 // npm install @flouviahq/elements
 import '@flouviahq/elements'; // registra <cord-cotizador>
@@ -99,12 +101,13 @@ defineProps({ token: String });
 </template>`,
     },
     {
-        id: 'wordpress', label: 'WordPress', file: 'Bloque HTML',
+        id: 'wordpress', label: 'WordPress', file: 'Bloque HTML', domain: 'wordpress.org', highlight: 1,
         code: `<!-- Pega esto en un bloque "HTML personalizado" -->
 <script src="https://cordhq.app/embed.js" async></script>
 <div data-cord-token="abc123"></div>`,
     },
-];
+].map((c) => ({ ...c, lines: c.code.split('\n') }));
+const favicon = (domain: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${domain}&size=128`;
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
@@ -238,19 +241,47 @@ const breadcrumbSchema = {
                         </div>
                     </div>
                 </div>
-                <div class="el-code el-tabs reveal-mockup" data-el-tabs>
-                    <div class="el-tabbar" role="tablist">
+
+                <div class="el-install-visual reveal-mockup" data-el-tabs>
+                    <!-- Selector de stack: logos reales (Google Favicon V2, regla 8), no tabs de texto -->
+                    <div class="el-fw-grid" role="tablist" aria-label={isEn ? 'Choose your stack' : 'Elige tu stack'}>
                         {CODES.map((c, i) => (
-                            <button class:list={['el-tab', { active: i === 0 }]} role="tab" data-tab={c.id}>{c.label}</button>
+                            <button class:list={['el-fw-tile', { active: i === 0 }]} role="tab" aria-selected={i === 0} data-tab={c.id} data-file={c.file} title={c.label}>
+                                <span class="el-fw-ico">
+                                    {c.domain ? (
+                                        <img src={favicon(c.domain)} alt="" width="24" height="24" loading="lazy" />
+                                    ) : c.icon === 'html' ? (
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 4 3 12 8 20"/><polyline points="16 4 21 12 16 20"/><line x1="13.5" y1="3" x2="10.5" y2="21"/></svg>
+                                    ) : (
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linejoin="round"><path d="M12 3.5l8 4.2-8 4.2-8-4.2 8-4.2z" fill="currentColor" fill-opacity="0.16"/><path d="M4 12l8 4.2 8-4.2"/><path d="M4 15.8l8 4.2 8-4.2"/></svg>
+                                    )}
+                                </span>
+                                <span class="el-fw-label">{c.label}</span>
+                            </button>
                         ))}
-                        <button class="el-copybtn" data-copy type="button" aria-label={isEn ? "Copy code" : "Copiar código"}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                            <span>{isEn ? 'Copy' : 'Copiar'}</span>
-                        </button>
                     </div>
-                    {CODES.map((c, i) => (
-                        <pre class:list={['el-panel', { active: i === 0 }]} data-panel={c.id} hidden={i !== 0}><code>{c.code}</code></pre>
-                    ))}
+
+                    <div class="el-code">
+                        <div class="el-code-bar">
+                            <span class="el-code-bar-file">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8l4 4v13a1 1 0 01-1 1H6a1 1 0 01-1-1v-16a1 1 0 011-1z"/><path d="M14 3.5v4h4"/></svg>
+                                <span id="elActiveFile">{CODES[0].file}</span>
+                            </span>
+                            <button class="el-copybtn" data-copy type="button" aria-label={isEn ? "Copy code" : "Copiar código"}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                <span>{isEn ? 'Copy' : 'Copiar'}</span>
+                            </button>
+                        </div>
+                        {CODES.map((c, i) => (
+                            <div class:list={['el-panel', { active: i === 0 }]} data-panel={c.id} hidden={i !== 0}>
+                                {c.lines.map((line, li) => (
+                                    <div class:list={['el-cl', { 'el-cl-hl': li === c.highlight }]}>
+                                        <span class="el-ln">{li + 1}</span><span class="el-lc">{line || ' '}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         </section>
@@ -396,28 +427,37 @@ const breadcrumbSchema = {
 </Layout>
 
 <script>
-    // Tabs de framework + copiar (sin dependencias).
+    // Selector de stack (logos) + copiar (sin dependencias).
     function initElTabs() {
         const wrap = document.querySelector('[data-el-tabs]');
         if (!wrap) return;
-        const tabs = Array.from(wrap.querySelectorAll<HTMLElement>('.el-tab'));
+        const tabs = Array.from(wrap.querySelectorAll<HTMLElement>('.el-fw-tile'));
         const panels = Array.from(wrap.querySelectorAll<HTMLElement>('.el-panel'));
+        const fileLabel = wrap.querySelector<HTMLElement>('#elActiveFile');
 
         const show = (id: string) => {
-            tabs.forEach((t) => t.classList.toggle('active', t.dataset.tab === id));
+            let file = '';
+            tabs.forEach((t) => {
+                const on = t.dataset.tab === id;
+                t.classList.toggle('active', on);
+                t.setAttribute('aria-selected', String(on));
+                if (on) file = t.dataset.file || '';
+            });
             panels.forEach((p) => {
                 const on = p.dataset.panel === id;
                 p.classList.toggle('active', on);
                 p.hidden = !on;
             });
+            if (fileLabel && file) fileLabel.textContent = file;
         };
         tabs.forEach((t) => t.addEventListener('click', () => show(t.dataset.tab!)));
 
         const copyBtn = wrap.querySelector<HTMLButtonElement>('[data-copy]');
         copyBtn?.addEventListener('click', async () => {
-            const active = wrap.querySelector<HTMLElement>('.el-panel.active code');
+            const active = wrap.querySelector<HTMLElement>('.el-panel.active');
+            const text = active ? Array.from(active.querySelectorAll<HTMLElement>('.el-lc')).map((l) => l.textContent || '').join('\n') : '';
             try {
-                await navigator.clipboard.writeText(active?.textContent || '');
+                await navigator.clipboard.writeText(text);
                 const label = copyBtn.querySelector('span');
                 copyBtn.classList.add('done');
                 if (label) label.textContent = document.documentElement.lang === 'en' ? 'Copied!' : '¡Copiado!';
@@ -773,21 +813,6 @@ const breadcrumbSchema = {
         font-size: 0.86rem; line-height: 1.75; color: #cde3ff; white-space: pre;
     }
 
-    /* ── Tabs de framework (estilo Stripe) ── */
-    .el-tabbar {
-        display: flex; align-items: center; gap: 2px;
-        padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,0.08);
-        overflow-x: auto; scrollbar-width: none;
-    }
-    .el-tabbar::-webkit-scrollbar { display: none; }
-    .el-tab {
-        font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600;
-        color: rgba(255,255,255,0.5); background: none; border: 0;
-        padding: 8px 14px; border-radius: 9px; cursor: pointer; white-space: nowrap;
-        transition: color 0.2s, background 0.2s;
-    }
-    .el-tab:hover { color: rgba(255,255,255,0.85); }
-    .el-tab.active { color: #fff; background: rgba(255,255,255,0.1); }
     .el-copybtn {
         margin-left: auto; flex-shrink: 0;
         display: inline-flex; align-items: center; gap: 6px;
@@ -799,8 +824,53 @@ const breadcrumbSchema = {
     .el-copybtn svg { width: 13px; height: 13px; }
     .el-copybtn:hover { background: rgba(255,255,255,0.13); color: #fff; }
     .el-copybtn.done { color: #6ee7b7; border-color: rgba(110,231,183,0.4); }
-    .el-panel { margin: 0; padding: 1.4rem 1.5rem; overflow-x: auto; }
+
+    /* ── Panel de código con números de línea + línea resaltada (el import que "conecta" Cord) ── */
+    .el-panel { padding: 0.9rem 0 1.1rem; overflow-x: auto; }
     .el-panel[hidden] { display: none; }
+    .el-cl {
+        display: flex; padding: 1px 1.5rem;
+        font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+        font-size: 0.83rem; line-height: 1.9; white-space: pre;
+    }
+    .el-ln { flex-shrink: 0; width: 26px; text-align: right; margin-right: 16px; color: rgba(255,255,255,0.22); user-select: none; }
+    .el-lc { color: #cde3ff; }
+    .el-cl-hl { background: rgba(59,130,246,0.14); box-shadow: inset 2px 0 0 #3b82f6; }
+    .el-cl-hl .el-ln { color: rgba(147,197,253,0.7); }
+    .el-cl-hl .el-lc { color: #dbeafe; }
+
+    /* ── Selector de stack: grilla de logos reales (estilo app-icon-grid) ── */
+    .el-fw-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 0.85rem;
+        margin-bottom: 1.4rem;
+    }
+    .el-fw-tile {
+        display: flex; flex-direction: column; align-items: center; gap: 8px;
+        padding: 1rem 0.6rem 0.85rem; border-radius: 16px; cursor: pointer;
+        background: var(--color-bg-soft); border: 1px solid var(--color-border);
+        transition: transform 0.35s var(--ease-spring), box-shadow 0.35s, border-color 0.3s, background 0.3s;
+    }
+    .el-fw-tile:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -14px rgba(10,25,47,0.18); }
+    .el-fw-tile.active {
+        background: #fff; border-color: rgba(10,25,47,0.16);
+        box-shadow: 0 0 0 1.5px var(--color-blue-deep), 0 16px 32px -14px rgba(10,25,47,0.22);
+    }
+    .el-fw-ico {
+        display: flex; align-items: center; justify-content: center;
+        width: 34px; height: 34px; border-radius: 10px;
+        color: var(--color-blue-deep);
+    }
+    .el-fw-ico img { width: 22px; height: 22px; object-fit: contain; border-radius: 5px; }
+    .el-fw-ico svg { width: 20px; height: 20px; }
+    .el-fw-label { font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); letter-spacing: -0.01em; }
+    .el-fw-tile.active .el-fw-label { color: var(--color-text); }
+
+    .el-code-bar-file {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.76rem;
+        color: rgba(255,255,255,0.65);
+    }
+    .el-code-bar-file svg { width: 14px; height: 14px; flex-shrink: 0; color: rgba(255,255,255,0.4); }
 
     /* ════════ INSTALAR — split izq/der (mismo patrón que el-dev y el bento) ════════ */
     .el-install { max-width: 1180px; margin: 0 auto; padding: 6rem 5%; }
@@ -808,6 +878,7 @@ const breadcrumbSchema = {
         display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 4rem; align-items: start;
     }
     .el-install-text { max-width: 440px; }
+    .el-install-visual { min-width: 0; }
     .el-install .el-code { text-align: left; }
     .el-steps { display: flex; flex-direction: column; margin-top: 2.4rem; }
     .el-step {
