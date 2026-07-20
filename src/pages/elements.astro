@@ -217,42 +217,40 @@ const breadcrumbSchema = {
             <p class="el-strip-lead reveal">{isEn ? <Fragment>For B2B companies that <b>already have their own portal</b> but don't want to build —or maintain— a quote builder that negotiates prices, tracks opens, and issues CFDI invoices in Mexico.</Fragment> : <Fragment>Para empresas B2B que <b>ya tienen su propio portal</b> pero no quieren construir —ni mantener— un cotizador que negocie precios, dé seguimiento y timbre CFDI en México.</Fragment>}</p>
         </section>
 
-        <!-- ════════ INSTALAR (snippet) ════════ -->
+        <!-- ════════ INSTALAR (snippet) — split izq/der, mismo patrón que el resto de la página ════════ -->
         <section class="el-install" id="instalar">
-            <div class="el-install-head">
-                <p class="el-eyebrow reveal">{isEn ? 'ONE LINE OF CODE' : 'UNA LÍNEA DE CÓDIGO'}</p>
-                <h2 class="el-h2 masked-title" set:html={isEn ? 'Paste. Done. No backend.' : 'Pegar. Listo. Sin backend.'} />
-                <p class="el-copy reveal">{isEn ? <Fragment>A script and a <code>&lt;div&gt;</code>. The quote builder appears with your brand, auto-adjusts its height, and inherits the host page's style — or go fully <code>headless</code> and build your own UI on top of our state.</Fragment> : <Fragment>Un script y un <code>&lt;div&gt;</code>. El cotizador aparece con tu marca, se ajusta solo a la altura del contenido y hereda el estilo de la página anfitriona — o ve 100% <code>headless</code> y construye tu propia interfaz sobre nuestro estado.</Fragment>}</p>
-            </div>
-            <div class="el-code el-tabs reveal-mockup" data-el-tabs>
-                <div class="el-tabbar" role="tablist">
+            <div class="el-install-inner">
+                <div class="el-install-text">
+                    <h2 class="el-h2 masked-title" set:html={isEn ? 'Paste. Done. No backend.' : 'Pegar. Listo. Sin backend.'} />
+                    <p class="el-copy reveal">{isEn ? <Fragment>A script and a <code>&lt;div&gt;</code>. The quote builder appears with your brand, auto-adjusts its height, and inherits the host page's style — or go fully <code>headless</code> and build your own UI on top of our state.</Fragment> : <Fragment>Un script y un <code>&lt;div&gt;</code>. El cotizador aparece con tu marca, se ajusta solo a la altura del contenido y hereda el estilo de la página anfitriona — o ve 100% <code>headless</code> y construye tu propia interfaz sobre nuestro estado.</Fragment>}</p>
+                    <div class="el-steps">
+                        <div class="el-step reveal">
+                            <span class="el-step-n">01</span>
+                            <div><b>{isEn ? 'Paste the snippet' : 'Pega el snippet'}</b><span>{isEn ? 'On the page where you want the quote builder. Works on any stack: WordPress, React, Webflow, plain HTML.' : 'En la página donde quieras el cotizador. Funciona en cualquier stack: WordPress, React, Webflow, HTML plano.'}</span></div>
+                        </div>
+                        <div class="el-step reveal">
+                            <span class="el-step-n">02</span>
+                            <div><b>{isEn ? 'Appears with your brand' : 'Aparece con tu marca'}</b><span>{isEn ? 'Color, logo, and tax details come from your Cord account. Zero extra setup on the host site.' : 'Color, logo y datos fiscales salen de tu cuenta de Cord. Cero configuración extra en el sitio anfitrión.'}</span></div>
+                        </div>
+                        <div class="el-step reveal">
+                            <span class="el-step-n">03</span>
+                            <div><b>{isEn ? 'Your client approves and pays' : 'Tu cliente aprueba y paga'}</b><span>{isEn ? 'Approval, counteroffers, and online payment — without leaving the portal. You receive the event in real time.' : 'Aprobación, contraoferta y pago en línea — sin salir del portal. Tú recibes el evento en tiempo real.'}</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="el-code el-tabs reveal-mockup" data-el-tabs>
+                    <div class="el-tabbar" role="tablist">
+                        {CODES.map((c, i) => (
+                            <button class:list={['el-tab', { active: i === 0 }]} role="tab" data-tab={c.id}>{c.label}</button>
+                        ))}
+                        <button class="el-copybtn" data-copy type="button" aria-label={isEn ? "Copy code" : "Copiar código"}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            <span>{isEn ? 'Copy' : 'Copiar'}</span>
+                        </button>
+                    </div>
                     {CODES.map((c, i) => (
-                        <button class:list={['el-tab', { active: i === 0 }]} role="tab" data-tab={c.id}>{c.label}</button>
+                        <pre class:list={['el-panel', { active: i === 0 }]} data-panel={c.id} hidden={i !== 0}><code>{c.code}</code></pre>
                     ))}
-                    <button class="el-copybtn" data-copy type="button" aria-label={isEn ? "Copy code" : "Copiar código"}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                        <span>{isEn ? 'Copy' : 'Copiar'}</span>
-                    </button>
-                </div>
-                {CODES.map((c, i) => (
-                    <pre class:list={['el-panel', { active: i === 0 }]} data-panel={c.id} hidden={i !== 0}><code>{c.code}</code></pre>
-                ))}
-            </div>
-            <div class="el-steps">
-                <div class="el-step reveal">
-                    <span class="el-step-n">01</span>
-                    <b>{isEn ? 'Paste the snippet' : 'Pega el snippet'}</b>
-                    <span>{isEn ? 'On the page where you want the quote builder. Works on any stack: WordPress, React, Webflow, plain HTML.' : 'En la página donde quieras el cotizador. Funciona en cualquier stack: WordPress, React, Webflow, HTML plano.'}</span>
-                </div>
-                <div class="el-step reveal">
-                    <span class="el-step-n">02</span>
-                    <b>{isEn ? 'Appears with your brand' : 'Aparece con tu marca'}</b>
-                    <span>{isEn ? 'Color, logo, and tax details come from your Cord account. Zero extra setup on the host site.' : 'Color, logo y datos fiscales salen de tu cuenta de Cord. Cero configuración extra en el sitio anfitrión.'}</span>
-                </div>
-                <div class="el-step reveal">
-                    <span class="el-step-n">03</span>
-                    <b>{isEn ? 'Your client approves and pays' : 'Tu cliente aprueba y paga'}</b>
-                    <span>{isEn ? 'Approval, counteroffers, and online payment — without leaving the portal. You receive the event in real time.' : 'Aprobación, contraoferta y pago en línea — sin salir del portal. Tú recibes el evento en tiempo real.'}</span>
                 </div>
             </div>
         </section>
@@ -341,18 +339,21 @@ const breadcrumbSchema = {
                 <p class="el-eyebrow reveal">{isEn ? 'FOR DEVELOPERS' : 'PARA DESARROLLADORES'}</p>
                 <h2 class="el-h2 masked-title" set:html={isEn ? 'React to every client action.' : 'Reacciona a cada acción del cliente.'} />
                 <p class="el-copy reveal">{isEn ? <Fragment>The container emits <code>CustomEvents</code> on your own <code>&lt;div&gt;</code>. Connect them to your analytics, redirect after approval, or sync your CRM — you keep control on your page.</Fragment> : <Fragment>El contenedor emite <code>CustomEvents</code> sobre tu propio <code>&lt;div&gt;</code>. Conéctalos a tu analítica, redirige tras la aprobación o sincroniza tu CRM — el control queda en tu página.</Fragment>}</p>
-                <ul class="el-events-list">
-                    <li class="reveal"><code>cord:ready</code><span>{isEn ? 'the quote builder loaded' : 'el cotizador cargó'}</span></li>
-                    <li class="reveal"><code>cord:approved</code><span>{isEn ? <Fragment>the client approved · <i>detail: signed_by, hash</i></Fragment> : <Fragment>el cliente aprobó · <i>detail: signed_by, hash</i></Fragment>}</span></li>
-                    <li class="reveal"><code>cord:signed</code><span>{isEn ? 'legal signature captured (fires together with cord:approved)' : 'firma legal capturada (dispara junto con cord:approved)'}</span></li>
-                    <li class="reveal"><code>cord:rejected</code><span>{isEn ? 'the client rejected' : 'el cliente rechazó'}</span></li>
-                    <li class="reveal"><code>cord:message</code><span>{isEn ? 'comment or counteroffer' : 'comentario o contraoferta'}</span></li>
-                    <li class="reveal"><code>cord:pay</code><span>{isEn ? 'online payment started' : 'inició el pago en línea'}</span></li>
+                <ul class="el-events-list" id="devEvtList">
+                    <li class="reveal" data-evt="ready"><i class="el-evt-dot"></i><code>cord:ready</code><span>{isEn ? 'the quote builder loaded' : 'el cotizador cargó'}</span></li>
+                    <li class="reveal" data-evt="approved"><i class="el-evt-dot"></i><code>cord:approved</code><span>{isEn ? <Fragment>the client approved · <i>detail: signed_by, hash</i></Fragment> : <Fragment>el cliente aprobó · <i>detail: signed_by, hash</i></Fragment>}</span></li>
+                    <li class="reveal" data-evt="signed"><i class="el-evt-dot"></i><code>cord:signed</code><span>{isEn ? 'legal signature captured (fires together with cord:approved)' : 'firma legal capturada (dispara junto con cord:approved)'}</span></li>
+                    <li class="reveal" data-evt="rejected"><i class="el-evt-dot"></i><code>cord:rejected</code><span>{isEn ? 'the client rejected' : 'el cliente rechazó'}</span></li>
+                    <li class="reveal" data-evt="message"><i class="el-evt-dot"></i><code>cord:message</code><span>{isEn ? 'comment or counteroffer' : 'comentario o contraoferta'}</span></li>
+                    <li class="reveal" data-evt="pay"><i class="el-evt-dot"></i><code>cord:pay</code><span>{isEn ? 'online payment started' : 'inició el pago en línea'}</span></li>
                 </ul>
             </div>
             <div class="el-code el-code-dev reveal-mockup">
-                <div class="el-code-bar"><span>app.js</span><span class="el-code-bar-badge">{isEn ? 'listener' : 'listener'}</span></div>
+                <div class="el-code-bar"><span>app.js</span><span class="el-code-bar-badge" id="devBadge"><i class="el-live-dot"></i>{isEn ? 'listening' : 'escuchando'}</span></div>
                 <pre><code>{EVENTS}</code></pre>
+                <div class="el-code-feed" id="devFeed">
+                    <span class="el-code-feed-arrow">→</span><span id="devFeedLine">cord:ready</span>
+                </div>
             </div>
         </section>
 
@@ -527,6 +528,37 @@ const breadcrumbSchema = {
                       .to(evt, { opacity: 1, duration: 0.4 }, '-=0.2')
                       .to({}, { duration: 1.6 });
                 } });
+        }
+
+        // EVENTOS — la lista de la izquierda "dispara" en cascada y el listener
+        // de la derecha lo confirma en vivo (feed + badge), demostrando la
+        // promesa de la sección: reaccionar a cada acción del cliente.
+        const devSection = document.querySelector('.el-dev');
+        if (devSection && !reduced) {
+            const items = Array.from(devSection.querySelectorAll<HTMLElement>('#devEvtList li'));
+            const badge = document.getElementById('devBadge');
+            const feed = document.getElementById('devFeed');
+            const feedLine = document.getElementById('devFeedLine');
+            if (items.length && badge && feed && feedLine) {
+                ScrollTrigger.create({ trigger: devSection, start: 'top 82%', once: true,
+                    onEnter: () => {
+                        const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.1 });
+                        items.forEach((li) => {
+                            const evt = li.dataset.evt;
+                            tl.call(() => {
+                                items.forEach((o) => o.classList.remove('is-live'));
+                                li.classList.add('is-live');
+                                feedLine.textContent = `cord:${evt}`;
+                                badge.classList.add('is-firing');
+                            })
+                              .fromTo(feed, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' })
+                              .to({}, { duration: 0.65 })
+                              .to(feed, { opacity: 0, duration: 0.25 })
+                              .call(() => badge.classList.remove('is-firing'));
+                        });
+                        tl.call(() => items.forEach((o) => o.classList.remove('is-live')));
+                    } });
+            }
         }
     });
 </script>
@@ -720,9 +752,20 @@ const breadcrumbSchema = {
         font-size: 0.74rem; color: rgba(255,255,255,0.5); font-weight: 500;
     }
     .el-code-bar-badge {
+        display: inline-flex; align-items: center; gap: 6px;
         font-size: 0.6rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase;
         color: rgba(255,255,255,0.55); background: rgba(255,255,255,0.07);
         border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; padding: 4px 9px;
+    }
+    .el-live-dot {
+        width: 6px; height: 6px; border-radius: 50%; background: #10b981;
+        box-shadow: 0 0 6px rgba(16,185,129,0.7);
+        animation: el-live-pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes el-live-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+    .el-code-bar-badge.is-firing {
+        color: #6ee7b7; background: rgba(16,185,129,0.14); border-color: rgba(110,231,183,0.35);
+        transition: background 0.3s, color 0.3s, border-color 0.3s;
     }
     .el-code pre { margin: 0; padding: 1.4rem 1.5rem; overflow-x: auto; }
     .el-code code {
@@ -759,22 +802,22 @@ const breadcrumbSchema = {
     .el-panel { margin: 0; padding: 1.4rem 1.5rem; overflow-x: auto; }
     .el-panel[hidden] { display: none; }
 
-    /* ════════ INSTALAR ════════ */
-    .el-install { max-width: 880px; margin: 0 auto; padding: 5rem 5%; text-align: center; }
-    .el-install-head { margin-bottom: 2.6rem; }
-    .el-install .el-copy { max-width: 620px; margin: 0 auto; }
-    .el-install .el-code { text-align: left; max-width: 720px; margin: 0 auto; }
-    .el-steps {
-        display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem;
-        margin-top: 3.5rem; text-align: left;
+    /* ════════ INSTALAR — split izq/der (mismo patrón que el-dev y el bento) ════════ */
+    .el-install { max-width: 1180px; margin: 0 auto; padding: 6rem 5%; }
+    .el-install-inner {
+        display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 4rem; align-items: start;
     }
+    .el-install-text { max-width: 440px; }
+    .el-install .el-code { text-align: left; }
+    .el-steps { display: flex; flex-direction: column; margin-top: 2.4rem; }
     .el-step {
-        display: flex; flex-direction: column; gap: 0.45rem;
-        padding: 1.5rem 0 0; border-top: 2px solid var(--color-blue-deep);
+        display: flex; align-items: flex-start; gap: 16px;
+        padding: 1.3rem 0; border-top: 1px solid var(--color-border);
     }
-    .el-step-n { font-size: 0.74rem; font-weight: 800; letter-spacing: 1px; color: #99a2af; }
-    .el-step b { font-size: 1.02rem; font-weight: 700; letter-spacing: -0.2px; }
-    .el-step span { font-size: 0.88rem; line-height: 1.55; color: var(--color-text-muted); }
+    .el-step:first-child { border-top: none; padding-top: 0; }
+    .el-step-n { flex-shrink: 0; font-size: 0.74rem; font-weight: 800; letter-spacing: 1px; color: #99a2af; padding-top: 2px; }
+    .el-step b { display: block; font-size: 0.98rem; font-weight: 700; letter-spacing: -0.2px; margin-bottom: 4px; }
+    .el-step span { font-size: 0.87rem; line-height: 1.55; color: var(--color-text-muted); }
 
     /* ════════ FEATURES (lista, hairline — regla de André) ════════ */
     .el-features { max-width: 1000px; margin: 0 auto; padding: 5rem 5%; }
@@ -804,16 +847,36 @@ const breadcrumbSchema = {
     .el-dev .el-copy { margin-bottom: 1.8rem; }
     .el-events-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
     .el-events-list li {
-        display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
-        padding: 0.8rem 0; border-bottom: 1px solid var(--color-border);
+        display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+        padding: 0.8rem 0.5rem 0.8rem 0.4rem; margin: 0 -0.5rem 0 -0.4rem; border-radius: 9px;
+        border-bottom: 1px solid var(--color-border);
+        transition: background 0.4s ease;
+    }
+    .el-events-list li.is-live { background: rgba(16,185,129,0.07); }
+    .el-evt-dot {
+        flex-shrink: 0; align-self: center; width: 6px; height: 6px; border-radius: 50%;
+        background: var(--color-border); transition: background 0.3s, box-shadow 0.3s, transform 0.3s;
+    }
+    .el-events-list li.is-live .el-evt-dot {
+        background: #10b981; box-shadow: 0 0 7px rgba(16,185,129,0.65); transform: scale(1.3);
     }
     .el-events-list code {
         font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.82rem;
         background: var(--color-blue-deep); color: #fff; padding: 3px 9px; border-radius: 7px;
+        transition: background 0.3s;
     }
+    .el-events-list li.is-live code { background: #059669; }
     .el-events-list span { font-size: 0.86rem; color: var(--color-text-muted); }
     .el-events-list i { font-style: normal; color: #99a2af; }
-    .el-code-dev pre { padding: 1.5rem 1.6rem; }
+    .el-code-dev pre { padding: 1.5rem 1.6rem 0.6rem; }
+    .el-code-feed {
+        display: flex; align-items: center; gap: 8px;
+        margin: 0.4rem 1.6rem 1.4rem; padding-top: 1rem;
+        border-top: 1px solid rgba(255,255,255,0.08);
+        font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.8rem;
+        color: #6ee7b7; opacity: 0;
+    }
+    .el-code-feed-arrow { color: rgba(255,255,255,0.35); }
 
     /* ════════ MID CTA ════════ */
     .el-mid { max-width: 720px; margin: 0 auto; padding: 6rem 5% 5rem; text-align: center; }
@@ -902,7 +965,8 @@ const breadcrumbSchema = {
         .el-dev { grid-template-columns: 1fr; gap: 2.5rem; }
         .el-dev-text { max-width: none; }
         .el-feat-list { grid-template-columns: 1fr; gap: 0; }
-        .el-steps { grid-template-columns: 1fr; gap: 1.8rem; }
+        .el-install-inner { grid-template-columns: 1fr; gap: 2.5rem; }
+        .el-install-text { max-width: none; }
         .el-demo-frame { height: 480px; }
         .pp-bento { grid-template-columns: 1fr; gap: 1.25rem; padding: 4rem 5% 3rem; }
         .pp-bcard-2, .pp-bcard-3 { flex-direction: column; min-height: 500px; }
