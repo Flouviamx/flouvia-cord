@@ -3,7 +3,7 @@
 <svg width="1000" height="1000" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
     <defs>
         <clipPath id="squircle">
-            <path d="M500,0 C170,0 0,170 0,500 C0,830 170,1000 500,1000 C830,1000 1000,830 1000,500 C1000,170 830,0 500,0 Z" />
+            <rect width="1000" height="1000" rx="150" ry="150" />
         </clipPath>
     </defs>
     <g clip-path="url(#squircle)">
