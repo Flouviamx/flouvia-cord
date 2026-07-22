@@ -112,8 +112,16 @@ export const onRequest = clerkMiddleware((auth, context, next) => {
     // carril de API key (sk_test_) tienen su propia resolución.
     const testMode = context.cookies.get("cord_test_mode")?.value === "1";
 
+    // Idioma: detectado del header Accept-Language del navegador — sin toggle
+    // manual (decisión del producto). Aplica a /app/**, /q/[token] y correos
+    // transaccionales (que reciben el locale ya resuelto). Nunca afecta la
+    // landing pública, que usa su propio sistema de rutas /en/*.
+    const acceptLang = context.request.headers.get("accept-language") ?? "";
+    const firstLang = acceptLang.split(",")[0]?.trim().toLowerCase() ?? "";
+    const locale: "es" | "en" = firstLang.startsWith("en") ? "en" : "es";
+
     // Exponer el userId Y la org activa de Clerk a las queries (db.ts →
     // getActiveOrgId) durante todo el render/handler de este request, vía
     // AsyncLocalStorage.
-    return reqContext.run({ userId: userId ?? null, clerkOrgId: orgId ?? null, testMode }, () => next());
+    return reqContext.run({ userId: userId ?? null, clerkOrgId: orgId ?? null, testMode, locale }, () => next());
 });

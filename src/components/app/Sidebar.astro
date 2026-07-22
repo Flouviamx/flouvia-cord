@@ -5,11 +5,14 @@
 
 import { getSidebarBadges, getOrg } from '../../lib/queries';
 import CustomOrgSwitcher from './CustomOrgSwitcher';
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
 
 // Contadores en vivo de la sidebar (estilo Linear): seguimiento + cartera vencida.
 const badges = await getSidebarBadges();
 const ORG = await getOrg();
 const orgLogoUrl = ORG.logoUrl || '';
+const L = currentLocale();
 
 interface Props {
     page: string;         // id de la página activa en el sidebar
@@ -26,28 +29,28 @@ const NAV_GROUPS = [
     {
         label: null,
         items: [
-            { id: 'dashboard',    href: '/app',              label: 'Inicio',       icon: '<rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>' },
-            { id: 'cotizaciones', href: '/app/cotizaciones', label: 'Cotizaciones', icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8" stroke-opacity="0.5"/><line x1="16" y1="13" x2="8" y2="13" stroke-opacity="0.5"/><line x1="16" y1="17" x2="8" y2="17" stroke-opacity="0.5"/><polyline points="10 9 9 9 8 9" stroke-opacity="0.5"/>', badge: badges.seguimiento, tone: 'neutral' },
-            { id: 'clientes',  href: '/app/clientes',  label: 'Clientes',  icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity="0.25" stroke="none"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87" stroke-opacity="0.5"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-opacity="0.5"/>' },
-            { id: 'productos', href: '/app/productos', label: 'Productos', icon: '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m7.5 4.27 9 5.15" stroke-opacity="0.5"/><path d="m3.3 7 8.7 5 8.7-5" stroke-opacity="0.5"/><path d="M12 22V12" stroke-opacity="0.5"/>' },
+            { id: 'dashboard',    href: '/app',              label: t(L, 'sidebar.item.inicio'),       icon: '<rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>' },
+            { id: 'cotizaciones', href: '/app/cotizaciones', label: t(L, 'sidebar.item.cotizaciones'), icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8" stroke-opacity="0.5"/><line x1="16" y1="13" x2="8" y2="13" stroke-opacity="0.5"/><line x1="16" y1="17" x2="8" y2="17" stroke-opacity="0.5"/><polyline points="10 9 9 9 8 9" stroke-opacity="0.5"/>', badge: badges.seguimiento, tone: 'neutral' },
+            { id: 'clientes',  href: '/app/clientes',  label: t(L, 'sidebar.item.clientes'),  icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity="0.25" stroke="none"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87" stroke-opacity="0.5"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-opacity="0.5"/>' },
+            { id: 'productos', href: '/app/productos', label: t(L, 'sidebar.item.productos'), icon: '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m7.5 4.27 9 5.15" stroke-opacity="0.5"/><path d="m3.3 7 8.7 5 8.7-5" stroke-opacity="0.5"/><path d="M12 22V12" stroke-opacity="0.5"/>' },
         ],
     },
     {
-        label: 'Mi dinero',
+        label: t(L, 'sidebar.grupo.dinero'),
         items: [
-            { id: 'cobros',   href: '/app/cobros',             label: 'Cobros',         icon: '<circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.1" stroke="none"/><path d="M12 2v20" stroke-opacity="0.5"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>' },
-            { id: 'cobranza', href: '/app/cobranza',           label: 'Cobranza',       icon: '<rect width="20" height="14" x="2" y="5" rx="2" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10" stroke-opacity="0.5"/>', badge: badges.vencidas, tone: 'danger' },
-            { id: 'ai-ar',    href: '/app/tesoreria/cobranza', label: 'Cobranza con IA', icon: '<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M6 9H4M6 15H4M18 9h2M18 15h2M9 6V4M15 6V4M9 18v2M15 18v2" stroke-opacity="0.6"/>' },
-            { id: 'flujo-caja', href: '/app/tesoreria/flujo',  label: 'Flujo de caja',   icon: '<path d="M22 7 L13.5 15.5 L8.5 10.5 L2 17 L2 22 L22 22 Z" fill="currentColor" fill-opacity="0.1" stroke="none"/><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13" stroke-opacity="0.5"/>' },
+            { id: 'cobros',   href: '/app/cobros',             label: t(L, 'sidebar.item.cobros'),         icon: '<circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.1" stroke="none"/><path d="M12 2v20" stroke-opacity="0.5"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>' },
+            { id: 'cobranza', href: '/app/cobranza',           label: t(L, 'sidebar.item.cobranza'),       icon: '<rect width="20" height="14" x="2" y="5" rx="2" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10" stroke-opacity="0.5"/>', badge: badges.vencidas, tone: 'danger' },
+            { id: 'ai-ar',    href: '/app/tesoreria/cobranza', label: t(L, 'sidebar.item.cobranza_ia'), icon: '<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M6 9H4M6 15H4M18 9h2M18 15h2M9 6V4M15 6V4M9 18v2M15 18v2" stroke-opacity="0.6"/>' },
+            { id: 'flujo-caja', href: '/app/tesoreria/flujo',  label: t(L, 'sidebar.item.flujo_caja'),   icon: '<path d="M22 7 L13.5 15.5 L8.5 10.5 L2 17 L2 22 L22 22 Z" fill="currentColor" fill-opacity="0.1" stroke="none"/><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13" stroke-opacity="0.5"/>' },
         ],
     },
     {
-        label: 'Inteligencia',
+        label: t(L, 'sidebar.grupo.inteligencia'),
         items: [
-            { id: 'cfo',       href: '/app/cfo',       label: 'Finanzas',  icon: '<path d="M4 20h16" stroke-opacity="0.4"/><rect x="5" y="13" width="4" height="7" rx="1" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect x="10" y="7" width="4" height="13" rx="1" fill="currentColor" fill-opacity="0.3" stroke="none"/><rect x="15" y="11" width="4" height="9" rx="1" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect x="5" y="13" width="4" height="7" rx="1" /><rect x="10" y="7" width="4" height="13" rx="1" /><rect x="15" y="11" width="4" height="9" rx="1" />' },
-            { id: 'analitica', href: '/app/analitica', label: 'Analítica', icon: '<path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H12V3" fill="currentColor" fill-opacity="0.1" stroke="none" /><path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H12V3"/>' },
-            { id: 'presupuestos', href: '/app/presupuestos', label: 'Presupuestos', icon: '<rect x="3" y="4" width="18" height="16" rx="2" fill="currentColor" fill-opacity="0.1" stroke="none"/><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9" stroke-opacity="0.5"/><line x1="8" y1="4" x2="8" y2="9" stroke-opacity="0.5"/><line x1="8" y1="13" x2="8" y2="13.01"/><line x1="12" y1="13" x2="12" y2="13.01"/><line x1="16" y1="13" x2="16" y2="13.01"/><line x1="8" y1="17" x2="8" y2="17.01"/><line x1="12" y1="17" x2="12" y2="17.01"/>' },
-            { id: 'desempeno', href: '/app/desempeno', label: 'Equipo',    icon: '<rect x="3" y="14" width="5" height="7" rx="1" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect x="9.5" y="9" width="5" height="12" rx="1" fill="currentColor" fill-opacity="0.3" stroke="none"/><rect x="16" y="12" width="5" height="9" rx="1" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect x="3" y="14" width="5" height="7" rx="1"/><rect x="9.5" y="9" width="5" height="12" rx="1"/><rect x="16" y="12" width="5" height="9" rx="1"/><circle cx="12" cy="5" r="1.6" fill="currentColor" fill-opacity="0.3"/>' },
+            { id: 'cfo',       href: '/app/cfo',       label: t(L, 'sidebar.item.finanzas'),  icon: '<path d="M4 20h16" stroke-opacity="0.4"/><rect x="5" y="13" width="4" height="7" rx="1" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect x="10" y="7" width="4" height="13" rx="1" fill="currentColor" fill-opacity="0.3" stroke="none"/><rect x="15" y="11" width="4" height="9" rx="1" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect x="5" y="13" width="4" height="7" rx="1" /><rect x="10" y="7" width="4" height="13" rx="1" /><rect x="15" y="11" width="4" height="9" rx="1" />' },
+            { id: 'analitica', href: '/app/analitica', label: t(L, 'sidebar.item.analitica'), icon: '<path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H12V3" fill="currentColor" fill-opacity="0.1" stroke="none" /><path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H12V3"/>' },
+            { id: 'presupuestos', href: '/app/presupuestos', label: t(L, 'sidebar.item.presupuestos'), icon: '<rect x="3" y="4" width="18" height="16" rx="2" fill="currentColor" fill-opacity="0.1" stroke="none"/><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9" stroke-opacity="0.5"/><line x1="8" y1="4" x2="8" y2="9" stroke-opacity="0.5"/><line x1="8" y1="13" x2="8" y2="13.01"/><line x1="12" y1="13" x2="12" y2="13.01"/><line x1="16" y1="13" x2="16" y2="13.01"/><line x1="8" y1="17" x2="8" y2="17.01"/><line x1="12" y1="17" x2="12" y2="17.01"/>' },
+            { id: 'desempeno', href: '/app/desempeno', label: t(L, 'sidebar.item.equipo'),    icon: '<rect x="3" y="14" width="5" height="7" rx="1" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect x="9.5" y="9" width="5" height="12" rx="1" fill="currentColor" fill-opacity="0.3" stroke="none"/><rect x="16" y="12" width="5" height="9" rx="1" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect x="3" y="14" width="5" height="7" rx="1"/><rect x="9.5" y="9" width="5" height="12" rx="1"/><rect x="16" y="12" width="5" height="9" rx="1"/><circle cx="12" cy="5" r="1.6" fill="currentColor" fill-opacity="0.3"/>' },
         ],
     },
 ];
@@ -67,17 +70,17 @@ const NAV_GROUPS = [
 
         <button class="sb-action-row" id="sbHelp" type="button" data-id="ayuda">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a2.9 2.9 0 0 1 5.6 1c0 2-2.9 2.9-2.9 2.9"/><line x1="12" y1="17" x2="12" y2="17"/></svg>
-            <span>Ayuda</span>
+            <span>{t(L, 'sidebar.ayuda')}</span>
         </button>
         <a href="/app/ajustes" class="sb-action-row" data-id="config">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            <span>Configuración</span>
+            <span>{t(L, 'sidebar.configuracion')}</span>
         </a>
     </div>
 
     <nav class="sb-nav">
         <div class="sb-indicator" id="sbIndicator" aria-hidden="true"></div>
-        <div class="sb-group sb-pins" id="sbPins" hidden></div>
+        <div class="sb-group sb-pins" id="sbPins" data-label={t(L, 'sidebar.grupo.fijados')} data-pin-on={t(L, 'sidebar.pin.quitar_menu')} data-pin-off={t(L, 'layout.aria.fijar_menu')} data-pin-remove={t(L, 'sidebar.pin.quitar')} hidden></div>
         {NAV_GROUPS.map((group) => (
             <div class:list={['sb-group', { 'sb-group-flat': !group.label }]}>
                 {group.label && (
@@ -637,16 +640,20 @@ const NAV_GROUPS = [
         const setPins = (p: any[]) => { try { localStorage.setItem(PIN_KEY, JSON.stringify(p)); } catch (e) {} };
         const current = () => ({ href: location.pathname, label: (document.querySelector('.ph-title')?.textContent || document.title).trim() });
         const isPinned = () => getPins().some((p) => p.href === location.pathname);
-        const syncBtn = () => { if (pinBtn) { const on = isPinned(); pinBtn.classList.toggle('pinned', on); pinBtn.setAttribute('title', on ? 'Quitar del menú' : 'Fijar en el menú'); } };
+        const pinLabelOn = (mount as HTMLElement)?.dataset.pinOn || 'Quitar del menú';
+        const pinLabelOff = (mount as HTMLElement)?.dataset.pinOff || 'Fijar en el menú';
+        const pinLabelRemove = (mount as HTMLElement)?.dataset.pinRemove || 'Quitar';
+        const syncBtn = () => { if (pinBtn) { const on = isPinned(); pinBtn.classList.toggle('pinned', on); pinBtn.setAttribute('title', on ? pinLabelOn : pinLabelOff); } };
         const renderMount = () => {
             if (!mount) return;
             let pins = getPins();
             if (!pins.length) { (mount as HTMLElement).hidden = true; mount.innerHTML = ''; return; }
             (mount as HTMLElement).hidden = false;
-            let html = '<span class="sb-group-label">Fijados</span>';
+            const pinsLabel = (mount as HTMLElement).dataset.label || 'Pinned';
+            let html = `<span class="sb-group-label">${eH(pinsLabel)}</span>`;
             pins.forEach((p, idx) => {
                 const active = p.href === location.pathname ? ' active' : '';
-                html += `<div class="sb-pin-row" draggable="true" data-idx="${idx}"><a href="${eA(p.href)}" class="sb-item${active}" title="${eA(p.label)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${PIN_ICON}</svg><span class="sb-item-label">${eH(p.label)}</span></a><button class="sb-pin-x" data-href="${eA(p.href)}" aria-label="Quitar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>`;
+                html += `<div class="sb-pin-row" draggable="true" data-idx="${idx}"><a href="${eA(p.href)}" class="sb-item${active}" title="${eA(p.label)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${PIN_ICON}</svg><span class="sb-item-label">${eH(p.label)}</span></a><button class="sb-pin-x" data-href="${eA(p.href)}" aria-label="${eA(pinLabelRemove)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>`;
             });
             mount.innerHTML = html;
             

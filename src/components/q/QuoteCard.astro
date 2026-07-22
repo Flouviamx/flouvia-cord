@@ -4,6 +4,17 @@
 // Reutilizado por /q/[token] (página pública) y /embed/[token] (CORD Elements).
 import { money, lineTotal, quoteSubtotal, quoteIva, quoteTotal } from '../../lib/queries';
 import { splitAnticipo } from '../../lib/cobros';
+import { currentLocale } from '../../lib/context';
+import { t, getQuoteCardRuntimeI18n } from '../../i18n/app';
+
+const L = currentLocale();
+const RTQ = getQuoteCardRuntimeI18n(L);
+// Helper de interpolación simple: t(L,'key').replace('{x}', val) encadenado.
+const tf = (key: string, vars: Record<string, string> = {}) => {
+    let s = t(L, key as any);
+    for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
+    return s;
+};
 
 interface Props {
     quote: any;
@@ -29,9 +40,9 @@ const viva = !yaAprobada && !yaRechazada;
 const dias: number | undefined = typeof q.diasVigencia === 'number' ? q.diasVigencia : undefined;
 const vigenciaUrgente = viva && typeof dias === 'number' && dias >= 0 && dias <= 7;
 const vigenciaVencida = viva && typeof dias === 'number' && dias < 0;
-const vigenciaTexto = vigenciaVencida ? 'Vigencia expirada'
-    : typeof dias === 'number' && dias === 0 ? 'Vence hoy'
-    : typeof dias === 'number' && dias > 0 ? `Vence en ${dias} día${dias === 1 ? '' : 's'}`
+const vigenciaTexto = vigenciaVencida ? t(L, 'q.vig_expirada')
+    : typeof dias === 'number' && dias === 0 ? t(L, 'q.vig_hoy')
+    : typeof dias === 'number' && dias > 0 ? tf('q.vig_en_dias', { n: String(dias), s: dias === 1 ? '' : 's' })
     : '';
 
 // Cobros parciales (anticipo/saldo/cuotas) + gating por términos de crédito.
@@ -54,10 +65,10 @@ if (!cobrosReales.length && anticipoPct >= 1 && anticipoPct <= 99 && q.status !=
 }
 const nextCobro = cobros.find((co: any) => co.status === 'pendiente' && !co.venceEnFuturo) || null;
 const cobroTipoLabel = (co: any) =>
-    co.tipo === 'anticipo' ? 'Anticipo'
-    : co.tipo === 'saldo' ? 'Saldo'
-    : co.tipo === 'cuota' ? `Cuota ${co.numeroCuota}`
-    : 'Total';
+    co.tipo === 'anticipo' ? t(L, 'q.tipo_anticipo')
+    : co.tipo === 'saldo' ? t(L, 'q.tipo_saldo')
+    : co.tipo === 'cuota' ? tf('q.tipo_cuota', { n: String(co.numeroCuota) })
+    : t(L, 'q.total');
 const montoAPagar = nextCobro ? money(nextCobro.monto) : total;
 const orgCobraOnline = (ORG.aceptaTarjeta || ORG.cobroSpeiAuto) && ORG.stripeAccountId && ORG.stripeChargesEnabled;
 // Crédito (Net 30/60) SIN cobros parciales y sin nada pagable todavía: en vez
@@ -76,9 +87,11 @@ if (cobros.length && q.status !== 'paid') {
     const ant = cobros.find((co: any) => co.tipo === 'anticipo');
     const sal = cobros.find((co: any) => co.tipo === 'saldo');
     if (pagadoSum > 0) {
-        splitNote = `Pagado: ${money(pagadoSum)} · Pendiente: ${money(pendSum)}`;
+        splitNote = tf('q.split_pagado_pendiente', { pagado: money(pagadoSum), pendiente: money(pendSum) });
     } else if (anticipoPct >= 1 && ant && sal) {
-        splitNote = `${viva ? 'Al aprobar pagas' : 'Hoy pagas'} ${money(ant.monto)} de anticipo (${anticipoPct}%) · Saldo: ${money(sal.monto)}${sal.vence ? ` — vence el ${sal.vence}` : ''}`;
+        const prefix = viva ? t(L, 'q.split_al_aprobar') : t(L, 'q.split_hoy_pagas');
+        const suffix = sal.vence ? tf('q.split_vence_saldo', { fecha: sal.vence }) : '';
+        splitNote = `${prefix} ${money(ant.monto)}` + tf('q.split_de_anticipo', { pct: String(anticipoPct), saldo: money(sal.monto) }) + suffix;
     }
 }
 
@@ -93,8 +106,8 @@ const orgCobraTarjeta = ORG.aceptaTarjeta && ORG.stripeAccountId && ORG.stripeCh
 const puedeAutorizarSus = esRecurrente && !susActiva && orgCobraTarjeta && q.status !== 'paid';
 if (esRecurrente && q.status !== 'paid') {
     splitNote = susActiva
-        ? `Iguala activa · se cobra ${montoMensual} cada mes`
-        : `Iguala mensual · ${montoMensual} cada mes`;
+        ? tf('q.iguala_split_activa', { monto: montoMensual })
+        : tf('q.iguala_split_mensual', { monto: montoMensual });
 }
 
 // Contacto del vendedor
@@ -109,7 +122,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
     {ORG.esPrueba && (
         <div class="q-test-ribbon" role="status">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 12h4l-1.5 8L17 9h-4.5z"/></svg>
-            Cotización de prueba — sin validez comercial ni fiscal
+            {t(L, 'q.test_ribbon')}
         </div>
     )}
     {banner && <div class="q-banner" style={`background:${color}`}>{banner}</div>}
@@ -127,7 +140,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
             </div>
         </div>
         <div class="q-folio-tag">
-            <span class="q-folio-eyebrow">COTIZACIÓN</span>
+            <span class="q-folio-eyebrow">{t(L, 'q.folio_eyebrow')}</span>
             <span class="q-folio-num">{folio}</span>
         </div>
     </header>
@@ -137,12 +150,12 @@ const hayContacto = !!(vEmail || vWa || vTel);
     <!-- Para / vigencia / términos -->
     <div class="q-meta">
         <div class="q-meta-col">
-            <span class="q-meta-label">PARA</span>
+            <span class="q-meta-label">{t(L, 'q.meta_para')}</span>
             <span class="q-meta-val">{q.cliente}</span>
         </div>
         {q.vigencia && (
             <div class="q-meta-col">
-                <span class="q-meta-label">VÁLIDA HASTA</span>
+                <span class="q-meta-label">{t(L, 'q.meta_vigencia')}</span>
                 <span class="q-meta-val">{q.vigencia}</span>
                 {vigenciaTexto && (
                     <span class:list={['q-vig-chip', { urgent: vigenciaUrgente || vigenciaVencida }]}>{vigenciaTexto}</span>
@@ -151,7 +164,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
         )}
         {q.terminos && (
             <div class="q-meta-col">
-                <span class="q-meta-label">TÉRMINOS</span>
+                <span class="q-meta-label">{t(L, 'q.meta_terminos')}</span>
                 <span class="q-meta-val">{q.terminos}</span>
             </div>
         )}
@@ -162,9 +175,9 @@ const hayContacto = !!(vEmail || vWa || vTel);
     <!-- Total protagonista -->
     <div class="q-total-hero">
         <div class="q-total-inner">
-            <span class="q-total-eyebrow">TOTAL A PAGAR</span>
+            <span class="q-total-eyebrow">{t(L, 'q.total_eyebrow')}</span>
             <span class="editorial q-total-amount" style={`color:${color}`} data-countup={quoteTotal(q)}>{total}</span>
-            <span class="q-total-note">MXN · IVA incluido</span>
+            <span class="q-total-note">{ORG.moneda || 'MXN'} · {t(L, 'q.total_note')}</span>
             {splitNote && <span class="q-total-split">{splitNote}</span>}
         </div>
     </div>
@@ -172,35 +185,35 @@ const hayContacto = !!(vEmail || vWa || vTel);
     <!-- Tabla de conceptos -->
     <div class="q-items">
         <div class="qi-head">
-            <span>Concepto</span>
-            <span class="qi-center">Cant.</span>
-            <span class="qi-right">P. Unit.</span>
-            <span class="qi-right">Importe</span>
+            <span>{t(L, 'q.th_concepto')}</span>
+            <span class="qi-center">{t(L, 'q.th_cant')}</span>
+            <span class="qi-right">{t(L, 'q.th_unit')}</span>
+            <span class="qi-right">{t(L, 'q.th_importe')}</span>
         </div>
         {q.items.map((it: any) => (
             <div data-line-id={it.id} data-importe={lineTotal(it)} class:list={['qi-row-wrapper', { 'qi-excluida': yaAprobada && it.aprobado === false }]}>
                 <div class="qi-row">
                     <span class="qi-name">
                         {!yaAprobada && !yaRechazada && (
-                            <label class="qi-pick" title="Incluir esta línea en tu aprobación">
+                            <label class="qi-pick" title={t(L, 'q.incluir_linea')}>
                                 <input type="checkbox" class="qi-pick-cb" data-pick={it.id} checked />
                                 <span class="qi-pick-box"></span>
                             </label>
                         )}
                         {it.descripcion}
-                        {yaAprobada && it.aprobado === false && <span class="qi-excluida-tag">No incluida</span>}
+                        {yaAprobada && it.aprobado === false && <span class="qi-excluida-tag">{t(L, 'q.no_incluida')}</span>}
                         {mostrarChat && !yaAprobada && !yaRechazada && (
-                            <button class="qi-chat-btn" data-item-id={it.id} aria-label="Comentar en esta línea">
+                            <button class="qi-chat-btn" data-item-id={it.id} aria-label={t(L, 'q.comentar_linea')}>
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                                 {it.comentarios?.length > 0 ? it.comentarios.length : ''}
                             </button>
                         )}
                     </span>
-                    <span class="qi-center qi-qty">{it.cantidad.toLocaleString('es-MX')} {it.unidad}</span>
+                    <span class="qi-center qi-qty">{it.cantidad.toLocaleString(L === 'en' ? 'en-US' : 'es-MX')} {it.unidad}</span>
                     <span class="editorial qi-right qi-price">{money(it.precioNegociado ?? it.precioLista)}</span>
                     <span class="editorial qi-right qi-total">{money(lineTotal(it))}</span>
                 </div>
-                
+
                 {mostrarChat && (
                     <div class="qi-thread ql-hidden" id={`thread-${it.id}`}>
                         <div class="qi-thread-inner">
@@ -212,8 +225,8 @@ const hayContacto = !!(vEmail || vWa || vTel);
                             ))}
                             {!yaAprobada && !yaRechazada && (
                                 <div class="qi-reply-box">
-                                    <input type="text" class="ql-input qi-reply-input" placeholder="Comentar sobre esta línea..." />
-                                    <button class="ql-ghost qi-reply-btn" data-item-id={it.id}>Enviar</button>
+                                    <input type="text" class="ql-input qi-reply-input" placeholder={t(L, 'q.comentar_linea_placeholder')} />
+                                    <button class="ql-ghost qi-reply-btn" data-item-id={it.id}>{t(L, 'q.enviar')}</button>
                                 </div>
                             )}
                         </div>
@@ -222,9 +235,9 @@ const hayContacto = !!(vEmail || vWa || vTel);
             </div>
         ))}
         <div class="qi-subtotals">
-            <div class="qt-row"><span>Subtotal</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
-            <div class="qt-row"><span>IVA {ORG.ivaPct}%</span><span class="editorial">{money(quoteIva(q))}</span></div>
-            <div class="qt-row qt-grand"><span>Total</span><span class="editorial">{money(quoteTotal(q))}</span></div>
+            <div class="qt-row"><span>{t(L, 'q.subtotal')}</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
+            <div class="qt-row"><span>{tf('q.iva', { pct: String(ORG.ivaPct) })}</span><span class="editorial">{money(quoteIva(q))}</span></div>
+            <div class="qt-row qt-grand"><span>{t(L, 'q.total')}</span><span class="editorial">{money(quoteTotal(q))}</span></div>
         </div>
     </div>
 
@@ -232,10 +245,10 @@ const hayContacto = !!(vEmail || vWa || vTel);
 
     {viva && (
         <div class="q-trust">
-            <span class="q-trust-live"><span class="q-live-dot"></span> Conectado en tiempo real</span>
+            <span class="q-trust-live"><span class="q-live-dot"></span> {t(L, 'q.conectado_vivo')}</span>
             <span class="q-trust-secure">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                Cifrado · firma con validez legal{ORG.paisCode === 'MX' ? ' · CFDI 4.0' : ''}
+                {t(L, 'q.cifrado_firma')}{ORG.paisCode === 'MX' ? t(L, 'q.cfdi_suffix') : ''}
             </span>
         </div>
     )}
@@ -248,68 +261,68 @@ const hayContacto = !!(vEmail || vWa || vTel);
         <!-- Paso: review (default si cotización viva) -->
         <div class="ql-step" id="stepReview">
             <div class="ql-partial" id="qPartialNote" hidden>
-                Aprobarás <b id="qPartialCount"></b> · Total a aprobar: <b class="editorial" id="qPartialTotal"></b>
+                {t(L, 'q.partial_aprobaras')} <b id="qPartialCount"></b> · {t(L, 'q.partial_total')} <b class="editorial" id="qPartialTotal"></b>
             </div>
             <button class="ql-cta" id="qApproveBtn" style={`background:${color}`}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                Aprobar cotización
+                {t(L, 'q.aprobar_cotizacion')}
             </button>
             <div class="ql-secondary-row">
                 <button class="ql-ghost" id="qPdfBtn">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    Descargar PDF
+                    {t(L, 'q.descargar_pdf')}
                 </button>
-                <button class="ql-ghost ql-reject-link" id="qRejectOpenBtn">Rechazar</button>
+                <button class="ql-ghost ql-reject-link" id="qRejectOpenBtn">{t(L, 'q.rechazar')}</button>
             </div>
         </div>
 
         <!-- Paso: firma digital -->
         <div class="ql-step ql-hidden" id="stepSign">
             <div class="ql-step-header">
-                <button class="ql-back" id="qSignBack" aria-label="Volver">
+                <button class="ql-back" id="qSignBack" aria-label={t(L, 'q.volver')}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                 </button>
-                <span class="ql-step-title">Firma digital</span>
+                <span class="ql-step-title">{t(L, 'q.firma_digital')}</span>
             </div>
             <div class="ql-summary-pill">
-                Aprobando <strong>{folio}</strong> por <strong style={`color:${color}`}>{total} MXN</strong>
+                {t(L, 'q.aprobando')} <strong>{folio}</strong> {t(L, 'q.por')} <strong style={`color:${color}`}>{total} {ORG.moneda || 'MXN'}</strong>
             </div>
             <div class="ql-field">
-                <label class="ql-label" for="qSignerName">Nombre completo del firmante</label>
-                <input class="ql-input" id="qSignerName" type="text" autocomplete="name" placeholder="Ej. María García López" />
+                <label class="ql-label" for="qSignerName">{t(L, 'q.nombre_firmante')}</label>
+                <input class="ql-input" id="qSignerName" type="text" autocomplete="name" placeholder={t(L, 'q.nombre_firmante_placeholder')} />
             </div>
             <div class="ql-field">
-                <label class="ql-label" for="qSignerEmail">Correo electrónico (opcional)</label>
-                <input class="ql-input" id="qSignerEmail" type="email" autocomplete="email" placeholder="Ej. maria@empresa.com" />
+                <label class="ql-label" for="qSignerEmail">{t(L, 'q.correo_opcional')}</label>
+                <input class="ql-input" id="qSignerEmail" type="email" autocomplete="email" placeholder={t(L, 'q.correo_placeholder')} />
             </div>
             <label class="ql-check-row">
                 <input type="checkbox" id="qTermsCheck" class="ql-checkbox" />
-                <span class="ql-check-text">He revisado esta cotización y acepto los términos y condiciones indicados</span>
+                <span class="ql-check-text">{t(L, 'q.acepto_terminos')}</span>
             </label>
             <button class="ql-cta" id="qConfirmSign" style={`background:${color}`} disabled>
-                Confirmar y firmar
+                {t(L, 'q.confirmar_firmar')}
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </button>
             <p class="ql-error" id="qSignError"></p>
             <div class="ql-legal-box">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                <span>Firma electrónica con validez legal. Tu nombre, IP y la fecha quedarán vinculados a un hash inmutable de esta cotización.</span>
+                <span>{t(L, 'q.legal_firma')}</span>
             </div>
         </div>
 
         <!-- Paso: rechazo -->
         <div class="ql-step ql-hidden" id="stepReject">
             <div class="ql-step-header">
-                <button class="ql-back" id="qRejectBack" aria-label="Volver">
+                <button class="ql-back" id="qRejectBack" aria-label={t(L, 'q.volver')}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                 </button>
-                <span class="ql-step-title">Rechazar cotización</span>
+                <span class="ql-step-title">{t(L, 'q.rechazar_cotizacion')}</span>
             </div>
             <div class="ql-field">
-                <label class="ql-label" for="qRejectMsg">Motivo (opcional — ayuda al vendedor a mejorar)</label>
-                <textarea class="ql-input ql-textarea" id="qRejectMsg" rows="3" placeholder="Ej. El precio está fuera de presupuesto, necesitamos más tiempo…"></textarea>
+                <label class="ql-label" for="qRejectMsg">{t(L, 'q.motivo_opcional')}</label>
+                <textarea class="ql-input ql-textarea" id="qRejectMsg" rows="3" placeholder={t(L, 'q.motivo_placeholder')}></textarea>
             </div>
-            <button class="ql-cta ql-danger" id="qConfirmReject">Confirmar rechazo</button>
+            <button class="ql-cta ql-danger" id="qConfirmReject">{t(L, 'q.confirmar_rechazo')}</button>
             <p class="ql-error" id="qRejectError"></p>
         </div>
 
@@ -322,19 +335,19 @@ const hayContacto = !!(vEmail || vWa || vTel);
                         <polyline class="ql-check-mark" points="14,27 22,35 38,18" fill="none" stroke={color} stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </div>
-                <span class="ql-done-title">Cotización aprobada</span>
+                <span class="ql-done-title">{t(L, 'q.cotizacion_aprobada')}</span>
                 <span class="ql-done-sub" id="qApprovedSub">
-                    {ORG.nombre} recibió tu confirmación y se pondrá en contacto contigo en breve.
+                    {tf('q.recibio_confirmacion', { org: ORG.nombre })}
                 </span>
                 <div class="ql-done-actions">
                     {esperaCobro && (
                         <div class="ql-credit-note">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3" fill="currentColor" fill-opacity="0.08"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 15l2 2 4-4"/></svg>
                             <div class="ql-credit-text">
-                                <strong>No tienes pagos pendientes por ahora</strong>
+                                <strong>{t(L, 'q.sin_pagos_pendientes')}</strong>
                                 <span>
-                                    Tu siguiente pago es el {cobroTipoLabel(proxCobro).toLowerCase()} de {money(proxCobro.monto)}{proxCobro.vence ? `, el ${proxCobro.vence}` : ''}.
-                                    {orgCobraOnline ? ' Podrás pagarlo en línea desde este mismo link cuando llegue la fecha.' : ''}
+                                    {tf('q.siguiente_pago', { tipo: cobroTipoLabel(proxCobro).toLowerCase(), monto: money(proxCobro.monto) })}{proxCobro.vence ? tf('q.siguiente_pago_fecha', { fecha: proxCobro.vence }) : ''}.
+                                    {orgCobraOnline ? t(L, 'q.pagar_en_linea_nota') : ''}
                                 </span>
                             </div>
                         </div>
@@ -343,23 +356,23 @@ const hayContacto = !!(vEmail || vWa || vTel);
                         <div class="ql-credit-note">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3" fill="currentColor" fill-opacity="0.08"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 15l2 2 4-4"/></svg>
                             <div class="ql-credit-text">
-                                <strong>Pedido confirmado con crédito {q.terminos}</strong>
+                                <strong>{tf('q.pedido_confirmado_credito', { terminos: q.terminos })}</strong>
                                 <span>
-                                    El pago de {total} MXN vence el {q.saldoVence}.
-                                    {orgCobraOnline ? ' Cuando llegue la fecha podrás pagar en línea desde este mismo link.' : ' Coordina el pago directamente con el vendedor.'}
+                                    {tf('q.pago_vence', { total: `${total} ${ORG.moneda || 'MXN'}`, fecha: q.saldoVence })}
+                                    {orgCobraOnline ? t(L, 'q.pago_vence_online') : t(L, 'q.pago_vence_manual')}
                                 </span>
                             </div>
                         </div>
                     )}
                     {cobros.length > 0 && (
                         <div class="ql-cobros">
-                            <div class="ql-cobros-title">Plan de pago</div>
+                            <div class="ql-cobros-title">{t(L, 'q.plan_de_pago')}</div>
                             {cobros.map((co: any) => (
                                 <div class:list={['ql-cobro-row', { paid: co.pagado, cancelled: co.status === 'cancelado' }]}>
                                     <span class="ql-cobro-tipo">{cobroTipoLabel(co)}</span>
                                     <span class="editorial ql-cobro-monto">{money(co.monto)}</span>
                                     <span class="ql-cobro-status">
-                                        {co.pagado ? 'Pagado' : co.status === 'cancelado' ? 'Cancelado' : co.venceEnFuturo ? `Vence el ${co.vence}` : 'Por pagar'}
+                                        {co.pagado ? t(L, 'q.pagado') : co.status === 'cancelado' ? t(L, 'q.cancelado') : co.venceEnFuturo ? tf('q.vence_el', { fecha: co.vence }) : t(L, 'q.por_pagar')}
                                     </span>
                                 </div>
                             ))}
@@ -369,9 +382,9 @@ const hayContacto = !!(vEmail || vWa || vTel);
                         <div class="ql-credit-note ql-sub-active">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.1"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
                             <div class="ql-credit-text">
-                                <strong>Iguala activa</strong>
+                                <strong>{t(L, 'q.iguala_activa')}</strong>
                                 <span>
-                                    Se te cobra {montoMensual} cada mes automáticamente con tu tarjeta{sus && sus.currentPeriodEnd ? ` — próximo cargo el ${sus.currentPeriodEnd}` : ''}. Para cancelar, contacta a {ORG.nombre}.
+                                    {tf('q.iguala_cobro_mensual', { monto: montoMensual })}{sus && sus.currentPeriodEnd ? tf('q.iguala_proximo_cargo', { fecha: sus.currentPeriodEnd }) : ''}{tf('q.iguala_cancelar', { org: ORG.nombre })}
                                 </span>
                             </div>
                         </div>
@@ -379,16 +392,16 @@ const hayContacto = !!(vEmail || vWa || vTel);
                     {puedeAutorizarSus && (
                         <div class="ql-pay">
                             <div class="ql-sub-copy">
-                                <strong>Autoriza tu iguala mensual</strong>
-                                <span>Se cobrará <b>{montoMensual}</b> a tu tarjeta hoy y ese mismo monto automáticamente cada mes, hasta que se cancele. Puedes cancelar cuando quieras.</span>
+                                <strong>{t(L, 'q.autoriza_iguala')}</strong>
+                                <span set:html={tf('q.autoriza_iguala_desc', { monto: `<b>${montoMensual}</b>` })} />
                             </div>
                             <button class="ql-cta" id="qSubBtn" style={`background:${color}`}>
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                                Autorizar cobro mensual
+                                {t(L, 'q.autorizar_cobro_mensual')}
                             </button>
                             <div class="ql-pay-secure">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                                Suscripción con tarjeta · procesada por Stripe
+                                {t(L, 'q.suscripcion_stripe')}
                                 <span class="ql-pay-cards"><span>VISA</span><span>MASTERCARD</span><span>AMEX</span></span>
                             </div>
                         </div>
@@ -397,33 +410,33 @@ const hayContacto = !!(vEmail || vWa || vTel);
                         <div class="ql-pay-options">
                             {ORG.aceptaTransferencia && (
                                 <div class="ql-pay-transfer">
-                                    <div class="ql-transfer-title">Datos para transferencia bancaria</div>
+                                    <div class="ql-transfer-title">{t(L, 'q.datos_transferencia')}</div>
                                     <div class="ql-transfer-details">
-                                        <div class="ql-transfer-row"><span>Banco</span><strong>{ORG.bancoNombre || 'N/A'}</strong></div>
-                                        <div class="ql-transfer-row"><span>CLABE</span><strong>{ORG.bancoClabe || 'N/A'}</strong></div>
-                                        <div class="ql-transfer-row"><span>Beneficiario</span><strong>{ORG.bancoBeneficiario || 'N/A'}</strong></div>
-                                        <div class="ql-transfer-note">Tras transferir, envía tu comprobante al vendedor para confirmar el pago.</div>
+                                        <div class="ql-transfer-row"><span>{t(L, 'q.banco')}</span><strong>{ORG.bancoNombre || 'N/A'}</strong></div>
+                                        <div class="ql-transfer-row"><span>{t(L, 'q.clabe')}</span><strong>{ORG.bancoClabe || 'N/A'}</strong></div>
+                                        <div class="ql-transfer-row"><span>{t(L, 'q.beneficiario')}</span><strong>{ORG.bancoBeneficiario || 'N/A'}</strong></div>
+                                        <div class="ql-transfer-note">{t(L, 'q.transferencia_nota')}</div>
                                     </div>
                                 </div>
                             )}
 
                             {ORG.aceptaTransferencia && (ORG.aceptaTarjeta || ORG.cobroSpeiAuto) && ORG.stripeAccountId && ORG.stripeChargesEnabled && (
-                                <div class="ql-pay-divider">O paga en línea</div>
+                                <div class="ql-pay-divider">{t(L, 'q.pagar_en_linea_divider')}</div>
                             )}
 
                             {(ORG.aceptaTarjeta || ORG.cobroSpeiAuto) && ORG.stripeAccountId && ORG.stripeChargesEnabled && (
                                 <div class="ql-pay">
                                     <div class="ql-pay-amount">
-                                        <span class="ql-pay-label">{nextCobro && nextCobro.tipo !== 'total' ? `A PAGAR AHORA · ${cobroTipoLabel(nextCobro).toUpperCase()}` : 'A PAGAR AHORA'}</span>
-                                        <span class="editorial ql-pay-total" style={`color:${color}`}>{montoAPagar} <small>MXN</small></span>
+                                        <span class="ql-pay-label">{nextCobro && nextCobro.tipo !== 'total' ? `${t(L, 'q.a_pagar_ahora')} · ${cobroTipoLabel(nextCobro).toUpperCase()}` : t(L, 'q.a_pagar_ahora')}</span>
+                                        <span class="editorial ql-pay-total" style={`color:${color}`}>{montoAPagar} <small>{ORG.moneda || 'MXN'}</small></span>
                                     </div>
                                     <button class="ql-cta" id="qPayBtn" style={`background:${color}`}>
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                                        {ORG.aceptaTarjeta ? 'Pagar de forma segura' : 'Pagar por transferencia (SPEI)'}
+                                        {ORG.aceptaTarjeta ? t(L, 'q.pagar_seguro') : t(L, 'q.pagar_spei')}
                                     </button>
                                     <div class="ql-pay-secure">
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                                        {ORG.aceptaTarjeta && ORG.cobroSpeiAuto ? 'Tarjeta o transferencia SPEI · vía Stripe' : ORG.cobroSpeiAuto ? 'Transferencia SPEI con CLABE · vía Stripe' : 'Pago protegido vía Stripe'}
+                                        {ORG.aceptaTarjeta && ORG.cobroSpeiAuto ? t(L, 'q.tarjeta_o_spei') : ORG.cobroSpeiAuto ? t(L, 'q.solo_spei') : t(L, 'q.pago_protegido')}
                                         {ORG.aceptaTarjeta && <span class="ql-pay-cards"><span>VISA</span><span>MASTERCARD</span><span>AMEX</span></span>}
                                     </div>
                                 </div>
@@ -432,18 +445,18 @@ const hayContacto = !!(vEmail || vWa || vTel);
                     )}
                     <button class="ql-ghost" id="qPdfApproved" style="margin-top: 1rem;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                        Descargar comprobante
+                        {t(L, 'q.descargar_comprobante')}
                     </button>
                 </div>
                 {q.firma ? (
                     <div class="ql-audit-stamp">
                         <div class="ql-audit-header">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
-                            <span>Documento verificado{ORG.paisCode === 'MX' ? ' · Listo para CFDI 4.0' : ''}</span>
+                            <span>{t(L, 'q.documento_verificado')}{ORG.paisCode === 'MX' ? t(L, 'q.cfdi_suffix') : ''}</span>
                         </div>
-                        <div class="ql-audit-row"><strong>Firmante:</strong> {q.firma.nombre} (IP: {q.firma.ip})</div>
-                        <div class="ql-audit-row"><strong>Fecha:</strong> {q.firma.cuando}</div>
-                        <div class="ql-audit-row"><strong>Sello:</strong> <span class="ql-hash">{q.firma.hash}</span></div>
+                        <div class="ql-audit-row"><strong>{t(L, 'q.firmante')}</strong> {q.firma.nombre} (IP: {q.firma.ip})</div>
+                        <div class="ql-audit-row"><strong>{t(L, 'q.fecha')}</strong> {q.firma.cuando}</div>
+                        <div class="ql-audit-row"><strong>{t(L, 'q.sello')}</strong> <span class="ql-hash">{q.firma.hash}</span></div>
                     </div>
                 ) : (
                     <p class="ql-stamp" id="qSignedStamp"></p>
@@ -461,8 +474,8 @@ const hayContacto = !!(vEmail || vWa || vTel);
                         <line x1="36" y1="16" x2="16" y2="36" stroke="#9ca3af" stroke-width="2.8" stroke-linecap="round"/>
                     </svg>
                 </div>
-                <span class="ql-done-title" style="color:#6b7280">Cotización rechazada</span>
-                <span class="ql-done-sub">Le notificamos a {ORG.nombre}. Si cambias de opinión, contáctalos directamente.</span>
+                <span class="ql-done-title" style="color:#6b7280">{t(L, 'q.cotizacion_rechazada')}</span>
+                <span class="ql-done-sub">{tf('q.notificamos', { org: ORG.nombre })}</span>
             </div>
         </div>
     </div>
@@ -471,7 +484,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
     {mostrarChat && (
         <div class="q-chat">
             <div class="q-thread" id="qThread" hidden={conversacion.length === 0}>
-                <div class="q-chat-eyebrow">CONVERSACIÓN</div>
+                <div class="q-chat-eyebrow">{t(L, 'q.conversacion')}</div>
                 {conversacion.map((m) => (
                     <div class:list={['q-msg', m.mine ? 'mine' : 'theirs', { counter: m.tipo === 'counter' }]}>
                         <span class="q-msg-text">{m.detalle}</span>
@@ -487,20 +500,20 @@ const hayContacto = !!(vEmail || vWa || vTel);
                             class="q-compose-ta"
                             id="qMsg"
                             rows="1"
-                            placeholder="Escribe un mensaje o propuesta…"
+                            placeholder={t(L, 'q.escribe_mensaje')}
                         ></textarea>
-                        <button class="q-compose-send" id="qSendMsg" aria-label="Enviar" style={`background:${color}`}>
+                        <button class="q-compose-send" id="qSendMsg" aria-label={t(L, 'q.enviar')} style={`background:${color}`}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                         </button>
                     </div>
                     <div class="q-compose-extras">
-                        <input class="q-compose-price" type="number" id="qProp" min="0" step="100" placeholder="Propuesta en MXN (opcional)" />
+                        <input class="q-compose-price" type="number" id="qProp" min="0" step="100" placeholder={t(L, 'q.propuesta_placeholder')} />
                         <button class="q-counter-pill" id="qSendCounter" style={`color:${color}; border-color:${color}`}>
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-                            Contraoferta
+                            {t(L, 'q.contraoferta')}
                         </button>
                     </div>
-                    <p class="q-compose-ok" id="qNegOk" hidden>Enviado. {ORG.nombre} lo verá al instante.</p>
+                    <p class="q-compose-ok" id="qNegOk" hidden>{tf('q.enviado_verá', { org: ORG.nombre })}</p>
                     <p class="ql-error" id="qNegErr"></p>
                 </div>
             )}
@@ -509,24 +522,24 @@ const hayContacto = !!(vEmail || vWa || vTel);
 
     {hayContacto && (
         <div class="q-contact">
-            <span class="q-contact-label">¿Dudas sobre esta cotización? Contacta a {ORG.nombre}</span>
+            <span class="q-contact-label">{tf('q.dudas_contacta', { org: ORG.nombre })}</span>
             <div class="q-contact-links">
                 {vWa && (
                     <a class="q-contact-link" href={`https://wa.me/${waDigits}`} target="_blank" rel="noopener">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
-                        WhatsApp
+                        {t(L, 'q.whatsapp')}
                     </a>
                 )}
                 {vEmail && (
                     <a class="q-contact-link" href={`mailto:${vEmail}`}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
-                        Correo
+                        {t(L, 'q.correo')}
                     </a>
                 )}
                 {vTel && (
                     <a class="q-contact-link" href={`tel:${vTel}`}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                        Llamar
+                        {t(L, 'q.llamar')}
                     </a>
                 )}
             </div>
@@ -537,10 +550,10 @@ const hayContacto = !!(vEmail || vWa || vTel);
         <div class="q-cord-badge">
             <span class="q-cord-badge-trust">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
-                Firma con validez legal{ORG.paisCode === 'MX' ? ' · Listo para CFDI 4.0' : ''}
+                {t(L, 'q.firma_validez_legal')}{ORG.paisCode === 'MX' ? t(L, 'q.cfdi_suffix') : ''}
             </span>
             <a href="https://cordhq.app" class="q-cord-badge-cta" target="_blank" rel="noopener">
-                Verificado por <img src="/imgs/logo-cord-navy.png" alt="Cord" /> — crea las tuyas gratis →
+                {t(L, 'q.verificado_por')} <img src="/imgs/logo-cord-navy.png" alt="Cord" /> {t(L, 'q.crea_las_tuyas')}
             </a>
         </div>
     )}
@@ -550,21 +563,28 @@ const hayContacto = !!(vEmail || vWa || vTel);
     <div class="q-sticky" id="qSticky" aria-hidden="true">
         <div class="q-sticky-inner">
             <div class="q-sticky-info">
-                <span class="q-sticky-label">Total a pagar</span>
+                <span class="q-sticky-label">{t(L, 'q.total_a_pagar')}</span>
                 <span class="editorial q-sticky-total" style={`color:${color}`}>{total}</span>
             </div>
             <button class="q-sticky-cta" id="qStickyApprove" style={`background:${color}`}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                Aprobar
+                {t(L, 'q.aprobar')}
             </button>
         </div>
     </div>
 )}
 
+<script is:inline define:vars={{ RTQ }}>
+    // El <script> grande de abajo NO es is:inline (usa TS) y no puede leer
+    // t()/frontmatter en runtime — se le pasa el runtime ya resuelto aquí.
+    window.CORD_I18N_Q = RTQ;
+</script>
+
 <script>
     const card = document.querySelector('.q-card') as HTMLElement | null;
     const folio = card?.dataset.folio ?? '';
     const token = card?.dataset.token ?? '';
+    const I18NQ = (window as any).CORD_I18N_Q || {};
 
     const emit = (name: string, detail: Record<string, unknown> = {}) =>
         window.dispatchEvent(new CustomEvent(name, { detail: { token, folio, ...detail } }));
@@ -601,13 +621,13 @@ const hayContacto = !!(vEmail || vWa || vTel);
             body: JSON.stringify({ action, ...extra }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Error inesperado');
+        if (!res.ok) throw new Error(data.error || I18NQ.errorInesperado);
         return data;
     };
 
     // ── Aprobación parcial: selección de líneas + total en vivo ──
     const ivaPct = Number((document.querySelector('.q-card') as HTMLElement)?.dataset.iva ?? '16') / 100;
-    const moneyFmt = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n);
+    const moneyFmt = (n: number) => '$' + new Intl.NumberFormat(I18NQ.localeIntl || 'es-MX', { minimumFractionDigits: 2 }).format(n);
     const picks = Array.from(document.querySelectorAll<HTMLInputElement>('.qi-pick-cb'));
     const approveBtn = document.getElementById('qApproveBtn') as HTMLButtonElement | null;
     const partialNote = document.getElementById('qPartialNote');
@@ -638,7 +658,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
                 partialNote.hidden = false;
                 const cnt = document.getElementById('qPartialCount');
                 const tot = document.getElementById('qPartialTotal');
-                if (cnt) cnt.textContent = `${n} de ${total} líneas`;
+                if (cnt) cnt.textContent = (I18NQ.lineasDe || '{n} de {total} líneas').replace('{n}', String(n)).replace('{total}', String(total));
                 if (tot) tot.textContent = moneyFmt(sub * (1 + ivaPct));
             } else {
                 partialNote.hidden = true;
@@ -674,7 +694,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
         const errEl = document.getElementById('qSignError');
         if (errEl) errEl.textContent = '';
         confirmSignBtn.disabled = true;
-        confirmSignBtn.textContent = 'Firmando…';
+        confirmSignBtn.textContent = I18NQ.firmando || 'Firmando…';
         try {
             const res = await api('approve', { signed_by: signedBy, email, accepted_items: acceptedIds() });
             const stamp = document.getElementById('qSignedStamp');
@@ -682,17 +702,17 @@ const hayContacto = !!(vEmail || vWa || vTel);
                 // MISMO markup que el render del servidor (.ql-audit-stamp). Sus
                 // estilos viven en <style is:global> porque este DOM se inyecta
                 // en runtime y no lleva data-astro-cid (regla del proyecto).
-                const now = new Date().toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' });
+                const now = new Date().toLocaleString(I18NQ.localeIntl || 'es-MX', { dateStyle: 'long', timeStyle: 'short' });
                 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 const pais = card?.dataset.pais || 'MX';
                 stamp.outerHTML = `<div class="ql-audit-stamp">
                     <div class="ql-audit-header">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
-                        <span>Documento verificado${pais === 'MX' ? ' · Listo para CFDI 4.0' : ''}</span>
+                        <span>${I18NQ.documentoVerificado || 'Documento verificado'}${pais === 'MX' ? (I18NQ.cfdiSuffix || ' · CFDI 4.0') : ''}</span>
                     </div>
-                    <div class="ql-audit-row"><strong>Firmante:</strong> ${esc(signedBy)}</div>
-                    <div class="ql-audit-row"><strong>Fecha:</strong> ${esc(now)}</div>
-                    <div class="ql-audit-row"><strong>Sello:</strong> <span class="ql-hash">${esc(String(res.hash ?? ''))}</span></div>
+                    <div class="ql-audit-row"><strong>${I18NQ.firmante || 'Firmante:'}</strong> ${esc(signedBy)}</div>
+                    <div class="ql-audit-row"><strong>${I18NQ.fecha || 'Fecha:'}</strong> ${esc(now)}</div>
+                    <div class="ql-audit-row"><strong>${I18NQ.sello || 'Sello:'}</strong> <span class="ql-hash">${esc(String(res.hash ?? ''))}</span></div>
                 </div>`;
             }
             showStep('stepApproved');
@@ -701,7 +721,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
         } catch (err: any) {
             if (errEl) errEl.textContent = (err as Error).message;
             confirmSignBtn.disabled = false;
-            confirmSignBtn.textContent = 'Confirmar y firmar';
+            confirmSignBtn.textContent = I18NQ.confirmarFirmar || 'Confirmar y firmar';
         }
     });
 
@@ -721,7 +741,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
         const comentario = (document.getElementById('qRejectMsg') as HTMLTextAreaElement | null)?.value.trim() ?? '';
         if (errEl) errEl.textContent = '';
         btn.disabled = true;
-        btn.textContent = 'Procesando…';
+        btn.textContent = I18NQ.procesando || 'Procesando…';
         try {
             await api('reject', { comentario });
             showStep('stepRejected');
@@ -729,7 +749,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
         } catch (err: any) {
             if (errEl) errEl.textContent = (err as Error).message;
             btn.disabled = false;
-            btn.textContent = 'Confirmar rechazo';
+            btn.textContent = I18NQ.confirmarRechazo || 'Confirmar rechazo';
         }
     });
 
@@ -741,7 +761,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
     document.getElementById('qPayBtn')?.addEventListener('click', async (e) => {
         const btn = e.currentTarget as HTMLButtonElement;
         btn.disabled = true;
-        btn.textContent = 'Redirigiendo…';
+        btn.textContent = I18NQ.redirigiendo || 'Redirigiendo…';
         try {
             const url = `/q/${token}/pay`;
             emit('cord:pay', { url });
@@ -749,7 +769,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
         } catch (err: any) {
             alert((err as Error).message);
             btn.disabled = false;
-            btn.textContent = 'Pagar en línea';
+            btn.textContent = I18NQ.pagarEnLinea || 'Pagar en línea';
         }
     });
 
@@ -757,7 +777,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
     document.getElementById('qSubBtn')?.addEventListener('click', (e) => {
         const btn = e.currentTarget as HTMLButtonElement;
         btn.disabled = true;
-        btn.textContent = 'Redirigiendo…';
+        btn.textContent = I18NQ.redirigiendo || 'Redirigiendo…';
         const url = `/q/${token}/pay`;
         emit('cord:pay', { url });
         window.location.href = url;
@@ -776,7 +796,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
         const div = document.createElement('div');
         div.className = 'q-msg mine' + (kind === 'counter' ? ' counter' : '');
         const t = document.createElement('span'); t.className = 'q-msg-text'; t.textContent = text;
-        const time = document.createElement('span'); time.className = 'q-msg-time'; time.textContent = 'ahora';
+        const time = document.createElement('span'); time.className = 'q-msg-time'; time.textContent = I18NQ.ahora || 'ahora';
         div.append(t, time);
         thread.appendChild(div);
         requestAnimationFrame(() => { thread.scrollTop = thread.scrollHeight; });
@@ -789,7 +809,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
         const div = document.createElement('div');
         div.className = 'q-msg theirs';
         const t = document.createElement('span'); t.className = 'q-msg-text'; t.textContent = text;
-        const time = document.createElement('span'); time.className = 'q-msg-time'; time.textContent = 'ahora';
+        const time = document.createElement('span'); time.className = 'q-msg-time'; time.textContent = I18NQ.ahora || 'ahora';
         div.append(t, time);
         thread.appendChild(div);
         requestAnimationFrame(() => { thread.scrollTop = thread.scrollHeight; });
@@ -810,13 +830,13 @@ const hayContacto = !!(vEmail || vWa || vTel);
         const mensaje = msgEl?.value.trim() ?? '';
         const propuesta = action === 'counter' ? Number(propEl?.value || 0) : 0;
         if (negErr) negErr.textContent = '';
-        if (action === 'comment' && !mensaje) { if (negErr) negErr.textContent = 'Escribe un mensaje.'; return; }
-        if (action === 'counter' && !mensaje && !propuesta) { if (negErr) negErr.textContent = 'Indica tu propuesta o escribe un mensaje.'; return; }
+        if (action === 'comment' && !mensaje) { if (negErr) negErr.textContent = I18NQ.escribeMensaje || 'Escribe un mensaje.'; return; }
+        if (action === 'counter' && !mensaje && !propuesta) { if (negErr) negErr.textContent = I18NQ.indicaPropuesta || 'Indica tu propuesta o escribe un mensaje.'; return; }
         btn.disabled = true;
         try {
             await api(action, { mensaje, propuesta });
             const label = action === 'counter' && propuesta
-                ? `Propuesta: $${propuesta.toLocaleString('es-MX')}${mensaje ? ` — ${mensaje}` : ''}`
+                ? `${(I18NQ.propuestaLabel || 'Propuesta: ${monto}').replace('${monto}', propuesta.toLocaleString(I18NQ.localeIntl || 'es-MX'))}${mensaje ? ` — ${mensaje}` : ''}`
                 : mensaje;
             appendMsg(label, action);
             if (msgEl) msgEl.value = '';
@@ -862,7 +882,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
                 const div = document.createElement('div');
                 div.className = 'qi-msg mine';
                 const t = document.createElement('span'); t.className = 'qi-msg-text'; t.textContent = mensaje;
-                const time = document.createElement('span'); time.className = 'qi-msg-time'; time.textContent = 'ahora';
+                const time = document.createElement('span'); time.className = 'qi-msg-time'; time.textContent = I18NQ.ahora || 'ahora';
                 div.append(t, time);
                 threadInner?.insertBefore(div, target.closest('.qi-reply-box'));
                 

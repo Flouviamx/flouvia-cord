@@ -27,6 +27,10 @@ interface ReqCtx {
     // está activo, getActiveOrgId() resuelve la org SANDBOX espejo (orgs.sandbox_of)
     // en vez de la real — datos de prueba 100% aislados, tipo Stripe test mode.
     testMode?: boolean;
+    // Idioma resuelto para este request (app interna /app/**, /q/[token] y
+    // correos transaccionales). Se detecta del header Accept-Language del
+    // navegador — sin toggle manual, ver docs/app-rutas.md → i18n de la app.
+    locale?: "es" | "en";
 }
 
 export const reqContext = new AsyncLocalStorage<ReqCtx>();
@@ -54,6 +58,11 @@ export function memoizedOrgId(): string | null {
 /** ¿Este request viene en modo de PRUEBA (cookie cord_test_mode)? */
 export function isTestModeRequest(): boolean {
     return reqContext.getStore()?.testMode === true;
+}
+
+/** Idioma resuelto para este request ("es"|"en"), default "es" fuera del middleware (crons/scripts). */
+export function currentLocale(): "es" | "en" {
+    return reqContext.getStore()?.locale ?? "es";
 }
 
 /** Guarda el org_id resuelto en el store del request para reutilizarlo. */

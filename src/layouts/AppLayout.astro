@@ -10,6 +10,11 @@ import SupportCoverBg from '../components/support/SupportCoverBg.jsx';
 import { clerkAppearance } from '../lib/clerk-theme';
 import Analytics from '@vercel/analytics/astro';
 import { memberCan } from '../lib/permissions';
+import { currentLocale } from '../lib/context';
+import { t, getAppRuntimeI18n } from '../i18n/app';
+
+const L = currentLocale();
+const RT = getAppRuntimeI18n(L);
 
 const [ORG, ME] = await Promise.all([getOrg(), getMyMembership()]);
 const canCotizar = memberCan(ME, 'cotizar');
@@ -109,91 +114,91 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
                     <div class="test-banner" role="status">
                         <span class="test-banner-badge">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 12h4l-1.5 8L17 9h-4.5z"/></svg>
-                            Entorno de prueba
+                            {t(L, 'layout.test.badge')}
                         </span>
-                        <span class="test-banner-desc">Todo lo que hagas aquí es de prueba — tus datos reales no se tocan.</span>
+                        <span class="test-banner-desc">{t(L, 'layout.test.desc')}</span>
                         <div class="test-banner-actions">
-                            <button class="test-banner-reset" id="testEnvReset" type="button">Vaciar datos de prueba</button>
-                            <button class="test-banner-exit" id="testEnvExit" type="button">Salir del modo de prueba</button>
+                            <button class="test-banner-reset" id="testEnvReset" type="button">{t(L, 'layout.test.reset')}</button>
+                            <button class="test-banner-exit" id="testEnvExit" type="button">{t(L, 'layout.test.exit')}</button>
                         </div>
                     </div>
                 )}
                 <header class="topbar">
-                    <button class="tb-burger" id="navBurger" type="button" aria-label="Abrir menú">
+                    <button class="tb-burger" id="navBurger" type="button" aria-label={t(L, 'layout.aria.abrir_menu')}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                     </button>
 
-                    <button class="tb-search" id="cmdkOpen" type="button" aria-label="Buscar — Command K">
+                    <button class="tb-search" id="cmdkOpen" type="button" aria-label={t(L, 'layout.aria.buscar_cmdk')}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        <span class="tb-search-label">Buscar cotizaciones, clientes…</span>
+                        <span class="tb-search-label">{t(L, 'topbar.buscar')}</span>
                         <kbd class="tb-kbd">⌘K</kbd>
                     </button>
 
                     <div class="tb-right">
                         {!setup.complete && (
-                            <button class="onb-pill" id="onbPill" type="button" hidden aria-label="Guía de configuración">
+                            <button class="onb-pill" id="onbPill" type="button" hidden aria-label={t(L, 'layout.aria.guia_config')}>
                                 <span class="onb-pill-ring" aria-hidden="true">
                                     <svg viewBox="0 0 36 36"><circle class="onb-ring-bg" cx="18" cy="18" r="15.5"></circle><circle class="onb-ring-fg" cx="18" cy="18" r="15.5" style={`stroke-dasharray:${pillDash}`}></circle></svg>
                                     <b class="editorial" data-pill-pct>{setup.pct}%</b>
                                 </span>
-                                <span class="onb-pill-label">Guía de configuración</span>
+                                <span class="onb-pill-label">{t(L, 'layout.aria.guia_config')}</span>
                             </button>
                         )}
                         {canCreateAny && (
                             <div class="tb-create-wrap">
                                 <button class="tb-create" id="tbCreate" type="button" aria-haspopup="menu" aria-expanded="false">
                                     <svg class="tb-create-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                    <span>Crear</span>
+                                    <span>{t(L, 'layout.crear')}</span>
                                     <svg class="tb-create-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
                                 </button>
                                 <div class="tb-create-menu" id="tbCreateMenu" role="menu" hidden>
                                     {canCotizar && (
                                         <a href="/app/cotizaciones/nueva" class="tb-create-item" role="menuitem">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-                                            <span>Cotización</span><kbd>C</kbd>
+                                            <span>{t(L, 'layout.crear.cotizacion')}</span><kbd>C</kbd>
                                         </a>
                                     )}
                                     {canClientes && (
                                         <a href="/app/clientes?nuevo=1" class="tb-create-item" role="menuitem">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-                                            <span>Cliente</span>
+                                            <span>{t(L, 'layout.crear.cliente')}</span>
                                         </a>
                                     )}
                                     {canProductos && (
                                         <a href="/app/productos?nuevo=1" class="tb-create-item" role="menuitem">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16h6"/><path d="M19 13v6"/><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><path d="m7.5 4.27 9 5.15"/><polyline points="3.29 7 12 12 12 22"/></svg>
-                                            <span>Producto</span>
+                                            <span>{t(L, 'layout.crear.producto')}</span>
                                         </a>
                                     )}
                                     <button type="button" class="tb-create-item" id="tbCreateTarea" role="menuitem">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="m3 17 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>
-                                        <span>Tarea</span>
+                                        <span>{t(L, 'layout.crear.tarea')}</span>
                                     </button>
                                 </div>
                             </div>
                         )}
                         <div class="tb-notif-wrap">
-                            <button class="tb-icon tb-activity" id="notifBtn" type="button" title="Actividad" aria-label="Notificaciones" aria-haspopup="menu" aria-expanded="false">
+                            <button class="tb-icon tb-activity" id="notifBtn" type="button" title={t(L, 'layout.aria.actividad')} aria-label={t(L, 'topbar.notificaciones')} aria-haspopup="menu" aria-expanded="false">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                                 <span class="tb-notif-dot" id="notifDot" hidden></span>
                             </button>
                             <div class="notif-panel" id="notifPanel" role="menu" hidden>
                                 <div class="notif-head">
-                                    <strong>Notificaciones</strong>
-                                    <button type="button" id="notifMarkAll" class="notif-mark">Marcar como leídas</button>
+                                    <strong>{t(L, 'layout.notif.titulo')}</strong>
+                                    <button type="button" id="notifMarkAll" class="notif-mark">{t(L, 'layout.notif.marcar_leidas')}</button>
                                 </div>
                                 <div class="notif-list" id="notifList"></div>
-                                <a class="notif-foot" href="/app">Ver toda la actividad</a>
+                                <a class="notif-foot" href="/app">{t(L, 'layout.notif.ver_todo')}</a>
                             </div>
                         </div>
-                        <button class="tb-icon tb-help" id="helpBtn" type="button" title="Ayuda" aria-label="Ayuda" aria-haspopup="dialog" aria-expanded="false">
+                        <button class="tb-icon tb-help" id="helpBtn" type="button" title={t(L, 'layout.aria.ayuda')} aria-label={t(L, 'layout.aria.ayuda')} aria-haspopup="dialog" aria-expanded="false">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/><path d="M9.1 9a2.9 2.9 0 0 1 5.6 1c0 2-2.9 2.9-2.9 2.9"/><line x1="12" y1="17" x2="12" y2="17"/></svg>
                         </button>
-                        <button class="tb-icon tb-theme" id="themeBtn" type="button" title="Tema claro/oscuro" aria-label="Cambiar tema">
+                        <button class="tb-icon tb-theme" id="themeBtn" type="button" title={t(L, 'layout.aria.tema')} aria-label={t(L, 'layout.aria.cambiar_tema')}>
                             <svg class="tb-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
                             <svg class="tb-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
                         </button>
-                        <a class:list={['tb-icon', 'tb-gear', { active: page === 'ajustes' }]} href="/app/ajustes" title="Ajustes" aria-label="Ajustes">
+                        <a class:list={['tb-icon', 'tb-gear', { active: page === 'ajustes' }]} href="/app/ajustes" title={t(L, 'topbar.ajustes')} aria-label={t(L, 'topbar.ajustes')}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                         </a>
                     </div>
@@ -203,7 +208,7 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
                     <div class="ph-inner">
                         <div class="ph-titles">
                             {crumbs.length > 0 && (
-                                <nav class="ph-crumbs" aria-label="Ruta">
+                                <nav class="ph-crumbs" aria-label={t(L, 'layout.aria.ruta')}>
                                     {crumbs.map((c) => (
                                         c.href ? <a href={c.href}>{c.label}</a> : <span>{c.label}</span>
                                     ))}
@@ -212,7 +217,7 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
                             )}
                             <div class="ph-title-row">
                                 <h1 class="ph-title">{heading ?? title}</h1>
-                                <button class="ph-pin" id="phPin" type="button" aria-label="Fijar página" title="Fijar en el menú">
+                                <button class="ph-pin" id="phPin" type="button" aria-label={t(L, 'layout.aria.fijar_pagina')} title={t(L, 'layout.aria.fijar_menu')}>
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.68V6a3 3 0 1 0-6 0v4.68a2 2 0 0 1-1.11 1.86l-1.78.89A2 2 0 0 0 5 15.24Z"/></svg>
                                 </button>
                             </div>
@@ -232,10 +237,10 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
         <!-- Drawer de Ayuda (se abre con el icono ? de la topbar) -->
         <div class="help-drawer" id="helpDrawer" hidden>
             <div class="help-backdrop" id="helpBackdrop"></div>
-            <aside class="help-panel" role="dialog" aria-modal="true" aria-label="Centro de ayuda">
+            <aside class="help-panel" role="dialog" aria-modal="true" aria-label={t(L, 'layout.help.titulo')}>
                 <header class="help-head">
-                    <strong>Centro de ayuda</strong>
-                    <button id="helpClose" class="help-x" type="button" aria-label="Cerrar ayuda">
+                    <strong>{t(L, 'layout.help.titulo')}</strong>
+                    <button id="helpClose" class="help-x" type="button" aria-label={t(L, 'layout.help.cerrar')}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                 </header>
@@ -243,30 +248,30 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
                     <div class="help-search-wrap">
                         <div class="help-search">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" fill="currentColor" fill-opacity="0.12"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                            <input id="helpSearch" type="search" placeholder="Buscar ayuda…" autocomplete="off" spellcheck="false" />
+                            <input id="helpSearch" type="search" placeholder={t(L, 'layout.help.buscar')} autocomplete="off" spellcheck="false" />
                         </div>
                     </div>
                     <div class="help-body">
                         <nav class="help-grid">
                             <button type="button" class="help-grid-btn" data-help-action="shortcuts">
                                 <span class="help-grid-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/></svg></span>
-                                <span>Atajos de teclado</span>
+                                <span>{t(L, 'layout.help.atajos')}</span>
                                 <svg class="help-grid-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                             </button>
                             <button type="button" class="help-grid-btn" data-help-action="guide">
                                 <span class="help-grid-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
-                                <span>Guía de uso</span>
+                                <span>{t(L, 'layout.help.guia_uso')}</span>
                                 <svg class="help-grid-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                             </button>
                             <a class="help-grid-btn" href="/soporte">
                                 <span class="help-grid-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
-                                <span>Contactar soporte</span>
+                                <span>{t(L, 'layout.help.contactar_soporte')}</span>
                                 <svg class="help-grid-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                             </a>
                         </nav>
-                        <div class="help-faq-head">Preguntas frecuentes</div>
+                        <div class="help-faq-head">{t(L, 'layout.help.faq_titulo')}</div>
                         <div class="help-inset-group help-faq" id="helpFaq"></div>
-                        <div class="help-empty" id="helpEmpty" hidden>Sin resultados para tu búsqueda.</div>
+                        <div class="help-empty" id="helpEmpty" hidden>{t(L, 'layout.help.sin_resultados')}</div>
                     </div>
 </div>
 <style is:global>
@@ -281,23 +286,23 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
                             <div class="ai-flare"></div>
                         </div>
                         <div class="help-ai-content">
-                            <button type="button" class="help-ai-back" id="helpAiBack" aria-label="Volver al menú" onclick="window.closeCordAi && window.closeCordAi(event)">
+                            <button type="button" class="help-ai-back" id="helpAiBack" aria-label={t(L, 'layout.help.volver_menu')} onclick="window.closeCordAi && window.closeCordAi(event)">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                                Atrás
+                                {t(L, 'layout.help.atras')}
                             </button>
                             <span class="help-ai-badge">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px;margin-right:2px"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" fill="currentColor" fill-opacity="0.2"/></svg>
-                                Inteligencia Artificial
+                                {t(L, 'layout.help.ia_badge')}
                             </span>
-                            <p class="help-ai-title">Cord AI</p>
+                            <p class="help-ai-title">{t(L, 'layout.help.ia_titulo')}</p>
                             <div class="help-ai-chat" id="helpAiChat">
                                 <div class="chat-history" id="chatHistory">
-                                    <div class="chat-bubble bot">Hola, soy Cord AI. Estoy aquí para resolver tus dudas sobre cómo usar la plataforma — cotizaciones, cobranza, facturación y más. ¿En qué te ayudo?</div>
+                                    <div class="chat-bubble bot">{RT.chatGreeting}</div>
                                 </div>
                                 <div class="chat-quick" id="chatQuick"></div>
                                 <div class="chat-input-row">
-                                    <input type="text" class="chat-real-input" id="chatRealInput" placeholder="Pregúntale a la IA sobre tu negocio..." autocomplete="off" onfocus="window.openCordAi && window.openCordAi()" onclick="window.openCordAi && window.openCordAi()" ontouchstart="window.openCordAi && window.openCordAi()">
-                                    <button type="button" class="chat-send" id="chatSendBtn" aria-label="Enviar mensaje">
+                                    <input type="text" class="chat-real-input" id="chatRealInput" placeholder={t(L, 'layout.help.ia_placeholder')} autocomplete="off" onfocus="window.openCordAi && window.openCordAi()" onclick="window.openCordAi && window.openCordAi()" ontouchstart="window.openCordAi && window.openCordAi()">
+                                    <button type="button" class="chat-send" id="chatSendBtn" aria-label={t(L, 'layout.help.enviar_mensaje')}>
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                                     </button>
                                 </div>
@@ -311,17 +316,17 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         <!-- ── MENÚ DE COMANDOS (Cmd+K) ── -->
         <div class="cmdk" id="cmdk" hidden>
             <div class="cmdk-backdrop" id="cmdkBackdrop"></div>
-            <div class="cmdk-panel" role="dialog" aria-modal="true" aria-label="Menú de comandos">
+            <div class="cmdk-panel" role="dialog" aria-modal="true" aria-label={t(L, 'layout.cmdk.aria')}>
                 <div class="cmdk-input-row">
                     <svg class="cmdk-search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input id="cmdkInput" type="text" placeholder="Buscar cotizaciones, clientes, productos… o un comando" autocomplete="off" spellcheck="false" />
+                    <input id="cmdkInput" type="text" placeholder={t(L, 'layout.cmdk.placeholder')} autocomplete="off" spellcheck="false" />
                     <kbd class="cmdk-esc">ESC</kbd>
                 </div>
                 <div class="cmdk-results" id="cmdkResults"></div>
                 <div class="cmdk-foot">
-                    <span><kbd>↑</kbd><kbd>↓</kbd> navegar</span>
-                    <span><kbd>↵</kbd> abrir</span>
-                    <span><kbd>esc</kbd> cerrar</span>
+                    <span><kbd>↑</kbd><kbd>↓</kbd> {t(L, 'layout.cmdk.navegar')}</span>
+                    <span><kbd>↵</kbd> {t(L, 'layout.cmdk.abrir')}</span>
+                    <span><kbd>esc</kbd> {t(L, 'layout.cmdk.cerrar')}</span>
                 </div>
             </div>
         </div>
@@ -329,17 +334,17 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         <!-- Quick-add de Tarea (desde el botón "Crear") -->
         <div class="qtask" id="qtask" hidden>
             <div class="qtask-backdrop" id="qtaskBackdrop"></div>
-            <form class="qtask-panel" id="qtaskForm" role="dialog" aria-modal="true" aria-label="Nueva tarea">
+            <form class="qtask-panel" id="qtaskForm" role="dialog" aria-modal="true" aria-label={t(L, 'layout.qtask.aria')}>
                 <div class="qtask-head">
-                    <strong>Nueva tarea</strong>
-                    <button type="button" class="qtask-x" id="qtaskClose" aria-label="Cerrar">
+                    <strong>{t(L, 'layout.qtask.aria')}</strong>
+                    <button type="button" class="qtask-x" id="qtaskClose" aria-label={t(L, 'layout.qtask.cerrar')}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                 </div>
-                <input id="qtaskTitulo" class="qtask-input" placeholder="Ej. Llamar a GAMA para dar seguimiento…" autocomplete="off" required />
+                <input id="qtaskTitulo" class="qtask-input" placeholder={t(L, 'layout.qtask.placeholder')} autocomplete="off" required />
                 <div class="qtask-row">
-                    <input id="qtaskDue" class="qtask-date" type="date" aria-label="Fecha límite" />
-                    <button type="submit" class="qtask-btn">Agregar tarea</button>
+                    <input id="qtaskDue" class="qtask-date" type="date" aria-label={t(L, 'layout.qtask.fecha_limite')} />
+                    <button type="submit" class="qtask-btn">{t(L, 'layout.qtask.agregar')}</button>
                 </div>
             </form>
         </div>
@@ -357,11 +362,11 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
                 <div class="cconf-icon" id="cconfIcon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 </div>
-                <h3 class="cconf-title" id="cconfTitle">¿Confirmar?</h3>
+                <h3 class="cconf-title" id="cconfTitle">{t(L, 'layout.confirm.titulo_default')}</h3>
                 <p class="cconf-body" id="cconfBody"></p>
                 <div class="cconf-actions">
-                    <button class="cconf-btn cconf-cancel" id="cconfCancel" type="button">Cancelar</button>
-                    <button class="cconf-btn cconf-ok" id="cconfOk" type="button">Confirmar</button>
+                    <button class="cconf-btn cconf-cancel" id="cconfCancel" type="button">{t(L, 'layout.confirm.cancelar')}</button>
+                    <button class="cconf-btn cconf-ok" id="cconfOk" type="button">{t(L, 'layout.confirm.confirmar')}</button>
                 </div>
             </div>
         </div>
@@ -369,19 +374,19 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         <!-- Overlay de atajos de teclado (se abre con ?) -->
         <div class="kbd-help" id="kbdHelp" hidden>
             <div class="kbd-help-backdrop" id="kbdHelpBackdrop"></div>
-            <div class="kbd-help-panel" role="dialog" aria-modal="true" aria-label="Atajos de teclado">
-                <div class="kbd-help-head"><strong>Atajos de teclado</strong><kbd>esc</kbd></div>
+            <div class="kbd-help-panel" role="dialog" aria-modal="true" aria-label={t(L, 'layout.kbd.titulo')}>
+                <div class="kbd-help-head"><strong>{t(L, 'layout.kbd.titulo')}</strong><kbd>esc</kbd></div>
                 <div class="kbd-help-body">
-                    <div class="kbd-row"><span>Buscar / menú de comandos</span><span><kbd>⌘</kbd><kbd>K</kbd> · <kbd>/</kbd></span></div>
-                    <div class="kbd-row"><span>Armar con IA (cotización)</span><span><kbd>C</kbd></span></div>
-                    <div class="kbd-row"><span>Ir a Dashboard</span><span><kbd>G</kbd> <kbd>D</kbd></span></div>
-                    <div class="kbd-row"><span>Ir a Cotizaciones</span><span><kbd>G</kbd> <kbd>C</kbd></span></div>
-                    <div class="kbd-row"><span>Ir a Clientes</span><span><kbd>G</kbd> <kbd>L</kbd></span></div>
-                    <div class="kbd-row"><span>Ir a Productos</span><span><kbd>G</kbd> <kbd>P</kbd></span></div>
-                    <div class="kbd-row"><span>Ir a Cobranza</span><span><kbd>G</kbd> <kbd>B</kbd></span></div>
-                    <div class="kbd-row"><span>Ir a Analítica</span><span><kbd>G</kbd> <kbd>A</kbd></span></div>
-                    <div class="kbd-row"><span>Fijar / quitar página del menú</span><span><kbd>F</kbd></span></div>
-                    <div class="kbd-row"><span>Mostrar estos atajos</span><span><kbd>?</kbd></span></div>
+                    <div class="kbd-row"><span>{t(L, 'layout.kbd.buscar_menu')}</span><span><kbd>⌘</kbd><kbd>K</kbd> · <kbd>/</kbd></span></div>
+                    <div class="kbd-row"><span>{t(L, 'layout.kbd.armar_ia')}</span><span><kbd>C</kbd></span></div>
+                    <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_dashboard')}</span><span><kbd>G</kbd> <kbd>D</kbd></span></div>
+                    <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_cotizaciones')}</span><span><kbd>G</kbd> <kbd>C</kbd></span></div>
+                    <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_clientes')}</span><span><kbd>G</kbd> <kbd>L</kbd></span></div>
+                    <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_productos')}</span><span><kbd>G</kbd> <kbd>P</kbd></span></div>
+                    <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_cobranza')}</span><span><kbd>G</kbd> <kbd>B</kbd></span></div>
+                    <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_analitica')}</span><span><kbd>G</kbd> <kbd>A</kbd></span></div>
+                    <div class="kbd-row"><span>{t(L, 'layout.kbd.fijar_quitar')}</span><span><kbd>F</kbd></span></div>
+                    <div class="kbd-row"><span>{t(L, 'layout.kbd.mostrar_atajos')}</span><span><kbd>?</kbd></span></div>
                 </div>
             </div>
         </div>
@@ -1510,6 +1515,13 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     }
 </style>
 
+<script is:inline define:vars={{ RT }}>
+    // Serializa el runtime de i18n ya resuelto en el idioma del request a un
+    // global — el <script> grande de abajo NO es is:inline (usa TS) y por lo
+    // tanto no puede leer `t()`/frontmatter directamente en tiempo de ejecución.
+    window.CORD_I18N = RT;
+</script>
+
 <script>
     // ── Salir del entorno de prueba (banner ámbar) ──
     // Limpia la cookie (fuente de verdad server-side) + el espejo en localStorage
@@ -1523,21 +1535,20 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     // Vaciar datos de prueba (tipo Stripe "delete all test data"): borra la org
     // sandbox por completo; se recrea fresca + reseed al recargar.
     document.getElementById('testEnvReset')?.addEventListener('click', async () => {
+        const I18N = (window as any).CORD_I18N || {};
         const cc = (window as any).cordConfirm;
         const ok = cc ? await cc({
-            title: 'Vaciar datos de prueba',
-            body: 'Se borrarán TODAS las cotizaciones, clientes y productos de prueba. Tus datos reales no se tocan. El entorno de prueba arrancará limpio.',
+            ...(I18N.testResetConfirm || { title: 'Vaciar datos de prueba', body: '', confirmText: 'Vaciar todo' }),
             danger: true,
-            confirmText: 'Vaciar todo',
         }) : true;
         if (!ok) return;
         try {
             const res = await fetch('/api/test-mode/reset', { method: 'POST' });
-            if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'No se pudo vaciar'); }
-            try { sessionStorage.setItem('cord.flash', JSON.stringify({ msg: 'Datos de prueba vaciados', type: 'ok' })); } catch {}
+            if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || I18N.testResetErr || 'No se pudo vaciar'); }
+            try { sessionStorage.setItem('cord.flash', JSON.stringify({ msg: I18N.testResetOk || 'Datos de prueba vaciados', type: 'ok' })); } catch {}
             window.location.assign('/app');
         } catch (e: any) {
-            (window as any).cordToast?.(e.message || 'No se pudo vaciar los datos de prueba', 'error');
+            (window as any).cordToast?.(e.message || I18N.testResetErr || 'No se pudo vaciar los datos de prueba', 'error');
         }
     });
 
@@ -1561,21 +1572,13 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
             check: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
             external: '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>',
         };
-        const NAV: any[] = [
-            ['Inicio', '/app', I.dashboard, 'Resumen y actividad'], ['Cotizaciones', '/app/cotizaciones', I.doc, 'Lista y pipeline'], ['Cobranza', '/app/cobranza', I.card, 'Cuentas por cobrar'],
-            ['Finanzas', '/app/cfo', I.chart, 'Proyección de flujo de caja (CFO)'], ['Analítica', '/app/analitica', I.chart, 'Métricas y forecast'],
-            ['Presupuestos', '/app/presupuestos', I.doc, 'Cédulas presupuestales: ventas, producción, compras, cobranza'],
-            ['Equipo (desempeño)', '/app/desempeno', I.users, 'Ranking de cierre y cobro por vendedor'],
-            ['Flujo de caja', '/app/tesoreria/flujo', I.chart, 'Flujo predictivo (tesorería)'], ['Cobranza con IA', '/app/tesoreria/cobranza', I.users, 'Agentes de cobranza (tesorería)'],
-            ['Clientes', '/app/clientes', I.users, 'Directorio de clientes'], ['Productos', '/app/productos', I.box, 'Catálogo'], ['Ajustes', '/app/ajustes', I.gear, 'Marca, fiscal, PDF…'],
-        ].map(([title, href, icon, hint]) => ({ group: 'Ir a', title, href, icon, hint }));
-        const ACTIONS: any[] = [
-            { group: 'Acciones', title: 'Armar con IA', href: '/app/cotizaciones/nueva', icon: I.sparkle, kbd: 'C', hint: 'Nueva cotización' },
-            { group: 'Acciones', title: 'Nuevo cliente', href: '/app/clientes?nuevo=1', icon: I.plus, hint: 'Agregar al directorio' },
-            { group: 'Acciones', title: 'Nuevo producto', href: '/app/productos?nuevo=1', icon: I.plus, hint: 'Agregar al catálogo' },
-            { group: 'Acciones', title: 'Nueva tarea', icon: I.check, hint: 'Recordatorio rápido', run: () => (window as any).cordQuickTask?.() },
-            { group: 'Acciones', title: 'Ver sitio público', href: '/', icon: I.external, hint: 'Abrir la landing' },
-        ];
+        const I18N = (window as any).CORD_I18N || {};
+        const G = I18N.cmdkGroups || { ir_a: 'Ir a', acciones: 'Acciones', recientes: 'Recientes', cotizaciones: 'Cotizaciones', clientes: 'Clientes', productos: 'Productos' };
+        const NAV: any[] = (I18N.cmdkNav || []).map(([title, href, iconKey, hint]: any) => ({ group: G.ir_a, title, href, icon: (I as any)[iconKey], hint }));
+        const ACTIONS: any[] = (I18N.cmdkActions || []).map((a: any) => ({
+            group: G.acciones, title: a.title, href: a.href, icon: (I as any)[a.icon], kbd: a.kbd, hint: a.hint,
+            run: a.runKey === 'quickTask' ? () => (window as any).cordQuickTask?.() : undefined,
+        }));
         const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
         const esc = (s: string) => String(s).replace(/</g, '&lt;');
 
@@ -1602,19 +1605,21 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         const buildItems = (q: string, ent: any) => {
             const list: any[] = [];
             if (!q.trim()) {
-                getRecents().forEach((r: any) => list.push({ group: 'Recientes', title: r.title, href: r.href, icon: r.icon || I.doc }));
+                getRecents().forEach((r: any) => list.push({ group: G.recientes, title: r.title, href: r.href, icon: r.icon || I.doc }));
             }
             if (ent) {
-                (ent.cotizaciones || []).forEach((c: any) => list.push({ group: 'Cotizaciones', title: `${c.folio} · ${c.cliente}`, href: `/app/cotizaciones/${c.id}`, icon: I.doc }));
-                (ent.clientes || []).forEach((c: any) => list.push({ group: 'Clientes', title: c.empresa, href: '/app/clientes', icon: I.users }));
-                (ent.productos || []).forEach((p: any) => list.push({ group: 'Productos', title: p.sku ? `${p.nombre} · ${p.sku}` : p.nombre, href: '/app/productos', icon: I.box }));
+                (ent.cotizaciones || []).forEach((c: any) => list.push({ group: G.cotizaciones, title: `${c.folio} · ${c.cliente}`, href: `/app/cotizaciones/${c.id}`, icon: I.doc }));
+                (ent.clientes || []).forEach((c: any) => list.push({ group: G.clientes, title: c.empresa, href: '/app/clientes', icon: I.users }));
+                (ent.productos || []).forEach((p: any) => list.push({ group: G.productos, title: p.sku ? `${p.nombre} · ${p.sku}` : p.nombre, href: '/app/productos', icon: I.box }));
             }
             staticMatches(q).forEach((c) => list.push(c));
             return list;
         };
         const paint = (q = '') => {
             if (!items.length) {
-                results.innerHTML = `<div class="cmdk-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>Sin resultados para “${esc(q)}”</p><span>Prueba con un folio, cliente, producto o sección.</span></div>`;
+                const noResults = (I18N.cmdkSinResultados || 'Sin resultados para “{q}”').replace('{q}', esc(q));
+                const hint = I18N.cmdkSugerencia || 'Prueba con un folio, cliente, producto o sección.';
+                results.innerHTML = `<div class="cmdk-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>${noResults}</p><span>${hint}</span></div>`;
                 return;
             }
             let html = ''; let last = '';
@@ -1696,7 +1701,8 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
             const t = document.createElement('div');
             t.className = 'toast ' + (type === 'ok' || type === 'error' ? type : '');
             const ico = ICONS[type] || ICONS.info;
-            t.innerHTML = `<svg class="toast-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ico}</svg><span>${String(msg).replace(/</g, '&lt;')}</span><button class="toast-close" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+            const closeLabel = (window as any).CORD_I18N?.layoutQtaskCerrar || 'Cerrar';
+            t.innerHTML = `<svg class="toast-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ico}</svg><span>${String(msg).replace(/</g, '&lt;')}</span><button class="toast-close" aria-label="${closeLabel}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
             stack.appendChild(t);
             const remove = () => { t.classList.add('out'); setTimeout(() => t.remove(), 250); };
             t.querySelector('.toast-close')?.addEventListener('click', remove);
@@ -1741,12 +1747,13 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         backdrop?.addEventListener('click', () => close(false));
 
         (window as any).cordConfirm = (opts: any): Promise<boolean> => {
+            const I18N = (window as any).CORD_I18N || {};
             const o = typeof opts === 'string' ? { body: opts } : (opts || {});
-            titleEl.textContent = o.title || '¿Estás seguro?';
+            titleEl.textContent = o.title || I18N.confirmTituloDefault || '¿Estás seguro?';
             bodyEl.textContent = o.body || '';
             bodyEl.style.display = o.body ? '' : 'none';
-            okBtn.textContent = o.confirmText || 'Confirmar';
-            cancelBtn.textContent = o.cancelText || 'Cancelar';
+            okBtn.textContent = o.confirmText || I18N.confirmOk || 'Confirmar';
+            cancelBtn.textContent = o.cancelText || I18N.confirmCancel || 'Cancelar';
             modal.classList.toggle('danger', !!o.danger);
             modal.removeAttribute('hidden');
             // Foco en cancelar por defecto (acción no destructiva) para evitar
@@ -1817,9 +1824,10 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         let latest = 0;
         const esc = (s: string) => String(s).replace(/</g, '&lt;');
         const getSeen = () => { try { return parseInt(localStorage.getItem(SEEN_KEY) || '0', 10) || 0; } catch { return 0; } };
+        const I18N = (window as any).CORD_I18N || {};
         const paint = (data: any) => {
             const items = data.items || []; latest = data.latest || 0;
-            if (!items.length) { list.innerHTML = '<div class="notif-empty">Sin actividad reciente</div>'; return; }
+            if (!items.length) { list.innerHTML = `<div class="notif-empty">${I18N.notifSinActividad || 'Sin actividad reciente'}</div>`; return; }
             const seen = getSeen();
             list.innerHTML = items.map((n: any) => {
                 const unread = n.ts > seen ? ' unread' : '';
@@ -1830,13 +1838,13 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         };
         const closeP = () => { (panel as HTMLElement).hidden = true; btn.setAttribute('aria-expanded', 'false'); };
         const load = async () => {
-            list.innerHTML = '<div class="notif-empty">Cargando…</div>';
+            list.innerHTML = `<div class="notif-empty">${I18N.notifCargando || 'Cargando…'}</div>`;
             try {
                 const res = await fetch('/api/notificaciones'); const data = await res.json();
                 paint(data);
                 try { localStorage.setItem(SEEN_KEY, String(latest || Date.now())); } catch (e) {}
                 (dot as HTMLElement).hidden = true;
-            } catch { list.innerHTML = '<div class="notif-empty">No se pudo cargar</div>'; }
+            } catch { list.innerHTML = `<div class="notif-empty">${I18N.notifNoCargo || 'No se pudo cargar'}</div>`; }
         };
         const openP = () => { (panel as HTMLElement).hidden = false; btn.setAttribute('aria-expanded', 'true'); load(); };
         btn.addEventListener('click', (e) => { e.stopPropagation(); (panel as HTMLElement).hidden ? openP() : closeP(); });
@@ -1892,18 +1900,10 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         const empty = document.getElementById('helpEmpty');
         if (!btn || !drawer || !faqWrap) return;
 
-        const FAQ = [
-            { q: '¿Cómo creo una cotización?', a: 'Ve a Cotizaciones y pulsa "Nueva cotización" (atajo C). Elige un cliente, agrega productos de tu catálogo o líneas libres, ajusta el precio negociado y guarda. Puedes guardarla como borrador o enviarla de inmediato.' },
-            { q: '¿Cómo le envío la cotización a mi cliente?', a: 'Desde el detalle de la cotización usa "Enviar" para mandar el link público por correo, o "Enviar por WhatsApp" para compartir un mensaje con el link ya armado. También puedes copiar el link y pegarlo donde quieras.' },
-            { q: '¿Qué ve mi cliente en el link público?', a: 'Tu cliente abre una página con tu marca donde revisa la cotización, descarga el PDF y la aprueba o rechaza con firma digital. Tú ves en vivo cuándo la abrió y cuándo la está viendo.' },
-            { q: '¿Cómo facturo (CFDI) una cotización?', a: 'Cuando una cotización está aprobada o pagada, usa la acción "Facturar" en el detalle para generar el CFDI. Antes asegúrate de tener tus datos fiscales completos en Ajustes › Fiscal.' },
-            { q: '¿Puedo importar mis productos y clientes?', a: 'Sí. En Productos y en Clientes hay un botón de Importar por CSV: subes el archivo, mapeas las columnas, revisas la vista previa y confirmas. Los productos se deduplican por SKU y los clientes por RFC o empresa.' },
-            { q: '¿Qué incluye mi plan y cómo subo de nivel?', a: 'En Ajustes › Plan ves tu uso del periodo (IA, CFDI, API) y los límites de tu plan. Desde ahí puedes subir de plan o abrir el portal de facturación para gestionar tu suscripción.' },
-            { q: '¿Cómo personalizo el PDF y el portal del cliente?', a: 'En Ajustes › PDF eliges plantilla, subes tu logo y defines color y mensajes, con vista previa en vivo. En Ajustes › Portal del cliente personalizas el banner, la bienvenida y qué se muestra en el link público.' },
-        ];
+        const FAQ = ((window as any).CORD_I18N?.faq) || [];
 
         // Render del acordeón
-        faqWrap.innerHTML = FAQ.map((f, i) => `
+        faqWrap.innerHTML = FAQ.map((f: any, i: number) => `
             <div class="faq-item" data-faq>
                 <button type="button" class="faq-q" aria-expanded="false">
                     <span>${f.q}</span>
@@ -1934,7 +1934,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         search?.addEventListener('input', () => {
             const term = search.value.trim().toLowerCase();
             let visible = 0;
-            FAQ.forEach((f, i) => {
+            FAQ.forEach((f: any, i: number) => {
                 const item = faqWrap.children[i] as HTMLElement;
                 if (!item) return;
                 const match = !term || (f.q + ' ' + f.a).toLowerCase().includes(term);
@@ -1995,7 +1995,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
 
         const hideQuick = () => { if (chatQuick) (chatQuick as HTMLElement).hidden = true; };
 
-        const CHAT_GREETING = 'Hola, soy Cord AI. Estoy aquí para resolver tus dudas sobre cómo usar la plataforma — cotizaciones, cobranza, facturación y más. ¿En qué te ayudo?';
+        const CHAT_GREETING = (window as any).CORD_I18N?.chatGreeting || 'Hola, soy Cord AI. Estoy aquí para resolver tus dudas sobre cómo usar la plataforma — cotizaciones, cobranza, facturación y más. ¿En qué te ayudo?';
         // El chat NO persiste entre sesiones ni acciones: es solo consulta/ayuda,
         // no ejecuta nada dentro de la app. Se reinicia cada vez que se cierra el drawer.
         const resetChat = () => {
@@ -2024,7 +2024,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
 
             setTimeout(() => {
                 thinkingB.remove();
-                const reply = "Buena pregunta. En este entorno de demostración Cord AI todavía no puede responder dudas específicas fuera de las preguntas frecuentes — pero es solo para resolver consultas, nunca ejecuta acciones dentro de tu cuenta. Si no encuentras tu respuesta arriba, escríbenos desde el Centro de ayuda.";
+                const reply = (window as any).CORD_I18N?.chatFallbackReply || "Buena pregunta. En este entorno de demostración Cord AI todavía no puede responder dudas específicas fuera de las preguntas frecuentes — pero es solo para resolver consultas, nunca ejecuta acciones dentro de tu cuenta. Si no encuentras tu respuesta arriba, escríbenos desde el Centro de ayuda.";
                 appendBotMsg(reply);
             }, 1200);
         };
@@ -2037,7 +2037,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         // Preguntas rápidas prefabricadas (respuesta instantánea, sin llamar a la IA —
         // reutiliza el mismo FAQ que alimenta el buscador de ayuda de arriba).
         if (chatQuick) {
-            chatQuick.innerHTML = FAQ.map((f, i) => `
+            chatQuick.innerHTML = FAQ.map((f: any, i: number) => `
                 <button type="button" class="chat-quick-btn" data-quick="${i}">
                     <span>${f.q}</span>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -2107,8 +2107,8 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
                 if (!res.ok) throw new Error();
                 close();
                 if (location.pathname === '/app') location.reload();
-                else (window as any).cordToast?.('Tarea creada', 'ok');
-            } catch { (window as any).cordToast?.('No se pudo crear la tarea', 'error'); }
+                else (window as any).cordToast?.((window as any).CORD_I18N?.taskCreatedOk || 'Tarea creada', 'ok');
+            } catch { (window as any).cordToast?.((window as any).CORD_I18N?.taskCreatedErr || 'No se pudo crear la tarea', 'error'); }
         });
     }
 
