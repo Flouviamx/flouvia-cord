@@ -95,25 +95,19 @@ const subdomainRewrite = async (context: any, next: any) => {
         ) {
             return next();
         }
-        // Reescritura INTERNA vía next(payload): la URL del navegador no cambia; solo
-        // se sirve el árbol del prefijo bajo el subdominio. El guard de arriba evita el
-        // bucle cuando next re-ejecuta este middleware.
-        const res = await next(sub.prefix + (path === "/" ? "" : path));
-
-        // ⚠️ Normalización de status: Astro asigna el status HTTP según si el path
-        // ORIGINAL matchea una ruta del árbol principal, ANTES de correr el middleware.
-        // Un artículo como /building-... (a nivel raíz del subdominio) no matchea
-        // ninguna ruta → Astro marca 404, aunque el rewrite SÍ renderizó el artículo
-        // real (malo para SEO/crawlers). Un slug inexistente hace Astro.redirect('/404')
-        // (302), NO llega aquí como 404-render — así que un 404 con cuerpo real solo
-        // puede ser este falso 404. Lo normalizamos a 200.
-        if (res.status === 404) {
-            return new Response(res.body, {
-                status: 200,
-                headers: res.headers,
-            });
-        }
-        return res;
+        // Reescritura INTERNA: la URL del navegador no cambia; se sirve el árbol del
+        // prefijo bajo el subdominio. Sirve sobre todo para la RAÍZ del subdominio
+        // (dev.cordhq.app/ → /dev-blog, docs.cordhq.app/ → /docs): la raíz "/" matchea
+        // la ruta index → status 200 correcto.
+        //
+        // ⚠️ El resto de páginas del dev-blog/docs enlazan con su prefijo (/dev-blog/*,
+        // /docs/*), así que el navegador pide directo un path que matchea ruta → 200 vía
+        // el guard de arriba, SIN pasar por este rewrite. Esto es a propósito: Astro fija
+        // el status HTTP según si el path ORIGINAL matchea una ruta, en una capa por
+        // ENCIMA del middleware — un path raíz-limpio (/<slug>) que no matchea ninguna
+        // ruta se sirve con 404 aunque el contenido renderice, y no se puede corregir
+        // desde aquí. Por eso los links llevan el prefijo (ver DevBlogLayout).
+        return next(sub.prefix + (path === "/" ? "" : path));
     }
 
     // Dominio principal (cordhq.app): en prod, el contenido de los subdominios no debe

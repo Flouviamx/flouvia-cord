@@ -4,7 +4,7 @@ import DevBlogLayout from "../../layouts/DevBlogLayout.astro";
 import PixelDevs from "../../components/dev-blog/PixelDevs.jsx";
 import PixelIcon from "../../components/dev-blog/PixelIcon.jsx";
 
-const devBase = import.meta.env.DEV ? "/dev-blog" : "";
+const devBase = "/dev-blog"; // prefijo fijo → paths matchean ruta → status 200 (ver DevBlogLayout)
 const lang = Astro.url.searchParams.get("lang") === "en" ? "en" : "es";
 
 const allDevBlogs = await getCollection('devBlog', ({ id }) => {

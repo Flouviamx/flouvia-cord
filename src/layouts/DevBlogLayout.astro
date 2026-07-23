@@ -9,7 +9,15 @@ interface Props {
 import DevConsole from "../components/dev-blog/DevConsole.jsx";
 import PixelDevelopers from "../components/dev-blog/PixelDevelopers.jsx";
 const { title, description = "Blog tecnico de Cord: articulos de ingenieria sobre arquitectura multi-tenant, pagos B2B, webhooks financieros y la API de cotizaciones para Mexico.", articleDate, articleAuthors } = Astro.props;
-const devBase = import.meta.env.DEV ? "/dev-blog" : "";
+// Los links del dev-blog usan SIEMPRE el prefijo /dev-blog (dev y prod). En el
+// subdominio dev.cordhq.app, el middleware sirve el árbol /dev-blog; que los links
+// apunten a /dev-blog/* hace que el navegador pida un path que SÍ matchea una ruta
+// de Astro → status 200 nativo. Con URLs limpias (/<slug>) Astro marca 404 aunque
+// el contenido renderice (fija el status según match de la ruta ORIGINAL, en una
+// capa por encima del middleware — no se puede sobreescribir desde aquí). Mismo
+// patrón que docs (links /docs/*). La raíz dev.cordhq.app/ igual muestra el home
+// (el middleware reescribe / → /dev-blog, y / matchea index → 200).
+const devBase = "/dev-blog";
 const lang = Astro.url.searchParams.get("lang") === "en" ? "en" : "es";
 const currentPath = Astro.url.pathname;
 const isBlog = currentPath.includes('/blog');
