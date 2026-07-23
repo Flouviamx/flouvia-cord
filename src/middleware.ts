@@ -96,13 +96,24 @@ const subdomainRewrite = async (context: any, next: any) => {
             return next();
         }
         // Reescritura INTERNA vía next(payload): la URL del navegador no cambia; solo
-        // se sirve el árbol del prefijo bajo el subdominio.
-        // ⚠️ Se usa next(payload), NO context.rewrite(): context.rewrite() renderiza el
-        // contenido correcto pero devuelve status 404 cuando la ruta ORIGINAL (p.ej.
-        // /building-... a nivel raíz) no existe en el árbol principal (quirk de Astro).
-        // next(payload) preserva el status real de la ruta destino (200 en artículos).
-        // El guard de arriba evita el bucle cuando next re-ejecuta este middleware.
-        return next(sub.prefix + (path === "/" ? "" : path));
+        // se sirve el árbol del prefijo bajo el subdominio. El guard de arriba evita el
+        // bucle cuando next re-ejecuta este middleware.
+        const res = await next(sub.prefix + (path === "/" ? "" : path));
+
+        // ⚠️ Normalización de status: Astro asigna el status HTTP según si el path
+        // ORIGINAL matchea una ruta del árbol principal, ANTES de correr el middleware.
+        // Un artículo como /building-... (a nivel raíz del subdominio) no matchea
+        // ninguna ruta → Astro marca 404, aunque el rewrite SÍ renderizó el artículo
+        // real (malo para SEO/crawlers). Un slug inexistente hace Astro.redirect('/404')
+        // (302), NO llega aquí como 404-render — así que un 404 con cuerpo real solo
+        // puede ser este falso 404. Lo normalizamos a 200.
+        if (res.status === 404) {
+            return new Response(res.body, {
+                status: 200,
+                headers: res.headers,
+            });
+        }
+        return res;
     }
 
     // Dominio principal (cordhq.app): en prod, el contenido de los subdominios no debe
