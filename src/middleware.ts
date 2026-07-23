@@ -95,9 +95,14 @@ const subdomainRewrite = async (context: any, next: any) => {
         ) {
             return next();
         }
-        // Reescritura INTERNA: la URL del navegador no cambia; solo se sirve el árbol
-        // del prefijo bajo el subdominio.
-        return context.rewrite(sub.prefix + (path === "/" ? "" : path));
+        // Reescritura INTERNA vía next(payload): la URL del navegador no cambia; solo
+        // se sirve el árbol del prefijo bajo el subdominio.
+        // ⚠️ Se usa next(payload), NO context.rewrite(): context.rewrite() renderiza el
+        // contenido correcto pero devuelve status 404 cuando la ruta ORIGINAL (p.ej.
+        // /building-... a nivel raíz) no existe en el árbol principal (quirk de Astro).
+        // next(payload) preserva el status real de la ruta destino (200 en artículos).
+        // El guard de arriba evita el bucle cuando next re-ejecuta este middleware.
+        return next(sub.prefix + (path === "/" ? "" : path));
     }
 
     // Dominio principal (cordhq.app): en prod, el contenido de los subdominios no debe
