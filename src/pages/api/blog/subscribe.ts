@@ -5,9 +5,9 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql } from '../../lib/db';
-import { sendEmail } from '../../lib/email';
-import { rateLimit, tooMany } from '../../lib/ratelimit';
+import { sql } from '../../../lib/db';
+import { sendEmail } from '../../../lib/email';
+import { rateLimit, tooMany } from '../../../lib/ratelimit';
 
 const isEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 
