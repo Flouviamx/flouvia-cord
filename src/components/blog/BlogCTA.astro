@@ -10,12 +10,17 @@ const { isEn } = Astro.props;
             <h3>{isEn ? 'Subscribe to the Cord Blog' : 'Suscríbete al Blog de Cord'}</h3>
             <p>{isEn ? 'Financial strategies, market analysis, and product updates right in your inbox.' : 'Estrategias financieras, análisis de mercado y novedades de producto directamente en tu bandeja de entrada.'}</p>
 
-            <form class="subscribe-form" onsubmit="event.preventDefault()">
-                <input type="email" placeholder={isEn ? 'you@company.com' : 'tu@empresa.com'} required />
-                <button type="submit" class="btn-primary">
-                    {isEn ? 'Subscribe' : 'Suscribirme'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            <form class="subscribe-form" id="blog-subscribe-form" data-lang={isEn ? 'en' : 'es'}>
+                <input type="email" name="email" placeholder={isEn ? 'you@company.com' : 'tu@empresa.com'} required autocomplete="email" />
+                <!-- Honeypot anti-spam (oculto) -->
+                <input type="text" name="website" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" tabindex="-1" autocomplete="off" />
+                <button type="submit" class="btn-primary" id="blog-subscribe-btn">
+                    <span class="btn-label">{isEn ? 'Subscribe' : 'Suscribirme'}</span>
+                    <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    <svg class="btn-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:none;"><circle cx="12" cy="12" r="10" stroke-dasharray="50" stroke-dashoffset="15" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.7s" repeatCount="indefinite"/></circle></svg>
                 </button>
             </form>
+            <div id="subscribe-feedback" style="display:none;"></div>
             <span class="privacy-note">{isEn ? 'Cord will process your data according to our' : 'Cord tratará tus datos según su'} <a href={isEn ? "/en/privacidad" : "/privacidad"}>{isEn ? 'Privacy Policy' : 'Política de Privacidad'}</a>.</span>
         </div>
 
@@ -48,6 +53,90 @@ const { isEn } = Astro.props;
 
     </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('blog-subscribe-form');
+    if (!form) return;
+    const isEn = form.dataset.lang === 'en';
+    const btn = document.getElementById('blog-subscribe-btn');
+    const feedback = document.getElementById('subscribe-feedback');
+    const arrow = btn?.querySelector('.btn-arrow');
+    const spinner = btn?.querySelector('.btn-spinner');
+    const label = btn?.querySelector('.btn-label');
+    const emailInput = form.querySelector('input[name="email"]');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!emailInput || !btn || !feedback) return;
+
+        const email = emailInput.value.trim();
+        if (!email) return;
+
+        // Honeypot
+        const hp = form.querySelector('input[name="website"]');
+        const hpVal = hp ? hp.value : '';
+
+        // Loading state
+        btn.disabled = true;
+        if (arrow) arrow.style.display = 'none';
+        if (spinner) spinner.style.display = 'inline';
+        if (label) label.textContent = isEn ? 'Subscribing...' : 'Suscribiendo...';
+        feedback.style.display = 'none';
+
+        try {
+            const res = await fetch('/api/blog/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, website: hpVal }),
+            });
+
+            if (res.status === 429) {
+                showFeedback(isEn ? 'Too many attempts. Try again in a minute.' : 'Demasiados intentos. Espera un minuto.', 'error');
+                resetBtn();
+                return;
+            }
+
+            const data = await res.json();
+            if (!res.ok) {
+                showFeedback(data.error || (isEn ? 'Something went wrong' : 'Algo salió mal'), 'error');
+                resetBtn();
+                return;
+            }
+
+            // Success
+            showFeedback(isEn ? "You're in! Check your inbox for a welcome email." : '¡Listo! Revisa tu bandeja de entrada.', 'success');
+            if (label) label.textContent = isEn ? 'Subscribed' : 'Suscrito';
+            if (spinner) spinner.style.display = 'none';
+            if (arrow) { arrow.style.display = 'inline'; }
+            btn.style.background = '#059669';
+            emailInput.value = '';
+            // Unlock after 5s for re-subscribe attempts
+            setTimeout(resetBtn, 5000);
+        } catch {
+            showFeedback(isEn ? 'Connection error. Please try again.' : 'Error de conexión. Intenta de nuevo.', 'error');
+            resetBtn();
+        }
+    });
+
+    function showFeedback(msg, type) {
+        if (!feedback) return;
+        feedback.textContent = msg;
+        feedback.className = `subscribe-feedback ${type}`;
+        feedback.style.display = 'block';
+    }
+
+    function resetBtn() {
+        if (!btn || !label || !spinner || !arrow) return;
+        btn.disabled = false;
+        btn.style.background = '';
+        label.textContent = isEn ? 'Subscribe' : 'Suscribirme';
+        spinner.style.display = 'none';
+        arrow.style.display = 'inline';
+    }
+});
+</script>
+
 
 <style>
     .article-footer-cta {
@@ -141,6 +230,21 @@ const { isEn } = Astro.props;
         font-size: 0.8rem; color: #86868b;
     }
     .privacy-note a { color: inherit; text-decoration: underline; }
+
+    .subscribe-feedback {
+        font-size: 0.85rem; font-weight: 600; margin-bottom: 0.6rem;
+        padding: 0.5rem 0; border-radius: 8px;
+    }
+    .subscribe-feedback.success { color: #059669; }
+    .subscribe-feedback.error   { color: #dc2626; }
+
+    .btn-primary:disabled {
+        opacity: 0.7; cursor: not-allowed;
+    }
+    .btn-primary:disabled:hover {
+        transform: none; box-shadow: none;
+    }
+
 
     .bento-link {
         display: inline-flex; align-items: center; gap: 6px;

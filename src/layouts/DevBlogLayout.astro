@@ -1,0 +1,433 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+
+import DevConsole from "../components/dev-blog/DevConsole.jsx";
+import PixelDevelopers from "../components/dev-blog/PixelDevelopers.jsx";
+const { title, description = "Cord Developer Blog" } = Astro.props;
+const devBase = import.meta.env.DEV ? "/dev-blog" : "";
+const lang = Astro.url.searchParams.get("lang") === "en" ? "en" : "es";
+const currentPath = Astro.url.pathname;
+const isBlog = currentPath.includes('/blog');
+const isApi = currentPath.includes('/api');
+const isMcp = currentPath.includes('/mcp');
+const isHome = !isBlog && !isApi && !isMcp;
+---
+
+<!DOCTYPE html>
+<html lang="es" class="dev-mode">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} | dev.cordhq.app</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/png" href="/imgs/favicon-32x32.png" />
+    
+    <!-- Fonts: JetBrains Mono, Inter, and Pixelify Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+
+
+    <!-- Minimalist Dev Navbar -->
+    <nav class="dev-nav">
+      <div class="dev-nav-left">
+        <a href={devBase || '/'} class="dev-logo-mark">CORD<span class="cmd-blink">_</span></a>
+        <div class="dev-nav-links">
+          <a href={`${devBase}/?lang=${lang}`} class={`dev-nav-btn ${isHome ? 'active' : ''}`}>
+            <kbd class="dev-kbd">H</kbd> <span class="btn-text">{lang === 'en' ? 'HOME' : 'INICIO'}</span>
+          </a>
+          <a href={`${devBase}/blog?lang=${lang}`} class={`dev-nav-btn ${isBlog ? 'active' : ''}`}>
+            <kbd class="dev-kbd">B</kbd> <span class="btn-text">BLOG</span>
+          </a>
+          <a href={`${devBase}/api?lang=${lang}`} class={`dev-nav-btn ${isApi ? 'active' : ''}`}>
+            <kbd class="dev-kbd">A</kbd> <span class="btn-text">{lang === 'en' ? 'API DOCS' : 'DOCS API'}</span>
+          </a>
+          <a href={`${devBase}/mcp?lang=${lang}`} class={`dev-nav-btn ${isMcp ? 'active' : ''}`}>
+            <kbd class="dev-kbd">M</kbd> <span class="btn-text">MCP</span>
+          </a>
+        </div>
+      </div>
+      <div class="dev-nav-right">
+        <div class="dev-nav-links">
+          <a href="?lang=es" class={`dev-nav-btn ${lang === 'es' ? 'active' : ''}`}>ES</a>
+          <a href="?lang=en" class={`dev-nav-btn ${lang === 'en' ? 'active' : ''}`}>EN</a>
+        </div>
+        <div class="dev-nav-links" id="console-trigger-container">
+          <a href="#" class="dev-nav-btn">
+            <kbd class="dev-kbd">C</kbd> <span class="btn-text">{lang === 'en' ? 'CONSOLE' : 'CONSOLA'}</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="dev-container">
+      <slot />
+    </main>
+
+    <footer class="dev-footer">
+      
+      <div class="footer-content">
+        <div class="footer-left">
+          <div class="footer-section-title">/ DOCS</div>
+          <p class="footer-desc">{lang === 'en' ? 'Explore our guides and examples to integrate Cord.' : 'Explora nuestras guías y ejemplos para integrar Cord.'}</p>
+          <a href="#" class="btn-learn-more">{lang === 'en' ? 'Learn more' : 'Saber más'}</a>
+          
+          <div class="copyright" style="margin-top: 40px;">© 2026 CORD, INC.</div>
+        </div>
+
+        <div class="footer-right">
+          <div class="footer-list-group">
+            <div class="footer-section-title">/ SOCIAL</div>
+            <div class="footer-tags">
+              <a href="#" class="dashed-tag">YOUTUBE</a>
+              <a href="#" class="dashed-tag">TWITTER/X</a>
+              <a href="#" class="dashed-tag">DISCORD</a>
+            </div>
+          </div>
+          <div class="footer-list-group">
+            <div class="footer-section-title">/ RESOURCES</div>
+            <div class="footer-tags">
+              <a href="#" class="dashed-tag">DOCS</a>
+              <a href="#" class="dashed-tag">DEVELOPER MEETUPS</a>
+            </div>
+          </div>
+          <div class="footer-list-group bottom-links">
+            <div class="footer-tags">
+              <a href="#" class="dashed-tag">PRIVACY</a>
+              <a href="#" class="dashed-tag">LEGAL</a>
+              <a href="#" class="dashed-tag">CORD.COM</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="footer-wireframe">
+        <PixelDevelopers client:load />
+      </div>
+    </footer>
+
+    <DevConsole client:load />
+
+    <script>
+      // Bind the Console button to open the DevConsole modal
+      const consoleContainer = document.getElementById('console-trigger-container');
+      if (consoleContainer) {
+        consoleContainer.addEventListener('click', (e) => {
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('open-dev-console'));
+        });
+      }
+    </script>
+
+    <style is:global>
+      :root.dev-mode {
+        --dev-bg: #0a192f; /* Cord Navy */
+        --dev-text: #e2e8f0;
+        --dev-text-muted: #94a3b8;
+        --dev-accent: #10b981; /* Cord Emerald */
+        --dev-accent-hover: #34d399;
+        --dev-border: rgba(255, 255, 255, 0.15);
+        --dev-border-light: rgba(255, 255, 255, 0.08);
+        --dev-mono: 'JetBrains Mono', monospace;
+        --dev-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+
+      html.dev-mode, html.dev-mode body {
+        margin: 0;
+        padding: 0;
+        background-color: var(--dev-bg);
+        color: var(--dev-text);
+        font-family: var(--dev-mono); /* Apply tech font globally */
+        min-height: 100vh;
+        overflow-x: clip;
+      }
+
+
+
+      /* Dev Navbar */
+      .dev-nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        box-sizing: border-box;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 32px;
+        background: transparent;
+        z-index: 1000;
+        font-family: var(--dev-mono);
+        font-size: 12px;
+        letter-spacing: 0.5px;
+      }
+
+      .dev-nav-left, .dev-nav-right {
+        display: flex;
+        align-items: center;
+        gap: 32px;
+      }
+
+      .dev-nav-links {
+        display: flex;
+        gap: 4px;
+      }
+
+      .dev-logo-mark {
+        color: white;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 18px;
+        letter-spacing: 2px;
+        display: flex;
+        align-items: center;
+      }
+      
+      .dev-logo-mark .cmd-blink {
+        color: var(--dev-accent);
+        animation: blink 1s step-end infinite;
+      }
+
+      @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+      }
+
+      /* Premium Sober Pixel Buttons */
+      .dev-nav-btn {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        background: rgba(255,255,255,0.03);
+        color: var(--dev-text-muted);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        
+        /* 2px Pixelated Corners */
+        clip-path: polygon(
+          2px 0px, calc(100% - 2px) 0px, 
+          calc(100% - 2px) 2px, 100% 2px, 
+          100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), 
+          calc(100% - 2px) 100%, 2px 100%, 
+          2px calc(100% - 2px), 0px calc(100% - 2px), 
+          0px 2px, 2px 2px
+        );
+      }
+
+      /* Subtle Dot Grid Animation on Hover */
+      .dev-nav-btn::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px);
+        background-size: 4px 4px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 0;
+      }
+
+      .btn-text, .dev-kbd {
+        position: relative;
+        z-index: 1;
+      }
+
+      .dev-nav-btn:hover {
+        background: rgba(255,255,255,0.06);
+        color: white;
+      }
+
+      .dev-nav-btn:hover::before {
+        opacity: 1;
+        animation: subtleScroll 2s linear infinite;
+      }
+
+      .dev-nav-btn.active {
+        background: var(--dev-accent);
+        color: var(--dev-bg);
+        font-weight: 600;
+      }
+
+      .dev-nav-btn.active::before {
+        display: none;
+      }
+
+      @keyframes subtleScroll {
+        0% { background-position: 0 0; }
+        100% { background-position: -8px -8px; }
+      }
+
+      /* Keycap UI */
+      .dev-kbd {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 4px;
+        font-family: var(--dev-mono);
+        font-size: 10px;
+        font-weight: 700;
+        background: rgba(0,0,0,0.3);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 4px;
+        border-bottom-width: 2px;
+        color: var(--dev-accent);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        transition: all 0.1s;
+      }
+
+      /* State overrides */
+      .dev-nav-btn.active .dev-kbd {
+        background: rgba(255,255,255,0.9);
+        color: var(--dev-bg);
+        border-color: rgba(255,255,255,1);
+        border-bottom-width: 1px;
+        box-shadow: none;
+      }
+
+      /* Main Container */
+      .dev-container {
+        position: relative;
+        z-index: 1;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 124px 24px 100px; /* 64px navbar + 60px original padding */
+      }
+
+      /* Dev Footer */
+      .dev-footer {
+        position: relative;
+        background-color: var(--dev-bg);
+        border-top: 1px solid var(--dev-border-light);
+        padding-top: 80px;
+        padding-bottom: 100vh; /* El overscroll original */
+      }
+
+      .footer-content {
+        position: relative;
+        z-index: 1;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 24px;
+        display: flex;
+        justify-content: space-between;
+        gap: 60px;
+      }
+
+      .footer-left {
+        max-width: 320px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .footer-section-title {
+        font-family: var(--dev-mono);
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        color: var(--dev-text-muted);
+      }
+
+      .footer-desc {
+        font-size: 20px;
+        line-height: 1.4;
+        font-weight: 300;
+        color: white;
+        margin: 0;
+      }
+
+      .btn-learn-more {
+        display: inline-flex;
+        padding: 8px 24px;
+        border: 1px solid var(--dev-accent);
+        border-radius: 999px;
+        color: white;
+        text-decoration: none;
+        font-family: var(--dev-sans);
+        font-size: 13px;
+        font-weight: 500;
+        align-self: flex-start;
+        margin-top: 10px;
+        transition: all 0.2s;
+      }
+
+      .btn-learn-more:hover {
+        background: rgba(16, 185, 129, 0.1);
+      }
+
+      .copyright {
+        font-family: var(--dev-mono);
+        font-size: 10px;
+        color: var(--dev-text-muted);
+        letter-spacing: 0.5px;
+      }
+
+      .footer-right {
+        display: flex;
+        flex-direction: column;
+        gap: 40px;
+        padding-top: 0px; 
+      }
+
+      .footer-list-group {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .footer-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .dashed-tag {
+        display: inline-block;
+        padding: 4px 8px;
+        border: 1px dashed rgba(255,255,255,0.3);
+        border-radius: 4px;
+        color: var(--dev-text-muted);
+        font-family: var(--dev-mono);
+        font-size: 10px;
+        text-decoration: none;
+        letter-spacing: 1px;
+        transition: all 0.2s;
+      }
+
+      .dashed-tag:hover {
+        color: white;
+        border-color: rgba(255,255,255,0.6);
+        background: rgba(255,255,255,0.03);
+      }
+
+      .bottom-links {
+        margin-top: 10px;
+      }
+
+      .footer-wireframe {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        margin-top: 80px;
+      }
+
+      @media (max-width: 768px) {
+        .footer-content {
+          flex-direction: column;
+        }
+        .footer-right {
+          padding-top: 20px;
+        }
+      }
+    </style>
+  </body>
+</html>

@@ -211,14 +211,35 @@ function AuroraPlane() {
 }
 
 export default function PriceAuroraBg() {
+  const wrapRef = useRef(null)
   const [visible, setVisible] = useState(false)
+  const [onScreen, setOnScreen] = useState(true)
+  const [reduced] = useState(
+    () => typeof window !== 'undefined'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  )
+
   useEffect(() => {
     const id = requestAnimationFrame(() => setVisible(true))
     return () => cancelAnimationFrame(id)
   }, [])
 
+  useEffect(() => {
+    if (!wrapRef.current) return
+    const io = new IntersectionObserver(
+      ([entry]) => setOnScreen(entry.isIntersecting),
+      { rootMargin: '140px' },
+    )
+    io.observe(wrapRef.current)
+    return () => io.disconnect()
+  }, [])
+
+  if (reduced) return null
+
   return (
-    <Canvas
+    <div
+      ref={wrapRef}
+      aria-hidden="true"
       style={{
         position:      'absolute',
         inset:         0,
@@ -228,17 +249,22 @@ export default function PriceAuroraBg() {
         opacity:       visible ? 1 : 0,
         transition:    'opacity 1s ease',
       }}
-      orthographic
-      camera={{ position: [0, 0, 1], near: 0.1, far: 10 }}
-      dpr={1}
-      gl={{
-        antialias:             false,
-        powerPreference:       'low-power',
-        preserveDrawingBuffer: false,
-      }}
-      resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
     >
-      <AuroraPlane />
-    </Canvas>
+      <Canvas
+        style={{ position: 'absolute', inset: 0, borderRadius: 'inherit' }}
+        orthographic
+        camera={{ position: [0, 0, 1], near: 0.1, far: 10 }}
+        dpr={1}
+        frameloop={onScreen ? 'always' : 'never'}
+        gl={{
+          antialias:             false,
+          powerPreference:       'low-power',
+          preserveDrawingBuffer: false,
+        }}
+        resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
+      >
+        <AuroraPlane />
+      </Canvas>
+    </div>
   )
 }

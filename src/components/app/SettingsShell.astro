@@ -6,9 +6,11 @@
 // Si `perm` está presente, verifica el permiso del usuario y muestra acceso
 // denegado inline (sin redirigir) si no lo tiene.
 import AppLayout from '../../layouts/AppLayout.astro';
-import { categoryOfTab } from '../../lib/settings';
+import { localizedCategoryOfTab } from '../../lib/settings';
 import { getMyMembership } from '../../lib/queries';
 import { memberCan, type PermKey } from '../../lib/permissions';
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
 
 interface Props {
     title: string;       // título del documento
@@ -18,7 +20,8 @@ interface Props {
     perm?: PermKey;      // permiso requerido para ver el contenido
 }
 const { title, tab, intro, save = false, perm } = Astro.props;
-const category = categoryOfTab(tab)!;
+const L = currentLocale();
+const category = localizedCategoryOfTab(tab, L)!;
 const single = category.tabs.length <= 1;
 
 const ME = perm ? await getMyMembership() : null;
@@ -29,15 +32,15 @@ const hasAccess = !perm || memberCan(ME!, perm);
     <div class="set2">
         <a href="/app/ajustes" class="set2-crumb">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            Configuración
+            {t(L, 'settings.configuracion')}
         </a>
         <h2 class="set2-title">{category.label}</h2>
         <p class="set2-desc">{category.desc}</p>
 
         {!single && (
-            <nav class="set2-tabs" aria-label={`Pestañas de ${category.label}`}>
-                {category.tabs.map((t) => (
-                    <a href={t.href} class:list={['set2-tab', { active: t.id === tab }]}>{t.label}</a>
+            <nav class="set2-tabs" aria-label={t(L, 'settings.pestanas_de').replace('{label}', category.label)}>
+                {category.tabs.map((tb) => (
+                    <a href={tb.href} class:list={['set2-tab', { active: tb.id === tab }]}>{tb.label}</a>
                 ))}
             </nav>
         )}
@@ -46,21 +49,21 @@ const hasAccess = !perm || memberCan(ME!, perm);
             {!hasAccess && (
                 <div class="access-denied">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    <h3>Sin acceso</h3>
-                    <p>Tu rol actual no tiene permiso para ver esta sección. Contacta al administrador de tu organización.</p>
+                    <h3>{t(L, 'settings.sin_acceso')}</h3>
+                    <p>{t(L, 'settings.sin_acceso_desc')}</p>
                 </div>
             )}
             {hasAccess && intro && <p class="set2-intro">{intro}</p>}
             {hasAccess && <slot />}
             {hasAccess && save && (
                 <div class="s-save-row">
-                    <button class="s-save" id="sBtn">
-                        <span class="s-save-label">Guardar cambios</span>
+                    <button class="s-save" id="sBtn" data-i18n-saved={t(L, 'settings.cambios_guardados')} data-i18n-err={t(L, 'settings.no_se_pudo_guardar')}>
+                        <span class="s-save-label">{t(L, 'settings.guardar_cambios')}</span>
                         <svg class="s-save-spinner" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" opacity="0.25"/><path d="M18 10a8 8 0 0 1-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                     </button>
                     <span class="s-saved" id="sMsg">
                         <svg class="s-check-icon" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4.5 4L16 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <span class="s-saved-text">Cambios guardados</span>
+                        <span class="s-saved-text">{t(L, 'settings.cambios_guardados')}</span>
                     </span>
                 </div>
             )}
@@ -308,7 +311,7 @@ const hasAccess = !perm || memberCan(ME!, perm);
             try {
                 const res = await fetch('/api/org', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
                 const d = await res.json();
-                if (!res.ok) throw new Error(d.error || 'No se pudo guardar');
+                if (!res.ok) throw new Error(d.error || btn.dataset.i18nErr || 'No se pudo guardar');
 
                 // Estado: saved (pulse verde + check animado). El snapshot se
                 // re-toma: lo guardado es el nuevo estado "limpio".
@@ -316,7 +319,7 @@ const hasAccess = !perm || memberCan(ME!, perm);
                 syncDirty();
                 btn.classList.remove('saving');
                 btn.classList.add('saved');
-                if (msgText) msgText.textContent = 'Cambios guardados';
+                if (msgText) msgText.textContent = btn.dataset.i18nSaved || 'Cambios guardados';
                 msg.className = 's-saved show';
 
                 setTimeout(() => {

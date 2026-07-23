@@ -3,11 +3,17 @@
 // no se manda nada y se devuelve { sent:false, skipped:'sin RESEND_API_KEY' }
 // (la app sigue funcionando — el link se genera igual).
 import { sql } from './db';
+import { currentLocale } from './context';
+import { t } from '../i18n/app';
 
 const RESEND_KEY = import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
 const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Cord <cotizaciones@flouvia.com>';
 
-const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(Number(n ?? 0));
+// Idioma del correo: se resuelve del request que dispara el envío (el
+// VENDEDOR enviando la cotización desde su sesión) — no existe hoy una señal
+// fiable del idioma del CLIENTE receptor (no hay locale por cliente en el
+// schema). Es el mismo criterio "sin toggle" del resto de la app.
+const moneyFmt = (n: number, locale: 'es' | 'en') => '$' + new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-MX', { minimumFractionDigits: 2 }).format(Number(n ?? 0));
 const esc = (s: string) => String(s ?? '').replace(/</g, '&lt;');
 
 export interface SendResult { sent: boolean; skipped?: string; error?: string; to?: string }
@@ -63,36 +69,44 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, origi
     const r = rows[0] as any;
     if (!r.email) return { sent: false, skipped: 'el cliente no tiene correo' };
 
+    const L = currentLocale();
+    const tf = (key: string, vars: Record<string, string> = {}) => {
+        let s = t(L, key as any);
+        for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
+        return s;
+    };
+
     const link = `${origin}/q/${r.public_token}`;
     const color = /^#[0-9a-fA-F]{6}$/.test(r.color) ? r.color : '#0a192f';
     // Variables disponibles en intro/firma: {cliente} {folio} {total} {negocio}.
-    const fill = (t: string) => esc(t)
-        .replace(/\{cliente\}/g, esc(r.empresa || 'cliente'))
+    // (Texto propio del vendedor, capturado en Ajustes › Correo — no se traduce.)
+    const fill = (txt: string) => esc(txt)
+        .replace(/\{cliente\}/g, esc(r.empresa || t(L, 'email.cliente_generico')))
         .replace(/\{folio\}/g, esc(r.folio))
-        .replace(/\{total\}/g, money(r.total))
+        .replace(/\{total\}/g, moneyFmt(r.total, L))
         .replace(/\{negocio\}/g, esc(r.org_nombre));
     const intro = (r.email_intro && r.email_intro.trim())
         ? fill(r.email_intro)
-        : `${esc(r.org_nombre)} le comparte la cotización <b>${esc(r.folio)}</b> por <b>${money(r.total)}</b>. Puede revisarla, dejar comentarios y aprobarla en línea:`;
+        : tf('email.intro_default', { org: esc(r.org_nombre), folio: esc(r.folio), total: moneyFmt(r.total, L) });
     const firma = (r.email_firma && r.email_firma.trim()) ? fill(r.email_firma) : '';
-    const poweredLine = r.portal_powered === false ? esc(r.org_nombre) : `${esc(r.org_nombre)} · enviado con Cord`;
+    const poweredLine = r.portal_powered === false ? esc(r.org_nombre) : `${esc(r.org_nombre)}${t(L, 'email.enviado_con_cord')}`;
     const html = `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
         <div style="max-width:540px;margin:0 auto;">
             <div style="margin-bottom:32px;">
                 <img src="https://cordhq.app/imgs/logo-cord-navy.png" width="90" height="auto" alt="Cord Logo" style="display:block;">
             </div>
-            
-            <p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">Estimado equipo de ${esc(r.empresa || 'cliente')},</p>
+
+            <p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">${tf('email.saludo', { empresa: esc(r.empresa || t(L, 'email.cliente_generico')) })}</p>
             <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;">${intro}</p>
-            
+
             <div style="margin:40px 0;">
-                <a href="${link}" style="display:inline-block;background-color:${color};color:#ffffff;text-decoration:none;font-weight:500;font-size:15px;padding:12px 24px;border-radius:8px;">Ver cotización ${esc(r.folio)}</a>
+                <a href="${link}" style="display:inline-block;background-color:${color};color:#ffffff;text-decoration:none;font-weight:500;font-size:15px;padding:12px 24px;border-radius:8px;">${tf('email.ver_cotizacion', { folio: esc(r.folio) })}</a>
             </div>
-            
-            <p style="font-size:14px;color:#6B7280;line-height:1.5;word-break:break-all;">O copie este enlace en su navegador:<br><a href="${link}" style="color:#2563EB;text-decoration:none;">${link}</a></p>
-            
+
+            <p style="font-size:14px;color:#6B7280;line-height:1.5;word-break:break-all;">${t(L, 'email.copie_enlace')}<br><a href="${link}" style="color:#2563EB;text-decoration:none;">${link}</a></p>
+
             ${r.mensaje ? `<div style="margin-top:40px;padding-top:32px;border-top:1px solid #F3F4F6;"><p style="font-size:15px;color:#374151;line-height:1.6;margin:0;">${esc(r.mensaje)}</p></div>` : ''}
-            ${firma ? `<div style="margin-top:32px;"><p style="font-size:15px;color:#374151;line-height:1.6;margin:0;">Atentamente,<br>${firma}</p></div>` : ''}
+            ${firma ? `<div style="margin-top:32px;"><p style="font-size:15px;color:#374151;line-height:1.6;margin:0;">${t(L, 'email.atentamente')}<br>${firma}</p></div>` : ''}
 
             <div style="margin-top:48px;padding-top:24px;border-top:1px solid #E5E7EB;">
                 <p style="font-size:12px;color:#9CA3AF;margin:0;line-height:1.5;">${poweredLine}</p>
@@ -101,10 +115,10 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, origi
     </div>`;
     // Entorno de PRUEBA: el correo sale marcado — que nadie confunda una
     // cotización de prueba con una real.
-    const testPrefix = r.sandbox_of ? '[Prueba] ' : '';
+    const testPrefix = r.sandbox_of ? t(L, 'email.prueba_prefix') : '';
     return sendEmail({
         to: r.email,
-        subject: `${testPrefix}Cotización ${r.folio} — ${r.org_nombre}`,
+        subject: `${testPrefix}${tf('email.asunto', { folio: r.folio, org: r.org_nombre })}`,
         html,
         fromName: r.email_from_name || r.org_nombre,
         replyTo: r.email_reply_to || r.email_contacto || null,

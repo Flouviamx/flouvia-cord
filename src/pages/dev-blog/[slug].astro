@@ -1,0 +1,291 @@
+---
+import { getEntry, render } from 'astro:content';
+import DevBlogLayout from "../../layouts/DevBlogLayout.astro";
+
+const slug = Astro.params.slug;
+const lang = Astro.url.searchParams.get("lang") === "en" ? "en" : "es";
+
+let entry = await getEntry('devBlog', `${lang}/${slug}`);
+
+if (!entry) {
+  // Fallback to the other language if not found
+  const fallbackLang = lang === "en" ? "es" : "en";
+  entry = await getEntry('devBlog', `${fallbackLang}/${slug}`);
+}
+
+if (!entry) {
+  return Astro.redirect('/404');
+}
+
+const { Content } = await render(entry);
+const { title, date, type, topic, authors, readTime, featured } = entry.data;
+
+const authorTags = authors ? authors.map(a => `<span class="dashed-tag">[ ${a} ]</span>`).join('\n          ') : '';
+---
+
+<DevBlogLayout title={title}>
+  
+  <!-- Article Hero -->
+  <header class="article-hero">
+    <div class="hero-content">
+      <h1 class="article-title">{title}</h1>
+    </div>
+  </header>
+
+  <!-- Article Body -->
+  <div class="article-body">
+    <!-- Metadata Sidebar -->
+    <aside class="metadata-sidebar">
+      <div class="section-label">METADATA</div>
+      
+      <div class="meta-row">
+        <span class="meta-key">{lang === 'en' ? 'DATE:' : 'FECHA:'}</span>
+        <span class="meta-val">{date}</span>
+      </div>
+      
+      {authors && authors.length > 0 && (
+        <div class="meta-row">
+          <span class="meta-key">{lang === 'en' ? 'AUTHORS:' : 'AUTORES:'}</span>
+          <div class="meta-tags" set:html={authorTags}></div>
+        </div>
+      )}
+      
+      {readTime && (
+        <div class="meta-row">
+          <span class="meta-key">{lang === 'en' ? 'READING TIME:' : 'TIEMPO LECTURA:'}</span>
+          <span class="meta-val">{readTime}</span>
+        </div>
+      )}
+      
+      <div class="meta-row">
+        <span class="meta-key">{lang === 'en' ? 'CATEGORIES:' : 'CATEGORÍAS:'}</span>
+        <div class="meta-tags">
+          <span class="dashed-tag" style="text-transform: uppercase;">[ {topic} ]</span>
+        </div>
+      </div>
+      
+      <div class="meta-group">
+        <span class="meta-key">{lang === 'en' ? 'AGENTS:' : 'AGENTES:'}</span>
+        <div class="btn-grid">
+          <button class="outline-btn">
+            <span class="btn-icon">⎘</span> {lang === 'en' ? 'Copy for LLM' : 'Copiar para LLM'}
+          </button>
+          <button class="outline-btn">
+            <span class="btn-icon">↓</span> {lang === 'en' ? 'View as Markdown' : 'Ver como Markdown'}
+          </button>
+        </div>
+      </div>
+      
+      <div class="meta-group">
+        <span class="meta-key">{lang === 'en' ? 'SHARE:' : 'COMPARTIR:'}</span>
+        <div class="btn-grid">
+          <button class="outline-btn">Twitter/X</button>
+          <button class="outline-btn">LinkedIn</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Content Area -->
+    <article class="content-area">
+      <div class="section-label-content">ARTICLE</div>
+      <div class="prose">
+        <Content />
+      </div>
+    </article>
+  </div>
+</DevBlogLayout>
+
+<style>
+  /* Hero Section */
+  .article-hero {
+    position: relative;
+    padding: 32px 0 40px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 40px;
+  }
+  
+  .hero-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 40px;
+  }
+  
+  .article-title {
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 400;
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+    color: white;
+    margin: 0;
+    max-width: 900px;
+  }
+  
+  /* Article Body */
+  .article-body {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 120px;
+  }
+  
+  /* Metadata Sidebar */
+  .metadata-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: sticky;
+    top: 120px;
+    align-self: flex-start;
+  }
+  
+  .section-label, .section-label-content {
+    font-family: var(--dev-mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--dev-text-muted);
+    text-transform: uppercase;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .section-label-content {
+    margin-bottom: 40px;
+  }
+  
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .meta-key {
+    font-family: var(--dev-mono);
+    font-size: 10px;
+    color: var(--dev-accent);
+    letter-spacing: 1px;
+    padding-top: 2px;
+  }
+  
+  .meta-val {
+    font-family: var(--dev-mono);
+    font-size: 11px;
+    color: white;
+    letter-spacing: 0.5px;
+  }
+  
+  .meta-tags {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  
+  :global(.dashed-tag) {
+    display: inline-block;
+    padding: 2px 6px;
+    border: 1px dashed rgba(192, 132, 252, 0.4);
+    border-radius: 2px;
+    color: #c084fc;
+    font-family: var(--dev-mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+  
+  .meta-group {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .btn-grid {
+    display: flex;
+    gap: 12px;
+  }
+  
+  .outline-btn {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--dev-accent);
+    color: var(--dev-accent);
+    font-family: var(--dev-mono);
+    font-size: 10px;
+    padding: 8px;
+    border-radius: 999px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+  }
+  
+  .outline-btn:hover {
+    background: rgba(16, 185, 129, 0.1);
+    color: white;
+  }
+  
+  /* Content Area */
+  .content-area {
+    padding-top: 0;
+  }
+  
+  :global(.prose) {
+    font-family: var(--dev-sans);
+    font-size: 1.15rem;
+    line-height: 1.8;
+    color: #94a3b8;
+    max-width: 760px;
+  }
+  
+  :global(.prose p) {
+    margin-bottom: 1.5em;
+  }
+  
+  :global(.prose h2) {
+    font-family: var(--dev-sans);
+    font-size: 2.25rem;
+    font-weight: 400;
+    color: white;
+    margin: 2em 0 1em 0;
+    letter-spacing: -0.02em;
+  }
+  
+  :global(.prose ul) {
+    margin-bottom: 1.5em;
+    padding-left: 1.5em;
+    color: #94a3b8;
+  }
+  
+  :global(.prose li) {
+    margin-bottom: 0.5em;
+  }
+  
+  @media (max-width: 900px) {
+    .article-body {
+      grid-template-columns: 1fr;
+    }
+    .hero-content {
+      flex-direction: column-reverse;
+    }
+  }
+</style>
+
+<script>
+  import gsap from 'gsap';
+  
+  gsap.from(".article-title", {
+    y: 30, opacity: 0, duration: 1, ease: "power3.out", delay: 0.1
+  });
+  
+  gsap.from(".metadata-sidebar", {
+    x: -30, opacity: 0, duration: 0.8, ease: "power3.out", delay: 0.4
+  });
+  
+  gsap.from(".content-area", {
+    y: 30, opacity: 0, duration: 0.8, ease: "power3.out", delay: 0.5
+  });
+</script>

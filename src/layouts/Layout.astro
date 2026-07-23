@@ -126,8 +126,13 @@ const locale = lang === 'es' ? 'es_MX' : 'en_US';
 
     *, *::before, *::after { box-sizing: border-box; }
 
+    html {
+        overflow-x: clip; /* clip: recorta sin crear scroll container → no rompe sticky */
+    }
+
     html, body {
         width: 100%;
+        max-width: 100%;
         margin: 0;
         padding: 0;
         position: relative;
@@ -138,6 +143,10 @@ const locale = lang === 'es' ? 'es_MX' : 'en_US';
         -moz-osx-font-smoothing: grayscale;
         text-rendering: optimizeLegibility;
         -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        overflow-x: clip; /* idem — asegura que body tampoco genere scrollbar horizontal */
     }
 
     ::selection {

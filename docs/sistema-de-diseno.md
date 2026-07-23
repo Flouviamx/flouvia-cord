@@ -414,3 +414,14 @@ Todo indicador de que la sesión está en el **entorno de prueba** (sandbox, ver
   layout, visible incluso colapsado) + el **eyebrow que cambia de texto/color**
   ("Espacio de trabajo" → "Entorno de prueba"). Regla general: en cualquier trigger de
   espacio angosto, preferir anillo/color de texto sobre un badge que compite por ancho.
+
+### Estética "Sober Pixel" (Marketing para Desarrolladores)
+
+Para secciones dirigidas a ingenieros (ej. `/dev-blog`), se utiliza una variante del sistema de diseño conocida como **"Sober Pixel"**. Esta estética busca un look técnico y retro (estilo terminal o dashboard de servidor) pero manteniendo la regla de "Quiet Luxury" del resto de la app.
+
+**Reglas de Sober Pixel:**
+- **No ruido visual ni "Glitch" excesivo:** Se evitaron explícitamente los shaders WebGL complejos, ruido estático de televisión o píxeles rotos intermitentes. Esos efectos se ven baratos o abrumadores.
+- **Bordes Chamfered con `clip-path`:** Para lograr un botón de 8-bits, no se dibujan múltiples divs ni box-shadows ruidosos. Se utiliza `clip-path: polygon(...)` recortando bloques de 2 píxeles en las 4 esquinas de un elemento sólido (`.dev-nav-btn`). Esto crea un borde pixelado perfecto, escalable y limpio.
+- **Hovers de "Radar Grid":** En lugar de cambiar a colores neón exagerados, los hovers (`.dev-nav-btn:hover::before`) revelan suavemente un patrón de cuadrícula de puntos hecho con `radial-gradient` que se desplaza en diagonal, imitando un HUD técnico limpio.
+- **Contenedores de Figuras `[ FIG. 1 ]`:** Las imágenes abstractas se encapsulan en "ventanas" (wireframes) con barras superiores grises y bordes sólidos de 1px. El contenido de estas ventanas suele ser modelos geométricos CSS puros (`.wireframe-shape`) rotando, dando la impresión de interfaces de cálculo avanzadas similares al estilo de ingeniería de Stripe.
+- **No simular consolas flotantes desordenadas:** Si se integra una terminal (como la `DevConsole`), esta debe ir anclada al 100% del ancho inferior (docked) con una cabecera nativa limpia (`#cbd5e1`), íconos vectoriales abstractos (`◱ ⇋`) y tipografía monospace (`var(--dev-mono)`), evitando parecer un popup invasivo.

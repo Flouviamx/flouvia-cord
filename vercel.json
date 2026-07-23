@@ -12,5 +12,12 @@
       "destination": "https://cordhq.app/:path*",
       "permanent": true
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/:match*",
+      "has": [{ "type": "host", "value": "dev.cordhq.app" }],
+      "destination": "/dev-blog/:match*"
+    }
   ]
 }

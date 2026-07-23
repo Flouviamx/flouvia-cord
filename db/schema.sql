@@ -1172,3 +1172,14 @@ create policy "rls_kit_items" on kit_items
 
 alter table kits      force row level security;
 alter table kit_items force row level security;
+
+-- ── Suscriptores del Blog (landing, jul 2026) ───────────────────────────────
+-- Tabla standalone (NO multi-tenant, sin org_id): recoge emails de visitantes
+-- del blog público que se suscriben al newsletter desde BlogCTA.
+-- El endpoint /api/blog/subscribe inserta aquí (ON CONFLICT do nothing).
+-- Sin RLS: no es dato de tenant, es un lead de marketing.
+create table if not exists blog_subscribers (
+  id          uuid        default gen_random_uuid() primary key,
+  email       text        not null unique,
+  created_at  timestamptz default now()
+);

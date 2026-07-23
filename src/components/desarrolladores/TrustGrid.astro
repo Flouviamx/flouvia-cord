@@ -4,7 +4,6 @@
 // página), texto oscuro a la izquierda, globo 3D grande a la derecha sin
 // nada encima. Los 4 datos del grid van debajo como fila horizontal.
 import type { DevTrust, DevTrustIcon } from '../../lib/desarrolladores';
-import TrustGlobe from './TrustGlobe.jsx';
 
 export interface Props { trust: DevTrust }
 const { trust } = Astro.props;
@@ -27,10 +26,7 @@ const ICONS: Record<DevTrustIcon, string> = {
 ---
 
 <section class="dvt-section">
-    <!-- Globo — posición absoluta sobre la derecha, sin clip -->
-    <div class="dvt-bg-globe" aria-hidden="true">
-        <TrustGlobe client:only="react" />
-    </div>
+    <!-- Globo — eliminado a petición del usuario -->
 
     <!-- Contenido de texto — ocupa solo la mitad izquierda -->
     <div class="dvt-inner">

@@ -132,9 +132,19 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         {solucion.slug === 'startups' && (
             <section class="integration-tabs-section reveal">
                 <div class="stripe-container">
-                    <div class="integration-header">
-                        <h2 class="integration-title">{isEn ? 'Integrate Cord your way' : 'Integra Cord a tu medida'}</h2>
-                        <p class="integration-sub">{isEn ? 'Stripe offers a wide range of options to accept payments, from no-code and low-code options to powerful APIs.' : 'Cord ofrece una amplia gama de opciones para automatizar tus ventas, desde configuraciones visuales sin código hasta potentes API REST.'}</p>
+                    <div class="integration-header-wrapper">
+                        <div class="integration-header">
+                            <h2 class="integration-title">{isEn ? 'Integrate Cord your way' : 'Integra Cord a tu medida'}</h2>
+                            <p class="integration-sub">{isEn ? 'Stripe offers a wide range of options to accept payments, from no-code and low-code options to powerful APIs.' : 'Cord ofrece una amplia gama de opciones para automatizar tus ventas, desde configuraciones visuales sin código hasta potentes API REST.'}</p>
+                        </div>
+                        <div class="integration-carousel-controls">
+                            <button id="integration-prev" class="carousel-btn" aria-label="Previous">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                            </button>
+                            <button id="integration-next" class="carousel-btn" aria-label="Next">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="stripe-tabs-container">
@@ -2704,10 +2714,28 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         padding: 6rem 0;
         background: #f6f9fc;
     }
+    .integration-header-wrapper {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 3rem;
+    }
     .integration-header {
         text-align: left;
-        margin-bottom: 3rem;
+        margin-bottom: 0;
         max-width: 700px;
+    }
+    .integration-carousel-controls {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 1rem;
+    }
+    @media (max-width: 768px) {
+        .integration-header-wrapper {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1.5rem;
+        }
     }
     .integration-title {
         font-size: clamp(2.2rem, 4vw, 3.2rem);
@@ -3775,6 +3803,23 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         const progressFill = document.getElementById('stripe-progress-fill');
         const intScrollTrack = document.getElementById('integration-scroll');
         const intCards = document.querySelectorAll('.int-card');
+
+        const intPrevBtn = document.getElementById('integration-prev');
+        const intNextBtn = document.getElementById('integration-next');
+
+        if (intScrollTrack && intPrevBtn && intNextBtn) {
+            const getIntScrollAmount = () => {
+                const card = intScrollTrack.querySelector('.int-card');
+                return card ? (card.clientWidth + 24) : 464; // 24 is gap
+            };
+
+            intPrevBtn.addEventListener('click', () => {
+                intScrollTrack.scrollBy({ left: -getIntScrollAmount(), behavior: 'smooth' });
+            });
+            intNextBtn.addEventListener('click', () => {
+                intScrollTrack.scrollBy({ left: getIntScrollAmount(), behavior: 'smooth' });
+            });
+        }
 
         if (stripeTabs.length > 0 && intScrollTrack && progressFill) {
             

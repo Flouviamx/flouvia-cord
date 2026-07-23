@@ -6,6 +6,64 @@
 
 ---
 
+✅ **Dev Blog: Migración a Astro Content Collections (jul 2026)** —
+   Para escalar el blog de manera mantenible, se migró la arquitectura de blogs estáticos (`.astro`) a Content Collections de Astro 5.
+   • **`content.config.ts` actualizado:** Se creó la colección `devBlog` usando `astro/loaders` (`glob` para capturar archivos `.md`) y validación Zod del frontmatter (`title`, `date`, `type`, `topic`, `authors`, `readTime`).
+   • **Archivos Markdown Dinámicos:** Se movieron todos los artículos simulados y reales a carpetas de idioma (`src/content/dev-blog/en` y `src/content/dev-blog/es`).
+   • **Ruta Dinámica `[slug].astro`:** El visor de blogs ahora lee el markdown dinámicamente (`render()` de `astro:content`).
+   • **Filtros y Feed Automatizados:** `index.astro` y `blog.astro` obtienen la lista usando `getCollection('devBlog')`, de forma automática y reactiva, sin hardcodear.
+   • **Mejoras de UI:** Se solucionó el problema del sidebar pegajoso (`position: sticky`) cambiando `overflow-x: hidden` por `clip` en el layout global, y se limpiaron los títulos de sección. Se borraron por completo los blogs hardcodeados sueltos.
+
+✅ **Dev Blog: Página de artículos, PixelBlog y Navbar Transparente (jul 2026)** —
+   Continuando con la estética Stripe.dev del Dev Blog, se añadieron nuevas páginas y componentes:
+   • **Navbar Transparente:** La barra de navegación (`DevBlogLayout.astro`) pasó de `sticky` a `fixed`, y se eliminó el glass effect (`backdrop-filter`) y borde inferior para dejarla 100% transparente. Se añadió padding superior al contenedor para evitar solapes.
+   • **Página de Blog (`blog.astro`):** Se creó una vista dedicada para el blog usando el nuevo componente `PixelBlog.jsx` (heredando la magia GLSL e interactividad 3D de `PixelDevs.jsx`, adaptada para decir "BLOG"). Se mantuvo la lista de artículos y sidebar con filtros funcionales.
+   • **Layout de Artículos Individuales:** Se construyó la plantilla base para los posts (ej. `building-multi-tenant-architecture.astro`). Inspirado directamente en Stripe Dev, incluye títulos gigantes, metadatos y medallas a la izquierda con líneas punteadas (`border-dashed`), y el contenido principal a la derecha a dos columnas. Se ajustó la tipografía (`JetBrains Mono` y botones duotone) respetando el diseño sobrio.
+
+✅ **Dev Blog: Footer Stripe Dev + PixelIcons interactivos (jul 2026)** —
+   A petición de André ("hazlo super técnico, estilo Stripe.dev con el texto gigante de
+   DEVELOPERS"), se diseñó el ecosistema de la página principal del Dev Blog.
+   • **PixelIcon.jsx interactivo:** se abstrayó la brujería de físicas 3D (magnetismo
+     GSAP + físicas de resorte masa-amortiguador al arrastrar y soltar) de `PixelDevs.jsx`
+     hacia un componente genérico `PixelIcon.jsx` que acepta matrices de dibujo.
+   • **Sidebar de Filtros Dinámicos:** layout dividido (Stripe style) con filtros
+     renderizados dinámicamente desde el frontmatter (`articles` array). Se definieron
+     matrices manuales (1s y 0s) para `folderOpen`, `folderClosed`, `checkboxEmpty` y
+     `checkboxFilled`. Los filtros son 100% funcionales vía JS (`data-type`, `data-topic`).
+     Todos los íconos del sidebar heredan la magia de arrastrar y aventar por la pantalla.
+   • **Footer Masivo (Stripe Dev Style):** `DevBlogLayout.astro` ahora cuenta con un footer
+     completamente técnico. Se usaron gradientes CSS cruzados (`radial-gradient` como mask)
+     para dibujar una cuadrícula perfecta con retículas (cruces `+`) en las intersecciones,
+     sin cargar SVGs de fondo.
+   • **WireframeText.jsx:** para el fondo gigantesco de la palabra "DEVELOPERS", se armó
+     un componente React que renderiza 24 capas SVG idénticas; la frontal en blanco sólido,
+     las 23 traseras en stroke semitransparente con `translateY` progresivo, formando un
+     túnel topográfico. Se animaron con GSAP para un sutil "breathe" en el eje Y.
+
+
+✅ **Flechas de carrusel agregadas en Startups (jul 2026)** — 
+   En la sección "Integra Cord a tu medida" de `/soluciones/startups`, se agregaron controles de navegación (flechas) idénticos a los del carrusel superior para mejorar la usabilidad del track horizontal.
+   • Se modificó la estructura HTML (usando un `.integration-header-wrapper`) y se reutilizaron los estilos existentes (`.carousel-btn`).
+   • Se agregó la lógica JavaScript al `integration-scroll` para que las flechas realicen scroll dinámico de acuerdo al ancho de cada tarjeta (464px o el ancho computado + gap).
+
+✅ **Optimización profunda de rendimiento en Shaders WebGL / R3F y limpieza (jul 2026)** — 
+   Se identificó que los fondos animados con React Three Fiber estaban causando lag severo y
+   drenaje de batería en las páginas de Empresas, Startups, y Soporte, especialmente en
+   pantallas de alta resolución (Retina).
+   • **Control de DPR (Device Pixel Ratio):** R3F por defecto renderiza a la resolución nativa
+     de la pantalla. En MacBooks/Retina esto significa calcular 4x a 9x más píxeles por frame. Se fijó
+     rígidamente `dpr={1}` en **todos** los canvas (`DarkAuroraBg`, `QuantizedWaveBg`, `BlueAuroraBg`,
+     `GuillocheHero`, `TrustGlobe`, `PriceAuroraBg`). Al ser shaders abstractos y difuminados, la
+     diferencia visual es nula pero el ahorro de GPU es gigantesco.
+   • **Pausa Inteligente (IntersectionObserver):** Los shaders seguían corriendo a 60FPS aunque el usuario
+     ya hubiera scrolleado muy por debajo del hero. Se implementó un `IntersectionObserver` en todos
+     los componentes restantes para condicionar el `frameloop={onScreen ? 'always' : 'never'}` (patrón
+     que ya tenía bien implementado `CardAuroraBg` y `ShowcaseAuroraBg`). Ahora el hilo de WebGL se
+     duerme por completo cuando el canvas sale de pantalla.
+   • **Eliminación de TrustGlobe:** A petición del usuario se eliminó por completo `TrustGlobe.jsx`
+     y se borró su montaje en `TrustGrid.astro` (página de Desarrolladores).
+
+
 ✅ **Fix de copy fiscal falso — `/desarrolladores/fiscal` ya no promete IRS/EIN/Sales Tax
    (jul 2026)** — misma auditoría de "promesas rotas" de la entrada anterior. La página
    afirmaba "100% cumplimiento normativo SAT **e IRS**", exponía un endpoint ficticio
@@ -1047,3 +1105,19 @@
    usar Playwright headless (`npx playwright` funciona sin instalación previa en este entorno)
    y capturar en varios timestamps tras un clic para verificar transiciones, no solo el estado
    final.
+
+### 22 jul 2026
+
+- **Plantillas de Producto (`/producto/[slug]`):** 
+  - Se eliminó el badge superior "MÁS DE CORD" de la sección final ("Explora el resto del producto.").
+  - **Cross-links curados por contexto:** En lugar de mostrar la lista completa de todos los demás features disponibles (11+), se implementó un mapa manual `RELATED` en el frontmatter. Ahora cada página de producto muestra exactamente **3 features** estrechamente relacionados con su flujo de trabajo (ej. `editor` muestra `link-publico`, `seguimiento`, `cfdi`), reduciendo el ruido visual y mejorando el recorrido del usuario. Verificado con Browser Agent.
+
+### Dev Blog (Estética "Stripe Dev" / Sober Pixel) - jul 2026
+
+Se realizó un rediseño radical de la página `/dev-blog` para elevar su nivel visual a un estándar AAA, alejándose de los clichés genéricos de "terminal retro" ruidosa y adoptando un enfoque mucho más limpio, sobrio y editorial, referenciado en `stripe.dev`.
+
+- **Navbar y "Sober Pixel Buttons":** Se eliminó el borde separador de la navbar para fusionarla con el fondo oscuro y lograr un efecto de panel flotante. Se implementó una nueva clase `.dev-nav-btn` que usa `clip-path` para cortar las 4 esquinas matemáticamente en "escalones" de 2 píxeles, logrando una forma de botón 8-bits perfecta pero sutil. El estado hover no usa glitches caóticos (se intentó WebGL y se descartó por ruido), sino un elegante micro-patrón de cuadrícula (`radial-gradient`) que se desplaza imperceptiblemente.
+- **Hero de Alta Gama:** Se limpió el Hero eliminando cursores intermitentes (`>`) y se incrementó significativamente el peso tipográfico usando la fuente Sans-serif principal (Quiet Luxury). Se integró un badge pill `[ LATEST RELEASE ] v2.0.4`.
+- **Feed Editorial y Figuras Esquema:** El feed de posts se convirtió en un layout editorial de 2 columnas separadas por una línea fina. Las imágenes de los posts ahora usan una ventana tipo interfaz técnica `[ FIG. 1 ]` con bordes sólidos y animaciones CSS abstractas de "wireframes" o grafos.
+- **Marquee de Estadísticas:** Se añadió un footer a la página principal del blog con un scroll infinito (Marquee CSS) mostrando métricas entre corchetes morados `[ 5 MILLION+ ]`, aportando densidad de información con un look de dashboard.
+- **Dev Console y AI Easter Egg:** El botón de `[C] CONSOLE` despliega un componente interactivo (`DevConsole.jsx`). En lugar de una ventana flotante, se rediseñó para anclarse en la parte inferior ocupando el 100% del ancho, con una barra de título gris claro (`#cbd5e1`). Se incluyó un Easter Egg (`ai <comando>`): simula una conexión ("INITIALIZING CORD NEURAL LINK") con retrasos reales y responde de forma técnica y útil a comandos como `ai api`, `ai webhooks` y `ai status`, en lugar de solo lanzar chistes de programadores.

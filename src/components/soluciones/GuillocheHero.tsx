@@ -86,13 +86,33 @@ const Scene = () => {
 };
 
 export default function GuillocheHero() {
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const [onScreen, setOnScreen] = React.useState(true)
+  const [reduced] = React.useState(
+    () => typeof window !== 'undefined'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  )
+
+  React.useEffect(() => {
+    if (!wrapRef.current) return
+    const io = new IntersectionObserver(
+      ([entry]) => setOnScreen(entry.isIntersecting),
+      { rootMargin: '140px' },
+    )
+    io.observe(wrapRef.current)
+    return () => io.disconnect()
+  }, [])
+
+  if (reduced) return null
+
   return (
-    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 0 }}>
+    <div ref={wrapRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 0 }}>
       <Canvas
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
         camera={{ position: [0, 0, 1] }}
         gl={{ alpha: true, antialias: true, powerPreference: 'default' }}
-        dpr={[1, 2]}
+        dpr={1}
+        frameloop={onScreen ? 'always' : 'never'}
       >
         <Scene />
       </Canvas>

@@ -238,6 +238,31 @@ export const appStrings = {
         "q.crea_las_tuyas": "— crea las tuyas gratis →",
         "q.total_a_pagar": "Total a pagar",
         "q.aprobar": "Aprobar",
+
+        // Correos transaccionales (email.ts) — el idioma se resuelve del
+        // request del VENDEDOR que dispara el envío (no hay señal fiable del
+        // idioma del cliente receptor; ver nota en email.ts).
+        "email.saludo": "Estimado equipo de {empresa},",
+        "email.intro_default": "{org} le comparte la cotización <b>{folio}</b> por <b>{total}</b>. Puede revisarla, dejar comentarios y aprobarla en línea:",
+        "email.ver_cotizacion": "Ver cotización {folio}",
+        "email.copie_enlace": "O copie este enlace en su navegador:",
+        "email.atentamente": "Atentamente,",
+        "email.enviado_con_cord": " · enviado con Cord",
+        "email.asunto": "Cotización {folio} — {org}",
+        "email.prueba_prefix": "[Prueba] ",
+        "email.cliente_generico": "cliente",
+
+        // SettingsShell (chasis compartido de las ~20 subpáginas de Ajustes)
+        "settings.configuracion": "Configuración",
+        "settings.pestanas_de": "Pestañas de {label}",
+        "settings.sin_acceso": "Sin acceso",
+        "settings.sin_acceso_desc": "Tu rol actual no tiene permiso para ver esta sección. Contacta al administrador de tu organización.",
+        "settings.sin_acceso_idx_desc": "Tu rol actual no tiene permiso para ver la configuración. Contacta al administrador de tu organización.",
+        "settings.guardar_cambios": "Guardar cambios",
+        "settings.cambios_guardados": "Cambios guardados",
+        "settings.no_se_pudo_guardar": "No se pudo guardar",
+        "settings.configuracion_titulo": "Configuración",
+        "settings.configuracion_para": "Todo lo que se personaliza en Cord para {org}.",
     },
     en: {
         // Sidebar — groups
@@ -458,6 +483,29 @@ export const appStrings = {
         "q.crea_las_tuyas": "— create yours free →",
         "q.total_a_pagar": "Total due",
         "q.aprobar": "Approve",
+
+        // Transactional emails (email.ts)
+        "email.saludo": "Dear {empresa} team,",
+        "email.intro_default": "{org} has shared quote <b>{folio}</b> for <b>{total}</b> with you. You can review it, leave comments, and approve it online:",
+        "email.ver_cotizacion": "View quote {folio}",
+        "email.copie_enlace": "Or copy this link into your browser:",
+        "email.atentamente": "Best regards,",
+        "email.enviado_con_cord": " · sent with Cord",
+        "email.asunto": "Quote {folio} — {org}",
+        "email.prueba_prefix": "[Test] ",
+        "email.cliente_generico": "client",
+
+        // SettingsShell (shared chassis of the ~20 Settings subpages)
+        "settings.configuracion": "Settings",
+        "settings.pestanas_de": "{label} tabs",
+        "settings.sin_acceso": "No access",
+        "settings.sin_acceso_desc": "Your current role doesn't have permission to view this section. Contact your organization's admin.",
+        "settings.sin_acceso_idx_desc": "Your current role doesn't have permission to view settings. Contact your organization's admin.",
+        "settings.guardar_cambios": "Save changes",
+        "settings.cambios_guardados": "Changes saved",
+        "settings.no_se_pudo_guardar": "Couldn't save",
+        "settings.configuracion_titulo": "Settings",
+        "settings.configuracion_para": "Everything you can customize in Cord for {org}.",
     },
 } as const;
 

@@ -1,0 +1,904 @@
+---
+import { getCollection } from 'astro:content';
+import DevBlogLayout from "../../layouts/DevBlogLayout.astro";
+import PixelDevs from "../../components/dev-blog/PixelDevs.jsx";
+import PixelIcon from "../../components/dev-blog/PixelIcon.jsx";
+
+const lang = Astro.url.searchParams.get("lang") === "en" ? "en" : "es";
+
+const allDevBlogs = await getCollection('devBlog', ({ id }) => {
+  return id.startsWith(`${lang}/`);
+});
+
+const articles = allDevBlogs
+  .map(post => {
+    const slug = post.id.split('/')[1];
+    return {
+      url: `/dev-blog/${slug}`,
+      date: post.data.date,
+      title: post.data.title,
+      type: post.data.type,
+      topic: post.data.topic
+    };
+  })
+  .sort((a, b) => new Date(b.date).valueOf() - new Date(a.date).valueOf());
+
+// Calcular conteos dinámicamente
+const typeCounts = articles.reduce((acc, article) => {
+  acc[article.type] = (acc[article.type] || 0) + 1;
+  return acc;
+}, {} as Record<string, number>);
+
+const topicCounts = articles.reduce((acc, article) => {
+  acc[article.topic] = (acc[article.topic] || 0) + 1;
+  return acc;
+}, {} as Record<string, number>);
+
+const uniqueTypes = Object.keys(typeCounts).sort();
+const uniqueTopics = Object.keys(topicCounts).sort();
+
+// Matrices para los íconos de 8-bits
+const folderClosedMatrix = [
+  [0,1,1,1,0,0,0,0,0,0],
+  [1,0,0,0,1,0,0,0,0,0],
+  [1,0,0,0,1,1,1,1,1,0],
+  [1,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,1],
+  [0,1,1,1,1,1,1,1,1,0]
+];
+
+const folderOpenMatrix = [
+  [0,1,1,1,0,0,0,0,0,0],
+  [1,0,0,0,1,0,0,0,0,0],
+  [1,0,0,0,0,1,1,1,1,0],
+  [1,0,1,1,1,1,0,0,0,1],
+  [1,1,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,1],
+  [0,1,1,1,1,1,1,1,1,0]
+];
+
+const checkboxEmpty = [
+  [0,1,1,1,1,1,1,0],
+  [1,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,1],
+  [0,1,1,1,1,1,1,0]
+];
+
+const checkboxFilled = [
+  [0,1,1,1,1,1,1,0],
+  [1,0,0,0,0,0,0,1],
+  [1,0,1,1,1,1,0,1],
+  [1,0,1,1,1,1,0,1],
+  [1,0,1,1,1,1,0,1],
+  [1,0,1,1,1,1,0,1],
+  [1,0,0,0,0,0,0,1],
+  [0,1,1,1,1,1,1,0]
+];
+---
+
+<DevBlogLayout title={lang === 'en' ? 'Cord Developer Blog' : 'Blog de Desarrolladores Cord'}>
+  <!-- Hero Section -->
+  <header class="dev-hero">
+    <h1 class="dev-title">
+      <span class="welcome-text">{lang === 'en' ? 'Welcome' : 'Bienvenidos'}</span>
+      <PixelDevs client:load />
+    </h1>
+    <p class="dev-lead">
+      {lang === 'en' 
+        ? 'Learn how to build B2B workflows, automate quotes, and manage your financial logic with the Cord API.' 
+        : 'Aprende a construir flujos B2B, automatizar cotizaciones y gestionar tu lógica financiera con la API de Cord.'}
+    </p>
+  </header>
+
+  <div class="dev-feed">
+    <div class="featured-grid">
+      
+      <!-- POST 1 -->
+      <div class="featured-col">
+        <div class="section-label">{lang === 'en' ? 'FEATURED POST' : 'POST DESTACADO'}</div>
+        <div class="featured-card">
+          <div class="card-fig">
+            <div class="fig-header">
+              <span class="fig-icon">◱</span>
+              <span class="fig-title">[ FIG. 1 ]</span>
+              <span class="fig-icon">⇋</span>
+            </div>
+            <div class="fig-content">
+              <div class="wireframe-shape shape-1"></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <h3 class="card-title">
+              {lang === 'en' ? 'How Cord uses graph search to auto-remediate fleets' : 'Cómo Cord usa búsqueda en grafos para auto-remediar infraestructuras'} <span class="arrow">↗</span>
+            </h3>
+            <p class="card-desc">
+              {lang === 'en' 
+                ? 'Discover how we modeled our infrastructure as a traversable graph and use pathfinding algorithms to dynamically compute changes.' 
+                : 'Descubre cómo modelamos nuestra infraestructura como un grafo navegable y usamos algoritmos de pathfinding para computar cambios dinámicamente.'}
+            </p>
+            <div class="card-tag-wrapper">
+              <span class="card-tag">[ {lang === 'en' ? 'ENGINEERING' : 'INGENIERÍA'} ]</span>
+            </div>
+            <a href="#" class="card-btn">{lang === 'en' ? 'More posts' : 'Más artículos'}</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- POST 2 -->
+      <div class="featured-col">
+        <div class="section-label">{lang === 'en' ? 'FEATURED VIDEO' : 'VIDEO DESTACADO'}</div>
+        <div class="featured-card">
+          <div class="card-fig">
+            <div class="fig-header">
+              <span class="fig-icon">◱</span>
+              <span class="fig-title">[ FIG. 2 ]</span>
+              <span class="fig-icon">⇋</span>
+            </div>
+            <div class="fig-content">
+                <div class="wireframe-shape shape-2"></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <h3 class="card-title">
+              {lang === 'en' ? 'How to turn strong customer authentication into a conversion engine' : 'Cómo convertir la autenticación fuerte (SCA) en un motor de conversión'} <span class="arrow">↗</span>
+            </h3>
+            <p class="card-desc">
+              {lang === 'en'
+                ? 'In this talk, our architects break down the evolution of Strong Customer Authentication (SCA) and 3D Secure protocols.'
+                : 'En esta charla, nuestros arquitectos desglosan la evolución de la Autenticación Fuerte de Clientes (SCA) y 3D Secure.'}
+            </p>
+            <div class="card-tag-wrapper">
+              <span class="card-tag">[ VIDEO ]</span>
+            </div>
+            <a href="#" class="card-btn">{lang === 'en' ? 'More videos' : 'Más videos'}</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+    
+  <!-- Statistics Marquee (Full-Bleed) -->
+  <div class="marquee-wrapper">
+    <div class="section-label">{lang === 'en' ? 'STATISTICS' : 'ESTADÍSTICAS'}</div>
+    <div class="stats-marquee-container">
+      <div class="stats-marquee">
+        <div class="marquee-content">
+            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'MEMBERS:' : 'MIEMBROS:'}</span> <span class="stat-val">[ 4400 ]</span></span>
+            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'CORD DEVELOPER COMMUNITY' : 'COMUNIDAD DE DESARROLLADORES CORD'}</span> <span class="stat-val">[ 5 MILLION ]</span></span>
+            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'YOUTUBE WATCH TIME HOURS:' : 'HORAS DE REPRODUCCIÓN EN YOUTUBE:'}</span> <span class="stat-val">[ 380,000 ]</span></span>
+            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'MEMBERS:' : 'MIEMBROS:'}</span> <span class="stat-val">[ 4400 ]</span></span>
+            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'CORD DEVELOPER COMMUNITY' : 'COMUNIDAD DE DESARROLLADORES CORD'}</span> <span class="stat-val">[ 5 MILLION ]</span></span>
+            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'YOUTUBE WATCH TIME HOURS:' : 'HORAS DE REPRODUCCIÓN EN YOUTUBE:'}</span> <span class="stat-val">[ 380,000 ]</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Articles List Layout (Stripe Dev Style) -->
+  <div class="articles-layout">
+    
+    <!-- Sidebar Filters with Pixel Icons -->
+    <aside class="articles-sidebar">
+      <div class="sidebar-header">
+        <div class="section-label">{lang === 'en' ? 'FILTER' : 'FILTRO'}</div>
+        <button class="clear-filters" id="clear-filters-btn">{lang === 'en' ? 'CLEAR FILTERS' : 'LIMPIAR FILTROS'}</button>
+      </div>
+
+      <div class="sidebar-group">
+        <div class="sidebar-title">
+          <div class="icon-open"><PixelIcon matrix={folderOpenMatrix} pixelSize={3} baseColor="#10b981" client:load /></div>
+          <div class="icon-closed" style="display: none;"><PixelIcon matrix={folderClosedMatrix} pixelSize={3} baseColor="#10b981" client:load /></div>
+          <span>{lang === 'en' ? 'Type' : 'Tipo'}</span>
+        </div>
+        <ul class="sidebar-list">
+          {uniqueTypes.map(type => (
+            <li class="filter-item filter-type" data-value={type}>
+              <div class="checkbox-empty"><PixelIcon matrix={checkboxEmpty} pixelSize={2} baseColor="#334155" client:load /></div>
+              <div class="checkbox-filled" style="display: none;"><PixelIcon matrix={checkboxFilled} pixelSize={2} baseColor="#10b981" client:load /></div>
+              <span>{type} ({typeCounts[type]})</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div class="sidebar-group">
+        <div class="sidebar-title">
+          <div class="icon-open"><PixelIcon matrix={folderOpenMatrix} pixelSize={3} baseColor="#10b981" client:load /></div>
+          <div class="icon-closed" style="display: none;"><PixelIcon matrix={folderClosedMatrix} pixelSize={3} baseColor="#10b981" client:load /></div>
+          <span>{lang === 'en' ? 'Topic' : 'Tema'}</span>
+        </div>
+        <ul class="sidebar-list">
+          {uniqueTopics.map(topic => (
+            <li class="filter-item filter-topic" data-value={topic}>
+              <div class="checkbox-empty"><PixelIcon matrix={checkboxEmpty} pixelSize={2} baseColor="#334155" client:load /></div>
+              <div class="checkbox-filled" style="display: none;"><PixelIcon matrix={checkboxFilled} pixelSize={2} baseColor="#10b981" client:load /></div>
+              <span>{topic} ({topicCounts[topic]})</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Articles Content -->
+    <div class="articles-content">
+      <div class="articles-header">
+        <h2 class="articles-title">{lang === 'en' ? 'Latest Releases' : 'Últimos Lanzamientos'}</h2>
+      </div>
+      
+      <div class="articles-table">
+        <div class="table-head">
+          <div class="col-date">{lang === 'en' ? 'DATE' : 'FECHA'}</div>
+          <div class="col-name">{lang === 'en' ? 'NAME' : 'TÍTULO'}</div>
+          <div class="col-type">{lang === 'en' ? 'TYPE' : 'TIPO'}</div>
+        </div>
+        
+        {articles.slice(0, 3).map(article => (
+          <a href={article.url} class="table-row article-row" data-type={article.type} data-topic={article.topic}>
+            <div class="col-date"><span class="table-date">{article.date}</span></div>
+            <div class="col-name"><span class="table-name">{article.title}</span></div>
+            <div class="col-type"><span class="card-tag">[ {article.type} ]</span><span class="row-arrow">↗</span></div>
+          </a>
+        ))}
+
+        <div id="no-results" style="display: none; padding: 40px 0; color: #94a3b8; font-family: var(--dev-mono); font-size: 11px;">
+          {lang === 'en' ? 'No articles match the selected filters.' : 'No hay artículos que coincidan con los filtros seleccionados.'}
+        </div>
+      </div>
+    </div>
+
+
+</DevBlogLayout>
+
+<script>
+  import gsap from 'gsap';
+
+  // Entry sequence
+  const tl = gsap.timeline();
+  
+  tl.from(".dev-title", {
+    y: 30,
+    opacity: 0,
+    duration: 0.8,
+    ease: "power3.out"
+  }, "-=0.6")
+  .from(".dev-lead", {
+    y: 20,
+    opacity: 0,
+    duration: 0.8,
+    ease: "power3.out"
+  }, "-=0.6")
+  .from(".featured-col", {
+    y: 40,
+    opacity: 0,
+    duration: 0.8,
+    stagger: 0.2,
+    ease: "power3.out"
+  }, "-=0.4")
+  .from(".marquee-wrapper", {
+    opacity: 0,
+    duration: 1,
+    ease: "none"
+  }, "-=0.4")
+  .from(".articles-sidebar", {
+    x: -30,
+    opacity: 0,
+    duration: 0.8,
+    ease: "power3.out"
+  }, "-=0.6")
+  .from(".articles-content", {
+    y: 30,
+    opacity: 0,
+    duration: 0.8,
+    ease: "power3.out"
+  }, "-=0.6");
+
+
+
+  // Interactive Hover Effects & Accordions
+  const groups = document.querySelectorAll('.sidebar-group');
+  groups.forEach(group => {
+    const title = group.querySelector('.sidebar-title');
+    const list = group.querySelector('.sidebar-list');
+    const iconOpen = group.querySelector('.icon-open');
+    const iconClosed = group.querySelector('.icon-closed');
+    
+    title.addEventListener('click', () => {
+      const isClosed = list.style.display === 'none';
+      if (isClosed) {
+        list.style.display = 'flex';
+        iconOpen.style.display = 'block';
+        iconClosed.style.display = 'none';
+      } else {
+        list.style.display = 'none';
+        iconOpen.style.display = 'none';
+        iconClosed.style.display = 'block';
+      }
+    });
+  });
+
+  const filterItems = document.querySelectorAll('.filter-item');
+  const articleRows = document.querySelectorAll('.article-row');
+  const noResults = document.getElementById('no-results');
+
+  function updateFilters() {
+    const activeTypes = Array.from(document.querySelectorAll('.filter-type.active-filter')).map(el => el.dataset.value);
+    const activeTopics = Array.from(document.querySelectorAll('.filter-topic.active-filter')).map(el => el.dataset.value);
+
+    let visibleCount = 0;
+    
+    articleRows.forEach(row => {
+      const type = row.dataset.type;
+      const topic = row.dataset.topic;
+      
+      const matchType = activeTypes.length === 0 || activeTypes.includes(type);
+      const matchTopic = activeTopics.length === 0 || activeTopics.includes(topic);
+      
+      if (matchType && matchTopic) {
+        row.style.display = 'grid'; // because it's a CSS grid layout
+        visibleCount++;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    if (noResults) {
+       noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+    }
+  }
+
+  filterItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const empty = item.querySelector('.checkbox-empty');
+      const filled = item.querySelector('.checkbox-filled');
+      
+      const isChecked = empty.style.display === 'none';
+      if (isChecked) {
+        empty.style.display = 'block';
+        filled.style.display = 'none';
+        item.classList.remove('active-filter');
+      } else {
+        empty.style.display = 'none';
+        filled.style.display = 'block';
+        item.classList.add('active-filter');
+      }
+      updateFilters();
+    });
+  });
+
+  const clearBtn = document.getElementById('clear-filters-btn');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      filterItems.forEach(item => {
+        item.querySelector('.checkbox-empty').style.display = 'block';
+        item.querySelector('.checkbox-filled').style.display = 'none';
+        item.classList.remove('active-filter');
+      });
+      updateFilters();
+    });
+  }
+
+  const cards = document.querySelectorAll('.featured-card');
+  cards.forEach(card => {
+    const figContent = card.querySelector('.fig-content');
+    
+    card.addEventListener('mouseenter', () => {
+      gsap.to(card, { y: -4, duration: 0.4, ease: "power3.out" });
+      if (figContent) {
+        gsap.to(figContent, { 
+          backgroundSize: "18px 18px", 
+          duration: 0.6, 
+          ease: "power2.out" 
+        });
+      }
+    });
+    
+    card.addEventListener('mouseleave', () => {
+      gsap.to(card, { y: 0, duration: 0.4, ease: "power3.out" });
+      if (figContent) {
+        gsap.to(figContent, { 
+          backgroundSize: "16px 16px", 
+          duration: 0.6, 
+          ease: "power2.out" 
+        });
+      }
+    });
+  });
+</script>
+
+<style>
+  /* Hero Styles */
+  .dev-hero {
+    margin-bottom: 80px;
+    padding-top: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dev-title {
+    font-size: clamp(3rem, 7vw, 6rem);
+    font-weight: 400;
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+    margin: 0 0 24px 0;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .dev-lead {
+    font-size: clamp(1rem, 1.6vw, 1.15rem);
+    color: #94a3b8;
+    max-width: 500px;
+    line-height: 1.7;
+    margin: 0;
+    font-weight: 300;
+  }
+
+  /* Feed & Featured Layout */
+  .dev-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 64px;
+    margin-bottom: 40px;
+  }
+
+  .featured-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+  }
+
+  .featured-col {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* Vertical divider between columns */
+  .featured-col:first-child::after {
+    content: '';
+    position: absolute;
+    right: -20px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(255,255,255,0.05);
+  }
+
+  .section-label {
+    font-family: var(--dev-mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--dev-text-muted);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+  }
+  .section-label::before {
+    content: '';
+    display: inline-block;
+    width: 4px; height: 4px;
+    background: var(--dev-accent);
+    margin-right: 8px;
+  }
+
+  .featured-card {
+    display: flex;
+    gap: 24px;
+    align-items: stretch;
+    cursor: pointer;
+  }
+
+  .card-fig {
+    flex: 1.2;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: #020617;
+    display: flex;
+    flex-direction: column;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .fig-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.03);
+    color: #e2e8f0;
+    font-family: var(--dev-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .fig-icon { opacity: 0.5; }
+
+  .fig-content {
+    flex: 1;
+    min-height: 200px;
+    background-color: #020617;
+    background-image: radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px);
+    background-size: 16px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Abstract wireframes for fig-content */
+  .wireframe-shape {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 1px solid rgba(255,255,255,0.4);
+  }
+  .shape-1 {
+    width: 140px; height: 140px;
+    border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+    animation: morph 8s ease-in-out infinite;
+  }
+  .shape-1::before {
+    content: ''; position: absolute; inset: -20px; border: 1px solid rgba(255,255,255,0.2); border-radius: inherit; animation: morph 12s ease-in-out infinite reverse;
+  }
+  
+  .shape-2 {
+    width: 100px; height: 100px;
+    border-radius: 2px;
+    animation: spinRotate 10s linear infinite;
+  }
+  .shape-2::before {
+    content: ''; position: absolute; inset: -15px; border: 1px dashed rgba(255,255,255,0.3); border-radius: inherit; animation: spinRotate 15s linear infinite reverse;
+  }
+
+  @keyframes morph {
+    0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+    34% { border-radius: 70% 30% 50% 50% / 30% 30% 70% 70%; }
+    67% { border-radius: 100% 60% 60% 100% / 100% 100% 60% 60%; }
+  }
+  @keyframes spinRotate {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+
+  .card-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card-title {
+    font-size: 20px;
+    line-height: 1.25;
+    font-weight: 400;
+    color: white;
+    margin: 0 0 16px 0;
+    letter-spacing: -0.5px;
+  }
+
+  .arrow {
+    font-family: var(--dev-mono);
+    color: var(--dev-text-muted);
+    font-weight: 300;
+    margin-left: 4px;
+    display: inline-block;
+    transition: transform 0.2s;
+  }
+
+  .featured-card:hover .arrow {
+    transform: translate(2px, -2px);
+    color: white;
+  }
+
+  .card-desc {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--dev-text-muted);
+    margin: 0 0 24px 0;
+  }
+
+  .card-tag-wrapper {
+    margin-bottom: 24px;
+  }
+
+  .card-tag {
+    font-family: var(--dev-mono);
+    font-size: 9px;
+    color: #c084fc; 
+    border: 1px dashed rgba(192, 132, 252, 0.4);
+    padding: 3px 6px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+  }
+
+  .card-btn {
+    display: block;
+    text-align: center;
+    font-family: var(--dev-mono);
+    font-size: 11px;
+    color: var(--dev-accent);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 999px;
+    padding: 6px 0;
+    text-decoration: none;
+    transition: all 0.2s;
+    margin-top: auto;
+  }
+
+  .card-btn:hover {
+    background: rgba(16,185,129,0.1);
+    border-color: var(--dev-accent);
+    color: white;
+  }
+
+  /* Marquee Full Bleed */
+  .marquee-wrapper {
+    margin-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 32px;
+  }
+
+  .stats-marquee-container {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    padding-top: 24px;
+  }
+
+  .stats-marquee {
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    font-family: var(--dev-mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    display: flex;
+    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  }
+
+  .marquee-content {
+    display: flex;
+    animation: marquee 30s linear infinite;
+  }
+
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .stat-item {
+    display: flex;
+    align-items: center;
+    margin-right: 48px;
+    gap: 8px;
+  }
+
+  .stat-label {
+    color: var(--dev-accent);
+  }
+
+  .stat-val {
+    color: #c084fc;
+    border: 1px dashed rgba(192, 132, 252, 0.3);
+    padding: 2px 6px;
+    border-radius: 2px;
+  }
+
+  /* Articles Layout (Sidebar + Content) */
+  .articles-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 64px;
+    margin-top: 64px;
+    margin-bottom: 100px;
+    align-items: start;
+  }
+
+  /* Sidebar */
+  .articles-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 12px;
+  }
+
+  .clear-filters {
+    background: none;
+    border: none;
+    color: var(--dev-text-muted);
+    font-family: var(--dev-mono);
+    font-size: 10px;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .clear-filters:hover {
+    color: white;
+  }
+
+  .sidebar-group {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .sidebar-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 16px;
+    color: white;
+    font-weight: 300;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .sidebar-list {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-left: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .sidebar-list li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--dev-text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+
+  .sidebar-list li:hover {
+    color: white;
+  }
+  
+  .sidebar-list li.active-filter {
+    color: white;
+    font-weight: 400;
+  }
+
+  .sidebar-list li span {
+    margin-top: 2px;
+  }
+
+  /* Articles Table */
+  .articles-content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .articles-header {
+    margin-bottom: 32px;
+  }
+
+  .articles-title {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 300;
+    color: white;
+    margin: 0;
+    letter-spacing: -0.04em;
+  }
+
+  .articles-table {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .table-head {
+    display: grid;
+    grid-template-columns: 120px 1fr 100px;
+    gap: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    font-family: var(--dev-mono);
+    font-size: 10px;
+    color: var(--dev-text-muted);
+    letter-spacing: 1px;
+  }
+
+  .table-row {
+    display: grid;
+    grid-template-columns: 120px 1fr 100px;
+    gap: 24px;
+    padding: 24px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    text-decoration: none;
+    align-items: center;
+    transition: background 0.2s, padding-left 0.3s;
+  }
+
+  .table-row:hover {
+    background: rgba(255,255,255,0.02);
+    padding-left: 12px;
+  }
+
+  .table-row:hover .table-name {
+    color: white;
+  }
+
+  .table-row:hover .row-arrow {
+    transform: translate(2px, -2px);
+    opacity: 1;
+  }
+
+  .table-date {
+    font-family: var(--dev-mono);
+    font-size: 11px;
+    color: #94a3b8;
+  }
+
+  .table-name {
+    font-size: 18px;
+    color: #cbd5e1;
+    font-weight: 300;
+    transition: color 0.2s;
+  }
+
+  .col-type {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .row-arrow {
+    font-family: var(--dev-mono);
+    color: var(--dev-text-muted);
+    opacity: 0;
+    transition: all 0.2s;
+  }
+
+  @media (max-width: 1024px) {
+    .featured-grid {
+      grid-template-columns: 1fr;
+      gap: 64px;
+    }
+    .featured-col:first-child::after {
+      display: none;
+    }
+    .featured-card {
+      flex-direction: column;
+    }
+    .card-fig {
+      min-height: 240px;
+    }
+    .articles-layout {
+      grid-template-columns: 1fr;
+      gap: 48px;
+    }
+    .table-head, .table-row {
+      grid-template-columns: 90px 1fr 80px;
+      gap: 16px;
+    }
+    .table-name {
+      font-size: 15px;
+    }
+  }
+</style>

@@ -190,15 +190,42 @@ function WavePlane() {
 }
 
 export default function QuantizedWaveBg() {
+  const wrapRef = useRef(null)
+  const [onScreen, setOnScreen] = useState(true)
+  const [reduced] = useState(
+    () => typeof window !== 'undefined'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  )
+
+  useEffect(() => {
+    if (!wrapRef.current) return
+    const io = new IntersectionObserver(
+      ([entry]) => setOnScreen(entry.isIntersecting),
+      { rootMargin: '140px' },
+    )
+    io.observe(wrapRef.current)
+    return () => io.disconnect()
+  }, [])
+
+  if (reduced) return null
+
   return (
-    <Canvas
+    <div
+      ref={wrapRef}
+      aria-hidden="true"
       style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none' }}
-      orthographic
-      camera={{ position: [0, 0, 1], near: 0.1, far: 10 }}
-      gl={{ antialias: false, powerPreference: 'low-power', preserveDrawingBuffer: false }}
-      resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
     >
-      <WavePlane />
-    </Canvas>
+      <Canvas
+        style={{ position: 'absolute', inset: 0 }}
+        orthographic
+        dpr={1}
+        frameloop={onScreen ? 'always' : 'never'}
+        camera={{ position: [0, 0, 1], near: 0.1, far: 10 }}
+        gl={{ antialias: false, powerPreference: 'low-power', preserveDrawingBuffer: false }}
+        resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
+      >
+        <WavePlane />
+      </Canvas>
+    </div>
   )
 }

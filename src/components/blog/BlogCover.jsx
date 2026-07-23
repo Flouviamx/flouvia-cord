@@ -303,22 +303,7 @@ export default function BlogCover({ category = 'default', featured = false, titl
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }}
       />
 
-      {/* Category watermark — ghost icon, barely-there at subpixel opacity */}
-      {(ICONS[category] || ICONS['featured']) && (
-        <div style={{
-          position: 'absolute',
-          top: featured ? '1.4rem' : '0.9rem',
-          right: featured ? '1.6rem' : '0.9rem',
-          width: featured ? '140px' : '90px',
-          height: featured ? '140px' : '90px',
-          opacity: 0.09,
-          color: '#ffffff',
-          pointerEvents: 'none',
-          zIndex: 2,
-        }}>
-          {ICONS[category] || ICONS['featured']}
-        </div>
-      )}
+
 
       {/* Title overlay */}
       {title && (

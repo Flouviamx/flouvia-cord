@@ -24,7 +24,27 @@ const lang = getLangFromUrl(Astro.url);
 const isEn = Astro.props.isEn || lang === 'en';
 const currentFeature = Astro.props.feature || Astro.props.feature;
 const feature = isEn && currentFeature ? FEATURES_EN.find((f) => f.slug === currentFeature.slug) || currentFeature : currentFeature;
-const otros = (isEn ? FEATURES_EN : FEATURES).filter((f) => f.slug !== feature.slug);
+// Mapa de 3 features relacionados por feature — curados por contexto
+const RELATED: Record<string, string[]> = {
+    'editor':          ['link-publico', 'seguimiento', 'cfdi'],
+    'link-publico':    ['editor', 'seguimiento', 'negociacion'],
+    'seguimiento':     ['link-publico', 'editor', 'cobranza-ia'],
+    'cfdi':            ['editor', 'clientes-credito', 'finanzas'],
+    'clientes-credito':['cfdi', 'cobranza-ia', 'finanzas'],
+    'cobranza-ia':     ['clientes-credito', 'seguimiento', 'finanzas'],
+    'divisas':         ['internacional', 'editor', 'cfdi'],
+    'internacional':   ['divisas', 'editor', 'cfdi'],
+    'finanzas':        ['cobranza-ia', 'clientes-credito', 'presupuestos'],
+    'aprobaciones':    ['editor', 'equipo', 'negociacion'],
+    'equipo':          ['aprobaciones', 'editor', 'clientes-credito'],
+    'negociacion':     ['editor', 'link-publico', 'aprobaciones'],
+    'presupuestos':    ['finanzas', 'clientes-credito', 'cobranza-ia'],
+};
+const allFeatures = isEn ? FEATURES_EN : FEATURES;
+const relatedSlugs = RELATED[feature.slug] ?? [];
+const otros = relatedSlugs
+    .map((s) => allFeatures.find((f) => f.slug === s))
+    .filter(Boolean) as typeof allFeatures;
 const tituloPlano = feature.titulo.replace(/<br\s*\/?>/gi, ' ');
 
 // ── Datos estructurados (JSON-LD) — FAQPage: lo que extraen los AI Overviews.
@@ -582,7 +602,6 @@ const breadcrumbSchema = {
         <!-- ── CROSS-LINKS ── -->
         <section class="pp-more">
             <div class="pp-more-head">
-                <p class="pp-eyebrow reveal">MÁS DE CORD</p>
                 <h2 class="pp-h2 masked-title">{isEn ? 'Explore the rest of the product.' : 'Explora el resto del producto.'}</h2>
             </div>
             <div class="pp-more-list">

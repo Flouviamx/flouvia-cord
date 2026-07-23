@@ -27,7 +27,21 @@ const blogCollection = defineCollection({
   }),
 });
 
+const devBlogCollection = defineCollection({
+  loader: glob({ pattern: "**/*.md", base: "./src/content/dev-blog" }),
+  schema: z.object({
+    title: z.string(),
+    date: z.string(),
+    type: z.enum(['BLOG', 'DOCS', 'VIDEO', 'EVENT']),
+    topic: z.string(),
+    authors: z.array(z.string()).optional(),
+    readTime: z.string().optional(),
+    featured: z.boolean().optional(),
+  }),
+});
+
 export const collections = {
   'support': supportCollection,
   'blog': blogCollection,
+  'devBlog': devBlogCollection,
 };
