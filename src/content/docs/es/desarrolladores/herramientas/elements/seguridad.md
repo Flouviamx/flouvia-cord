@@ -1,0 +1,40 @@
+---
+title: "Seguridad CSP de Elements"
+description: "Configura la lista de dominios permitidos para evitar Clickjacking en Cord Elements."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Seguridad (CSP)</h1>
+  <p class="page-subtitle">Protege a tus clientes garantizando que tus cotizaciones solo se puedan abrir donde tú lo autorizas.</p>
+</header>
+
+## La Amenaza de Clickjacking
+
+Si cualquier página web en Internet pudiera simplemente crear un `<iframe>` apuntando a las cotizaciones privadas de tus clientes, un atacante podría construir una página falsa superpuesta (UI Redressing o Clickjacking) y engañar a un cliente para que haga clic en un botón de pago falso que en realidad hace clic en el botón de aceptar dentro de tu cotización invisible.
+
+Por ello, la seguridad de **Cord Elements es estricta desde el primer día.**
+
+## Frame Ancestors y la Allowlist
+
+Cord mitiga esta vulnerabilidad mediante encabezados HTTP nativos conocidos como Política de Seguridad de Contenido (CSP). Específicamente, usamos la directiva `frame-ancestors`.
+
+Para que el snippet de instalación de Elements funcione en tu sitio web corporativo, primero debes registrar tus orígenes en el panel de control.
+
+1. Dirígete a **Ajustes > Desarrolladores > Elements**.
+2. Busca la sección de **Dominios autorizados**.
+3. Añade los dominios separados por saltos de línea.
+
+### Ejemplos válidos
+
+El sistema de dominios permite orígenes estrictos o el uso de comodines (wildcards):
+- `tu-empresa.com` (Autoriza solo la raíz).
+- `*.tu-empresa.com` (Autoriza la raíz y cualquier subdominio, como `app.tu-empresa.com`).
+- `https://portal.tu-empresa.com` (Altamente específico).
+
+> **Atención:** Si la lista de dominios está **completamente vacía**, Cord operará en un "Modo Abierto", lo que significa que el iframe puede ser embebido en cualquier parte. Recomendamos este modo únicamente durante la etapa de pruebas locales (localhost) y exigir dominios antes de salir a producción.
+
+## Origin Validation en Eventos
+
+La seguridad no se detiene en prevenir quién puede ver el iframe. Cuando Cord Elements dispara eventos hacia afuera (como `cord:approved`), la comunicación podría ser interceptada por otra pestaña maliciosa.
+
+Cord utiliza el parámetro `parentOrigin` que envía tu frontend y lo cruza con tu Allowlist registrada en la base de datos de Cord. Si el origen solicitante está en la lista de dominios autorizados, el canal `window.postMessage` dirigirá la comunicación **únicamente a ese origen específico**. Si no, los eventos fallarán silenciosamente. Esto evita la exfiltración de datos sensibles.

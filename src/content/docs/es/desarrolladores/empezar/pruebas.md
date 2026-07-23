@@ -1,0 +1,37 @@
+---
+title: "Entornos de Prueba"
+description: "Aprende cómo aislar tu desarrollo usando el Sandbox de Cord."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Entornos de Prueba (Sandbox)</h1>
+  <p class="page-subtitle">Aísla tu desarrollo, experimenta sin miedo y limpia tus datos con un solo clic.</p>
+</header>
+
+## ¿Por qué usar Entornos de Prueba?
+
+Al integrar APIs financieras, es crítico probar la lógica de tu aplicación sin generar transacciones reales o enviar correos a clientes verdaderos. Cord resuelve esto otorgándote un **Entorno de Prueba (Sandbox)** completamente aislado.
+
+Los datos creados en el modo de prueba (cotizaciones, clientes, webhooks) jamás interactúan con tus datos en vivo.
+
+## Identificando el Modo de Prueba
+
+1. **En el Dashboard:** Cuando el Modo de Prueba está activo, verás un indicador visual naranja en la interfaz. Todas las acciones manuales que realices ocurrirán dentro del entorno aislado.
+2. **En la API:** Las claves de API secretas determinan automáticamente a qué entorno estás llamando. Una clave de prueba interactuará con el Sandbox, mientras que una clave en vivo tocará tus datos reales.
+
+> **Importante:** Jamás uses claves reales en tus flujos de pruebas unitarias o de integración.
+
+## Reinicio Rápido (Reset Sandbox)
+
+Durante el desarrollo de integraciones, a menudo generarás miles de registros basura. Cord cuenta con una herramienta radical para devolver tu entorno a un estado limpio: el Endpoint de Reset.
+
+### Vaciar datos del entorno de prueba
+
+Puedes invocar una limpieza destructiva (que borrará clientes, cotizaciones, productos y eventos en cascada del entorno de prueba) haciendo un POST al siguiente endpoint interno (requiere sesión activa en el navegador en Modo de Prueba):
+
+```bash
+POST /api/test-mode/reset
+```
+
+> **Advertencia:**
+> Este endpoint contiene protecciones de base de datos estrictas (`sandbox_of is not null`). Incluso si lo llamas por error en tu entorno en vivo, la base de datos abortará la transacción para proteger tus datos reales. Solo funciona dentro de entornos Sandbox.

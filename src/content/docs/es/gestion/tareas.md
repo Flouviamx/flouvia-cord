@@ -1,0 +1,35 @@
+---
+title: "Tareas y Seguimiento"
+description: "Crea tareas y recordatorios para asegurar el cierre de tus ventas."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Tareas y Seguimiento</h1>
+  <p class="page-subtitle">Las ventas no se cierran solas. Configura recordatorios con fecha para dar seguimiento puntual a cada prospecto.</p>
+</header>
+
+## No dejes enfriar a tus clientes
+
+El seguimiento oportuno es la diferencia entre una venta cerrada y una perdida. Cord incluye un sistema de **Tareas con fecha** integrado directamente en la vista de detalle de cada cotización.
+
+Aunque es una función pequeña, es increíblemente poderosa para asegurar que ningún trato se escape por falta de seguimiento.
+
+### Cómo crear una tarea paso a paso
+
+1. Ve a tu Dashboard y abre la cotización que deseas seguir (ya sea en estado Borrador, Enviada o Vista).
+2. En el panel lateral derecho, busca la sección **"Tareas y Seguimiento"**.
+3. Haz clic en **"+ Nueva Tarea"**.
+4. Se abrirá un pequeño formulario donde debes ingresar:
+   - **Descripción:** Por ejemplo, *"Llamar a Luis para preguntar si ya revisó la cotización"*.
+   - **Fecha límite (Due Date):** Selecciona el día exacto en el calendario.
+5. Haz clic en **Guardar**.
+
+### Recordatorios Automáticos
+
+Una vez que la tarea está agendada, Cord se encargará de recordártelo. 
+- En el sistema, la tarea se marcará con un indicador de color según su urgencia (verde si está a tiempo, rojo si está vencida).
+- Cuando llega la fecha de la tarea, recibirás una notificación en tu correo electrónico recordándote que debes hacer la llamada o enviar el mensaje.
+
+Una vez que completas el seguimiento, simplemente marca la casilla `[x]` junto a la tarea para darla por concluida.
+
+> **Consejo pro:** Te recomendamos crear una tarea de *"Llamada de seguimiento"* inmediatamente después de enviar el Enlace Mágico, agendándola para 48 horas después del envío.

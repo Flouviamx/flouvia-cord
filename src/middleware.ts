@@ -56,12 +56,45 @@ function allow(ip: string, scope: string, limit: number): boolean {
     return b.count <= limit;
 }
 
-const devBlogRewrite = async (context: any, next: any) => {
+const subdomainRewrite = async (context: any, next: any) => {
     const host = context.request.headers.get("host") || "";
     const path = context.url.pathname;
-    if (host.includes("dev.cordhq.app") && !path.startsWith("/dev-blog")) {
-        return context.rewrite(`/dev-blog${path === "/" ? "" : path}`);
+
+    if (host.includes("dev.cordhq.app")) {
+        // Si visitan explícitamente dev.cordhq.app/dev-blog/..., los redirigimos a dev.cordhq.app/...
+        if (path.startsWith("/dev-blog")) {
+            let cleanPath = path.replace(/^\/dev-blog/, "") || "/";
+            return context.redirect(cleanPath, 301);
+        }
+        
+        // Reescribimos internamente para que dev.cordhq.app sirva las páginas de /dev-blog
+        let newPath = `/dev-blog${path === "/" ? "" : path}`;
+        if (!newPath.endsWith("/")) newPath += "/";
+        return context.rewrite(newPath);
+    } else if (host.includes("docs.cordhq.app")) {
+        // Mismo patrón para docs.cordhq.app -> /docs
+        if (path.startsWith("/docs")) {
+            let cleanPath = path.replace(/^\/docs/, "") || "/";
+            return context.redirect(cleanPath, 301);
+        }
+        
+        let newPath = `/docs${path === "/" ? "" : path}`;
+        if (!newPath.endsWith("/")) newPath += "/";
+        return context.rewrite(newPath);
+    } else {
+        // En producción, prohibimos el acceso directo en el dominio principal y redirigimos a los subdominios correspondientes
+        if (import.meta.env.PROD) {
+            if (path.startsWith("/dev-blog")) {
+                let cleanPath = path.replace(/^\/dev-blog/, "") || "/";
+                return context.redirect(`https://dev.cordhq.app${cleanPath}`, 301);
+            }
+            if (path.startsWith("/docs")) {
+                let cleanPath = path.replace(/^\/docs/, "") || "/";
+                return context.redirect(`https://docs.cordhq.app${cleanPath}`, 301);
+            }
+        }
     }
+    
     return next();
 };
 
@@ -137,4 +170,4 @@ const mainHandler = clerkMiddleware((auth, context, next) => {
     return reqContext.run({ userId: userId ?? null, clerkOrgId: orgId ?? null, testMode, locale }, () => next());
 });
 
-export const onRequest = sequence(devBlogRewrite, mainHandler);
+export const onRequest = sequence(subdomainRewrite, mainHandler);

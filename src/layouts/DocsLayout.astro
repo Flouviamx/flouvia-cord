@@ -1,0 +1,1469 @@
+---
+import Layout from "./Layout.astro";
+
+export interface Props {
+  title: string;
+  lang?: "es" | "en";
+  description?: string;
+}
+
+const { title, lang = "es", description } = Astro.props;
+
+// Build breadcrumb from URL path
+const pathSegments = Astro.url.pathname.split('/').filter(Boolean);
+const breadcrumbItems = pathSegments.map((segment, index) => {
+  const path = '/' + pathSegments.slice(0, index + 1).join('/');
+  const label = segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');
+  return { name: label, url: `https://cordhq.app${path}` };
+});
+
+// JSON-LD structured data
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://cordhq.app/#organization",
+      "name": "Cord",
+      "url": "https://cordhq.app",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://cordhq.app/imgs/logo-cord-navy.png"
+      },
+      "sameAs": []
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://cordhq.app/#website",
+      "url": "https://cordhq.app",
+      "name": "Cord",
+      "publisher": { "@id": "https://cordhq.app/#organization" },
+      "inLanguage": lang === "es" ? "es-MX" : "en-US"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": breadcrumbItems.map((item, i) => ({
+        "@type": "ListItem",
+        "position": i + 1,
+        "name": item.name,
+        "item": item.url
+      }))
+    },
+    {
+      "@type": "WebPage",
+      "name": title,
+      ...(description ? { "description": description } : {}),
+      "url": `https://cordhq.app${Astro.url.pathname}`,
+      "inLanguage": lang === "es" ? "es-MX" : "en-US",
+      "isPartOf": { "@id": "https://cordhq.app/#website" },
+      "about": { "@id": "https://cordhq.app/#organization" },
+      "dateModified": new Date().toISOString().split('T')[0]
+    }
+  ]
+};
+---
+
+<Layout title={`${title} | Cord Docs`} description={description} ogType="article">
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  <div class="docs-layout">
+    
+    <!-- Header -->
+    <header class="docs-header">
+      <div class="header-top">
+        <div class="header-left">
+          <a href="/docs" class="logo">
+            <img src="/imgs/logo-cord-navy.png" alt="Cord" height="24" style="height: 24px; margin-right: 6px;" />
+            <span class="brand-docs">DOCS</span>
+          </a>
+        </div>
+        
+        <div class="header-center">
+          <div class="search-container">
+            <button class="search-input" id="search-trigger">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              <span>{lang === 'es' ? 'Buscar en la document...' : 'Search docs...'}</span>
+              <kbd>/</kbd>
+            </button>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="lang-toggle">
+            <a href="?lang=es" class={`lang-option ${lang === 'es' ? 'active' : ''}`}>ES</a>
+            <a href="?lang=en" class={`lang-option ${lang === 'en' ? 'active' : ''}`}>EN</a>
+          </div>
+        </div>
+      </div>
+
+      <nav class="header-bottom">
+        <ul class="nav-links">
+          <li class={!Astro.url.pathname.includes('/docs/pagos') && !Astro.url.pathname.includes('/docs/presupuestos') && !Astro.url.pathname.includes('/docs/desarrolladores') ? 'active' : ''}><a href={`/docs?lang=${lang}`}>{lang === 'es' ? 'Empezar' : 'Get Started'}</a></li>
+          <li class={Astro.url.pathname.includes('/docs/pagos') ? 'active' : ''}><a href={`/docs/pagos/resumen?lang=${lang}`}>{lang === 'es' ? 'Pagos' : 'Payments'}</a></li>
+          <li class={Astro.url.pathname.includes('/docs/presupuestos') ? 'active' : ''}><a href={`/docs/presupuestos/resumen?lang=${lang}`}>{lang === 'es' ? 'Presupuestos' : 'Budgets'}</a></li>
+          <li class={Astro.url.pathname.includes('/docs/desarrolladores') ? 'active' : ''}><a href={`/docs/desarrolladores/empezar/apikey?lang=${lang}`}>{lang === 'es' ? 'Desarrolladores' : 'Developers'}</a></li>
+        </ul>
+        <div class="nav-tools">
+          <div class="nav-dropdown-wrapper">
+            <button class="nav-dropdown">{lang === 'es' ? 'Ayuda' : 'Help'} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+            <div class="dropdown-menu">
+              <a href="/soporte">{lang === 'es' ? 'Centro de soporte' : 'Support Center'}</a>
+              <a href="/contacto/ventas">{lang === 'es' ? 'Contactar a ventas' : 'Contact Sales'}</a>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <div class="docs-body">
+      <!-- Sidebar -->
+      <aside class="docs-sidebar">
+        <nav class="sidebar-nav">
+          {Astro.url.pathname.includes('/docs/presupuestos') ? (
+            <>
+              <ul class="sidebar-menu">
+                <li class={Astro.url.pathname === '/docs/presupuestos/resumen' || Astro.url.pathname === '/docs/presupuestos/resumen/' ? 'active' : ''}><a href={`/docs/presupuestos/resumen?lang=${lang}`}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
+                <li class={Astro.url.pathname.includes('/docs/presupuestos/primera-cedula') ? 'active' : ''}><a href={`/docs/presupuestos/primera-cedula?lang=${lang}`}>{lang === 'es' ? 'Plantillas y plan completo' : 'Templates and full plan'}</a></li>
+              </ul>
+
+              <div class="sidebar-section">
+                <h4 class="sidebar-heading">{lang === 'es' ? 'PRESUPUESTA CON CORD' : 'BUDGET WITH CORD'}</h4>
+                <ul class="sidebar-menu">
+                  <li class="sidebar-dropdown open">
+                    <button class="sidebar-dropdown-toggle">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      {lang === 'es' ? 'Conceptos básicos' : 'Basics'}
+                    </button>
+                    <ul class="sidebar-submenu">
+                      <li class={Astro.url.pathname.includes('/docs/presupuestos/conceptos-basicos') ? 'active' : ''}><a href={`/docs/presupuestos/conceptos-basicos?lang=${lang}`}>{lang === 'es' ? 'Qué es una cédula' : 'What is a schedule'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/presupuestos/glosario') ? 'active' : ''}><a href={`/docs/presupuestos/glosario?lang=${lang}`}>{lang === 'es' ? 'Glosario contable' : 'Accounting glossary'}</a></li>
+                    </ul>
+                  </li>
+                  <li class="sidebar-dropdown open">
+                    <button class="sidebar-dropdown-toggle">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      {lang === 'es' ? 'Uso de la App' : 'App usage'}
+                    </button>
+                    <ul class="sidebar-submenu">
+                      <li class={Astro.url.pathname.includes('/docs/presupuestos/interfaz') ? 'active' : ''}><a href={`/docs/presupuestos/interfaz?lang=${lang}`}>{lang === 'es' ? 'La interfaz' : 'The interface'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/presupuestos/herramientas') ? 'active' : ''}><a href={`/docs/presupuestos/herramientas?lang=${lang}`}>{lang === 'es' ? 'Herramientas de análisis' : 'Analysis tools'}</a></li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+            </>
+          ) : Astro.url.pathname.includes('/docs/pagos') ? (
+            <>
+              <ul class="sidebar-menu">
+                <li class={Astro.url.pathname === '/docs/pagos/resumen' || Astro.url.pathname === '/docs/pagos/resumen/' ? 'active' : ''}><a href={`/docs/pagos/resumen?lang=${lang}`}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
+                <li class={Astro.url.pathname.includes('/docs/pagos/aceptar') ? 'active' : ''}><a href={`/docs/pagos/aceptar?lang=${lang}`}>{lang === 'es' ? 'Aceptar un pago' : 'Accept a payment'}</a></li>
+              </ul>
+
+              <div class="sidebar-section">
+                <h4 class="sidebar-heading">{lang === 'es' ? 'PAGOS EN COTIZACIONES' : 'PAYMENTS IN QUOTES'}</h4>
+                <ul class="sidebar-menu">
+                  <li class="sidebar-dropdown open">
+                    <button class="sidebar-dropdown-toggle">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      {lang === 'es' ? 'Configurar cobros' : 'Configure payments'}
+                    </button>
+                    <ul class="sidebar-submenu">
+                      <li class={Astro.url.pathname.includes('/docs/pagos/onboarding') ? 'active' : ''}><a href={`/docs/pagos/onboarding?lang=${lang}`}>{lang === 'es' ? 'Conectar cuenta (KYC)' : 'Connect account (KYC)'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/pagos/condiciones') ? 'active' : ''}><a href={`/docs/pagos/condiciones?lang=${lang}`}>{lang === 'es' ? 'Tarifas y ventajas' : 'Fees and advantages'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/pagos/metodos') ? 'active' : ''}><a href={`/docs/pagos/metodos?lang=${lang}`}>{lang === 'es' ? 'Métodos de cobro' : 'Payment methods'}</a></li>
+                    </ul>
+                  </li>
+                  <li class="sidebar-dropdown open">
+                    <button class="sidebar-dropdown-toggle">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      {lang === 'es' ? 'Modelos de cobro avanzado' : 'Advanced billing models'}
+                    </button>
+                    <ul class="sidebar-submenu">
+                      <li class={Astro.url.pathname.includes('/docs/pagos/anticipos') ? 'active' : ''}><a href={`/docs/pagos/anticipos?lang=${lang}`}>{lang === 'es' ? 'Anticipo y Saldo' : 'Upfront and Balance'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/pagos/igualas') ? 'active' : ''}><a href={`/docs/pagos/igualas?lang=${lang}`}>{lang === 'es' ? 'Igualas recurrentes' : 'Monthly retainers'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/pagos/credito') ? 'active' : ''}><a href={`/docs/pagos/credito?lang=${lang}`}>{lang === 'es' ? 'Términos de crédito (Net)' : 'Credit terms (Net)'}</a></li>
+                    </ul>
+                  </li>
+                  <li class="sidebar-dropdown open">
+                    <button class="sidebar-dropdown-toggle">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      {lang === 'es' ? 'Gestión de cobros' : 'Payment management'}
+                    </button>
+                    <ul class="sidebar-submenu">
+                      <li class={Astro.url.pathname.includes('/docs/pagos/dashboard') ? 'active' : ''}><a href={`/docs/pagos/dashboard?lang=${lang}`}>{lang === 'es' ? 'Dashboard de cobros' : 'Payments dashboard'}</a></li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+            </>
+          ) : Astro.url.pathname.includes('/docs/desarrolladores') ? (
+            <>
+              <ul class="sidebar-menu">
+                <li class={Astro.url.pathname === '/docs/desarrolladores/empezar/resumen' || Astro.url.pathname === '/docs/desarrolladores/empezar/resumen/' ? 'active' : ''}><a href={`/docs/desarrolladores/empezar/resumen?lang=${lang}`}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
+              </ul>
+
+              <div class="sidebar-section">
+                <h4 class="sidebar-heading">{lang === 'es' ? 'DESARROLLADORES' : 'DEVELOPERS'}</h4>
+                <ul class="sidebar-menu">
+                  <li class="sidebar-dropdown open">
+                    <button class="sidebar-dropdown-toggle">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      {lang === 'es' ? 'Empezar' : 'Get Started'}
+                    </button>
+                    <ul class="sidebar-submenu">
+                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/empezar/apikey') ? 'active' : ''}><a href={`/docs/desarrolladores/empezar/apikey?lang=${lang}`}>{lang === 'es' ? 'Crea tu API Key' : 'Create your API Key'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/empezar/pruebas') ? 'active' : ''}><a href={`/docs/desarrolladores/empezar/pruebas?lang=${lang}`}>{lang === 'es' ? 'Entornos de Prueba' : 'Test Environments'}</a></li>
+                    </ul>
+                  </li>
+                  <li class="sidebar-dropdown open">
+                    <button class="sidebar-dropdown-toggle">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      {lang === 'es' ? 'Herramientas' : 'Tools'}
+                    </button>
+                    <ul class="sidebar-submenu">
+                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/herramientas/webhooks') ? 'active' : ''}><a href={`/docs/desarrolladores/herramientas/webhooks?lang=${lang}`}>{lang === 'es' ? 'Webhooks' : 'Webhooks'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/herramientas/mcp') ? 'active' : ''}><a href={`/docs/desarrolladores/herramientas/mcp?lang=${lang}`}>{lang === 'es' ? 'Servidor MCP' : 'MCP Server'}</a></li>
+                    </ul>
+                  </li>
+                  <li class="sidebar-dropdown open">
+                    <button class="sidebar-dropdown-toggle">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      Cord Elements
+                    </button>
+                    <ul class="sidebar-submenu">
+                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/herramientas/elements/resumen') ? 'active' : ''}><a href={`/docs/desarrolladores/herramientas/elements/resumen?lang=${lang}`}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/herramientas/elements/react') ? 'active' : ''}><a href={`/docs/desarrolladores/herramientas/elements/react?lang=${lang}`}>React & Next.js</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/herramientas/elements/web-components') ? 'active' : ''}><a href={`/docs/desarrolladores/herramientas/elements/web-components?lang=${lang}`}>Web Components & Vue</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/herramientas/elements/server') ? 'active' : ''}><a href={`/docs/desarrolladores/herramientas/elements/server?lang=${lang}`}>Server SDK</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/herramientas/elements/apariencia') ? 'active' : ''}><a href={`/docs/desarrolladores/herramientas/elements/apariencia?lang=${lang}`}>{lang === 'es' ? 'Apariencia' : 'Appearance'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/herramientas/elements/eventos') ? 'active' : ''}><a href={`/docs/desarrolladores/herramientas/elements/eventos?lang=${lang}`}>{lang === 'es' ? 'Eventos' : 'Events'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/herramientas/elements/seguridad') ? 'active' : ''}><a href={`/docs/desarrolladores/herramientas/elements/seguridad?lang=${lang}`}>{lang === 'es' ? 'Seguridad CSP' : 'CSP Security'}</a></li>
+                    </ul>
+                  </li>
+                  <li class="sidebar-dropdown open">
+                    <button class="sidebar-dropdown-toggle">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      {lang === 'es' ? 'Esenciales' : 'Essentials'}
+                    </button>
+                    <ul class="sidebar-submenu">
+                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/esenciales/autenticacion') ? 'active' : ''}><a href={`/docs/desarrolladores/esenciales/autenticacion?lang=${lang}`}>{lang === 'es' ? 'Autenticación' : 'Authentication'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/esenciales/paginacion') ? 'active' : ''}><a href={`/docs/desarrolladores/esenciales/paginacion?lang=${lang}`}>{lang === 'es' ? 'Paginación' : 'Pagination'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/esenciales/errores') ? 'active' : ''}><a href={`/docs/desarrolladores/esenciales/errores?lang=${lang}`}>{lang === 'es' ? 'Manejo de Errores' : 'Error Handling'}</a></li>
+                    </ul>
+                  </li>
+                  <li class="sidebar-dropdown open">
+                    <button class="sidebar-dropdown-toggle">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      {lang === 'es' ? 'Funciones' : 'Features'}
+                    </button>
+                    <ul class="sidebar-submenu">
+                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/funciones/cotizaciones') ? 'active' : ''}><a href={`/docs/desarrolladores/funciones/cotizaciones?lang=${lang}`}>{lang === 'es' ? 'API de Cotizaciones' : 'Quotes API'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/funciones/clientes') ? 'active' : ''}><a href={`/docs/desarrolladores/funciones/clientes?lang=${lang}`}>{lang === 'es' ? 'API de Clientes' : 'Clients API'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/funciones/productos') ? 'active' : ''}><a href={`/docs/desarrolladores/funciones/productos?lang=${lang}`}>{lang === 'es' ? 'API de Productos' : 'Products API'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/funciones/cobranza') ? 'active' : ''}><a href={`/docs/desarrolladores/funciones/cobranza?lang=${lang}`}>{lang === 'es' ? 'API de Cobranza' : 'Collections API'}</a></li>
+                    </ul>
+                  </li>
+                  <li class="sidebar-dropdown open">
+                    <button class="sidebar-dropdown-toggle">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      {lang === 'es' ? 'Seguridad y Privacidad' : 'Security & Privacy'}
+                    </button>
+                    <ul class="sidebar-submenu">
+                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/seguridad/sso') ? 'active' : ''}><a href={`/docs/desarrolladores/seguridad/sso?lang=${lang}`}>{lang === 'es' ? 'SSO y SAML' : 'SSO & SAML'}</a></li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+            </>
+          ) : (
+            <>
+              <ul class="sidebar-menu">
+                <li class={Astro.url.pathname === '/docs' || Astro.url.pathname === '/docs/' ? 'active' : ''}><a href={`/docs?lang=${lang}`}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
+                <li class={Astro.url.pathname.includes('/docs/productos') ? 'active' : ''}><a href={`/docs/productos?lang=${lang}`}>{lang === 'es' ? 'Ver todos los productos' : 'See all products'}</a></li>
+              </ul>
+
+              <div class="sidebar-section">
+                <h4 class="sidebar-heading">{lang === 'es' ? 'EMPIEZA A DESARROLLARLA' : 'START BUILDING'}</h4>
+                <ul class="sidebar-menu">
+                  <li class="sidebar-dropdown open">
+                    <button class="sidebar-dropdown-toggle">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      {lang === 'es' ? 'Crea una cuenta' : 'Create an account'}
+                    </button>
+                    <ul class="sidebar-submenu">
+                      <li class={Astro.url.pathname === '/docs/cuenta/resumen' || Astro.url.pathname === '/docs/cuenta/resumen/' ? 'active' : ''}><a href={`/docs/cuenta/resumen?lang=${lang}`}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/cuenta/configuracion') ? 'active' : ''}><a href={`/docs/cuenta/configuracion?lang=${lang}`}>{lang === 'es' ? 'Configura tu cuenta' : 'Configure your account'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/cuenta/csd') ? 'active' : ''}><a href={`/docs/cuenta/csd?lang=${lang}`}>{lang === 'es' ? 'Agrega la información fiscal (CSD)' : 'Add tax information (CSD)'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/cuenta/catalogo') ? 'active' : ''}><a href={`/docs/cuenta/catalogo?lang=${lang}`}>{lang === 'es' ? 'Importa tu catálogo' : 'Import your catalog'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/cuenta/marca') ? 'active' : ''}><a href={`/docs/cuenta/marca?lang=${lang}`}>{lang === 'es' ? 'Personaliza tu marca' : 'Customize your branding'}</a></li>
+                    </ul>
+                  </li>
+                  <li class="sidebar-dropdown open">
+                    <button class="sidebar-dropdown-toggle">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      {lang === 'es' ? 'Crea una cotización' : 'Create a quote'}
+                    </button>
+                    <ul class="sidebar-submenu">
+                      <li class={Astro.url.pathname === '/docs/cotizacion/resumen' || Astro.url.pathname === '/docs/cotizacion/resumen/' ? 'active' : ''}><a href={`/docs/cotizacion/resumen?lang=${lang}`}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/cotizacion/ia') ? 'active' : ''}><a href={`/docs/cotizacion/ia?lang=${lang}`}>{lang === 'es' ? 'Generar con IA' : 'Generate with AI'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/cotizacion/cliente') ? 'active' : ''}><a href={`/docs/cotizacion/cliente?lang=${lang}`}>{lang === 'es' ? 'Datos del cliente' : 'Client data'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/cotizacion/productos') ? 'active' : ''}><a href={`/docs/cotizacion/productos?lang=${lang}`}>{lang === 'es' ? 'Productos y descuentos' : 'Products and discounts'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/cotizacion/opciones') ? 'active' : ''}><a href={`/docs/cotizacion/opciones?lang=${lang}`}>{lang === 'es' ? 'Opciones avanzadas' : 'Advanced options'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/cotizacion/envio') ? 'active' : ''}><a href={`/docs/cotizacion/envio?lang=${lang}`}>{lang === 'es' ? 'Vista previa y envío' : 'Preview and sending'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/cotizacion/timbrado') ? 'active' : ''}><a href={`/docs/cotizacion/timbrado?lang=${lang}`}>{lang === 'es' ? 'Aprobación y timbrado' : 'Approval and stamping'}</a></li>
+                    </ul>
+                  </li>
+                  <li class="sidebar-dropdown open">
+                    <button class="sidebar-dropdown-toggle">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      {lang === 'es' ? 'Interacción y cierre' : 'Interaction and closing'}
+                    </button>
+                    <ul class="sidebar-submenu">
+                      <li class={Astro.url.pathname === '/docs/interaccion/chat' || Astro.url.pathname === '/docs/interaccion/chat/' ? 'active' : ''}><a href={`/docs/interaccion/chat?lang=${lang}`}>{lang === 'es' ? 'Chat y negociación' : 'Chat and negotiation'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/interaccion/firma') ? 'active' : ''}><a href={`/docs/interaccion/firma?lang=${lang}`}>{lang === 'es' ? 'Firma y auditoría' : 'Signature and audit'}</a></li>
+                    </ul>
+                  </li>
+                  <li class="sidebar-dropdown open">
+                    <button class="sidebar-dropdown-toggle">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      {lang === 'es' ? 'Gestión de ventas' : 'Sales management'}
+                    </button>
+                    <ul class="sidebar-submenu">
+                      <li class={Astro.url.pathname === '/docs/gestion/dashboard' || Astro.url.pathname === '/docs/gestion/dashboard/' ? 'active' : ''}><a href={`/docs/gestion/dashboard?lang=${lang}`}>{lang === 'es' ? 'Dashboard y vistas' : 'Dashboard and views'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/gestion/cotizaciones') ? 'active' : ''}><a href={`/docs/gestion/cotizaciones?lang=${lang}`}>{lang === 'es' ? 'Gestión de cotizaciones' : 'Quote management'}</a></li>
+                      <li class={Astro.url.pathname.includes('/docs/gestion/tareas') ? 'active' : ''}><a href={`/docs/gestion/tareas?lang=${lang}`}>{lang === 'es' ? 'Tareas y seguimiento' : 'Tasks and follow-up'}</a></li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+            </>
+          )}
+        </nav>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="docs-main">
+        <div class="content-container">
+          <slot />
+          
+          <div class="docs-footer">
+            <div class="feedback-section">
+              <span class="feedback-title" id="feedback-question">{lang === 'es' ? '¿Te ha sido útil la página?' : 'Was this page helpful?'}</span>
+              <button class="feedback-btn" id="feedback-yes"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg> {lang === 'es' ? 'Sí' : 'Yes'}</button>
+              <button class="feedback-btn" id="feedback-no"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path></svg> {lang === 'es' ? 'No' : 'No'}</button>
+              <span class="feedback-thanks" id="feedback-thanks" style="display: none;">{lang === 'es' ? '¡Gracias por tus comentarios!' : 'Thanks for your feedback!'}</span>
+            </div>
+            
+            <hr class="footer-divider" />
+            
+            <ul class="footer-links">
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="4"></circle><line x1="21.17" y1="8" x2="12" y2="8"></line><line x1="3.95" y1="6.06" x2="8.54" y2="14"></line><line x1="10.88" y1="21.94" x2="15.46" y2="14"></line></svg>
+                {lang === 'es' ? '¿Necesitas ayuda? ' : 'Need help? '}
+                <a href="/soporte">{lang === 'es' ? 'Ponte en contacto con el equipo de soporte' : 'Contact support team'}</a>
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                {lang === 'es' ? 'Chatea con desarrolladores de Cord en ' : 'Chat with Cord developers on '}
+                <a href="/discord">Discord</a>
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                {lang === 'es' ? 'Echa un vistazo a nuestro ' : 'Check out our '}
+                <a href="/changelog">{lang === 'es' ? 'registro de cambios' : 'changelog'}</a>
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                {lang === 'es' ? '¿Tienes alguna pregunta? ' : 'Have questions? '}
+                <a href="/ventas">{lang === 'es' ? 'Ponte en contacto con el equipo de ventas' : 'Contact sales team'}</a>
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                {lang === 'es' ? '¿LLM? ' : 'LLM? '}
+                <a href="/llms.txt">{lang === 'es' ? 'Lee llms.txt' : 'Read llms.txt'}</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Search Modal -->
+  <div id="search-modal" class="search-modal hidden">
+    <div class="search-modal-backdrop" id="search-backdrop"></div>
+    <div class="search-modal-content">
+      <div class="search-modal-header">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="search-input-field" placeholder={lang === 'es' ? 'Buscar en la documentación...' : 'Search documentation...'} autocomplete="off" spellcheck="false" />
+        <button id="search-close" class="search-close-btn">ESC</button>
+      </div>
+      <div class="search-modal-body">
+        <div class="search-results-empty">
+          <p>{lang === 'es' ? 'Escribe algo para buscar en guías, referencias de API y más.' : 'Type to search guides, API references, and more.'}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  // Dropdown Logic
+  const dropdownToggles = document.querySelectorAll('.sidebar-dropdown-toggle');
+  dropdownToggles.forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      const parent = toggle.parentElement;
+      parent.classList.toggle('open');
+    });
+  });
+
+  // Search Modal Logic
+  const trigger = document.getElementById('search-trigger');
+  const modal = document.getElementById('search-modal');
+  const backdrop = document.getElementById('search-backdrop');
+  const closeBtn = document.getElementById('search-close');
+  const input = document.getElementById('search-input-field');
+
+  function openSearch() {
+    modal.classList.remove('hidden');
+    input.focus();
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSearch() {
+    modal.classList.add('hidden');
+    input.value = '';
+    document.body.style.overflow = '';
+  }
+
+  if (trigger) trigger.addEventListener('click', openSearch);
+  if (backdrop) backdrop.addEventListener('click', closeSearch);
+  if (closeBtn) closeBtn.addEventListener('click', closeSearch);
+
+  document.addEventListener('keydown', (e) => {
+    // Open with "/"
+    if (e.key === '/' && modal.classList.contains('hidden')) {
+      const activeTag = document.activeElement.tagName;
+      if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA') {
+        e.preventDefault();
+        openSearch();
+      }
+    }
+    // Close with "Escape"
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+      closeSearch();
+    }
+  });
+
+  // Feedback Logic
+  const btnYes = document.getElementById('feedback-yes');
+  const btnNo = document.getElementById('feedback-no');
+  const thanksMsg = document.getElementById('feedback-thanks');
+
+  function handleFeedbackClick(clickedBtn, otherBtn) {
+    if (!clickedBtn || !otherBtn || !thanksMsg) return;
+    
+    // Add active state to clicked button
+    clickedBtn.classList.add('active');
+    
+    // Disable both buttons
+    clickedBtn.classList.add('disabled');
+    otherBtn.classList.add('disabled');
+    
+    // Show thank you message
+    thanksMsg.style.display = 'inline-block';
+  }
+
+  if (btnYes) {
+    btnYes.addEventListener('click', () => handleFeedbackClick(btnYes, btnNo));
+  }
+  if (btnNo) {
+    btnNo.addEventListener('click', () => handleFeedbackClick(btnNo, btnYes));
+  }
+</script>
+
+<style is:global>
+  /* Base Layout Styles */
+  .docs-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f5f5f7; /* Apple gray */
+    font-family: var(--font-sans);
+    color: #050505; /* Pure black for text */
+  }
+
+  /* Header */
+  .docs-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(245, 245, 247, 0.85); /* Translucent */
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(0,0,0,0.05); /* Hairline border */
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    border-bottom: 1px solid rgba(0,0,0,0.03);
+  }
+
+  .header-left .logo {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #050505;
+  }
+
+  .brand-name {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .brand-docs {
+    font-size: 20px;
+    font-weight: 500;
+    color: #050505;
+    letter-spacing: -0.04em;
+    margin-left: 4px;
+  }
+
+  .header-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+  }
+
+  .search-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+  }
+
+  .search-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #ffffff; /* White input on gray bg */
+    border: 1px solid transparent; /* No border initially */
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    color: #697386;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    width: 280px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  }
+  .search-input:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    background: #ffffff;
+  }
+  .search-input kbd {
+    background: #f5f5f7;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #050505;
+    margin-left: auto;
+  }
+
+  /* Lang Toggle */
+  .header-right {
+    display: flex;
+    align-items: center;
+  }
+  .lang-toggle {
+    display: flex;
+    align-items: center;
+    background: #e3e3e8; /* Slightly darker gray for toggle bg */
+    border-radius: 999px;
+    padding: 3px;
+  }
+  .lang-option {
+    font-size: 12px;
+    font-weight: 600;
+    color: #697386;
+    text-decoration: none;
+    padding: 4px 12px;
+    border-radius: 999px;
+    transition: all 0.2s;
+  }
+  .lang-option:hover {
+    color: #050505;
+  }
+  .lang-option.active {
+    background: #ffffff;
+    color: #050505;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  /* Secondary Nav */
+  .header-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+  }
+  .nav-links {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 32px;
+  }
+  .nav-links li a {
+    display: block;
+    padding: 16px 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: #4f566b;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s;
+  }
+  .nav-links li a:hover {
+    color: #050505;
+  }
+  .nav-links li.active a {
+    color: #050505; /* Black active state */
+    border-bottom-color: #050505;
+  }
+
+  /* Dropdowns */
+  .nav-tools {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+  .nav-dropdown {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    color: #4f566b;
+    cursor: pointer;
+    padding: 8px 0;
+  }
+  .nav-dropdown:hover {
+    color: #050505;
+  }
+  .nav-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+  .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 16px;
+    box-shadow: 0 12px 32px -4px rgba(0,0,0,0.08), 0 4px 12px -4px rgba(0,0,0,0.04);
+    min-width: 180px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    z-index: 110;
+    overflow: hidden;
+    padding: 8px;
+  }
+  .nav-dropdown-wrapper:hover .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(4px);
+  }
+  .dropdown-menu a {
+    display: block;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #4f566b;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background 0.2s, color 0.2s;
+  }
+  .dropdown-menu a:hover {
+    background: rgba(0,0,0,0.03);
+    color: #050505;
+  }
+
+  /* Body Layout */
+  .docs-body {
+    display: flex;
+    flex: 1;
+    max-width: 1440px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* Sidebar */
+  .docs-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    padding: 32px 0 64px 0;
+    height: calc(100vh - 110px);
+    overflow-y: auto;
+    position: sticky;
+    top: 110px; /* Offset for the sticky header */
+    /* Soft border right */
+    border-right: 1px solid rgba(0,0,0,0.05);
+  }
+  .sidebar-menu {
+    list-style: none;
+    margin: 0;
+    padding: 0 16px; /* Space on sides */
+  }
+  .sidebar-menu li {
+    margin-bottom: 2px;
+  }
+  .sidebar-menu a {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #4f566b;
+    text-decoration: none;
+    border-radius: 8px; /* Rounded items instead of left border */
+    transition: all 0.2s;
+  }
+  .sidebar-menu a:hover {
+    color: #050505;
+    background: rgba(0,0,0,0.03);
+  }
+  .sidebar-menu li.active a {
+    color: #050505;
+    font-weight: 600;
+    background: rgba(0,0,0,0.05);
+  }
+  
+  /* Sidebar Dropdown */
+  .sidebar-dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #4f566b;
+    cursor: pointer;
+    text-align: left;
+    border-radius: 8px;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .sidebar-dropdown-toggle:hover {
+    color: #050505;
+    background: rgba(0,0,0,0.03);
+  }
+  .sidebar-dropdown-toggle .chevron {
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    stroke: #8792a2;
+    flex-shrink: 0;
+  }
+  .sidebar-dropdown.open .chevron {
+    transform: rotate(0deg);
+  }
+  .sidebar-dropdown:not(.open) .chevron {
+    transform: rotate(-90deg);
+  }
+  .sidebar-submenu {
+    list-style: none;
+    padding: 0 0 0 24px; /* Indent sub-items */
+    margin: 2px 0 6px 0;
+    display: none;
+    position: relative;
+  }
+  .sidebar-submenu::before {
+    content: '';
+    position: absolute;
+    left: 17px;
+    top: 4px;
+    bottom: 4px;
+    width: 1px;
+    background: rgba(0,0,0,0.06);
+  }
+  .sidebar-dropdown.open .sidebar-submenu {
+    display: block;
+  }
+  .sidebar-submenu li a {
+    font-size: 13.5px;
+    padding: 6px 12px;
+    color: #6b7280;
+  }
+  .sidebar-submenu li a:hover {
+    color: #050505;
+    background: rgba(0,0,0,0.02);
+  }
+  .sidebar-submenu li.active a {
+    color: #0071e3;
+    font-weight: 500;
+    background: rgba(0, 113, 227, 0.05); /* Soft blue background for active sub-item */
+  }
+
+  .sidebar-section {
+    margin-top: 32px;
+  }
+  .sidebar-heading {
+    font-size: 11px;
+    font-weight: 600;
+    color: #8792a2;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin: 0 0 12px 28px;
+  }
+
+  /* Main Content Area */
+  .docs-main {
+    flex: 1;
+    padding: 64px 48px 120px;
+    min-width: 0;
+  }
+  .content-container {
+    max-width: 1000px;
+  }
+
+  /* Content Typography & Elements (from resumen.md) */
+  .content-header {
+    margin-bottom: 64px;
+  }
+  .page-title {
+    font-size: 40px;
+    font-weight: 700;
+    color: #050505;
+    margin: 0 0 12px 0;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+  }
+  .page-subtitle {
+    font-size: 20px;
+    color: #4f566b;
+    margin: 0;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  /* Base Markdown Typography */
+  .content-container h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #050505;
+    margin: 48px 0 16px 0;
+    letter-spacing: -0.02em;
+  }
+  .content-container h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #050505;
+    margin: 32px 0 12px 0;
+  }
+  .content-container p {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #4f566b;
+    margin: 0 0 20px 0;
+  }
+  .content-container ul, .content-container ol {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #4f566b;
+    margin: 0 0 24px 0;
+    padding-left: 24px;
+  }
+  .content-container li {
+    margin-bottom: 8px;
+  }
+  .content-container li strong {
+    color: #050505;
+  }
+  .content-container blockquote {
+    margin: 32px 0;
+    padding: 16px 24px;
+    background: rgba(0, 113, 227, 0.05); /* Soft Apple Blue */
+    border-left: 4px solid #0071e3;
+    border-radius: 0 8px 8px 0;
+  }
+  .content-container blockquote p {
+    margin: 0;
+    color: #1a1f36;
+  }
+  .content-container strong {
+    color: #050505;
+    font-weight: 600;
+  }
+  .content-container p a,
+  .content-container li a {
+    color: #050505;
+    text-decoration: underline;
+    text-decoration-color: rgba(0,0,0,0.15);
+    text-underline-offset: 3px;
+    font-weight: 500;
+    transition: text-decoration-color 0.2s ease;
+  }
+  .content-container p a:hover,
+  .content-container li a:hover {
+    text-decoration-color: rgba(0,0,0,0.5);
+  }
+  .content-container code {
+    background-color: rgba(0, 0, 0, 0.04);
+    color: #050505;
+    padding: 3px 6px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .content-container pre {
+    background-color: #0a192f !important;
+    border-radius: 16px;
+    padding: 24px;
+    margin: 32px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(10, 25, 47, 0.1);
+    box-shadow: 0 12px 32px -12px rgba(10, 25, 47, 0.15);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .content-container pre code {
+    background-color: transparent !important;
+    padding: 0;
+    color: #d7e3f4; /* Fallback for plain text */
+    border-radius: 0;
+  }
+  
+  .docs-section {
+    margin-bottom: 80px;
+  }
+  .docs-section.border-top {
+    border-top: 1px solid rgba(0,0,0,0.05);
+    padding-top: 64px;
+  }
+  .inline-link {
+    color: #050505;
+    text-decoration: underline;
+    text-decoration-color: rgba(0,0,0,0.2);
+    text-underline-offset: 2px;
+    font-weight: 500;
+    transition: text-decoration-color 0.2s;
+  }
+  .inline-link:hover {
+    text-decoration-color: #050505;
+  }
+  .action-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #050505;
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 15px;
+    text-decoration: none;
+    margin-top: 8px;
+    padding: 12px 24px;
+    border-radius: 999px; /* Píldora */
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .action-link:hover {
+    transform: scale(0.98);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  }
+  .action-link-text {
+    display: inline-block;
+    color: #0071e3; /* Apple Blue */
+    font-size: 15px;
+    font-weight: 500;
+    text-decoration: none;
+    margin-top: 16px;
+    transition: opacity 0.2s;
+  }
+  .action-link-text:hover {
+    opacity: 0.8;
+  }
+
+  /* Mockup Visual */
+  .split {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 64px;
+    align-items: center;
+  }
+  .mockup-card {
+    background: #ffffff;
+    border-radius: 40px; /* Squircles massivos */
+    box-shadow: 0 24px 64px -12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.02);
+    display: flex;
+    overflow: hidden;
+    transform: scale(0.95);
+    transform-origin: center right;
+  }
+  .mockup-left {
+    flex: 1.5;
+    padding: 40px;
+    background: #ffffff;
+  }
+  .mockup-left h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 24px 0;
+    color: #050505;
+    letter-spacing: -0.02em;
+  }
+  .mockup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .mockup-form label {
+    font-size: 12px;
+    color: #4f566b;
+    font-weight: 500;
+    margin-bottom: -4px;
+  }
+  .input-field {
+    background: #f5f5f7; /* Apple gray bg */
+    border: none;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #c1c9d2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: box-shadow 0.2s;
+  }
+  .input-field:hover {
+    box-shadow: 0 0 0 2px rgba(10, 25, 47, 0.05);
+  }
+  .input-row {
+    display: flex;
+    gap: 12px;
+  }
+  .input-field.half { flex: 1; }
+  .input-field.full { width: 100%; }
+
+  .mockup-right {
+    flex: 1;
+    background: #fafafa;
+    padding: 40px 32px;
+    border-left: 1px solid rgba(0,0,0,0.03);
+  }
+  .mockup-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .mockup-steps li {
+    font-size: 13px;
+    font-weight: 500;
+    color: #8792a2;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .mockup-steps li.active {
+    color: #050505;
+    font-weight: 600;
+  }
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #e3e3e8;
+    color: #697386;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .mockup-steps li.active .step-num {
+    background: #050505;
+    color: #ffffff;
+  }
+
+  /* Use Cases Grid */
+  .use-cases-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .use-case-card {
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.04);
+    border-radius: 24px;
+    padding: 32px;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+  }
+  .use-case-card:hover {
+    box-shadow: 0 16px 40px -8px rgba(0,0,0,0.08);
+    transform: translateY(-4px);
+    border-color: rgba(0,0,0,0.08);
+  }
+  .use-case-card h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #0071e3; /* Blue titles like Stripe */
+    margin: 0 0 12px 0;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+  }
+  .use-case-card p {
+    font-size: 14px;
+    color: #4f566b;
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  /* Resources */
+  .resources-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .resource-card {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02), 0 0 0 1px rgba(0,0,0,0.04);
+  }
+  .video-card {
+    display: flex;
+    flex-direction: column;
+  }
+  .resource-tag {
+    font-size: 16px;
+    font-weight: 600;
+    color: #0071e3;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.01em;
+  }
+  .resource-desc {
+    font-size: 14px;
+    color: #4f566b;
+    margin: 0 0 32px 0;
+    line-height: 1.5;
+  }
+  .video-thumbnail {
+    margin-top: auto;
+    background: linear-gradient(135deg, #f5f5f7 0%, #e3e3e8 100%);
+    border-radius: 16px;
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: #050505;
+    font-weight: 600;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5);
+  }
+  
+  .links-card {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+  .resource-link {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .resource-link:hover {
+    transform: translateX(4px);
+  }
+  .resource-icon {
+    color: #0071e3;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .resource-link-content h4 {
+    margin: 0 0 6px 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #0071e3;
+  }
+  .resource-link-content p {
+    margin: 0;
+    font-size: 14px;
+    color: #4f566b;
+    line-height: 1.5;
+  }
+
+  /* Products Area */
+  .product-area {
+    margin-top: 48px;
+    border-top: 1px solid rgba(0,0,0,0.06);
+    padding-top: 40px;
+  }
+  .product-area-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #4f566b;
+    margin-bottom: 24px;
+  }
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px 24px;
+  }
+  .product-link {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .product-link:hover {
+    transform: translateY(-2px);
+  }
+  .product-link h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0071e3;
+    margin: 0 0 6px 0;
+  }
+  .product-link p {
+    font-size: 14px;
+    color: #4f566b;
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  /* Footer */
+  .docs-footer {
+    margin-top: 120px;
+  }
+  .feedback-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+  .feedback-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #050505;
+    letter-spacing: -0.01em;
+  }
+  .feedback-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4f566b;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .feedback-btn:hover:not(.disabled) {
+    color: #050505;
+    background: #f5f5f7;
+    border-color: rgba(0,0,0,0.15);
+  }
+  .feedback-btn.active {
+    background: #0071e3;
+    color: #ffffff;
+    border-color: #0071e3;
+  }
+  .feedback-btn.disabled {
+    opacity: 0.5;
+    cursor: default;
+    pointer-events: none;
+  }
+  .feedback-thanks {
+    font-size: 14px;
+    font-weight: 500;
+    color: #0071e3;
+    margin-left: 8px;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .footer-divider {
+    border: none;
+    border-top: 1px solid rgba(0,0,0,0.06);
+    margin: 0 0 40px 0;
+  }
+  .footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .footer-links li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: #4f566b;
+  }
+  .footer-links svg {
+    color: #8792a2;
+    flex-shrink: 0;
+  }
+  .footer-links a {
+    color: #0071e3;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .footer-links a:hover {
+    text-decoration: underline;
+  }
+
+  /* Search Modal Apple aesthetic */
+  .search-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 15vh;
+  }
+  .search-modal.hidden {
+    display: none;
+  }
+  .search-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(245, 245, 247, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .search-modal-content {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(40px);
+    border-radius: 24px;
+    box-shadow: 0 32px 80px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    margin: 0 24px;
+    transform: scale(1);
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .search-modal-header {
+    display: flex;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    color: #8792a2;
+  }
+  .search-modal-header input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 18px;
+    margin-left: 16px;
+    color: #050505;
+    background: transparent;
+    font-weight: 500;
+  }
+  .search-modal-header input::placeholder {
+    color: #a0aec0;
+  }
+  .search-close-btn {
+    background: #f5f5f7;
+    border: none;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #050505;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .search-close-btn:hover {
+    background: #e3e3e8;
+  }
+  .search-modal-body {
+    padding: 48px 24px;
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .search-results-empty {
+    text-align: center;
+    color: #8792a2;
+    font-size: 15px;
+  }
+
+  /* Responsive Adjustments */
+  @media (max-width: 1024px) {
+    .split {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+    .use-cases-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    .docs-sidebar {
+      width: 220px;
+    }
+    .mockup-card {
+      transform: scale(1);
+    }
+    .resources-split {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 768px) {
+    .docs-sidebar {
+      display: none;
+    }
+    .header-bottom {
+      overflow-x: auto;
+    }
+    .use-cases-grid {
+      grid-template-columns: 1fr;
+    }
+    .docs-main {
+      padding: 40px 24px 80px;
+    }
+    .mockup-card {
+      flex-direction: column;
+    }
+    .mockup-left, .mockup-right {
+      flex: none;
+    }
+    .product-grid {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+  }
+</style>

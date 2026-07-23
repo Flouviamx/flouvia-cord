@@ -1,0 +1,21 @@
+---
+title: "Account Overview"
+description: "Everything you need to know to set up your account and start selling."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Create an account: Overview</h1>
+  <p class="page-subtitle">Set up your workspace in minutes to issue quotes and stamp CFDI 4.0 invoices.</p>
+</header>
+
+## Your B2B environment, ready in 4 steps
+
+Cord is designed so any B2B company in Mexico can digitize their sales process in record time. To make the most of the platform, you need to configure four key elements:
+
+1. **[Configure your account](/docs/cuenta/configuracion?lang=en):** Enter your company's basic information and manage your team members.
+2. **[Add tax information (CSD)](/docs/cuenta/csd?lang=en):** Upload your Digital Seal Certificate (CSD) to stamp CFDI 4.0 invoices directly with the SAT.
+3. **[Import your catalog](/docs/cuenta/catalogo?lang=en):** Upload your products, SKUs, base prices, and applicable taxes (VAT, IEPS).
+4. **[Customize your branding](/docs/cuenta/marca?lang=en):** Add your logo and corporate colors so your public quote link looks highly professional.
+
+> **Tip:** Do you have multiple companies?
+> Cord is **multi-tenant**. You can manage several companies or legal entities from a single login. Each environment will have its own independent CSD, catalog, and visual configuration.

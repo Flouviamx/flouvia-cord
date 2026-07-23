@@ -1,0 +1,43 @@
+---
+title: "Resumen de creación de cotización"
+description: "Descubre el flujo completo para crear, enviar y timbrar cotizaciones B2B en Cord. 5 pasos desde la captura de datos del cliente hasta el CFDI 4.0."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Crea una cotización: Resumen</h1>
+  <p class="page-subtitle">El corazón de Cord. Aprende cómo transformar un proceso de ventas tedioso en una experiencia digital interactiva.</p>
+</header>
+
+Cord es un software de cotizaciones B2B que permite a equipos de ventas en Mexico crear, enviar y timbrar propuestas comerciales digitales con precios negociados, terminos de credito y facturacion CFDI 4.0 integrada. El proceso completo toma 5 pasos y se ejecuta en menos de 3 minutos, eliminando hojas de calculo y PDFs estaticos.
+
+*Ultima actualizacion: julio 2026*
+
+## El nuevo estandar B2B
+
+Historicamente, crear una cotizacion B2B implicaba hojas de calculo, exportaciones a PDF estaticos, envios por correo y cadenas infinitas de respuestas para negociar precios. Segun datos del equipo de Cord, el proceso manual promedio toma entre 25 y 45 minutos por cotizacion; con Cord, ese mismo flujo se completa en menos de 3 minutos.
+
+Cord reinventa este flujo combinando un **Cotizador Interno de Alta Velocidad** (para tu equipo de ventas) con un **Enlace Web Interactivo** (para tu cliente final), culminando en el **Timbrado Automatico CFDI 4.0**.
+
+### El Flujo de Trabajo en Cord
+
+Para crear y cerrar una cotizacion de forma exitosa, el proceso se divide en 5 etapas principales:
+
+1. **[Datos del cliente](/docs/cotizacion/cliente?lang=es):** Selecciona o crea el perfil fiscal y comercial de tu cliente.
+2. **[Productos y descuentos](/docs/cotizacion/productos?lang=es):** Arma la propuesta agregando SKUs, definiendo cantidades y aplicando descuentos estrategicos.
+3. **[Opciones avanzadas](/docs/cotizacion/opciones?lang=es):** Configura la vigencia, la moneda (MXN, USD) y las notas comerciales o legales.
+4. **[Vista previa y envio](/docs/cotizacion/envio?lang=es):** Revisa como se vera la cotizacion y compartela a traves de un Enlace Magico.
+5. **[Aprobacion y timbrado](/docs/cotizacion/timbrado?lang=es):** Cuando el cliente aprueba digitalmente, un solo clic convierte la cotizacion en una factura oficial ante el SAT.
+
+> **Nota:** Si tienes configuradas multiples razones sociales en tu cuenta, recuerda seleccionar la entidad emisora correcta antes de comenzar a cotizar.
+
+## Preguntas frecuentes
+
+**Cuanto tiempo toma crear una cotizacion en Cord?**
+Una cotizacion tipica se crea en menos de 3 minutos. Si utilizas [Cord AI](/docs/cotizacion/ia?lang=es), puedes generar un borrador completo en menos de 10 segundos a partir de un texto, PDF o imagen.
+
+**Cord funciona para negocios fuera de Mexico?**
+Cord soporta cotizaciones en MXN, USD y EUR con tipo de cambio bloqueado. El timbrado CFDI 4.0 es especifico para Mexico, pero las funciones de cotizacion, cobro y gestion de clientes son universales.
+
+**Necesito conocimientos tecnicos para usar Cord?**
+No. Cord esta disenado para equipos de ventas. No requiere integraciones tecnicas para empezar; simplemente crea tu cuenta, sube tu catalogo y envia tu primera cotizacion.
+

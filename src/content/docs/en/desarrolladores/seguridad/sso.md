@@ -1,0 +1,36 @@
+---
+title: "SSO and SAML"
+description: "Secure access to the Cord ecosystem using your corporate identity provider."
+---
+
+<header class="content-header">
+  <h1 class="page-title">SSO (Single Sign-On) Configuration</h1>
+  <p class="page-subtitle">Delegate Cord authentication to your enterprise identity provider (Okta, Google Workspace, Azure AD).</p>
+</header>
+
+## Enterprise Security
+
+As organizations grow, managing users and passwords individually becomes an unmanageable risk. Cord supports world-class integrations using **SSO (SAML)**.
+
+By enabling SSO in your Cord organization:
+- Your employees log in automatically if they are already authenticated in their corporate work portal.
+- Any strict **MFA (Multi-Factor Authentication)** policies you configure in your identity provider (Okta) are mandatorily enforced before Cord grants access.
+- When an employee leaves the company, the IT department only needs to disable their central corporate account, and they automatically lose access to Cord's sensitive financial data.
+
+## Prerequisites
+
+1. Your organization must be subscribed to a **Cord Enterprise Plan** (this feature is not available on introductory tiers).
+2. You must have the Administrator role in Cord (or explicit `ajustes` and `equipo` permissions).
+3. You must have Administrator privileges in your Identity Provider.
+
+## SAML Configuration Steps
+
+Configuration requires a two-way exchange between Cord and your Identity Provider.
+
+1. Navigate to **Settings > Security > SSO**.
+2. Copy the **ACS URL** (Assertion Consumer Service) and the **Entity ID** that Cord has generated for your organization.
+3. Enter this data when creating the new SAML application in Okta, Azure AD, or your provider of choice.
+4. Once the application is created in your provider, you will receive an IdP login URL and an **X.509 Certificate**.
+5. Paste the login URL and upload the X.509 certificate to the Cord configuration.
+
+> **Important:** Test the integration with a single user before forcing it on the entire team, otherwise you could lock out your entire staff if the configuration has mapping errors.

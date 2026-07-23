@@ -1,5 +1,6 @@
 ---
-title: "Modelos de cobro para agentes de IA autónomos"
+title: "Modelos de cobro para agentes de IA autonomos"
+description: "Como facturar por computo no determinista: metricas dimensionales de uso, presupuestos por tarea y modelos hibridos para agentes de IA empresariales."
 date: "2026.06.28"
 type: "EVENT"
 topic: "AI"

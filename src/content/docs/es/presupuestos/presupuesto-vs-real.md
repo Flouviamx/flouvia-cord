@@ -1,0 +1,40 @@
+---
+title: "Presupuesto vs. Real (BvA)"
+description: "Descubre cómo funciona la conexión en vivo entre tus cédulas de presupuesto y las transacciones históricas de ventas y cobros."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Presupuesto vs. Real</h1>
+  <p class="page-subtitle">El motor analítico que compara tus proyecciones contra la realidad de tu cuenta bancaria y transacciones cerradas.</p>
+</header>
+
+## La métrica definitiva (Budget vs. Actual)
+
+Proyectar el futuro (Presupuestar) no tiene valor si no mides la desviación contra la realidad. En los sistemas tradicionales, esto implica exportar tu hoja de cálculo, descargar tu estado de cuenta, y empatar filas a mano.
+
+Cord elimina este problema introduciendo la columna **Presupuesto vs. Real** directo en la cédula.
+
+### ¿Cómo funciona la conexión?
+
+Cualquier fila de tu presupuesto puede ser enlazada a una **Fuente Real** (`fuente_real`). Cord soporta la conexión directa a los módulos del CRM y Facturación:
+
+- **Ventas (Monto o Unidades):** Cord consulta todas las cotizaciones cuyo estatus sea `approved`, `paid`, o `invoiced`. 
+- **Cobranza (Monto):** Cord consulta el flujo de efectivo real (dinero en el banco).
+
+### Empate por Fecha (Anti-doble conteo)
+
+El motor matemático de Cord cruza los datos reales con las columnas (periodos) de tu cédula usando lógicas estrictas para garantizar exactitud:
+
+1. **Ventas:** El sistema agrupa los tratos cerrados usando la fecha `approved_at` o, en su defecto, la fecha de creación.
+2. **Cobranza:** El sistema agrupa los cobros procesados por Stripe (usando `paid_at`) más los pagos marcados manualmente, **excluyendo** ingresos duplicados para no inflar artificialmente el flujo de caja.
+3. **Parseo de periodo:** Tus periodos (ej. "Ene 2026") se leen automáticamente. El sistema asocia el flujo de Enero 2026 con la columna correspondiente. *Nota: Si nombras un periodo "Q1" sin especificar el año o los meses exactos, el sistema lo dejará en blanco para evitar falsas comparativas.*
+
+## Variaciones e Indicadores Visuales
+
+Una vez conectada una fila, debajo de tu número presupuestado (ej. `$50,000`), aparecerá el número real reportado por el sistema (ej. `$55,000`) acompañado de una píldora indicadora.
+
+- **Verde (Favorable):** El valor real superó o igualó al presupuesto.
+- **Rojo (Desfavorable):** El valor real quedó por debajo del presupuesto.
+
+> **Importante: Meses futuros**
+> Si tu presupuesto incluye periodos que aún no han pasado (ej. Noviembre, y estás en Agosto), Cord **ocultará** el valor real en lugar de mostrar "$0" y un "−100% rojo". Esto evita que las métricas globales se distorsionen por meses que simplemente aún no han ocurrido.

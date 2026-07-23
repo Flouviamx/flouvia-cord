@@ -18,12 +18,39 @@ if (!entry) {
 }
 
 const { Content } = await render(entry);
-const { title, date, type, topic, authors, readTime, featured } = entry.data;
+const { title, description, date, type, topic, authors, readTime, featured } = entry.data;
 
 const authorTags = authors ? authors.map(a => `<span class="dashed-tag">[ ${a} ]</span>`).join('\n          ') : '';
+
+// Convert date format from "2026.07.23" to ISO
+const isoDate = date ? date.replace(/\./g, '-') : undefined;
+const articleDescription = description || `${title} — articulo tecnico del equipo de ingenieria de Cord sobre ${topic.toLowerCase()}.`;
+
+// Article JSON-LD
+const articleJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": title,
+  "description": articleDescription,
+  "datePublished": isoDate,
+  "dateModified": isoDate,
+  "author": authors ? authors.map(a => ({ "@type": "Person", "name": a })) : [{ "@type": "Organization", "name": "Cord" }],
+  "publisher": {
+    "@type": "Organization",
+    "name": "Cord",
+    "logo": { "@type": "ImageObject", "url": "https://cordhq.app/imgs/logo-cord-navy.png" }
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": `https://cordhq.app/dev-blog/${slug}`
+  },
+  "inLanguage": lang === "es" ? "es-MX" : "en-US",
+  "image": "https://cordhq.app/og-cord.png"
+};
 ---
 
-<DevBlogLayout title={title}>
+<DevBlogLayout title={title} description={articleDescription} articleDate={isoDate} articleAuthors={authors}>
+  <script type="application/ld+json" set:html={JSON.stringify(articleJsonLd)} />
   
   <!-- Article Hero -->
   <header class="article-hero">

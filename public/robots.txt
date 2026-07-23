@@ -36,3 +36,7 @@ Disallow: /verify-email
 Disallow: /onboarding/
 
 Sitemap: https://cordhq.app/sitemap.xml
+
+# AI context file — see https://llmstxt.org
+# Provides structured product context for AI agents and LLMs
+LLMs: https://cordhq.app/llms.txt

@@ -5,6 +5,15 @@
 
 ---
 
+✅ **Documentación del SDK de NPM y rediseño visual "Apple" para docs (jul 2026)** — 
+   • Se actualizaron a fondo los docs de `Cord Elements` en la barra lateral de desarrolladores (`DocsLayout.astro`), promoviéndolo de una subsección a un botón principal/desplegable de alto nivel.
+   • Se crearon guías detalladas para el uso real del paquete NPM `@flouviahq/elements`:
+     - `react.md`: Uso del `<CordProvider>`, `<CordCotizador>`, `<CordBuilder>` y `useQuoteBuilder`.
+     - `web-components.md`: Uso del web component nativo `<cord-cotizador>` en Vanilla JS/PHP, el wrapper de Vue, y Code Components en Framer.
+     - `server.md`: Documentación de `@flouviahq/elements/server` para validación criptográfica de webhooks (`constructEvent`) contra ataques de repetición y llamadas directas a la API REST.
+   • Limpieza de tono: Se eliminaron todos los callouts genéricos de GitHub (`> [!TIP]`, `> [!WARNING]`) en favor de un formato más profesional con `> **Nota:**`.
+   • Rediseño visual "Quiet Luxury / Apple": Se rediseñaron los estilos markdown globales de `.content-container` en `DocsLayout.astro`. Los `<pre>` ahora tienen fondo azul oscuro profundo (`#0a192f`), esquinas muy redondeadas (`16px`), padding amplio (`24px`), y sombras sutiles; los enlaces (`<a>`) pasaron de azul vibrante a negro sobrio con subrayado sutil que se acentúa en hover; y el código inline (`<code>`) recibió un fondo gris suave al estilo de la documentación de desarrolladores de Apple.
+
 ✅ **Cord Elements v1.0.0 — rediseño mayor del SDK al nivel Stripe/Clerk (jul 2026)** —
    motivado por una integración real (cliente "El Zarco") que reveló que la mitad del
    contrato entre el SDK y la app no estaba conectado: 3 `@ts-ignore` por tipos

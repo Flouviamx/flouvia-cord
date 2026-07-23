@@ -31,6 +31,7 @@ const devBlogCollection = defineCollection({
   loader: glob({ pattern: "**/*.md", base: "./src/content/dev-blog" }),
   schema: z.object({
     title: z.string(),
+    description: z.string().optional(),
     date: z.string(),
     type: z.enum(['BLOG', 'DOCS', 'VIDEO', 'EVENT']),
     topic: z.string(),
@@ -40,8 +41,18 @@ const devBlogCollection = defineCollection({
   }),
 });
 
+const docsCollection = defineCollection({
+  loader: glob({ pattern: "**/*.md", base: "./src/content/docs" }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string().optional(),
+    order: z.number().optional(),
+  }),
+});
+
 export const collections = {
   'support': supportCollection,
   'blog': blogCollection,
   'devBlog': devBlogCollection,
+  'docs': docsCollection,
 };

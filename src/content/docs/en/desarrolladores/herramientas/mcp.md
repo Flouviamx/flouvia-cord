@@ -1,0 +1,35 @@
+---
+title: "Cord MCP Server"
+description: "Connect AI clients like Claude and Cursor to your company's financial system."
+---
+
+<header class="content-header">
+  <h1 class="page-title">MCP Server (Model Context Protocol)</h1>
+  <p class="page-subtitle">The open standard for providing financial tools to Agentic Artificial Intelligence.</p>
+</header>
+
+## What is MCP?
+
+The Model Context Protocol (MCP) is a universal standard that allows Artificial Intelligence assistants to connect to secure data sources. 
+
+By configuring the Cord MCP Server, you empower agents like Claude or IDE-integrated assistants (like Cursor) to organically interact with your company.
+
+**Questions you can ask the AI once connected:**
+- *"Extract the requirements from the attached PDF and generate a quote in Cord for this client."*
+- *"Review the overdue quotes from the last 30 days and draft friendly collection emails for me."*
+
+## How to Configure the Connection
+
+Authentication for your AI client is performed using your standard Cord **API Key**. 
+
+1. Navigate to **Settings > Developers > MCP** in the Cord interface.
+2. Generate an API Key if you don't have one.
+3. Copy the MCP client JSON configuration provided on the screen.
+4. Paste this configuration into the corresponding local path for your client (e.g., the `claude_desktop_config.json` file if you use the Claude for Desktop app).
+
+## Secure Tools
+
+Cord exposes "Tools" to the AI in a controlled manner. This means the AI does not have raw, unlimited access to your database; the AI can only invoke endpoints that Cord has approved and categorized, inheriting the permissions tied to the API Key.
+
+> **Important:**
+> Business rules are strictly applied. If the AI attempts to apply a 150% discount when building a quote, the API will reject the request by returning a `400 invalid_request` code to protect your business.

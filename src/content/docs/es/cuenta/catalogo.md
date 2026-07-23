@@ -1,0 +1,34 @@
+---
+title: "Importa tu catálogo"
+description: "Carga tus productos y servicios, SKUs, y precios base en Cord."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Importa tu catálogo</h1>
+  <p class="page-subtitle">Sube tus productos, SKUs y precios para poder crear cotizaciones B2B en segundos.</p>
+</header>
+
+## Administra tus SKUs fácilmente
+
+El corazón de una cotización B2B es la precisión de los productos. Cord te permite gestionar un catálogo centralizado donde tu equipo de ventas simplemente busca y selecciona, garantizando que el nombre, el SKU y la base fiscal siempre sean correctos.
+
+### 1. Creación Manual
+
+Si tienes un catálogo pequeño o vendes servicios, puedes agregar productos uno a uno desde **Catálogo > Nuevo Producto**.
+Se te pedirán los siguientes datos:
+- **Nombre del Producto / Servicio**
+- **SKU (Código Interno):** Identificador único.
+- **Precio Base (Antes de impuestos):** El precio de lista público.
+- **Costo Interno (Opcional):** Si capturas cuánto te cuesta a ti el producto, Cord te calculará e indicará el **Margen de Ganancia** en tiempo real al momento de armar la cotización. Tu cliente nunca verá este costo.
+- **Precios por Volumen:** En B2B es vital. Puedes configurar reglas automáticas, por ejemplo: *"De 1 a 10 piezas el precio es $100, de 11 a 50 piezas el precio baja a $85"*. Cord ajustará el precio automáticamente según la cantidad que el vendedor agregue a la cotización.
+- **Estado (Activo / Inactivo):** Si descontinúas un producto o te quedas sin stock de largo plazo, puedes marcarlo como *Inactivo* para que los vendedores ya no puedan agregarlo a nuevas cotizaciones, sin borrar su historial.
+- **Clave de Producto/Servicio y Unidad (SAT):** Obligatorio para el CFDI 4.0. Contamos con un buscador inteligente integrado.
+- **Impuestos aplicables:** Define si lleva IVA (16%, 8%, 0% o Exento) o IEPS.
+
+### 2. Importación Masiva (Próximamente)
+
+Para empresas B2B con cientos o miles de referencias, Cord pronto habilitará la importación masiva. 
+Podrás descargar nuestra **Plantilla CSV / Excel**, pegar la información extraída de tu ERP (como SAP, Oracle, o Microsip), y subirla a Cord para actualizar precios, claves del SAT y descripciones en un solo movimiento.
+
+> **Consejo:** ¿Tus precios cambian constantemente?
+> Con la **API Pública de Cord** (Desarrolladores), puedes sincronizar tu catálogo en tiempo real. Si actualizas un precio en tu ERP, un *webhook* o llamada de API puede actualizarlo automáticamente en Cord, asegurando que tus vendedores siempre coticen con la lista de precios vigente.

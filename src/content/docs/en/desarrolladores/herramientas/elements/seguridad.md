@@ -1,0 +1,40 @@
+---
+title: "Elements CSP Security"
+description: "Configure the allowed domains list to prevent Clickjacking in Cord Elements."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Security (CSP)</h1>
+  <p class="page-subtitle">Protect your clients by ensuring your quotes can only be opened where you authorize them.</p>
+</header>
+
+## The Clickjacking Threat
+
+If any webpage on the Internet could simply create an `<iframe>` pointing to your clients' private quotes, an attacker could build a fake overlaid page (UI Redressing or Clickjacking) and trick a client into clicking a fake payment button that actually clicks the accept button inside your invisible quote.
+
+Because of this, **Cord Elements' security is strict from day one.**
+
+## Frame Ancestors and the Allowlist
+
+Cord mitigates this vulnerability through native HTTP headers known as Content Security Policy (CSP). Specifically, we use the `frame-ancestors` directive.
+
+For the Elements installation snippet to work on your corporate website, you must first register your origins in the dashboard.
+
+1. Go to **Settings > Developers > Elements**.
+2. Look for the **Allowed Domains** section.
+3. Add the domains separated by line breaks.
+
+### Valid examples
+
+The domain system allows strict origins or the use of wildcards:
+- `your-company.com` (Authorizes only the root).
+- `*.your-company.com` (Authorizes the root and any subdomain, like `app.your-company.com`).
+- `https://portal.your-company.com` (Highly specific).
+
+> **Warning:** If the domains list is **completely empty**, Cord will operate in an "Open Mode", meaning the iframe can be embedded anywhere. We recommend this mode only during the local testing stage (localhost) and requiring domains before going to production.
+
+## Origin Validation in Events
+
+Security doesn't stop at preventing who can see the iframe. When Cord Elements fires events outward (like `cord:approved`), the communication could be intercepted by another malicious tab.
+
+Cord uses the `parentOrigin` parameter sent by your frontend and cross-references it with your registered Allowlist in Cord's database. If the requesting origin is on the authorized domains list, the `window.postMessage` channel will route the communication **only to that specific origin**. If not, the events will fail silently. This prevents sensitive data exfiltration.

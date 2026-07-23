@@ -290,3 +290,11 @@
    • Verificado: `npm run db:migrate` corrido contra Neon (3 tablas, RLS+FORCE confirmado
      contra `pg_class`/`pg_policies`), `npm run build` limpio, CSS del build inspeccionado
      directamente para confirmar que los resets/overrides quedaron compilados.
+
+### 22 jul 2026 - Documentación Core (Presupuestos y Herramientas)
+
+- **Reescritura del Módulo de Presupuestos:** Se reemplazó la narrativa incorrecta en los docs (`resumen`, `conceptos-basicos`, `primera-cedula`) para alinearla con la realidad del motor matemático (`src/lib/cedulas.ts`): planeación de presupuestos maestros por series de tiempo, la lógica de agregación en cascada `combo`, la función `offset` para desfases de flujo, y la magia de clonación `shiftYears`.
+- **Nuevos Documentos de Uso:**
+  - `interfaz.md`: Documenta la navegación (pestañas), la creación por plantillas visuales, la opción de duplicar (Mismos periodos vs. Recorrer año), y los límites del Freemium en presupuestos (1 en Gratis, 3 en Starter, Ilimitadas en Pro).
+  - `herramientas.md`: Desglosa a fondo el uso de `src/lib/analisis.ts` desde el frontend, explicando las 3 calculadoras de la pestaña Herramientas (VPN/TIR/Payback, Punto de inventario EOQ, y Presupuesto Flexible de Variaciones), incluyendo la funcionalidad de guardar escenarios.
+- **Glosario Avanzado:** Se actualizaron `glosario.md` (ES/EN) eliminando términos de ventas y añadiendo vocabulario financiero de alto nivel (VPN, TIR, Payback, EOQ/CEP, Variación Precio/Eficiencia).

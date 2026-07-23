@@ -19,14 +19,49 @@ to any B2B business in Mexico regardless of whether they use any other Flouvia p
 - CFDI 4.0 electronic invoicing for Mexico via Facturapi
 - Multi-currency quoting (MXN/USD/EUR) with FX rate locking
 - Team roles, approval thresholds, and audit logging for B2B sales orgs
+- AI-powered quote generation from text, PDF, or images (Cord AI)
+- Financial budgeting module with master schedules and NPV/IRR/EOQ analysis tools
 
 ## Documentation
 
-- [API reference](https://cordhq.app/desarrolladores/api): REST API for quotes, clients, products, collections
+- [Product docs](https://cordhq.app/docs): Complete user guide covering quotes, payments, budgets, integrations, and account setup
+- [API reference](https://cordhq.app/docs/desarrolladores/empezar/apikey): REST API for quotes, clients, products, collections
 - [OpenAPI spec](https://cordhq.app/openapi.yaml): machine-readable schema for the full API
-- [Integrations & webhooks](https://cordhq.app/desarrolladores/integraciones): outbound event notifications (quote.sent, quote.paid, etc.), HMAC-signed, plus Zapier/Make/n8n guidance
-- [MCP server](https://cordhq.app/desarrolladores/mcp): Model Context Protocol tools for AI agents to query quotes, clients, and receivables
-- [Cord Elements](https://cordhq.app/elements): embeddable quote builder (Web Component, React, Vue) — npm package `@flouviahq/elements`
+- [Webhooks](https://cordhq.app/docs/desarrolladores/herramientas/webhooks): outbound event notifications (quote.sent, quote.paid, etc.), HMAC-signed
+- [MCP server](https://cordhq.app/docs/desarrolladores/herramientas/mcp): Model Context Protocol tools for AI agents to query quotes, clients, and receivables
+- [Cord Elements](https://cordhq.app/docs/desarrolladores/herramientas/elements/resumen): embeddable quote builder (Web Component, React, Vue) — npm package `@flouviahq/elements`
+- [Authentication](https://cordhq.app/docs/desarrolladores/esenciales/autenticacion): API key auth, SSO, and SAML
+- [Error handling](https://cordhq.app/docs/desarrolladores/esenciales/errores): standard error codes and responses
+
+## Developer Blog
+
+Technical articles from the Cord engineering team:
+
+- [Billing models for autonomous AI agents](https://cordhq.app/dev-blog/ai-agent-billing): Dimensional usage metering for non-deterministic AI workloads
+- [API idempotency patterns](https://cordhq.app/dev-blog/api-idempotency): Safely retry financial API calls with idempotency keys
+- [Billing best practices](https://cordhq.app/dev-blog/billing-best-practices): Revenue recognition, proration, and subscription lifecycle
+- [Multi-tenant architecture with Neon](https://cordhq.app/dev-blog/building-multi-tenant-architecture): Row-Level Security and connection pooling at scale
+- [CLI schema validation](https://cordhq.app/dev-blog/cord-cli-schema-validation): Validate quote schemas before deployment
+- [Financial reconciliation with webhooks](https://cordhq.app/dev-blog/financial-reconciliation-webhooks): HMAC verification, idempotent processing, and out-of-order event handling
+
+## Key Documentation Pages
+
+### Payments
+- [Payments overview](https://cordhq.app/docs/pagos/resumen): SPEI + card payment infrastructure for B2B in Mexico
+- [Payment methods](https://cordhq.app/docs/pagos/metodos): Bank transfer (SPEI), credit/debit cards, credit terms
+- [Advance payments](https://cordhq.app/docs/pagos/anticipos): Deposit and balance payment splitting
+- [Recurring retainers](https://cordhq.app/docs/pagos/igualas): Monthly retainer billing for service businesses
+- [AI collections agent](https://cordhq.app/docs/pagos/cobranza-ia): Autonomous collection negotiation via email
+- [CFDI invoicing](https://cordhq.app/docs/pagos/facturacion): CFDI 4.0 electronic invoice stamping via Facturapi
+
+### Quoting
+- [Quotes overview](https://cordhq.app/docs/cotizacion/resumen): Create and send B2B quotes with negotiated pricing
+- [AI quote generation](https://cordhq.app/docs/cotizacion/ia): Generate quotes from text, PDF, or photos using AI
+- [E-signature and audit](https://cordhq.app/docs/interaccion/firma): Legally binding e-signatures with immutable audit trails
+
+### Financial Budgeting
+- [Budgets overview](https://cordhq.app/docs/presupuestos/resumen): Master budget schedules for financial planning
+- [Analysis tools](https://cordhq.app/docs/presupuestos/herramientas): NPV, IRR, EOQ, and variance analysis calculators
 
 ## Product
 

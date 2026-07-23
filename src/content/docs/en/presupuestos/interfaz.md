@@ -1,0 +1,45 @@
+---
+title: "The Interface"
+description: "Learn how to navigate the Budgets module: creation, modals, duplication, and your plan's limits."
+---
+
+<header class="content-header">
+  <h1 class="page-title">The Interface</h1>
+  <p class="page-subtitle">Learn how to navigate the Budgets module: creation, duplication, states, and your plan's limits.</p>
+</header>
+
+## Main Navigation
+
+The Budgets module in Cord is divided into two major ecosystems (you can switch between them using the top tabs):
+
+1. **Schedules (Cédulas):** Your main list of saved master budgets. This is where you plan your months.
+2. **Tools:** Quick financial analysis calculators (Project Evaluation, Inventory, and Variances) for decision-making. *(Available from the Professional Plan onwards)*.
+
+## Creating a Budget
+
+Clicking the **+ New budget** button will open a two-step modal designed so you never have to start with a blank canvas.
+
+**Step 1: Choose the type**  
+Cord will present you with a visual menu featuring the *Complete Financial Plan* (Our top recommendation) and the 7 individual templates (Sales, Production, Cash Flow, etc.).
+
+**Step 2: Define the horizon**  
+In the second step, you will name your schedule and choose the **periods to plan**. Cord includes quick buttons to pre-fill the fields with a *Quarter*, *6 months*, or the *Full year*.
+
+> **Pro Tip:**
+> Periods must be written in the format `Month Year` separated by commas (e.g. *Jan 2026, Feb 2026*). This is crucial so the system can automatically match your budget columns with your Stripe transactions and show you the **Budget vs. Actual** metric.
+
+## Duplicating schedules
+
+Want to model an optimistic vs. a pessimistic scenario? Or maybe the year is over and you need to budget for the next one? The **Duplicate** button (the copy icon to the right of each schedule) is your best friend.
+
+When clicked, Cord will give you two options:
+- **Same periods:** Creates an exact copy (e.g. Jan 2026 to Dec 2026). Useful for modeling a "Pessimistic Scenario" without breaking the original.
+- **Shift to next year (`shiftYears`):** Cord's magic trick. It will copy your entire structure of rows, formulas, and values, but it will magically shift all column headers to the next year (e.g. Jan 2026 becomes Jan 2027). This way, the new year starts fresh and ready to be compared against reality, without losing a single one of your business rules.
+
+## Your plan's limits (Freemium)
+
+Cord democratizes financial planning, but protects the intensive computational power for paying customers.
+
+- **Free Plan:** You are entitled to create and maintain **1 active Schedule**. Ideal for budgeting a specific project.
+- **Starter Plan:** The limit is expanded to **3 Schedules**.
+- **Professional Plan:** Unlocks **unlimited Schedules**, access to the **Complete Financial Plan** Wizard (the automatic waterfall), enables the live **Budget vs. Actual** connection, and gives you full access to the **Analysis Tools** tab.
