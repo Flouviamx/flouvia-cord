@@ -42,8 +42,15 @@ export default defineConfig({
     // mezclan CJS/ESM y rompen el SSR de Vite con "reading 'call'" si se dejan
     // como external. Forzar el bundle (noExternal) hace que Vite resuelva el
     // interop correctamente, tanto en dev como en el build de Vercel.
+    //
+    // gsap: los componentes del dev-blog (PixelDevs, PixelIcon, etc.) se montan
+    // con client:load, así que Astro los renderiza también en SSR e importa gsap
+    // en el servidor. gsap se publica como ESM puro (gsap/index.js usa `import`),
+    // y el bundle serverless de Vercel lo carga como CommonJS → "Cannot use import
+    // statement outside a module" (500 en dev-blog en prod; en dev de Vite no pasa
+    // porque maneja ESM nativo). noExternal fuerza a Vite a empaquetarlo bien.
     ssr: {
-      noExternal: ['@modelcontextprotocol/sdk'],
+      noExternal: ['@modelcontextprotocol/sdk', 'gsap'],
     },
   },
 });
