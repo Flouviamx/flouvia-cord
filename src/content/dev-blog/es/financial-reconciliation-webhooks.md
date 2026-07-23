@@ -7,9 +7,9 @@ authors:
   - "CORD ENG"
 readTime: "12 MIN WATCH"
 ---
-Cuando se mueve dinero, tu sistema necesita saberlo de manera instantánea y precisa. Consultar (polling) las APIs para conocer el estado de las transacciones es ineficiente y propenso a límites de tasa. El estándar de la industria para actualizaciones financieras en tiempo real son los webhooks.
+Cuando se mueve dinero, tu sistema necesita saberlo de manera instantánea y precisa. Consultar (polling) las APIs para conocer el estado de las transacciones es ineficiente y propenso a límites de tasa. El estándar de la industria para actualizaciones financieras en tiempo real es recibir webhooks de tu proveedor de pagos.
 
-Sin embargo, los webhooks en un contexto financiero requieren un nivel de rigor mucho mayor que un simple endpoint HTTP. En Cord, procesamos millones de webhooks diarios para mantener nuestros libros contables internos perfectamente sincronizados con nuestros socios bancarios.
+Sin embargo, manejar webhooks en un contexto financiero requiere un nivel de rigor mucho mayor que un simple endpoint HTTP. Procesar webhooks de forma segura asegura que tus libros contables internos se mantengan perfectamente sincronizados con plataformas como Cord.
 
 ## Los desafíos de los webhooks financieros
 
@@ -22,7 +22,7 @@ Los webhooks son esencialmente solicitudes HTTP de "disparar y olvidar". Esto in
 ## Diseñando un pipeline de webhooks robusto
 
 ### 1. Verificación de Firma Criptográfica
-Nunca confíes ciegamente en el contenido de un webhook. Siempre verifica la firma provista en las cabeceras utilizando el secreto compartido desde tu panel de control. En Node.js, esto implica calcular un HMAC SHA-256 del cuerpo crudo de la solicitud y compararlo con la firma proporcionada. Si no coinciden, devuelve instantáneamente un `401 Unauthorized`.
+Nunca confíes ciegamente en el contenido de un webhook. Siempre verifica la firma provista en las cabeceras utilizando el secreto compartido desde tu panel de Cord. En Node.js, esto implica calcular un HMAC SHA-256 del cuerpo crudo de la solicitud y compararlo con la firma proporcionada. Si no coinciden, devuelve instantáneamente un `401 Unauthorized`.
 
 ### 2. Acepta Rápido, Procesa Después
 Los proveedores de webhooks esperan una respuesta HTTP `2xx` en unos pocos segundos. Si tu base de datos está bloqueada o el procesamiento toma demasiado tiempo, el proveedor asumirá que el webhook falló y activará una tormenta de reintentos.
@@ -37,4 +37,4 @@ SET status = 'failed'
 WHERE id = 'tx_123' AND updated_at < 'payload.timestamp';
 ```
 
-Esto garantiza que un evento `payment_created` retrasado no sobrescribirá un estado `payment_failed` más nuevo en tu base de datos.
+Esto garantiza que un evento `payment_created` retrasado no sobrescribirá un estado `payment_failed` más nuevo en tu base de datos. Al aplicar estos patrones, puedes construir una integración de webhooks que sea tanto en tiempo real como financieramente sólida.

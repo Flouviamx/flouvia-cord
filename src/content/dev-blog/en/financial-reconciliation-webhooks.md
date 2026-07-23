@@ -7,9 +7,9 @@ authors:
   - "CORD ENG"
 readTime: "12 MIN WATCH"
 ---
-When money moves, your system needs to know about it instantly and accurately. Polling APIs for transaction statuses is inefficient and prone to rate limits. The industry standard for real-time financial updates is webhooks.
+When money moves, your system needs to know about it instantly and accurately. Polling APIs for transaction statuses is inefficient and prone to rate limits. The industry standard for real-time financial updates is receiving webhooks from your payment provider.
 
-However, webhooks in a financial context require a level of rigor far beyond a simple HTTP endpoint. At Cord, we process millions of webhooks daily to keep internal ledgers perfectly synced with our banking partners. 
+However, handling webhooks in a financial context requires a level of rigor far beyond a simple HTTP endpoint. Processing webhooks safely ensures that your internal ledgers stay perfectly synced with platforms like Cord.
 
 ## The challenges of financial webhooks
 
@@ -22,7 +22,7 @@ Webhooks are essentially "fire and forget" HTTP requests. This introduces severa
 ## Engineering a robust webhook pipeline
 
 ### 1. Cryptographic Signature Verification
-Never trust the payload of a webhook. Always verify the signature provided in the headers using the shared secret from your dashboard. In Node.js, this involves computing a SHA-256 HMAC of the raw request body and comparing it to the provided signature. If they don't match, instantly return a `401 Unauthorized`.
+Never trust the payload of a webhook blindly. Always verify the signature provided in the headers using the shared secret from your Cord dashboard. In Node.js, this involves computing a SHA-256 HMAC of the raw request body and comparing it to the provided signature. If they don't match, instantly return a `401 Unauthorized`.
 
 ### 2. Acknowledge Fast, Process Later
 Webhook providers expect a `2xx` HTTP response within a few seconds. If your database is locked or processing takes too long, the provider will assume the webhook failed and trigger a retry storm.
@@ -37,4 +37,4 @@ SET status = 'failed'
 WHERE id = 'tx_123' AND updated_at < 'payload.timestamp';
 ```
 
-This guarantees that a delayed `payment_created` event won't overwrite a newer `payment_failed` state in your database. By applying these patterns, you can build a reconciliation engine that is both real-time and financially sound.
+This guarantees that a delayed `payment_created` event won't overwrite a newer `payment_failed` state in your database. By applying these patterns, you can build a webhook integration that is both real-time and financially sound.

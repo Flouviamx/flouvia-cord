@@ -6,6 +6,13 @@
 
 ---
 
+✅ **Dev Blog: Restricción de dominio a dev.cordhq.app y nuevos artículos técnicos (jul 2026)** —
+   Para asegurar que el blog de desarrolladores mantenga su independencia visual y de ruteo, se confinó todo su tráfico exclusivamente al subdominio `dev.cordhq.app`.
+   • **Redirecciones en `vercel.json`:** Se añadieron reglas (`redirects`) para que cualquier acceso a `cordhq.app/dev-blog` redirija permanentemente a `https://dev.cordhq.app`. Además, se agregó una regla para que un acceso erróneo a `dev.cordhq.app/dev-blog` redirija a la raíz del subdominio (`/`).
+   • **Limpieza de rutas absolutas:** En `index.astro` y `blog.astro`, se eliminó el hardcodeo de `/dev-blog/${slug}` y se reemplazó por la variable de entorno `devBase`, igualando la lógica de navegación de `DevBlogLayout.astro`. Así, en producción los artículos se montan limpiamente sobre la raíz del subdominio sin generar duplicación de paths.
+   • **Expansión de contenido técnico:** Se redactaron artículos extensos y altamente técnicos sobre la arquitectura de Cord: *Financial Reconciliation with Webhooks* (EN), *API Idempotency & Conflict Resolution* (ES), *Facturación para Agentes de IA Autónomos* (ES) y *Building a Multi-Tenant B2B Architecture* (ES). Se enfatizaron implementaciones reales con código, diagramas, manejo de webhooks (Stripe/Clerk) y control de concurrencia usando Postgres y Redis.
+
+
 ✅ **Dev Blog: Migración a Astro Content Collections (jul 2026)** —
    Para escalar el blog de manera mantenible, se migró la arquitectura de blogs estáticos (`.astro`) a Content Collections de Astro 5.
    • **`content.config.ts` actualizado:** Se creó la colección `devBlog` usando `astro/loaders` (`glob` para capturar archivos `.md`) y validación Zod del frontmatter (`title`, `date`, `type`, `topic`, `authors`, `readTime`).

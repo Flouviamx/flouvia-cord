@@ -92,6 +92,16 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
                    orgs.embed_domains; postMessage resize + relay de eventos. Loader:
                    public/embed.js. export const prerender = false.
 
+# Dev Blog (Subdominio dev.cordhq.app)
+/dev-blog/*      → El ecosistema técnico para desarrolladores. Vercel.json gestiona un
+                   rewrite para que las visitas a `dev.cordhq.app` carguen esta ruta 
+                   invisiblemente, y redirects para que accesos a `cordhq.app/dev-blog`
+                   redirijan forzosamente a `dev.cordhq.app`. Los artículos viven en
+                   `src/content/dev-blog/` (Astro Content Collections) y las vistas en
+                   `src/pages/dev-blog/` (`index.astro`, `blog.astro`, `[slug].astro`).
+                   Usa el layout 100% independiente `DevBlogLayout.astro` con estética
+                   pixel/dark-mode.
+
 # App — CONECTADA a Neon (src/lib/queries.ts); usa AppLayout.astro
 /login /registro → Clerk SignIn/SignUp (es-MX)
 /app             → dashboard: KPIs (incl. "por dar seguimiento"), pipeline, recientes, feed

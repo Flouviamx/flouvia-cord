@@ -8,33 +8,33 @@ authors:
   - "CORD ENG"
 readTime: "8 MIN"
 ---
-A las 2 a.m. de un martes, suena el busca de un ingeniero de guardia. Un shard de base de datos, uno de los 2000 que procesaron colectivamente 1.9 billones de dólares en pagos en 2025, ha entrado en estado degradado. Dos nodos están caídos, y un tercero está bloqueando la construcción de un índice debido a un voto mal configurado.
+Al construir una aplicación SaaS, una de las primeras decisiones arquitectónicas que debes tomar es cómo manejar el multi-tenancy. Necesitas asegurarte de que los datos del Cliente A estén estrictamente aislados del Cliente B, mientras mantienes bajos los costos de infraestructura y la carga operativa.
 
-Este escenario se repitió cientos de veces al año en nuestra flota de bases de datos. La explosión combinatoria de los modos de fallo hizo imposible anticipar cada escenario con automatización estática y codificada manualmente. Necesitábamos un enfoque fundamentalmente diferente.
+La explosión combinatoria de modos de fallo en el sharding tradicional de bases de datos puede hacer imposible anticipar cada escenario con automatización estática y manual. Un enfoque moderno implica aprovechar Postgres Serverless y la separación lógica.
 
-## Por qué la automatización estática se rompe a escala
+## Por qué la fragmentación estática se rompe a escala
 
-Nuestro sistema original de auto-remediación operaba como una máquina de estados de un solo paso, codificada rígidamente. Un conjunto de plugins, cada uno responsable de un problema como 'arreglar votos', 'arreglar prioridad' o 'reconstruir nodo caído', se ejecutaba en una secuencia cuidadosamente ordenada basada en clasificaciones.
+Los sistemas tradicionales de auto-remediación a menudo operan como máquinas de estados de un solo paso, codificadas rígidamente. Si un shard falla, un conjunto de scripts se ejecuta en una secuencia cuidadosamente ordenada para arreglar votos, ajustar prioridades o reconstruir un nodo caído.
 
-Esto funcionaba bien para casos simples, como si un solo nodo se caía, o uno o dos votos mal configurados, pero tenía limitaciones fundamentales:
+Esto funciona bien para casos simples, pero tiene limitaciones fundamentales:
 
-- Las dependencias implícitas entre los plugins significaban que el ordenamiento era frágil. Los plugins de "arreglar votos" requerían que no hubiera nodos caídos, pero tenían mayor prioridad.
-- Los escenarios de múltiples fallos exponían puntos ciegos. Cuando múltiples nodos afectados se combinaban con particiones de red, la lógica estática entraba en un bucle infinito.
+- Las dependencias implícitas significan que el ordenamiento es frágil.
+- Los escenarios de múltiples fallos exponían puntos ciegos. Cuando múltiples nodos afectados se combinan con particiones de red, la lógica estática puede entrar en un bucle infinito.
 
 ## El salto a Postgres Serverless con Neon
 
-Para solucionar esto, migramos nuestra capa de enrutamiento principal a Postgres Serverless de Neon. En lugar de gestionar fragmentos físicos (shards) y lidiar con el reequilibrio manual, aprovechamos la separación de almacenamiento y cómputo de Neon.
+Para solucionar esto, los desarrolladores están migrando cada vez más sus capas de enrutamiento principales a soluciones de Postgres Serverless como Neon. En lugar de gestionar fragmentos físicos (shards) y lidiar con el reequilibrio manual, puedes aprovechar la separación de almacenamiento y cómputo.
 
-Esto nos permitió construir una verdadera arquitectura multi-tenant usando dos conceptos clave:
+Esto te permite construir una verdadera arquitectura multi-tenant usando dos conceptos clave:
 
 ### 1. Seguridad a Nivel de Fila (RLS) para el aislamiento de Inquilinos
-En lugar de aprovisionar una nueva base de datos para cada cliente (lo que escala mal y aumenta los costos de infraestructura), agrupamos a los inquilinos en bases de datos compartidas. Imponemos un estricto aislamiento de datos utilizando la Seguridad a Nivel de Fila de Postgres (RLS).
+En lugar de aprovisionar una nueva base de datos para cada cliente (lo que escala mal y aumenta los costos de infraestructura), agrupas a los inquilinos en bases de datos compartidas. Impones un estricto aislamiento de datos utilizando la Seguridad a Nivel de Fila de Postgres (RLS).
 
-Cada consulta ejecutada por nuestra API está envuelta en una transacción que establece una variable local para el `tenant_id`. Postgres automáticamente añade `WHERE tenant_id = current_setting('app.current_tenant')` a cada lectura y escritura. Incluso si hay un error en la lógica de nuestra aplicación, un inquilino no puede ver los datos de otro.
+Cada consulta ejecutada por tu API puede estar envuelta en una transacción que establece una variable local para el `tenant_id`. Postgres automáticamente añade `WHERE tenant_id = current_setting('app.current_tenant')` a cada lectura y escritura. Incluso si hay un error en la lógica de tu aplicación, un inquilino no puede ver los datos de otro.
 
 ### 2. Agrupación de conexiones en el Edge (Connection Pooling)
-Un gran desafío con Postgres es el agotamiento de las conexiones. Si 5,000 inquilinos se conectan simultáneamente, Postgres fallará. Solucionamos esto implementando PgBouncer en el borde, escalándolo en múltiples regiones y enrutando dinámicamente las consultas a los puntos finales de cómputo de Neon.
+Un gran desafío con Postgres es el agotamiento de las conexiones. Si 5,000 inquilinos se conectan simultáneamente, Postgres fallará. Puedes solucionar esto implementando PgBouncer en el borde, escalándolo en múltiples regiones y enrutando dinámicamente las consultas a los puntos finales de cómputo.
 
 ## El Resultado
 
-Al migrar a esta arquitectura, redujimos el volumen de alertas en nuestro buscapersonas en un 92%. Ya no nos despertamos de madrugada para arreglar shards rotos porque el cómputo escala instantáneamente según la carga, y el almacenamiento se gestiona de forma transparente por el proveedor de la nube. Ahora podemos incorporar a 10,000 nuevos inquilinos sin modificar una sola pieza de infraestructura.
+Al migrar a esta arquitectura, puedes reducir drásticamente la carga operativa. Ya no necesitas despertarte de madrugada para arreglar shards rotos porque el cómputo escala instantáneamente según la carga, y el almacenamiento se gestiona de forma transparente por el proveedor de la nube.

@@ -1,0 +1,43 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout title="Cord Docs - Documentación">
+  <main class="docs-hero">
+    <h1 class="masked-title">Cord Docs</h1>
+    <p class="docs-lead">Documentación técnica, guías de integración y referencias de la API.</p>
+    
+    <div class="docs-placeholder">
+      <p>Próximamente: Contenido de documentación.</p>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .docs-hero {
+    min-height: 100vh;
+    padding: 120px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: var(--color-bg);
+  }
+
+  .docs-lead {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    text-align: center;
+    max-width: 600px;
+    margin-bottom: 48px;
+    line-height: 1.6;
+  }
+
+  .docs-placeholder {
+    padding: 40px;
+    border: 1px dashed var(--color-border);
+    border-radius: 8px;
+    color: var(--color-text-muted);
+    font-family: var(--font-sans);
+    text-align: center;
+  }
+</style>

@@ -35,6 +35,30 @@
       "has": [{ "type": "host", "value": "dev.cordhq.app" }],
       "destination": "/:path*",
       "permanent": true
+    },
+    {
+      "source": "/docs",
+      "missing": [{ "type": "host", "value": "docs.cordhq.app" }],
+      "destination": "https://docs.cordhq.app",
+      "permanent": true
+    },
+    {
+      "source": "/docs/:path*",
+      "missing": [{ "type": "host", "value": "docs.cordhq.app" }],
+      "destination": "https://docs.cordhq.app/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/docs",
+      "has": [{ "type": "host", "value": "docs.cordhq.app" }],
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/docs/:path*",
+      "has": [{ "type": "host", "value": "docs.cordhq.app" }],
+      "destination": "/:path*",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -42,6 +66,11 @@
       "source": "/:match*",
       "has": [{ "type": "host", "value": "dev.cordhq.app" }],
       "destination": "/dev-blog/:match*"
+    },
+    {
+      "source": "/:match*",
+      "has": [{ "type": "host", "value": "docs.cordhq.app" }],
+      "destination": "/docs/:match*"
     }
   ]
 }

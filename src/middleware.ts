@@ -1,4 +1,5 @@
 import { clerkMiddleware } from "@clerk/astro/server";
+import { sequence } from "astro:middleware";
 import { reqContext } from "./lib/context";
 
 // APIs que DEBEN seguir públicas (las llaman terceros sin sesión Clerk):
@@ -55,9 +56,19 @@ function allow(ip: string, scope: string, limit: number): boolean {
     return b.count <= limit;
 }
 
-export const onRequest = clerkMiddleware((auth, context, next) => {
+const devBlogRewrite = async (context: any, next: any) => {
+    const host = context.request.headers.get("host") || "";
+    const path = context.url.pathname;
+    if (host.includes("dev.cordhq.app") && !path.startsWith("/dev-blog")) {
+        return context.rewrite(`/dev-blog${path === "/" ? "" : path}`);
+    }
+    return next();
+};
+
+const mainHandler = clerkMiddleware((auth, context, next) => {
     const { userId, orgId } = auth();
     const path = context.url.pathname;
+
     const ip =
         context.request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anon";
     const isWrite = ["POST", "PATCH", "PUT", "DELETE"].includes(context.request.method);
@@ -125,3 +136,5 @@ export const onRequest = clerkMiddleware((auth, context, next) => {
     // AsyncLocalStorage.
     return reqContext.run({ userId: userId ?? null, clerkOrgId: orgId ?? null, testMode, locale }, () => next());
 });
+
+export const onRequest = sequence(devBlogRewrite, mainHandler);

@@ -17,14 +17,14 @@ En 2024, muchas empresas intentaron poner precio a los agentes de IA "por acció
 
 ## Avanzando hacia la medición de uso dimensional
 
-En Cord, hemos observado que la industria está cambiando hacia la **medición de uso dimensional**. En lugar de facturar puramente por resultado o por procesamiento bruto, los sistemas de facturación de IA modernos rastrean múltiples dimensiones simultáneamente:
+Para construir un negocio sostenible de IA, la industria está cambiando hacia la **medición de uso dimensional**. En lugar de facturar puramente por resultado o por procesamiento bruto, los sistemas de facturación de IA modernos rastrean múltiples dimensiones simultáneamente:
 
 1. **Tokens de Inferencia:** Medidos en tiempo real mientras el agente "piensa".
 2. **Profundidad de la Ventana de Contexto:** Cobrando una prima por agentes que necesitan mantener un estado masivo.
 3. **Invocaciones de Herramientas Externas:** Cobrando tarifas planas cuando el agente necesita llamar a APIs de terceros.
 
-## Cómo la infraestructura de Cord soporta esto
+## Implementando esto con Cord
 
-Para soportar estos modelos de facturación complejos, rediseñamos nuestro pipeline de ingesta de medición. Cuando un agente se ejecuta en nuestra plataforma, emite un flujo de eventos de telemetría. Nuestro procesador de eventos basado en Rust agrega estas micro-transacciones en memoria y las envía a un libro mayor distribuido cada 5 segundos.
+Si estás construyendo una plataforma de IA, Cord te permite implementar fácilmente la medición dimensional. Al enviar un flujo de eventos de telemetría a la API de Cord, puedes agregar microtransacciones en memoria.
 
-Esto asegura que incluso si un agente se sale de control y consume $10,000 de cómputo en un minuto, nuestros disyuntores de facturación pueden pausar la ejecución casi en tiempo real, protegiéndonos tanto a nosotros como a nuestros clientes de un impacto de facturación indeseado.
+Puedes configurar disyuntores de facturación para pausar la ejecución casi en tiempo real si un cliente específico excede su límite, protegiendo tu infraestructura de agentes fuera de control y de impactos de facturación inesperados.
