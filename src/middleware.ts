@@ -56,45 +56,62 @@ function allow(ip: string, scope: string, limit: number): boolean {
     return b.count <= limit;
 }
 
+// ── Subdominios ───────────────────────────────────────────────────────────────
+//   dev.cordhq.app  → sirve el árbol /dev-blog en su raíz
+//   docs.cordhq.app → sirve el árbol /docs en su raíz
+//
+// ⚠️ ESTE es el ÚNICO lugar donde se rutean los subdominios. NO agregar rewrites/
+// redirects de subdominio en vercel.json: los `rewrites` de vercel.json corren DESPUÉS
+// del filesystem (pierden contra archivos estáticos) y, cuando sí disparan, chocan con
+// esta lógica y causan bucles 301 / 500. Un solo dueño = sin conflictos.
+//
+// ⚠️ Requiere que las páginas que sirven la RAÍZ de un subdominio NO sean prerender
+// (ver index.astro): las prerender se sirven estáticas y saltan el middleware. Las
+// páginas de /dev-blog y /docs ya son SSR. Los assets estáticos (/_astro, /imgs, /fonts)
+// se sirven directo por Vercel sin pasar por aquí, así que la reescritura no los toca.
+const SUBDOMAINS = [
+    { host: "dev.cordhq.app", prefix: "/dev-blog" },
+    { host: "docs.cordhq.app", prefix: "/docs" },
+];
+
 const subdomainRewrite = async (context: any, next: any) => {
-    const host = context.request.headers.get("host") || "";
+    const host = (context.request.headers.get("host") || "").toLowerCase();
     const path = context.url.pathname;
 
-    if (host.includes("dev.cordhq.app")) {
-        // Si visitan explícitamente dev.cordhq.app/dev-blog/..., los redirigimos a dev.cordhq.app/...
-        if (path.startsWith("/dev-blog")) {
-            let cleanPath = path.replace(/^\/dev-blog/, "") || "/";
-            return context.redirect(cleanPath, 301);
+    const sub = SUBDOMAINS.find((s) => host.includes(s.host));
+    if (sub) {
+        // Idempotente + a prueba de bucles: si el path YA vive bajo el prefijo (porque
+        // context.rewrite re-ejecuta el middleware, o porque los links internos ya lo
+        // incluyen — p.ej. DocsLayout usa /docs/*), se sirve tal cual. Nunca se
+        // re-reescribe (evita /dev-blog/dev-blog/... y ping-pong de redirecciones).
+        // También se dejan pasar los endpoints internos de Astro (/_image, /_server-islands,
+        // /_actions) y el 404 (el [slug] del dev-blog redirige a /404 en slug inexistente;
+        // sin esta salida se generaría un bucle /404 → /dev-blog/404 → /404).
+        if (
+            path === sub.prefix ||
+            path.startsWith(sub.prefix + "/") ||
+            path.startsWith("/_") ||
+            path === "/404"
+        ) {
+            return next();
         }
-        
-        // Reescribimos internamente para que dev.cordhq.app sirva las páginas de /dev-blog
-        let newPath = `/dev-blog${path === "/" ? "" : path}`;
-        if (!newPath.endsWith("/")) newPath += "/";
-        return context.rewrite(newPath);
-    } else if (host.includes("docs.cordhq.app")) {
-        // Mismo patrón para docs.cordhq.app -> /docs
-        if (path.startsWith("/docs")) {
-            let cleanPath = path.replace(/^\/docs/, "") || "/";
-            return context.redirect(cleanPath, 301);
-        }
-        
-        let newPath = `/docs${path === "/" ? "" : path}`;
-        if (!newPath.endsWith("/")) newPath += "/";
-        return context.rewrite(newPath);
-    } else {
-        // En producción, prohibimos el acceso directo en el dominio principal y redirigimos a los subdominios correspondientes
-        if (import.meta.env.PROD) {
-            if (path.startsWith("/dev-blog")) {
-                let cleanPath = path.replace(/^\/dev-blog/, "") || "/";
-                return context.redirect(`https://dev.cordhq.app${cleanPath}`, 301);
-            }
-            if (path.startsWith("/docs")) {
-                let cleanPath = path.replace(/^\/docs/, "") || "/";
-                return context.redirect(`https://docs.cordhq.app${cleanPath}`, 301);
+        // Reescritura INTERNA: la URL del navegador no cambia; solo se sirve el árbol
+        // del prefijo bajo el subdominio.
+        return context.rewrite(sub.prefix + (path === "/" ? "" : path));
+    }
+
+    // Dominio principal (cordhq.app): en prod, el contenido de los subdominios no debe
+    // vivir también en cordhq.app/dev-blog|/docs (evita contenido duplicado / SEO split).
+    // Estas rutas son SSR, así que este middleware sí corre para ellas.
+    if (import.meta.env.PROD) {
+        for (const s of SUBDOMAINS) {
+            if (path === s.prefix || path.startsWith(s.prefix + "/")) {
+                const clean = path.slice(s.prefix.length) || "/";
+                return context.redirect(`https://${s.host}${clean}`, 301);
             }
         }
     }
-    
+
     return next();
 };
 

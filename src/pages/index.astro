@@ -1,7 +1,10 @@
 ---
 // Landing de Cord — página de ventas completa.
-export const prerender = true;
-
+// NO es prerender a propósito: en modo `server`, las páginas prerender=true se sirven
+// como HTML estático desde el edge y SALTAN el middleware. La raíz "/" de los subdominios
+// (dev.cordhq.app / docs.cordhq.app) necesita pasar por SSR para que src/middleware.ts
+// pueda reescribirla al árbol /dev-blog o /docs. Si esto vuelve a ser prerender, los
+// subdominios volverán a mostrar la landing principal en su raíz.
 import Layout from '../layouts/Layout.astro';
 import Nav from '../components/landing/Nav.astro';
 import Hero from '../components/landing/Hero.astro';
