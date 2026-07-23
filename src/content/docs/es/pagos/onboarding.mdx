@@ -1,0 +1,45 @@
+---
+title: "Configurar cobros"
+description: "Aprende cómo conectar tu cuenta bancaria y pasar el proceso de verificación (KYC) para empezar a cobrar en línea."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Configurar cobros</h1>
+  <p class="page-subtitle">Conecta tu cuenta bancaria y pasa la verificación (KYC) nativa para empezar a cobrar en línea, sin redirecciones.</p>
+</header>
+
+## Arquitectura In-House
+
+A diferencia de las pasarelas de pago tradicionales que sacan a tus clientes a otra página o te obligan a usar paneles externos, Cord utiliza la arquitectura **Stripe Connect Custom**.
+
+Esto significa que cuentas con una sub-cuenta propia de procesamiento de pagos que está conectada a tu cuenta bancaria, pero **toda la experiencia vive 100% dentro de Cord**, con una estética profesional y bajo tu propia marca . 
+
+Cord no cobra ninguna comisión propia, tú solo asumes las tarifas estándar de procesamiento.
+
+### Pasos para conectar tu cuenta
+
+1. Dirígete a **Ajustes > Cobros** dentro de la app.
+2. Si tu estado es **"nuevo"**, verás una pantalla de bienvenida.
+3. Haz clic en el botón de **Empezar verificación**. 
+
+### Verificación de Identidad (KYC) con LiveCapture
+
+Por regulaciones financieras internacionales, es obligatorio verificar tu identidad y la legitimidad de tu negocio (KYC - Know Your Customer). 
+
+Cord utiliza un sistema nativo llamado **LiveCapture** que realiza esto en segundos y directamente desde tu navegador:
+
+- **Información Básica:** Ingresarás tu razón social (con la que facturas) y la CLABE interbancaria donde deseas recibir tus fondos automáticamente.
+- **Toma de Fotografía en Vivo:** El sistema solicitará permiso para acceder a tu cámara. Capturarás el frente y reverso de la identificación oficial (INE o Pasaporte) del representante legal, y finalmente tomarás una *selfie* para prueba de vida.
+- Todo ocurre sin subir archivos pesados ni abrir páginas de terceros.
+
+<Callout type="info">
+**Seguridad Criptográfica:** Cord no almacena ninguna de las fotografías o documentos sensibles en sus servidores. Las imágenes se transmiten de forma encriptada directamente a los servidores financieros nivel PCI-1 a través de canales seguros efímeros.
+</Callout>
+
+## Estados de tu cuenta
+
+Dependiendo de tu progreso en el onboarding, tu cuenta de cobros mostrará distintos estados en la interfaz:
+
+- **Nuevo:** Aún no has iniciado el proceso. Ningún método automático estará disponible.
+- **Pendiente:** Has iniciado el proceso pero el sistema financiero está evaluando tus imágenes o requieres re-capturar alguna foto borrosa. Las tarjetas y SPEI siguen bloqueados.
+- **Activo:** ¡Todo listo! Tu identidad y cuenta CLABE están confirmadas. Ya puedes cobrar y el dinero fluirá automáticamente.

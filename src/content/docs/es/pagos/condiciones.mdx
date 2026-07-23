@@ -1,0 +1,50 @@
+---
+title: "Tarifas y ventajas"
+description: "Conoce a detalle cuánto cuesta procesar pagos, las ventajas de la automatización y las consideraciones antes de activar Stripe."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Tarifas y ventajas</h1>
+  <p class="page-subtitle">Conoce a detalle cuánto cuesta procesar pagos, las ventajas de la automatización y las consideraciones antes de activar Stripe.</p>
+</header>
+
+## Comisiones y tarifas reales
+
+La regla de oro en Cord es simple: **Cord no cobra ninguna comisión por procesar tus pagos.** Todo el dinero fluye a través de una cuenta de **Stripe Connect Custom** que es de tu propiedad, lo que significa que el dinero aterriza directo en tu banco sin pasar por nosotros.
+
+Sin embargo, Stripe como pasarela de pagos sí cobra tarifas estándar de la industria por el uso de su infraestructura:
+
+### Tarifa por pago con Tarjeta (Crédito y Débito)
+- **Costo:** 3.6% + $3.00 MXN (más IVA) por transacción exitosa.
+- **Uso ideal:** Clientes internacionales, clientes que buscan meses sin intereses (si los habilitas) o pagos urgentes de montos menores.
+- *Nota: Stripe no devuelve las comisiones si tú decides hacer un reembolso al cliente.*
+
+### Tarifa por transferencia SPEI (Automática)
+- **Costo:** Stripe cobra una tarifa fija nominal (típicamente $8.00 MXN más IVA, dependiendo de tu volumen negociado) por cada SPEI procesado, sin importar si el cliente paga $100 pesos o $100,000 pesos.
+- **Uso ideal:** Cobros B2B de alto volumen. Al ser una tarifa plana, el porcentaje de comisión se vuelve matemáticamente invisible en pagos grandes.
+
+### Tarifa por transferencia Manual (Fuera de Stripe)
+- **Costo:** $0.00 (Gratis).
+- **Uso ideal:** Cuando el cliente prefiere depositarte directamente a tu cuenta bancaria tradicional usando tu CLABE de siempre. El cliente sube su comprobante y tú marcas el pago de forma manual.
+
+## Ventajas de cobrar a través de Cord
+
+Activar los pagos en línea con Cord (vía Stripe) transforma por completo tu operación de cuentas por cobrar:
+
+1. **Conciliación 100% automática:** Se acabó el cazar depósitos en el portal del banco y adivinar a qué factura corresponden. Cada cobro se asocia automáticamente a su cotización y el estado cambia a pagado en tiempo real.
+2. **Dinero directo a ti:** Al usar arquitectura *Connect Custom*, Cord no retiene tus fondos, ni actúa como intermediario riesgoso. Eres el dueño financiero de los cobros.
+3. **Experiencia de marca (Quiet Luxury):** Tu cliente paga en un checkout in-house elegante incrustado en el documento (sin redirecciones extrañas ni logos de terceros), con tu marca y nombre.
+4. **Igualas y cobros fraccionados:** El sistema soporta cobrar un anticipo hoy y el saldo a crédito (Net 30/60), e incluso igualas mensuales donde Stripe debita la tarjeta del cliente automáticamente cada mes.
+
+## Desventajas y consideraciones
+
+Para ser completamente transparentes, depender de una pasarela de pagos internacional tiene algunas reglas con las que debes estar de acuerdo:
+
+1. **Tiempo de liquidación (Payouts):** El dinero no cae inmediatamente a tu banco local. Stripe tiene un ciclo rodante de liquidación (Payout Schedule) que en México suele tardar entre **2 a 7 días hábiles**. 
+2. **Onboarding riguroso (KYC):** Stripe está regulado como entidad financiera y sus procesos antilavado de dinero son estrictos. Te exigirán identificaciones, RFC, actas constitutivas y podrían hacer preguntas sobre tu modelo de negocio si tienes un pico inusual de ventas.
+3. **Bloqueo por disputas (Chargebacks):** Si un cliente desconoce un cargo en su tarjeta (contracargo), Stripe retendrá temporalmente ese dinero más una multa por disputa mientras demuestras con evidencia (la cotización firmada) que el servicio se entregó.
+
+<Callout type="info">
+**Recomendación de oro:** Si tus cotizaciones son de millones de pesos, el método de "Transferencia Manual" siempre será la opción más segura y barata (0% comisión, dinero instantáneo). Usa las funciones de Stripe para anticipos, igualas mensuales y cobros con tarjeta donde la automatización justifique el costo y el tiempo de liquidación.
+
+</Callout>

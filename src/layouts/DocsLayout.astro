@@ -1,13 +1,24 @@
 ---
 import Layout from "./Layout.astro";
 
+import type { MarkdownHeading } from "astro";
+import TableOfContents from "../components/docs/TableOfContents.astro";
+
 export interface Props {
+  headings?: MarkdownHeading[];
   title: string;
   lang?: "es" | "en";
   description?: string;
 }
 
-const { title, lang = "es", description } = Astro.props;
+import { altLangUrls } from "../i18n/utils";
+
+const { title, lang = "es", description, headings = [] } = Astro.props;
+const { esUrl, enUrl } = altLangUrls(Astro.url);
+
+const getUrl = (path: string) => lang === 'en' ? `/en${path}` : path;
+
+const isOverviewPage = Astro.url.pathname.endsWith('/resumen') || Astro.url.pathname.endsWith('/resumen/') || Astro.url.pathname === '/docs' || Astro.url.pathname === '/docs/' || Astro.url.pathname === '/en/docs' || Astro.url.pathname === '/en/docs/';
 
 // Build breadcrumb from URL path
 const pathSegments = Astro.url.pathname.split('/').filter(Boolean);
@@ -64,6 +75,14 @@ const jsonLd = {
 ---
 
 <Layout title={`${title} | Cord Docs`} description={description} ogType="article">
+  <style is:inline>
+    :root { color-scheme: light; }
+    html { lang: ${lang}; }
+  </style>
+  <!-- Set lang dynamically for JS scripts to read -->
+  <script is:inline define:vars={{ lang }}>
+    document.documentElement.lang = lang;
+  </script>
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   <div class="docs-layout">
     
@@ -89,18 +108,18 @@ const jsonLd = {
 
         <div class="header-right">
           <div class="lang-toggle">
-            <a href="?lang=es" class={`lang-option ${lang === 'es' ? 'active' : ''}`}>ES</a>
-            <a href="?lang=en" class={`lang-option ${lang === 'en' ? 'active' : ''}`}>EN</a>
+            <a href={esUrl} class={`lang-option ${lang === 'es' ? 'active' : ''}`}>ES</a>
+            <a href={enUrl} class={`lang-option ${lang === 'en' ? 'active' : ''}`}>EN</a>
           </div>
         </div>
       </div>
 
       <nav class="header-bottom">
         <ul class="nav-links">
-          <li class={!Astro.url.pathname.includes('/docs/pagos') && !Astro.url.pathname.includes('/docs/presupuestos') && !Astro.url.pathname.includes('/docs/desarrolladores') ? 'active' : ''}><a href={`/docs?lang=${lang}`}>{lang === 'es' ? 'Empezar' : 'Get Started'}</a></li>
-          <li class={Astro.url.pathname.includes('/docs/pagos') ? 'active' : ''}><a href={`/docs/pagos/resumen?lang=${lang}`}>{lang === 'es' ? 'Pagos' : 'Payments'}</a></li>
-          <li class={Astro.url.pathname.includes('/docs/presupuestos') ? 'active' : ''}><a href={`/docs/presupuestos/resumen?lang=${lang}`}>{lang === 'es' ? 'Presupuestos' : 'Budgets'}</a></li>
-          <li class={Astro.url.pathname.includes('/docs/desarrolladores') ? 'active' : ''}><a href={`/docs/desarrolladores/empezar/apikey?lang=${lang}`}>{lang === 'es' ? 'Desarrolladores' : 'Developers'}</a></li>
+          <li class={!Astro.url.pathname.includes(getUrl('/docs/pagos')) && !Astro.url.pathname.includes(getUrl('/docs/presupuestos')) && !Astro.url.pathname.includes(getUrl('/docs/desarrolladores')) ? 'active' : ''}><a href={getUrl('/docs')}>{lang === 'es' ? 'Empezar' : 'Get Started'}</a></li>
+          <li class={Astro.url.pathname.includes(getUrl('/docs/pagos')) ? 'active' : ''}><a href={getUrl('/docs/pagos/resumen')}>{lang === 'es' ? 'Pagos' : 'Payments'}</a></li>
+          <li class={Astro.url.pathname.includes(getUrl('/docs/presupuestos')) ? 'active' : ''}><a href={getUrl('/docs/presupuestos/resumen')}>{lang === 'es' ? 'Presupuestos' : 'Budgets'}</a></li>
+          <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/empezar/apikey')}>{lang === 'es' ? 'Desarrolladores' : 'Developers'}</a></li>
         </ul>
         <div class="nav-tools">
           <div class="nav-dropdown-wrapper">
@@ -118,11 +137,11 @@ const jsonLd = {
       <!-- Sidebar -->
       <aside class="docs-sidebar">
         <nav class="sidebar-nav">
-          {Astro.url.pathname.includes('/docs/presupuestos') ? (
+          {Astro.url.pathname.includes(getUrl('/docs/presupuestos')) ? (
             <>
               <ul class="sidebar-menu">
-                <li class={Astro.url.pathname === '/docs/presupuestos/resumen' || Astro.url.pathname === '/docs/presupuestos/resumen/' ? 'active' : ''}><a href={`/docs/presupuestos/resumen?lang=${lang}`}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
-                <li class={Astro.url.pathname.includes('/docs/presupuestos/primera-cedula') ? 'active' : ''}><a href={`/docs/presupuestos/primera-cedula?lang=${lang}`}>{lang === 'es' ? 'Plantillas y plan completo' : 'Templates and full plan'}</a></li>
+                <li class={Astro.url.pathname === getUrl('/docs/presupuestos/resumen') || Astro.url.pathname === getUrl('/docs/presupuestos/resumen/') ? 'active' : ''}><a href={getUrl('/docs/presupuestos/resumen')}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
+                <li class={Astro.url.pathname.includes(getUrl('/docs/presupuestos/primera-cedula')) ? 'active' : ''}><a href={getUrl('/docs/presupuestos/primera-cedula')}>{lang === 'es' ? 'Plantillas y plan completo' : 'Templates and full plan'}</a></li>
               </ul>
 
               <div class="sidebar-section">
@@ -134,8 +153,8 @@ const jsonLd = {
                       {lang === 'es' ? 'Conceptos básicos' : 'Basics'}
                     </button>
                     <ul class="sidebar-submenu">
-                      <li class={Astro.url.pathname.includes('/docs/presupuestos/conceptos-basicos') ? 'active' : ''}><a href={`/docs/presupuestos/conceptos-basicos?lang=${lang}`}>{lang === 'es' ? 'Qué es una cédula' : 'What is a schedule'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/presupuestos/glosario') ? 'active' : ''}><a href={`/docs/presupuestos/glosario?lang=${lang}`}>{lang === 'es' ? 'Glosario contable' : 'Accounting glossary'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/presupuestos/conceptos-basicos')) ? 'active' : ''}><a href={getUrl('/docs/presupuestos/conceptos-basicos')}>{lang === 'es' ? 'Qué es una cédula' : 'What is a schedule'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/presupuestos/glosario')) ? 'active' : ''}><a href={getUrl('/docs/presupuestos/glosario')}>{lang === 'es' ? 'Glosario contable' : 'Accounting glossary'}</a></li>
                     </ul>
                   </li>
                   <li class="sidebar-dropdown open">
@@ -144,18 +163,18 @@ const jsonLd = {
                       {lang === 'es' ? 'Uso de la App' : 'App usage'}
                     </button>
                     <ul class="sidebar-submenu">
-                      <li class={Astro.url.pathname.includes('/docs/presupuestos/interfaz') ? 'active' : ''}><a href={`/docs/presupuestos/interfaz?lang=${lang}`}>{lang === 'es' ? 'La interfaz' : 'The interface'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/presupuestos/herramientas') ? 'active' : ''}><a href={`/docs/presupuestos/herramientas?lang=${lang}`}>{lang === 'es' ? 'Herramientas de análisis' : 'Analysis tools'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/presupuestos/interfaz')) ? 'active' : ''}><a href={getUrl('/docs/presupuestos/interfaz')}>{lang === 'es' ? 'La interfaz' : 'The interface'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/presupuestos/herramientas')) ? 'active' : ''}><a href={getUrl('/docs/presupuestos/herramientas')}>{lang === 'es' ? 'Herramientas de análisis' : 'Analysis tools'}</a></li>
                     </ul>
                   </li>
                 </ul>
               </div>
             </>
-          ) : Astro.url.pathname.includes('/docs/pagos') ? (
+          ) : Astro.url.pathname.includes(getUrl('/docs/pagos')) ? (
             <>
               <ul class="sidebar-menu">
-                <li class={Astro.url.pathname === '/docs/pagos/resumen' || Astro.url.pathname === '/docs/pagos/resumen/' ? 'active' : ''}><a href={`/docs/pagos/resumen?lang=${lang}`}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
-                <li class={Astro.url.pathname.includes('/docs/pagos/aceptar') ? 'active' : ''}><a href={`/docs/pagos/aceptar?lang=${lang}`}>{lang === 'es' ? 'Aceptar un pago' : 'Accept a payment'}</a></li>
+                <li class={Astro.url.pathname === getUrl('/docs/pagos/resumen') || Astro.url.pathname === getUrl('/docs/pagos/resumen/') ? 'active' : ''}><a href={getUrl('/docs/pagos/resumen')}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
+                <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/aceptar')) ? 'active' : ''}><a href={getUrl('/docs/pagos/aceptar')}>{lang === 'es' ? 'Aceptar un pago' : 'Accept a payment'}</a></li>
               </ul>
 
               <div class="sidebar-section">
@@ -167,9 +186,9 @@ const jsonLd = {
                       {lang === 'es' ? 'Configurar cobros' : 'Configure payments'}
                     </button>
                     <ul class="sidebar-submenu">
-                      <li class={Astro.url.pathname.includes('/docs/pagos/onboarding') ? 'active' : ''}><a href={`/docs/pagos/onboarding?lang=${lang}`}>{lang === 'es' ? 'Conectar cuenta (KYC)' : 'Connect account (KYC)'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/pagos/condiciones') ? 'active' : ''}><a href={`/docs/pagos/condiciones?lang=${lang}`}>{lang === 'es' ? 'Tarifas y ventajas' : 'Fees and advantages'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/pagos/metodos') ? 'active' : ''}><a href={`/docs/pagos/metodos?lang=${lang}`}>{lang === 'es' ? 'Métodos de cobro' : 'Payment methods'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/onboarding')) ? 'active' : ''}><a href={getUrl('/docs/pagos/onboarding')}>{lang === 'es' ? 'Conectar cuenta (KYC)' : 'Connect account (KYC)'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/condiciones')) ? 'active' : ''}><a href={getUrl('/docs/pagos/condiciones')}>{lang === 'es' ? 'Tarifas y ventajas' : 'Fees and advantages'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/metodos')) ? 'active' : ''}><a href={getUrl('/docs/pagos/metodos')}>{lang === 'es' ? 'Métodos de cobro' : 'Payment methods'}</a></li>
                     </ul>
                   </li>
                   <li class="sidebar-dropdown open">
@@ -178,9 +197,9 @@ const jsonLd = {
                       {lang === 'es' ? 'Modelos de cobro avanzado' : 'Advanced billing models'}
                     </button>
                     <ul class="sidebar-submenu">
-                      <li class={Astro.url.pathname.includes('/docs/pagos/anticipos') ? 'active' : ''}><a href={`/docs/pagos/anticipos?lang=${lang}`}>{lang === 'es' ? 'Anticipo y Saldo' : 'Upfront and Balance'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/pagos/igualas') ? 'active' : ''}><a href={`/docs/pagos/igualas?lang=${lang}`}>{lang === 'es' ? 'Igualas recurrentes' : 'Monthly retainers'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/pagos/credito') ? 'active' : ''}><a href={`/docs/pagos/credito?lang=${lang}`}>{lang === 'es' ? 'Términos de crédito (Net)' : 'Credit terms (Net)'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/anticipos')) ? 'active' : ''}><a href={getUrl('/docs/pagos/anticipos')}>{lang === 'es' ? 'Anticipo y Saldo' : 'Upfront and Balance'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/igualas')) ? 'active' : ''}><a href={getUrl('/docs/pagos/igualas')}>{lang === 'es' ? 'Igualas recurrentes' : 'Monthly retainers'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/credito')) ? 'active' : ''}><a href={getUrl('/docs/pagos/credito')}>{lang === 'es' ? 'Términos de crédito (Net)' : 'Credit terms (Net)'}</a></li>
                     </ul>
                   </li>
                   <li class="sidebar-dropdown open">
@@ -189,16 +208,16 @@ const jsonLd = {
                       {lang === 'es' ? 'Gestión de cobros' : 'Payment management'}
                     </button>
                     <ul class="sidebar-submenu">
-                      <li class={Astro.url.pathname.includes('/docs/pagos/dashboard') ? 'active' : ''}><a href={`/docs/pagos/dashboard?lang=${lang}`}>{lang === 'es' ? 'Dashboard de cobros' : 'Payments dashboard'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/dashboard')) ? 'active' : ''}><a href={getUrl('/docs/pagos/dashboard')}>{lang === 'es' ? 'Dashboard de cobros' : 'Payments dashboard'}</a></li>
                     </ul>
                   </li>
                 </ul>
               </div>
             </>
-          ) : Astro.url.pathname.includes('/docs/desarrolladores') ? (
+          ) : Astro.url.pathname.includes(getUrl('/docs/desarrolladores')) ? (
             <>
               <ul class="sidebar-menu">
-                <li class={Astro.url.pathname === '/docs/desarrolladores/empezar/resumen' || Astro.url.pathname === '/docs/desarrolladores/empezar/resumen/' ? 'active' : ''}><a href={`/docs/desarrolladores/empezar/resumen?lang=${lang}`}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
+                <li class={Astro.url.pathname === getUrl('/docs/desarrolladores/empezar/resumen') || Astro.url.pathname === getUrl('/docs/desarrolladores/empezar/resumen/') ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/empezar/resumen')}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
               </ul>
 
               <div class="sidebar-section">
@@ -210,8 +229,8 @@ const jsonLd = {
                       {lang === 'es' ? 'Empezar' : 'Get Started'}
                     </button>
                     <ul class="sidebar-submenu">
-                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/empezar/apikey') ? 'active' : ''}><a href={`/docs/desarrolladores/empezar/apikey?lang=${lang}`}>{lang === 'es' ? 'Crea tu API Key' : 'Create your API Key'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/empezar/pruebas') ? 'active' : ''}><a href={`/docs/desarrolladores/empezar/pruebas?lang=${lang}`}>{lang === 'es' ? 'Entornos de Prueba' : 'Test Environments'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/empezar/apikey')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/empezar/apikey')}>{lang === 'es' ? 'Crea tu API Key' : 'Create your API Key'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/empezar/pruebas')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/empezar/pruebas')}>{lang === 'es' ? 'Entornos de Prueba' : 'Test Environments'}</a></li>
                     </ul>
                   </li>
                   <li class="sidebar-dropdown open">
@@ -220,8 +239,8 @@ const jsonLd = {
                       {lang === 'es' ? 'Herramientas' : 'Tools'}
                     </button>
                     <ul class="sidebar-submenu">
-                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/herramientas/webhooks') ? 'active' : ''}><a href={`/docs/desarrolladores/herramientas/webhooks?lang=${lang}`}>{lang === 'es' ? 'Webhooks' : 'Webhooks'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/herramientas/mcp') ? 'active' : ''}><a href={`/docs/desarrolladores/herramientas/mcp?lang=${lang}`}>{lang === 'es' ? 'Servidor MCP' : 'MCP Server'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/herramientas/webhooks')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/herramientas/webhooks')}>{lang === 'es' ? 'Webhooks' : 'Webhooks'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/herramientas/mcp')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/herramientas/mcp')}>{lang === 'es' ? 'Servidor MCP' : 'MCP Server'}</a></li>
                     </ul>
                   </li>
                   <li class="sidebar-dropdown open">
@@ -230,13 +249,13 @@ const jsonLd = {
                       Cord Elements
                     </button>
                     <ul class="sidebar-submenu">
-                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/herramientas/elements/resumen') ? 'active' : ''}><a href={`/docs/desarrolladores/herramientas/elements/resumen?lang=${lang}`}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/herramientas/elements/react') ? 'active' : ''}><a href={`/docs/desarrolladores/herramientas/elements/react?lang=${lang}`}>React & Next.js</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/herramientas/elements/web-components') ? 'active' : ''}><a href={`/docs/desarrolladores/herramientas/elements/web-components?lang=${lang}`}>Web Components & Vue</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/herramientas/elements/server') ? 'active' : ''}><a href={`/docs/desarrolladores/herramientas/elements/server?lang=${lang}`}>Server SDK</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/herramientas/elements/apariencia') ? 'active' : ''}><a href={`/docs/desarrolladores/herramientas/elements/apariencia?lang=${lang}`}>{lang === 'es' ? 'Apariencia' : 'Appearance'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/herramientas/elements/eventos') ? 'active' : ''}><a href={`/docs/desarrolladores/herramientas/elements/eventos?lang=${lang}`}>{lang === 'es' ? 'Eventos' : 'Events'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/herramientas/elements/seguridad') ? 'active' : ''}><a href={`/docs/desarrolladores/herramientas/elements/seguridad?lang=${lang}`}>{lang === 'es' ? 'Seguridad CSP' : 'CSP Security'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/herramientas/elements/resumen')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/herramientas/elements/resumen')}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/herramientas/elements/react')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/herramientas/elements/react')}>React & Next.js</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/herramientas/elements/web-components')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/herramientas/elements/web-components')}>Web Components & Vue</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/herramientas/elements/server')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/herramientas/elements/server')}>Server SDK</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/herramientas/elements/apariencia')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/herramientas/elements/apariencia')}>{lang === 'es' ? 'Apariencia' : 'Appearance'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/herramientas/elements/eventos')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/herramientas/elements/eventos')}>{lang === 'es' ? 'Eventos' : 'Events'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/herramientas/elements/seguridad')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/herramientas/elements/seguridad')}>{lang === 'es' ? 'Seguridad CSP' : 'CSP Security'}</a></li>
                     </ul>
                   </li>
                   <li class="sidebar-dropdown open">
@@ -245,9 +264,9 @@ const jsonLd = {
                       {lang === 'es' ? 'Esenciales' : 'Essentials'}
                     </button>
                     <ul class="sidebar-submenu">
-                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/esenciales/autenticacion') ? 'active' : ''}><a href={`/docs/desarrolladores/esenciales/autenticacion?lang=${lang}`}>{lang === 'es' ? 'Autenticación' : 'Authentication'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/esenciales/paginacion') ? 'active' : ''}><a href={`/docs/desarrolladores/esenciales/paginacion?lang=${lang}`}>{lang === 'es' ? 'Paginación' : 'Pagination'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/esenciales/errores') ? 'active' : ''}><a href={`/docs/desarrolladores/esenciales/errores?lang=${lang}`}>{lang === 'es' ? 'Manejo de Errores' : 'Error Handling'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/esenciales/autenticacion')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/esenciales/autenticacion')}>{lang === 'es' ? 'Autenticación' : 'Authentication'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/esenciales/paginacion')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/esenciales/paginacion')}>{lang === 'es' ? 'Paginación' : 'Pagination'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/esenciales/errores')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/esenciales/errores')}>{lang === 'es' ? 'Manejo de Errores' : 'Error Handling'}</a></li>
                     </ul>
                   </li>
                   <li class="sidebar-dropdown open">
@@ -256,10 +275,10 @@ const jsonLd = {
                       {lang === 'es' ? 'Funciones' : 'Features'}
                     </button>
                     <ul class="sidebar-submenu">
-                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/funciones/cotizaciones') ? 'active' : ''}><a href={`/docs/desarrolladores/funciones/cotizaciones?lang=${lang}`}>{lang === 'es' ? 'API de Cotizaciones' : 'Quotes API'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/funciones/clientes') ? 'active' : ''}><a href={`/docs/desarrolladores/funciones/clientes?lang=${lang}`}>{lang === 'es' ? 'API de Clientes' : 'Clients API'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/funciones/productos') ? 'active' : ''}><a href={`/docs/desarrolladores/funciones/productos?lang=${lang}`}>{lang === 'es' ? 'API de Productos' : 'Products API'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/funciones/cobranza') ? 'active' : ''}><a href={`/docs/desarrolladores/funciones/cobranza?lang=${lang}`}>{lang === 'es' ? 'API de Cobranza' : 'Collections API'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/funciones/cotizaciones')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/funciones/cotizaciones')}>{lang === 'es' ? 'API de Cotizaciones' : 'Quotes API'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/funciones/clientes')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/funciones/clientes')}>{lang === 'es' ? 'API de Clientes' : 'Clients API'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/funciones/productos')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/funciones/productos')}>{lang === 'es' ? 'API de Productos' : 'Products API'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/funciones/cobranza')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/funciones/cobranza')}>{lang === 'es' ? 'API de Cobranza' : 'Collections API'}</a></li>
                     </ul>
                   </li>
                   <li class="sidebar-dropdown open">
@@ -268,7 +287,7 @@ const jsonLd = {
                       {lang === 'es' ? 'Seguridad y Privacidad' : 'Security & Privacy'}
                     </button>
                     <ul class="sidebar-submenu">
-                      <li class={Astro.url.pathname.includes('/docs/desarrolladores/seguridad/sso') ? 'active' : ''}><a href={`/docs/desarrolladores/seguridad/sso?lang=${lang}`}>{lang === 'es' ? 'SSO y SAML' : 'SSO & SAML'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/seguridad/sso')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/seguridad/sso')}>{lang === 'es' ? 'SSO y SAML' : 'SSO & SAML'}</a></li>
                     </ul>
                   </li>
                 </ul>
@@ -277,8 +296,8 @@ const jsonLd = {
           ) : (
             <>
               <ul class="sidebar-menu">
-                <li class={Astro.url.pathname === '/docs' || Astro.url.pathname === '/docs/' ? 'active' : ''}><a href={`/docs?lang=${lang}`}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
-                <li class={Astro.url.pathname.includes('/docs/productos') ? 'active' : ''}><a href={`/docs/productos?lang=${lang}`}>{lang === 'es' ? 'Ver todos los productos' : 'See all products'}</a></li>
+                <li class={Astro.url.pathname === getUrl('/docs') || Astro.url.pathname === getUrl('/docs/') ? 'active' : ''}><a href={getUrl('/docs')}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
+                <li class={Astro.url.pathname.includes(getUrl('/docs/productos')) ? 'active' : ''}><a href={getUrl('/docs/productos')}>{lang === 'es' ? 'Ver todos los productos' : 'See all products'}</a></li>
               </ul>
 
               <div class="sidebar-section">
@@ -290,11 +309,11 @@ const jsonLd = {
                       {lang === 'es' ? 'Crea una cuenta' : 'Create an account'}
                     </button>
                     <ul class="sidebar-submenu">
-                      <li class={Astro.url.pathname === '/docs/cuenta/resumen' || Astro.url.pathname === '/docs/cuenta/resumen/' ? 'active' : ''}><a href={`/docs/cuenta/resumen?lang=${lang}`}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/cuenta/configuracion') ? 'active' : ''}><a href={`/docs/cuenta/configuracion?lang=${lang}`}>{lang === 'es' ? 'Configura tu cuenta' : 'Configure your account'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/cuenta/csd') ? 'active' : ''}><a href={`/docs/cuenta/csd?lang=${lang}`}>{lang === 'es' ? 'Agrega la información fiscal (CSD)' : 'Add tax information (CSD)'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/cuenta/catalogo') ? 'active' : ''}><a href={`/docs/cuenta/catalogo?lang=${lang}`}>{lang === 'es' ? 'Importa tu catálogo' : 'Import your catalog'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/cuenta/marca') ? 'active' : ''}><a href={`/docs/cuenta/marca?lang=${lang}`}>{lang === 'es' ? 'Personaliza tu marca' : 'Customize your branding'}</a></li>
+                      <li class={Astro.url.pathname === getUrl('/docs/cuenta/resumen') || Astro.url.pathname === getUrl('/docs/cuenta/resumen/') ? 'active' : ''}><a href={getUrl('/docs/cuenta/resumen')}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/cuenta/configuracion')) ? 'active' : ''}><a href={getUrl('/docs/cuenta/configuracion')}>{lang === 'es' ? 'Configura tu cuenta' : 'Configure your account'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/cuenta/csd')) ? 'active' : ''}><a href={getUrl('/docs/cuenta/csd')}>{lang === 'es' ? 'Agrega la información fiscal (CSD)' : 'Add tax information (CSD)'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/cuenta/catalogo')) ? 'active' : ''}><a href={getUrl('/docs/cuenta/catalogo')}>{lang === 'es' ? 'Importa tu catálogo' : 'Import your catalog'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/cuenta/marca')) ? 'active' : ''}><a href={getUrl('/docs/cuenta/marca')}>{lang === 'es' ? 'Personaliza tu marca' : 'Customize your branding'}</a></li>
                     </ul>
                   </li>
                   <li class="sidebar-dropdown open">
@@ -303,13 +322,13 @@ const jsonLd = {
                       {lang === 'es' ? 'Crea una cotización' : 'Create a quote'}
                     </button>
                     <ul class="sidebar-submenu">
-                      <li class={Astro.url.pathname === '/docs/cotizacion/resumen' || Astro.url.pathname === '/docs/cotizacion/resumen/' ? 'active' : ''}><a href={`/docs/cotizacion/resumen?lang=${lang}`}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/cotizacion/ia') ? 'active' : ''}><a href={`/docs/cotizacion/ia?lang=${lang}`}>{lang === 'es' ? 'Generar con IA' : 'Generate with AI'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/cotizacion/cliente') ? 'active' : ''}><a href={`/docs/cotizacion/cliente?lang=${lang}`}>{lang === 'es' ? 'Datos del cliente' : 'Client data'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/cotizacion/productos') ? 'active' : ''}><a href={`/docs/cotizacion/productos?lang=${lang}`}>{lang === 'es' ? 'Productos y descuentos' : 'Products and discounts'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/cotizacion/opciones') ? 'active' : ''}><a href={`/docs/cotizacion/opciones?lang=${lang}`}>{lang === 'es' ? 'Opciones avanzadas' : 'Advanced options'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/cotizacion/envio') ? 'active' : ''}><a href={`/docs/cotizacion/envio?lang=${lang}`}>{lang === 'es' ? 'Vista previa y envío' : 'Preview and sending'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/cotizacion/timbrado') ? 'active' : ''}><a href={`/docs/cotizacion/timbrado?lang=${lang}`}>{lang === 'es' ? 'Aprobación y timbrado' : 'Approval and stamping'}</a></li>
+                      <li class={Astro.url.pathname === getUrl('/docs/cotizacion/resumen') || Astro.url.pathname === getUrl('/docs/cotizacion/resumen/') ? 'active' : ''}><a href={getUrl('/docs/cotizacion/resumen')}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/cotizacion/ia')) ? 'active' : ''}><a href={getUrl('/docs/cotizacion/ia')}>{lang === 'es' ? 'Generar con IA' : 'Generate with AI'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/cotizacion/cliente')) ? 'active' : ''}><a href={getUrl('/docs/cotizacion/cliente')}>{lang === 'es' ? 'Datos del cliente' : 'Client data'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/cotizacion/productos')) ? 'active' : ''}><a href={getUrl('/docs/cotizacion/productos')}>{lang === 'es' ? 'Productos y descuentos' : 'Products and discounts'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/cotizacion/opciones')) ? 'active' : ''}><a href={getUrl('/docs/cotizacion/opciones')}>{lang === 'es' ? 'Opciones avanzadas' : 'Advanced options'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/cotizacion/envio')) ? 'active' : ''}><a href={getUrl('/docs/cotizacion/envio')}>{lang === 'es' ? 'Vista previa y envío' : 'Preview and sending'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/cotizacion/timbrado')) ? 'active' : ''}><a href={getUrl('/docs/cotizacion/timbrado')}>{lang === 'es' ? 'Aprobación y timbrado' : 'Approval and stamping'}</a></li>
                     </ul>
                   </li>
                   <li class="sidebar-dropdown open">
@@ -318,8 +337,8 @@ const jsonLd = {
                       {lang === 'es' ? 'Interacción y cierre' : 'Interaction and closing'}
                     </button>
                     <ul class="sidebar-submenu">
-                      <li class={Astro.url.pathname === '/docs/interaccion/chat' || Astro.url.pathname === '/docs/interaccion/chat/' ? 'active' : ''}><a href={`/docs/interaccion/chat?lang=${lang}`}>{lang === 'es' ? 'Chat y negociación' : 'Chat and negotiation'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/interaccion/firma') ? 'active' : ''}><a href={`/docs/interaccion/firma?lang=${lang}`}>{lang === 'es' ? 'Firma y auditoría' : 'Signature and audit'}</a></li>
+                      <li class={Astro.url.pathname === getUrl('/docs/interaccion/chat') || Astro.url.pathname === getUrl('/docs/interaccion/chat/') ? 'active' : ''}><a href={getUrl('/docs/interaccion/chat')}>{lang === 'es' ? 'Chat y negociación' : 'Chat and negotiation'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/interaccion/firma')) ? 'active' : ''}><a href={getUrl('/docs/interaccion/firma')}>{lang === 'es' ? 'Firma y auditoría' : 'Signature and audit'}</a></li>
                     </ul>
                   </li>
                   <li class="sidebar-dropdown open">
@@ -328,9 +347,9 @@ const jsonLd = {
                       {lang === 'es' ? 'Gestión de ventas' : 'Sales management'}
                     </button>
                     <ul class="sidebar-submenu">
-                      <li class={Astro.url.pathname === '/docs/gestion/dashboard' || Astro.url.pathname === '/docs/gestion/dashboard/' ? 'active' : ''}><a href={`/docs/gestion/dashboard?lang=${lang}`}>{lang === 'es' ? 'Dashboard y vistas' : 'Dashboard and views'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/gestion/cotizaciones') ? 'active' : ''}><a href={`/docs/gestion/cotizaciones?lang=${lang}`}>{lang === 'es' ? 'Gestión de cotizaciones' : 'Quote management'}</a></li>
-                      <li class={Astro.url.pathname.includes('/docs/gestion/tareas') ? 'active' : ''}><a href={`/docs/gestion/tareas?lang=${lang}`}>{lang === 'es' ? 'Tareas y seguimiento' : 'Tasks and follow-up'}</a></li>
+                      <li class={Astro.url.pathname === getUrl('/docs/gestion/dashboard') || Astro.url.pathname === getUrl('/docs/gestion/dashboard/') ? 'active' : ''}><a href={getUrl('/docs/gestion/dashboard')}>{lang === 'es' ? 'Dashboard y vistas' : 'Dashboard and views'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/gestion/cotizaciones')) ? 'active' : ''}><a href={getUrl('/docs/gestion/cotizaciones')}>{lang === 'es' ? 'Gestión de cotizaciones' : 'Quote management'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/gestion/tareas')) ? 'active' : ''}><a href={getUrl('/docs/gestion/tareas')}>{lang === 'es' ? 'Tareas y seguimiento' : 'Tasks and follow-up'}</a></li>
                     </ul>
                   </li>
                 </ul>
@@ -342,7 +361,9 @@ const jsonLd = {
 
       <!-- Main Content -->
       <main class="docs-main">
-        <div class="content-container">
+        <div class="docs-content-area">
+          <div class={`main-content-column ${isOverviewPage ? 'overview-layout' : ''}`}>
+            <div class="content-container">
           <slot />
           
           <div class="docs-footer">
@@ -384,6 +405,13 @@ const jsonLd = {
             </ul>
           </div>
         </div>
+      </div>
+          {headings && headings.length > 0 && !isOverviewPage && (
+            <aside class="docs-toc">
+              <TableOfContents headings={headings} lang={lang} />
+            </aside>
+          )}
+        </div>
       </main>
     </div>
   </div>
@@ -416,22 +444,108 @@ const jsonLd = {
     });
   });
 
-  // Search Modal Logic
+  
+  // Search Modal Logic with Fuse.js
+  import Fuse from 'fuse.js';
+  
   const trigger = document.getElementById('search-trigger');
   const modal = document.getElementById('search-modal');
   const backdrop = document.getElementById('search-backdrop');
   const closeBtn = document.getElementById('search-close');
   const input = document.getElementById('search-input-field');
+  const resultsContainer = document.querySelector('.search-modal-body');
+  
+  let fuse = null;
+  let searchData = [];
+  let isFetching = false;
+
+  async function fetchSearchData() {
+    if (fuse || isFetching) return;
+    isFetching = true;
+    try {
+      // Show loading state
+      if (resultsContainer) {
+        resultsContainer.innerHTML = `<div class="search-results-empty"><p>${document.documentElement.lang === 'en' ? 'Loading search index...' : 'Cargando índice de búsqueda...'}</p></div>`;
+      }
+      const res = await fetch('/api/docs-search.json');
+      searchData = await res.json();
+      
+      // Filter by current language
+      const currentLang = document.documentElement.lang || 'es';
+      searchData = searchData.filter(doc => doc.lang === currentLang);
+
+      fuse = new Fuse(searchData, {
+        keys: [
+          { name: 'title', weight: 0.7 },
+          { name: 'description', weight: 0.3 },
+          { name: 'body', weight: 0.5 }
+        ],
+        includeMatches: true,
+        threshold: 0.3,
+        ignoreLocation: true
+      });
+      
+      // Trigger search if user already typed something
+      if (input.value.trim() !== '') {
+        performSearch(input.value);
+      } else {
+        showEmptyState();
+      }
+    } catch (err) {
+      console.error('Failed to load search data:', err);
+      if (resultsContainer) {
+        resultsContainer.innerHTML = `<div class="search-results-empty"><p>${document.documentElement.lang === 'en' ? 'Failed to load search.' : 'Error al cargar búsqueda.'}</p></div>`;
+      }
+    }
+  }
+
+  function showEmptyState() {
+    if (resultsContainer) {
+      resultsContainer.innerHTML = `<div class="search-results-empty"><p>${document.documentElement.lang === 'en' ? 'Type to search guides, API references, and more.' : 'Escribe algo para buscar en guías, referencias de API y más.'}</p></div>`;
+    }
+  }
+
+  function performSearch(query) {
+    if (!fuse) return;
+    if (!query || query.trim() === '') {
+      showEmptyState();
+      return;
+    }
+    
+    const results = fuse.search(query).slice(0, 8); // Top 8 results
+    
+    if (results.length === 0) {
+      resultsContainer.innerHTML = `<div class="search-results-empty"><p>${document.documentElement.lang === 'en' ? 'No results found for' : 'No se encontraron resultados para'} "${query}"</p></div>`;
+      return;
+    }
+    
+    let html = '<ul class="search-results-list">';
+    results.forEach(({ item }) => {
+      html += `
+        <li class="search-result-item">
+          <a href="${item.url}">
+            <span class="search-result-title">${item.title}</span>
+            ${item.description ? `<span class="search-result-desc">${item.description}</span>` : ''}
+          </a>
+        </li>
+      `;
+    });
+    html += '</ul>';
+    
+    resultsContainer.innerHTML = html;
+  }
 
   function openSearch() {
     modal.classList.remove('hidden');
     input.focus();
     document.body.style.overflow = 'hidden';
+    fetchSearchData(); // Fetch JSON dynamically on first open
   }
 
   function closeSearch() {
     modal.classList.add('hidden');
     input.value = '';
+    showEmptyState();
     document.body.style.overflow = '';
   }
 
@@ -439,22 +553,12 @@ const jsonLd = {
   if (backdrop) backdrop.addEventListener('click', closeSearch);
   if (closeBtn) closeBtn.addEventListener('click', closeSearch);
 
-  document.addEventListener('keydown', (e) => {
-    // Open with "/"
-    if (e.key === '/' && modal.classList.contains('hidden')) {
-      const activeTag = document.activeElement.tagName;
-      if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA') {
-        e.preventDefault();
-        openSearch();
-      }
-    }
-    // Close with "Escape"
-    if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
-      closeSearch();
-    }
-  });
-
-  // Feedback Logic
+  if (input) {
+    input.addEventListener('input', (e) => {
+      performSearch(e.target.value);
+    });
+  }
+// Feedback Logic
   const btnYes = document.getElementById('feedback-yes');
   const btnNo = document.getElementById('feedback-no');
   const thanksMsg = document.getElementById('feedback-thanks');
@@ -482,6 +586,88 @@ const jsonLd = {
 </script>
 
 <style is:global>
+  
+  /* 3-Column Layout */
+  .docs-content-area {
+    display: flex;
+    width: 100%;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  
+  .main-content-column {
+    flex: 1;
+    min-width: 0;
+    max-width: 800px;
+    padding: 64px 48px 120px;
+  }
+  
+  .main-content-column.overview-layout {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  
+  .docs-toc {
+    width: 240px;
+    flex-shrink: 0;
+    padding-top: 32px;
+    display: none; /* hidden on small screens */
+    position: sticky;
+    top: 80px;
+    height: calc(100vh - 80px);
+  }
+  
+  @media (min-width: 1200px) {
+    .docs-toc {
+      display: block;
+    }
+  }
+
+  /* Search Modal Results Styling */
+  .search-results-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .search-result-item {
+    margin-bottom: 4px;
+  }
+  
+  .search-result-item a {
+    display: flex;
+    flex-direction: column;
+    padding: 12px 16px;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #050505;
+    transition: background 0.2s;
+  }
+  
+  .search-result-item a:hover {
+    background: #f5f5f7;
+  }
+  
+  .search-result-item a:focus {
+    background: #e3e3e8;
+    outline: none;
+  }
+  
+  .search-result-title {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+  
+  .search-result-desc {
+    font-size: 13px;
+    color: #697386;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
   /* Base Layout Styles */
   .docs-layout {
     display: flex;
@@ -832,7 +1018,6 @@ const jsonLd = {
   /* Main Content Area */
   .docs-main {
     flex: 1;
-    padding: 64px 48px 120px;
     min-width: 0;
   }
   .content-container {
@@ -1411,16 +1596,27 @@ const jsonLd = {
     background: #e3e3e8;
   }
   .search-modal-body {
-    padding: 48px 24px;
+    padding: 16px;
     min-height: 160px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    max-height: 55vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .search-modal-body::-webkit-scrollbar {
+    width: 6px;
+  }
+  .search-modal-body::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 4px;
   }
   .search-results-empty {
     text-align: center;
     color: #8792a2;
     font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
   }
 
   /* Responsive Adjustments */
@@ -1452,7 +1648,7 @@ const jsonLd = {
     .use-cases-grid {
       grid-template-columns: 1fr;
     }
-    .docs-main {
+    .main-content-column {
       padding: 40px 24px 80px;
     }
     .mockup-card {

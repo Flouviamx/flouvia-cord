@@ -6,6 +6,13 @@
 
 ---
 
+✅ **Docs: Migración masiva a Astro MDX y componentes interactivos (jul 2026)** —
+   Se migró toda la base de conocimientos de Cord (`src/content/docs/`) de Markdown clásico a MDX para soportar el diseño B2B premium de la marca mediante componentes interactivos.
+   • **Soporte MDX en Astro:** Se instaló `@astrojs/mdx` (v6.0.0, compatible con Astro 4/5) y se configuró en `astro.config.mjs`. Se actualizó la colección `docsCollection` en `content.config.ts` para reconocer el patrón `**/*.{md,mdx}`.
+   • **Componentes Globales:** Se inyectaron dinámicamente `<Callout>`, `<Tabs>`, `<TabItem>` y `<Steps>` en `src/pages/docs/[...slug].astro` vía la prop `components={{...}}` del renderizador `<Content />`, permitiendo su uso nativo sin necesidad de imports en cada archivo.
+   • **Migración Automatizada:** Se ejecutó un script iterativo que renombró 74 archivos `.md` a `.mdx`, y detectó semánticamente todos los blockquotes de la plataforma para convertirlos a `<Callout type="info|warning|success">`. Se atraparon correctamente edge-cases ("Consejo", "Pro tip", lazy blockquotes). Los comentarios HTML (`<!-- -->`) que rompían la compilación de MDX fueron convertidos a sintaxis JSX segura `{/* */}`.
+   • **Mejora del Layout:** Se ajustó el CSS global en `DocsLayout.astro` para implementar una "Tabla de Contenidos" (ToC) pegajosa (`sticky`) a la derecha, centrando el contenido principal y garantizando una experiencia de lectura fluida.
+
 ✅ **Dev Blog: Restricción de dominio a dev.cordhq.app y nuevos artículos técnicos (jul 2026)** —
    Para asegurar que el blog de desarrolladores mantenga su independencia visual y de ruteo, se confinó todo su tráfico exclusivamente al subdominio `dev.cordhq.app`.
    • **Redirecciones en `vercel.json`:** Se añadieron reglas (`redirects`) para que cualquier acceso a `cordhq.app/dev-blog` redirija permanentemente a `https://dev.cordhq.app`. Además, se agregó una regla para que un acceso erróneo a `dev.cordhq.app/dev-blog` redirija a la raíz del subdominio (`/`).

@@ -1,0 +1,42 @@
+---
+title: "Configure your account"
+description: "Enter your company's general information and manage your team."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Configure your account</h1>
+  <p class="page-subtitle">Enter your company's general data and manage your team's permissions.</p>
+</header>
+
+## 1. General company data
+
+The first step is to register your company in Cord. Go to **Settings > General** to fill in the following information:
+
+- **Commercial Name:** This is how your clients will see your company on quotes and public links.
+- **Legal Name (Razón Social):** Required for invoicing purposes.
+- **RFC:** Your valid Mexican Tax ID (Registro Federal de Contribuyentes).
+- **Tax Regime (Régimen Fiscal):** The tax regime under which you file with the SAT.
+- **Zip Code:** The zip code of your main fiscal address.
+
+<Callout type="warning">
+**Important:** Make sure the RFC and Tax Regime exactly match your Constancia de Situación Fiscal. Cord will use this data as the issuer to stamp the CFDI 4.0.
+</Callout>
+
+## 2. Invite your sales team
+
+The B2B sales process is collaborative. Cord allows you to invite as many team members as you need. Go to **Settings > Team** and select **Invite member**.
+
+### Available Roles (Coming Soon)
+
+Currently, all invited members have access to quote creation. In a future update, we will enable **Granular Roles and Permissions** to distinguish between:
+- **Admin:** Full access to settings, billing, CSD, and exports.
+- **Sales Rep:** Can create quotes, adjust prices (with limits), and send links, but cannot modify the general catalog or view global metrics.
+- **Viewer:** Read-only access for audits.
+
+## 3. Default Credit Terms Settings
+
+If your business model operates under corporate B2B terms (where you don't charge cash upfront, but on 30 or 60-day terms), you don't have to configure it manually on every quote.
+
+Go to **Settings > Sales > Credit Terms** to set your account's global values:
+- **Default terms:** Select *Net 30* or *Net 60*. From now on, every new quote will automatically inherit this payment term.
+- When a quote with terms is approved, the system schedules the due date and programs the smart collections flow, blocking the creation of new quotes if the client exceeds their credit limit or has overdue invoices.

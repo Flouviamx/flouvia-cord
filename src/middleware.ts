@@ -27,7 +27,7 @@ import { reqContext } from "./lib/context";
 // final para NO alcanzar /api/billing/connect/capture-session (esa SÍ requiere
 // sesión — la crea el escritorio autenticado).
 const PUBLIC_API_PREFIXES = ["/api/q/", "/api/stripe/", "/api/cron/", "/api/v1/", "/api/mcp/sse", "/api/mcp/message", "/api/clerk/", "/api/contacto/", "/api/billing/connect/capture/"];
-const PUBLIC_API_EXACT = ["/api/mcp"];
+const PUBLIC_API_EXACT = ["/api/mcp", "/api/docs-search.json"];
 
 // ── Rate limiting (in-memory, por IP) ────────────────────────────────────────
 // Ventana: 60 s. Límites:

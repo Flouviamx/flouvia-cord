@@ -4,23 +4,31 @@
 // columna de orgs que el editor lee (iva_pct, retencion_*). CRUD en /api/impuestos.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getImpuestos, getOrg, TIPO_IMPUESTO } from '../../../lib/queries';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 const ORG = await getOrg();
+const L = currentLocale();
+const tf = (key: string, vars: Record<string, string> = {}) => {
+    let s = t(L, key as any);
+    for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
+    return s;
+};
 const IMPUESTOS = await getImpuestos();
 const TIPOS = Object.entries(TIPO_IMPUESTO);
 ---
 
 <SettingsShell title="Impuestos — Ajustes" tab="impuestos" perm="ajustes"
-    intro="Define las tasas que aplicas en tus cotizaciones. El perfil marcado como predeterminado de cada tipo es el que el editor usa automáticamente en cada cotización nueva.">
+    intro={t(L, 'set.imp.intro')}>
 
     <div class="s-block">
         <div class="imp-head">
-            <h3>Perfiles de impuesto</h3>
-            <button class="dev-new" id="impNew">+ Nuevo impuesto</button>
+            <h3>{t(L, 'set.imp.perfiles')}</h3>
+            <button class="dev-new" id="impNew">{t(L, 'set.imp.nuevo')}</button>
         </div>
 
         <div class="imp-list" id="impList">
             {IMPUESTOS.length === 0 && (
-                <p class="imp-empty" id="impEmpty">Aún no defines impuestos. El IVA actual de tu cuenta es {ORG.ivaPct}%. Crea un perfil para gestionarlos aquí.</p>
+                <p class="imp-empty" id="impEmpty">{tf('set.imp.vacio', { pct: String(ORG.ivaPct) })}</p>
             )}
             {IMPUESTOS.map((i) => (
                 <div class="imp-row" data-id={i.id}>
@@ -30,57 +38,60 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
                         <span class="imp-tasa editorial">{i.tasa}%</span>
                     </span>
                     {i.esDefault
-                        ? <span class="imp-default">Predeterminado</span>
-                        : <button class="imp-setdef" data-setdef={i.id}>Hacer predeterminado</button>}
-                    <button class="key-revoke" data-del={i.id}>Eliminar</button>
+                        ? <span class="imp-default">{t(L, 'set.imp.predeterminado')}</span>
+                        : <button class="imp-setdef" data-setdef={i.id}>{t(L, 'set.imp.hacer_predeterminado')}</button>}
+                    <button class="key-revoke" data-del={i.id}>{t(L, 'set.imp.eliminar')}</button>
                 </div>
             ))}
         </div>
-        <p class="dev-note">El predeterminado de tipo <b>IVA</b> alimenta el cálculo del editor de cotizaciones (hoy: {ORG.ivaPct}%). Los de retención alimentan las retenciones globales. IEPS y exento se guardan para uso futuro por línea.</p>
+        <p class="dev-note">{tf('set.imp.nota', { pct: String(ORG.ivaPct) })}</p>
     </div>
 
-    <div class="s-block" style="margin-top: 2rem;">
+    <div class="s-block" style="margin-top: 2rem;" data-i18n-crear-err={t(L, 'set.imp.no_se_pudo_crear')} data-i18n-actualizar-err={t(L, 'set.imp.no_se_pudo_actualizar')}
+        data-i18n-eliminar-titulo={t(L, 'set.imp.eliminar_titulo')} data-i18n-eliminar-body={t(L, 'set.imp.eliminar_body')}
+        data-i18n-eliminar-confirm={t(L, 'set.imp.eliminar')} data-i18n-eliminar-err={t(L, 'set.imp.no_se_pudo_eliminar')}
+        data-i18n-config-err={t(L, 'set.imp.no_se_pudo_guardar_config')} id="impMeta">
         <div class="imp-head">
-            <h3>Comportamiento en cotizaciones</h3>
+            <h3>{t(L, 'set.imp.comportamiento')}</h3>
         </div>
         <div style="padding: 0.5rem 0 1rem;">
             <label class="s-toggle">
                 <input type="checkbox" id="ivaIncluidoDefecto" checked={ORG.ivaIncluidoDefecto} />
                 <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
-                <span class="s-toggle-text">Precios ya incluyen IVA por defecto al crear nuevas cotizaciones</span>
+                <span class="s-toggle-text">{t(L, 'set.imp.toggle_incluido')}</span>
             </label>
-            <p class="dev-note" style="margin-top: 0.8rem;">Si lo activas, el switch de "Precios ya incluyen IVA" aparecerá encendido cada vez que crees una cotización nueva.</p>
+            <p class="dev-note" style="margin-top: 0.8rem;">{t(L, 'set.imp.toggle_incluido_nota')}</p>
         </div>
     </div>
 </SettingsShell>
 
 <dialog id="impDlg" class="kdlg">
     <div class="kdlg-inner">
-        <h4>Nuevo impuesto</h4>
+        <h4>{t(L, 'set.imp.dlg_titulo')}</h4>
         <div class="s-field" style="margin-bottom:1rem">
-            <label for="iNombre">Nombre</label>
+            <label for="iNombre">{t(L, 'set.imp.nombre')}</label>
             <input class="s-input" id="iNombre" placeholder="IVA 16%, Frontera 8%, Ret. IVA 10.667%…" />
         </div>
         <div class="s-row" style="margin-bottom:1rem">
             <div class="s-field">
-                <label for="iTipo">Tipo</label>
+                <label for="iTipo">{t(L, 'set.imp.tipo')}</label>
                 <select class="s-input" id="iTipo">
                     {TIPOS.map(([id, label]) => <option value={id}>{label}</option>)}
                 </select>
             </div>
             <div class="s-field">
-                <label for="iTasa">Tasa (%)</label>
+                <label for="iTasa">{t(L, 'set.imp.tasa')}</label>
                 <input class="s-input" id="iTasa" type="number" min="0" max="100" step="0.001" value="16" />
             </div>
         </div>
         <label class="s-toggle" style="margin-bottom:0.3rem">
             <input type="checkbox" id="iDefault" checked />
             <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
-            <span class="s-toggle-text">Predeterminado para este tipo</span>
+            <span class="s-toggle-text">{t(L, 'set.imp.predeterminado_tipo')}</span>
         </label>
         <div class="wh-dlg-actions">
-            <button type="button" class="api-btn-ghost" id="impCancel">Cancelar</button>
-            <button type="button" class="api-btn-solid" id="impCreate">Crear</button>
+            <button type="button" class="api-btn-ghost" id="impCancel">{t(L, 'set.imp.cancelar')}</button>
+            <button type="button" class="api-btn-solid" id="impCreate">{t(L, 'set.imp.crear')}</button>
         </div>
     </div>
 </dialog>
@@ -123,6 +134,8 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
         const dlg = document.getElementById('impDlg') as HTMLDialogElement | null;
         const newBtn = document.getElementById('impNew');
         if (!dlg || !newBtn) return;
+        const meta = document.getElementById('impMeta') as HTMLElement | null;
+        const M = meta?.dataset || ({} as DOMStringMap);
 
         newBtn.addEventListener('click', () => {
             (document.getElementById('iNombre') as HTMLInputElement).value = '';
@@ -145,9 +158,9 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
             try {
                 const res = await fetch('/api/impuestos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, tipo, tasa, es_default }) });
                 const d = await res.json();
-                if (!res.ok) throw new Error(d.error || 'No se pudo crear');
+                if (!res.ok) throw new Error(d.error || M.i18nCrearErr || 'No se pudo crear');
                 location.reload();
-            } catch (err: any) { (window as any).cordToast?.(err.message || 'No se pudo crear', 'error'); btn.disabled = false; }
+            } catch (err: any) { (window as any).cordToast?.(err.message || M.i18nCrearErr || 'No se pudo crear', 'error'); btn.disabled = false; }
         });
 
         document.querySelectorAll('[data-setdef]').forEach((b) => b.addEventListener('click', async () => {
@@ -156,17 +169,17 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
                 const res = await fetch('/api/impuestos', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, es_default: true }) });
                 if (!res.ok) throw new Error();
                 location.reload();
-            } catch { (window as any).cordToast?.('No se pudo actualizar', 'error'); }
+            } catch { (window as any).cordToast?.(M.i18nActualizarErr || 'No se pudo actualizar', 'error'); }
         }));
 
         document.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => {
             const id = (b as HTMLElement).dataset.del!;
-            if (!await (window as any).cordConfirm({ title: 'Eliminar impuesto', body: '¿Eliminar este impuesto de tu configuración?', danger: true, confirmText: 'Eliminar' })) return;
+            if (!await (window as any).cordConfirm({ title: M.i18nEliminarTitulo || 'Eliminar impuesto', body: M.i18nEliminarBody || '¿Eliminar este impuesto de tu configuración?', danger: true, confirmText: M.i18nEliminarConfirm || 'Eliminar' })) return;
             try {
                 const res = await fetch('/api/impuestos', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
-                if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'No se pudo eliminar'); }
+                if (!res.ok) { const d = await res.json(); throw new Error(d.error || M.i18nEliminarErr || 'No se pudo eliminar'); }
                 (b.closest('.imp-row') as HTMLElement)?.remove();
-            } catch (err: any) { (window as any).cordToast?.(err.message || 'No se pudo eliminar', 'error'); }
+            } catch (err: any) { (window as any).cordToast?.(err.message || M.i18nEliminarErr || 'No se pudo eliminar', 'error'); }
         }));
 
         document.getElementById('ivaIncluidoDefecto')?.addEventListener('change', async (e) => {
@@ -179,7 +192,7 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
                 });
                 if (!res.ok) throw new Error();
             } catch {
-                (window as any).cordToast?.('No se pudo guardar la configuración', 'error');
+                (window as any).cordToast?.(M.i18nConfigErr || 'No se pudo guardar la configuración', 'error');
                 (e.target as HTMLInputElement).checked = !checked;
             }
         });

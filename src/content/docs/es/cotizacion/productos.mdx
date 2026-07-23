@@ -1,0 +1,49 @@
+---
+title: "Productos y descuentos"
+description: "Añade SKUs, agrupa artículos en kits y negocia precios."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Productos y descuentos</h1>
+  <p class="page-subtitle">Construye tu propuesta comercial añadiendo artículos, agrupando en kits y negociando el precio perfecto.</p>
+</header>
+
+## Formas de armar tu Catálogo
+
+Antes de agregar productos a una cotización, Cord te permite nutrir tu catálogo base de diferentes formas:
+
+1. **Creación Manual:** Añade SKUs uno por uno, definiendo su Precio Base, nombre, descripción y la Clave de Producto/Servicio del SAT.
+2. **Importación Masiva por CSV / Excel:** Descarga nuestra plantilla, pega tu inventario desde tu ERP actual (SAP, Microsip, Excel) y súbelo. Puedes actualizar miles de precios en una sola carga.
+3. **Kits de Productos (Bundles):** Si sueles vender las mismas cosas juntas (Ej: *Kit de Punto de Venta: Computadora + Lector de Código de Barras + Impresora Térmica*), puedes crear un **Kit** en Cord. Al cotizar, simplemente seleccionas el Kit y el sistema añadirá automáticamente todas sus partes, ahorrándote el tener que buscar y agregar los mismos artículos varias veces.
+
+## Agregando partidas a la cotización
+
+En la sección de **Partidas** del cotizador, tienes dos opciones:
+
+1. **Buscar en el Catálogo:** Utiliza la barra de búsqueda para encontrar los productos, servicios o Kits que ya configuraste con sus claves del SAT.
+2. **Partida Libre:** Si necesitas cotizar algo único sobre la marcha (Ej: *Un servicio especial de instalación de fin de semana*), puedes agregar una **Línea Libre**. Simplemente escribes el nombre que quieras, le pones la cantidad y le asignas el precio que desees en ese momento, sin tener que ir a crear un producto en el catálogo primero.
+
+Por cada partida que agregues, puedes personalizar:
+- **Cantidad:** Número de unidades.
+- **Sobrescribir el Precio Unitario:** El sistema cargará el Precio Base de tu catálogo, pero puedes editarlo libremente en ese momento (Ej: bajar de $500 a $450) para esa cotización específica sin afectar el catálogo general.
+- **Notas para el cliente:** Agrega notas o descripciones largas justo debajo del producto. Si vendes "Consultoría", puedes añadir como nota: *"Incluye 10 horas de desarrollo frontend y 2 horas de diseño"*. El cliente verá estas notas debajo de cada partida en el enlace web.
+
+### Descuentos Inteligentes
+
+El B2B vive de la negociación. Cord maneja los descuentos de manera jerárquica:
+
+1. **Descuento de Nivel de Cliente (Automático):** Si seleccionaste un cliente VIP, Cord ya aplicó su descuento base automáticamente.
+2. **Descuento por partida:** Se aplica únicamente a un producto específico (Ej: *20% de descuento en el Software, pero el Hardware se cobra completo*).
+3. **Descuento global:** Se aplica al subtotal de toda la cotización. Puedes ingresarlo como porcentaje (*10%*) o monto fijo (*-$5,000 MXN*).
+
+<Callout type="warning">
+**Importante para el SAT:** Todos los descuentos en Cord se aplican matemáticamente **antes** de calcular los impuestos (IVA/IEPS), cumpliendo estrictamente con las reglas de redondeo del CFDI 4.0. No tienes que preocuparte por descuadres de centavos.
+</Callout>
+
+## Cálculo en Tiempo Real
+
+A medida que agregas productos o modificas descuentos, Cord actualiza instantáneamente el desglose en la parte inferior de la pantalla:
+- **Subtotal:** Suma de todas las partidas sin impuestos.
+- **Descuentos:** Total restado.
+- **Impuestos (IVA / IEPS):** Calculados con base en las reglas fiscales de cada producto.
+- **Total:** Lo que el cliente pagará.

@@ -6,67 +6,70 @@
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
 import { planTieneApi } from '../../../lib/permissions';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 const ORG = await getOrg();
 // Quitar el "Powered by Cord" es feature de plan de pago (igual que el embed).
 const puedeQuitarMarca = planTieneApi(ORG.plan_raw);
+const L = currentLocale();
 ---
 
 <SettingsShell title="Portal del cliente — Ajustes" tab="portal" perm="ajustes" save
-    intro="Así se ve la página pública donde tu cliente revisa, comenta y aprueba una cotización (la del link /q y la del cotizador embebible). Personalízala con tu marca.">
+    intro={t(L, 'set.portal.intro')}>
 
     <div class="portal-grid">
         <div class="portal-form">
             <div class="s-block">
-                <h3>Mensajes</h3>
+                <h3>{t(L, 'set.portal.mensajes')}</h3>
                 <div class="s-body">
                     <div class="s-field">
-                        <label for="pBanner">Banner superior</label>
+                        <label for="pBanner">{t(L, 'set.portal.banner_superior')}</label>
                         <input class="s-input" id="pBanner" data-field="portal_banner" value={ORG.portalBanner} maxlength="200" placeholder="Ej. Precios válidos hasta fin de mes · Envío sin costo en pedidos > $10,000" />
-                        <span class="s-hint">Aviso breve arriba de la cotización. Vacío = sin banner.</span>
+                        <span class="s-hint">{t(L, 'set.portal.banner_hint')}</span>
                     </div>
                     <div class="s-field">
-                        <label for="pWelcome">Mensaje de bienvenida</label>
+                        <label for="pWelcome">{t(L, 'set.portal.mensaje_bienvenida')}</label>
                         <textarea class="s-input s-textarea" id="pWelcome" data-field="portal_bienvenida" rows="3" maxlength="280" placeholder="Gracias por considerar a tu negocio. Cualquier duda, escríbenos por aquí mismo.">{ORG.portalBienvenida}</textarea>
-                        <span class="s-hint">Aparece bajo el encabezado, antes de las partidas.</span>
+                        <span class="s-hint">{t(L, 'set.portal.mensaje_bienvenida_hint')}</span>
                     </div>
                 </div>
             </div>
 
             <div class="s-block">
-                <h3>Color de marca</h3>
+                <h3>{t(L, 'set.portal.color_marca')}</h3>
                 <div class="s-field">
-                    <label for="oColor">Acento del portal</label>
+                    <label for="oColor">{t(L, 'set.portal.acento')}</label>
                     <div class="color-row">
-                        <input type="color" id="oColorPick" value={ORG.colorMarca} aria-label="Elegir color" />
+                        <input type="color" id="oColorPick" value={ORG.colorMarca} aria-label={t(L, 'set.portal.elegir_color')} />
                         <input class="s-input" id="oColor" data-field="color_marca" value={ORG.colorMarca} maxlength="7" />
                     </div>
-                    <span class="s-hint">Botones, montos y detalles del portal usan este color.</span>
+                    <span class="s-hint">{t(L, 'set.portal.acento_hint')}</span>
                 </div>
             </div>
 
             <div class="s-block">
-                <h3>Interacción</h3>
+                <h3>{t(L, 'set.portal.interaccion')}</h3>
                 <div class="s-body">
                     <label class="s-toggle">
                         <input type="checkbox" id="pChat" data-field="portal_mostrar_chat" checked={ORG.portalMostrarChat} />
                         <span class="s-toggle-track" aria-hidden="true"><span class="s-toggle-thumb"></span></span>
-                        <span class="s-toggle-text">Permitir comentarios y contraofertas del cliente</span>
+                        <span class="s-toggle-text">{t(L, 'set.portal.permitir_chat')}</span>
                     </label>
-                    <span class="s-hint" style="margin-left:49px;margin-top:-6px">Si lo apagas, el cliente solo puede aprobar o rechazar (sin chat ni negociación).</span>
+                    <span class="s-hint" style="margin-left:49px;margin-top:-6px">{t(L, 'set.portal.permitir_chat_hint')}</span>
 
                     <label class:list={['s-toggle', { disabled: !puedeQuitarMarca }]} style="margin-top:0.4rem">
                         <input type="checkbox" id="pPowered" data-field="portal_powered" checked={ORG.portalPowered} disabled={!puedeQuitarMarca} />
                         <span class="s-toggle-track" aria-hidden="true"><span class="s-toggle-thumb"></span></span>
-                        <span class="s-toggle-text">Mostrar "enviado vía Cord"{!puedeQuitarMarca && <span class="lock-tag">plan Negocio para quitarlo</span>}</span>
+                        <span class="s-toggle-text">{t(L, 'set.portal.mostrar_powered')}{!puedeQuitarMarca && <span class="lock-tag">{t(L, 'set.portal.plan_negocio_tag')}</span>}</span>
                     </label>
-                    <span class="s-hint" style="margin-left:49px;margin-top:-6px">El branding sutil de Cord al pie del portal. Quitarlo requiere un plan de pago.</span>
+                    <span class="s-hint" style="margin-left:49px;margin-top:-6px">{t(L, 'set.portal.powered_hint')}</span>
                 </div>
             </div>
         </div>
 
         <!-- ── PREVIEW EN VIVO DEL PORTAL ── -->
         <aside class="portal-pane">
-            <div class="portal-pane-head"><span>Vista del cliente</span></div>
+            <div class="portal-pane-head"><span>{t(L, 'set.portal.vista_cliente')}</span></div>
             <div class="pp-frame">
                 <div class="pp-banner" id="ppBanner" style={ORG.portalBanner ? '' : 'display:none'}>{ORG.portalBanner}</div>
                 <div class="pp-card" id="ppCard">
@@ -74,23 +77,23 @@ const puedeQuitarMarca = planTieneApi(ORG.plan_raw);
                         <span class="pp-mark" id="ppMark">{ORG.inicial}</span>
                         <div>
                             <b id="ppOrg">{ORG.nombre}</b>
-                            <i>Cotización COT-0149</i>
+                            <i>{t(L, 'set.portal.folio_ejemplo')}</i>
                         </div>
                     </div>
                     <p class="pp-welcome" id="ppWelcome" style={ORG.portalBienvenida ? '' : 'display:none'}>{ORG.portalBienvenida}</p>
                     <div class="pp-rows">
-                        <div class="pp-r"><span>Cemento gris 50kg × 120</span><span class="editorial">$21,840</span></div>
-                        <div class="pp-r"><span>Varilla 3/8" × 340</span><span class="editorial">$57,290</span></div>
+                        <div class="pp-r"><span>{t(L, 'set.portal.item1')}</span><span class="editorial">$21,840</span></div>
+                        <div class="pp-r"><span>{t(L, 'set.portal.item2')}</span><span class="editorial">$57,290</span></div>
                     </div>
-                    <div class="pp-total"><span>Total</span><b class="editorial" id="ppTotal">$131,323.60</b></div>
-                    <button class="pp-approve" id="ppApprove">Aprobar cotización</button>
+                    <div class="pp-total"><span>{t(L, 'set.portal.total')}</span><b class="editorial" id="ppTotal">$131,323.60</b></div>
+                    <button class="pp-approve" id="ppApprove" data-i18n-label={t(L, 'set.portal.aprobar_cotizacion')}>{t(L, 'set.portal.aprobar_cotizacion')}</button>
                     <div class="pp-chat" id="ppChat">
-                        <input disabled placeholder="Escribe un comentario o contraoferta…" />
+                        <input disabled placeholder={t(L, 'set.portal.chat_placeholder')} />
                     </div>
                 </div>
-                <div class="pp-powered" id="ppPowered" style={ORG.portalPowered ? '' : 'display:none'}>enviado vía <b>Cord</b></div>
+                <div class="pp-powered" id="ppPowered" style={ORG.portalPowered ? '' : 'display:none'}>{t(L, 'set.portal.enviado_via')} <b>Cord</b></div>
             </div>
-            <span class="portal-pane-hint">Datos de ejemplo. Tu cliente ve esto en el link /q y en el cotizador embebible.</span>
+            <span class="portal-pane-hint">{t(L, 'set.portal.preview_hint')}</span>
         </aside>
     </div>
 </SettingsShell>
@@ -144,7 +147,8 @@ const puedeQuitarMarca = planTieneApi(ORG.plan_raw);
             show('ppBanner', !!banner); setTxt('ppBanner', banner);
             const welcome = val('pWelcome').trim();
             show('ppWelcome', !!welcome); setTxt('ppWelcome', welcome);
-            setTxt('ppApprove', 'Aprobar cotización');
+            const approveBtn = document.getElementById('ppApprove');
+            setTxt('ppApprove', approveBtn?.dataset.i18nLabel || 'Aprobar cotización');
 
             const chat = (document.getElementById('pChat') as HTMLInputElement)?.checked;
             show('ppChat', !!chat);

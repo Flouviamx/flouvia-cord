@@ -1,0 +1,131 @@
+---
+// src/components/docs/mdx/Tabs.astro
+---
+
+<cord-tabs class="cord-tabs">
+  <div class="tabs-header" role="tablist">
+    <!-- Buttons injected via JS -->
+  </div>
+  <div class="tabs-panels">
+    <slot />
+  </div>
+</cord-tabs>
+
+<script>
+  class CordTabs extends HTMLElement {
+    constructor() {
+      super();
+      
+      const panels = Array.from(this.querySelectorAll('.tab-panel'));
+      const header = this.querySelector('.tabs-header');
+      
+      if (!header || panels.length === 0) return;
+      
+      panels.forEach((panel, i) => {
+        const label = panel.getAttribute('data-label');
+        const btn = document.createElement('button');
+        btn.className = `tab-btn ${i === 0 ? 'active' : ''}`;
+        btn.setAttribute('role', 'tab');
+        btn.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+        btn.textContent = label || `Tab ${i + 1}`;
+        btn.addEventListener('click', () => {
+          // Deactivate all
+          this.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.remove('active');
+            b.setAttribute('aria-selected', 'false');
+          });
+          panels.forEach(p => {
+            p.classList.remove('active');
+            p.setAttribute('hidden', '');
+          });
+          
+          // Activate clicked
+          btn.classList.add('active');
+          btn.setAttribute('aria-selected', 'true');
+          panel.classList.add('active');
+          panel.removeAttribute('hidden');
+        });
+        
+        header.appendChild(btn);
+        
+        if (i !== 0) {
+          panel.setAttribute('hidden', '');
+        } else {
+          panel.classList.add('active');
+        }
+      });
+    }
+  }
+  
+  if (!customElements.get('cord-tabs')) {
+    customElements.define('cord-tabs', CordTabs);
+  }
+</script>
+
+<style>
+  .cord-tabs {
+    display: block;
+    margin: 24px 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+  }
+  
+  .tabs-header {
+    display: flex;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0 8px;
+    gap: 8px;
+  }
+  
+  .tabs-header :global(.tab-btn) {
+    background: transparent;
+    border: none;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #64748b;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  
+  .tabs-header :global(.tab-btn:hover) {
+    color: #0f172a;
+  }
+  
+  .tabs-header :global(.tab-btn.active) {
+    color: #0f172a;
+    border-bottom-color: #0f172a;
+  }
+  
+  .tabs-panels {
+    padding: 20px;
+  }
+  
+  /* Fix code blocks inside tabs to not have double padding/margin if possible */
+  .tabs-panels :global(> .tab-panel) {
+    display: none;
+  }
+  
+  .tabs-panels :global(> .tab-panel.active) {
+    display: block;
+    animation: tabFadeIn 0.3s ease;
+  }
+  
+  .tabs-panels :global(.tab-panel > *:first-child) {
+    margin-top: 0;
+  }
+  
+  .tabs-panels :global(.tab-panel > *:last-child) {
+    margin-bottom: 0;
+  }
+  
+  @keyframes tabFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>

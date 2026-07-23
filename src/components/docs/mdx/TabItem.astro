@@ -1,0 +1,12 @@
+---
+// src/components/docs/mdx/TabItem.astro
+export interface Props {
+  label: string;
+}
+
+const { label } = Astro.props;
+---
+
+<div class="tab-panel" data-label={label} role="tabpanel">
+  <slot />
+</div>

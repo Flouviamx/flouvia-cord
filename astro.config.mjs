@@ -5,6 +5,7 @@ import clerk from '@clerk/astro';
 import { esMX } from '@clerk/localizations';
 
 import react from '@astrojs/react';
+import mdx from '@astrojs/mdx';
 
 export default defineConfig({
   site: 'https://cordhq.app',
@@ -30,7 +31,7 @@ export default defineConfig({
     '/en/desarrolladores/elements': '/en/elements',
   },
 
-  integrations: [clerk({ localization: esMX, afterSignOutUrl: '/' }), react()],
+  integrations: [clerk({ localization: esMX, afterSignOutUrl: '/' }), react(), mdx()],
 
   adapter: vercel(),
 

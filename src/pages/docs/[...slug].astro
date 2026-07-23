@@ -4,21 +4,32 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 
 // Resolve the dynamic slug. If none provided, default to "index" which maps to "resumen"
 const slug = Astro.params.slug || "index";
-const lang = Astro.url.searchParams.get("lang") === "en" ? "en" : "es";
+const lang = "es";
+
+// Redirect query-param styled urls for SEO
+if (Astro.url.searchParams.get("lang") === "en") {
+  const querySlug = Astro.params.slug ? `/${Astro.params.slug}` : '';
+  return Astro.redirect(`/en/docs${querySlug}`);
+}
 
 const entrySlug = slug === "index" ? "resumen" : slug;
 const doc = await getEntry("docs", `${lang}/${entrySlug}`);
 
 if (!doc) {
   // If the document doesn't exist, redirect back to the main overview
-  return Astro.redirect(`/docs?lang=${lang}`);
+  return Astro.redirect(`/docs`);
 }
 
-const { Content } = await render(doc);
+import Callout from "../../components/docs/mdx/Callout.astro";
+import Tabs from "../../components/docs/mdx/Tabs.astro";
+import TabItem from "../../components/docs/mdx/TabItem.astro";
+import Steps from "../../components/docs/mdx/Steps.astro";
+
+const { Content, headings } = await render(doc);
 const description = doc.data.description || undefined;
 ---
 
-<DocsLayout title={doc.data.title} lang={lang} description={description}>
-  <Content />
+<DocsLayout title={doc.data.title} lang={lang} description={description} headings={headings}>
+  <Content components={{ Callout, Tabs, TabItem, Steps }} />
 </DocsLayout>
 

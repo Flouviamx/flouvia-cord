@@ -1,0 +1,37 @@
+---
+title: "Import your catalog"
+description: "Upload your products and services, SKUs, and base prices to Cord."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Import your catalog</h1>
+  <p class="page-subtitle">Upload your products, SKUs, and prices so you can create B2B quotes in seconds.</p>
+</header>
+
+## Manage your SKUs easily
+
+The heart of a B2B quote is product accuracy. Cord allows you to manage a centralized catalog where your sales team simply searches and selects, ensuring the name, SKU, and tax base are always correct.
+
+### 1. Manual Creation
+
+If you have a small catalog or sell services, you can add products one by one from **Catalog > New Product**.
+You will be asked for the following data:
+- **Product / Service Name**
+- **SKU (Internal Code):** Unique identifier.
+- **Base Price (Before taxes):** The public list price.
+- **Internal Cost (Optional):** If you enter how much the product costs you, Cord will calculate and show you the **Profit Margin** in real-time when building the quote. Your client will never see this cost.
+- **Volume Pricing:** Vital in B2B. You can set up automatic rules, for example: *"From 1 to 10 pieces the price is $100, from 11 to 50 pieces the price drops to $85"*. Cord will automatically adjust the price based on the quantity the sales rep adds to the quote.
+- **Status (Active / Inactive):** If you discontinue a product or run out of stock long-term, you can mark it as *Inactive* so sales reps can no longer add it to new quotes, without deleting its history.
+- **Product/Service and Unit Key (SAT):** Mandatory for CFDI 4.0. We have a built-in smart search engine.
+- **Applicable Taxes:** Define if it carries VAT (16%, 8%, 0% or Exempt) or IEPS.
+
+### 2. Bulk Import (Coming Soon)
+
+For B2B companies with hundreds or thousands of references, Cord will soon enable bulk import. 
+You will be able to download our **CSV / Excel Template**, paste the information extracted from your ERP (such as SAP, Oracle, or Microsip), and upload it to Cord to update prices, SAT keys, and descriptions in a single move.
+
+<Callout type="info">
+**Tip:** Do your prices change constantly?
+With the **Cord Public API** (Developers), you can synchronize your catalog in real-time. If you update a price in your ERP, a *webhook* or API call can automatically update it in Cord, ensuring your salespeople always quote with the current price list.
+
+</Callout>

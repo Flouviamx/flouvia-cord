@@ -1,0 +1,48 @@
+---
+title: "Configure payments"
+description: "Learn how to connect your bank account and pass the verification process (KYC) to start charging online."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Configure payments</h1>
+  <p class="page-subtitle">Learn how to connect your bank account and pass the verification process (KYC) to start charging online.</p>
+</header>
+
+## The Onboarding Process
+
+For money to reach your bank directly without Cord holding it, we use **Stripe Connect**. This means you'll have your own sub-account for payment processing, tied to your bank account, and configured so that Cord charges zero commission—you only pay standard Stripe processing fees.
+
+### Steps to connect your account
+
+1. Go to **Settings > Payments** inside the app.
+2. If your status is **"new"**, you will see a welcome screen.
+3. Click on the **Start verification** button. This will open a secure embedded Stripe component where you will be asked for information about your company.
+
+### What information is required (KYC)?
+
+Stripe is required by law to verify your identity and the legitimacy of your business (KYC - Know Your Customer). You should have ready:
+
+- **Company Tax ID:** The legal name and tax ID (RFC) you use for billing.
+- **Official ID:** Passport or government ID of the legal representative.
+- **Bank account (CLABE/IBAN):** The account where you want your sales deposited automatically.
+- **Articles of Incorporation:** In some cases (for companies with high sales volume), Stripe might request the articles of incorporation to verify shareholder structure.
+
+<Callout type="warning">
+**Important note:** Cord does not store any of this sensitive information. The entire process takes place within a secure Stripe iframe (`<iframe>`), and documents go directly to their PCI Level 1 certified financial servers.
+</Callout>
+
+## Account Statuses
+
+Depending on your progress in onboarding, your payment account will show different statuses in the interface:
+
+- **New:** You haven't started the process yet. No automatic payment methods will be available.
+- **Pending:** You've started the process but Stripe needs to verify your documents or requires additional uploads. In this state, Card and SPEI methods remain locked.
+- **Active:** You're all set! Stripe has verified your identity and your bank account is confirmed. You can now charge, and money will flow automatically.
+
+## Available Payment Methods
+
+Once your status is **Active**, you'll be able to individually toggle the methods you offer on your quotes:
+
+- **Credit and debit card:** Processed instantly (Visa, Mastercard, Amex).
+- **Automatic SPEI transfer (MX):** Generates a unique, temporary CLABE for the current quote. When the client transfers the funds, the system automatically marks the payment as completed and notifies you.
+- **Manual transfer (Without Stripe):** Displays your traditional bank account details. The client uploads their receipt, and you manually mark the payment as received. This method is available **regardless of the status** of your Stripe account.

@@ -2,93 +2,96 @@
 // Ajustes › General — identidad del negocio, contacto, presencia y localización.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 const ORG = await getOrg();
+const L = currentLocale();
 
 const MONEDAS = [
-    { v: 'MXN', l: 'Peso mexicano (MXN)' },
-    { v: 'USD', l: 'Dólar estadounidense (USD)' },
-    { v: 'EUR', l: 'Euro (EUR)' },
+    { v: 'MXN', l: t(L, 'set.general.moneda.mxn') },
+    { v: 'USD', l: t(L, 'set.general.moneda.usd') },
+    { v: 'EUR', l: t(L, 'set.general.moneda.eur') },
 ];
 const ZONAS = [
-    { v: 'America/Mexico_City', l: 'Centro — Ciudad de México (GMT-6)' },
-    { v: 'America/Tijuana',     l: 'Pacífico — Tijuana (GMT-8)' },
-    { v: 'America/Cancun',      l: 'Sureste — Cancún (GMT-5)' },
-    { v: 'America/Hermosillo',  l: 'Pacífico — Hermosillo (GMT-7)' },
+    { v: 'America/Mexico_City', l: t(L, 'set.general.zona.centro') },
+    { v: 'America/Tijuana',     l: t(L, 'set.general.zona.tijuana') },
+    { v: 'America/Cancun',      l: t(L, 'set.general.zona.cancun') },
+    { v: 'America/Hermosillo',  l: t(L, 'set.general.zona.hermosillo') },
 ];
 ---
 
 <SettingsShell title="General — Ajustes" tab="general" perm="ajustes"
-    intro="Lo esencial de tu negocio: cómo te llamas, cómo te contactan y en qué moneda operas. Estos datos viajan al link público y al PDF de cada cotización." save>
+    intro={t(L, 'set.general.intro')} save>
 
     <div class="s-block">
-        <h3>Identidad del negocio</h3>
+        <h3>{t(L, 'set.general.identidad')}</h3>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
-                    <label for="oNombre">Nombre del negocio</label>
+                    <label for="oNombre">{t(L, 'set.general.nombre')}</label>
                     <input class="s-input" id="oNombre" data-field="nombre" value={ORG.nombre} />
                 </div>
                 <div class="s-field">
-                    <label for="oMoneda">Moneda base</label>
+                    <label for="oMoneda">{t(L, 'set.general.moneda')}</label>
                     <select class="s-input" id="oMoneda" data-field="moneda">
                         {MONEDAS.map((m) => <option value={m.v} selected={ORG.moneda === m.v}>{m.l}</option>)}
                     </select>
-                    <span class="s-hint">Moneda en la que cotizas. Cambiarla no convierte montos existentes.</span>
+                    <span class="s-hint">{t(L, 'set.general.moneda_hint')}</span>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="s-block">
-        <h3>Contacto</h3>
+        <h3>{t(L, 'set.general.contacto')}</h3>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
-                    <label for="oEmail">Correo de contacto</label>
+                    <label for="oEmail">{t(L, 'set.general.correo_contacto')}</label>
                     <input class="s-input" id="oEmail" data-field="email_contacto" type="email" value={ORG.email} placeholder="ventas@tunegocio.mx" />
                 </div>
                 <div class="s-field">
-                    <label for="oTelefono">Teléfono</label>
+                    <label for="oTelefono">{t(L, 'set.general.telefono')}</label>
                     <input class="s-input" id="oTelefono" data-field="telefono" value={ORG.telefono} placeholder="55 1234 5678" />
                 </div>
             </div>
             <div class="s-field">
-                <label for="oDireccion">Dirección</label>
+                <label for="oDireccion">{t(L, 'set.general.direccion')}</label>
                 <input class="s-input" id="oDireccion" data-field="direccion" value={ORG.direccion} placeholder="Av. Industria 123, Tlalnepantla, Edo. Méx." />
             </div>
         </div>
     </div>
 
     <div class="s-block">
-        <h3>Presencia en línea</h3>
+        <h3>{t(L, 'set.general.presencia')}</h3>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
-                    <label for="oWeb">Sitio web</label>
+                    <label for="oWeb">{t(L, 'set.general.sitio_web')}</label>
                     <input class="s-input" id="oWeb" data-field="sitio_web" value={ORG.sitioWeb} placeholder="https://tunegocio.mx" />
                 </div>
                 <div class="s-field">
-                    <label for="oWa">WhatsApp</label>
+                    <label for="oWa">{t(L, 'set.general.whatsapp')}</label>
                     <input class="s-input" id="oWa" data-field="whatsapp" value={ORG.whatsapp} placeholder="5215512345678" />
-                    <span class="s-hint">Con lada país (52). Se usa en el botón "Enviar por WhatsApp".</span>
+                    <span class="s-hint">{t(L, 'set.general.whatsapp_hint')}</span>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="s-block">
-        <h3>Localización</h3>
+        <h3>{t(L, 'set.general.localizacion')}</h3>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
-                    <label for="oZona">Zona horaria</label>
+                    <label for="oZona">{t(L, 'set.general.zona_horaria')}</label>
                     <select class="s-input" id="oZona" data-field="zona_horaria">
                         {ZONAS.map((z) => <option value={z.v} selected={ORG.zonaHoraria === z.v}>{z.l}</option>)}
                     </select>
-                    <span class="s-hint">Para fechas de vencimiento y horarios de eventos.</span>
+                    <span class="s-hint">{t(L, 'set.general.zona_horaria_hint')}</span>
                 </div>
                 <div class="s-field">
-                    <label for="oIdioma">Idioma</label>
+                    <label for="oIdioma">{t(L, 'set.general.idioma')}</label>
                     <select class="s-input" id="oIdioma" data-field="idioma">
                         <option value="es-MX" selected={ORG.idioma === 'es-MX'}>Español (México)</option>
                         <option value="en-US" disabled>English (próximamente)</option>

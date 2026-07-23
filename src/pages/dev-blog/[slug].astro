@@ -1,6 +1,67 @@
 ---
 import { getEntry, render } from 'astro:content';
 import DevBlogLayout from "../../layouts/DevBlogLayout.astro";
+import PixelIcon from "../../components/dev-blog/PixelIcon.jsx";
+
+const copyMatrix = [
+  [0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,1,1,1,1,1,1,0,0,0],
+  [0,0,0,1,0,0,0,0,1,0,0,0],
+  [0,0,0,1,0,0,0,0,1,0,0,0],
+  [0,0,0,1,0,0,0,0,1,0,0,0],
+  [0,1,1,1,1,1,1,0,1,0,0,0],
+  [0,1,0,0,0,0,1,0,1,0,0,0],
+  [0,1,0,0,0,0,1,1,1,0,0,0],
+  [0,1,0,0,0,0,1,0,0,0,0,0],
+  [0,1,0,0,0,0,1,0,0,0,0,0],
+  [0,1,1,1,1,1,1,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0]
+];
+
+const mdMatrix = [
+  [0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,1,1,0,0,0,0,0],
+  [0,0,0,0,0,1,1,0,0,0,0,0],
+  [0,0,0,0,0,1,1,0,0,0,0,0],
+  [0,0,0,0,0,1,1,0,0,0,0,0],
+  [0,0,1,1,0,1,1,0,1,1,0,0],
+  [0,0,0,1,1,1,1,1,1,0,0,0],
+  [0,0,0,0,1,1,1,1,0,0,0,0],
+  [0,0,0,0,0,1,1,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,1,1,1,1,1,1,1,1,1,1,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0]
+];
+
+const xMatrix = [
+  [0,0,0,0,0,0,0,0,0,0,0,0],
+  [1,1,1,0,0,0,0,0,0,0,1,1],
+  [0,1,1,1,0,0,0,0,0,1,1,0],
+  [0,0,1,1,1,0,0,0,1,1,0,0],
+  [0,0,0,1,1,1,0,1,1,0,0,0],
+  [0,0,0,0,1,1,1,1,0,0,0,0],
+  [0,0,0,0,0,1,1,0,0,0,0,0],
+  [0,0,0,0,1,1,1,1,0,0,0,0],
+  [0,0,0,1,1,0,1,1,1,0,0,0],
+  [0,0,1,1,0,0,0,1,1,1,0,0],
+  [0,1,1,0,0,0,0,0,1,1,1,0],
+  [1,1,0,0,0,0,0,0,0,1,1,1]
+];
+
+const inMatrix = [
+  [1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,1,1,0,1,1,0,0,1,0,1],
+  [1,0,1,1,0,1,1,1,0,1,0,1],
+  [1,0,0,0,0,1,0,1,1,1,0,1],
+  [1,0,1,1,0,1,0,0,1,1,0,1],
+  [1,0,1,1,0,1,0,0,1,1,0,1],
+  [1,0,1,1,0,1,0,0,1,1,0,1],
+  [1,0,1,1,0,1,0,0,1,1,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1],
+  [0,0,0,0,0,0,0,0,0,0,0,0]
+];
 
 const slug = Astro.params.slug;
 const lang = Astro.url.searchParams.get("lang") === "en" ? "en" : "es";
@@ -94,11 +155,11 @@ const articleJsonLd = {
       <div class="meta-group">
         <span class="meta-key">{lang === 'en' ? 'AGENTS:' : 'AGENTES:'}</span>
         <div class="btn-grid">
-          <button class="outline-btn">
-            <span class="btn-icon">⎘</span> {lang === 'en' ? 'Copy for LLM' : 'Copiar para LLM'}
+          <button class="outline-btn" id="btn-copy-llm">
+            <span class="btn-icon"><PixelIcon matrix={copyMatrix} pixelSize={0.8} baseColor="currentColor" client:load /></span> <span id="copy-llm-text">{lang === 'en' ? 'Copy for LLM' : 'Copiar para LLM'}</span>
           </button>
-          <button class="outline-btn">
-            <span class="btn-icon">↓</span> {lang === 'en' ? 'View as Markdown' : 'Ver como Markdown'}
+          <button class="outline-btn" id="btn-toggle-md">
+            <span class="btn-icon" id="icon-md-down"><PixelIcon matrix={mdMatrix} pixelSize={0.8} baseColor="currentColor" client:load /></span> <span id="toggle-md-text">{lang === 'en' ? 'View as Markdown' : 'Ver como Markdown'}</span>
           </button>
         </div>
       </div>
@@ -106,8 +167,12 @@ const articleJsonLd = {
       <div class="meta-group">
         <span class="meta-key">{lang === 'en' ? 'SHARE:' : 'COMPARTIR:'}</span>
         <div class="btn-grid">
-          <button class="outline-btn">Twitter/X</button>
-          <button class="outline-btn">LinkedIn</button>
+          <button class="outline-btn" id="btn-share-x">
+            <span class="btn-icon"><PixelIcon matrix={xMatrix} pixelSize={0.8} baseColor="currentColor" client:load /></span> <span class="btn-text">Twitter/X</span>
+          </button>
+          <button class="outline-btn" id="btn-share-in">
+            <span class="btn-icon"><PixelIcon matrix={inMatrix} pixelSize={0.8} baseColor="currentColor" client:load /></span> <span class="btn-text">LinkedIn</span>
+          </button>
         </div>
       </div>
     </aside>
@@ -115,9 +180,10 @@ const articleJsonLd = {
     <!-- Content Area -->
     <article class="content-area">
       <div class="section-label-content">ARTICLE</div>
-      <div class="prose">
+      <div class="prose" id="article-html">
         <Content />
       </div>
+      <pre class="prose-raw" id="article-raw" style="display: none;"><code set:text={entry.body}></code></pre>
     </article>
   </div>
 </DevBlogLayout>
@@ -233,6 +299,13 @@ const articleJsonLd = {
     gap: 12px;
   }
   
+  .btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+  }
+  
   .outline-btn {
     flex: 1;
     background: transparent;
@@ -240,7 +313,7 @@ const articleJsonLd = {
     color: var(--dev-accent);
     font-family: var(--dev-mono);
     font-size: 10px;
-    padding: 8px;
+    padding: 6px 8px;
     border-radius: 999px;
     cursor: pointer;
     display: flex;
@@ -248,6 +321,7 @@ const articleJsonLd = {
     justify-content: center;
     gap: 6px;
     transition: all 0.2s;
+    white-space: nowrap;
   }
   
   .outline-btn:hover {
@@ -270,6 +344,21 @@ const articleJsonLd = {
   
   :global(.prose p) {
     margin-bottom: 1.5em;
+  }
+  
+  :global(.prose-raw) {
+    font-family: var(--dev-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    color: #94a3b8;
+    background: rgba(2, 6, 23, 0.5);
+    padding: 24px;
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-width: 760px;
+    overflow-x: hidden;
   }
   
   :global(.prose h2) {
@@ -315,4 +404,65 @@ const articleJsonLd = {
   gsap.from(".content-area", {
     y: 30, opacity: 0, duration: 0.8, ease: "power3.out", delay: 0.5
   });
+
+  // Action Buttons Logic
+  const btnCopy = document.getElementById('btn-copy-llm');
+  const copyText = document.getElementById('copy-llm-text');
+  const rawCode = document.getElementById('article-raw');
+  
+  if (btnCopy && rawCode) {
+    btnCopy.addEventListener('click', () => {
+      navigator.clipboard.writeText(rawCode.textContent).then(() => {
+        const originalText = copyText.textContent;
+        copyText.textContent = 'Copied!';
+        btnCopy.style.borderColor = '#10b981';
+        btnCopy.style.color = '#10b981';
+        setTimeout(() => {
+          copyText.textContent = originalText;
+          btnCopy.style.borderColor = '';
+          btnCopy.style.color = '';
+        }, 2000);
+      });
+    });
+  }
+
+  const btnToggle = document.getElementById('btn-toggle-md');
+  const toggleText = document.getElementById('toggle-md-text');
+  const htmlView = document.getElementById('article-html');
+  
+  if (btnToggle && htmlView && rawCode) {
+    let isMd = false;
+    const isEn = toggleText.textContent.includes('View');
+    btnToggle.addEventListener('click', () => {
+      isMd = !isMd;
+      if (isMd) {
+        htmlView.style.display = 'none';
+        rawCode.style.display = 'block';
+        toggleText.textContent = isEn ? 'View as HTML' : 'Ver como HTML';
+      } else {
+        htmlView.style.display = 'block';
+        rawCode.style.display = 'none';
+        toggleText.textContent = isEn ? 'View as Markdown' : 'Ver como Markdown';
+      }
+    });
+  }
+
+  const btnX = document.getElementById('btn-share-x');
+  const btnIn = document.getElementById('btn-share-in');
+  
+  if (btnX) {
+    btnX.addEventListener('click', () => {
+      const url = encodeURIComponent(window.location.href);
+      const titleEl = document.querySelector('.article-title');
+      const title = titleEl ? encodeURIComponent(titleEl.textContent) : '';
+      window.open(`https://twitter.com/intent/tweet?text=${title}&url=${url}`, '_blank', 'width=600,height=400');
+    });
+  }
+  
+  if (btnIn) {
+    btnIn.addEventListener('click', () => {
+      const url = encodeURIComponent(window.location.href);
+      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank', 'width=600,height=400');
+    });
+  }
 </script>

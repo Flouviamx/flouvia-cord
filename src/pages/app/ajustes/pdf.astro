@@ -4,42 +4,45 @@
 // (se editan en sus propias secciones); aquí solo se ajusta el documento.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 const ORG = await getOrg();
+const L = currentLocale();
 const accent = /^#[0-9a-fA-F]{6}$/.test(ORG.colorMarca) ? ORG.colorMarca : '#0a192f';
 const tpl = ORG.pdfTemplate || 'clasico';
 ---
 
 <SettingsShell title="Documento PDF — Ajustes" tab="pdf" perm="ajustes"
-    intro="Personaliza el PDF que tus clientes descargan o reciben impreso. Cada cuenta tiene el suyo." save>
+    intro={t(L, 'set.pdf.intro')} save>
     <div class="pdf-layout">
         <!-- Columna del formulario -->
         <div class="pdf-form">
             <div class="s-block">
-                <h3>Plantilla</h3>
+                <h3>{t(L, 'set.pdf.plantilla')}</h3>
                 <div class="tpl-grid">
                     <label class="tpl-card">
                         <input type="radio" name="pdfTpl" data-field="pdf_template" value="minimal" checked={tpl === 'minimal'} />
                         <span class="tpl-mini m-minimal" aria-hidden="true"><i class="b"></i><i></i><i></i><i class="t"></i></span>
-                        <span class="tpl-name">Minimal</span>
+                        <span class="tpl-name">{t(L, 'set.pdf.tpl_minimal')}</span>
                     </label>
                     <label class="tpl-card">
                         <input type="radio" name="pdfTpl" data-field="pdf_template" value="clasico" checked={tpl !== 'minimal' && tpl !== 'detallado'} />
                         <span class="tpl-mini m-clasico" aria-hidden="true"><i class="b"></i><i></i><i></i><i class="t"></i></span>
-                        <span class="tpl-name">Clásico</span>
+                        <span class="tpl-name">{t(L, 'set.pdf.tpl_clasico')}</span>
                     </label>
                     <label class="tpl-card">
                         <input type="radio" name="pdfTpl" data-field="pdf_template" value="detallado" checked={tpl === 'detallado'} />
                         <span class="tpl-mini m-detallado" aria-hidden="true"><i class="b"></i><i></i><i></i><i class="t"></i></span>
-                        <span class="tpl-name">Detallado</span>
+                        <span class="tpl-name">{t(L, 'set.pdf.tpl_detallado')}</span>
                     </label>
                 </div>
             </div>
 
             <div class="s-block">
-                <h3>Logo y textos</h3>
+                <h3>{t(L, 'set.pdf.logo_textos')}</h3>
                 <div class="s-body">
                     <div class="s-field">
-                        <label>Logo del documento</label>
+                        <label>{t(L, 'set.pdf.logo_doc')}</label>
                         <div class="logo-row">
                             <div class="logo-prev" id="logoPrev">
                                 <img id="logoImg" src={ORG.logoUrl || undefined} alt="Logo" style={ORG.logoUrl ? '' : 'display:none'} />
@@ -49,28 +52,28 @@ const tpl = ORG.pdfTemplate || 'clasico';
                                 <div class="logo-btns">
                                     <label class="logo-btn">
                                         <input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden />
-                                        Subir logo
+                                        {t(L, 'set.pdf.subir_logo')}
                                     </label>
-                                    <button type="button" class="logo-remove" id="logoRemove">Quitar</button>
+                                    <button type="button" class="logo-remove" id="logoRemove">{t(L, 'set.pdf.quitar')}</button>
                                 </div>
-                                <span class="s-hint">PNG, JPG, SVG o WEBP. Máx ~1 MB. Si no subes logo, usamos la inicial.</span>
+                                <span class="s-hint">{t(L, 'set.pdf.logo_hint')}</span>
                             </div>
                         </div>
                         <input type="hidden" id="oLogo" data-field="logo_url" value={ORG.logoUrl} />
                     </div>
                     <div class="s-field">
-                        <label for="oPdfMensaje">Mensaje de pie de página</label>
+                        <label for="oPdfMensaje">{t(L, 'set.pdf.mensaje_pie')}</label>
                         <input class="s-input" id="oPdfMensaje" data-field="pdf_mensaje" value={ORG.pdfMensaje} placeholder="Gracias por su preferencia. Precios sujetos a cambio sin previo aviso." />
                     </div>
                     <div class="s-field">
-                        <label for="oPdfCond">Condiciones comerciales</label>
+                        <label for="oPdfCond">{t(L, 'set.pdf.condiciones')}</label>
                         <textarea class="s-input s-textarea" id="oPdfCond" data-field="pdf_condiciones" rows="3" placeholder={"Entrega en obra sujeta a disponibilidad.\nAnticipo del 50% para pedidos especiales."}>{ORG.pdfCondiciones}</textarea>
-                        <span class="s-hint">Aparecen al final del documento, una por línea.</span>
+                        <span class="s-hint">{t(L, 'set.pdf.condiciones_hint')}</span>
                     </div>
                     <label class="s-toggle">
                         <input type="checkbox" id="oPdfLista" data-field="pdf_mostrar_lista" checked={ORG.pdfMostrarLista} />
                         <span class="s-toggle-track" aria-hidden="true"><span class="s-toggle-thumb"></span></span>
-                        <span class="s-toggle-text">Mostrar precio de lista tachado y % de descuento por línea</span>
+                        <span class="s-toggle-text">{t(L, 'set.pdf.toggle_lista')}</span>
                     </label>
                 </div>
             </div>
@@ -79,8 +82,8 @@ const tpl = ORG.pdfTemplate || 'clasico';
         <!-- Preview en vivo -->
         <aside class="pdf-pane">
             <div class="pdf-pane-head">
-                <span>Vista previa</span>
-                <span class="pdf-pane-tpl" id="ppTplName">Clásico</span>
+                <span>{t(L, 'set.pdf.vista_previa')}</span>
+                <span class="pdf-pane-tpl" id="ppTplName">{t(L, 'set.pdf.tpl_clasico')}</span>
             </div>
             <div class="pdf-doc" id="pdfDoc" data-template={tpl} style={`--accent:${accent}`}>
                 <div class="pdf-head">
@@ -94,29 +97,29 @@ const tpl = ORG.pdfTemplate || 'clasico';
                         </div>
                     </div>
                     <div class="pdf-doc-meta">
-                        <span class="pdf-lbl">COTIZACIÓN</span>
+                        <span class="pdf-lbl">{t(L, 'set.pdf.cotizacion_lbl')}</span>
                         <b class="pdf-folio editorial">{ORG.prefix}-0149</b>
                         <i>Net 30</i>
                     </div>
                 </div>
                 <table class="pdf-items">
-                    <thead><tr><th>Concepto</th><th class="n">Cant.</th><th class="n">P. unit.</th><th class="n">Importe</th></tr></thead>
+                    <thead><tr><th>{t(L, 'set.pdf.concepto')}</th><th class="n">{t(L, 'set.pdf.cant')}</th><th class="n">{t(L, 'set.pdf.p_unit')}</th><th class="n">{t(L, 'set.pdf.importe')}</th></tr></thead>
                     <tbody id="ppBody"></tbody>
                 </table>
                 <div class="pdf-totals">
-                    <div><span>Subtotal</span><span class="editorial" id="ppSub"></span></div>
-                    <div><span>IVA <em id="ppIvaLbl">{ORG.ivaPct}</em>%</span><span class="editorial" id="ppIva"></span></div>
-                    <div class="pdf-grand"><span>Total</span><b class="editorial" id="ppTotal"></b></div>
+                    <div><span>{t(L, 'set.pdf.subtotal')}</span><span class="editorial" id="ppSub"></span></div>
+                    <div><span>{t(L, 'set.cot.iva').replace(' (%)', '')} <em id="ppIvaLbl">{ORG.ivaPct}</em>%</span><span class="editorial" id="ppIva"></span></div>
+                    <div class="pdf-grand"><span>{t(L, 'set.pdf.total')}</span><b class="editorial" id="ppTotal"></b></div>
                 </div>
                 <div class="pdf-notes" id="ppCondWrap" style="display:none">
-                    <span class="pdf-lbl">CONDICIONES COMERCIALES</span>
+                    <span class="pdf-lbl">{t(L, 'set.pdf.condiciones_lbl')}</span>
                     <ul id="ppCond"></ul>
                 </div>
                 <div class="pdf-foot" id="ppMsgWrap" style="display:none">
                     <p id="ppMsg"></p>
                 </div>
             </div>
-            <span class="pdf-pane-hint">Datos de ejemplo. Marca y fiscales se editan en sus secciones.</span>
+            <span class="pdf-pane-hint">{t(L, 'set.pdf.preview_hint')}</span>
         </aside>
     </div>
 </SettingsShell>

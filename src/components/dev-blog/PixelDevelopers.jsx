@@ -1,10 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
-
-if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger);
-}
 
 const DEVELOPERS_MATRIX = [
   // D        E        V        E        L        O        P        E        R        S
@@ -195,20 +190,26 @@ export default function PixelDevelopers() {
   };
 
   useEffect(() => {
-    // ANIMACION SCROLL ORIGINAL - (Sin pin, traslación suave)
-    const st = ScrollTrigger.create({
-      trigger: wrapperRef.current, 
-      start: "top 80%", 
-      end: "+=100vh", 
-      scrub: true,
-      animation: gsap.to(containerRef.current, {
-        y: "45vh", // Contrarresta el scroll para mantenerlo centrado visualmente
-        scale: 1.25, 
-        ease: "none"
-      })
+    let st;
+    import('gsap/ScrollTrigger').then(({ ScrollTrigger }) => {
+      gsap.registerPlugin(ScrollTrigger);
+      // ANIMACION SCROLL ORIGINAL - (Sin pin, traslación suave)
+      st = ScrollTrigger.create({
+        trigger: wrapperRef.current, 
+        start: "top 80%", 
+        end: "+=100vh", 
+        scrub: true,
+        animation: gsap.to(containerRef.current, {
+          y: "45vh", // Contrarresta el scroll para mantenerlo centrado visualmente
+          scale: 1.25, 
+          ease: "none"
+        })
+      });
     });
     
-    return () => st.kill();
+    return () => {
+      if (st) st.kill();
+    };
   }, []);
 
   let blockIndex = 0;

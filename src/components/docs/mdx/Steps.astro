@@ -1,0 +1,84 @@
+---
+// src/components/docs/mdx/Steps.astro
+---
+
+<div class="cord-steps">
+  <slot />
+</div>
+
+<style>
+  .cord-steps {
+    margin: 32px 0;
+  }
+  
+  .cord-steps :global(ol), .cord-steps :global(ul) {
+    list-style: none;
+    padding-left: 0;
+    margin-left: 0;
+    counter-reset: cord-step-counter;
+  }
+  
+  .cord-steps :global(li) {
+    position: relative;
+    padding-left: 48px;
+    margin-bottom: 32px;
+    counter-increment: cord-step-counter;
+  }
+  
+  .cord-steps :global(li:last-child) {
+    margin-bottom: 0;
+  }
+  
+  .cord-steps :global(li::before) {
+    content: counter(cord-step-counter);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    z-index: 2;
+  }
+  
+  .cord-steps :global(li::after) {
+    content: '';
+    position: absolute;
+    left: 15px; /* center of the 32px circle */
+    top: 32px;
+    bottom: -32px;
+    width: 2px;
+    background: #e2e8f0;
+    z-index: 1;
+  }
+  
+  .cord-steps :global(li:last-child::after) {
+    display: none;
+  }
+  
+  /* Reset nested lists to normal */
+  .cord-steps :global(li ol), .cord-steps :global(li ul) {
+    list-style: inherit;
+    padding-left: 24px;
+    margin-left: 0;
+    margin-top: 12px;
+  }
+  
+  .cord-steps :global(li ol li::before), .cord-steps :global(li ul li::before) {
+    display: none;
+  }
+  .cord-steps :global(li ol li::after), .cord-steps :global(li ul li::after) {
+    display: none;
+  }
+  .cord-steps :global(li ol li), .cord-steps :global(li ul li) {
+    padding-left: 0;
+    margin-bottom: 8px;
+  }
+</style>

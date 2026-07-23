@@ -1,0 +1,130 @@
+---
+title: "Elements en React y Next.js"
+description: "Aprende a integrar el SDK de Cord en ecosistemas React mediante Componentes y Hooks."
+---
+
+<header class="content-header">
+  <h1 class="page-title">React y Next.js</h1>
+  <p class="page-subtitle">Poderosas primitivas headless y componentes preestilizados para tu frontend React.</p>
+</header>
+
+## Instalación
+
+Asegúrate de haber instalado el paquete en tu proyecto.
+
+```bash
+npm install @flouviahq/elements
+```
+
+## El Proveedor: `<CordProvider>`
+
+Para usar cualquier componente o hook de React provisto por el SDK, tu aplicación (o la porción de tu app que usa el cotizador) debe estar envuelta en un `CordProvider`.
+
+Existen dos modos de seguridad para inicializar el proveedor: **Publishable** y **Proxy**. Estos modos son mutuamente excluyentes; no puedes pasar ambas propiedades al mismo tiempo.
+
+### Modo Publishable (Frontend directo)
+Usa este modo si deseas que el cliente de React se comunique directamente con la API de Cord.
+Las Claves Publicables (`pk_live_...` / `pk_test_...`) están altamente limitadas por seguridad: pueden crear cotizaciones y leer el catálogo de productos (omitiendo tu costo), pero **nunca** podrán leer tu directorio de clientes CRM.
+
+```tsx
+// app/layout.tsx
+import { CordProvider } from '@flouviahq/elements/react';
+
+export default function Layout({ children }) {
+  return (
+    <CordProvider publishableKey={process.env.NEXT_PUBLIC_CORD_PUBLISHABLE_KEY!}>
+      {children}
+    </CordProvider>
+  );
+}
+```
+
+### Modo Proxy (Backend intermediario)
+Usa este modo si no quieres exponer ninguna llave en tu cliente o si necesitas funcionalidades que requieren llaves secretas (como leer el CRM). El SDK enviará las peticiones a la ruta proxy que indiques, y tu backend se encargará de reenviarlas a la API de Cord con la Clave Secreta (`sk_live_...`).
+
+```tsx
+<CordProvider proxyUrl="/api/cord/proxy">
+  {children}
+</CordProvider>
+```
+
+---
+
+## `<CordCotizador>`: Visualizador Iframe
+
+Si ya tienes un `token` de una cotización y solo deseas mostrarla para que el cliente la apruebe y la pague, usa el visor nativo. Este componente renderiza un iframe inyectado bajo tu marca de forma segura.
+
+<Callout type="warning">
+**Importante:** `<CordCotizador>` es el único componente que **no requiere** estar dentro de un `CordProvider`, ya que el token de la cotización provee su propio contexto de autenticación.
+</Callout>
+
+```tsx
+import { CordCotizador } from '@flouviahq/elements/react';
+
+function QuotePage({ token }: { token: string }) {
+  return (
+    <CordCotizador
+      token={token}
+      onApproved={(detail) => console.log('Aprobada por', detail.signed_by)}
+      onPay={(detail) => window.location.assign(detail.url)}
+    />
+  );
+}
+```
+
+---
+
+## `<CordBuilder>`: Creador de Cotizaciones (Compound)
+
+Si deseas construir una interfaz para armar cotizaciones nuevas y aprovechar la interfaz estandarizada del SDK, usa el `CordBuilder`. Utiliza un patrón de componentes compuestos (compound pattern), por lo que puedes reordenar o prescindir de partes del formulario.
+
+```tsx
+import { CordBuilder } from '@flouviahq/elements/react';
+
+function NewQuote() {
+  return (
+    <CordBuilder onQuoteCreated={(q) => console.log('Creada:', q.folio)}>
+      <CordBuilder.Header />
+      <CordBuilder.Items className="mi-clase-tailwind" />
+      <CordBuilder.Summary />
+      <CordBuilder.SubmitButton className="btn btn-primary" />
+    </CordBuilder>
+  );
+}
+```
+
+Los componentes inyectan clases CSS estables (`.cord-*`) para facilitar su modificación. Sin embargo, Cord nunca aplica *inline styles*, asegurando que tu CSS personalizado (como Tailwind o CSS Modules) siempre tenga precedencia sin tener que usar `!important`.
+
+---
+
+## `useQuoteBuilder`: Headless UI
+
+Si `<CordBuilder>` no se adapta a las necesidades exactas de diseño de tu interfaz, puedes extraer todo el motor de estado usando el hook `useQuoteBuilder` y renderizar los botones, inputs y tablas enteramente por tu cuenta.
+
+```tsx
+import { useQuoteBuilder } from '@flouviahq/elements/react';
+
+function MiPropioBuilder() {
+  const {
+    items, updateItem, removeItem, subtotal, iva, total,
+    cliente, setCliente, notas, setNotas,
+    handleSubmit, isLoading
+  } = useQuoteBuilder({
+    catalog: misProductosLocales, 
+    onQuoteCreated: (q) => console.log('Link:', q.link_publico),
+  });
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* Construye la interfaz 100% tuya usando el estado de Cord */}
+      <h2>Total: ${total}</h2>
+      <button type="submit" disabled={isLoading}>Crear</button>
+    </form>
+  );
+}
+```
+
+<Callout type="info">
+**Nota de Configuración:** Si necesitas ajustar el porcentaje de IVA, configúralo globalmente en tu `<CordProvider ivaPct={0.16}>` en lugar de pasarlo a cada instancia. Esto garantiza que lo que calcula el cliente y lo que evalúa el servidor siempre sea idéntico.
+
+</Callout>

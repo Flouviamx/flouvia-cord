@@ -2,91 +2,94 @@
 // Ajustes › Cotizaciones e impuestos — folio, IVA, defaults, retenciones y leyenda.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 const ORG = await getOrg();
+const L = currentLocale();
 const TERMS = [
-    { v: 'contado', l: 'Contado' },
-    { v: 'net30', l: 'Net 30' },
-    { v: 'net60', l: 'Net 60' },
+    { v: 'contado', l: t(L, 'set.cot.term.contado') },
+    { v: 'net30', l: t(L, 'set.cot.term.net30') },
+    { v: 'net60', l: t(L, 'set.cot.term.net60') },
 ];
 ---
 
 <SettingsShell title="Cotizaciones e impuestos — Ajustes" tab="cotizaciones" perm="ajustes"
-    intro="Folio, impuestos y valores con los que arranca cada cotización nueva. El IVA y los defaults se aplican de verdad en el editor." save>
+    intro={t(L, 'set.cot.intro')} save>
     <div class="s-block">
-        <h3>Folio</h3>
+        <h3>{t(L, 'set.cot.folio')}</h3>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
-                    <label for="oPrefix">Prefijo de folio</label>
+                    <label for="oPrefix">{t(L, 'set.cot.prefijo')}</label>
                     <input class="s-input" id="oPrefix" data-field="quote_prefix" value={ORG.prefix} maxlength="6" />
-                    <span class="s-hint">Ej. {ORG.prefix}-0149</span>
+                    <span class="s-hint">{t(L, 'set.cot.prefijo_hint').replace('{prefix}', ORG.prefix)}</span>
                 </div>
                 <div class="s-field">
-                    <label for="oSerie">Serie (opcional)</label>
+                    <label for="oSerie">{t(L, 'set.cot.serie')}</label>
                     <input class="s-input" id="oSerie" data-field="serie_folio" value={ORG.serieFolio} maxlength="6" placeholder="A" />
-                    <span class="s-hint">Para numeración por serie en CFDI. Vacío = sin serie.</span>
+                    <span class="s-hint">{t(L, 'set.cot.serie_hint')}</span>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="s-block">
-        <h3>Impuestos</h3>
+        <h3>{t(L, 'set.cot.impuestos')}</h3>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
-                    <label for="oIva">IVA (%)</label>
+                    <label for="oIva">{t(L, 'set.cot.iva')}</label>
                     <input class="s-input" id="oIva" data-field="iva_pct" type="number" min="0" max="100" step="1" value={ORG.ivaPct} />
-                    <span class="s-hint">16% en casi todo México; 8% en franja fronteriza. <b>Ya se aplica en el editor y los totales.</b></span>
+                    <span class="s-hint">{t(L, 'set.cot.iva_hint')}</span>
                 </div>
                 <div class="s-field">
-                    <label for="oRetIva">Retención de IVA (%)</label>
+                    <label for="oRetIva">{t(L, 'set.cot.ret_iva')}</label>
                     <input class="s-input" id="oRetIva" data-field="retencion_iva_pct" type="number" min="0" max="100" step="0.5" value={ORG.retencionIvaPct} />
-                    <span class="s-hint">Servicios: típicamente 10.667%. 0 = sin retención.</span>
+                    <span class="s-hint">{t(L, 'set.cot.ret_iva_hint')}</span>
                 </div>
             </div>
             <div class="s-field" style="max-width:50%">
-                <label for="oRetIsr">Retención de ISR (%)</label>
+                <label for="oRetIsr">{t(L, 'set.cot.ret_isr')}</label>
                 <input class="s-input" id="oRetIsr" data-field="retencion_isr_pct" type="number" min="0" max="100" step="0.5" value={ORG.retencionIsrPct} />
-                <span class="s-hint">Servicios profesionales: típicamente 10%. 0 = sin retención.</span>
+                <span class="s-hint">{t(L, 'set.cot.ret_isr_hint')}</span>
             </div>
         </div>
     </div>
 
     <div class="s-block">
-        <h3>Valores por default de cada cotización</h3>
+        <h3>{t(L, 'set.cot.defaults')}</h3>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
-                    <label for="oVig">Vigencia por default (días)</label>
+                    <label for="oVig">{t(L, 'set.cot.vigencia')}</label>
                     <input class="s-input" id="oVig" data-field="vigencia_default_dias" type="number" min="1" max="365" step="1" value={ORG.vigenciaDefaultDias} />
-                    <span class="s-hint">El editor arranca con este número de días.</span>
+                    <span class="s-hint">{t(L, 'set.cot.vigencia_hint')}</span>
                 </div>
                 <div class="s-field">
-                    <label for="oTerm">Términos de pago por default</label>
+                    <label for="oTerm">{t(L, 'set.cot.terminos')}</label>
                     <select class="s-input" id="oTerm" data-field="terminos_default">
-                        {TERMS.map((t) => <option value={t.v} selected={ORG.terminosDefault === t.v}>{t.l}</option>)}
+                        {TERMS.map((tm) => <option value={tm.v} selected={ORG.terminosDefault === tm.v}>{tm.l}</option>)}
                     </select>
-                    <span class="s-hint">Preseleccionado al crear una cotización.</span>
+                    <span class="s-hint">{t(L, 'set.cot.terminos_hint')}</span>
                 </div>
             </div>
             <div class="s-row">
                 <div class="s-field">
-                    <label for="oAnticipo">Anticipo por default (%)</label>
+                    <label for="oAnticipo">{t(L, 'set.cot.anticipo')}</label>
                     <input class="s-input" id="oAnticipo" data-field="anticipo_default_pct" type="number" min="0" max="99" step="1" value={ORG.anticipoDefaultPct || ''} placeholder="0" />
-                    <span class="s-hint">Al aprobarse una cotización, el cliente paga este % de inmediato y el resto según los términos. Déjalo en 0 si no pides anticipo.</span>
+                    <span class="s-hint">{t(L, 'set.cot.anticipo_hint')}</span>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="s-block">
-        <h3>Leyenda legal</h3>
+        <h3>{t(L, 'set.cot.leyenda')}</h3>
         <div class="s-body">
             <div class="s-field">
-                <label for="oLegal">Texto legal por default</label>
+                <label for="oLegal">{t(L, 'set.cot.texto_legal')}</label>
                 <textarea class="s-input s-textarea" id="oLegal" data-field="texto_legal" rows="2" placeholder="Esta cotización no es un comprobante fiscal. Precios en MXN. Vigencia sujeta a disponibilidad.">{ORG.textoLegal}</textarea>
-                <span class="s-hint">Aparece al pie de la cotización y del PDF.</span>
+                <span class="s-hint">{t(L, 'set.cot.texto_legal_hint')}</span>
             </div>
         </div>
     </div>

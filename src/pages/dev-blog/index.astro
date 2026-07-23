@@ -19,10 +19,18 @@ const articles = allDevBlogs
       date: post.data.date,
       title: post.data.title,
       type: post.data.type,
-      topic: post.data.topic
+      topic: post.data.topic,
+      featured: post.data.featured || false,
+      description: post.data.description || ""
     };
   })
   .sort((a, b) => new Date(b.date).valueOf() - new Date(a.date).valueOf());
+
+const featuredArticles = articles.filter(a => a.featured).slice(0, 2);
+if (featuredArticles.length < 2) {
+  const nonFeatured = articles.filter(a => !a.featured);
+  featuredArticles.push(...nonFeatured.slice(0, 2 - featuredArticles.length));
+}
 
 // Calcular conteos dinámicamente
 const typeCounts = articles.reduce((acc, article) => {
@@ -82,6 +90,20 @@ const checkboxFilled = [
   [1,0,0,0,0,0,0,1],
   [0,1,1,1,1,1,1,0]
 ];
+
+const searchMatrix = [
+  [0,0,0,1,1,1,1,1,0,0,0],
+  [0,0,1,0,0,0,0,0,1,0,0],
+  [0,1,0,1,1,0,0,0,0,1,0],
+  [1,0,0,1,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,1],
+  [0,1,0,0,0,0,0,0,0,1,0],
+  [0,0,1,0,0,0,0,0,1,1,0],
+  [0,0,0,1,1,1,1,1,0,1,1],
+  [0,0,0,0,0,0,0,0,0,0,1]
+];
 ---
 
 <DevBlogLayout title={lang === 'en' ? 'Cord Developer Blog' : 'Blog de Desarrolladores Cord'}>
@@ -102,66 +124,70 @@ const checkboxFilled = [
     <div class="featured-grid">
       
       <!-- POST 1 -->
+      {featuredArticles[0] && (
       <div class="featured-col">
         <div class="section-label">{lang === 'en' ? 'FEATURED POST' : 'POST DESTACADO'}</div>
-        <div class="featured-card">
-          <div class="card-fig">
-            <div class="fig-header">
-              <span class="fig-icon">◱</span>
-              <span class="fig-title">[ FIG. 1 ]</span>
-              <span class="fig-icon">⇋</span>
+        <a href={featuredArticles[0].url} style="text-decoration: none;">
+          <div class="featured-card">
+            <div class="card-fig">
+              <div class="fig-header">
+                <span class="fig-icon">◱</span>
+                <span class="fig-title">[ FIG. 1 ]</span>
+                <span class="fig-icon">⇋</span>
+              </div>
+              <div class="fig-content">
+                <div class="wireframe-shape shape-1"></div>
+              </div>
             </div>
-            <div class="fig-content">
-              <div class="wireframe-shape shape-1"></div>
+            <div class="card-info">
+              <h3 class="card-title">
+                {featuredArticles[0].title} <span class="arrow">↗</span>
+              </h3>
+              <p class="card-desc">
+                {featuredArticles[0].description}
+              </p>
+              <div class="card-tag-wrapper">
+                <span class="card-tag" style="text-transform: uppercase;">[ {featuredArticles[0].topic} ]</span>
+              </div>
+              <span class="card-btn">{lang === 'en' ? 'Read article' : 'Leer artículo'}</span>
             </div>
           </div>
-          <div class="card-info">
-            <h3 class="card-title">
-              {lang === 'en' ? 'How Cord uses graph search to auto-remediate fleets' : 'Cómo Cord usa búsqueda en grafos para auto-remediar infraestructuras'} <span class="arrow">↗</span>
-            </h3>
-            <p class="card-desc">
-              {lang === 'en' 
-                ? 'Discover how we modeled our infrastructure as a traversable graph and use pathfinding algorithms to dynamically compute changes.' 
-                : 'Descubre cómo modelamos nuestra infraestructura como un grafo navegable y usamos algoritmos de pathfinding para computar cambios dinámicamente.'}
-            </p>
-            <div class="card-tag-wrapper">
-              <span class="card-tag">[ {lang === 'en' ? 'ENGINEERING' : 'INGENIERÍA'} ]</span>
-            </div>
-            <a href="#" class="card-btn">{lang === 'en' ? 'More posts' : 'Más artículos'}</a>
-          </div>
-        </div>
+        </a>
       </div>
+      )}
 
       <!-- POST 2 -->
+      {featuredArticles[1] && (
       <div class="featured-col">
-        <div class="section-label">{lang === 'en' ? 'FEATURED VIDEO' : 'VIDEO DESTACADO'}</div>
-        <div class="featured-card">
-          <div class="card-fig">
-            <div class="fig-header">
-              <span class="fig-icon">◱</span>
-              <span class="fig-title">[ FIG. 2 ]</span>
-              <span class="fig-icon">⇋</span>
+        <div class="section-label">{lang === 'en' ? 'FEATURED' : 'DESTACADO'}</div>
+        <a href={featuredArticles[1].url} style="text-decoration: none;">
+          <div class="featured-card">
+            <div class="card-fig">
+              <div class="fig-header">
+                <span class="fig-icon">◱</span>
+                <span class="fig-title">[ FIG. 2 ]</span>
+                <span class="fig-icon">⇋</span>
+              </div>
+              <div class="fig-content">
+                  <div class="wireframe-shape shape-2"></div>
+              </div>
             </div>
-            <div class="fig-content">
-                <div class="wireframe-shape shape-2"></div>
+            <div class="card-info">
+              <h3 class="card-title">
+                {featuredArticles[1].title} <span class="arrow">↗</span>
+              </h3>
+              <p class="card-desc">
+                {featuredArticles[1].description}
+              </p>
+              <div class="card-tag-wrapper">
+                <span class="card-tag" style="text-transform: uppercase;">[ {featuredArticles[1].topic} ]</span>
+              </div>
+              <span class="card-btn">{lang === 'en' ? 'Read article' : 'Leer artículo'}</span>
             </div>
           </div>
-          <div class="card-info">
-            <h3 class="card-title">
-              {lang === 'en' ? 'How to turn strong customer authentication into a conversion engine' : 'Cómo convertir la autenticación fuerte (SCA) en un motor de conversión'} <span class="arrow">↗</span>
-            </h3>
-            <p class="card-desc">
-              {lang === 'en'
-                ? 'In this talk, our architects break down the evolution of Strong Customer Authentication (SCA) and 3D Secure protocols.'
-                : 'En esta charla, nuestros arquitectos desglosan la evolución de la Autenticación Fuerte de Clientes (SCA) y 3D Secure.'}
-            </p>
-            <div class="card-tag-wrapper">
-              <span class="card-tag">[ VIDEO ]</span>
-            </div>
-            <a href="#" class="card-btn">{lang === 'en' ? 'More videos' : 'Más videos'}</a>
-          </div>
-        </div>
+        </a>
       </div>
+      )}
 
     </div>
   </div>
@@ -188,6 +214,12 @@ const checkboxFilled = [
     
     <!-- Sidebar Filters with Pixel Icons -->
     <aside class="articles-sidebar">
+      <div class="sidebar-search-container">
+        <div class="search-icon"><PixelIcon matrix={searchMatrix} pixelSize={2} baseColor="#10b981" client:load /></div>
+        <input type="text" id="article-search" placeholder={lang === 'en' ? 'Search...' : 'Buscar...'} class="search-input" autocomplete="off" spellcheck="false" />
+        <span class="search-cursor">_</span>
+      </div>
+      
       <div class="sidebar-header">
         <div class="section-label">{lang === 'en' ? 'FILTER' : 'FILTRO'}</div>
         <button class="clear-filters" id="clear-filters-btn">{lang === 'en' ? 'CLEAR FILTERS' : 'LIMPIAR FILTROS'}</button>
@@ -241,11 +273,11 @@ const checkboxFilled = [
           <div class="col-type">{lang === 'en' ? 'TYPE' : 'TIPO'}</div>
         </div>
         
-        {articles.slice(0, 3).map(article => (
-          <a href={article.url} class="table-row article-row" data-type={article.type} data-topic={article.topic}>
+        {articles.map(article => (
+          <a href={article.url} class="table-row article-row" data-type={article.type} data-topic={article.topic} data-title={article.title.toLowerCase()}>
             <div class="col-date"><span class="table-date">{article.date}</span></div>
             <div class="col-name"><span class="table-name">{article.title}</span></div>
-            <div class="col-type"><span class="card-tag">[ {article.type} ]</span><span class="row-arrow">↗</span></div>
+            <div class="col-type"><span class="card-tag" style="text-transform: uppercase;">[ {article.type} ]</span><span class="row-arrow">↗</span></div>
           </a>
         ))}
 
@@ -328,21 +360,25 @@ const checkboxFilled = [
   const filterItems = document.querySelectorAll('.filter-item');
   const articleRows = document.querySelectorAll('.article-row');
   const noResults = document.getElementById('no-results');
+  const searchInput = document.getElementById('article-search');
 
   function updateFilters() {
     const activeTypes = Array.from(document.querySelectorAll('.filter-type.active-filter')).map(el => el.dataset.value);
     const activeTopics = Array.from(document.querySelectorAll('.filter-topic.active-filter')).map(el => el.dataset.value);
+    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
     let visibleCount = 0;
     
     articleRows.forEach(row => {
       const type = row.dataset.type;
       const topic = row.dataset.topic;
+      const title = row.dataset.title || '';
       
       const matchType = activeTypes.length === 0 || activeTypes.includes(type);
       const matchTopic = activeTopics.length === 0 || activeTopics.includes(topic);
+      const matchSearch = searchTerm === '' || title.includes(searchTerm);
       
-      if (matchType && matchTopic) {
+      if (matchType && matchTopic && matchSearch) {
         row.style.display = 'grid'; // because it's a CSS grid layout
         visibleCount++;
       } else {
@@ -353,6 +389,10 @@ const checkboxFilled = [
     if (noResults) {
        noResults.style.display = visibleCount === 0 ? 'block' : 'none';
     }
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', updateFilters);
   }
 
   filterItems.forEach(item => {
@@ -738,6 +778,63 @@ const checkboxFilled = [
   }
   .clear-filters:hover {
     color: white;
+  }
+
+  .sidebar-search-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    margin-bottom: 24px;
+    background: rgba(2, 6, 23, 0.5);
+    border: 1px dashed rgba(255,255,255,0.15);
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+
+  .sidebar-search-container:focus-within {
+    border-color: var(--dev-accent);
+    background: rgba(16, 185, 129, 0.05);
+  }
+
+  .search-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+  }
+
+  .sidebar-search-container:focus-within .search-icon {
+    opacity: 1;
+  }
+
+  .search-input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    color: white;
+    font-family: var(--dev-mono);
+    font-size: 12px;
+    outline: none;
+  }
+
+  .search-input::placeholder {
+    color: var(--dev-text-muted);
+  }
+
+  .search-cursor {
+    color: var(--dev-accent);
+    font-family: var(--dev-mono);
+    font-weight: bold;
+    font-size: 14px;
+    display: none;
+    animation: blink 1s step-end infinite;
+  }
+
+  .sidebar-search-container:focus-within .search-cursor {
+    display: block;
   }
 
   .sidebar-group {

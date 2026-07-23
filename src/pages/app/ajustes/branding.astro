@@ -3,15 +3,18 @@
 // Preview EN VIVO del encabezado del link público con los colores elegidos.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 const ORG = await getOrg();
 const SEC = ORG.colorSecundario || ORG.colorMarca;
+const L = currentLocale();
 ---
 
 <SettingsShell title="Branding — Ajustes" tab="branding" perm="ajustes"
-    intro="Tu logo y colores aparecen en el link público de cada cotización y en el PDF. Así lo ve tu cliente cuando abre el documento." save>
+    intro={t(L, 'set.branding.intro')} save>
 
     <div class="s-block">
-        <h3>Logo</h3>
+        <h3>{t(L, 'set.branding.logo')}</h3>
         <div class="s-body">
             <div class="logo-row">
                 <div class="logo-prev">
@@ -22,52 +25,53 @@ const SEC = ORG.colorSecundario || ORG.colorMarca;
                     <div class="logo-btns">
                         <label class="logo-btn">
                             <input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden />
-                            Subir logo
+                            {t(L, 'set.branding.subir_logo')}
                         </label>
-                        <button type="button" class="logo-remove" id="logoRemove">Quitar</button>
+                        <button type="button" class="logo-remove" id="logoRemove">{t(L, 'set.branding.quitar')}</button>
                     </div>
-                    <span class="s-hint">PNG, JPG, SVG o WEBP. Máx ~1 MB. Si no subes logo, usamos la inicial.</span>
+                    <span class="s-hint">{t(L, 'set.branding.logo_hint')}</span>
                 </div>
             </div>
-            <input type="hidden" id="oLogo" data-field="logo_url" value={ORG.logoUrl} />
+            <input type="hidden" id="oLogo" data-field="logo_url" value={ORG.logoUrl}
+                data-i18n-default={t(L, 'set.branding.preview_default')} data-i18n-pesado={t(L, 'set.branding.logo_pesado')} />
         </div>
     </div>
 
     <div class="s-block">
-        <h3>Colores de marca</h3>
+        <h3>{t(L, 'set.branding.colores')}</h3>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
-                    <label for="oColor">Color principal</label>
+                    <label for="oColor">{t(L, 'set.branding.color_principal')}</label>
                     <div class="color-row">
-                        <input type="color" id="oColorPick" value={ORG.colorMarca} aria-label="Elegir color principal" />
+                        <input type="color" id="oColorPick" value={ORG.colorMarca} aria-label={t(L, 'set.branding.elegir_principal')} />
                         <input class="s-input" id="oColor" data-field="color_marca" value={ORG.colorMarca} maxlength="7" />
                     </div>
-                    <span class="s-hint">Botones y acentos del portal de cliente.</span>
+                    <span class="s-hint">{t(L, 'set.branding.color_principal_hint')}</span>
                 </div>
                 <div class="s-field">
-                    <label for="oColorSec">Color secundario</label>
+                    <label for="oColorSec">{t(L, 'set.branding.color_secundario')}</label>
                     <div class="color-row">
-                        <input type="color" id="oColorSecPick" value={SEC} aria-label="Elegir color secundario" />
+                        <input type="color" id="oColorSecPick" value={SEC} aria-label={t(L, 'set.branding.elegir_secundario')} />
                         <input class="s-input" id="oColorSec" data-field="color_secundario" value={ORG.colorSecundario} maxlength="7" placeholder="#0a192f" />
                     </div>
-                    <span class="s-hint">Fondo del encabezado y degradados. Opcional.</span>
+                    <span class="s-hint">{t(L, 'set.branding.color_secundario_hint')}</span>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="s-block">
-        <h3>Portal de cliente</h3>
+        <h3>{t(L, 'set.branding.portal')}</h3>
         <div class="s-body">
             <div class="s-field">
-                <label for="oPortalBien">Mensaje de bienvenida</label>
+                <label for="oPortalBien">{t(L, 'set.branding.mensaje_bienvenida')}</label>
                 <textarea class="s-input s-textarea" id="oPortalBien" data-field="portal_bienvenida" rows="2" placeholder="Gracias por considerarnos. Cualquier duda, contáctanos.">{ORG.portalBienvenida}</textarea>
-                <span class="s-hint">Se muestra arriba de la cotización en el link público.</span>
+                <span class="s-hint">{t(L, 'set.branding.mensaje_bienvenida_hint')}</span>
             </div>
 
             <div class="brand-preview" id="brandPrev">
-                <span class="brand-pv-label">Vista previa del link público</span>
+                <span class="brand-pv-label">{t(L, 'set.branding.preview_label')}</span>
                 <div class="brand-card">
                     <div class="brand-head" id="pvHead">
                         <img class="brand-logo" id="pvLogo" alt="" src={ORG.logoUrl || undefined} style={ORG.logoUrl ? '' : 'display:none'} />
@@ -75,10 +79,10 @@ const SEC = ORG.colorSecundario || ORG.colorMarca;
                         <span class="brand-name">{ORG.nombre}</span>
                     </div>
                     <div class="brand-body">
-                        <p class="brand-bien" id="pvBien">{ORG.portalBienvenida || 'Tu mensaje de bienvenida aparecerá aquí.'}</p>
+                        <p class="brand-bien" id="pvBien">{ORG.portalBienvenida || t(L, 'set.branding.preview_default')}</p>
                         <div class="brand-line"></div>
                         <div class="brand-line short"></div>
-                        <button class="brand-cta" id="pvCta">Aprobar cotización</button>
+                        <button class="brand-cta" id="pvCta">{t(L, 'set.branding.preview_cta')}</button>
                     </div>
                 </div>
             </div>
@@ -139,13 +143,14 @@ const SEC = ORG.colorSecundario || ORG.colorMarca;
         secPick.addEventListener('input', () => { secP.value = secPick.value; render(); });
         secP.addEventListener('input', () => { if (/^#[0-9a-fA-F]{6}$/.test(secP.value)) secPick.value = secP.value; render(); });
         // Mensaje
-        bienIn.addEventListener('input', () => { if (bien) bien.textContent = bienIn.value || 'Tu mensaje de bienvenida aparecerá aquí.'; });
+        const defaultBien = oLogo.dataset.i18nDefault || 'Tu mensaje de bienvenida aparecerá aquí.';
+        bienIn.addEventListener('input', () => { if (bien) bien.textContent = bienIn.value || defaultBien; });
 
         // Logo
         logoFile.addEventListener('change', () => {
             const f = logoFile.files?.[0];
             if (!f) return;
-            if (f.size > 1_000_000) { (window as any).cordToast?.('El logo pesa más de 1 MB. Usa una imagen más ligera.', 'error'); logoFile.value = ''; return; }
+            if (f.size > 1_000_000) { (window as any).cordToast?.(oLogo.dataset.i18nPesado || 'El logo pesa más de 1 MB. Usa una imagen más ligera.', 'error'); logoFile.value = ''; return; }
             const reader = new FileReader();
             reader.onload = () => {
                 const url = String(reader.result);

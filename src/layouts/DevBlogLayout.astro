@@ -8,6 +8,52 @@ interface Props {
 
 import DevConsole from "../components/dev-blog/DevConsole.jsx";
 import PixelDevelopers from "../components/dev-blog/PixelDevelopers.jsx";
+import PixelIcon from "../components/dev-blog/PixelIcon.jsx";
+
+const xMatrix = [
+  [1,1,1,0,0,0,0,0,0,0,1,1],
+  [0,1,1,1,0,0,0,0,0,1,1,0],
+  [0,0,1,1,1,0,0,0,1,1,0,0],
+  [0,0,0,1,1,1,0,1,1,0,0,0],
+  [0,0,0,0,1,1,1,1,0,0,0,0],
+  [0,0,0,0,0,1,1,0,0,0,0,0],
+  [0,0,0,0,1,1,1,1,0,0,0,0],
+  [0,0,0,1,1,0,1,1,1,0,0,0],
+  [0,0,1,1,0,0,0,1,1,1,0,0],
+  [0,1,1,0,0,0,0,0,1,1,1,0],
+  [1,1,0,0,0,0,0,0,0,1,1,1],
+  [0,0,0,0,0,0,0,0,0,0,0,0]
+];
+
+const igMatrix = [
+  [0,0,1,1,1,1,1,1,1,1,0,0],
+  [0,1,0,0,0,0,0,0,0,0,1,0],
+  [1,0,0,0,0,0,0,0,1,0,0,1],
+  [1,0,0,0,1,1,1,0,0,0,0,1],
+  [1,0,0,1,0,0,0,1,0,0,0,1],
+  [1,0,0,1,0,0,0,1,0,0,0,1],
+  [1,0,0,1,0,0,0,1,0,0,0,1],
+  [1,0,0,0,1,1,1,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,1],
+  [0,1,0,0,0,0,0,0,0,0,1,0],
+  [0,0,1,1,1,1,1,1,1,1,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0]
+];
+
+const tkMatrix = [
+  [0,0,0,0,0,0,1,1,0,0,0,0],
+  [0,0,0,0,0,0,1,1,0,0,1,1],
+  [0,0,0,0,0,0,1,1,1,1,1,1],
+  [0,0,0,0,0,0,1,1,0,0,0,0],
+  [0,0,0,0,0,0,1,1,0,0,0,0],
+  [0,0,0,0,1,1,1,1,0,0,0,0],
+  [0,0,0,1,1,1,1,1,0,0,0,0],
+  [0,0,1,1,0,0,1,1,0,0,0,0],
+  [0,0,1,1,0,0,1,1,0,0,0,0],
+  [0,0,0,1,1,1,1,1,0,0,0,0],
+  [0,0,0,0,1,1,1,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0]
+];
 const { title, description = "Blog tecnico de Cord: articulos de ingenieria sobre arquitectura multi-tenant, pagos B2B, webhooks financieros y la API de cotizaciones para Mexico.", articleDate, articleAuthors } = Astro.props;
 // Los links del dev-blog usan SIEMPRE el prefijo /dev-blog (dev y prod). En el
 // subdominio dev.cordhq.app, el middleware sirve el árbol /dev-blog; que los links
@@ -21,9 +67,7 @@ const devBase = "/dev-blog";
 const lang = Astro.url.searchParams.get("lang") === "en" ? "en" : "es";
 const currentPath = Astro.url.pathname;
 const isBlog = currentPath.includes('/blog');
-const isApi = currentPath.includes('/api');
-const isMcp = currentPath.includes('/mcp');
-const isHome = !isBlog && !isApi && !isMcp;
+const isHome = !isBlog;
 
 const SITE = 'https://cordhq.app';
 const canonical = `${SITE}${currentPath}`;
@@ -94,11 +138,8 @@ const orgJsonLd = {
           <a href={`${devBase}/blog?lang=${lang}`} class={`dev-nav-btn ${isBlog ? 'active' : ''}`}>
             <kbd class="dev-kbd">B</kbd> <span class="btn-text">BLOG</span>
           </a>
-          <a href={`${devBase}/api?lang=${lang}`} class={`dev-nav-btn ${isApi ? 'active' : ''}`}>
-            <kbd class="dev-kbd">A</kbd> <span class="btn-text">{lang === 'en' ? 'API DOCS' : 'DOCS API'}</span>
-          </a>
-          <a href={`${devBase}/mcp?lang=${lang}`} class={`dev-nav-btn ${isMcp ? 'active' : ''}`}>
-            <kbd class="dev-kbd">M</kbd> <span class="btn-text">MCP</span>
+          <a href="https://docs.cordhq.app" class="dev-nav-btn" target="_blank" rel="noopener noreferrer">
+            <kbd class="dev-kbd">D</kbd> <span class="btn-text">DOCS</span>
           </a>
         </div>
       </div>
@@ -123,34 +164,40 @@ const orgJsonLd = {
       
       <div class="footer-content">
         <div class="footer-left">
-          <div class="footer-section-title">/ DOCS</div>
+          <div class="footer-section-title">DOCS</div>
           <p class="footer-desc">{lang === 'en' ? 'Explore our guides and examples to integrate Cord.' : 'Explora nuestras guías y ejemplos para integrar Cord.'}</p>
-          <a href="#" class="btn-learn-more">{lang === 'en' ? 'Learn more' : 'Saber más'}</a>
+          <a href="https://docs.cordhq.app" target="_blank" rel="noopener noreferrer" class="btn-learn-more">{lang === 'en' ? 'Learn more' : 'Saber más'}</a>
           
           <div class="copyright" style="margin-top: 40px;">© 2026 CORD, INC.</div>
         </div>
 
         <div class="footer-right">
           <div class="footer-list-group">
-            <div class="footer-section-title">/ SOCIAL</div>
+            <div class="footer-section-title">SOCIAL</div>
             <div class="footer-tags">
-              <a href="#" class="dashed-tag">YOUTUBE</a>
-              <a href="#" class="dashed-tag">TWITTER/X</a>
-              <a href="#" class="dashed-tag">DISCORD</a>
+              <a href="https://instagram.com/flouvia" target="_blank" rel="noopener noreferrer" class="dashed-tag">
+                <PixelIcon matrix={igMatrix} pixelSize={1.5} baseColor="var(--dev-text-muted)" client:load /> INSTAGRAM
+              </a>
+              <a href="https://tiktok.com/@flouvia" target="_blank" rel="noopener noreferrer" class="dashed-tag">
+                <PixelIcon matrix={tkMatrix} pixelSize={1.5} baseColor="var(--dev-text-muted)" client:load /> TIKTOK
+              </a>
+              <a href="https://x.com/flouvia" target="_blank" rel="noopener noreferrer" class="dashed-tag">
+                <PixelIcon matrix={xMatrix} pixelSize={1.5} baseColor="var(--dev-text-muted)" client:load /> X
+              </a>
             </div>
           </div>
           <div class="footer-list-group">
-            <div class="footer-section-title">/ RESOURCES</div>
+            <div class="footer-section-title">RESOURCES</div>
             <div class="footer-tags">
-              <a href="#" class="dashed-tag">DOCS</a>
-              <a href="#" class="dashed-tag">DEVELOPER MEETUPS</a>
+              <a href="https://docs.cordhq.app" target="_blank" rel="noopener noreferrer" class="dashed-tag">DOCS</a>
+              <a href={`${devBase}/meetups`} class="dashed-tag">DEVELOPER MEETUPS</a>
             </div>
           </div>
           <div class="footer-list-group bottom-links">
             <div class="footer-tags">
-              <a href="#" class="dashed-tag">PRIVACY</a>
-              <a href="#" class="dashed-tag">LEGAL</a>
-              <a href="#" class="dashed-tag">CORD.COM</a>
+              <a href="/privacidad" class="dashed-tag">PRIVACY</a>
+              <a href="/terminos" class="dashed-tag">LEGAL</a>
+              <a href="https://cordhq.app" target="_blank" rel="noopener noreferrer" class="dashed-tag">CORD.COM</a>
             </div>
           </div>
         </div>
@@ -441,7 +488,9 @@ const orgJsonLd = {
       }
 
       .dashed-tag {
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         padding: 4px 8px;
         border: 1px dashed rgba(255,255,255,0.3);
         border-radius: 4px;

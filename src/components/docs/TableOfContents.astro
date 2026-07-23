@@ -1,0 +1,124 @@
+---
+import type { MarkdownHeading } from 'astro';
+
+interface Props {
+  headings: MarkdownHeading[];
+  lang: "es" | "en";
+}
+
+const { headings, lang } = Astro.props;
+
+// Only keep h2 and h3
+const toc = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+
+const tocTitle = lang === 'es' ? 'En esta página' : 'On this page';
+---
+
+{toc.length > 0 && (
+  <nav class="toc-nav">
+    <h4 class="toc-title">{tocTitle}</h4>
+    <ul class="toc-list">
+      {toc.map((heading) => (
+        <li class={`toc-item depth-${heading.depth}`}>
+          <a href={`#${heading.slug}`} class="toc-link">
+            {heading.text}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+)}
+
+<script>
+  // ScrollSpy logic for Table of Contents
+  const observerOptions = {
+    root: null,
+    rootMargin: '0px 0px -80% 0px', // Trigger when heading crosses top 20% of viewport
+    threshold: 1.0,
+  };
+
+  function initScrollSpy() {
+    const headings = document.querySelectorAll('.docs-main h2, .docs-main h3');
+    const tocLinks = document.querySelectorAll('.toc-link');
+
+    if (headings.length === 0 || tocLinks.length === 0) return;
+
+    // Remove active class from all links
+    const removeAllActive = () => {
+      tocLinks.forEach(link => link.classList.remove('active'));
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      // Find the currently active heading (the one closest to top, or most recently passed)
+      // Since IntersectionObserver can be tricky with scrolling up/down,
+      // a simpler approach is finding which heading is currently visible,
+      // or the last one that scrolled past the top.
+      
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.getAttribute('id');
+          if (id) {
+            removeAllActive();
+            const activeLink = document.querySelector(`.toc-link[href="#${id}"]`);
+            if (activeLink) activeLink.classList.add('active');
+          }
+        }
+      });
+    }, observerOptions);
+
+    headings.forEach(heading => observer.observe(heading));
+  }
+
+  // Initialize on load
+  document.addEventListener('DOMContentLoaded', initScrollSpy);
+</script>
+
+<style>
+  .toc-nav {
+    position: sticky;
+    top: 110px; /* Below sticky header */
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    padding: 0 0 32px 24px;
+    border-left: 1px solid rgba(0,0,0,0.05); /* Hairline border */
+    font-size: 13px;
+  }
+
+  .toc-title {
+    font-weight: 600;
+    color: #050505;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .toc-item {
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+
+  .toc-item.depth-3 {
+    padding-left: 12px; /* Indent subheadings */
+  }
+
+  .toc-link {
+    color: #697386;
+    text-decoration: none;
+    transition: color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: inline-block;
+  }
+
+  .toc-link:hover {
+    color: #050505;
+  }
+
+  .toc-link.active {
+    color: #0a192f; /* Cord Navy */
+    font-weight: 600;
+  }
+</style>

@@ -192,8 +192,7 @@ export default function PixelIcon({
         gap: `${gap}px`,
         perspective: '800px',
         alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: '8px'
+        justifyContent: 'center'
       }}
     >
       {matrix.map((row, rIdx) => 
