@@ -116,8 +116,12 @@ const subdomainRewrite = async (context: any, next: any) => {
     if (import.meta.env.PROD) {
         for (const s of SUBDOMAINS) {
             if (path === s.prefix || path.startsWith(s.prefix + "/")) {
-                const clean = path.slice(s.prefix.length) || "/";
-                return context.redirect(`https://${s.host}${clean}`, 301);
+                // ⚠️ Se PRESERVA el prefijo en el destino (no se recorta). Un deep link
+                // como cordhq.app/docs/pagos/resumen debe caer en
+                // docs.cordhq.app/docs/pagos/resumen (matchea ruta → 200). Si se recortara
+                // a docs.cordhq.app/pagos/resumen, el contenido renderiza pero con status
+                // 404 (Astro fija el status por match de la ruta ORIGINAL — ver arriba).
+                return context.redirect(`https://${s.host}${path}`, 301);
             }
         }
     }

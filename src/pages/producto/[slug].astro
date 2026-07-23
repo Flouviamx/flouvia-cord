@@ -40,6 +40,27 @@ const RELATED: Record<string, string[]> = {
     'negociacion':     ['editor', 'link-publico', 'aprobaciones'],
     'presupuestos':    ['finanzas', 'clientes-credito', 'cobranza-ia'],
 };
+// Link contextual a la documentación (docs.cordhq.app) por feature. Cada valor es una
+// ruta REAL de src/content/docs/{es,en}/ — verificada, no inventar (ya hubo un bug de
+// 404 silenciosos por inventar slugs). ⚠️ La URL conserva el prefijo /docs a propósito:
+// es el path que matchea ruta en Astro y devuelve 200 (ver src/middleware.ts).
+const DOCS_PATH: Record<string, string> = {
+    'editor':           'cotizacion/resumen',
+    'link-publico':     'cotizacion/envio',
+    'seguimiento':      'gestion/cotizaciones',
+    'cfdi':             'cotizacion/timbrado',
+    'clientes-credito': 'pagos/credito',
+    'cobranza-ia':      'pagos/cobranza-ia',
+    'divisas':          'pagos/tesoreria-fx',
+    'internacional':    'pagos/facturacion',
+    'finanzas':         'gestion/dashboard',
+    'aprobaciones':     'cuenta/configuracion',
+    'equipo':           'cuenta/resumen',
+    'negociacion':      'interaccion/chat',
+    'presupuestos':     'presupuestos/resumen',
+};
+const docsUrl = `https://docs.cordhq.app/docs/${DOCS_PATH[feature.slug] ?? 'resumen'}${isEn ? '?lang=en' : ''}`;
+
 const allFeatures = isEn ? FEATURES_EN : FEATURES;
 const relatedSlugs = RELATED[feature.slug] ?? [];
 const otros = relatedSlugs
@@ -616,6 +637,20 @@ const breadcrumbSchema = {
                         </i>
                     </a>
                 ))}
+                <a href={docsUrl} class="pp-more-row pp-docs-row reveal">
+                    <span class="pp-docs-ico">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3z" fill="currentColor" fill-opacity="0.12"/><path d="M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3z"/><path d="M8 8.5h7M8 12h7" stroke-opacity="0.5"/></svg>
+                    </span>
+                    <div class="pp-more-info">
+                        <b>{isEn ? 'Documentation' : 'Documentación'}</b>
+                        <span>{isEn
+                            ? `Step-by-step guides for ${feature.nav.toLowerCase()}.`
+                            : `Guías paso a paso de ${feature.nav.toLowerCase()}.`}</span>
+                    </div>
+                    <i class="pp-more-arrow">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </i>
+                </a>
             </div>
         </section>
     </main>
@@ -1423,6 +1458,21 @@ const breadcrumbSchema = {
     }
     .pp-more-row:first-child { border-top: 1px solid var(--color-border); }
     .pp-more-row:hover { padding-left: 1.2rem; }
+    /* Fila de documentación (docs.cordhq.app) — hairline como el resto, con icono
+       duotone al frente para distinguirla de los cross-links de producto. */
+    .pp-docs-row { gap: 1rem; }
+    .pp-docs-ico {
+        flex-shrink: 0;
+        width: 38px; height: 38px;
+        display: grid; place-items: center;
+        border-radius: 11px;
+        background: var(--color-bg-soft);
+        color: var(--color-blue-deep);
+        box-shadow: inset 0 0 0 1px rgba(10, 25, 47, 0.06);
+        transition: background 0.4s var(--ease-spring), transform 0.4s var(--ease-spring);
+    }
+    .pp-docs-ico svg { width: 19px; height: 19px; }
+    .pp-docs-row:hover .pp-docs-ico { background: #fff; transform: scale(1.04); }
     .pp-more-info { display: flex; flex-direction: column; gap: 0.3rem; }
     .pp-more-info b { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.3px; color: var(--color-text); }
     .pp-more-info span { font-size: 0.88rem; line-height: 1.5; color: var(--color-text-muted); }
