@@ -4,8 +4,18 @@
 import AppLayout from '../../../layouts/AppLayout.astro';
 import { getOrg, getSetupProgress, getMyMembership } from '../../../lib/queries';
 import { memberCan } from '../../../lib/permissions';
-import { SETTINGS_CATEGORIES } from '../../../lib/settings';
+import { localizeCategories } from '../../../lib/settings';
 import SupportCoverBg from '../../../components/support/SupportCoverBg.jsx';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
+
+const L = currentLocale();
+const tf = (key: string, vars: Record<string, string> = {}) => {
+    let s = t(L, key as any);
+    for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
+    return s;
+};
+const SETTINGS_CATEGORIES = localizeCategories(L);
 
 const [ORG, SETUP, ME] = await Promise.all([getOrg(), getSetupProgress(), getMyMembership()]);
 const hasAccess = memberCan(ME, 'ajustes');
@@ -24,14 +34,14 @@ const sDev = [catMap.api_webhooks, catMap.mcp, catMap.agentes, catMap.elements];
     {!hasAccess && (
         <div class="access-denied-idx">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <h3>Sin acceso</h3>
-            <p>Tu rol actual no tiene permiso para ver la configuración. Contacta al administrador de tu organización.</p>
+            <h3>{t(L, 'settings.sin_acceso')}</h3>
+            <p>{t(L, 'settings.sin_acceso_idx_desc')}</p>
         </div>
     )}
     {hasAccess && <div class="idx">
         <header class="idx-head">
-            <h2>Configuración</h2>
-            <p>Todo lo que se personaliza en Cord para {ORG.nombre}.</p>
+            <h2>{t(L, 'settings.configuracion_titulo')}</h2>
+            <p>{tf('settings.configuracion_para', { org: ORG.nombre })}</p>
         </header>
 
         {!SETUP.complete && (
@@ -49,14 +59,14 @@ const sDev = [catMap.api_webhooks, catMap.mcp, catMap.agentes, catMap.elements];
                     <span class="idx-ring-pct editorial">{SETUP.pct}%</span>
                 </span>
                 <span class="idx-health-body">
-                    <span class="idx-health-title">Tu cuenta está {SETUP.pct}% configurada</span>
-                    <span class="idx-health-desc">Te faltan {SETUP.total - SETUP.doneN} de {SETUP.total} pasos para sacarle todo el provecho a Cord.</span>
+                    <span class="idx-health-title">{tf('idx.cuenta_configurada', { pct: String(SETUP.pct) })}</span>
+                    <span class="idx-health-desc">{tf('idx.te_faltan', { n: String(SETUP.total - SETUP.doneN), total: String(SETUP.total) })}</span>
                 </span>
-                <span class="idx-health-cta">Continuar →</span>
+                <span class="idx-health-cta">{t(L, 'idx.continuar')}</span>
             </a>
         )}
 
-        <h3 class="idx-section-label">Configuración personal</h3>
+        <h3 class="idx-section-label">{t(L, 'idx.sec_personal')}</h3>
         <div class="idx-rows">
             {sPersonal.map((c) => (
                 <a href={c.tabs[0].href} class="idx-row" data-cat={c.id}>
@@ -70,7 +80,7 @@ const sDev = [catMap.api_webhooks, catMap.mcp, catMap.agentes, catMap.elements];
             ))}
         </div>
 
-        <h3 class="idx-section-label idx-section-adv">Ajustes de la cuenta</h3>
+        <h3 class="idx-section-label idx-section-adv">{t(L, 'idx.sec_cuenta')}</h3>
         <div class="idx-rows">
             {sCuenta.map((c) => (
                 <a href={c.tabs[0].href} class="idx-row" data-cat={c.id}>
@@ -84,7 +94,7 @@ const sDev = [catMap.api_webhooks, catMap.mcp, catMap.agentes, catMap.elements];
             ))}
         </div>
 
-        <h3 class="idx-section-label idx-section-adv">Configuración del producto</h3>
+        <h3 class="idx-section-label idx-section-adv">{t(L, 'idx.sec_producto')}</h3>
         <div class="idx-rows">
             {sProducto.map((c) => (
                 <a href={c.tabs[0].href} class="idx-row" data-cat={c.id}>
@@ -99,7 +109,7 @@ const sDev = [catMap.api_webhooks, catMap.mcp, catMap.agentes, catMap.elements];
         </div>
 
         <div id="idxDevSection" style="display:none;">
-            <h3 class="idx-section-label idx-section-adv">Desarrolladores</h3>
+            <h3 class="idx-section-label idx-section-adv">{t(L, 'idx.sec_dev')}</h3>
             <div class="idx-rows">
                 {sDev.map((c) => (
                     <a href={c.tabs[0].href} class="idx-row" data-cat={c.id}>
@@ -116,10 +126,10 @@ const sDev = [catMap.api_webhooks, catMap.mcp, catMap.agentes, catMap.elements];
 
         <div class="idx-devmode">
             <span class="idx-dm-body">
-                <span class="idx-dm-title">Modo desarrollador</span>
-                <span class="idx-dm-desc">Muestra las opciones técnicas (API, webhooks, MCP, agentes IA y cotizador embebible). Actívalo solo si vas a integrar Cord con tu sistema.</span>
+                <span class="idx-dm-title">{t(L, 'idx.devmode_titulo')}</span>
+                <span class="idx-dm-desc">{t(L, 'idx.devmode_desc')}</span>
             </span>
-            <button type="button" class="idx-switch" id="devModeToggle" role="switch" aria-checked="false" aria-label="Activar modo desarrollador"><span class="idx-switch-dot"></span></button>
+            <button type="button" class="idx-switch" id="devModeToggle" role="switch" aria-checked="false" aria-label={t(L, 'idx.devmode_aria')}><span class="idx-switch-dot"></span></button>
         </div>
     </div>}
 </AppLayout>

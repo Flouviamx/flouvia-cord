@@ -335,7 +335,7 @@ const hasAccess = !perm || memberCan(ME!, perm);
                 btn.style.animation = 's-shake 0.4s var(--ease-spring)';
                 btn.addEventListener('animationend', () => { btn.style.animation = ''; }, { once: true });
 
-                if (msgText) msgText.textContent = err.message || 'No se pudo guardar';
+                if (msgText) msgText.textContent = err.message || btn.dataset.i18nErr || 'No se pudo guardar';
                 msg.className = 's-saved show error';
                 setTimeout(() => msg.classList.remove('show'), 3500);
             }

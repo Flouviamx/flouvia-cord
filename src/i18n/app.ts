@@ -263,6 +263,18 @@ export const appStrings = {
         "settings.no_se_pudo_guardar": "No se pudo guardar",
         "settings.configuracion_titulo": "Configuración",
         "settings.configuracion_para": "Todo lo que se personaliza en Cord para {org}.",
+
+        // Índice de Ajustes (/app/ajustes)
+        "idx.continuar": "Continuar →",
+        "idx.cuenta_configurada": "Tu cuenta está {pct}% configurada",
+        "idx.te_faltan": "Te faltan {n} de {total} pasos para sacarle todo el provecho a Cord.",
+        "idx.sec_personal": "Configuración personal",
+        "idx.sec_cuenta": "Ajustes de la cuenta",
+        "idx.sec_producto": "Configuración del producto",
+        "idx.sec_dev": "Desarrolladores",
+        "idx.devmode_titulo": "Modo desarrollador",
+        "idx.devmode_desc": "Muestra las opciones técnicas (API, webhooks, MCP, agentes IA y cotizador embebible). Actívalo solo si vas a integrar Cord con tu sistema.",
+        "idx.devmode_aria": "Activar modo desarrollador",
     },
     en: {
         // Sidebar — groups
@@ -506,6 +518,18 @@ export const appStrings = {
         "settings.no_se_pudo_guardar": "Couldn't save",
         "settings.configuracion_titulo": "Settings",
         "settings.configuracion_para": "Everything you can customize in Cord for {org}.",
+
+        // Settings index (/app/ajustes)
+        "idx.continuar": "Continue →",
+        "idx.cuenta_configurada": "Your account is {pct}% set up",
+        "idx.te_faltan": "{n} of {total} steps left to get the most out of Cord.",
+        "idx.sec_personal": "Personal settings",
+        "idx.sec_cuenta": "Account settings",
+        "idx.sec_producto": "Product settings",
+        "idx.sec_dev": "Developers",
+        "idx.devmode_titulo": "Developer mode",
+        "idx.devmode_desc": "Shows the technical options (API, webhooks, MCP, AI agents, and embeddable quote builder). Turn it on only if you're integrating Cord with your system.",
+        "idx.devmode_aria": "Enable developer mode",
     },
 } as const;
 
