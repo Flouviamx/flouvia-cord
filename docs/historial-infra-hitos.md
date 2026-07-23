@@ -6,6 +6,68 @@
 
 ---
 
+✅ **Ruteo de subdominios `dev.cordhq.app`/`docs.cordhq.app` arreglado + link a Docs en
+   nav/producto (jul 2026)** — André había agregado los subdominios `dev.cordhq.app`
+   (dev blog) y `docs.cordhq.app` (documentación) pero ambos mostraban la landing normal
+   en su raíz. Causa raíz DOBLE:
+   • **`index.astro` era `prerender = true`:** en modo `server`, una página prerender se
+     sirve como HTML estático desde el edge de Vercel y **salta el middleware por
+     completo** — el rewrite por host (`subdomainRewrite` en `src/middleware.ts`, ya
+     existente) nunca corría en la raíz "/". Fix: `index.astro` ya NO es prerender (pasa
+     por SSR; no hace queries, sin costo real).
+   • **Doble sistema peleándose:** `vercel.json` tenía `rewrites`/`redirects` de
+     subdominio que chocaban con la lógica del middleware — 500 en sub-paths del
+     dev-blog, bucle 301 infinito en sub-paths de docs. Se limpió `vercel.json` (solo
+     quedan los `crons`) y `src/middleware.ts` quedó como **único dueño** del ruteo de
+     subdominios: reescritura idempotente y a prueba de bucles (guarda `/prefijo`, `/_*`
+     y `/404` para no re-reescribir). De paso se quitó el redirect muerto de
+     `cord.flouvia.com` (dominio viejo, ya no existe — confirmado por André).
+   • **Bug real #1 encontrado al destapar el ruteo — 500 en TODO el dev-blog:** los
+     componentes React del dev-blog (`PixelDevs`, `PixelIcon`, `DevConsole`, etc.) se
+     montan con `client:load` (no `client:only`), así que Astro también los renderiza en
+     SSR e importa `gsap` en el servidor. `gsap` se publica como ESM puro y el bundle
+     serverless de Vercel lo cargaba como CommonJS → `SyntaxError: Cannot use import
+     statement outside a module`. Invisible en `npm run dev` (Vite maneja ESM nativo) —
+     el bug era EXCLUSIVO de producción. Fix: `gsap` agregado a `vite.ssr.noExternal` en
+     `astro.config.mjs` (mismo patrón ya usado para `@modelcontextprotocol/sdk`).
+   • **Bug real #2 — artículos del dev-blog renderizaban bien pero con status 404:**
+     Astro fija el status HTTP según si el path ORIGINAL matchea una ruta del árbol
+     principal, en una capa POR ENCIMA del middleware — un path raíz-limpio como
+     `/building-...` no matchea ninguna ruta → 404 aunque el rewrite sirviera el
+     artículo real (malo para SEO/crawlers). Se probó `context.rewrite()`,
+     `next(payload)` y envolver la `Response` en `new Response(body,{status:200})`:
+     ninguno lo corrige desde el middleware. **Solución real:** los links del dev-blog
+     (`devBase` en `DevBlogLayout.astro`/`index.astro`/`blog.astro`) ya NO son
+     condicionales a `import.meta.env.DEV` — ahora SIEMPRE llevan el prefijo
+     `/dev-blog/*`, igual que ya hacía `docs` con `/docs/*`. Un path con prefijo SÍ
+     matchea ruta → 200 nativo. La raíz `dev.cordhq.app/` sigue mostrando el home en
+     200 (el rewrite `/` → `/dev-blog` matchea `index`).
+   • **Link a Documentación agregado (nav + contextual), como Stripe separa Docs de
+     Support:** ítem "Documentación" nuevo en el megamenú **Recursos** (desktop, junto a
+     "Centro de ayuda") y su acordeón móvil, apuntando a `docs.cordhq.app`. Además, cada
+     una de las 13 páginas de `/producto/[slug]` ganó una fila de cross-link
+     "Documentación" al final (mapa `DOCS_PATH` en `[slug].astro`, apuntando a la
+     sub-sección real de docs relevante a esa feature — verificado contra los slugs
+     reales de `src/content/docs/{es,en}/`, no inventados).
+   • **Bug real #3 encontrado al agregar los links — redirect recortaba el prefijo:** el
+     redirect `cordhq.app/docs/*` → `docs.cordhq.app` en el middleware recortaba el
+     prefijo `/docs` del destino; un deep link nuevo como
+     `cordhq.app/docs/pagos/resumen` habría caído en `docs.cordhq.app/pagos/resumen`
+     (SIN prefijo) → el mismo falso-404 del bug #2. Corregido para PRESERVAR el path
+     completo en el destino del redirect.
+   • Verificado en producción con status codes reales (no solo visualmente): las raíces
+     y sub-páginas de ambos subdominios dan 200, el dominio principal (`cordhq.app` +
+     `/precios` + `/producto/*`) sigue 200 sin regresión, y los redirects
+     `cordhq.app/dev-blog|/docs` → subdominio dan 301 con destino correcto.
+   ⚠️ **Regla a futuro (documentada también en memoria del proyecto):** (1) una página
+     que sirve la RAÍZ de un subdominio nunca puede ser `prerender = true`. (2) el
+     ruteo de subdominios vive SOLO en `src/middleware.ts` — no volver a agregar
+     rewrites/redirects de subdominio en `vercel.json`. (3) cualquier lib ESM-pura
+     importada en SSR vía un componente `client:load` (no `client:only`) necesita
+     `vite.ssr.noExternal`. (4) los links internos de contenido servido por subdominio
+     SIEMPRE llevan su propio prefijo (`/dev-blog/*`, `/docs/*`) — nunca URLs limpias a
+     nivel raíz, o el status HTTP sale 404 aunque el contenido se vea bien.
+
 ✅ **Migración de dominio: `cord.flouvia.com` → `cordhq.app` (jul 2026)** — André compró
    `cordhq.app` (dominio propio, ya no subdominio de flouvia.com) y decidió migrar Cord ahí
    de forma completa e inmediata.
