@@ -20,3 +20,21 @@ Esto funcionaba bien para casos simples, como si un solo nodo se caía, o uno o 
 
 - Las dependencias implícitas entre los plugins significaban que el ordenamiento era frágil. Los plugins de "arreglar votos" requerían que no hubiera nodos caídos, pero tenían mayor prioridad.
 - Los escenarios de múltiples fallos exponían puntos ciegos. Cuando múltiples nodos afectados se combinaban con particiones de red, la lógica estática entraba en un bucle infinito.
+
+## El salto a Postgres Serverless con Neon
+
+Para solucionar esto, migramos nuestra capa de enrutamiento principal a Postgres Serverless de Neon. En lugar de gestionar fragmentos físicos (shards) y lidiar con el reequilibrio manual, aprovechamos la separación de almacenamiento y cómputo de Neon.
+
+Esto nos permitió construir una verdadera arquitectura multi-tenant usando dos conceptos clave:
+
+### 1. Seguridad a Nivel de Fila (RLS) para el aislamiento de Inquilinos
+En lugar de aprovisionar una nueva base de datos para cada cliente (lo que escala mal y aumenta los costos de infraestructura), agrupamos a los inquilinos en bases de datos compartidas. Imponemos un estricto aislamiento de datos utilizando la Seguridad a Nivel de Fila de Postgres (RLS).
+
+Cada consulta ejecutada por nuestra API está envuelta en una transacción que establece una variable local para el `tenant_id`. Postgres automáticamente añade `WHERE tenant_id = current_setting('app.current_tenant')` a cada lectura y escritura. Incluso si hay un error en la lógica de nuestra aplicación, un inquilino no puede ver los datos de otro.
+
+### 2. Agrupación de conexiones en el Edge (Connection Pooling)
+Un gran desafío con Postgres es el agotamiento de las conexiones. Si 5,000 inquilinos se conectan simultáneamente, Postgres fallará. Solucionamos esto implementando PgBouncer en el borde, escalándolo en múltiples regiones y enrutando dinámicamente las consultas a los puntos finales de cómputo de Neon.
+
+## El Resultado
+
+Al migrar a esta arquitectura, redujimos el volumen de alertas en nuestro buscapersonas en un 92%. Ya no nos despertamos de madrugada para arreglar shards rotos porque el cómputo escala instantáneamente según la carga, y el almacenamiento se gestiona de forma transparente por el proveedor de la nube. Ahora podemos incorporar a 10,000 nuevos inquilinos sin modificar una sola pieza de infraestructura.

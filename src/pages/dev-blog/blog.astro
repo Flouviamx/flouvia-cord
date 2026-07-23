@@ -4,6 +4,7 @@ import DevBlogLayout from "../../layouts/DevBlogLayout.astro";
 import PixelBlog from "../../components/dev-blog/PixelBlog.jsx";
 import PixelIcon from "../../components/dev-blog/PixelIcon.jsx";
 
+const devBase = import.meta.env.DEV ? "/dev-blog" : "";
 const lang = Astro.url.searchParams.get("lang") === "en" ? "en" : "es";
 
 const allDevBlogs = await getCollection('devBlog', ({ id }) => {
@@ -14,7 +15,7 @@ const articles = allDevBlogs
   .map(post => {
     const slug = post.id.split('/')[1];
     return {
-      url: `/dev-blog/${slug}`,
+      url: `${devBase}/${slug}`,
       date: post.data.date,
       title: post.data.title,
       type: post.data.type,

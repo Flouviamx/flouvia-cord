@@ -11,6 +11,30 @@
       "has": [{ "type": "host", "value": "cord.flouvia.com" }],
       "destination": "https://cordhq.app/:path*",
       "permanent": true
+    },
+    {
+      "source": "/dev-blog",
+      "missing": [{ "type": "host", "value": "dev.cordhq.app" }],
+      "destination": "https://dev.cordhq.app",
+      "permanent": true
+    },
+    {
+      "source": "/dev-blog/:path*",
+      "missing": [{ "type": "host", "value": "dev.cordhq.app" }],
+      "destination": "https://dev.cordhq.app/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/dev-blog",
+      "has": [{ "type": "host", "value": "dev.cordhq.app" }],
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/dev-blog/:path*",
+      "has": [{ "type": "host", "value": "dev.cordhq.app" }],
+      "destination": "/:path*",
+      "permanent": true
     }
   ],
   "rewrites": [
