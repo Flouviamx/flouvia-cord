@@ -2,9 +2,17 @@
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg, getMembers, getMyMembership } from '../../../lib/queries';
 import { memberCan } from '../../../lib/permissions';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 
 const [ORG, ME, members] = await Promise.all([getOrg(), getMyMembership(), getMembers()]);
 const canEdit = memberCan(ME, 'equipo');
+const L = currentLocale();
+const tf = (key: string, vars: Record<string, string> = {}) => {
+    let s = t(L, key as any);
+    for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
+    return s;
+};
 
 const activos = members.filter(m => m.estado === 'activo');
 const pendientes = members.filter(m => m.estado === 'invitado');
@@ -12,10 +20,10 @@ const inactivos = members.filter(m => m.estado === 'revocado');
 
 // Mapeo amigable de roles
 const ROL_LABEL: Record<string, string> = {
-    owner: 'Súper administrador',
-    admin: 'Administrador',
-    vendedor: 'Vendedor',
-    lectura: 'Solo lectura'
+    owner: t(L, 'set.eq.rol.owner'),
+    admin: t(L, 'set.eq.rol.admin'),
+    vendedor: t(L, 'set.eq.rol.vendedor'),
+    lectura: t(L, 'set.eq.rol.lectura'),
 };
 
 const getAvatarColor = (name: string) => {
@@ -27,24 +35,24 @@ const getAvatarColor = (name: string) => {
 ---
 
 <SettingsShell title="Equipo y roles — Ajustes" tab="equipo"
-    intro="Administra quién tiene acceso a la organización y define roles de Administrador o Miembro.">
+    intro={t(L, 'set.eq.intro')}>
 
     <div class="tm-controls">
         <div class="tm-tabs" id="teamTabs">
-            <button class="tm-tab active" data-filter="all">Todos <span class="tm-badge">{members.length}</span></button>
-            <button class="tm-tab" data-filter="activo">Activos <span class="tm-badge">{activos.length}</span></button>
-            <button class="tm-tab" data-filter="invitado">Invitaciones pendientes <span class="tm-badge">{pendientes.length}</span></button>
-            <button class="tm-tab" data-filter="revocado">Inactivos <span class="tm-badge">{inactivos.length}</span></button>
+            <button class="tm-tab active" data-filter="all">{t(L, 'set.eq.todos')} <span class="tm-badge">{members.length}</span></button>
+            <button class="tm-tab" data-filter="activo">{t(L, 'set.eq.activos')} <span class="tm-badge">{activos.length}</span></button>
+            <button class="tm-tab" data-filter="invitado">{t(L, 'set.eq.invitaciones_pendientes')} <span class="tm-badge">{pendientes.length}</span></button>
+            <button class="tm-tab" data-filter="revocado">{t(L, 'set.eq.inactivos')} <span class="tm-badge">{inactivos.length}</span></button>
         </div>
         <div class="tm-tools">
             <button class="btn-secondary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Exportar
+                {t(L, 'set.eq.exportar')}
             </button>
             {canEdit && (
-                <button class="btn-primary" id="btnInvite">
+                <button class="btn-primary" id="btnInvite" data-i18n-add={t(L, 'set.eq.enviar_invitacion')} data-i18n-adding={t(L, 'set.eq.enviando')}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    Agregar miembro
+                    {t(L, 'set.eq.agregar_miembro')}
                 </button>
             )}
         </div>
@@ -52,13 +60,21 @@ const getAvatarColor = (name: string) => {
 
     <div class="tm-table-wrap">
         <div class="tm-thead">
-            <div class="tm-th">Nombre</div>
-            <div class="tm-th">Correo electrónico</div>
-            <div class="tm-th">Rol</div>
-            <div class="tm-th">Último inicio de sesión</div>
+            <div class="tm-th">{t(L, 'set.eq.th_nombre')}</div>
+            <div class="tm-th">{t(L, 'set.eq.th_correo')}</div>
+            <div class="tm-th">{t(L, 'set.eq.th_rol')}</div>
+            <div class="tm-th">{t(L, 'set.eq.th_ultimo_login')}</div>
             <div class="tm-th tm-th-action"></div>
         </div>
-        <div class="tm-tbody" id="teamList">
+        <div class="tm-tbody" id="teamList"
+            data-i18n-copiado={t(L, 'set.eq.enlace_copiado')} data-i18n-err-invitar={t(L, 'set.eq.error_invitar')}
+            data-i18n-ok-invitar={t(L, 'set.eq.invitacion_enviada')} data-i18n-err-actualizar={t(L, 'set.eq.error_actualizar')}
+            data-i18n-ok-actualizar={t(L, 'set.eq.funciones_actualizadas')} data-i18n-err-revocar={t(L, 'set.eq.error_revocar')}
+            data-i18n-ok-revocar={t(L, 'set.eq.acceso_revocado')}
+            data-i18n-enviando={t(L, 'set.eq.enviando')} data-i18n-enviar={t(L, 'set.eq.enviar_invitacion')}
+            data-i18n-guardando={t(L, 'set.eq.guardando')} data-i18n-guardar={t(L, 'set.eq.guardar_cambios')}
+            data-i18n-revocando={t(L, 'set.eq.revocando')} data-i18n-revocar-btn={t(L, 'set.eq.revocar_acceso')}
+            data-i18n-viendo={t(L, 'set.eq.viendo')}>
             {members.map(m => {
                 const ac = getAvatarColor(m.nombre || 'A');
                 return (
@@ -69,28 +85,28 @@ const getAvatarColor = (name: string) => {
                         </div>
                         <div class="tm-name-meta">
                             <span class="tm-name">{m.nombre}</span>
-                            {m.esYo && <span class="tm-pill">Tú</span>}
+                            {m.esYo && <span class="tm-pill">{t(L, 'set.eq.tu')}</span>}
                         </div>
                     </div>
                     <div class="tm-col tm-col-email">{m.email || '—'}</div>
                     <div class="tm-col tm-col-role">
-                        <span class={`role-badge ${m.rol}`}>{ROL_LABEL[m.rol] || 'Miembro'}</span>
+                        <span class={`role-badge ${m.rol}`}>{ROL_LABEL[m.rol] || t(L, 'set.eq.rol.miembro')}</span>
                     </div>
                     <div class="tm-col tm-col-date">
-                        {m.estado === 'invitado' ? <span class="status-inv">Invitación pendiente</span> : `Desde ${m.desde}`}
+                        {m.estado === 'invitado' ? <span class="status-inv">{t(L, 'set.eq.invitacion_pendiente')}</span> : tf('set.eq.desde', { fecha: m.desde })}
                     </div>
                     <div class="tm-col tm-col-action">
                         {canEdit && !m.esYo && m.rol !== 'owner' && (
                             <div class="tm-menu-wrap">
-                                <button class="tm-btn-more" aria-label="Opciones" data-id={m.id} data-rol={m.rol}>
+                                <button class="tm-btn-more" aria-label={t(L, 'set.eq.opciones')} data-id={m.id} data-rol={m.rol}>
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
                                 </button>
                                 <div class="tm-dropdown" hidden>
-                                    <button class="tm-dd-item act-edit" data-id={m.id} data-rol={m.rol}>Editar funciones</button>
+                                    <button class="tm-dd-item act-edit" data-id={m.id} data-rol={m.rol}>{t(L, 'set.eq.editar_funciones')}</button>
                                     {m.estado === 'invitado' && m.token && (
-                                        <button class="tm-dd-item act-link" data-link={`/unirse/${m.token}`}>Copiar link de invitación</button>
+                                        <button class="tm-dd-item act-link" data-link={`/unirse/${m.token}`}>{t(L, 'set.eq.copiar_link')}</button>
                                     )}
-                                    <button class="tm-dd-item tm-dd-danger act-revoke" data-id={m.id}>Revocar acceso</button>
+                                    <button class="tm-dd-item tm-dd-danger act-revoke" data-id={m.id}>{t(L, 'set.eq.revocar_acceso')}</button>
                                 </div>
                             </div>
                         )}
@@ -102,40 +118,40 @@ const getAvatarColor = (name: string) => {
                     <div class="tm-empty-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                     </div>
-                    <h4>Tu equipo está vacío</h4>
-                    <p>Agrega miembros para colaborar en las cotizaciones y cobranza.</p>
+                    <h4>{t(L, 'set.eq.vacio_titulo')}</h4>
+                    <p>{t(L, 'set.eq.vacio_desc')}</p>
                 </div>
             )}
         </div>
     </div>
-    <p class="tm-footer-count" id="tmFooterCount">Viendo {members.length} de {members.length} resultados</p>
+    <p class="tm-footer-count" id="tmFooterCount">{tf('set.eq.viendo', { n: String(members.length), total: String(members.length) })}</p>
 </SettingsShell>
 
 <!-- ── MODAL: INVITAR ── -->
 <div class="modal-overlay" id="modInvite" hidden>
     <div class="modal-card">
         <div class="modal-head">
-            <h3 class="modal-title">Agregar miembro del equipo</h3>
+            <h3 class="modal-title">{t(L, 'set.eq.modal_invitar_titulo')}</h3>
             <button class="modal-close" data-close="modInvite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
         <div class="modal-body">
-            <p style="font-size:0.86rem; color:var(--color-text-muted); margin-bottom:1.5rem; line-height: 1.5;">Se enviará una invitación por correo electrónico para que se unan a <strong>{ORG?.nombre}</strong>.</p>
+            <p style="font-size:0.86rem; color:var(--color-text-muted); margin-bottom:1.5rem; line-height: 1.5;">{tf('set.eq.modal_invitar_desc', { org: ORG?.nombre || '' })}</p>
             <form id="frmInvite">
                 <div class="form-group">
-                    <label for="invEmail">Correo electrónico</label>
+                    <label for="invEmail">{t(L, 'set.eq.correo_electronico')}</label>
                     <input type="email" id="invEmail" class="form-control" required placeholder="ejemplo@empresa.com" />
                 </div>
                 <div class="form-group">
-                    <label for="invRole">Funciones (Rol)</label>
+                    <label for="invRole">{t(L, 'set.eq.funciones_rol')}</label>
                     <select id="invRole" class="form-control" required>
-                        <option value="vendedor">Vendedor (cotiza y envía)</option>
-                        <option value="admin">Administrador (acceso total)</option>
-                        <option value="lectura">Solo lectura</option>
+                        <option value="vendedor">{t(L, 'set.eq.rol_vendedor_desc')}</option>
+                        <option value="admin">{t(L, 'set.eq.rol_admin_desc')}</option>
+                        <option value="lectura">{t(L, 'set.eq.rol_lectura')}</option>
                     </select>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn-secondary" data-close="modInvite">Cancelar</button>
-                    <button type="submit" class="btn-primary" id="btnSubmitInvite">Enviar invitación</button>
+                    <button type="button" class="btn-secondary" data-close="modInvite">{t(L, 'set.eq.cancelar')}</button>
+                    <button type="submit" class="btn-primary" id="btnSubmitInvite">{t(L, 'set.eq.enviar_invitacion')}</button>
                 </div>
             </form>
         </div>
@@ -146,23 +162,23 @@ const getAvatarColor = (name: string) => {
 <div class="modal-overlay" id="modEdit" hidden>
     <div class="modal-card">
         <div class="modal-head">
-            <h3 class="modal-title">Editar funciones</h3>
+            <h3 class="modal-title">{t(L, 'set.eq.modal_editar_titulo')}</h3>
             <button class="modal-close" data-close="modEdit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
         <div class="modal-body">
             <form id="frmEdit">
                 <input type="hidden" id="editId" />
                 <div class="form-group">
-                    <label for="editRole">Nuevo rol</label>
+                    <label for="editRole">{t(L, 'set.eq.nuevo_rol')}</label>
                     <select id="editRole" class="form-control" required>
-                        <option value="vendedor">Vendedor</option>
-                        <option value="admin">Administrador</option>
-                        <option value="lectura">Solo lectura</option>
+                        <option value="vendedor">{t(L, 'set.eq.rol_vendedor')}</option>
+                        <option value="admin">{t(L, 'set.eq.rol_admin')}</option>
+                        <option value="lectura">{t(L, 'set.eq.rol_lectura')}</option>
                     </select>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn-secondary" data-close="modEdit">Cancelar</button>
-                    <button type="submit" class="btn-primary" id="btnSubmitEdit">Guardar cambios</button>
+                    <button type="button" class="btn-secondary" data-close="modEdit">{t(L, 'set.eq.cancelar')}</button>
+                    <button type="submit" class="btn-primary" id="btnSubmitEdit">{t(L, 'set.eq.guardar_cambios')}</button>
                 </div>
             </form>
         </div>
@@ -173,18 +189,18 @@ const getAvatarColor = (name: string) => {
 <div class="modal-overlay" id="modRevoke" hidden>
     <div class="modal-card">
         <div class="modal-head">
-            <h3 class="modal-title">Revocar acceso</h3>
+            <h3 class="modal-title">{t(L, 'set.eq.modal_revocar_titulo')}</h3>
             <button class="modal-close" data-close="modRevoke"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
         <div class="modal-body">
             <p style="font-size:0.9rem; color:var(--color-text); margin-bottom:1.5rem; line-height: 1.5;">
-                ¿Estás seguro de que deseas revocar el acceso de este miembro? Ya no podrá entrar a la organización.
+                {t(L, 'set.eq.revocar_confirm')}
             </p>
             <form id="frmRevoke">
                 <input type="hidden" id="revokeId" />
                 <div class="modal-actions">
-                    <button type="button" class="btn-secondary" data-close="modRevoke">Cancelar</button>
-                    <button type="submit" class="btn-danger" id="btnSubmitRevoke">Revocar acceso</button>
+                    <button type="button" class="btn-secondary" data-close="modRevoke">{t(L, 'set.eq.cancelar')}</button>
+                    <button type="submit" class="btn-danger" id="btnSubmitRevoke">{t(L, 'set.eq.revocar_acceso')}</button>
                 </div>
             </form>
         </div>

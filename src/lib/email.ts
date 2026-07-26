@@ -9,6 +9,17 @@ import { t } from '../i18n/app';
 const RESEND_KEY = import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
 const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Cord <cotizaciones@flouvia.com>';
 
+// Origen público fijo para links dentro de correos disparados por CRON (sin un
+// request de navegador real detrás). `new URL(request.url).origin` en ese
+// contexto resuelve a la URL interna del deployment de Vercel (algo tipo
+// https://flouvia-cord-xxxx.vercel.app), NO a cordhq.app — el link salía roto/
+// feo en los correos de recordatorios y cobranza. Los endpoints disparados por
+// el navegador del vendedor (enviar cotización, etc.) SÍ siguen usando su
+// propio origin real, que ya resuelve bien.
+export function siteOrigin(): string {
+    return (import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cordhq.app').replace(/\/$/, '');
+}
+
 // Idioma del correo: se resuelve del request que dispara el envío (el
 // VENDEDOR enviando la cotización desde su sesión) — no existe hoy una señal
 // fiable del idioma del CLIENTE receptor (no hay locale por cliente en el

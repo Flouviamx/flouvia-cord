@@ -3,27 +3,30 @@
 // Usa el guardado genérico del shell (data-field → PATCH /api/org).
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 const ORG = await getOrg();
+const L = currentLocale();
 
 const TIMEOUTS = [
-    { v: 0,    l: 'Sin límite' },
-    { v: 60,   l: '1 hora' },
-    { v: 240,  l: '4 horas' },
-    { v: 480,  l: '8 horas' },
-    { v: 1440, l: '24 horas' },
+    { v: 0,    l: t(L, 'set.seg.timeout.sin_limite') },
+    { v: 60,   l: t(L, 'set.seg.timeout.1h') },
+    { v: 240,  l: t(L, 'set.seg.timeout.4h') },
+    { v: 480,  l: t(L, 'set.seg.timeout.8h') },
+    { v: 1440, l: t(L, 'set.seg.timeout.24h') },
 ];
 ---
 
 <SettingsShell title="Seguridad — Ajustes" tab="seguridad" perm="ajustes"
-    intro="Reglas de acceso para todo tu equipo. La identidad la maneja Clerk; aquí defines las políticas que aplican a tu organización." save>
+    intro={t(L, 'set.seg.intro')} save>
 
     <div class="s-block">
-        <h3>Autenticación</h3>
+        <h3>{t(L, 'set.seg.autenticacion')}</h3>
         <div class="s-body">
             <div class="sec-toggle-row">
                 <span class="sec-info">
-                    <span class="sec-title">Exigir verificación en dos pasos (2FA)</span>
-                    <span class="sec-desc">Todos los miembros deberán tener 2FA activo para entrar. Protege tu cuenta aunque se filtre una contraseña.</span>
+                    <span class="sec-title">{t(L, 'set.seg.exigir_2fa')}</span>
+                    <span class="sec-desc">{t(L, 'set.seg.exigir_2fa_desc')}</span>
                 </span>
                 <label class="s-toggle">
                     <input type="checkbox" data-field="require_2fa" checked={ORG.require2fa} />
@@ -32,31 +35,31 @@ const TIMEOUTS = [
             </div>
             <div class="sec-hint-box">
                 <span class="sec-dot"></span>
-                <span>La política se guarda de inmediato. El bloqueo de acceso se aplica con la instancia de <b>producción</b> de Clerk (la 2FA por usuario se configura en <a href="/app/ajustes/cuenta">Tu cuenta</a>).</span>
+                <span>{t(L, 'set.seg.hint_box')}</span>
             </div>
         </div>
     </div>
 
     <div class="s-block">
-        <h3>Sesiones</h3>
+        <h3>{t(L, 'set.seg.sesiones')}</h3>
         <div class="s-body">
             <div class="s-field" style="max-width:50%">
-                <label for="oTimeout">Cierre por inactividad</label>
+                <label for="oTimeout">{t(L, 'set.seg.cierre_inactividad')}</label>
                 <select class="s-input" id="oTimeout" data-field="session_timeout_min">
-                    {TIMEOUTS.map((t) => <option value={t.v} selected={ORG.sessionTimeoutMin === t.v}>{t.l}</option>)}
+                    {TIMEOUTS.map((tm) => <option value={tm.v} selected={ORG.sessionTimeoutMin === tm.v}>{tm.l}</option>)}
                 </select>
-                <span class="s-hint">Tras este tiempo sin actividad, se pedirá iniciar sesión de nuevo.</span>
+                <span class="s-hint">{t(L, 'set.seg.cierre_inactividad_hint')}</span>
             </div>
         </div>
     </div>
 
     <div class="s-block">
-        <h3>Dominios de invitación</h3>
+        <h3>{t(L, 'set.seg.dominios_invitacion')}</h3>
         <div class="s-body">
             <div class="s-field">
-                <label for="oDomains">Dominios permitidos</label>
+                <label for="oDomains">{t(L, 'set.seg.dominios_permitidos')}</label>
                 <input class="s-input" id="oDomains" data-field="invite_domains" value={ORG.inviteDomains} placeholder="tuempresa.mx, tuempresa.com" />
-                <span class="s-hint">Separados por coma. Si los defines, solo podrás invitar correos de esos dominios. Déjalo vacío para permitir cualquiera.</span>
+                <span class="s-hint">{t(L, 'set.seg.dominios_hint')}</span>
             </div>
         </div>
     </div>
