@@ -4,53 +4,56 @@
 // Guarda con el guardado genérico (PATCH /api/org). Preview en vivo del correo.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 const ORG = await getOrg();
+const L = currentLocale();
 const RESEND_ON = !!(import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY);
 ---
 
 <SettingsShell title="Correo — Ajustes" tab="correo" perm="ajustes" save
-    intro="Cuando envías una cotización por correo (vía Resend), el cliente recibe este email con el link a su portal. Personaliza el remitente y el texto. Variables: {cliente} {folio} {total} {negocio}.">
+    intro={t(L, 'set.correo.intro')}>
 
     {!RESEND_ON && (
         <div class="mail-warn">
             <span class="mail-warn-dot"></span>
-            <p><b>Resend no está configurado todavía.</b> Puedes personalizar el correo aquí, pero no se enviará hasta verificar tu dominio en Resend y setear <code>RESEND_API_KEY</code>. El link a la cotización se genera igual.</p>
+            <p><b>{t(L, 'set.correo.resend_off')}</b> {t(L, 'set.correo.resend_off_desc')}</p>
         </div>
     )}
 
     <div class="mail-grid">
         <div class="mail-form">
             <div class="s-block">
-                <h3>Remitente</h3>
+                <h3>{t(L, 'set.correo.remitente')}</h3>
                 <div class="s-body">
                     <div class="s-row">
                         <div class="s-field">
-                            <label for="mName">Nombre visible</label>
+                            <label for="mName">{t(L, 'set.correo.nombre_visible')}</label>
                             <input class="s-input" id="mName" data-field="email_from_name" value={ORG.emailFromName} maxlength="80" placeholder={ORG.nombre} />
-                            <span class="s-hint">Lo que ve el cliente como remitente. Default: el nombre del negocio.</span>
+                            <span class="s-hint">{t(L, 'set.correo.nombre_visible_hint')}</span>
                         </div>
                         <div class="s-field">
-                            <label for="mReply">Responder a</label>
+                            <label for="mReply">{t(L, 'set.correo.responder_a')}</label>
                             <input class="s-input" id="mReply" type="email" data-field="email_reply_to" value={ORG.emailReplyTo} placeholder={ORG.email || 'ventas@tunegocio.mx'} />
-                            <span class="s-hint">A dónde llegan las respuestas del cliente.</span>
+                            <span class="s-hint">{t(L, 'set.correo.responder_a_hint')}</span>
                         </div>
                     </div>
-                    <p class="s-hint">El dominio del correo se fija al dominio verificado en Resend (no editable aquí); el nombre visible sí es libre.</p>
+                    <p class="s-hint">{t(L, 'set.correo.dominio_hint')}</p>
                 </div>
             </div>
 
             <div class="s-block">
-                <h3>Contenido</h3>
+                <h3>{t(L, 'set.correo.contenido')}</h3>
                 <div class="s-body">
                     <div class="s-field">
-                        <label for="mIntro">Párrafo de introducción</label>
+                        <label for="mIntro">{t(L, 'set.correo.parrafo_intro')}</label>
                         <textarea class="s-input s-textarea" id="mIntro" data-field="email_intro" rows="3" maxlength="500" placeholder="{negocio} le comparte la cotización {folio} por {total}. Puede revisarla y aprobarla en línea:">{ORG.emailIntro}</textarea>
-                        <span class="s-hint">Vacío = texto por defecto. Usa {'{cliente} {folio} {total} {negocio}'}.</span>
+                        <span class="s-hint">{t(L, 'set.correo.parrafo_intro_hint')}</span>
                     </div>
                     <div class="s-field">
-                        <label for="mFirma">Firma</label>
+                        <label for="mFirma">{t(L, 'set.correo.firma')}</label>
                         <textarea class="s-input s-textarea" id="mFirma" data-field="email_firma" rows="2" maxlength="300" placeholder="Equipo de Ventas · {negocio} · 55 1234 5678">{ORG.emailFirma}</textarea>
-                        <span class="s-hint">Aparece al final, antes del pie.</span>
+                        <span class="s-hint">{t(L, 'set.correo.firma_hint')}</span>
                     </div>
                 </div>
             </div>
@@ -58,8 +61,11 @@ const RESEND_ON = !!(import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KE
 
         <!-- ── PREVIEW DEL CORREO ── -->
         <aside class="mail-pane">
-            <div class="mail-pane-head"><span>Vista previa</span></div>
-            <div class="mail-client">
+            <div class="mail-pane-head"><span>{t(L, 'set.correo.vista_previa')}</span></div>
+            <div class="mail-client"
+                data-i18n-saludo={t(L, 'set.correo.saludo')} data-i18n-ver={t(L, 'set.correo.ver_cotizacion')}
+                data-i18n-intro-default={t(L, 'email.intro_default')} data-i18n-enviado-cord={t(L, 'set.correo.enviado_con_cord')}
+                data-i18n-tu-negocio={t(L, 'set.correo.tu_negocio')}>
                 <div class="mail-from">
                     <span class="mail-avatar" id="mvAvatar" style={`background:${ORG.colorMarca}`}>{ORG.inicial}</span>
                     <div class="mail-from-info">
@@ -68,15 +74,15 @@ const RESEND_ON = !!(import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KE
                     </div>
                 </div>
                 <div class="mail-body">
-                    <p>Estimado equipo de <b>Constructora Demo</b>,</p>
+                    <p>{t(L, 'set.correo.saludo')} <b>Constructora Demo</b>,</p>
                     <p id="mvIntro"></p>
-                    <p style="margin:18px 0"><span class="mv-btn" id="mvBtn" style={`background:${ORG.colorMarca}`}>Ver cotización COT-0149</span></p>
-                    <p class="mv-link">O copie este enlace: <br><span style={`color:${ORG.colorMarca}`}>https://cordhq.app/q/demo</span></p>
+                    <p style="margin:18px 0"><span class="mv-btn" id="mvBtn" style={`background:${ORG.colorMarca}`}>{t(L, 'set.correo.ver_cotizacion')} COT-0149</span></p>
+                    <p class="mv-link">{t(L, 'set.correo.o_copie')} <br><span style={`color:${ORG.colorMarca}`}>https://cordhq.app/q/demo</span></p>
                     <p class="mv-firma" id="mvFirma" style="display:none"></p>
-                    <p class="mv-foot" id="mvFoot">{ORG.portalPowered === false ? ORG.nombre : `${ORG.nombre} · enviado con Cord`}</p>
+                    <p class="mv-foot" id="mvFoot">{ORG.portalPowered === false ? ORG.nombre : `${ORG.nombre}${t(L, 'set.correo.enviado_con_cord')}`}</p>
                 </div>
             </div>
-            <span class="mail-pane-hint">Datos de ejemplo. Total {'{total}'} = $131,323.60.</span>
+            <span class="mail-pane-hint">{t(L, 'set.correo.preview_hint')}</span>
         </aside>
     </div>
 </SettingsShell>
@@ -112,7 +118,9 @@ const RESEND_ON = !!(import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KE
         const form = document.querySelector('[data-settings-form]');
         if (!form) return;
         const val = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value ?? '';
-        const NEG = (document.getElementById('mvFrom')?.textContent || 'Tu negocio');
+        const client = document.getElementById('mvAvatar')?.closest('.mail-client') as HTMLElement | null;
+        const M = client?.dataset || ({} as DOMStringMap);
+        const NEG = (document.getElementById('mvFrom')?.textContent || M.i18nTuNegocio || 'Tu negocio');
         const SAMPLE = { cliente: 'Constructora Demo', folio: 'COT-0149', total: '$131,323.60' };
         const esc = (s: string) => s.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c));
         const fill = (t: string, negocio: string) => esc(t)
@@ -123,7 +131,9 @@ const RESEND_ON = !!(import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KE
             const negocio = val('mName').trim() || NEG;
             const fromEl = document.getElementById('mvFrom'); if (fromEl) fromEl.textContent = negocio;
             const introRaw = val('mIntro').trim();
-            const intro = introRaw ? fill(introRaw, negocio) : `${esc(negocio)} le comparte la cotización <b>${SAMPLE.folio}</b> por <b>${SAMPLE.total}</b>. Puede revisarla, dejar comentarios y aprobarla en línea:`;
+            const introDefault = (M.i18nIntroDefault || '{org} le comparte la cotización <b>{folio}</b> por <b>{total}</b>. Puede revisarla, dejar comentarios y aprobarla en línea:')
+                .replace('{org}', esc(negocio)).replace('{folio}', SAMPLE.folio).replace('{total}', SAMPLE.total);
+            const intro = introRaw ? fill(introRaw, negocio) : introDefault;
             const introEl = document.getElementById('mvIntro'); if (introEl) introEl.innerHTML = intro;
             const firmaRaw = val('mFirma').trim();
             const firmaEl = document.getElementById('mvFirma') as HTMLElement;

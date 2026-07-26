@@ -4,31 +4,34 @@
 // genérico del shell (por eso NO pasa `save`): tiene su propia barra.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 const ORG = await getOrg();
 const P = ORG.notifPrefs || {};
+const L = currentLocale();
 
 const EVENTOS = [
-    { id: 'quote_viewed',    label: 'Tu cliente vio la cotización', desc: 'Cuando alguien abre el link público.' },
-    { id: 'quote_approved',  label: 'Cotización aprobada',          desc: 'El cliente aceptó la propuesta.' },
-    { id: 'quote_rejected',  label: 'Cotización rechazada',         desc: 'El cliente rechazó o contraofertó.' },
-    { id: 'quote_paid',      label: 'Pago recibido',                desc: 'Se registró el pago en línea.' },
-    { id: 'quote_expiring',  label: 'Cotización por vencer',        desc: '3 días antes de la fecha de vigencia.' },
-    { id: 'payment_overdue', label: 'Pago vencido',                 desc: 'Una cuenta por cobrar pasó su fecha.' },
-    { id: 'team_join',       label: 'Alguien se unió al equipo',    desc: 'Un invitado aceptó la invitación.' },
+    { id: 'quote_viewed',    label: t(L, 'set.notif.ev.viewed'),   desc: t(L, 'set.notif.ev.viewed_desc') },
+    { id: 'quote_approved',  label: t(L, 'set.notif.ev.approved'), desc: t(L, 'set.notif.ev.approved_desc') },
+    { id: 'quote_rejected',  label: t(L, 'set.notif.ev.rejected'), desc: t(L, 'set.notif.ev.rejected_desc') },
+    { id: 'quote_paid',      label: t(L, 'set.notif.ev.paid'),     desc: t(L, 'set.notif.ev.paid_desc') },
+    { id: 'quote_expiring',  label: t(L, 'set.notif.ev.expiring'), desc: t(L, 'set.notif.ev.expiring_desc') },
+    { id: 'payment_overdue', label: t(L, 'set.notif.ev.overdue'),  desc: t(L, 'set.notif.ev.overdue_desc') },
+    { id: 'team_join',       label: t(L, 'set.notif.ev.team_join'), desc: t(L, 'set.notif.ev.team_join_desc') },
 ];
 const CANALES = [
-    { id: 'email',    label: 'Correo' },
-    { id: 'slack',    label: 'Slack' },
-    { id: 'whatsapp', label: 'WhatsApp' },
+    { id: 'email',    label: t(L, 'set.notif.canal.email') },
+    { id: 'slack',    label: t(L, 'set.notif.canal.slack') },
+    { id: 'whatsapp', label: t(L, 'set.notif.canal.whatsapp') },
 ];
 const on = (ev: string, c: string) => !!(P[ev] && P[ev][c]);
 ---
 
 <SettingsShell title="Notificaciones — Ajustes" tab="notificaciones"
-    intro="Decide qué eventos te avisan y por dónde. El correo usa tu cuenta de contacto; Slack y WhatsApp requieren conectar el canal abajo.">
+    intro={t(L, 'set.notif.intro')}>
 
     <div class="s-block">
-        <h3>Eventos</h3>
+        <h3>{t(L, 'set.notif.eventos')}</h3>
         <div class="notif-grid" data-notif>
             <div class="notif-row notif-head">
                 <span></span>
@@ -52,24 +55,24 @@ const on = (ev: string, c: string) => !!(P[ev] && P[ev][c]);
     </div>
 
     <div class="s-block">
-        <h3>Canal de Slack</h3>
+        <h3>{t(L, 'set.notif.slack_canal')}</h3>
         <div class="s-body">
             <div class="s-field">
-                <label for="oSlack">Webhook entrante de Slack</label>
+                <label for="oSlack">{t(L, 'set.notif.slack_webhook')}</label>
                 <input class="s-input" id="oSlack" value={ORG.slackWebhook} placeholder="https://hooks.slack.com/services/T000/B000/XXXX" />
-                <span class="s-hint">Crea un <b>Incoming Webhook</b> en tu workspace y pega la URL. Los eventos marcados con Slack se publicarán ahí.</span>
+                <span class="s-hint">{t(L, 'set.notif.slack_hint')}</span>
             </div>
         </div>
     </div>
 
     <div class="s-save-row">
-        <button class="s-save" id="nBtn">
-            <span class="s-save-label">Guardar cambios</span>
+        <button class="s-save" id="nBtn" data-i18n-saved={t(L, 'settings.cambios_guardados')} data-i18n-err={t(L, 'settings.no_se_pudo_guardar')}>
+            <span class="s-save-label">{t(L, 'settings.guardar_cambios')}</span>
             <svg class="s-save-spinner" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" opacity="0.25"/><path d="M18 10a8 8 0 0 1-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         </button>
         <span class="s-saved" id="nMsg">
             <svg class="s-check-icon" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4.5 4L16 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span class="s-saved-text">Cambios guardados</span>
+            <span class="s-saved-text">{t(L, 'settings.cambios_guardados')}</span>
         </span>
     </div>
 </SettingsShell>
@@ -103,6 +106,7 @@ const on = (ev: string, c: string) => !!(P[ev] && P[ev][c]);
         if (!btn || !msg || !grid) return;
 
         const msgText = msg.querySelector('.s-saved-text') as HTMLElement | null;
+        const M = btn.dataset;
 
         btn.addEventListener('click', async () => {
             const notif_prefs: Record<string, Record<string, boolean>> = {};
@@ -128,12 +132,12 @@ const on = (ev: string, c: string) => !!(P[ev] && P[ev][c]);
                     body: JSON.stringify({ notif_prefs, slack_webhook_url: slack?.value ?? '' }),
                 });
                 const d = await res.json();
-                if (!res.ok) throw new Error(d.error || 'No se pudo guardar');
+                if (!res.ok) throw new Error(d.error || M.i18nErr || 'No se pudo guardar');
 
                 // Estado: saved (pulse verde + check animado)
                 btn.classList.remove('saving');
                 btn.classList.add('saved');
-                if (msgText) msgText.textContent = 'Cambios guardados';
+                if (msgText) msgText.textContent = M.i18nSaved || 'Cambios guardados';
                 msg.className = 's-saved show';
 
                 setTimeout(() => {
@@ -149,7 +153,7 @@ const on = (ev: string, c: string) => !!(P[ev] && P[ev][c]);
                 btn.style.animation = 's-shake 0.4s var(--ease-spring)';
                 btn.addEventListener('animationend', () => { btn.style.animation = ''; }, { once: true });
 
-                if (msgText) msgText.textContent = err.message || 'No se pudo guardar';
+                if (msgText) msgText.textContent = err.message || M.i18nErr || 'No se pudo guardar';
                 msg.className = 's-saved show error';
                 setTimeout(() => msg.classList.remove('show'), 3500);
             }
