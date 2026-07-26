@@ -6,8 +6,11 @@
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
 import { sql, getActiveOrgId } from '../../../lib/db';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 
 const ORG = await getOrg();
+const L = currentLocale();
 
 // Token real de una cotización enviada → snippet copy-paste que YA funciona.
 // Si no hay ninguna aún, mostramos un placeholder.
@@ -26,39 +29,33 @@ const hasDomains = (ORG.embedDomains || '').trim().length > 0;
 ---
 
 <SettingsShell title="Cotizador embebible — Ajustes" tab="elements" perm="ajustes" save={true}
-    intro="Lleva tu cotizador a CUALQUIER sitio. Pega una línea de código en la web de tu cliente y la cotización aparece embebida, con tu marca y aprobación/pago en línea. Ideal para portales B2B que ya existen.">
+    intro={t(L, 'set.el.intro')}>
 
     <div class="s-block">
-        <h3>1 · Código de instalación</h3>
-        <p class="el-p">Pega esto donde quieras que aparezca el cotizador. Se ajusta solo a la altura del contenido y hereda el fondo de la página anfitriona.</p>
+        <h3>{t(L, 'set.el.paso1_titulo')}</h3>
+        <p class="el-p">{t(L, 'set.el.paso1_desc')}</p>
         <div class="el-code">
             <pre><code id="elSnippet">{snippet}</code></pre>
-            <button class="el-copy" id="elCopy" type="button">Copiar</button>
+            <button class="el-copy" id="elCopy" type="button" data-i18n-copiar={t(L, 'set.el.copiar')} data-i18n-copiado={t(L, 'set.el.copiado')}>{t(L, 'set.el.copiar')}</button>
         </div>
         <a class="el-preview" href={`/embed/${sampleToken}`} target="_blank" rel="noopener">
-            Ver el embed en una pestaña nueva ↗
+            {t(L, 'set.el.ver_embed')}
         </a>
     </div>
 
     <div class="s-block">
-        <h3>2 · Dominios autorizados</h3>
-        <p class="el-p">
-            Por seguridad (anti-clickjacking), indica en qué dominios se puede embeber tu
-            cotizador. Uno por línea o separados por coma. Acepta comodines:
-            <code>cliente.com</code>, <code>*.cliente.com</code>, <code>https://app.cliente.com</code>.
-        </p>
+        <h3>{t(L, 'set.el.paso2_titulo')}</h3>
+        <p class="el-p" set:html={t(L, 'set.el.paso2_desc')} />
         <textarea class="el-domains" data-field="embed_domains" rows="4"
             placeholder="cliente-a.com&#10;*.cliente-b.com">{ORG.embedDomains}</textarea>
         <p class:list={['el-status', hasDomains ? 'ok' : 'warn']}>
-            {hasDomains
-                ? '🔒 Solo los dominios de la lista pueden embeber tu cotizador.'
-                : '⚠️ Lista vacía: cualquier sitio puede embeber tu cotizador (modo abierto, útil para pruebas). Agrega dominios antes de producción.'}
+            {hasDomains ? t(L, 'set.el.status_ok') : t(L, 'set.el.status_warn')}
         </p>
     </div>
 
     <div class="s-block">
-        <h3>3 · Reacciona a los eventos (opcional)</h3>
-        <p class="el-p">El contenedor emite eventos cuando el cliente actúa, para que tu sitio reaccione (analítica, redirigir, etc.):</p>
+        <h3>{t(L, 'set.el.paso3_titulo')}</h3>
+        <p class="el-p">{t(L, 'set.el.paso3_desc')}</p>
         <div class="el-code">
             <pre><code>{`document.querySelector('[data-cord-token]')
   .addEventListener('cord:approved', (e) => {
@@ -66,12 +63,12 @@ const hasDomains = (ORG.embedDomains || '').trim().length > 0;
   });`}</code></pre>
         </div>
         <ul class="el-events">
-            <li><code>cord:ready</code> — el cotizador cargó</li>
-            <li><code>cord:approved</code> — el cliente aprobó <span>· detail: signed_by, hash</span></li>
-            <li><code>cord:signed</code> — firma legal capturada <span>· dispara junto con cord:approved</span></li>
-            <li><code>cord:rejected</code> — el cliente rechazó</li>
-            <li><code>cord:message</code> — comentario o contraoferta</li>
-            <li><code>cord:pay</code> — inició el pago en línea</li>
+            <li><code>cord:ready</code> — {t(L, 'set.el.ev_ready')}</li>
+            <li><code>cord:approved</code> — {t(L, 'set.el.ev_approved')} <span>{t(L, 'set.el.ev_approved_detail')}</span></li>
+            <li><code>cord:signed</code> — {t(L, 'set.el.ev_signed')} <span>{t(L, 'set.el.ev_signed_detail')}</span></li>
+            <li><code>cord:rejected</code> — {t(L, 'set.el.ev_rejected')}</li>
+            <li><code>cord:message</code> — {t(L, 'set.el.ev_message')}</li>
+            <li><code>cord:pay</code> — {t(L, 'set.el.ev_pay')}</li>
         </ul>
     </div>
 </SettingsShell>
@@ -112,11 +109,13 @@ const hasDomains = (ORG.embedDomains || '').trim().length > 0;
         const btn = document.getElementById('elCopy');
         const code = document.getElementById('elSnippet');
         if (!btn || !code) return;
+        const i18nCopiar = (btn as HTMLElement).dataset.i18nCopiar || 'Copiar';
+        const i18nCopiado = (btn as HTMLElement).dataset.i18nCopiado || '✓ Copiado';
         btn.addEventListener('click', async () => {
             try {
                 await navigator.clipboard.writeText(code.textContent || '');
-                btn.textContent = '✓ Copiado'; btn.classList.add('done');
-                setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('done'); }, 2000);
+                btn.textContent = i18nCopiado; btn.classList.add('done');
+                setTimeout(() => { btn.textContent = i18nCopiar; btn.classList.remove('done'); }, 2000);
             } catch {}
         });
     }
