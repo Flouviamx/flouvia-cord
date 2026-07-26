@@ -3,97 +3,110 @@
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
 import { REGIMENES_FISCALES, USOS_CFDI } from '../../../lib/sat';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 const ORG = await getOrg();
+const L = currentLocale();
 ---
 
 <SettingsShell title="Datos fiscales — Ajustes" tab="fiscal" perm="ajustes"
-    intro="Necesarios para timbrar CFDI 4.0 ante el SAT. Se usan tal cual en el comprobante; sube tu CSD abajo para emitir bajo tu RFC." save>
+    intro={t(L, 'set.fiscal.intro')} save>
     <div class="s-block">
-        <h3>Identificación fiscal</h3>
+        <h3>{t(L, 'set.fiscal.identificacion')}</h3>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
-                    <label for="oRfc">RFC</label>
+                    <label for="oRfc">{t(L, 'set.fiscal.rfc')}</label>
                     <input class="s-input" id="oRfc" data-field="rfc" value={ORG.rfc} maxlength="13" placeholder="XAXX010101000" />
                 </div>
                 <div class="s-field">
-                    <label for="oRazon">Razón social</label>
+                    <label for="oRazon">{t(L, 'set.fiscal.razon_social')}</label>
                     <input class="s-input" id="oRazon" data-field="razon_social" value={ORG.razonSocial} placeholder="Mi Empresa S.A. de C.V." />
                 </div>
             </div>
             <div class="s-row">
                 <div class="s-field">
-                    <label for="oRegimen">Régimen fiscal</label>
+                    <label for="oRegimen">{t(L, 'set.fiscal.regimen')}</label>
                     <select class="s-input" id="oRegimen" data-field="regimen_fiscal">
-                        <option value="" selected={!ORG.regimenFiscal}>Selecciona…</option>
+                        <option value="" selected={!ORG.regimenFiscal}>{t(L, 'set.fiscal.selecciona')}</option>
                         {REGIMENES_FISCALES.map((r) => <option value={r.codigo} selected={ORG.regimenFiscal === r.codigo}>{r.nombre}</option>)}
                     </select>
                 </div>
                 <div class="s-field">
-                    <label for="oCp">CP de expedición</label>
+                    <label for="oCp">{t(L, 'set.fiscal.cp')}</label>
                     <input class="s-input" id="oCp" data-field="cp_fiscal" value={ORG.cpFiscal} maxlength="5" inputmode="numeric" placeholder="54000" />
-                    <span class="s-hint">Lugar de expedición del CFDI.</span>
+                    <span class="s-hint">{t(L, 'set.fiscal.cp_hint')}</span>
                 </div>
             </div>
             <div class="s-field" style="max-width:50%">
-                <label for="oUso">Uso de CFDI por default</label>
+                <label for="oUso">{t(L, 'set.fiscal.uso_cfdi')}</label>
                 <select class="s-input" id="oUso" data-field="uso_cfdi">
-                    <option value="" selected={!ORG.usoCfdi}>Selecciona…</option>
+                    <option value="" selected={!ORG.usoCfdi}>{t(L, 'set.fiscal.selecciona')}</option>
                     {USOS_CFDI.map((u) => <option value={u.codigo} selected={ORG.usoCfdi === u.codigo}>{u.nombre}</option>)}
                 </select>
-                <span class="s-hint">Uso default; el cliente lo puede cambiar al facturar.</span>
+                <span class="s-hint">{t(L, 'set.fiscal.uso_cfdi_hint')}</span>
             </div>
         </div>
     </div>
 
     <div class="s-block">
-        <h3>Certificado de Sello Digital (CSD)</h3>
-        <p class="csd-intro">Sube tu CSD para que Cord timbre CFDI 4.0 bajo <b>tu RFC</b>. Se manda cifrado a nuestro PAC (Facturapi); la contraseña no se guarda en Cord.</p>
+        <h3>{t(L, 'set.fiscal.csd')}</h3>
+        <p class="csd-intro">{t(L, 'set.fiscal.csd_intro')}</p>
 
-        <div class="csd-state" id="csdState" data-on={ORG.csdEstado === 'cargado' ? '1' : '0'}>
+        <div class="csd-state" id="csdState" data-on={ORG.csdEstado === 'cargado' ? '1' : '0'}
+            data-i18n-cargado={t(L, 'set.fiscal.csd_cargado')} data-i18n-sin-csd={t(L, 'set.fiscal.sin_csd')}
+            data-i18n-cert-activo={t(L, 'set.fiscal.certificado_activo')} data-i18n-sube={t(L, 'set.fiscal.sube_cer_key')}
+            data-i18n-elige-cer={t(L, 'set.fiscal.elige_cer')} data-i18n-elige-key={t(L, 'set.fiscal.elige_key')}
+            data-i18n-elige-ambos={t(L, 'set.fiscal.elige_ambos')} data-i18n-escribe-pass={t(L, 'set.fiscal.escribe_contrasena')}
+            data-i18n-subiendo={t(L, 'set.fiscal.subiendo')} data-i18n-csd-ok={t(L, 'set.fiscal.csd_ok')}
+            data-i18n-no-subio={t(L, 'set.fiscal.no_se_pudo_subir')} data-i18n-conectado-toast={t(L, 'set.fiscal.csd_conectado_toast')}
+            data-i18n-quitar-titulo={t(L, 'set.fiscal.quitar_csd_titulo')} data-i18n-quitar-body={t(L, 'set.fiscal.quitar_csd_body')}
+            data-i18n-quitar={t(L, 'set.fiscal.quitar')} data-i18n-removido={t(L, 'set.fiscal.csd_removido')}
+            data-i18n-no-quito={t(L, 'set.fiscal.no_se_pudo_quitar')} data-i18n-conectado={t(L, 'set.fiscal.conectado')}
+            data-i18n-sin-conectar={t(L, 'set.fiscal.sin_conectar')}>
             <span class="csd-state-dot"></span>
             <span class="csd-state-info">
-                <span class="csd-state-title" id="csdStateTitle">{ORG.csdEstado === 'cargado' ? 'CSD cargado' : 'Sin CSD'}</span>
-                <span class="csd-state-sub" id="csdName">{ORG.csdEstado === 'cargado' ? (ORG.csdNombre || 'Certificado activo') : 'Sube tu .cer y .key para empezar a timbrar.'}</span>
+                <span class="csd-state-title" id="csdStateTitle">{ORG.csdEstado === 'cargado' ? t(L, 'set.fiscal.csd_cargado') : t(L, 'set.fiscal.sin_csd')}</span>
+                <span class="csd-state-sub" id="csdName">{ORG.csdEstado === 'cargado' ? (ORG.csdNombre || t(L, 'set.fiscal.certificado_activo')) : t(L, 'set.fiscal.sube_cer_key')}</span>
             </span>
-            <button type="button" class="csd-btn-ghost" id="csdRemove" style={ORG.csdEstado === 'cargado' ? '' : 'display:none'}>Quitar</button>
+            <button type="button" class="csd-btn-ghost" id="csdRemove" style={ORG.csdEstado === 'cargado' ? '' : 'display:none'}>{t(L, 'set.fiscal.quitar')}</button>
         </div>
 
         <div class="csd-files">
             <label class="csd-drop" id="cerDrop">
                 <input type="file" id="cerFile" accept=".cer" />
                 <span class="csd-drop-ico">.cer</span>
-                <span class="csd-drop-t">Certificado</span>
-                <span class="csd-drop-s" id="cerName">Elige tu archivo .cer</span>
+                <span class="csd-drop-t">{t(L, 'set.fiscal.certificado')}</span>
+                <span class="csd-drop-s" id="cerName">{t(L, 'set.fiscal.elige_cer')}</span>
             </label>
             <label class="csd-drop" id="keyDrop">
                 <input type="file" id="keyFile" accept=".key" />
                 <span class="csd-drop-ico">.key</span>
-                <span class="csd-drop-t">Llave privada</span>
-                <span class="csd-drop-s" id="keyName">Elige tu archivo .key</span>
+                <span class="csd-drop-t">{t(L, 'set.fiscal.llave_privada')}</span>
+                <span class="csd-drop-s" id="keyName">{t(L, 'set.fiscal.elige_key')}</span>
             </label>
         </div>
         <div class="s-field" style="max-width:50%; margin-top:1rem">
-            <label for="oCsdPass">Contraseña de la llave</label>
+            <label for="oCsdPass">{t(L, 'set.fiscal.contrasena')}</label>
             <input class="s-input" id="oCsdPass" type="password" placeholder="••••••••" autocomplete="off" />
-            <span class="s-hint">Sólo se envía a Facturapi para descifrar tu .key al sellar. No se almacena en Cord.</span>
+            <span class="s-hint">{t(L, 'set.fiscal.contrasena_hint')}</span>
         </div>
         <div class="csd-actions">
-            <button type="button" class="csd-btn-solid" id="csdUpload">Subir CSD y conectar</button>
+            <button type="button" class="csd-btn-solid" id="csdUpload">{t(L, 'set.fiscal.subir_csd')}</button>
             <span class="csd-msg" id="csdMsg"></span>
         </div>
     </div>
 
     <div class="s-block">
-        <h3>Timbrado (PAC)</h3>
+        <h3>{t(L, 'set.fiscal.timbrado')}</h3>
         <div class="s-body">
             <div class="pac-row">
                 <span class="csd-dot pac-dot" id="pacDot" data-on={ORG.csdEstado === 'cargado' ? '1' : '0'}></span>
                 <span class="pac-info">
-                    <span class="pac-title">Facturapi · CFDI 4.0</span>
-                    <span class="pac-desc">Timbramos vía Facturapi. Al subir tu CSD creamos tu organización y conectamos tu RFC automáticamente.</span>
+                    <span class="pac-title">{t(L, 'set.fiscal.pac_titulo')}</span>
+                    <span class="pac-desc">{t(L, 'set.fiscal.pac_desc')}</span>
                 </span>
-                <span class="pac-badge" id="pacBadge" data-on={ORG.csdEstado === 'cargado' ? '1' : '0'}>{ORG.csdEstado === 'cargado' ? 'Conectado' : 'Sin conectar'}</span>
+                <span class="pac-badge" id="pacBadge" data-on={ORG.csdEstado === 'cargado' ? '1' : '0'}>{ORG.csdEstado === 'cargado' ? t(L, 'set.fiscal.conectado') : t(L, 'set.fiscal.sin_conectar')}</span>
             </div>
         </div>
     </div>
@@ -153,6 +166,8 @@ const ORG = await getOrg();
         const rmBtn = document.getElementById('csdRemove') as HTMLButtonElement | null;
         const msg = document.getElementById('csdMsg');
         if (!cerFile || !keyFile || !passIn || !upBtn || !msg) return;
+        const state = document.getElementById('csdState') as HTMLElement | null;
+        const M = state?.dataset || ({} as DOMStringMap);
 
         const flash = (text: string, ok: boolean) => {
             msg.textContent = text;
@@ -170,63 +185,61 @@ const ORG = await getOrg();
                 if (drop) drop.classList.toggle('has-file', !!f);
             });
         };
-        bind(cerFile, 'cerName', 'cerDrop', 'Elige tu archivo .cer');
-        bind(keyFile, 'keyName', 'keyDrop', 'Elige tu archivo .key');
+        bind(cerFile, 'cerName', 'cerDrop', M.i18nEligeCer || 'Elige tu archivo .cer');
+        bind(keyFile, 'keyName', 'keyDrop', M.i18nEligeKey || 'Elige tu archivo .key');
 
         upBtn.addEventListener('click', async () => {
             const cer = cerFile.files?.[0];
             const key = keyFile.files?.[0];
             const password = passIn.value;
-            if (!cer || !key) { flash('Elige tu archivo .cer y .key.', false); return; }
-            if (!password) { flash('Escribe la contraseña de la llave.', false); return; }
+            if (!cer || !key) { flash(M.i18nEligeAmbos || 'Elige tu archivo .cer y .key.', false); return; }
+            if (!password) { flash(M.i18nEscribePass || 'Escribe la contraseña de la llave.', false); return; }
 
             const fd = new FormData();
             fd.append('cer', cer);
             fd.append('key', key);
             fd.append('password', password);
 
-            upBtn.disabled = true; const orig = upBtn.textContent; upBtn.textContent = 'Subiendo…';
+            upBtn.disabled = true; const orig = upBtn.textContent; upBtn.textContent = M.i18nSubiendo || 'Subiendo…';
             try {
                 const res = await fetch('/api/fiscal/csd', { method: 'POST', body: fd });
                 const d = await res.json().catch(() => ({}));
-                if (!res.ok) throw new Error(d.error || 'No se pudo subir el CSD');
-                flash('✓ CSD cargado. Ya puedes timbrar bajo tu RFC.', true);
+                if (!res.ok) throw new Error(d.error || M.i18nNoSubio || 'No se pudo subir el CSD');
+                flash(M.i18nCsdOk || '✓ CSD cargado. Ya puedes timbrar bajo tu RFC.', true);
                 passIn.value = '';
                 // Actualiza el estado visual sin recargar.
-                const state = document.getElementById('csdState');
                 const title = document.getElementById('csdStateTitle');
                 const name = document.getElementById('csdName');
                 if (state) state.setAttribute('data-on', '1');
-                if (title) title.textContent = 'CSD cargado';
-                if (name) name.textContent = d.csd_nombre || 'Certificado activo';
+                if (title) title.textContent = M.i18nCargado || 'CSD cargado';
+                if (name) name.textContent = d.csd_nombre || M.i18nCertActivo || 'Certificado activo';
                 if (rmBtn) rmBtn.style.display = '';
                 document.getElementById('pacBadge')?.setAttribute('data-on', '1');
-                const pb = document.getElementById('pacBadge'); if (pb) pb.textContent = 'Conectado';
+                const pb = document.getElementById('pacBadge'); if (pb) pb.textContent = M.i18nConectado || 'Conectado';
                 document.getElementById('pacDot')?.setAttribute('data-on', '1');
-                (window as any).cordToast?.('CSD conectado a Facturapi', 'ok');
+                (window as any).cordToast?.(M.i18nConectadoToast || 'CSD conectado a Facturapi', 'ok');
             } catch (err: any) {
-                flash(err.message || 'No se pudo subir el CSD', false);
+                flash(err.message || M.i18nNoSubio || 'No se pudo subir el CSD', false);
             } finally { upBtn.disabled = false; upBtn.textContent = orig; }
         });
 
         rmBtn?.addEventListener('click', async () => {
-            if (!await (window as any).cordConfirm({ title: 'Quitar CSD', body: 'Dejarás de poder timbrar CFDI hasta subir uno nuevo. ¿Quitar el certificado?', danger: true, confirmText: 'Quitar CSD' })) return;
+            if (!await (window as any).cordConfirm({ title: M.i18nQuitarTitulo || 'Quitar CSD', body: M.i18nQuitarBody || 'Dejarás de poder timbrar CFDI hasta subir uno nuevo. ¿Quitar el certificado?', danger: true, confirmText: M.i18nQuitar || 'Quitar CSD' })) return;
             rmBtn.disabled = true;
             try {
                 const res = await fetch('/api/fiscal/csd', { method: 'DELETE' });
                 if (!res.ok) throw new Error();
-                const state = document.getElementById('csdState');
                 const title = document.getElementById('csdStateTitle');
                 const name = document.getElementById('csdName');
                 if (state) state.setAttribute('data-on', '0');
-                if (title) title.textContent = 'Sin CSD';
-                if (name) name.textContent = 'Sube tu .cer y .key para empezar a timbrar.';
+                if (title) title.textContent = M.i18nSinCsd || 'Sin CSD';
+                if (name) name.textContent = M.i18nSube || 'Sube tu .cer y .key para empezar a timbrar.';
                 rmBtn.style.display = 'none';
                 document.getElementById('pacBadge')?.setAttribute('data-on', '0');
-                const pb = document.getElementById('pacBadge'); if (pb) pb.textContent = 'Sin conectar';
+                const pb = document.getElementById('pacBadge'); if (pb) pb.textContent = M.i18nSinConectar || 'Sin conectar';
                 document.getElementById('pacDot')?.setAttribute('data-on', '0');
-                flash('CSD removido.', true);
-            } catch { flash('No se pudo quitar el CSD', false); } finally { rmBtn.disabled = false; }
+                flash(M.i18nRemovido || 'CSD removido.', true);
+            } catch { flash(M.i18nNoQuito || 'No se pudo quitar el CSD', false); } finally { rmBtn.disabled = false; }
         });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCsd);

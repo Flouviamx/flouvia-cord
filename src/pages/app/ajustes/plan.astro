@@ -5,10 +5,18 @@
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg, getPlanUsage, getBillingUsage } from '../../../lib/queries';
 import { PLANES, precioAnualTotal, precioAnualMensualizado } from '../../../lib/precios';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 
 const ORG = await getOrg();
 const USAGE = await getPlanUsage();
 const BILL = await getBillingUsage();
+const L = currentLocale();
+const tf = (key: string, vars: Record<string, string> = {}) => {
+    let s = t(L, key as any);
+    for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
+    return s;
+};
 
 // Entorno de PRUEBA: la facturación (Stripe) nunca opera sobre la org sandbox.
 // Ocultamos los botones de cobro y mostramos un aviso — el servidor los bloquea
@@ -18,48 +26,49 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
 const planRaw = ORG.plan_raw;
 const esPago = planRaw !== 'free';
 const PAID = PLANES.filter((p) => p.id !== 'free');
-const money = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
+const money = (n: number) => '$' + new Intl.NumberFormat(L === 'en' ? 'en-US' : 'es-MX').format(n);
 
 const STATUS_LABEL: Record<string, string> = {
-    trialing: 'En prueba', active: 'Activa', past_due: 'Pago pendiente', canceled: 'Cancelada',
+    trialing: t(L, 'set.plan.status.trialing'), active: t(L, 'set.plan.status.active'),
+    past_due: t(L, 'set.plan.status.past_due'), canceled: t(L, 'set.plan.status.canceled'),
 };
 const planActual = PLANES.find((p) => p.id === planRaw);
 ---
 
 <SettingsShell title="Plan y facturación — Ajustes" tab="plan" perm="ajustes"
-    intro="Tu suscripción de Cord, uso del plan y comprobantes.">
+    intro={t(L, 'set.plan.intro')}>
 
     {isTestEnv && (
         <div class="plan-test-note">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 12h4l-1.5 8L17 9h-4.5z"/></svg>
-            <span>Estás en el <b>entorno de prueba</b>. La facturación no aplica aquí — sal del modo de prueba para cambiar de plan o abrir el portal de pagos.</span>
+            <span>{t(L, 'set.plan.test_note')}</span>
         </div>
     )}
 
     <div class="s-block">
-        <h3>Suscripción actual</h3>
+        <h3>{t(L, 'set.plan.suscripcion_actual')}</h3>
         <div class="plan-row">
             <div class="plan-meta">
                 <span class="plan-name">
-                    Plan {ORG.plan}
+                    {t(L, 'set.plan.plan_prefix')} {ORG.plan}
                     {BILL.status && <span class={`plan-badge st-${BILL.status}`}>{STATUS_LABEL[BILL.status] ?? BILL.status}</span>}
                 </span>
                 <span class="plan-price">
-                    <span class="editorial">{planActual ? money(planActual.precioMensual) : '$0'}</span> MXN/mes · IVA incluido
-                    {BILL.cycle === 'anual' && ' · facturación anual'}
-                    {BILL.periodFin && <i class="plan-renews"> · renueva {BILL.periodFin}</i>}
+                    <span class="editorial">{planActual ? money(planActual.precioMensual) : '$0'}</span> {t(L, 'set.plan.mes_iva')}
+                    {BILL.cycle === 'anual' && t(L, 'set.plan.facturacion_anual')}
+                    {BILL.periodFin && <i class="plan-renews">{tf('set.plan.renueva', { fecha: BILL.periodFin })}</i>}
                 </span>
             </div>
-            {esPago && !isTestEnv && <button class="plan-btn solid" data-portal>Gestionar suscripción</button>}
+            {esPago && !isTestEnv && <button class="plan-btn solid" data-portal>{t(L, 'set.plan.gestionar')}</button>}
         </div>
     </div>
 
     <!-- ── ELEGIR / CAMBIAR DE PLAN ── -->
     <div class="s-block">
-        <h3>{esPago ? 'Cambiar de plan' : 'Sube de plan'}</h3>
-        <div class="cycle-toggle" role="tablist" aria-label="Ciclo">
-            <button class="cyc-btn is-active" data-cycle="mensual">Mensual</button>
-            <button class="cyc-btn" data-cycle="anual">Anual <span class="cyc-save">2 meses gratis</span></button>
+        <h3>{esPago ? t(L, 'set.plan.cambiar') : t(L, 'set.plan.sube')}</h3>
+        <div class="cycle-toggle" role="tablist" aria-label={t(L, 'set.plan.ciclo')}>
+            <button class="cyc-btn is-active" data-cycle="mensual">{t(L, 'set.plan.mensual')}</button>
+            <button class="cyc-btn" data-cycle="anual">{t(L, 'set.plan.anual')} <span class="cyc-save">{t(L, 'set.plan.anual_ahorro')}</span></button>
         </div>
         <div class="picker">
             {PAID.map((p) => {
@@ -68,47 +77,47 @@ const planActual = PLANES.find((p) => p.id === planRaw);
                 return (
                     <div class:list={['pick-row', { destacado: p.destacado, actual }]}>
                         <div class="pick-info">
-                            <span class="pick-name">{p.nombre} {p.destacado && <i class="pick-tag">Popular</i>}</span>
+                            <span class="pick-name">{p.nombre} {p.destacado && <i class="pick-tag">{t(L, 'set.plan.popular')}</i>}</span>
                             <span class="pick-tag-line">{p.tagline}</span>
                         </div>
                         <div class="pick-price">
                             <b class="editorial" data-mensual={String(p.precioMensual)} data-anual={String(anual)}>{money(p.precioMensual)}</b>
-                            <span>MXN / mes</span>
+                            <span>{t(L, 'set.plan.mxn_mes')}</span>
                         </div>
                         {actual ? (
-                            <span class="pick-current">Plan actual</span>
+                            <span class="pick-current">{t(L, 'set.plan.actual')}</span>
                         ) : isTestEnv ? (
-                            <span class="pick-current" title="Sal del modo de prueba para cambiar de plan">No disponible en prueba</span>
+                            <span class="pick-current" title={t(L, 'set.plan.no_disponible_prueba_title')}>{t(L, 'set.plan.no_disponible_prueba')}</span>
                         ) : (
-                            <button class="plan-btn solid" data-subscribe={p.id}>Elegir</button>
+                            <button class="plan-btn solid" data-subscribe={p.id}>{t(L, 'set.plan.elegir')}</button>
                         )}
                     </div>
                 );
             })}
         </div>
-        <p class="pick-foot">Cambias o cancelas cuando quieras; el excedente se factura al cierre del periodo.</p>
+        <p class="pick-foot">{t(L, 'set.plan.pick_foot')}</p>
     </div>
 
     <!-- ── MEDIDORES DE USO ── -->
     <div class="s-block">
-        <h3>Uso del plan este periodo</h3>
+        <h3>{t(L, 'set.plan.uso_periodo')}</h3>
 
         <div class="usage">
             <div class="usage-top">
-                <span class="usage-label">Cotizaciones activas</span>
+                <span class="usage-label">{t(L, 'set.plan.cotizaciones_activas')}</span>
                 <span class="usage-count editorial">{USAGE.usadas}{USAGE.ilimitado ? '' : ` / ${USAGE.limite}`}</span>
             </div>
             {USAGE.ilimitado ? (
-                <div class="usage-unlim">∞ Ilimitadas en tu plan</div>
+                <div class="usage-unlim">{t(L, 'set.plan.ilimitadas')}</div>
             ) : (
                 <div class="usage-bar"><span class:list={['usage-fill', { warn: USAGE.pct >= 80, full: USAGE.excedido }]} style={`width:${USAGE.pct}%`}></span></div>
             )}
         </div>
 
         {[
-            { k: 'ia', label: 'Armados con IA', m: BILL.ia },
-            { k: 'cfdi', label: 'Timbres CFDI 4.0', m: BILL.cfdi },
-            { k: 'api', label: 'Llamadas a la API', m: BILL.api },
+            { k: 'ia', label: t(L, 'set.plan.armados_ia'), m: BILL.ia },
+            { k: 'cfdi', label: t(L, 'set.plan.timbres_cfdi'), m: BILL.cfdi },
+            { k: 'api', label: t(L, 'set.plan.llamadas_api'), m: BILL.api },
         ].map(({ label, m }) => (
             <div class="usage">
                 <div class="usage-top">
@@ -116,11 +125,11 @@ const planActual = PLANES.find((p) => p.id === planRaw);
                     <span class="usage-count editorial">{m.usado}{m.ilimitado ? '' : ` / ${m.incluido}`}</span>
                 </div>
                 {m.ilimitado ? (
-                    <div class="usage-unlim">∞ Ilimitado en tu plan</div>
+                    <div class="usage-unlim">{t(L, 'set.plan.ilimitado')}</div>
                 ) : (
                     <>
                         <div class="usage-bar"><span class:list={['usage-fill', { warn: m.pct >= 80, full: m.excedido }]} style={`width:${m.pct}%`}></span></div>
-                        {m.excedido && <p class="usage-note">Vas {m.usado - (m.incluido ?? 0)} por encima de lo incluido — el excedente se cobra al cierre del periodo.</p>}
+                        {m.excedido && <p class="usage-note">{tf('set.plan.excedente_nota', { n: String(m.usado - (m.incluido ?? 0)) })}</p>}
                     </>
                 )}
             </div>
@@ -128,28 +137,38 @@ const planActual = PLANES.find((p) => p.id === planRaw);
     </div>
 
     <div class="s-block">
-        <h3>Método de pago y comprobantes</h3>
+        <h3>{t(L, 'set.plan.metodo_pago')}</h3>
         {isTestEnv ? (
-            <p class="plan-empty">Los pagos no aplican en el entorno de prueba.</p>
+            <p class="plan-empty">{t(L, 'set.plan.pagos_no_aplican')}</p>
         ) : esPago ? (
-            <p class="plan-empty">Tu tarjeta, recibos y facturas se gestionan en el portal seguro de Stripe. <button class="link-btn" data-portal>Abrir portal →</button></p>
+            <p class="plan-empty">{t(L, 'set.plan.gestion_stripe')} <button class="link-btn" data-portal>{t(L, 'set.plan.abrir_portal')}</button></p>
         ) : (
-            <p class="plan-empty">Agrega un método de pago al subir de plan. Se cobra de forma segura vía Stripe.</p>
+            <p class="plan-empty">{t(L, 'set.plan.agrega_metodo')}</p>
         )}
     </div>
 </SettingsShell>
 
+<script is:inline define:vars={{
+    I18N_PLAN: {
+        noContinuar: t(L, 'set.plan.no_se_pudo_continuar'),
+        redirigiendo: t(L, 'set.plan.redirigiendo'),
+        abriendo: t(L, 'set.plan.abriendo'),
+        noProcesar: t(L, 'set.plan.no_se_pudo_procesar'),
+        localeIntl: L === 'en' ? 'en-US' : 'es-MX',
+    },
+}}></script>
 <script>
     const post = async (url: string, body?: any) => {
         const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
         const data = await r.json().catch(() => ({}));
-        if (!r.ok || !data.url) throw new Error(data.error || 'No se pudo continuar');
+        if (!r.ok || !data.url) throw new Error(data.error || (window as any).I18N_PLAN?.noContinuar || 'No se pudo continuar');
         window.location.href = data.url;
     };
 
     // Toggle de ciclo → cambia precios mostrados y el ciclo que se envía.
     let cycle: 'mensual' | 'anual' = 'mensual';
-    const fmt = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
+    const I18N = (window as any).I18N_PLAN || {};
+    const fmt = (n: number) => '$' + new Intl.NumberFormat(I18N.localeIntl || 'es-MX').format(n);
     document.querySelectorAll<HTMLButtonElement>('.cyc-btn').forEach((b) => {
         b.addEventListener('click', () => {
             cycle = (b.dataset.cycle as 'mensual' | 'anual') || 'mensual';
@@ -164,16 +183,16 @@ const planActual = PLANES.find((p) => p.id === planRaw);
     // "Elegir" → checkout embebido dentro de la app (mismo flujo que landing/precios).
     document.querySelectorAll<HTMLButtonElement>('[data-subscribe]').forEach((b) => {
         b.addEventListener('click', () => {
-            b.disabled = true; b.textContent = 'Redirigiendo…';
+            b.disabled = true; b.textContent = I18N.redirigiendo || 'Redirigiendo…';
             window.location.href = `/app/checkout?plan=${b.dataset.subscribe}&cycle=${cycle}`;
         });
     });
 
     document.querySelectorAll<HTMLButtonElement>('[data-portal]').forEach((b) => {
         b.addEventListener('click', async () => {
-            const t = b.textContent; b.disabled = true; b.textContent = 'Abriendo…';
+            const label = b.textContent; b.disabled = true; b.textContent = I18N.abriendo || 'Abriendo…';
             try { await post('/api/billing/portal'); }
-            catch (e: any) { (window as any).cordToast?.(e.message || 'No se pudo procesar', 'error'); b.disabled = false; b.textContent = t; }
+            catch (e: any) { (window as any).cordToast?.(e.message || I18N.noProcesar || 'No se pudo procesar', 'error'); b.disabled = false; b.textContent = label; }
         });
     });
 </script>

@@ -2,7 +2,10 @@
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import ConnectCustomOnboarding from '../../../components/app/ConnectCustomOnboarding';
 import { getOrg } from '../../../lib/queries';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 const ORG = await getOrg();
+const L = currentLocale();
 
 // Estado de la cuenta de cobros
 const conectado = !!ORG.stripeAccountId;
@@ -15,42 +18,42 @@ const marca = ORG.colorMarca || '#0a192f';
 // Stripe son: si existe la cuenta y si ya puede cobrar). El detalle granular del
 // KYC lo muestra el propio componente embebido de Stripe abajo.
 const pasos = [
-    { label: 'Conecta tu cuenta',      done: estado !== 'nuevo',  active: estado === 'nuevo' },
-    { label: 'Verificación de Stripe', done: estado === 'activo', active: estado === 'pendiente' },
-    { label: 'Listo para cobrar',      done: estado === 'activo', active: false },
+    { label: t(L, 'set.cobros.paso1'), done: estado !== 'nuevo',  active: estado === 'nuevo' },
+    { label: t(L, 'set.cobros.paso2'), done: estado === 'activo', active: estado === 'pendiente' },
+    { label: t(L, 'set.cobros.paso3'), done: estado === 'activo', active: false },
 ];
 ---
 
 <SettingsShell title="Cobros — Ajustes" tab="cobros" perm="ajustes"
-    intro="Recibe pagos de tus cotizaciones en línea. El dinero cae directo a tu cuenta — Cord no toca ni retiene tus fondos." save>
+    intro={t(L, 'set.cobros.intro')} save>
 
     {estado === 'nuevo' ? (
         <>
         <div style="margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border);">
-            <span style="font-size: 0.65rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--color-text-muted);">COBROS EN LÍNEA</span>
-            <h2 class="editorial" style="font-size: 1.8rem; margin: 0.5rem 0 1rem; color: var(--color-text);">Deja que tus clientes te paguen con un clic</h2>
-            <p style="font-size: 0.95rem; color: var(--color-text-muted); line-height: 1.6; max-width: 60ch; margin: 0 0 1.5rem;">Conecta tu cuenta en un par de minutos y empieza a cobrar tus cotizaciones con tarjeta o transferencia. Sin mensualidades extra, sin comisiones de Cord.</p>
-            
+            <span style="font-size: 0.65rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--color-text-muted);">{t(L, 'set.cobros.eyebrow')}</span>
+            <h2 class="editorial" style="font-size: 1.8rem; margin: 0.5rem 0 1rem; color: var(--color-text);">{t(L, 'set.cobros.titulo')}</h2>
+            <p style="font-size: 0.95rem; color: var(--color-text-muted); line-height: 1.6; max-width: 60ch; margin: 0 0 1.5rem;">{t(L, 'set.cobros.desc')}</p>
+
             <div style="display: flex; flex-direction: column;">
                 <div style="display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--color-border);">
                     <svg style="width: 20px; height: 20px; color: var(--color-blue-deep);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                     <div style="display: flex; flex-direction: column; gap: 2px;">
-                        <strong style="font-size: 0.85rem; font-weight: 600; color: var(--color-text);">Directo a tu cuenta</strong>
-                        <span style="font-size: 0.75rem; color: var(--color-text-muted);">Cord nunca toca tus fondos.</span>
+                        <strong style="font-size: 0.85rem; font-weight: 600; color: var(--color-text);">{t(L, 'set.cobros.f1_titulo')}</strong>
+                        <span style="font-size: 0.75rem; color: var(--color-text-muted);">{t(L, 'set.cobros.f1_desc')}</span>
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--color-border);">
                     <svg style="width: 20px; height: 20px; color: var(--color-blue-deep);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>
                     <div style="display: flex; flex-direction: column; gap: 2px;">
-                        <strong style="font-size: 0.85rem; font-weight: 600; color: var(--color-text);">0% comisión de Cord</strong>
-                        <span style="font-size: 0.75rem; color: var(--color-text-muted);">Solo pagas las tarifas de Stripe.</span>
+                        <strong style="font-size: 0.85rem; font-weight: 600; color: var(--color-text);">{t(L, 'set.cobros.f2_titulo')}</strong>
+                        <span style="font-size: 0.75rem; color: var(--color-text-muted);">{t(L, 'set.cobros.f2_desc')}</span>
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 12px; padding: 14px 0;">
                     <svg style="width: 20px; height: 20px; color: var(--color-blue-deep);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
                     <div style="display: flex; flex-direction: column; gap: 2px;">
-                        <strong style="font-size: 0.85rem; font-weight: 600; color: var(--color-text);">Tarjeta y SPEI</strong>
-                        <span style="font-size: 0.75rem; color: var(--color-text-muted);">Con conciliación automática.</span>
+                        <strong style="font-size: 0.85rem; font-weight: 600; color: var(--color-text);">{t(L, 'set.cobros.f3_titulo')}</strong>
+                        <span style="font-size: 0.75rem; color: var(--color-text-muted);">{t(L, 'set.cobros.f3_desc')}</span>
                     </div>
                 </div>
             </div>
@@ -67,26 +70,26 @@ const pasos = [
     ) : (
         <>
         <div style="margin-bottom: 3rem;">
-            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: var(--color-text);">Estado de tu cuenta</h3>
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: var(--color-text);">{t(L, 'set.cobros.estado_cuenta')}</h3>
             <div>
                 {estado === 'activo' ? (
                     <div class="cobros-status cobros-status--activo">
                         <span class="cs-dot"></span>
                         <div class="cs-text">
-                            <strong>¡Todo listo, ya puedes cobrar!</strong>
-                            <span>Tu cuenta está verificada y activa. El dinero de tus cobros se enviará automáticamente a tu banco.</span>
+                            <strong>{t(L, 'set.cobros.activo_titulo')}</strong>
+                            <span>{t(L, 'set.cobros.activo_desc')}</span>
                         </div>
-                        <button type="button" class="cs-disconnect" id="btnDisconnect">Desconectar</button>
+                        <button type="button" class="cs-disconnect" id="btnDisconnect">{t(L, 'set.cobros.desconectar')}</button>
                     </div>
                 ) : (
                     <>
                         <div class="cobros-status cobros-status--pendiente">
                             <span class="cs-dot"></span>
                             <div class="cs-text">
-                                <strong>Verificación pendiente</strong>
-                                <span>Stripe necesita algunos datos más para habilitar tus cobros. Complétalos en el formulario de abajo.</span>
+                                <strong>{t(L, 'set.cobros.pendiente_titulo')}</strong>
+                                <span>{t(L, 'set.cobros.pendiente_desc')}</span>
                             </div>
-                            <button type="button" class="cs-disconnect" id="btnDisconnect">Desconectar</button>
+                            <button type="button" class="cs-disconnect" id="btnDisconnect">{t(L, 'set.cobros.desconectar')}</button>
                         </div>
                         <div class="c-stepper">
                             {pasos.map((p, i) => (
@@ -103,12 +106,15 @@ const pasos = [
         </>
     )}
 
-    <div style="margin-bottom: 2rem;">
-        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: var(--color-text);">Métodos de pago</h3>
+    <div style="margin-bottom: 2rem;" id="cobrosMeta"
+        data-i18n-desc-titulo={t(L, 'set.cobros.desconectar_titulo')} data-i18n-desc-body={t(L, 'set.cobros.desconectar_body')}
+        data-i18n-desc-confirm={t(L, 'set.cobros.desconectar')} data-i18n-desc-native={t(L, 'set.cobros.desconectar_confirm')}
+        data-i18n-desc-ok={t(L, 'set.cobros.desconectada_ok')} data-i18n-desc-err={t(L, 'set.cobros.error_desconectar')}>
+        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: var(--color-text);">{t(L, 'set.cobros.metodos_pago')}</h3>
         <div>
             <div class={`pay-methods ${!puedeCobrar ? 'has-locked' : ''}`}>
                 {!puedeCobrar && (
-                    <p class="methods-locked">Activa y verifica tu cuenta arriba para habilitar tarjeta y SPEI. La transferencia manual funciona sin Stripe.</p>
+                    <p class="methods-locked">{t(L, 'set.cobros.methods_locked')}</p>
                 )}
 
                 <!-- Tarjeta -->
@@ -117,8 +123,8 @@ const pasos = [
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5" fill="currentColor" fill-opacity="0.12"/><path d="M2 10h20"/></svg>
                     </div>
                     <div class="pm-text">
-                        <strong>Tarjeta de crédito y débito</strong>
-                        <span>Visa, Mastercard y Amex. Se procesa al instante vía Stripe.</span>
+                        <strong>{t(L, 'set.cobros.tarjeta_titulo')}</strong>
+                        <span>{t(L, 'set.cobros.tarjeta_desc')}</span>
                     </div>
                     <label class="s-toggle pm-toggle">
                         <input type="checkbox" data-field="acepta_tarjeta" data-pv="tarjeta" checked={puedeCobrar && ORG.aceptaTarjeta} disabled={!puedeCobrar} />
@@ -132,8 +138,8 @@ const pasos = [
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11" fill="currentColor" fill-opacity="0.12"/><path d="M9 21v-6h6v6"/></svg>
                     </div>
                     <div class="pm-text">
-                        <strong>Transferencia SPEI automática</strong>
-                        <span>Stripe genera una CLABE única por cotización y la marca pagada sola.</span>
+                        <strong>{t(L, 'set.cobros.spei_titulo')}</strong>
+                        <span>{t(L, 'set.cobros.spei_desc')}</span>
                     </div>
                     <label class="s-toggle pm-toggle">
                         <input type="checkbox" data-field="cobro_spei_auto" data-pv="spei" checked={puedeCobrar && ORG.cobroSpeiAuto} disabled={!puedeCobrar} />
@@ -148,8 +154,8 @@ const pasos = [
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2" fill="currentColor" fill-opacity="0.12"/><path d="M3 8l9-5 9 5"/><path d="M7 20v-6M12 20v-6M17 20v-6"/></svg>
                         </div>
                         <div class="pm-text">
-                            <strong>Transferencia bancaria manual</strong>
-                            <span>Muestra tu CLABE en el link público. Tú confirmas el cobro al recibirlo.</span>
+                            <strong>{t(L, 'set.cobros.manual_titulo')}</strong>
+                            <span>{t(L, 'set.cobros.manual_desc')}</span>
                         </div>
                         <label class="s-toggle pm-toggle">
                             <input type="checkbox" data-field="acepta_transferencia" data-pv="transferencia" checked={ORG.aceptaTransferencia} />
@@ -159,17 +165,17 @@ const pasos = [
                     <div class="pm-bank">
                         <div class="s-row">
                             <div class="s-field">
-                                <label for="oBanco">Banco</label>
+                                <label for="oBanco">{t(L, 'set.cobros.banco')}</label>
                                 <input class="s-input" id="oBanco" data-field="banco_nombre" value={ORG.bancoNombre} placeholder="Ej. BBVA" />
                             </div>
                             <div class="s-field">
-                                <label for="oClabe">CLABE interbancaria</label>
-                                <input class="s-input" id="oClabe" data-field="banco_clabe" value={ORG.bancoClabe} placeholder="18 dígitos" maxlength="18" inputmode="numeric" />
+                                <label for="oClabe">{t(L, 'set.cobros.clabe')}</label>
+                                <input class="s-input" id="oClabe" data-field="banco_clabe" value={ORG.bancoClabe} placeholder={t(L, 'set.cobros.clabe_placeholder')} maxlength="18" inputmode="numeric" />
                             </div>
                         </div>
                         <div class="s-field">
-                            <label for="oBen">Nombre del beneficiario</label>
-                            <input class="s-input" id="oBen" data-field="banco_beneficiario" value={ORG.bancoBeneficiario} placeholder="Razón social o nombre" />
+                            <label for="oBen">{t(L, 'set.cobros.beneficiario')}</label>
+                            <input class="s-input" id="oBen" data-field="banco_beneficiario" value={ORG.bancoBeneficiario} placeholder={t(L, 'set.cobros.beneficiario_placeholder')} />
                         </div>
                     </div>
                 </div>
@@ -181,7 +187,7 @@ const pasos = [
 
     <p class="cobros-foot">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        Procesado de forma segura por Stripe. Cord nunca almacena datos de tarjetas ni retiene tus fondos.
+        {t(L, 'set.cobros.foot')}
     </p>
 </SettingsShell>
 
@@ -448,16 +454,18 @@ const pasos = [
 
     // Desconectar
     document.getElementById('btnDisconnect')?.addEventListener('click', async () => {
+        const meta = document.getElementById('cobrosMeta') as HTMLElement | null;
+        const M = meta?.dataset || ({} as DOMStringMap);
         const cc = (window as any).cordConfirm;
         const ct = (window as any).cordToast;
         const ok = cc
-          ? await cc({ title: 'Desconectar Stripe', body: 'Dejarás de recibir pagos en línea. Tus datos de transferencia manual se conservan. ¿Continuar?', danger: true, confirmText: 'Desconectar' })
-          : confirm('¿Seguro que deseas desconectar tu cuenta de Stripe? Dejarás de recibir pagos en línea.');
+          ? await cc({ title: M.i18nDescTitulo || 'Desconectar Stripe', body: M.i18nDescBody || 'Dejarás de recibir pagos en línea. Tus datos de transferencia manual se conservan. ¿Continuar?', danger: true, confirmText: M.i18nDescConfirm || 'Desconectar' })
+          : confirm(M.i18nDescNative || '¿Seguro que deseas desconectar tu cuenta de Stripe? Dejarás de recibir pagos en línea.');
         if (!ok) return;
         try {
             const res = await fetch('/api/billing/connect/disconnect', { method: 'POST' });
-            if (!res.ok) { const data = await res.json(); throw new Error(data.error || 'Error al desconectar'); }
-            if (ct) ct('Cuenta desconectada');
+            if (!res.ok) { const data = await res.json(); throw new Error(data.error || M.i18nDescErr || 'Error al desconectar'); }
+            if (ct) ct(M.i18nDescOk || 'Cuenta desconectada');
             setTimeout(() => window.location.reload(), 1200);
         } catch (e: any) {
             if (ct) ct(e.message, 'error'); else alert(e.message);
