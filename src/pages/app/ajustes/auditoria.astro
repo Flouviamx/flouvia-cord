@@ -2,14 +2,17 @@
 // Ajustes › Auditoría
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getAuditLog } from '../../../lib/queries';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 const AUDIT = await getAuditLog();
+const L = currentLocale();
 ---
 
 <SettingsShell title="Auditoría — Ajustes" tab="auditoria" perm="ajustes"
-    intro="Registro inmutable de cada cambio: qué, cuándo e IP. Solo lectura — para tus auditores.">
+    intro={t(L, 'set.aud.intro')}>
     <div class="s-block">
         <div class="audit-list">
-            {AUDIT.length === 0 && <p class="audit-empty">Aún no hay eventos registrados.</p>}
+            {AUDIT.length === 0 && <p class="audit-empty">{t(L, 'set.aud.vacio')}</p>}
             {AUDIT.map((a) => (
                 <div class="audit-row">
                     <span class="audit-accion">{a.accion}</span>

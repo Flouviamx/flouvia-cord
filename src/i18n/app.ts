@@ -958,6 +958,25 @@ export const appStrings = {
         "set.el.ev_rejected": "el cliente rechazó",
         "set.el.ev_message": "comentario o contraoferta",
         "set.el.ev_pay": "inició el pago en línea",
+
+        "set.datos.intro": "Tus datos son tuyos. Expórtalos cuando quieras o cierra tu cuenta. Cord no vende ni comparte tu información.",
+        "set.datos.exportar_titulo": "Exportar tus datos",
+        "set.datos.json_titulo": "Descargar todo (JSON)",
+        "set.datos.json_desc": "Productos, clientes, cotizaciones (con líneas y eventos), tareas y registro de auditoría en un solo archivo portable.",
+        "set.datos.exportar": "Exportar",
+        "set.datos.csv_titulo": "Catálogo y clientes (CSV)",
+        "set.datos.csv_desc": "Para abrir en Excel o migrar a otra herramienta. Mismo formato que la importación.",
+        "set.datos.proximamente": "Próximamente",
+        "set.datos.retencion_titulo": "Retención de datos",
+        "set.datos.retencion_desc": "Conservamos tus cotizaciones y CFDI mientras tu cuenta esté activa. Los CFDI timbrados se guardan <b>5 años</b> conforme al SAT. Las cotizaciones rechazadas o vencidas siguen disponibles para tu histórico hasta que las borres.",
+        "set.datos.zona_peligro": "Zona de peligro",
+        "set.datos.eliminar_cuenta_titulo": "Eliminar la cuenta de {org}",
+        "set.datos.eliminar_cuenta_desc": "Borra de forma permanente la organización y <b>todos</b> sus datos. No se puede deshacer. Exporta antes.",
+        "set.datos.eliminar_cuenta": "Eliminar cuenta",
+        "set.datos.eliminar_alert": "Eliminar la cuenta es permanente. Por seguridad, esta acción se habilita escribiendo a soporte@flouvia.com mientras conectamos el flujo de baja con verificación. Mientras tanto, puedes exportar todos tus datos arriba.",
+
+        "set.aud.intro": "Registro inmutable de cada cambio: qué, cuándo e IP. Solo lectura — para tus auditores.",
+        "set.aud.vacio": "Aún no hay eventos registrados.",
     },
     en: {
         // Sidebar — groups
@@ -1896,6 +1915,25 @@ export const appStrings = {
         "set.el.ev_rejected": "the client rejected",
         "set.el.ev_message": "comment or counteroffer",
         "set.el.ev_pay": "started online payment",
+
+        "set.datos.intro": "Your data is yours. Export it whenever you want, or close your account. Cord doesn't sell or share your information.",
+        "set.datos.exportar_titulo": "Export your data",
+        "set.datos.json_titulo": "Download everything (JSON)",
+        "set.datos.json_desc": "Products, clients, quotes (with line items and events), tasks, and audit log in a single portable file.",
+        "set.datos.exportar": "Export",
+        "set.datos.csv_titulo": "Catalog and clients (CSV)",
+        "set.datos.csv_desc": "To open in Excel or migrate to another tool. Same format as the import.",
+        "set.datos.proximamente": "Coming soon",
+        "set.datos.retencion_titulo": "Data retention",
+        "set.datos.retencion_desc": "We keep your quotes and invoices while your account is active. Stamped CFDI invoices are kept for <b>5 years</b> per SAT requirements. Rejected or expired quotes remain available in your history until you delete them.",
+        "set.datos.zona_peligro": "Danger zone",
+        "set.datos.eliminar_cuenta_titulo": "Delete {org}'s account",
+        "set.datos.eliminar_cuenta_desc": "Permanently deletes the organization and <b>all</b> its data. Cannot be undone. Export first.",
+        "set.datos.eliminar_cuenta": "Delete account",
+        "set.datos.eliminar_alert": "Deleting the account is permanent. For security, this action is enabled by writing to soporte@flouvia.com while we connect the verified deletion flow. In the meantime, you can export all your data above.",
+
+        "set.aud.intro": "Immutable log of every change: what, when, and IP. Read-only — for your auditors.",
+        "set.aud.vacio": "No events logged yet.",
     },
 } as const;
 
