@@ -108,7 +108,7 @@ const tpl = ORG.pdfTemplate || 'clasico';
                 </table>
                 <div class="pdf-totals">
                     <div><span>{t(L, 'set.pdf.subtotal')}</span><span class="editorial" id="ppSub"></span></div>
-                    <div><span>{t(L, 'set.cot.iva').replace(' (%)', '')} <em id="ppIvaLbl">{ORG.ivaPct}</em>%</span><span class="editorial" id="ppIva"></span></div>
+                    <div><span>{t(L, 'set.pdf.iva_lbl')} <em id="ppIvaLbl">{ORG.ivaPct}</em>%</span><span class="editorial" id="ppIva"></span></div>
                     <div class="pdf-grand"><span>{t(L, 'set.pdf.total')}</span><b class="editorial" id="ppTotal"></b></div>
                 </div>
                 <div class="pdf-notes" id="ppCondWrap" style="display:none">
@@ -204,19 +204,25 @@ const tpl = ORG.pdfTemplate || 'clasico';
     }
 </style>
 
-<script is:inline define:vars={{ IVA_PCT: ORG.ivaPct }}>
+<script is:inline define:vars={{
+    IVA_PCT: ORG.ivaPct,
+    LOCALE_INTL: L === 'en' ? 'en-US' : 'es-MX',
+    TPL_NAMES: { minimal: t(L, 'set.pdf.tpl_minimal'), clasico: t(L, 'set.pdf.tpl_clasico'), detallado: t(L, 'set.pdf.tpl_detallado') },
+    SAMPLE_ITEMS: [t(L, 'set.pdf.item1'), t(L, 'set.pdf.item2'), t(L, 'set.pdf.item3')],
+    LOGO_PESADO: t(L, 'set.pdf.logo_pesado'),
+}}>
     // Preview en vivo SOLO de los campos del documento. Marca/fiscales ya vienen
     // renderizados desde el servidor (se editan en sus propias secciones).
     document.addEventListener('DOMContentLoaded', () => {
         const SAMPLE = [
-            { d: 'Cemento gris 50kg', q: 120, lista: 198.0, nego: 182.0 },
-            { d: 'Varilla 3/8" × 12m', q: 340, lista: 189.0, nego: 168.5 },
-            { d: 'Block hueco 15×20×40', q: 2400, lista: 16.5, nego: 14.2 },
+            { d: SAMPLE_ITEMS[0], q: 120, lista: 198.0, nego: 182.0 },
+            { d: SAMPLE_ITEMS[1], q: 340, lista: 189.0, nego: 168.5 },
+            { d: SAMPLE_ITEMS[2], q: 2400, lista: 16.5, nego: 14.2 },
         ];
         const SUBTOTAL = SAMPLE.reduce((s, it) => s + it.nego * it.q, 0);
-        const money = (n) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+        const money = (n) => '$' + new Intl.NumberFormat(LOCALE_INTL, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
         const pct = (l, n) => (l > 0 ? Math.round((1 - n / l) * 100) : 0);
-        const TPL_NAME = { minimal: 'Minimal', clasico: 'Clásico', detallado: 'Detallado' };
+        const TPL_NAME = TPL_NAMES;
         const el = (id) => document.getElementById(id);
         const doc = el('pdfDoc');
         const oLogo = el('oLogo');
@@ -232,7 +238,7 @@ const tpl = ORG.pdfTemplate || 'clasico';
         const render = () => {
             const tpl = (document.querySelector('input[name="pdfTpl"]:checked')?.value) || 'clasico';
             doc.dataset.template = tpl;
-            setTxt('ppTplName', TPL_NAME[tpl] ?? 'Clásico');
+            setTxt('ppTplName', TPL_NAME[tpl] ?? TPL_NAME.clasico);
 
             const ppLogo = el('ppLogo'), ppMark = el('ppMark');
             if (oLogo.value) { ppLogo.src = oLogo.value; ppLogo.style.display = 'block'; ppMark.style.display = 'none'; }
@@ -242,7 +248,7 @@ const tpl = ORG.pdfTemplate || 'clasico';
             el('ppBody').innerHTML = SAMPLE.map((it) => {
                 const strike = showList && it.nego < it.lista
                     ? `<span class="pdf-strike"><s>${money(it.lista)}</s><i>−${pct(it.lista, it.nego)}%</i></span>` : '';
-                return `<tr><td>${it.d}</td><td class="n">${it.q.toLocaleString('es-MX')}</td><td class="n">${strike}${money(it.nego)}</td><td class="n">${money(it.nego * it.q)}</td></tr>`;
+                return `<tr><td>${it.d}</td><td class="n">${it.q.toLocaleString(LOCALE_INTL)}</td><td class="n">${strike}${money(it.nego)}</td><td class="n">${money(it.nego * it.q)}</td></tr>`;
             }).join('');
 
             const cond = el('oPdfCond').value.split('\n').map((s) => s.trim()).filter(Boolean);
@@ -259,7 +265,7 @@ const tpl = ORG.pdfTemplate || 'clasico';
         logoFile.addEventListener('change', () => {
             const f = logoFile.files?.[0];
             if (!f) return;
-            if (f.size > 1_000_000) { if (window.cordToast) window.cordToast('El logo pesa más de 1 MB. Usa una imagen más ligera.', 'error'); logoFile.value = ''; return; }
+            if (f.size > 1_000_000) { if (window.cordToast) window.cordToast(LOGO_PESADO, 'error'); logoFile.value = ''; return; }
             const reader = new FileReader();
             reader.onload = () => { const url = String(reader.result); oLogo.value = url; logoImg.src = url; logoImg.style.display = ''; logoFallback.style.display = 'none'; render(); };
             reader.readAsDataURL(f);

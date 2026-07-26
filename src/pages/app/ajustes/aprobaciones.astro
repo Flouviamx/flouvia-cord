@@ -2,43 +2,46 @@
 // Ajustes › Aprobaciones y tesorería
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 const ORG = await getOrg();
+const L = currentLocale();
 ---
 
 <SettingsShell title="Aprobaciones y tesorería — Ajustes" tab="aprobaciones" perm="ajustes"
-    intro="Protege tus márgenes: topes que disparan aprobación de gerencia y la tasa de interés por mora." save>
+    intro={t(L, 'set.aprob.intro')} save>
     <div class="s-block">
-        <h3>Umbrales de aprobación</h3>
+        <h3>{t(L, 'set.aprob.umbrales')}</h3>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
-                    <label for="oAprobDesc">Descuento máx. sin aprobación (%)</label>
+                    <label for="oAprobDesc">{t(L, 'set.aprob.desc_max')}</label>
                     <input class="s-input" id="oAprobDesc" data-field="aprob_descuento_max" type="number" min="0" max="100" step="1" value={ORG.aprobDescuentoMax} />
-                    <span class="s-hint">0 = sin tope. Por encima, "Enviar" pide aprobación de gerencia.</span>
+                    <span class="s-hint">{t(L, 'set.aprob.desc_max_hint')}</span>
                 </div>
                 <div class="s-field">
-                    <label for="oAprobMonto">Monto máx. sin aprobación (MXN)</label>
+                    <label for="oAprobMonto">{t(L, 'set.aprob.monto_max')}</label>
                     <input class="s-input" id="oAprobMonto" data-field="aprob_monto_max" type="number" min="0" step="1000" value={ORG.aprobMontoMax} />
-                    <span class="s-hint">0 = sin tope.</span>
+                    <span class="s-hint">{t(L, 'set.aprob.monto_max_hint')}</span>
                 </div>
             </div>
             <div class="s-row">
                 <div class="s-field">
-                    <label for="oAprobMargen">Margen bruto mínimo sin aprobación (%)</label>
+                    <label for="oAprobMargen">{t(L, 'set.aprob.margen_min')}</label>
                     <input class="s-input" id="oAprobMargen" data-field="aprob_margen_min" type="number" min="0" max="100" step="1" value={ORG.aprobMargenMin} />
-                    <span class="s-hint">0 = sin tope. Si alguna línea baja de este margen, la cotización se bloquea hasta que gerencia apruebe. Requiere que los productos tengan costo configurado.</span>
+                    <span class="s-hint">{t(L, 'set.aprob.margen_min_hint')}</span>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="s-block">
-        <h3>Tesorería</h3>
+        <h3>{t(L, 'set.aprob.tesoreria')}</h3>
         <div class="s-body">
             <div class="s-field">
-                <label for="oInteres">Interés moratorio mensual (%)</label>
+                <label for="oInteres">{t(L, 'set.aprob.interes')}</label>
                 <input class="s-input" id="oInteres" data-field="interes_moratorio_pct" type="number" min="0" max="100" step="0.5" value={ORG.interesMoratorioPct} />
-                <span class="s-hint">Compuesto sobre el saldo vencido. Se calcula en Cobranza.</span>
+                <span class="s-hint">{t(L, 'set.aprob.interes_hint')}</span>
             </div>
         </div>
     </div>

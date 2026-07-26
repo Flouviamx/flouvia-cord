@@ -3,28 +3,35 @@
 // enviar cotizaciones por WhatsApp / correo. CRUD real vía /api/plantillas.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getPlantillas } from '../../../lib/queries';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 const PLANTILLAS = await getPlantillas();
+const L = currentLocale();
 
 const CANAL_META: Record<string, { label: string; color: string; bg: string }> = {
-    whatsapp: { label: 'WhatsApp', color: '#128C7E', bg: 'rgba(18,140,126,0.1)' },
-    email:    { label: 'Correo',   color: '#0a192f', bg: 'rgba(10,25,47,0.08)' },
-    nota:     { label: 'Nota',     color: '#b45309', bg: 'rgba(245,158,11,0.12)' },
+    whatsapp: { label: t(L, 'set.pl.canal.whatsapp'), color: '#128C7E', bg: 'rgba(18,140,126,0.1)' },
+    email:    { label: t(L, 'set.pl.canal.email'),    color: '#0a192f', bg: 'rgba(10,25,47,0.08)' },
+    nota:     { label: t(L, 'set.pl.canal.nota'),     color: '#b45309', bg: 'rgba(245,158,11,0.12)' },
 };
 const VARS = ['{cliente}', '{empresa}', '{folio}', '{total}', '{link}', '{vigencia}'];
 ---
 
 <SettingsShell title="Plantillas de mensaje — Ajustes" tab="plantillas" perm="ajustes"
-    intro="Escribe una vez, reutiliza siempre. Estos textos aparecen al enviar una cotización por WhatsApp o correo. Usa variables como {cliente} o {link} y se rellenan solas.">
+    intro={t(L, 'set.pl.intro')}>
 
     <div class="s-block">
         <div class="pl-head">
-            <h3>Tus plantillas</h3>
-            <button class="pl-new" id="plNew">+ Nueva plantilla</button>
+            <h3>{t(L, 'set.pl.tus_plantillas')}</h3>
+            <button class="pl-new" id="plNew">{t(L, 'set.pl.nueva')}</button>
         </div>
 
-        <div class="pl-list" id="plList">
+        <div class="pl-list" id="plList"
+            data-i18n-nueva={t(L, 'set.pl.dlg_nueva')} data-i18n-editar={t(L, 'set.pl.dlg_editar')}
+            data-i18n-eliminar-titulo={t(L, 'set.pl.eliminar_titulo')} data-i18n-eliminar-body={t(L, 'set.pl.eliminar_body')}
+            data-i18n-eliminar-confirm={t(L, 'set.pl.eliminar')} data-i18n-eliminar-err={t(L, 'set.pl.no_se_pudo_eliminar')}
+            data-i18n-guardar-err={t(L, 'set.pl.no_se_pudo_guardar')}>
             {PLANTILLAS.length === 0 && (
-                <p class="pl-empty">Aún no tienes plantillas. Crea una para mandar tus cotizaciones en segundos.</p>
+                <p class="pl-empty">{t(L, 'set.pl.vacio')}</p>
             )}
             {PLANTILLAS.map((p) => (
                 <div class="pl-row" data-id={p.id} data-nombre={p.nombre} data-canal={p.canal} data-cuerpo={p.cuerpo}>
@@ -35,8 +42,8 @@ const VARS = ['{cliente}', '{empresa}', '{folio}', '{total}', '{link}', '{vigenc
                         <span class="pl-body">{p.cuerpo}</span>
                     </span>
                     <span class="pl-actions">
-                        <button class="pl-edit" data-edit={p.id}>Editar</button>
-                        <button class="pl-del" data-del={p.id}>Eliminar</button>
+                        <button class="pl-edit" data-edit={p.id}>{t(L, 'set.pl.editar')}</button>
+                        <button class="pl-del" data-del={p.id}>{t(L, 'set.pl.eliminar')}</button>
                     </span>
                 </div>
             ))}
@@ -44,42 +51,42 @@ const VARS = ['{cliente}', '{empresa}', '{folio}', '{total}', '{link}', '{vigenc
     </div>
 
     <div class="s-block">
-        <h3>Variables disponibles</h3>
+        <h3>{t(L, 'set.pl.variables')}</h3>
         <div class="pl-vars">
             {VARS.map((v) => <code class="pl-var">{v}</code>)}
         </div>
-        <p class="pl-note">Al enviar, cada variable se reemplaza con los datos reales de la cotización.</p>
+        <p class="pl-note">{t(L, 'set.pl.variables_nota')}</p>
     </div>
 </SettingsShell>
 
 <dialog id="plDlg" class="pldlg">
     <form class="pldlg-inner" id="plForm">
-        <h4 id="plTitle">Nueva plantilla</h4>
+        <h4 id="plTitle">{t(L, 'set.pl.dlg_nueva')}</h4>
         <input type="hidden" id="plId" />
         <div class="s-field">
-            <label for="plNombre">Nombre</label>
+            <label for="plNombre">{t(L, 'set.pl.nombre')}</label>
             <input class="s-input" id="plNombre" placeholder="Envío estándar" required maxlength="80" />
         </div>
         <div class="s-field">
-            <label for="plCanal">Canal</label>
+            <label for="plCanal">{t(L, 'set.pl.canal')}</label>
             <select class="s-input" id="plCanal">
                 <option value="whatsapp">WhatsApp</option>
-                <option value="email">Correo</option>
-                <option value="nota">Nota interna</option>
+                <option value="email">{t(L, 'set.pl.canal.email')}</option>
+                <option value="nota">{t(L, 'set.pl.canal_nota')}</option>
             </select>
         </div>
         <div class="s-field">
-            <label for="plCuerpo">Mensaje</label>
+            <label for="plCuerpo">{t(L, 'set.pl.mensaje')}</label>
             <textarea class="s-input s-textarea" id="plCuerpo" rows="5" required maxlength="2000"
                 placeholder={"Hola {cliente}, te comparto la cotización {folio} por {total}. Puedes verla y aprobarla aquí: {link}\n\nVigencia: {vigencia}. ¡Gracias!"}></textarea>
-            <span class="s-hint">Toca una variable para insertarla:</span>
+            <span class="s-hint">{t(L, 'set.pl.toca_variable')}</span>
             <div class="pl-vars" id="plInsert">
                 {VARS.map((v) => <button type="button" class="pl-var pl-var-btn" data-var={v}>{v}</button>)}
             </div>
         </div>
         <div class="pldlg-foot">
-            <button type="button" class="pldlg-cancel" id="plCancel">Cancelar</button>
-            <button type="submit" class="pldlg-save" id="plSave">Guardar</button>
+            <button type="button" class="pldlg-cancel" id="plCancel">{t(L, 'set.pl.cancelar')}</button>
+            <button type="submit" class="pldlg-save" id="plSave">{t(L, 'set.pl.guardar')}</button>
         </div>
     </form>
 </dialog>
@@ -126,6 +133,8 @@ const VARS = ['{cliente}', '{empresa}', '{folio}', '{total}', '{link}', '{vigenc
         if (!dlg || !form) return;
         const $ = (id: string) => document.getElementById(id) as HTMLInputElement;
         const idEl = $('plId'), nombre = $('plNombre'), canal = $('plCanal'), cuerpo = $('plCuerpo'), title = document.getElementById('plTitle');
+        const list = document.getElementById('plList') as HTMLElement | null;
+        const M = list?.dataset || ({} as DOMStringMap);
 
         function open(edit?: HTMLElement) {
             if (edit) {
@@ -133,10 +142,10 @@ const VARS = ['{cliente}', '{empresa}', '{folio}', '{total}', '{link}', '{vigenc
                 nombre.value = edit.dataset.nombre ?? '';
                 canal.value = edit.dataset.canal ?? 'whatsapp';
                 cuerpo.value = edit.dataset.cuerpo ?? '';
-                if (title) title.textContent = 'Editar plantilla';
+                if (title) title.textContent = M.i18nEditar || 'Editar plantilla';
             } else {
                 idEl.value = ''; nombre.value = ''; canal.value = 'whatsapp'; cuerpo.value = '';
-                if (title) title.textContent = 'Nueva plantilla';
+                if (title) title.textContent = M.i18nNueva || 'Nueva plantilla';
             }
             dlg!.showModal();
         }
@@ -155,13 +164,13 @@ const VARS = ['{cliente}', '{empresa}', '{folio}', '{total}', '{link}', '{vigenc
         }));
 
         document.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => {
-            if (!await (window as any).cordConfirm({ title: 'Eliminar plantilla', body: '¿Eliminar esta plantilla de mensaje?', danger: true, confirmText: 'Eliminar' })) return;
+            if (!await (window as any).cordConfirm({ title: M.i18nEliminarTitulo || 'Eliminar plantilla', body: M.i18nEliminarBody || '¿Eliminar esta plantilla de mensaje?', danger: true, confirmText: M.i18nEliminarConfirm || 'Eliminar' })) return;
             const id = (b as HTMLElement).dataset.del!;
             try {
                 const res = await fetch('/api/plantillas', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
                 if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
                 location.reload();
-            } catch (e: any) { (window as any).cordToast?.(e.message || 'No se pudo eliminar', 'error'); }
+            } catch (e: any) { (window as any).cordToast?.(e.message || M.i18nEliminarErr || 'No se pudo eliminar', 'error'); }
         }));
 
         form.addEventListener('submit', async (e) => {
@@ -176,7 +185,7 @@ const VARS = ['{cliente}', '{empresa}', '{folio}', '{total}', '{link}', '{vigenc
                 });
                 if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
                 location.reload();
-            } catch (e: any) { (window as any).cordToast?.(e.message || 'No se pudo guardar', 'error'); save.disabled = false; }
+            } catch (e: any) { (window as any).cordToast?.(e.message || M.i18nGuardarErr || 'No se pudo guardar', 'error'); save.disabled = false; }
         });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPlantillas);
