@@ -7,79 +7,88 @@ import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getActiveOrgId } from '../../../lib/db';
 import { sql } from '../../../lib/db';
 import { listMcpServers } from '../../../lib/agents/governance';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 
 const orgId = await getActiveOrgId();
 const [org] = await sql`select ai_cobranza_activa from orgs where id = ${orgId}`;
 const aiCobranza = !!org?.ai_cobranza_activa;
 const servers = await listMcpServers(orgId);
+const L = currentLocale();
 ---
 
 <SettingsShell title="Agentes IA y MCP — Ajustes" tab="agentes" perm="ajustes"
-    intro="Controla qué puede hacer la IA de Cord: cobranza autónoma y a qué sistemas externos (CRMs, bases de datos) se conecta vía MCP. Las empresas B2B son celosas con su data — aquí defines los límites.">
+    intro={t(L, 'set.ag.intro')}>
 
     <!-- ── Cobranza autónoma (opt-in) ── -->
     <div class="s-block">
         <div class="ag-head">
             <div>
-                <h3 style="margin:0;padding:0;border:0">Cobranza autónoma con IA</h3>
-                <p class="ag-sub">Un agente envía correos de cobranza a clientes con facturas vencidas y negocia planes de pago (hasta 3 cuotas). Corre diario, solo sobre cotizaciones facturadas y vencidas.</p>
+                <h3 style="margin:0;padding:0;border:0">{t(L, 'set.ag.cobranza_titulo')}</h3>
+                <p class="ag-sub">{t(L, 'set.ag.cobranza_desc')}</p>
             </div>
-            <label class="s-toggle" title="Activar cobranza autónoma">
-                <input type="checkbox" id="cobranzaToggle" checked={aiCobranza} />
+            <label class="s-toggle" title={t(L, 'set.ag.activar_cobranza')}>
+                <input type="checkbox" id="cobranzaToggle" checked={aiCobranza}
+                    data-i18n-on={t(L, 'set.ag.cobranza_activada')} data-i18n-off={t(L, 'set.ag.cobranza_desactivada')} data-i18n-err={t(L, 'set.ag.no_pudo_guardar')} />
                 <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
             </label>
         </div>
-        <p class="ag-warn">⚠️ Al activarlo, Cord <b>enviará correos automáticos a tus clientes</b> en tu nombre. Requiere <code>RESEND_API_KEY</code> configurada. Desactívalo cuando quieras.</p>
+        <p class="ag-warn" set:html={t(L, 'set.ag.cobranza_warn')} />
     </div>
 
     <!-- ── Servidores MCP (gobernanza outbound) ── -->
-    <div class="s-block">
+    <div class="s-block"
+        data-i18n-perm-on={t(L, 'set.ag.permiso_otorgado')} data-i18n-perm-off={t(L, 'set.ag.permiso_revocado')}
+        data-i18n-err={t(L, 'set.ag.no_pudo_guardar')} data-i18n-del-titulo={t(L, 'set.ag.eliminar_servidor_titulo')}
+        data-i18n-del-body={t(L, 'set.ag.eliminar_servidor_body')} data-i18n-del-confirm={t(L, 'set.ag.eliminar')}
+        data-i18n-del-ok={t(L, 'set.ag.servidor_eliminado')} data-i18n-del-err={t(L, 'set.ag.no_pudo_eliminar')}
+        data-i18n-add-err={t(L, 'set.ag.no_pudo_agregar')}>
         <div class="ag-head">
             <div>
-                <h3 style="margin:0;padding:0;border:0">Servidores MCP conectados</h3>
-                <p class="ag-sub">Registra un servidor MCP (HubSpot, Salesforce, tu base de datos…). El agente solo podrá leer/ejecutar herramientas de los servidores que tengan el permiso <b>activado</b>.</p>
+                <h3 style="margin:0;padding:0;border:0">{t(L, 'set.ag.mcp_titulo')}</h3>
+                <p class="ag-sub" set:html={t(L, 'set.ag.mcp_desc')} />
             </div>
-            <button class="api-btn-solid" id="addBtn">+ Agregar servidor</button>
+            <button class="api-btn-solid" id="addBtn">{t(L, 'set.ag.agregar_servidor')}</button>
         </div>
 
         <div class="mcp-rows" id="mcpRows">
             {servers.length === 0 && (
-                <p class="mcp-empty">Aún no hay servidores MCP. Agrega uno para que la IA de Cord pueda consultar tus sistemas.</p>
+                <p class="mcp-empty">{t(L, 'set.ag.mcp_vacio')}</p>
             )}
             {servers.map((s) => (
                 <div class="mcp-row" data-id={s.id}>
                     <span class="mcp-dot" data-on={s.activo ? '1' : '0'}></span>
                     <span class="mcp-body">
                         <span class="mcp-name">{s.nombre}</span>
-                        <span class="mcp-url">{s.url_sse}{s.auth_token ? ' · 🔒 con token' : ''}</span>
+                        <span class="mcp-url">{s.url_sse}{s.auth_token ? t(L, 'set.ag.con_token') : ''}</span>
                     </span>
-                    <label class="mcp-perm" title="Permitir que el agente use este servidor">
+                    <label class="mcp-perm" title={t(L, 'set.ag.permitir_ia_titulo')}>
                         <input type="checkbox" data-perm checked={s.permitido} />
-                        <span>Permitir IA</span>
+                        <span>{t(L, 'set.ag.permitir_ia')}</span>
                     </label>
-                    <label class="s-toggle" title="Activo">
+                    <label class="s-toggle" title={t(L, 'set.ag.activo')}>
                         <input type="checkbox" data-activo checked={s.activo} />
                         <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
                     </label>
-                    <button class="mcp-del" data-del title="Eliminar">✕</button>
+                    <button class="mcp-del" data-del title={t(L, 'set.ag.eliminar_titulo')}>✕</button>
                 </div>
             ))}
         </div>
-        <p class="ag-note">Solo los servidores con <b>"Permitir IA"</b> activado entran al contexto del agente. Esta es tu capa de gobernanza: nada se conecta sin tu autorización explícita.</p>
+        <p class="ag-note" set:html={t(L, 'set.ag.nota')} />
     </div>
 </SettingsShell>
 
 <!-- Modal alta de servidor MCP -->
 <dialog id="addModal" class="ag-dialog">
     <form method="dialog" class="ag-form">
-        <h3>Nuevo servidor MCP</h3>
-        <label class="ag-l">Nombre<input id="mNombre" placeholder="HubSpot CRM" /></label>
-        <label class="ag-l">URL del endpoint SSE<input id="mUrl" placeholder="https://mcp.tuservicio.com/sse" /></label>
-        <label class="ag-l">Token de acceso (opcional)<input id="mToken" placeholder="Bearer token / API key" /></label>
+        <h3>{t(L, 'set.ag.modal_titulo')}</h3>
+        <label class="ag-l">{t(L, 'set.ag.nombre')}<input id="mNombre" placeholder="HubSpot CRM" /></label>
+        <label class="ag-l">{t(L, 'set.ag.url_endpoint')}<input id="mUrl" placeholder="https://mcp.tuservicio.com/sse" /></label>
+        <label class="ag-l">{t(L, 'set.ag.token_opcional')}<input id="mToken" placeholder="Bearer token / API key" /></label>
         <p class="ag-err" id="mErr"></p>
         <div class="ag-form-actions">
-            <button type="button" class="api-btn-ghost" id="mCancel">Cancelar</button>
-            <button type="button" class="api-btn-solid" id="mSave">Agregar</button>
+            <button type="button" class="api-btn-ghost" id="mCancel">{t(L, 'set.ag.cancelar')}</button>
+            <button type="button" class="api-btn-solid" id="mSave">{t(L, 'set.ag.agregar')}</button>
         </div>
     </form>
 </dialog>
@@ -141,11 +150,21 @@ const servers = await listMcpServers(orgId);
         const cob = document.getElementById('cobranzaToggle') as HTMLInputElement | null;
         cob?.addEventListener('change', async () => {
             const res = await post({ action: 'cobranza', value: cob.checked });
-            if (res.ok) toast(cob.checked ? 'Cobranza autónoma activada' : 'Cobranza autónoma desactivada');
-            else { cob.checked = !cob.checked; toast('No se pudo guardar', 'error'); }
+            if (res.ok) toast(cob.checked ? (cob.dataset.i18nOn || 'Cobranza autónoma activada') : (cob.dataset.i18nOff || 'Cobranza autónoma desactivada'));
+            else { cob.checked = !cob.checked; toast(cob.dataset.i18nErr || 'No se pudo guardar', 'error'); }
         });
 
         // Row toggles (perm / activo / delete)
+        const mcpBlock = document.getElementById('mcpRows')?.closest('.s-block') as HTMLElement | null;
+        const i18nPermOn = mcpBlock?.dataset.i18nPermOn || 'Permiso otorgado a la IA';
+        const i18nPermOff = mcpBlock?.dataset.i18nPermOff || 'Permiso revocado';
+        const i18nErr = mcpBlock?.dataset.i18nErr || 'No se pudo guardar';
+        const i18nDelTitulo = mcpBlock?.dataset.i18nDelTitulo || 'Eliminar servidor MCP';
+        const i18nDelBody = mcpBlock?.dataset.i18nDelBody || '¿Eliminar este servidor MCP? Los agentes dejarán de usar sus herramientas.';
+        const i18nDelConfirm = mcpBlock?.dataset.i18nDelConfirm || 'Eliminar';
+        const i18nDelOk = mcpBlock?.dataset.i18nDelOk || 'Servidor eliminado';
+        const i18nDelErr = mcpBlock?.dataset.i18nDelErr || 'No se pudo eliminar';
+        const i18nAddErr = mcpBlock?.dataset.i18nAddErr || 'No se pudo agregar';
         document.getElementById('mcpRows')?.querySelectorAll('.mcp-row').forEach((row) => {
             const id = (row as HTMLElement).dataset.id!;
             const perm = row.querySelector('[data-perm]') as HTMLInputElement | null;
@@ -155,19 +174,19 @@ const servers = await listMcpServers(orgId);
 
             perm?.addEventListener('change', async () => {
                 const res = await post({ action: 'toggle_permiso', id, value: perm.checked });
-                if (res.ok) toast(perm.checked ? 'Permiso otorgado a la IA' : 'Permiso revocado');
-                else { perm.checked = !perm.checked; toast('No se pudo guardar', 'error'); }
+                if (res.ok) toast(perm.checked ? i18nPermOn : i18nPermOff);
+                else { perm.checked = !perm.checked; toast(i18nErr, 'error'); }
             });
             activo?.addEventListener('change', async () => {
                 const res = await post({ action: 'toggle_activo', id, value: activo.checked });
                 if (res.ok && dot) dot.setAttribute('data-on', activo.checked ? '1' : '0');
-                else if (!res.ok) { activo.checked = !activo.checked; toast('No se pudo guardar', 'error'); }
+                else if (!res.ok) { activo.checked = !activo.checked; toast(i18nErr, 'error'); }
             });
             del?.addEventListener('click', async () => {
-                if (!await (window as any).cordConfirm({ title: 'Eliminar servidor MCP', body: '¿Eliminar este servidor MCP? Los agentes dejarán de usar sus herramientas.', danger: true, confirmText: 'Eliminar' })) return;
+                if (!await (window as any).cordConfirm({ title: i18nDelTitulo, body: i18nDelBody, danger: true, confirmText: i18nDelConfirm })) return;
                 const res = await post({ action: 'delete', id });
-                if (res.ok) { row.remove(); toast('Servidor eliminado'); }
-                else toast('No se pudo eliminar', 'error');
+                if (res.ok) { row.remove(); toast(i18nDelOk); }
+                else toast(i18nDelErr, 'error');
             });
         });
 
@@ -183,7 +202,7 @@ const servers = await listMcpServers(orgId);
             err.textContent = '';
             const res = await post({ action: 'add', nombre, url_sse, auth_token });
             const d = await res.json();
-            if (!res.ok) { err.textContent = d.error || 'No se pudo agregar'; return; }
+            if (!res.ok) { err.textContent = d.error || i18nAddErr; return; }
             modal?.close();
             location.reload();
         });
