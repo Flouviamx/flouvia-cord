@@ -4,38 +4,48 @@ import AppLayout from '../../layouts/AppLayout.astro';
 import { getClientes, getCotizaciones, getMyMembership, money } from '../../lib/queries';
 import { memberCan } from '../../lib/permissions';
 import { REGIMENES_FISCALES, USOS_CFDI } from '../../lib/sat';
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
+
+const L = currentLocale();
+const tf = (key: string, vars: Record<string, string> = {}) => {
+    let s = t(L, key as any);
+    for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
+    return s;
+};
 
 const [CLIENTES, COTIZACIONES, ME] = await Promise.all([getClientes(), getCotizaciones(), getMyMembership()]);
 const canEdit = memberCan(ME, 'clientes');
 const countQuotes = (empresa: string) => COTIZACIONES.filter(q => q.cliente === empresa).length;
 
 const TERM_VALUE: Record<string, string> = { 'Contado': 'contado', 'Net 30': 'net30', 'Net 60': 'net60' };
-const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Plata', oro: 'Oro', distribuidor: 'Distribuidor' };
+const NIVEL_LABEL: Record<string, string> = { estandar: t(L, 'cli.nivel_estandar'), plata: t(L, 'cli.nivel_plata'), oro: t(L, 'cli.nivel_oro'), distribuidor: t(L, 'cli.nivel_distribuidor') };
 ---
 
-<AppLayout title="Clientes — Cord" page="clientes" heading="Clientes">
+<AppLayout title="Clientes — Cord" page="clientes" heading={t(L, 'cli.heading')}>
     <div slot="topbar-actions" class="topbar-btns">
-        <div class="ph-search">
+        <div class="ph-search"
+            data-i18n-sin-resultados={t(L, 'cli.sin_resultados')} data-i18n-singular={t(L, 'cli.cliente_singular')} data-i18n-plural={t(L, 'cli.cliente_plural')}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input id="searchClientes" type="search" placeholder="Buscar clientes…" autocomplete="off" spellcheck="false" />
-            <button class="ph-search-clear" id="searchClearCli" aria-label="Limpiar">
+            <input id="searchClientes" type="search" placeholder={t(L, 'cli.buscar_ph')} autocomplete="off" spellcheck="false" />
+            <button class="ph-search-clear" id="searchClearCli" aria-label={t(L, 'cli.limpiar')}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
         </div>
         {canEdit && <button class="btn-import" id="btnImport">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Importar CSV
+            {t(L, 'cli.importar_csv')}
         </button>}
-        {canEdit && <button class="btn-new" id="btnNew">+ Nuevo cliente</button>}
+        {canEdit && <button class="btn-new" id="btnNew">{t(L, 'cli.nuevo_cliente')}</button>}
     </div>
 
     <section class="dir">
         <div class="section-head">
-            <h2>Directorio</h2>
-            <span class="dir-count" id="dirCount">{CLIENTES.length} {CLIENTES.length === 1 ? 'cliente' : 'clientes'}</span>
+            <h2>{t(L, 'cli.directorio')}</h2>
+            <span class="dir-count" id="dirCount">{CLIENTES.length} {CLIENTES.length === 1 ? t(L, 'cli.cliente_singular') : t(L, 'cli.cliente_plural')}</span>
         </div>
         <div class="t-head">
-            <span>Cliente</span><span>Contacto</span><span>RFC</span><span>Términos</span><span class="t-right">Límite de crédito</span><span class="t-right">Cotizaciones</span>
+            <span>{t(L, 'cli.th_cliente')}</span><span>{t(L, 'cli.th_contacto')}</span><span>{t(L, 'cli.th_rfc')}</span><span>{t(L, 'cli.th_terminos')}</span><span class="t-right">{t(L, 'cli.th_limite')}</span><span class="t-right">{t(L, 'cli.th_cotizaciones')}</span>
         </div>
         {CLIENTES.map((c) => (
             <button
@@ -69,11 +79,11 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
         {CLIENTES.length === 0 && (
             <div class="t-empty">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <p><b>Aún no tienes clientes</b> Agrega tu primer cliente o impórtalos en lote desde un CSV.</p>
+                <p><b>{t(L, 'cli.vacio_titulo')}</b> {t(L, 'cli.vacio_desc')}</p>
                 {canEdit && (
                     <div class="t-empty-cta">
-                        {canEdit && <button class="btn-new" id="btnNewEmpty">+ Nuevo cliente</button>}
-                        <button class="btn-import" id="btnImportEmpty">Importar CSV</button>
+                        {canEdit && <button class="btn-new" id="btnNewEmpty">{t(L, 'cli.nuevo_cliente')}</button>}
+                        <button class="btn-import" id="btnImportEmpty">{t(L, 'cli.importar_csv')}</button>
                     </div>
                 )}
             </div>
@@ -81,87 +91,92 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
     </section>
 
     <!-- Modal alta / edición (solo si tiene permiso de edición) -->
-    {canEdit && <dialog class="modal" id="clientModal">
+    {canEdit && <dialog class="modal" id="clientModal"
+        data-i18n-nuevo={t(L, 'cli.modal_nuevo_titulo')} data-i18n-editar={t(L, 'cli.modal_editar_titulo')}
+        data-i18n-sin-descuento={t(L, 'cli.sin_descuento')}
+        data-i18n-no-pudo-guardar={t(L, 'cli.no_pudo_guardar')}
+        data-i18n-eliminar-titulo={t(L, 'cli.eliminar_cliente_titulo')} data-i18n-eliminar-body={t(L, 'cli.eliminar_cliente_body')}
+        data-i18n-eliminar={t(L, 'cli.eliminar')} data-i18n-no-pudo-eliminar={t(L, 'cli.no_pudo_eliminar')}>
         <form method="dialog" class="m-form" id="clientForm">
             <div class="m-head">
-                <h2 id="mTitle">Nuevo cliente</h2>
-                <button type="button" class="m-close" id="mClose" aria-label="Cerrar">✕</button>
+                <h2 id="mTitle">{t(L, 'cli.modal_nuevo_titulo')}</h2>
+                <button type="button" class="m-close" id="mClose" aria-label={t(L, 'cli.cerrar')}>✕</button>
             </div>
 
             <div class="m-field">
-                <label for="fEmpresa">Empresa *</label>
-                <input class="m-input" id="fEmpresa" name="empresa" required placeholder="Distribuidora El Zarco" />
+                <label for="fEmpresa">{t(L, 'cli.empresa')}</label>
+                <input class="m-input" id="fEmpresa" name="empresa" required placeholder={t(L, 'cli.empresa_ph')} />
             </div>
             <div class="m-row">
                 <div class="m-field">
-                    <label for="fContacto">Contacto</label>
-                    <input class="m-input" id="fContacto" name="contacto" placeholder="Raúl Mendoza" />
+                    <label for="fContacto">{t(L, 'cli.contacto')}</label>
+                    <input class="m-input" id="fContacto" name="contacto" placeholder={t(L, 'cli.contacto_ph')} />
                 </div>
                 <div class="m-field">
-                    <label for="fEmail">Correo</label>
-                    <input class="m-input" id="fEmail" name="email" type="email" placeholder="compras@elzarco.mx" />
+                    <label for="fEmail">{t(L, 'cli.correo')}</label>
+                    <input class="m-input" id="fEmail" name="email" type="email" placeholder={t(L, 'cli.correo_ph')} />
                 </div>
             </div>
             <div class="m-row">
                 <div class="m-field">
-                    <label for="fRfc">RFC</label>
+                    <label for="fRfc">{t(L, 'cli.rfc')}</label>
                     <input class="m-input" id="fRfc" name="rfc" placeholder="DEZ981123QX1" maxlength="13" />
                 </div>
                 <div class="m-field">
-                    <label for="fLimite">Límite de crédito (MXN)</label>
+                    <label for="fLimite">{t(L, 'cli.limite_credito')}</label>
                     <input class="m-input" id="fLimite" name="limite" type="number" min="0" step="1000" placeholder="500000" />
                 </div>
             </div>
             <div class="m-field">
-                <label>Nivel de precio</label>
+                <label>{t(L, 'cli.nivel_precio')}</label>
                 <div class="m-chips m-tiers" id="fTiers">
-                    <button type="button" class="chip tier active" data-v="estandar" data-sug="0">Estándar</button>
-                    <button type="button" class="chip tier" data-v="plata" data-sug="5">Plata</button>
-                    <button type="button" class="chip tier" data-v="oro" data-sug="10">Oro</button>
-                    <button type="button" class="chip tier" data-v="distribuidor" data-sug="15">Distribuidor</button>
+                    <button type="button" class="chip tier active" data-v="estandar" data-sug="0">{t(L, 'cli.nivel_estandar')}</button>
+                    <button type="button" class="chip tier" data-v="plata" data-sug="5">{t(L, 'cli.nivel_plata')}</button>
+                    <button type="button" class="chip tier" data-v="oro" data-sug="10">{t(L, 'cli.nivel_oro')}</button>
+                    <button type="button" class="chip tier" data-v="distribuidor" data-sug="15">{t(L, 'cli.nivel_distribuidor')}</button>
                 </div>
                 <input type="hidden" id="fNivel" value="estandar" />
             </div>
             <div class="m-field">
-                <label for="fDescuento">Descuento automático en sus precios</label>
+                <label for="fDescuento">{t(L, 'cli.descuento_auto')}</label>
                 <div class="disc-row">
                     <div class="disc-input">
                         <input class="m-input" id="fDescuento" type="number" min="0" max="100" step="1" placeholder="0" />
                         <span class="disc-suffix">%</span>
                     </div>
-                    <span class="disc-preview" id="discPreview">Sin descuento</span>
+                    <span class="disc-preview" id="discPreview">{t(L, 'cli.sin_descuento')}</span>
                 </div>
-                <span class="m-hint">Cada vez que le cotices, sus precios bajan este % solos. Ej. <b>Oro = −10%</b>: un producto de $1,000 le sale en $900.</span>
+                <span class="m-hint" set:html={t(L, 'cli.descuento_hint')} />
             </div>
             <div class="m-field">
-                <label>Términos de pago</label>
+                <label>{t(L, 'cli.terminos_pago')}</label>
                 <div class="m-chips" id="fTerminos">
-                    <button type="button" class="chip active" data-v="contado">Contado</button>
-                    <button type="button" class="chip" data-v="net30">Net 30</button>
-                    <button type="button" class="chip" data-v="net60">Net 60</button>
+                    <button type="button" class="chip active" data-v="contado">{t(L, 'cli.term_contado')}</button>
+                    <button type="button" class="chip" data-v="net30">{t(L, 'cli.term_net30')}</button>
+                    <button type="button" class="chip" data-v="net60">{t(L, 'cli.term_net60')}</button>
                 </div>
             </div>
 
             <details class="m-fiscal">
-                <summary>Datos fiscales para CFDI (opcional)</summary>
-                <p class="m-hint" style="margin: 0 0 0.75rem 0;">Si los capturas, al facturar timbramos el CFDI 4.0 a nombre de este cliente. Si los dejas vacíos, usamos "público en general".</p>
+                <summary>{t(L, 'cli.fiscal_summary')}</summary>
+                <p class="m-hint" style="margin: 0 0 0.75rem 0;">{t(L, 'cli.fiscal_hint')}</p>
                 <div class="m-row">
                     <div class="m-field">
-                        <label for="fRegimen">Régimen fiscal</label>
+                        <label for="fRegimen">{t(L, 'cli.regimen_fiscal')}</label>
                         <select class="m-input" id="fRegimen">
-                            <option value="">— Sin especificar —</option>
+                            <option value="">{t(L, 'cli.sin_especificar')}</option>
                             {REGIMENES_FISCALES.map((r) => <option value={r.codigo}>{r.nombre}</option>)}
                         </select>
                     </div>
                     <div class="m-field">
-                        <label for="fCp">Código postal (domicilio fiscal)</label>
+                        <label for="fCp">{t(L, 'cli.cp_domicilio')}</label>
                         <input class="m-input" id="fCp" inputmode="numeric" maxlength="5" placeholder="06600" />
                     </div>
                 </div>
                 <div class="m-field">
-                    <label for="fUso">Uso del CFDI</label>
+                    <label for="fUso">{t(L, 'cli.uso_cfdi')}</label>
                     <select class="m-input" id="fUso">
-                        <option value="">— Sin especificar (G03) —</option>
+                        <option value="">{t(L, 'cli.sin_especificar_g03')}</option>
                         {USOS_CFDI.map((u) => <option value={u.codigo}>{u.nombre}</option>)}
                     </select>
                 </div>
@@ -170,57 +185,68 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
             <p class="m-error" id="mError"></p>
 
             <div class="m-actions">
-                {canEdit && <button type="button" class="m-delete" id="mDelete">Eliminar</button>}
+                {canEdit && <button type="button" class="m-delete" id="mDelete">{t(L, 'cli.eliminar')}</button>}
                 <span class="m-spacer"></span>
-                <button type="button" class="m-cancel" id="mCancel">Cancelar</button>
-                <button type="submit" class="m-save" id="mSave">Guardar cliente</button>
+                <button type="button" class="m-cancel" id="mCancel">{t(L, 'cli.cancelar')}</button>
+                <button type="submit" class="m-save" id="mSave">{t(L, 'cli.guardar_cliente')}</button>
             </div>
         </form>
     </dialog>}
 
     <!-- Modal de importación CSV (solo si tiene permiso de edición) -->
-    {canEdit && <dialog class="modal modal-lg" id="importModal">
+    {canEdit && <dialog class="modal modal-lg" id="importModal"
+        data-i18n-field-empresa={t(L, 'cli.field_empresa')} data-i18n-field-contacto={t(L, 'cli.field_contacto')}
+        data-i18n-field-correo={t(L, 'cli.field_correo')} data-i18n-field-telefono={t(L, 'cli.field_telefono')}
+        data-i18n-field-rfc={t(L, 'cli.field_rfc')} data-i18n-field-terminos={t(L, 'cli.field_terminos')}
+        data-i18n-field-limite={t(L, 'cli.field_limite')} data-i18n-ninguna={t(L, 'cli.ninguna')}
+        data-i18n-columna={t(L, 'cli.columna')} data-i18n-elige-empresa={t(L, 'cli.elige_columna_empresa')}
+        data-i18n-a-importar={t(L, 'cli.clientes_a_importar')} data-i18n-filas-omitidas={t(L, 'cli.filas_omitidas')}
+        data-i18n-th-email={t(L, 'cli.th_email')} data-i18n-th-contacto={t(L, 'cli.th_contacto')} data-i18n-th-rfc={t(L, 'cli.th_rfc')}
+        data-i18n-th-terminos={t(L, 'cli.th_terminos')} data-i18n-th-limite={t(L, 'cli.th_limite')} data-i18n-th-empresa={t(L, 'cli.field_empresa')}
+        data-i18n-term-contado={t(L, 'cli.term_contado')} data-i18n-term-net30={t(L, 'cli.term_net30')} data-i18n-term-net60={t(L, 'cli.term_net60')}
+        data-i18n-continuar={t(L, 'cli.continuar')} data-i18n-importar-n={t(L, 'cli.importar_n')} data-i18n-importando={t(L, 'cli.importando')}
+        data-i18n-no-pudo-importar={t(L, 'cli.no_pudo_importar')} data-i18n-archivo-vacio={t(L, 'cli.archivo_vacio')}>
         <div class="m-form">
             <div class="m-head">
-                <h2>Importar clientes por CSV</h2>
-                <button type="button" class="m-close" id="impClose" aria-label="Cerrar">✕</button>
+                <h2>{t(L, 'cli.importar_titulo')}</h2>
+                <button type="button" class="m-close" id="impClose" aria-label={t(L, 'cli.cerrar')}>✕</button>
             </div>
 
             <div class="imp-steps" id="impSteps">
-                <span class="imp-stepdot active" data-s="file"><i>1</i> Archivo</span>
-                <span class="imp-stepdot" data-s="map"><i>2</i> Columnas</span>
-                <span class="imp-stepdot" data-s="prev"><i>3</i> Revisar</span>
+                <span class="imp-stepdot active" data-s="file"><i>1</i> {t(L, 'cli.paso1')}</span>
+                <span class="imp-stepdot" data-s="map"><i>2</i> {t(L, 'cli.paso2')}</span>
+                <span class="imp-stepdot" data-s="prev"><i>3</i> {t(L, 'cli.paso3')}</span>
             </div>
 
             <div class="imp-step" id="impStepFile">
                 <label class="imp-drop" id="impDrop">
                     <input type="file" id="impFile" accept=".csv,text/csv" hidden />
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></svg>
-                    <b>Arrastra tu archivo CSV o haz clic para elegirlo</b>
-                    <span>Columnas sugeridas: empresa, contacto, email, teléfono, RFC, términos, límite</span>
+                    <b>{t(L, 'cli.drop_titulo')}</b>
+                    <span>{t(L, 'cli.drop_hint')}</span>
                 </label>
-                <button type="button" class="imp-tpl" id="impTpl">↓ Descargar plantilla de ejemplo</button>
+                <button type="button" class="imp-tpl" id="impTpl">{t(L, 'cli.descargar_plantilla')}</button>
             </div>
 
             <div class="imp-step" id="impStepMap" hidden>
-                <p class="imp-lead">Empareja las columnas de tu archivo con los campos de Cord.</p>
-                <label class="imp-check"><input type="checkbox" id="impHeader" checked /> La primera fila son encabezados</label>
+                <p class="imp-lead">{t(L, 'cli.emparejar_hint')}</p>
+                <label class="imp-check"><input type="checkbox" id="impHeader" checked /> {t(L, 'cli.primera_fila_encabezados')}</label>
                 <div class="imp-maps" id="impMaps"></div>
             </div>
 
             <div class="imp-step" id="impStepPrev" hidden>
                 <div class="imp-summary" id="impSummary"></div>
-                <label class="imp-check"><input type="checkbox" id="impUpsert" checked /> Actualizar clientes existentes (mismo RFC o nombre)</label>
+                <label class="imp-check"><input type="checkbox" id="impUpsert" checked /> {t(L, 'cli.actualizar_existentes')}</label>
                 <div class="imp-prev-wrap"><table class="imp-prev"><thead id="impPrevHead"></thead><tbody id="impPrevBody"></tbody></table></div>
             </div>
 
             <p class="m-error" id="impError"></p>
 
             <div class="m-actions">
-                <button type="button" class="m-cancel" id="impBack" hidden>← Atrás</button>
+                <button type="button" class="m-cancel" id="impBack" hidden>{t(L, 'cli.atras')}</button>
                 <span class="m-spacer"></span>
-                <button type="button" class="m-cancel" id="impCancel">Cancelar</button>
-                <button type="button" class="m-save" id="impNext" disabled>Continuar</button>
+                <button type="button" class="m-cancel" id="impCancel">{t(L, 'cli.cancelar')}</button>
+                <button type="button" class="m-save" id="impNext" disabled>{t(L, 'cli.continuar')}</button>
             </div>
         </div>
     </dialog>}
@@ -454,6 +480,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
     document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('clientModal') as HTMLDialogElement;
         if (!modal) return; // sin permiso de edición, el modal no existe
+        const I = modal.dataset;
         const form = document.getElementById('clientForm') as HTMLFormElement;
         const title = document.getElementById('mTitle')!;
         const errorEl = document.getElementById('mError')!;
@@ -476,8 +503,8 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
             const d = parseFloat(input('fDescuento').value) || 0;
             const el = document.getElementById('discPreview');
             if (!el) return;
-            if (d <= 0) { el.innerHTML = 'Sin descuento'; el.classList.remove('on'); }
-            else { el.innerHTML = `$1,000 → <b>$${Math.round(1000 * (1 - d / 100)).toLocaleString('es-MX')}</b>`; el.classList.add('on'); }
+            if (d <= 0) { el.innerHTML = I.i18nSinDescuento || 'Sin descuento'; el.classList.remove('on'); }
+            else { el.innerHTML = `$1,000 → <b>$${Math.round(1000 * (1 - d / 100)).toLocaleString(document.documentElement.lang === 'en' ? 'en-US' : 'es-MX')}</b>`; el.classList.add('on'); }
         };
         // Elegir un nivel pinta el chip y (si lo pides) sugiere su descuento típico.
         const setNivel = (v: string, applySuggested = false) => {
@@ -495,7 +522,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
         const open = (data?: DOMStringMap) => {
             errorEl.textContent = '';
             editId = data?.id ?? null;
-            title.textContent = editId ? 'Editar cliente' : 'Nuevo cliente';
+            title.textContent = editId ? (I.i18nEditar || 'Editar cliente') : (I.i18nNuevo || 'Nuevo cliente');
             btnDelete.hidden = !editId;
             input('fEmpresa').value = data?.empresa ?? '';
             input('fContacto').value = data?.contacto ?? '';
@@ -549,7 +576,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
                     body: JSON.stringify(payload),
                 });
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
+                if (!res.ok) throw new Error(data.error || I.i18nNoPudoGuardar);
                 location.reload();
             } catch (err: any) {
                 errorEl.textContent = err.message;
@@ -559,7 +586,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
 
         btnDelete.addEventListener('click', async () => {
             if (!editId) return;
-            if (!await (window as any).cordConfirm({ title: 'Eliminar cliente', body: 'Sus cotizaciones se conservan. ¿Eliminar este cliente del directorio?', danger: true, confirmText: 'Eliminar' })) return;
+            if (!await (window as any).cordConfirm({ title: I.i18nEliminarTitulo, body: I.i18nEliminarBody, danger: true, confirmText: I.i18nEliminar })) return;
             const delId = editId;
             const res = await fetch('/api/clientes', {
                 method: 'DELETE',
@@ -570,7 +597,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
                 // Optimista: quita la fila en sitio y cierra el modal (sin recargar).
                 document.querySelector(`.t-row[data-id="${delId}"]`)?.remove();
                 modal.close();
-            } else errorEl.textContent = (await res.json()).error || 'No se pudo eliminar';
+            } else errorEl.textContent = (await res.json()).error || I.i18nNoPudoEliminar;
         });
     });
 </script>
@@ -580,6 +607,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
     document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('importModal') as HTMLDialogElement | null;
         if (!modal) return;
+        const I = modal.dataset;
         const $ = (id: string) => document.getElementById(id)!;
         const fileInput = $('impFile') as HTMLInputElement;
         const drop = $('impDrop');
@@ -592,13 +620,13 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
         const btnBack = $('impBack') as HTMLButtonElement;
 
         const FIELDS = [
-            { key: 'empresa', label: 'Empresa', req: true, guess: ['empresa', 'cliente', 'razon', 'nombre', 'company'] },
-            { key: 'contacto', label: 'Contacto', req: false, guess: ['contacto', 'contact', 'atencion'] },
-            { key: 'email', label: 'Correo', req: false, guess: ['email', 'correo', 'mail'] },
-            { key: 'telefono', label: 'Teléfono', req: false, guess: ['telefono', 'tel', 'phone', 'celular', 'movil', 'whats'] },
-            { key: 'rfc', label: 'RFC', req: false, guess: ['rfc'] },
-            { key: 'terminos', label: 'Términos de pago', req: false, guess: ['terminos', 'term', 'pago', 'condicion'] },
-            { key: 'limite', label: 'Límite de crédito', req: false, guess: ['limite', 'credito', 'limit', 'credit'] },
+            { key: 'empresa', label: I.i18nFieldEmpresa || 'Empresa', req: true, guess: ['empresa', 'cliente', 'razon', 'nombre', 'company'] },
+            { key: 'contacto', label: I.i18nFieldContacto || 'Contacto', req: false, guess: ['contacto', 'contact', 'atencion'] },
+            { key: 'email', label: I.i18nFieldCorreo || 'Correo', req: false, guess: ['email', 'correo', 'mail'] },
+            { key: 'telefono', label: I.i18nFieldTelefono || 'Teléfono', req: false, guess: ['telefono', 'tel', 'phone', 'celular', 'movil', 'whats'] },
+            { key: 'rfc', label: I.i18nFieldRfc || 'RFC', req: false, guess: ['rfc'] },
+            { key: 'terminos', label: I.i18nFieldTerminos || 'Términos de pago', req: false, guess: ['terminos', 'term', 'pago', 'condicion'] },
+            { key: 'limite', label: I.i18nFieldLimite || 'Límite de crédito', req: false, guess: ['limite', 'credito', 'limit', 'credit'] },
         ];
 
         let grid: string[][] = [];
@@ -607,7 +635,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
 
         const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
         const parseNum = (v: string) => Number(String(v ?? '').replace(/[^0-9.\-]/g, '')) || 0;
-        const TERM_LABEL: Record<string, string> = { contado: 'Contado', net30: 'Net 30', net60: 'Net 60' };
+        const TERM_LABEL: Record<string, string> = { contado: I.i18nTermContado || 'Contado', net30: I.i18nTermNet30 || 'Net 30', net60: I.i18nTermNet60 || 'Net 60' };
         const normTerm = (v: string) => {
             const s = norm(v);
             if (s.includes('60')) return 'net60';
@@ -615,7 +643,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
             if (s.includes('net') || s.includes('credito')) return 'net30';
             return 'contado';
         };
-        const money = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
+        const money = (n: number) => '$' + new Intl.NumberFormat(document.documentElement.lang === 'en' ? 'en-US' : 'es-MX').format(n);
         const esc = (s: string) => String(s ?? '').replace(/</g, '&lt;');
 
         function parseCSV(text: string): string[][] {
@@ -650,8 +678,8 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
             stepPrev.hidden = s !== 'prev';
             btnBack.hidden = s === 'file';
             errorEl.textContent = '';
-            if (s === 'file') { btnNext.disabled = true; btnNext.textContent = 'Continuar'; }
-            if (s === 'map') { btnNext.disabled = false; btnNext.textContent = 'Continuar'; }
+            if (s === 'file') { btnNext.disabled = true; btnNext.textContent = I.i18nContinuar || 'Continuar'; }
+            if (s === 'map') { btnNext.disabled = false; btnNext.textContent = I.i18nContinuar || 'Continuar'; }
             const order: Record<string, number> = { file: 0, map: 1, prev: 2 };
             document.querySelectorAll<HTMLElement>('#impSteps .imp-stepdot').forEach((d) => {
                 const di = order[d.dataset.s || 'file']; const ci = order[s];
@@ -668,9 +696,9 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
             mapsEl.innerHTML = FIELDS.map(f => {
                 let guessed = -1;
                 if (useHeader) guessed = headers.findIndex(h => f.guess.some(g => norm(h).includes(g)));
-                const opts = ['<option value="-1">— ninguna —</option>'];
+                const opts = [`<option value="-1">${I.i18nNinguna || '— ninguna —'}</option>`];
                 for (let i = 0; i < n; i++) {
-                    const label = useHeader && headers[i] ? headers[i] : `Columna ${i + 1}`;
+                    const label = useHeader && headers[i] ? headers[i] : (I.i18nColumna || 'Columna {n}').replace('{n}', String(i + 1));
                     opts.push(`<option value="${i}" ${i === guessed ? 'selected' : ''}>${esc(label)}</option>`);
                 }
                 return `<div class="imp-map"><label>${f.label}${f.req ? ' <span class="req">*</span>' : ''}</label><select data-field="${f.key}">${opts.join('')}</select></div>`;
@@ -684,7 +712,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
 
         function buildPreview() {
             const m = readMap();
-            if ((m.empresa ?? -1) < 0) { errorEl.textContent = 'Elige qué columna tiene el nombre de la empresa.'; return false; }
+            if ((m.empresa ?? -1) < 0) { errorEl.textContent = I.i18nEligeEmpresa || 'Elige qué columna tiene el nombre de la empresa.'; return false; }
             const dataRows = headerChk.checked ? grid.slice(1) : grid;
             prepared = dataRows.map(r => ({
                 empresa: (r[m.empresa] ?? '').trim(),
@@ -698,17 +726,18 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
             const valid = prepared.filter(p => p.empresa);
             const skipped = prepared.length - valid.length;
 
+            const importarNTpl = I.i18nImportarN || 'Importar {n} cliente{s}';
             $('impSummary').innerHTML =
-                `<div><span class="is-num">${valid.length}</span><small>clientes a importar</small></div>` +
-                (skipped > 0 ? `<div><span class="is-num warn">${skipped}</span><small>filas omitidas (sin empresa)</small></div>` : '');
+                `<div><span class="is-num">${valid.length}</span><small>${I.i18nAImportar || 'clientes a importar'}</small></div>` +
+                (skipped > 0 ? `<div><span class="is-num warn">${skipped}</span><small>${I.i18nFilasOmitidas || 'filas omitidas (sin empresa)'}</small></div>` : '');
 
-            $('impPrevHead').innerHTML = '<tr><th>Empresa</th><th>Contacto</th><th>Email</th><th>RFC</th><th>Términos</th><th class="n">Límite</th></tr>';
+            $('impPrevHead').innerHTML = `<tr><th>${I.i18nThEmpresa || 'Empresa'}</th><th>${I.i18nThContacto || 'Contacto'}</th><th>${I.i18nThEmail || 'Email'}</th><th>${I.i18nThRfc || 'RFC'}</th><th>${I.i18nThTerminos || 'Términos'}</th><th class="n">${I.i18nThLimite || 'Límite'}</th></tr>`;
             $('impPrevBody').innerHTML = prepared.slice(0, 8).map(p => {
                 const bad = !p.empresa;
                 return `<tr class="${bad ? 'bad' : ''}"><td>${esc(p.empresa || '—')}</td><td>${esc(p.contacto || '—')}</td><td>${esc(p.email || '—')}</td><td>${esc(p.rfc || '—')}</td><td>${TERM_LABEL[p.terminos]}</td><td class="n">${p.limite === '' ? '—' : money(p.limite)}</td></tr>`;
             }).join('');
 
-            btnNext.textContent = `Importar ${valid.length} cliente${valid.length === 1 ? '' : 's'}`;
+            btnNext.textContent = importarNTpl.replace('{n}', String(valid.length)).replace('{s}', valid.length === 1 ? '' : 's');
             btnNext.disabled = valid.length === 0;
             return true;
         }
@@ -716,7 +745,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
         async function doImport() {
             const valid = prepared.filter(p => p.empresa);
             if (!valid.length) return;
-            btnNext.disabled = true; btnNext.textContent = 'Importando…';
+            btnNext.disabled = true; btnNext.textContent = I.i18nImportando || 'Importando…';
             try {
                 const res = await fetch('/api/clientes/import', {
                     method: 'POST',
@@ -724,11 +753,11 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
                     body: JSON.stringify({ rows: valid, upsert: upsertChk.checked }),
                 });
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'No se pudo importar');
+                if (!res.ok) throw new Error(data.error || I.i18nNoPudoImportar);
                 location.reload();
             } catch (err: any) {
                 errorEl.textContent = err.message;
-                btnNext.disabled = false; btnNext.textContent = `Importar ${valid.length} clientes`;
+                btnNext.disabled = false; btnNext.textContent = (I.i18nImportarN || 'Importar {n} clientes').replace('{n}', String(valid.length)).replace('{s}', 's');
             }
         }
 
@@ -736,7 +765,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
             const reader = new FileReader();
             reader.onload = () => {
                 grid = parseCSV(String(reader.result));
-                if (!grid.length) { errorEl.textContent = 'El archivo está vacío o no se pudo leer.'; return; }
+                if (!grid.length) { errorEl.textContent = I.i18nArchivoVacio || 'El archivo está vacío o no se pudo leer.'; return; }
                 buildMaps();
                 showStep('map');
             };
@@ -832,6 +861,11 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
         const clearBtn = document.getElementById('searchClearCli');
         const countEl = document.getElementById('dirCount');
         if (!input) return;
+        const searchBox = document.querySelector('.ph-search');
+        const iSinResultados = (searchBox && searchBox.dataset.i18nSinResultados) || 'Sin resultados para esta búsqueda.';
+        const iSingular = (searchBox && searchBox.dataset.i18nSingular) || 'cliente';
+        const iPlural = (searchBox && searchBox.dataset.i18nPlural) || 'clientes';
+        const isEn = document.documentElement.lang === 'en';
 
         const rows = Array.from(document.querySelectorAll('.dir .t-row'));
         const total = rows.length;
@@ -839,7 +873,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
         if (!noResults) {
             noResults = document.createElement('div');
             noResults.className = 'search-no-results';
-            noResults.textContent = 'Sin resultados para esta búsqueda.';
+            noResults.textContent = iSinResultados;
             document.querySelector('.dir').appendChild(noResults);
         }
 
@@ -858,8 +892,9 @@ const NIVEL_LABEL: Record<string, string> = { estandar: 'Estándar', plata: 'Pla
             });
             noResults.style.display = visible === 0 && q ? 'block' : 'none';
             if (countEl) {
-                if (q) countEl.textContent = `${visible} de ${total} ${total === 1 ? 'cliente' : 'clientes'}`;
-                else countEl.textContent = `${total} ${total === 1 ? 'cliente' : 'clientes'}`;
+                const labelFor = (n) => n === 1 ? iSingular : iPlural;
+                if (q) countEl.textContent = isEn ? `${visible} of ${total} ${labelFor(total)}` : `${visible} de ${total} ${labelFor(total)}`;
+                else countEl.textContent = `${total} ${labelFor(total)}`;
             }
         }
 
