@@ -7,38 +7,86 @@
 import AppLayout from '../../../layouts/AppLayout.astro';
 import { getMyMembership } from '../../../lib/queries';
 import { memberCan } from '../../../lib/permissions';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 
+const L = currentLocale();
 const ME = await getMyMembership();
 const hasAccess = memberCan(ME, 'analitica');
 const cedulaId = Astro.params.id;
+
+const CED_T = {
+    isEn: L === 'en',
+    cargando: t(L, 'ced.cargando'),
+    nPeriodosTpl: t(L, 'ced.n_periodos'),
+    conectadaReal: t(L, 'ced.conectada_real'),
+    filaEliminada: t(L, 'ced.fila_eliminada'),
+    fuenteLabel: {
+        ventas_monto: t(L, 'ced.fuente_ventas_monto').split(' — ')[0],
+        ventas_unidades: t(L, 'ced.fuente_ventas_unidades').split(' — ')[0],
+        cobranza_monto: t(L, 'ced.fuente_cobranza_monto').split(' — ')[0],
+    },
+    datosReales: t(L, 'ced.datos_reales'),
+    vsPrefix: 'vs. ',
+    conectadaClicCambiar: t(L, 'ced.conectada_clic_cambiar'),
+    compararContraReal: t(L, 'ced.comparar_contra_real'),
+    eliminarFilaTooltip: t(L, 'ced.eliminar'),
+    cedulaNoEncontrada: t(L, 'ced.cedula_no_encontrada'),
+    noPudoGuardarValor: t(L, 'ced.no_pudo_guardar_valor'),
+    eliminarFilaTitulo: t(L, 'ced.eliminar_fila_titulo'),
+    eliminarFilaBody: t(L, 'ced.eliminar_fila_body'),
+    eliminarBtn: t(L, 'ced.eliminar'),
+    noPudoEliminarFila: t(L, 'ced.no_pudo_eliminar_fila'),
+    noPudoRenombrar: t(L, 'ced.no_pudo_renombrar'),
+    noPudoGuardar: t(L, 'ced.no_pudo_guardar'),
+    filaConectada: t(L, 'ced.fila_conectada'),
+    filaDesconectada: t(L, 'ced.fila_desconectada'),
+    escribeNombrePeriodo: t(L, 'ced.escribe_nombre_periodo'),
+    noPudoAgregar: t(L, 'ced.no_pudo_agregar'),
+    periodoAgregado: t(L, 'ced.periodo_agregado'),
+    escribeConcepto: t(L, 'ced.escribe_concepto'),
+    terminoInvalido: t(L, 'ced.termino_invalido'),
+    noPudoAgregarFila: t(L, 'ced.no_pudo_agregar_fila'),
+    estaCedula: t(L, 'ced.esta_cedula'),
+    tipoSumaResta: t(L, 'ced.tipo_suma_resta'),
+    tipoPctOtra: t(L, 'ced.tipo_pct_otra'),
+    tipoProductoOtra: t(L, 'ced.tipo_producto_otra'),
+    titleTipoTermino: t(L, 'ced.title_tipo_termino'),
+    titleCoeficiente: t(L, 'ced.title_coeficiente'),
+    titleOffset: t(L, 'ced.title_offset'),
+    quitar: t(L, 'ced.quitar'),
+    mesesEs: ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'],
+    mesesEn: ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'],
+    mesesLbl: [0,1,2,3,4,5,6,7,8,9,10,11].map((i) => t(L, `pre.mes.${i}` as any)),
+};
 ---
 
-<AppLayout title="Cédula — Cord" page="presupuestos" heading="Cédula" crumbs={[{ label: 'Presupuestos', href: '/app/presupuestos' }]}>
+<AppLayout title={t(L, 'ced.title')} page="presupuestos" heading={t(L, 'ced.heading')} crumbs={[{ label: t(L, 'ced.crumb_presupuestos'), href: '/app/presupuestos' }]}>
     <div slot="topbar-actions">
-        {hasAccess && <button class="btn-ghost" id="btnAddPeriodo">+ Periodo</button>}
-        {hasAccess && <button class="btn-ghost" id="btnAddFila">+ Agregar fila</button>}
+        {hasAccess && <button class="btn-ghost" id="btnAddPeriodo">{t(L, 'ced.add_periodo')}</button>}
+        {hasAccess && <button class="btn-ghost" id="btnAddFila">{t(L, 'ced.add_fila')}</button>}
     </div>
 
     {!hasAccess && (
         <div class="pr-denied">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <h3>Sin acceso</h3>
-            <p>Tu rol actual no tiene permiso para ver presupuestos. Contacta al administrador de tu organización.</p>
+            <h3>{t(L, 'ced.sin_acceso_titulo')}</h3>
+            <p>{t(L, 'ced.sin_acceso_desc')}</p>
         </div>
     )}
 
     {hasAccess && <>
         <div class="pr-toolbar">
-            <button type="button" id="btnRename" class="pr-name-wrap" title="Clic para renombrar">
-                <span id="cName" class="pr-cedula-name">Cargando…</span>
+            <button type="button" id="btnRename" class="pr-name-wrap" title={t(L, 'ced.clic_renombrar')}>
+                <span id="cName" class="pr-cedula-name">{t(L, 'ced.cargando')}</span>
                 <svg class="pr-pencil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
             </button>
             <input id="cNameInput" class="pr-cedula-name-input" type="text" maxlength="120" hidden />
             <span id="cTipo" class="pr-badge"></span>
-            <span id="cReal" class="pr-badge pr-badge-real" hidden>Conectada a datos reales</span>
+            <span id="cReal" class="pr-badge pr-badge-real" hidden>{t(L, 'ced.conectada_real')}</span>
         </div>
 
-        <div class="pr-grid-wrap" id="gridWrap">
+        <div class="pr-grid-wrap" id="gridWrap" data-i18n={JSON.stringify(CED_T)}>
             <div class="skeleton-wrap" id="skel">
                 <div class="skeleton skeleton-line" style="width:100%;height:44px;margin-bottom:8px"></div>
                 <div class="skeleton skeleton-line" style="width:100%;height:44px;margin-bottom:8px"></div>
@@ -46,49 +94,49 @@ const cedulaId = Astro.params.id;
             </div>
             <table class="pr-grid" id="grid" hidden></table>
             <div class="pr-empty-grid" id="emptyGrid" hidden>
-                <p>Esta cédula todavía no tiene filas.</p>
-                <button type="button" class="empty-cta" id="emptyGridCta">+ Agregar la primera fila</button>
+                <p>{t(L, 'ced.sin_filas')}</p>
+                <button type="button" class="empty-cta" id="emptyGridCta">{t(L, 'ced.agregar_primera_fila')}</button>
             </div>
         </div>
-        <p class="pr-legend">Las filas con <span class="pr-fx-badge">ƒx</span> son <strong>calculadas</strong> — se recalculan solas al cambiar un insumo. Las filas con el ícono de enlace <strong>se comparan contra tus datos reales</strong> (ventas y cobranza de Cord) mes a mes.</p>
+        <p class="pr-legend" set:html={t(L, 'ced.leyenda')} />
 
         <!-- ── Modal: agregar fila ── -->
         <dialog class="modal modal-lg" id="filaModal">
             <form method="dialog" class="modal-card">
                 <header>
-                    <h3>Agregar fila</h3>
-                    <button type="button" class="mclose" id="fmClose" aria-label="Cerrar">&times;</button>
+                    <h3>{t(L, 'ced.agregar_fila_titulo')}</h3>
+                    <button type="button" class="mclose" id="fmClose" aria-label={t(L, 'ced.cerrar')}>&times;</button>
                 </header>
                 <div class="modal-body">
                     <label class="fld">
-                        <span>Concepto</span>
-                        <input type="text" id="fmConcepto" placeholder="Ej. Consumo de acero por unidad" maxlength="160" />
+                        <span>{t(L, 'ced.concepto')}</span>
+                        <input type="text" id="fmConcepto" placeholder={t(L, 'ced.concepto_ph')} maxlength="160" />
                     </label>
                     <div class="fld">
-                        <span>Tipo de fila</span>
+                        <span>{t(L, 'ced.tipo_fila')}</span>
                         <div class="pr-type-toggle">
-                            <button type="button" class="pr-type-opt is-active" data-tipo="input">Insumo (lo tecleas)</button>
-                            <button type="button" class="pr-type-opt" data-tipo="formula">Fórmula (se calcula)</button>
+                            <button type="button" class="pr-type-opt is-active" data-tipo="input">{t(L, 'ced.insumo')}</button>
+                            <button type="button" class="pr-type-opt" data-tipo="formula">{t(L, 'ced.formula')}</button>
                         </div>
                     </div>
                     <div id="formulaBuilder" hidden>
-                        <p class="m-hint">Los términos se aplican en el orden en que los agregas: "Suma/resta" acumula un valor (positivo o negativo); "% de otra fila" aplica un porcentaje de cambio sobre lo acumulado hasta ese punto (ej. +1% económico, luego +3% de distribución); "× otra fila" multiplica lo acumulado por otra fila completa (ej. unidades × precio). El campo <strong>Atrás</strong> toma el valor de un periodo anterior (0 = mismo periodo, 1 = el periodo pasado) — útil para cobranza escalonada.</p>
+                        <p class="m-hint" set:html={t(L, 'ced.formula_hint')} />
                         <div class="pr-term-head">
-                            <span>Operación</span>
-                            <span>Cédula</span>
-                            <span>Fila</span>
-                            <span class="pr-th-c">Coef.</span>
-                            <span class="pr-th-c">Atrás</span>
+                            <span>{t(L, 'ced.th_operacion')}</span>
+                            <span>{t(L, 'ced.th_cedula')}</span>
+                            <span>{t(L, 'ced.th_fila')}</span>
+                            <span class="pr-th-c">{t(L, 'ced.th_coef')}</span>
+                            <span class="pr-th-c">{t(L, 'ced.th_atras')}</span>
                             <span></span>
                         </div>
                         <div id="terms"></div>
-                        <button type="button" id="btnAddTerm" class="pr-add-term">+ Agregar término</button>
+                        <button type="button" id="btnAddTerm" class="pr-add-term">{t(L, 'ced.agregar_termino')}</button>
                     </div>
                     <p class="m-err" id="fmErr" hidden></p>
                 </div>
                 <footer>
-                    <button type="button" id="fmCancel" class="btn-ghost">Cancelar</button>
-                    <button type="button" id="fmSave" class="btn-primary">Agregar fila</button>
+                    <button type="button" id="fmCancel" class="btn-ghost">{t(L, 'ced.cancelar')}</button>
+                    <button type="button" id="fmSave" class="btn-primary">{t(L, 'ced.agregar_fila_btn')}</button>
                 </footer>
             </form>
         </dialog>
@@ -97,30 +145,30 @@ const cedulaId = Astro.params.id;
         <dialog class="modal" id="fuenteModal">
             <form method="dialog" class="modal-card">
                 <header>
-                    <h3>Comparar contra datos reales</h3>
-                    <button type="button" class="mclose" id="rmClose" aria-label="Cerrar">&times;</button>
+                    <h3>{t(L, 'ced.comparar_real_titulo')}</h3>
+                    <button type="button" class="mclose" id="rmClose" aria-label={t(L, 'ced.cerrar')}>&times;</button>
                 </header>
                 <div class="modal-body" id="rmBody">
-                    <p class="m-hint" style="margin-bottom:.9rem">Conecta esta fila a los datos reales de tu negocio en Cord. Debajo de cada mes presupuestado verás lo que realmente pasó y si vas arriba o abajo del plan — sin capturar nada.</p>
+                    <p class="m-hint" style="margin-bottom:.9rem">{t(L, 'ced.comparar_real_hint')}</p>
                     <label class="fld">
-                        <span>Fuente de datos</span>
+                        <span>{t(L, 'ced.fuente_datos')}</span>
                         <select id="rmFuente">
-                            <option value="">Sin conexión</option>
-                            <option value="ventas_monto">Ventas cerradas ($) — cotizaciones aprobadas, pagadas o facturadas</option>
-                            <option value="ventas_unidades">Unidades vendidas — líneas aceptadas de esas cotizaciones</option>
-                            <option value="cobranza_monto">Cobranza recibida ($) — pagos realmente cobrados</option>
+                            <option value="">{t(L, 'ced.sin_conexion')}</option>
+                            <option value="ventas_monto">{t(L, 'ced.fuente_ventas_monto')}</option>
+                            <option value="ventas_unidades">{t(L, 'ced.fuente_ventas_unidades')}</option>
+                            <option value="cobranza_monto">{t(L, 'ced.fuente_cobranza_monto')}</option>
                         </select>
                     </label>
-                    <p class="m-hint">Cord empata cada columna por su mes (ej. "Ene 2026"). Los meses futuros no muestran real todavía.</p>
+                    <p class="m-hint">{t(L, 'ced.empata_mes_hint')}</p>
                     <p class="m-err" id="rmErr" hidden></p>
                 </div>
                 <div class="modal-body" id="rmUpsell" hidden>
-                    <p class="rm-upsell-txt">Comparar tu presupuesto contra las ventas y la cobranza reales de tu negocio — automáticamente, mes a mes — es parte del plan <strong>Profesional</strong>.</p>
-                    <a href="/app/ajustes/plan" class="empty-cta">Ver planes</a>
+                    <p class="rm-upsell-txt" set:html={t(L, 'ced.upsell_txt')} />
+                    <a href="/app/ajustes/plan" class="empty-cta">{t(L, 'ced.ver_planes')}</a>
                 </div>
                 <footer id="rmFooter">
-                    <button type="button" id="rmCancel" class="btn-ghost">Cancelar</button>
-                    <button type="button" id="rmSave" class="btn-primary">Guardar</button>
+                    <button type="button" id="rmCancel" class="btn-ghost">{t(L, 'ced.cancelar')}</button>
+                    <button type="button" id="rmSave" class="btn-primary">{t(L, 'ced.guardar')}</button>
                 </footer>
             </form>
         </dialog>
@@ -129,20 +177,20 @@ const cedulaId = Astro.params.id;
         <dialog class="modal" id="periodoModal">
             <form method="dialog" class="modal-card">
                 <header>
-                    <h3>Agregar periodo</h3>
-                    <button type="button" class="mclose" id="pmClose" aria-label="Cerrar">&times;</button>
+                    <h3>{t(L, 'ced.add_periodo_titulo')}</h3>
+                    <button type="button" class="mclose" id="pmClose" aria-label={t(L, 'ced.cerrar')}>&times;</button>
                 </header>
                 <div class="modal-body">
                     <label class="fld">
-                        <span>Nombre del periodo</span>
-                        <input type="text" id="pmLabel" maxlength="40" placeholder="Ej. Ene 2027" />
+                        <span>{t(L, 'ced.nombre_periodo')}</span>
+                        <input type="text" id="pmLabel" maxlength="40" placeholder={t(L, 'ced.periodo_ph')} />
                     </label>
-                    <p class="m-hint">Se agrega al final. Usa "Mes Año" para que se compare contra tus datos reales.</p>
+                    <p class="m-hint">{t(L, 'ced.periodo_hint')}</p>
                     <p class="m-err" id="pmErr" hidden></p>
                 </div>
                 <footer>
-                    <button type="button" id="pmCancel" class="btn-ghost">Cancelar</button>
-                    <button type="button" id="pmSave" class="btn-primary">Agregar</button>
+                    <button type="button" id="pmCancel" class="btn-ghost">{t(L, 'ced.cancelar')}</button>
+                    <button type="button" id="pmSave" class="btn-primary">{t(L, 'ced.agregar')}</button>
                 </footer>
             </form>
         </dialog>
@@ -289,7 +337,9 @@ const cedulaId = Astro.params.id;
 <script define:vars={{ cedulaId }}>
     let STATE = null; // última respuesta de GET /api/cedulas/[id]
 
-    const money = (n) => Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    const T = JSON.parse(document.getElementById('gridWrap').dataset.i18n || '{}');
+    const tpl = (s, vars) => s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] != null ? vars[k] : ''));
+    const money = (n) => Number(n || 0).toLocaleString(T.isEn ? 'en-US' : 'es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
     function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
     // Nombre de una fila por id, cruzando la cédula propia + todas las "otras"
@@ -297,11 +347,11 @@ const cedulaId = Astro.params.id;
     function filaNombre(filaId, cedulaIdRef) {
         if (!cedulaIdRef || cedulaIdRef === STATE.cedula.id) {
             const f = STATE.cedula.filas.find((x) => x.id === filaId);
-            return f ? f.concepto : '(fila eliminada)';
+            return f ? f.concepto : T.filaEliminada || '(fila eliminada)';
         }
         const otra = STATE.otras.find((o) => o.id === cedulaIdRef);
         const f = otra && otra.filas.find((x) => x.id === filaId);
-        if (!f) return '(fila eliminada)';
+        if (!f) return T.filaEliminada || '(fila eliminada)';
         return `${f.concepto} · ${otra.nombre}`;
     }
 
@@ -325,7 +375,7 @@ const cedulaId = Astro.params.id;
         }).join('');
     }
 
-    const FUENTE_LABEL = {
+    const FUENTE_LABEL = T.fuenteLabel || {
         ventas_monto: 'Ventas cerradas ($)',
         ventas_unidades: 'Unidades vendidas',
         cobranza_monto: 'Cobranza recibida ($)',
@@ -358,11 +408,11 @@ const cedulaId = Astro.params.id;
 
     async function load() {
         const res = await fetch(`/api/cedulas/${cedulaId}`);
-        if (!res.ok) { document.getElementById('cName').textContent = 'Cédula no encontrada'; return; }
+        if (!res.ok) { document.getElementById('cName').textContent = T.cedulaNoEncontrada || 'Cédula no encontrada'; return; }
         STATE = await res.json();
         document.title = `${STATE.cedula.nombre} — Cord`;
         document.getElementById('cName').textContent = STATE.cedula.nombre;
-        document.getElementById('cTipo').textContent = STATE.cedula.periodos.length + ' periodos';
+        document.getElementById('cTipo').textContent = tpl(T.nPeriodosTpl || '{n} periodos', { n: String(STATE.cedula.periodos.length) });
         const anyReal = STATE.cedula.filas.some((f) => f.fuenteReal);
         document.getElementById('cReal').toggleAttribute('hidden', !anyReal);
         renderGrid();
@@ -401,7 +451,7 @@ const cedulaId = Astro.params.id;
             const formulaTxt = f.tipo === 'formula' ? describeFormula(f.formula) : '';
             const fxBadge = f.tipo === 'formula' ? '<span class="pr-fx-badge">ƒx</span>' : '';
             const realTag = f.fuenteReal
-                ? `<span class="pr-concepto-real"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>vs. ${escapeHtml(FUENTE_LABEL[f.fuenteReal] || 'datos reales')}</span>`
+                ? `<span class="pr-concepto-real"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>${escapeHtml((T.vsPrefix || 'vs. ') + (FUENTE_LABEL[f.fuenteReal] || T.datosReales || 'datos reales'))}</span>`
                 : '';
             return `<tr class="${f.tipo === 'formula' ? 'pr-row-formula' : ''}">
                 <td class="pr-row-head">
@@ -412,10 +462,10 @@ const cedulaId = Astro.params.id;
                             ${realTag}
                         </div>
                         <div class="pr-row-actions">
-                            <button class="pr-link-fila ${f.fuenteReal ? 'is-on' : ''}" data-fuente-fila="${f.id}" title="${f.fuenteReal ? 'Conectada a datos reales — clic para cambiar' : 'Comparar contra datos reales'}" type="button">
+                            <button class="pr-link-fila ${f.fuenteReal ? 'is-on' : ''}" data-fuente-fila="${f.id}" title="${f.fuenteReal ? (T.conectadaClicCambiar || 'Conectada a datos reales — clic para cambiar') : (T.compararContraReal || 'Comparar contra datos reales')}" type="button">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
                             </button>
-                            <button class="pr-del-fila" data-del-fila="${f.id}" title="Eliminar fila" type="button">
+                            <button class="pr-del-fila" data-del-fila="${f.id}" title="${T.eliminarFilaTooltip || 'Eliminar fila'}" type="button">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                             </button>
                         </div>
@@ -440,18 +490,18 @@ const cedulaId = Astro.params.id;
                     method: 'PATCH', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'set_valor', fila_id: filaId, periodo_idx: idx, valor }),
                 });
-                if (r.ok) refreshValues(); else window.cordToast?.('No se pudo guardar el valor', 'error');
+                if (r.ok) refreshValues(); else window.cordToast?.(T.noPudoGuardarValor || 'No se pudo guardar el valor', 'error');
             });
         });
         grid.querySelectorAll('[data-del-fila]').forEach((btn) => {
             btn.addEventListener('click', async () => {
                 const filaId = btn.dataset.delFila;
-                if (!await window.cordConfirm({ title: 'Eliminar fila', body: 'Se borrarán sus valores. Si otra fórmula la referencia, esa fórmula pasará a calcular 0 para esta fila.', danger: true, confirmText: 'Eliminar' })) return;
+                if (!await window.cordConfirm({ title: T.eliminarFilaTitulo || 'Eliminar fila', body: T.eliminarFilaBody || 'Se borrarán sus valores. Si otra fórmula la referencia, esa fórmula pasará a calcular 0 para esta fila.', danger: true, confirmText: T.eliminarBtn || 'Eliminar' })) return;
                 const r = await fetch(`/api/cedulas/${cedulaId}`, {
                     method: 'PATCH', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'delete_fila', fila_id: filaId }),
                 });
-                if (r.ok) load(); else window.cordToast?.('No se pudo eliminar la fila', 'error');
+                if (r.ok) load(); else window.cordToast?.(T.noPudoEliminarFila || 'No se pudo eliminar la fila', 'error');
             });
         });
         grid.querySelectorAll('[data-fuente-fila]').forEach((btn) => {
@@ -528,7 +578,7 @@ const cedulaId = Astro.params.id;
             body: JSON.stringify({ action: 'rename', nombre }),
         });
         if (r.ok) { STATE.cedula.nombre = nombre; document.title = `${nombre} — Cord`; }
-        else { document.getElementById('cName').textContent = STATE.cedula.nombre; window.cordToast?.('No se pudo renombrar', 'error'); }
+        else { document.getElementById('cName').textContent = STATE.cedula.nombre; window.cordToast?.(T.noPudoRenombrar || 'No se pudo renombrar', 'error'); }
     }
     nameBtn?.addEventListener('click', startRename);
     nameInput?.addEventListener('keydown', (e) => {
@@ -571,26 +621,26 @@ const cedulaId = Astro.params.id;
         const data = await r.json().catch(() => ({}));
         if (!r.ok) {
             const errEl = document.getElementById('rmErr');
-            errEl.textContent = data.error || 'No se pudo guardar';
+            errEl.textContent = data.error || T.noPudoGuardar || 'No se pudo guardar';
             errEl.removeAttribute('hidden');
             return;
         }
         fuenteModal.close();
-        window.cordToast?.(fuente ? 'Fila conectada a datos reales' : 'Fila desconectada', 'ok');
+        window.cordToast?.(fuente ? (T.filaConectada || 'Fila conectada a datos reales') : (T.filaDesconectada || 'Fila desconectada'), 'ok');
         load();
     });
 
     // ── Modal "Agregar periodo" ───────────────────────────────────────
     const periodoModal = document.getElementById('periodoModal');
-    const MESES_ES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-    const MESES_LBL = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const MESES_KEY = T.isEn ? (T.mesesEn || ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']) : (T.mesesEs || ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']);
+    const MESES_LBL = T.mesesLbl || ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     // Sugiere el siguiente mes a partir de la última etiqueta ("Jun 2026" → "Jul 2026").
     function nextPeriodoSuggestion() {
         if (!STATE || !STATE.cedula.periodos.length) return '';
         const last = String(STATE.cedula.periodos[STATE.cedula.periodos.length - 1]);
         const m = last.toLowerCase().match(/^([a-záéíóú]+)\.?\s*(\d{4})$/);
         if (!m) return '';
-        const idx = MESES_ES.indexOf(m[1].slice(0, 3));
+        const idx = MESES_KEY.indexOf(m[1].slice(0, 3));
         if (idx < 0) return '';
         const y = Number(m[2]);
         const ni = (idx + 1) % 12;
@@ -608,15 +658,15 @@ const cedulaId = Astro.params.id;
     document.getElementById('pmSave')?.addEventListener('click', async () => {
         const label = document.getElementById('pmLabel').value.trim();
         const errEl = document.getElementById('pmErr');
-        if (!label) { errEl.textContent = 'Escribe el nombre del periodo.'; errEl.removeAttribute('hidden'); return; }
+        if (!label) { errEl.textContent = T.escribeNombrePeriodo || 'Escribe el nombre del periodo.'; errEl.removeAttribute('hidden'); return; }
         const r = await fetch(`/api/cedulas/${cedulaId}`, {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'add_periodo', label }),
         });
         const data = await r.json().catch(() => ({}));
-        if (!r.ok) { errEl.textContent = data.error || 'No se pudo agregar'; errEl.removeAttribute('hidden'); return; }
+        if (!r.ok) { errEl.textContent = data.error || T.noPudoAgregar || 'No se pudo agregar'; errEl.removeAttribute('hidden'); return; }
         periodoModal.close();
-        window.cordToast?.('Periodo agregado', 'ok');
+        window.cordToast?.(T.periodoAgregado || 'Periodo agregado', 'ok');
         load();
     });
 
@@ -648,7 +698,7 @@ const cedulaId = Astro.params.id;
 
     function cedulaOptionsHtml() {
         if (!STATE) return '';
-        let opts = `<option value="">${escapeHtml(STATE.cedula.nombre)} (esta cédula)</option>`;
+        let opts = `<option value="">${escapeHtml(STATE.cedula.nombre)} ${escapeHtml(T.estaCedula || '(esta cédula)')}</option>`;
         for (const o of STATE.otras) opts += `<option value="${o.id}">${escapeHtml(o.nombre)}</option>`;
         return opts;
     }
@@ -661,16 +711,16 @@ const cedulaId = Astro.params.id;
         row.className = 'pr-term-row';
         row.dataset.kind = 'suma';
         row.innerHTML = `
-            <select class="term-kind" title="Tipo de término">
-                <option value="suma">Suma / resta</option>
-                <option value="pct">% de otra fila</option>
-                <option value="producto">× otra fila</option>
+            <select class="term-kind" title="${escapeHtml(T.titleTipoTermino || 'Tipo de término')}">
+                <option value="suma">${escapeHtml(T.tipoSumaResta || 'Suma / resta')}</option>
+                <option value="pct">${escapeHtml(T.tipoPctOtra || '% de otra fila')}</option>
+                <option value="producto">${escapeHtml(T.tipoProductoOtra || '× otra fila')}</option>
             </select>
             <select class="term-cedula">${cedulaOptionsHtml()}</select>
             <select class="term-fila"></select>
-            <input type="number" class="term-coef" value="1" step="any" title="Coeficiente" />
-            <input type="number" class="term-offset" value="0" step="1" min="0" title="Periodos atrás (0 = mismo periodo, 1 = un periodo antes…)" />
-            <button type="button" class="pr-term-del" title="Quitar">
+            <input type="number" class="term-coef" value="1" step="any" title="${escapeHtml(T.titleCoeficiente || 'Coeficiente')}" />
+            <input type="number" class="term-offset" value="0" step="1" min="0" title="${escapeHtml(T.titleOffset || 'Periodos atrás (0 = mismo periodo, 1 = un periodo antes…)')}" />
+            <button type="button" class="pr-term-del" title="${escapeHtml(T.quitar || 'Quitar')}">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>`;
         termsWrap.appendChild(row);
@@ -688,7 +738,7 @@ const cedulaId = Astro.params.id;
     document.getElementById('fmSave')?.addEventListener('click', async () => {
         const concepto = document.getElementById('fmConcepto').value.trim();
         const errEl = document.getElementById('fmErr');
-        if (!concepto) { errEl.textContent = 'Escribe un concepto.'; errEl.removeAttribute('hidden'); return; }
+        if (!concepto) { errEl.textContent = T.escribeConcepto || 'Escribe un concepto.'; errEl.removeAttribute('hidden'); return; }
         const body = { action: 'add_fila', concepto, tipo: currentTipo };
         if (currentTipo === 'formula') {
             const terms = Array.from(termsWrap.querySelectorAll('.pr-term-row')).map((row) => {
@@ -701,14 +751,14 @@ const cedulaId = Astro.params.id;
                     offset: Number(row.querySelector('.term-offset').value) || 0,
                 };
             }).filter((t) => t.fila_id && (t.kind !== 'suma' || t.coef !== 0));
-            if (!terms.length) { errEl.textContent = 'Agrega al menos un término válido (suma con coeficiente distinto de 0, o una referencia de % / ×).'; errEl.removeAttribute('hidden'); return; }
+            if (!terms.length) { errEl.textContent = T.terminoInvalido || 'Agrega al menos un término válido (suma con coeficiente distinto de 0, o una referencia de % / ×).'; errEl.removeAttribute('hidden'); return; }
             body.formula = { terms };
         }
         const r = await fetch(`/api/cedulas/${cedulaId}`, {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
         });
         const data = await r.json();
-        if (!r.ok) { errEl.textContent = data.error || 'No se pudo agregar la fila.'; errEl.removeAttribute('hidden'); return; }
+        if (!r.ok) { errEl.textContent = data.error || T.noPudoAgregarFila || 'No se pudo agregar la fila.'; errEl.removeAttribute('hidden'); return; }
         filaModal.close();
         load();
     });
