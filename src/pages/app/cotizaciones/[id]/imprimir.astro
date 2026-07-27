@@ -5,6 +5,10 @@
 export const prerender = false;
 
 import { getCotizacion, getOrg, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal } from '../../../../lib/queries';
+import { currentLocale } from '../../../../lib/context';
+import { t } from '../../../../i18n/app';
+
+const L = currentLocale();
 
 const { id } = Astro.params;
 const [q, ORG] = await Promise.all([getCotizacion(id ?? ''), getOrg()]);
@@ -13,7 +17,7 @@ if (!q) return Astro.redirect('/app/cotizaciones');
 const descuentoPct = (lista: number, nego: number) =>
     lista > 0 ? Math.round((1 - nego / lista) * 100) : 0;
 const condiciones = ORG.pdfCondiciones ? ORG.pdfCondiciones.split('\n').filter(Boolean) : [];
-const hoy = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
+const hoy = new Intl.DateTimeFormat(L === 'en' ? 'en-US' : 'es-MX', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
 
 // Plantilla del PDF: clasico (acento) | minimal (líneas finas) | detallado (banda de color)
 const tpl = ORG.pdfTemplate || 'clasico';
@@ -25,7 +29,7 @@ const headStyle = isBand
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang={L}>
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -35,9 +39,9 @@ const headStyle = isBand
 <body>
     <!-- Toolbar (no se imprime) -->
     <div class="toolbar">
-        <a href={`/app/cotizaciones/${q.id}`} class="tb-back">← Volver</a>
-        <span class="tb-hint">Usa "Guardar como PDF" en el diálogo de impresión</span>
-        <button class="tb-print" onclick="window.print()">Imprimir / Guardar PDF</button>
+        <a href={`/app/cotizaciones/${q.id}`} class="tb-back">{t(L, 'imp.volver')}</a>
+        <span class="tb-hint">{t(L, 'imp.hint')}</span>
+        <button class="tb-print" onclick="window.print()">{t(L, 'imp.imprimir')}</button>
     </div>
 
     <main class="sheet" data-template={tpl}>
@@ -56,26 +60,26 @@ const headStyle = isBand
                 </div>
             </div>
             <div class="dh-doc">
-                <span class="dh-label">COTIZACIÓN</span>
+                <span class="dh-label">{t(L, 'imp.cotizacion')}</span>
                 <span class="dh-folio editorial" style={`color: ${isBand ? '#fff' : accent}`}>{q.folio}</span>
-                <span class="dh-date">Emitida: {q.creada}</span>
-                <span class="dh-date">Vigente hasta: {q.vigencia}</span>
+                <span class="dh-date">{t(L, 'imp.emitida')} {q.creada}</span>
+                <span class="dh-date">{t(L, 'imp.vigente_hasta')} {q.vigencia}</span>
             </div>
         </header>
 
         <!-- Cliente y términos -->
         <section class="doc-meta">
             <div>
-                <span class="dm-label">PARA</span>
+                <span class="dm-label">{t(L, 'imp.para')}</span>
                 <b>{q.cliente}</b>
             </div>
             <div>
-                <span class="dm-label">TÉRMINOS</span>
+                <span class="dm-label">{t(L, 'imp.terminos')}</span>
                 <b>{q.terminos}</b>
             </div>
             <div>
-                <span class="dm-label">MONEDA</span>
-                <b>MXN · IVA incluido en el total</b>
+                <span class="dm-label">{t(L, 'imp.moneda')}</span>
+                <b>{t(L, 'imp.moneda_iva')}</b>
             </div>
         </section>
 
@@ -83,10 +87,10 @@ const headStyle = isBand
         <table class="doc-items">
             <thead>
                 <tr style={`border-color: ${tpl === 'minimal' ? 'rgba(10,25,47,0.18)' : accent}`}>
-                    <th>Concepto</th>
-                    <th class="num">Cantidad</th>
-                    <th class="num">Precio unitario</th>
-                    <th class="num">Importe</th>
+                    <th>{t(L, 'imp.concepto')}</th>
+                    <th class="num">{t(L, 'imp.cantidad')}</th>
+                    <th class="num">{t(L, 'imp.precio_unitario')}</th>
+                    <th class="num">{t(L, 'imp.importe')}</th>
                 </tr>
             </thead>
             <tbody>
@@ -96,7 +100,7 @@ const headStyle = isBand
                             {it.descripcion}
                             <small>{it.unidad}</small>
                         </td>
-                        <td class="num editorial">{it.cantidad.toLocaleString('es-MX')}</td>
+                        <td class="num editorial">{it.cantidad.toLocaleString(L === 'en' ? 'en-US' : 'es-MX')}</td>
                         <td class="num">
                             {ORG.pdfMostrarLista && it.precioNegociado !== null && (
                                 <span class="strike">
@@ -114,24 +118,24 @@ const headStyle = isBand
 
         <!-- Totales -->
         <section class="doc-totals">
-            <div><span>Subtotal</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
-            <div><span>IVA {ORG.ivaPct}%</span><span class="editorial">{money(quoteIva(q))}</span></div>
+            <div><span>{t(L, 'imp.subtotal')}</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
+            <div><span>{t(L, 'imp.iva')} {ORG.ivaPct}%</span><span class="editorial">{money(quoteIva(q))}</span></div>
             <div class="grand" style={`border-color: ${ORG.colorMarca}`}>
-                <span>Total</span>
+                <span>{t(L, 'imp.total')}</span>
                 <span class="editorial" style={`color: ${ORG.colorMarca}`}>{money(quoteTotal(q))}</span>
             </div>
         </section>
 
         {q.notas && (
             <section class="doc-notes">
-                <span class="dm-label">NOTAS</span>
+                <span class="dm-label">{t(L, 'imp.notas')}</span>
                 <p>{q.notas}</p>
             </section>
         )}
 
         {condiciones.length > 0 && (
             <section class="doc-notes">
-                <span class="dm-label">CONDICIONES COMERCIALES</span>
+                <span class="dm-label">{t(L, 'imp.condiciones')}</span>
                 <ul>
                     {condiciones.map((c) => <li>{c}</li>)}
                 </ul>
@@ -140,7 +144,7 @@ const headStyle = isBand
 
         <footer class="doc-foot">
             {ORG.pdfMensaje && <p class="df-msg">{ORG.pdfMensaje}</p>}
-            <p class="df-meta">Documento generado el {hoy} · {ORG.nombre} vía Cord</p>
+            <p class="df-meta">{t(L, 'imp.generado_pre')} {hoy} · {ORG.nombre} {t(L, 'imp.generado_post')}</p>
         </footer>
     </main>
 </body>
