@@ -6,6 +6,50 @@
 
 ---
 
+🟡 **i18n de la app interna — Ajustes 100% traducido; resto de `/app/**` PENDIENTE (jul 2026)** —
+   André pidió traducir la app al inglés. Se diseñó un sistema de i18n propio (sin librería
+   externa), **distinto de `src/i18n/ui.ts`** (que es solo para la landing pública con rutas
+   `/en/*` explícitas):
+   • **Detección 100% automática por `Accept-Language`, sin toggle manual.** `src/middleware.ts`
+     parsea el primer idioma del header (`en` → inglés, cualquier otro → español) y lo guarda en
+     el contexto por-request (`ReqCtx.locale`, `src/lib/context.ts`) junto a `orgId`/`testMode` —
+     mismo patrón `AsyncLocalStorage` ya usado para esos dos. `currentLocale()` lo expone; la MISMA
+     ruta (`/app/cotizaciones`, `/app/ajustes/general`, etc.) sirve en ES o EN según el navegador
+     de quien la visita, sin URLs duplicadas.
+   • **Diccionario en `src/i18n/app.ts`:** objeto plano `{ es: {...}, en: {...} }` con
+     `t(locale, key)` (fallback a español si falta la key) — llenado de forma INCREMENTAL, página
+     por página. Convención de namespacing: `sidebar.*`/`topbar.*`/`layout.*` (AppLayout), `q.*`
+     (QuoteCard), `email.*` (correos transaccionales), `settings.*` (chassis compartido de
+     Ajustes), y `set.<pagina>.*` por cada subpágina de Ajustes (`set.general.*`, `set.eq.*` para
+     equipo, `set.api.*`, etc.).
+   • **Puente para `<script>` no-inline:** un `<script>` normal de Astro (no `is:inline`) no puede
+     llamar `t()` en runtime — se le pasan las cadenas necesarias vía atributos `data-i18n-*` en un
+     elemento DOM estable, y el script las lee con `el.dataset.i18nXxx || 'fallback en español'`.
+     Los `<script is:inline define:vars={{...}}>` (como en `pdf.astro`/`plan.astro`) reciben las
+     traducciones directamente como variables precalculadas en el frontmatter — no necesitan el
+     puente. Patrón replicado en `equipo.astro`, `webhooks.astro`, `mcp.astro`, `agentes.astro`,
+     `integraciones.astro`, `api.astro`, `elements.astro`, `datos.astro`.
+   • **Islands de React también traducidos:** `CustomUserProfile.tsx` (perfil de Clerk en Ajustes
+     › Tu cuenta) recibe un prop `locale` desde `cuenta.astro` (resuelto server-side) e importa
+     `t()` directo de `src/i18n/app.ts` — un módulo TS plano se puede importar igual desde un
+     componente `.tsx`, no hace falta reinventar el bridge de `<script>`.
+   • **Alcance YA cubierto (verificado con `npm run build` limpio en cada lote):** el shell
+     compartido (`AppLayout.astro` — topbar, Cmd+K, centro de notificaciones, drawer de ayuda/FAQ,
+     chat; `Sidebar.astro`), el chassis de Ajustes (`SettingsShell.astro`), **las 20 subpáginas de
+     Ajustes completas** (general, branding, portal, cotizaciones, impuestos, pdf, aprobaciones,
+     plantillas, fiscal, cobros, plan, notificaciones, correo, equipo, sso, seguridad,
+     integraciones, api, webhooks, mcp, agentes, elements, datos, auditoria, cuenta), el link
+     público `QuoteCard.astro` (`/q/[token]` y `/embed/[token]`), y los correos transaccionales
+     (`src/lib/email.ts` → `notifyQuoteSent`).
+   • **⚠️ PENDIENTE — el resto de `/app/**` sigue 100% en español** (ver sección "Estado actual"
+     más abajo para el detalle completo página por página; el chrome/shell ya está listo en ambos
+     idiomas, pero el contenido de cada página de negocio todavía no).
+   • Fuera de alcance documentado (no bloqueante, requiere su propio diseño):
+     `ConnectCustomOnboarding.tsx` (wizard de Stripe Connect en Ajustes › Cobros), los nombres/
+     taglines de planes de `src/lib/precios.ts` (`PLANES`), las etiquetas `TIPO_IMPUESTO` de
+     `src/lib/queries.ts`, y el texto de eventos generado en backend que consume
+     `getNotificaciones()` (ej. "aprobó la cotización", "vio el link").
+
 ✅ **Kits de cotización + precio de combo (jul 2026)** — feature nuevo pedido por André:
    paquetes pre-armados de renglones (ej. "Kit de obra negra") que se insertan de un clic
    en el editor, en vez de agregar producto por producto cada vez que se cotiza la misma
