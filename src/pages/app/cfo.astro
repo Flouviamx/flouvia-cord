@@ -4,6 +4,11 @@
 // por cliente. Charts en CSS puro; sin librerías externas.
 import AppLayout from '../../layouts/AppLayout.astro';
 import { getCFO, money } from '../../lib/queries';
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
+
+const L = currentLocale();
+const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
 
 const D = await getCFO();
 const hayDatos = D.items.length > 0;
@@ -16,21 +21,27 @@ const maxCliente = Math.max(1, ...D.rankClientes.map(c => c.valorEsperado));
 const semanasConAncho = D.semanas.map(s => ({
     ...s,
     ancho: s.valorEsperado > 0 ? Math.max(2, Math.round((s.valorEsperado / D.maxSemana) * 100)) : 0,
-    subLabel: s.n > 0 ? (s.n === 1 ? '1 cotización' : s.n + ' cotizaciones') : 'sin cotizaciones',
+    subLabel: s.n > 0 ? (s.n === 1 ? t(L, 'cfo.una_cotizacion') : tpl(t(L, 'cfo.n_cotizaciones'), { n: String(s.n) })) : t(L, 'cfo.sin_cotizaciones'),
 }));
 const rankClientesConAncho = D.rankClientes.map(c => ({
     ...c,
     ancho: Math.max(2, Math.round((c.valorEsperado / maxCliente) * 100)),
     tasaLabel: c.tasaPct + '%',
 }));
+
+const [concPre, concPost] = t(L, 'cfo.alerta_concentracion').split('<b>{cliente}</b>').map(s => s);
+const concPreFilled = tpl(concPre, { pct: String(D.kpis.concentracion) });
+const silParts = t(L, 'cfo.alerta_silenciadas').split(/<\/?b>/);
+const silBold = tpl(silParts[1] ?? '', { n: String(D.kpis.nSilenciadas), s: D.kpis.nSilenciadas === 1 ? '' : 's' });
+const silPost = silParts[2] ?? '';
 ---
 
-<AppLayout title="Finanzas — Cord" page="cfo" heading="Finanzas">
-    <slot slot="page-sub">Proyección financiera basada en historial real de cierre y cobro por cliente.</slot>
+<AppLayout title={t(L, 'cfo.title')} page="cfo" heading={t(L, 'cfo.heading')}>
+    <slot slot="page-sub">{t(L, 'cfo.sub')}</slot>
     <div slot="page-tabs">
-        <a href="/app/cfo" class="ph-tab active">Finanzas</a>
-        <a href="/app/analitica" class="ph-tab">Analítica</a>
-        <a href="/app/desempeno" class="ph-tab">Equipo</a>
+        <a href="/app/cfo" class="ph-tab active">{t(L, 'cfo.tab_finanzas')}</a>
+        <a href="/app/analitica" class="ph-tab">{t(L, 'cfo.tab_analitica')}</a>
+        <a href="/app/desempeno" class="ph-tab">{t(L, 'cfo.tab_equipo')}</a>
     </div>
 
     {!hayDatos && (
@@ -38,9 +49,9 @@ const rankClientesConAncho = D.rankClientes.map(c => ({
             <div class="empty-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
             </div>
-            <h2>Sin pipeline activo</h2>
-            <p>Cuando tengas cotizaciones enviadas o vistas, aquí verás la proyección de flujo de caja semana a semana basada en el historial de cada cliente.</p>
-            <a href="/app/cotizaciones/nueva" class="empty-cta">+ Crear cotización</a>
+            <h2>{t(L, 'cfo.vacio_titulo')}</h2>
+            <p>{t(L, 'cfo.vacio_desc')}</p>
+            <a href="/app/cotizaciones/nueva" class="empty-cta">{t(L, 'cfo.crear_cotizacion')}</a>
         </section>
     )}
 
@@ -49,24 +60,24 @@ const rankClientesConAncho = D.rankClientes.map(c => ({
         <!-- KPIs financieros -->
         <section class="kpis">
             <div class="kpi">
-                <span class="kpi-label">PIPELINE TOTAL</span>
+                <span class="kpi-label">{t(L, 'cfo.kpi_pipeline')}</span>
                 <span class="editorial kpi-num">{money(D.kpis.totalPipeline, 0)}</span>
-                <span class="kpi-sub">{D.items.length} cotización{D.items.length === 1 ? '' : 'es'} activas (enviadas + vistas)</span>
+                <span class="kpi-sub">{tpl(t(L, 'cfo.kpi_pipeline_sub'), { n: String(D.items.length), s: D.items.length === 1 ? '' : 's' })}</span>
             </div>
             <div class="kpi">
-                <span class="kpi-label">INGRESO ESPERADO</span>
+                <span class="kpi-label">{t(L, 'cfo.kpi_esperado')}</span>
                 <span class="editorial kpi-num kpi-ok">{money(D.kpis.totalEsperado, 0)}</span>
-                <span class="kpi-sub">ponderado por tasa histórica de cierre por cliente</span>
+                <span class="kpi-sub">{t(L, 'cfo.kpi_esperado_sub')}</span>
             </div>
             <div class="kpi">
-                <span class="kpi-label">DSO (DÍAS A COBRO)</span>
-                <span class="editorial kpi-num" style={'color:' + dsoColor}>{D.kpis.dso === 0 ? '—' : D.kpis.dso}<span class="kpi-pct">{D.kpis.dso > 0 ? ' días' : ''}</span></span>
-                <span class="kpi-sub">días de ventas pendientes de cobro este mes</span>
+                <span class="kpi-label">{t(L, 'cfo.kpi_dso')}</span>
+                <span class="editorial kpi-num" style={'color:' + dsoColor}>{D.kpis.dso === 0 ? '—' : D.kpis.dso}<span class="kpi-pct">{D.kpis.dso > 0 ? t(L, 'cfo.kpi_dso_dias') : ''}</span></span>
+                <span class="kpi-sub">{t(L, 'cfo.kpi_dso_sub')}</span>
             </div>
             <div class="kpi">
-                <span class="kpi-label">CONCENTRACIÓN</span>
+                <span class="kpi-label">{t(L, 'cfo.kpi_concentracion')}</span>
                 <span class="editorial kpi-num" style={'color:' + concColor}>{D.kpis.concentracion}<span class="kpi-pct">%</span></span>
-                <span class="kpi-sub">del pipeline en {D.rankClientes[0]?.empresa ?? 'un cliente'}; riesgo de dependencia</span>
+                <span class="kpi-sub">{tpl(t(L, 'cfo.kpi_concentracion_sub'), { cliente: D.rankClientes[0]?.empresa ?? t(L, 'cfo.un_cliente') })}</span>
             </div>
         </section>
 
@@ -76,14 +87,14 @@ const rankClientesConAncho = D.rankClientes.map(c => ({
                 {D.kpis.concentracion >= 70 && (
                     <div class="alert alert-warn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                        <span>Alta concentración: {D.kpis.concentracion}% del pipeline depende de <b>{D.rankClientes[0]?.empresa}</b>. Diversifica para reducir riesgo.</span>
+                        <span>{concPreFilled}<b>{D.rankClientes[0]?.empresa}</b>{concPost}</span>
                     </div>
                 )}
                 {D.kpis.nSilenciadas > 0 && (
                     <div class="alert alert-blue">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        <span><b>{D.kpis.nSilenciadas} cotización{D.kpis.nSilenciadas === 1 ? '' : 'es'}</b> sin respuesta hace más de 7 días. Considera hacer seguimiento.</span>
-                        <a href="#silenciadas" class="alert-link">Ver →</a>
+                        <span><b>{silBold}</b>{silPost}</span>
+                        <a href="#silenciadas" class="alert-link">{t(L, 'cfo.ver')}</a>
                     </div>
                 )}
             </section>
@@ -92,8 +103,8 @@ const rankClientesConAncho = D.rankClientes.map(c => ({
         <!-- Proyección semanal de flujo de caja -->
         <section class="forecast-card">
             <div class="sec-head">
-                <h2 class="sec-title">Proyección de flujo de caja</h2>
-                <span class="section-note">valor esperado = monto × tasa de cierre histórica del cliente</span>
+                <h2 class="sec-title">{t(L, 'cfo.proyeccion_titulo')}</h2>
+                <span class="section-note">{t(L, 'cfo.proyeccion_note')}</span>
             </div>
             <div class="weeks">
                 {semanasConAncho.map((s) => (
@@ -112,29 +123,29 @@ const rankClientesConAncho = D.rankClientes.map(c => ({
                 ))}
             </div>
             <p class="forecast-note">
-                La proyección usa el historial real de cada cliente: tasa de cierre (aprobadas / enviadas) y tiempo promedio de cierre y cobro. Clientes nuevos usan tasas conservadoras (25–50%).
+                {t(L, 'cfo.proyeccion_footer')}
             </p>
         </section>
 
         <!-- Pipeline por cliente (ranking) -->
         <section class="rank-card">
             <div class="sec-head">
-                <h2 class="sec-title">Pipeline ponderado por cliente</h2>
-                <span class="section-note">ordenado por valor esperado</span>
+                <h2 class="sec-title">{t(L, 'cfo.rank_titulo')}</h2>
+                <span class="section-note">{t(L, 'cfo.rank_note')}</span>
             </div>
             <div class="rank-header">
-                <span>Cliente</span>
-                <span>Pipeline</span>
-                <span>Tasa hist.</span>
-                <span class="col-cierre">Días a cierre</span>
-                <span class="col-cobro">Días a cobro</span>
-                <span>Valor esperado</span>
+                <span>{t(L, 'cfo.th_cliente')}</span>
+                <span>{t(L, 'cfo.th_pipeline')}</span>
+                <span>{t(L, 'cfo.th_tasa_hist')}</span>
+                <span class="col-cierre">{t(L, 'cfo.th_dias_cierre')}</span>
+                <span class="col-cobro">{t(L, 'cfo.th_dias_cobro')}</span>
+                <span>{t(L, 'cfo.th_valor_esperado')}</span>
             </div>
             {rankClientesConAncho.map((c) => (
                 <div class="rank-row">
                     <div class="rank-info">
                         <span class="rank-name">{c.empresa}</span>
-                        <span class="rank-meta">{c.n} cotización{c.n === 1 ? '' : 'es'} · {c.aprobHist}/{c.totalHist} hist.</span>
+                        <span class="rank-meta">{tpl(t(L, 'cfo.rank_meta'), { n: String(c.n), s: c.n === 1 ? '' : 's', aprob: String(c.aprobHist), total: String(c.totalHist) })}</span>
                         <div class="rank-barwrap">
                             <span class="rank-bar" style={'width:' + c.ancho + '%'}></span>
                         </div>
@@ -153,34 +164,37 @@ const rankClientesConAncho = D.rankClientes.map(c => ({
         <!-- Detalle del pipeline -->
         <section class="pipeline-card">
             <div class="sec-head">
-                <h2 class="sec-title">Detalle del pipeline</h2>
-                <span class="section-note">{D.items.length} cotización{D.items.length === 1 ? '' : 'es'} activas</span>
+                <h2 class="sec-title">{t(L, 'cfo.pipeline_titulo')}</h2>
+                <span class="section-note">{tpl(t(L, 'cfo.pipeline_note'), { n: String(D.items.length), s: D.items.length === 1 ? '' : 's' })}</span>
             </div>
             <div class="pipe-table">
                 <div class="pipe-head">
-                    <span>Folio</span>
-                    <span>Cliente</span>
-                    <span>Estado</span>
-                    <span>Monto</span>
-                    <span>Tasa</span>
-                    <span>Cobro est.</span>
-                    <span>Valor esp.</span>
+                    <span>{t(L, 'cfo.th_folio')}</span>
+                    <span>{t(L, 'cfo.th_cliente')}</span>
+                    <span>{t(L, 'cfo.th_estado')}</span>
+                    <span>{t(L, 'cfo.th_monto')}</span>
+                    <span>{t(L, 'cfo.th_tasa')}</span>
+                    <span>{t(L, 'cfo.th_cobro_est')}</span>
+                    <span>{t(L, 'cfo.th_valor_esp')}</span>
                 </div>
-                {D.items.slice(0, 20).map((item) => (
+                {D.items.slice(0, 20).map((item) => {
+                    const diasLabel = item.diasParaCobro > 0 ? tpl(t(L, 'cfo.en_n_dias'), { n: String(item.diasParaCobro) }) : t(L, 'cfo.hoy');
+                    return (
                     <a href={'/app/cotizaciones/' + item.id} class="pipe-row">
                         <span class="pipe-folio">{item.folio}</span>
                         <span class="pipe-empresa">{item.empresa}</span>
                         <span class:list={['status-pill', item.status === 'viewed' ? 'sp-viewed' : 'sp-sent']}>
-                            {item.status === 'viewed' ? 'Vista' : 'Enviada'}
+                            {item.status === 'viewed' ? t(L, 'cfo.vista') : t(L, 'cfo.enviada')}
                         </span>
                         <span class="editorial pipe-total">{money(item.total, 0)}</span>
                         <span class="pipe-tasa">{item.tasaPct}%</span>
-                        <span class="pipe-dias">{item.diasParaCobro <= 0 ? 'hoy' : 'en ' + item.diasParaCobro + 'd'}</span>
+                        <span class="pipe-dias">{diasLabel}</span>
                         <span class="editorial pipe-val">{money(item.valorEsperado, 0)}</span>
                     </a>
-                ))}
+                    );
+                })}
                 {D.items.length > 20 && (
-                    <div class="pipe-more">+{D.items.length - 20} cotizaciones más</div>
+                    <div class="pipe-more">{tpl(t(L, 'cfo.mas_cotizaciones'), { n: String(D.items.length - 20) })}</div>
                 )}
             </div>
         </section>
@@ -189,16 +203,16 @@ const rankClientesConAncho = D.rankClientes.map(c => ({
         {D.silenciadas.length > 0 && (
             <section class="silenciadas-card" id="silenciadas">
                 <div class="sec-head">
-                    <h2 class="sec-title">Sin respuesta (+7 días)</h2>
-                    <span class="section-note">candidatas a seguimiento</span>
+                    <h2 class="sec-title">{t(L, 'cfo.silenciadas_titulo')}</h2>
+                    <span class="section-note">{t(L, 'cfo.silenciadas_note')}</span>
                 </div>
                 {D.silenciadas.map((s) => (
                     <a href={'/app/cotizaciones/' + s.id} class="sil-row">
                         <span class="sil-folio">{s.folio}</span>
                         <span class="sil-empresa">{s.empresa}</span>
-                        <span class="sil-dias">{s.dias} días</span>
+                        <span class="sil-dias">{s.dias} {t(L, 'cfo.dias')}</span>
                         <span class="editorial sil-total">{money(s.total, 0)}</span>
-                        <span class="sil-action">Ver →</span>
+                        <span class="sil-action">{t(L, 'cfo.ver')}</span>
                     </a>
                 ))}
             </section>

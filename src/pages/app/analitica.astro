@@ -5,6 +5,12 @@
 import AppLayout from '../../layouts/AppLayout.astro';
 import { getAnalytics, getMyMembership, money } from '../../lib/queries';
 import { memberCan } from '../../lib/permissions';
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
+
+const L = currentLocale();
+const isEn = L === 'en';
+const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
 
 const ME = await getMyMembership();
 const hasAccess = memberCan(ME, 'analitica');
@@ -17,7 +23,7 @@ for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     monthKeys.push({
         ym: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
-        label: d.toLocaleDateString('es-MX', { month: 'short' }).replace('.', ''),
+        label: d.toLocaleDateString(isEn ? 'en-US' : 'es-MX', { month: 'short' }).replace('.', ''),
     });
 }
 const mByYm = new Map((A?.meses ?? []).map((m) => [m.ym, m]));
@@ -38,10 +44,10 @@ const deltaMes = cerradoMesPrev > 0
 const F = A?.funnel ?? { enviadas: 0, vistas: 0, aprobadas: 0, pagadas: 0 };
 const funnelMax = Math.max(1, F.enviadas);
 const funnelRows = [
-    { label: 'Enviadas', n: F.enviadas, color: '#3b82f6' },
-    { label: 'Vistas', n: F.vistas, color: '#7c3aed' },
-    { label: 'Aprobadas', n: F.aprobadas, color: '#10b981' },
-    { label: 'Pagadas', n: F.pagadas, color: '#059669' },
+    { label: t(L, 'an.fn_enviadas'), n: F.enviadas, color: '#3b82f6' },
+    { label: t(L, 'an.fn_vistas'), n: F.vistas, color: '#7c3aed' },
+    { label: t(L, 'an.fn_aprobadas'), n: F.aprobadas, color: '#10b981' },
+    { label: t(L, 'an.fn_pagadas'), n: F.pagadas, color: '#059669' },
 ];
 const pctOf = (n: number) => (F.enviadas ? Math.round((n / F.enviadas) * 100) : 0);
 
@@ -50,24 +56,24 @@ const maxProducto = Math.max(1, ...(A?.productos ?? []).map((p) => p.importe));
 const hayDatos = F.enviadas > 0 || (A?.productos.length ?? 0) > 0;
 ---
 
-<AppLayout title="Analítica — Cord" page="analitica" heading="Analítica">
+<AppLayout title={t(L, 'an.title')} page="analitica" heading={t(L, 'an.heading')}>
     <div slot="page-tabs">
-        <a href="/app/cfo" class="ph-tab">Finanzas</a>
-        <a href="/app/analitica" class="ph-tab active">Analítica</a>
-        <a href="/app/desempeno" class="ph-tab">Equipo</a>
+        <a href="/app/cfo" class="ph-tab">{t(L, 'an.tab_finanzas')}</a>
+        <a href="/app/analitica" class="ph-tab active">{t(L, 'an.tab_analitica')}</a>
+        <a href="/app/desempeno" class="ph-tab">{t(L, 'an.tab_equipo')}</a>
     </div>
     {!hasAccess && (
         <div class="an-denied">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <h3>Sin acceso</h3>
-            <p>Tu rol actual no tiene permiso para ver la analítica. Contacta al administrador de tu organización.</p>
+            <h3>{t(L, 'an.sin_acceso_titulo')}</h3>
+            <p>{t(L, 'an.sin_acceso_desc')}</p>
         </div>
     )}
     {hasAccess && !hayDatos && (
         <section class="empty">
-            <h2>Aún no hay datos que analizar</h2>
-            <p>Cuando envíes y cierres cotizaciones, aquí verás tu conversión, el margen que cedes y tus mejores clientes y productos.</p>
-            <a href="/app/cotizaciones/nueva" class="empty-cta">+ Crear una cotización</a>
+            <h2>{t(L, 'an.vacio_titulo')}</h2>
+            <p>{t(L, 'an.vacio_desc')}</p>
+            <a href="/app/cotizaciones/nueva" class="empty-cta">{t(L, 'an.crear_cotizacion')}</a>
         </section>
     )}
 
@@ -76,39 +82,39 @@ const hayDatos = F.enviadas > 0 || (A?.productos.length ?? 0) > 0;
         <!-- KPIs -->
         <section class="kpis">
             <div class="kpi">
-                <span class="kpi-label">CERRADO (TOTAL)</span>
+                <span class="kpi-label">{t(L, 'an.kpi_cerrado')}</span>
                 <span class="editorial kpi-num kpi-ok">{money(A.kpis.cerradoTotal, 0)}</span>
-                <span class="kpi-sub">aprobadas, pagadas y facturadas</span>
+                <span class="kpi-sub">{t(L, 'an.kpi_cerrado_sub')}</span>
             </div>
             <div class="kpi">
-                <span class="kpi-label">TASA DE CIERRE</span>
+                <span class="kpi-label">{t(L, 'an.kpi_tasa')}</span>
                 <span class="editorial kpi-num">{A.kpis.tasaCierre}<span class="kpi-pct">%</span></span>
-                <span class="kpi-sub">de las enviadas se aprueban</span>
+                <span class="kpi-sub">{t(L, 'an.kpi_tasa_sub')}</span>
             </div>
             <div class="kpi">
-                <span class="kpi-label">TICKET PROMEDIO</span>
+                <span class="kpi-label">{t(L, 'an.kpi_ticket')}</span>
                 <span class="editorial kpi-num">{money(A.kpis.ticketPromedio, 0)}</span>
-                <span class="kpi-sub">por cotización cerrada</span>
+                <span class="kpi-sub">{t(L, 'an.kpi_ticket_sub')}</span>
             </div>
             <div class="kpi">
-                <span class="kpi-label">TIEMPO A CIERRE</span>
-                <span class="editorial kpi-num">{A.kpis.diasCierre}<span class="kpi-pct"> días</span></span>
-                <span class="kpi-sub">promedio de enviada a aprobada</span>
+                <span class="kpi-label">{t(L, 'an.kpi_tiempo')}</span>
+                <span class="editorial kpi-num">{A.kpis.diasCierre}<span class="kpi-pct">{t(L, 'an.kpi_tiempo_dias')}</span></span>
+                <span class="kpi-sub">{t(L, 'an.kpi_tiempo_sub')}</span>
             </div>
         </section>
 
         <!-- Pronóstico -->
         <section class="forecast">
             <div class="fc-main">
-                <span class="kpi-label">PRONÓSTICO DE CARTERA ABIERTA</span>
+                <span class="kpi-label">{t(L, 'an.pronostico_label')}</span>
                 <span class="editorial fc-num">{money(A.forecast.ponderado, 0)}</span>
-                <span class="kpi-sub">valor esperado de lo enviado y visto, ponderado por probabilidad de cierre</span>
+                <span class="kpi-sub">{t(L, 'an.pronostico_sub')}</span>
             </div>
             <div class="fc-side">
-                <span class="fc-side-label">Cerrado este mes</span>
+                <span class="fc-side-label">{t(L, 'an.cerrado_mes')}</span>
                 <span class="editorial fc-side-num">{money(cerradoMesActual, 0)}</span>
                 <span class:list={['fc-delta', deltaMes >= 0 ? 'up' : 'down']}>
-                    {deltaMes >= 0 ? '▲' : '▼'} {Math.abs(deltaMes)}% vs mes anterior
+                    {deltaMes >= 0 ? '▲' : '▼'} {Math.abs(deltaMes)}% {t(L, 'an.vs_mes_anterior')}
                 </span>
             </div>
         </section>
@@ -117,18 +123,18 @@ const hayDatos = F.enviadas > 0 || (A?.productos.length ?? 0) > 0;
             <!-- Cotizado vs cerrado por mes -->
             <section class="chart-card">
                 <div class="sec-head">
-                    <h2 class="sec-title">Cotizado vs. cerrado</h2>
+                    <h2 class="sec-title">{t(L, 'an.cotizado_vs_cerrado')}</h2>
                     <div class="legend">
-                        <span class="lg"><i class="sw sw-cot"></i>Cotizado</span>
-                        <span class="lg"><i class="sw sw-cer"></i>Cerrado</span>
+                        <span class="lg"><i class="sw sw-cot"></i>{t(L, 'an.cotizado')}</span>
+                        <span class="lg"><i class="sw sw-cer"></i>{t(L, 'an.cerrado')}</span>
                     </div>
                 </div>
                 <div class="bars">
                     {monthly.map((m) => (
                         <div class="bar-group">
                             <div class="bar-pair">
-                                <span class="bar bar-cot" style={`height:${Math.round((m.cotizado / maxMonth) * 100)}%`} title={`Cotizado: ${money(m.cotizado, 0)}`}></span>
-                                <span class="bar bar-cer" style={`height:${Math.round((m.cerrado / maxMonth) * 100)}%`} title={`Cerrado: ${money(m.cerrado, 0)}`}></span>
+                                <span class="bar bar-cot" style={`height:${Math.round((m.cotizado / maxMonth) * 100)}%`} title={`${t(L, 'an.cotizado')}: ${money(m.cotizado, 0)}`}></span>
+                                <span class="bar bar-cer" style={`height:${Math.round((m.cerrado / maxMonth) * 100)}%`} title={`${t(L, 'an.cerrado')}: ${money(m.cerrado, 0)}`}></span>
                             </div>
                             <span class="bar-label">{m.label}</span>
                         </div>
@@ -138,7 +144,7 @@ const hayDatos = F.enviadas > 0 || (A?.productos.length ?? 0) > 0;
 
             <!-- Embudo de conversión -->
             <section class="funnel-card">
-                <div class="sec-head"><h2 class="sec-title">Embudo de conversión</h2></div>
+                <div class="sec-head"><h2 class="sec-title">{t(L, 'an.embudo')}</h2></div>
                 <div class="funnel">
                     {funnelRows.map((r) => (
                         <div class="fn-row">
@@ -157,20 +163,20 @@ const hayDatos = F.enviadas > 0 || (A?.productos.length ?? 0) > 0;
 
         <!-- Margen cedido -->
         <section class="margin-card">
-            <div class="sec-head"><h2 class="sec-title">Margen cedido</h2></div>
+            <div class="sec-head"><h2 class="sec-title">{t(L, 'an.margen_cedido')}</h2></div>
             <div class="margin-grid">
                 <div class="margin-figure">
-                    <span class="kpi-label">MARGEN CEDIDO EN DESCUENTOS</span>
+                    <span class="kpi-label">{t(L, 'an.margen_cedido_label')}</span>
                     <span class="editorial margin-num">{money(A.margen.cedido, 0)}</span>
-                    <span class="kpi-sub">{A.margen.pct.toFixed(1)}% por debajo del precio de lista en cotizaciones enviadas</span>
+                    <span class="kpi-sub">{tpl(t(L, 'an.margen_cedido_sub'), { pct: A.margen.pct.toFixed(1) })}</span>
                 </div>
                 <div class="margin-bar-wrap">
                     <div class="margin-bar">
                         <span class="margin-fill" style={`width:${Math.min(100, Math.round((A.margen.negoTotal / Math.max(1, A.margen.listaTotal)) * 100))}%`}></span>
                     </div>
                     <div class="margin-legend">
-                        <span>Negociado <b class="editorial">{money(A.margen.negoTotal, 0)}</b></span>
-                        <span>Lista <b class="editorial">{money(A.margen.listaTotal, 0)}</b></span>
+                        <span>{t(L, 'an.negociado')} <b class="editorial">{money(A.margen.negoTotal, 0)}</b></span>
+                        <span>{t(L, 'an.lista')} <b class="editorial">{money(A.margen.listaTotal, 0)}</b></span>
                     </div>
                 </div>
             </div>
@@ -179,14 +185,14 @@ const hayDatos = F.enviadas > 0 || (A?.productos.length ?? 0) > 0;
         <div class="two-col">
             <!-- Top clientes -->
             <section class="rank-card">
-                <div class="sec-head"><h2 class="sec-title">Top clientes</h2><span class="rank-sub">por monto cerrado</span></div>
+                <div class="sec-head"><h2 class="sec-title">{t(L, 'an.top_clientes')}</h2><span class="rank-sub">{t(L, 'an.top_clientes_sub')}</span></div>
                 <div class="rank">
-                    {A.clientes.length === 0 && <p class="rank-empty">Sin clientes con cotizaciones todavía.</p>}
+                    {A.clientes.length === 0 && <p class="rank-empty">{t(L, 'an.sin_clientes')}</p>}
                     {A.clientes.map((c) => (
                         <div class="rank-row">
                             <div class="rank-info">
                                 <span class="rank-name">{c.empresa}</span>
-                                <span class="rank-meta">{c.cotizaciones} cotización{c.cotizaciones === 1 ? '' : 'es'} · {c.tasa}% aprob.</span>
+                                <span class="rank-meta">{c.cotizaciones} {c.cotizaciones === 1 ? t(L, 'an.cotizacion_singular') : t(L, 'an.cotizacion_plural')} · {c.tasa}% {t(L, 'an.aprob')}</span>
                             </div>
                             <div class="rank-barwrap">
                                 <span class="rank-bar" style={`width:${Math.round((c.cerrado / maxCliente) * 100)}%`}></span>
@@ -199,14 +205,14 @@ const hayDatos = F.enviadas > 0 || (A?.productos.length ?? 0) > 0;
 
             <!-- Top productos -->
             <section class="rank-card">
-                <div class="sec-head"><h2 class="sec-title">Top productos</h2><span class="rank-sub">por importe cotizado</span></div>
+                <div class="sec-head"><h2 class="sec-title">{t(L, 'an.top_productos')}</h2><span class="rank-sub">{t(L, 'an.top_productos_sub')}</span></div>
                 <div class="rank">
-                    {A.productos.length === 0 && <p class="rank-empty">Sin productos cotizados todavía.</p>}
+                    {A.productos.length === 0 && <p class="rank-empty">{t(L, 'an.sin_productos')}</p>}
                     {A.productos.map((p) => (
                         <div class="rank-row">
                             <div class="rank-info">
                                 <span class="rank-name">{p.nombre}</span>
-                                <span class="rank-meta">{p.cantidad.toLocaleString('es-MX')} u. · {p.cotizaciones} cotización{p.cotizaciones === 1 ? '' : 'es'}</span>
+                                <span class="rank-meta">{p.cantidad.toLocaleString(isEn ? 'en-US' : 'es-MX')} {t(L, 'an.unidades')} · {p.cotizaciones} {p.cotizaciones === 1 ? t(L, 'an.cotizacion_singular') : t(L, 'an.cotizacion_plural')}</span>
                             </div>
                             <div class="rank-barwrap">
                                 <span class="rank-bar rank-bar-alt" style={`width:${Math.round((p.importe / maxProducto) * 100)}%`}></span>

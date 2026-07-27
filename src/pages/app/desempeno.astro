@@ -5,7 +5,10 @@
 import AppLayout from '../../layouts/AppLayout.astro';
 import { getDesempeno, getMyMembership, money } from '../../lib/queries';
 import { memberCan, ROL_LABEL } from '../../lib/permissions';
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
 
+const L = currentLocale();
 const ME = await getMyMembership();
 const hasAccess = memberCan(ME, 'analitica');
 const D = hasAccess ? await getDesempeno() : null;
@@ -18,26 +21,26 @@ const tasaEquipo = D && D.vendedores.length
 const mostrarSinAsignar = !!D && (D.sinAsignar.n > 0 || D.sinAsignar.cerradoTotal > 0);
 ---
 
-<AppLayout title="Desempeño del equipo — Cord" page="desempeno" heading="Desempeño">
+<AppLayout title={t(L, 'des.title')} page="desempeno" heading={t(L, 'des.heading')}>
     <div slot="page-tabs">
-        <a href="/app/cfo" class="ph-tab">Finanzas</a>
-        <a href="/app/analitica" class="ph-tab">Analítica</a>
-        <a href="/app/desempeno" class="ph-tab active">Equipo</a>
+        <a href="/app/cfo" class="ph-tab">{t(L, 'an.tab_finanzas')}</a>
+        <a href="/app/analitica" class="ph-tab">{t(L, 'an.tab_analitica')}</a>
+        <a href="/app/desempeno" class="ph-tab active">{t(L, 'an.tab_equipo')}</a>
     </div>
 
     {!hasAccess && (
         <div class="an-denied">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <h3>Sin acceso</h3>
-            <p>Tu rol actual no tiene permiso para ver el desempeño del equipo. Contacta al administrador de tu organización.</p>
+            <h3>{t(L, 'des.sin_acceso_titulo')}</h3>
+            <p>{t(L, 'des.sin_acceso_desc')}</p>
         </div>
     )}
 
     {hasAccess && D && !D.hayDatos && (
         <section class="empty">
-            <h2>Aún no hay cotizaciones para medir</h2>
-            <p>En cuanto tu equipo empiece a crear y cerrar cotizaciones, aquí verás quién cierra más y quién cobra más rápido.</p>
-            <a href="/app/cotizaciones/nueva" class="empty-cta">+ Crear una cotización</a>
+            <h2>{t(L, 'des.vacio_titulo')}</h2>
+            <p>{t(L, 'des.vacio_desc')}</p>
+            <a href="/app/cotizaciones/nueva" class="empty-cta">{t(L, 'des.crear_cotizacion')}</a>
         </section>
     )}
 
@@ -45,38 +48,38 @@ const mostrarSinAsignar = !!D && (D.sinAsignar.n > 0 || D.sinAsignar.cerradoTota
         <>
         <section class="kpis">
             <div class="kpi">
-                <span class="kpi-label">CERRADO POR EL EQUIPO</span>
+                <span class="kpi-label">{t(L, 'des.kpi_cerrado')}</span>
                 <span class="editorial kpi-num kpi-ok">{money(D.totalCerrado, 0)}</span>
-                <span class="kpi-sub">aprobadas, pagadas y facturadas</span>
+                <span class="kpi-sub">{t(L, 'des.kpi_cerrado_sub')}</span>
             </div>
             <div class="kpi">
-                <span class="kpi-label">TASA DE CIERRE PROMEDIO</span>
+                <span class="kpi-label">{t(L, 'des.kpi_tasa')}</span>
                 <span class="editorial kpi-num">{tasaEquipo}<span class="kpi-pct">%</span></span>
-                <span class="kpi-sub">de lo enviado por vendedor</span>
+                <span class="kpi-sub">{t(L, 'des.kpi_tasa_sub')}</span>
             </div>
             <div class="kpi">
-                <span class="kpi-label">LÍDER DEL PERIODO</span>
+                <span class="kpi-label">{t(L, 'des.kpi_lider')}</span>
                 <span class="editorial kpi-num kpi-lead" title={top?.nombre}>{top ? top.nombre : '—'}</span>
-                <span class="kpi-sub">{top ? money(top.cerradoTotal, 0) + ' cerrado' : 'sin cierres todavía'}</span>
+                <span class="kpi-sub">{top ? money(top.cerradoTotal, 0) + t(L, 'des.cerrado_suffix') : t(L, 'des.sin_cierres')}</span>
             </div>
             <div class="kpi">
-                <span class="kpi-label">VENDEDORES ACTIVOS</span>
+                <span class="kpi-label">{t(L, 'des.kpi_vendedores')}</span>
                 <span class="editorial kpi-num">{D.vendedores.length}</span>
-                <span class="kpi-sub">con cuenta activa en el equipo</span>
+                <span class="kpi-sub">{t(L, 'des.kpi_vendedores_sub')}</span>
             </div>
         </section>
 
         <section class="rank-card lb-card">
-            <div class="sec-head"><h2 class="sec-title">Ranking por vendedor</h2><span class="rank-sub">por monto cerrado</span></div>
+            <div class="sec-head"><h2 class="sec-title">{t(L, 'des.ranking_titulo')}</h2><span class="rank-sub">{t(L, 'des.ranking_sub')}</span></div>
 
             <div class="lb-head">
-                <span class="lb-col-name">Vendedor</span>
-                <span class="lb-col-n">Cotiz.</span>
-                <span class="lb-col-n">Cierre</span>
-                <span class="lb-col-bar">Cerrado</span>
-                <span class="lb-col-amt">Cobrado</span>
-                <span class="lb-col-amt">Ticket</span>
-                <span class="lb-col-n">Días</span>
+                <span class="lb-col-name">{t(L, 'des.col_vendedor')}</span>
+                <span class="lb-col-n">{t(L, 'des.col_cotiz')}</span>
+                <span class="lb-col-n">{t(L, 'des.col_cierre')}</span>
+                <span class="lb-col-bar">{t(L, 'des.col_cerrado')}</span>
+                <span class="lb-col-amt">{t(L, 'des.col_cobrado')}</span>
+                <span class="lb-col-amt">{t(L, 'des.col_ticket')}</span>
+                <span class="lb-col-n">{t(L, 'des.col_dias')}</span>
             </div>
 
             {D.vendedores.map((v, i) => (
@@ -85,7 +88,7 @@ const mostrarSinAsignar = !!D && (D.sinAsignar.n > 0 || D.sinAsignar.cerradoTota
                         <span class="lb-rank">{i + 1}</span>
                         <span class="lb-avatar">{v.inicial}</span>
                         <span class="lb-nm">
-                            <span class="lb-nm-main">{v.nombre}{v.esYo && <span class="lb-tag">Tú</span>}</span>
+                            <span class="lb-nm-main">{v.nombre}{v.esYo && <span class="lb-tag">{t(L, 'des.tu')}</span>}</span>
                             {v.rol !== 'vendedor' && <span class="lb-role">{ROL_LABEL[v.rol] ?? v.rol}</span>}
                         </span>
                     </div>
@@ -105,7 +108,7 @@ const mostrarSinAsignar = !!D && (D.sinAsignar.n > 0 || D.sinAsignar.cerradoTota
                     <div class="lb-name">
                         <span class="lb-rank">—</span>
                         <span class="lb-avatar lb-avatar-muted">?</span>
-                        <span class="lb-nm"><span class="lb-nm-main">Sin asignar</span><span class="lb-role">de antes de este reporte o vía API</span></span>
+                        <span class="lb-nm"><span class="lb-nm-main">{t(L, 'des.sin_asignar')}</span><span class="lb-role">{t(L, 'des.sin_asignar_desc')}</span></span>
                     </div>
                     <span class="lb-n">{D.sinAsignar.n}</span>
                     <span class="lb-n">—</span>
