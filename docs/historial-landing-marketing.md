@@ -6,6 +6,65 @@
 
 ---
 
+✅ **Reposicionamiento global — de "cotizaciones B2B en México" a "software de operaciones
+   B2B" (jul 2026)** — André reportó que el copy/SEO sonaba "muy específico para México"
+   cuando cualquier negocio, en cualquier país, ya puede registrarse hoy (signup abierto,
+   sin gate geográfico), y que el producto ya no es solo cotizar: desde jul 2026 también
+   incluye Presupuestos/Cédulas, CFO Dashboard y Analítica. Auditoría con grep de todo el
+   repo separando **dos problemas mezclados** en el mismo texto: (1) geo-restricción
+   FALSA ("para cualquier negocio B2B en México" en features sin nada que ver con
+   México — el editor, el link público, cobranza con IA, negociación, multi-divisa,
+   soluciones/casos de uso) y (2) CFDI/SAT, que SÍ es honestamente Mexico-only y se dejó
+   intacto, reencuadrado como beneficio adicional ("para negocios en México") en vez de
+   ser la puerta de entrada de todo el producto.
+   • **Mensaje central nuevo:** título de home ES "Cord — Cotizaciones, Presupuestos y
+     Cobranza B2B" (antes "...y CFDI 4.0 en México"); EN "Cord — B2B Quoting, Budgeting &
+     Collections Software". Mismo criterio en `Layout.astro` (default description),
+     `precios.astro`, `llms.txt`, footer tagline y manifest.webmanifest.
+   • **JSON-LD de `/` actualizado:** `softwareSchema.audience` pasó de "Any B2B business
+     in Mexico" a "Any B2B business worldwide"; `featureList` ganó "Financial budgeting &
+     budget-vs-actual tracking" y "AI-powered collections"; CFDI se quedó en la lista
+     pero anotado "(Mexico)" en vez de ser el límite de audiencia.
+   • **12 páginas de producto (`producto.ts`/`.en.ts`):** solo 5 tenían el gate falso
+     (editor, link-publico, cobranza-ia, negociacion, divisas) — verificado con grep que
+     eran las ÚNICAS fuera de la página de CFDI. `divisas` fue el más delicado: la
+     feature (cotizar en USD/EUR) es universal y `fiscal_currency` es un campo
+     configurable por el usuario (no hardcodeado a MXN, confirmado en
+     `cotizaciones.ts`), así que el headline pasó de "factura en pesos" a "factura en tu
+     moneda", con el caso concreto de México (CFDI 4.0 en pesos) explícito en el cuerpo.
+     **No se tocó** la página `cfdi` — sus menciones de México son ciertas y centrales.
+   • **Soluciones y casos de uso:** `empresas`/`startups` (`solucion.ts`/`.en.ts`) y las 4
+     páginas de `/casos-de-uso/*` (saas, agencias, comercializadoras, software-factory)
+     tenían el mismo patrón ("para Startups/Empresas/agencias... en México") — corregido
+     en sus metaTitle/metaDescription y 2 líneas de copy de `saas.astro`.
+   • **FAQ (ES/EN, `ui.ts` faq.1/faq.8 + `precios.ts`/`.en.ts`):** "Cualquier negocio B2B
+     en México puede registrarse" → "en cualquier país". `faq.4` (CFDI) se dejó igual.
+   • **Hallazgo funcional (no solo copy):** el SYSTEM prompt de `ai-draft.ts` (armar
+     cotización con IA) se autodefinía como "Eres un extractor de pedidos B2B **en
+     México**" — un sesgo de rol innecesario para un feature que ya usa reglas explícitas
+     (no depende de asumir locale). Corregido a genérico.
+   • **`ProductAccordion.jsx`** (bento de `/producto/[slug]`) y `elements.astro` (hero de
+     Cord Elements) tenían el mismo patrón de "factura/timbra CFDI en México" como límite
+     — corregidos igual que `producto.ts`.
+   • **NO se tocó `desarrolladores.ts`/`.en.ts`:** sus 9 menciones de México son todas
+     sobre la página de fiscal internacional (CFDI/SAT, ya honestamente correcta) o la
+     región real donde vive la infraestructura (dato técnico, no de audiencia).
+   • **NO se tocó el contenido de soporte/docs/blog (132+ artículos):** las menciones de
+     México que quedan ahí (payouts de Stripe, SPEI, NOM-151, IVA de exportación) son
+     mecánica real y específica de México, no una restricción de audiencia — igual que
+     "Hecho en México" (trust signal de procedencia, no de exclusividad) se dejó intacto
+     en los footers de auth. Solo se corrigió `docs/{es,en}/cuenta/resumen.mdx` (línea de
+     apertura del overview de la cuenta, que sí generalizaba TODO el producto a México).
+   ⚠️ **Pendiente natural de una siguiente pasada (fuera de alcance de esta sesión, no
+     bloqueante):** si se quiere profundizar el reposicionamiento, la siguiente capa
+     natural es una pasada de exactitud sobre los 132 artículos de soporte (mismo patrón
+     que `[[cord-seo-ai-seo-audit-pattern]]`), pero no se tocaron en esta sesión.
+   • Verificado con `npm run build` (limpio, sin errores de tipos ni sintaxis) y grep
+     post-cambio confirmando que las únicas menciones de "en México"/"in Mexico"
+     restantes en `producto.ts`/`.en.ts`/`solucion.ts`/`.en.ts`/`index.astro`/
+     `Layout.astro`/`llms.txt`/`ui.ts`/`precios.astro`/`precios.ts`/`.en.ts` son las de
+     CFDI/SAT (intencionales) y "Hecho en México" (trust signal, intencional).
+
 ✅ **Docs: Migración masiva a Astro MDX y componentes interactivos (jul 2026)** —
    Se migró toda la base de conocimientos de Cord (`src/content/docs/`) de Markdown clásico a MDX para soportar el diseño B2B premium de la marca mediante componentes interactivos.
    • **Soporte MDX en Astro:** Se instaló `@astrojs/mdx` (v6.0.0, compatible con Astro 4/5) y se configuró en `astro.config.mjs`. Se actualizó la colección `docsCollection` en `content.config.ts` para reconocer el patrón `**/*.{md,mdx}`.

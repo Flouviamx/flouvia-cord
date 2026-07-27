@@ -11,7 +11,7 @@ import Hero from '../components/landing/Hero.astro';
 import Features from '../components/landing/Features.astro';
 import AdvancedFeatures from '../components/landing/AdvancedFeatures.astro';
 import Steps from '../components/landing/Steps.astro';
-import CtaDuo from '../components/landing/CtaDuo.astro';
+import PresupuestosDuo from '../components/landing/PresupuestosDuo.astro';
 import ClientView from '../components/landing/ClientView.astro';
 import Pricing from '../components/landing/Pricing.astro';
 import Faq from '../components/landing/Faq.astro';
@@ -74,12 +74,12 @@ const howToSchema = {
 // clientes de Flouvia". "by Flouvia" se movió del <title> a un dato de
 // confianza secundario dentro de la descripción, sin liderar el mensaje.
 const title = isEn
-    ? "Cord — B2B Quoting, Order & CFDI Invoicing Software (Mexico)"
-    : "Cord — Software de Cotizaciones B2B y CFDI 4.0 en México";
+    ? "Cord — B2B Quoting, Budgeting & Collections Software"
+    : "Cord — Cotizaciones, Presupuestos y Cobranza B2B";
 
 const description = isEn
-    ? "Cord is independent B2B software for quotes, orders, credit terms (Net 30/60) and automated SAT e-invoicing (CFDI 4.0). Built for any B2B business in Mexico — not only Flouvia customers. Free plan forever, by the team at Flouvia."
-    : "Cord es un software B2B independiente para cotizaciones, pedidos, términos de crédito (Net 30/60) y CFDI 4.0 automático ante el SAT. Para cualquier negocio B2B en México — no solo clientes de Flouvia. Plan gratis para siempre, hecho por el equipo de Flouvia.";
+    ? "Cord is independent B2B operations software to quote, budget, and collect — for any B2B business, anywhere. Negotiated pricing, one-click approval, budget-vs-actual tracking, AI-powered collections, and automated CFDI 4.0 e-invoicing for Mexican businesses. Not only Flouvia customers. Free plan forever, by the team at Flouvia."
+    : "Cord es un software B2B independiente para cotizar, presupuestar y cobrar — para cualquier negocio B2B, en cualquier país. Precios negociados, aprobación en un clic, presupuestos con seguimiento vs. real, cobranza con IA y CFDI 4.0 automático para negocios en México. No solo clientes de Flouvia. Plan gratis para siempre, hecho por el equipo de Flouvia.";
 
 // ── Datos estructurados adicionales (jul 2026) ──────────────────────────
 // Organization (Flouvia, la empresa creadora) + SoftwareApplication (Cord,
@@ -110,14 +110,14 @@ const softwareSchema = {
     name: 'Cord',
     url: 'https://cordhq.app',
     applicationCategory: 'BusinessApplication',
-    applicationSubCategory: isEn ? 'B2B Quoting & Invoicing Software' : 'Software de Cotizaciones y Facturación B2B',
+    applicationSubCategory: isEn ? 'B2B Quoting, Budgeting & Operations Software' : 'Software de Cotizaciones, Presupuestos y Operaciones B2B',
     operatingSystem: 'Web',
     description: isEn
-        ? 'Cord is a standalone, publicly available B2B SaaS for creating quotes with negotiated pricing, tracking approvals in real time, and stamping Mexican CFDI 4.0 e-invoices automatically. Open to any B2B business in Mexico, independent of Flouvia\'s other products.'
-        : 'Cord es un SaaS B2B independiente y de acceso público para crear cotizaciones con precios negociados, dar seguimiento a las aprobaciones en tiempo real y timbrar CFDI 4.0 automáticamente ante el SAT. Abierto a cualquier negocio B2B en México, independiente de los demás productos de Flouvia.',
+        ? 'Cord is a standalone, publicly available B2B SaaS for creating quotes with negotiated pricing, tracking approvals in real time, planning budgets with budget-vs-actual tracking, and automating collections. Mexican businesses can also stamp CFDI 4.0 e-invoices automatically. Open to any B2B business worldwide, independent of Flouvia\'s other products.'
+        : 'Cord es un SaaS B2B independiente y de acceso público para crear cotizaciones con precios negociados, dar seguimiento a las aprobaciones en tiempo real, planear presupuestos con seguimiento vs. real y automatizar la cobranza. Los negocios en México además pueden timbrar CFDI 4.0 automáticamente ante el SAT. Abierto a cualquier negocio B2B en cualquier país, independiente de los demás productos de Flouvia.',
     audience: {
         '@type': 'BusinessAudience',
-        audienceType: isEn ? 'Any B2B business in Mexico (distributors, wholesalers, manufacturers, service providers, SaaS, agencies)' : 'Cualquier negocio B2B en México (distribuidoras, mayoristas, manufactura, servicios, SaaS, agencias)',
+        audienceType: isEn ? 'Any B2B business worldwide (distributors, wholesalers, manufacturers, service providers, SaaS, agencies)' : 'Cualquier negocio B2B en cualquier país (distribuidoras, mayoristas, manufactura, servicios, SaaS, agencias)',
     },
     creator: { '@id': 'https://flouvia.com/#organization' },
     provider: { '@id': 'https://flouvia.com/#organization' },
@@ -128,8 +128,8 @@ const softwareSchema = {
         description: isEn ? 'Free plan, forever — no credit card required.' : 'Plan gratis para siempre — sin tarjeta de crédito.',
     },
     featureList: isEn
-        ? ['Negotiated B2B pricing', 'One-click quote approval', 'Real-time view tracking', 'Automated CFDI 4.0 e-invoicing', 'Net 30/60 credit terms', 'Public API & webhooks']
-        : ['Precios negociados B2B', 'Aprobación de cotizaciones en un clic', 'Seguimiento en tiempo real', 'CFDI 4.0 automático', 'Términos de crédito Net 30/60', 'API pública y webhooks'],
+        ? ['Negotiated B2B pricing', 'One-click quote approval', 'Real-time view tracking', 'Financial budgeting & budget-vs-actual tracking', 'AI-powered collections', 'Automated CFDI 4.0 e-invoicing (Mexico)', 'Net 30/60 credit terms', 'Public API & webhooks']
+        : ['Precios negociados B2B', 'Aprobación de cotizaciones en un clic', 'Seguimiento en tiempo real', 'Presupuestos y seguimiento vs. real', 'Cobranza automatizada con IA', 'CFDI 4.0 automático (México)', 'Términos de crédito Net 30/60', 'API pública y webhooks'],
 };
 
 // Misma fuente (claves faq.1..faq.8 de ui.ts) que consume <Faq /> — el
@@ -179,7 +179,7 @@ const faqSchema = {
         <Features />
         <AdvancedFeatures />
         <Steps />
-        <CtaDuo />
+        <PresupuestosDuo />
         <ClientView />
         <Pricing />
         <Faq />

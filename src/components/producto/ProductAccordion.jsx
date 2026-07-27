@@ -398,7 +398,7 @@ const SLIDES = {
   ],
   internacional: [
     { label: '01', title: 'El dólar se mueve. Tu margen no.', sub: 'Tasa spot real del BCE más el buffer de cobertura que configures, congelada 30 días. El margen pactado sobrevive a la volatilidad del tipo de cambio.', icon: 'shield' },
-    { label: '02', title: 'Cotizas en la moneda del cliente', sub: 'Divisa de presentación para el cliente extranjero y divisa fiscal para facturar en México. Cord guarda ambas y la tasa congelada en la misma cotización.', icon: 'globe' },
+    { label: '02', title: 'Cotizas en la moneda del cliente', sub: 'Divisa de presentación para el cliente extranjero y divisa fiscal para facturar en la tuya (en México, vía CFDI 4.0). Cord guarda ambas y la tasa congelada en la misma cotización.', icon: 'globe' },
     { label: '03', title: 'México timbra de verdad', sub: 'Cuando el trato cierra en México, Cord emite CFDI 4.0 real ante el SAT vía Facturapi: UUID, XML y PDF timbrados. El ciclo fiscal resuelto de punta a punta.', icon: 'receipt' },
     { label: '04', title: 'Arquitectura lista para crecer', sub: 'Un patrón de proveedores fiscales enruta cada emisión según el país. Las emisiones se centralizan en un registro unificado — preparado para sumar mercados.', icon: 'layers' },
   ],

@@ -1,14 +1,16 @@
 # Cord
 
-> Cord is an independent B2B quoting and payments SaaS for any business in Mexico —
-> not exclusive to Shopify or to clients of its parent company, Flouvia. Businesses use
-> Cord to create quotes with negotiated pricing and credit terms, get them approved via
-> a public link, collect payment (cards, SPEI, autonomous AI collections), and issue
-> CFDI 4.0 invoices, all without leaving the quote flow.
+> Cord is an independent B2B operations SaaS — quoting, budgeting, and collections — for
+> any business worldwide, not exclusive to Shopify or to clients of its parent company,
+> Flouvia. Businesses use Cord to create quotes with negotiated pricing and credit terms,
+> get them approved via a public link, plan budgets with budget-vs-actual tracking,
+> collect payment (cards, SPEI, autonomous AI collections), and issue CFDI 4.0 invoices
+> (Mexico), all without leaving the quote flow.
 
 Cord is built and maintained by the team at Flouvia (flouvia.com), a Mexican company —
 but Cord itself is a standalone product with its own domain, billing, and signup, open
-to any B2B business in Mexico regardless of whether they use any other Flouvia product.
+to any B2B business worldwide regardless of whether they use any other Flouvia product.
+Businesses based in Mexico additionally get automated CFDI 4.0 e-invoicing built in.
 
 ## Core capabilities
 
@@ -47,7 +49,7 @@ Technical articles from the Cord engineering team:
 ## Key Documentation Pages
 
 ### Payments
-- [Payments overview](https://cordhq.app/docs/pagos/resumen): SPEI + card payment infrastructure for B2B in Mexico
+- [Payments overview](https://cordhq.app/docs/pagos/resumen): card payment infrastructure for any B2B business, plus SPEI bank transfer for Mexico
 - [Payment methods](https://cordhq.app/docs/pagos/metodos): Bank transfer (SPEI), credit/debit cards, credit terms
 - [Advance payments](https://cordhq.app/docs/pagos/anticipos): Deposit and balance payment splitting
 - [Recurring retainers](https://cordhq.app/docs/pagos/igualas): Monthly retainer billing for service businesses

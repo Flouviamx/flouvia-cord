@@ -94,14 +94,16 @@ const {
                 <div class="footer-col">
                     <span class="footer-col-title">{t("nav.recursos")}</span>
                     <a href={l("/blog")}>{t("nav.mega.rec.1.title")}</a>
+                    <a href="https://dev.cordhq.app" target="_blank">{isEn ? 'Developer Blog' : 'Blog de desarrolladores'}</a>
                     <a href={l("/roadmap")}>{t("nav.mega.rec.4.title")}</a>
                     <a href={l("/precios")}>{t("footer.link.precios")}</a>
                     
                     <span style="height: 1px; background: rgba(255,255,255,0.1); width: 100%; margin: 0.2rem 0;"></span>
                     <span style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: #5a5f6b; font-weight: 700;">{isEn ? 'Help & Contact' : 'Ayuda y Contacto'}</span>
+                    <a href={isEn ? 'https://docs.cordhq.app/?lang=en' : 'https://docs.cordhq.app'}>{isEn ? 'Documentation' : 'Documentación'}</a>
                     <a href={lang === 'en' ? '/en/support' : '/soporte'}>{t("footer.link.soporte")}</a>
                     <a href={l("/q/demo")}>{t("nav.mega.rec.2.title")}</a>
-                    <a href={l("/contacto")}>{isEn ? 'Contact Sales' : 'Ventas'}</a>
+                    <a href={l("/contacto/ventas")}>{isEn ? 'Contact Sales' : 'Ventas'}</a>
                 </div>
                 <div class="footer-col">
                     <span class="footer-col-title">{t("footer.col.empresa")}</span>

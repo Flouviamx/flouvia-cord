@@ -7,11 +7,24 @@ import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 const ORG = await getOrg();
 const L = currentLocale();
+// La facturación fiscal REAL (CSD + timbrado ante un PAC) solo existe para
+// México hoy (MexicoSatProvider vía Facturapi). El resto de países pueden
+// cotizar/cobrar/usar el CRM normal — solo el timbrado fiscal no aplica todavía.
+const isMx = ORG.countryCode === 'MX';
 ---
 
 <SettingsShell title="Datos fiscales — Ajustes" tab="fiscal" perm="ajustes"
     intro={t(L, 'set.fiscal.intro')} save>
-    <div class="s-block">
+    {!isMx && (
+        <div class="fiscal-notice">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"/><line x1="12" y1="8" x2="12" y2="12.5"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div>
+                <strong>Por ahora, la facturación fiscal (CFDI/timbrado) solo está disponible en México.</strong>
+                <p>Puedes cotizar, cobrar y usar el CRM normalmente en tu país — el timbrado ante una autoridad fiscal local todavía no está conectado. Escríbenos si quieres que lo prioricemos para tu país.</p>
+            </div>
+        </div>
+    )}
+    <div class="s-block" style={isMx ? undefined : 'opacity:0.5; pointer-events:none;'}>
         <h3>{t(L, 'set.fiscal.identificacion')}</h3>
         <div class="s-body">
             <div class="s-row">
@@ -49,7 +62,7 @@ const L = currentLocale();
         </div>
     </div>
 
-    <div class="s-block">
+    <div class="s-block" style={isMx ? undefined : 'opacity:0.5; pointer-events:none;'}>
         <h3>{t(L, 'set.fiscal.csd')}</h3>
         <p class="csd-intro">{t(L, 'set.fiscal.csd_intro')}</p>
 
@@ -97,7 +110,7 @@ const L = currentLocale();
         </div>
     </div>
 
-    <div class="s-block">
+    <div class="s-block" style={isMx ? undefined : 'opacity:0.5; pointer-events:none;'}>
         <h3>{t(L, 'set.fiscal.timbrado')}</h3>
         <div class="s-body">
             <div class="pac-row">
@@ -113,6 +126,11 @@ const L = currentLocale();
 </SettingsShell>
 
 <style>
+    .fiscal-notice { display: flex; gap: 12px; align-items: flex-start; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.22); border-radius: 14px; padding: 14px 16px; margin-bottom: 1.6rem; color: #92400e; }
+    html[data-theme="dark"] .fiscal-notice { color: #fcd34d; }
+    .fiscal-notice svg { flex-shrink: 0; width: 20px; height: 20px; margin-top: 1px; }
+    .fiscal-notice strong { display: block; font-size: 0.88rem; margin-bottom: 4px; }
+    .fiscal-notice p { margin: 0; font-size: 0.82rem; line-height: 1.5; opacity: 0.9; }
     .csd-intro { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.55; margin: 0 0 1.1rem; }
     .csd-intro b { color: var(--color-text); font-weight: 600; }
     .csd-files { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }

@@ -27,12 +27,12 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
 // "Scale", no "Negocio" — dato falso que Google/IA podían repetir) +
 // aclaración de independencia de Flouvia, consistente con /index y el FAQ.
 const title = isEn
-    ? "Cord Pricing — B2B Quoting & CFDI Software, Plans from $0"
-    : "Precios de Cord — Software de Cotizaciones B2B desde $0";
+    ? "Cord Pricing — B2B Quoting & Budgeting Software, Plans from $0"
+    : "Precios de Cord — Software de Cotizaciones y Presupuestos B2B desde $0";
 
 const description = isEn
-    ? "Compare Cord's 5 plans — Free, Starter, Pro, Scale, and Developer. B2B quoting, CFDI 4.0 e-invoicing, and API access. No contracts, cancel anytime. For any B2B business in Mexico, not only Flouvia customers."
-    : "Compara los 5 planes de Cord: Gratis, Starter, Profesional, Scale y Developer. Cotizaciones B2B, CFDI 4.0 y acceso a la API. Sin contratos, cancela cuando quieras. Para cualquier negocio B2B en México, no solo clientes de Flouvia.";
+    ? "Compare Cord's 5 plans — Free, Starter, Pro, Scale, and Developer. B2B quoting, budgeting, AI collections, and API access — for any B2B business, anywhere. CFDI 4.0 e-invoicing for Mexican businesses. No contracts, cancel anytime. Not only Flouvia customers."
+    : "Compara los 5 planes de Cord: Gratis, Starter, Profesional, Scale y Developer. Cotizaciones B2B, presupuestos, cobranza con IA y acceso a la API — para cualquier negocio B2B en cualquier país. CFDI 4.0 para negocios en México. Sin contratos, cancela cuando quieras. No solo clientes de Flouvia.";
 
 // ── JSON-LD: Product + Offer por plan (jul 2026) ──────────────────────────
 // Antes esta página no tenía ningún dato estructurado — un vacío grande en
@@ -46,8 +46,8 @@ const productSchema = {
     '@type': 'Product',
     name: 'Cord',
     description: isEn
-        ? 'Independent B2B SaaS for quotes, orders, and automated CFDI 4.0 e-invoicing. Open to any B2B business in Mexico.'
-        : 'SaaS B2B independiente para cotizaciones, pedidos y CFDI 4.0 automático. Abierto a cualquier negocio B2B en México.',
+        ? 'Independent B2B SaaS to quote, budget, and collect, with automated CFDI 4.0 e-invoicing for Mexican businesses. Open to any B2B business, anywhere.'
+        : 'SaaS B2B independiente para cotizar, presupuestar y cobrar, con CFDI 4.0 automático para negocios en México. Abierto a cualquier negocio B2B en cualquier país.',
     brand: { '@type': 'Brand', name: 'Cord' },
     offers: PLANES.map((p) => ({
         '@type': 'Offer',

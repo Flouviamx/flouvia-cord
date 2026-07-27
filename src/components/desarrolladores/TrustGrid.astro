@@ -1,12 +1,14 @@
 ---
 // TrustGrid — sección de confianza/infraestructura debajo del bento en
-// /desarrolladores/[slug]. Layout tipo Stripe: fondo claro (igual que la
-// página), texto oscuro a la izquierda, globo 3D grande a la derecha sin
-// nada encima. Los 4 datos del grid van debajo como fila horizontal.
+// /desarrolladores/[slug]. Un solo panel gris Apple con una cuadrícula de
+// tarjetas blancas squircle (icono + título + una línea corta) — nada de
+// bloques de texto largos ni sub-secciones separadas.
 import type { DevTrust, DevTrustIcon } from '../../lib/desarrolladores';
+import DevBlockMockup from './DevBlockMockup.astro';
 
-export interface Props { trust: DevTrust }
-const { trust } = Astro.props;
+export interface Props { trust: DevTrust; slug: string }
+const { trust, slug } = Astro.props;
+const items = trust.items;
 
 const svg = (inner: string) => `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
 
@@ -26,168 +28,96 @@ const ICONS: Record<DevTrustIcon, string> = {
 ---
 
 <section class="dvt-section">
-    <!-- Globo — eliminado a petición del usuario -->
-
-    <!-- Contenido de texto — ocupa solo la mitad izquierda -->
-    <div class="dvt-inner">
-        <p class="dvt-eyebrow">{trust.eyebrow}</p>
-        <h2 class="dvt-title masked-title" set:html={trust.titulo} />
-
-        <div class="dvt-protect dvt-anim-protect">
-            <span class="dvt-picon" set:html={ICONS[trust.proteccion.icon]} />
-            <div class="dvt-protect-tx">
-                <h3>{trust.proteccion.titulo}</h3>
-                <p>{trust.proteccion.copy}</p>
-            </div>
-        </div>
-
-        <ul class="dvt-points">
-            {trust.puntos.map((p) => (
-                <li class="dvt-anim-point">
-                    <span class="dvt-sicon" set:html={ICONS[p.icon]} />
-                    <span>{p.titulo}</span>
-                </li>
-            ))}
-        </ul>
+    <div class="dvt-mockups">
+        <div class="dvt-mock-card"><DevBlockMockup slug={slug} index={3} /></div>
+        <div class="dvt-mock-card"><DevBlockMockup slug={slug} index={4} /></div>
     </div>
 
-    <!-- Grid de datos — fila de 4 debajo -->
-    <div class="dvt-grid dvt-anim-right">
-        {trust.grid.map((g) => (
-            <div class="dvt-gitem">
-                <span class="dvt-gicon" set:html={ICONS[g.icon]} />
-                <span class="dvt-glabel">{g.titulo}</span>
-                {g.copy && <p class="dvt-gcopy">{g.copy}</p>}
+    <div class="dvt-head">
+        <p class="dvt-eyebrow">{trust.eyebrow}</p>
+        <h2 class="dvt-title masked-title" set:html={trust.titulo} />
+    </div>
+
+    <div class="dvt-grid">
+        {items.map((it) => (
+            <div class="dvt-tile">
+                <span class="dvt-ticon" set:html={ICONS[it.icon]} />
+                <p class="dvt-tcopy">{it.copy || it.titulo}</p>
             </div>
         ))}
     </div>
 </section>
 
 <style>
-    /* ── Sección clara, sin overflow hidden — el globo puede extenderse ── */
+    /* ── Directo sobre el fondo de la página — sin tarjeta, sin panel ── */
     .dvt-section {
-        position: relative;
-        padding: 6rem 0 4rem;
-        overflow: visible;
+        max-width: 1360px; margin: 0 auto; padding: 5rem 5%;
     }
 
-    /* ── Globo — absoluto, centrado verticalmente, anclado a la derecha ── */
-    .dvt-bg-globe {
-        position: absolute;
-        top: 28%; right: -2%;
-        width: 48vw; max-width: 640px; min-width: 420px;
-        aspect-ratio: 1 / 1;
-        transform: translateY(-45%);
-        z-index: 0;
-        pointer-events: none;
+    /* ── Dos mockups flotando sobre paneles suaves, como el hero — nunca sobre tarjeta gris ── */
+    .dvt-mockups {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;
+        margin: 0 0 4.5rem;
     }
-
-    /* ── Contenido — solo la mitad izquierda ── */
-    .dvt-inner {
-        position: relative; z-index: 2;
-        max-width: 580px;
-        margin: 0 0 0 max(5%, calc((100% - 1360px) / 2 + 5%));
-        padding: 0;
+    .dvt-mock-card {
+        background: linear-gradient(160deg, rgba(10,25,47,0.035), rgba(10,25,47,0.065));
+        border-radius: 32px;
+        padding: clamp(2rem, 4vw, 3rem) clamp(1.5rem, 3vw, 2.25rem);
+        display: flex; align-items: center; justify-content: center;
+        min-height: 300px;
     }
+    .dvt-mock-card :global(.dbm-wrap) { width: 100%; max-width: 420px; }
 
+    .dvt-head { max-width: 620px; margin: 0 0 3.25rem; }
     .dvt-eyebrow {
         font-size: 0.62rem; font-weight: 800; letter-spacing: 2.8px;
         text-transform: uppercase; color: var(--color-blue-deep, #2563eb);
-        margin: 0 0 1.1rem;
+        margin: 0 0 0.9rem;
     }
     .dvt-title {
-        font-size: clamp(2rem, 3.15vw, 2.75rem); font-weight: 800;
-        line-height: 1.08; letter-spacing: -0.04em;
-        color: var(--color-text, #0f172a); margin: 0 0 2.9rem;
+        font-size: clamp(1.7rem, 2.5vw, 2.15rem); font-weight: 800;
+        line-height: 1.12; letter-spacing: -0.035em;
+        color: var(--color-text, #0f172a); margin: 0;
     }
 
-    .dvt-protect {
-        display: flex; align-items: flex-start; gap: 1.2rem;
-        padding-bottom: 2.1rem;
-        border-bottom: 1px solid var(--color-border, rgba(10,25,47,0.08));
-    }
-    .dvt-picon {
-        flex-shrink: 0; width: 36px; height: 36px; border-radius: 11px;
-        background: rgba(10,25,47,0.05); color: var(--color-blue-deep, #2563eb);
-        display: flex; align-items: center; justify-content: center;
-    }
-    .dvt-picon :global(svg) { width: 18px; height: 18px; }
-    .dvt-protect-tx h3 {
-        font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em;
-        color: var(--color-text, #0f172a); margin: 0 0 0.5rem;
-    }
-    .dvt-protect-tx p {
-        font-size: 0.92rem; line-height: 1.72;
-        color: var(--color-text-muted, #64748b); margin: 0;
-    }
-
-    .dvt-points { list-style: none; margin: 0; padding: 0; }
-    .dvt-points li {
-        display: flex; align-items: center; gap: 0.95rem;
-        padding: 1.25rem 0;
-        border-bottom: 1px solid var(--color-border, rgba(10,25,47,0.08));
-        font-size: 0.93rem; font-weight: 500; letter-spacing: -0.005em;
-        color: var(--color-text, #0f172a);
-    }
-    .dvt-points li:last-child { border-bottom: none; }
-    .dvt-sicon {
-        flex-shrink: 0; width: 36px; height: 36px; border-radius: 11px;
-        background: rgba(10,25,47,0.05); color: var(--color-blue-deep, #2563eb);
-        display: flex; align-items: center; justify-content: center;
-    }
-    .dvt-sicon :global(svg) { width: 18px; height: 18px; }
-
-    /* ── Grid de datos — fila de 4 debajo ── */
+    /* ── Fila de icono + texto, sin caja/borde/sombra — estilo Stripe ── */
     .dvt-grid {
-        position: relative; z-index: 2;
-        max-width: 1360px; margin: 3.5rem auto 0; padding: 0 5%;
-        display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
-        border-top: 1px solid var(--color-border, rgba(10,25,47,0.08));
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        column-gap: 3.25rem;
+        row-gap: 2.75rem;
     }
-    .dvt-gitem {
-        padding: 2rem 1.6rem;
-        border-right: 1px solid var(--color-border, rgba(10,25,47,0.08));
+    .dvt-tile { max-width: 320px; }
+
+    .dvt-ticon {
+        display: flex; width: 52px; height: 52px; border-radius: 15px;
+        background: transparent; border: 1.4px solid var(--color-border, rgba(10,25,47,0.14));
+        color: var(--color-blue-deep, #0a192f);
+        align-items: center; justify-content: center; margin-bottom: 1.4rem;
     }
-    .dvt-gitem:last-child { border-right: none; }
-    .dvt-gicon {
-        display: flex; width: 32px; height: 32px; border-radius: 9px;
-        background: rgba(10,25,47,0.05); color: var(--color-blue-deep, #2563eb);
-        align-items: center; justify-content: center; margin-bottom: 0.9rem;
-    }
-    .dvt-gicon :global(svg) { width: 16px; height: 16px; }
-    .dvt-glabel {
-        display: block; font-size: 0.88rem; font-weight: 600;
-        letter-spacing: -0.01em; line-height: 1.4;
-        color: var(--color-text, #0f172a); margin-bottom: 0.5rem;
-    }
-    .dvt-gcopy {
-        margin: 0; font-size: 0.82rem; line-height: 1.6;
-        color: var(--color-text-muted, #64748b);
+    .dvt-ticon :global(svg) { width: 21px; height: 21px; }
+    .dvt-tcopy {
+        margin: 0; font-size: 0.98rem; line-height: 1.62; font-weight: 450;
+        letter-spacing: -0.005em;
+        color: var(--color-text, #1e293b);
+        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
-    @media (max-width: 1000px) {
-        .dvt-inner { max-width: 50%; margin-left: 5%; }
-        .dvt-bg-globe { width: 46vw; min-width: 340px; }
-        .dvt-grid { grid-template-columns: repeat(2, 1fr); }
+    @media (max-width: 780px) {
+        .dvt-mockups { grid-template-columns: 1fr; gap: 1rem; margin-bottom: 3.25rem; }
+        .dvt-mock-card { min-height: 220px; border-radius: 24px; }
     }
     @media (max-width: 720px) {
-        .dvt-section { padding: 4rem 0 2.5rem; }
-        .dvt-inner { max-width: 100%; margin: 0 5%; }
-        .dvt-bg-globe {
-            position: relative; top: auto; right: auto; transform: none;
-            width: 80vw; min-width: unset; max-width: 340px;
-            margin: 0 auto 1.5rem;
-        }
-        .dvt-grid { grid-template-columns: 1fr; }
-        .dvt-gitem { border-right: none; border-bottom: 1px solid var(--color-border, rgba(10,25,47,0.08)); }
-        .dvt-gitem:last-child { border-bottom: none; }
+        .dvt-section { padding: 3.5rem 5%; }
+        .dvt-grid { grid-template-columns: 1fr; column-gap: 0; row-gap: 2.25rem; }
+        .dvt-tile { max-width: none; }
     }
 </style>
 
 <style is:global>
-    .js-anim .dvt-anim-protect,
-    .js-anim .dvt-anim-point,
-    .js-anim .dvt-anim-right { opacity: 0; }
+    .js-anim .dvt-tile,
+    .js-anim .dvt-mock-card { opacity: 0; }
 </style>
 
 <script>
@@ -195,55 +125,35 @@ const ICONS: Record<DevTrustIcon, string> = {
     import { ScrollTrigger } from 'gsap/ScrollTrigger';
     gsap.registerPlugin(ScrollTrigger);
 
-    const BLUR_IN = 'blur(14px)';
-
     const init = () => {
         const section = document.querySelector<HTMLElement>('.dvt-section');
         if (!section) return;
 
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const mocks = gsap.utils.toArray<HTMLElement>('.dvt-mock-card', section);
+        const tiles = gsap.utils.toArray<HTMLElement>('.dvt-tile', section);
 
-        const picon = section.querySelector<HTMLElement>('.dvt-picon');
-        const protectTx = section.querySelector<HTMLElement>('.dvt-protect-tx');
-        const protect = section.querySelector<HTMLElement>('.dvt-anim-protect');
-        const points = gsap.utils.toArray<HTMLElement>('.dvt-anim-point', section);
-        const grid = section.querySelector<HTMLElement>('.dvt-anim-right');
-        const gitems = gsap.utils.toArray<HTMLElement>('.dvt-gitem', section);
+        if (reduced) { gsap.set([...mocks, ...tiles], { clearProps: 'all', opacity: 1 }); return; }
 
-        const revealAll = () => {
-            gsap.set([protect, ...points, grid, ...gitems], { clearProps: 'all', opacity: 1 });
-            gsap.set([picon, protectTx], { clearProps: 'all', opacity: 1 });
-        };
-
-        if (reduced) { revealAll(); return; }
-
-        if (picon) gsap.set(picon, { opacity: 0, scale: 0.6, filter: BLUR_IN });
-        if (protectTx) gsap.set(protectTx, { opacity: 0, y: 12, filter: BLUR_IN });
-        gsap.set(points, { y: 14, filter: BLUR_IN });
-        gsap.set(gitems, { opacity: 0, y: 18 });
+        gsap.set(mocks, { opacity: 0, y: 20 });
+        gsap.set(tiles, { opacity: 0, y: 16 });
 
         ScrollTrigger.create({
             trigger: section,
             start: 'top 85%',
             once: true,
             onEnter: () => {
-                const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
-
-                tl.to(picon, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.55 }, 0)
-                  .to(protectTx, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.6 }, 0.14)
-                  .set(protect, { opacity: 1 }, 0);
-
-                tl.to(points, {
-                    opacity: 1, y: 0, filter: 'blur(0px)',
-                    duration: 0.55, stagger: 0.09,
-                }, 0.22);
-
-                tl.set(grid, { opacity: 1 }, 0.3);
-                tl.to(gitems, {
-                    opacity: 1, y: 0, duration: 0.5, stagger: 0.08,
-                }, 0.4);
-
-                tl.set([picon, protectTx, ...points, ...gitems], { clearProps: 'filter,transform' });
+                gsap.to(mocks, {
+                    opacity: 1, y: 0, duration: 0.6, stagger: 0.1,
+                    ease: 'power3.out',
+                    clearProps: 'transform',
+                });
+                gsap.to(tiles, {
+                    opacity: 1, y: 0, duration: 0.55, stagger: 0.06,
+                    delay: 0.15,
+                    ease: 'power3.out',
+                    clearProps: 'transform',
+                });
             },
         });
     };

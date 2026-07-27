@@ -136,14 +136,20 @@ de los de flouvia.com:
 ```
 DATABASE_URL=                                                   # Neon (PostgreSQL)
 PUBLIC_CLERK_PUBLISHABLE_KEY=  CLERK_SECRET_KEY=                # signup ABIERTO
+CLERK_WEBHOOK_SECRET=                                           # firma Svix de /api/clerk/webhook
 STRIPE_SECRET_KEY=  STRIPE_WEBHOOK_SECRET=  PUBLIC_STRIPE_PUBLISHABLE_KEY=
+STRIPE_CONNECT_WEBHOOK_SECRET=                                  # 2º webhook: eventos de cuentas Connect conectadas
 RESEND_API_KEY=  RESEND_FROM=                                   # recordatorios de cobro + form de contacto
 SALES_EMAIL=                                                    # destino de leads de /contacto/ventas (default hola@flouvia.com)
-CRON_SECRET=                                                    # protege /api/cron/recordatorios
+CRON_SECRET=                                                    # protege /api/cron/*
 FACTURAPI_API_KEY=                                              # CFDI 4.0 vía Facturapi (sk_test_/sk_live_); sin ella el timbrado es SIMULADO
+FACTURAPI_USER_KEY=                                             # llave de CUENTA de Facturapi — habilita que cada org suba SU CSD y timbre bajo su RFC. Pendiente a propósito (jul 2026): André espera tener usuarios antes de contratar el plan; sin ella el CSD de Ajustes›Fiscal no opera, todo timbra con la llave global
 # FACTURAPI_URL=                                                # opcional (default https://www.facturapi.io/v2)
 ANTHROPIC_API_KEY=                                              # IA "armar cotización desde texto" + cobranza/MCP
 AI_MODEL=                                                       # opcional (default claude-haiku-4-5-20251001 — TODA la IA usa Haiku)
+INBOUND_EMAIL_SECRET=                                           # respuestas por correo a la cobranza IA (endpoint hoy inalcanzable a propósito, ver docs/historial-infra-hitos.md)
+UPSTASH_REDIS_REST_URL=  UPSTASH_REDIS_REST_TOKEN=              # rate-limit DURABLE compartido entre instancias (src/lib/ratelimit.ts); sin ellas cae a un contador in-memory por proceso — funciona pero no es global. Provisionar vía Vercel Marketplace → Upstash → Storage del proyecto (auto-inyecta ambas)
+PUBLIC_SITE_URL=                                                # opcional (default https://cordhq.app) — origen fijo para links en correos disparados por CRON (nunca derivar de request.url ahí, ver docs/historial-infra-hitos.md)
 ```
 
 Neon se recomienda provisionar vía **Vercel Marketplace → Neon** desde el proyecto

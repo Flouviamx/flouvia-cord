@@ -10,13 +10,37 @@ import SupportCoverBg from '../components/support/SupportCoverBg.jsx';
 import { clerkAppearance } from '../lib/clerk-theme';
 import Analytics from '@vercel/analytics/astro';
 import { memberCan } from '../lib/permissions';
-import { currentLocale } from '../lib/context';
+import { currentLocale, currentUserId } from '../lib/context';
 import { t, getAppRuntimeI18n } from '../i18n/app';
+import { clerkClient } from '@clerk/astro/server';
 
 const L = currentLocale();
 const RT = getAppRuntimeI18n(L);
 
 const [ORG, ME] = await Promise.all([getOrg(), getMyMembership()]);
+
+// "Exigir 2FA al equipo" (Ajustes › Seguridad) — antes se guardaba en BD pero
+// NUNCA se aplicaba (cero enforcement, el toggle daba una falsa sensación de
+// seguridad). Ahora, si la org lo exige y el usuario de la sesión actual NO
+// tiene 2FA activo en Clerk, se le manda directo a Ajustes › Cuenta a
+// activarlo — es la ÚNICA salida (nunca un bloqueo total sin escape): desde ahí
+// puede prender su 2FA o, si es el dueño, apagar el requisito en Seguridad.
+// Solo se llama a Clerk cuando la org realmente lo exige (la inmensa mayoría de
+// orgs no paga este costo extra en cada carga de página).
+const path = Astro.url.pathname;
+const EXEMPT_2FA = ['/app/ajustes/cuenta', '/app/ajustes/seguridad'];
+if (ORG.require2fa && !EXEMPT_2FA.some((p) => path === p || path.startsWith(p + '/'))) {
+    const uid = currentUserId();
+    if (uid) {
+        try {
+            const user = await clerkClient(Astro).users.getUser(uid);
+            if (!user.twoFactorEnabled) {
+                return Astro.redirect('/app/ajustes/cuenta?require2fa=1');
+            }
+        } catch { /* si Clerk falla, no se bloquea el acceso — fail-open a propósito */ }
+    }
+}
+
 const canCotizar = memberCan(ME, 'cotizar');
 const canClientes = memberCan(ME, 'clientes');
 const canProductos = memberCan(ME, 'productos');

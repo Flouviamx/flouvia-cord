@@ -65,45 +65,30 @@ void main() {
 
   float f = fbm(uv + r) * 0.5 + 0.5;
 
-  float y = uv.y * 0.75 + fbm(uv * 2.8 + t * 0.28) * 0.32 + 0.08;
-  y = clamp(y, 0.0, 1.0);
+  float y = clamp(uv.y * 0.75 + fbm(uv * 2.8 + t * 0.28) * 0.32 + 0.08, 0.0, 1.0);
 
   vec3 col = mix(u_ca, u_cb, smoothstep(0.0, 0.55, y));
   col = mix(col, u_cc, smoothstep(0.40, 1.0, y + f * 0.22));
-
   col += (f - 0.5) * 0.055;
 
-  float vig = 1.0 - length((uv - 0.5) * 1.5);
-  vig = clamp(vig * vig, 0.0, 1.0);
-  col *= vig * 0.30 + 0.58;
+  float vig = clamp(1.0 - length((uv - 0.5) * 1.5), 0.0, 1.0);
+  vig *= vig;
+  col *= vig * 0.28 + 0.72;
 
-  float glow = exp(-length(uv - vec2(0.5, 0.42)) * 3.2) * 0.14;
-  col += u_cc * glow;
+  col += u_cc * exp(-length(uv - vec2(0.5, 0.4)) * 3.5) * 0.09;
+  col += (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) * 0.022;
 
-  // Empuje de saturación — mantiene el azul denso en vez de lavarlo hacia gris/blanco
-  float lum = dot(col, vec3(0.299, 0.587, 0.114));
-  col = mix(vec3(lum), col, 1.2);
-
-  float grain = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
-  col += (grain - 0.5) * 0.022;
-
-  col  = col / (col + 0.34);
-  col  = pow(clamp(col, 0.0, 1.0), vec3(0.88));
-
-  // Empuje final hacia negro — navy oscuro y denso, no un azul brillante
-  col *= 0.72;
-
-  gl_FragColor = vec4(col, 1.0);
+  col = col / (col + 0.35);
+  gl_FragColor = vec4(pow(clamp(col, 0.0, 1.0), vec3(0.90)), 1.0);
 }
 `;
 
-// Navy casi negro → azul marino denso → acento azul (nunca celeste pastel).
-// Más oscuro que un azul "vivo" a propósito — se lee como el navy de marca
-// de Cord (#0a192f), no como un azul brillante de landing genérica.
+// Paleta azul eléctrico más viva (misma familia que ProductAccordion.jsx /
+// mockups de producto) — reemplaza el navy casi-negro que se veía "muy vacío".
 const PAL_BLUE = [
-  [0.003, 0.008, 0.045],
-  [0.012, 0.06, 0.32],
-  [0.04, 0.16, 0.64],
+  [0.04, 0.10, 0.24],
+  [0.09, 0.24, 0.54],
+  [0.20, 0.50, 0.96],
 ];
 
 function mkShader(gl, type, src) {

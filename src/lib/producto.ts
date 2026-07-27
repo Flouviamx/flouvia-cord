@@ -50,8 +50,8 @@ export const FEATURES: Feature[] = [
         eyebrow: 'EDITOR DE COTIZACIONES',
         titulo: 'La cotización perfecta, en minutos.',
         sub: 'Arrastra productos de tu catálogo, negocia el precio línea por línea y mira el total recalcularse con IVA en vivo. Lo que antes era una hora en Excel, ahora son minutos.',
-        metaTitle: 'Cómo hacer cotizaciones B2B con precios negociados en México — Cord',
-        metaDescription: 'El editor de cotizaciones de Cord permite negociar el precio de cada producto por separado, aplicar términos Net 30/60, calcular IVA en tiempo real y generar un link de aprobación con tu marca. Para distribuidores y mayoristas en México.',
+        metaTitle: 'Cómo hacer cotizaciones B2B con precios negociados — Cord',
+        metaDescription: 'El editor de cotizaciones de Cord permite negociar el precio de cada producto por separado, aplicar términos Net 30/60, calcular impuestos en tiempo real y generar un link de aprobación con tu marca. Para distribuidores y mayoristas en cualquier país.',
         plan: 'Disponible en todos los planes',
         stats: [
             { valor: '4', countup: 4, suffix: ' min', label: 'tiempo promedio para armar una cotización' },
@@ -130,7 +130,7 @@ export const FEATURES: Feature[] = [
         titulo: 'Tu cliente aprueba en un clic.',
         sub: 'Cada cotización genera un link elegante con tu marca. Tu cliente lo abre desde el celular, revisa los precios y aprueba — sin crear cuenta, sin descargar nada, sin fricción.',
         metaTitle: 'Aprobación de cotizaciones B2B por link sin registro — Cord',
-        metaDescription: 'El link público de Cord genera una página con tu marca (logo, colores y datos fiscales) donde tu cliente revisa la cotización y aprueba en un clic, sin crear cuenta ni descargar nada. Para cualquier negocio B2B en México.',
+        metaDescription: 'El link público de Cord genera una página con tu marca (logo, colores y datos fiscales) donde tu cliente revisa la cotización y aprueba en un clic, sin crear cuenta ni descargar nada. Para cualquier negocio B2B, en cualquier país.',
         plan: 'Disponible en todos los planes',
         stats: [
             { valor: '0', countup: 0, label: 'cuentas que tu cliente necesita crear' },
@@ -445,8 +445,8 @@ export const FEATURES: Feature[] = [
         eyebrow: 'COBRANZA AUTÓNOMA CON IA',
         titulo: 'Tu cobranza trabaja sola, hasta de noche.',
         sub: 'Un agente de inteligencia artificial da seguimiento a cada factura vencida por ti: le escribe al cliente, negocia un plan de pagos en cuotas y te avisa solo cuando necesita tu visto bueno. Tú apruebas, la IA persigue — sin que se te enfríe la cartera.',
-        metaTitle: 'Cobranza automática con IA para empresas B2B en México — Cord',
-        metaDescription: 'El agente de cobranza con IA de Cord da seguimiento a las facturas vencidas, negocia planes de pago de hasta 3 cuotas mensuales y proyecta tu flujo de caja a 90 días. Tú apruebas cada acuerdo; queda todo en bitácora. Para negocios B2B en México.',
+        metaTitle: 'Cobranza automática con IA para empresas B2B — Cord',
+        metaDescription: 'El agente de cobranza con IA de Cord da seguimiento a las facturas vencidas, negocia planes de pago de hasta 3 cuotas mensuales y proyecta tu flujo de caja a 90 días. Tú apruebas cada acuerdo; queda todo en bitácora. Para negocios B2B en cualquier país.',
         plan: 'Plan Scale en adelante',
         stats: [
             { valor: '24/7', label: 'el agente da seguimiento sin descanso ni olvidos' },
@@ -522,21 +522,21 @@ export const FEATURES: Feature[] = [
         slug: 'divisas',
         nav: 'Multi-divisa y FX',
         eyebrow: 'MULTI-DIVISA Y COBERTURA CAMBIARIA',
-        titulo: 'Cotiza en dólares. Factura en pesos. Cuida tu margen.',
-        sub: 'Tu cliente ve el precio en su moneda; tú facturas en pesos. Cord congela el tipo de cambio del día por 30 días y le suma una cobertura, para que el margen que cerraste sea el margen que cobras.',
-        metaTitle: 'Cotizaciones en dólares y euros con cobertura cambiaria para empresas en México — Cord',
-        metaDescription: 'Cotiza en USD o EUR y factura en pesos. Cord toma la tasa spot del Banco Central Europeo, le aplica un buffer de cobertura para proteger tu margen y congela el tipo de cambio 30 días (FX lock). Para negocios B2B en México que venden con divisas.',
+        titulo: 'Cotiza en dólares. Factura en tu moneda. Cuida tu margen.',
+        sub: 'Tu cliente ve el precio en su moneda; tú facturas en la tuya. Cord congela el tipo de cambio del día por 30 días y le suma una cobertura, para que el margen que cerraste sea el margen que cobras.',
+        metaTitle: 'Cotizaciones en dólares y euros con cobertura cambiaria — Cord',
+        metaDescription: 'Cotiza en USD o EUR y factura en tu moneda fiscal. Cord toma la tasa spot del Banco Central Europeo, le aplica un buffer de cobertura para proteger tu margen y congela el tipo de cambio 30 días (FX lock). Para negocios B2B en cualquier país que venden con divisas.',
         plan: 'Disponible en todos los planes',
         stats: [
             { valor: '30', countup: 30, suffix: ' días', label: 'que se congela el tipo de cambio por cotización' },
-            { valor: '3', countup: 3, label: 'monedas de presentación: USD, EUR y MXN — siempre facturas en pesos' },
+            { valor: '3', countup: 3, label: 'monedas de presentación: USD, EUR y MXN — factura en la moneda fiscal que uses' },
             { valor: '2', countup: 2, suffix: '%', label: 'de cobertura sugerida sobre el tipo de cambio spot, ajustable' },
         ],
         blocks: [
             {
                 eyebrow: 'DOS MONEDAS, UN TRATO',
-                titulo: 'El cliente ve dólares. El SAT ve pesos.',
-                copy: 'En Cord la moneda de presentación y la moneda fiscal son dos cosas distintas. Tu cliente revisa y aprueba la cotización en dólares o euros, como espera; tú facturas en pesos, como vives en México. Cord guarda ambas monedas y la tasa con la que las amarró dentro de la misma cotización, sin que tengas que llevar la conversión a mano.',
+                titulo: 'El cliente ve dólares. Tú facturas en la tuya.',
+                copy: 'En Cord la moneda de presentación y la moneda fiscal son dos cosas distintas. Tu cliente revisa y aprueba la cotización en dólares o euros, como espera; tú facturas en la moneda que uses de verdad (en México, pesos vía CFDI 4.0). Cord guarda ambas monedas y la tasa con la que las amarró dentro de la misma cotización, sin que tengas que llevar la conversión a mano.',
                 bullets: [
                     'Presenta en USD, EUR o MXN; factura siempre en pesos',
                     'La tasa aplicada queda guardada en la cotización',
@@ -577,14 +577,14 @@ export const FEATURES: Feature[] = [
             },
             {
                 eyebrow: 'DOS MONEDAS, UN SOLO TRATO',
-                titulo: 'Tu cliente ve dólares. El SAT ve pesos. Nadie se confunde.',
-                copy: 'Presenta en USD o EUR como espera tu cliente internacional; factura en pesos como exige México. Ambas monedas quedan amarradas en el mismo documento.',
+                titulo: 'Tu cliente ve dólares. Tú facturas en la tuya. Nadie se confunde.',
+                copy: 'Presenta en USD o EUR como espera tu cliente internacional; factura en tu moneda fiscal, sea pesos, dólares o la que uses (en México, vía CFDI 4.0). Ambas monedas quedan amarradas en el mismo documento.',
             },
         ],
         faqs: [
             {
                 q: '¿Puedo cotizar en dólares y facturar en pesos con Cord?',
-                a: 'Sí. En Cord la moneda de presentación es independiente de la moneda fiscal. Tu cliente revisa y aprueba la cotización en dólares (USD) o euros (EUR), mientras que tú facturas en pesos mexicanos (MXN). Cord guarda ambas monedas y el tipo de cambio aplicado dentro de la misma cotización, así que no necesitas llevar la conversión por separado en un Excel. La factura siempre se emite en pesos.',
+                a: 'Sí. En Cord la moneda de presentación es independiente de la moneda fiscal. Tu cliente revisa y aprueba la cotización en dólares (USD) o euros (EUR), mientras que tú registras tu moneda fiscal (por ejemplo pesos mexicanos). Cord guarda ambas monedas y el tipo de cambio aplicado dentro de la misma cotización, así que no necesitas llevar la conversión por separado en un Excel. Si tu negocio está en México, la factura se emite en pesos como CFDI 4.0 real ante el SAT.',
             },
             {
                 q: '¿De dónde saca Cord el tipo de cambio?',
@@ -919,7 +919,7 @@ export const FEATURES: Feature[] = [
         eyebrow: 'NEGOCIACIÓN Y APROBACIONES',
         titulo: 'Acuerdos blindados, línea por línea.',
         sub: 'Tus clientes pueden revisar, ajustar cantidades o proponer un nuevo precio en productos específicos. Cada cambio genera una versión inmutable firmada criptográficamente — adiós a los malentendidos.',
-        metaTitle: 'Negociación de cotizaciones B2B en México — Cord',
+        metaTitle: 'Negociación de cotizaciones B2B con firma digital — Cord',
         metaDescription: 'Permite a tus clientes aprobar o contraofertar línea por línea. Cada versión es inmutable y se firma con SHA-256 para total transparencia.',
         plan: 'Disponible desde el plan Pro',
         stats: [

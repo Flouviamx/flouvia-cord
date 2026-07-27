@@ -307,6 +307,6 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
     },
     {
         q: '¿Necesito ser cliente de Flouvia para contratar un plan?',
-        a: 'No. Cord es un software independiente: cualquier negocio B2B en México puede registrarse directamente en cordhq.app y elegir un plan, sin relación previa con Flouvia ni con ningún otro producto.',
+        a: 'No. Cord es un software independiente: cualquier negocio B2B, en cualquier país, puede registrarse directamente en cordhq.app y elegir un plan, sin relación previa con Flouvia ni con ningún otro producto.',
     },
 ];

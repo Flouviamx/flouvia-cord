@@ -96,6 +96,10 @@ export async function getOrg() {
         cpFiscal: (o.cp_fiscal as string) ?? '',
         serieFolio: (o.serie_folio as string) ?? '',
         zonaHoraria: (o.zona_horaria as string) || 'America/Mexico_City',
+        // Solo el booleano (nunca la llave) — para que la UI pueda avisar cuando
+        // el timbrado va a caer a la llave global de prueba en vez del CSD propio.
+        tieneCsdPropio: !!o.facturapi_live_key,
+        countryCode: (o.country_code as string) || 'MX',
         idioma: (o.idioma as string) || 'es-MX',
         colorSecundario: (o.color_secundario as string) || '',
         portalBienvenida: (o.portal_bienvenida as string) ?? '',
@@ -654,6 +658,10 @@ export async function getDocumentosFiscales(cotizacionId: string) {
         fiscalId: (r.fiscal_id as string) || null,
         status: r.status as string,
         simulado: !!(r.provider_data && (r.provider_data.simulado === true)),
+        // Facturapi emite de verdad pero con una llave sk_test_: el documento
+        // "existe" en su sandbox, NUNCA llega al SAT. Distinto de `simulado`
+        // (que es cuando Cord ni siquiera llamó al proveedor).
+        testMode: !!(r.provider_data && r.provider_data.livemode === false),
         pdfUrl: (r.pdf_url as string) || null,
         xmlUrl: (r.xml_url as string) || null,
         creado: fmtDate(r.created_at as string),

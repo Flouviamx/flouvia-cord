@@ -35,9 +35,7 @@ export interface DevTrustItem {
 export interface DevTrust {
     eyebrow: string;
     titulo: string;
-    proteccion: { icon: DevTrustIcon; titulo: string; copy: string };
-    puntos: DevTrustItem[];  // 2 renglones cortos bajo el bloque de protección
-    grid: DevTrustItem[];    // 4 celdas del grid 2×2 con divisores hairline
+    items: DevTrustItem[];  // exactamente 3 — útiles, no obvios, sin repetir blocks/faqs
 }
 
 export interface DevPage {
@@ -146,21 +144,11 @@ export const DEV_PAGES: DevPage[] = [
         cta: { titulo: 'Conecta Cord a tu sistema.', sub: 'Genera una llave de prueba gratis y haz tu primera llamada hoy.' },
         trust: {
             eyebrow: 'INFRAESTRUCTURA',
-            titulo: 'Construida para producción',
-            proteccion: {
-                icon: 'shield',
-                titulo: 'Seguridad de nivel empresarial',
-                copy: 'Cada llamada viaja cifrada con TLS; los datos en reposo, con AES-256. La Row Level Security de la base aísla cada organización — ninguna consulta cruza datos entre negocios distintos.',
-            },
-            puntos: [
-                { icon: 'key', titulo: 'Llaves test y live, revocables al instante' },
-                { icon: 'doc', titulo: 'Solo guardamos el hash de tu llave, nunca en claro' },
-            ],
-            grid: [
-                { icon: 'gauge', titulo: '~500 peticiones/min por IP', copy: 'El límite corre por ventana de 60 segundos; si lo alcanzas, la respuesta trae el código y el tiempo de espera exactos.' },
-                { icon: 'globe', titulo: 'Infraestructura y datos alojados en México', copy: 'Tu base de datos y el cómputo de la API viven en la región de México, sin saltos innecesarios a otros continentes.' },
-                { icon: 'unlock', titulo: 'Disponible desde el plan Gratis', copy: 'No existe un plan exclusivo que "desbloquea" la API — cada plan trae su propio número de llaves y límite mensual de llamadas.' },
-                { icon: 'layers', titulo: 'Paginación limit/offset en cada endpoint', copy: 'Todos los listados aceptan limit y offset, así construyes tu propia paginación sin adivinar el tamaño de página.' },
+            titulo: 'Detalles que solo importan cuando integras de verdad',
+            items: [
+                { icon: 'gauge', titulo: '~500 peticiones por minuto, por IP', copy: 'El límite corre por ventana de 60 segundos — si lo alcanzas, la respuesta te dice cuánto esperar.' },
+                { icon: 'globe', titulo: 'Datos y cómputo alojados en México', copy: 'Sin saltos innecesarios a otro continente: tu base de datos y la API viven en la misma región.' },
+                { icon: 'doc', titulo: 'Errores siempre planos: { error, code }', copy: 'Nunca un objeto anidado que tengas que desempacar — un solo formato para manejar en tu código.' },
             ],
         },
     },
@@ -238,22 +226,12 @@ await mcpManager.disconnectAll();`,
         ],
         cta: { titulo: 'Conecta la IA a tu negocio. En los dos sentidos.', sub: 'Mismo header, misma llave. Expón tus 7 herramientas y enlaza tus sistemas con permisos que tú controlas.' },
         trust: {
-            eyebrow: 'GOBERNANZA',
-            titulo: 'Acceso explícito, nunca abierto',
-            proteccion: {
-                icon: 'shield',
-                titulo: 'Cada consulta respeta tu RLS',
-                copy: 'La sesión MCP queda atada a tu org_id: cada herramienta que la IA invoca —tuya o de un servidor externo— filtra por Row Level Security. Ningún agente ve datos de otra organización.',
-            },
-            puntos: [
-                { icon: 'doc', titulo: 'Cada acción del agente queda en el audit log' },
-                { icon: 'key', titulo: 'Misma API key para la API REST y el MCP' },
-            ],
-            grid: [
-                { icon: 'toggle', titulo: 'Permiso por servidor, revocable al instante', copy: 'Activas o apagas el acceso de tu agente a cada servidor MCP externo desde Ajustes, sin esperar un despliegue.' },
-                { icon: 'route', titulo: 'Máximo 5 vueltas del agent loop por cotización', copy: 'Es un tope de seguridad: la IA consulta tus sistemas hasta 5 veces antes de armar el borrador, nunca en loop infinito.' },
-                { icon: 'globe', titulo: '2 transportes: HTTP sin estado y HTTP/SSE', copy: 'Usa JSON-RPC simple para llamadas puntuales, o el canal SSE con sesión cuando necesitas streaming continuo.' },
-                { icon: 'unlock', titulo: 'Disponible en todos los planes', copy: 'El MCP entrante y saliente usan la misma llave de API — no hay un plan aparte para conectar IA a tu negocio.' },
+            eyebrow: 'DETALLES DE PROTOCOLO',
+            titulo: 'Lo que no se ve en el copy de marketing',
+            items: [
+                { icon: 'doc', titulo: 'Un error de negocio nunca rompe el protocolo', copy: 'Un cliente inexistente o un permiso faltante regresa isError:true dentro de la respuesta — la IA lo lee y sigue la conversación, sin un error crudo de transporte.' },
+                { icon: 'key', titulo: 'Auditoría por acción, no solo por sesión', copy: 'Cada llamada de una herramienta —tuya o de un servidor remoto— queda en el audit log de tu cuenta, con qué agente la invocó.' },
+                { icon: 'globe', titulo: '/api/mcp es stateless de verdad', copy: 'Cada llamada JSON-RPC es independiente, sin sesión que expire. Para streaming continuo, usa el canal SSE con sesión.' },
             ],
         },
     },
@@ -339,22 +317,12 @@ export function Cotizacion({ token }) {
         ],
         cta: { titulo: 'Lleva tu cotizador a donde están tus clientes.', sub: 'Crea tu cuenta gratis y embebe tu primer cotizador hoy mismo — una línea de código.' },
         trust: {
-            eyebrow: 'COTIZADOR EMBEBIBLE',
-            titulo: 'Seguro por diseño',
-            proteccion: {
-                icon: 'shield',
-                titulo: 'Blindado contra clickjacking',
-                copy: 'Tú decides en qué dominios puede vivir tu cotizador embebido: una allowlist por cuenta controla el header CSP frame-ancestors, así nadie más puede insertarlo en un sitio que no autorizaste.',
-            },
-            puntos: [
-                { icon: 'unlock', titulo: 'Signup gratis, sin backend propio que mantener' },
-                { icon: 'doc', titulo: '5 eventos en vivo: ready, approved, rejected, message, pay' },
-            ],
-            grid: [
-                { icon: 'globe', titulo: 'Funciona en cualquier stack: HTML, React, Vue, Astro', copy: 'El mismo iframe seguro se monta con un script, el paquete de npm o el Web Component — tú eliges según tu stack.' },
-                { icon: 'key', titulo: 'Llaves pk_ públicas de scope acotado', copy: 'Una llave pk_ solo puede crear cotizaciones y leer catálogo — nunca tu cartera ni tu CRM completo, aunque quede expuesta en el navegador.' },
-                { icon: 'toggle', titulo: 'Quita el aviso "vía Cord" desde un plan de pago', copy: 'En el plan Gratis el cotizador muestra un discreto "vía Cord"; lo retiras en cualquier momento desde Ajustes.' },
-                { icon: 'route', titulo: 'Mismo motor, seis formas de integrarlo', copy: 'Cambias de HTML plano a React, Vue, Framer o Webflow sin perder nada — el mismo cálculo de totales y los mismos eventos.' },
+            eyebrow: 'DETALLES QUE IMPORTAN',
+            titulo: 'Lo fino, resuelto de fábrica',
+            items: [
+                { icon: 'route', titulo: '5 eventos, nombrados sin ambigüedad', copy: 'ready, approved, rejected, message y pay — los mismos en el iframe, el Web Component y el hook de React.' },
+                { icon: 'doc', titulo: 'Tipos de TypeScript generados, no escritos a mano', copy: 'Salen del build real del SDK — si algo cambia, tu editor lo refleja al instante, sin un .d.ts desincronizado.' },
+                { icon: 'lock', titulo: 'El mensaje del iframe solo llega a tu dominio', copy: 'El postMessage de eventos se dirige al origen exacto de tu allowlist, no a cualquier ventana que esté escuchando.' },
             ],
         },
     },
@@ -400,22 +368,12 @@ export function Cotizacion({ token }) {
         ],
         cta: { titulo: 'Mantén tu rentabilidad blindada.', sub: 'Integra tipos de cambio en vivo hoy mismo.' },
         trust: {
-            eyebrow: 'COBERTURA CAMBIARIA',
-            titulo: 'Tu margen, protegido',
-            proteccion: {
-                icon: 'shield',
-                titulo: 'La tasa que cierras es la que cobras',
-                copy: 'Congela el tipo de cambio hasta por 30 días (FX lock) desde que cotizas. Aunque el peso se mueva antes de que tu cliente pague, tu margen no se mueve con él.',
-            },
-            puntos: [
-                { icon: 'gauge', titulo: 'Buffer de cobertura configurable por cotización' },
-                { icon: 'doc', titulo: 'El CFDI 4.0 se timbra en pesos, ya con la tasa aplicada' },
-            ],
-            grid: [
-                { icon: 'globe', titulo: 'Fix de Banxico sin costo extra, en todos los planes', copy: 'El tipo de cambio oficial de Banxico viene incluido desde el plan Gratis, sin cargo adicional por consultarlo.' },
-                { icon: 'refresh', titulo: 'Tipos interbancarios en vivo desde plan Profesional', copy: 'Para operaciones grandes, la tasa interbancaria en tiempo real reduce el margen que dejas sobre la mesa.' },
-                { icon: 'lock', titulo: 'Tasa congelada hasta 30 días (FX lock)', copy: 'Cotizas hoy, tu cliente aprueba en dos semanas, y la tasa que le mostraste sigue siendo la que se factura.' },
-                { icon: 'layers', titulo: 'Divisa de cotización y de facturación, independientes', copy: 'Tu cliente puede ver el precio en USD mientras el CFDI 4.0 se timbra en pesos, sin que hagas la conversión a mano.' },
+            eyebrow: 'CÓMO SE USA EN LA PRÁCTICA',
+            titulo: 'Más allá de "congela la tasa"',
+            items: [
+                { icon: 'gauge', titulo: 'El buffer se define por cotización', copy: 'Ajusta cuánto colchón quieres sobre la tasa spot según el cliente o el riesgo del trato — no un número fijo para toda la cuenta.' },
+                { icon: 'toggle', titulo: 'El cliente ve su moneda; tu contabilidad ve la tuya', copy: 'El precio en pantalla puede ser USD o EUR mientras tus reportes internos siguen en pesos, sin conversiones manuales.' },
+                { icon: 'refresh', titulo: 'Se re-congela solo si vuelves a cotizar', copy: 'Una vez fijada, la tasa no cambia sola a mitad de negociación — solo se actualiza al generar una nueva versión.' },
             ],
         },
     },
@@ -461,22 +419,12 @@ export function Cotizacion({ token }) {
         ],
         cta: { titulo: 'Factura real en México desde el día uno.', sub: 'Conecta tu CSD y timbra CFDI 4.0 de producción — sin simulaciones.' },
         trust: {
-            eyebrow: 'CUMPLIMIENTO FISCAL',
-            titulo: 'Cumplimiento sin fricción',
-            proteccion: {
-                icon: 'shield',
-                titulo: 'CFDI 4.0 real ante el SAT',
-                copy: 'El timbrado corre en producción vía un PAC certificado (Facturapi): tu Certificado de Sello Digital, tu RFC, tu factura real. Sin una llave configurada, el flujo corre en modo simulado para que pruebes sin comprometerte.',
-            },
-            puntos: [
-                { icon: 'doc', titulo: 'Régimen fiscal, uso de CFDI y código postal capturados por cliente' },
-                { icon: 'layers', titulo: 'Arquitectura de adaptador por país, lista para sumar mercados' },
-            ],
-            grid: [
-                { icon: 'gauge', titulo: 'IVA y retenciones ISR/IVA configurables por negocio', copy: 'Cada organización define su tasa de IVA y sus retenciones en Ajustes — el motor de cotización las aplica sin que nadie las recuerde a mano.' },
-                { icon: 'globe', titulo: 'Un adaptador por país, no un monolito', copy: 'México ya opera en producción vía un PAC certificado; sumar un país nuevo es agregar su propio proveedor fiscal, no reescribir el core.' },
-                { icon: 'unlock', titulo: 'Plan Developer', copy: 'El mayor volumen de timbrado y las llaves de API en vivo viven en el plan Developer.' },
-                { icon: 'route', titulo: 'Cross-border US/MX: en el roadmap, no en producción', copy: 'El adaptador de facturación para Estados Unidos todavía no está terminado — contáctanos si tu caso de uso lo necesita, para saber cuándo estará listo.' },
+            eyebrow: 'CASOS QUE NADIE PREGUNTA HASTA QUE PASAN',
+            titulo: 'Los detalles que sí importan al facturar',
+            items: [
+                { icon: 'gauge', titulo: 'IVA y retenciones, configurables por negocio', copy: 'Cada organización define su tasa y sus retenciones ISR/IVA en Ajustes — el motor las aplica solo, sin que nadie las recuerde a mano.' },
+                { icon: 'doc', titulo: 'Cada emisión queda en tu historial fiscal', copy: 'Real o simulada, cada factura emitida se registra — nunca pierdes rastro de qué se timbró y cuándo.' },
+                { icon: 'unlock', titulo: 'RFC genérico, cobertura automática', copy: 'Si el cliente no tiene régimen fiscal capturado, Cord factura a público en general en vez de bloquear el timbrado.' },
             ],
         },
     },
@@ -528,22 +476,12 @@ export function Cotizacion({ token }) {
         ],
         cta: { titulo: 'Conecta Cord a tu stack hoy.', sub: 'Registra un webhook o genera una llave de prueba y recibe tu primer evento en minutos.' },
         trust: {
-            eyebrow: 'CONFIABILIDAD',
-            titulo: 'Entregas en las que puedes confiar',
-            proteccion: {
-                icon: 'shield',
-                titulo: 'Cada entrega, firmada y verificable',
-                copy: 'Todo webhook sale firmado con HMAC-SHA256 en el header X-Cord-Signature — calculas el hash del cuerpo crudo con tu secret y confirmas que vino de Cord, no de alguien más.',
-            },
-            puntos: [
-                { icon: 'refresh', titulo: 'Reintento automático si la primera entrega falla' },
-                { icon: 'doc', titulo: 'Log de entregas con estado, latencia y reenvío manual' },
-            ],
-            grid: [
-                { icon: 'route', titulo: 'Zapier, Make, n8n o tu backend propio', copy: 'Un mismo webhook llega a miles de apps sin que Cord mantenga un conector propietario por cada una.' },
-                { icon: 'toggle', titulo: 'Slack nativo: alertas automáticas por evento', copy: 'A diferencia de Zapier o Make, Slack no necesita intermediario: la notificación llega sola a tu canal.' },
-                { icon: 'gauge', titulo: 'De 1 endpoint (Gratis) a 100 (Developer)', copy: 'El límite crece con el plan; los excedentes se miden por consumo de API, no por número de endpoints registrados.' },
-                { icon: 'key', titulo: 'Secret mostrado una sola vez, nunca en claro', copy: 'Cópialo al crearlo — después solo queda su huella para firmar, no hay forma de volver a verlo completo.' },
+            eyebrow: 'CÓMO SE COMPORTA DE VERDAD',
+            titulo: 'Lo que pasa cuando algo falla',
+            items: [
+                { icon: 'key', titulo: 'El secret se muestra una sola vez', copy: 'Cópialo al crearlo — después solo queda su huella para firmar, nunca vuelves a verlo completo.' },
+                { icon: 'refresh', titulo: 'Reintento automático a los 300 ms', copy: 'Si la primera entrega falla, Cord reintenta una vez con un backoff corto — no bombardea tu servidor.' },
+                { icon: 'gauge', titulo: 'Timeout de 5 segundos por intento', copy: 'Si tu endpoint no responde a tiempo, Cord corta la conexión y lo marca como fallo — nunca se queda colgado esperando.' },
             ],
         },
     },

@@ -252,7 +252,7 @@ const breadcrumbSchema = {
             })}
         </section>
 
-        {page.trust && <TrustGrid trust={page.trust} />}
+        {page.trust && <TrustGrid trust={page.trust} slug={page.slug} />}
 
         <FaqAccordion
             faqs={page.faqs}

@@ -8,7 +8,7 @@ export const FEATURES_EN: Feature[] = [
         eyebrow: 'QUOTE EDITOR',
         titulo: 'The perfect quote, in minutes.',
         sub: 'Drag products from your catalog, negotiate prices line by line, and watch the total recalculate with tax live. What used to take an hour in Excel now takes minutes.',
-        metaTitle: 'How to make B2B quotes with negotiated prices in Mexico — Cord',
+        metaTitle: 'How to make B2B quotes with negotiated prices — Cord',
         metaDescription: 'Cord\'s quote editor lets you negotiate the price of each product separately, apply Net 30/60 terms, calculate tax in real time, and generate an approval link with your brand.',
         plan: 'Available on all plans',
         stats: [
@@ -88,7 +88,7 @@ export const FEATURES_EN: Feature[] = [
         titulo: 'Your client approves in one click.',
         sub: 'Every quote generates an elegant link with your brand. Your client opens it from their phone, reviews the prices, and approves — no account creation, no downloads, no friction.',
         metaTitle: 'B2B quote approval via link without registration — Cord',
-        metaDescription: "Cord's public link creates a branded page (logo, colors, and tax details) where your client reviews the quote and approves in one click — no account, no downloads. For any B2B business in Mexico.",
+        metaDescription: "Cord's public link creates a branded page (logo, colors, and tax details) where your client reviews the quote and approves in one click — no account, no downloads. For any B2B business, anywhere.",
         plan: 'Available on all plans',
         stats: [
             { valor: '0', countup: 0, label: 'accounts your client needs to create' },
@@ -403,7 +403,7 @@ export const FEATURES_EN: Feature[] = [
         eyebrow: 'AUTONOMOUS AI COLLECTIONS',
         titulo: 'Your collections work alone, even at night.',
         sub: 'An artificial intelligence agent follows up on every overdue invoice for you: it emails the client, negotiates an installment plan, and only alerts you when it needs your approval. You approve, the AI chases — without your AR going cold.',
-        metaTitle: 'Automated AI collections for B2B companies in Mexico — Cord',
+        metaTitle: 'Automated AI collections for B2B companies — Cord',
         metaDescription: 'Cord\'s AI collections agent follows up on overdue invoices, negotiates payment plans of up to 3 monthly installments, and projects your cash flow 90 days out.',
         plan: 'Scale plan and above',
         stats: [
@@ -480,23 +480,23 @@ export const FEATURES_EN: Feature[] = [
         slug: 'divisas',
         nav: 'Multi-currency & FX',
         eyebrow: 'MULTI-CURRENCY AND FX HEDGING',
-        titulo: 'Quote in dollars. Invoice in pesos. Protect your margin.',
-        sub: 'Your client sees the price in their currency; you invoice in pesos. Cord locks the daily exchange rate for 30 days and adds a hedging buffer, so the margin you closed is the margin you collect.',
-        metaTitle: 'Quotes in dollars and euros with FX hedging for companies in Mexico — Cord',
-        metaDescription: 'Quote in USD or EUR and invoice in MXN. Cord takes the spot rate from the ECB, applies a hedging buffer to protect your margin, and locks the FX rate for 30 days.',
+        titulo: 'Quote in dollars. Invoice in your currency. Protect your margin.',
+        sub: 'Your client sees the price in their currency; you invoice in yours. Cord locks the daily exchange rate for 30 days and adds a hedging buffer, so the margin you closed is the margin you collect.',
+        metaTitle: 'Quotes in dollars and euros with FX hedging — Cord',
+        metaDescription: 'Quote in USD or EUR and invoice in your tax currency. Cord takes the spot rate from the ECB, applies a hedging buffer to protect your margin, and locks the FX rate for 30 days. For B2B businesses anywhere that deal in foreign currency.',
         plan: 'Available on all plans',
         stats: [
             { valor: '30', countup: 30, suffix: ' days', label: 'that the exchange rate is locked per quote' },
-            { valor: '3', countup: 3, label: 'presentation currencies: USD, EUR, and MXN' },
+            { valor: '3', countup: 3, label: 'presentation currencies: USD, EUR, and MXN — invoice in the tax currency you use' },
             { valor: '2', countup: 2, suffix: '%', label: 'suggested hedging buffer over the spot rate, adjustable' },
         ],
         blocks: [
             {
                 eyebrow: 'TWO CURRENCIES, ONE DEAL',
-                titulo: 'The client sees dollars. The SAT sees pesos.',
-                copy: 'In Cord, the presentation currency and the tax currency are two different things. Your client reviews and approves the quote in dollars or euros; you invoice in pesos, as you live in Mexico. Cord saves both currencies and the rate it locked them at within the same quote, without you tracking the conversion by hand.',
+                titulo: 'The client sees dollars. You invoice in yours.',
+                copy: 'In Cord, the presentation currency and the tax currency are two different things. Your client reviews and approves the quote in dollars or euros; you record your own tax currency (in Mexico, pesos via real CFDI 4.0). Cord saves both currencies and the rate it locked them at within the same quote, without you tracking the conversion by hand.',
                 bullets: [
-                    'Present in USD, EUR, or MXN; always invoice in pesos',
+                    'Present in USD, EUR, or MXN; invoice in your tax currency',
                     'The applied rate is saved in the quote',
                     'The client decides in their currency; you fulfill in yours',
                 ],
@@ -535,14 +535,14 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 eyebrow: 'TWO CURRENCIES, ONE DEAL',
-                titulo: 'Your client sees dollars. The tax authority sees pesos. No one gets confused.',
-                copy: 'Present in USD or EUR as your international client expects; invoice in pesos as Mexico requires. Both currencies stay locked together in the same document.',
+                titulo: 'Your client sees dollars. You invoice in yours. No one gets confused.',
+                copy: 'Present in USD or EUR as your international client expects; invoice in your own tax currency, whether that\'s pesos, dollars, or whatever you use (in Mexico, via real CFDI 4.0). Both currencies stay locked together in the same document.',
             },
         ],
         faqs: [
             {
                 q: 'Can I quote in dollars and invoice in pesos with Cord?',
-                a: 'Yes. In Cord, the presentation currency is independent of the tax currency. Your client reviews and approves the quote in dollars (USD) or euros (EUR), while you invoice in Mexican pesos (MXN). Cord saves both currencies and the applied exchange rate within the same quote, so you don\'t need to track the conversion separately in an Excel sheet. The invoice is always issued in pesos.',
+                a: 'Yes. In Cord, the presentation currency is independent of the tax currency. Your client reviews and approves the quote in dollars (USD) or euros (EUR), while you record your own tax currency (for example, Mexican pesos). Cord saves both currencies and the applied exchange rate within the same quote, so you don\'t need to track the conversion separately in an Excel sheet. If your business is in Mexico, the invoice is issued in pesos as a real CFDI 4.0 with the SAT.',
             },
             {
                 q: 'Where does Cord get the exchange rate?',

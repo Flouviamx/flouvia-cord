@@ -15,8 +15,8 @@ const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
 const t = useTranslations(lang);
 
-const metaTitle = "Cord para Comercializadoras B2B — Cotizaciones y Crédito en México";
-const metaDesc = "Digitaliza las ventas de tu comercializadora: cotiza por volumen, controla el crédito Net 30/60 por cliente y timbra CFDI 4.0 automático en pedidos grandes. Para distribuidoras y mayoristas B2B en México.";
+const metaTitle = "Cord para Comercializadoras B2B — Cotizaciones y Crédito";
+const metaDesc = "Digitaliza las ventas de tu comercializadora: cotiza por volumen, controla el crédito Net 30/60 por cliente y factura automáticamente (CFDI 4.0 para negocios en México). Para distribuidoras y mayoristas B2B en cualquier país.";
 
 // FAQ + JSON-LD (jul 2026, auditoría SEO/AI-SEO) — preguntas ancladas a
 // capacidades reales del producto.
@@ -155,147 +155,7 @@ const testimonialItems = [
             </div>
         </section>
 
-        <!-- LEYENDA STRIPE-LITERAL STRUCTURE -->
-        <div class="stripe-literal-wrapper">
-            <!-- Grid de fondo exacto -->
-            <div class="sl-grid-bg">
-                <div class="sl-col"></div>
-                <div class="sl-col"></div>
-                <div class="sl-col"></div>
-                <div class="sl-col"></div>
-            </div>
-
-            <div class="uc-container" style="position:relative; z-index:10; padding-top: 4rem;">
-                <!-- Header centrado -->
-                <div class="sl-header reveal">
-                    <span class="sl-eyebrow">Para comercializadoras</span>
-                    <h2>Acelera el ciclo de ventas B2B y maneja crédito sin riesgo</h2>
-                    <p>Cotiza rápidamente, aplica descuentos por volumen y aprueba líneas de crédito institucionales. Todo integrado con la emisión de facturas y el seguimiento de pagos Net 30/60.</p>
-                </div>
-
-                <!-- Split Layout -->
-                <div class="sl-split reveal">
-                    <!-- Izquierda: Features -->
-                    <div class="sl-features">
-                        <div class="slf-item active">
-                            <div class="slf-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" fill="currentColor" fill-opacity="0.15" stroke="none"/>
-                                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <line x1="7" y1="7" x2="7.01" y2="7" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </div>
-                            <div class="slf-text">
-                                <h3>Descuentos Dinámicos por Volumen</h3>
-                                <p>Aplica descuentos estructurados, márgenes específicos y niveles de precios según el distribuidor. El cotizador ajusta los montos al instante.</p>
-                            </div>
-                        </div>
-
-                        <div class="slf-item">
-                            <div class="slf-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <rect x="2" y="5" width="20" height="14" rx="2" fill="currentColor" fill-opacity="0.15" stroke="none" />
-                                    <rect x="2" y="5" width="20" height="14" rx="2" stroke-linecap="round" stroke-linejoin="round" />
-                                    <line x1="2" y1="10" x2="22" y2="10" stroke-linecap="round" stroke-linejoin="round" />
-                                </svg>
-                            </div>
-                            <div class="slf-text">
-                                <h3>Manejo de Crédito (Net 30)</h3>
-                                <p>Asigna un límite de crédito a tus clientes recurrentes. Si el saldo excede el límite, Cord pausa los nuevos pedidos y solicita aprobación ejecutiva.</p>
-                            </div>
-                        </div>
-
-                        <div class="slf-item">
-                            <div class="slf-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.15" stroke="none" />
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke-linecap="round" stroke-linejoin="round" />
-                                    <polyline points="14 2 14 8 20 8" stroke-linecap="round" stroke-linejoin="round" />
-                                    <line x1="16" y1="13" x2="8" y2="13" stroke-linecap="round" stroke-linejoin="round" />
-                                    <line x1="16" y1="17" x2="8" y2="17" stroke-linecap="round" stroke-linejoin="round" />
-                                    <polyline points="10 9 9 9 8 9" stroke-linecap="round" stroke-linejoin="round" />
-                                </svg>
-                            </div>
-                            <div class="slf-text">
-                                <h3>Complementos de Pago (REP)</h3>
-                                <p>Cuando recibes un pago parcial o diferido de una factura PPD, Cord genera automáticamente el Complemento de Recepción de Pago y lo envía al cliente.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Derecha: Mockups -->
-                    <div class="sl-mockups mk-comercializadora-mockup">
-                        <!-- Card Principal -->
-                        <div class="slm-main" style="border-top: 4px solid #f59e0b;">
-                            <div class="slm-main-header">
-                                <div class="slm-mh-icon" style="background:#fef3c7; color:#b45309;">C</div>
-                                <span>Aprobación de Pedido</span>
-                            </div>
-                            <div class="slm-main-body" style="padding: 16px;">
-                                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
-                                    <div>
-                                        <div style="font-weight:600; font-size:15px; color:#0f172a;">Global Supply Co.</div>
-                                        <div style="font-size:13px; color:#64748b;">Límite Crédito: $150,000</div>
-                                    </div>
-                                    <div class="cmk-badge cmk-b-amber">Net 30</div>
-                                </div>
-                                
-                                <div style="border: 1px solid #fcd34d; background:#fffbeb; border-radius: 6px; padding:12px; margin-bottom:16px;">
-                                    <div style="font-size:13px; font-weight:600; color:#b45309; display:flex; align-items:center; gap:6px; margin-bottom:4px;">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px; height:14px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                                        Alerta de Límite de Crédito
-                                    </div>
-                                    <div style="font-size:12px; color:#92400e;">
-                                        Este pedido por $45,000 elevará el saldo vivo a $165,000, superando el límite aprobado.
-                                    </div>
-                                    <div style="margin-top:10px; display:flex; gap:8px;">
-                                        <div style="background:#b45309; color:#fff; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:500;">Aprobar Excepción</div>
-                                        <div style="background:#fde68a; color:#92400e; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:500;">Solicitar Pago</div>
-                                    </div>
-                                </div>
-                                
-                                <div style="font-size:12px; font-weight:600; color:#475569; margin-bottom:8px;">Detalle del Pedido #8924</div>
-                                <div style="border: 1px solid #e2e8f0; border-radius: 6px; overflow:hidden;">
-                                    <div style="display:flex; justify-content:space-between; padding:8px 12px; font-size:13px; border-bottom:1px solid #e2e8f0;">
-                                        <div style="font-weight:500; color:#0f172a;">Rodamiento 6205 <span style="font-size:11px; color:#64748b;">(x500)</span></div>
-                                        <div style="font-weight:500;">$24,000</div>
-                                    </div>
-                                    <div style="display:flex; justify-content:space-between; padding:8px 12px; font-size:13px; background:#f8fafc;">
-                                        <div style="font-weight:500; color:#0f172a;">Banda transp. <span style="font-size:11px; color:#64748b;">(x80)</span></div>
-                                        <div style="font-weight:500;">$21,000</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Conector SVG -->
-                        <svg class="slm-connector" viewBox="0 0 100 60" preserveAspectRatio="none">
-                            <path d="M 0,10 C 40,10 60,50 100,50" fill="none" stroke="var(--color-blue-deep)" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round" />
-                        </svg>
-
-                        <!-- Card Flotante -->
-                        <div class="slm-chat" style="top: 50%; left: 40%; width: 280px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 1px solid rgba(226, 232, 240, 0.8);">
-                            <div class="slm-chat-header" style="background:#fef3c7; border-bottom:1px solid #fde68a; color:#b45309; display:flex; align-items:center; gap:8px;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-                                Acción Requerida
-                            </div>
-                            <div class="slm-chat-body" style="padding:16px;">
-                                <div class="slmc-bubble slmc-ai">
-                                    Para liberar este pedido, el cliente debe saldar al menos $15,000 de sus facturas atrasadas. ¿Envío recordatorio de pago con link de pago con tarjeta?
-                                </div>
-                                <div style="display:flex; gap:8px; margin-top:12px;">
-                                    <div style="flex:1; border:1px solid #e2e8f0; background:#f8fafc; color:#0f172a; text-align:center; padding:6px; border-radius:4px; font-size:12px; font-weight:500;">Sí, enviar link</div>
-                                    <div style="flex:1; border:1px solid #e2e8f0; background:#fff; color:#475569; text-align:center; padding:6px; border-radius:4px; font-size:12px;">Descartar</div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-        </div>
-
-                <!-- SECONDARY BENEFITS SECTION -->
+        <!-- SECONDARY BENEFITS SECTION -->
         <section class="uc-benefits">
             <div class="uc-container">
                 <div class="uc-benefits-intro reveal">

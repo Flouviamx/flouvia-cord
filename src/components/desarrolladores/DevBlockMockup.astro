@@ -86,6 +86,36 @@ const { slug, index } = Astro.props;
     </div>
   )}
 
+  {slug === 'api' && index === 3 && (
+    <div class="dbm-app dbm-api-m3">
+      <div class="dbm-app-bar">
+        <span class="dbm-app-title">Uso de la API · hoy</span>
+        <span class="dbm-app-badge dbm-badge-blue">Ventana 60s</span>
+      </div>
+      <div class="dbm-app-body">
+        <div class="dbm-kv"><span>Peticiones hoy</span><b>2,418</b></div>
+        <div class="dbm-kv"><span>Límite por IP</span><b>500 / min</b></div>
+        <div class="dbm-kv"><span>Latencia promedio</span><b>38 ms</b></div>
+        <div class="dbm-kv"><span>Región</span><b>México</b></div>
+      </div>
+      <div class="dbm-app-foot"><span>Ventana de 60 segundos</span><b>Sin sorpresas</b></div>
+    </div>
+  )}
+
+  {slug === 'api' && index === 4 && (
+    <div class="dbm-term dbm-api-m4">
+      <div class="dbm-term-bar">
+        <span class="dbm-term-title"><span class="dbm-term-method" style="color:#dc2626;">POST</span> /api/v1/cotizaciones</span>
+        <span class="dbm-term-badge" style="color:#dc2626;background:rgba(220,38,38,0.08);border-color:rgba(220,38,38,0.2);">400</span>
+      </div>
+      <pre class="dbm-code dbm-api-json"><code>{`{`}
+  <span class="dbm-jkey">"error"</span>: <span class="dbm-jstr">"cliente_id inválido"</span>,
+  <span class="dbm-jkey">"code"</span>: <span class="dbm-jstr">"invalid_client"</span>
+{`}`}</code></pre>
+      <div class="dbm-term-foot"><span>Un solo nivel, siempre</span><span class="dbm-term-total">Fácil de parsear</span></div>
+    </div>
+  )}
+
   {/* ══════════════════════ MCP ══════════════════════ */}
   {slug === 'mcp' && index === 0 && (
     <div class="dbm-app dbm-mcp-m0">
@@ -149,6 +179,37 @@ const { slug, index } = Astro.props;
     </div>
   )}
 
+  {slug === 'mcp' && index === 3 && (
+    <div class="dbm-app dbm-mcp-m3">
+      <div class="dbm-app-bar">
+        <span class="dbm-app-title">Audit log · agentes</span>
+        <span class="dbm-app-badge dbm-badge-blue">En vivo</span>
+      </div>
+      <div class="dbm-app-body">
+        <div class="dbm-kv"><div class="dbm-uid"><span class="dbm-avat a2">A</span><div class="dbm-uid-tx"><b>Asistente Cord</b><span>cartera_vencida</span></div></div><span class="dbm-tg dbm-tg-green">ok</span></div>
+        <div class="dbm-kv"><div class="dbm-uid"><span class="dbm-avat a4">E</span><div class="dbm-uid-tx"><b>CRM externo</b><span>get_saldo("El Zarco")</span></div></div><span class="dbm-tg dbm-tg-amber">isError</span></div>
+        <div class="dbm-kv"><div class="dbm-uid"><span class="dbm-avat a2">A</span><div class="dbm-uid-tx"><b>Asistente Cord</b><span>resumen_negocio</span></div></div><span class="dbm-tg dbm-tg-green">ok</span></div>
+      </div>
+      <div class="dbm-app-foot"><span>Cada llamada, con su agente</span><b>Sin excepciones</b></div>
+    </div>
+  )}
+
+  {slug === 'mcp' && index === 4 && (
+    <div class="dbm-term dbm-mcp-m4">
+      <div class="dbm-term-bar">
+        <span class="dbm-term-title">POST /api/mcp</span>
+        <span class="dbm-term-badge">Sin sesión</span>
+      </div>
+      <pre class="dbm-code dbm-api-json"><code>{`{`}
+  <span class="dbm-jkey">"jsonrpc"</span>: <span class="dbm-jstr">"2.0"</span>,
+  <span class="dbm-jkey">"method"</span>: <span class="dbm-jstr">"tools/call"</span>,
+  <span class="dbm-jkey">"params"</span>: {`{ `}<span class="dbm-jkey">"name"</span>: <span class="dbm-jstr">"resumen_negocio"</span>{` }`},
+  <span class="dbm-jkey">"id"</span>: <span class="dbm-jnum">7</span>
+{`}`}</code></pre>
+      <div class="dbm-term-foot"><span>Cada llamada es independiente</span><span class="dbm-term-total">SSE guarda sesión</span></div>
+    </div>
+  )}
+
   {/* ══════════════════════ ELEMENTS ══════════════════════ */}
   {slug === 'elements' && index === 0 && (
     <div class="dbm-term dbm-el-m0">
@@ -205,6 +266,37 @@ const { slug, index } = Astro.props;
     </div>
   )}
 
+  {slug === 'elements' && index === 3 && (
+    <div class="dbm-app dbm-el-m3">
+      <div class="dbm-app-bar">
+        <span class="dbm-app-title">Eventos · cord-cotizador</span>
+        <span class="dbm-app-badge dbm-badge-green">5 en vivo</span>
+      </div>
+      <div class="dbm-app-body">
+        <div class="dbm-kv"><span>ready</span><b>iframe montado</b></div>
+        <div class="dbm-kv"><span>approved</span><b>COT-0148</b></div>
+        <div class="dbm-kv"><span>message</span><b>nuevo comentario</b></div>
+        <div class="dbm-kv"><span>pay</span><b>checkout listo</b></div>
+      </div>
+      <div class="dbm-app-foot"><span>Mismos 5 en todos los SDKs</span><b>Un solo contrato</b></div>
+    </div>
+  )}
+
+  {slug === 'elements' && index === 4 && (
+    <div class="dbm-term dbm-el-m4">
+      <div class="dbm-term-bar">
+        <span class="dbm-term-title">types/index.d.ts</span>
+        <span class="dbm-term-badge">Generado</span>
+      </div>
+      <pre class="dbm-code"><code><span class="dbm-jtag">export interface</span> CordCotizadorProps {`{`}
+  token: <span class="dbm-jstr">string</span>;
+  onApproved?: (d: QuoteEvent) =&gt; <span class="dbm-jstr">void</span>;
+  onPay?: () =&gt; <span class="dbm-jstr">void</span>;
+{`}`}</code></pre>
+      <div class="dbm-term-foot"><span>Del build real, no a mano</span><span class="dbm-term-total">Nunca desincronizado</span></div>
+    </div>
+  )}
+
   {/* ══════════════════════ FX ══════════════════════ */}
   {slug === 'fx' && index === 0 && (
     <div class="dbm-app dbm-fx-m0">
@@ -226,6 +318,36 @@ const { slug, index } = Astro.props;
     </div>
   )}
 
+  {slug === 'fx' && index === 3 && (
+    <div class="dbm-app dbm-fx-m3">
+      <div class="dbm-app-bar">
+        <span class="dbm-app-title">Configura tu buffer</span>
+        <span class="dbm-app-badge dbm-badge-blue">Por cotización</span>
+      </div>
+      <div class="dbm-app-body">
+        <div class="dbm-kv"><span>Cliente</span><b>Acme Imports</b></div>
+        <div class="dbm-kv"><span>Buffer de cobertura</span><div class="dbm-cbar" style="width:110px;"><i style="width:40%;background:#2563eb;"></i></div></div>
+        <div class="dbm-kv"><span>Vigencia de la tasa</span><b>hasta 30 días</b></div>
+      </div>
+      <div class="dbm-app-foot"><span>Ajustable en cada cotización</span><b>No un número fijo</b></div>
+    </div>
+  )}
+
+  {slug === 'fx' && index === 4 && (
+    <div class="dbm-app dbm-fx-m4">
+      <div class="dbm-app-bar">
+        <span class="dbm-app-title">Reporte interno vs. cliente</span>
+        <span class="dbm-app-badge dbm-badge-green">Sincronizado</span>
+      </div>
+      <div class="dbm-app-body">
+        <div class="dbm-kv"><span>El cliente ve</span><b class="editorial">US$10,620.50</b></div>
+        <div class="dbm-kv"><span>Tu contabilidad ve</span><b class="editorial">$196,469.20 MXN</b></div>
+        <div class="dbm-kv"><span>CFDI 4.0</span><b>en pesos, siempre</b></div>
+      </div>
+      <div class="dbm-app-foot"><span>Dos monedas, una sola fuente</span><b>Sin conversión manual</b></div>
+    </div>
+  )}
+
   {/* ══════════════════════ FISCAL ══════════════════════ */}
   {slug === 'fiscal' && index === 0 && (
     <div class="dbm-app dbm-fiscal-m0">
@@ -240,6 +362,34 @@ const { slug, index } = Astro.props;
         <div class="dbm-kv"><span>Subtotal · impuesto · total</span><b class="editorial">1,500 · 240 · 1,740</b></div>
       </div>
       <div class="dbm-app-foot"><span>Impuestos locales, globales</span><b>Un solo endpoint</b></div>
+    </div>
+  )}
+
+  {slug === 'fiscal' && index === 3 && (
+    <div class="dbm-app dbm-fiscal-m3">
+      <div class="dbm-app-bar">
+        <span class="dbm-app-title">Historial fiscal</span>
+        <span class="dbm-app-badge dbm-badge-blue">Real + simulado</span>
+      </div>
+      <div class="dbm-app-body">
+        <div class="dbm-kv"><div class="dbm-uid"><div class="dbm-uid-tx"><b>CFDI 4.0 timbrado</b><span>UUID 3f29a7c1…</span></div></div><span class="dbm-tg dbm-tg-green">real</span></div>
+        <div class="dbm-kv"><div class="dbm-uid"><div class="dbm-uid-tx"><b>Modo simulado</b><span>sin CSD conectado</span></div></div><span class="dbm-tg dbm-tg-gray">prueba</span></div>
+      </div>
+      <div class="dbm-app-foot"><span>Cada emisión, rastreable</span><b>Nunca se pierde</b></div>
+    </div>
+  )}
+
+  {slug === 'fiscal' && index === 4 && (
+    <div class="dbm-app dbm-fiscal-m4">
+      <div class="dbm-app-bar">
+        <span class="dbm-app-title">Datos del receptor</span>
+        <span class="dbm-app-badge dbm-badge-green">Automático</span>
+      </div>
+      <div class="dbm-app-body">
+        <div class="dbm-kv"><span>RFC genérico (XAXX010101000)</span><b>público en general</b></div>
+        <div class="dbm-kv"><span>RFC con régimen capturado</span><b>factura nominativa</b></div>
+      </div>
+      <div class="dbm-app-foot"><span>Cord decide solo</span><b>Nunca bloquea el timbrado</b></div>
     </div>
   )}
 
@@ -280,6 +430,38 @@ const { slug, index } = Astro.props;
         <div class="dbm-kv"><div class="dbm-uid"><span class="dbm-avat a1" style="border-radius:7px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" fill-opacity="0.15" d="M4 5h16v14H4z"/><path d="M4 9h16M9 5v14"/></svg></span><div class="dbm-uid-tx"><b>Tu backend / ERP</b><span>endpoint HTTP propio</span></div></div><span class="dbm-tg dbm-tg-gray">Directo</span></div>
       </div>
       <div class="dbm-app-foot"><span>Sin esperar un conector propietario</span><b>6 eventos</b></div>
+    </div>
+  )}
+
+  {slug === 'integraciones' && index === 3 && (
+    <div class="dbm-app dbm-int-m3">
+      <div class="dbm-app-bar">
+        <span class="dbm-app-title">Reintentos y timeouts</span>
+        <span class="dbm-app-badge dbm-badge-blue">Por entrega</span>
+      </div>
+      <div class="dbm-app-body">
+        <div class="dbm-kv"><span>Intento 1</span><span class="dbm-tg dbm-tg-red">falló · 502</span></div>
+        <div class="dbm-kv"><span>Reintento · 300 ms después</span><span class="dbm-tg dbm-tg-amber">en curso</span></div>
+        <div class="dbm-kv"><span>Intento 2</span><span class="dbm-tg dbm-tg-green">200 OK</span></div>
+        <div class="dbm-kv"><span>Timeout por intento</span><b>5 s</b></div>
+      </div>
+      <div class="dbm-app-foot"><span>No bombardea tu servidor</span><b>Backoff corto</b></div>
+    </div>
+  )}
+
+  {slug === 'integraciones' && index === 4 && (
+    <div class="dbm-app dbm-int-m4">
+      <div class="dbm-app-bar">
+        <span class="dbm-app-title">Secret de firma</span>
+        <span class="dbm-app-badge">Mostrado 1 vez</span>
+      </div>
+      <div class="dbm-app-body">
+        <div class="dbm-keychip">
+          <span class="dbm-key-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="3.5"/><path d="M10 13l8-8 3 3M16 7l2 2"/></svg></span>
+          <span class="dbm-key-val">whsec_9f2a••••••••c81b</span>
+        </div>
+      </div>
+      <div class="dbm-app-foot"><span>Cópialo al crearlo</span><b>Después, solo su huella</b></div>
     </div>
   )}
 </div>

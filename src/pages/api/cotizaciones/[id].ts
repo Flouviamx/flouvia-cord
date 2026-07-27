@@ -170,6 +170,20 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
 
     const now = new Date().toISOString();
+
+    // Emisión fiscal ANTES del flip de status: si el PAC falla, la cotización
+    // NUNCA debe quedar marcada 'invoiced' ni cobrarse el folio de timbrado —
+    // eso mentiría al cliente y al vendedor por igual. Enruta al proveedor del
+    // país (CFDI MX, invoice US, …) vía FiscalFactory y registra el documento
+    // en documentos_fiscales incluso cuando falla (status 'error').
+    let fiscal: Awaited<ReturnType<typeof emitFiscalDocument>> | undefined;
+    if (action.to === 'invoiced') {
+        fiscal = await emitFiscalDocument(orgId, id);
+        if (!fiscal.emitted) {
+            return json({ error: fiscal.error || 'No se pudo timbrar el CFDI', fiscal }, 502);
+        }
+    }
+
     if (action.to === 'sent') {
         await sql`update cotizaciones set status = 'sent', sent_at = coalesce(sent_at, ${now}) where id = ${id}`;
     } else if (action.to === 'approved') {
@@ -218,13 +232,9 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     const whev = WH_MAP[action.evento];
     if (whev) after(dispatchQuoteEvent(orgId, id, whev));
 
-    // Emisión fiscal: enruta al proveedor del país (CFDI MX, invoice US, …) vía
-    // FiscalFactory y registra el documento en documentos_fiscales. Best-effort:
-    // no rompe la facturación si el proveedor falla (queda como status 'error').
-    let fiscal: Awaited<ReturnType<typeof emitFiscalDocument>> | undefined;
+    // Timbrar consume un folio: mide el uso del periodo (excedente vía Stripe).
+    // Solo se llega aquí si fiscal.emitted === true (ver el corte temprano arriba).
     if (action.to === 'invoiced') {
-        fiscal = await emitFiscalDocument(orgId, id);
-        // Timbrar consume un folio: mide el uso del periodo (excedente vía Stripe).
         await reportUsage(orgId, 'timbrado', 1);
     }
 

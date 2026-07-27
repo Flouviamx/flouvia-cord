@@ -6,6 +6,95 @@
 
 ---
 
+✅ **Auditoría de "listo para producción" + 4 bugs de dinero/seguridad corregidos
+   (jul 2026)** — André pidió un mapeo completo de la app para salir a producción el
+   mismo día ("qué falta, qué está mal conectado"). Se verificó el estado REAL contra
+   Neon/Stripe/Clerk (no solo el código): build limpio, schema sin drift (32 tablas +
+   101 columnas, RLS/FORCE ok), 14 orgs reales en MX, Stripe Connect Custom YA
+   aprobado en LIVE (1 cuenta con `charges_enabled`), y — al revisar los webhooks de
+   Stripe con la API — se confirmó que **el webhook de "eventos en cuentas
+   conectadas" que varias entradas anteriores de este archivo marcaban como
+   pendiente YA EXISTÍA** (`application: ca_...`, con `payment_intent.succeeded` +
+   `invoice.paid` + `customer.subscription.*`) — la nota de "pendiente" en esas
+   entradas quedó obsoleta, este gap ya estaba cerrado antes de esta sesión.
+   • **Bug de dinero real — se podía marcar `invoiced` sin haber facturado de
+     verdad:** en `PATCH /api/cotizaciones/[id].ts`, el flip de status a `invoiced`
+     y el `reportUsage(orgId,'timbrado',1)` corrían **ANTES** de que
+     `emitFiscalDocument()` confirmara que el PAC (Facturapi) había timbrado
+     correctamente — si el proveedor fallaba, la cotización igual quedaba marcada
+     como facturada y se cobraba el folio de timbrado sin que existiera ningún CFDI
+     real. Corregido: la emisión fiscal ahora corre PRIMERO; si `fiscal.emitted`
+     es `false` el endpoint devuelve 502 sin tocar el status ni cobrar el folio.
+   • **`USInvoiceProvider` fingía éxito:** devolvía `success:true` con un folio y
+     un PDF **inventados** (`/invoices/pdf/ejemplo_us.pdf`, ni siquiera existe) —
+     una org en EE.UU. veía su cotización "facturada" sin ningún documento fiscal
+     real detrás. Reescrito para devolver `success:false` con mensaje honesto
+     ("todavía no disponible para EE.UU."); combinado con el fix de arriba, la
+     cotización nunca llega a `invoiced` en ese caso.
+   • **Selector de país — decisión final:** se evaluó restringir el alta a solo
+     México (dado que `FiscalFactory` solo tiene un proveedor real) pero André
+     pidió mantener abiertos TODOS los países (MX/US/CO/AR/CL/PE/ES) — cotizar,
+     cobrar y el CRM funcionan igual en cualquiera; lo único limitado a México es
+     la FACTURACIÓN fiscal real. Se implementó ese límite de forma visible en 3
+     lugares en vez de bloquear el alta: (1) **Ajustes › Fiscal** muestra un aviso
+     ámbar y atenúa los bloques de CSD/timbrado cuando `orgs.country_code !== 'MX'`
+     (nueva columna expuesta en `getOrg()` → `ORG.countryCode`); (2) el detalle de
+     cotización oculta el botón "Timbrar CFDI 4.0" para orgs no-MX y muestra
+     "Facturación fiscal — próximamente en tu país" en su lugar; (3) el backend
+     (`FiscalFactory`/`emitFiscalDocument`) ya degradaba honesto a status `error`
+     para países sin proveedor — ahora nunca deja pasar un flip a `invoiced` sin
+     éxito real (mismo fix del punto anterior).
+   • **"Exigir 2FA al equipo" pasó de guardar-sin-aplicar a enforcement real:** el
+     toggle de `orgs.require_2fa` (Ajustes › Seguridad) solo se guardaba en BD —
+     cero verificación en ningún lado, dando una falsa sensación de seguridad (una
+     org lo tenía prendido creyendo estar protegida). Gate nuevo en
+     `AppLayout.astro`: si la org exige 2FA y el usuario de la sesión NO lo tiene
+     activo en Clerk (`clerkClient(Astro).users.getUser(uid).twoFactorEnabled`),
+     se redirige a `/app/ajustes/cuenta?require2fa=1` — la ÚNICA salida permitida
+     (junto con `/app/ajustes/seguridad`, para que el dueño pueda apagar el
+     requisito si no quiere activar 2FA ahora mismo); nunca un bloqueo total sin
+     escape. La llamada a Clerk solo ocurre cuando `ORG.require2fa` es `true`
+     (la inmensa mayoría de orgs no paga ese costo extra por request). Aviso
+     visible nuevo en `cuenta.astro` cuando llega por ese redirect, explicando por
+     qué. Fail-open a propósito si Clerk falla (no se bloquea el acceso).
+   • **Bug real en los correos de CRON — link roto tipo "Vercel":** `cron/
+     recordatorios.ts` y `cron/cobranza.ts` armaban el link público con
+     `new URL(request.url).origin` — pero cuando el CRON de Vercel dispara la
+     request (no un navegador), ese origin resuelve a la URL INTERNA del
+     deployment (`https://flouvia-cord-xxxx.vercel.app`), no a `cordhq.app`. Los
+     recordatorios de cobro salían con un link roto/feo. Fix: helper nuevo
+     `siteOrigin()` en `src/lib/email.ts` (lee `PUBLIC_SITE_URL`, default
+     `https://cordhq.app`) usado en ambos crons — los endpoints disparados por el
+     navegador del vendedor (enviar cotización, etc.) NO tenían este bug, su
+     `origin` ya resolvía bien. De paso, `cron/recordatorios.ts` (texto plano, sin
+     marca) se reescribió con la MISMA plantilla de `notifyQuoteSent`/`cron/
+     cobranza.ts` (logo, color de marca de la org, botón pill) — antes era el
+     único correo transaccional sin ese diseño.
+   • **`og-cord.png` generado** (confirmado 404 en prod desde la auditoría SEO de
+     una sesión anterior, ver [[cord-seo-ai-seo-audit-pattern]]): tarjeta OG
+     1200×630 renderizada con Playwright (HTML/CSS propio, navy + logo real +
+     tagline + 3 badges de confianza — mismo lenguaje visual que el resto del
+     sitio) en vez de dejarla para diseño manual. Ya vive en `public/og-cord.png`.
+   • **Cobranza con IA desactivada por seguridad operativa (dato, no código):**
+     la auditoría encontró 2 orgs reales con `ai_cobranza_activa=true` y el cron
+     agendado a diario — se desactivó el flag en esas 2 orgs directo en Neon para
+     no mandar correos de cobranza automáticos sin que el dueño lo supiera de
+     nuevo; reactivable desde Ajustes › Agentes IA cuando se quiera.
+   • **Webhook de Stripe — evento faltante agregado vía API:** el endpoint de
+     PLATAFORMA (distinto del de Connect, ver arriba) le faltaba
+     `customer.subscription.updated` — sin él, un cambio de plan hecho desde el
+     Customer Portal no sincronizaba `orgs.plan`. Agregado con la `sk_live_` ya
+     configurada (no requirió tocar el dashboard).
+   ⚠️ **Pendiente, dejado a propósito:** `FACTURAPI_USER_KEY` (CSD por org) —
+     André prefiere esperar a tener usuarios reales antes de contratar el plan de
+     Facturapi que la habilita; Upstash (rate-limit durable) — pendiente de
+     provisionar manualmente desde Vercel Marketplace (la CLI de este entorno
+     estaba autenticada con una cuenta/equipo de Vercel distinta al proyecto real
+     de Cord, así que no se pudo hacer desde la sesión).
+   • Verificado: 2 builds limpios tras cada tanda de cambios; estado de Stripe/
+     Clerk/Facturapi confirmado con sus APIs reales (no solo inspección de
+     código) antes de dar cualquier hallazgo por bueno.
+
 ✅ **Ruteo de subdominios `dev.cordhq.app`/`docs.cordhq.app` arreglado + link a Docs en
    nav/producto (jul 2026)** — André había agregado los subdominios `dev.cordhq.app`
    (dev blog) y `docs.cordhq.app` (documentación) pero ambos mostraban la landing normal

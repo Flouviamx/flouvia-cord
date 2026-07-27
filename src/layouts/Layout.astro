@@ -1,6 +1,7 @@
 ---
 // Layout base de Cord — hereda el sistema de diseño Flouvia.
-// v1 solo español (target: México). El i18n se añade después con el patrón de flouvia-web.
+// Producto global (signup abierto a cualquier país); CFDI/SAT es una función
+// adicional para negocios en México, no un gate de quién puede usar Cord.
 
 interface Props {
     title: string;
@@ -15,7 +16,7 @@ import { getLangFromUrl, altLangUrls } from '../i18n/utils';
 
 const {
     title,
-    description = 'Cord — software B2B independiente para cotizaciones, pedidos y CFDI 4.0. Crea, envía y da seguimiento a tus cotizaciones con precios negociados y términos de crédito. Para cualquier negocio B2B en México, hecho por el equipo de Flouvia.',
+    description = 'Cord — software B2B independiente para cotizar, presupuestar y cobrar. Crea cotizaciones con precios negociados, da seguimiento en tiempo real, planea presupuestos vs. real y factura CFDI 4.0 automático para negocios en México. Para cualquier negocio B2B, en cualquier país, hecho por el equipo de Flouvia.',
     image = '/og-cord.png',
     noindex = false,
     ogType = 'website',

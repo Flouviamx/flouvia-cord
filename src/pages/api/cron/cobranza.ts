@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { sql } from '../../../lib/db';
 import { runARAgent } from '../../../lib/agents/ar-agent';
-import { sendEmail } from '../../../lib/email';
+import { sendEmail, siteOrigin } from '../../../lib/email';
 
 export const prerender = false;
 
@@ -41,7 +41,7 @@ export const GET: APIRoute = async ({ request }) => {
     }
   }
 
-  const origin = new URL(request.url).origin;
+  const origin = siteOrigin();
 
   try {
     // Cotizaciones aprobadas o facturadas, sin pagar, con el término de crédito

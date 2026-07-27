@@ -212,7 +212,7 @@ const breadcrumbSchema = {
 
         <!-- ════════ TRUST / VALOR ════════ -->
         <section class="el-strip">
-            <p class="el-strip-lead reveal">{isEn ? <Fragment>For B2B companies that <b>already have their own portal</b> but don't want to build —or maintain— a quote builder that negotiates prices, tracks opens, and issues CFDI invoices in Mexico.</Fragment> : <Fragment>Para empresas B2B que <b>ya tienen su propio portal</b> pero no quieren construir —ni mantener— un cotizador que negocie precios, dé seguimiento y timbre CFDI en México.</Fragment>}</p>
+            <p class="el-strip-lead reveal">{isEn ? <Fragment>For B2B companies that <b>already have their own portal</b> but don't want to build —or maintain— a quote builder that negotiates prices, tracks opens, and issues invoices (CFDI e-invoicing for Mexico).</Fragment> : <Fragment>Para empresas B2B que <b>ya tienen su propio portal</b> pero no quieren construir —ni mantener— un cotizador que negocie precios, dé seguimiento y facture automáticamente (CFDI para negocios en México).</Fragment>}</p>
         </section>
 
         <!-- ════════ INSTALAR (snippet) — split izq/der, mismo patrón que el resto de la página ════════ -->
@@ -359,7 +359,7 @@ const breadcrumbSchema = {
             </div>
         </section>
 
-        {devPage.trust && <TrustGrid trust={devPage.trust} />}
+        {devPage.trust && <TrustGrid trust={devPage.trust} slug="elements" />}
 
         <!-- ════════ CTA secundario ════════ -->
         <section class="el-mid">

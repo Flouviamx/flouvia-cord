@@ -20,7 +20,11 @@ const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
 
 // Países que hoy ofrecemos en el alta (ISO 3166-1 alpha-2). Mantener en sync con
-// COUNTRIES de CreateWorkspaceModal.tsx.
+// COUNTRIES de CreateWorkspaceModal.tsx. El alta en cualquier país está abierta
+// (cotizar/cobrar/CRM funcionan igual en todos) — lo que SÍ está limitado a
+// México por ahora es la FACTURACIÓN fiscal real (ver FiscalFactory: solo
+// MexicoSatProvider timbra de verdad; el resto degrada honesto a "sin
+// facturación fiscal todavía" en vez de fingir éxito).
 const SUPPORTED = new Set(['MX', 'US', 'CO', 'AR', 'CL', 'PE', 'ES']);
 
 export const POST: APIRoute = async (context) => {

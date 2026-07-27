@@ -32,7 +32,7 @@ const DOC_TYPES = new Set(['application/pdf']);
 // body de una función de Vercel.
 const MAX_B64_CHARS = 6_000_000;
 
-const SYSTEM = `Eres un extractor de pedidos B2B en México. ÚNICA tarea: convertir el pedido del cliente (texto, y/o una foto o PDF de una orden de compra, requisición o cotización de un tercero) en líneas de cotización usando el catálogo dado.
+const SYSTEM = `Eres un extractor de pedidos B2B. ÚNICA tarea: convertir el pedido del cliente (texto, y/o una foto o PDF de una orden de compra, requisición o cotización de un tercero) en líneas de cotización usando el catálogo dado.
 
 Si recibes un documento o imagen: léelo como leerías una orden de compra real — extrae cada renglón (producto/concepto, cantidad, precio si aparece). Ignora encabezados, sellos, folios internos del cliente y firmas; esos no son líneas de cotización. Si el documento trae varias páginas o secciones, cubre todas.
 
