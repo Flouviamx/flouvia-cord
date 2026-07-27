@@ -6,7 +6,7 @@
 
 ---
 
-🟡 **i18n de la app interna — Ajustes 100% traducido; resto de `/app/**` PENDIENTE (jul 2026)** —
+✅ **i18n de la app interna — COMPLETADO, todo `/app/**` traducido (jul 2026)** —
    André pidió traducir la app al inglés. Se diseñó un sistema de i18n propio (sin librería
    externa), **distinto de `src/i18n/ui.ts`** (que es solo para la landing pública con rutas
    `/en/*` explícitas):
@@ -33,17 +33,38 @@
      › Tu cuenta) recibe un prop `locale` desde `cuenta.astro` (resuelto server-side) e importa
      `t()` directo de `src/i18n/app.ts` — un módulo TS plano se puede importar igual desde un
      componente `.tsx`, no hace falta reinventar el bridge de `<script>`.
-   • **Alcance YA cubierto (verificado con `npm run build` limpio en cada lote):** el shell
+   • **Alcance completo (verificado con `npm run build` limpio en cada lote):** el shell
      compartido (`AppLayout.astro` — topbar, Cmd+K, centro de notificaciones, drawer de ayuda/FAQ,
      chat; `Sidebar.astro`), el chassis de Ajustes (`SettingsShell.astro`), **las 20 subpáginas de
-     Ajustes completas** (general, branding, portal, cotizaciones, impuestos, pdf, aprobaciones,
+     Ajustes** (general, branding, portal, cotizaciones, impuestos, pdf, aprobaciones,
      plantillas, fiscal, cobros, plan, notificaciones, correo, equipo, sso, seguridad,
      integraciones, api, webhooks, mcp, agentes, elements, datos, auditoria, cuenta), el link
-     público `QuoteCard.astro` (`/q/[token]` y `/embed/[token]`), y los correos transaccionales
-     (`src/lib/email.ts` → `notifyQuoteSent`).
-   • **⚠️ PENDIENTE — el resto de `/app/**` sigue 100% en español** (ver sección "Estado actual"
-     más abajo para el detalle completo página por página; el chrome/shell ya está listo en ambos
-     idiomas, pero el contenido de cada página de negocio todavía no).
+     público `QuoteCard.astro` (`/q/[token]` y `/embed/[token]`), los correos transaccionales
+     (`src/lib/email.ts` → `notifyQuoteSent`), y **el resto de la app de negocio** cerrado en una
+     segunda pasada: `index.astro` (dashboard), `cotizaciones/{index,nueva,[id],[id]/editar,
+     [id]/imprimir}.astro`, `clientes.astro`, `productos/{index,kits}.astro`, `cfo.astro`,
+     `analitica.astro`, `desempeno.astro`, `cobranza.astro`, `cobros.astro`,
+     `tesoreria/{cobranza,flujo}/index.astro`, `presupuestos/{index,[id],herramientas}.astro`, y
+     `checkout.astro` (Payment Element).
+   • **Namespaces nuevos de esta pasada** en `src/i18n/app.ts`: `dash.*`, `cot.*`, `ed.*`
+     (editor `nueva.astro`), `id.*` (detalle `[id].astro`), `edv.*` (`editar.astro`), `imp.*`
+     (`imprimir.astro`), `cli.*`, `prod.*`/`kit.*`, `cfo.*`, `an.*` (analítica, compartido con
+     desempeño), `des.*`, `cob.*`/`cbr.*` (cobranza/cobros), `tia.*` (cobranza IA), `flu.*` (flujo
+     de caja), `pre.*`/`ced.*`/`her.*` (presupuestos: índice/editor de cédula/herramientas), `chk.*`
+     (checkout).
+   • **Cada `<script>` no-inline** de estas páginas sigue el mismo puente de `data-i18n-*`/
+     `JSON.stringify` sobre un contenedor estable descrito arriba; los `<script define:vars>`
+     (`kits.astro`, `presupuestos/[id].astro`) reciben un objeto `T` plano (sin funciones —
+     `define:vars` serializa con `JSON.stringify`) precomputado en el frontmatter.
+   • **Bug de Astro/esbuild encontrado y evitado (regla a futuro):** un objeto literal `{...}`
+     como rama falsa de un ternario dentro de una expresión JSX (`{cond ? x : tpl(t(...), {n:...})}`)
+     lo interpreta el compilador de Astro como el shorthand de Fragment `<>` intentando recibir
+     atributos, y truena con `Unable to assign attributes when using <> Fragment shorthand syntax`
+     (visto en `cfo.astro`). Fix: sacar el cálculo del ternario a una variable ANTES del `return`/
+     JSX, nunca anidar un objeto literal como rama de un ternario dentro de `{}` de JSX.
+   • **Único pendiente real, documentado y sin bloquear nada:** `ajustes/sso/configuracion.astro`
+     (el wizard de configuración SSO) sigue sin traducir — es 100% cosmético (SSO empresarial no
+     está conectado, ver `historial-auth-clerk.md`), sin botones de entrada activos.
    • Fuera de alcance documentado (no bloqueante, requiere su propio diseño):
      `ConnectCustomOnboarding.tsx` (wizard de Stripe Connect en Ajustes › Cobros), los nombres/
      taglines de planes de `src/lib/precios.ts` (`PLANES`), las etiquetas `TIPO_IMPUESTO` de
