@@ -3,38 +3,42 @@
 import AppLayout from '../../../layouts/AppLayout.astro';
 import { getProductos, getMyMembership, money } from '../../../lib/queries';
 import { memberCan } from '../../../lib/permissions';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 
 const [PRODUCTOS, ME] = await Promise.all([getProductos(), getMyMembership()]);
 const canEdit = memberCan(ME, 'productos');
+const L = currentLocale();
+const pLabel = PRODUCTOS.length === 1 ? t(L, 'prod.producto_singular') : t(L, 'prod.producto_plural');
 ---
 
-<AppLayout title="Productos — Cord" page="productos" heading="Productos">
+<AppLayout title={t(L, 'prod.title')} page="productos" heading={t(L, 'prod.catalogo')}>
     <div slot="page-tabs">
-        <a href="/app/productos" class="ph-tab active">Catálogo</a>
-        <a href="/app/productos/kits" class="ph-tab">Kits</a>
+        <a href="/app/productos" class="ph-tab active">{t(L, 'prod.tab_catalogo')}</a>
+        <a href="/app/productos/kits" class="ph-tab">{t(L, 'prod.tab_kits')}</a>
     </div>
     <div slot="topbar-actions" class="topbar-btns">
-        <div class="ph-search">
+        <div class="ph-search" data-i18n-sin-resultados={t(L, 'prod.sin_resultados')} data-i18n-producto-singular={t(L, 'prod.producto_singular')} data-i18n-producto-plural={t(L, 'prod.producto_plural')} data-i18n-n-de-n={t(L, 'prod.n_de_n_productos')}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input id="searchProductos" type="search" placeholder="Buscar productos…" autocomplete="off" spellcheck="false" />
-            <button class="ph-search-clear" id="searchClear" aria-label="Limpiar">
+            <input id="searchProductos" type="search" placeholder={t(L, 'prod.buscar_ph')} autocomplete="off" spellcheck="false" />
+            <button class="ph-search-clear" id="searchClear" aria-label={t(L, 'prod.limpiar')}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
         </div>
         {canEdit && <button class="btn-import" id="btnImport">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Importar CSV
+            {t(L, 'prod.importar_csv')}
         </button>}
-        {canEdit && <button class="btn-new" id="btnNew">+ Nuevo producto</button>}
+        {canEdit && <button class="btn-new" id="btnNew">{t(L, 'prod.nuevo_producto')}</button>}
     </div>
 
     <section class="catalogo">
         <div class="section-head">
-            <h2>Catálogo</h2>
-            <span class="cat-count" id="catCount">{PRODUCTOS.length} producto{PRODUCTOS.length === 1 ? '' : 's'}</span>
+            <h2>{t(L, 'prod.catalogo')}</h2>
+            <span class="cat-count" id="catCount">{PRODUCTOS.length} {pLabel}</span>
         </div>
         <div class="t-head">
-            <span>SKU</span><span>Producto</span><span>Unidad</span><span class="t-right">Precio de lista</span><span>Estado</span>
+            <span>{t(L, 'prod.th_sku')}</span><span>{t(L, 'prod.th_producto')}</span><span>{t(L, 'prod.th_unidad')}</span><span class="t-right">{t(L, 'prod.th_precio')}</span><span>{t(L, 'prod.th_estado')}</span>
         </div>
         {PRODUCTOS.map((p) => (
             <button
@@ -52,17 +56,17 @@ const canEdit = memberCan(ME, 'productos');
                 <span class="t-name">{p.nombre}</span>
                 <span class="t-muted">{p.unidad}</span>
                 <span class="editorial t-amount t-right">{money(p.precio)}</span>
-                <span class:list={['t-state', p.activo ? 'on' : 'off']}>{p.activo ? '● Activo' : '○ Inactivo'}</span>
+                <span class:list={['t-state', p.activo ? 'on' : 'off']}>{p.activo ? t(L, 'prod.activo') : t(L, 'prod.inactivo')}</span>
             </button>
         ))}
         {PRODUCTOS.length === 0 && (
             <div class="t-empty">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-                <p><b>Tu catálogo está vacío</b> Agrega tu primer producto o impórtalos en lote desde un CSV.</p>
+                <p><b>{t(L, 'prod.vacio_titulo')}</b> {t(L, 'prod.vacio_desc')}</p>
                 {canEdit && (
                     <div class="t-empty-cta">
-                        <button class="btn-new" id="btnNewEmpty">+ Nuevo producto</button>
-                        <button class="btn-import" id="btnImportEmpty">Importar CSV</button>
+                        <button class="btn-new" id="btnNewEmpty">{t(L, 'prod.nuevo_producto')}</button>
+                        <button class="btn-import" id="btnImportEmpty">{t(L, 'prod.importar_csv')}</button>
                     </div>
                 )}
             </div>
@@ -70,36 +74,50 @@ const canEdit = memberCan(ME, 'productos');
     </section>
 
     <!-- Modal alta / edición (solo si tiene permiso de edición) -->
-    {canEdit && <dialog class="modal" id="prodModal">
+    {canEdit && <dialog class="modal" id="prodModal"
+        data-i18n-nuevo={t(L, 'prod.modal_nuevo_titulo')}
+        data-i18n-editar={t(L, 'prod.modal_editar_titulo')}
+        data-i18n-no-pudo-guardar={t(L, 'prod.no_pudo_guardar')}
+        data-i18n-eliminar-titulo={t(L, 'prod.eliminar_titulo')}
+        data-i18n-eliminar-body={t(L, 'prod.eliminar_body')}
+        data-i18n-eliminar-btn={t(L, 'prod.eliminar')}
+        data-i18n-no-pudo-eliminar={t(L, 'prod.no_pudo_eliminar')}
+        data-i18n-gana-tpl={t(L, 'prod.gana_por_unidad')}
+        data-i18n-pierde-tpl={t(L, 'prod.pierde_por_unidad')}
+        data-i18n-vol-desde={t(L, 'prod.vol_desde')}
+        data-i18n-vol-pz={t(L, 'prod.vol_pz')}
+        data-i18n-vol-quitar={t(L, 'prod.vol_quitar')}
+        data-i18n-locale={L}
+    >
         <form method="dialog" class="m-form" id="prodForm">
             <div class="m-head">
-                <h2 id="mTitle">Nuevo producto</h2>
-                <button type="button" class="m-close" id="mClose" aria-label="Cerrar">✕</button>
+                <h2 id="mTitle">{t(L, 'prod.modal_nuevo_titulo')}</h2>
+                <button type="button" class="m-close" id="mClose" aria-label={t(L, 'prod.cerrar')}>✕</button>
             </div>
 
             <div class="m-field">
-                <label for="fNombre">Nombre *</label>
-                <input class="m-input" id="fNombre" required placeholder="Cemento gris 50kg" />
+                <label for="fNombre">{t(L, 'prod.nombre')}</label>
+                <input class="m-input" id="fNombre" required placeholder={t(L, 'prod.nombre_ph')} />
             </div>
             <div class="m-row">
                 <div class="m-field">
-                    <label for="fSku">SKU</label>
-                    <input class="m-input" id="fSku" placeholder="CEM-50" maxlength="24" />
+                    <label for="fSku">{t(L, 'prod.sku')}</label>
+                    <input class="m-input" id="fSku" placeholder={t(L, 'prod.sku_ph')} maxlength="24" />
                 </div>
                 <div class="m-field">
-                    <label for="fUnidad">Unidad</label>
-                    <input class="m-input" id="fUnidad" placeholder="saco, pieza, m³…" />
+                    <label for="fUnidad">{t(L, 'prod.unidad')}</label>
+                    <input class="m-input" id="fUnidad" placeholder={t(L, 'prod.unidad_ph')} />
                 </div>
             </div>
             <div class="m-row">
                 <div class="m-field">
-                    <label for="fPrecio">Precio de venta (MXN) *</label>
+                    <label for="fPrecio">{t(L, 'prod.precio_venta')}</label>
                     <input class="m-input" id="fPrecio" type="number" min="0" step="0.01" required placeholder="198.00" />
                 </div>
                 <div class="m-field">
-                    <label for="fCosto">¿Cuánto te cuesta? (MXN)</label>
+                    <label for="fCosto">{t(L, 'prod.costo_pregunta')}</label>
                     <input class="m-input" id="fCosto" type="number" min="0" step="0.01" placeholder="0.00" />
-                    <span class="m-hint">Opcional. Nos deja mostrarte tu ganancia.</span>
+                    <span class="m-hint">{t(L, 'prod.costo_hint')}</span>
                 </div>
             </div>
             <div class="margin-strip" id="marginStrip" hidden>
@@ -109,21 +127,21 @@ const canEdit = memberCan(ME, 'productos');
 
             <!-- Precios por volumen (opcional) -->
             <div class="m-field vol-field">
-                <label>Precios por volumen <span class="m-optlbl">opcional</span></label>
-                <span class="m-hint">Aplica un precio más bajo automáticamente cuando la cantidad en la cotización alcanza cada nivel. Ideal para ventas al mayoreo.</span>
+                <label>{t(L, 'prod.vol_titulo')} <span class="m-optlbl">{t(L, 'prod.vol_opcional')}</span></label>
+                <span class="m-hint">{t(L, 'prod.vol_hint')}</span>
                 <div class="vol-list" id="volList"></div>
                 <button type="button" class="vol-add" id="volAdd">
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    Agregar nivel de volumen
+                    {t(L, 'prod.vol_agregar')}
                 </button>
             </div>
 
             <div class="m-row">
                 <div class="m-field" style="flex:0 0 auto">
-                    <label>Estado</label>
+                    <label>{t(L, 'prod.estado_label')}</label>
                     <div class="m-chips" id="fActivo">
-                        <button type="button" class="chip active" data-v="1">Activo</button>
-                        <button type="button" class="chip" data-v="">Inactivo</button>
+                        <button type="button" class="chip active" data-v="1">{t(L, 'prod.activo').replace('● ', '')}</button>
+                        <button type="button" class="chip" data-v="">{t(L, 'prod.inactivo').replace('○ ', '')}</button>
                     </div>
                 </div>
             </div>
@@ -131,26 +149,45 @@ const canEdit = memberCan(ME, 'productos');
             <p class="m-error" id="mError"></p>
 
             <div class="m-actions">
-                {canEdit && <button type="button" class="m-delete" id="mDelete">Eliminar</button>}
+                {canEdit && <button type="button" class="m-delete" id="mDelete">{t(L, 'prod.eliminar')}</button>}
                 <span class="m-spacer"></span>
-                <button type="button" class="m-cancel" id="mCancel">Cancelar</button>
-                <button type="submit" class="m-save" id="mSave">Guardar producto</button>
+                <button type="button" class="m-cancel" id="mCancel">{t(L, 'prod.cancelar')}</button>
+                <button type="submit" class="m-save" id="mSave">{t(L, 'prod.guardar_producto')}</button>
             </div>
         </form>
     </dialog>}
 
     <!-- Modal de importación CSV (solo si tiene permiso de edición) -->
-    {canEdit && <dialog class="modal modal-lg" id="importModal">
+    {canEdit && <dialog class="modal modal-lg" id="importModal"
+        data-i18n-locale={L}
+        data-i18n-ninguna={t(L, 'prod.ninguna')}
+        data-i18n-columna-tpl={t(L, 'prod.columna')}
+        data-i18n-elige-columna={t(L, 'prod.elige_columna_nombre')}
+        data-i18n-productos-a-importar={t(L, 'prod.productos_a_importar')}
+        data-i18n-filas-omitidas={t(L, 'prod.filas_omitidas')}
+        data-i18n-si={t(L, 'prod.si')}
+        data-i18n-no={t(L, 'prod.no')}
+        data-i18n-importar-tpl={t(L, 'prod.importar_n')}
+        data-i18n-importando={t(L, 'prod.importando')}
+        data-i18n-no-pudo-importar={t(L, 'prod.no_pudo_importar')}
+        data-i18n-archivo-vacio={t(L, 'prod.archivo_vacio')}
+        data-i18n-continuar={t(L, 'prod.continuar')}
+        data-i18n-field-nombre={t(L, 'prod.field_nombre')}
+        data-i18n-field-sku={t(L, 'prod.field_sku')}
+        data-i18n-field-unidad={t(L, 'prod.field_unidad')}
+        data-i18n-field-precio={t(L, 'prod.field_precio')}
+        data-i18n-field-activo={t(L, 'prod.field_activo')}
+    >
         <div class="m-form">
             <div class="m-head">
-                <h2 id="impTitle">Importar productos por CSV</h2>
-                <button type="button" class="m-close" id="impClose" aria-label="Cerrar">✕</button>
+                <h2 id="impTitle">{t(L, 'prod.importar_titulo')}</h2>
+                <button type="button" class="m-close" id="impClose" aria-label={t(L, 'prod.cerrar')}>✕</button>
             </div>
 
             <div class="imp-steps" id="impSteps">
-                <span class="imp-stepdot active" data-s="file"><i>1</i> Archivo</span>
-                <span class="imp-stepdot" data-s="map"><i>2</i> Columnas</span>
-                <span class="imp-stepdot" data-s="prev"><i>3</i> Revisar</span>
+                <span class="imp-stepdot active" data-s="file"><i>1</i> {t(L, 'prod.paso1')}</span>
+                <span class="imp-stepdot" data-s="map"><i>2</i> {t(L, 'prod.paso2')}</span>
+                <span class="imp-stepdot" data-s="prev"><i>3</i> {t(L, 'prod.paso3')}</span>
             </div>
 
             <!-- Paso 1: archivo -->
@@ -158,33 +195,33 @@ const canEdit = memberCan(ME, 'productos');
                 <label class="imp-drop" id="impDrop">
                     <input type="file" id="impFile" accept=".csv,text/csv" hidden />
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></svg>
-                    <b>Arrastra tu archivo CSV o haz clic para elegirlo</b>
-                    <span>Columnas sugeridas: SKU, nombre, unidad, precio, activo</span>
+                    <b>{t(L, 'prod.drop_titulo')}</b>
+                    <span>{t(L, 'prod.drop_hint')}</span>
                 </label>
-                <button type="button" class="imp-tpl" id="impTpl">↓ Descargar plantilla de ejemplo</button>
+                <button type="button" class="imp-tpl" id="impTpl">{t(L, 'prod.descargar_plantilla')}</button>
             </div>
 
             <!-- Paso 2: mapeo de columnas -->
             <div class="imp-step" id="impStepMap" hidden>
-                <p class="imp-lead">Empareja las columnas de tu archivo con los campos de Cord.</p>
-                <label class="imp-check"><input type="checkbox" id="impHeader" checked /> La primera fila son encabezados</label>
+                <p class="imp-lead">{t(L, 'prod.emparejar_hint')}</p>
+                <label class="imp-check"><input type="checkbox" id="impHeader" checked /> {t(L, 'prod.primera_fila_encabezados')}</label>
                 <div class="imp-maps" id="impMaps"></div>
             </div>
 
             <!-- Paso 3: preview -->
             <div class="imp-step" id="impStepPrev" hidden>
                 <div class="imp-summary" id="impSummary"></div>
-                <label class="imp-check"><input type="checkbox" id="impUpsert" checked /> Actualizar productos existentes con el mismo SKU</label>
+                <label class="imp-check"><input type="checkbox" id="impUpsert" checked /> {t(L, 'prod.actualizar_existentes')}</label>
                 <div class="imp-prev-wrap"><table class="imp-prev"><thead id="impPrevHead"></thead><tbody id="impPrevBody"></tbody></table></div>
             </div>
 
             <p class="m-error" id="impError"></p>
 
             <div class="m-actions">
-                <button type="button" class="m-cancel" id="impBack" hidden>← Atrás</button>
+                <button type="button" class="m-cancel" id="impBack" hidden>{t(L, 'prod.atras')}</button>
                 <span class="m-spacer"></span>
-                <button type="button" class="m-cancel" id="impCancel">Cancelar</button>
-                <button type="button" class="m-save" id="impNext" disabled>Continuar</button>
+                <button type="button" class="m-cancel" id="impCancel">{t(L, 'prod.cancelar')}</button>
+                <button type="button" class="m-save" id="impNext" disabled>{t(L, 'prod.continuar')}</button>
             </div>
         </div>
     </dialog>}
@@ -460,6 +497,8 @@ const canEdit = memberCan(ME, 'productos');
     document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('prodModal') as HTMLDialogElement;
         if (!modal) return; // sin permiso de edición, el modal no existe
+        const I = modal.dataset;
+        const isEn = I.i18nLocale === 'en';
         const form = document.getElementById('prodForm') as HTMLFormElement;
         const title = document.getElementById('mTitle')!;
         const errorEl = document.getElementById('mError')!;
@@ -477,7 +516,8 @@ const canEdit = memberCan(ME, 'productos');
         };
 
         // Medidor de margen en vivo: traduce precio − costo en pesos ganados + %.
-        const moneyFmt = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n);
+        const moneyFmt = (n: number) => '$' + new Intl.NumberFormat(isEn ? 'en-US' : 'es-MX', { minimumFractionDigits: 2 }).format(n);
+        const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
         const updateMargin = () => {
             const precio = parseFloat(input('fPrecio').value) || 0;
             const costo = parseFloat(input('fCosto').value) || 0;
@@ -493,8 +533,8 @@ const canEdit = memberCan(ME, 'productos');
             fill.className = 'ms-fill ' + cls;
             text.className = 'ms-text ' + cls;
             text.innerHTML = ganancia < 0
-                ? `Pierdes <b>${moneyFmt(Math.abs(ganancia))}</b> por unidad — tu costo supera el precio`
-                : `Ganas <b>${moneyFmt(ganancia)}</b> por unidad · margen <b>${Math.round(m)}%</b>`;
+                ? tpl(I.i18nPierdeTpl || 'Pierdes <b>{monto}</b> por unidad — tu costo supera el precio', { monto: moneyFmt(Math.abs(ganancia)) })
+                : tpl(I.i18nGanaTpl || 'Ganas <b>{monto}</b> por unidad · margen <b>{pct}%</b>', { monto: moneyFmt(ganancia), pct: String(Math.round(m)) });
         };
         input('fPrecio').addEventListener('input', updateMargin);
         input('fCosto').addEventListener('input', updateMargin);
@@ -503,12 +543,12 @@ const canEdit = memberCan(ME, 'productos');
         const volList = document.getElementById('volList')!;
         let volTiers: { min: number | string; precio: number | string }[] = [];
         const renderVol = () => {
-            volList.innerHTML = volTiers.map((t, i) => `
+            volList.innerHTML = volTiers.map((tr, i) => `
                 <div class="vol-row" data-i="${i}">
-                    <div class="vol-cell"><span class="vc-pre">Desde</span><input type="number" min="1" step="1" data-vk="min" value="${t.min ?? ''}" placeholder="500" /><span class="vc-pre">pz</span></div>
+                    <div class="vol-cell"><span class="vc-pre">${I.i18nVolDesde || 'Desde'}</span><input type="number" min="1" step="1" data-vk="min" value="${tr.min ?? ''}" placeholder="500" /><span class="vc-pre">${I.i18nVolPz || 'pz'}</span></div>
                     <span class="vol-arrow">→</span>
-                    <div class="vol-cell"><span class="vc-pre">$</span><input type="number" min="0" step="0.01" data-vk="precio" value="${t.precio ?? ''}" placeholder="90.00" /></div>
-                    <button type="button" class="vol-del" data-vdel="${i}" aria-label="Quitar nivel">
+                    <div class="vol-cell"><span class="vc-pre">$</span><input type="number" min="0" step="0.01" data-vk="precio" value="${tr.precio ?? ''}" placeholder="90.00" /></div>
+                    <button type="button" class="vol-del" data-vdel="${i}" aria-label="${I.i18nVolQuitar || 'Quitar nivel'}">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                 </div>`).join('');
@@ -534,7 +574,7 @@ const canEdit = memberCan(ME, 'productos');
         const open = (data?: DOMStringMap) => {
             errorEl.textContent = '';
             editId = data?.id ?? null;
-            title.textContent = editId ? 'Editar producto' : 'Nuevo producto';
+            title.textContent = editId ? (I.i18nEditar || 'Editar producto') : (I.i18nNuevo || 'Nuevo producto');
             btnDelete.hidden = !editId;
             input('fNombre').value = data?.nombre ?? '';
             input('fSku').value = data?.sku ?? '';
@@ -586,7 +626,7 @@ const canEdit = memberCan(ME, 'productos');
                     body: JSON.stringify(payload),
                 });
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
+                if (!res.ok) throw new Error(data.error || I.i18nNoPudoGuardar || 'No se pudo guardar');
                 location.reload();
             } catch (err: any) {
                 errorEl.textContent = err.message;
@@ -596,7 +636,7 @@ const canEdit = memberCan(ME, 'productos');
 
         btnDelete.addEventListener('click', async () => {
             if (!editId) return;
-            if (!await (window as any).cordConfirm({ title: 'Eliminar producto', body: '¿Eliminar este producto del catálogo? Esta acción no se puede deshacer.', danger: true, confirmText: 'Eliminar' })) return;
+            if (!await (window as any).cordConfirm({ title: I.i18nEliminarTitulo || 'Eliminar producto', body: I.i18nEliminarBody || '¿Eliminar este producto del catálogo? Esta acción no se puede deshacer.', danger: true, confirmText: I.i18nEliminarBtn || 'Eliminar' })) return;
             const delId = editId;
             const res = await fetch('/api/productos', {
                 method: 'DELETE',
@@ -607,7 +647,7 @@ const canEdit = memberCan(ME, 'productos');
                 // Optimista: quita la fila en sitio y cierra el modal (sin recargar).
                 document.querySelector(`.t-row[data-id="${delId}"]`)?.remove();
                 modal.close();
-            } else errorEl.textContent = (await res.json()).error || 'No se pudo eliminar';
+            } else errorEl.textContent = (await res.json()).error || I.i18nNoPudoEliminar || 'No se pudo eliminar';
         });
     });
 </script>
@@ -617,6 +657,9 @@ const canEdit = memberCan(ME, 'productos');
     document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('importModal') as HTMLDialogElement | null;
         if (!modal) return;
+        const I = modal.dataset;
+        const isEn = I.i18nLocale === 'en';
+        const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
         const $ = (id: string) => document.getElementById(id)!;
         const fileInput = $('impFile') as HTMLInputElement;
         const drop = $('impDrop');
@@ -629,11 +672,11 @@ const canEdit = memberCan(ME, 'productos');
         const btnBack = $('impBack') as HTMLButtonElement;
 
         const FIELDS = [
-            { key: 'nombre', label: 'Nombre', req: true, guess: ['nombre', 'producto', 'descripcion', 'description', 'name', 'concepto', 'articulo'] },
-            { key: 'sku', label: 'SKU / Clave', req: false, guess: ['sku', 'clave', 'codigo', 'code'] },
-            { key: 'unidad', label: 'Unidad', req: false, guess: ['unidad', 'unit', 'medida', 'um'] },
-            { key: 'precio', label: 'Precio de lista', req: false, guess: ['precio', 'price', 'lista', 'costo', 'importe', 'monto'] },
-            { key: 'activo', label: 'Activo', req: false, guess: ['activo', 'active', 'estatus', 'status', 'estado'] },
+            { key: 'nombre', label: I.i18nFieldNombre || 'Nombre', req: true, guess: ['nombre', 'producto', 'descripcion', 'description', 'name', 'concepto', 'articulo'] },
+            { key: 'sku', label: I.i18nFieldSku || 'SKU / Clave', req: false, guess: ['sku', 'clave', 'codigo', 'code'] },
+            { key: 'unidad', label: I.i18nFieldUnidad || 'Unidad', req: false, guess: ['unidad', 'unit', 'medida', 'um'] },
+            { key: 'precio', label: I.i18nFieldPrecio || 'Precio de lista', req: false, guess: ['precio', 'price', 'lista', 'costo', 'importe', 'monto'] },
+            { key: 'activo', label: I.i18nFieldActivo || 'Activo', req: false, guess: ['activo', 'active', 'estatus', 'status', 'estado'] },
         ];
 
         let grid: string[][] = [];
@@ -677,8 +720,8 @@ const canEdit = memberCan(ME, 'productos');
             stepPrev.hidden = s !== 'prev';
             btnBack.hidden = s === 'file';
             errorEl.textContent = '';
-            if (s === 'file') { btnNext.disabled = true; btnNext.textContent = 'Continuar'; }
-            if (s === 'map') { btnNext.disabled = false; btnNext.textContent = 'Continuar'; }
+            if (s === 'file') { btnNext.disabled = true; btnNext.textContent = I.i18nContinuar || 'Continuar'; }
+            if (s === 'map') { btnNext.disabled = false; btnNext.textContent = I.i18nContinuar || 'Continuar'; }
             const order: Record<string, number> = { file: 0, map: 1, prev: 2 };
             document.querySelectorAll<HTMLElement>('#impSteps .imp-stepdot').forEach((d) => {
                 const di = order[d.dataset.s || 'file']; const ci = order[s];
@@ -698,9 +741,9 @@ const canEdit = memberCan(ME, 'productos');
                 if (useHeader) {
                     guessed = headers.findIndex(h => f.guess.some(g => norm(h).includes(g)));
                 }
-                const opts = ['<option value="-1">— ninguna —</option>'];
+                const opts = [`<option value="-1">${I.i18nNinguna || '— ninguna —'}</option>`];
                 for (let i = 0; i < n; i++) {
-                    const label = useHeader && headers[i] ? headers[i] : `Columna ${i + 1}`;
+                    const label = useHeader && headers[i] ? headers[i] : tpl(I.i18nColumnaTpl || 'Columna {n}', { n: String(i + 1) });
                     opts.push(`<option value="${i}" ${i === guessed ? 'selected' : ''}>${label.replace(/</g, '&lt;')}</option>`);
                 }
                 return `<div class="imp-map"><label>${f.label}${f.req ? ' <span class="req">*</span>' : ''}</label><select data-field="${f.key}">${opts.join('')}</select></div>`;
@@ -715,7 +758,7 @@ const canEdit = memberCan(ME, 'productos');
 
         function buildPreview() {
             const m = readMap();
-            if ((m.nombre ?? -1) < 0) { errorEl.textContent = 'Elige qué columna tiene el nombre del producto.'; return false; }
+            if ((m.nombre ?? -1) < 0) { errorEl.textContent = I.i18nEligeColumna || 'Elige qué columna tiene el nombre del producto.'; return false; }
             const dataRows = headerChk.checked ? grid.slice(1) : grid;
             prepared = dataRows.map(r => ({
                 nombre: (r[m.nombre] ?? '').trim(),
@@ -726,19 +769,19 @@ const canEdit = memberCan(ME, 'productos');
             }));
             const valid = prepared.filter(p => p.nombre);
             const skipped = prepared.length - valid.length;
-            const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n);
+            const money = (n: number) => '$' + new Intl.NumberFormat(isEn ? 'en-US' : 'es-MX', { minimumFractionDigits: 2 }).format(n);
 
             $('impSummary').innerHTML =
-                `<div><span class="is-num">${valid.length}</span><small>productos a importar</small></div>` +
-                (skipped > 0 ? `<div><span class="is-num warn">${skipped}</span><small>filas omitidas (sin nombre)</small></div>` : '');
+                `<div><span class="is-num">${valid.length}</span><small>${I.i18nProductosAImportar || 'productos a importar'}</small></div>` +
+                (skipped > 0 ? `<div><span class="is-num warn">${skipped}</span><small>${I.i18nFilasOmitidas || 'filas omitidas (sin nombre)'}</small></div>` : '');
 
-            $('impPrevHead').innerHTML = '<tr><th>SKU</th><th>Nombre</th><th>Unidad</th><th class="n">Precio</th><th>Activo</th></tr>';
+            $('impPrevHead').innerHTML = `<tr><th>${I.i18nFieldSku || 'SKU'}</th><th>${I.i18nFieldNombre || 'Nombre'}</th><th>${I.i18nFieldUnidad || 'Unidad'}</th><th class="n">${I.i18nFieldPrecio || 'Precio'}</th><th>${I.i18nFieldActivo || 'Activo'}</th></tr>`;
             $('impPrevBody').innerHTML = prepared.slice(0, 8).map(p => {
                 const bad = !p.nombre;
-                return `<tr class="${bad ? 'bad' : ''}"><td>${esc(p.sku)}</td><td>${esc(p.nombre || '—')}</td><td>${esc(p.unidad || 'pieza')}</td><td class="n">${money(p.precio)}</td><td>${p.activo ? 'Sí' : 'No'}</td></tr>`;
+                return `<tr class="${bad ? 'bad' : ''}"><td>${esc(p.sku)}</td><td>${esc(p.nombre || '—')}</td><td>${esc(p.unidad || 'pieza')}</td><td class="n">${money(p.precio)}</td><td>${p.activo ? (I.i18nSi || 'Sí') : (I.i18nNo || 'No')}</td></tr>`;
             }).join('');
 
-            btnNext.textContent = `Importar ${valid.length} producto${valid.length === 1 ? '' : 's'}`;
+            btnNext.textContent = tpl(I.i18nImportarTpl || 'Importar {n} producto{s}', { n: String(valid.length), s: valid.length === 1 ? '' : 's' });
             btnNext.disabled = valid.length === 0;
             return true;
         }
@@ -747,7 +790,7 @@ const canEdit = memberCan(ME, 'productos');
         async function doImport() {
             const valid = prepared.filter(p => p.nombre);
             if (!valid.length) return;
-            btnNext.disabled = true; btnNext.textContent = 'Importando…';
+            btnNext.disabled = true; btnNext.textContent = I.i18nImportando || 'Importando…';
             try {
                 const res = await fetch('/api/productos/import', {
                     method: 'POST',
@@ -755,11 +798,11 @@ const canEdit = memberCan(ME, 'productos');
                     body: JSON.stringify({ rows: valid, upsert: upsertChk.checked }),
                 });
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'No se pudo importar');
+                if (!res.ok) throw new Error(data.error || I.i18nNoPudoImportar || 'No se pudo importar');
                 location.reload();
             } catch (err: any) {
                 errorEl.textContent = err.message;
-                btnNext.disabled = false; btnNext.textContent = `Importar ${valid.length} productos`;
+                btnNext.disabled = false; btnNext.textContent = tpl(I.i18nImportarTpl || 'Importar {n} producto{s}', { n: String(valid.length), s: 's' });
             }
         }
 
@@ -767,7 +810,7 @@ const canEdit = memberCan(ME, 'productos');
             const reader = new FileReader();
             reader.onload = () => {
                 grid = parseCSV(String(reader.result));
-                if (!grid.length) { errorEl.textContent = 'El archivo está vacío o no se pudo leer.'; return; }
+                if (!grid.length) { errorEl.textContent = I.i18nArchivoVacio || 'El archivo está vacío o no se pudo leer.'; return; }
                 buildMaps();
                 showStep('map');
             };
@@ -801,7 +844,9 @@ const canEdit = memberCan(ME, 'productos');
 
         // Plantilla CSV de ejemplo
         $('impTpl').addEventListener('click', () => {
-            const csv = 'sku,nombre,unidad,precio,activo\nCEM-50,Cemento gris 50kg,saco,198.00,1\nVAR-38,Varilla 3/8 x 12m,pieza,189.00,1\nBLK-152,Block hueco 15x20x40,pieza,16.50,1\n';
+            const csv = isEn
+                ? 'sku,name,unit,price,active\nCEM-50,Gray cement 50kg,bag,198.00,1\nVAR-38,Rebar 3/8 x 12m,piece,189.00,1\nBLK-152,Hollow block 15x20x40,piece,16.50,1\n'
+                : 'sku,nombre,unidad,precio,activo\nCEM-50,Cemento gris 50kg,saco,198.00,1\nVAR-38,Varilla 3/8 x 12m,pieza,189.00,1\nBLK-152,Block hueco 15x20x40,pieza,16.50,1\n';
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
@@ -891,6 +936,9 @@ const canEdit = memberCan(ME, 'productos');
         const clearBtn = document.getElementById('searchClear');
         const countEl = document.getElementById('catCount');
         if (!input) return;
+        const searchBox = document.querySelector('.ph-search');
+        const I = searchBox ? searchBox.dataset : {};
+        const tpl = (s, vars) => s.replace(/\{(\w+)\}/g, function (_, k) { return vars[k] != null ? vars[k] : ''; });
 
         const rows = Array.from(document.querySelectorAll('.catalogo .t-row'));
         const total = rows.length;
@@ -898,7 +946,7 @@ const canEdit = memberCan(ME, 'productos');
         if (!noResults) {
             noResults = document.createElement('div');
             noResults.className = 'search-no-results';
-            noResults.textContent = 'Sin resultados para esta búsqueda.';
+            noResults.textContent = I.i18nSinResultados || 'Sin resultados para esta búsqueda.';
             document.querySelector('.catalogo').appendChild(noResults);
         }
 
@@ -916,8 +964,9 @@ const canEdit = memberCan(ME, 'productos');
             });
             noResults.style.display = visible === 0 && q ? 'block' : 'none';
             if (countEl) {
-                if (q) countEl.textContent = `${visible} de ${total} producto${total === 1 ? '' : 's'}`;
-                else countEl.textContent = `${total} producto${total === 1 ? '' : 's'}`;
+                const label = total === 1 ? (I.i18nProductoSingular || 'producto') : (I.i18nProductoPlural || 'productos');
+                if (q) countEl.textContent = tpl(I.i18nNDeN || '{visible} de {total} {productoLabel}', { visible: String(visible), total: String(total), productoLabel: label });
+                else countEl.textContent = total + ' ' + label;
             }
         }
 

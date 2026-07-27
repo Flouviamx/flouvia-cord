@@ -7,47 +7,75 @@
 import AppLayout from '../../../layouts/AppLayout.astro';
 import { getKits, getProductos, getMyMembership, money } from '../../../lib/queries';
 import { memberCan } from '../../../lib/permissions';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 
 const [KITS, productos, ME] = await Promise.all([getKits(), getProductos(), getMyMembership()]);
 const catalogo = productos.filter((p) => p.activo);
 const canEdit = memberCan(ME, 'productos');
+const L = currentLocale();
+const kitLabel = KITS.length === 1 ? t(L, 'kit.kit_singular') : t(L, 'kit.kit_plural');
+const KIT_T = {
+    locale: L,
+    modalNuevo: t(L, 'kit.modal_nuevo_titulo'),
+    modalEditar: t(L, 'kit.modal_editar_titulo'),
+    lineaLibrePh: t(L, 'kit.linea_libre_ph'),
+    quitar: t(L, 'kit.quitar'),
+    comboHintVacio: t(L, 'kit.combo_hint_vacio'),
+    comboHintSumaTpl: t(L, 'kit.combo_hint_suma'),
+    comboHintAhorroTpl: t(L, 'kit.combo_hint_ahorro'),
+    comboHintCaroTpl: t(L, 'kit.combo_hint_caro'),
+    comboHintIgualTpl: t(L, 'kit.combo_hint_igual'),
+    sinCoincidencias: t(L, 'kit.sin_coincidencias'),
+    noPudoCargar: t(L, 'kit.no_pudo_cargar'),
+    noPudoEliminar: t(L, 'kit.no_pudo_eliminar'),
+    noPudoGuardar: t(L, 'kit.no_pudo_guardar'),
+    eliminarKitTitulo: t(L, 'kit.eliminar_kit_titulo'),
+    eliminarKitBodyTpl: t(L, 'kit.eliminar_kit_body'),
+    eliminarKitBtn: t(L, 'kit.eliminar_kit_btn'),
+    nombreObligatorio: t(L, 'kit.nombre_obligatorio'),
+    lineasLibresIncompletas: t(L, 'kit.lineas_libres_incompletas'),
+    comboInvalido: t(L, 'kit.combo_invalido'),
+    noPudoCrear: t(L, 'kit.no_pudo_crear'),
+    noPudoGuardarRenglon: t(L, 'kit.no_pudo_guardar_renglon'),
+};
 ---
 
-<AppLayout title="Kits — Cord" page="productos" heading="Productos">
+<AppLayout title={t(L, 'kit.title')} page="productos" heading={t(L, 'prod.catalogo')}>
     <div slot="page-tabs">
-        <a href="/app/productos" class="ph-tab">Catálogo</a>
-        <a href="/app/productos/kits" class="ph-tab active">Kits</a>
+        <a href="/app/productos" class="ph-tab">{t(L, 'prod.tab_catalogo')}</a>
+        <a href="/app/productos/kits" class="ph-tab active">{t(L, 'prod.tab_kits')}</a>
     </div>
     <div slot="topbar-actions">
-        {canEdit && <button class="btn-new" id="kitNew">+ Nuevo kit</button>}
+        {canEdit && <button class="btn-new" id="kitNew">{t(L, 'kit.nuevo_kit')}</button>}
     </div>
 
     <section class="kits-sec">
         <div class="section-head">
-            <h2>Tus kits</h2>
-            <span class="kit-count">{KITS.length} kit{KITS.length === 1 ? '' : 's'}</span>
+            <h2>{t(L, 'kit.tus_kits')}</h2>
+            <span class="kit-count">{KITS.length} {kitLabel}</span>
         </div>
 
         <div class="ki-list" id="kiList">
             {KITS.length === 0 && (
                 <div class="ki-empty">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-                    <p><b>Aún no tienes kits</b> Agrupa productos que sueles cotizar juntos (ej. un kit de obra negra) para insertarlos de un clic.</p>
-                    {canEdit && <button class="btn-new" id="kitNewEmpty">+ Nuevo kit</button>}
+                    <p><b>{t(L, 'kit.vacio_titulo')}</b> {t(L, 'kit.vacio_desc')}</p>
+                    {canEdit && <button class="btn-new" id="kitNewEmpty">{t(L, 'kit.nuevo_kit')}</button>}
                 </div>
             )}
             {KITS.map((k) => (
                 <div class="ki-row" data-id={k.id}>
                     <span class="ki-info">
-                        <span class="ki-name">{k.nombre}{!k.activo && <span class="ki-inactive">Inactivo</span>}</span>
+                        <span class="ki-name">{k.nombre}{!k.activo && <span class="ki-inactive">{t(L, 'kit.inactivo')}</span>}</span>
                         {k.descripcion && <span class="ki-desc">{k.descripcion}</span>}
                     </span>
-                    <span class="ki-count-pill">{k.itemCount} línea{k.itemCount === 1 ? '' : 's'}</span>
-                    {k.precioCombo != null && <span class="ki-combo-pill">Combo {money(k.precioCombo)}</span>}
+                    <span class="ki-count-pill">{k.itemCount} {k.itemCount === 1 ? t(L, 'kit.linea_singular') : t(L, 'kit.linea_plural')}</span>
+                    {k.precioCombo != null && <span class="ki-combo-pill">{t(L, 'kit.combo').replace('{monto}', money(k.precioCombo))}</span>}
                     {canEdit && (
                         <span class="ki-actions">
-                            <button class="ki-btn" data-edit={k.id}>Editar</button>
-                            <button class="ki-btn ki-btn-danger" data-del={k.id} data-del-name={k.nombre}>Eliminar</button>
+                            <button class="ki-btn" data-edit={k.id}>{t(L, 'kit.editar')}</button>
+                            <button class="ki-btn ki-btn-danger" data-del={k.id} data-del-name={k.nombre}>{t(L, 'kit.eliminar')}</button>
                         </span>
                     )}
                 </div>
@@ -59,52 +87,52 @@ const canEdit = memberCan(ME, 'productos');
         <dialog id="kitDlg" class="kmod">
             <form class="kmod-inner" id="kitForm">
                 <div class="kmod-head">
-                    <h2 id="kitTitle">Nuevo kit</h2>
-                    <button type="button" class="kmod-close" id="kitClose" aria-label="Cerrar">✕</button>
+                    <h2 id="kitTitle">{t(L, 'kit.modal_nuevo_titulo')}</h2>
+                    <button type="button" class="kmod-close" id="kitClose" aria-label={t(L, 'kit.cerrar')}>✕</button>
                 </div>
 
                 <div class="kmod-field">
-                    <label for="kitNombre">Nombre *</label>
-                    <input class="kmod-input" id="kitNombre" required maxlength="120" placeholder="Kit de obra negra" />
+                    <label for="kitNombre">{t(L, 'kit.nombre')}</label>
+                    <input class="kmod-input" id="kitNombre" required maxlength="120" placeholder={t(L, 'kit.nombre_ph')} />
                 </div>
                 <div class="kmod-field">
-                    <label for="kitDescripcion">Descripción <span class="kmod-opt">opcional</span></label>
-                    <input class="kmod-input" id="kitDescripcion" maxlength="300" placeholder="Cemento, varilla y block para 20 m² de muro" />
+                    <label for="kitDescripcion">{t(L, 'kit.descripcion')} <span class="kmod-opt">{t(L, 'kit.opcional')}</span></label>
+                    <input class="kmod-input" id="kitDescripcion" maxlength="300" placeholder={t(L, 'kit.descripcion_ph')} />
                 </div>
 
                 <div class="kmod-field">
-                    <label>Renglones del kit</label>
+                    <label>{t(L, 'kit.renglones')}</label>
                     <div class="ki-items" id="kiItems"></div>
-                    <div class="ki-items-empty" id="kiItemsEmpty">Agrega productos de tu catálogo o una línea libre.</div>
+                    <div class="ki-items-empty" id="kiItemsEmpty">{t(L, 'kit.renglones_vacio')}</div>
 
                     <div class="ki-add-row">
                         <div class="prod-search">
                             <svg class="prod-search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
-                            <input type="text" class="prod-input" id="kitProdInput" placeholder="Busca un producto de tu catálogo… (nombre o SKU)" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="kitProdDrop" />
+                            <input type="text" class="prod-input" id="kitProdInput" placeholder={t(L, 'kit.buscar_ph')} autocomplete="off" role="combobox" aria-expanded="false" aria-controls="kitProdDrop" />
                             <div class="prod-drop" id="kitProdDrop" hidden role="listbox"></div>
                         </div>
-                        <button type="button" class="btn-free-line" id="kitFreeLine">+ Línea libre</button>
+                        <button type="button" class="btn-free-line" id="kitFreeLine">{t(L, 'kit.linea_libre')}</button>
                     </div>
                 </div>
 
                 <div class="kmod-field">
-                    <label class="kmod-check"><input type="checkbox" id="kitComboToggle" /> Vender el kit a un precio fijo <span class="kmod-opt">opcional — combo con descuento</span></label>
+                    <label class="kmod-check"><input type="checkbox" id="kitComboToggle" /> {t(L, 'kit.combo_toggle')} <span class="kmod-opt">{t(L, 'kit.combo_toggle_hint')}</span></label>
                     <div class="kmod-combo-box" id="kitComboBox" hidden>
                         <div class="kmod-combo-row">
                             <span class="kmod-combo-pre">$</span>
                             <input type="number" min="0.01" step="0.01" class="kmod-combo-input" id="kitComboPrice" placeholder="0.00" />
                         </div>
-                        <p class="kmod-combo-hint" id="kitComboHint">Agrega productos de catálogo para calcular el ahorro.</p>
+                        <p class="kmod-combo-hint" id="kitComboHint">{t(L, 'kit.combo_hint_vacio')}</p>
                     </div>
                 </div>
 
                 <p class="kmod-error" id="kitError"></p>
 
                 <div class="kmod-actions">
-                    <button type="button" class="kmod-delete" id="kitDelete" hidden>Eliminar kit</button>
+                    <button type="button" class="kmod-delete" id="kitDelete" hidden>{t(L, 'kit.eliminar_kit_btn')}</button>
                     <span class="kmod-spacer"></span>
-                    <button type="button" class="kmod-cancel" id="kitCancel">Cancelar</button>
-                    <button type="submit" class="kmod-save" id="kitSave">Guardar kit</button>
+                    <button type="button" class="kmod-cancel" id="kitCancel">{t(L, 'kit.cancelar')}</button>
+                    <button type="submit" class="kmod-save" id="kitSave">{t(L, 'kit.guardar_kit')}</button>
                 </div>
             </form>
         </dialog>
@@ -249,10 +277,12 @@ const canEdit = memberCan(ME, 'productos');
     }
 </style>
 
-<script define:vars={{ catalogo }}>
+<script define:vars={{ catalogo, T: KIT_T }}>
     function initKits() {
         const dlg = document.getElementById('kitDlg');
         if (!dlg) return; // sin permiso de edición
+        const isEn = T.locale === 'en';
+        const tpl = (s, vars) => s.replace(/\{(\w+)\}/g, function (_, k) { return vars[k] != null ? vars[k] : ''; });
         const form = document.getElementById('kitForm');
         const title = document.getElementById('kitTitle');
         const errorEl = document.getElementById('kitError');
@@ -267,7 +297,7 @@ const canEdit = memberCan(ME, 'productos');
         let items = []; // { id?, productoId, descripcion, cantidad, unidad, sku, precio, persisted }
         let removedIds = [];
 
-        const money = (n) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n || 0);
+        const money = (n) => '$' + new Intl.NumberFormat(isEn ? 'en-US' : 'es-MX', { minimumFractionDigits: 2 }).format(n || 0);
         const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
         function renderItems() {
@@ -276,10 +306,10 @@ const canEdit = memberCan(ME, 'productos');
                 <div class="kii-row" data-idx="${idx}">
                     ${it.productoId
                         ? `<span class="kii-name">${esc(it.descripcion)}${it.sku ? `<small>${esc(it.sku)}</small>` : ''}</span>`
-                        : `<input type="text" class="kii-desc-input" data-idx="${idx}" data-field="descripcion" value="${esc(it.descripcion)}" placeholder="Descripción de la línea libre…" />`}
+                        : `<input type="text" class="kii-desc-input" data-idx="${idx}" data-field="descripcion" value="${esc(it.descripcion)}" placeholder="${esc(T.lineaLibrePh)}" />`}
                     <input type="number" min="0.01" step="0.01" class="kii-qty" data-idx="${idx}" data-field="cantidad" value="${it.cantidad}" />
                     <span class="kii-unit">${esc(it.unidad || '')}</span>
-                    <button type="button" class="kii-del" data-del="${idx}" aria-label="Quitar">
+                    <button type="button" class="kii-del" data-del="${idx}" aria-label="${esc(T.quitar)}">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                 </div>`).join('');
@@ -298,14 +328,14 @@ const canEdit = memberCan(ME, 'productos');
         function updateComboHint() {
             if (!$comboBox || $comboBox.hidden) return;
             const suma = sumaListaKit();
-            if (suma <= 0) { $comboHint.textContent = 'Agrega productos de catálogo para calcular el ahorro.'; $comboHint.className = 'kmod-combo-hint'; return; }
+            if (suma <= 0) { $comboHint.textContent = T.comboHintVacio; $comboHint.className = 'kmod-combo-hint'; return; }
             const combo = parseFloat($comboPrice.value) || 0;
-            if (!combo) { $comboHint.textContent = `Suma de lista: ${money(suma)}`; $comboHint.className = 'kmod-combo-hint'; return; }
+            if (!combo) { $comboHint.textContent = tpl(T.comboHintSumaTpl, { suma: money(suma) }); $comboHint.className = 'kmod-combo-hint'; return; }
             const ahorro = suma - combo;
             const pct = Math.round((Math.abs(ahorro) / suma) * 100);
-            if (ahorro > 0.004) { $comboHint.textContent = `Suma de lista: ${money(suma)} · el kit ahorra ${money(ahorro)} (${pct}%)`; $comboHint.className = 'kmod-combo-hint good'; }
-            else if (ahorro < -0.004) { $comboHint.textContent = `Suma de lista: ${money(suma)} · este precio es ${money(Math.abs(ahorro))} más caro que comprar suelto (${pct}%)`; $comboHint.className = 'kmod-combo-hint warn'; }
-            else { $comboHint.textContent = `Suma de lista: ${money(suma)} · mismo precio que comprar suelto`; $comboHint.className = 'kmod-combo-hint'; }
+            if (ahorro > 0.004) { $comboHint.textContent = tpl(T.comboHintAhorroTpl, { suma: money(suma), ahorro: money(ahorro), pct: String(pct) }); $comboHint.className = 'kmod-combo-hint good'; }
+            else if (ahorro < -0.004) { $comboHint.textContent = tpl(T.comboHintCaroTpl, { suma: money(suma), ahorro: money(Math.abs(ahorro)), pct: String(pct) }); $comboHint.className = 'kmod-combo-hint warn'; }
+            else { $comboHint.textContent = tpl(T.comboHintIgualTpl, { suma: money(suma) }); $comboHint.className = 'kmod-combo-hint'; }
         }
         $comboToggle?.addEventListener('change', () => {
             $comboBox.hidden = !$comboToggle.checked;
@@ -359,7 +389,7 @@ const canEdit = memberCan(ME, 'productos');
         function renderDrop() {
             if (!$prodDrop) return;
             $prodDrop.innerHTML = !prodResults.length
-                ? '<div class="prod-empty">No hay coincidencias en tu catálogo.</div>'
+                ? `<div class="prod-empty">${esc(T.sinCoincidencias)}</div>`
                 : prodResults.map((p, i) => `
                     <button type="button" class="prod-item ${i === prodActive ? 'is-active' : ''}" data-pid="${p.id}" role="option">
                         <span class="prod-item-name">${esc(p.nombre)}${p.sku ? `<small>${esc(p.sku)}</small>` : ''}</span>
@@ -406,7 +436,7 @@ const canEdit = memberCan(ME, 'productos');
             editId = null; items = []; removedIds = [];
             nombreInput.value = ''; descInput.value = '';
             $comboToggle.checked = false; $comboBox.hidden = true; $comboPrice.value = '';
-            title.textContent = 'Nuevo kit';
+            title.textContent = T.modalNuevo;
             btnDelete.hidden = true;
             errorEl.textContent = '';
             renderItems();
@@ -418,7 +448,7 @@ const canEdit = memberCan(ME, 'productos');
             nombreInput.value = kit.nombre; descInput.value = kit.descripcion || '';
             const hasCombo = kit.precioCombo != null;
             $comboToggle.checked = hasCombo; $comboBox.hidden = !hasCombo; $comboPrice.value = hasCombo ? kit.precioCombo : '';
-            title.textContent = 'Editar kit';
+            title.textContent = T.modalEditar;
             btnDelete.hidden = false;
             btnDelete.dataset.id = kit.id;
             errorEl.textContent = '';
@@ -435,15 +465,15 @@ const canEdit = memberCan(ME, 'productos');
             try {
                 const res = await fetch(`/api/kits/${b.dataset.edit}`);
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'No se pudo cargar el kit');
+                if (!res.ok) throw new Error(data.error || T.noPudoCargar);
                 openEdit(data.kit);
-            } catch (err) { window.cordToast?.(err.message || 'No se pudo cargar el kit', 'error'); }
+            } catch (err) { window.cordToast?.(err.message || T.noPudoCargar, 'error'); }
         }));
 
         async function deleteKit(id, nombre) {
-            if (!await window.cordConfirm({ title: 'Eliminar kit', body: `¿Eliminar el kit "${nombre}"? Esta acción no se puede deshacer.`, danger: true, confirmText: 'Eliminar' })) return false;
+            if (!await window.cordConfirm({ title: T.eliminarKitTitulo, body: tpl(T.eliminarKitBodyTpl, { nombre }), danger: true, confirmText: T.eliminarKitBtn })) return false;
             const res = await fetch(`/api/kits/${id}`, { method: 'DELETE' });
-            if (!res.ok) { const d = await res.json(); window.cordToast?.(d.error || 'No se pudo eliminar', 'error'); return false; }
+            if (!res.ok) { const d = await res.json(); window.cordToast?.(d.error || T.noPudoEliminar, 'error'); return false; }
             return true;
         }
 
@@ -459,15 +489,15 @@ const canEdit = memberCan(ME, 'productos');
             e.preventDefault();
             errorEl.textContent = '';
             const nombre = nombreInput.value.trim();
-            if (!nombre) { errorEl.textContent = 'El nombre del kit es obligatorio.'; return; }
+            if (!nombre) { errorEl.textContent = T.nombreObligatorio; return; }
             if (items.some((it) => !it.productoId && !it.descripcion.trim())) {
-                errorEl.textContent = 'Completa la descripción de todas las líneas libres (o quítalas).';
+                errorEl.textContent = T.lineasLibresIncompletas;
                 return;
             }
             let precioCombo = null;
             if ($comboToggle.checked) {
                 precioCombo = parseFloat($comboPrice.value) || 0;
-                if (precioCombo <= 0) { errorEl.textContent = 'Ingresa un precio de combo válido, mayor a $0.'; $comboPrice.focus(); return; }
+                if (precioCombo <= 0) { errorEl.textContent = T.comboInvalido; $comboPrice.focus(); return; }
             }
             btnSave.disabled = true;
             try {
@@ -475,11 +505,11 @@ const canEdit = memberCan(ME, 'productos');
                 if (!kitId) {
                     const res = await fetch('/api/kits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, descripcion: descInput.value, precio_combo: precioCombo }) });
                     const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || 'No se pudo crear el kit');
+                    if (!res.ok) throw new Error(data.error || T.noPudoCrear);
                     kitId = data.id;
                 } else {
                     const res = await fetch(`/api/kits/${kitId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'rename', nombre, descripcion: descInput.value, precio_combo: precioCombo }) });
-                    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'No se pudo guardar'); }
+                    if (!res.ok) { const d = await res.json(); throw new Error(d.error || T.noPudoGuardar); }
                 }
                 for (const rid of removedIds) {
                     await fetch(`/api/kits/${kitId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remove_item', item_id: rid }) });
@@ -488,11 +518,11 @@ const canEdit = memberCan(ME, 'productos');
                 for (const it of items) {
                     if (it.persisted) { orden++; continue; }
                     const res = await fetch(`/api/kits/${kitId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add_item', producto_id: it.productoId, descripcion: it.descripcion, cantidad: it.cantidad, orden: orden++ }) });
-                    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'No se pudo guardar un renglón'); }
+                    if (!res.ok) { const d = await res.json(); throw new Error(d.error || T.noPudoGuardarRenglon); }
                 }
                 location.reload();
             } catch (err) {
-                errorEl.textContent = err.message || 'No se pudo guardar el kit';
+                errorEl.textContent = err.message || T.noPudoGuardar;
                 btnSave.disabled = false;
             }
         });
