@@ -3,7 +3,12 @@ import AppLayout from '../../../../layouts/AppLayout.astro';
 import { money } from '../../../../lib/queries';
 import { getActiveOrgId } from '../../../../lib/db';
 import { getCashFlowPrediction } from '../../../../lib/analytics/cashflow';
+import { currentLocale } from '../../../../lib/context';
+import { t } from '../../../../i18n/app';
 
+const L = currentLocale();
+const isEn = L === 'en';
+const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
 const orgId = await getActiveOrgId();
 
 let predictions: any[] = [];
@@ -22,8 +27,8 @@ const hayDatos = conIngreso.length > 0;
 const nCotizaciones = new Set(conIngreso.flatMap((p) => p.contributingQuotes.map((q: any) => q.id))).size;
 const proximo = conIngreso[0];
 
-const fmtFecha = (d: any) => new Date(d).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
-const fmtFechaCorta = (d: any) => new Date(d).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+const fmtFecha = (d: any) => new Date(d).toLocaleDateString(isEn ? 'en-US' : 'es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+const fmtFechaCorta = (d: any) => new Date(d).toLocaleDateString(isEn ? 'en-US' : 'es-MX', { day: 'numeric', month: 'short' });
 
 // Agrupar en semanas (7 días) para la gráfica — mismo lenguaje visual que /app/cfo
 const HOY = new Date();
@@ -38,8 +43,8 @@ const semanas = Array.from({ length: 12 }, (_, i) => {
   const total = enRango.reduce((acc, p) => acc + p.expectedAmount, 0);
   const n = enRango.reduce((acc, p) => acc + p.contributingQuotes.length, 0);
   return {
-    label: i === 0 ? 'Esta semana' : 'Semana del ' + fmtFechaCorta(iniStr),
-    subLabel: n > 0 ? (n === 1 ? '1 cotización' : n + ' cotizaciones') : 'sin cobros esperados',
+    label: i === 0 ? t(L, 'flu.esta_semana') : tpl(t(L, 'flu.semana_del'), { fecha: fmtFechaCorta(iniStr) }),
+    subLabel: n > 0 ? (n === 1 ? t(L, 'flu.una_cotizacion') : tpl(t(L, 'flu.n_cotizaciones'), { n: String(n) })) : t(L, 'flu.sin_cobros_esperados'),
     total,
     n,
   };
@@ -53,12 +58,12 @@ const semanasConAncho = semanas.map((s) => ({
 const probTier = (p: number) => (p >= 0.7 ? 'ok' : p >= 0.4 ? 'mid' : 'low');
 ---
 
-<AppLayout title="Flujo de caja — Cord" page="flujo-caja" heading="Flujo de caja">
-  <p slot="page-sub">Cuándo vas a cobrar, cruzando el estado de tus cotizaciones con el historial real de pago de cada cliente.</p>
+<AppLayout title={t(L, 'flu.title')} page="flujo-caja" heading={t(L, 'flu.heading')}>
+  <p slot="page-sub">{t(L, 'flu.sub')}</p>
   <div slot="page-tabs">
-    <a href="/app/cobranza" class="ph-tab">Cobranza</a>
-    <a href="/app/tesoreria/cobranza" class="ph-tab">Cobranza con IA</a>
-    <a href="/app/tesoreria/flujo" class="ph-tab active">Flujo de caja</a>
+    <a href="/app/cobranza" class="ph-tab">{t(L, 'tia.tab_cobranza')}</a>
+    <a href="/app/tesoreria/cobranza" class="ph-tab">{t(L, 'tia.tab_ia')}</a>
+    <a href="/app/tesoreria/flujo" class="ph-tab active">{t(L, 'tia.tab_flujo')}</a>
   </div>
 
   {!hayDatos && (
@@ -66,9 +71,9 @@ const probTier = (p: number) => (p >= 0.7 ? 'ok' : p >= 0.4 ? 'mid' : 'low');
       <div class="empty-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="m9 15 2 2 4-4"/></svg>
       </div>
-      <h2>Sin cobros por proyectar</h2>
-      <p>Cuando tengas cotizaciones enviadas, vistas, aprobadas o facturadas, aquí verás en qué fechas esperas cobrarlas.</p>
-      <a href="/app/cotizaciones/nueva" class="empty-cta">+ Crear cotización</a>
+      <h2>{t(L, 'flu.vacio_titulo')}</h2>
+      <p>{t(L, 'flu.vacio_desc')}</p>
+      <a href="/app/cotizaciones/nueva" class="empty-cta">{t(L, 'flu.crear_cotizacion')}</a>
     </section>
   )}
 
@@ -77,27 +82,27 @@ const probTier = (p: number) => (p >= 0.7 ? 'ok' : p >= 0.4 ? 'mid' : 'low');
     <!-- KPIs -->
     <section class="kpis">
       <div class="kpi">
-        <span class="kpi-label">TOTAL ESPERADO · 90 DÍAS</span>
+        <span class="kpi-label">{t(L, 'flu.kpi_total_90')}</span>
         <span class="editorial kpi-num kpi-ok">{money(total90Days, 0)}</span>
-        <span class="kpi-sub">suma de lo que aún no cobras, ponderado por probabilidad</span>
+        <span class="kpi-sub">{t(L, 'flu.kpi_total_90_sub')}</span>
       </div>
       <div class="kpi">
-        <span class="kpi-label">PRÓXIMO COBRO ESPERADO</span>
+        <span class="kpi-label">{t(L, 'flu.kpi_proximo')}</span>
         <span class="editorial kpi-num">{proximo ? money(proximo.expectedAmount, 0) : '—'}</span>
-        <span class="kpi-sub">{proximo ? 'el ' + fmtFecha(proximo.date) : 'sin fecha próxima'}</span>
+        <span class="kpi-sub">{proximo ? tpl(t(L, 'flu.el_dia'), { fecha: fmtFecha(proximo.date) }) : t(L, 'flu.sin_fecha')}</span>
       </div>
       <div class="kpi">
-        <span class="kpi-label">COTIZACIONES EN PROYECCIÓN</span>
+        <span class="kpi-label">{t(L, 'flu.kpi_en_proyeccion')}</span>
         <span class="editorial kpi-num">{nCotizaciones}</span>
-        <span class="kpi-sub">enviadas, vistas, aprobadas o facturadas — aún sin cobrar</span>
+        <span class="kpi-sub">{t(L, 'flu.kpi_en_proyeccion_sub')}</span>
       </div>
     </section>
 
     <!-- Gráfica semanal -->
     <section class="forecast-card">
       <div class="sec-head">
-        <h2 class="sec-title">Próximas 12 semanas</h2>
-        <span class="section-note">monto esperado por semana</span>
+        <h2 class="sec-title">{t(L, 'flu.semanas_titulo')}</h2>
+        <span class="section-note">{t(L, 'flu.semanas_note')}</span>
       </div>
       <div class="weeks">
         {semanasConAncho.map((s) => (
@@ -116,19 +121,15 @@ const probTier = (p: number) => (p >= 0.7 ? 'ok' : p >= 0.4 ? 'mid' : 'low');
         ))}
       </div>
       <p class="forecast-note">
-        <b>Cómo se calcula:</b> cruzamos dos datos por cada cotización pendiente de cobro. Primero, qué tan
-        avanzada está (enviada, vista, aprobada o ya facturada — entre más avanzada, más probable que se
-        pague). Segundo, cuánto tarda en pagar ese cliente en particular, según su historial real con tu
-        negocio. Con eso ubicamos una fecha probable de cobro y calculamos 3 escenarios: conservador,
-        esperado y optimista.
+        <b>{t(L, 'flu.como_se_calcula_b')}</b>{t(L, 'flu.como_se_calcula_texto')}
       </p>
     </section>
 
     <!-- Detalle por fecha -->
     <section class="detail-card">
       <div class="sec-head">
-        <h2 class="sec-title">Detalle por fecha</h2>
-        <span class="section-note">el % es la probabilidad de cobro de cada cotización</span>
+        <h2 class="sec-title">{t(L, 'flu.detalle_titulo')}</h2>
+        <span class="section-note">{t(L, 'flu.detalle_note')}</span>
       </div>
       <div class="tf-rows">
         {conIngreso.map((p) => (
@@ -142,7 +143,7 @@ const probTier = (p: number) => (p >= 0.7 ? 'ok' : p >= 0.4 ? 'mid' : 'low');
                     <span class="tf-empresa">{q.empresa}</span>
                     <span class="editorial tf-monto">{money(q.amount, 0)}</span>
                     <span class:list={['tasa-pill', 'tasa-' + probTier(q.probability)]}>
-                      {Math.round(q.probability * 100)}% prob.
+                      {Math.round(q.probability * 100)}% {t(L, 'flu.prob')}
                     </span>
                   </div>
                 ))}
@@ -150,8 +151,8 @@ const probTier = (p: number) => (p >= 0.7 ? 'ok' : p >= 0.4 ? 'mid' : 'low');
             </div>
             <div class="tf-row-right">
               <span class="editorial tf-expected">{money(p.expectedAmount, 0)}</span>
-              <span class="tf-expected-lbl">Escenario esperado</span>
-              <span class="tf-range">entre {money(p.conservativeAmount, 0)} y {money(p.optimisticAmount, 0)}</span>
+              <span class="tf-expected-lbl">{t(L, 'flu.escenario_esperado')}</span>
+              <span class="tf-range">{tpl(t(L, 'flu.entre_y'), { min: money(p.conservativeAmount, 0), max: money(p.optimisticAmount, 0) })}</span>
             </div>
           </div>
         ))}
