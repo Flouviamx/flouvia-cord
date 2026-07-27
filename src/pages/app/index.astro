@@ -2,6 +2,15 @@
 // Dashboard — pipeline, monto por cerrar, actividad reciente. Datos reales (Neon).
 import AppLayout from '../../layouts/AppLayout.astro';
 import { getDashboard, getTareas, getCFO, getAnalytics, getOrg, STATUS_META, money } from '../../lib/queries';
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
+
+const L = currentLocale();
+const tf = (key: string, vars: Record<string, string> = {}) => {
+    let s = t(L, key as any);
+    for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
+    return s;
+};
 
 const [dash, TAREAS, CFO, ANALYTICS, ORG] = await Promise.all([getDashboard(), getTareas(), getCFO(), getAnalytics(), getOrg()]);
 // Aviso único para invitar a configurar cobros a quien aún no conecta su cuenta
@@ -38,18 +47,18 @@ const demoToken = isDemo ? COTIZACIONES[0].token : null;
 const showTour = isDemo && COTIZACIONES[0].status === 'sent';
 ---
 
-<AppLayout title="Dashboard — Cord" page="dashboard" heading="Dashboard">
+<AppLayout title="Dashboard — Cord" page="dashboard" heading={t(L, 'dash.heading')}>
     {mostrarNudgeCobros && (
         <div class="cobros-nudge" id="cobrosNudge" style="display:none">
             <div class="cn-ico">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5" fill="currentColor" fill-opacity="0.12"/><path d="M2 10h20"/></svg>
             </div>
             <div class="cn-text">
-                <strong>Activa los cobros en línea</strong>
-                <span>Conecta tu cuenta para que tus clientes paguen las cotizaciones con tarjeta o transferencia. El dinero cae directo a tu cuenta — Cord no toca tus fondos.</span>
+                <strong>{t(L, 'dash.nudge_titulo')}</strong>
+                <span>{t(L, 'dash.nudge_desc')}</span>
             </div>
-            <a class="cn-cta" href="/app/ajustes/cobros">Configurar cobros</a>
-            <button type="button" class="cn-close" id="cobrosNudgeClose" aria-label="Descartar">
+            <a class="cn-cta" href="/app/ajustes/cobros">{t(L, 'dash.nudge_cta')}</a>
+            <button type="button" class="cn-close" id="cobrosNudgeClose" aria-label={t(L, 'dash.nudge_descartar')}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
         </div>
@@ -70,48 +79,48 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     <!-- KPIs -->
     <section class="kpis">
         <div class="kpi">
-            <span class="kpi-label">POR CERRAR</span>
+            <span class="kpi-label">{t(L, 'dash.kpi_por_cerrar')}</span>
             <span class="editorial kpi-num" data-countup={porCerrar.toFixed(2)}>{money(porCerrar)}</span>
-            <span class="kpi-sub">{abiertas} cotizaciones activas</span>
+            <span class="kpi-sub">{tf('dash.kpi_cotizaciones_activas', { n: String(abiertas) })}</span>
         </div>
         <div class="kpi">
-            <span class="kpi-label">CERRADO ESTE MES</span>
+            <span class="kpi-label">{t(L, 'dash.kpi_cerrado_mes')}</span>
             <span class="editorial kpi-num kpi-ok" data-countup={cerradoMes.toFixed(2)}>{money(cerradoMes)}</span>
-            <span class="kpi-sub">{aprobadasN} aprobadas · {pagadasN} pagada{pagadasN === 1 ? '' : 's'}</span>
+            <span class="kpi-sub">{tf('dash.kpi_aprobadas_pagadas', { a: String(aprobadasN), p: String(pagadasN), s: pagadasN === 1 ? '' : 's' })}</span>
         </div>
         <div class="kpi">
-            <span class="kpi-label">TASA DE CIERRE</span>
+            <span class="kpi-label">{t(L, 'dash.kpi_tasa_cierre')}</span>
             <span class="editorial kpi-num">{tasaCierre}<span class="kpi-pct">%</span></span>
-            <span class="kpi-sub">últimos 90 días</span>
+            <span class="kpi-sub">{t(L, 'dash.kpi_ultimos_90d')}</span>
         </div>
         <a class="kpi kpi-link" href="/app/cotizaciones">
-            <span class="kpi-label">POR DAR SEGUIMIENTO</span>
+            <span class="kpi-label">{t(L, 'dash.kpi_por_seguimiento')}</span>
             <span class:list={['editorial', 'kpi-num', { 'kpi-warn': seguimiento > 0 }]}>{seguimiento}</span>
-            <span class="kpi-sub">{seguimiento === 1 ? 'cotización vista' : 'cotizaciones vistas'}, sin responder</span>
+            <span class="kpi-sub">{seguimiento === 1 ? t(L, 'dash.kpi_vista_singular') : t(L, 'dash.kpi_vista_plural')}</span>
         </a>
     </section>
 
     <!-- Salud del pipeline (DSO · concentración · ingreso esperado) -->
     <section class="health">
         <div class="sec-head">
-            <h2 class="sec-title">Salud del pipeline</h2>
-            <a href="/app/cfo" class="sec-link">Ver CFO →</a>
+            <h2 class="sec-title">{t(L, 'dash.salud_titulo')}</h2>
+            <a href="/app/cfo" class="sec-link">{t(L, 'dash.ver_cfo')}</a>
         </div>
         <div class="health-grid">
             <div class="health-cell">
-                <span class="health-label">DÍAS PROMEDIO DE COBRO (DSO)</span>
+                <span class="health-label">{t(L, 'dash.dso_label')}</span>
                 <span class:list={['editorial', 'health-num', `h-${dsoTone}`]}>{dso}<span class="health-unit">d</span></span>
-                <span class="health-sub"><span class:list={['health-dot', `h-${dsoTone}`]}></span>{dsoTone === 'ok' ? 'Saludable' : dsoTone === 'warn' ? 'Vigilar' : 'Alto — acelerar cobro'}</span>
+                <span class="health-sub"><span class:list={['health-dot', `h-${dsoTone}`]}></span>{dsoTone === 'ok' ? t(L, 'dash.dso_ok') : dsoTone === 'warn' ? t(L, 'dash.dso_warn') : t(L, 'dash.dso_danger')}</span>
             </div>
             <div class="health-cell">
-                <span class="health-label">CONCENTRACIÓN DE RIESGO</span>
+                <span class="health-label">{t(L, 'dash.conc_label')}</span>
                 <span class:list={['editorial', 'health-num', `h-${concTone}`]}>{concentracion}<span class="health-unit">%</span></span>
-                <span class="health-sub"><span class:list={['health-dot', `h-${concTone}`]}></span>{concentracion >= 70 ? 'Top cliente domina el pipeline' : concentracion >= 40 ? 'Moderada' : 'Bien diversificado'}</span>
+                <span class="health-sub"><span class:list={['health-dot', `h-${concTone}`]}></span>{concentracion >= 70 ? t(L, 'dash.conc_danger') : concentracion >= 40 ? t(L, 'dash.conc_warn') : t(L, 'dash.conc_ok')}</span>
             </div>
             <div class="health-cell">
-                <span class="health-label">INGRESO ESPERADO (PONDERADO)</span>
+                <span class="health-label">{t(L, 'dash.ingreso_esperado_label')}</span>
                 <span class="editorial health-num">{money(ingresoEsperado, 0)}</span>
-                <span class="health-sub">de {money(CFO.kpis.totalPipeline, 0)} en pipeline abierto</span>
+                <span class="health-sub">{tf('dash.de_pipeline', { monto: money(CFO.kpis.totalPipeline, 0) })}</span>
             </div>
         </div>
     </section>
@@ -119,8 +128,8 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     <!-- Pipeline -->
     <section class="pipeline">
         <div class="sec-head">
-            <h2 class="sec-title">Pipeline</h2>
-            <a href="/app/cotizaciones" class="sec-link">Ver todas →</a>
+            <h2 class="sec-title">{t(L, 'dash.pipeline_titulo')}</h2>
+            <a href="/app/cotizaciones" class="sec-link">{t(L, 'dash.ver_todas')}</a>
         </div>
         <div class="pipe-row">
             {(['draft', 'sent', 'viewed', 'approved', 'paid'] as const).map((st) => {
@@ -144,18 +153,18 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     <div class="two-col two-col-flow">
         <section class="flow-card">
             <div class="sec-head">
-                <h2 class="sec-title">Flujo esperado · 5 semanas</h2>
-                <a href="/app/tesoreria/flujo" class="sec-link">Tesorería →</a>
+                <h2 class="sec-title">{t(L, 'dash.flujo_titulo')}</h2>
+                <a href="/app/tesoreria/flujo" class="sec-link">{t(L, 'dash.tesoreria')}</a>
             </div>
             <div class="flow-bars">
-                {semanas.map((s) => (
+                {semanas.map((s, i) => (
                     <div class="flow-col">
                         <span class="editorial flow-amount">{s.valorEsperado > 0 ? money(s.valorEsperado, 0) : '—'}</span>
                         <div class="flow-track">
                             <div class="flow-fill" style={`height:${Math.max(s.valorEsperado > 0 ? 6 : 0, Math.round((s.valorEsperado / maxSemana) * 100))}%`}></div>
                         </div>
-                        <span class="flow-label">{s.label.replace('semana', 'sem')}</span>
-                        <span class="flow-n">{s.n > 0 ? `${s.n} cot.` : ''}</span>
+                        <span class="flow-label">{t(L, `dash.sem_short.${i}` as any)}</span>
+                        <span class="flow-n">{s.n > 0 ? tf('dash.n_cot', { n: String(s.n) }) : ''}</span>
                     </div>
                 ))}
             </div>
@@ -163,7 +172,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
 
         <section class="silence-card">
             <div class="sec-head">
-                <h2 class="sec-title">Necesitan seguimiento</h2>
+                <h2 class="sec-title">{t(L, 'dash.seguimiento_titulo')}</h2>
                 {silenciadas.length > 0 && <span class="silence-count">{CFO.kpis.nSilenciadas}</span>}
             </div>
             {silenciadas.length > 0 ? (
@@ -174,7 +183,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
                                 <span class="silence-folio">{s.folio}</span>
                                 <span class="silence-client">{s.empresa}</span>
                             </div>
-                            <span class="silence-days">{s.dias}d sin respuesta</span>
+                            <span class="silence-days">{tf('dash.sin_respuesta', { n: String(s.dias) })}</span>
                             <span class="editorial silence-total">{money(s.total, 0)}</span>
                             <span class="silence-go">→</span>
                         </a>
@@ -183,7 +192,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             ) : (
                 <div class="silence-empty">
                     <span class="silence-empty-ico">✓</span>
-                    <p>Sin cotizaciones silenciadas. Todo tu pipeline está activo.</p>
+                    <p>{t(L, 'dash.sin_silenciadas')}</p>
                 </div>
             )}
         </section>
@@ -193,8 +202,8 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
         <!-- Cotizaciones recientes -->
         <section class="list-card">
             <div class="sec-head">
-                <h2 class="sec-title">Recientes</h2>
-                <a href="/app/cotizaciones" class="sec-link">Ver todas →</a>
+                <h2 class="sec-title">{t(L, 'dash.recientes_titulo')}</h2>
+                <a href="/app/cotizaciones" class="sec-link">{t(L, 'dash.ver_todas')}</a>
             </div>
             <div class="quote-list">
                 {recientes.map((q) => (
@@ -215,7 +224,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
 
         <!-- Actividad -->
         <section class="activity-card">
-            <div class="sec-head"><h2 class="sec-title">Actividad</h2></div>
+            <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.actividad_titulo')}</h2></div>
             <div class="feed">
                 {eventosFeed.map((e) => (
                     <a href={`/app/cotizaciones/${e.id}`} class="feed-item">
@@ -233,7 +242,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     <!-- Mix: clientes por tasa de aprobación + productos por ingreso -->
     <div class="two-col two-col-even">
         <section class="rank-card">
-            <div class="sec-head"><h2 class="sec-title">Clientes por tasa de aprobación</h2></div>
+            <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.rank_clientes_titulo')}</h2></div>
             {clientesTasa.length > 0 ? (
                 <div class="rank-list">
                     {clientesTasa.map((c) => (
@@ -244,11 +253,11 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
                         </div>
                     ))}
                 </div>
-            ) : <p class="rank-empty">Aún no hay historial suficiente.</p>}
+            ) : <p class="rank-empty">{t(L, 'dash.rank_sin_historial')}</p>}
         </section>
 
         <section class="rank-card">
-            <div class="sec-head"><h2 class="sec-title">Productos por ingreso</h2></div>
+            <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.rank_productos_titulo')}</h2></div>
             {topProductos.length > 0 ? (
                 <div class="rank-list">
                     {topProductos.map((p) => (
@@ -259,31 +268,31 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
                         </div>
                     ))}
                 </div>
-            ) : <p class="rank-empty">Aún no hay productos cotizados.</p>}
+            ) : <p class="rank-empty">{t(L, 'dash.rank_sin_productos')}</p>}
         </section>
     </div>
 
     <!-- Tareas / recordatorios -->
     <section class="tasks-card">
-        <div class="sec-head"><h2 class="sec-title">Tareas y recordatorios</h2></div>
+        <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.tareas_titulo')}</h2></div>
         <form class="task-add" id="taskAdd">
-            <input id="taskTitulo" class="task-input" placeholder="Ej. Llamar a GAMA para dar seguimiento…" autocomplete="off" required />
-            <input id="taskDue" class="task-date" type="date" aria-label="Fecha límite" />
-            <button class="task-btn" type="submit">Agregar</button>
+            <input id="taskTitulo" class="task-input" placeholder={t(L, 'dash.tarea_ph')} autocomplete="off" required />
+            <input id="taskDue" class="task-date" type="date" aria-label={t(L, 'dash.tarea_fecha_limite')} />
+            <button class="task-btn" type="submit">{t(L, 'dash.agregar')}</button>
         </form>
         <div class="task-list" id="taskList">
-            {TAREAS.map((t) => (
-                <div class="task-row" data-id={t.id}>
-                    <button class="task-check" data-done aria-label="Marcar completada"></button>
+            {TAREAS.map((tarea) => (
+                <div class="task-row" data-id={tarea.id}>
+                    <button class="task-check" data-done aria-label={t(L, 'dash.marcar_completada')}></button>
                     <div class="task-body">
-                        <span class="task-title">{t.titulo}</span>
-                        {(t.folio || t.due) && <span class="task-meta">{[t.folio, t.due].filter(Boolean).join(' · ')}</span>}
+                        <span class="task-title">{tarea.titulo}</span>
+                        {(tarea.folio || tarea.due) && <span class="task-meta">{[tarea.folio, tarea.due].filter(Boolean).join(' · ')}</span>}
                     </div>
-                    {t.vencida && <span class="task-overdue">vencida</span>}
-                    <button class="task-del" data-del aria-label="Eliminar">×</button>
+                    {tarea.vencida && <span class="task-overdue">{t(L, 'dash.vencida')}</span>}
+                    <button class="task-del" data-del aria-label={t(L, 'dash.eliminar')}>×</button>
                 </div>
             ))}
-            <p class="task-empty" id="taskEmpty" hidden={TAREAS.length > 0}>Sin pendientes. Agrega un recordatorio arriba.</p>
+            <p class="task-empty" id="taskEmpty" hidden={TAREAS.length > 0}>{t(L, 'dash.tareas_vacio')}</p>
         </div>
     </section>
 
@@ -292,16 +301,16 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             <div class="demo-tour-inner">
                 <span class="demo-tour-ico">✨</span>
                 <div class="demo-tour-text">
-                    <strong>¡Tu primera cotización está viva!</strong>
-                    <p id="demoTourMsg">El cliente está por abrir el link que le enviaste...</p>
+                    <strong>{t(L, 'dash.tour_titulo')}</strong>
+                    <p id="demoTourMsg">{t(L, 'dash.tour_msg_inicial')}</p>
                 </div>
             </div>
         </div>
-        <script define:vars={{ demoToken }}>
+        <script define:vars={{ demoToken, tourMsgFinal: t(L, 'dash.tour_msg_final') }}>
             setTimeout(() => {
                 const msg = document.getElementById('demoTourMsg');
-                if (msg) msg.textContent = '¡Magia! El cliente acaba de abrirla.';
-                
+                if (msg) msg.textContent = tourMsgFinal;
+
                 // Simula al cliente abriendo el link público para disparar 'viewed'
                 fetch('/q/' + demoToken).then(() => {
                     setTimeout(() => {
@@ -544,7 +553,8 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     // Count-up ligero de los KPIs (vanilla, sin GSAP — la app no carga GSAP)
     document.addEventListener('DOMContentLoaded', () => {
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        const fmt = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+        const localeIntl = document.documentElement.lang === 'en' ? 'en-US' : 'es-MX';
+        const fmt = (n: number) => '$' + new Intl.NumberFormat(localeIntl, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
         document.querySelectorAll<HTMLElement>('[data-countup]').forEach((el) => {
             const target = parseFloat(el.dataset.countup || '0');
             const t0 = performance.now();

@@ -4,7 +4,8 @@
 // Re-exporta los helpers puros y STATUS_META del mock (no se duplican).
 
 import { sql, getActiveOrgId, withOrgTx, withPublicToken } from './db';
-import { currentUserId, currentOrgIdOverride } from './context';
+import { currentUserId, currentOrgIdOverride, currentLocale } from './context';
+import { t as i18nT } from '../i18n/app';
 import { dispatchQuoteEvent } from './webhooks';
 import { memberCan, planTienePresupuestos, type Membership, type PermKey, type PermMap } from './permissions';
 import { INCLUDED } from './billing';
@@ -1153,7 +1154,8 @@ async function getCFOUncached() {
     }).sort((a, b) => b.valorEsperado - a.valorEsperado);
 
     // Proyección de flujo de caja: 5 cubetas semanales por días a cobro.
-    const semLabels = ['Esta semana', 'Próxima semana', 'En 2 semanas', 'En 3 semanas', 'En 4+ semanas'];
+    const cfoLocale = currentLocale();
+    const semLabels = [0, 1, 2, 3, 4].map((i) => i18nT(cfoLocale, `dash.sem.${i}` as any));
     const semanas = semLabels.map((label, i) => ({ n: 0, label, valorEsperado: 0 }));
     for (const it of items) {
         const idx = Math.min(4, Math.max(0, Math.floor(it.diasParaCobro / 7)));
