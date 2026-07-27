@@ -8,49 +8,97 @@
 import AppLayout from '../../../layouts/AppLayout.astro';
 import { getMyMembership, getOrg } from '../../../lib/queries';
 import { memberCan, planTienePresupuestos } from '../../../lib/permissions';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 
+const L = currentLocale();
 const ME = await getMyMembership();
 const ORG = await getOrg();
 const hasPerm = memberCan(ME, 'analitica');
 const hasPlan = planTienePresupuestos(ORG.plan_raw);
 const hasAccess = hasPerm && hasPlan;
+
+const HER_T = {
+    isEn: L === 'en',
+    tipoLabel: { proyecto: t(L, 'her.tipo_proyecto'), inventario: t(L, 'her.tipo_inventario'), variaciones: t(L, 'her.tipo_variaciones') },
+    seAcepta: t(L, 'her.se_acepta'),
+    seRechaza: t(L, 'her.se_rechaza'),
+    noSeRecupera: t(L, 'her.no_se_recupera'),
+    aniosSuffix: t(L, 'her.anios_suffix'),
+    vpnLabel: t(L, 'her.vpn_label'),
+    tirLabel: t(L, 'her.tir_label'),
+    tirSub: t(L, 'her.tir_sub'),
+    paybackLabel: t(L, 'her.payback_label'),
+    factorLabel: t(L, 'her.factor_label'),
+    factorSub: t(L, 'her.factor_sub'),
+    cepLabel: t(L, 'her.cep_label'),
+    reordenLabel: t(L, 'her.reorden_label'),
+    reordenSubTpl: t(L, 'her.reorden_sub'),
+    ordenesAnioLabel: t(L, 'her.ordenes_anio_label'),
+    costoTotalLabel: t(L, 'her.costo_total_label'),
+    costoTotalSubTpl: t(L, 'her.costo_total_sub'),
+    total: t(L, 'her.total'),
+    thCosto: t(L, 'her.th_concepto'),
+    thCostoStd: t(L, 'her.th_costo_std'),
+    thCostoReal: t(L, 'her.th_costo_real'),
+    thVarTotal: t(L, 'her.th_var_total'),
+    thVarPrecio: t(L, 'her.th_var_precio'),
+    thVarCantidad: t(L, 'her.th_var_cantidad'),
+    quitarConcepto: t(L, 'her.quitar_concepto'),
+    noPudoAbrir: t(L, 'her.no_pudo_abrir'),
+    eliminarEscenarioTitulo: t(L, 'her.eliminar_escenario_titulo'),
+    eliminarEscenarioBody: t(L, 'her.eliminar_escenario_body'),
+    eliminarBtn: t(L, 'her.eliminar'),
+    noPudoEliminar: t(L, 'her.no_pudo_eliminar'),
+    escenarioEliminado: t(L, 'her.escenario_eliminado'),
+    cambiosGuardados: t(L, 'her.cambios_guardados'),
+    noPudoGuardar: t(L, 'her.no_pudo_guardar'),
+    escribeNombre: t(L, 'her.escribe_nombre'),
+    noPudoGuardarPunto: t(L, 'her.no_pudo_guardar_punto'),
+    escenarioGuardado: t(L, 'her.escenario_guardado'),
+    editandoTpl: t(L, 'her.editando_tpl'),
+    guardarCambios: t(L, 'her.guardar_cambios'),
+    guardarEscenario: t(L, 'her.guardar_escenario'),
+    flujoCalculadoTpl: t(L, 'her.flujo_calculado_tpl'),
+    flujoAnioTpl: t(L, 'her.flujo_anio_tpl'),
+};
 ---
 
-<AppLayout title="Herramientas de análisis — Cord" page="presupuestos" heading="Presupuestos">
-    <div slot="page-sub">Calculadoras de decisión — evaluación de proyectos y punto óptimo de inventario.</div>
+<AppLayout title={t(L, 'her.title')} page="presupuestos" heading={t(L, 'her.heading')}>
+    <div slot="page-sub">{t(L, 'her.sub')}</div>
     {hasPerm && (
         <div slot="page-tabs">
-            <a href="/app/presupuestos" class="ph-tab">Cédulas</a>
-            <a href="/app/presupuestos/herramientas" class="ph-tab active">Herramientas</a>
+            <a href="/app/presupuestos" class="ph-tab">{t(L, 'her.tab_cedulas')}</a>
+            <a href="/app/presupuestos/herramientas" class="ph-tab active">{t(L, 'her.tab_herramientas')}</a>
         </div>
     )}
 
     {!hasPerm && (
         <div class="pr-denied">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <h3>Sin acceso</h3>
-            <p>Tu rol actual no tiene permiso para ver herramientas de análisis. Contacta al administrador de tu organización.</p>
+            <h3>{t(L, 'her.sin_acceso_titulo')}</h3>
+            <p>{t(L, 'her.sin_acceso_desc')}</p>
         </div>
     )}
     {hasPerm && !hasPlan && (
         <div class="pr-denied">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <h3>Disponible desde el plan Profesional</h3>
-            <p>Las herramientas de análisis (VPN/TIR, inventario, variaciones) son una función de planeación financiera avanzada. Actualiza tu plan para desbloquearla.</p>
-            <a href="/app/ajustes/plan" class="empty-cta">Ver planes</a>
+            <h3>{t(L, 'her.plan_pro_titulo')}</h3>
+            <p>{t(L, 'her.plan_pro_desc')}</p>
+            <a href="/app/ajustes/plan" class="empty-cta">{t(L, 'her.ver_planes')}</a>
         </div>
     )}
 
     {hasAccess && <>
         <!-- ── Escenarios guardados ─────────────────────────────────── -->
-        <section class="tl-saved">
-            <div class="sec-head"><h2 class="sec-title">Escenarios guardados</h2></div>
+        <section class="tl-saved" id="toolsRoot" data-i18n={JSON.stringify(HER_T)}>
+            <div class="sec-head"><h2 class="sec-title">{t(L, 'her.escenarios_guardados')}</h2></div>
             <div class="skeleton-wrap" id="savedSkel">
                 <div class="skeleton skeleton-line" style="width:100%;height:44px;margin-bottom:8px"></div>
                 <div class="skeleton skeleton-line" style="width:100%;height:44px"></div>
             </div>
             <div id="savedEmpty" class="tl-saved-empty" hidden>
-                Aún no guardas ningún escenario. Usa una calculadora abajo y presiona “Guardar escenario”.
+                {t(L, 'her.escenarios_vacio')}
             </div>
             <div id="savedRows" class="pr-list" hidden></div>
         </section>
@@ -58,17 +106,17 @@ const hasAccess = hasPerm && hasPlan;
         <!-- ── Calculadora 1: Evaluación de proyecto ─────────────────── -->
         <section class="tl-tool" id="toolProyecto">
             <div class="sec-head">
-                <h2 class="sec-title">Evaluación de proyecto (VPN)</h2>
+                <h2 class="sec-title">{t(L, 'her.eval_proyecto_titulo')}</h2>
                 <span class="tl-loaded" id="proyLoaded" hidden></span>
             </div>
-            <p class="tl-desc">Valor presente neto, tasa interna de retorno y periodo de recuperación de una inversión.</p>
+            <p class="tl-desc">{t(L, 'her.eval_proyecto_desc')}</p>
 
             <div class="tl-grid">
-                <label class="fld"><span>Inversión inicial ($)</span>
+                <label class="fld"><span>{t(L, 'her.inversion_inicial')}</span>
                     <input type="number" step="any" id="p_inversion" value="100000" /></label>
-                <label class="fld"><span>Tasa de descuento (%)</span>
+                <label class="fld"><span>{t(L, 'her.tasa_descuento')}</span>
                     <input type="number" step="any" id="p_tasa" value="15" /></label>
-                <label class="fld"><span>Número de años</span>
+                <label class="fld"><span>{t(L, 'her.numero_anios')}</span>
                     <input type="number" step="1" min="1" max="60" id="p_anios" value="6" /></label>
             </div>
 
@@ -76,93 +124,93 @@ const hasAccess = hasPerm && hasPlan;
                 <label class="tl-switch">
                     <input type="checkbox" id="p_uniforme" checked />
                     <span class="tl-switch-track"><span class="tl-switch-thumb"></span></span>
-                    <span class="tl-switch-txt">El flujo es igual cada año</span>
+                    <span class="tl-switch-txt">{t(L, 'her.flujo_igual')}</span>
                 </label>
                 <div id="p_uniformeWrap">
-                    <label class="fld"><span>Flujo neto anual ($)</span>
+                    <label class="fld"><span>{t(L, 'her.flujo_neto_anual')}</span>
                         <input type="number" step="any" id="p_flujo" value="41000" /></label>
                 </div>
                 <div id="p_porAnioWrap" class="tl-grid" hidden></div>
             </div>
 
             <details class="tl-asst">
-                <summary>Asistente: derivar el flujo anual desde la utilidad</summary>
-                <p class="m-hint">Calcula el flujo neto = (ganancia antes de depreciación e impuestos − depreciación) × (1 − ISR) + depreciación, y lo copia al flujo anual de arriba.</p>
+                <summary>{t(L, 'her.asistente_titulo')}</summary>
+                <p class="m-hint">{t(L, 'her.asistente_hint')}</p>
                 <div class="tl-grid">
-                    <label class="fld"><span>Ganancia anual antes de dep. e imp. ($)</span>
+                    <label class="fld"><span>{t(L, 'her.ganancia_anual')}</span>
                         <input type="number" step="any" id="a_ganancia" value="50000" /></label>
-                    <label class="fld"><span>Depreciación anual ($)</span>
+                    <label class="fld"><span>{t(L, 'her.dep_anual')}</span>
                         <input type="number" step="any" id="a_dep" value="20000" /></label>
-                    <label class="fld"><span>Tasa de ISR (%)</span>
+                    <label class="fld"><span>{t(L, 'her.tasa_isr')}</span>
                         <input type="number" step="any" id="a_isr" value="30" /></label>
                 </div>
-                <button type="button" class="btn-ghost" id="a_aplicar">Calcular y aplicar flujo</button>
+                <button type="button" class="btn-ghost" id="a_aplicar">{t(L, 'her.calcular_aplicar')}</button>
             </details>
 
             <div class="tl-out" id="p_out"></div>
             <div class="tl-actions">
-                <button type="button" class="btn-primary" id="p_save">Guardar escenario</button>
-                <button type="button" class="tl-save-new" id="p_saveNew" hidden>Guardar como nuevo</button>
+                <button type="button" class="btn-primary" id="p_save">{t(L, 'her.guardar_escenario')}</button>
+                <button type="button" class="tl-save-new" id="p_saveNew" hidden>{t(L, 'her.guardar_como_nuevo')}</button>
             </div>
         </section>
 
         <!-- ── Calculadora 2: Punto óptimo de inventario ─────────────── -->
         <section class="tl-tool" id="toolInventario">
             <div class="sec-head">
-                <h2 class="sec-title">Punto óptimo de inventario (EOQ)</h2>
+                <h2 class="sec-title">{t(L, 'her.eoq_titulo')}</h2>
                 <span class="tl-loaded" id="invLoaded" hidden></span>
             </div>
-            <p class="tl-desc">Cantidad económica de pedido (CEP), costo total mínimo y punto de reorden.</p>
+            <p class="tl-desc">{t(L, 'her.eoq_desc')}</p>
 
             <div class="tl-grid">
-                <label class="fld"><span>Demanda anual (unidades)</span>
+                <label class="fld"><span>{t(L, 'her.demanda_anual')}</span>
                     <input type="number" step="any" id="i_demanda" value="800" /></label>
-                <label class="fld"><span>Costo de ordenar ($ por orden)</span>
+                <label class="fld"><span>{t(L, 'her.costo_ordenar')}</span>
                     <input type="number" step="any" id="i_ordenar" value="50" /></label>
-                <label class="fld"><span>Costo de mantener ($ por unidad/año)</span>
+                <label class="fld"><span>{t(L, 'her.costo_mantener')}</span>
                     <input type="number" step="any" id="i_mantener" value="2" /></label>
-                <label class="fld"><span>Tiempo de entrega (días)</span>
+                <label class="fld"><span>{t(L, 'her.tiempo_entrega')}</span>
                     <input type="number" step="any" id="i_entrega" value="5" /></label>
-                <label class="fld"><span>Días hábiles al año</span>
+                <label class="fld"><span>{t(L, 'her.dias_habiles')}</span>
                     <input type="number" step="any" id="i_dias" value="365" /></label>
             </div>
 
             <div class="tl-out" id="i_out"></div>
             <div class="tl-actions">
-                <button type="button" class="btn-primary" id="i_save">Guardar escenario</button>
-                <button type="button" class="tl-save-new" id="i_saveNew" hidden>Guardar como nuevo</button>
+                <button type="button" class="btn-primary" id="i_save">{t(L, 'her.guardar_escenario')}</button>
+                <button type="button" class="tl-save-new" id="i_saveNew" hidden>{t(L, 'her.guardar_como_nuevo')}</button>
             </div>
         </section>
 
         <!-- ── Calculadora 3: Análisis de variaciones ────────────────── -->
         <section class="tl-tool" id="toolVariaciones">
             <div class="sec-head">
-                <h2 class="sec-title">Análisis de variaciones (presupuesto flexible)</h2>
+                <h2 class="sec-title">{t(L, 'her.variaciones_titulo')}</h2>
                 <span class="tl-loaded" id="varLoaded" hidden></span>
             </div>
-            <p class="tl-desc">Compara el costo estándar contra el real de tu producción y descompone la diferencia en variación de precio y de cantidad (eficiencia).</p>
+            <p class="tl-desc">{t(L, 'her.variaciones_desc')}</p>
 
             <div class="tl-grid" style="max-width:320px">
-                <label class="fld"><span>Unidades producidas</span>
+                <label class="fld"><span>{t(L, 'her.unidades_producidas')}</span>
                     <input type="number" step="any" id="v_unidades" value="300" /></label>
             </div>
 
             <div class="tl-vhead">
-                <span class="tl-vhead-c">Concepto</span>
-                <span>Cant. estándar</span>
-                <span>Precio estándar</span>
-                <span>Cant. real</span>
-                <span>Precio real</span>
+                <span class="tl-vhead-c">{t(L, 'her.th_concepto')}</span>
+                <span>{t(L, 'her.th_cant_std')}</span>
+                <span>{t(L, 'her.th_precio_std')}</span>
+                <span>{t(L, 'her.th_cant_real')}</span>
+                <span>{t(L, 'her.th_precio_real')}</span>
                 <span></span>
             </div>
             <div id="v_conceptos"></div>
-            <button type="button" id="v_addConcepto" class="tl-add-concepto">+ Agregar concepto</button>
+            <button type="button" id="v_addConcepto" class="tl-add-concepto">{t(L, 'her.agregar_concepto')}</button>
 
             <div class="tl-vout" id="v_out"></div>
-            <p class="tl-fd-legend"><span class="tl-fd F">F</span> Favorable (costó menos de lo estándar) · <span class="tl-fd D">D</span> Desfavorable (costó más de lo estándar)</p>
+            <p class="tl-fd-legend"><span class="tl-fd F">F</span> {t(L, 'her.fd_favorable')} · <span class="tl-fd D">D</span> {t(L, 'her.fd_desfavorable')}</p>
             <div class="tl-actions">
-                <button type="button" class="btn-primary" id="v_save">Guardar escenario</button>
-                <button type="button" class="tl-save-new" id="v_saveNew" hidden>Guardar como nuevo</button>
+                <button type="button" class="btn-primary" id="v_save">{t(L, 'her.guardar_escenario')}</button>
+                <button type="button" class="tl-save-new" id="v_saveNew" hidden>{t(L, 'her.guardar_como_nuevo')}</button>
             </div>
         </section>
 
@@ -170,19 +218,19 @@ const hasAccess = hasPerm && hasPlan;
         <dialog class="modal" id="saveModal">
             <form method="dialog" class="modal-card">
                 <header>
-                    <h3>Guardar escenario</h3>
-                    <button type="button" class="mclose" id="sm_close" aria-label="Cerrar">&times;</button>
+                    <h3>{t(L, 'her.guardar_escenario_titulo')}</h3>
+                    <button type="button" class="mclose" id="sm_close" aria-label={t(L, 'her.cerrar')}>&times;</button>
                 </header>
                 <div class="modal-body">
                     <label class="fld">
-                        <span>Nombre</span>
-                        <input type="text" id="sm_nombre" placeholder="Ej. Proyecto restaurante Vallarta" maxlength="120" />
+                        <span>{t(L, 'her.nombre_label')}</span>
+                        <input type="text" id="sm_nombre" placeholder={t(L, 'her.nombre_ph')} maxlength="120" />
                     </label>
                     <p class="m-err" id="sm_err" hidden></p>
                 </div>
                 <footer>
-                    <button type="button" id="sm_cancel" class="btn-ghost">Cancelar</button>
-                    <button type="button" id="sm_save" class="btn-primary">Guardar</button>
+                    <button type="button" id="sm_cancel" class="btn-ghost">{t(L, 'her.cancelar')}</button>
+                    <button type="button" id="sm_save" class="btn-primary">{t(L, 'her.guardar')}</button>
                 </footer>
             </form>
         </dialog>
@@ -322,14 +370,16 @@ const hasAccess = hasPerm && hasPlan;
 <script>
     import { computeProyecto, computeInventario, deriveFlujoAnual, computeVariaciones, sentidoVariacion } from '../../../lib/analisis';
 
+    const T = JSON.parse(document.getElementById('toolsRoot')?.getAttribute('data-i18n') || '{}');
+    const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] != null ? vars[k] : ''));
     const $ = (id: string) => document.getElementById(id) as HTMLInputElement;
     const el = (id: string) => document.getElementById(id)!;
     const num = (id: string) => Number($(id)?.value) || 0;
-    const money = (n: number) => n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const dec = (n: number, d = 2) => n.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: d });
+    const money = (n: number) => n.toLocaleString(T.isEn ? 'en-US' : 'es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const dec = (n: number, d = 2) => n.toLocaleString(T.isEn ? 'en-US' : 'es-MX', { minimumFractionDigits: 0, maximumFractionDigits: d });
     const esc = (s: string) => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
 
-    const TIPO_LABEL: Record<string, string> = { proyecto: 'Evaluación de proyecto', inventario: 'Inventario (EOQ)', variaciones: 'Variaciones' };
+    const TIPO_LABEL: Record<string, string> = T.tipoLabel || { proyecto: 'Evaluación de proyecto', inventario: 'Inventario (EOQ)', variaciones: 'Variaciones' };
 
     // Escenario cargado por herramienta (para PATCH vs POST).
     const loaded: Record<string, { id: string; nombre: string } | null> = { proyecto: null, inventario: null, variaciones: null };
@@ -342,7 +392,7 @@ const hasAccess = hasPerm && hasPlan;
         let html = '';
         for (let i = 0; i < n; i++) {
             const v = prefill ? (prefill[i] ?? 0) : (existing[i] ?? (Number($('p_flujo').value) || 0));
-            html += `<label class="fld"><span>Flujo año ${i + 1} ($)</span><input type="number" step="any" class="p_flujo_anio" value="${v}" /></label>`;
+            html += `<label class="fld"><span>${tpl(T.flujoAnioTpl || 'Flujo año {n} ($)', { n: String(i + 1) })}</span><input type="number" step="any" class="p_flujo_anio" value="${v}" /></label>`;
         }
         wrap.innerHTML = html;
         wrap.querySelectorAll('.p_flujo_anio').forEach((i) => i.addEventListener('input', computeP));
@@ -358,26 +408,26 @@ const hasAccess = hasPerm && hasPlan;
     function computeP() {
         const r = computeProyecto({ inversionInicial: num('p_inversion'), tasa: num('p_tasa'), anios: Math.floor(num('p_anios')), flujos: flujosActuales() });
         const okPill = r.decision === 'acepta'
-            ? '<span class="tl-pill ok">Se acepta</span>'
-            : '<span class="tl-pill bad">Se rechaza</span>';
-        const paybackTxt = r.payback == null ? 'No se recupera' : `${dec(r.payback)} años`;
+            ? `<span class="tl-pill ok">${T.seAcepta || 'Se acepta'}</span>`
+            : `<span class="tl-pill bad">${T.seRechaza || 'Se rechaza'}</span>`;
+        const paybackTxt = r.payback == null ? (T.noSeRecupera || 'No se recupera') : `${dec(r.payback)}${T.aniosSuffix || ' años'}`;
         const tirTxt = r.tir == null ? '—' : `${dec(r.tir)} %`;
         const factorTxt = r.factorAnualidad == null ? '—' : dec(r.factorAnualidad, 4);
         el('p_out').innerHTML = `
-            <div class="tl-metric"><span class="tl-metric-label">Valor presente neto (VPN)</span><span class="tl-metric-val editorial">$${money(r.vpn)}</span>${okPill}</div>
-            <div class="tl-metric"><span class="tl-metric-label">Tasa interna de retorno (TIR)</span><span class="tl-metric-val editorial">${tirTxt}</span><span class="tl-metric-sub">se compara contra tu tasa de descuento</span></div>
-            <div class="tl-metric"><span class="tl-metric-label">Periodo de recuperación</span><span class="tl-metric-val editorial">${paybackTxt}</span></div>
-            <div class="tl-metric"><span class="tl-metric-label">Factor de anualidad</span><span class="tl-metric-val editorial">${factorTxt}</span><span class="tl-metric-sub">solo con flujo uniforme</span></div>`;
+            <div class="tl-metric"><span class="tl-metric-label">${T.vpnLabel || 'Valor presente neto (VPN)'}</span><span class="tl-metric-val editorial">$${money(r.vpn)}</span>${okPill}</div>
+            <div class="tl-metric"><span class="tl-metric-label">${T.tirLabel || 'Tasa interna de retorno (TIR)'}</span><span class="tl-metric-val editorial">${tirTxt}</span><span class="tl-metric-sub">${T.tirSub || 'se compara contra tu tasa de descuento'}</span></div>
+            <div class="tl-metric"><span class="tl-metric-label">${T.paybackLabel || 'Periodo de recuperación'}</span><span class="tl-metric-val editorial">${paybackTxt}</span></div>
+            <div class="tl-metric"><span class="tl-metric-label">${T.factorLabel || 'Factor de anualidad'}</span><span class="tl-metric-val editorial">${factorTxt}</span><span class="tl-metric-sub">${T.factorSub || 'solo con flujo uniforme'}</span></div>`;
     }
 
     // ── Cálculo: inventario ──────────────────────────────────────────
     function computeI() {
         const r = computeInventario({ demandaAnual: num('i_demanda'), costoOrdenar: num('i_ordenar'), costoMantener: num('i_mantener'), tiempoEntrega: num('i_entrega'), diasAnio: num('i_dias') });
         el('i_out').innerHTML = `
-            <div class="tl-metric"><span class="tl-metric-label">Cantidad económica de pedido (CEP)</span><span class="tl-metric-val editorial">${dec(r.cep)} u</span></div>
-            <div class="tl-metric"><span class="tl-metric-label">Punto de reorden</span><span class="tl-metric-val editorial">${dec(r.puntoReorden)} u</span><span class="tl-metric-sub">demanda diaria: ${dec(r.demandaDiaria)} u</span></div>
-            <div class="tl-metric"><span class="tl-metric-label">Órdenes al año</span><span class="tl-metric-val editorial">${dec(r.numOrdenes)}</span></div>
-            <div class="tl-metric"><span class="tl-metric-label">Costo total anual</span><span class="tl-metric-val editorial">$${money(r.costoTotal)}</span><span class="tl-metric-sub">ordenar $${money(r.costoOrdenar)} · mantener $${money(r.costoMantener)}</span></div>`;
+            <div class="tl-metric"><span class="tl-metric-label">${T.cepLabel || 'Cantidad económica de pedido (CEP)'}</span><span class="tl-metric-val editorial">${dec(r.cep)} u</span></div>
+            <div class="tl-metric"><span class="tl-metric-label">${T.reordenLabel || 'Punto de reorden'}</span><span class="tl-metric-val editorial">${dec(r.puntoReorden)} u</span><span class="tl-metric-sub">${tpl(T.reordenSubTpl || 'demanda diaria: {n} u', { n: dec(r.demandaDiaria) })}</span></div>
+            <div class="tl-metric"><span class="tl-metric-label">${T.ordenesAnioLabel || 'Órdenes al año'}</span><span class="tl-metric-val editorial">${dec(r.numOrdenes)}</span></div>
+            <div class="tl-metric"><span class="tl-metric-label">${T.costoTotalLabel || 'Costo total anual'}</span><span class="tl-metric-val editorial">$${money(r.costoTotal)}</span><span class="tl-metric-sub">${tpl(T.costoTotalSubTpl || 'ordenar {a} · mantener {b}', { a: '$' + money(r.costoOrdenar), b: '$' + money(r.costoMantener) })}</span></div>`;
     }
 
     // ── Variaciones (presupuesto flexible) ───────────────────────────
@@ -389,12 +439,12 @@ const hasAccess = hasPerm && hasPlan;
         const row = document.createElement('div');
         row.className = 'tl-vrow';
         row.innerHTML = `
-            <input type="text" class="vc-nombre" placeholder="Concepto" maxlength="80" value="${(c.nombre ?? '').toString().replace(/"/g, '&quot;')}" />
+            <input type="text" class="vc-nombre" placeholder="${T.thCosto || 'Concepto'}" maxlength="80" value="${(c.nombre ?? '').toString().replace(/"/g, '&quot;')}" />
             <input type="number" step="any" class="vc-qStd" value="${c.qStd ?? 0}" />
             <input type="number" step="any" class="vc-pStd" value="${c.pStd ?? 0}" />
             <input type="number" step="any" class="vc-qReal" value="${c.qReal ?? 0}" />
             <input type="number" step="any" class="vc-pReal" value="${c.pReal ?? 0}" />
-            <button type="button" class="tl-vdel" title="Quitar concepto">
+            <button type="button" class="tl-vdel" title="${T.quitarConcepto || 'Quitar concepto'}">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>`;
         el('v_conceptos').appendChild(row);
@@ -431,10 +481,10 @@ const hasAccess = hasPerm && hasPlan;
         const t = r.totales;
         el('v_out').innerHTML = `
             <table class="tl-vtable">
-                <thead><tr><th>Concepto</th><th>Costo estándar</th><th>Costo real</th><th>Var. total</th><th>Var. precio</th><th>Var. cantidad</th></tr></thead>
+                <thead><tr><th>${T.thCosto || 'Concepto'}</th><th>${T.thCostoStd || 'Costo estándar'}</th><th>${T.thCostoReal || 'Costo real'}</th><th>${T.thVarTotal || 'Var. total'}</th><th>${T.thVarPrecio || 'Var. precio'}</th><th>${T.thVarCantidad || 'Var. cantidad'}</th></tr></thead>
                 <tbody>${body}</tbody>
                 <tfoot><tr>
-                    <td>Total</td><td class="editorial">$${money(t.costoStd)}</td><td class="editorial">$${money(t.costoReal)}</td>
+                    <td>${T.total || 'Total'}</td><td class="editorial">$${money(t.costoStd)}</td><td class="editorial">$${money(t.costoReal)}</td>
                     <td>${varCell(t.varTotal)}</td><td>${varCell(t.varPrecio)}</td><td>${varCell(t.varCantidad)}</td>
                 </tr></tfoot>
             </table>`;
@@ -502,13 +552,13 @@ const hasAccess = hasPerm && hasPlan;
         const saveBtn = el(SAVE_BTN[tipo]);
         const saveNew = el(SAVE_NEW[tipo]);
         if (item) {
-            badge.textContent = `Editando: ${item.nombre}`;
+            badge.textContent = tpl(T.editandoTpl || 'Editando: {nombre}', { nombre: item.nombre });
             badge.hidden = false;
-            saveBtn.textContent = 'Guardar cambios';
+            saveBtn.textContent = T.guardarCambios || 'Guardar cambios';
             saveNew.hidden = false;
         } else {
             badge.hidden = true;
-            saveBtn.textContent = 'Guardar escenario';
+            saveBtn.textContent = T.guardarEscenario || 'Guardar escenario';
             saveNew.hidden = true;
         }
     }
@@ -527,8 +577,8 @@ const hasAccess = hasPerm && hasPlan;
             <div class="pr-row" data-id="${a.id}" data-tipo="${a.tipo}">
                 <div class="pr-name">${esc(a.nombre)}</div>
                 <span class="pr-badge">${esc(TIPO_LABEL[a.tipo] || a.tipo)}</span>
-                <span class="pr-updated">${new Date(a.updatedAt).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}</span>
-                <button class="pr-del" data-del="${a.id}" title="Eliminar" type="button">
+                <span class="pr-updated">${new Date(a.updatedAt).toLocaleDateString(T.isEn ? 'en-US' : 'es-MX', { day: 'numeric', month: 'short' })}</span>
+                <button class="pr-del" data-del="${a.id}" title="${T.eliminarBtn || 'Eliminar'}" type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                 </button>
             </div>`).join('');
@@ -537,7 +587,7 @@ const hasAccess = hasPerm && hasPlan;
                 if ((e.target as HTMLElement).closest('[data-del]')) return;
                 const id = (row as HTMLElement).dataset.id!;
                 const r = await fetch(`/api/analisis/${id}`);
-                if (!r.ok) { (window as any).cordToast?.('No se pudo abrir el escenario', 'error'); return; }
+                if (!r.ok) { (window as any).cordToast?.(T.noPudoAbrir || 'No se pudo abrir el escenario', 'error'); return; }
                 const { analisis } = await r.json();
                 if (analisis.tipo === 'proyecto') { applyProyecto(analisis.inputs); setLoaded('proyecto', { id, nombre: analisis.nombre }); el('toolProyecto').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
                 else if (analisis.tipo === 'variaciones') { applyVariaciones(analisis.inputs); setLoaded('variaciones', { id, nombre: analisis.nombre }); el('toolVariaciones').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
@@ -548,12 +598,12 @@ const hasAccess = hasPerm && hasPlan;
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const id = (btn as HTMLElement).dataset.del!;
-                if (!await (window as any).cordConfirm({ title: 'Eliminar escenario', body: 'Se borrará este escenario guardado. Esta acción no se puede deshacer.', danger: true, confirmText: 'Eliminar' })) return;
+                if (!await (window as any).cordConfirm({ title: T.eliminarEscenarioTitulo || 'Eliminar escenario', body: T.eliminarEscenarioBody || 'Se borrará este escenario guardado. Esta acción no se puede deshacer.', danger: true, confirmText: T.eliminarBtn || 'Eliminar' })) return;
                 const r = await fetch(`/api/analisis/${id}`, { method: 'DELETE' });
                 if (r.ok) {
-                    (['proyecto', 'inventario', 'variaciones'] as Tool[]).forEach((t) => { if (loaded[t]?.id === id) setLoaded(t, null); });
-                    (window as any).cordToast?.('Escenario eliminado', 'ok'); loadSaved();
-                } else (window as any).cordToast?.('No se pudo eliminar', 'error');
+                    (['proyecto', 'inventario', 'variaciones'] as Tool[]).forEach((tt) => { if (loaded[tt]?.id === id) setLoaded(tt, null); });
+                    (window as any).cordToast?.(T.escenarioEliminado || 'Escenario eliminado', 'ok'); loadSaved();
+                } else (window as any).cordToast?.(T.noPudoEliminar || 'No se pudo eliminar', 'error');
             });
         });
     }
@@ -572,8 +622,8 @@ const hasAccess = hasPerm && hasPlan;
         const current = loaded[tipo];
         if (current && !forceNew) {
             const r = await fetch(`/api/analisis/${current.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ inputs }) });
-            if (r.ok) { (window as any).cordToast?.('Cambios guardados', 'ok'); loadSaved(); }
-            else (window as any).cordToast?.('No se pudo guardar', 'error');
+            if (r.ok) { (window as any).cordToast?.(T.cambiosGuardados || 'Cambios guardados', 'ok'); loadSaved(); }
+            else (window as any).cordToast?.(T.noPudoGuardar || 'No se pudo guardar', 'error');
             return;
         }
         // Nuevo escenario → pide nombre en el modal.
@@ -587,14 +637,14 @@ const hasAccess = hasPerm && hasPlan;
     document.getElementById('sm_save')?.addEventListener('click', async () => {
         const nombre = $('sm_nombre').value.trim();
         const errEl = el('sm_err');
-        if (!nombre) { errEl.textContent = 'Escribe un nombre para el escenario.'; errEl.removeAttribute('hidden'); return; }
+        if (!nombre) { errEl.textContent = T.escribeNombre || 'Escribe un nombre para el escenario.'; errEl.removeAttribute('hidden'); return; }
         const inputs = inputsDe(pendingTipo);
         const r = await fetch('/api/analisis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tipo: pendingTipo, nombre, inputs }) });
         const data = await r.json();
-        if (!r.ok) { errEl.textContent = data.error || 'No se pudo guardar.'; errEl.removeAttribute('hidden'); return; }
+        if (!r.ok) { errEl.textContent = data.error || T.noPudoGuardarPunto || 'No se pudo guardar.'; errEl.removeAttribute('hidden'); return; }
         setLoaded(pendingTipo, { id: data.id, nombre });
         saveModal.close();
-        (window as any).cordToast?.('Escenario guardado', 'ok');
+        (window as any).cordToast?.(T.escenarioGuardado || 'Escenario guardado', 'ok');
         loadSaved();
     });
     document.getElementById('sm_close')?.addEventListener('click', () => saveModal.close());
@@ -609,7 +659,7 @@ const hasAccess = hasPerm && hasPlan;
         $('p_uniforme').checked = true; toggleUniforme(null);
         $('p_flujo').value = String(flujo);
         computeP();
-        (window as any).cordToast?.(`Flujo anual calculado: $${money(flujo)}`, 'ok');
+        (window as any).cordToast?.(tpl(T.flujoCalculadoTpl || 'Flujo anual calculado: {monto}', { monto: '$' + money(flujo) }), 'ok');
     });
     document.getElementById('p_save')?.addEventListener('click', () => doSave('proyecto', false));
     document.getElementById('p_saveNew')?.addEventListener('click', () => doSave('proyecto', true));
