@@ -5,6 +5,16 @@
 import AppLayout from '../../../layouts/AppLayout.astro';
 import { getProductos, getClientes, getOrg, getCotizacion, getKitsForEditor, money } from '../../../lib/queries';
 import { REGIMENES_FISCALES, USOS_CFDI } from '../../../lib/sat';
+import { currentLocale } from '../../../lib/context';
+import { t, getEditorRuntimeI18n } from '../../../i18n/app';
+
+const L = currentLocale();
+const ET = getEditorRuntimeI18n(L);
+const tf = (key: string, vars: Record<string, string> = {}) => {
+    let s = t(L, key as any);
+    for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
+    return s;
+};
 
 const draftId = Astro.url.searchParams.get('draft');
 let draftQuote = null;
@@ -22,7 +32,11 @@ const catalogo = productos.filter(p => p.activo);
 const kitSumaLista = (k: typeof kits[number]) => k.items.reduce((s, it) => s + (it.productoId && it.precio ? it.precio * it.cantidad : 0), 0);
 
 // Defaults reales desde Ajustes › Cotizaciones e impuestos.
-const TERM_DEFAULT_LABEL = draftQuote ? draftQuote.terminos : (({ contado: 'Contado', net30: 'Net 30', net60: 'Net 60' } as Record<string, string>)[ORG.terminosDefault] ?? 'Contado');
+// TERM_DEFAULT_CODE es un código estable (contado/net30/net60) — el LABEL
+// visible se traduce aparte (ed.term_*); el código nunca cambia con el idioma.
+const TERM_DEFAULT_CODE = draftQuote ? draftQuote.terminos : (ORG.terminosDefault || 'contado');
+const TERM_CODES = ['contado', 'net30', 'net60'] as const;
+const termLabel = (code: string) => t(L, `ed.term_${code}` as any);
 // Moneda inicial del editor: la del borrador si se está editando; si no, la
 // moneda default de la org (Ajustes → General). FIX jul 2026: antes MXN estaba
 // hardcodeado y el ajuste "moneda" era placebo.
@@ -39,58 +53,58 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
 
 ---
 
-<AppLayout title={draftQuote ? "Editar borrador" : "Nueva cotización"} page="cotizaciones" heading={draftQuote ? "Editar borrador" : "Nueva cotización"} crumbs={[{ label: 'Cotizaciones', href: '/app/cotizaciones' }]}>
-    <span slot="topbar-actions" class="draft-tag">Borrador</span>
+<AppLayout title={draftQuote ? t(L, "ed.title_editar") : t(L, "ed.title_nueva")} page="cotizaciones" heading={draftQuote ? t(L, "ed.title_editar") : t(L, "ed.title_nueva")} crumbs={[{ label: t(L, 'ed.crumb_cotizaciones'), href: '/app/cotizaciones' }]}>
+    <span slot="topbar-actions" class="draft-tag">{t(L, 'ed.borrador')}</span>
 
     <div class="editor-grid">
         <!-- ── Columna principal ── -->
         <div class="ed-main">
             <!-- Armar con IA — la forma rápida (puerta de entrada) -->
             <section class="ed-block ai-block">
-                <h2 class="ai-title">Arma la cotización con IA</h2>
-                <p class="ai-sub">Pega el pedido del cliente o adjunta la foto/PDF de su orden de compra.</p>
+                <h2 class="ai-title">{t(L, 'ed.ai_titulo')}</h2>
+                <p class="ai-sub">{t(L, 'ed.ai_sub')}</p>
                 <div class="ai-textarea-wrap">
-                    <textarea id="aiText" class="ed-textarea ai-textarea" rows="3" placeholder="Ej. Hola, necesito 200 sacos de cemento gris, 50 varillas de 3/8 y 2 m³ de arena. ¿Me pasas precio?"></textarea>
+                    <textarea id="aiText" class="ed-textarea ai-textarea" rows="3" placeholder={t(L, 'ed.ai_textarea_ph')}></textarea>
                     <input type="file" id="aiFile" accept="application/pdf,image/jpeg,image/png,image/webp" hidden />
-                    <button type="button" class="ai-attach-btn" id="aiAttachBtn" aria-label="Adjuntar foto o PDF de una orden de compra" title="Adjuntar foto o PDF">
+                    <button type="button" class="ai-attach-btn" id="aiAttachBtn" aria-label={t(L, 'ed.ai_adjuntar_aria')} title={t(L, 'ed.ai_adjuntar_title')}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                     </button>
                 </div>
                 <div class="ai-file-chip" id="aiFileChip" hidden>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
                     <span id="aiFileName"></span>
-                    <button type="button" id="aiFileRemove" aria-label="Quitar archivo">
+                    <button type="button" id="aiFileRemove" aria-label={t(L, 'ed.ai_quitar_archivo')}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
                 <div class="ai-actions">
-                    <button class="ai-btn" id="aiBtn"><span class="ai-btn-label">Armar cotización con IA</span></button>
+                    <button class="ai-btn" id="aiBtn"><span class="ai-btn-label">{t(L, 'ed.ai_boton')}</span></button>
                     <span class="ai-status" id="aiStatus"></span>
                 </div>
             </section>
 
-            <div class="ed-or"><span>o créala manualmente</span></div>
+            <div class="ed-or"><span>{t(L, 'ed.o_manual')}</span></div>
 
             <!-- Cliente -->
             <section class="ed-block">
                 <div class="section-head step-head">
                     <span class="step-num">1</span>
                     <div class="step-text">
-                        <h2>¿A quién le cotizas?</h2>
-                        <p class="step-hint">Elige el cliente y cómo te paga. Si tiene un nivel con descuento, se aplica solo a los precios.</p>
+                        <h2>{t(L, 'ed.paso1_titulo')}</h2>
+                        <p class="step-hint">{t(L, 'ed.paso1_hint')}</p>
                     </div>
                 </div>
                 <div class="client-row">
                     <select class="ed-select" id="clientSelect">
-                        <option value="" disabled selected>— Selecciona un cliente —</option>
+                        <option value="" disabled selected>{t(L, 'ed.selecciona_cliente')}</option>
                         {CLIENTES.map((c) => (
                             <option value={c.id} data-desc={String(c.descuentoPct)} data-nivel={c.nivel} data-term={c.terminos}>{c.empresa}{c.contacto ? ` — ${c.contacto}` : ''}</option>
                         ))}
-                        <option value="__NEW__" class="opt-action">+ Crear nuevo cliente…</option>
+                        <option value="__NEW__" class="opt-action">{t(L, 'ed.crear_cliente')}</option>
                     </select>
                     <div class="term-chips" id="termChips">
-                        {['Contado', 'Net 30', 'Net 60'].map((t) => (
-                            <button class:list={['chip', { active: t === TERM_DEFAULT_LABEL }]} data-term={t}>{t}</button>
+                        {TERM_CODES.map((code) => (
+                            <button class:list={['chip', { active: code === TERM_DEFAULT_CODE }]} data-term={code}>{termLabel(code)}</button>
                         ))}
                     </div>
                 </div>
@@ -102,31 +116,31 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 <div class="section-head step-head">
                     <span class="step-num">2</span>
                     <div class="step-text">
-                        <h2>¿Qué le vas a cotizar?</h2>
-                        <p class="step-hint">Agrega productos de tu catálogo o una línea libre. Baja el precio en <b>Negociado</b> sin tocar tu lista.</p>
+                        <h2>{t(L, 'ed.paso2_titulo')}</h2>
+                        <p class="step-hint" set:html={t(L, 'ed.paso2_hint')} />
                     </div>
                 </div>
 
                 <div class="lines-head">
-                    <span>Producto</span><span>Cant.</span><span>Lista</span><span>Negociado</span><span class="lh-right">Importe</span><span class="lh-margen">Margen <span class="lh-i" title="Tu ganancia sobre el precio negociado, ya descontando el costo. Verde = sano · rojo = por debajo de tu mínimo.">?</span></span><span></span>
+                    <span>{t(L, 'ed.th_producto')}</span><span>{t(L, 'ed.th_cant')}</span><span>{t(L, 'ed.th_lista')}</span><span>{t(L, 'ed.th_negociado')}</span><span class="lh-right">{t(L, 'ed.th_importe')}</span><span class="lh-margen">{t(L, 'ed.th_margen')} <span class="lh-i" title={t(L, 'ed.th_margen_title')}>?</span></span><span></span>
                 </div>
                 <div id="lines"></div>
 
                 <div class="lines-empty" id="linesEmpty">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v4H3z"/><path d="M3 7v14h18V7"/><path d="M9 12h6"/></svg>
-                    <p><b>Aún no agregas productos</b> Búscalos en tu catálogo aquí abajo o agrega una línea libre.</p>
+                    <p><b>{t(L, 'ed.lines_empty_titulo')}</b> {t(L, 'ed.lines_empty_desc')}</p>
                 </div>
 
                 <div class="add-actions">
                     <div class="prod-search">
                         <svg class="prod-search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
-                        <input type="text" class="prod-input" id="prodInput" placeholder="Busca un producto de tu catálogo… (nombre o SKU)" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="prodDrop" />
+                        <input type="text" class="prod-input" id="prodInput" placeholder={t(L, 'ed.buscar_producto_ph')} autocomplete="off" role="combobox" aria-expanded="false" aria-controls="prodDrop" />
                         <div class="prod-drop" id="prodDrop" hidden role="listbox"></div>
                     </div>
-                    <button class="btn-free-line" id="btnFreeLine">+ Línea libre</button>
+                    <button class="btn-free-line" id="btnFreeLine">{t(L, 'ed.linea_libre')}</button>
                     {kits.length > 0 && (
                         <div class="kit-insert-wrap">
-                            <button type="button" class="btn-free-line" id="btnKitInsert" aria-expanded="false" aria-controls="kitInsertDrop">+ Insertar kit</button>
+                            <button type="button" class="btn-free-line" id="btnKitInsert" aria-expanded="false" aria-controls="kitInsertDrop">{t(L, 'ed.insertar_kit')}</button>
                             <div class="kit-insert-drop" id="kitInsertDrop" hidden>
                                 {kits.map((k) => {
                                     const suma = kitSumaLista(k);
@@ -135,13 +149,13 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                                         <div class="kit-insert-row" data-kid={k.id}>
                                             <span class="kit-insert-name">{k.nombre}
                                                 <small>
-                                                    {k.items.length} línea{k.items.length === 1 ? '' : 's'}
-                                                    {k.precioCombo != null && ` · Combo ${money(k.precioCombo)}`}
-                                                    {ahorro > 0.004 && ` (ahorras ${money(ahorro)})`}
+                                                    {k.items.length} {k.items.length === 1 ? t(L, 'ed.linea_singular') : t(L, 'ed.linea_plural')}
+                                                    {k.precioCombo != null && ` ${t(L, 'ed.kit_combo')} ${money(k.precioCombo)}`}
+                                                    {ahorro > 0.004 && ` ${tf('ed.kit_ahorras', { monto: money(ahorro) })}`}
                                                 </small>
                                             </span>
-                                            <input type="number" class="kit-insert-qty" min="1" step="1" value="1" aria-label={`Cuántas veces insertar ${k.nombre}`} />
-                                            <button type="button" class="kit-insert-add" data-kid-add={k.id}>Agregar</button>
+                                            <input type="number" class="kit-insert-qty" min="1" step="1" value="1" aria-label={tf('ed.kit_cuantas_veces', { nombre: k.nombre })} />
+                                            <button type="button" class="kit-insert-add" data-kid-add={k.id}>{t(L, 'ed.agregar')}</button>
                                         </div>
                                     );
                                 })}
@@ -149,47 +163,47 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                         </div>
                     )}
                 </div>
-                <p class="add-hint">Escribe para buscar y presiona <kbd>Enter</kbd> para agregar. Puedes agregar varios seguidos.</p>
+                <p class="add-hint">{t(L, 'ed.add_hint_pre')} <kbd>Enter</kbd> {t(L, 'ed.add_hint_post')}</p>
             </section>
 
             <!-- Notas -->
             <section class="ed-block">
-                <div class="section-head"><h2>Notas para el cliente <span class="opt">(opcional)</span></h2></div>
-                <textarea id="notasText" class="ed-textarea" rows="2" placeholder="Ej. Precio especial por volumen — entrega en obra incluida.">{draftQuote?.notas || ''}</textarea>
+                <div class="section-head"><h2>{t(L, 'ed.notas_titulo')} <span class="opt">{t(L, 'ed.opcional')}</span></h2></div>
+                <textarea id="notasText" class="ed-textarea" rows="2" placeholder={t(L, 'ed.notas_ph')}>{draftQuote?.notas || ''}</textarea>
             </section>
         </div>
 
         <!-- ── Sidebar resumen ── -->
         <aside class="ed-side">
             <section class="ed-summary">
-                <div class="section-head"><h2>Revisa y envía</h2></div>
-                <div class="sum-count" id="sumCount">Agrega productos para ver el total</div>
-                <div class="sum-line"><span>Subtotal</span><span class="editorial" id="sumSubtotal">$0.00</span></div>
-                <div class="sum-line sum-save" id="sumSaveLine" hidden><span>Le descontaste</span><span class="editorial" id="sumSave">$0.00</span></div>
+                <div class="section-head"><h2>{t(L, 'ed.revisa_envia')}</h2></div>
+                <div class="sum-count" id="sumCount">{t(L, 'ed.agrega_productos_default')}</div>
+                <div class="sum-line"><span>{t(L, 'ed.subtotal')}</span><span class="editorial" id="sumSubtotal">$0.00</span></div>
+                <div class="sum-line sum-save" id="sumSaveLine" hidden><span>{t(L, 'ed.le_descontaste')}</span><span class="editorial" id="sumSave">$0.00</span></div>
                 <div class="sum-field" style="flex-direction: row; align-items: center; justify-content: space-between; margin-top: 0.5rem; margin-bottom: -0.5rem;">
-                    <label for="ivaIncluido" style="margin:0; cursor: pointer; color: var(--color-text);">Precios ya incluyen IVA</label>
-                    <label class="s-toggle" title="Precios incluyen IVA">
+                    <label for="ivaIncluido" style="margin:0; cursor: pointer; color: var(--color-text);">{t(L, 'ed.iva_incluido')}</label>
+                    <label class="s-toggle" title={t(L, 'ed.iva_incluido_title')}>
                         <input type="checkbox" id="ivaIncluido" checked={draftQuote ? draftQuote.iva_incluido : ORG.ivaIncluidoDefecto} />
                         <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
                     </label>
                 </div>
-                <div class="sum-line"><span>IVA {ORG.ivaPct}%</span><span class="editorial" id="sumIva">$0.00</span></div>
+                <div class="sum-line"><span>{t(L, 'ed.iva')} {ORG.ivaPct}%</span><span class="editorial" id="sumIva">$0.00</span></div>
                 <input type="hidden" id="cfgIva" value={ORG.ivaPct} />
                 <div class="sum-divider"></div>
-                <div class="sum-line sum-total"><span>Total</span><span class="editorial" id="sumTotal">$0.00</span></div>
+                <div class="sum-line sum-total"><span>{t(L, 'ed.total')}</span><span class="editorial" id="sumTotal">$0.00</span></div>
 
                 <div class="sum-field">
-                    <label>Vigencia</label>
+                    <label>{t(L, 'ed.vigencia')}</label>
                     <select class="ed-select" id="vigSelect">
-                        {VIGENCIAS.map((n) => <option value={n} selected={n === SELECTED_VIG}>{n} días</option>)}
+                        {VIGENCIAS.map((n) => <option value={n} selected={n === SELECTED_VIG}>{n} {t(L, 'ed.dias')}</option>)}
                     </select>
                 </div>
 
                 <!-- Iguala recurrente: cobro automático mensual. Solo con términos de
                      contado; excluyente con anticipo. -->
                 <div class="sum-field" id="recurrenteField" style="flex-direction: row; align-items: center; justify-content: space-between;">
-                    <label for="esRecurrente" style="margin:0; cursor: pointer; color: var(--color-text);">Cobro recurrente mensual <span class="opt">(iguala)</span></label>
-                    <label class="s-toggle" title="Cobra el total automáticamente cada mes">
+                    <label for="esRecurrente" style="margin:0; cursor: pointer; color: var(--color-text);">{t(L, 'ed.recurrente_label')} <span class="opt">(iguala)</span></label>
+                    <label class="s-toggle" title={t(L, 'ed.recurrente_title')}>
                         <input type="checkbox" id="esRecurrente" checked={DEFAULT_RECURRENTE} />
                         <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
                     </label>
@@ -197,54 +211,54 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 <p class="sum-anticipo-note" id="recurrenteNote" hidden></p>
 
                 <div class="sum-field" id="anticipoField">
-                    <label>Anticipo (%) <span class="opt">(opcional)</span></label>
+                    <label>{t(L, 'ed.anticipo_label')} <span class="opt">{t(L, 'ed.opcional')}</span></label>
                     <input class="ed-select" id="anticipoPct" type="number" min="0" max="99" step="1" placeholder="0" value={DEFAULT_ANTICIPO || ''} />
                     <p class="sum-anticipo-note" id="anticipoNote" hidden></p>
                 </div>
 
                 <div class="sum-field">
-                    <label>¿En qué moneda le cotizas?</label>
+                    <label>{t(L, 'ed.moneda_label')}</label>
                     <select class="ed-select" id="fxBase">
-                        <option value="MXN" selected={DEFAULT_CURRENCY === 'MXN'}>🇲🇽 Pesos mexicanos (MXN)</option>
-                        <option value="USD" selected={DEFAULT_CURRENCY === 'USD'}>🇺🇸 Dólares (USD)</option>
-                        <option value="EUR" selected={DEFAULT_CURRENCY === 'EUR'}>🇪🇺 Euros (EUR)</option>
+                        <option value="MXN" selected={DEFAULT_CURRENCY === 'MXN'}>{t(L, 'ed.moneda_mxn')}</option>
+                        <option value="USD" selected={DEFAULT_CURRENCY === 'USD'}>{t(L, 'ed.moneda_usd')}</option>
+                        <option value="EUR" selected={DEFAULT_CURRENCY === 'EUR'}>{t(L, 'ed.moneda_eur')}</option>
                     </select>
                 </div>
 
                 <div class="fx-cover" id="fxCover" hidden>
-                    <p class="fx-explain">Le muestras precios en <b id="fxBaseLbl2">USD</b>, pero tu factura sale en pesos 🇲🇽. Congelamos el tipo de cambio de hoy para que un peso volátil no te coma el margen si tarda en pagarte.</p>
+                    <p class="fx-explain">{t(L, 'ed.fx_explain_pre')} <b id="fxBaseLbl2">USD</b>{t(L, 'ed.fx_explain_post')}</p>
 
                     <div class="fx-stepper">
                         <div class="fx-step">
-                            <span class="fx-step-lbl">Tipo de cambio hoy</span>
+                            <span class="fx-step-lbl">{t(L, 'ed.fx_tipo_hoy')}</span>
                             <span class="fx-step-val editorial" id="fxSpot">—</span>
                         </div>
                         <span class="fx-arrow" aria-hidden="true">→</span>
                         <div class="fx-step fx-step-on">
-                            <span class="fx-step-lbl">Tu tasa protegida <span id="fxBufLbl">+2%</span></span>
+                            <span class="fx-step-lbl">{t(L, 'ed.fx_tasa_protegida')} <span id="fxBufLbl">+2%</span></span>
                             <span class="fx-step-val editorial" id="fxApplied">—</span>
                         </div>
                     </div>
 
-                    <label class="fx-cushion-lbl">¿Qué tan cauto quieres ser?</label>
+                    <label class="fx-cushion-lbl">{t(L, 'ed.fx_cauto_label')}</label>
                     <div class="fx-cushion" id="fxCushion">
-                        <button type="button" class="fx-cush-chip" data-buf="1"><b>Poco</b><small>+1%</small></button>
-                        <button type="button" class="fx-cush-chip active" data-buf="2"><b>Normal</b><small>+2%</small></button>
-                        <button type="button" class="fx-cush-chip" data-buf="5"><b>Cauto</b><small>+5%</small></button>
+                        <button type="button" class="fx-cush-chip" data-buf="1"><b>{t(L, 'ed.fx_poco')}</b><small>+1%</small></button>
+                        <button type="button" class="fx-cush-chip active" data-buf="2"><b>{t(L, 'ed.fx_normal')}</b><small>+2%</small></button>
+                        <button type="button" class="fx-cush-chip" data-buf="5"><b>{t(L, 'ed.fx_cauto')}</b><small>+5%</small></button>
                     </div>
                     <input type="hidden" id="fxBuffer" value="2" />
 
-                    <p class="fx-client-sees" id="fxPreview">Tu cliente verá ≈ <b>US$—</b></p>
-                    <div class="fx-lock-row"><span class="fx-lock-ic">🔒</span> Tasa congelada 30 días — tú decides el colchón</div>
+                    <p class="fx-client-sees" id="fxPreview" set:html={t(L, 'ed.fx_preview_default')} />
+                    <div class="fx-lock-row"><span class="fx-lock-ic">🔒</span> {t(L, 'ed.fx_lock_row')}</div>
                 </div>
 
                 <button class="btn-send" id="btnSend">
-                    <span>{draftQuote ? 'Guardar y enviar' : 'Crear y enviar'}</span>
+                    <span>{draftQuote ? t(L, 'ed.btn_enviar_editar') : t(L, 'ed.btn_enviar_nueva')}</span>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                 </button>
-                <button class="btn-draft" id="btnDraft">{draftQuote ? 'Guardar cambios' : 'Guardar borrador'}</button>
-                <p class="sum-note">{draftQuote ? 'Los cambios se guardan sobre este borrador; al enviar se crea el link público.' : 'Al enviar se generará la V1 y se creará el link público.'}</p>
-                <p class="sum-kbd"><kbd>⌘</kbd><kbd>Enter</kbd> para enviar</p>
+                <button class="btn-draft" id="btnDraft">{draftQuote ? t(L, 'ed.btn_borrador_editar') : t(L, 'ed.btn_borrador_nueva')}</button>
+                <p class="sum-note">{draftQuote ? t(L, 'ed.nota_editar') : t(L, 'ed.nota_nueva')}</p>
+                <p class="sum-kbd"><kbd>⌘</kbd><kbd>Enter</kbd> {t(L, 'ed.kbd_enviar')}</p>
             </section>
         </aside>
     </div>
@@ -253,84 +267,84 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     <dialog class="modal" id="clientModal">
         <form method="dialog" class="m-form" id="clientForm">
             <div class="m-head">
-                <h2 id="mTitle">Nuevo cliente</h2>
-                <button type="button" class="m-close" id="mClose" aria-label="Cerrar">✕</button>
+                <h2 id="mTitle">{t(L, 'ed.modal_cliente_titulo')}</h2>
+                <button type="button" class="m-close" id="mClose" aria-label={t(L, 'ed.cerrar')}>✕</button>
             </div>
 
             <div class="m-field">
-                <label for="fEmpresa">Empresa *</label>
-                <input class="m-input" id="fEmpresa" name="empresa" required placeholder="Distribuidora El Zarco" />
+                <label for="fEmpresa">{t(L, 'ed.empresa')}</label>
+                <input class="m-input" id="fEmpresa" name="empresa" required placeholder={t(L, 'ed.empresa_ph')} />
             </div>
             <div class="m-row">
                 <div class="m-field">
-                    <label for="fContacto">Contacto</label>
-                    <input class="m-input" id="fContacto" name="contacto" placeholder="Raúl Mendoza" />
+                    <label for="fContacto">{t(L, 'ed.contacto')}</label>
+                    <input class="m-input" id="fContacto" name="contacto" placeholder={t(L, 'ed.contacto_ph')} />
                 </div>
                 <div class="m-field">
-                    <label for="fEmail">Correo</label>
-                    <input class="m-input" id="fEmail" name="email" type="email" placeholder="compras@elzarco.mx" />
+                    <label for="fEmail">{t(L, 'ed.correo')}</label>
+                    <input class="m-input" id="fEmail" name="email" type="email" placeholder={t(L, 'ed.correo_ph')} />
                 </div>
             </div>
             <div class="m-row">
                 <div class="m-field">
-                    <label for="fRfc">RFC</label>
+                    <label for="fRfc">{t(L, 'ed.rfc')}</label>
                     <input class="m-input" id="fRfc" name="rfc" placeholder="DEZ981123QX1" maxlength="13" />
                 </div>
                 <div class="m-field">
-                    <label for="fLimite">Límite de crédito (MXN)</label>
+                    <label for="fLimite">{t(L, 'ed.limite_credito')}</label>
                     <input class="m-input" id="fLimite" name="limite" type="number" min="0" step="1000" placeholder="500000" />
                 </div>
             </div>
             <div class="m-field">
-                <label>Nivel de precio</label>
+                <label>{t(L, 'ed.nivel_precio')}</label>
                 <div class="m-chips m-tiers" id="fTiers">
-                    <button type="button" class="chip tier active" data-v="estandar" data-sug="0">Estándar</button>
-                    <button type="button" class="chip tier" data-v="plata" data-sug="5">Plata</button>
-                    <button type="button" class="chip tier" data-v="oro" data-sug="10">Oro</button>
-                    <button type="button" class="chip tier" data-v="distribuidor" data-sug="15">Distribuidor</button>
+                    <button type="button" class="chip tier active" data-v="estandar" data-sug="0">{t(L, 'ed.tier_estandar')}</button>
+                    <button type="button" class="chip tier" data-v="plata" data-sug="5">{t(L, 'ed.tier_plata')}</button>
+                    <button type="button" class="chip tier" data-v="oro" data-sug="10">{t(L, 'ed.tier_oro')}</button>
+                    <button type="button" class="chip tier" data-v="distribuidor" data-sug="15">{t(L, 'ed.tier_distribuidor')}</button>
                 </div>
                 <input type="hidden" id="fNivel" value="estandar" />
             </div>
             <div class="m-field">
-                <label for="fDescuento">Descuento automático en sus precios</label>
+                <label for="fDescuento">{t(L, 'ed.descuento_auto')}</label>
                 <div class="disc-row">
                     <div class="disc-input">
                         <input class="m-input" id="fDescuento" type="number" min="0" max="100" step="1" placeholder="0" />
                         <span class="disc-suffix">%</span>
                     </div>
-                    <span class="disc-preview" id="discPreview">Sin descuento</span>
+                    <span class="disc-preview" id="discPreview">{ET.sinDescuento}</span>
                 </div>
-                <span class="m-hint">Cada vez que le cotices, sus precios bajan este % solos. Ej. <b>Oro = −10%</b>: un producto de $1,000 le sale en $900.</span>
+                <span class="m-hint" set:html={t(L, 'ed.descuento_hint')} />
             </div>
             <div class="m-field">
-                <label>Términos de pago</label>
+                <label>{t(L, 'ed.terminos_pago')}</label>
                 <div class="m-chips" id="fTerminos">
-                    <button type="button" class="chip active" data-v="contado">Contado</button>
-                    <button type="button" class="chip" data-v="net30">Net 30</button>
-                    <button type="button" class="chip" data-v="net60">Net 60</button>
+                    <button type="button" class="chip active" data-v="contado">{t(L, 'ed.term_contado')}</button>
+                    <button type="button" class="chip" data-v="net30">{t(L, 'ed.term_net30')}</button>
+                    <button type="button" class="chip" data-v="net60">{t(L, 'ed.term_net60')}</button>
                 </div>
             </div>
 
             <details class="m-fiscal">
-                <summary>Datos fiscales para CFDI (opcional)</summary>
-                <p class="m-hint" style="margin: 0 0 0.75rem 0;">Si los capturas, al facturar timbramos el CFDI 4.0 a nombre de este cliente. Si los dejas vacíos, usamos "público en general".</p>
+                <summary>{t(L, 'ed.fiscal_summary')}</summary>
+                <p class="m-hint" style="margin: 0 0 0.75rem 0;">{t(L, 'ed.fiscal_hint')}</p>
                 <div class="m-row">
                     <div class="m-field">
-                        <label for="fRegimen">Régimen fiscal</label>
+                        <label for="fRegimen">{t(L, 'ed.regimen_fiscal')}</label>
                         <select class="m-input" id="fRegimen">
-                            <option value="">— Sin especificar —</option>
+                            <option value="">{t(L, 'ed.sin_especificar')}</option>
                             {REGIMENES_FISCALES.map((r) => <option value={r.codigo}>{r.nombre}</option>)}
                         </select>
                     </div>
                     <div class="m-field">
-                        <label for="fCp">Código postal (domicilio fiscal)</label>
+                        <label for="fCp">{t(L, 'ed.cp_domicilio')}</label>
                         <input class="m-input" id="fCp" inputmode="numeric" maxlength="5" placeholder="06600" />
                     </div>
                 </div>
                 <div class="m-field">
-                    <label for="fUso">Uso del CFDI</label>
+                    <label for="fUso">{t(L, 'ed.uso_cfdi')}</label>
                     <select class="m-input" id="fUso">
-                        <option value="">— Sin especificar (G03) —</option>
+                        <option value="">{t(L, 'ed.sin_especificar_g03')}</option>
                         {USOS_CFDI.map((u) => <option value={u.codigo}>{u.nombre}</option>)}
                     </select>
                 </div>
@@ -340,8 +354,8 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
 
             <div class="m-actions">
                 <span class="m-spacer"></span>
-                <button type="button" class="m-cancel" id="mCancel">Cancelar</button>
-                <button type="submit" class="m-save" id="mSave">Crear y seleccionar</button>
+                <button type="button" class="m-cancel" id="mCancel">{t(L, 'ed.cancelar')}</button>
+                <button type="submit" class="m-save" id="mSave">{t(L, 'ed.crear_seleccionar')}</button>
             </div>
         </form>
     </dialog>
@@ -349,11 +363,12 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     <!-- Toast -->
     <div class="toast" id="toast" hidden>
         <span class="toast-dot"></span>
-        <span id="toastMsg">Cotización enviada</span>
+        <span id="toastMsg">{t(L, 'ed.toast_default')}</span>
     </div>
 </AppLayout>
 
-<script is:inline define:vars={{ catalogo, kits, aprobMargenMin: ORG.aprobMargenMin, draftQuote }}>
+<script is:inline define:vars={{ catalogo, kits, aprobMargenMin: ORG.aprobMargenMin, draftQuote, T: ET }}>
+    const tpl = (s, vars) => { let r = s; for (const k in vars) r = r.split('{' + k + '}').join(vars[k]); return r; };
     const lines = [];
     const catMap = Object.fromEntries(catalogo.map(p => [p.id, p]));
     const volUnit = (l) => {
@@ -384,7 +399,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     }
     const $lines = document.getElementById('lines');
     const $empty = document.getElementById('linesEmpty');
-    const fmt = (n) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+    const fmt = (n) => '$' + new Intl.NumberFormat(T.localeIntl, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
     const fmtPct = (n) => Number.isFinite(n) ? Math.round(n) + '%' : '—';
     const margenPct = (costo, precio) => (costo > 0 && precio > 0) ? (precio - costo) / precio * 100 : null;
 
@@ -401,7 +416,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     // HTML del sub-texto del nombre (unidad + nota de volumen + precio sugerido).
     const nameNote = (l, idx) => {
         const vm = volMin(l);
-        let html = l.unidad + (vm ? ` · <b class="lr-volnote">precio x volumen (${vm}+)</b>` : '');
+        let html = l.unidad + (vm ? ` · <b class="lr-volnote">${tpl(T.volNoteTpl, { min: vm })}</b>` : '');
         html += pricingNoteHtml(l, idx);
         return html;
     };
@@ -414,8 +429,8 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         if (Math.abs(precioFinal - p.suggestedPrice) < 0.01) return ''; // ya está en el precio sugerido
         const band = p.bands.find(b => b.band === p.suggestedDiscountPct);
         const pctCierre = band ? Math.round(band.winRate * 100) : null;
-        const label = pctCierre !== null ? `Sugerido: ${fmt(p.suggestedPrice)} (${pctCierre}% cierra)` : `Sugerido: ${fmt(p.suggestedPrice)}`;
-        return ` · <button type="button" class="lr-pricing-hint" data-apply-price="${idx}" title="Basado en tu historial real de cotizaciones decididas">${label}</button>`;
+        const label = pctCierre !== null ? tpl(T.sugeridoConCierreTpl, { precio: fmt(p.suggestedPrice), pct: pctCierre }) : tpl(T.sugeridoTpl, { precio: fmt(p.suggestedPrice) });
+        return ` · <button type="button" class="lr-pricing-hint" data-apply-price="${idx}" title="${T.sugeridoTitle}">${label}</button>`;
     }
 
     function loadPricing(idx) {
@@ -472,8 +487,8 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         }, 0);
         const $cnt = document.getElementById('sumCount');
         if ($cnt) $cnt.textContent = nLines === 0
-            ? 'Agrega productos para ver el total'
-            : `${nLines} ${nLines === 1 ? 'línea' : 'líneas'} · ${pieces} ${pieces === 1 ? 'pieza' : 'piezas'}`;
+            ? T.agregaProductos
+            : `${nLines} ${nLines === 1 ? T.linea : T.lineas} · ${pieces} ${pieces === 1 ? T.pieza : T.piezas}`;
         const $save = document.getElementById('sumSaveLine');
         const $saveV = document.getElementById('sumSave');
         if ($save && $saveV) { $save.hidden = saved <= 0; $saveV.textContent = '−' + fmt(saved); }
@@ -485,7 +500,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
             const pct = Math.min(99, Math.max(0, parseInt(antEl.value, 10) || 0));
             if (pct >= 1 && total > 0) {
                 const ant = Math.round(total * pct) / 100;
-                antNote.textContent = `Al aprobar, tu cliente paga ${fmt(ant)} de anticipo y el resto (${fmt(total - ant)}) según los términos.`;
+                antNote.textContent = tpl(T.anticipoNoteTpl, { ant: fmt(ant), resto: fmt(total - ant) });
                 antNote.hidden = false;
             } else {
                 antNote.hidden = true;
@@ -529,7 +544,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 <input type="number" min="0" step="0.01" value="${precioFinal.toFixed(2)}" class="lr-input lr-nego ${l.negociado !== null && l.negociado < l.lista ? 'is-deal' : ''}" data-idx="${idx}" data-field="negociado" />
                 <span class="editorial lr-importe">${fmt(importe)}</span>
                 ${margenBadge(l.costo, precioFinal)}
-                <button class="lr-del" data-del="${idx}" aria-label="Quitar">
+                <button class="lr-del" data-del="${idx}" aria-label="${T.quitar}">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             `;
@@ -565,7 +580,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     function renderDrop() {
         if (!$prodDrop) return;
         if (!prodResults.length) {
-            $prodDrop.innerHTML = '<div class="prod-empty">No hay coincidencias en tu catálogo.<br/><small>Usa "+ Línea libre" para cotizar algo fuera del catálogo.</small></div>';
+            $prodDrop.innerHTML = `<div class="prod-empty">${T.sinCoincidencias}<br/><small>${T.sinCoincidenciasHint}</small></div>`;
         } else {
             $prodDrop.innerHTML = prodResults.map((p, i) => `
                 <button type="button" class="prod-item ${i === prodActive ? 'is-active' : ''}" data-pid="${p.id}" role="option">
@@ -696,8 +711,8 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         setTimeout(() => rows.forEach(r => r.classList.remove('line-added')), 900);
         if (window.cordToast) {
             const msg = ahorroTotal > 0.004
-                ? `Kit "${kit.nombre}" insertado con precio de combo — ahorras ${fmt(ahorroTotal)}`
-                : `Kit "${kit.nombre}" insertado — ${kit.items.length} línea${kit.items.length === 1 ? '' : 's'}`;
+                ? tpl(T.kitInsertadoComboTpl, { nombre: kit.nombre, ahorro: fmt(ahorroTotal) })
+                : tpl(T.kitInsertadoTpl, { nombre: kit.nombre, n: kit.items.length, lineaLabel: kit.items.length === 1 ? T.linea : T.lineas });
             window.cordToast(msg, 'ok');
         }
         closeKitDrop();
@@ -819,7 +834,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         const recNote = document.getElementById('recurrenteNote');
         const antField = document.getElementById('anticipoField');
         const activeTerm = document.querySelector('#termChips .chip.active');
-        const esContado = !activeTerm || activeTerm.dataset.term === 'Contado';
+        const esContado = !activeTerm || activeTerm.dataset.term === 'contado';
         if (!recEl) return;
         if (!esContado) { recEl.checked = false; if (recField) recField.hidden = true; }
         else if (recField) recField.hidden = false;
@@ -829,8 +844,8 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
             if (on) {
                 const total = currentTotal();
                 recNote.textContent = total > 0
-                    ? `Al autorizar, tu cliente paga ${fmt(total)} hoy y se le cobra ese monto automáticamente cada mes con su tarjeta, hasta que se cancele.`
-                    : 'Se cobra el total automáticamente cada mes con tarjeta (requiere cuenta de cobros conectada).';
+                    ? tpl(T.recurrenteNoteConTotalTpl, { total: fmt(total) })
+                    : T.recurrenteNoteSinTotal;
                 recNote.hidden = false;
             } else {
                 recNote.hidden = true;
@@ -843,7 +858,6 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     // ── Guardado real (POST /api/cotizaciones → Neon) ──
     const toast = document.getElementById('toast');
     const toastMsg = document.getElementById('toastMsg');
-    const TERM_MAP = { 'Contado': 'contado', 'Net 30': 'net30', 'Net 60': 'net60' };
     const showToast = (msg, hide = 0) => {
         toastMsg.textContent = msg; toast.hidden = false;
         if (hide) setTimeout(() => { toast.hidden = true; }, hide);
@@ -872,7 +886,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         // Anticipo: % que el cliente paga de inmediato al aprobar (0 = sin anticipo).
         const antEl = document.getElementById('anticipoPct');
         const anticipo_pct = antEl ? Math.min(99, Math.max(0, parseInt(antEl.value, 10) || 0)) : 0;
-        const terminos = es_recurrente ? 'contado' : (TERM_MAP[activeChip ? activeChip.dataset.term : 'Contado'] || 'contado');
+        const terminos = es_recurrente ? 'contado' : ((activeChip && activeChip.dataset.term) || 'contado');
 
         return {
             send,
@@ -899,21 +913,21 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
 
     async function save(send, btn) {
         if (!lines.length) {
-            showToast('Agrega al menos un producto en el paso 2', 2600);
+            showToast(T.agregaAlMenosUno, 2600);
             if ($prodInput) $prodInput.focus();
             return;
         }
         // Líneas libres sin descripción: pedir que se completen antes de guardar.
         const emptyFree = lines.findIndex(l => !l.id && !(l.nombre || '').trim());
         if (emptyFree >= 0) {
-            showToast('Describe la línea libre (o quítala) antes de continuar', 2800);
+            showToast(T.describeLineaLibre, 2800);
             const inputs = $lines.querySelectorAll('.lr-desc-input');
             if (inputs[0]) inputs[0].focus();
             return;
         }
         // Para ENVIAR se necesita un cliente (el link y el correo van dirigidos a él).
         if (send && (!$client || !$client.value || $client.value === '__NEW__')) {
-            showToast('Elige un cliente en el paso 1 para poder enviar', 2800);
+            showToast(T.eligeCliente, 2800);
             if ($client) {
                 $client.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 setTimeout(() => $client.focus(), 350);
@@ -922,8 +936,8 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         }
         const original = btn.innerHTML;
         btn.disabled = true; btn.style.opacity = '0.7';
-        showToast(send ? 'Enviando…' : 'Guardando…');
-        
+        showToast(send ? T.enviando : T.guardando);
+
         try {
             if (draftQuote) {
                 // If it's a draft, update it instead of creating a new one
@@ -935,8 +949,8 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                     body: JSON.stringify(payload),
                 });
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'Error al guardar');
-                showToast(send ? 'Enviada con éxito ✓' : 'Borrador guardado ✓');
+                if (!res.ok) throw new Error(data.error || T.errorGuardar);
+                showToast(send ? T.enviadaExito : T.borradorGuardado);
                 setTimeout(() => { window.location.href = `/app/cotizaciones/${draftQuote.id}`; }, 1100);
             } else {
                 // Normal creation
@@ -946,14 +960,14 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                     body: JSON.stringify(buildPayload(send)),
                 });
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'Error al guardar');
-                if (data.needsApproval) showToast(`Aprobación solicitada — ${data.folio}. Espera el visto bueno de gerencia.`);
-                else showToast(send ? `Enviada — ${data.folio} ✓` : `Borrador ${data.folio} guardado ✓`);
+                if (!res.ok) throw new Error(data.error || T.errorGuardar);
+                if (data.needsApproval) showToast(tpl(T.aprobacionSolicitadaTpl, { folio: data.folio }));
+                else showToast(send ? tpl(T.enviadaFolioTpl, { folio: data.folio }) : tpl(T.borradorFolioGuardadoTpl, { folio: data.folio }));
                 setTimeout(() => { window.location.href = `/app/cotizaciones/${data.id}`; }, 1100);
             }
         } catch (err) {
             btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = original;
-            showToast(err.message || 'Error de red', 2600);
+            showToast(err.message || T.errorRed, 2600);
         }
     }
 
@@ -981,7 +995,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     const $fxApplied = document.getElementById('fxApplied');
     const $fxBufLbl = document.getElementById('fxBufLbl');
     const $fxCushion = document.getElementById('fxCushion');
-    const nfFx = new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const nfFx = new Intl.NumberFormat(T.localeIntl, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const symFx = (c) => c === 'USD' ? 'US$' : c === 'EUR' ? '€' : '$';
 
     function parseTotal() {
@@ -1012,11 +1026,11 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
             const clientSees = applied > 0 ? amount / applied : 0;
             if ($fxPreview) {
                 $fxPreview.innerHTML = amount > 0
-                    ? `Tu cliente verá ≈ <b>${symFx(base)}${nfFx.format(clientSees)}</b> · tú facturas <b>$${nfFx.format(amount)} MXN</b>`
-                    : `Agrega productos para ver el total en ${base}.`;
+                    ? tpl(T.clienteVeraTpl, { sym: symFx(base), monto: nfFx.format(clientSees), mxn: nfFx.format(amount) })
+                    : tpl(T.agregaProductosDivisaTpl, { base });
             }
         } catch {
-            if ($fxPreview) $fxPreview.textContent = 'No se pudo obtener el tipo de cambio.';
+            if ($fxPreview) $fxPreview.textContent = T.noSePudoObtenerFx;
         }
     }
     function scheduleFx() { clearTimeout(fxTimer); fxTimer = setTimeout(refreshFx, 250); }
@@ -1071,9 +1085,9 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         return new Promise((resolve, reject) => {
             const img = new Image();
             const reader = new FileReader();
-            reader.onerror = () => reject(new Error('No se pudo leer la imagen'));
+            reader.onerror = () => reject(new Error(T.noSePudoLeerImagen));
             reader.onload = () => {
-                img.onerror = () => reject(new Error('No se pudo leer la imagen'));
+                img.onerror = () => reject(new Error(T.noSePudoLeerImagen));
                 img.onload = () => {
                     let w = img.naturalWidth, h = img.naturalHeight;
                     const scale = Math.min(1, IMG_MAX_DIM / Math.max(w, h));
@@ -1091,9 +1105,9 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     }
     function readPdf(file) {
         return new Promise((resolve, reject) => {
-            if (file.size > MAX_PDF_BYTES) { reject(new Error('El PDF pesa más de 3MB — intenta escanearlo en menor resolución o sube una foto en su lugar.')); return; }
+            if (file.size > MAX_PDF_BYTES) { reject(new Error(T.pdfMuyPesado)); return; }
             const reader = new FileReader();
-            reader.onerror = () => reject(new Error('No se pudo leer el PDF'));
+            reader.onerror = () => reject(new Error(T.noSePudoLeerPdf));
             reader.onload = () => resolve({ mediaType: 'application/pdf', data: b64FromDataUrl(reader.result) });
             reader.readAsDataURL(file);
         });
@@ -1104,13 +1118,13 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         $aiFile.addEventListener('change', async () => {
             const file = $aiFile.files && $aiFile.files[0];
             if (!file) return;
-            $aiStatus.textContent = 'Leyendo archivo…';
+            $aiStatus.textContent = T.leyendoArchivo;
             try {
                 const result = file.type.startsWith('image/') ? await readImageCompressed(file) : await readPdf(file);
                 setPendingFile(result.mediaType, result.data, file.name);
                 $aiStatus.textContent = '';
             } catch (err) {
-                $aiStatus.textContent = err.message || 'No se pudo procesar el archivo';
+                $aiStatus.textContent = err.message || T.noSePudoProcesarArchivo;
                 clearPendingFile();
             }
         });
@@ -1124,17 +1138,17 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     if ($aiBtn) {
         $aiBtn.addEventListener('click', async () => {
             const text = ($aiText.value || '').trim();
-            if (!text && !pendingFile) { $aiStatus.textContent = 'Escribe el pedido, pégalo, o adjunta una foto/PDF.'; return; }
+            if (!text && !pendingFile) { $aiStatus.textContent = T.escribeOAdjunta; return; }
             const label = $aiBtn.querySelector('.ai-btn-label');
             const prev = label.textContent;
-            $aiBtn.disabled = true; label.textContent = pendingFile ? 'Leyendo documento…' : 'Armando…'; $aiStatus.textContent = '';
+            $aiBtn.disabled = true; label.textContent = pendingFile ? T.leyendoDocumento : T.armando; $aiStatus.textContent = '';
             try {
                 const res = await fetch('/api/cotizaciones/ai-draft', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text, file: pendingFile }),
                 });
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'No se pudo armar');
+                if (!res.ok) throw new Error(data.error || T.noSePudoArmar);
                 lines.length = 0;
                 data.items.forEach((it) => {
                     const cat = it.id ? catMap[it.id] : null;
@@ -1158,9 +1172,9 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 lines.forEach((l, idx) => { if (l.id) loadPricing(idx); });
                 clearPendingFile();
                 const n = data.items.length;
-                $aiStatus.textContent = `✓ ${n} línea${n === 1 ? '' : 's'} armada${n === 1 ? '' : 's'}. Revisa cantidades y precios.`;
+                $aiStatus.textContent = tpl(T.lineasArmadasTpl, { n, lineaLabel: n === 1 ? T.linea : T.lineas, armadaLabel: n === 1 ? T.armada : T.armadas });
             } catch (err) {
-                $aiStatus.textContent = err.message || 'Error de red';
+                $aiStatus.textContent = err.message || T.errorRed;
             } finally {
                 $aiBtn.disabled = false; label.textContent = prev;
             }
@@ -1185,8 +1199,8 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         const d = Number(document.getElementById('fDescuento').value || 0);
         const el = document.getElementById('discPreview');
         if (!el) return;
-        if (d <= 0) { el.innerHTML = 'Sin descuento'; el.classList.remove('on'); }
-        else { el.innerHTML = `$1,000 → <b>$${Math.round(1000 * (1 - d / 100)).toLocaleString('es-MX')}</b>`; el.classList.add('on'); }
+        if (d <= 0) { el.innerHTML = T.sinDescuento; el.classList.remove('on'); }
+        else { el.innerHTML = `$1,000 → <b>$${Math.round(1000 * (1 - d / 100)).toLocaleString(T.localeIntl)}</b>`; el.classList.add('on'); }
     };
     const setNivel = (v, applySuggested = false) => {
         document.getElementById('fNivel').value = v;
@@ -1222,7 +1236,6 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         if (e.target === $ncOverlay) closeClientModal();
     });
 
-    const TERM_LABEL = { contado: 'Contado', net30: 'Net 30', net60: 'Net 60' };
     const $mError = document.getElementById('mError');
 
     $ncForm?.addEventListener('submit', async (e) => {
@@ -1230,14 +1243,14 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         if ($mError) $mError.textContent = '';
         const empresa = document.getElementById('fEmpresa').value.trim();
         if (!empresa) {
-            if ($mError) $mError.textContent = 'El nombre de la empresa es obligatorio.';
+            if ($mError) $mError.textContent = T.empresaObligatoria;
             document.getElementById('fEmpresa').focus();
             return;
         }
 
         const prevHTML = $ncSubmit.innerHTML;
         $ncSubmit.disabled = true;
-        $ncSubmit.textContent = 'Creando…';
+        $ncSubmit.textContent = T.creando;
 
         try {
             const contactoVal = $ncContacto ? $ncContacto.value.trim() : '';
@@ -1264,13 +1277,13 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Error al crear cliente');
+            if (!res.ok) throw new Error(data.error || T.errorCrearCliente);
 
             const opt = document.createElement('option');
             opt.value = data.id;
             opt.dataset.desc = String(descVal || 0);
             opt.dataset.nivel = nivelVal;
-            opt.dataset.term = TERM_LABEL[terminos] || 'Contado';
+            opt.dataset.term = terminos || 'contado';
             opt.textContent = contactoVal ? `${empresa} — ${contactoVal}` : empresa;
 
             const newOpt = $client.querySelector('option[value="__NEW__"]');
@@ -1288,9 +1301,9 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
             $client.dispatchEvent(new Event('change'));
 
             closeClientModal();
-            showToast(`Cliente "${empresa}" creado y seleccionado ✓`, 2400);
+            showToast(tpl(T.clienteCreadoTpl, { empresa }), 2400);
         } catch (err) {
-            if ($mError) $mError.textContent = err.message || 'No se pudo crear el cliente.';
+            if ($mError) $mError.textContent = err.message || T.noSePudoCrearCliente;
         } finally {
             $ncSubmit.disabled = false;
             $ncSubmit.innerHTML = prevHTML;
