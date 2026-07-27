@@ -3,6 +3,15 @@
 import AppLayout from '../../../layouts/AppLayout.astro';
 import { getCotizacion, getDocumentosFiscales, getMyMembership, getOrg, getSuscripcionByCotizacion, STATUS_META, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal } from '../../../lib/queries';
 import { memberCan } from '../../../lib/permissions';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
+
+const L = currentLocale();
+const tf = (key: string, vars: Record<string, string> = {}) => {
+    let s = t(L, key as any);
+    for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
+    return s;
+};
 
 const { id } = Astro.params;
 const [q, ME, ORG] = await Promise.all([getCotizacion(id ?? ''), getMyMembership(), getOrg()]);
@@ -10,20 +19,27 @@ if (!q) return Astro.redirect('/app/cotizaciones');
 const docsFiscales = await getDocumentosFiscales(id ?? '');
 // Iguala recurrente: estado de la suscripción de Stripe (para mostrar y cancelar).
 const sus = q.esRecurrente ? await getSuscripcionByCotizacion(id ?? '') : null;
-const susLabel: Record<string, string> = { active: 'Activa', trialing: 'En prueba', past_due: 'Cobro pendiente', incomplete: 'Sin autorizar', canceled: 'Cancelada' };
-const DOC_LABEL: Record<string, string> = { cfdi_40: 'CFDI 4.0', invoice: 'Factura comercial', dian_einvoice: 'Factura DIAN' };
+const susLabel: Record<string, string> = { active: t(L, 'id.sus_active'), trialing: t(L, 'id.sus_trialing'), past_due: t(L, 'id.sus_past_due'), incomplete: t(L, 'id.sus_incomplete'), canceled: t(L, 'id.sus_canceled') };
+const DOC_LABEL: Record<string, string> = { cfdi_40: t(L, 'id.doc_cfdi'), invoice: t(L, 'id.doc_invoice'), dian_einvoice: t(L, 'id.doc_dian') };
 const canCotizar = memberCan(ME, 'cotizar');
 const canAprobar = memberCan(ME, 'aprobar');
 
 const hasLiveView = ['pro', 'scale', 'developer'].includes(ORG.plan_raw);
 
+// Solo se checa el PREFIJO de la llave global (nunca se expone al cliente) para
+// saber si, sin CSD propio, el timbrado caería en modo de prueba de Facturapi.
+const facturapiGlobalKey = import.meta.env.FACTURAPI_API_KEY || process.env.FACTURAPI_API_KEY || '';
+const isFacturapiGlobalLive = facturapiGlobalKey.startsWith('sk_live_');
+// La facturación fiscal real solo existe para México hoy (ver FiscalFactory).
+const isMx = ORG.countryCode === 'MX';
+
 // Stepper de estado (solo flujo positivo; rechazada/expirada lo omiten — basta el pill)
 const STEPS = [
-    { key: 'draft', label: 'Borrador' },
-    { key: 'sent', label: 'Enviada' },
-    { key: 'viewed', label: 'Vista' },
-    { key: 'approved', label: 'Aprobada' },
-    { key: q.status === 'invoiced' ? 'invoiced' : 'paid', label: q.status === 'invoiced' ? 'Facturada' : 'Pagada' },
+    { key: 'draft', label: t(L, 'id.step_borrador') },
+    { key: 'sent', label: t(L, 'id.step_enviada') },
+    { key: 'viewed', label: t(L, 'id.step_vista') },
+    { key: 'approved', label: t(L, 'id.step_aprobada') },
+    { key: q.status === 'invoiced' ? 'invoiced' : 'paid', label: q.status === 'invoiced' ? t(L, 'id.step_facturada') : t(L, 'id.step_pagada') },
 ];
 const STEP_IDX: Record<string, number> = { draft: 0, sent: 1, viewed: 2, approved: 3, paid: 4, invoiced: 4 };
 const showStepper = q.status in STEP_IDX;
@@ -38,31 +54,31 @@ const dotColor = (tipo: string) =>
     : '#cbd5e1';
 ---
 
-<AppLayout title={`${q.folio} — Cord`} page="cotizaciones" heading={q.folio} crumbs={[{ label: 'Cotizaciones', href: '/app/cotizaciones' }]}>
+<AppLayout title={`${q.folio} — Cord`} page="cotizaciones" heading={q.folio} crumbs={[{ label: t(L, 'id.volver').replace('← ', ''), href: '/app/cotizaciones' }]}>
     <span slot="topbar-actions" class="status-pill tb-status" style={`color:${meta.color}; background:${meta.bg}`}>{meta.label}</span>
 
-    <a href="/app/cotizaciones" class="back-link">← Cotizaciones</a>
+    <a href="/app/cotizaciones" class="back-link">{t(L, 'id.volver')}</a>
 
     {q.aprobEstado === 'pendiente' && (
         <div class="approval-banner">
             <div class="ap-info">
                 <span class="ap-title">
                     <svg class="ap-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12"/><polyline points="12 7 12 12 15.5 14"/></svg>
-                    Pendiente de aprobación
+                    {t(L, 'id.pendiente_aprobacion')}
                 </span>
                 <span class="ap-motivo">{q.aprobMotivo}</span>
             </div>
             {canAprobar && (
                 <div class="ap-actions">
-                    <button class="ap-approve" id="apApprove">Aprobar y enviar</button>
-                    <button class="ap-reject" id="apReject">Rechazar</button>
+                    <button class="ap-approve" id="apApprove">{t(L, 'id.aprobar_enviar')}</button>
+                    <button class="ap-reject" id="apReject">{t(L, 'id.rechazar')}</button>
                 </div>
             )}
         </div>
     )}
     {q.aprobEstado === 'rechazada' && (
         <div class="approval-banner ap-rejected">
-            <span class="ap-title">Solicitud de aprobación rechazada por gerencia</span>
+            <span class="ap-title">{t(L, 'id.rechazada_gerencia')}</span>
         </div>
     )}
 
@@ -89,35 +105,35 @@ const dotColor = (tipo: string) =>
                             <span class="version-badge">V{q.version}</span>
                             {hasLiveView && (
                                 <span class="lv-badge" id="liveViewing" hidden>
-                                    <span class="lv-dot"></span> Viendo ahora
+                                    <span class="lv-dot"></span> {t(L, 'id.viendo_ahora')}
                                 </span>
                             )}
                         </h2>
-                        <p class="dh-meta">{q.terminos} · Vigente hasta {q.vigencia} · Creada {q.creada}</p>
+                        <p class="dh-meta">{q.terminos} · {t(L, 'id.vigente_hasta')} {q.vigencia} · {t(L, 'id.creada')} {q.creada}</p>
                     </div>
                 </div>
                 <div class="dh-total">
-                    <span class="dh-total-label">TOTAL</span>
+                    <span class="dh-total-label">{t(L, 'id.total')}</span>
                     <span class="editorial dh-total-val">{money(quoteTotal(q))}</span>
                 </div>
             </section>
 
             <!-- Items -->
             <section class="d-items">
-                <div class="section-head"><h2>Detalle</h2></div>
-                <div class="di-head"><span>Producto</span><span>Cant.</span><span>Precio</span><span class="di-right">Importe</span></div>
+                <div class="section-head"><h2>{t(L, 'id.detalle')}</h2></div>
+                <div class="di-head"><span>{t(L, 'id.th_producto')}</span><span>{t(L, 'id.th_cant')}</span><span>{t(L, 'id.th_precio')}</span><span class="di-right">{t(L, 'id.th_importe')}</span></div>
                 {q.items.map((it) => (
                     <div class="di-row-wrap" data-item-id={it.id}>
                         <div class:list={['di-row', { 'di-excluida': it.aprobado === false }]}>
                             <span class="di-name">
                                 {it.descripcion}<small>{it.unidad}</small>
-                                {it.aprobado === false && <span class="di-excluida-tag">No incluida</span>}
-                                <button class="di-chat-toggle" data-item-toggle={it.id} aria-label="Comentarios de esta línea">
+                                {it.aprobado === false && <span class="di-excluida-tag">{t(L, 'id.no_incluida')}</span>}
+                                <button class="di-chat-toggle" data-item-toggle={it.id} aria-label={t(L, 'id.comentarios_linea')}>
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                                     {it.comentarios && it.comentarios.length > 0 ? it.comentarios.length : ''}
                                 </button>
                             </span>
-                            <span class="di-qty">{it.cantidad.toLocaleString('es-MX')}</span>
+                            <span class="di-qty">{it.cantidad.toLocaleString(L === 'en' ? 'en-US' : 'es-MX')}</span>
                             <span class="di-price">
                                 {it.precioNegociado !== null && <s>{money(it.precioLista)}</s>}
                                 <span class="editorial">{money(it.precioNegociado ?? it.precioLista)}</span>
@@ -133,13 +149,13 @@ const dotColor = (tipo: string) =>
                                     </div>
                                 ))}
                                 {(!it.comentarios || it.comentarios.length === 0) && (
-                                    <p class="di-thread-empty">Sin comentarios en esta línea todavía.</p>
+                                    <p class="di-thread-empty">{t(L, 'id.sin_comentarios_linea')}</p>
                                 )}
                             </div>
                             {canCotizar && (
                                 <div class="di-thread-reply">
-                                    <input type="text" class="di-thread-input" placeholder="Responder sobre esta línea…" />
-                                    <button class="di-thread-send" data-item-reply={it.id} aria-label="Enviar">
+                                    <input type="text" class="di-thread-input" placeholder={t(L, 'id.responder_linea_ph')} />
+                                    <button class="di-thread-send" data-item-reply={it.id} aria-label={t(L, 'id.enviar')}>
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                                     </button>
                                 </div>
@@ -150,15 +166,15 @@ const dotColor = (tipo: string) =>
                 {q.items.some((it) => it.aprobado === false) && (
                     <div class="di-partial-note">
                         <svg class="dp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" fill="currentColor" fill-opacity="0.12"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                        Aprobación parcial — el cliente firmó solo las líneas incluidas
-                        (<b class="editorial">{money(q.items.filter((it) => it.aprobado !== false).reduce((s, it) => s + lineTotal(it), 0))}</b> de <span class="editorial">{money(quoteSubtotal(q))}</span> + IVA).
+                        {t(L, 'id.aprobacion_parcial')}
+                        (<b class="editorial">{money(q.items.filter((it) => it.aprobado !== false).reduce((s, it) => s + lineTotal(it), 0))}</b> {tf('id.de_mas_iva', { subtotal: money(quoteSubtotal(q)) })}
                     </div>
                 )}
                 <div class="di-totals">
-                    <div class="dt-line"><span>Subtotal</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
-                    <div class="dt-line"><span>IVA {ORG.ivaPct ?? 16}%</span><span class="editorial">{money(quoteIva(q))}</span></div>
+                    <div class="dt-line"><span>{t(L, 'id.subtotal')}</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
+                    <div class="dt-line"><span>{t(L, 'id.iva')} {ORG.ivaPct ?? 16}%</span><span class="editorial">{money(quoteIva(q))}</span></div>
                     <div class="dt-line dt-grand">
-                        <span>Total {q.iva_incluido && <span style="font-size: 0.7em; font-weight: 500; color: var(--color-text-muted); margin-left: 0.4rem; background: var(--color-bg-soft); padding: 2px 6px; border-radius: 4px;">Precios con IVA incluido</span>}</span>
+                        <span>{t(L, 'id.total_line')} {q.iva_incluido && <span style="font-size: 0.7em; font-weight: 500; color: var(--color-text-muted); margin-left: 0.4rem; background: var(--color-bg-soft); padding: 2px 6px; border-radius: 4px;">{t(L, 'id.precios_con_iva')}</span>}</span>
                         <span class="editorial">{money(quoteTotal(q))}</span>
                     </div>
                 </div>
@@ -166,7 +182,7 @@ const dotColor = (tipo: string) =>
 
             {q.notas && (
                 <section class="d-notes">
-                    <div class="section-head"><h2>Notas</h2></div>
+                    <div class="section-head"><h2>{t(L, 'id.notas')}</h2></div>
                     <p>{q.notas}</p>
                 </section>
             )}
@@ -174,7 +190,7 @@ const dotColor = (tipo: string) =>
             {q.versiones && q.versiones.length > 0 && (
                 <section class="d-versions">
                     <details class="v-accordion">
-                        <summary>Historial de versiones ({q.versiones.length})</summary>
+                        <summary>{tf('id.historial_versiones', { n: String(q.versiones.length) })}</summary>
                         <div class="v-list">
                             {q.versiones.map(v => (
                                 <div class="v-item">
@@ -190,7 +206,7 @@ const dotColor = (tipo: string) =>
 
             {docsFiscales.length > 0 && (
                 <section class="d-fiscal">
-                    <div class="section-head"><h2>Documentos fiscales</h2></div>
+                    <div class="section-head"><h2>{t(L, 'id.documentos_fiscales')}</h2></div>
                     <div class="df-list">
                         {docsFiscales.map((d) => (
                             <div class="df-row" data-status={d.status}>
@@ -203,9 +219,10 @@ const dotColor = (tipo: string) =>
                                     <div class="df-top">
                                         <span class="df-type">{DOC_LABEL[d.tipo] || d.tipo}</span>
                                         <span class="df-pais">{d.pais}</span>
-                                        {d.simulado && <span class="df-sim">Simulado</span>}
+                                        {d.simulado && <span class="df-sim">{t(L, 'id.simulado')}</span>}
+                                        {!d.simulado && d.testMode && <span class="df-sim" title={t(L, 'id.modo_prueba_fiscal_title')}>{t(L, 'id.modo_prueba_fiscal')}</span>}
                                         <span class:list={['df-state', d.status]}>
-                                            {d.status === 'issued' ? 'Emitido' : d.status === 'error' ? 'Error' : 'Pendiente'}
+                                            {d.status === 'issued' ? t(L, 'id.emitido') : d.status === 'error' ? t(L, 'id.error') : t(L, 'id.pendiente')}
                                         </span>
                                     </div>
                                     {d.fiscalId && <div class="df-uuid">UUID: <code>{d.fiscalId}</code></div>}
@@ -219,7 +236,7 @@ const dotColor = (tipo: string) =>
                         ))}
                     </div>
                     {docsFiscales.some((d) => d.simulado) && (
-                        <p class="df-note">Un timbre <b>simulado</b> significa que aún no hay PAC conectado (faltan <code>PAC_API_URL</code>/<code>PAC_API_KEY</code>). El registro queda para auditoría, pero no es un CFDI válido ante el SAT.</p>
+                        <p class="df-note" set:html={t(L, 'id.df_note')} />
                     )}
                 </section>
             )}
@@ -227,71 +244,90 @@ const dotColor = (tipo: string) =>
 
         <!-- Sidebar: acciones + timeline -->
         <aside class="d-side">
-            <section class="d-actions" data-qid={q.id} data-token={q.token} data-folio={q.folio} data-cliente={q.cliente} data-total={money(quoteTotal(q))} data-live-view={hasLiveView ? '1' : ''}>
-                <div class="section-head" style="margin-bottom: 0.5rem;"><h2>Acciones</h2></div>
-                
+            <section class="d-actions" data-qid={q.id} data-token={q.token} data-folio={q.folio} data-cliente={q.cliente} data-total={money(quoteTotal(q))} data-live-view={hasLiveView ? '1' : ''} data-fiscal-test={(!ORG.tieneCsdPropio && !isFacturapiGlobalLive) ? '1' : ''}
+                data-i18n-no-pudo-procesar={t(L, 'id.no_pudo_procesar')} data-i18n-rechazar-titulo={t(L, 'id.rechazar_solicitud_titulo')} data-i18n-rechazar-body={t(L, 'id.rechazar_solicitud_body')}
+                data-i18n-rechazar={t(L, 'id.rechazar')} data-i18n-cancelar-iguala-titulo={t(L, 'id.cancelar_iguala_titulo')} data-i18n-cancelar-iguala-body={t(L, 'id.cancelar_iguala_body')}
+                data-i18n-cancelar-iguala={t(L, 'id.cancelar_iguala')} data-i18n-no-mantenerla={t(L, 'id.no_mantenerla')} data-i18n-cancelando={t(L, 'id.cancelando')}
+                data-i18n-no-pudo-cancelar={t(L, 'id.no_pudo_cancelar')} data-i18n-iguala-cancelada={t(L, 'id.iguala_cancelada')} data-i18n-error-cancelar={t(L, 'id.error_cancelar')}
+                data-i18n-confirm-titulo={t(L, 'id.confirmar_titulo')} data-i18n-continuar={t(L, 'id.continuar')}
+                data-i18n-confirm-reject={t(L, 'id.confirm_reject')} data-i18n-confirm-paid={t(L, 'id.confirm_paid')}
+                data-i18n-confirm-invoiced-test={t(L, 'id.confirm_invoiced_test')} data-i18n-confirm-invoiced-real={t(L, 'id.confirm_invoiced_real')}
+                data-i18n-no-pudo-aplicar={t(L, 'id.no_pudo_aplicar')}
+                data-i18n-wa-saludo={t(L, 'id.wa_saludo')} data-i18n-wa-por={t(L, 'id.wa_por')}
+                data-i18n-no-pudo-copiar-link={t(L, 'id.no_pudo_copiar_link')} data-i18n-copiado={t(L, 'id.copiado')} data-i18n-copiar-link={t(L, 'id.copiar_link')}
+                data-i18n-link-copiado-toast={t(L, 'id.link_copiado_toast')}
+                data-i18n-ahora={t(L, 'id.ahora')} data-i18n-no-pudo-enviar={t(L, 'id.no_pudo_enviar')}
+                data-i18n-no-pudo-duplicar={t(L, 'id.no_pudo_duplicar')}
+                data-i18n-eliminar-borrador-titulo={t(L, 'id.eliminar_borrador_titulo')} data-i18n-eliminar-borrador-body={t(L, 'id.eliminar_borrador_body')}
+                data-i18n-eliminar={t(L, 'id.eliminar')} data-i18n-no-pudo-eliminar={t(L, 'id.no_pudo_eliminar')}>
+                <div class="section-head" style="margin-bottom: 0.5rem;"><h2>{t(L, 'id.acciones')}</h2></div>
+
                 <!-- PRIMARY ACTIONS -->
                 {q.status === 'draft' && canCotizar && (
-                    <button class="act-primary act-do" data-action="send">Enviar al cliente</button>
+                    <button class="act-primary act-do" data-action="send">{t(L, 'id.enviar_cliente')}</button>
                 )}
-                
+
                 {(q.status === 'sent' || q.status === 'viewed') && canAprobar && (
-                    <button class="act-ok act-do" data-action="approve">Marcar aprobada</button>
+                    <button class="act-ok act-do" data-action="approve">{t(L, 'id.marcar_aprobada')}</button>
                 )}
                 {(q.status === 'sent' || q.status === 'viewed') && canAprobar && (
-                    <button class="act-danger act-do" data-action="reject">Marcar rechazada</button>
+                    <button class="act-danger act-do" data-action="reject">{t(L, 'id.marcar_rechazada')}</button>
                 )}
                 {(q.status === 'sent' || q.status === 'viewed' || q.status === 'expired') && canCotizar && (
-                    <a href={`/app/cotizaciones/${q.id}/editar`} class="act-secondary act-link" style="text-align: center; text-decoration: none; display: block;">Modificar y reenviar (V{q.version + 1})</a>
+                    <a href={`/app/cotizaciones/${q.id}/editar`} class="act-secondary act-link" style="text-align: center; text-decoration: none; display: block;">{tf('id.modificar_reenviar', { n: String(q.version + 1) })}</a>
                 )}
                 {q.status === 'approved' && canAprobar && !q.esRecurrente && (
-                    <button class="act-ok act-do" data-action="paid">Registrar pago</button>
+                    <button class="act-ok act-do" data-action="paid">{t(L, 'id.registrar_pago')}</button>
                 )}
 
                 {q.esRecurrente && (
                     <div class="act-sub">
                         <div class="act-sub-head">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                            <span>Iguala mensual · {money(quoteTotal(q))}</span>
+                            <span>{t(L, 'id.iguala_mensual')} · {money(quoteTotal(q))}</span>
                         </div>
                         {sus ? (
                             <p class="act-sub-status">
-                                Estado: <b>{susLabel[sus.estado] ?? sus.estado}</b>
-                                {sus.cancelAtPeriodEnd && ' · se cancela al fin de periodo'}
-                                {sus.activa && sus.currentPeriodEnd && ` · próximo cargo ${sus.currentPeriodEnd}`}
+                                {t(L, 'id.estado_label')} <b>{susLabel[sus.estado] ?? sus.estado}</b>
+                                {sus.cancelAtPeriodEnd && ` ${t(L, 'id.se_cancela_periodo')}`}
+                                {sus.activa && sus.currentPeriodEnd && ` ${tf('id.proximo_cargo', { fecha: sus.currentPeriodEnd })}`}
                             </p>
                         ) : (
-                            <p class="act-sub-status">El cliente aún no autoriza el cobro recurrente.</p>
+                            <p class="act-sub-status">{t(L, 'id.sin_autorizar_cobro')}</p>
                         )}
                         {sus && sus.activa && !sus.cancelAtPeriodEnd && canAprobar && (
-                            <button class="act-danger" id="btnCancelSub" data-qid={q.id}>Cancelar iguala</button>
+                            <button class="act-danger" id="btnCancelSub" data-qid={q.id}>{t(L, 'id.cancelar_iguala')}</button>
                         )}
                     </div>
                 )}
                 {(q.status === 'approved' || q.status === 'paid') && canAprobar && (
-                    <button class="act-cfdi act-do" data-action="invoiced">Timbrar CFDI 4.0</button>
+                    isMx ? (
+                        <button class="act-cfdi act-do" data-action="invoiced">{t(L, 'id.timbrar_cfdi')}</button>
+                    ) : (
+                        <p class="act-sub-status" title={t(L, 'id.fiscal_proximamente_title')}>{t(L, 'id.fiscal_proximamente')}</p>
+                    )
                 )}
 
                 {q.status === 'draft' && canCotizar && (
-                    <a href={`/app/cotizaciones/nueva?draft=${q.id}`} class="act-secondary act-link" style="text-align: center; text-decoration: none; display: block;">Continuar editando</a>
+                    <a href={`/app/cotizaciones/nueva?draft=${q.id}`} class="act-secondary act-link" style="text-align: center; text-decoration: none; display: block;">{t(L, 'id.continuar_editando')}</a>
                 )}
 
                 <!-- SECONDARY ACTIONS GRID -->
                 {q.status !== 'draft' && (
                     <div class="act-grid">
-                        <a href={`/q/${q.token}`} class="act-util" target="_blank" title="Abrir el link público que ve tu cliente">
+                        <a href={`/q/${q.token}`} class="act-util" target="_blank" title={t(L, 'id.abrir_link_title')}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                            <span class="act-util-lbl">Abrir link</span>
+                            <span class="act-util-lbl">{t(L, 'id.abrir_link')}</span>
                         </a>
-                        <button class="act-util" id="btnCopy" title="Copiar el link público al portapapeles">
+                        <button class="act-util" id="btnCopy" title={t(L, 'id.copiar_link_title')}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                            <span class="act-util-lbl">Copiar link</span>
+                            <span class="act-util-lbl">{t(L, 'id.copiar_link')}</span>
                         </button>
-                        <a href={`/app/cotizaciones/${q.id}/imprimir`} target="_blank" class="act-util" title="Descargar o imprimir el PDF">
+                        <a href={`/app/cotizaciones/${q.id}/imprimir`} target="_blank" class="act-util" title={t(L, 'id.pdf_title')}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                            <span class="act-util-lbl">PDF</span>
+                            <span class="act-util-lbl">{t(L, 'id.pdf')}</span>
                         </a>
-                        <button class="act-util act-util-wa" id="btnWhats" title="Compartir el link por WhatsApp">
+                        <button class="act-util act-util-wa" id="btnWhats" title={t(L, 'id.wa_title')}>
                             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
                             <span class="act-util-lbl">WhatsApp</span>
                         </button>
@@ -299,23 +335,23 @@ const dotColor = (tipo: string) =>
                 )}
                 {q.status === 'draft' && (
                     <div class="act-grid">
-                        <a href={`/q/${q.token}`} class="act-util" target="_blank" title="Ver cómo la verá tu cliente antes de enviarla">
+                        <a href={`/q/${q.token}`} class="act-util" target="_blank" title={t(L, 'id.vista_previa_title')}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                            <span class="act-util-lbl">Vista previa</span>
+                            <span class="act-util-lbl">{t(L, 'id.vista_previa')}</span>
                         </a>
                     </div>
                 )}
 
-                <button class="act-secondary" id="btnDuplicate" style="width: 100%; margin-top: 0.5rem;">Duplicar cotización</button>
+                <button class="act-secondary" id="btnDuplicate" style="width: 100%; margin-top: 0.5rem;">{t(L, 'id.duplicar')}</button>
 
                 {q.status === 'draft' && canCotizar && (
-                    <button class="act-delete" id="btnDelete" style="width: 100%; margin-top: 0.5rem;">Eliminar borrador</button>
+                    <button class="act-delete" id="btnDelete" style="width: 100%; margin-top: 0.5rem;">{t(L, 'id.eliminar_borrador')}</button>
                 )}
                 <p class="act-error" id="actError"></p>
             </section>
 
             <section class="d-timeline">
-                <div class="section-head"><h2>Actividad</h2></div>
+                <div class="section-head"><h2>{t(L, 'id.actividad')}</h2></div>
                 <div class="tl">
                     {q.eventos.map((e) => (
                         <div class="tl-item">
@@ -331,9 +367,9 @@ const dotColor = (tipo: string) =>
 
             <section class="d-chat">
                 <div class="section-head">
-                    <h2>Conversación</h2>
+                    <h2>{t(L, 'id.conversacion')}</h2>
                     <button class="tl-new" id="tlNew" hidden>
-                        <span class="tl-new-dot"></span> Nuevo
+                        <span class="tl-new-dot"></span> {t(L, 'id.nuevo')}
                     </button>
                 </div>
                 <div class="dc-thread" id="dcThread">
@@ -344,13 +380,13 @@ const dotColor = (tipo: string) =>
                         </div>
                     ))}
                     {(!q.conversacion || q.conversacion.length === 0) && (
-                        <p class="dc-thread-empty">Aún no hay mensajes con tu cliente.</p>
+                        <p class="dc-thread-empty">{t(L, 'id.sin_mensajes')}</p>
                     )}
                 </div>
                 {canCotizar && (
                     <div class="dc-compose">
-                        <textarea id="replyMsg" rows="1" placeholder="Responder al cliente (aparece en su link)…"></textarea>
-                        <button class="dc-send" id="btnReply" aria-label="Enviar">
+                        <textarea id="replyMsg" rows="1" placeholder={t(L, 'id.responder_ph')}></textarea>
+                        <button class="dc-send" id="btnReply" aria-label={t(L, 'id.enviar')}>
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                         </button>
                     </div>
@@ -680,6 +716,7 @@ const dotColor = (tipo: string) =>
         const qid = panel.dataset.qid!;
         const token = panel.dataset.token!;
         const errorEl = document.getElementById('actError')!;
+        const I = panel.dataset; // atajo al bridge data-i18n-*
 
         // ── Presencia + conversación EN VIVO (SSE, no polling) ──
         // La presencia ("viendo ahora") se muestra solo en planes con la feature;
@@ -742,49 +779,50 @@ const dotColor = (tipo: string) =>
             try {
                 const res = await fetch(`/api/cotizaciones/${qid}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) });
                 const d = await res.json();
-                if (!res.ok) throw new Error(d.error || 'No se pudo procesar');
+                if (!res.ok) throw new Error(d.error || I.i18nNoPudoProcesar);
                 location.reload();
             } catch (e: any) { errorEl.textContent = e.message; btn.disabled = false; }
         };
         document.getElementById('apApprove')?.addEventListener('click', (e) => apAction('approve_request', e.currentTarget as HTMLButtonElement));
-        document.getElementById('apReject')?.addEventListener('click', async (e) => { const b = e.currentTarget as HTMLButtonElement; if (await (window as any).cordConfirm({ title: 'Rechazar solicitud', body: '¿Rechazar esta solicitud de aprobación?', danger: true, confirmText: 'Rechazar' })) apAction('reject_request', b); });
+        document.getElementById('apReject')?.addEventListener('click', async (e) => { const b = e.currentTarget as HTMLButtonElement; if (await (window as any).cordConfirm({ title: I.i18nRechazarTitulo, body: I.i18nRechazarBody, danger: true, confirmText: I.i18nRechazar })) apAction('reject_request', b); });
 
         // Cancelar iguala recurrente (cancel_at_period_end en Stripe)
         document.getElementById('btnCancelSub')?.addEventListener('click', async (e) => {
             const b = e.currentTarget as HTMLButtonElement;
             const qid = b.dataset.qid!;
             const ok = await (window as any).cordConfirm({
-                title: 'Cancelar iguala',
-                body: 'Se dejará de cobrar al cliente al final del periodo actual. El cargo de este mes ya realizado no se reembolsa. ¿Cancelar la iguala?',
-                danger: true, confirmText: 'Cancelar iguala', cancelText: 'No, mantenerla',
+                title: I.i18nCancelarIgualaTitulo,
+                body: I.i18nCancelarIgualaBody,
+                danger: true, confirmText: I.i18nCancelarIguala, cancelText: I.i18nNoMantenerla,
             });
             if (!ok) return;
-            b.disabled = true; b.textContent = 'Cancelando…';
+            b.disabled = true; b.textContent = I.i18nCancelando!;
             try {
                 const res = await fetch(`/api/cotizaciones/${qid}/subscription`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'cancel' }),
                 });
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'No se pudo cancelar');
-                (window as any).cordToast?.('Iguala cancelada al fin del periodo', 'ok');
+                if (!res.ok) throw new Error(data.error || I.i18nNoPudoCancelar);
+                (window as any).cordToast?.(I.i18nIgualaCancelada, 'ok');
                 setTimeout(() => location.reload(), 900);
             } catch (err: any) {
-                (window as any).cordToast?.(err.message || 'Error al cancelar', 'error');
-                b.disabled = false; b.textContent = 'Cancelar iguala';
+                (window as any).cordToast?.(err.message || I.i18nErrorCancelar, 'error');
+                b.disabled = false; b.textContent = I.i18nCancelarIguala!;
             }
         });
 
+        const fiscalTest = panel.dataset.fiscalTest === '1';
         const CONFIRM: Record<string, string> = {
-            reject: '¿Marcar esta cotización como rechazada?',
-            paid: '¿Registrar el pago? La cotización quedará marcada como pagada.',
-            invoiced: 'Se marcará como facturada y se emitirá el documento fiscal (CFDI real si tienes tu facturación conectada; si no, queda registrado como simulado). ¿Continuar?',
+            reject: I.i18nConfirmReject!,
+            paid: I.i18nConfirmPaid!,
+            invoiced: fiscalTest ? I.i18nConfirmInvoicedTest! : I.i18nConfirmInvoicedReal!,
         };
 
         panel.querySelectorAll<HTMLButtonElement>('.act-do').forEach((btn) => {
             btn.addEventListener('click', async () => {
                 const action = btn.dataset.action!;
-                if (CONFIRM[action] && !await (window as any).cordConfirm({ title: 'Confirmar acción', body: CONFIRM[action], confirmText: 'Continuar' })) return;
+                if (CONFIRM[action] && !await (window as any).cordConfirm({ title: I.i18nConfirmTitulo, body: CONFIRM[action], confirmText: I.i18nContinuar })) return;
                 btn.disabled = true;
                 errorEl.textContent = '';
                 try {
@@ -794,7 +832,7 @@ const dotColor = (tipo: string) =>
                         body: JSON.stringify({ action }),
                     });
                     const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || 'No se pudo aplicar la acción');
+                    if (!res.ok) throw new Error(data.error || I.i18nNoPudoAplicar);
                     location.reload();
                 } catch (err: any) {
                     errorEl.textContent = err.message;
@@ -808,7 +846,11 @@ const dotColor = (tipo: string) =>
             const cliente = panel.dataset.cliente || '';
             const total = panel.dataset.total || '';
             const link = `${location.origin}/q/${token}`;
-            const msg = `¡Hola${cliente ? ' ' + cliente : ''}! Te comparto la cotización ${folio}${total ? ' por ' + total : ''}. Puedes revisarla y aprobarla aquí: ${link}`;
+            const msg = (I.i18nWaSaludo || '')
+                .replace('{cliente}', cliente ? ' ' + cliente : '')
+                .replace('{folio}', folio)
+                .replace('{total}', total ? (I.i18nWaPor || '').replace('{total}', total) : '')
+                .replace('{link}', link);
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         });
 
@@ -817,15 +859,15 @@ const dotColor = (tipo: string) =>
             try {
                 await navigator.clipboard.writeText(`${location.origin}/q/${token}`);
             } catch {
-                errorEl.textContent = 'No se pudo copiar el link';
+                errorEl.textContent = I.i18nNoPudoCopiarLink!;
                 return;
             }
             // Feedback sin destruir el ícono SVG (antes textContent lo borraba).
             const lbl = btn.querySelector<HTMLElement>('.act-util-lbl');
             const prev = lbl?.textContent || '';
             btn.classList.add('act-copied');
-            if (lbl) lbl.textContent = 'Copiado';
-            (window as any).cordToast?.('Link copiado al portapapeles', 'ok', 1800);
+            if (lbl) lbl.textContent = I.i18nCopiado!;
+            (window as any).cordToast?.(I.i18nLinkCopiadoToast, 'ok', 1800);
             setTimeout(() => { btn.classList.remove('act-copied'); if (lbl) lbl.textContent = prev; }, 1800);
         });
 
@@ -840,7 +882,7 @@ const dotColor = (tipo: string) =>
             const div = document.createElement('div');
             div.className = (small ? 'di-msg' : 'dc-msg') + (mine ? ' mine' : '');
             const t = document.createElement('span'); t.className = small ? 'di-msg-text' : 'dc-msg-text'; t.textContent = text;
-            const time = document.createElement('span'); time.className = small ? 'di-msg-time' : 'dc-msg-time'; time.textContent = 'ahora';
+            const time = document.createElement('span'); time.className = small ? 'di-msg-time' : 'dc-msg-time'; time.textContent = I.i18nAhora || 'ahora';
             div.append(t, time);
             thread.appendChild(div);
             thread.scrollTop = thread.scrollHeight;
@@ -866,7 +908,7 @@ const dotColor = (tipo: string) =>
                     body: JSON.stringify({ action: 'reply', mensaje }),
                 });
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'No se pudo enviar');
+                if (!res.ok) throw new Error(data.error || I.i18nNoPudoEnviar);
             } catch (err: any) {
                 if (dcError) dcError.textContent = err.message;
             } finally {
@@ -900,7 +942,7 @@ const dotColor = (tipo: string) =>
                         body: JSON.stringify({ action: 'item_reply', item_id: itemId, mensaje }),
                     });
                     const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || 'No se pudo enviar');
+                    if (!res.ok) throw new Error(data.error || I.i18nNoPudoEnviar);
                 } catch (err: any) {
                     errorEl.textContent = err.message;
                 } finally {
@@ -916,7 +958,7 @@ const dotColor = (tipo: string) =>
             try {
                 const res = await fetch(`/api/cotizaciones/${qid}/duplicate`, { method: 'POST' });
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'No se pudo duplicar');
+                if (!res.ok) throw new Error(data.error || I.i18nNoPudoDuplicar);
                 location.href = `/app/cotizaciones/${data.id}`;
             } catch (err: any) {
                 errorEl.textContent = err.message;
@@ -925,10 +967,10 @@ const dotColor = (tipo: string) =>
         });
 
         document.getElementById('btnDelete')?.addEventListener('click', async () => {
-            if (!await (window as any).cordConfirm({ title: 'Eliminar borrador', body: 'Esta acción no se puede deshacer. ¿Eliminar este borrador?', danger: true, confirmText: 'Eliminar' })) return;
+            if (!await (window as any).cordConfirm({ title: I.i18nEliminarBorradorTitulo, body: I.i18nEliminarBorradorBody, danger: true, confirmText: I.i18nEliminar })) return;
             const res = await fetch(`/api/cotizaciones/${qid}`, { method: 'DELETE' });
             if (res.ok) location.href = '/app/cotizaciones';
-            else errorEl.textContent = (await res.json()).error || 'No se pudo eliminar';
+            else errorEl.textContent = (await res.json()).error || I.i18nNoPudoEliminar;
         });
     });
 </script>
