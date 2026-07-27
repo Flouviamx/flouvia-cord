@@ -5,7 +5,11 @@
 import AppLayout from '../../layouts/AppLayout.astro';
 import { getCobranza, getMyMembership, money } from '../../lib/queries';
 import { memberCan } from '../../lib/permissions';
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
 
+const L = currentLocale();
+const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
 const ME = await getMyMembership();
 const hasAccess = memberCan(ME, 'cobranza');
 const C = hasAccess ? await getCobranza() : null;
@@ -13,24 +17,24 @@ const maxAging = Math.max(1, ...(C?.aging ?? []).map((a) => a.monto));
 const hay = (C?.items.length ?? 0) > 0;
 ---
 
-<AppLayout title="Cobranza — Cord" page="cobranza" heading="Cobranza">
+<AppLayout title={t(L, 'cob.title')} page="cobranza" heading={t(L, 'cob.heading')}>
     <div slot="page-tabs">
-        <a href="/app/cobranza" class="ph-tab active">Cobranza</a>
-        <a href="/app/tesoreria/cobranza" class="ph-tab">Cobranza con IA</a>
-        <a href="/app/tesoreria/flujo" class="ph-tab">Flujo de caja</a>
+        <a href="/app/cobranza" class="ph-tab active">{t(L, 'cob.tab_cobranza')}</a>
+        <a href="/app/tesoreria/cobranza" class="ph-tab">{t(L, 'cob.tab_ia')}</a>
+        <a href="/app/tesoreria/flujo" class="ph-tab">{t(L, 'cob.tab_flujo')}</a>
     </div>
     {!hasAccess && (
         <div class="cb-denied">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <h3>Sin acceso</h3>
-            <p>Tu rol actual no tiene permiso para ver cobranza. Contacta al administrador de tu organización.</p>
+            <h3>{t(L, 'cob.sin_acceso_titulo')}</h3>
+            <p>{t(L, 'cob.sin_acceso_desc')}</p>
         </div>
     )}
     {hasAccess && !hay && (
         <section class="empty">
-            <h2>Estás al corriente 🎉</h2>
-            <p>No tienes cuentas por cobrar. Cuando una cotización se apruebe a crédito (Net 30/60) y aún no se pague, aparecerá aquí con su vencimiento.</p>
-            <a href="/app/cotizaciones" class="empty-cta">Ver cotizaciones</a>
+            <h2>{t(L, 'cob.vacio_titulo')}</h2>
+            <p>{t(L, 'cob.vacio_desc')}</p>
+            <a href="/app/cotizaciones" class="empty-cta">{t(L, 'cob.ver_cotizaciones')}</a>
         </section>
     )}
 
@@ -39,25 +43,25 @@ const hay = (C?.items.length ?? 0) > 0;
         <!-- KPIs de cartera -->
         <section class="kpis">
             <div class="kpi">
-                <span class="kpi-label">TOTAL POR COBRAR</span>
+                <span class="kpi-label">{t(L, 'cob.kpi_total')}</span>
                 <span class="editorial kpi-num">{money(C.resumen.totalPorCobrar, 0)}</span>
-                <span class="kpi-sub">{C.resumen.nPorCobrar} cuenta{C.resumen.nPorCobrar === 1 ? '' : 's'}</span>
+                <span class="kpi-sub">{C.resumen.nPorCobrar} {C.resumen.nPorCobrar === 1 ? t(L, 'cob.cuenta_singular') : t(L, 'cob.cuenta_plural')}</span>
             </div>
             <div class="kpi">
-                <span class="kpi-label">VENCIDO</span>
+                <span class="kpi-label">{t(L, 'cob.kpi_vencido')}</span>
                 <span class:list={['editorial', 'kpi-num', { 'kpi-danger': C.resumen.totalVencido > 0 }]}>{money(C.resumen.totalVencido, 0)}</span>
-                <span class="kpi-sub">{C.resumen.nVencidas} vencida{C.resumen.nVencidas === 1 ? '' : 's'}</span>
+                <span class="kpi-sub">{C.resumen.nVencidas} {C.resumen.nVencidas === 1 ? t(L, 'cob.vencida_singular') : t(L, 'cob.vencida_plural')}</span>
             </div>
             <div class="kpi">
-                <span class="kpi-label">POR VENCER</span>
+                <span class="kpi-label">{t(L, 'cob.kpi_por_vencer')}</span>
                 <span class="editorial kpi-num">{money(C.resumen.totalVigente, 0)}</span>
-                <span class="kpi-sub">aún dentro de plazo</span>
+                <span class="kpi-sub">{t(L, 'cob.kpi_por_vencer_sub')}</span>
             </div>
             <div class="kpi">
-                <span class="kpi-label">CLIENTES CON SALDO</span>
+                <span class="kpi-label">{t(L, 'cob.kpi_clientes_saldo')}</span>
                 <span class="editorial kpi-num">{C.resumen.nClientes}</span>
                 <span class:list={['kpi-sub', { 'kpi-sub-danger': C.resumen.nExcedidos > 0 }]}>
-                    {C.resumen.nExcedidos > 0 ? `${C.resumen.nExcedidos} excede su límite` : 'dentro de su límite'}
+                    {C.resumen.nExcedidos > 0 ? tpl(t(L, 'cob.excede_limite'), { n: String(C.resumen.nExcedidos) }) : t(L, 'cob.dentro_limite')}
                 </span>
             </div>
         </section>
@@ -65,20 +69,20 @@ const hay = (C?.items.length ?? 0) > 0;
         <!-- Flujo de caja predictivo -->
         <section class="cash-card">
             <div class="cash-main">
-                <span class="kpi-label">FLUJO ESPERADO · PRÓXIMOS 30 DÍAS</span>
+                <span class="kpi-label">{t(L, 'cob.flujo_label')}</span>
                 <span class="editorial cash-num">{money(C.resumen.esperado30, 0)}</span>
                 <span class="kpi-sub">
                     {C.resumen.avgDelay > 0
-                        ? `tus clientes pagan en promedio ${C.resumen.avgDelay} días después del vencimiento`
+                        ? tpl(t(L, 'cob.pagan_despues'), { n: String(C.resumen.avgDelay) })
                         : C.resumen.avgDelay < 0
-                        ? `tus clientes pagan en promedio ${Math.abs(C.resumen.avgDelay)} días antes del vencimiento`
-                        : 'proyección sobre la fecha de vencimiento (sin historial de pagos aún)'}
+                        ? tpl(t(L, 'cob.pagan_antes'), { n: String(Math.abs(C.resumen.avgDelay)) })
+                        : t(L, 'cob.sin_historial')}
                 </span>
             </div>
             <div class="cash-side">
-                <div><span>Próximos 7 días</span><b class="editorial">{money(C.resumen.esperado7, 0)}</b></div>
+                <div><span>{t(L, 'cob.proximos_7')}</span><b class="editorial">{money(C.resumen.esperado7, 0)}</b></div>
                 {C.resumen.interesPct > 0 && (
-                    <div><span>Interés moratorio ({C.resumen.interesPct}%/mes)</span><b class="editorial cash-interes">{money(C.resumen.interesTotal, 0)}</b></div>
+                    <div><span>{tpl(t(L, 'cob.interes_moratorio'), { pct: String(C.resumen.interesPct) })}</span><b class="editorial cash-interes">{money(C.resumen.interesTotal, 0)}</b></div>
                 )}
             </div>
         </section>
@@ -86,7 +90,7 @@ const hay = (C?.items.length ?? 0) > 0;
         <div class="two-col">
             <!-- Aging -->
             <section class="aging-card">
-                <div class="sec-head"><h2 class="sec-title">Antigüedad del saldo</h2></div>
+                <div class="sec-head"><h2 class="sec-title">{t(L, 'cob.antiguedad')}</h2></div>
                 <div class="aging">
                     {C.aging.map((a) => (
                         <div class="ag-row">
@@ -102,18 +106,18 @@ const hay = (C?.items.length ?? 0) > 0;
 
             <!-- Exposición por cliente -->
             <section class="expo-card">
-                <div class="sec-head"><h2 class="sec-title">Exposición por cliente</h2><span class="rank-sub">saldo vs. límite</span></div>
+                <div class="sec-head"><h2 class="sec-title">{t(L, 'cob.exposicion')}</h2><span class="rank-sub">{t(L, 'cob.exposicion_sub')}</span></div>
                 <div class="expo">
                     {C.clientes.slice(0, 6).map((c) => (
                         <div class="expo-row">
                             <div class="expo-info">
                                 <span class="expo-name">{c.empresa}</span>
-                                <span class="expo-meta">{c.limite > 0 ? `${money(c.saldo, 0)} de ${money(c.limite, 0)}` : `${money(c.saldo, 0)} · sin límite`}</span>
+                                <span class="expo-meta">{c.limite > 0 ? tpl(t(L, 'cob.de_monto'), { saldo: money(c.saldo, 0), limite: money(c.limite, 0) }) : tpl(t(L, 'cob.sin_limite'), { saldo: money(c.saldo, 0) })}</span>
                             </div>
                             {c.limite > 0 && (
                                 <div class="expo-bar"><span class:list={['expo-fill', { over: c.excede }]} style={`width:${Math.min(100, c.uso)}%`}></span></div>
                             )}
-                            {c.excede && <span class="expo-flag">Excede</span>}
+                            {c.excede && <span class="expo-flag">{t(L, 'cob.excede')}</span>}
                         </div>
                     ))}
                 </div>
@@ -122,9 +126,9 @@ const hay = (C?.items.length ?? 0) > 0;
 
         <!-- Tabla de cuentas por cobrar -->
         <section class="table-card">
-            <div class="sec-head"><h2 class="sec-title">Cuentas por cobrar</h2></div>
+            <div class="sec-head"><h2 class="sec-title">{t(L, 'cob.cuentas_por_cobrar')}</h2></div>
             <div class="t-head">
-                <span>Cliente</span><span>Folio</span><span>Términos</span><span>Vence</span><span>Estado</span><span class="t-right">Saldo</span><span class="t-right">Acción</span>
+                <span>{t(L, 'cob.th_cliente')}</span><span>{t(L, 'cob.th_folio')}</span><span>{t(L, 'cob.th_terminos')}</span><span>{t(L, 'cob.th_vence')}</span><span>{t(L, 'cob.th_estado')}</span><span class="t-right">{t(L, 'cob.th_saldo')}</span><span class="t-right">{t(L, 'cob.th_accion')}</span>
             </div>
             {C.items.map((it) => (
                 <div class="t-row" data-id={it.id} data-token={it.token} data-folio={it.folio} data-empresa={it.empresa} data-total={money(it.total)} data-tel={it.telefono} data-vence={it.vence}
@@ -135,63 +139,76 @@ const hay = (C?.items.length ?? 0) > 0;
                     <span class="t-muted">{it.vence}</span>
                     <span class="t-estado">
                         {it.overdue
-                            ? <span class="est est-over">Vencida {it.diasVencido} d</span>
-                            : <span class="est est-due">{it.diasParaVencer === 0 ? 'Vence hoy' : `Vence en ${it.diasParaVencer} d`}</span>}
+                            ? <span class="est est-over">{tpl(t(L, 'cob.vencida_dias'), { n: String(it.diasVencido) })}</span>
+                            : <span class="est est-due">{it.diasParaVencer === 0 ? t(L, 'cob.vence_hoy') : tpl(t(L, 'cob.vence_en'), { n: String(it.diasParaVencer) })}</span>}
                         {it.promesa && (
-                            <span class="est est-prom" title={it.promesa.nota || 'Promesa de pago'}>
+                            <span class="est est-prom" title={it.promesa.nota || t(L, 'cob.promesa_pago')}>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
-                                Promete {it.promesa.fecha}
+                                {tpl(t(L, 'cob.promete'), { fecha: it.promesa.fecha })}
                             </span>
                         )}
                     </span>
                     <span class="t-saldo t-right">
                         <span class="editorial t-amount">{money(it.total, 0)}</span>
-                        {it.interes > 0 && <small class="t-interes">+{money(it.interes, 0)} mora</small>}
+                        {it.interes > 0 && <small class="t-interes">+{money(it.interes, 0)} {t(L, 'cob.mora')}</small>}
                     </span>
                     <span class="t-actions t-right">
-                        <button class:list={['cob-prom', { 'has-prom': it.promesa }]} title="Promesa de pago" aria-label="Promesa de pago">
+                        <button class:list={['cob-prom', { 'has-prom': it.promesa }]} title={t(L, 'cob.promesa_pago')} aria-label={t(L, 'cob.promesa_pago')}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         </button>
-                        <button class="cob-whats" title="Recordar por WhatsApp" aria-label="Recordar por WhatsApp">
+                        <button class="cob-whats" title={t(L, 'cob.recordar_whatsapp')} aria-label={t(L, 'cob.recordar_whatsapp')}>
                             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
                         </button>
-                        <button class="cob-paid">Cobrada</button>
+                        <button class="cob-paid">{t(L, 'cob.cobrada')}</button>
                     </span>
                 </div>
             ))}
         </section>
 
         <!-- Modal: registrar / gestionar promesa de pago -->
-        <dialog class="modal" id="promModal">
+        <dialog class="modal" id="promModal"
+            data-i18n-editar={t(L, 'cob.modal_editar_promesa')}
+            data-i18n-nueva={t(L, 'cob.modal_nueva_promesa')}
+            data-i18n-cliente-default={t(L, 'cob.cliente_default')}
+            data-i18n-saldo={t(L, 'cob.saldo_de')}
+            data-i18n-elige-fecha={t(L, 'cob.elige_fecha')}
+            data-i18n-no-pudo-guardar={t(L, 'cob.no_pudo_guardar_promesa')}
+        >
             <form method="dialog" class="m-form" id="promForm">
                 <div class="m-head">
-                    <h2 id="promTitle">Promesa de pago</h2>
-                    <button type="button" class="m-close" id="promClose" aria-label="Cerrar">✕</button>
+                    <h2 id="promTitle">{t(L, 'cob.promesa_pago')}</h2>
+                    <button type="button" class="m-close" id="promClose" aria-label={t(L, 'cob.cerrar')}>✕</button>
                 </div>
                 <p class="prom-ctx" id="promCtx"></p>
                 <div class="m-field">
-                    <label for="promFecha">¿Cuándo promete pagar? *</label>
+                    <label for="promFecha">{t(L, 'cob.cuando_promete')}</label>
                     <input class="m-input" id="promFecha" type="date" required />
                 </div>
                 <div class="m-field">
-                    <label for="promMonto">Monto comprometido (opcional)</label>
-                    <input class="m-input" id="promMonto" type="number" min="0" step="0.01" placeholder="Déjalo vacío si promete el saldo completo" />
+                    <label for="promMonto">{t(L, 'cob.monto_comprometido')}</label>
+                    <input class="m-input" id="promMonto" type="number" min="0" step="0.01" placeholder={t(L, 'cob.monto_comprometido_ph')} />
                 </div>
                 <div class="m-field">
-                    <label for="promNota">Nota (opcional)</label>
-                    <input class="m-input" id="promNota" placeholder="Ej. confirmó por teléfono, paga al recibir factura…" maxlength="400" />
+                    <label for="promNota">{t(L, 'cob.nota_opcional')}</label>
+                    <input class="m-input" id="promNota" placeholder={t(L, 'cob.nota_ph')} maxlength="400" />
                 </div>
                 <p class="m-error" id="promErr"></p>
                 <div class="m-actions">
-                    <button type="button" class="m-delete" id="promDel" hidden>Quitar promesa</button>
+                    <button type="button" class="m-delete" id="promDel" hidden>{t(L, 'cob.quitar_promesa')}</button>
                     <span class="m-spacer"></span>
-                    <button type="button" class="m-done" id="promDone" hidden>Marcar cumplida</button>
-                    <button type="submit" class="m-save" id="promSave">Guardar</button>
+                    <button type="button" class="m-done" id="promDone" hidden>{t(L, 'cob.marcar_cumplida')}</button>
+                    <button type="submit" class="m-save" id="promSave">{t(L, 'cob.guardar')}</button>
                 </div>
             </form>
         </dialog>
 
-        <p class="cob-err" id="cobErr"></p>
+        <p class="cob-err" id="cobErr"
+            data-i18n-registrar-titulo={t(L, 'cob.registrar_pago_titulo')}
+            data-i18n-registrar-body-tpl={t(L, 'cob.registrar_pago_body')}
+            data-i18n-registrar-btn={t(L, 'cob.registrar_pago_btn')}
+            data-i18n-no-pudo-registrar={t(L, 'cob.no_pudo_registrar_pago')}
+            data-i18n-wa-saludo-tpl={t(L, 'cob.wa_saludo')}
+        ></p>
         </>
     )}
 </AppLayout>
@@ -371,6 +388,8 @@ const hay = (C?.items.length ?? 0) > 0;
     // Cobranza: marcar cobrada (PATCH paid) + recordatorio por WhatsApp + promesa de pago.
     document.addEventListener('DOMContentLoaded', () => {
         const err = document.getElementById('cobErr');
+        const E = err ? err.dataset : ({} as DOMStringMap);
+        const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
         const cleanPhone = (t: string) => {
             const d = (t || '').replace(/\D/g, '');
             if (!d) return '';
@@ -380,6 +399,7 @@ const hay = (C?.items.length ?? 0) > 0;
 
         // ── Promesa de pago (modal) ──
         const promModal = document.getElementById('promModal') as HTMLDialogElement | null;
+        const PM = promModal ? promModal.dataset : ({} as DOMStringMap);
         const $p = (id: string) => document.getElementById(id) as HTMLInputElement;
         let promRow: HTMLElement | null = null;
         const todayISO = () => new Date().toISOString().slice(0, 10);
@@ -389,8 +409,8 @@ const hay = (C?.items.length ?? 0) > 0;
             promRow = row;
             const d = row.dataset;
             const has = !!d.promId;
-            document.getElementById('promTitle')!.textContent = has ? 'Editar promesa de pago' : 'Registrar promesa de pago';
-            document.getElementById('promCtx')!.innerHTML = `<b>${d.empresa || 'Cliente'}</b> · ${d.folio} · saldo ${d.total}`;
+            document.getElementById('promTitle')!.textContent = has ? (PM.i18nEditar || 'Editar promesa de pago') : (PM.i18nNueva || 'Registrar promesa de pago');
+            document.getElementById('promCtx')!.innerHTML = `<b>${d.empresa || PM.i18nClienteDefault || 'Cliente'}</b> · ${d.folio} · ${PM.i18nSaldo || 'saldo'} ${d.total}`;
             $p('promFecha').value = d.promFecha || '';
             $p('promFecha').min = todayISO();
             $p('promMonto').value = d.promMonto || '';
@@ -407,7 +427,7 @@ const hay = (C?.items.length ?? 0) > 0;
         const promApi = async (method: string, body: any) => {
             const res = await fetch('/api/promesas', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'No se pudo guardar la promesa');
+            if (!res.ok) throw new Error(data.error || PM.i18nNoPudoGuardar || 'No se pudo guardar la promesa');
             return data;
         };
 
@@ -417,7 +437,7 @@ const hay = (C?.items.length ?? 0) > 0;
             const save = document.getElementById('promSave') as HTMLButtonElement;
             const errP = document.getElementById('promErr')!;
             const fecha = $p('promFecha').value;
-            if (!fecha) { errP.textContent = 'Elige la fecha en que el cliente promete pagar.'; return; }
+            if (!fecha) { errP.textContent = PM.i18nEligeFecha || 'Elige la fecha en que el cliente promete pagar.'; return; }
             save.disabled = true; errP.textContent = '';
             try {
                 const oldId = promRow.dataset.promId;
@@ -453,7 +473,13 @@ const hay = (C?.items.length ?? 0) > 0;
 
             row.querySelector('.cob-whats')?.addEventListener('click', () => {
                 const link = `${location.origin}/q/${d.token}`;
-                const msg = `Hola${d.empresa ? ' ' + d.empresa : ''}, le recordamos amablemente el saldo de la cotización ${d.folio} por ${d.total} (vence ${d.vence}). Puede revisarla aquí: ${link}. ¡Gracias!`;
+                const msg = tpl(E.i18nWaSaludoTpl || 'Hola{empresa}, le recordamos amablemente el saldo de la cotización {folio} por {total} (vence {vence}). Puede revisarla aquí: {link}. ¡Gracias!', {
+                    empresa: d.empresa ? ' ' + d.empresa : '',
+                    folio: d.folio || '',
+                    total: d.total || '',
+                    vence: d.vence || '',
+                    link,
+                });
                 const phone = cleanPhone(d.tel || '');
                 const url = phone
                     ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
@@ -463,7 +489,8 @@ const hay = (C?.items.length ?? 0) > 0;
 
             row.querySelector('.cob-paid')?.addEventListener('click', async (e) => {
                 const btn = e.currentTarget as HTMLButtonElement;
-                if (!await (window as any).cordConfirm({ title: 'Registrar pago', body: `¿Registrar el pago de ${d.folio} por ${d.total}?`, confirmText: 'Registrar pago' })) return;
+                const body = tpl(E.i18nRegistrarBodyTpl || '¿Registrar el pago de {folio} por {total}?', { folio: d.folio || '', total: d.total || '' });
+                if (!await (window as any).cordConfirm({ title: E.i18nRegistrarTitulo || 'Registrar pago', body, confirmText: E.i18nRegistrarBtn || 'Registrar pago' })) return;
                 btn.disabled = true;
                 if (err) err.textContent = '';
                 try {
@@ -473,7 +500,7 @@ const hay = (C?.items.length ?? 0) > 0;
                         body: JSON.stringify({ action: 'paid' }),
                     });
                     const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || 'No se pudo registrar el pago');
+                    if (!res.ok) throw new Error(data.error || E.i18nNoPudoRegistrar || 'No se pudo registrar el pago');
                     // Optimista: quita la fila cobrada en sitio (los KPI/aging se
                     // recalculan en la próxima navegación).
                     row.remove();
