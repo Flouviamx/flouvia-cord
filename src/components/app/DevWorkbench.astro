@@ -1,0 +1,218 @@
+---
+// Dock de Desarrolladores estilo Stripe Workbench — barra inferior navy siempre
+// disponible en /app/** cuando el "Modo desarrollador" está activo (toggle en
+// Ajustes › Empresa, ver src/pages/app/ajustes/index.astro). Reemplaza las
+// páginas de Ajustes "API" y "Webhooks" (movidas aquí); MCP/Agentes/Elements
+// se quedan en Ajustes tal cual.
+//
+// Arquitectura: este componente es solo el CHASIS (barra + tabs + contenedor).
+// El contenido de cada pestaña se pide bajo demanda a /app/_wb/[tab] (fragmento
+// SSR sin layout) y se inyecta con innerHTML — los <script> de ese fragmento
+// se re-ejecutan a mano (ver initDevWorkbench abajo) porque un <script> insertado
+// vía innerHTML nunca corre solo.
+import '../../styles/workbench.css';
+import { t } from '../../i18n/app';
+
+interface Props { locale: 'es' | 'en' }
+const { locale } = Astro.props;
+const L = locale;
+
+const TABS = [
+    { id: 'resumen', label: t(L, 'wb.tab.resumen') },
+    { id: 'webhooks', label: t(L, 'wb.tab.webhooks') },
+    { id: 'api', label: t(L, 'wb.tab.api') },
+    { id: 'registros', label: t(L, 'wb.tab.registros') },
+];
+---
+
+<div class="wb-dock" id="wbDock">
+    <button type="button" class="wb-bar" id="wbBarToggle" aria-expanded="false" aria-controls="wbPanel">
+        <span class="wb-bar-left">
+            <svg class="wb-bar-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="4 17 10 11 4 5" fill-opacity="0.12" />
+                <line x1="12" x2="20" y1="19" y2="19" />
+            </svg>
+            <span class="wb-bar-label">{t(L, 'wb.titulo')}</span>
+        </span>
+        <span class="wb-bar-dot" id="wbBarDot" hidden aria-hidden="true"></span>
+        <svg class="wb-bar-chevron" id="wbBarChevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="18 15 12 9 6 15" />
+        </svg>
+    </button>
+
+    <div class="wb-panel" id="wbPanel" role="region" aria-label={t(L, 'wb.titulo')} hidden>
+        <div class="wb-tabs" role="tablist">
+            {TABS.map((tb) => (
+                <button type="button" class="wb-tab" data-wb-tab={tb.id} role="tab" aria-selected="false">{tb.label}</button>
+            ))}
+            <span class="wb-tabs-indicator" id="wbTabsIndicator" aria-hidden="true"></span>
+            <button type="button" class="wb-close" id="wbClose" aria-label={t(L, 'wb.cerrar')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+        </div>
+        <div class="wb-body" id="wbBody">
+            <div class="wb-loading"><span class="wb-spinner" aria-hidden="true"></span></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ── Cord Workbench — controlador global ──────────────────────────────────
+    // Expone window.cordWorkbench = { open(tab?), close(), toggle() }. Registrado
+    // en initApp() de AppLayout.astro junto a initToasts()/initConfirm().
+    function initDevWorkbench() {
+        const dock = document.getElementById('wbDock');
+        const bar = document.getElementById('wbBarToggle');
+        const panel = document.getElementById('wbPanel') as HTMLElement | null;
+        const closeBtn = document.getElementById('wbClose');
+        const body = document.getElementById('wbBody') as HTMLElement | null;
+        const indicator = document.getElementById('wbTabsIndicator') as HTMLElement | null;
+        const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('.wb-tab'));
+        if (!dock || !bar || !panel || !body || !tabs.length) return;
+
+        const KEY = 'cord.wb.v1';
+        const BAR_H = '46px';
+        const cache = new Map<string, string>();
+        let currentTab = 'resumen';
+        let isOpen = false;
+
+        const isDevOn = () => document.documentElement.classList.contains('cord-dev');
+
+        function readState(): { open: boolean; tab: string } {
+            try {
+                const raw = localStorage.getItem(KEY);
+                if (!raw) return { open: false, tab: 'resumen' };
+                const p = JSON.parse(raw);
+                return { open: !!p.open, tab: typeof p.tab === 'string' ? p.tab : 'resumen' };
+            } catch { return { open: false, tab: 'resumen' }; }
+        }
+        function writeState() {
+            try { localStorage.setItem(KEY, JSON.stringify({ open: isOpen, tab: currentTab })); } catch {}
+        }
+
+        function updateWbH() {
+            const on = isDevOn();
+            // --wb-h: altura VISUAL actual del dock (para desplazar toasts/onboarding
+            // por encima). --wb-bar-h: reserva FIJA de la barra colapsada (para el
+            // padding-bottom de .app-content) — nunca cambia al expandir/colapsar, si
+            // no el contenido brincaría cada vez que se abre el panel de 62vh.
+            document.documentElement.style.setProperty('--wb-h', !on ? '0px' : isOpen ? '62vh' : BAR_H);
+            document.documentElement.style.setProperty('--wb-bar-h', on ? BAR_H : '0px');
+        }
+
+        function moveIndicator(tabId: string) {
+            const btn = tabs.find((b) => b.dataset.wbTab === tabId);
+            if (!btn || !indicator) return;
+            indicator.style.width = btn.offsetWidth + 'px';
+            indicator.style.transform = `translateX(${btn.offsetLeft}px)`;
+        }
+
+        function setActiveTabUI(tabId: string) {
+            tabs.forEach((b) => {
+                const active = b.dataset.wbTab === tabId;
+                b.classList.toggle('active', active);
+                b.setAttribute('aria-selected', active ? 'true' : 'false');
+            });
+            moveIndicator(tabId);
+        }
+
+        // Un <script> insertado por innerHTML no se ejecuta — se clona a un
+        // elemento fresco para que el navegador SÍ lo corra (mismo truco que
+        // usan los loaders de HTMX/Turbo).
+        function reviveScripts(root: HTMLElement) {
+            root.querySelectorAll('script').forEach((old) => {
+                const fresh = document.createElement('script');
+                for (const attr of Array.from(old.attributes)) fresh.setAttribute(attr.name, attr.value);
+                fresh.textContent = old.textContent;
+                old.replaceWith(fresh);
+            });
+        }
+
+        async function loadTab(tabId: string, force = false) {
+            setActiveTabUI(tabId);
+            currentTab = tabId;
+            writeState();
+            if (!force && cache.has(tabId)) {
+                body.innerHTML = cache.get(tabId)!;
+                reviveScripts(body);
+                return;
+            }
+            body.innerHTML = '<div class="wb-loading"><span class="wb-spinner" aria-hidden="true"></span></div>';
+            try {
+                const res = await fetch(`/app/wb/${tabId}`, { headers: { 'X-Requested-With': 'cord-workbench' } });
+                const html = await res.text();
+                cache.set(tabId, html);
+                body.innerHTML = html;
+                reviveScripts(body);
+            } catch {
+                body.innerHTML = '<div class="wb-error">' + ((window as any).CORD_I18N?.wbLoadError || 'No se pudo cargar. Intenta de nuevo.') + '</div>';
+            }
+        }
+
+        function openDock(tabId?: string) {
+            isOpen = true;
+            panel.hidden = false;
+            bar.setAttribute('aria-expanded', 'true');
+            dock.classList.add('is-open');
+            updateWbH();
+            const target = tabId || currentTab || 'resumen';
+            if (target !== currentTab || !cache.has(target)) loadTab(target);
+            else setActiveTabUI(target);
+            writeState();
+        }
+        function closeDock() {
+            isOpen = false;
+            panel.hidden = true;
+            bar.setAttribute('aria-expanded', 'false');
+            dock.classList.remove('is-open');
+            updateWbH();
+            writeState();
+        }
+
+        bar.addEventListener('click', () => (isOpen ? closeDock() : openDock()));
+        closeBtn?.addEventListener('click', (e) => { e.stopPropagation(); closeDock(); });
+        tabs.forEach((b) => b.addEventListener('click', () => loadTab(b.dataset.wbTab!)));
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isOpen) closeDock(); });
+        window.addEventListener('resize', () => moveIndicator(currentTab));
+
+        // Sincronización en vivo con el toggle "Modo desarrollador" de Ajustes —
+        // sin recargar la página (evento análogo a cord:test_mode_changed).
+        window.addEventListener('cord:devmode_changed', (e: any) => {
+            if (!e.detail?.on) closeDock();
+            updateWbH();
+        });
+
+        (window as any).cordWorkbench = {
+            open: (tabId?: string) => openDock(tabId),
+            close: () => closeDock(),
+            toggle: () => (isOpen ? closeDock() : openDock()),
+            // Invalida el caché de una pestaña y la vuelve a pedir al servidor —
+            // usado tras crear/editar/revocar algo, para que la lista se vea al
+            // instante sin depender de un location.reload() de página completa.
+            refresh: (tabId?: string) => { const t = tabId || currentTab; cache.delete(t); if (t === currentTab) loadTab(t, true); },
+        };
+
+        // Restaura el estado persistido (solo si el modo desarrollador está activo).
+        const st = readState();
+        currentTab = st.tab;
+        setActiveTabUI(currentTab);
+        updateWbH();
+        if (isDevOn() && st.open) openDock(currentTab);
+
+        // Redirect legacy (?wb=<tab>, ver middleware.ts) — abre el dock directo
+        // en la pestaña correcta y limpia la URL.
+        const params = new URLSearchParams(location.search);
+        const wbParam = params.get('wb');
+        if (wbParam && ['resumen', 'webhooks', 'api', 'registros'].includes(wbParam)) {
+            try { localStorage.setItem('cord.devmode', '1'); } catch {}
+            document.documentElement.classList.add('cord-dev');
+            openDock(wbParam);
+            params.delete('wb');
+            const rest = params.toString();
+            history.replaceState(null, '', location.pathname + (rest ? `?${rest}` : ''));
+        }
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initDevWorkbench);
+    else initDevWorkbench();
+</script>

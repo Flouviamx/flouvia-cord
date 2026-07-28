@@ -1,0 +1,844 @@
+---
+// Fragmentos SSR del Cord Workbench (dock de Desarrolladores, ver
+// src/components/app/DevWorkbench.astro). Cada pestaña se pide bajo demanda
+// vía fetch() y se inyecta con innerHTML — por eso este archivo NO usa
+// AppLayout/SettingsShell: solo devuelve el <div>/<dialog>/<script> de esa
+// pestaña, nada de <html>/<head>/<body>.
+//
+// Contenido migrado 1:1 desde las antiguas /app/ajustes/api.astro y
+// /app/ajustes/webhooks.astro (mismos ids, mismos data-i18n-*, mismos
+// endpoints) — solo cambió el contenedor. "Resumen" es la única pestaña
+// nueva (agregado ligero de lectura, sin mutaciones).
+export const prerender = false;
+
+import { getOrg, getMyMembership, getApiKeys, getApiActivity, getWebhooks } from '../../../lib/queries';
+import { memberCan, apiKeyLimit, webhookLimit, planLabel } from '../../../lib/permissions';
+import { WEBHOOK_EVENTS } from '../../../lib/webhooks';
+import '../../../styles/developers.css';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
+
+const L = currentLocale();
+const tf = (key: string, vars: Record<string, string> = {}) => {
+    let s = t(L, key as any);
+    for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
+    return s;
+};
+
+const tab = Astro.params.tab as string;
+const ME = await getMyMembership();
+const hasAccess = memberCan(ME, 'ajustes');
+if (!hasAccess) Astro.response.status = 403;
+
+let ORG: any = null;
+let KEYS: any[] = [];
+let ACTIVITY: any = { total24: 0, errores24: 0, latProm: 0, recent: [] };
+let WEBHOOKS: any[] = [];
+let LIMITE_KEYS = 0, ACTIVAS = 0, AT_LIMIT_KEYS = false;
+let LIMITE_WH = 0, AT_LIMIT_WH = false;
+
+if (hasAccess) {
+    if (tab === 'api') {
+        [ORG, KEYS, ACTIVITY] = await Promise.all([getOrg(), getApiKeys(), getApiActivity()]);
+        LIMITE_KEYS = apiKeyLimit(ORG.plan_raw);
+        ACTIVAS = KEYS.filter((k) => !k.revocada).length;
+        AT_LIMIT_KEYS = ACTIVAS >= LIMITE_KEYS;
+    } else if (tab === 'webhooks') {
+        [ORG, WEBHOOKS] = await Promise.all([getOrg(), getWebhooks()]);
+        LIMITE_WH = webhookLimit(ORG.plan_raw);
+        AT_LIMIT_WH = WEBHOOKS.length >= LIMITE_WH;
+    } else if (tab === 'registros') {
+        ACTIVITY = await getApiActivity();
+    } else if (tab === 'resumen') {
+        [ORG, ACTIVITY, WEBHOOKS] = await Promise.all([getOrg(), getApiActivity(), getWebhooks()]);
+    }
+}
+
+const activosWh = WEBHOOKS.filter((w) => w.activo && !w.deshabilitadoMotivo).length;
+---
+
+{!hasAccess && (
+    <div class="wb-sinacceso">{t(L, 'wb.sin_acceso')}</div>
+)}
+
+{hasAccess && tab === 'resumen' && (
+    <div class="wb-frag">
+        <div class="wb-resumen-grid">
+            <div class="wb-resumen-tile"><span class="val editorial">{activosWh}<em>/{WEBHOOKS.length}</em></span><span class="lbl">{t(L, 'wb.resumen.webhooks_activos')}</span></div>
+            <div class="wb-resumen-tile"><span class="val editorial">{ACTIVITY.total24}</span><span class="lbl">{t(L, 'wb.resumen.requests_24h')}</span></div>
+            <div class="wb-resumen-tile"><span class={`val editorial ${ACTIVITY.errores24 > 0 ? 'bad' : ''}`}>{ACTIVITY.errores24}</span><span class="lbl">{t(L, 'wb.resumen.errores_24h')}</span></div>
+            <div class="wb-resumen-tile"><span class="val editorial">{ACTIVITY.latProm}<em>ms</em></span><span class="lbl">{t(L, 'wb.resumen.latencia_prom')}</span></div>
+        </div>
+
+        <div class="dev-card">
+            <div class="dev-card-header">
+                <h3 class="dev-card-title">{t(L, 'wb.resumen.actividad_reciente')}</h3>
+            </div>
+            <div class="act-list">
+                {ACTIVITY.recent.length === 0 && <p class="dev-empty">{t(L, 'wb.resumen.sin_actividad')}</p>}
+                {ACTIVITY.recent.slice(0, 6).map((r: any) => (
+                    <div class="act-row">
+                        <span class={`act-m ${r.metodo.toLowerCase()}`}>{r.metodo}</span>
+                        <code class="act-path">{r.ruta}</code>
+                        <span class={`act-status ${r.status >= 400 ? 'bad' : 'ok'}`}>{r.status}</span>
+                        <span class="act-lat">{r.ms != null ? `${r.ms}ms` : '—'}</span>
+                        <span class="act-when">{r.cuando}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        <div class="wb-resumen-links">
+            <a href="#" data-wb-goto="webhooks">{t(L, 'wb.resumen.ver_webhooks')}</a>
+            <a href="#" data-wb-goto="api">{t(L, 'wb.resumen.ver_api')}</a>
+            <a href="#" data-wb-goto="registros">{t(L, 'wb.resumen.ver_registros')}</a>
+        </div>
+    </div>
+    <script>
+        document.querySelectorAll('[data-wb-goto]').forEach((a) => {
+            a.addEventListener('click', (e) => {
+                e.preventDefault();
+                const tab = (a as HTMLElement).dataset.wbGoto!;
+                document.querySelector<HTMLButtonElement>(`.wb-tab[data-wb-tab="${tab}"]`)?.click();
+            });
+        });
+    </script>
+)}
+
+{hasAccess && tab === 'api' && (
+    <div class="wb-frag">
+    <div class="dev-wrapper">
+
+        <div class="dev-card">
+            <div class="dev-card-header">
+                <div>
+                    <h3 class="dev-card-title">{t(L, 'set.api.claves_titulo')}</h3>
+                    <p class="dev-card-sub" set:html={t(L, 'set.api.claves_sub')} />
+                </div>
+                <div class="dev-head-actions">
+                    <div class="dev-seg" role="tablist" aria-label={t(L, 'set.api.modo_clave')}>
+                        <button class="dev-seg-btn active" data-mode="test">{t(L, 'set.api.prueba')}</button>
+                        <button class="dev-seg-btn" data-mode="live">{t(L, 'set.api.vivo')}</button>
+                    </div>
+                    <span class="dev-limit">{tf('set.api.plan_limite', { plan: planLabel(ORG.plan_raw) })} <b>{ACTIVAS}/{LIMITE_KEYS}</b></span>
+                    <button class="api-btn-solid" id="kNew" disabled={AT_LIMIT_KEYS} title={AT_LIMIT_KEYS ? tf('set.api.limite_hint', { n: String(LIMITE_KEYS) }) : ''}>{t(L, 'set.api.generar_clave')}</button>
+                </div>
+            </div>
+            {AT_LIMIT_KEYS && (
+                <p class="dev-limit-note">{tf('set.api.limite_nota_pre', { n: String(LIMITE_KEYS) })} <a href="/app/ajustes/plan">{t(L, 'set.api.subir_plan')}</a> {t(L, 'set.api.limite_nota_post')}</p>
+            )}
+
+            <div class="key-table" id="keyList">
+                <div class="key-thead">
+                    <span>{t(L, 'set.api.th_nombre')}</span><span>{t(L, 'set.api.th_token')}</span><span>{t(L, 'set.api.th_permisos')}</span><span>{t(L, 'set.api.th_ultimo_uso')}</span><span>{t(L, 'set.api.th_creacion')}</span><span></span>
+                </div>
+                {KEYS.length === 0 && (
+                    <div class="key-empty" id="keyEmpty">{t(L, 'set.api.vacio')}</div>
+                )}
+                {KEYS.map((k) => (
+                    <div class:list={['key-trow', { revoked: k.revocada }]} data-id={k.id}>
+                        <span class="key-cell-name">
+                            <span class="key-nm">{k.nombre}</span>
+                            <span style="display:flex;gap:0.3rem">
+                                <span class={`key-mode ${k.mode}`}>{k.mode === 'test' ? t(L, 'set.api.prueba') : t(L, 'set.api.vivo')}</span>
+                                <span class={`key-mode`} style={`background:${k.type === 'publishable' ? '#e0e7ff' : '#f1f5f9'}; color:${k.type === 'publishable' ? '#4f46e5' : '#475569'}`}>{k.type === 'publishable' ? t(L, 'set.api.publica') : t(L, 'set.api.secreta')}</span>
+                            </span>
+                        </span>
+                        <code class="key-cell-token">{k.masked}</code>
+                        <span class={`key-scope ${k.scope}`}>{k.scope === 'write' ? t(L, 'set.api.escritura') : t(L, 'set.api.lectura')}</span>
+                        <span class="key-cell-muted">{k.ultimoUso || t(L, 'set.api.sin_uso')}</span>
+                        <span class="key-cell-muted">{k.creada}</span>
+                        <span class="key-cell-act">
+                            {k.revocada
+                                ? <span class="key-badge-revoked">{t(L, 'set.api.revocada')}</span>
+                                : <button class="key-revoke" data-revoke={k.id}>{t(L, 'set.api.revocar')}</button>}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        <div class="dev-card">
+            <h3 class="dev-card-title">{t(L, 'set.api.endpoints_titulo')}</h3>
+            <p class="dev-note" style="margin: 0.4rem 0 1.2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                <span>{t(L, 'set.api.endpoints_base_pre')} <code>https://cordhq.app/api/v1</code> {t(L, 'set.api.endpoints_base_post')} <code>Authorization: Bearer &lt;tu_clave&gt;</code>.</span>
+                <span style="display:flex; gap: 0.8rem; font-size: 0.75rem;">
+                    <a href="/openapi.yaml" target="_blank" rel="noopener" style="color: #7fd1c1; text-decoration: none; font-weight: 600;">{t(L, 'set.api.spec_openapi')}</a>
+                    <a href="/llms.txt" target="_blank" rel="noopener" style="color: #7fd1c1; text-decoration: none; font-weight: 600;">{t(L, 'set.api.llms_txt')}</a>
+                </span>
+            </p>
+            <div class="ep-rows">
+                <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/me</code><span class="ep-d">{t(L, 'set.api.ep_me')}</span></div>
+                <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/cotizaciones</code><span class="ep-d" set:html={t(L, 'set.api.ep_cot_list')} /></div>
+                <div class="ep-row"><span class="ep-m post">POST</span><code class="ep-path">/cotizaciones</code><span class="ep-d">{t(L, 'set.api.ep_cot_create')}</span></div>
+                <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/cotizaciones/:id</code><span class="ep-d">{t(L, 'set.api.ep_cot_detail')}</span></div>
+                <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/clientes</code><span class="ep-d">{t(L, 'set.api.ep_cli_list')}</span></div>
+                <div class="ep-row"><span class="ep-m post">POST</span><code class="ep-path">/clientes</code><span class="ep-d">{t(L, 'set.api.ep_cli_create')}</span></div>
+                <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/productos</code><span class="ep-d">{t(L, 'set.api.ep_prod_list')}</span></div>
+                <div class="ep-row"><span class="ep-m post">POST</span><code class="ep-path">/productos</code><span class="ep-d">{t(L, 'set.api.ep_prod_create')}</span></div>
+                <div class="ep-row"><span class="ep-m get">GET</span><code class="ep-path">/cobranza</code><span class="ep-d">{t(L, 'set.api.ep_cobranza')}</span></div>
+            </div>
+            <div class="dev-terminal">
+                <span class="ep-code-label">{t(L, 'set.api.ejemplo')}</span>
+                <pre><code>curl https://cordhq.app/api/v1/cotizaciones \
+  -H "Authorization: Bearer sk_live_xxxxxxxxxxxx"</code></pre>
+            </div>
+            <div style="margin-top: 1.5rem;">
+                <button class="api-btn-ghost" id="btnAiPrompt" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.6rem;" data-i18n-copiado={t(L, 'set.api.prompt_copiado')}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    {t(L, 'set.api.generar_prompt')}
+                </button>
+            </div>
+        </div>
+
+    </div>
+    </div>
+
+    <!-- Modal: crear API key (nombre + scope) -->
+    <dialog id="kCreate" class="kdlg"
+        data-i18n-prueba={t(L, 'set.api.modal_nueva_prueba')} data-i18n-vivo={t(L, 'set.api.modal_nueva_vivo')}
+        data-i18n-pruebas={t(L, 'set.api.pruebas')} data-i18n-produccion={t(L, 'set.api.produccion')}
+        data-i18n-no-pudo-crear={t(L, 'set.api.no_pudo_crear')} data-i18n-disabled-test={t(L, 'set.api.disabled_test_env')}
+        data-i18n-revocar-titulo={t(L, 'set.api.revocar_titulo')} data-i18n-revocar-body={t(L, 'set.api.revocar_body')} data-i18n-revocar-confirm={t(L, 'set.api.revocar_confirm')}>
+        <div class="kdlg-inner">
+            <h4 id="kCreateTitle">{t(L, 'set.api.modal_nueva_titulo')}</h4>
+            <div class="s-field" style="margin-bottom:1.1rem">
+                <label for="kName">{t(L, 'set.api.modal_nombre')}</label>
+                <input class="s-input" id="kName" placeholder={t(L, 'set.api.modal_nombre_ph')} />
+            </div>
+            <div class="s-field">
+                <label>{t(L, 'set.api.tipo_clave')}</label>
+                <div class="scope-opts" style="margin-bottom: 1.1rem;">
+                    <label class="scope-opt">
+                        <input type="radio" name="kType" value="secret" checked />
+                        <span class="scope-body"><b>{t(L, 'set.api.tipo_secreta_titulo')}</b><i>{t(L, 'set.api.tipo_secreta_desc')}</i></span>
+                    </label>
+                    <label class="scope-opt">
+                        <input type="radio" name="kType" value="publishable" />
+                        <span class="scope-body"><b>{t(L, 'set.api.tipo_publica_titulo')}</b><i>{t(L, 'set.api.tipo_publica_desc')}</i></span>
+                    </label>
+                </div>
+            </div>
+            <div class="s-field" id="kScopeField">
+                <label>{t(L, 'set.api.permisos')}</label>
+                <div class="scope-opts">
+                    <label class="scope-opt">
+                        <input type="radio" name="kScope" value="read" checked />
+                        <span class="scope-body"><b>{t(L, 'set.api.solo_lectura_titulo')}</b><i>{t(L, 'set.api.solo_lectura_desc')}</i></span>
+                    </label>
+                    <label class="scope-opt">
+                        <input type="radio" name="kScope" value="write" />
+                        <span class="scope-body"><b>{t(L, 'set.api.lectura_escritura_titulo')}</b><i>{t(L, 'set.api.lectura_escritura_desc')}</i></span>
+                    </label>
+                </div>
+            </div>
+            <div class="wh-dlg-actions">
+                <button type="button" class="api-btn-ghost" id="kCreateCancel">{t(L, 'set.api.cancelar')}</button>
+                <button type="button" class="api-btn-solid" id="kCreateGo">{t(L, 'set.api.generar_clave')}</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Modal: clave recién creada (se muestra UNA vez) -->
+    <dialog id="kDialog" class="kdlg">
+        <div class="kdlg-inner">
+            <h4 id="kdlgTitle">{t(L, 'set.api.modal_clave_titulo')}</h4>
+            <p class="kdlg-warn" set:html={t(L, 'set.api.modal_clave_warn')} />
+            <div class="kdlg-key">
+                <code id="kdlgSecret">sk_live_…</code>
+                <button id="kdlgCopy" class="kdlg-copy" data-i18n-copiar={t(L, 'set.api.copiar')} data-i18n-copiada={t(L, 'set.api.copiada')}>{t(L, 'set.api.copiar')}</button>
+            </div>
+            <form method="dialog"><button class="kdlg-done">{t(L, 'set.api.listo_guardada')}</button></form>
+        </div>
+    </dialog>
+
+    <script>
+        function initApi() {
+            const dialog = document.getElementById('kDialog') as HTMLDialogElement | null;
+            const secretEl = document.getElementById('kdlgSecret');
+            const newBtn = document.getElementById('kNew');
+            const createDlg = document.getElementById('kCreate') as HTMLDialogElement | null;
+            if (!dialog || !newBtn || !createDlg) return;
+
+            const inTestEnv = document.cookie.split('; ').includes('cord_test_mode=1');
+            let mode = inTestEnv || localStorage.getItem('cord_test_mode') === 'true' ? 'test' : 'live';
+
+            const setModeUI = (newMode: string) => {
+                mode = inTestEnv ? 'test' : newMode;
+                document.querySelectorAll('.dev-seg-btn').forEach((x) => x.classList.remove('active'));
+                const activeBtn = document.querySelector(`.dev-seg-btn[data-mode="${mode}"]`);
+                if (activeBtn) activeBtn.classList.add('active');
+            };
+            setModeUI(mode);
+            if (inTestEnv) {
+                const liveBtn = document.querySelector('.dev-seg-btn[data-mode="live"]') as HTMLButtonElement | null;
+                if (liveBtn) { liveBtn.disabled = true; liveBtn.title = createDlg.dataset.i18nDisabledTest || 'Estás en el entorno de prueba — sal del modo de prueba para generar llaves en vivo.'; }
+            }
+
+            document.querySelectorAll('.dev-seg-btn').forEach((b) => b.addEventListener('click', () => {
+                setModeUI((b as HTMLElement).dataset.mode || 'test');
+            }));
+
+            window.addEventListener('cord:test_mode_changed', (e: any) => {
+                setModeUI(e.detail.isTestMode ? 'test' : 'live');
+            });
+
+            const nameIn = document.getElementById('kName') as HTMLInputElement;
+            const titleEl = document.getElementById('kCreateTitle')!;
+
+            document.querySelectorAll('input[name="kType"]').forEach((r) => {
+                r.addEventListener('change', (e) => {
+                    const isPub = (e.target as HTMLInputElement).value === 'publishable';
+                    document.getElementById('kScopeField')!.style.display = isPub ? 'none' : 'block';
+                });
+            });
+            newBtn.addEventListener('click', () => {
+                titleEl.textContent = mode === 'test' ? (createDlg.dataset.i18nPrueba || 'Nueva API key de prueba') : (createDlg.dataset.i18nVivo || 'Nueva API key EN VIVO');
+                nameIn.value = mode === 'test' ? (createDlg.dataset.i18nPruebas || 'Pruebas') : (createDlg.dataset.i18nProduccion || 'Producción');
+                (createDlg.querySelector('input[name="kScope"][value="read"]') as HTMLInputElement).checked = true;
+                (createDlg.querySelector('input[name="kType"][value="secret"]') as HTMLInputElement).checked = true;
+                document.getElementById('kScopeField')!.style.display = 'block';
+                createDlg.showModal(); nameIn.focus(); nameIn.select();
+            });
+            document.getElementById('kCreateCancel')?.addEventListener('click', () => createDlg.close());
+
+            document.getElementById('kCreateGo')?.addEventListener('click', async () => {
+                const nombre = nameIn.value.trim() || 'Sin nombre';
+                const scope = (createDlg.querySelector('input[name="kScope"]:checked') as HTMLInputElement)?.value || 'read';
+                const type = (createDlg.querySelector('input[name="kType"]:checked') as HTMLInputElement)?.value || 'secret';
+                const go = document.getElementById('kCreateGo') as HTMLButtonElement;
+                go.disabled = true;
+                try {
+                    const res = await fetch('/api/keys', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nombre, scope, mode, type }),
+                    });
+                    const d = await res.json();
+                    if (!res.ok) throw new Error(d.error || (createDlg.dataset.i18nNoPudoCrear || 'No se pudo crear'));
+                    createDlg.close();
+                    if (secretEl) secretEl.textContent = d.secret;
+                    dialog.showModal();
+                    dialog.addEventListener('close', () => (window as any).cordWorkbench?.refresh('api'), { once: true });
+                } catch (err: any) {
+                    (window as any).cordToast?.(err.message || (createDlg.dataset.i18nNoPudoCrear || 'No se pudo crear la clave'), 'error');
+                } finally { go.disabled = false; }
+            });
+
+            document.getElementById('kdlgCopy')?.addEventListener('click', async () => {
+                const txt = secretEl?.textContent || '';
+                const b = document.getElementById('kdlgCopy')!;
+                const copiadaTxt = b.dataset.i18nCopiada || '✓ Copiada';
+                const copiarTxt = b.dataset.i18nCopiar || 'Copiar';
+                try { await navigator.clipboard.writeText(txt); b.textContent = copiadaTxt; setTimeout(() => (b.textContent = copiarTxt), 1800); } catch {}
+            });
+
+            document.querySelectorAll('[data-revoke]').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const id = (btn as HTMLElement).dataset.revoke!;
+                    const dlg = document.getElementById('kCreate');
+                    const titleTxt = dlg?.dataset.i18nRevocarTitulo || 'Revocar API key';
+                    if (!await (window as any).cordConfirm({ title: titleTxt, body: dlg?.dataset.i18nRevocarBody || 'Dejará de funcionar de inmediato y no se puede deshacer. ¿Revocar esta clave?', danger: true, confirmText: dlg?.dataset.i18nRevocarConfirm || 'Revocar' })) return;
+                    try {
+                        const res = await fetch('/api/keys', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+                        if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'No se pudo revocar'); }
+                        (window as any).cordWorkbench?.refresh('api');
+                    } catch (err: any) { (window as any).cordToast?.(err.message || 'No se pudo revocar', 'error'); }
+                });
+            });
+
+            const btnAi = document.getElementById('btnAiPrompt');
+            if (btnAi) {
+                btnAi.addEventListener('click', async () => {
+                    const prompt = `Eres un Desarrollador Backend Senior (experto en TypeScript, Node.js y frameworks modernos como Next.js).
+Tu tarea es implementar la integración con la API REST de Flouvia Cord (un SaaS B2B) para mi aplicación.
+
+== CONTEXTO TÉCNICO ==
+- Base URL: https://cordhq.app/api/v1
+- Autenticación: Header "Authorization: Bearer <TU_API_KEY>"
+- Content-Type: application/json
+
+== REQUERIMIENTO ==
+Crea el código necesario para automatizar la creación de una cotización cuando un usuario realiza una acción en mi aplicación (por ejemplo, enviar un formulario B2B).
+Debes estructurar el código siguiendo las mejores prácticas: separación de responsabilidades, manejo de errores de red (try/catch), y validación de variables de entorno.
+IMPORTANTE: Si estoy usando Next.js App Router, implementa esto como un Server Action (o Route Handler) para jamás exponer la API Key en el lado del cliente (browser).
+
+== ESQUEMA DEL ENDPOINT (POST /cotizaciones) ==
+El endpoint de Cord requiere este JSON de forma estricta:
+{
+  "send": boolean, // (Opcional) Si es true, la cotización se aprueba y se genera un link público inmediatamente. Si es false, se queda como borrador.
+  "notas": string, // (Opcional) Campo de texto libre para uso interno o volcar detalles de un formulario.
+  "cliente_id": string, // (Opcional) UUID del cliente si ya existe en el directorio de Cord.
+  "items": [ // (OBLIGATORIO) Array con al menos 1 producto/servicio
+    {
+      "descripcion": string, // (Obligatorio) Nombre del concepto (ej. "Solicitud Cotización Web")
+      "cantidad": number, // (Obligatorio)
+      "precio_unitario": number // (Obligatorio) Precio en la moneda base. Puedes mandar 0 si se negociará después por un vendedor.
+    }
+  ]
+}
+
+== SALIDA ESPERADA ==
+- Escribe la función de integración (ej. \`src/actions/cord.ts\`).
+- Incluye comentarios sobre cómo llamar a esta función de manera segura desde mi frontend.`;
+                    try {
+                        await navigator.clipboard.writeText(prompt);
+                        const original = btnAi.innerHTML;
+                        btnAi.textContent = (btnAi as HTMLElement).dataset.i18nCopiado || '✓ Prompt copiado — Pégalo en ChatGPT o Cursor';
+                        (btnAi as HTMLElement).style.color = '#6ee7b7';
+                        setTimeout(() => { btnAi.innerHTML = original; (btnAi as HTMLElement).style.color = ''; }, 3500);
+                    } catch {}
+                });
+            }
+        }
+        initApi();
+    </script>
+)}
+
+{hasAccess && tab === 'registros' && (
+    <div class="wb-frag">
+    <div class="dev-card">
+        <div class="dev-card-header">
+            <h3 class="dev-card-title">{t(L, 'set.api.actividad_titulo')}</h3>
+            <button class="dev-refresh" id="actRefresh" title={t(L, 'set.api.actualizar')} data-i18n-actualizar={t(L, 'set.api.actualizar')} data-i18n-actualizando={t(L, 'set.api.actualizando')}>{t(L, 'set.api.actualizar')}</button>
+        </div>
+        <div class="dev-stats-grid">
+            <div class="dev-stat-box"><span class="dev-stat-value editorial" id="actTotal">{ACTIVITY.total24}</span><span class="dev-stat-label">{t(L, 'set.api.requests_24h')}</span></div>
+            <div class="dev-stat-box"><span class={`dev-stat-value editorial ${ACTIVITY.errores24 > 0 ? 'bad' : ''}`} id="actErr">{ACTIVITY.errores24}</span><span class="dev-stat-label">{t(L, 'set.api.errores_24h')}</span></div>
+            <div class="dev-stat-box"><span class="dev-stat-value editorial" id="actLat">{ACTIVITY.latProm}<em>ms</em></span><span class="dev-stat-label">{t(L, 'set.api.latencia_prom')}</span></div>
+        </div>
+        <div class="act-list" id="actList" data-i18n-sin-actividad={t(L, 'set.api.sin_actividad')}>
+            {ACTIVITY.recent.length === 0 && <p class="dev-empty" id="actEmpty">{t(L, 'set.api.sin_actividad')}</p>}
+            {ACTIVITY.recent.map((r: any) => (
+                <div class="act-row">
+                    <span class={`act-m ${r.metodo.toLowerCase()}`}>{r.metodo}</span>
+                    <code class="act-path">{r.ruta}</code>
+                    <span class={`act-status ${r.status >= 400 ? 'bad' : 'ok'}`}>{r.status}</span>
+                    <span class="act-lat">{r.ms != null ? `${r.ms}ms` : '—'}</span>
+                    <span class="act-when">{r.cuando}{r.mode === 'test' ? ' · test' : ''}</span>
+                </div>
+            ))}
+        </div>
+    </div>
+    </div>
+    <script>
+        function initActivity() {
+            const btn = document.getElementById('actRefresh');
+            if (!btn) return;
+            const i18nActualizar = btn.dataset.i18nActualizar || 'Actualizar';
+            const i18nActualizando = btn.dataset.i18nActualizando || 'Actualizando…';
+            btn.addEventListener('click', async () => {
+                (btn as HTMLButtonElement).disabled = true; btn.textContent = i18nActualizando;
+                try {
+                    const res = await fetch('/api/dev/activity');
+                    if (res.ok) {
+                        const d = await res.json();
+                        document.getElementById('actTotal')!.textContent = String(d.total24);
+                        const errEl = document.getElementById('actErr')!;
+                        errEl.textContent = String(d.errores24);
+                        errEl.classList.toggle('bad', d.errores24 > 0);
+                        document.getElementById('actLat')!.innerHTML = `${d.latProm}<em>ms</em>`;
+                        renderActivity(d.recent);
+                    }
+                } catch {}
+                (btn as HTMLButtonElement).disabled = false; btn.textContent = i18nActualizar;
+            });
+        }
+        function renderActivity(recent: any[]) {
+            const list = document.getElementById('actList');
+            if (!list) return;
+            if (!recent.length) { list.innerHTML = `<p class="dev-empty">${list.dataset.i18nSinActividad || 'Sin actividad todavía. Cuando llames la API con una clave, las requests aparecerán aquí.'}</p>`; return; }
+            const esc = (s: string) => String(s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c));
+            list.innerHTML = recent.map((r) => `
+                <div class="act-row">
+                    <span class="act-m ${r.metodo.toLowerCase()}">${esc(r.metodo)}</span>
+                    <code class="act-path">${esc(r.ruta)}</code>
+                    <span class="act-status ${r.status >= 400 ? 'bad' : 'ok'}">${r.status}</span>
+                    <span class="act-lat">${r.ms != null ? r.ms + 'ms' : '—'}</span>
+                    <span class="act-when">${esc(r.cuando)}${r.mode === 'test' ? ' · test' : ''}</span>
+                </div>`).join('');
+        }
+        initActivity();
+    </script>
+)}
+
+{hasAccess && tab === 'webhooks' && (
+    <div class="wb-frag">
+    <div class="dev-wrapper">
+        <div class="dev-card">
+            <div class="dev-card-header">
+                <div>
+                    <h3 class="dev-card-title">{t(L, 'set.wh.endpoints_titulo')}</h3>
+                    <p class="dev-card-sub" set:html={t(L, 'set.wh.endpoints_sub')} />
+                </div>
+                <div class="dev-head-actions">
+                    <span class="dev-limit">{tf('set.wh.plan', { plan: planLabel(ORG.plan_raw) })} <b>{WEBHOOKS.length}/{LIMITE_WH}</b></span>
+                    <button class="api-btn-solid" id="whNew" disabled={AT_LIMIT_WH} title={AT_LIMIT_WH ? tf('set.wh.limite_hint', { n: String(LIMITE_WH) }) : ''}>{t(L, 'set.wh.agregar_endpoint')}</button>
+                </div>
+            </div>
+            {AT_LIMIT_WH && (
+                <p class="dev-limit-note">{tf('set.wh.limite_nota_pre', { n: String(LIMITE_WH), s: LIMITE_WH === 1 ? '' : 's' })} <a href="/app/ajustes/plan">{t(L, 'set.wh.subir_plan')}</a> {t(L, 'set.wh.limite_nota_post')}</p>
+            )}
+
+            <div class="wh-list" id="whList">
+                {WEBHOOKS.length === 0 && (
+                    <p class="dev-empty" id="whEmpty">{t(L, 'set.wh.vacio')}</p>
+                )}
+                {WEBHOOKS.map((w) => (
+                    <div class:list={['wh-item', { off: !w.activo, disabled: !!w.deshabilitadoMotivo }]} data-id={w.id}>
+                        {w.deshabilitadoMotivo && (
+                            <div class="wh-health-banner">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                <span class="wh-health-msg">{t(L, 'set.wh.deshabilitado_pre')} {w.deshabilitadoMotivo}{w.deshabilitadoEn ? ` — ${w.deshabilitadoEn}` : ''}</span>
+                                <span class="wh-health-actions">
+                                    <button data-reenable={w.id}>{t(L, 'set.wh.reactivar')}</button>
+                                    <button data-reenable-retry={w.id}>{t(L, 'set.wh.reactivar_reintentar')}</button>
+                                </span>
+                            </div>
+                        )}
+                        <div class="wh-row">
+                            <button class="wh-expand" data-expand={w.id} title={t(L, 'set.wh.ver_entregas')} aria-expanded="false">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                            </button>
+                            <span class="wh-info">
+                                <span class="wh-url">{w.url}</span>
+                                <span class="wh-sub">
+                                    <code>{w.secretMasked}</code>
+                                    <button type="button" class="wh-rotate-link" data-rotate={w.id}>{t(L, 'set.wh.rotar')}</button>
+                                    {w.rotandoHasta && <i class="wh-rotating-note">{t(L, 'set.wh.rotando_hasta_pre')} {w.rotandoHasta}</i>}
+                                    {w.eventos.length === 0 ? <i>{t(L, 'set.wh.todos_eventos')}</i> : <i>{w.eventos.length > 1 ? tf('set.wh.eventos_plural', { n: String(w.eventos.length) }) : t(L, 'set.wh.evento_singular')}</i>}
+                                    {w.ultimaEntrega && (
+                                        <i class:list={['wh-stat', { ok: w.lastStatus && w.lastStatus < 400, err: !w.lastStatus || w.lastStatus >= 400 }]}
+                                            title={w.lastError ? `${t(L, 'set.wh.ultimo_error_pre')} ${w.lastError}` : ''}>
+                                            {t(L, 'set.wh.ultima_pre')} {w.ultimaEntrega} {w.lastStatus ? `(${w.lastStatus})` : (w.lastError || t(L, 'set.wh.fallo'))}
+                                        </i>
+                                    )}
+                                </span>
+                            </span>
+                            <button class="api-btn-ghost wh-test" data-test={w.id} title={t(L, 'set.wh.probar_titulo')}>{t(L, 'set.wh.probar')}</button>
+                            <button class="api-btn-ghost wh-edit" data-edit={w.id} data-url={w.url} data-eventos={JSON.stringify(w.eventos)}>{t(L, 'set.wh.editar')}</button>
+                            <label class="s-toggle wh-toggle" title={t(L, 'set.wh.activar_pausar')}>
+                                <input type="checkbox" data-toggle={w.id} checked={w.activo} />
+                                <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                            </label>
+                            <button class="api-btn-ghost" data-del={w.id}>{t(L, 'set.wh.eliminar')}</button>
+                        </div>
+                        <div class="wh-deliveries" data-deliveries={w.id} hidden>
+                            <div class="wh-del-body" data-delbody={w.id}
+                                data-i18n-cargando={t(L, 'set.wh.cargando_entregas')} data-i18n-sin-entregas={t(L, 'set.wh.sin_entregas')}
+                                data-i18n-no-cargo={t(L, 'set.wh.no_pudo_cargar_log')} data-i18n-reintentar={t(L, 'set.wh.reintentar')}
+                                data-i18n-intento={t(L, 'set.wh.intento')} data-i18n-prueba-tag={t(L, 'set.wh.prueba_tag')} data-i18n-fallo={t(L, 'set.wh.fallo')}>
+                                <span class="wh-del-loading">{t(L, 'set.wh.cargando_entregas')}</span>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Modal: agregar/editar webhook -->
+    <dialog id="whDialog" class="kdlg"
+        data-i18n-no-pudo-crear={t(L, 'set.wh.no_pudo_crear')} data-i18n-no-pudo-actualizar={t(L, 'set.wh.no_pudo_actualizar')}
+        data-i18n-eliminar-titulo={t(L, 'set.wh.eliminar_titulo')} data-i18n-eliminar-body={t(L, 'set.wh.eliminar_body')}
+        data-i18n-eliminar={t(L, 'set.wh.eliminar')} data-i18n-no-pudo-eliminar={t(L, 'set.wh.no_pudo_eliminar')}
+        data-i18n-enviado={t(L, 'set.wh.enviado')} data-i18n-error={t(L, 'set.wh.error_generico')}
+        data-i18n-titulo-agregar={t(L, 'set.wh.modal_agregar_titulo')} data-i18n-titulo-editar={t(L, 'set.wh.modal_editar_titulo')}
+        data-i18n-crear-endpoint={t(L, 'set.wh.crear_endpoint')} data-i18n-guardar-cambios={t(L, 'set.wh.guardar_cambios')}
+        data-i18n-reactivando={t(L, 'set.wh.reactivando')} data-i18n-no-pudo-reactivar={t(L, 'set.wh.no_pudo_reactivar')}
+        data-i18n-rotando={t(L, 'set.wh.rotando')} data-i18n-no-pudo-rotar={t(L, 'set.wh.no_pudo_rotar')}
+        data-i18n-titulo-creado={t(L, 'set.wh.modal_creado_titulo')} data-i18n-warn-creado={t(L, 'set.wh.modal_creado_warn')}
+        data-i18n-titulo-rotado={t(L, 'set.wh.modal_rotado_titulo')} data-i18n-warn-rotado={t(L, 'set.wh.modal_rotado_warn')}>
+        <div class="kdlg-inner" id="whStepForm">
+            <h4 id="whFormTitle">{t(L, 'set.wh.modal_agregar_titulo')}</h4>
+            <div class="s-field" style="margin-bottom:1.1rem">
+                <label for="whUrl">{t(L, 'set.wh.url_destino')}</label>
+                <input class="s-input" id="whUrl" placeholder="https://tusistema.mx/webhooks/cord" />
+            </div>
+            <div class="wh-events">
+                <span class="wh-events-label">{t(L, 'set.wh.eventos_label')}</span>
+                <div class="wh-checks">
+                    {WEBHOOK_EVENTS.map((e) => (
+                        <label class="wh-check">
+                            <input type="checkbox" value={e.id} />
+                            <span><code>{e.id}</code> {e.label}</span>
+                        </label>
+                    ))}
+                </div>
+            </div>
+            <div class="wh-dlg-actions">
+                <button type="button" class="api-btn-ghost" id="whCancel">{t(L, 'set.wh.cancelar')}</button>
+                <button type="button" class="api-btn-solid" id="whCreate">{t(L, 'set.wh.crear_endpoint')}</button>
+            </div>
+        </div>
+        <div class="kdlg-inner" id="whStepRotate" hidden>
+            <h4>{t(L, 'set.wh.rotar_titulo')}</h4>
+            <p class="kdlg-warn">{t(L, 'set.wh.rotar_intro')}</p>
+            <div class="wh-events">
+                <span class="wh-events-label">{t(L, 'set.wh.rotar_ventana')}</span>
+                <div class="wh-checks">
+                    <label class="wh-check"><input type="radio" name="whRotateWindow" value="1" /> <span>{t(L, 'set.wh.rotar_1h')}</span></label>
+                    <label class="wh-check"><input type="radio" name="whRotateWindow" value="24" checked /> <span>{t(L, 'set.wh.rotar_24h')}</span></label>
+                    <label class="wh-check"><input type="radio" name="whRotateWindow" value="72" /> <span>{t(L, 'set.wh.rotar_72h')}</span></label>
+                </div>
+            </div>
+            <div class="wh-dlg-actions">
+                <button type="button" class="api-btn-ghost" id="whRotateCancel">{t(L, 'set.wh.cancelar')}</button>
+                <button type="button" class="api-btn-solid" id="whRotateConfirm">{t(L, 'set.wh.rotar_confirmar')}</button>
+            </div>
+        </div>
+        <div class="kdlg-inner" id="whStepDone" hidden>
+            <h4 id="whDoneTitle">{t(L, 'set.wh.modal_creado_titulo')}</h4>
+            <p class="kdlg-warn" id="whDoneWarn" set:html={t(L, 'set.wh.modal_creado_warn')} />
+            <div class="kdlg-key">
+                <code id="whSecret"></code>
+                <button id="whCopy" class="kdlg-copy" type="button" data-i18n-copiar={t(L, 'set.wh.copiar')} data-i18n-copiado={t(L, 'set.wh.copiado')}>{t(L, 'set.wh.copiar')}</button>
+            </div>
+            <button class="kdlg-done" type="button" id="whDone">{t(L, 'set.wh.listo')}</button>
+        </div>
+    </dialog>
+
+    <script>
+        function initWebhooks() {
+            const dlg = document.getElementById('whDialog') as HTMLDialogElement | null;
+            const newBtn = document.getElementById('whNew') as HTMLButtonElement | null;
+            if (!dlg || !newBtn) return;
+            const urlIn = document.getElementById('whUrl') as HTMLInputElement;
+            const stepForm = document.getElementById('whStepForm')!;
+            const stepRotate = document.getElementById('whStepRotate')!;
+            const stepDone = document.getElementById('whStepDone')!;
+            const secretEl = document.getElementById('whSecret')!;
+            const doneTitle = document.getElementById('whDoneTitle')!;
+            const doneWarn = document.getElementById('whDoneWarn')!;
+            const createBtn = document.getElementById('whCreate') as HTMLButtonElement;
+            const formTitle = document.getElementById('whFormTitle')!;
+
+            const i18nTituloAgregar = dlg.dataset.i18nTituloAgregar || 'Agregar endpoint';
+            const i18nTituloEditar = dlg.dataset.i18nTituloEditar || 'Editar endpoint';
+            const i18nCrearEndpoint = dlg.dataset.i18nCrearEndpoint || 'Crear endpoint';
+            const i18nGuardarCambios = dlg.dataset.i18nGuardarCambios || 'Guardar cambios';
+
+            function refresh() { (window as any).cordWorkbench?.refresh('webhooks'); }
+
+            let editingId: string | null = null;
+
+            function openDialogFor(id: string | null, url = '', eventos: string[] = []) {
+                editingId = id;
+                stepForm.hidden = false; stepRotate.hidden = true; stepDone.hidden = true;
+                urlIn.value = url;
+                dlg.querySelectorAll<HTMLInputElement>('.wh-check input').forEach((c) => (c.checked = eventos.includes(c.value)));
+                createBtn.disabled = false;
+                formTitle.textContent = id ? i18nTituloEditar : i18nTituloAgregar;
+                createBtn.textContent = id ? i18nGuardarCambios : i18nCrearEndpoint;
+                dlg.showModal(); urlIn.focus();
+            }
+
+            newBtn.addEventListener('click', () => openDialogFor(null));
+            document.querySelectorAll('[data-edit]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const el = btn as HTMLElement;
+                    let eventos: string[] = [];
+                    try { eventos = JSON.parse(el.dataset.eventos || '[]'); } catch {}
+                    openDialogFor(el.dataset.edit!, el.dataset.url || '', eventos);
+                });
+            });
+            document.getElementById('whCancel')?.addEventListener('click', () => dlg.close());
+            document.getElementById('whDone')?.addEventListener('click', () => { dlg.close(); refresh(); });
+            const i18nCopiar = document.getElementById('whCopy')?.dataset.i18nCopiar || 'Copiar';
+            const i18nCopiado = document.getElementById('whCopy')?.dataset.i18nCopiado || '✓ Copiado';
+            document.getElementById('whCopy')?.addEventListener('click', async () => {
+                try { await navigator.clipboard.writeText(secretEl.textContent || ''); const b = document.getElementById('whCopy')!; b.textContent = i18nCopiado; setTimeout(() => (b.textContent = i18nCopiar), 1800); } catch {}
+            });
+
+            const i18nNoPudoCrear = dlg.dataset.i18nNoPudoCrear || 'No se pudo crear';
+            const i18nNoPudoActualizar = dlg.dataset.i18nNoPudoActualizar || 'No se pudo actualizar';
+            const i18nTituloCreado = dlg.dataset.i18nTituloCreado || 'Endpoint creado';
+            const i18nWarnCreado = dlg.dataset.i18nWarnCreado || '';
+            createBtn.addEventListener('click', async () => {
+                const url = urlIn.value.trim();
+                if (!url) { urlIn.focus(); return; }
+                const eventos = Array.from(dlg.querySelectorAll<HTMLInputElement>('.wh-check input:checked')).map((c) => c.value);
+                createBtn.disabled = true;
+                if (editingId) {
+                    try {
+                        const res = await fetch('/api/webhooks', {
+                            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: editingId, url, eventos }),
+                        });
+                        if (!res.ok) { const d = await res.json(); throw new Error(d.error || i18nNoPudoActualizar); }
+                        dlg.close(); refresh();
+                    } catch (err: any) { (window as any).cordToast?.(err.message || i18nNoPudoActualizar, 'error'); createBtn.disabled = false; }
+                    return;
+                }
+                try {
+                    const res = await fetch('/api/webhooks', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url, eventos }),
+                    });
+                    const d = await res.json();
+                    if (!res.ok) throw new Error(d.error || i18nNoPudoCrear);
+                    secretEl.textContent = d.secret;
+                    doneTitle.textContent = i18nTituloCreado;
+                    doneWarn.innerHTML = i18nWarnCreado;
+                    stepForm.hidden = true; stepRotate.hidden = true; stepDone.hidden = false;
+                } catch (err: any) { (window as any).cordToast?.(err.message || i18nNoPudoCrear, 'error'); createBtn.disabled = false; }
+            });
+
+            const i18nRotando = dlg.dataset.i18nRotando || 'Rotando…';
+            const i18nNoPudoRotar = dlg.dataset.i18nNoPudoRotar || 'No se pudo rotar el secreto';
+            const i18nTituloRotado = dlg.dataset.i18nTituloRotado || 'Secreto rotado';
+            const i18nWarnRotado = dlg.dataset.i18nWarnRotado || '';
+            const rotateConfirmBtn = document.getElementById('whRotateConfirm') as HTMLButtonElement | null;
+            let rotatingId: string | null = null;
+
+            document.querySelectorAll('[data-rotate]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    rotatingId = (btn as HTMLElement).dataset.rotate!;
+                    stepForm.hidden = true; stepDone.hidden = true; stepRotate.hidden = false;
+                    dlg.showModal();
+                });
+            });
+            document.getElementById('whRotateCancel')?.addEventListener('click', () => dlg.close());
+            rotateConfirmBtn?.addEventListener('click', async () => {
+                if (!rotatingId) return;
+                const overlapHours = Number((dlg.querySelector('input[name="whRotateWindow"]:checked') as HTMLInputElement)?.value || '24');
+                rotateConfirmBtn.disabled = true;
+                const orig = rotateConfirmBtn.textContent;
+                rotateConfirmBtn.textContent = i18nRotando;
+                try {
+                    const res = await fetch('/api/webhooks', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'rotate', id: rotatingId, overlapHours }),
+                    });
+                    const d = await res.json();
+                    if (!res.ok) throw new Error(d.error || i18nNoPudoRotar);
+                    secretEl.textContent = d.secret;
+                    doneTitle.textContent = i18nTituloRotado;
+                    doneWarn.innerHTML = i18nWarnRotado;
+                    stepRotate.hidden = true; stepDone.hidden = false;
+                } catch (err: any) {
+                    (window as any).cordToast?.(err.message || i18nNoPudoRotar, 'error');
+                    rotateConfirmBtn.disabled = false; rotateConfirmBtn.textContent = orig;
+                }
+            });
+
+            const i18nReactivando = dlg.dataset.i18nReactivando || 'Reactivando…';
+            const i18nNoPudoReactivar = dlg.dataset.i18nNoPudoReactivar || 'No se pudo reactivar';
+            async function doReenable(btn: HTMLButtonElement, id: string, retryRecent: boolean) {
+                btn.disabled = true;
+                const sibling = btn.parentElement?.querySelectorAll('button');
+                sibling?.forEach((b) => (b.disabled = true));
+                const orig = btn.textContent;
+                btn.textContent = i18nReactivando;
+                try {
+                    const res = await fetch('/api/webhooks', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, activo: true, retryRecent }) });
+                    if (!res.ok) throw new Error();
+                    refresh();
+                } catch {
+                    (window as any).cordToast?.(i18nNoPudoReactivar, 'error');
+                    sibling?.forEach((b) => (b.disabled = false));
+                    btn.textContent = orig;
+                }
+            }
+            document.querySelectorAll('[data-reenable]').forEach((btn) => {
+                btn.addEventListener('click', () => doReenable(btn as HTMLButtonElement, (btn as HTMLElement).dataset.reenable!, false));
+            });
+            document.querySelectorAll('[data-reenable-retry]').forEach((btn) => {
+                btn.addEventListener('click', () => doReenable(btn as HTMLButtonElement, (btn as HTMLElement).dataset.reenableRetry!, true));
+            });
+
+            document.querySelectorAll('[data-toggle]').forEach((el) => {
+                el.addEventListener('change', async () => {
+                    const id = (el as HTMLElement).dataset.toggle!;
+                    const activo = (el as HTMLInputElement).checked;
+                    try {
+                        const res = await fetch('/api/webhooks', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, activo }) });
+                        if (!res.ok) throw new Error();
+                        (el.closest('.wh-item') as HTMLElement)?.classList.toggle('off', !activo);
+                    } catch { (el as HTMLInputElement).checked = !activo; (window as any).cordToast?.(dlg.dataset.i18nNoPudoActualizar || 'No se pudo actualizar', 'error'); }
+                });
+            });
+
+            document.querySelectorAll('[data-del]').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const id = (btn as HTMLElement).dataset.del!;
+                    if (!await (window as any).cordConfirm({ title: dlg.dataset.i18nEliminarTitulo || 'Eliminar endpoint', body: dlg.dataset.i18nEliminarBody || 'Dejará de recibir eventos de inmediato. ¿Eliminar este webhook?', danger: true, confirmText: dlg.dataset.i18nEliminar || 'Eliminar' })) return;
+                    try {
+                        const res = await fetch('/api/webhooks', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+                        if (!res.ok) { const d = await res.json(); throw new Error(d.error || (dlg.dataset.i18nNoPudoEliminar || 'No se pudo eliminar')); }
+                        (btn.closest('.wh-item') as HTMLElement)?.remove();
+                    } catch (err: any) { (window as any).cordToast?.(err.message || (dlg.dataset.i18nNoPudoEliminar || 'No se pudo eliminar'), 'error'); }
+                });
+            });
+
+            document.querySelectorAll('[data-test]').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const id = (btn as HTMLElement).dataset.test!;
+                    const b = btn as HTMLButtonElement;
+                    b.disabled = true; const orig = b.textContent; b.textContent = '…';
+                    try {
+                        const res = await fetch('/api/webhooks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'test', id }) });
+                        const d = await res.json();
+                        b.textContent = d.ok ? (dlg.dataset.i18nEnviado || '✓ Enviado') : `✗ ${d.status || 'falló'}`;
+                        const open = document.querySelector(`[data-expand="${id}"][aria-expanded="true"]`);
+                        if (open) loadDeliveries(id);
+                        setTimeout(() => (b.textContent = orig), 2400);
+                    } catch { b.textContent = dlg.dataset.i18nError || '✗ error'; setTimeout(() => (b.textContent = orig), 2400); }
+                    finally { b.disabled = false; }
+                });
+            });
+
+            document.querySelectorAll('[data-expand]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const id = (btn as HTMLElement).dataset.expand!;
+                    const panel = document.querySelector(`[data-deliveries="${id}"]`) as HTMLElement;
+                    const open = btn.getAttribute('aria-expanded') === 'true';
+                    btn.setAttribute('aria-expanded', String(!open));
+                    panel.hidden = open;
+                    if (!open) loadDeliveries(id);
+                });
+            });
+        }
+
+        async function loadDeliveries(webhookId: string) {
+            const body = document.querySelector(`[data-delbody="${webhookId}"]`) as HTMLElement | null;
+            if (!body) return;
+            const i18nCargando = body.dataset.i18nCargando || 'Cargando entregas…';
+            const i18nSinEntregas = body.dataset.i18nSinEntregas || 'Sin entregas aún. Usa "Probar" o espera a que pase un evento real.';
+            const i18nNoCargo = body.dataset.i18nNoCargo || 'No se pudo cargar el log.';
+            const i18nReintentar = body.dataset.i18nReintentar || 'Reintentar';
+            const i18nIntentoTpl = body.dataset.i18nIntento || '· intento {n}';
+            const i18nPruebaTag = body.dataset.i18nPruebaTag || 'prueba';
+            const i18nFallo = body.dataset.i18nFallo || '(falló)';
+            body.innerHTML = `<span class="wh-del-loading">${i18nCargando}</span>`;
+            try {
+                const res = await fetch(`/api/webhooks?deliveries=${encodeURIComponent(webhookId)}`);
+                const d = await res.json();
+                const list: any[] = d.deliveries || [];
+                if (!list.length) { body.innerHTML = `<span class="wh-del-empty">${i18nSinEntregas}</span>`; return; }
+                body.innerHTML = list.map((x) => `
+                    <div class="del-row">
+                        <span class="del-dot ${x.ok ? 'ok' : 'err'}"></span>
+                        <span class="del-ev">${x.evento}${x.intento > 1 ? `<span class="del-try"> ${i18nIntentoTpl.replace('{n}', x.intento)}</span>` : ''}${x.prueba ? `<i class="del-test">${i18nPruebaTag}</i>` : ''}</span>
+                        <span class="del-status ${x.ok ? 'ok' : 'err'}">${x.status || (x.error || i18nFallo)}</span>
+                        <span class="del-meta">${x.ms != null ? x.ms + 'ms' : ''} · ${x.cuando}</span>
+                        <button class="del-replay" data-replay="${x.id}">${i18nReintentar}</button>
+                    </div>`).join('');
+                body.querySelectorAll('[data-replay]').forEach((rb) => {
+                    rb.addEventListener('click', async () => {
+                        const deliveryId = (rb as HTMLElement).dataset.replay!;
+                        const b = rb as HTMLButtonElement; b.disabled = true; b.textContent = '…';
+                        try {
+                            const r = await fetch('/api/webhooks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'redeliver', deliveryId }) });
+                            const dd = await r.json();
+                            b.textContent = dd.ok ? '✓' : `✗ ${dd.status || ''}`;
+                            setTimeout(() => loadDeliveries(webhookId), 800);
+                        } catch { b.textContent = '✗'; b.disabled = false; }
+                    });
+                });
+            } catch { body.innerHTML = `<span class="wh-del-empty">${i18nNoCargo}</span>`; }
+        }
+
+        initWebhooks();
+    </script>
+)}

@@ -9,7 +9,7 @@ Tus Claves de API son la puerta de entrada a tu cuenta. Trátalas con el mismo c
 
 ### Dónde se generan
 
-Entra a **Ajustes > Developers > API** (`/app/ajustes/api`). Ahí creas llaves nuevas, eliges su alcance (lectura o escritura) y las revocas. La llave secreta se muestra **una sola vez** al crearla; guárdala en un gestor de secretos, nunca en el código fuente.
+Activa el **Modo desarrollador** (Ajustes > Empresa) y abre la pestaña **API** en el dock de Desarrolladores, la barra que aparece al fondo de la pantalla (`/app?wb=api`). Ahí creas llaves nuevas, eliges su alcance (lectura o escritura) y las revocas. La llave secreta se muestra **una sola vez** al crearla; guárdala en un gestor de secretos, nunca en el código fuente.
 
 ### Autenticación
 
@@ -41,6 +41,6 @@ Al crear una llave eliges su modo:
 
 No hay rotación "en sitio" con periodo de gracia. Si una llave se filtró (ej. se subió por error a GitHub):
 
-1. Entra a **Ajustes > Developers > API**.
+1. Abre la pestaña **API** en el dock de Desarrolladores (actívalo en Ajustes > Empresa si no lo ves).
 2. Crea una llave nueva y actualiza tus servidores con ella.
 3. **Revoca** la llave comprometida. La revocación es inmediata: cualquier petición con esa llave responderá `401`.

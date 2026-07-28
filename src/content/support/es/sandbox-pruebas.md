@@ -8,7 +8,7 @@ Antes de operar en serio querrás probar el flujo (enviar una cotización, cobra
 
 ### Llaves de API en modo Test
 
-Crea una llave `sk_test_...` en **Ajustes > Developers > API**. Las llaves test **no consumen tu medidor de uso ni cuentan para tu facturación**, así que puedes iterar tu integración sin costo. Ten en cuenta que operan sobre los **mismos datos** de tu organización (no hay un entorno paralelo); etiqueta o borra los registros de prueba que crees.
+Crea una llave `sk_test_...` en la pestaña **API** del dock de Desarrolladores (actívalo en Ajustes > Empresa). Las llaves test **no consumen tu medidor de uso ni cuentan para tu facturación**, así que puedes iterar tu integración sin costo. Ten en cuenta que operan sobre los **mismos datos** de tu organización (no hay un entorno paralelo); etiqueta o borra los registros de prueba que crees.
 
 ### Probar el cobro con tarjeta
 

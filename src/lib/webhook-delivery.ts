@@ -301,7 +301,7 @@ async function notifyOwner(orgId: string, opts: { subject: string; heading: stri
         const to = (org?.email_contacto as string) || (org?.owner_email as string) || null;
         if (!to) return;
         const color = /^#[0-9a-fA-F]{6}$/.test(org?.color as string) ? (org.color as string) : '#0a192f';
-        const link = `${siteOrigin()}/app/ajustes/webhooks`;
+        const link = `${siteOrigin()}/app?wb=webhooks`;
         const html = `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
             <div style="max-width:540px;margin:0 auto;">
                 <div style="margin-bottom:32px;">

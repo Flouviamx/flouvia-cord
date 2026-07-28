@@ -11,7 +11,7 @@ Los webhooks son llamadas HTTP (callbacks) que nuestro servidor hace al tuyo cua
 
 Para recibir webhooks, expón una ruta `POST` en tu servidor (ej. `https://api.tuempresa.com/webhooks/cord`).
 
-1. Ve a **Ajustes > Developers > Webhooks** en el panel de Cord.
+1. Activa el **Modo desarrollador** (Ajustes > Empresa) y abre la pestaña **Webhooks** en el dock de Desarrolladores, al fondo de la pantalla.
 2. Añade tu URL y guarda. El **secreto de firma** se muestra una sola vez: guárdalo.
 3. Selecciona a qué eventos suscribirte.
 

@@ -138,6 +138,16 @@ const mainHandler = clerkMiddleware((auth, context, next) => {
     const isWrite = ["POST", "PATCH", "PUT", "DELETE"].includes(context.request.method);
 
     const isApp = path === "/app" || path.startsWith("/app/");
+
+    // Legacy: Ajustes › API / Webhooks se movieron al Cord Workbench (dock de
+    // Desarrolladores estilo Stripe, ver src/components/app/DevWorkbench.astro).
+    // Redirige a /app abriendo el dock directo en la pestaña correspondiente
+    // (?wb=<tab>, leído client-side por DevWorkbench.astro).
+    if (path === "/app/ajustes/api" || path === "/app/ajustes/webhooks") {
+        const tab = path.endsWith("/api") ? "api" : "webhooks";
+        return context.redirect(`/app?wb=${tab}`, 301);
+    }
+
     const isApi = path.startsWith("/api/");
     const isPublicApi =
         PUBLIC_API_EXACT.includes(path) || PUBLIC_API_PREFIXES.some((p) => path.startsWith(p));

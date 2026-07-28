@@ -10,7 +10,7 @@ description: "Administra las llaves criptográficas que dan acceso a la platafor
 
 ## Funcionamiento de las Claves
 
-Toda petición programática a la API de Cord requiere una **Clave de API**. Puedes administrarlas, revocarlas y monitorear su uso desde **Ajustes > Desarrolladores > API**.
+Toda petición programática a la API de Cord requiere una **Clave de API**. Puedes administrarlas, revocarlas y monitorear su uso desde la pestaña **API** del dock de Desarrolladores (actívalo en Ajustes > Empresa con el toggle "Modo desarrollador").
 
 Por seguridad, los sistemas de Cord almacenan tu Clave de API como un Hash (`sha-256`) irreversible. La llave en texto claro (el string que comienza con `sk_...` o `pk_...`) solo se te mostrará **una vez** al momento de crearla. Si la pierdes, no hay forma de recuperarla; deberás revocarla y generar una nueva.
 

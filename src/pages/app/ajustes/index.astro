@@ -27,7 +27,7 @@ const catMap = Object.fromEntries(SETTINGS_CATEGORIES.map(c => [c.id, c]));
 const sPersonal = [catMap.cuenta];
 const sCuenta = [catMap.general, catMap.branding, catMap.equipo, catMap.notificaciones, catMap.planes, catMap.avanzado];
 const sProducto = [catMap.cotizaciones, catMap.facturacion, catMap.cobros, catMap.integraciones];
-const sDev = [catMap.api_webhooks, catMap.mcp, catMap.agentes, catMap.elements];
+const sDev = [catMap.mcp, catMap.agentes, catMap.elements];
 ---
 
 <AppLayout title="Configuración — Cord" page="ajustes" heading="Ajustes">
@@ -147,6 +147,10 @@ const sDev = [catMap.api_webhooks, catMap.mcp, catMap.agentes, catMap.elements];
             devSec.style.display = on ? 'block' : 'none';
             toggle.classList.toggle('on', on);
             toggle.setAttribute('aria-checked', on ? 'true' : 'false');
+            // El dock de Desarrolladores (Cord Workbench) es global a toda la app —
+            // este toggle ahora también lo prende/apaga en vivo, sin recargar.
+            document.documentElement.classList.toggle('cord-dev', on);
+            window.dispatchEvent(new CustomEvent('cord:devmode_changed', { detail: { on } }));
         };
         apply(localStorage.getItem(KEY) === '1');
         toggle.addEventListener('click', () => {

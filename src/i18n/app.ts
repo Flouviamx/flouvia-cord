@@ -273,7 +273,7 @@ export const appStrings = {
         "idx.sec_producto": "Configuración del producto",
         "idx.sec_dev": "Desarrolladores",
         "idx.devmode_titulo": "Modo desarrollador",
-        "idx.devmode_desc": "Muestra las opciones técnicas (API, webhooks, MCP, agentes IA y cotizador embebible). Actívalo solo si vas a integrar Cord con tu sistema.",
+        "idx.devmode_desc": "Activa el dock de Desarrolladores (Webhooks, API y Registros) y muestra las demás opciones técnicas (MCP, agentes IA, cotizador embebible). Actívalo solo si vas a integrar Cord con tu sistema.",
         "idx.devmode_aria": "Activar modo desarrollador",
 
         // Ajustes › General
@@ -2259,6 +2259,24 @@ export const appStrings = {
         "onb.configurar": "Configurar",
         "onb.todo_listo": "¡Todo listo!",
         "onb.cuenta_configurada": "Tu cuenta está configurada. A vender.",
+
+        // Cord Workbench — dock de Desarrolladores estilo Stripe (jul 2026)
+        "wb.titulo": "Desarrolladores",
+        "wb.tab.resumen": "Resumen",
+        "wb.tab.webhooks": "Webhooks",
+        "wb.tab.api": "API",
+        "wb.tab.registros": "Registros",
+        "wb.cerrar": "Cerrar",
+        "wb.sin_acceso": "No tienes acceso a esta sección.",
+        "wb.resumen.webhooks_activos": "Webhooks activos",
+        "wb.resumen.requests_24h": "Requests (24h)",
+        "wb.resumen.errores_24h": "Errores (24h)",
+        "wb.resumen.latencia_prom": "Latencia prom.",
+        "wb.resumen.actividad_reciente": "Actividad reciente",
+        "wb.resumen.sin_actividad": "Sin actividad todavía.",
+        "wb.resumen.ver_webhooks": "Ver Webhooks →",
+        "wb.resumen.ver_api": "Ver API →",
+        "wb.resumen.ver_registros": "Ver Registros →",
     },
     en: {
         // Sidebar — groups
@@ -2512,7 +2530,7 @@ export const appStrings = {
         "idx.sec_producto": "Product settings",
         "idx.sec_dev": "Developers",
         "idx.devmode_titulo": "Developer mode",
-        "idx.devmode_desc": "Shows the technical options (API, webhooks, MCP, AI agents, and embeddable quote builder). Turn it on only if you're integrating Cord with your system.",
+        "idx.devmode_desc": "Turns on the Developers dock (Webhooks, API, and Logs) and shows the other technical options (MCP, AI agents, embeddable quote builder). Turn it on only if you're integrating Cord with your system.",
         "idx.devmode_aria": "Enable developer mode",
 
         // Settings › General
@@ -4498,6 +4516,24 @@ export const appStrings = {
         "onb.configurar": "Configure",
         "onb.todo_listo": "All set!",
         "onb.cuenta_configurada": "Your account is set up. Time to sell.",
+
+        // Cord Workbench — Stripe-style Developers dock (jul 2026)
+        "wb.titulo": "Developers",
+        "wb.tab.resumen": "Overview",
+        "wb.tab.webhooks": "Webhooks",
+        "wb.tab.api": "API",
+        "wb.tab.registros": "Logs",
+        "wb.cerrar": "Close",
+        "wb.sin_acceso": "You don't have access to this section.",
+        "wb.resumen.webhooks_activos": "Active webhooks",
+        "wb.resumen.requests_24h": "Requests (24h)",
+        "wb.resumen.errores_24h": "Errors (24h)",
+        "wb.resumen.latencia_prom": "Avg. latency",
+        "wb.resumen.actividad_reciente": "Recent activity",
+        "wb.resumen.sin_actividad": "No activity yet.",
+        "wb.resumen.ver_webhooks": "View Webhooks →",
+        "wb.resumen.ver_api": "View API →",
+        "wb.resumen.ver_registros": "View Logs →",
     },
 } as const;
 

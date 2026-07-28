@@ -5,6 +5,7 @@
 
 import { getOrg, getSetupProgress, getMyMembership } from '../lib/queries';
 import OnboardingWidget from '../components/app/OnboardingWidget.astro';
+import DevWorkbench from '../components/app/DevWorkbench.astro';
 import Sidebar from '../components/app/Sidebar.astro';
 import SupportCoverBg from '../components/support/SupportCoverBg.jsx';
 import { clerkAppearance } from '../lib/clerk-theme';
@@ -45,6 +46,10 @@ const canCotizar = memberCan(ME, 'cotizar');
 const canClientes = memberCan(ME, 'clientes');
 const canProductos = memberCan(ME, 'productos');
 const canCreateAny = canCotizar || canClientes || canProductos;
+// Cord Workbench (dock de Desarrolladores estilo Stripe) — mismo permiso que
+// el resto de Ajustes; el gate REAL de visibilidad es client-side (clase
+// .cord-dev, toggle "Modo desarrollador"), esto es defensa en profundidad.
+const canDev = memberCan(ME, 'ajustes');
 
 // Avance de configuración (Fase 3). Si la cuenta ya está 100% lista no montamos
 // el widget de onboarding ni la píldora de la topbar.
@@ -89,6 +94,16 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
             // Restaura estado colapsado de la sidebar + tema antes del primer paint (sin flash).
             try { if (localStorage.getItem('cord.sb.collapsed') === '1') document.documentElement.classList.add('sb-collapsed'); } catch (e) {}
             try { if (localStorage.getItem('cord.theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); } catch (e) {}
+            // Cord Workbench: si el "Modo desarrollador" está activo, reserva de una
+            // vez el espacio de la barra colapsada (--wb-h) para que el contenido no
+            // salte al montar el dock (mismo patrón anti-flash que sidebar/tema).
+            try {
+                if (localStorage.getItem('cord.devmode') === '1') {
+                    document.documentElement.classList.add('cord-dev');
+                    document.documentElement.style.setProperty('--wb-h', '46px');
+                    document.documentElement.style.setProperty('--wb-bar-h', '46px');
+                }
+            } catch (e) {}
         </script>
         <style is:inline>
             /* ASTRO OPTIMIZATION BYPASS: Forced CSS injection */
@@ -417,6 +432,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
 
 
         {!setup.complete && <OnboardingWidget progress={setup} />}
+        {canDev && <DevWorkbench locale={L} />}
 
         <Analytics />
     </body>
@@ -875,7 +891,11 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     .nav-progress.active { opacity: 1; }
 
     /* ════════ Toasts globales (window.cordToast) ════════ */
-    .toast-stack { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 800; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
+    .toast-stack { position: fixed; bottom: calc(20px + var(--wb-h, 0px)); left: 50%; transform: translateX(-50%); z-index: 900; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; transition: bottom 0.32s var(--ease-spring); }
+    /* Cord Workbench (dock de Desarrolladores, ver DevWorkbench.astro): la barra
+       vive a z-index:820 — toasts y el widget de onboarding deben seguir viéndose
+       por encima y desplazarse para no quedar tapados, colapsado o expandido. */
+    .onb { z-index: 850 !important; bottom: calc(24px + var(--wb-h, 0px)) !important; transition: opacity 0.4s var(--ease-spring), transform 0.4s var(--ease-spring), bottom 0.32s var(--ease-spring) !important; }
     .toast {
         display: flex; align-items: center; gap: 9px; pointer-events: auto;
         background: var(--color-blue-deep); color: #fff;
@@ -1443,7 +1463,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     /* Subtítulo opcional (slot name="page-sub") */
     .page-head :global(.ph-sub) { font-size: 0.86rem; color: var(--color-text-muted); margin: 0; }
 
-    .app-content { padding: 1.4rem 2rem 4rem; max-width: var(--content-max); width: 100%; transition: max-width 0.28s var(--ease-spring); }
+    .app-content { padding: 1.4rem 2rem calc(4rem + var(--wb-bar-h, 0px)); max-width: var(--content-max); width: 100%; transition: max-width 0.28s var(--ease-spring), padding-bottom 0.32s var(--ease-spring); }
 
     /* ════════ MENÚ DE COMANDOS (Cmd+K) ════════ */
     .cmdk { position: fixed; inset: 0; z-index: 500; display: flex; align-items: flex-start; justify-content: center; padding: 12vh 1rem 1rem; }

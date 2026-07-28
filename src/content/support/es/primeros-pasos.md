@@ -30,7 +30,7 @@ Para cobrar con tarjeta en línea, Cord usa **tu propia cuenta de Stripe** (no c
 ## Paso 5: (Para devs) Conecta la API
 Si vas a usar Cord programáticamente:
 
-- Ve a **Ajustes > Developers > API** y crea una llave (`sk_test_...` o `sk_live_...`).
+- Activa el **Modo desarrollador** (Ajustes > Empresa), abre la pestaña **API** en el dock de Desarrolladores y crea una llave (`sk_test_...` o `sk_live_...`).
 - Verifica que funciona con la llamada más simple:
 
 ```bash

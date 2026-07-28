@@ -9,7 +9,7 @@ Your API Keys are the gateway to your account. Treat them with the same care as 
 
 ### Where to generate them
 
-Go to **Settings > Developers > API** (`/app/ajustes/api`). There you create new keys, pick their scope (read or write), and revoke them. The secret key is shown **only once** when created; store it in a secrets manager, never in source code.
+Turn on **Developer mode** (Settings > Company) and open the **API** tab in the Developers dock, the bar that appears at the bottom of the screen (`/app?wb=api`). There you create new keys, pick their scope (read or write), and revoke them. The secret key is shown **only once** when created; store it in a secrets manager, never in source code.
 
 ### Authentication
 
@@ -41,6 +41,6 @@ When you create a key you choose its mode:
 
 There is no in-place rotation with a grace period. If a key leaks (e.g. accidentally pushed to GitHub):
 
-1. Go to **Settings > Developers > API**.
+1. Open the **API** tab in the Developers dock (turn it on in Settings > Company if you don't see it).
 2. Create a new key and update your servers with it.
 3. **Revoke** the compromised key. Revocation is immediate: any request with that key returns `401`.

@@ -105,16 +105,6 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         ],
     },
     {
-        id: 'api_webhooks', label: 'API y Webhooks', labelEn: 'API & Webhooks',
-        desc: 'Endpoints REST y notificaciones en tiempo real para tu sistema.',
-        descEn: 'REST endpoints and real-time notifications for your system.',
-        icon: '<polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/>',
-        tabs: [
-            { id: 'api',           label: 'API',                 labelEn: 'API',      href: '/app/ajustes/api' },
-            { id: 'webhooks',      label: 'Webhooks',            labelEn: 'Webhooks', href: '/app/ajustes/webhooks' },
-        ],
-    },
-    {
         id: 'mcp', label: 'MCP', labelEn: 'MCP',
         desc: 'Configura el Model Context Protocol para tus asistentes.',
         descEn: 'Configure the Model Context Protocol for your assistants.',
