@@ -21,46 +21,45 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
     intro={t(L, 'set.imp.intro')}>
 
     <div class="s-block">
-        <div class="imp-head">
-            <h3>{t(L, 'set.imp.perfiles')}</h3>
-            <button class="dev-new" id="impNew">{t(L, 'set.imp.nuevo')}</button>
+        <h3>{t(L, 'set.imp.perfiles')}</h3>
+        <div class="s-body">
+            <div class="imp-actions-row">
+                <button class="dev-new" id="impNew">{t(L, 'set.imp.nuevo')}</button>
+            </div>
+            <div class="imp-list" id="impList">
+                {IMPUESTOS.length === 0 && (
+                    <p class="imp-empty" id="impEmpty">{tf('set.imp.vacio', { pct: String(ORG.ivaPct) })}</p>
+                )}
+                {IMPUESTOS.map((i) => (
+                    <div class="imp-row" data-id={i.id}>
+                        <span class={`imp-tipo ${i.tipo}`}>{i.tipoLabel}</span>
+                        <span class="imp-body">
+                            <span class="imp-name">{i.nombre}</span>
+                            <span class="imp-tasa editorial">{i.tasa}%</span>
+                        </span>
+                        {i.esDefault
+                            ? <span class="imp-default">{t(L, 'set.imp.predeterminado')}</span>
+                            : <button class="imp-setdef" data-setdef={i.id}>{t(L, 'set.imp.hacer_predeterminado')}</button>}
+                        <button class="key-revoke" data-del={i.id}>{t(L, 'set.imp.eliminar')}</button>
+                    </div>
+                ))}
+            </div>
+            <p class="dev-note">{tf('set.imp.nota', { pct: String(ORG.ivaPct) })}</p>
         </div>
-
-        <div class="imp-list" id="impList">
-            {IMPUESTOS.length === 0 && (
-                <p class="imp-empty" id="impEmpty">{tf('set.imp.vacio', { pct: String(ORG.ivaPct) })}</p>
-            )}
-            {IMPUESTOS.map((i) => (
-                <div class="imp-row" data-id={i.id}>
-                    <span class={`imp-tipo ${i.tipo}`}>{i.tipoLabel}</span>
-                    <span class="imp-body">
-                        <span class="imp-name">{i.nombre}</span>
-                        <span class="imp-tasa editorial">{i.tasa}%</span>
-                    </span>
-                    {i.esDefault
-                        ? <span class="imp-default">{t(L, 'set.imp.predeterminado')}</span>
-                        : <button class="imp-setdef" data-setdef={i.id}>{t(L, 'set.imp.hacer_predeterminado')}</button>}
-                    <button class="key-revoke" data-del={i.id}>{t(L, 'set.imp.eliminar')}</button>
-                </div>
-            ))}
-        </div>
-        <p class="dev-note">{tf('set.imp.nota', { pct: String(ORG.ivaPct) })}</p>
     </div>
 
-    <div class="s-block" style="margin-top: 2rem;" data-i18n-crear-err={t(L, 'set.imp.no_se_pudo_crear')} data-i18n-actualizar-err={t(L, 'set.imp.no_se_pudo_actualizar')}
+    <div class="s-block" data-i18n-crear-err={t(L, 'set.imp.no_se_pudo_crear')} data-i18n-actualizar-err={t(L, 'set.imp.no_se_pudo_actualizar')}
         data-i18n-eliminar-titulo={t(L, 'set.imp.eliminar_titulo')} data-i18n-eliminar-body={t(L, 'set.imp.eliminar_body')}
         data-i18n-eliminar-confirm={t(L, 'set.imp.eliminar')} data-i18n-eliminar-err={t(L, 'set.imp.no_se_pudo_eliminar')}
         data-i18n-config-err={t(L, 'set.imp.no_se_pudo_guardar_config')} id="impMeta">
-        <div class="imp-head">
-            <h3>{t(L, 'set.imp.comportamiento')}</h3>
-        </div>
-        <div style="padding: 0.5rem 0 1rem;">
+        <h3>{t(L, 'set.imp.comportamiento')}</h3>
+        <div class="s-body">
             <label class="s-toggle">
                 <input type="checkbox" id="ivaIncluidoDefecto" checked={ORG.ivaIncluidoDefecto} />
                 <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
                 <span class="s-toggle-text">{t(L, 'set.imp.toggle_incluido')}</span>
             </label>
-            <p class="dev-note" style="margin-top: 0.8rem;">{t(L, 'set.imp.toggle_incluido_nota')}</p>
+            <p class="dev-note">{t(L, 'set.imp.toggle_incluido_nota')}</p>
         </div>
     </div>
 </SettingsShell>
@@ -97,12 +96,11 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
 </dialog>
 
 <style>
-    .imp-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--color-border); }
-    .imp-head h3 { margin: 0; padding: 0; border: none; }
+    .imp-actions-row { display: flex; justify-content: flex-end; }
     .dev-new { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 8px 14px; cursor: pointer; transition: transform 0.3s var(--ease-spring); }
     .dev-new:hover { transform: translateY(-1px); }
     .imp-empty { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; padding: 0.6rem 0; }
-    .imp-list { display: flex; flex-direction: column; }
+    .imp-list { display: flex; flex-direction: column; margin-top: -0.5rem; }
     .imp-row { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 1rem; padding: 1rem 0.3rem; border-bottom: 1px solid var(--color-border); }
     .imp-tipo { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; padding: 4px 9px; border-radius: 100px; white-space: nowrap; color: var(--color-blue-deep); background: rgba(10,25,47,0.08); }
     .imp-tipo.ret_iva, .imp-tipo.ret_isr { color: #b45309; background: rgba(245,158,11,0.12); }
@@ -115,7 +113,7 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
     .imp-setdef:hover { border-color: var(--color-blue-deep); color: var(--color-blue-deep); }
     .key-revoke { font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 12px; cursor: pointer; transition: border-color 0.25s, color 0.25s; }
     .key-revoke:hover { border-color: var(--color-danger); color: var(--color-danger); }
-    .dev-note { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.5; margin: 1.1rem 0 0; }
+    .dev-note { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.5; margin: 0; }
     .dev-note b { color: var(--color-text); }
 
     .kdlg { border: none; border-radius: 16px; padding: 0; max-width: 460px; width: 92vw; box-shadow: 0 40px 90px -30px rgba(10,25,47,0.5); }

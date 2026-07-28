@@ -10,7 +10,12 @@ export type CordWebhookEventType =
     | 'quote.viewed'
     | 'quote.approved'
     | 'quote.rejected'
+    | 'quote.updated'
+    | 'quote.expired'
+    | 'quote.deleted'
     | 'quote.paid'
+    | 'payment.partial'
+    | 'payment.failed'
     | 'invoice.stamped'
     | 'ping';
 
@@ -26,12 +31,50 @@ export interface CordWebhookQuoteData {
     mensaje?: string;
 }
 
-/** Payload real que Cord entrega — `{ event, created_at, data }`, NUNCA `{ type, created }`. */
-export interface CordWebhookEvent {
-    event: CordWebhookEventType;
-    created_at: string;
-    data: CordWebhookQuoteData;
+/**
+ * `data` de `payment.partial` — un anticipo/saldo/cuota se cobró SIN cubrir
+ * el total (si lo cubriera, el evento sería `quote.paid` en su lugar).
+ * Extiende el resumen normal de cotización con los campos del cobro.
+ */
+export interface CordWebhookPaymentPartialData extends CordWebhookQuoteData {
+    /** 'anticipo' | 'saldo' | 'cuota'. */
+    tipo: string;
+    /** Monto de ESTE cobro (no el total de la cotización). */
+    monto: number;
+    /** Solo > 0 cuando `tipo === 'cuota'`. */
+    numero_cuota: number;
+    /** Lo que sigue faltando por cobrar después de este pago. */
+    saldo_pendiente: number;
+    payment_method: string | null;
 }
+
+/**
+ * Payload real que Cord entrega — `{ id, event, created_at, data }`, NUNCA
+ * `{ type, created }`. Unión discriminada por `event`: todos los eventos
+ * comparten `CordWebhookQuoteData` salvo `payment.partial`, cuyo `data` trae
+ * campos adicionales del cobro — revisa `event` antes de leer `data` para que
+ * TypeScript te dé el tipo correcto.
+ */
+export type CordWebhookEvent =
+    | {
+        /**
+         * Identidad del evento (`evt_…`), estable a través de reintentos y de
+         * un replay manual desde Ajustes › Developers — el MISMO id que el
+         * header `X-Cord-Event-Id`/`Idempotency-Key`. Úsalo para deduplicar
+         * del lado del receptor (un reintento reenvía bytes idénticos,
+         * incluido este campo).
+         */
+        id: string;
+        event: Exclude<CordWebhookEventType, 'payment.partial'>;
+        created_at: string;
+        data: CordWebhookQuoteData;
+    }
+    | {
+        id: string;
+        event: 'payment.partial';
+        created_at: string;
+        data: CordWebhookPaymentPartialData;
+    };
 
 export interface ConstructEventOptions {
     /** Segundos de tolerancia para la firma V1 (con timestamp). Default 300. */
@@ -52,15 +95,24 @@ function hexEqual(expectedHex: string, actualHex: string): boolean {
 }
 
 // Header real: `X-Cord-Signature-V1: t=<unix>,v1=<hmac hex de "<t>.<body>">`.
-function parseV1Header(header: string): { t: string; v1: string } | null {
-    const parts: Record<string, string> = {};
+// Durante una rotación de secreto en curso, Cord manda DOS pares `v1=` (uno
+// por el secreto nuevo, uno por el viejo — ver rotateSecret/buildHeaders en
+// la app) para que un endpoint pueda actualizar su secreto sin una ventana de
+// entregas rechazadas. Se aceptan TODOS los `v1=` presentes; basta con que
+// UNO cuadre contra el secreto que tengas configurado.
+function parseV1Header(header: string): { t: string; v1s: string[] } | null {
+    let t: string | null = null;
+    const v1s: string[] = [];
     for (const kv of header.split(',')) {
         const eq = kv.indexOf('=');
         if (eq === -1) continue;
-        parts[kv.slice(0, eq).trim()] = kv.slice(eq + 1).trim();
+        const key = kv.slice(0, eq).trim();
+        const value = kv.slice(eq + 1).trim();
+        if (key === 't') t = value;
+        else if (key === 'v1') v1s.push(value);
     }
-    if (!parts.t || !parts.v1) return null;
-    return { t: parts.t, v1: parts.v1 };
+    if (!t || !v1s.length) return null;
+    return { t, v1s };
 }
 
 // Acepta el header legacy (string, retrocompatible una versión) o un mapa de
@@ -116,8 +168,10 @@ export class CordWebhooks {
             if (!parsed) throw new Error('Invalid X-Cord-Signature-V1 header format');
             const age = Math.abs(Math.floor(Date.now() / 1000) - parseInt(parsed.t, 10));
             if (age > tolerance) throw new Error('Webhook signature has expired (fuera de tolerancia)');
+            // Durante una rotación de secreto puede haber 2 `v1=` (nuevo + viejo)
+            // — basta con que UNO cuadre contra el secreto configurado aquí.
             const expected = createHmac('sha256', endpointSecret).update(`${parsed.t}.${payloadString}`).digest('hex');
-            if (!hexEqual(expected, parsed.v1)) throw new Error('Webhook signature mismatch');
+            if (!parsed.v1s.some((v1s) => hexEqual(expected, v1s))) throw new Error('Webhook signature mismatch');
             return JSON.parse(payloadString);
         }
 
@@ -178,8 +232,10 @@ export class CordWebhooks {
             if (!parsed) throw new Error('Invalid X-Cord-Signature-V1 header format');
             const age = Math.abs(Math.floor(Date.now() / 1000) - parseInt(parsed.t, 10));
             if (age > tolerance) throw new Error('Webhook signature has expired (fuera de tolerancia)');
+            // Durante una rotación de secreto puede haber 2 `v1=` (nuevo + viejo)
+            // — basta con que UNO cuadre contra el secreto configurado aquí.
             const expected = await webCryptoHmacHex(endpointSecret, `${parsed.t}.${payloadString}`);
-            if (!timingSafeHexEqual(expected, parsed.v1.toLowerCase())) throw new Error('Webhook signature mismatch');
+            if (!parsed.v1s.some((v1s) => timingSafeHexEqual(expected, v1s.toLowerCase()))) throw new Error('Webhook signature mismatch');
             return JSON.parse(payloadString);
         }
 

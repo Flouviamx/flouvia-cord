@@ -1,6 +1,6 @@
 ---
 title: "Cord Webhooks"
-description: "Build real-time integrations by reacting to events that occur in Cord."
+description: "Build real-time integrations by reacting to events that occur in Cord — durable delivery with retries, event identity, and zero-downtime secret rotation."
 ---
 
 <header class="content-header">
@@ -10,35 +10,159 @@ description: "Build real-time integrations by reacting to events that occur in C
 
 ## Why use Webhooks?
 
-Instead of your system (like an ERP or an automated Zapier/Make workflow) asking Cord every 5 minutes "has the client paid yet?", Cord's Webhooks "notify" your system at the exact moment the event occurs, sending an HTTP `POST` to your server.
+Instead of your system (an ERP, a Zapier/Make flow, or your own backend) asking Cord every 5 minutes "has the client paid yet?", Cord's webhooks notify your system the moment the event happens, with a signed `POST` to your server.
 
 Common use cases:
-- Automatically provision a software license when a quote enters the `pagada` (paid) state.
-- Send an internal Slack message when a quote is first `vista` (viewed) by the client.
-- Trigger the billing process in your ERP.
+- Automatically provision a software license when a quote enters the `paid` state.
+- Send an internal Slack message the first time a client `views` a quote.
+- Trigger your ERP's billing process once a CFDI is stamped.
 
-## Setting up an Endpoint
+## Setting up an endpoint
 
-To start receiving events, you must register your server's URL:
-1. Navigate to **Settings > Developers > Webhooks**.
-2. Click on **Add Endpoint**.
-3. Enter your public HTTPS URL. Unencrypted HTTP URLs are not allowed for security reasons.
-4. Select the subset of events you want to listen to (e.g., `cotizacion.enviada`, `cotizacion.pagada`).
+1. Turn on **Developer mode** in Settings (toggle at the top-right of the Settings index).
+2. Go to **Settings › API & Webhooks › Webhooks tab**.
+3. Click **Add endpoint**.
+4. Enter your URL — **it must be `https://`**; Cord rejects `http://` destinations, `localhost`, private/internal IPs, and `.internal`/`.local` hosts at creation time.
+5. Pick the subset of events you want (leaving all unchecked = you receive **all** of them). See the [full catalog](#event-catalog) below.
+6. Save your **secret** (`whsec_…`) — it's shown in clear text **once**. After that it's masked.
 
-## Security and Signatures (HMAC-SHA256)
+<Callout type="info">
+Each plan has an endpoint limit (Free: 1 · Starter: 3 · Professional: 10 · Scale: 25 ·
+Developer: 100). Webhooks are NOT gated behind a paid plan — every plan, including free,
+can use them.
+</Callout>
 
-Because your endpoint must be public on the Internet, anyone could send you fake requests trying to trick your system. 
+## The payload
 
-To prevent this, Cord cryptographically signs every payload sent to your server using an **Endpoint Secret**.
+Every delivery is a `POST` with `Content-Type: application/json` and this body:
 
-### Verifying the signature on your server
+```json
+{
+  "id": "evt_5f2a1c9e8b3d4a7f6e1c0d9b8a7f6e5c",
+  "event": "quote.paid",
+  "created_at": "2026-07-27T18:32:04.000Z",
+  "data": {
+    "id": "b3f1...",
+    "folio": "COT-0148",
+    "status": "paid",
+    "total": 45200.00,
+    "cliente": "Distribuidora El Zarco",
+    "link_publico": "https://cordhq.app/q/6f2a...",
+    "mensaje": "Only present on the ping test event"
+  }
+}
+```
 
-1. Cord includes an `X-Cord-Signature` header in the `POST` request.
-2. You must use your Endpoint Secret to calculate the HMAC-SHA256 hash of the exact request body.
-3. Compare the hash you calculated with the one Cord sent. If they match, the request is authentically from Cord.
+`id` is the **event's** identity, not the quote's — it stays the same across retries and a manual replay (see [event identity & idempotency](#event-identity--idempotency)). `data.id` is the quote's internal id.
 
-## Retries and Fault Tolerance
+## Signing and security
 
-If your destination server is down or returns an error code (anything other than `2xx`), Cord will consider the delivery as failed.
+Cord signs every delivery with two headers. Use the SDK (`@flouviahq/elements/server`, see the
+[Server SDK guide](/docs/desarrolladores/herramientas/elements/server)) so you don't have to
+implement verification by hand:
 
-You can navigate to the **Delivery Log** inside the Webhooks Settings to examine the request body that failed and the exact response your server gave (useful for debugging). There you can also click "Retry Delivery" manually.
+```ts
+import { CordAPI } from '@flouviahq/elements/server';
+const cord = new CordAPI(process.env.CORD_SECRET_KEY!);
+
+const event = cord.webhooks.constructEvent(
+  await req.text(),
+  req.headers,
+  process.env.CORD_WEBHOOK_SECRET!,
+);
+```
+
+If you'd rather verify by hand:
+
+| Header | Content | Notes |
+|---|---|---|
+| `X-Cord-Signature-V1` | `t=<unix>,v1=<hmac_sha256(secret, "<t>.<body>")>` | **Recommended.** Includes a timestamp — real replay protection. May carry **two** `v1=` pairs during a secret rotation (see below); accept if either one matches. |
+| `X-Cord-Signature` | `sha256=<hmac_sha256(secret, body)>` | Legacy, no timestamp. Still sent on every delivery for compatibility; use V1 if you can. |
+| `X-Cord-Event-Id` | `evt_…` | Same value as the body's `id` field. |
+| `X-Cord-Delivery-Id` | uuid | This **attempt's** id — changes on every retry/replay, unlike `X-Cord-Event-Id`. |
+| `X-Cord-Attempt` | number | 1-indexed. |
+| `Idempotency-Key` | `evt_…` | Repeats `X-Cord-Event-Id` — several server frameworks read it from there for free. |
+
+<Callout type="warning">
+Never compare signatures with plain `===` in production — use a constant-time comparison (the
+SDK already does). A regular `!==` can leak information via a timing attack.
+</Callout>
+
+## Event identity & idempotency
+
+Every logical event has a stable `id` (`evt_…`), identical in the body and in `X-Cord-Event-Id`/`Idempotency-Key`. It's the **same** value:
+
+- Across every automatic retry of the same event (see the next section).
+- On a manual replay from Settings ("Retry" in the delivery log) — the payload is resent **byte-for-byte**, `id` included.
+
+Since retries and replays can make your endpoint receive the same event more than once, your handler needs to be **idempotent**: store the `id`s you've already processed (even a simple table with a `unique` constraint works) and silently skip duplicates before applying side effects (charging a card, sending an email, etc.).
+
+## Retries and guaranteed delivery
+
+Cord enqueues every event **before** attempting delivery — if your endpoint is down, the event isn't lost: it follows an exponential-backoff retry schedule for up to **11 attempts over ~3.6 days**:
+
+| Attempt | Wait since the previous one |
+|---|---|
+| 1 | immediate |
+| 2 | ~10 s |
+| 3 | ~1 min |
+| 4 | ~5 min |
+| 5 | ~30 min |
+| 6 | ~2 h |
+| 7 | ~5 h |
+| 8 | ~10 h |
+| 9–11 | ~1 day |
+
+(With ±20% jitter so many endpoints that went down at the same time don't all get retried in the exact same second.) Any non-`2xx` response, a timeout, or a network error counts as a failure and schedules the next attempt. A `3xx` (redirect) is **never followed** — it's treated as a failure; if your endpoint moved, update the URL in Settings instead of leaving a redirect in place.
+
+Delivery is **at-least-once**, not exactly-once — which is exactly why deduplicating by `id` matters (see above).
+
+## Endpoint health
+
+Cord tracks each endpoint's failure streak (only events that **exhausted** their full retry schedule count, or a failed manual test/replay — never an attempt that still has retries ahead of it):
+
+- **3 failures in a row** → you get a warning email (at most one every 24h).
+- **5 failures in a row** → the endpoint is **automatically disabled** (stops receiving new events) and you get an email explaining why. Events still waiting to retry against that endpoint get canceled — they don't pile up indefinitely against a dead destination.
+
+Once you've fixed your endpoint, from Settings you can:
+- **Reactivate** — start receiving new events again from now on.
+- **Reactivate & retry** — also requeues whatever failed in the **last 24 hours** (never the full backlog, so you don't get bombarded with old events all at once).
+
+## Secret rotation
+
+You can rotate an endpoint's secret without missing a single delivery. From Settings, click **"Rotate secret"**, pick an overlap window (1h / 24h / 72h), and confirm — you'll see the new secret in clear text once.
+
+During the window, Cord signs every delivery with **both** secrets at once:
+
+```
+X-Cord-Signature-V1: t=1732650000,v1=<hmac with the NEW secret>,v1=<hmac with the OLD secret>
+```
+
+That means you can update your `CORD_WEBHOOK_SECRET` at any point within the window — before or after rotating on Cord's side — without a single delivery getting rejected. The SDK already accepts whichever `v1=` matches. If you verify by hand and only read the first `v1=` you find, you're still covered (it's the newest one). Once the window closes, Cord stops sending the old secret.
+
+## Event catalog
+
+| Event | Fires when… |
+|---|---|
+| `quote.sent` | The seller sends the quote to the client. |
+| `quote.viewed` | The client opens the public link for the first time. |
+| `quote.approved` | The client approves (fully or partially) the quote. |
+| `quote.rejected` | The client rejects it. |
+| `quote.updated` | The seller edits and resends it ("Modify and resend" from the detail view). |
+| `quote.expired` | Its expiration date passed without a client decision (it was `sent`/`viewed`). |
+| `quote.deleted` | A draft is deleted (only applies to quotes that were never sent). |
+| `quote.paid` | Full payment is received (a simple charge, or the last pending charge of a deposit/installment plan). |
+| `payment.partial` | A SINGLE partial charge is received (deposit, balance, or one installment) without the quote being fully paid yet. |
+| `payment.failed` | A recurring retainer/subscription charge fails. |
+| `invoice.stamped` | The CFDI is stamped. |
+| `ping` | Only shows up when using "Send test" from Settings — never fired by a real event. |
+
+> **Note:** `payment.partial` carries extra fields on `data` that other events don't have:
+> `tipo` (`anticipo`\|`saldo`\|`cuota`), `monto`, `numero_cuota`, `saldo_pendiente`, and
+> `payment_method`, in addition to the normal quote summary (folio, client, total, link). If
+> you use the Server SDK in TypeScript, `CordWebhookEvent` is a discriminated union on
+> `event` — comparing `event === 'payment.partial'` narrows the type of `data` for you.
+
+## Delivery log and retention
+
+Each endpoint in Settings has an expandable log with the outcome of every attempt (status, duration, your server's response) and a "Retry" button per row. The log is kept for **30 days**; events that ultimately failed for good are kept for **90 days** (so "Retry" keeps working longer in that case). Don't use Cord's log as long-term storage of what was sent — persist whatever you need to keep in your own system as you process each delivery.

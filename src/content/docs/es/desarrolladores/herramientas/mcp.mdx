@@ -1,6 +1,6 @@
 ---
 title: "Cord MCP Server"
-description: "Conecta clientes de IA como Claude y Cursor al sistema financiero de tu empresa."
+description: "Conecta clientes de IA como Claude y Cursor al sistema financiero de tu empresa — 7 herramientas, paginación real, llamadas seguras de repetir y actividad medida como el resto de la API."
 ---
 
 <header class="content-header">
@@ -10,29 +10,119 @@ description: "Conecta clientes de IA como Claude y Cursor al sistema financiero 
 
 ## ¿Qué es MCP?
 
-El Model Context Protocol (MCP) es un estándar universal que permite a los asistentes de Inteligencia Artificial conectarse a fuentes de datos seguras. 
+El Model Context Protocol (MCP) es un estándar universal que permite a los asistentes de Inteligencia Artificial conectarse a fuentes de datos seguras.
 
 Al configurar el Servidor MCP de Cord, empoderas a agentes como Claude o asistentes integrados en IDEs (como Cursor) para interactuar orgánicamente con tu empresa.
 
 **Preguntas que puedes hacer a la IA una vez conectada:**
 - *"Extrae del PDF adjunto los requerimientos y genera una cotización en Cord para este cliente."*
 - *"Revisa las cotizaciones vencidas de los últimos 30 días y redáctame correos de cobranza amigables."*
+- *"Busca al cliente Distribuidora El Zarco y arma un borrador con estas 3 líneas."*
 
-## Cómo Configurar la Conexión
+## Cómo configurar la conexión
 
-La autenticación para tu cliente de IA se realiza utilizando tu **Clave de API** estándar de Cord. 
+La autenticación para tu cliente de IA se realiza utilizando tu **Clave de API** estándar de Cord (`sk_live_…` / `sk_test_…`) — la misma que usa la API REST.
 
-1. Navega a **Ajustes > Desarrolladores > MCP** en la interfaz de Cord.
-2. Genera una Clave de API si no tienes una.
+1. Navega a **Ajustes › Desarrolladores › MCP** en la interfaz de Cord.
+2. Genera una Clave de API si no tienes una (necesitas scope `write` para usar `crear_cotizacion_borrador`; `read` alcanza para las demás).
 3. Copia la configuración JSON del cliente MCP proporcionada en pantalla.
 4. Pega esta configuración en la ruta local correspondiente a tu cliente (por ejemplo, el archivo `claude_desktop_config.json` si usas la aplicación Claude for Desktop).
 
+<Callout type="info">
+Las llaves **Publishable** (`pk_…`, pensadas para vivir expuestas en el navegador) no pueden
+usarse con MCP — solo cubren crear cotizaciones y leer el catálogo vía la API REST. Usa una
+llave **Secret** desde tu backend o tu cliente de escritorio.
+</Callout>
+
+## Dos formas de conectarte
+
+**Streamable HTTP (recomendado)** — `POST https://cordhq.app/api/mcp` con el header
+`Authorization: Bearer sk_live_…`. Sin sesión: cada mensaje JSON-RPC es una petición HTTP
+independiente. Es lo que espera la mayoría de los clientes MCP modernos.
+
+**HTTP + SSE (legacy, se mantiene para clientes antiguos)** — `GET
+https://cordhq.app/api/mcp/sse` abre una conexión de larga duración y devuelve dónde mandar los
+mensajes (`POST /api/mcp/message?sessionId=…`). Cada mensaje POST debe llevar el **mismo**
+`Authorization: Bearer` con el que abriste la sesión — no basta con el `sessionId` de la URL
+(viaja en texto plano y puede quedar expuesto en logs de proxies intermedios), y la llave debe
+pertenecer a la misma organización que abrió la sesión.
+
+## Herramientas disponibles
+
+| Tool | Qué hace | Permiso |
+|---|---|---|
+| `listar_cotizaciones` | Lista cotizaciones, con filtro opcional por estado. | lectura |
+| `detalle_cotizacion` | Detalle completo de una cotización: líneas, totales, línea de tiempo. | lectura |
+| `cartera_vencida` | Cuentas por cobrar VENCIDAS: monto, aging, detalle por cliente. | lectura |
+| `resumen_negocio` | KPIs, embudo de conversión, pronóstico de pipeline, uso del plan. | lectura |
+| `buscar_cliente` | Busca en el directorio por empresa/contacto/RFC/correo. Paginado. | lectura |
+| `listar_productos` | Catálogo de productos (id, SKU, nombre, unidad, precio de lista). Paginado. | lectura |
+| `crear_cotizacion_borrador` | Crea una cotización en BORRADOR (no la envía). Idempotente si mandas `idempotency_key`. | **escritura** |
+
+Cada tool declara sus anotaciones estándar de MCP (`readOnlyHint`, `idempotentHint`,
+`destructiveHint`) en `tools/list` — un cliente MCP puede usarlas para decidir qué llamadas
+auto-aprobar sin preguntarle al usuario cada vez. Las 6 de lectura son `readOnlyHint: true`;
+`crear_cotizacion_borrador` es `readOnlyHint: false` y, honestamente, `idempotentHint: false`
+por default (solo es segura de repetir si le mandas `idempotency_key`, ver abajo).
+
+## Paginación
+
+`buscar_cliente` y `listar_productos` devuelven páginas, no la tabla completa:
+
+```json
+{
+  "items": [ { "id": "…", "empresa": "Distribuidora El Zarco" } ],
+  "total": 47,
+  "has_more": true,
+  "next_cursor": "20"
+}
+```
+
+Si `has_more` viene en `true`, vuelve a llamar la misma tool pasando `cursor: next_cursor` para
+la siguiente página. `next_cursor` viene en `null` cuando ya no hay más resultados.
+
+<Callout type="info">
+`listar_productos` **nunca** incluye el costo/margen interno del producto — solo precio de
+lista, SKU, nombre y unidad. Esa columna es intencionalmente invisible desde una API key,
+tenga o no permiso de escritura.
+</Callout>
+
+## Llamadas seguras de repetir (idempotencia)
+
+`crear_cotizacion_borrador` acepta un `idempotency_key` opcional — un identificador único que
+**tú generas** (un UUID, por ejemplo). Si tu cliente MCP necesita reintentar la llamada porque
+no recibió respuesta a tiempo (timeout de red), repite el MISMO `idempotency_key`: Cord te
+devuelve la cotización que ya se creó la primera vez en vez de crear un borrador duplicado.
+
+```json
+{
+  "name": "crear_cotizacion_borrador",
+  "arguments": {
+    "idempotency_key": "a1b2c3d4-…",
+    "cliente_id": "…",
+    "items": [{ "descripcion": "Instalación", "cantidad": 1, "precio_unitario": 4500 }]
+  }
+}
+```
+
+Sin `idempotency_key`, la tool sigue funcionando normal — cada llamada crea un borrador nuevo
+(no es un campo obligatorio, solo recomendado si tu cliente reintenta automáticamente).
+
 ## Herramientas Seguras (Tools)
 
-Cord expone de forma controlada "Herramientas" (Tools) hacia la IA. Esto significa que la IA no tiene acceso crudo e ilimitado a tu base de datos; la IA únicamente puede invocar los endpoints que Cord ha aprobado y categorizado, heredando los permisos vinculados a la Clave de API.
+Cord expone de forma controlada "Herramientas" (Tools) hacia la IA. Esto significa que la IA no
+tiene acceso crudo e ilimitado a tu base de datos; la IA únicamente puede invocar los endpoints
+que Cord ha aprobado y categorizado, heredando los permisos vinculados a la Clave de API.
 
 <Callout type="warning">
 **Importante:**
 Las reglas de negocio se aplican estrictamente. Si la IA intenta aplicar un descuento del 150% al construir una cotización, la API rechazará la solicitud devolviendo un código `400 invalid_request` para proteger tu negocio.
-
 </Callout>
+
+## Límites, medición y actividad
+
+Cada llamada real (no las notificaciones de protocolo como `notifications/initialized`) cuenta
+igual que una llamada a la API REST: contra tu cuota de uso del plan, contra el límite de
+peticiones por llave (600/min), y queda en el log de **Ajustes › Desarrolladores › Actividad**
+con la tool que se llamó (ej. `/mcp/tools/call:listar_productos`) — así puedes ver exactamente
+qué está haciendo tu agente, con qué llave y cuándo.

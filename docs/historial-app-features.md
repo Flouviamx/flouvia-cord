@@ -6,6 +6,22 @@
 
 ---
 
+✅ **Exportar catálogo/clientes a CSV — cableado real (jul 2026)** — en Ajustes › Datos y
+   privacidad, el botón "Catálogo y clientes (CSV)" era un placeholder estático ("Próximamente",
+   sin link) mientras que "Descargar todo (JSON)" sí funcionaba (`/api/org/export`). André lo
+   reportó al ver la pantalla. Se construyó el export real:
+   • **`GET /api/productos/export`** y **`GET /api/clientes/export`** (nuevos) — devuelven CSV
+     con las MISMAS columnas que sus importadores respectivos (`sku,nombre,unidad,precio,activo`
+     y `empresa,contacto,email,telefono,rfc,terminos,limite`), así un archivo exportado se puede
+     reimportar sin remapear columnas. Gateados por los permisos `productos`/`clientes`
+     (`requirePerm`), BOM UTF-8 + CRLF para abrir limpio en Excel. Helper compartido
+     `src/lib/csv.ts` (`csvCell` escapa comillas/comas, `csvFilename` arma el nombre con fecha).
+   • **UI (`/app/ajustes/datos`):** el placeholder `.datos-soon` se reemplazó por dos botones
+     ghost ("Productos" / "Clientes"), cada uno descarga su CSV vía link `download`. Claves i18n
+     nuevas `set.datos.csv_productos`/`csv_clientes` (ES/EN); `set.datos.proximamente` queda sin
+     uso en esta pantalla (se deja en el diccionario por si se reutiliza en otro lado).
+   • Verificado con `npm run build` limpio.
+
 ✅ **i18n de la app interna — COMPLETADO, todo `/app/**` traducido (jul 2026)** —
    André pidió traducir la app al inglés. Se diseñó un sistema de i18n propio (sin librería
    externa), **distinto de `src/i18n/ui.ts`** (que es solo para la landing pública con rutas

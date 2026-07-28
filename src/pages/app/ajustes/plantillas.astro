@@ -20,42 +20,46 @@ const VARS = ['{cliente}', '{empresa}', '{folio}', '{total}', '{link}', '{vigenc
     intro={t(L, 'set.pl.intro')}>
 
     <div class="s-block">
-        <div class="pl-head">
-            <h3>{t(L, 'set.pl.tus_plantillas')}</h3>
-            <button class="pl-new" id="plNew">{t(L, 'set.pl.nueva')}</button>
-        </div>
+        <h3>{t(L, 'set.pl.tus_plantillas')}</h3>
+        <div class="s-body">
+            <div class="pl-actions-row">
+                <button class="pl-new" id="plNew">{t(L, 'set.pl.nueva')}</button>
+            </div>
 
-        <div class="pl-list" id="plList"
-            data-i18n-nueva={t(L, 'set.pl.dlg_nueva')} data-i18n-editar={t(L, 'set.pl.dlg_editar')}
-            data-i18n-eliminar-titulo={t(L, 'set.pl.eliminar_titulo')} data-i18n-eliminar-body={t(L, 'set.pl.eliminar_body')}
-            data-i18n-eliminar-confirm={t(L, 'set.pl.eliminar')} data-i18n-eliminar-err={t(L, 'set.pl.no_se_pudo_eliminar')}
-            data-i18n-guardar-err={t(L, 'set.pl.no_se_pudo_guardar')}>
-            {PLANTILLAS.length === 0 && (
-                <p class="pl-empty">{t(L, 'set.pl.vacio')}</p>
-            )}
-            {PLANTILLAS.map((p) => (
-                <div class="pl-row" data-id={p.id} data-nombre={p.nombre} data-canal={p.canal} data-cuerpo={p.cuerpo}>
-                    <span class="pl-info">
-                        <span class="pl-name">{p.nombre}
-                            <span class="pl-canal" style={`color:${CANAL_META[p.canal]?.color}; background:${CANAL_META[p.canal]?.bg}`}>{CANAL_META[p.canal]?.label ?? p.canal}</span>
+            <div class="pl-list" id="plList"
+                data-i18n-nueva={t(L, 'set.pl.dlg_nueva')} data-i18n-editar={t(L, 'set.pl.dlg_editar')}
+                data-i18n-eliminar-titulo={t(L, 'set.pl.eliminar_titulo')} data-i18n-eliminar-body={t(L, 'set.pl.eliminar_body')}
+                data-i18n-eliminar-confirm={t(L, 'set.pl.eliminar')} data-i18n-eliminar-err={t(L, 'set.pl.no_se_pudo_eliminar')}
+                data-i18n-guardar-err={t(L, 'set.pl.no_se_pudo_guardar')}>
+                {PLANTILLAS.length === 0 && (
+                    <p class="pl-empty">{t(L, 'set.pl.vacio')}</p>
+                )}
+                {PLANTILLAS.map((p) => (
+                    <div class="pl-row" data-id={p.id} data-nombre={p.nombre} data-canal={p.canal} data-cuerpo={p.cuerpo}>
+                        <span class="pl-info">
+                            <span class="pl-name">{p.nombre}
+                                <span class="pl-canal" style={`color:${CANAL_META[p.canal]?.color}; background:${CANAL_META[p.canal]?.bg}`}>{CANAL_META[p.canal]?.label ?? p.canal}</span>
+                            </span>
+                            <span class="pl-body">{p.cuerpo}</span>
                         </span>
-                        <span class="pl-body">{p.cuerpo}</span>
-                    </span>
-                    <span class="pl-actions">
-                        <button class="pl-edit" data-edit={p.id}>{t(L, 'set.pl.editar')}</button>
-                        <button class="pl-del" data-del={p.id}>{t(L, 'set.pl.eliminar')}</button>
-                    </span>
-                </div>
-            ))}
+                        <span class="pl-actions">
+                            <button class="pl-edit" data-edit={p.id}>{t(L, 'set.pl.editar')}</button>
+                            <button class="pl-del" data-del={p.id}>{t(L, 'set.pl.eliminar')}</button>
+                        </span>
+                    </div>
+                ))}
+            </div>
         </div>
     </div>
 
     <div class="s-block">
         <h3>{t(L, 'set.pl.variables')}</h3>
-        <div class="pl-vars">
-            {VARS.map((v) => <code class="pl-var">{v}</code>)}
+        <div class="s-body">
+            <div class="pl-vars">
+                {VARS.map((v) => <code class="pl-var">{v}</code>)}
+            </div>
+            <p class="pl-note">{t(L, 'set.pl.variables_nota')}</p>
         </div>
-        <p class="pl-note">{t(L, 'set.pl.variables_nota')}</p>
     </div>
 </SettingsShell>
 
@@ -92,13 +96,12 @@ const VARS = ['{cliente}', '{empresa}', '{folio}', '{total}', '{link}', '{vigenc
 </dialog>
 
 <style>
-    .pl-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--color-border); }
-    .pl-head h3 { margin: 0; padding: 0; border: none; }
+    .pl-actions-row { display: flex; justify-content: flex-end; }
     .pl-new { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 8px 14px; cursor: pointer; transition: transform 0.3s var(--ease-spring); }
     .pl-new:hover { transform: translateY(-1px); }
     .pl-empty { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; padding: 0.6rem 0; }
 
-    .pl-list { display: flex; flex-direction: column; }
+    .pl-list { display: flex; flex-direction: column; margin-top: -0.5rem; }
     .pl-row { display: flex; align-items: center; gap: 1rem; padding: 1rem 0.3rem; border-bottom: 1px solid var(--color-border); }
     .pl-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
     .pl-name { font-size: 0.9rem; font-weight: 600; color: var(--color-text); display: flex; align-items: center; gap: 8px; }
@@ -111,11 +114,11 @@ const VARS = ['{cliente}', '{empresa}', '{folio}', '{total}', '{link}', '{vigenc
     .pl-del { color: var(--color-text-muted); }
     .pl-del:hover { border-color: var(--color-danger); color: var(--color-danger); }
 
-    .pl-vars { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.3rem; }
+    .pl-vars { display: flex; flex-wrap: wrap; gap: 0.5rem; }
     .pl-var { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.74rem; color: var(--color-blue-deep); background: rgba(10,25,47,0.06); padding: 4px 9px; border-radius: 6px; border: none; }
     .pl-var-btn { cursor: pointer; transition: background 0.2s; }
     .pl-var-btn:hover { background: rgba(10,25,47,0.12); }
-    .pl-note { font-size: 0.78rem; color: var(--color-text-muted); margin: 0.8rem 0 0; }
+    .pl-note { font-size: 0.78rem; color: var(--color-text-muted); margin: 0; }
 
     .pldlg { border: none; border-radius: 16px; padding: 0; max-width: 520px; width: 94vw; box-shadow: 0 40px 90px -30px rgba(10,25,47,0.5); }
     .pldlg::backdrop { background: rgba(10,25,47,0.45); backdrop-filter: blur(3px); }

@@ -1,6 +1,6 @@
 ---
 title: "Cord MCP Server"
-description: "Connect AI clients like Claude and Cursor to your company's financial system."
+description: "Connect AI clients like Claude and Cursor to your company's financial system — 7 tools, real pagination, safe-to-retry calls, and activity metered like the rest of the API."
 ---
 
 <header class="content-header">
@@ -10,22 +10,103 @@ description: "Connect AI clients like Claude and Cursor to your company's financ
 
 ## What is MCP?
 
-The Model Context Protocol (MCP) is a universal standard that allows Artificial Intelligence assistants to connect to secure data sources. 
+The Model Context Protocol (MCP) is a universal standard that allows Artificial Intelligence assistants to connect to secure data sources.
 
 By configuring the Cord MCP Server, you empower agents like Claude or IDE-integrated assistants (like Cursor) to organically interact with your company.
 
 **Questions you can ask the AI once connected:**
 - *"Extract the requirements from the attached PDF and generate a quote in Cord for this client."*
 - *"Review the overdue quotes from the last 30 days and draft friendly collection emails for me."*
+- *"Look up the client Distribuidora El Zarco and draft a quote with these 3 line items."*
 
-## How to Configure the Connection
+## How to configure the connection
 
-Authentication for your AI client is performed using your standard Cord **API Key**. 
+Authentication for your AI client is performed using your standard Cord **API Key** (`sk_live_…` / `sk_test_…`) — the same one the REST API uses.
 
-1. Navigate to **Settings > Developers > MCP** in the Cord interface.
-2. Generate an API Key if you don't have one.
+1. Navigate to **Settings › Developers › MCP** in the Cord interface.
+2. Generate an API Key if you don't have one (you need `write` scope to use `crear_cotizacion_borrador`; `read` is enough for the rest).
 3. Copy the MCP client JSON configuration provided on the screen.
 4. Paste this configuration into the corresponding local path for your client (e.g., the `claude_desktop_config.json` file if you use the Claude for Desktop app).
+
+<Callout type="info">
+**Publishable** keys (`pk_…`, meant to live exposed in the browser) can't be used with MCP —
+they only cover creating quotes and reading the catalog via the REST API. Use a **Secret** key
+from your backend or desktop client instead.
+</Callout>
+
+## Two ways to connect
+
+**Streamable HTTP (recommended)** — `POST https://cordhq.app/api/mcp` with the header
+`Authorization: Bearer sk_live_…`. Sessionless: every JSON-RPC message is an independent HTTP
+request. This is what most modern MCP clients expect.
+
+**HTTP + SSE (legacy, kept for older clients)** — `GET https://cordhq.app/api/mcp/sse` opens a
+long-lived connection and returns where to send messages (`POST
+/api/mcp/message?sessionId=…`). Every POST message must carry the **same**
+`Authorization: Bearer` used to open the session — the `sessionId` in the URL alone isn't
+enough (it travels in plain text and can end up exposed in intermediate proxy logs), and the
+key must belong to the same organization that opened the session.
+
+## Available tools
+
+| Tool | What it does | Permission |
+|---|---|---|
+| `listar_cotizaciones` | Lists quotes, with an optional status filter. | read |
+| `detalle_cotizacion` | Full detail of a quote: line items, totals, timeline. | read |
+| `cartera_vencida` | OVERDUE accounts receivable: amount, aging, per-client detail. | read |
+| `resumen_negocio` | KPIs, conversion funnel, pipeline forecast, plan usage. | read |
+| `buscar_cliente` | Searches the directory by company/contact/RFC/email. Paginated. | read |
+| `listar_productos` | Product catalog (id, SKU, name, unit, list price). Paginated. | read |
+| `crear_cotizacion_borrador` | Creates a DRAFT quote (doesn't send it). Idempotent if you pass `idempotency_key`. | **write** |
+
+Every tool declares standard MCP annotations (`readOnlyHint`, `idempotentHint`,
+`destructiveHint`) in `tools/list` — an MCP client can use these to decide which calls to
+auto-approve without asking the user every time. The 6 read tools are `readOnlyHint: true`;
+`crear_cotizacion_borrador` is `readOnlyHint: false` and, honestly, `idempotentHint: false` by
+default (it's only safe to retry if you pass `idempotency_key`, see below).
+
+## Pagination
+
+`buscar_cliente` and `listar_productos` return pages, not the whole table:
+
+```json
+{
+  "items": [ { "id": "…", "empresa": "Distribuidora El Zarco" } ],
+  "total": 47,
+  "has_more": true,
+  "next_cursor": "20"
+}
+```
+
+If `has_more` comes back `true`, call the same tool again passing `cursor: next_cursor` for the
+next page. `next_cursor` is `null` once there are no more results.
+
+<Callout type="info">
+`listar_productos` **never** includes a product's internal cost/margin — only list price, SKU,
+name, and unit. That column is intentionally invisible from an API key, whether it has write
+permission or not.
+</Callout>
+
+## Safe-to-retry calls (idempotency)
+
+`crear_cotizacion_borrador` accepts an optional `idempotency_key` — a unique identifier **you
+generate** (a UUID, for example). If your MCP client needs to retry the call because it didn't
+get a response in time (network timeout), repeat the SAME `idempotency_key`: Cord returns the
+quote that was already created the first time instead of creating a duplicate draft.
+
+```json
+{
+  "name": "crear_cotizacion_borrador",
+  "arguments": {
+    "idempotency_key": "a1b2c3d4-…",
+    "cliente_id": "…",
+    "items": [{ "descripcion": "Installation", "cantidad": 1, "precio_unitario": 4500 }]
+  }
+}
+```
+
+Without `idempotency_key`, the tool still works normally — every call creates a new draft
+(it's not a required field, just recommended if your client retries automatically).
 
 ## Secure Tools
 
@@ -34,5 +115,12 @@ Cord exposes "Tools" to the AI in a controlled manner. This means the AI does no
 <Callout type="warning">
 **Important:**
 Business rules are strictly applied. If the AI attempts to apply a 150% discount when building a quote, the API will reject the request by returning a `400 invalid_request` code to protect your business.
-
 </Callout>
+
+## Limits, metering, and activity
+
+Every real call (not protocol notifications like `notifications/initialized`) counts just like
+a REST API call: against your plan's usage quota, against the per-key rate limit (600/min), and
+shows up in **Settings › Developers › Activity** with the tool that was called (e.g.
+`/mcp/tools/call:listar_productos`) — so you can see exactly what your agent is doing, with
+which key, and when.

@@ -158,6 +158,13 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
  * handler recibe el contexto de Astro + el `auth` ya validado.
  *
  *   export const GET = withApiAuth('read', async (ctx, auth) => { ... });
+ *
+ * Compone los 3 helpers exportados abajo (rate-limit por llave, medición de
+ * uso, bitácora) — son la MISMA lógica que usa directamente MCP (`/api/mcp`,
+ * `/api/mcp/sse`, `/api/mcp/message`), que no puede usar este wrapper porque
+ * necesita procesar JSON-RPC/sesiones antes de decidir si hubo trabajo
+ * facturable. Un solo lugar para las 3 piezas evita que MCP y /api/v1
+ * diverjan en cómo miden/limitan/auditan.
  */
 export function withApiAuth(
     need: ApiScope,
@@ -166,13 +173,9 @@ export function withApiAuth(
     return async (ctx) => {
         const auth = await authApiKey(ctx.request, need);
         if (auth instanceof Response) return auth;
-        // Rate limit por LLAVE: las pk_ (frontend) son más restringidas para evitar abusos.
-        const maxReqs = auth.type === 'publishable' ? 120 : 600; // pk_ 120/min vs sk_ 600/min
-        const keyRl = await rateLimit(`apikey:${auth.keyId}`, maxReqs, 60);
-        if (!keyRl.ok) return tooMany(keyRl.retryAfter);
-        // Mide la llamada a la API pública (solo llaves en vivo se facturan).
-        // Fire-and-forget: reportUsage nunca lanza y no debe frenar la respuesta.
-        if (auth.mode === 'live') void reportUsage(auth.orgId, 'api', 1);
+        const limited = await checkApiKeyRateLimit(auth);
+        if (limited) return limited;
+        meterApiUsage(auth);
         // userId null → el carril Clerk queda inactivo; orgId manda la tenancy.
         const t0 = Date.now();
         const res = await reqContext.run({ userId: null, orgId: auth.orgId }, () => handler(ctx, auth));
@@ -182,12 +185,31 @@ export function withApiAuth(
     };
 }
 
+// Rate limit por LLAVE: las pk_ (frontend) son más restringidas para evitar
+// abusos. Devuelve un 429 listo para retornar, o null si puede seguir.
+export async function checkApiKeyRateLimit(auth: ApiAuth): Promise<Response | null> {
+    const maxReqs = auth.type === 'publishable' ? 120 : 600; // pk_ 120/min vs sk_ 600/min
+    const keyRl = await rateLimit(`apikey:${auth.keyId}`, maxReqs, 60);
+    if (!keyRl.ok) return tooMany(keyRl.retryAfter);
+    return null;
+}
+
+// Mide la llamada a la API pública (solo llaves en vivo se facturan).
+// Fire-and-forget: reportUsage nunca lanza y no debe frenar la respuesta.
+export function meterApiUsage(auth: ApiAuth): void {
+    if (auth.mode === 'live') void reportUsage(auth.orgId, 'api', 1);
+}
+
 // Registra la llamada en api_requests para el "Log de actividad" de Developers.
 // Silencioso ante cualquier error (tabla no migrada, fallo de red a Neon, …).
-async function logApiRequest(auth: ApiAuth, request: Request, status: number, ms: number): Promise<void> {
+// `routeOverride` deja que un caller que no vive en /api/v1 (MCP: 3 rutas
+// físicas distintas pero N métodos JSON-RPC posibles) reporte una ruta
+// LEGIBLE en el log en vez del pathname físico repetido siempre igual — ej.
+// `/mcp/tools/call:listar_productos` en vez de solo `/mcp`.
+export async function logApiRequest(auth: ApiAuth, request: Request, status: number, ms: number, routeOverride?: string): Promise<void> {
     try {
         const url = new URL(request.url);
-        const ruta = url.pathname.replace(/^\/api/, '') || '/';
+        const ruta = routeOverride || (url.pathname.replace(/^\/api/, '') || '/');
         const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || null;
         await sql`
             insert into api_requests (org_id, key_id, metodo, ruta, status, duracion_ms, mode, ip)

@@ -1,16 +1,18 @@
 // src/lib/webhooks.ts
 // Webhooks SALIENTES: cuando algo le pasa a una cotización (enviada, vista,
 // aprobada, rechazada, pagada, facturada), notificamos a las URLs que la org
-// registró en Ajustes › Developers. La entrega es POST JSON firmado con
-// HMAC-sha256 para que el receptor verifique el origen.
+// registró en Ajustes › Developers. La entrega real (firma, reintentos,
+// durabilidad) vive en src/lib/webhook-delivery.ts — este archivo solo arma el
+// payload desde la cotización, resuelve los suscriptores, encola, y dispara la
+// entrega inmediata en segundo plano.
 //
 // REGLA DE ORO: dispatchQuoteEvent NUNCA lanza. Un fallo de webhook jamás debe
 // romper la operación de negocio que lo originó (enviar, aprobar, cobrar…).
 
-import { createHmac } from 'node:crypto';
 import { sql } from './db';
+import { after } from './after';
 import { postToSlack } from './slack';
-import { assertSafeWebhookTarget } from './ssrf';
+import { enqueueForSubscribers, flushNow, newEventId } from './webhook-delivery';
 
 // Catálogo de eventos públicos (lo consume la UI y la validación de la API).
 export const WEBHOOK_EVENTS = [
@@ -18,99 +20,38 @@ export const WEBHOOK_EVENTS = [
     { id: 'quote.viewed', label: 'Cotización vista' },
     { id: 'quote.approved', label: 'Cotización aprobada' },
     { id: 'quote.rejected', label: 'Cotización rechazada' },
+    { id: 'quote.updated', label: 'Cotización modificada y reenviada' },
+    { id: 'quote.expired', label: 'Cotización vencida' },
+    { id: 'quote.deleted', label: 'Borrador eliminado' },
     { id: 'quote.paid', label: 'Pago recibido' },
+    { id: 'payment.partial', label: 'Pago parcial recibido' },
+    { id: 'payment.failed', label: 'Cobro recurrente fallido' },
     { id: 'invoice.stamped', label: 'CFDI timbrado' },
 ] as const;
 
 export type WebhookEvent = typeof WEBHOOK_EVENTS[number]['id'];
 export const WEBHOOK_EVENT_IDS = WEBHOOK_EVENTS.map((e) => e.id) as string[];
 
-const TIMEOUT_MS = 5000;
-const sign = (secret: string, body: string) => createHmac('sha256', secret).update(body).digest('hex');
-const truncate = (s: string, max = 4000) => (s.length > max ? s.slice(0, max) + '…' : s);
+// Re-exportados para no cambiar los imports existentes (api/webhooks.ts, etc.)
+// — la implementación real vive en webhook-delivery.ts, que también maneja el
+// motor de entrega/reintentos que usa dispatchQuoteEvent abajo.
+export { sendTestEvent, redeliver, reenableAndRetryRecent, rotateSecret } from './webhook-delivery';
 
-// Registra el intento en webhook_deliveries (best-effort: jamás lanza).
-async function logDelivery(hook: any, evento: string, body: string, r: {
-    status: number; ok: boolean; error: string | null; intento: number; ms: number; response: string; prueba: boolean;
-}): Promise<void> {
-    try {
-        await sql`
-            insert into webhook_deliveries
-                (org_id, webhook_id, evento, status, ok, error, intento, es_prueba, duracion_ms, request_body, response_body)
-            values
-                (${hook.org_id}, ${hook.id}, ${evento}, ${r.status || null}, ${r.ok}, ${r.error},
-                 ${r.intento}, ${r.prueba}, ${r.ms}, ${truncate(body)}, ${truncate(r.response)})`;
-    } catch { /* tabla no migrada → no-op */ }
-}
-
-/**
- * Entrega individual con un reintento. Registra CADA intento en
- * webhook_deliveries y actualiza el resumen (last_status/error) en webhooks.
- */
-async function deliver(hook: any, evento: string, body: string, prueba = false): Promise<void> {
-    const secret = hook.secret as string;
-    // Doble firma, a propósito NO reemplazando la legacy: los verificadores
-    // ya en producción hacen `header.replace('sha256=','')` + HMAC del body
-    // crudo — agregar `,v1=...` a ESE header los rompería a todos. La
-    // firma V1 (con timestamp, anti-replay real) vive en un header NUEVO,
-    // invisible para quien no la busca. Ventana de deprecación de la legacy:
-    // ~90 días desde que esto se publique (ver CHANGELOG).
-    const ts = Math.floor(Date.now() / 1000);
-    const headers = {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Cord-Webhooks/1.0',
-        'X-Cord-Event': evento,
-        'X-Cord-Signature': `sha256=${sign(secret, body)}`,
-        'X-Cord-Timestamp': String(ts),
-        'X-Cord-Signature-V1': `t=${ts},v1=${sign(secret, `${ts}.${body}`)}`,
-    };
-
-    let status = 0;
-    let error: string | null = null;
-    let ok = false;
-
-    // Anti-SSRF: re-valida el destino (con resolución DNS) justo antes de golpearlo.
-    // Atrapa rebinding y URLs internas que se colaron antes de este control.
-    try {
-        await assertSafeWebhookTarget(hook.url as string);
-    } catch (e: any) {
-        await logDelivery(hook, evento, body, { status: 0, ok: false, error: e?.message || 'destino bloqueado', intento: 1, ms: 0, response: '', prueba });
-        sql`update webhooks set last_status = null, last_error = ${e?.message || 'destino bloqueado'}, last_delivery_at = now() where id = ${hook.id}`.catch(() => {});
-        return;
-    }
-
-    for (let intento = 0; intento < 2; intento++) {
-        const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
-        const t0 = Date.now();
-        let response = '';
-        try {
-            const res = await fetch(hook.url as string, { method: 'POST', headers, body, signal: ctrl.signal });
-            clearTimeout(t);
-            status = res.status;
-            ok = res.ok;
-            try { response = await res.text(); } catch { /* sin cuerpo */ }
-            error = res.ok ? null : `HTTP ${res.status}`;
-        } catch (e: any) {
-            clearTimeout(t);
-            status = 0; ok = false;
-            error = e?.name === 'AbortError' ? 'timeout' : (e?.message || 'error de red');
-        }
-        await logDelivery(hook, evento, body, { status, ok, error, intento: intento + 1, ms: Date.now() - t0, response, prueba });
-        if (ok) break;
-        // backoff mínimo antes del reintento
-        if (intento === 0) await new Promise((r) => setTimeout(r, 300));
-    }
-
-    // Resumen de la última entrega en la fila del webhook (best-effort).
-    sql`update webhooks set last_status = ${status || null}, last_error = ${error}, last_delivery_at = now() where id = ${hook.id}`
-        .catch(() => {});
+// Resumen mínimo de cotización que necesita el payload (y Slack). Compartido
+// por el camino que re-consulta la fila y por el que ya trae los datos a mano
+// (ej. quote.deleted, donde la fila ya no existe para cuando se dispara).
+interface QuoteSummary {
+    id: string; folio: string; status: string; total: unknown;
+    public_token: string; empresa: string | null;
 }
 
 /**
  * Notifica un evento de cotización a las webhooks suscritas de la org. Construye
- * el payload desde la cotización y lo entrega a cada URL en paralelo. Silencioso:
- * cualquier error (incluida tabla no migrada) se traga.
+ * el payload desde la cotización, lo ENCOLA (durable — sobrevive aunque esta
+ * invocación muera) y dispara la entrega inmediata en segundo plano vía
+ * after()/waitUntil. Si esa entrega inmediata falla o nunca corre, el cron de
+ * sweep (/api/cron/webhooks) la recoge. Silencioso: cualquier error (incluida
+ * tabla no migrada) se traga — nunca debe romper la operación que lo originó.
  */
 export async function dispatchQuoteEvent(orgId: string, cotizacionId: string, evento: WebhookEvent): Promise<void> {
     try {
@@ -120,42 +61,98 @@ export async function dispatchQuoteEvent(orgId: string, cotizacionId: string, ev
             from cotizaciones c left join clientes cl on cl.id = c.cliente_id
             where c.id = ${cotizacionId} and c.org_id = ${orgId}`;
         if (!q) return;
-
-        // ── Slack (best-effort, en paralelo a los webhooks) ──
-        void dispatchSlack(orgId, evento, q);
-
-        let hooks: any[] = [];
-        try {
-            hooks = await sql`select * from webhooks where org_id = ${orgId} and activo = true`;
-        } catch { return; } // tabla aún no migrada → no-op
-        const subs = hooks.filter((h) => {
-            const evs = Array.isArray(h.eventos) ? h.eventos : [];
-            return evs.length === 0 || evs.includes(evento);
-        });
-        if (!subs.length) return;
-
-        // Absoluto: dispatchQuoteEvent corre también desde crons/background sin
-        // request en curso, así que no hay `origin` que leer — mismo fallback
-        // que ya usa dispatchSlack() abajo. Un link relativo obligaba a quien
-        // recibe el webhook a adivinar el dominio para armar el link real.
-        const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cordhq.app';
-        const body = JSON.stringify({
-            event: evento,
-            created_at: new Date().toISOString(),
-            data: {
-                id: q.id,
-                folio: q.folio,
-                status: q.status,
-                total: Number(q.total ?? 0),
-                cliente: q.empresa ?? null,
-                link_publico: `${base}/q/${q.public_token}`,
-            },
-        });
-
-        await Promise.all(subs.map((h) => deliver(h, evento, body)));
+        await dispatchToSubscribers(orgId, evento, q as QuoteSummary);
     } catch {
         /* nunca romper la operación principal por un webhook */
     }
+}
+
+/**
+ * Igual que dispatchQuoteEvent, pero con un resumen de cotización YA EN MANO
+ * (no re-consulta la fila). Necesario para `quote.deleted` — la fila ya no
+ * existe cuando se dispara el evento — y en general para cualquier caller que
+ * ya haya cargado los datos y quiera evitar una segunda consulta.
+ */
+export async function dispatchQuoteEventFrom(orgId: string, evento: WebhookEvent, q: QuoteSummary): Promise<void> {
+    try {
+        await dispatchToSubscribers(orgId, evento, q);
+    } catch {
+        /* nunca romper la operación principal por un webhook */
+    }
+}
+
+/**
+ * `payment.partial`: un anticipo/saldo/cuota se cobró SIN completar el total
+ * (si lo completara, la cotización ya habría pasado a 'paid' y ese es el
+ * evento que se dispara en su lugar — ver markQuotePaid en stripe/webhook.ts).
+ * `extra` se mezcla dentro de `data`, junto al resumen normal de la cotización.
+ */
+export async function dispatchPaymentPartial(orgId: string, cotizacionId: string, extra: {
+    tipo: string; monto: number; numero_cuota: number; saldo_pendiente: number; payment_method: string | null;
+}): Promise<void> {
+    try {
+        const [q] = await sql`
+            select c.id, c.folio, c.status, c.total, c.public_token, cl.empresa
+            from cotizaciones c left join clientes cl on cl.id = c.cliente_id
+            where c.id = ${cotizacionId} and c.org_id = ${orgId}`;
+        if (!q) return;
+        await dispatchToSubscribers(orgId, 'payment.partial', q as QuoteSummary, extra);
+    } catch {
+        /* nunca romper la operación principal por un webhook */
+    }
+}
+
+// Arma el payload, resuelve suscriptores, dispara Slack en paralelo, encola
+// (durable) y dispara la entrega inmediata en segundo plano. `extra` (si se
+// pasa) se mezcla dentro de `data` junto al resumen de la cotización — así
+// eventos como payment.partial pueden llevar campos propios sin que
+// dispatchQuoteEvent tenga que conocerlos.
+async function dispatchToSubscribers(orgId: string, evento: string, q: QuoteSummary, extra?: Record<string, unknown>): Promise<void> {
+    // ── Slack (best-effort, en paralelo a los webhooks) ──
+    void dispatchSlack(orgId, evento, q);
+
+    let hooks: any[] = [];
+    try {
+        hooks = await sql`select id, eventos from webhooks where org_id = ${orgId} and activo = true`;
+    } catch { return; } // tabla aún no migrada → no-op
+    const subs = hooks.filter((h) => {
+        const evs = Array.isArray(h.eventos) ? h.eventos : [];
+        return evs.length === 0 || evs.includes(evento);
+    });
+    if (!subs.length) return;
+
+    // Absoluto: dispatchQuoteEvent corre también desde crons/background sin
+    // request en curso, así que no hay `origin` que leer — mismo fallback
+    // que ya usa dispatchSlack() abajo. Un link relativo obligaba a quien
+    // recibe el webhook a adivinar el dominio para armar el link real.
+    const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cordhq.app';
+    // El event_id se genera AQUÍ (antes de serializar) para poder incluirlo
+    // como campo `id` dentro del JSON que se firma — así el receptor puede
+    // deduplicar leyendo el body, sin depender solo del header. El MISMO
+    // event_id se copia a la columna webhook_events.event_id de cada
+    // suscriptor (enqueueForSubscribers) — nunca diverge.
+    const eventId = newEventId();
+    const body = JSON.stringify({
+        id: eventId,
+        event: evento,
+        created_at: new Date().toISOString(),
+        data: {
+            id: q.id,
+            folio: q.folio,
+            status: q.status,
+            total: Number(q.total ?? 0),
+            cliente: q.empresa ?? null,
+            link_publico: `${base}/q/${q.public_token}`,
+            ...extra,
+        },
+    });
+
+    // Encolar es DURABLE (se espera aquí — si esta invocación muere justo
+    // después, el evento ya quedó a salvo en webhook_events). La entrega
+    // inline es solo la optimización de latencia: nunca se espera, para no
+    // demorar la operación de negocio que disparó el evento.
+    const ids = await enqueueForSubscribers(orgId, subs.map((h) => h.id as string), evento, body, eventId);
+    if (ids.length) after(flushNow(orgId, ids));
 }
 
 // Postea el evento al Slack de la org si tiene un Incoming Webhook conectado.
@@ -173,46 +170,4 @@ async function dispatchSlack(orgId: string, evento: string, q: any): Promise<voi
             link: `${base}/q/${q.public_token}`,
         });
     } catch { /* no-op */ }
-}
-
-/**
- * Envía un evento de PRUEBA a un endpoint (ping con datos de ejemplo). Lo usa el
- * botón "Enviar prueba" de Ajustes › Developers para validar el endpoint sin
- * esperar a que pase algo real. Devuelve el resultado del primer intento.
- */
-export async function sendTestEvent(orgId: string, webhookId: string): Promise<{ ok: boolean; status: number; error: string | null }> {
-    const [hook] = await sql`select * from webhooks where id = ${webhookId} and org_id = ${orgId}`;
-    if (!hook) return { ok: false, status: 0, error: 'Endpoint no encontrado' };
-    const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cordhq.app';
-    const body = JSON.stringify({
-        event: 'ping',
-        created_at: new Date().toISOString(),
-        data: {
-            id: '00000000-0000-0000-0000-000000000000',
-            folio: 'COT-PRUEBA',
-            status: 'sent',
-            total: 12500,
-            cliente: 'Cliente de prueba S.A. de C.V.',
-            link_publico: `${base}/q/demo`,
-            mensaje: 'Esta es una entrega de prueba enviada desde Ajustes › Developers.',
-        },
-    });
-    await deliver(hook, 'ping', body, true);
-    const [last] = await sql`select status, ok, error from webhook_deliveries where webhook_id = ${webhookId} order by created_at desc limit 1`;
-    return { ok: !!last?.ok, status: (last?.status as number) ?? 0, error: (last?.error as string) ?? null };
-}
-
-/**
- * Re-entrega (replay) una entrega pasada: re-firma y re-envía EXACTAMENTE el
- * mismo payload a la misma URL. Útil cuando el receptor estuvo caído.
- */
-export async function redeliver(orgId: string, deliveryId: string): Promise<{ ok: boolean; status: number; error: string | null }> {
-    const [d] = await sql`select * from webhook_deliveries where id = ${deliveryId} and org_id = ${orgId}`;
-    if (!d) return { ok: false, status: 0, error: 'Entrega no encontrada' };
-    const [hook] = await sql`select * from webhooks where id = ${d.webhook_id} and org_id = ${orgId}`;
-    if (!hook) return { ok: false, status: 0, error: 'Endpoint no encontrado' };
-    const body = (d.request_body as string) || '{}';
-    await deliver(hook, d.evento as string, body, !!d.es_prueba);
-    const [last] = await sql`select status, ok, error from webhook_deliveries where webhook_id = ${hook.id} order by created_at desc limit 1`;
-    return { ok: !!last?.ok, status: (last?.status as number) ?? 0, error: (last?.error as string) ?? null };
 }

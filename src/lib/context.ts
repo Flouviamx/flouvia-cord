@@ -31,6 +31,12 @@ interface ReqCtx {
     // correos transaccionales). Se detecta del header Accept-Language del
     // navegador — sin toggle manual, ver docs/app-rutas.md → i18n de la app.
     locale?: "es" | "en";
+    // Carril de SISTEMA (crons cross-org, ej. el sweeper de webhooks). Lo marca
+    // el propio cron route DESPUÉS de validar CRON_SECRET, envolviendo su
+    // handler en reqContext.run({..., cronScope:true}, ...). withSystemTx()
+    // (db.ts) exige esto antes de setear app.scope='system' — así una ruta con
+    // sesión de usuario normal nunca puede tocar ese carril por accidente.
+    cronScope?: boolean;
 }
 
 export const reqContext = new AsyncLocalStorage<ReqCtx>();
@@ -63,6 +69,11 @@ export function isTestModeRequest(): boolean {
 /** Idioma resuelto para este request ("es"|"en"), default "es" fuera del middleware (crons/scripts). */
 export function currentLocale(): "es" | "en" {
     return reqContext.getStore()?.locale ?? "es";
+}
+
+/** ¿Este request corre en el carril de SISTEMA de un cron (ver withSystemTx)? */
+export function isCronScope(): boolean {
+    return reqContext.getStore()?.cronScope === true;
 }
 
 /** Guarda el org_id resuelto en el store del request para reutilizarlo. */

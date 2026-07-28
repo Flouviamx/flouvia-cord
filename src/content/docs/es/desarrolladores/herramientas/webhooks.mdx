@@ -1,6 +1,6 @@
 ---
 title: "Cord Webhooks"
-description: "Construye integraciones en tiempo real reaccionando a eventos que ocurren en Cord."
+description: "Construye integraciones en tiempo real reaccionando a eventos que ocurren en Cord — entrega durable con reintentos, identidad de evento y rotación de secreto sin downtime."
 ---
 
 <header class="content-header">
@@ -10,35 +10,159 @@ description: "Construye integraciones en tiempo real reaccionando a eventos que 
 
 ## ¿Por qué usar Webhooks?
 
-En lugar de que tu sistema (como un ERP o un flujo automatizado de Zapier/Make) pregunte a Cord cada 5 minutos "¿ya pagó el cliente?", los Webhooks de Cord le "avisan" a tu sistema en el momento exacto en que ocurre el evento, enviando un `POST` HTTP a tu servidor.
+En lugar de que tu sistema (un ERP, un flujo de Zapier/Make, o tu propio backend) le pregunte a Cord cada 5 minutos "¿ya pagó el cliente?", los webhooks de Cord le avisan a tu sistema en el momento en que ocurre el evento, con un `POST` HTTP firmado a tu servidor.
 
 Casos de uso comunes:
-- Provisionar una licencia de software automáticamente cuando una cotización entra en estado `pagada`.
-- Enviar un mensaje interno a Slack cuando una cotización es `vista` por primera vez por el cliente.
-- Disparar el proceso de facturación en tu ERP.
+- Provisionar una licencia de software automáticamente cuando una cotización entra en estado `paid`.
+- Enviar un mensaje interno a Slack cuando una cotización es `viewed` por primera vez por el cliente.
+- Disparar el proceso de facturación en tu ERP cuando se timbra el CFDI.
 
-## Configurar un Endpoint
+## Configurar un endpoint
 
-Para comenzar a recibir eventos, debes registrar la URL de tu servidor:
-1. Navega a **Ajustes > Desarrolladores > Webhooks**.
-2. Haz clic en **Añadir Endpoint**.
-3. Ingresa tu URL HTTPS pública. No se permiten URLs HTTP (sin cifrar) por seguridad.
-4. Selecciona el subconjunto de eventos que deseas escuchar (ej. `cotizacion.enviada`, `cotizacion.pagada`).
+1. Activa el **Modo desarrollador** en Ajustes (interruptor arriba a la derecha del índice de Ajustes).
+2. Entra a **Ajustes › API y Webhooks › pestaña Webhooks**.
+3. Haz clic en **Agregar endpoint**.
+4. Ingresa tu URL — **debe ser `https://`**; Cord rechaza destinos `http://`, `localhost`, IPs privadas/internas y hosts `.internal`/`.local` desde la creación.
+5. Elige el subconjunto de eventos que quieres recibir (dejar todos sin marcar = recibes **todos**). Ver el [catálogo completo](#catálogo-de-eventos) abajo.
+6. Guarda una copia de tu **secret** (`whsec_…`) — se muestra en claro **una sola vez**. Después solo se ve enmascarado.
 
-## Seguridad y Firmas (HMAC-SHA256)
+<Callout type="info">
+Cada plan tiene un límite de endpoints (Gratis: 1 · Starter: 3 · Profesional: 10 · Scale: 25 ·
+Developer: 100). Los webhooks NO están gateados a un plan de pago — todos los planes, incluido
+el gratuito, pueden usarlos.
+</Callout>
 
-Debido a que tu endpoint debe ser público en Internet, cualquiera podría enviarle peticiones falsas intentando engañar a tu sistema. 
+## El payload
 
-Para prevenir esto, Cord firma criptográficamente cada carga útil (payload) enviada a tu servidor usando un **Secreto de Endpoint**.
+Cada entrega es un `POST` con `Content-Type: application/json` y este cuerpo:
 
-### Verificar la firma en tu servidor
+```json
+{
+  "id": "evt_5f2a1c9e8b3d4a7f6e1c0d9b8a7f6e5c",
+  "event": "quote.paid",
+  "created_at": "2026-07-27T18:32:04.000Z",
+  "data": {
+    "id": "b3f1...",
+    "folio": "COT-0148",
+    "status": "paid",
+    "total": 45200.00,
+    "cliente": "Distribuidora El Zarco",
+    "link_publico": "https://cordhq.app/q/6f2a...",
+    "mensaje": "Solo presente en el evento de prueba ping"
+  }
+}
+```
 
-1. Cord incluye un encabezado `X-Cord-Signature` en la petición `POST`.
-2. Debes usar tu Secreto de Endpoint para calcular el hash HMAC-SHA256 del cuerpo exacto de la petición.
-3. Compara el hash que calculaste con el que envió Cord. Si coinciden, la petición es auténticamente de Cord.
+`id` es la identidad **del evento**, no de la cotización — es el mismo valor a través de reintentos y de un replay manual (ver [identidad e idempotencia](#identidad-del-evento-e-idempotencia)). `data.id` es el id interno de la cotización.
 
-## Reintentos y Tolerancia a Fallos
+## Firmas y seguridad
 
-Si tu servidor de destino está caído o devuelve un código de error (cualquier cosa que no sea `2xx`), Cord considerará el envío como fallido.
+Cord firma cada entrega con dos headers. Usa el SDK (`@flouviahq/elements/server`, ver la
+[guía del Server SDK](/docs/desarrolladores/herramientas/elements/server)) para no tener que
+implementar la verificación a mano:
 
-Puedes navegar al **Log de Entregas** dentro de los Ajustes de Webhooks para examinar el cuerpo de la petición que falló y la respuesta exacta que dio tu servidor (útil para debug). Allí también podrás hacer clic en "Reintentar Envío" manualmente.
+```ts
+import { CordAPI } from '@flouviahq/elements/server';
+const cord = new CordAPI(process.env.CORD_SECRET_KEY!);
+
+const event = cord.webhooks.constructEvent(
+  await req.text(),
+  req.headers,
+  process.env.CORD_WEBHOOK_SECRET!,
+);
+```
+
+Si prefieres verificar a mano:
+
+| Header | Contenido | Notas |
+|---|---|---|
+| `X-Cord-Signature-V1` | `t=<unix>,v1=<hmac_sha256(secret, "<t>.<body>")>` | **Recomendado.** Incluye timestamp — protección real contra replay. Puede traer **dos** `v1=` durante una rotación de secreto (ver abajo); acepta si cualquiera cuadra. |
+| `X-Cord-Signature` | `sha256=<hmac_sha256(secret, body)>` | Legacy, sin timestamp. Se sigue enviando en cada entrega por compatibilidad; usa V1 si puedes. |
+| `X-Cord-Event-Id` | `evt_…` | Igual al campo `id` del body. |
+| `X-Cord-Delivery-Id` | uuid | Id de este **intento** — cambia en cada reintento/replay, a diferencia de `X-Cord-Event-Id`. |
+| `X-Cord-Attempt` | número | 1-indexado. |
+| `Idempotency-Key` | `evt_…` | Repite `X-Cord-Event-Id` — varios frameworks de servidor lo leen de ahí directo. |
+
+<Callout type="warning">
+Nunca compares las firmas con `===` a mano en producción — usa una comparación de tiempo
+constante (el SDK ya lo hace). Un `!==` normal puede filtrar información por *timing attack*.
+</Callout>
+
+## Identidad del evento e idempotencia
+
+Cada evento lógico tiene un `id` estable (`evt_…`), igual en el body y en `X-Cord-Event-Id`/`Idempotency-Key`. Es el **mismo** valor:
+
+- En cada reintento automático de un mismo evento (ver la siguiente sección).
+- En un replay manual desde Ajustes ("Reintentar" en el log de entregas) — el payload se reenvía **byte-idéntico**, incluido el `id`.
+
+Como los reintentos y los replays pueden hacer que tu endpoint reciba el mismo evento más de una vez, tu handler debe ser **idempotente**: guarda los `id` ya procesados (aunque sea en una tabla simple con `unique`) y descarta silenciosamente los repetidos antes de aplicar efectos secundarios (cobrar, mandar un correo, etc.).
+
+## Reintentos y entrega garantizada
+
+Cord encola cada evento **antes** de intentar entregarlo — si tu endpoint está caído, el evento no se pierde: sigue un calendario de reintentos con backoff exponencial hasta por **11 intentos en ~3.6 días**:
+
+| Intento | Espera desde el anterior |
+|---|---|
+| 1 | inmediato |
+| 2 | ~10 s |
+| 3 | ~1 min |
+| 4 | ~5 min |
+| 5 | ~30 min |
+| 6 | ~2 h |
+| 7 | ~5 h |
+| 8 | ~10 h |
+| 9–11 | ~1 día |
+
+(Con jitter de ±20% para que muchos endpoints caídos al mismo tiempo no reciban el reintento exactamente en el mismo segundo.) Cualquier respuesta que no sea `2xx`, un timeout, o un error de red cuenta como fallo y programa el siguiente intento. Un `3xx` (redirect) **nunca se sigue** — se trata como fallo; si tu endpoint cambió de URL, actualízala en Ajustes en vez de dejar un redirect.
+
+La entrega es **al menos una vez** (*at-least-once*), no exactamente una vez — de ahí la importancia de deduplicar por `id` (ver arriba).
+
+## Salud del endpoint
+
+Cord vigila la racha de fallos de cada endpoint (solo cuenta eventos que **agotaron** su calendario de reintentos, o fallos de una prueba/replay manual — nunca un intento que todavía tiene reintentos por delante):
+
+- **3 fallos seguidos** → recibes un correo de aviso (como máximo uno cada 24 h).
+- **5 fallos seguidos** → el endpoint se **desactiva automáticamente** (deja de recibir eventos nuevos) y recibes un correo explicando por qué. Los eventos que seguían pendientes de reintento para ese endpoint se cancelan — no se acumulan indefinidamente contra un destino caído.
+
+Cuando arregles tu endpoint, desde Ajustes puedes:
+- **Reactivar** — vuelve a recibir eventos nuevos desde ahora.
+- **Reactivar y reintentar** — además, reencola lo que falló en las **últimas 24 horas** (nunca el backlog completo, para no bombardearte con eventos viejos de golpe).
+
+## Rotación de secreto
+
+Puedes rotar el secreto de un endpoint sin perder ni una entrega. Desde Ajustes, botón **"Rotar secreto"**, elige una ventana de solape (1h / 24h / 72h) y confirma — verás el secreto nuevo en claro una sola vez.
+
+Durante la ventana, Cord firma cada entrega con **ambos** secretos a la vez:
+
+```
+X-Cord-Signature-V1: t=1732650000,v1=<hmac con el secreto NUEVO>,v1=<hmac con el secreto VIEJO>
+```
+
+Esto significa que puedes actualizar tu `CORD_WEBHOOK_SECRET` en cualquier momento dentro de la ventana — antes o después de rotar en Cord — sin que ninguna entrega se rechace. El SDK ya acepta cualquiera de los dos `v1=` que cuadre. Si verificas a mano y solo lees el primer `v1=` que encuentres, sigues funcionando igual (es el más nuevo). Al cerrarse la ventana, Cord deja de mandar el secreto viejo.
+
+## Catálogo de eventos
+
+| Evento | Se dispara cuando… |
+|---|---|
+| `quote.sent` | El vendedor envía la cotización al cliente. |
+| `quote.viewed` | El cliente abre el link público por primera vez. |
+| `quote.approved` | El cliente aprueba (total o parcialmente) la cotización. |
+| `quote.rejected` | El cliente la rechaza. |
+| `quote.updated` | El vendedor la modifica y la reenvía ("Modificar y reenviar" en el detalle). |
+| `quote.expired` | Pasó su fecha de vigencia sin que el cliente decidiera (estaba `sent`/`viewed`). |
+| `quote.deleted` | Se elimina un borrador (solo aplica a cotizaciones que nunca se enviaron). |
+| `quote.paid` | Se recibe el pago total (cobro simple o el último cobro pendiente de un plan por anticipo/cuotas). |
+| `payment.partial` | Se recibe UN cobro parcial (anticipo, saldo o una cuota) sin que la cotización quede totalmente pagada todavía. |
+| `payment.failed` | Falla un cobro recurrente de una iguala/retainer. |
+| `invoice.stamped` | Se timbra el CFDI. |
+| `ping` | Solo aparece al usar "Enviar prueba" desde Ajustes — nunca lo dispara un evento real. |
+
+> **Nota:** `payment.partial` trae campos extra en `data` que los demás eventos no tienen:
+> `tipo` (`anticipo`\|`saldo`\|`cuota`), `monto`, `numero_cuota`, `saldo_pendiente` y
+> `payment_method`, además del resumen normal de la cotización (folio, cliente, total, link).
+> Si usas el Server SDK en TypeScript, `CordWebhookEvent` es una unión discriminada por
+> `event` — al comparar `event === 'payment.partial'` el tipo de `data` se estrecha solo.
+
+## Log de entregas y retención
+
+Desde Ajustes, cada endpoint tiene un log expandible con el resultado de cada intento (status, duración, respuesta de tu servidor) y un botón "Reintentar" por fila. El log se conserva **30 días**; los eventos que llegaron a fallar del todo se conservan **90 días** (para que "Reintentar" siga funcionando más tiempo en ese caso). No uses el log de Cord como almacenamiento de largo plazo de lo que se envió — guarda tú lo que necesites conservar en tu propio sistema al procesarlo.

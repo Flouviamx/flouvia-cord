@@ -9,7 +9,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { reqIp } from '../../../lib/db';
 import { requirePerm } from '../../../lib/queries';
-import { MCP_TOOLS } from '../../../lib/mcp';
+import { MCP_TOOLS, McpToolError } from '../../../lib/mcp';
 
 export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('ajustes');
@@ -30,7 +30,12 @@ export const POST: APIRoute = async ({ request }) => {
         const result = await tool.handler(body.args ?? {}, { ip: reqIp(request), keyId: 'playground' });
         return json({ ok: true, tool: name, result });
     } catch (err: any) {
-        return json({ error: err?.message || 'La tool falló' }, 500);
+        // McpToolError = mensaje de NEGOCIO pensado para mostrarse ("no
+        // encontré esa cotización") — seguro de exponer. Cualquier otro error
+        // (DB caída, bug interno, etc.) puede traer detalles que no deben
+        // llegar al navegador del dev — mensaje genérico en su lugar.
+        const msg = err instanceof McpToolError ? err.message : 'La tool falló. Intenta de nuevo o revisa los argumentos.';
+        return json({ error: msg }, 500);
     }
 };
 

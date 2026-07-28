@@ -837,38 +837,33 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     .ph-crumbs a::after, .ph-crumbs > span:not(.ph-crumb-here)::after { content: '/'; margin-left: 6px; color: #c4cad3; }
     .ph-crumb-here { color: var(--color-text); font-weight: 600; }
     .ph-tabs-row { max-width: var(--content-max); position: relative; z-index: 5; }
-    /* Tabs de sección: segmented control estilo iOS — track recesado, activo navy sólido (jul 2026) */
+    /* Tabs de sección: texto plano + subrayado deslizante, estilo App Store/Music (jul 2026) */
     .ph-tabs-row:not(:empty) {
-        margin: 1.15rem 0 1.6rem; display: inline-flex; align-items: center; gap: 2px;
+        margin: 1.3rem 0 1.7rem; display: flex; align-items: center; gap: 1.7rem;
         max-width: 100%; overflow-x: auto; overflow-y: visible;
         scrollbar-width: none; -webkit-overflow-scrolling: touch;
-        background: var(--color-bg-soft);
-        box-shadow: inset 0 1px 2px rgba(10,25,47,0.05), inset 0 0 0 1px rgba(10,25,47,0.03);
-        border-radius: 999px; padding: 3px;
+        border-bottom: 1px solid var(--color-border);
     }
     .ph-tabs-row::-webkit-scrollbar { display: none; }
-    html[data-theme="dark"] .ph-tabs-row:not(:empty) {
-        box-shadow: inset 0 1px 2px rgba(0,0,0,0.25), inset 0 0 0 1px rgba(255,255,255,0.04);
-    }
     /* Helper para que las páginas pinten tabs consistentes (slot page-tabs) */
     .ph-tab {
-        position: relative; flex-shrink: 0; padding: 7px 16px; font-size: 0.835rem; font-weight: 600;
-        letter-spacing: -0.01em;
+        position: relative; flex-shrink: 0; padding: 0 0 0.7rem; font-size: 0.92rem; font-weight: 550;
+        letter-spacing: -0.01em; line-height: 1;
         color: var(--color-text-muted); text-decoration: none; background: none; border: none;
-        border-radius: 999px; cursor: pointer; font-family: var(--font-sans); white-space: nowrap;
-        transition: color 0.2s var(--ease-ios), background-color 0.24s var(--ease-ios), box-shadow 0.3s var(--ease-ios), transform 0.2s var(--ease-spring);
+        cursor: pointer; font-family: var(--font-sans); white-space: nowrap;
+        transition: color 0.22s var(--ease-ios), transform 0.2s var(--ease-spring);
+    }
+    .ph-tab::after {
+        content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+        border-radius: 2px 2px 0 0; background: var(--color-blue-deep);
+        transform: scaleX(0); transform-origin: center;
+        transition: transform 0.32s var(--ease-spring);
     }
     .ph-tab:hover { color: var(--color-text); }
-    .ph-tab:active { transform: scale(0.96); }
-    .ph-tab.active {
-        color: #fff; background: var(--color-blue-deep);
-        box-shadow: 0 1px 2px rgba(10,25,47,0.2), 0 4px 10px -3px rgba(10,25,47,0.35);
-    }
-    .ph-tab.active:hover { color: #fff; }
-    .ph-tab.active:active { transform: scale(0.97); }
-    html[data-theme="dark"] .ph-tab.active {
-        box-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 4px 10px -3px rgba(0,0,0,0.5);
-    }
+    .ph-tab:active { transform: scale(0.97); }
+    .ph-tab.active { color: var(--color-text); font-weight: 700; }
+    .ph-tab.active::after { transform: scaleX(1); }
+    html[data-theme="dark"] .ph-tab.active::after { background: #fff; }
 
     /* ════════ Barra de progreso de navegación ════════ */
     .nav-progress {

@@ -2,6 +2,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { sql } from "../db";
 import { assertSafeWebhookTarget } from "../ssrf";
+import { decryptSecret } from "../crypto-secret";
 
 export interface AllowedTool {
   serverName: string;
@@ -35,11 +36,18 @@ export class McpClientManager {
   // Obtiene la lista de servidores MCP registrados por la organización
   private async getServers(): Promise<McpServerConfig[]> {
     const rows = await sql`
-      SELECT id, nombre, url_sse, auth_token 
-      FROM mcp_servers 
+      SELECT id, nombre, url_sse, auth_token
+      FROM mcp_servers
       WHERE org_id = ${this.orgId} AND activo = true
     `;
-    return rows as McpServerConfig[];
+    // auth_token se guarda cifrado (ver crypto-secret.ts) — se descifra aquí,
+    // en el único lugar que de verdad lo USA para conectarse. decryptSecret
+    // devuelve el texto plano tal cual si el token es heredado (pre-cifrado)
+    // o si nunca se configuró ENCRYPTION_KEY.
+    return (rows as any[]).map((r) => ({
+      id: r.id, nombre: r.nombre, url_sse: r.url_sse,
+      auth_token: decryptSecret(r.auth_token),
+    }));
   }
 
   // Obtiene los permisos del agente (qué herramientas puede usar)

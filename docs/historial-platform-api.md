@@ -5,6 +5,387 @@
 
 ---
 
+✅ **MCP — calidad de las tools: paginación real, idempotencia, anotaciones y cifrado en
+   reposo (fase 10, ÚLTIMA del plan de "MCP y webhooks a nivel artesanía", jul 2026)** — cierra
+   el plan completo (7 fases de webhooks + 4 de MCP). Cuatro piezas:
+   • **Paginación real en SQL** (`buscar_cliente`/`listar_productos`, `src/lib/mcp.ts`): antes
+     cargaban la tabla COMPLETA de la org a JS y filtraban con `.includes()`, devolviendo
+     `slice(0, 20 o 50)` sin ninguna señal de que había más — con cientos/miles de filas, cada
+     llamada movía el directorio/catálogo entero por la red para enseñar 20 resultados. Ahora
+     filtran (`ilike`, con escape de `%`/`_` para que buscar literalmente "50%" no se comporte
+     como comodín) y paginan (`limit`/`offset` + `count(*) over()` para el total, todo en una
+     sola query) directo en Postgres. Respuesta nueva y uniforme:
+     `{items, total, has_more, next_cursor}` — un cliente MCP sabe pedir la siguiente página
+     pasando `cursor: next_cursor` sin adivinar nada.
+   • **Bug de exposición de datos encontrado de paso — `listar_productos` filtraba el margen:**
+     la tool alimentaba su respuesta desde `getProductos()`, que SÍ incluye `costo` (el margen
+     interno del producto) — cualquier llave de API de solo LECTURA podía leer el costo de cada
+     producto del catálogo sin que la tool lo necesitara para nada (su propia descripción decía
+     "id, SKU, nombre, unidad, precio de lista"). Al reescribir la query a SQL directo, el
+     `SELECT` ahora excluye `costo` explícitamente — mismo criterio que ya aplica `pk_` (llaves
+     publishable) sobre `/api/v1/productos`.
+   • **Idempotencia en `crear_cotizacion_borrador`:** nueva tabla `mcp_idempotency`
+     (`key_id + idempotency_key` único, RLS+FORCE por `org_id`) — la tool acepta un
+     `idempotency_key` opcional (lo genera el CLIENTE, mismo patrón que Stripe); un reintento
+     con la MISMA llave devuelve la respuesta YA GUARDADA (folio/id reales de la primera
+     llamada) en vez de crear un segundo borrador. Antes, cualquier reintento tras un timeout
+     de red duplicaba la cotización sin que el cliente MCP tuviera forma de saberlo. ⚠️
+     **Ventana de carrera aceptada y documentada en el código:** dos llamadas con la MISMA
+     llave literalmente simultáneas (no secuenciales) podrían ambas pasar el `SELECT` antes de
+     que cualquiera termine de escribir — el índice único evita que `mcp_idempotency` termine
+     con dos filas, pero no evita una segunda cotización real en ese caso extremo. El escenario
+     que sí queda resuelto al 100% es el real: un cliente que reintenta DESPUÉS de no recibir
+     respuesta (timeout), que es la causa de duplicados que describía el plan.
+   • **Anotaciones + `outputSchema` en `tools/list`** (`McpToolAnnotations` nuevo en
+     `src/lib/mcp.ts`, propagado por `rpc.ts`): cada tool ahora declara `readOnlyHint`/
+     `destructiveHint`/`idempotentHint`/`openWorldHint`/`title` — es lo que le permite a un
+     cliente MCP decidir qué llamadas auto-aprobar sin preguntarle al humano cada vez (las 6
+     tools de lectura son `readOnlyHint:true`; `crear_cotizacion_borrador` es
+     `readOnlyHint:false` y, honestamente, `idempotentHint:false` por default — solo es
+     idempotente si el cliente manda `idempotency_key`). `outputSchema` declara la forma de
+     nivel superior de cada respuesta (sin bajar a modelar cada campo anidado — proporción
+     razonable de esfuerzo vs. valor).
+   • **Cifrado en reposo del `auth_token` de `mcp_servers`** (`src/lib/crypto-secret.ts`,
+     nuevo, AES-256-GCM): el token con el que Cord se conecta a un servidor MCP EXTERNO que la
+     org registró (ej. HubSpot) vivía en texto plano en la base de datos. `ENCRYPTION_KEY` →
+     `MCP_SECRET_KEY` (32 bytes en base64, opcional) cifra en `addMcpServer` y descifra en el
+     ÚNICO lugar que de verdad lo usa (`client-manager.ts`, al abrir la conexión saliente). Sin
+     la env var configurada, el token se guarda en claro igual que antes (degradación
+     documentada, no bloquea nada) — y un token viejo guardado ANTES de configurar la llave se
+     sigue leyendo tal cual después (el prefijo `enc:v1:` distingue cifrado de heredado, sin
+     necesitar una migración de datos).
+   • **`toggle_activo` ahora se audita:** `POST /api/agentes {action:'toggle_activo'}`
+     (activar/desactivar un servidor MCP externo) era la única acción de ese endpoint que NO
+     dejaba rastro en `audit_log` — las otras tres (agregar/eliminar/cambiar permiso) sí.
+     Agregado `logAudit(...)` con el mismo patrón que las demás.
+   • **`/api/mcp/playground.ts` — mismo fix de exposición de errores que ya se hizo en fase 9**
+     para el resto de MCP, aplicado aquí también: solo se documentó como pendiente, ya estaba
+     corregido desde la fase 9 (ver esa entrada).
+   • **Verificado con dos harnesses reales:** uno aislado sin BD para `crypto-secret.ts` (11
+     checks: round-trip con llave, degradación sin llave, compat hacia atrás con tokens en
+     claro, llave equivocada devuelve `null` sin lanzar, IVs distintos por cifrado); y uno
+     contra Neon (21 checks) que cubre `tools/list` con anotaciones/outputSchema reales,
+     paginación de 3 páginas sobre 5 clientes sembrados (sin duplicados entre páginas, último
+     `has_more:false`), `listar_productos` confirmando la AUSENCIA de `costo` en la respuesta,
+     idempotencia (mismo folio en el reintento, UNA sola fila en `cotizaciones` con ese folio,
+     una llave distinta SÍ crea una cotización nueva, sin llave sigue funcionando normal), el
+     `auth_token` guardado por `addMcpServer` confirmado NO-texto-plano en la fila real de
+     `mcp_servers` y descifrado exacto por el mismo camino que usa `client-manager.ts`, y la
+     fila de `audit_log` que ahora sí deja `toggle_activo`. 32/32 checks. `npm run db:migrate`
+     corrido contra Neon real (tabla `mcp_idempotency`, RLS+FORCE confirmado contra
+     `pg_class`/`pg_policies`). `npm run build` limpio.
+   ⚠️ **Fuera de alcance de esta pasada, deliberado:** la selección de tools por-servidor en
+     `agentes.astro` (`setServerPermitido` sigue otorgando siempre `["*"]"` — TODAS las tools
+     de un servidor conectado, aunque el schema de `agentes_permisos.herramientas` ya soporta
+     una allowlist granular) es una feature de UI completa (listar las tools reales del
+     servidor remoto vía `tools/list`, checkboxes, persistir la selección) — se dejó fuera para
+     no construir una UI a medias; el resto de la fase 10 son fixes/mejoras de backend
+     autocontenidos que sí se cerraron por completo.
+
+✅ **MCP — paridad con /api/v1: rate-limit por llave, medición de uso y bitácora (fase 9 del
+   plan de "MCP y webhooks a nivel artesanía", jul 2026)** — hasta esta pasada, MCP era la
+   asimetría más grande del código: `/api/v1` mide/limita/audita cada llamada vía
+   `withApiAuth`, pero MCP autenticaba con `authApiKey` directo y ahí se quedaba — cómputo
+   gratis (nunca cuenta contra la cuota de Stripe Billing), sin rate-limit por llave (solo el
+   límite genérico por IP), e invisible en el "Log de actividad" de Ajustes › Developers.
+   • **3 helpers extraídos de `withApiAuth` en `src/lib/apikey.ts`** (ahora exportados):
+     `checkApiKeyRateLimit(auth)` (600/min llaves secretas, 120/min publishable — mismos
+     números de siempre), `meterApiUsage(auth)` (fire-and-forget a `reportUsage(orgId,'api',1)`,
+     solo llaves `live`), y `logApiRequest(auth, request, status, ms, routeOverride?)` — este
+     último ganó un parámetro `routeOverride` nuevo (100% aditivo, default = comportamiento de
+     antes). `withApiAuth` se reescribió para componer estos 3 mismos helpers en vez de tener
+     la lógica inline — una sola fuente de verdad que ahora comparten `/api/v1` y MCP, no dos
+     copias que puedan divergir.
+   • **`routeLabel(msg)` nuevo en `rpc.ts`** — el pathname físico de MCP es siempre `/api/mcp`
+     o `/api/mcp/message` sin importar qué se llamó, así que loguear eso sería inútil para
+     depurar uso real. `routeLabel` arma una ruta LEGIBLE a partir del método JSON-RPC:
+     `/mcp/ping`, `/mcp/initialize`, y para `tools/call` incluye el nombre de la tool —
+     `/mcp/tools/call:listar_productos` — que es el dato que de verdad importa auditar.
+   • **Cableado en las 3 rutas físicas:** `/api/mcp` (POST) y `/api/mcp/message` (POST, el
+     transporte SSE) aplican rate-limit + bitácora en TODO mensaje autenticado, y miden uso
+     SOLO en mensajes reales — una notificación (`notifications/initialized`, sin `id`) se
+     loguea igual (para diagnóstico) pero NO cuenta como trabajo facturable, porque no ejecuta
+     ninguna tool. `/api/mcp/sse` (GET, abre la sesión) aplica rate-limit + bitácora al abrir
+     la conexión — sin medición ahí, porque abrir una sesión no ejecuta nada por sí solo; el
+     uso real se mide mensaje por mensaje en `/message` conforme llegan (una sola conexión SSE
+     puede llevar muchas llamadas a lo largo de sus ~4.5 minutos, así que medir solo la
+     apertura habría subcontado brutalmente contra el transporte HTTP, donde 1 request = 1
+     unidad). Los fallos de protocolo del lado de SSE (sesión no encontrada, llave de otra
+     org, JSON mal formado) también quedan en la bitácora una vez que la llave se autenticó,
+     con su propia ruta descriptiva (`/mcp/sse-message:session-not-found`, etc.) — mismo
+     criterio que `withApiAuth`: no se loguea nada ANTES de que `authApiKey` resuelva una
+     identidad real (un intento con llave inválida no dejaba rastro antes, y sigue sin
+     dejarlo).
+   • **`/api/mcp/playground.ts` — fuga de errores internos cerrada:** el probador de tools
+     (Ajustes › Developers, sesión de Clerk) devolvía `err.message` crudo en el 500 ante
+     CUALQUIER excepción — incluidas las que no son de negocio (`McpToolError`, mensajes
+     pensados para mostrarse), como un id vacío que hace que Postgres rechace un `uuid`
+     inválido con su propio texto de error interno. Corregido: solo `McpToolError.message` se
+     expone; cualquier otra excepción devuelve un mensaje genérico.
+   • **Verificado con un harness E2E real contra Neon**: un `tools/call` real por HTTP sube
+     `uso_periodo.api` en +1 y deja una fila en `api_requests` con la ruta legible
+     (`/mcp/tools/call:listar_productos`); una notificación responde 202, queda en la
+     bitácora, pero NO mueve el contador de uso; un `ping` con `id` sí cuenta con ruta
+     `/mcp/ping`; el MISMO comportamiento se confirmó por el transporte SSE (`/api/mcp/sse` +
+     `/api/mcp/message`) — abrir la sesión se loguea como `/mcp/sse`, y un `tools/call`
+     posterior por ese canal también sube el contador y deja la ruta con el nombre de la tool.
+     `checkApiKeyRateLimit` llamado 605 veces seguidas contra la misma llave se bloqueó en la
+     petición #595 (dentro del rango esperado del límite real de 600/min). Y se reprodujo el
+     escenario EXACTO que exponía errores internos en el playground (`getCotizacion('')`
+     lanza un error de Postgres real, NO un `McpToolError`) para confirmar que la lógica de
+     enmascarado distingue correctamente ambos casos. 16/16 checks. `npm run build` limpio.
+   ⚠️ **Pendiente (fase 10 del plan, aún sin empezar):** calidad de tools — paginación real en
+     `buscar_cliente`/`listar_productos` (hoy cortan en 20/50 sin ninguna señal de que hay
+     más), idempotencia en `crear_cotizacion_borrador` (un reintento del cliente crea una
+     cotización duplicada), anotaciones `readOnlyHint`/`destructiveHint`/`outputSchema` por
+     tool, y cifrado en reposo del `auth_token` de `mcp_servers` (hoy en claro).
+
+✅ **MCP — sesiones fuera del proceso (Redis/memoria) + auth reforzada en el transporte SSE
+   (fase 8 del plan de "MCP y webhooks a nivel artesanía", jul 2026)** — continuación directa
+   de la fase 7 (ver entrada de abajo). Dos problemas quedaban abiertos ahí a propósito:
+   • **Multi-instancia:** `activeSessions` (fase 7) seguía siendo un `Map` en memoria de
+     proceso — con más de una instancia de Vercel activa, una sesión abierta por el `GET
+     /api/mcp/sse` que sirvió UNA instancia no era visible si el `POST /api/mcp/message`
+     siguiente caía en OTRA (Fluid Compute reutiliza instancias pero no las garantiza fijas
+     entre requests). **`src/lib/mcp/session-store.ts` (nuevo)** — mismo patrón de
+     `src/lib/ratelimit.ts`: Upstash Redis (REST) si `UPSTASH_REDIS_REST_URL`/`_TOKEN` están
+     configuradas (aún pendiente de provisionar en este proyecto, ver
+     `[[scale-security-audit-jul2026]]` en memoria), con fallback automático a un `Map` en
+     memoria — documentado que en ese modo degradado solo funciona con una instancia, sin
+     bloquear nada. Dos estructuras por sesión: `mcp:sess:<id>` (string JSON `{orgId, scope,
+     keyId}`, TTL 600s) y `mcp:out:<id>` (lista FIFO de mensajes pendientes de entregar).
+   • **`src/pages/api/mcp/sse.ts` reescrito al patrón de `/api/q/[token]/stream.ts`** (ya
+     probado en producción para el chat en vivo del link público): el stream YA NO habla con
+     ningún SDK ni objeto de transporte — es un loop que hace `drainOutbox()` cada ~1s y
+     relaya cada mensaje como `event: message`, con `event: ping` de heartbeat cada ~20s
+     (que además refresca el TTL de la sesión vía `touchSession()`), auto-cierre a los ~4.5
+     min, y `request.signal` para limpiar (`deleteSession()`) al desconectar. El `POST
+     /api/mcp/message` que procesa el mensaje puede caer en OTRA instancia sin problema: solo
+     necesita leer la sesión del store y hacer `pushOutbox()` — nunca toca el stream
+     directamente, así que no importa qué instancia lo sirva.
+   • **`src/lib/mcp/transport.ts` (`WebSseTransport`, de la fase 7) ELIMINADO por completo** —
+     ya no hace falta una clase de transporte: `sse.ts` y `message.ts` hablan directo con
+     `session-store.ts` y con `handle()` de `rpc.ts`.
+   • **Auth reforzada en `message.ts`:** antes el `sessionId` en el query string era la ÚNICA
+     credencial — visible en logs de proxies intermedios, suficiente por sí solo para inyectar
+     mensajes en una sesión ajena si se filtraba. Ahora el POST exige el header `Authorization:
+     Bearer` de una API key válida (mismo `authApiKey` que usa todo el resto del API pública) Y
+     valida que esa llave resuelva al MISMO `orgId` que quedó guardado en la sesión al abrirla
+     — una llave de otra org con un `sessionId` adivinado o filtrado responde 403, no ejecuta
+     nada. Sesión inexistente/expirada → 404. Todo con forma JSON-RPC real
+     (`{jsonrpc:'2.0', error:{code, message}}`) en vez del `400 "Invalid message"` de texto
+     plano que había antes — un cliente MCP ahora puede distinguir el tipo de fallo.
+   • **Verificado con dos harnesses E2E reales:** (1) contra Neon + el backend en memoria (el
+     único disponible en este entorno, sin Upstash provisionado): sesión SSE real abierta,
+     `POST /message` sin sessionId (error JSON-RPC, no texto plano), sin Authorization (401),
+     con la llave de OTRA org (403 por mismatch), con sessionId inexistente (404), y el flujo
+     feliz completo — `tools/call` con credenciales correctas responde 202 y el resultado
+     real (con el producto verdadero de esa org) llega por el STREAM, no en la respuesta del
+     POST; una notificación autenticada no encola nada en el buzón (confirmado leyendo el
+     siguiente frame real). 19/19 checks. (2) Contra un `fetch` mockeado con
+     `UPSTASH_REDIS_REST_URL`/`_TOKEN` forzadas — verificó la FORMA exacta de cada comando
+     Redis que `session-store.ts` mandaría en producción (`SET … EX`, `GET`, `EXPIRE` en las
+     dos keys, `RPUSH`+`EXPIRE` en un solo pipeline, `LPOP` con count, `DEL` de ambas keys en
+     un solo comando) — no se pudo probar contra Upstash real por no tener credenciales en
+     este entorno, pero la forma de cada payload quedó confirmada contra el spec REST de
+     Upstash. 11/11 checks. `npm run build` limpio en ambos casos.
+   ⚠️ **Pendiente (fases 9-10 del plan, aún sin empezar):** paridad de rate-limit/metering/
+     bitácora con `/api/v1` (MCP no reporta uso a `reportUsage`, ni cuenta contra cuota, ni
+     deja fila en `api_requests` todavía — HTTP y SSE por igual); y calidad de tools
+     (paginación real en `buscar_cliente`/`listar_productos`, idempotencia en
+     `crear_cotizacion_borrador`, anotaciones `readOnlyHint`/`destructiveHint`, cifrado en
+     reposo del `auth_token` de `mcp_servers`).
+
+✅ **MCP — motor JSON-RPC unificado, fin de la fuga cross-tenant en SSE (fase 7 del plan de
+   "MCP y webhooks a nivel artesanía", jul 2026)** — la auditoría que originó la pasada de
+   webhooks (ver entrada de abajo) encontró un bug de seguridad real en el canal SSE de MCP:
+   `src/lib/mcp/cord-server.ts` instanciaba un único `Server` GLOBAL del SDK de MCP, y
+   `sse.ts` hacía `cordMcpServer.connect(transport)` en CADA conexión nueva — el SDK guarda un
+   solo campo `_transport` por instancia de `Server`, así que cada `connect()` pisaba el de la
+   conexión anterior. Con dos sesiones SSE simultáneas de dos orgs distintas, la respuesta
+   calculada para la org A podía terminar escrita en el stream de la org B (o viceversa) — una
+   fuga cross-tenant real, no teórica. Además ese servidor solo exponía **1 tool**
+   (`listar_productos`) contra las **7** reales de `/api/mcp` (HTTP): eran dos catálogos
+   distintos y desincronizados.
+   • **`src/lib/mcp/rpc.ts` (nuevo)** — se extrajo el `handle()` que antes vivía dentro de
+     `src/pages/api/mcp.ts` a un motor compartido (`SERVER_INFO`, `RpcError`, `handle()`) que
+     AHORA usan los dos transportes. `src/pages/api/mcp.ts` quedó como transporte HTTP
+     delgado que solo arma/desarma el sobre JSON-RPC y llama a `handle()`.
+   • **`cord-server.ts` ELIMINADO.** `src/lib/mcp/transport.ts` (`WebSseTransport`) dejó de
+     implementar la interfaz `Transport` del SDK y de conectarse a un `Server` compartido —
+     cada sesión SSE ahora es dueña de su propia identidad (`orgId`/`scope`/`keyId`,
+     capturados una sola vez al abrir la sesión en `sse.ts`) y de su propio stream. Un mensaje
+     entrante (`POST /api/mcp/message`) se procesa con `handleIncoming()`, que llama al MISMO
+     `handle()` de `rpc.ts` y manda la respuesta ÚNICAMENTE por `this.send()` de esa instancia
+     — no queda ningún estado compartido entre conexiones, así que la fuga desaparece por
+     diseño (no por parche) y de paso los dos transportes quedan con el catálogo de 7 tools
+     idéntico y sincronizado en una sola fuente. ⚠️ **SUPERADO por la Fase 8** (ver entrada de
+     arriba): `transport.ts`/`WebSseTransport` se eliminó por completo en esa pasada siguiente
+     y se reemplazó por `session-store.ts` (sesión + buzón fuera del proceso) — el fix de la
+     fuga cross-tenant descrito aquí sigue vigente (nunca dependió de `transport.ts`, dependía
+     de eliminar el `Server` global), solo cambió el mecanismo de entrega del mensaje.
+   • **Bug de protocolo corregido:** `handle()` no tenía ningún caso para
+     `notifications/initialized` (la notificación que todo cliente MCP manda justo después de
+     `initialize`) — caía al `default`, lanzaba `-32601`, y el código respondía un **error a
+     una notificación**, violación de JSON-RPC 2.0 (las notificaciones, mensajes sin `id`,
+     jamás llevan respuesta) que rompe clientes MCP estrictos. Corregido cortocircuitando a
+     `202` (HTTP) / sin escribir ningún frame (SSE) ANTES de invocar `handle()`, en vez de
+     intentar reconocer cada notificación una por una.
+   • **CORS corregido:** el preflight `OPTIONS` de `/api/mcp` anunciaba
+     `Access-Control-Allow-Origin`, pero la respuesta REAL del `POST` no lo llevaba — un
+     cliente MCP corriendo en el navegador pasaba el preflight y la petición real fallaba
+     igual. Ahora `CORS_HEADERS` se aplica tanto a `rpcOk`/`rpcErr` como a la respuesta 202 de
+     una notificación.
+   • **Verificado con un harness E2E real contra Neon**, llamando los handlers de ruta REALES
+     (no una reimplementación): dos orgs con su propia API key y su propio producto en
+     catálogo, dos sesiones SSE abiertas al mismo tiempo, y una llamada a `listar_productos`
+     disparada CONCURRENTEMENTE en ambas sesiones (`Promise.all`, reproduciendo el escenario
+     exacto del bug) — el stream de cada org recibió únicamente su propio producto, nunca el
+     de la otra. Además: `tools/list` idéntico (7 tools, mismos nombres) por HTTP y por SSE;
+     `notifications/initialized` responde 202 sin tronar y sin encolar ningún frame en el
+     stream (confirmado leyendo el SIGUIENTE frame real tras la notificación); CORS presente
+     en una respuesta normal y no solo en el preflight; y el scope `read`/`write` por-tool
+     (una llave de solo lectura sigue sin poder ejecutar `crear_cotizacion_borrador`) sobrevivió
+     intacto al mover el motor. 25/25 checks. `npm run build` limpio.
+   ⚠️ **Pendiente (fases 8-10 del plan, aún sin empezar):** sesiones SSE en Redis con TTL para
+     que funcionen entre múltiples instancias de Vercel (hoy `activeSessions` sigue siendo un
+     `Map` en memoria de proceso — funciona para el caso común de una instancia con Fluid
+     Compute, pero una sesión abierta en una instancia no es visible en otra si el `POST
+     /message` cae en una instancia distinta a la que sirvió el `GET /sse`); exigir
+     `Authorization: Bearer` en `/api/mcp/message` (hoy el `sessionId` en el query string es la
+     única credencial); paridad de rate-limit/metering/bitácora con `/api/v1` (MCP no reporta
+     uso ni cuenta contra cuota todavía); y calidad de tools (paginación real, idempotencia en
+     `crear_cotizacion_borrador`, anotaciones `readOnlyHint`/`destructiveHint`).
+
+✅ **Webhooks salientes llevados a nivel Stripe — outbox durable, identidad de evento, salud/auto-desactivación, rotación de secreto sin downtime, retención (jul 2026)** —
+   auditoría pedida por André ("MCP y webhooks a nivel artesanía de código, útiles y seguros")
+   encontró 4 bugs reales (fuga cross-tenant en MCP compartiendo un `Server` global entre
+   conexiones SSE, bypass de SSRF porque `fetch` seguía redirects hacia `169.254.169.254`,
+   `quote.paid` que se podía perder por usar `.catch()` en vez de `after()`/`waitUntil`, y un
+   cuelgue por `clearTimeout` antes de leer el cuerpo de la respuesta) más la ausencia de casi
+   toda la infraestructura que hace confiable un sistema de webhooks en producción: sin
+   durabilidad (2 intentos en proceso — si moría la invocación, el evento se perdía sin
+   rastro), sin identidad de evento (reintentos byte-idénticos, receptor no puede deduplicar),
+   sin auto-desactivación de endpoints muertos, sin rotación de secreto, log sin retención.
+   Siete fases, cada una verificada con harnesses E2E reales contra Neon + un endpoint HTTPS
+   real (httpbin.org/postman-echo.com) — no mocks:
+   • **Fase 0 (hotfix, sin migración):** `safeFetch()` nuevo en `src/lib/ssrf.ts` —
+     `redirect:'manual'` (un 3xx nunca se sigue, se trata como fallo — cierra el bypass de
+     metadatos), lectura del cuerpo ACOTADA (`readCapped`, 8 KiB) con el `AbortController`
+     armado durante toda la lectura (ya no solo hasta los headers). Los 3 sitios de
+     `dispatchQuoteEvent(...,'quote.paid')` en `stripe/webhook.ts` pasaron de `.catch(()=>{})`
+     a `after(...)`.
+   • **Fase 1 — outbox durable:** tabla nueva `webhook_events` (una fila por evento lógico ×
+     endpoint suscrito, `payload` INMUTABLE) + `src/lib/webhook-delivery.ts` (motor nuevo,
+     reemplaza el `deliver()` viejo de `webhooks.ts`, que queda como productor delgado). Cada
+     evento se ENCOLA primero (awaited — durable aunque la invocación muera) y se entrega
+     inline vía `after(flushNow(...))` para no perder la latencia p50 — el outbox es red de
+     seguridad, no impuesto de latencia. Cron nuevo `/api/cron/webhooks` (cada minuto) reclama
+     lo que quedó `pending`/`delivering` con lease vencido. El **claim** es una sola sentencia
+     SQL (`for update ... skip locked` + CTE) — la corrección depende del *lease*
+     (`lease_until`), no de `SKIP LOCKED` (que es solo rendimiento); cada `settle()` lleva
+     `and lease_id = ${leaseId}` como CAS. Carril de sistema nuevo `withSystemTx`/`cronScope`
+     en `db.ts`/`context.ts` para el claim cross-org (política RLS de `webhook_events` acepta
+     `app.org_id` O `app.scope='system'`). **Bug real encontrado por el propio harness:**
+     `claimByIdsOrg` (usado por `flushNow` tras encolar) no filtraba `next_retry_at <= now()`
+     como sí hace `claimDue` — una segunda llamada podía re-disparar un intento antes de
+     cumplir su backoff. Corregido.
+   • **Fase 2 — identidad de evento:** el payload gana `id: "evt_…"` (generado ANTES de
+     serializar, para que quede embebido en los bytes que se firman) + headers nuevos
+     `X-Cord-Event-Id`/`X-Cord-Delivery-Id`/`X-Cord-Attempt`/`Idempotency-Key`. `redeliver()`
+     reutiliza el `id` YA embebido en el payload guardado (mismo evento lógico) con fallback a
+     generar uno fresco solo para filas legacy sin `id`. SDK (`@flouviahq/elements`) bumpeado a
+     1.1.0 (sin publicar aún): `CordWebhookEvent.id` nuevo, 100% aditivo.
+   • **Fase 3 — salud del endpoint:** la racha cuenta MENSAJES en estado TERMINAL (agotó los
+     11 intentos, o un oneShot de prueba/replay falló) — nunca intentos sueltos, para que un
+     mal minuto no desactive un endpoint sano. Racha 3 → correo de aviso (throttle 24h);
+     racha 5 → `activo=false` + cancela lo pendiente de ese endpoint + correo + `logAudit`,
+     guardado por `where activo=true` para que solo el primer fallo que cruza el umbral
+     dispare el aviso (idempotente ante carreras). Nuevo botón "Reactivar y reintentar"
+     (`reenableAndRetryRecent`, solo últimas 24h — nunca el backlog completo). Techo
+     `OUTBOUND_LIMIT_PER_MIN=120` por endpoint ANTES de tocar la red (Cord no debe ser
+     reflector de un ataque volumétrico) — un throttle no cuenta como intento ni toca la
+     racha. `action:'test'`/`'redeliver'` ganaron rate-limit (20/min por org); el PATCH de
+     endpoints (antes sin auditar — cambiar la URL a un host ajeno no dejaba rastro) ahora sí
+     se audita. UI: banner rojo con el motivo + botones Reactivar/Reactivar y reintentar,
+     botón "Editar" (la API ya soportaba PATCH `url`/`eventos`, la UI solo mandaba
+     `{id,activo}`), `last_error` ahora se pinta (antes vivía en la BD sin mostrarse).
+   • **Fase 4 — rotación de secreto sin downtime:** botón "Rotar secreto" con ventana de
+     solape (1h/24h/72h). Durante la ventana, `X-Cord-Signature-V1` lleva DOS `v1=` (nuevo
+     primero, viejo al final — el orden es load-bearing: un SDK sin actualizar que arma un
+     `Record` se queda con el ÚLTIMO `v1=`, que es el del secreto que todavía tiene, así que
+     sigue verificando sin tocar código). El SDK parcheado (`parseV1Header` ahora colecciona
+     TODOS los `v1=`) acepta cualquiera que cuadre — verificado invocando el **SDK real
+     compilado** (`dist/server.cjs`), no una reimplementación. `X-Cord-Signature` legacy (un
+     solo valor posible) firma con el viejo durante la ventana y pasa al nuevo al cerrarse.
+   • **Fase 5 — retención:** cron nuevo `/api/cron/webhooks-limpieza` (diario, 4am UTC) —
+     `webhook_deliveries` > 30 días + tope de 500 filas más recientes por endpoint (hasta 50
+     endpoints "calientes" por corrida, autocorrectivo); `webhook_events` succeeded/canceled
+     > 30 días, failed > 90 días (`redeliver()` los necesita más tiempo). Borrado SIEMPRE en
+     lotes acotados (`ctid = any(array(select ctid ... limit N))`), nunca un DELETE gigante.
+     **El ahorro grande fue upstream:** `request_body` dejó de duplicarse en cada uno de los
+     hasta 11 intentos de un mismo mensaje (ya vivía, idéntico, en `webhook_events.payload`) —
+     `redeliver()` ahora lee el payload de ahí vía `message_id`, con fallback a la columna
+     vieja solo para filas de antes de este cambio. `response_body` bajó de 4000 a 2000
+     caracteres.
+   • **Fase 6 — catálogo de eventos nuevos + SSRF definitivo (cierra el TOCTOU residual):**
+     5 eventos nuevos en `WEBHOOK_EVENTS`: `payment.partial` (la rama de pago parcial en
+     `stripe/webhook.ts` no emitía NADA — una integración nunca se enteraba de que cayó un
+     anticipo/cuota), `payment.failed` (iguala/retainer con cobro recurrente fallido),
+     `quote.updated` (reenvío tras "Modificar y reenviar" — reusa el mismo action `resend`,
+     que pasó de disparar `quote.sent` a `quote.updated`; verificado que el badge de la UI
+     `dotColor()` tiene fallback gris para tipos no reconocidos antes del cambio, así que no
+     rompe nada visual), `quote.deleted` (nuevo `dispatchQuoteEventFrom()` — recibe el
+     resumen de la cotización YA CAPTURADO antes del `DELETE`, porque para cuando se dispara
+     el evento la fila ya no existe y una re-consulta normal fallaría), y `quote.expired`
+     (gap real: nada en el código marcaba `status='expired'` — cron nuevo
+     `/api/cron/expirar-cotizaciones`, diario, mueve a `expired` toda cotización
+     `sent`/`viewed` cuya `vigencia` ya pasó, registra el evento interno + audit log, y
+     dispara el webhook). `payment.partial` tiene un shape de `data` distinto (trae
+     `tipo`/`monto`/`numero_cuota`/`saldo_pendiente`/`payment_method` fusionados al resumen
+     normal) — `CordWebhookEvent` del SDK pasó a unión discriminada por `event` para que el
+     tipo de `data` se infiera correctamente en TypeScript según el evento.
+     **SSRF definitivo:** `guardedLookup()` nuevo en `ssrf.ts` — un `Agent` de `undici` con
+     `connect.lookup` custom que valida la IP en el momento EXACTO de la conexión TCP,
+     cerrando la ventana TOCTOU que quedaba entre el pre-chequeo DNS de
+     `assertSafeWebhookTarget` y la resolución real que hacía `fetch` por su cuenta —
+     verificado con una URL de DNS-rebinding real (`169-254-169-254.sslip.io`, que resuelve
+     literalmente a `169.254.169.254`) bloqueada sin llegar a abrir el socket.
+     **Bug real encontrado por el harness — el fix de SSRF rompía TODA entrega:**
+     `guardedLookup` ignoraba el parámetro `options` y siempre respondía con la forma de una
+     sola dirección (`callback(err, ip, family)`); pero el conector de `undici` invoca este
+     lookup con `{ all: true }` y espera la forma de arreglo (`callback(err, addresses[])`) —
+     con el shape equivocado, `net` de Node interpretaba el string de IP como si fuera el
+     arreglo y tronaba con `Invalid IP address: undefined` en TODA conexión, incluida una
+     entrega sana a un endpoint público real. Sin este fix, el cierre del TOCTOU habría
+     tumbado el sistema de webhooks completo en el primer deploy. Corregido para respetar
+     `options.all` y devolver el shape correcto en cada caso.
+   • **Documentación:** reescritura completa de `docs.cordhq.app` → Desarrolladores →
+     Herramientas → Webhooks (ES+EN) — la versión anterior documentaba nombres de evento
+     inventados (`cotizacion.pagada`) y solo el header legacy; ahora cubre el payload real,
+     ambos headers de firma, identidad/idempotencia, la tabla real de reintentos, salud del
+     endpoint, rotación de secreto y el catálogo completo de 11 eventos + `ping` (incluyendo
+     los 5 de la Fase 6). Nota de idempotencia + mención de rotación agregada también a la
+     guía del Server SDK.
+   ⚠️ **`invoice.canceled` deliberadamente NO se construyó** (estaba en la lista original de
+     eventos nuevos): no existe ningún flujo de cancelación de CFDI en el código (Facturapi
+     soporta cancelar con motivo SAT, pero Cord nunca lo expone) — construirlo solo para
+     tener de qué colgar un webhook sería inventar una feature fiscal completa como efecto
+     secundario de esta tarea. Queda fuera de alcance hasta que la cancelación de CFDI sea un
+     feature real.
+   ⚠️ **Pendiente (no bloqueante, documentado para una sesión futura):** el bloque de MCP del
+     plan original (unificar el motor JSON-RPC entre `/api/mcp` y el canal SSE — hoy comparten
+     un `Server` global que causa una fuga cross-tenant real —, sesiones en Redis con TTL, y
+     paridad de rate-limit/metering/bitácora con `/api/v1`) sigue sin empezar.
+   • Verificado: cada fase cerró con `npm run build` limpio + harness E2E propio contra Neon
+     real y un endpoint HTTPS real (SSRF/redirect, backoff exponencial, doble-claim, sweeper
+     cross-org, streak de salud con sus 2 umbrales, auto-cancelación de pendientes, throttle
+     anti-reflector, rotación con el SDK real compilado, los conteos exactos de la retención
+     en una segunda corrida idempotente, y en la Fase 6 los 5 eventos nuevos + el bloqueo real
+     de DNS-rebinding + la regresión de entrega normal, contra la BD real). Migración de
+     schema corrida contra Neon (tabla `webhook_events` + columnas nuevas en
+     `webhooks`/`webhook_deliveries`, RLS+FORCE confirmado contra `pg_class`/`pg_policy`).
+
 ✅ **Documentación del SDK de NPM y rediseño visual "Apple" para docs (jul 2026)** — 
    • Se actualizaron a fondo los docs de `Cord Elements` en la barra lateral de desarrolladores (`DocsLayout.astro`), promoviéndolo de una subsección a un botón principal/desplegable de alto nivel.
    • Se crearon guías detalladas para el uso real del paquete NPM `@flouviahq/elements`:

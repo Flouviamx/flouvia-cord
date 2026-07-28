@@ -3,6 +3,9 @@
   "crons": [
     { "path": "/api/cron/recordatorios", "schedule": "0 15 * * *" },
     { "path": "/api/cron/intereses",     "schedule": "0 6 1 * *"  },
-    { "path": "/api/cron/cobranza",      "schedule": "0 16 * * *" }
+    { "path": "/api/cron/cobranza",      "schedule": "0 16 * * *" },
+    { "path": "/api/cron/webhooks",      "schedule": "* * * * *"  },
+    { "path": "/api/cron/webhooks-limpieza", "schedule": "0 4 * * *" },
+    { "path": "/api/cron/expirar-cotizaciones", "schedule": "0 7 * * *" }
   ]
 }

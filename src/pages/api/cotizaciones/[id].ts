@@ -8,7 +8,7 @@ import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
 import { notifyQuoteSent } from '../../../lib/email';
 import { requirePerm } from '../../../lib/queries';
-import { dispatchQuoteEvent, type WebhookEvent } from '../../../lib/webhooks';
+import { dispatchQuoteEvent, dispatchQuoteEventFrom, type WebhookEvent } from '../../../lib/webhooks';
 import { after } from '../../../lib/after';
 import { reportUsage } from '../../../lib/billing';
 import { emitFiscalDocument } from '../../../lib/fiscal/emit';
@@ -19,7 +19,7 @@ import { sanitizeItem } from '../../../../packages/elements/src/engine';
 // Evento interno (eventos.tipo) → evento público de webhook.
 const WH_MAP: Record<string, WebhookEvent> = {
     sent: 'quote.sent', approved: 'quote.approved', rejected: 'quote.rejected',
-    paid: 'quote.paid', invoiced: 'invoice.stamped',
+    paid: 'quote.paid', invoiced: 'invoice.stamped', updated: 'quote.updated',
 };
 
 // Acciones que cambian la decisión de aprobación → requieren permiso 'aprobar';
@@ -29,7 +29,13 @@ const APROBAR_ACTIONS = new Set(['approve', 'reject', 'approve_request', 'reject
 // Transiciones permitidas: action → { desde[], status final, evento }
 const ACTIONS: Record<string, { from: string[]; to: string; evento: string; detalle: string }> = {
     send:         { from: ['draft'],                      to: 'sent',     evento: 'sent',     detalle: 'Cotización enviada — link generado' },
-    resend:       { from: ['sent', 'viewed', 'expired'],  to: 'sent',     evento: 'sent',     detalle: 'Cotización reenviada al cliente' },
+    // evento:'updated' (no 'sent') — un reenvío de una cotización YA enviada es
+    // una MODIFICACIÓN, no un envío inicial; antes reusaba quote.sent, lo que
+    // hacía que una integración no pudiera distinguir "se mandó por primera
+    // vez" de "se editó y se volvió a mandar". `to` sigue en 'sent' (el status
+    // de la cotización), así que el correo al cliente (más abajo, gateado por
+    // action.to==='sent') sigue funcionando igual.
+    resend:       { from: ['sent', 'viewed', 'expired'],  to: 'sent',     evento: 'updated',  detalle: 'Cotización reenviada al cliente' },
     update_draft: { from: ['draft'],                      to: 'draft',    evento: 'comment',  detalle: 'Borrador actualizado' },
     approve:      { from: ['sent', 'viewed'],             to: 'approved', evento: 'approved', detalle: 'Cotización marcada como aprobada' },
     reject:       { from: ['sent', 'viewed'],             to: 'rejected', evento: 'rejected', detalle: 'Cotización marcada como rechazada' },
@@ -259,11 +265,20 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 export const DELETE: APIRoute = async ({ params }) => {
     const id = params.id ?? '';
     const orgId = await getActiveOrgId();
+    // Capturamos el resumen ANTES de borrar — dispatchQuoteEvent (el camino
+    // normal) re-consulta la fila por id, y para cuando dispararíamos el
+    // webhook la fila ya no existe. dispatchQuoteEventFrom toma los datos ya
+    // en mano en vez de volver a preguntarle a la BD.
+    const [before] = await sql`
+        select c.id, c.folio, c.status, c.total, c.public_token, cl.empresa
+        from cotizaciones c left join clientes cl on cl.id = c.cliente_id
+        where c.id = ${id} and c.org_id = ${orgId} and c.status = 'draft'`;
     const rows = await sql`
         delete from cotizaciones
         where id = ${id} and org_id = ${orgId} and status = 'draft'
         returning id`;
     if (!rows.length) return json({ error: 'Solo se pueden eliminar borradores' }, 409);
+    if (before) after(dispatchQuoteEventFrom(orgId, 'quote.deleted', before as any));
     return json({ ok: true });
 };
 

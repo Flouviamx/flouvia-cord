@@ -2,6 +2,52 @@
 
 Todos los cambios notables de `@flouviahq/elements` se documentan aquí.
 
+## [1.1.0] — sin publicar
+
+Identidad de evento para los webhooks salientes — parte de llevar el motor de entrega
+(`src/lib/webhook-delivery.ts`, no publicado, es código de la app) a un outbox durable con
+reintentos con backoff exponencial. 100% aditivo, sin breaking changes.
+
+### Added
+
+- **`CordWebhookEvent.id`** (`evt_…`) — cada entrega trae ahora un identificador estable,
+  igual en el body y en el header `X-Cord-Event-Id`. Es el MISMO valor en reintentos
+  automáticos y en un replay manual desde Ajustes › Developers (el payload se reenvía
+  byte-idéntico) — úsalo para deduplicar del lado del receptor.
+- Headers nuevos en cada entrega: `X-Cord-Event-Id` (= `id` del body), `X-Cord-Delivery-Id`
+  (id del intento — cambia en cada replay, a diferencia de `X-Cord-Event-Id`),
+  `X-Cord-Attempt` (número de intento, 1-indexado), `Idempotency-Key` (repite
+  `X-Cord-Event-Id` — varios frameworks de servidor lo leen de ahí sin configuración extra).
+- **Rotación de secreto sin downtime**: `CordWebhooks#constructEvent`/`constructEventAsync`
+  ahora aceptan `X-Cord-Signature-V1` con **más de un** par `v1=` (uno por cada secreto
+  vigente durante una rotación en curso) — basta con que UNO cuadre. Nuevo botón "Rotar
+  secreto" en Ajustes › Developers con ventana de solape configurable (1h/24h/72h): durante
+  esa ventana Cord firma con el secreto nuevo Y el viejo a la vez, así que **no hace falta
+  desplegar tu verificador actualizado el mismo instante en que rotas** — puedes rotar y
+  actualizar tu `endpointSecret` en cualquier momento dentro de la ventana sin perder ni una
+  entrega. El header legacy `X-Cord-Signature` (un solo valor posible) firma con el secreto
+  VIEJO durante la ventana y pasa al nuevo cuando cierra.
+- **6 eventos nuevos**: `quote.updated` (una cotización ya enviada se editó y se reenvió —
+  antes reusaba `quote.sent`, indistinguible de un envío inicial), `quote.expired` (venció su
+  vigencia sin que el cliente decidiera), `quote.deleted` (se borró un borrador),
+  `payment.partial` (cayó un anticipo/saldo/cuota sin cubrir el total — antes NINGÚN webhook
+  avisaba de esto, solo te enterabas hasta que `quote.paid` cubría el 100%), `payment.failed`
+  (un cobro recurrente de iguala falló). `CordWebhookEvent` pasó a **unión discriminada** por
+  `event`: todos comparten `CordWebhookQuoteData`, excepto `payment.partial`, cuyo `data` trae
+  además `tipo`/`monto`/`numero_cuota`/`saldo_pendiente`/`payment_method`
+  (`CordWebhookPaymentPartialData`, nueva interfaz exportada) — revisa `event.event` antes de
+  leer `event.data` para que TypeScript te dé el tipo correcto.
+
+### Notes
+
+- Ningún header ni campo existente cambió de forma — `X-Cord-Signature`/`X-Cord-Signature-V1`
+  siguen firmando exactamente el mismo body crudo; `constructEvent`/`constructEventAsync` no
+  requieren cambios de tu parte, el campo `id` simplemente aparece en el objeto devuelto.
+- Reintentos ahora corren con backoff exponencial (hasta 11 intentos en ~3.6 días) en vez de
+  2 intentos fijos — no afecta el contrato del SDK, pero un endpoint caído puede recibir el
+  mismo evento más veces de las que veía antes. Deduplicar por `id` es la forma correcta de
+  manejarlo (nunca fue seguro asumir entrega exactly-once).
+
 ## [1.0.0] — sin publicar
 
 Reescritura mayor para llevar el SDK al nivel de Stripe Elements / Clerk Elements.

@@ -1183,3 +1183,112 @@ create table if not exists blog_subscribers (
   email       text        not null unique,
   created_at  timestamptz default now()
 );
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- OUTBOX de webhooks salientes — durabilidad real (jul 2026)
+-- ════════════════════════════════════════════════════════════════════════════
+-- Antes, dispatchQuoteEvent entregaba EN LÍNEA con 2 intentos y 300ms fijos: si
+-- la invocación serverless moría a media entrega, el evento se perdía sin dejar
+-- rastro (no había fila "pendiente" en ningún lado). Ahora cada evento se
+-- ENCOLA primero — una fila por evento lógico × endpoint suscrito — y solo
+-- DESPUÉS se intenta entregar. Si la función muere, el cron de sweep
+-- (/api/cron/webhooks) recupera el trabajo pendiente sin que nadie tenga que
+-- reintentar a mano. `payload` son los bytes EXACTOS que se firman: nunca se
+-- re-serializan en un reintento (la firma dejaría de cuadrar y el receptor
+-- perdería la capacidad de deduplicar por event_id).
+create table if not exists webhook_events (
+  id             uuid        default gen_random_uuid() primary key,
+  org_id         uuid        not null references orgs(id) on delete cascade,
+  webhook_id     uuid        not null references webhooks(id) on delete cascade,
+  event_id       text        not null,                    -- evt_… público, MISMO valor para los N endpoints de un evento
+  evento         text        not null,
+  payload        text        not null,                    -- JSON exacto (inmutable, ya incluye el event_id)
+  dedupe_key     text,                                     -- idempotencia del PRODUCTOR (null = sin dedupe)
+  estado         text        not null default 'pending',   -- pending | delivering | succeeded | failed | canceled
+  intentos       int         not null default 0,
+  next_retry_at  timestamptz not null default now(),
+  lease_id       uuid,
+  lease_until    timestamptz,
+  last_status    int,
+  last_error     text,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now(),
+  delivered_at   timestamptz
+);
+
+-- Índice del SWEEPER: PARCIAL, así que se mantiene diminuto aunque la tabla
+-- acumule millones de filas 'succeeded'/'canceled' con el tiempo.
+create index if not exists idx_wh_events_due on webhook_events (next_retry_at)
+  where estado in ('pending', 'delivering');
+create index if not exists idx_wh_events_hook on webhook_events(webhook_id, created_at desc);
+create index if not exists idx_wh_events_org  on webhook_events(org_id, created_at desc);
+
+-- Idempotencia de ENQUEUE: reintentar dispatchQuoteEvent con el mismo
+-- dedupe_key (ej. el mismo pago de Stripe reprocesado) no duplica el fan-out
+-- hacia un mismo endpoint. Parcial porque dedupe_key es opcional.
+create unique index if not exists uq_wh_events_dedupe
+  on webhook_events(webhook_id, dedupe_key) where dedupe_key is not null;
+
+alter table webhook_events enable row level security;
+-- El sweeper (cron cross-org) usa el carril de sistema app.scope='system' (ver
+-- withSystemTx en db.ts) SOLO para el claim de filas de varias orgs a la vez;
+-- el resto de las queries sobre una fila ya reclamada corren agrupadas por
+-- org_id vía withOrgTx normal, como cualquier otra tabla.
+create policy "rls_webhook_events" on webhook_events
+  using (
+    org_id = nullif(current_setting('app.org_id', true), '')::uuid
+    or current_setting('app.scope', true) = 'system'
+  );
+alter table webhook_events force row level security;
+
+-- ── Salud del endpoint: racha de fallos → auto-desactivación (jul 2026) ─────
+-- La racha cuenta MENSAJES agotados (los 11 intentos de un evento fallaron),
+-- no intentos sueltos — si contara intentos, un mal minuto desactivaría el
+-- endpoint. Ver settle()/runSweep() en src/lib/webhook-delivery.ts.
+alter table webhooks add column if not exists fallos_consecutivos int not null default 0;
+alter table webhooks add column if not exists deshabilitado_at    timestamptz;
+alter table webhooks add column if not exists deshabilitado_motivo text;
+alter table webhooks add column if not exists aviso_fallos_at     timestamptz;  -- throttle del correo de aviso (1×/24h)
+
+-- ── Rotación de secreto con ventana de solape (jul 2026) ────────────────────
+-- Durante la ventana, la firma V1 lleva AMBOS secretos (nuevo y viejo) para que
+-- un consumidor que todavía no actualizó su código siga verificando sin tocar
+-- nada. secret_prev_expira = null → sin rotación en curso.
+alter table webhooks add column if not exists secret_prev         text;
+alter table webhooks add column if not exists secret_prev_expira  timestamptz;
+alter table webhooks add column if not exists secret_rotado_at    timestamptz;
+
+-- ── Trazabilidad log ↔ outbox ────────────────────────────────────────────────
+-- Cada intento HTTP (webhook_deliveries) queda ligado al mensaje del outbox
+-- que lo originó, y lleva su propio event_id copiado (para no tener que hacer
+-- JOIN solo para mostrar el id en la UI).
+alter table webhook_deliveries add column if not exists message_id uuid references webhook_events(id) on delete set null;
+alter table webhook_deliveries add column if not exists event_id   text;
+create index if not exists idx_wh_deliveries_msg on webhook_deliveries(message_id);
+
+-- ── Idempotencia de tools MCP de escritura (jul 2026) ───────────────────────
+-- Un cliente MCP puede reintentar una llamada (timeout, red inestable) sin
+-- saber si la anterior sí llegó a ejecutarse — sin esto, `crear_cotizacion_
+-- borrador` crea una cotización DUPLICADA por cada reintento. La tool acepta
+-- un `idempotency_key` opcional (mismo patrón que Stripe: el CLIENTE lo
+-- genera y lo repite en un reintento); la llave está scoped a la API key
+-- (`key_id`), no solo a la org — dos integraciones distintas de la misma org
+-- podrían coincidir en un idempotency_key trivial ("1") sin pisarse. Se
+-- guarda la respuesta COMPLETA ya serializada: un replay devuelve EXACTO lo
+-- que se devolvió la primera vez, sin tener que reconstruirla del estado
+-- actual (que pudo cambiar desde entonces).
+create table if not exists mcp_idempotency (
+  id               uuid        default gen_random_uuid() primary key,
+  org_id           uuid        not null references orgs(id) on delete cascade,
+  key_id           uuid        not null references api_keys(id) on delete cascade,
+  idempotency_key  text        not null,
+  tool             text        not null,
+  response         jsonb       not null,
+  created_at       timestamptz not null default now()
+);
+create unique index if not exists uq_mcp_idem on mcp_idempotency(key_id, idempotency_key);
+
+alter table mcp_idempotency enable row level security;
+create policy "rls_mcp_idempotency" on mcp_idempotency
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+alter table mcp_idempotency force row level security;

@@ -31,7 +31,10 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
                     <span class="datos-title">{t(L, 'set.datos.csv_titulo')}</span>
                     <span class="datos-desc">{t(L, 'set.datos.csv_desc')}</span>
                 </span>
-                <span class="datos-soon">{t(L, 'set.datos.proximamente')}</span>
+                <span class="datos-btn-group">
+                    <a class="datos-btn ghost" href="/api/productos/export" download>{t(L, 'set.datos.csv_productos')}</a>
+                    <a class="datos-btn ghost" href="/api/clientes/export" download>{t(L, 'set.datos.csv_clientes')}</a>
+                </span>
             </div>
         </div>
     </div>
@@ -63,7 +66,9 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
     .datos-desc b { color: var(--color-text); font-weight: 600; }
     .datos-btn { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; text-decoration: none; white-space: nowrap; transition: transform 0.3s var(--ease-spring); }
     .datos-btn:hover { transform: translateY(-1px); }
-    .datos-soon { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 4px 9px; border-radius: 100px; color: #b45309; background: rgba(245,158,11,0.1); white-space: nowrap; }
+    .datos-btn-group { display: flex; gap: 0.5rem; flex-shrink: 0; }
+    .datos-btn.ghost { color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border); }
+    .datos-btn.ghost:hover { background: var(--color-border); }
     .datos-note { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.6; margin: 0; }
     .datos-note b { color: var(--color-text); font-weight: 600; }
 

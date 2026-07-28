@@ -10,7 +10,7 @@ const L = currentLocale();
 
 <SettingsShell title="Auditoría — Ajustes" tab="auditoria" perm="ajustes"
     intro={t(L, 'set.aud.intro')}>
-    <div class="s-block">
+    <div class="s-block full">
         <div class="audit-list">
             {AUDIT.length === 0 && <p class="audit-empty">{t(L, 'set.aud.vacio')}</p>}
             {AUDIT.map((a) => (

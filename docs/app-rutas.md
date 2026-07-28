@@ -42,7 +42,8 @@ identidad sigue siendo Clerk (userId), solo la membresía/permiso es nuestra.
 - `tareas` — recordatorios CRM del vendedor
 - `audit_log` — registro inmutable de acciones (logAudit/reqIp)
 - `api_keys` — llaves API públicas (hash SHA-256, mode test|live, scope read|write, **type secret|publishable** jul 2026 — ver "Cord Elements: llaves pk_/sk_" en historial.md)
-- `webhooks` — endpoints salientes (HMAC-sha256, best-effort, 1 retry)
+- `webhooks` — endpoints salientes (HMAC-sha256; salud/auto-desactivación y rotación de secreto con solape — ver `webhook_events` abajo y "Webhooks salientes llevados a nivel Stripe" en `historial-platform-api.md`)
+- `webhook_events` (jul 2026) — outbox DURABLE de webhooks: una fila por evento lógico × endpoint suscrito, `payload` inmutable, calendario de reintentos con backoff exponencial (11 intentos en ~3.6 días). RLS con carril de sistema (`app.scope='system'`) para el claim cross-org del sweeper — ver `withSystemTx` en `db.ts`.
 - `intereses_moratorios` — cargos mensuales de interés moratorio por cotización (cron día 1; idempotente por cotizacion_id+periodo)
 - `promesas_pago` — promesa de pago del cliente para una fecha (cobranza; seguimiento manual, no automatiza). `productos.precios_volumen jsonb` = matriz de precios por volumen `[{min,precio}]`
 - `cotizacion_cobros` (jul 2026) — cobros por "rebanadas" de una cotización (`tipo`: total|anticipo|saldo|cuota), cada uno con su propio PaymentIntent de Stripe. RLS por `org_id` O `public_token` + FORCE. Columnas nuevas relacionadas: `cotizaciones.anticipo_pct` (% de anticipo, null = sin anticipo) y `orgs.anticipo_default_pct` (default del negocio). Ver "Cobros por términos de crédito + Anticipo/Saldo + Cuotas" en `negocio-billing.md`. ⚠️ Fechas `date` de la BD se comparan SIEMPRE con `venceDia()` (`src/lib/cobros.ts`), nunca `String(v).slice(0,10)` (Neon devuelve DATE como objeto Date).
@@ -50,6 +51,7 @@ identidad sigue siendo Clerk (userId), solo la membresía/permiso es nuestra.
 - `cedulas` / `cedula_filas` / `cedula_valores` (jul 2026) — Cédulas Presupuestales (planeación financiera: Ventas→Producción→Compras de MP→Cobranza). RLS `FORCE` con `org_id` denormalizado en las 3 (sin carril `public_token` — no hay vista pública). `cedula_filas.formula` es jsonb flexible (primitivo "combo": suma ponderada de referencias a otras filas, propias o de otra cédula); `cedula_valores` solo guarda filas `tipo='input'` — las `formula` se calculan on-the-fly en `src/lib/cedulas.ts` (`computeCedula`). **El motor combo soporta 3 tipos de término (`kind`: suma/pct/producto, fold secuencial) + `offset` de periodo** — ver "Presupuestos curso completo — Fases 1-2" en `historial.md`. `cedula_filas.fuente_real` (jul 2026) conecta una fila a datos REALES de la org ("Presupuesto vs. Real": ventas_monto | ventas_unidades | cobranza_monto; serie en `getRealPorMes`, mapeo etiqueta→mes en `parsePeriodoMes` — Pro+). Acceso FREEMIUM por cantidad (`cedulasLimit`: free 1 · starter 3 · pro+ ∞); wizard "plan financiero completo" (`createPlanCompleto`) y herramientas de análisis = Pro+. Ver "Presupuestos v2" en `historial.md`.
 - `analisis` (jul 2026) — herramientas de decisión guardables (evaluación de proyecto VPN/TIR/payback, punto óptimo de inventario EOQ, análisis de variaciones estándar-vs-real). Una fila = un escenario: `tipo` (proyecto|inventario|variaciones), `nombre`, `inputs jsonb`. Solo persiste INPUTS; los resultados se calculan on-the-fly en `src/lib/analisis.ts` (funciones puras, sin DB — se bundlean también en el cliente). RLS directa por `org_id` + FORCE, sin `public_token`. Ver "Presupuestos curso completo — Fases 3-4" en `historial.md`.
 - `kits` / `kit_items` (jul 2026) — Kits de cotización: paquetes pre-armados de renglones que se insertan de un clic en el editor (`/app/cotizaciones/nueva`, botón "+ Insertar kit"). Se gestionan en `/app/productos/kits` (sub-pestaña de Productos, NO Ajustes). `kit_items.producto_id` nullable = línea libre dentro del kit; `org_id` denormalizado en ambas para RLS sin JOIN. RLS directa por `org_id` + FORCE, sin `public_token` (no hay vista pública de un kit). `kits.precio_combo` (nullable) = precio TOTAL fijo para una unidad del kit; al insertar, el editor prorratea ese total entre las líneas de catálogo (`ratio = precioCombo / sumaListaDeUnKit`, sobreescribe `negociado` con `negoTouched:true`) — las líneas libres no participan. Al insertarse, un kit se vuelve `cotizacion_items` normales sin ninguna referencia de vuelta hacia el kit. Ver "Kits de cotización + precio de combo" en `historial-app-features.md`.
+- `mcp_idempotency` (jul 2026) — idempotencia de la tool `crear_cotizacion_borrador` del servidor MCP (`src/lib/mcp.ts`): un cliente MCP puede mandar un `idempotency_key` propio; un reintento con la MISMA llave (única por `key_id + idempotency_key`) devuelve la respuesta YA guardada en vez de crear un segundo borrador. RLS por `org_id` + FORCE. Ver "MCP — calidad de las tools" en `historial-platform-api.md`.
 
 Patrón RLS: `org_id = current_setting('app.org_id', TRUE)::uuid` — activo a nivel de
 base de datos (jun 2026). El backend usa `withOrgTx(orgId, ...queries)` en `db.ts`
@@ -206,8 +208,27 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
 /api/v1/clientes     → GET list + POST crear
 /api/v1/productos    → GET list + POST crear
 /api/v1/cobranza     → GET cartera
-/api/mcp             → MCP JSON-RPC 2.0: initialize/ping/tools/list/tools/call
-/api/webhooks        → CRUD webhooks salientes (POST crea y devuelve secret 1 vez)
+/api/mcp             → MCP JSON-RPC 2.0 (transporte moderno, sin sesión):
+                   initialize/ping/tools/list/tools/call. Motor compartido en
+                   src/lib/mcp/rpc.ts (jul 2026 — antes vivía inline aquí).
+/api/mcp/sse + /api/mcp/message → transporte MCP legacy (HTTP+SSE), mismo
+                   motor rpc.ts. Sesión (orgId/scope/keyId) en
+                   src/lib/mcp/session-store.ts (Redis vía Upstash si está
+                   configurado, si no Map en memoria — mismo patrón que
+                   ratelimit.ts); message.ts exige Authorization: Bearer
+                   ADEMÁS del sessionId y valida que la llave sea de la
+                   MISMA org que abrió la sesión.
+/api/webhooks        → CRUD webhooks salientes + POST action:test|redeliver|rotate
+                   (rotate = ventana de solape 1h/24h/72h, devuelve secret nuevo 1 vez)
+/api/cron/webhooks   → sweeper del outbox (cada minuto) — reclama trabajo vencido
+                   (invocaciones muertas, reintentos programados) vía withSystemTx.
+/api/cron/webhooks-limpieza → retención diaria (webhook_deliveries >30d + tope 500/
+                   endpoint; webhook_events resueltos >30d, failed >90d). Borrado en
+                   lotes acotados, nunca un DELETE gigante.
+/api/cron/expirar-cotizaciones → diario (jul 2026): mueve a status='expired' toda
+                   cotización sent/viewed cuya vigencia ya pasó (antes ningún código
+                   path escribía ese status); registra evento interno + audit log +
+                   dispara el webhook quote.expired.
 
 # Entorno de PRUEBA (jul 2026 — ver "Entorno de prueba REAL tipo Stripe" en historial.md)
 /api/test-mode/reset → POST "Vaciar datos de prueba" (interna, requiere sesión). Solo opera si
@@ -251,7 +272,11 @@ Medidor de uso real del plan en `getPlanUsage()`. **Jun 2026 (API/Webhooks):** t
 `api_keys` (`org_id`, `key_hash` SHA-256, `mode` test|live, `scope` read|write, `label`,
 `last_used_at`, `revoked`); tabla `webhooks` (`org_id`, `url`, `eventos` jsonb, `secret`
 en claro para firma, `activo`, `last_status`, `last_error`, `last_delivery_at`);
-columna `orgs.embed_domains` (allowlist CSP para Elements). ⚠️ Correr `npm run db:migrate` tras pull.
+columna `orgs.embed_domains` (allowlist CSP para Elements). **Jul 2026 (salud + rotación):**
+`webhooks` ganó `fallos_consecutivos`, `deshabilitado_at`/`deshabilitado_motivo`,
+`aviso_fallos_at`, `secret_prev`/`secret_prev_expira`/`secret_rotado_at`; `webhook_deliveries`
+ganó `message_id`/`event_id` (liga al outbox); tabla nueva `webhook_events` (ver arriba). ⚠️
+Correr `npm run db:migrate` tras pull.
 
 **Mock data:** `src/lib/mock.ts` exporta `ORG`, `PRODUCTOS`, `CLIENTES`,
 `COTIZACIONES` (con items + eventos), `STATUS_META` (label/color/bg por estado),

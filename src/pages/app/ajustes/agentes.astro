@@ -22,18 +22,18 @@ const L = currentLocale();
 
     <!-- ── Cobranza autónoma (opt-in) ── -->
     <div class="s-block">
-        <div class="ag-head">
-            <div>
-                <h3 style="margin:0;padding:0;border:0">{t(L, 'set.ag.cobranza_titulo')}</h3>
+        <h3>{t(L, 'set.ag.cobranza_titulo')}</h3>
+        <div class="s-body">
+            <div class="ag-toggle-row">
                 <p class="ag-sub">{t(L, 'set.ag.cobranza_desc')}</p>
+                <label class="s-toggle" title={t(L, 'set.ag.activar_cobranza')}>
+                    <input type="checkbox" id="cobranzaToggle" checked={aiCobranza}
+                        data-i18n-on={t(L, 'set.ag.cobranza_activada')} data-i18n-off={t(L, 'set.ag.cobranza_desactivada')} data-i18n-err={t(L, 'set.ag.no_pudo_guardar')} />
+                    <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                </label>
             </div>
-            <label class="s-toggle" title={t(L, 'set.ag.activar_cobranza')}>
-                <input type="checkbox" id="cobranzaToggle" checked={aiCobranza}
-                    data-i18n-on={t(L, 'set.ag.cobranza_activada')} data-i18n-off={t(L, 'set.ag.cobranza_desactivada')} data-i18n-err={t(L, 'set.ag.no_pudo_guardar')} />
-                <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
-            </label>
+            <p class="ag-warn" set:html={t(L, 'set.ag.cobranza_warn')} />
         </div>
-        <p class="ag-warn" set:html={t(L, 'set.ag.cobranza_warn')} />
     </div>
 
     <!-- ── Servidores MCP (gobernanza outbound) ── -->
@@ -43,38 +43,38 @@ const L = currentLocale();
         data-i18n-del-body={t(L, 'set.ag.eliminar_servidor_body')} data-i18n-del-confirm={t(L, 'set.ag.eliminar')}
         data-i18n-del-ok={t(L, 'set.ag.servidor_eliminado')} data-i18n-del-err={t(L, 'set.ag.no_pudo_eliminar')}
         data-i18n-add-err={t(L, 'set.ag.no_pudo_agregar')}>
-        <div class="ag-head">
-            <div>
-                <h3 style="margin:0;padding:0;border:0">{t(L, 'set.ag.mcp_titulo')}</h3>
+        <h3>{t(L, 'set.ag.mcp_titulo')}</h3>
+        <div class="s-body">
+            <div class="ag-toggle-row">
                 <p class="ag-sub" set:html={t(L, 'set.ag.mcp_desc')} />
+                <button class="api-btn-solid" id="addBtn">{t(L, 'set.ag.agregar_servidor')}</button>
             </div>
-            <button class="api-btn-solid" id="addBtn">{t(L, 'set.ag.agregar_servidor')}</button>
-        </div>
 
-        <div class="mcp-rows" id="mcpRows">
-            {servers.length === 0 && (
-                <p class="mcp-empty">{t(L, 'set.ag.mcp_vacio')}</p>
-            )}
-            {servers.map((s) => (
-                <div class="mcp-row" data-id={s.id}>
-                    <span class="mcp-dot" data-on={s.activo ? '1' : '0'}></span>
-                    <span class="mcp-body">
-                        <span class="mcp-name">{s.nombre}</span>
-                        <span class="mcp-url">{s.url_sse}{s.auth_token ? t(L, 'set.ag.con_token') : ''}</span>
-                    </span>
-                    <label class="mcp-perm" title={t(L, 'set.ag.permitir_ia_titulo')}>
-                        <input type="checkbox" data-perm checked={s.permitido} />
-                        <span>{t(L, 'set.ag.permitir_ia')}</span>
-                    </label>
-                    <label class="s-toggle" title={t(L, 'set.ag.activo')}>
-                        <input type="checkbox" data-activo checked={s.activo} />
-                        <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
-                    </label>
-                    <button class="mcp-del" data-del title={t(L, 'set.ag.eliminar_titulo')}>✕</button>
-                </div>
-            ))}
+            <div class="mcp-rows" id="mcpRows">
+                {servers.length === 0 && (
+                    <p class="mcp-empty">{t(L, 'set.ag.mcp_vacio')}</p>
+                )}
+                {servers.map((s) => (
+                    <div class="mcp-row" data-id={s.id}>
+                        <span class="mcp-dot" data-on={s.activo ? '1' : '0'}></span>
+                        <span class="mcp-body">
+                            <span class="mcp-name">{s.nombre}</span>
+                            <span class="mcp-url">{s.url_sse}{s.auth_token ? t(L, 'set.ag.con_token') : ''}</span>
+                        </span>
+                        <label class="mcp-perm" title={t(L, 'set.ag.permitir_ia_titulo')}>
+                            <input type="checkbox" data-perm checked={s.permitido} />
+                            <span>{t(L, 'set.ag.permitir_ia')}</span>
+                        </label>
+                        <label class="s-toggle" title={t(L, 'set.ag.activo')}>
+                            <input type="checkbox" data-activo checked={s.activo} />
+                            <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                        </label>
+                        <button class="mcp-del" data-del title={t(L, 'set.ag.eliminar_titulo')}>✕</button>
+                    </div>
+                ))}
+            </div>
+            <p class="ag-note" set:html={t(L, 'set.ag.nota')} />
         </div>
-        <p class="ag-note" set:html={t(L, 'set.ag.nota')} />
     </div>
 </SettingsShell>
 
@@ -94,14 +94,14 @@ const L = currentLocale();
 </dialog>
 
 <style>
-    .ag-head { display: flex; align-items: flex-start; gap: 1rem; justify-content: space-between; }
-    .ag-sub { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.5; margin: 4px 0 0; max-width: 60ch; }
-    .ag-warn { font-size: 0.78rem; color: #b45309; background: rgba(245,158,11,0.1); padding: 0.7rem 0.9rem; border-radius: 10px; margin: 1rem 0 0; line-height: 1.5; }
+    .ag-toggle-row { display: flex; align-items: center; gap: 1.5rem; justify-content: space-between; }
+    .ag-sub { font-size: 0.84rem; color: var(--color-text-muted); line-height: 1.55; margin: 0; max-width: 60ch; }
+    .ag-warn { font-size: 0.78rem; color: #b45309; background: rgba(245,158,11,0.1); padding: 0.7rem 0.9rem; border-radius: 10px; margin: 0; line-height: 1.5; }
     .ag-warn code { font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem; background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 4px; }
-    .ag-note { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.55; margin: 1.1rem 0 0; }
+    .ag-note { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.55; margin: 0; }
     .ag-note b { color: var(--color-text); font-weight: 600; }
 
-    .mcp-rows { display: flex; flex-direction: column; margin-top: 1rem; }
+    .mcp-rows { display: flex; flex-direction: column; margin-top: 0; }
     .mcp-empty { font-size: 0.84rem; color: var(--color-text-muted); padding: 1.2rem 0.2rem; }
     .mcp-row { display: grid; grid-template-columns: auto 1fr auto auto auto; align-items: center; gap: 1rem; padding: 1rem 0.4rem; border-bottom: 1px solid var(--color-border); }
     .mcp-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--color-text-muted); flex-shrink: 0; opacity: 0.4; }

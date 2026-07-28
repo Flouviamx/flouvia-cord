@@ -46,7 +46,17 @@ const AT_LIMIT = USADOS >= LIMITE;
                 <p class="dev-empty" id="whEmpty">{t(L, 'set.wh.vacio')}</p>
             )}
             {WEBHOOKS.map((w) => (
-                <div class:list={['wh-item', { off: !w.activo }]} data-id={w.id}>
+                <div class:list={['wh-item', { off: !w.activo, disabled: !!w.deshabilitadoMotivo }]} data-id={w.id}>
+                    {w.deshabilitadoMotivo && (
+                        <div class="wh-health-banner">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            <span class="wh-health-msg">{t(L, 'set.wh.deshabilitado_pre')} {w.deshabilitadoMotivo}{w.deshabilitadoEn ? ` — ${w.deshabilitadoEn}` : ''}</span>
+                            <span class="wh-health-actions">
+                                <button data-reenable={w.id}>{t(L, 'set.wh.reactivar')}</button>
+                                <button data-reenable-retry={w.id}>{t(L, 'set.wh.reactivar_reintentar')}</button>
+                            </span>
+                        </div>
+                    )}
                     <div class="wh-row">
                         <button class="wh-expand" data-expand={w.id} title={t(L, 'set.wh.ver_entregas')} aria-expanded="false">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -55,15 +65,19 @@ const AT_LIMIT = USADOS >= LIMITE;
                             <span class="wh-url">{w.url}</span>
                             <span class="wh-sub">
                                 <code>{w.secretMasked}</code>
+                                <button type="button" class="wh-rotate-link" data-rotate={w.id}>{t(L, 'set.wh.rotar')}</button>
+                                {w.rotandoHasta && <i class="wh-rotating-note">{t(L, 'set.wh.rotando_hasta_pre')} {w.rotandoHasta}</i>}
                                 {w.eventos.length === 0 ? <i>{t(L, 'set.wh.todos_eventos')}</i> : <i>{w.eventos.length > 1 ? tf('set.wh.eventos_plural', { n: String(w.eventos.length) }) : t(L, 'set.wh.evento_singular')}</i>}
                                 {w.ultimaEntrega && (
-                                    <i class:list={['wh-stat', { ok: w.lastStatus && w.lastStatus < 400, err: !w.lastStatus || w.lastStatus >= 400 }]}>
-                                        {t(L, 'set.wh.ultima_pre')} {w.ultimaEntrega} {w.lastStatus ? `(${w.lastStatus})` : t(L, 'set.wh.fallo')}
+                                    <i class:list={['wh-stat', { ok: w.lastStatus && w.lastStatus < 400, err: !w.lastStatus || w.lastStatus >= 400 }]}
+                                        title={w.lastError ? `${t(L, 'set.wh.ultimo_error_pre')} ${w.lastError}` : ''}>
+                                        {t(L, 'set.wh.ultima_pre')} {w.ultimaEntrega} {w.lastStatus ? `(${w.lastStatus})` : (w.lastError || t(L, 'set.wh.fallo'))}
                                     </i>
                                 )}
                             </span>
                         </span>
                         <button class="api-btn-ghost wh-test" data-test={w.id} title={t(L, 'set.wh.probar_titulo')}>{t(L, 'set.wh.probar')}</button>
+                        <button class="api-btn-ghost wh-edit" data-edit={w.id} data-url={w.url} data-eventos={JSON.stringify(w.eventos)}>{t(L, 'set.wh.editar')}</button>
                         <label class="s-toggle wh-toggle" title={t(L, 'set.wh.activar_pausar')}>
                             <input type="checkbox" data-toggle={w.id} checked={w.activo} />
                             <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
@@ -85,14 +99,20 @@ const AT_LIMIT = USADOS >= LIMITE;
 </div>
 </SettingsShell>
 
-<!-- Modal: agregar webhook -->
+<!-- Modal: agregar/editar webhook -->
 <dialog id="whDialog" class="kdlg"
     data-i18n-no-pudo-crear={t(L, 'set.wh.no_pudo_crear')} data-i18n-no-pudo-actualizar={t(L, 'set.wh.no_pudo_actualizar')}
     data-i18n-eliminar-titulo={t(L, 'set.wh.eliminar_titulo')} data-i18n-eliminar-body={t(L, 'set.wh.eliminar_body')}
     data-i18n-eliminar={t(L, 'set.wh.eliminar')} data-i18n-no-pudo-eliminar={t(L, 'set.wh.no_pudo_eliminar')}
-    data-i18n-enviado={t(L, 'set.wh.enviado')} data-i18n-error={t(L, 'set.wh.error_generico')}>
+    data-i18n-enviado={t(L, 'set.wh.enviado')} data-i18n-error={t(L, 'set.wh.error_generico')}
+    data-i18n-titulo-agregar={t(L, 'set.wh.modal_agregar_titulo')} data-i18n-titulo-editar={t(L, 'set.wh.modal_editar_titulo')}
+    data-i18n-crear-endpoint={t(L, 'set.wh.crear_endpoint')} data-i18n-guardar-cambios={t(L, 'set.wh.guardar_cambios')}
+    data-i18n-reactivando={t(L, 'set.wh.reactivando')} data-i18n-no-pudo-reactivar={t(L, 'set.wh.no_pudo_reactivar')}
+    data-i18n-rotando={t(L, 'set.wh.rotando')} data-i18n-no-pudo-rotar={t(L, 'set.wh.no_pudo_rotar')}
+    data-i18n-titulo-creado={t(L, 'set.wh.modal_creado_titulo')} data-i18n-warn-creado={t(L, 'set.wh.modal_creado_warn')}
+    data-i18n-titulo-rotado={t(L, 'set.wh.modal_rotado_titulo')} data-i18n-warn-rotado={t(L, 'set.wh.modal_rotado_warn')}>
     <div class="kdlg-inner" id="whStepForm">
-        <h4>{t(L, 'set.wh.modal_agregar_titulo')}</h4>
+        <h4 id="whFormTitle">{t(L, 'set.wh.modal_agregar_titulo')}</h4>
         <div class="s-field" style="margin-bottom:1.1rem">
             <label for="whUrl">{t(L, 'set.wh.url_destino')}</label>
             <input class="s-input" id="whUrl" placeholder="https://tusistema.mx/webhooks/cord" />
@@ -113,9 +133,25 @@ const AT_LIMIT = USADOS >= LIMITE;
             <button type="button" class="api-btn-solid" id="whCreate">{t(L, 'set.wh.crear_endpoint')}</button>
         </div>
     </div>
+    <div class="kdlg-inner" id="whStepRotate" hidden>
+        <h4>{t(L, 'set.wh.rotar_titulo')}</h4>
+        <p class="kdlg-warn">{t(L, 'set.wh.rotar_intro')}</p>
+        <div class="wh-events">
+            <span class="wh-events-label">{t(L, 'set.wh.rotar_ventana')}</span>
+            <div class="wh-checks">
+                <label class="wh-check"><input type="radio" name="whRotateWindow" value="1" /> <span>{t(L, 'set.wh.rotar_1h')}</span></label>
+                <label class="wh-check"><input type="radio" name="whRotateWindow" value="24" checked /> <span>{t(L, 'set.wh.rotar_24h')}</span></label>
+                <label class="wh-check"><input type="radio" name="whRotateWindow" value="72" /> <span>{t(L, 'set.wh.rotar_72h')}</span></label>
+            </div>
+        </div>
+        <div class="wh-dlg-actions">
+            <button type="button" class="api-btn-ghost" id="whRotateCancel">{t(L, 'set.wh.cancelar')}</button>
+            <button type="button" class="api-btn-solid" id="whRotateConfirm">{t(L, 'set.wh.rotar_confirmar')}</button>
+        </div>
+    </div>
     <div class="kdlg-inner" id="whStepDone" hidden>
-        <h4>{t(L, 'set.wh.modal_creado_titulo')}</h4>
-        <p class="kdlg-warn" set:html={t(L, 'set.wh.modal_creado_warn')} />
+        <h4 id="whDoneTitle">{t(L, 'set.wh.modal_creado_titulo')}</h4>
+        <p class="kdlg-warn" id="whDoneWarn" set:html={t(L, 'set.wh.modal_creado_warn')} />
         <div class="kdlg-key">
             <code id="whSecret"></code>
             <button id="whCopy" class="kdlg-copy" type="button" data-i18n-copiar={t(L, 'set.wh.copiar')} data-i18n-copiado={t(L, 'set.wh.copiado')}>{t(L, 'set.wh.copiar')}</button>
@@ -125,23 +161,49 @@ const AT_LIMIT = USADOS >= LIMITE;
 </dialog>
 
 <script>
-    // ── Webhooks: crear, toggle, eliminar, PROBAR, expandir log + replay ──
+    // ── Webhooks: crear/editar, toggle, eliminar, PROBAR, reactivar, expandir log + replay ──
     function initWebhooks() {
         const dlg = document.getElementById('whDialog') as HTMLDialogElement | null;
         const newBtn = document.getElementById('whNew') as HTMLButtonElement | null;
         if (!dlg || !newBtn) return;
         const urlIn = document.getElementById('whUrl') as HTMLInputElement;
         const stepForm = document.getElementById('whStepForm')!;
+        const stepRotate = document.getElementById('whStepRotate')!;
         const stepDone = document.getElementById('whStepDone')!;
         const secretEl = document.getElementById('whSecret')!;
+        const doneTitle = document.getElementById('whDoneTitle')!;
+        const doneWarn = document.getElementById('whDoneWarn')!;
         const createBtn = document.getElementById('whCreate') as HTMLButtonElement;
+        const formTitle = document.getElementById('whFormTitle')!;
 
-        newBtn.addEventListener('click', () => {
-            stepForm.hidden = false; stepDone.hidden = true;
-            urlIn.value = '';
-            dlg.querySelectorAll<HTMLInputElement>('.wh-check input').forEach((c) => (c.checked = false));
+        const i18nTituloAgregar = dlg.dataset.i18nTituloAgregar || 'Agregar endpoint';
+        const i18nTituloEditar = dlg.dataset.i18nTituloEditar || 'Editar endpoint';
+        const i18nCrearEndpoint = dlg.dataset.i18nCrearEndpoint || 'Crear endpoint';
+        const i18nGuardarCambios = dlg.dataset.i18nGuardarCambios || 'Guardar cambios';
+
+        // null = creando uno nuevo; con valor = editando ESE endpoint (el mismo
+        // dialog/formulario sirve para ambos, solo cambia el modo de envío).
+        let editingId: string | null = null;
+
+        function openDialogFor(id: string | null, url = '', eventos: string[] = []) {
+            editingId = id;
+            stepForm.hidden = false; stepRotate.hidden = true; stepDone.hidden = true;
+            urlIn.value = url;
+            dlg.querySelectorAll<HTMLInputElement>('.wh-check input').forEach((c) => (c.checked = eventos.includes(c.value)));
             createBtn.disabled = false;
+            formTitle.textContent = id ? i18nTituloEditar : i18nTituloAgregar;
+            createBtn.textContent = id ? i18nGuardarCambios : i18nCrearEndpoint;
             dlg.showModal(); urlIn.focus();
+        }
+
+        newBtn.addEventListener('click', () => openDialogFor(null));
+        document.querySelectorAll('[data-edit]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const el = btn as HTMLElement;
+                let eventos: string[] = [];
+                try { eventos = JSON.parse(el.dataset.eventos || '[]'); } catch {}
+                openDialogFor(el.dataset.edit!, el.dataset.url || '', eventos);
+            });
         });
         document.getElementById('whCancel')?.addEventListener('click', () => dlg.close());
         document.getElementById('whDone')?.addEventListener('click', () => { dlg.close(); location.reload(); });
@@ -152,11 +214,27 @@ const AT_LIMIT = USADOS >= LIMITE;
         });
 
         const i18nNoPudoCrear = dlg.dataset.i18nNoPudoCrear || 'No se pudo crear';
+        const i18nNoPudoActualizar = dlg.dataset.i18nNoPudoActualizar || 'No se pudo actualizar';
+        const i18nTituloCreado = dlg.dataset.i18nTituloCreado || 'Endpoint creado';
+        const i18nWarnCreado = dlg.dataset.i18nWarnCreado || '';
         createBtn.addEventListener('click', async () => {
             const url = urlIn.value.trim();
             if (!url) { urlIn.focus(); return; }
             const eventos = Array.from(dlg.querySelectorAll<HTMLInputElement>('.wh-check input:checked')).map((c) => c.value);
             createBtn.disabled = true;
+            if (editingId) {
+                // Editar: la API ya soportaba PATCH {url, eventos} — solo faltaba
+                // que la UI lo mandara (antes solo mandaba {id, activo}).
+                try {
+                    const res = await fetch('/api/webhooks', {
+                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: editingId, url, eventos }),
+                    });
+                    if (!res.ok) { const d = await res.json(); throw new Error(d.error || i18nNoPudoActualizar); }
+                    dlg.close(); location.reload();
+                } catch (err: any) { (window as any).cordToast?.(err.message || i18nNoPudoActualizar, 'error'); createBtn.disabled = false; }
+                return;
+            }
             try {
                 const res = await fetch('/api/webhooks', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -165,8 +243,75 @@ const AT_LIMIT = USADOS >= LIMITE;
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || i18nNoPudoCrear);
                 secretEl.textContent = d.secret;
-                stepForm.hidden = true; stepDone.hidden = false;
+                doneTitle.textContent = i18nTituloCreado;
+                doneWarn.innerHTML = i18nWarnCreado;
+                stepForm.hidden = true; stepRotate.hidden = true; stepDone.hidden = false;
             } catch (err: any) { (window as any).cordToast?.(err.message || i18nNoPudoCrear, 'error'); createBtn.disabled = false; }
+        });
+
+        // Rotar secreto (link junto al secreto enmascarado en cada fila)
+        const i18nRotando = dlg.dataset.i18nRotando || 'Rotando…';
+        const i18nNoPudoRotar = dlg.dataset.i18nNoPudoRotar || 'No se pudo rotar el secreto';
+        const i18nTituloRotado = dlg.dataset.i18nTituloRotado || 'Secreto rotado';
+        const i18nWarnRotado = dlg.dataset.i18nWarnRotado || '';
+        const rotateConfirmBtn = document.getElementById('whRotateConfirm') as HTMLButtonElement | null;
+        let rotatingId: string | null = null;
+
+        document.querySelectorAll('[data-rotate]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                rotatingId = (btn as HTMLElement).dataset.rotate!;
+                stepForm.hidden = true; stepDone.hidden = true; stepRotate.hidden = false;
+                dlg.showModal();
+            });
+        });
+        document.getElementById('whRotateCancel')?.addEventListener('click', () => dlg.close());
+        rotateConfirmBtn?.addEventListener('click', async () => {
+            if (!rotatingId) return;
+            const overlapHours = Number((dlg.querySelector('input[name="whRotateWindow"]:checked') as HTMLInputElement)?.value || '24');
+            rotateConfirmBtn.disabled = true;
+            const orig = rotateConfirmBtn.textContent;
+            rotateConfirmBtn.textContent = i18nRotando;
+            try {
+                const res = await fetch('/api/webhooks', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'rotate', id: rotatingId, overlapHours }),
+                });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || i18nNoPudoRotar);
+                secretEl.textContent = d.secret;
+                doneTitle.textContent = i18nTituloRotado;
+                doneWarn.innerHTML = i18nWarnRotado;
+                stepRotate.hidden = true; stepDone.hidden = false;
+            } catch (err: any) {
+                (window as any).cordToast?.(err.message || i18nNoPudoRotar, 'error');
+                rotateConfirmBtn.disabled = false; rotateConfirmBtn.textContent = orig;
+            }
+        });
+
+        // Reactivar / Reactivar y reintentar (banner de endpoint auto-desactivado)
+        const i18nReactivando = dlg.dataset.i18nReactivando || 'Reactivando…';
+        const i18nNoPudoReactivar = dlg.dataset.i18nNoPudoReactivar || 'No se pudo reactivar';
+        async function doReenable(btn: HTMLButtonElement, id: string, retryRecent: boolean) {
+            btn.disabled = true;
+            const sibling = btn.parentElement?.querySelectorAll('button');
+            sibling?.forEach((b) => (b.disabled = true));
+            const orig = btn.textContent;
+            btn.textContent = i18nReactivando;
+            try {
+                const res = await fetch('/api/webhooks', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, activo: true, retryRecent }) });
+                if (!res.ok) throw new Error();
+                location.reload();
+            } catch {
+                (window as any).cordToast?.(i18nNoPudoReactivar, 'error');
+                sibling?.forEach((b) => (b.disabled = false));
+                btn.textContent = orig;
+            }
+        }
+        document.querySelectorAll('[data-reenable]').forEach((btn) => {
+            btn.addEventListener('click', () => doReenable(btn as HTMLButtonElement, (btn as HTMLElement).dataset.reenable!, false));
+        });
+        document.querySelectorAll('[data-reenable-retry]').forEach((btn) => {
+            btn.addEventListener('click', () => doReenable(btn as HTMLButtonElement, (btn as HTMLElement).dataset.reenableRetry!, true));
         });
 
         document.querySelectorAll('[data-toggle]').forEach((el) => {

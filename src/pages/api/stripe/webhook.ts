@@ -11,8 +11,9 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import crypto from 'node:crypto';
 import { sql, logAudit } from '../../../lib/db';
-import { dispatchQuoteEvent } from '../../../lib/webhooks';
+import { dispatchQuoteEvent, dispatchPaymentPartial } from '../../../lib/webhooks';
 import { PRICE_TO_PLAN, isPaidPlan, stripe } from '../../../lib/billing';
+import { after } from '../../../lib/after';
 
 const WH_SECRET = import.meta.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
 const CONNECT_WH_SECRET = import.meta.env.STRIPE_CONNECT_WEBHOOK_SECRET || process.env.STRIPE_CONNECT_WEBHOOK_SECRET;
@@ -220,7 +221,7 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
                 await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                           values (${orgId}, ${cid}, 'paid', 'Pago recibido vía Stripe — cotización saldada')`;
                 await logAudit(orgId, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea (Stripe)' });
-                dispatchQuoteEvent(orgId, cid, 'quote.paid').catch(() => {});
+                after(dispatchQuoteEvent(orgId, cid, 'quote.paid'));
             } else if (marked.length) {
                 // Pago PARCIAL: evento informativo, sin quote.paid (avisar a las
                 // integraciones que "se pagó todo" cuando solo cayó el anticipo
@@ -235,6 +236,17 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
                 await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                           values (${orgId}, ${cid}, 'paid', ${`${label} de ${monto} pagado vía Stripe${sufijo}`})`;
                 await logAudit(orgId, { accion: 'cotizacion.cobro_pagado', entidad: 'cotizacion', entidad_id: cid, detalle: `${label} pagado en línea (Stripe)` });
+                // payment.partial: antes NINGÚN webhook avisaba que cayó un
+                // anticipo/saldo/cuota — una integración solo se enteraba hasta
+                // que el TOTAL quedaba cubierto (quote.paid). `sums` ya refleja
+                // el pago recién marcado (se consultó después del UPDATE de arriba).
+                after(dispatchPaymentPartial(orgId, cid, {
+                    tipo: co.tipo as string,
+                    monto: Number(co.monto),
+                    numero_cuota: Number(co.numero_cuota ?? 0),
+                    saldo_pendiente: Math.max(0, Number(sums.total) - Number(sums.pagado)),
+                    payment_method: paymentMethod,
+                }));
             }
         } else {
             // ── Legacy: PaymentIntent/Checkout creado antes de los cobros parciales ──
@@ -245,10 +257,12 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
             await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                       values (${orgId}, ${cid}, 'paid', 'Pago recibido vía Stripe')`;
             await logAudit(orgId, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea (Stripe)' });
-            // Fire-and-forget: no demorar el 200 a Stripe con nuestro webhook saliente
-            // (dispatchQuoteEvent nunca lanza, pero por si acaso se traga el error —
-            // antes aquí se llamaba a un `after()` inexistente que tronaba el handler).
-            dispatchQuoteEvent(orgId, cid, 'quote.paid').catch(() => {});
+            // No demorar el 200 a Stripe con nuestro webhook saliente, pero SIN perderlo:
+            // after()/waitUntil mantiene viva la invocación hasta que termine, a
+            // diferencia de un `.catch(()=>{})` suelto que Vercel puede congelar en
+            // cuanto el handler responde (el evento de dinero más crítico del sistema
+            // no puede depender de que la función siga viva por accidente).
+            after(dispatchQuoteEvent(orgId, cid, 'quote.paid'));
         }
     }
 }
@@ -406,7 +420,8 @@ async function recurringInvoicePaid(invoice: any, account: string) {
               values (${row.org_id}, ${row.cotizacion_id}, 'paid', ${`Cobro mensual de ${monto} recibido (iguala)`})`;
     await logAudit(row.org_id as string, { accion: 'cotizacion.iguala_cobrada', entidad: 'cotizacion', entidad_id: row.cotizacion_id as string, detalle: `Cobro recurrente ${monto} (Stripe)` });
     // Cada cobro mensual exitoso es un "Pago recibido" real para las integraciones.
-    dispatchQuoteEvent(row.org_id as string, row.cotizacion_id as string, 'quote.paid').catch(() => {});
+    // after()/waitUntil — no perderlo si Vercel congela la invocación tras el 200.
+    after(dispatchQuoteEvent(row.org_id as string, row.cotizacion_id as string, 'quote.paid'));
 }
 
 async function recurringInvoiceFailed(invoice: any, account: string) {
@@ -416,6 +431,9 @@ async function recurringInvoiceFailed(invoice: any, account: string) {
     await sql`update cotizacion_suscripciones set estado = 'past_due' where id = ${row.id}`;
     await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
               values (${row.org_id}, ${row.cotizacion_id}, 'comment', 'El cobro mensual de la iguala falló — Stripe reintentará automáticamente')`;
+    // Antes esto no avisaba a NINGUNA integración — un ERP conectado nunca se
+    // enteraba de que la iguala dejó de cobrarse hasta que alguien lo notara a mano.
+    after(dispatchQuoteEvent(row.org_id as string, row.cotizacion_id as string, 'payment.failed'));
 }
 
 // customer.subscription.updated/created → sincroniza estado y fin de ciclo.

@@ -168,6 +168,14 @@ export async function getWebhooks() {
         lastStatus: w.last_status as number | null,
         lastError: (w.last_error as string) ?? null,
         ultimaEntrega: w.last_delivery_at ? fmtRelative(w.last_delivery_at) : null,
+        fallosConsecutivos: (w.fallos_consecutivos as number) ?? 0,
+        deshabilitadoMotivo: (w.deshabilitado_motivo as string) ?? null,
+        deshabilitadoEn: w.deshabilitado_at ? fmtRelative(w.deshabilitado_at) : null,
+        // Ventana de solape de rotación de secreto en curso (null = sin rotación
+        // activa — secret_prev_expira ya pasó o nunca se rotó).
+        rotandoHasta: (w.secret_prev_expira && new Date(w.secret_prev_expira as string).getTime() > Date.now())
+            ? fmtRelative(w.secret_prev_expira as string)
+            : null,
     }));
 }
 

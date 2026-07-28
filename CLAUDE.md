@@ -148,7 +148,8 @@ FACTURAPI_USER_KEY=                                             # llave de CUENT
 ANTHROPIC_API_KEY=                                              # IA "armar cotización desde texto" + cobranza/MCP
 AI_MODEL=                                                       # opcional (default claude-haiku-4-5-20251001 — TODA la IA usa Haiku)
 INBOUND_EMAIL_SECRET=                                           # respuestas por correo a la cobranza IA (endpoint hoy inalcanzable a propósito, ver docs/historial-infra-hitos.md)
-UPSTASH_REDIS_REST_URL=  UPSTASH_REDIS_REST_TOKEN=              # rate-limit DURABLE compartido entre instancias (src/lib/ratelimit.ts); sin ellas cae a un contador in-memory por proceso — funciona pero no es global. Provisionar vía Vercel Marketplace → Upstash → Storage del proyecto (auto-inyecta ambas)
+UPSTASH_REDIS_REST_URL=  UPSTASH_REDIS_REST_TOKEN=              # rate-limit DURABLE compartido entre instancias (src/lib/ratelimit.ts) + sesiones del transporte SSE de MCP (src/lib/mcp/session-store.ts, jul 2026); sin ellas ambos caen a un Map en memoria por proceso — funcionan pero no son globales entre instancias. Provisionar vía Vercel Marketplace → Upstash → Storage del proyecto (auto-inyecta ambas)
+MCP_SECRET_KEY=                                                 # opcional (jul 2026) — cifra en reposo mcp_servers.auth_token (AES-256-GCM, src/lib/crypto-secret.ts); sin ella el token se guarda en claro. Generar con `openssl rand -base64 32`
 PUBLIC_SITE_URL=                                                # opcional (default https://cordhq.app) — origen fijo para links en correos disparados por CRON (nunca derivar de request.url ahí, ver docs/historial-infra-hitos.md)
 ```
 

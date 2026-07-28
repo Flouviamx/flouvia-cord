@@ -14,15 +14,24 @@
 //   respaldado por localStorage + un CustomEvent para sincronizar la UI.
 
 import type { getSetupProgress } from '../../lib/queries';
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
 
 interface Props {
     progress: Awaited<ReturnType<typeof getSetupProgress>>;
 }
 const { progress } = Astro.props;
+const L = currentLocale();
+const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
 
 // Primer grupo incompleto abierto por defecto (acordeón).
 const firstOpen = progress.groups.find((g) => !g.done)?.id ?? '';
 const dash = (pct: number) => `${(pct * 0.9739).toFixed(2)} 100`;
+
+const ONB_T = {
+    pasosListosTpl: t(L, 'onb.pasos_listos_tpl'),
+    completadosTpl: t(L, 'onb.completados_tpl'),
+};
 
 // Íconos duotone (Glass Duotone, Regla 9) por grupo — trazo currentColor + relleno sutil.
 const ICONS: Record<string, string> = {
@@ -34,7 +43,7 @@ const ICONS: Record<string, string> = {
 };
 ---
 
-<aside class="onb" id="onbCard" aria-label="Guía de configuración">
+<aside class="onb" id="onbCard" aria-label={t(L, 'onb.aria_label')} data-i18n={JSON.stringify(ONB_T)}>
     <div class="onb-card">
         <header class="onb-head">
             <span class="onb-ring" data-ring aria-hidden="true">
@@ -45,10 +54,10 @@ const ICONS: Record<string, string> = {
                 <b class="editorial" data-pct>{progress.pct}%</b>
             </span>
             <div class="onb-titles">
-                <strong>Configura Cord</strong>
-                <span data-count>{progress.doneN} de {progress.total} pasos listos</span>
+                <strong>{t(L, 'onb.titulo')}</strong>
+                <span data-count>{tpl(t(L, 'onb.pasos_listos_tpl'), { n: String(progress.doneN), total: String(progress.total) })}</span>
             </div>
-            <button class="onb-min" id="onbMin" type="button" aria-label="Minimizar a la barra">
+            <button class="onb-min" id="onbMin" type="button" aria-label={t(L, 'onb.minimizar')}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>
         </header>
@@ -65,24 +74,24 @@ const ICONS: Record<string, string> = {
                         </span>
                         <span class="onb-group-text">
                             <span class="onb-group-title">{g.label}</span>
-                            <span class="onb-group-sub" data-gsub>{g.doneN}/{g.total} completados</span>
+                            <span class="onb-group-sub" data-gsub>{tpl(t(L, 'onb.completados_tpl'), { n: String(g.doneN), total: String(g.total) })}</span>
                         </span>
                         <span class="onb-gcount" data-gcount aria-hidden="true">
-                            {g.tasks.map((t) => <i class="onb-dot" data-dot={t.id} data-done={t.done ? 'true' : 'false'}></i>)}
+                            {g.tasks.map((task) => <i class="onb-dot" data-dot={task.id} data-done={task.done ? 'true' : 'false'}></i>)}
                         </span>
                         <svg class="onb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                     </button>
                     <div class="onb-group-body">
                         <div class="onb-group-inner">
-                            {g.tasks.map((t) => (
-                                <div class="onb-step" data-id={t.id} data-done={t.done ? 'true' : 'false'}>
+                            {g.tasks.map((task) => (
+                                <div class="onb-step" data-id={task.id} data-done={task.done ? 'true' : 'false'}>
                                     <span class="onb-check" aria-hidden="true">
                                         <svg class="onb-check-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                     </span>
                                     <div class="onb-step-main">
-                                        <span class="onb-step-title">{t.label}</span>
-                                        <p class="onb-step-desc">{t.desc}</p>
-                                        <a href={t.href} class="onb-step-cta">Configurar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></a>
+                                        <span class="onb-step-title">{task.label}</span>
+                                        <p class="onb-step-desc">{task.desc}</p>
+                                        <a href={task.href} class="onb-step-cta">{t(L, 'onb.configurar')} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></a>
                                     </div>
                                 </div>
                             ))}
@@ -96,8 +105,8 @@ const ICONS: Record<string, string> = {
             <span class="onb-done-burst" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </span>
-            <strong>¡Todo listo!</strong>
-            <p>Tu cuenta está configurada. A vender.</p>
+            <strong>{t(L, 'onb.todo_listo')}</strong>
+            <p>{t(L, 'onb.cuenta_configurada')}</p>
         </div>
     </div>
 </aside>

@@ -109,7 +109,10 @@ export const POST: APIRoute = async ({ request }) => {
       return json({ ok: true });
     }
     case 'toggle_activo': {
-      await setServerActivo(orgId, String(body.id ?? ''), Boolean(body.value));
+      const id = String(body.id ?? '');
+      const value = Boolean(body.value);
+      await setServerActivo(orgId, id, value);
+      await logAudit(orgId, { accion: 'agente.mcp_server_activo', entidad: 'mcp_server', entidad_id: id, detalle: value ? 'activado' : 'desactivado', ip });
       return json({ ok: true });
     }
     case 'toggle_permiso': {

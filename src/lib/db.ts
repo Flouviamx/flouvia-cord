@@ -7,7 +7,7 @@
 // usar sql.query('... $1 ...', [params]).
 
 import { neon } from '@neondatabase/serverless';
-import { currentUserId, currentOrgIdOverride, currentClerkOrgId, memoizedOrgId, memoizeOrgId, isTestModeRequest } from './context';
+import { currentUserId, currentOrgIdOverride, currentClerkOrgId, memoizedOrgId, memoizeOrgId, isTestModeRequest, isCronScope } from './context';
 
 const url = import.meta.env.DATABASE_URL || process.env.DATABASE_URL;
 
@@ -216,6 +216,38 @@ export async function withOrgTx(orgId: string, ...queries: any[]): Promise<any[]
 export async function withPublicToken(token: string, ...queries: any[]): Promise<any[][]> {
     const results = await (sql as any).transaction([
         sql`select set_config('app.public_token', ${token}, true)`,
+        ...queries,
+    ]);
+    return (results as any[][]).slice(1);
+}
+
+// ── Carril de SISTEMA (crons cross-org) ──────────────────────────────────────
+// El sweeper de webhook_events (/api/cron/webhooks) reclama filas de MUCHAS
+// orgs en UNA sola sentencia — no hay un org_id único que setear. Este carril
+// alterno setea `app.scope='system'`, que SOLO la política RLS de
+// `webhook_events` acepta (ver db/schema.sql). El set_config es LOCAL a la
+// transacción, igual que withOrgTx: no se filtra a otras queries del proceso.
+
+/** Lanza si el request actual no corre en el carril de cron (ver context.ts). */
+export function assertCronContext(): void {
+    if (!isCronScope()) {
+        throw new Error(
+            '[db] withSystemTx requiere contexto de cron (reqContext cronScope=true) — ' +
+            'nunca se debe llamar desde una ruta con sesión de usuario.'
+        );
+    }
+}
+
+/**
+ * Igual que withOrgTx pero para el trabajo cross-org del sweeper. Exige que el
+ * cron ya haya marcado su reqContext con cronScope:true (assertCronContext) —
+ * así una ruta de usuario normal jamás puede tocar el carril de sistema por
+ * accidente, aunque alguien importe withSystemTx sin querer.
+ */
+export async function withSystemTx(...queries: any[]): Promise<any[][]> {
+    assertCronContext();
+    const results = await (sql as any).transaction([
+        sql`select set_config('app.scope', 'system', true)`,
         ...queries,
     ]);
     return (results as any[][]).slice(1);

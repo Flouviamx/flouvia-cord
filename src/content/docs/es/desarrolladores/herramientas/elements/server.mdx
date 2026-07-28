@@ -38,7 +38,7 @@ Uno de los principales casos de uso del Server SDK es la verificación de firmas
 
 Para verificar un webhook de manera síncrona, utiliza `cord.webhooks.constructEvent()`. Debes proporcionarle el payload crudo (`raw text`), los encabezados de la petición, y tu **Secreto de Webhook** (configurable en Ajustes > Desarrolladores).
 
-El SDK revisa automáticamente las firmas de mitigación contra ataques de repetición (Replay Attacks) verificando `X-Cord-Signature-V1` y descartando eventos antiguos mediante una tolerancia de tiempo (por defecto 300 segundos).
+El SDK revisa automáticamente las firmas de mitigación contra ataques de repetición (Replay Attacks) verificando `X-Cord-Signature-V1` y descartando eventos antiguos mediante una tolerancia de tiempo (por defecto 300 segundos). Durante una rotación de secreto, `X-Cord-Signature-V1` puede traer dos firmas a la vez (secreto nuevo y viejo) — el SDK acepta cualquiera de las dos automáticamente, sin que tengas que hacer nada. Detalle completo en la [guía de Webhooks](/docs/desarrolladores/herramientas/webhooks#rotación-de-secreto).
 
 ```ts
 // app/api/webhooks/cord/route.ts
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     );
     
     // event es fuertemente tipado
-    // { event: 'quote.paid', created_at: '...', data: { folio, status, ... } }
+    // { id: 'evt_...', event: 'quote.paid', created_at: '...', data: { folio, status, ... } }
     
     if (event.event === 'quote.paid') {
       console.log(`¡La cotización ${event.data.folio} fue pagada exitosamente!`);
@@ -72,6 +72,13 @@ export async function POST(req: Request) {
   }
 }
 ```
+
+<Callout type="warning">
+**Idempotencia:** Cord entrega "al menos una vez" — un mismo `event.id` puede llegarte más de
+una vez (reintentos automáticos o un replay manual desde Ajustes). Guarda los `id` ya
+procesados y descarta los repetidos antes de aplicar efectos secundarios. Más detalle en la
+[guía de Webhooks](/docs/desarrolladores/herramientas/webhooks#identidad-del-evento-e-idempotencia).
+</Callout>
 
 ### Edge Runtimes (Cloudflare Workers, Vercel Edge)
 

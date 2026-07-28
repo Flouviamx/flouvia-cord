@@ -142,7 +142,18 @@
 .wh-list { display: flex; flex-direction: column; margin-top: 0.6rem; }
 .wh-item { border-bottom: 1px solid var(--color-border); }
 .wh-item.off { opacity: 0.55; }
-.wh-row { display: grid; grid-template-columns: auto 1fr auto auto auto; align-items: center; gap: 0.8rem; padding: 1rem 0.3rem; }
+.wh-item.disabled { opacity: 1; } /* auto-desactivado: el banner ya comunica el estado, no atenuar */
+.wh-row { display: grid; grid-template-columns: auto 1fr auto auto auto auto; align-items: center; gap: 0.8rem; padding: 1rem 0.3rem; }
+
+/* Banner de salud — endpoint auto-desactivado por racha de fallos */
+.wh-health-banner { display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 0.9rem; margin: 0.2rem 0.3rem 0; background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.22); border-radius: 10px; font-size: 0.78rem; color: var(--color-text); }
+.wh-health-banner svg { width: 16px; height: 16px; color: var(--color-danger); flex-shrink: 0; }
+.wh-health-msg { flex: 1; min-width: 0; line-height: 1.4; }
+.wh-health-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+.wh-health-actions button { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 600; border-radius: 7px; padding: 5px 10px; cursor: pointer; white-space: nowrap; border: 1px solid var(--color-danger); background: none; color: var(--color-danger); transition: background 0.2s; }
+.wh-health-actions button:hover { background: rgba(239,68,68,0.08); }
+.wh-health-actions button:disabled { opacity: 0.5; cursor: wait; }
+@media (max-width: 600px) { .wh-health-banner { flex-wrap: wrap; } }
 .wh-expand { background: none; border: none; cursor: pointer; color: #99a2af; padding: 2px; display: flex; align-items: center; transition: transform 0.25s var(--ease-spring), color 0.2s; }
 .wh-expand svg { width: 15px; height: 15px; }
 .wh-expand[aria-expanded="true"] { transform: rotate(90deg); color: var(--color-blue-deep); }
@@ -151,10 +162,13 @@
 .wh-sub { font-size: 0.72rem; color: #99a2af; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .wh-sub code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.7rem; background: rgba(10,25,47,0.06); padding: 1px 5px; border-radius: 4px; }
 .wh-sub i { font-style: normal; }
+.wh-rotate-link { background: none; border: none; padding: 0; font: inherit; font-size: 0.72rem; color: #99a2af; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.wh-rotate-link:hover { color: var(--color-blue-deep); }
+.wh-rotating-note { color: #b45309; }
 .wh-stat.ok { color: var(--color-ok); }
 .wh-stat.err { color: var(--color-danger); }
-.wh-test { font-family: var(--font-sans); font-size: 0.74rem; font-weight: 600; color: var(--color-blue-deep); background: none; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 11px; cursor: pointer; white-space: nowrap; transition: border-color 0.25s, background 0.2s; }
-.wh-test:hover { border-color: var(--color-blue-deep); background: rgba(10,25,47,0.04); }
+.wh-test, .wh-edit { font-family: var(--font-sans); font-size: 0.74rem; font-weight: 600; color: var(--color-blue-deep); background: none; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 11px; cursor: pointer; white-space: nowrap; transition: border-color 0.25s, background 0.2s; }
+.wh-test:hover, .wh-edit:hover { border-color: var(--color-blue-deep); background: rgba(10,25,47,0.04); }
 .wh-test:disabled { opacity: 0.5; cursor: wait; }
 .wh-toggle { margin: 0; }
 
@@ -177,7 +191,7 @@
 .del-replay { font-family: var(--font-sans); font-size: 0.7rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 7px; padding: 4px 10px; cursor: pointer; transition: border-color 0.25s, color 0.25s; }
 .del-replay:hover { border-color: var(--color-blue-deep); color: var(--color-blue-deep); }
 .del-replay:disabled { opacity: 0.5; cursor: wait; }
-@media (max-width: 600px) { .wh-row { grid-template-columns: auto 1fr auto; } .wh-test { display: none; } .del-row { grid-template-columns: auto 1fr auto; } .del-meta { display: none; } }
+@media (max-width: 600px) { .wh-row { grid-template-columns: auto 1fr auto; } .wh-test, .wh-edit { display: none; } .del-row { grid-template-columns: auto 1fr auto; } .del-meta { display: none; } }
 
 .wh-checks { display: flex; flex-direction: column; gap: 0.6rem; }
 .wh-check { display: flex; align-items: center; gap: 9px; cursor: pointer; font-size: 0.82rem; color: var(--color-text); }

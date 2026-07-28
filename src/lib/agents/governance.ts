@@ -5,6 +5,7 @@
 // filtramos por org_id explícito en cada query (mismo patrón que client-manager).
 
 import { sql } from '../db';
+import { encryptSecret } from '../crypto-secret';
 
 const DEFAULT_AGENT_NAME = 'Asistente Cord';
 
@@ -54,9 +55,13 @@ export async function listMcpServers(orgId: string): Promise<McpServerRow[]> {
 export async function addMcpServer(
   orgId: string, nombre: string, urlSse: string, authToken: string | null,
 ): Promise<string> {
+  // Cifrado en reposo (AES-256-GCM si ENCRYPTION_KEY está configurada; si no,
+  // encryptSecret lo deja en claro — ver crypto-secret.ts). client-manager.ts
+  // lo descifra al conectar.
+  const stored = authToken ? encryptSecret(authToken) : null;
   const [row] = await sql`
     insert into mcp_servers (org_id, nombre, url_sse, auth_token, activo)
-    values (${orgId}, ${nombre}, ${urlSse}, ${authToken || null}, true)
+    values (${orgId}, ${nombre}, ${urlSse}, ${stored}, true)
     returning id`;
   return row.id as string;
 }
