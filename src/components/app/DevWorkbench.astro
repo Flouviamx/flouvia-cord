@@ -1,9 +1,11 @@
 ---
-// Dock de Desarrolladores estilo Stripe Workbench — barra inferior navy siempre
+// Dock de Desarrolladores estilo Apple/Stripe Workbench — barra inferior
 // disponible en /app/** cuando el "Modo desarrollador" está activo (toggle en
-// Ajustes › Empresa, ver src/pages/app/ajustes/index.astro). Reemplaza las
-// páginas de Ajustes "API" y "Webhooks" (movidas aquí); MCP/Agentes/Elements
-// se quedan en Ajustes tal cual.
+// Ajustes › Empresa, ver src/pages/app/ajustes/index.astro). Sigue el tema
+// claro/oscuro real de la app (ver src/styles/workbench.css) y es redimensionable
+// vía el handle #wbDrag, con altura acotada al viewport para nunca taparse contra
+// la topbar. Reemplaza las páginas de Ajustes "API" y "Webhooks" (movidas aquí);
+// MCP/Agentes/Elements se quedan en Ajustes tal cual.
 //
 // Arquitectura: este componente es solo el CHASIS (barra + tabs + contenedor).
 // El contenido de cada pestaña se pide bajo demanda a /app/_wb/[tab] (fragmento
@@ -41,6 +43,9 @@ const TABS = [
     </button>
 
     <div class="wb-panel" id="wbPanel" role="region" aria-label={t(L, 'wb.titulo')} hidden>
+        <div class="wb-drag" id="wbDrag" role="separator" aria-orientation="horizontal" aria-label={t(L, 'wb.resize')} tabindex="0">
+            <span class="wb-drag-grip" aria-hidden="true"></span>
+        </div>
         <div class="wb-tabs" role="tablist">
             {TABS.map((tb) => (
                 <button type="button" class="wb-tab" data-wb-tab={tb.id} role="tab" aria-selected="false">{tb.label}</button>
@@ -64,6 +69,7 @@ const TABS = [
         const dock = document.getElementById('wbDock');
         const bar = document.getElementById('wbBarToggle');
         const panel = document.getElementById('wbPanel') as HTMLElement | null;
+        const dragHandle = document.getElementById('wbDrag') as HTMLElement | null;
         const closeBtn = document.getElementById('wbClose');
         const body = document.getElementById('wbBody') as HTMLElement | null;
         const indicator = document.getElementById('wbTabsIndicator') as HTMLElement | null;
@@ -71,23 +77,39 @@ const TABS = [
         if (!dock || !bar || !panel || !body || !tabs.length) return;
 
         const KEY = 'cord.wb.v1';
-        const BAR_H = '46px';
+        const BAR_H_PX = 46;
+        const BAR_H = BAR_H_PX + 'px';
+        const MIN_PANEL_H = 220;
         const cache = new Map<string, string>();
         let currentTab = 'resumen';
         let isOpen = false;
 
+        // Altura del panel — SIEMPRE acotada a lo que el viewport puede dar sin
+        // taparse a sí mismo contra la topbar (bug reportado: en ventanas cortas
+        // un 62vh fijo cubría casi toda la pantalla). Redimensionable a mano vía
+        // el handle #wbDrag; se persiste junto al resto del estado.
+        const maxPanelH = () => Math.max(MIN_PANEL_H, window.innerHeight - 200);
+        const defaultPanelH = () => Math.min(Math.round(window.innerHeight * 0.4), maxPanelH());
+        let panelH = defaultPanelH();
+
         const isDevOn = () => document.documentElement.classList.contains('cord-dev');
 
-        function readState(): { open: boolean; tab: string } {
+        function readState(): { open: boolean; tab: string; h?: number } {
             try {
                 const raw = localStorage.getItem(KEY);
                 if (!raw) return { open: false, tab: 'resumen' };
                 const p = JSON.parse(raw);
-                return { open: !!p.open, tab: typeof p.tab === 'string' ? p.tab : 'resumen' };
+                return { open: !!p.open, tab: typeof p.tab === 'string' ? p.tab : 'resumen', h: typeof p.h === 'number' ? p.h : undefined };
             } catch { return { open: false, tab: 'resumen' }; }
         }
         function writeState() {
-            try { localStorage.setItem(KEY, JSON.stringify({ open: isOpen, tab: currentTab })); } catch {}
+            try { localStorage.setItem(KEY, JSON.stringify({ open: isOpen, tab: currentTab, h: panelH })); } catch {}
+        }
+
+        function applyPanelH(px?: number) {
+            panelH = Math.min(maxPanelH(), Math.max(MIN_PANEL_H, px ?? panelH));
+            panel!.style.height = panelH + 'px';
+            updateWbH();
         }
 
         function updateWbH() {
@@ -95,8 +117,8 @@ const TABS = [
             // --wb-h: altura VISUAL actual del dock (para desplazar toasts/onboarding
             // por encima). --wb-bar-h: reserva FIJA de la barra colapsada (para el
             // padding-bottom de .app-content) — nunca cambia al expandir/colapsar, si
-            // no el contenido brincaría cada vez que se abre el panel de 62vh.
-            document.documentElement.style.setProperty('--wb-h', !on ? '0px' : isOpen ? '62vh' : BAR_H);
+            // no el contenido brincaría cada vez que se abre el panel.
+            document.documentElement.style.setProperty('--wb-h', !on ? '0px' : isOpen ? (panelH + BAR_H_PX) + 'px' : BAR_H);
             document.documentElement.style.setProperty('--wb-bar-h', on ? BAR_H : '0px');
         }
 
@@ -152,6 +174,7 @@ const TABS = [
         function openDock(tabId?: string) {
             isOpen = true;
             panel.hidden = false;
+            applyPanelH();
             bar.setAttribute('aria-expanded', 'true');
             dock.classList.add('is-open');
             updateWbH();
@@ -173,7 +196,42 @@ const TABS = [
         closeBtn?.addEventListener('click', (e) => { e.stopPropagation(); closeDock(); });
         tabs.forEach((b) => b.addEventListener('click', () => loadTab(b.dataset.wbTab!)));
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isOpen) closeDock(); });
-        window.addEventListener('resize', () => moveIndicator(currentTab));
+        window.addEventListener('resize', () => { moveIndicator(currentTab); if (isOpen) applyPanelH(panelH); });
+
+        // Handle de arrastre — resolvía la queja "no puedo bajar la barra": antes el
+        // dock solo abría/cerraba, sin forma de ajustar cuánto espacio ocupa.
+        if (dragHandle) {
+            let dragging = false;
+            let startY = 0;
+            let startH = 0;
+            const onMove = (e: PointerEvent) => {
+                if (!dragging) return;
+                applyPanelH(startH + (startY - e.clientY));
+            };
+            const endDrag = (e: PointerEvent) => {
+                if (!dragging) return;
+                dragging = false;
+                dock.classList.remove('is-dragging');
+                try { dragHandle.releasePointerCapture(e.pointerId); } catch {}
+                writeState();
+            };
+            dragHandle.addEventListener('pointerdown', (e) => {
+                dragging = true;
+                startY = e.clientY;
+                startH = panel.getBoundingClientRect().height;
+                dock.classList.add('is-dragging');
+                dragHandle.setPointerCapture(e.pointerId);
+                e.preventDefault();
+            });
+            dragHandle.addEventListener('pointermove', onMove);
+            dragHandle.addEventListener('pointerup', endDrag);
+            dragHandle.addEventListener('pointercancel', endDrag);
+            dragHandle.addEventListener('keydown', (e) => {
+                const step = e.shiftKey ? 48 : 16;
+                if (e.key === 'ArrowUp') { applyPanelH(panelH + step); e.preventDefault(); writeState(); }
+                else if (e.key === 'ArrowDown') { applyPanelH(panelH - step); e.preventDefault(); writeState(); }
+            });
+        }
 
         // Sincronización en vivo con el toggle "Modo desarrollador" de Ajustes —
         // sin recargar la página (evento análogo a cord:test_mode_changed).
@@ -195,6 +253,7 @@ const TABS = [
         // Restaura el estado persistido (solo si el modo desarrollador está activo).
         const st = readState();
         currentTab = st.tab;
+        if (st.h) panelH = Math.min(maxPanelH(), Math.max(MIN_PANEL_H, st.h));
         setActiveTabUI(currentTab);
         updateWbH();
         if (isDevOn() && st.open) openDock(currentTab);

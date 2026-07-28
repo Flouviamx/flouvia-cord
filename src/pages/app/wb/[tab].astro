@@ -163,8 +163,8 @@ const activosWh = WEBHOOKS.filter((w) => w.activo && !w.deshabilitadoMotivo).len
             <p class="dev-note" style="margin: 0.4rem 0 1.2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
                 <span>{t(L, 'set.api.endpoints_base_pre')} <code>https://cordhq.app/api/v1</code> {t(L, 'set.api.endpoints_base_post')} <code>Authorization: Bearer &lt;tu_clave&gt;</code>.</span>
                 <span style="display:flex; gap: 0.8rem; font-size: 0.75rem;">
-                    <a href="/openapi.yaml" target="_blank" rel="noopener" style="color: #7fd1c1; text-decoration: none; font-weight: 600;">{t(L, 'set.api.spec_openapi')}</a>
-                    <a href="/llms.txt" target="_blank" rel="noopener" style="color: #7fd1c1; text-decoration: none; font-weight: 600;">{t(L, 'set.api.llms_txt')}</a>
+                    <a href="/openapi.yaml" target="_blank" rel="noopener" style="color: var(--color-blue-deep); text-decoration: none; font-weight: 600;">{t(L, 'set.api.spec_openapi')}</a>
+                    <a href="/llms.txt" target="_blank" rel="noopener" style="color: var(--color-blue-deep); text-decoration: none; font-weight: 600;">{t(L, 'set.api.llms_txt')}</a>
                 </span>
             </p>
             <div class="ep-rows">
@@ -384,7 +384,7 @@ El endpoint de Cord requiere este JSON de forma estricta:
                         await navigator.clipboard.writeText(prompt);
                         const original = btnAi.innerHTML;
                         btnAi.textContent = (btnAi as HTMLElement).dataset.i18nCopiado || '✓ Prompt copiado — Pégalo en ChatGPT o Cursor';
-                        (btnAi as HTMLElement).style.color = '#6ee7b7';
+                        (btnAi as HTMLElement).style.color = 'var(--color-ok)';
                         setTimeout(() => { btnAi.innerHTML = original; (btnAi as HTMLElement).style.color = ''; }, 3500);
                     } catch {}
                 });

@@ -6,6 +6,32 @@
 
 ---
 
+✅ **Cord Workbench (dock de Desarrolladores) — rediseño Apple + redimensionable (jul 2026)** —
+   André reportó con captura que el dock de "Desarrolladores" (`src/components/app/DevWorkbench.astro`,
+   ver `/app/wb/[tab]`) se veía roto: navy oscuro fijo que no seguía la estética del resto de la
+   app, y sin forma de achicarlo ("no puedo ni bajar la barra"). Causa raíz encontrada: el panel
+   tenía una altura fija `62vh` (más los 46px de la barra) sin ningún límite relativo al viewport
+   real — en una ventana de navegador con poca altura efectiva (barras de bookmarks, varias
+   pestañas), esa altura cubría casi toda la pantalla y se montaba encima de la topbar, sin ningún
+   control para reducirla (solo abrir/cerrar).
+   • **`src/styles/workbench.css` reescrito a los tokens reales del tema** (`--surface`,
+     `--color-border`, `--color-text`, `--color-blue-deep`, mismo `blur(24px) saturate(1.4)` que
+     `.topbar`/`.sidebar`) — se eliminó el bloque de "reskin oscuro" que forzaba navy/teal fijo en
+     TODAS las clases reusadas de `developers.css` (`.dev-card`, `.key-table`, `.wh-*`…): esas
+     clases ya leían tokens de tema correctamente, el override era innecesario y es lo que
+     mantenía el dock permanentemente oscuro sin importar el modo claro/oscuro de la app.
+   • **Altura acotada al viewport + redimensionable a mano:** `DevWorkbench.astro` calcula
+     `maxPanelH()`/`defaultPanelH()` desde `window.innerHeight` (nunca más que
+     `innerHeight - 200px`, mínimo 220px) y agrega un **handle de arrastre** (`#wbDrag`, grip tipo
+     iOS sheet) con soporte de pointer events + flechas de teclado (accesible), persistido junto al
+     resto del estado en `localStorage`. Se re-clampa en cada `resize` de ventana.
+   • Radio de esquinas superiores + sombra únicos en `.wb-dock` (contenedor, `overflow:hidden`) en
+     vez de duplicados en bar y panel por separado (evitaba el doble-shadow visual en la unión).
+   • Los 2 links de `/openapi.yaml`/`llms.txt` y el mensaje de éxito del prompt de IA en
+     `src/pages/app/wb/[tab].astro` usaban colores hardcodeados del tema navy viejo (`#7fd1c1`
+     teal, `#6ee7b7` mint) — corregidos a `var(--color-blue-deep)`/`var(--color-ok)`.
+   • Verificado con `npm run build` limpio.
+
 ✅ **Exportar catálogo/clientes a CSV — cableado real (jul 2026)** — en Ajustes › Datos y
    privacidad, el botón "Catálogo y clientes (CSV)" era un placeholder estático ("Próximamente",
    sin link) mientras que "Descargar todo (JSON)" sí funcionaba (`/api/org/export`). André lo
