@@ -4,8 +4,11 @@
 // el calendario de backoff exponencial (ver src/lib/webhook-delivery.ts). Es
 // la red de seguridad del patrón outbox: la entrega inmediata ya corre inline
 // justo después de encolar (flushNow vía after()) — este cron solo recoge lo
-// que esa entrega inmediata no logró resolver. Pensado para correr cada minuto
-// (ver vercel.json). Protegido con CRON_SECRET, igual que el resto de crons.
+// que esa entrega inmediata no logró resolver. Corre cada 5 minutos (ver
+// vercel.json) — bajado de "cada minuto" en jul 2026 porque esa frecuencia
+// hacía que Vercel rechazara el deploy entero (límite de crons del plan,
+// ver docs/historial-platform-api.md). Protegido con CRON_SECRET, igual que
+// el resto de crons.
 export const prerender = false;
 
 import type { APIRoute } from 'astro';

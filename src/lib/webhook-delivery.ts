@@ -9,9 +9,10 @@
 //   2. flushNow() — intento INLINE inmediato (fire-and-forget vía after()), para
 //      no perder la latencia p50 de hoy: el outbox es red de seguridad, no un
 //      impuesto de latencia.
-//   3. runSweep() (cron /api/cron/webhooks, cada minuto) — reclama lo que
-//      quedó 'pending'/'delivering' con lease vencido (invocaciones muertas,
-//      fallos) y sigue el calendario de reintentos hasta agotarlo.
+//   3. runSweep() (cron /api/cron/webhooks, cada 5 minutos — ver vercel.json)
+//      — reclama lo que quedó 'pending'/'delivering' con lease vencido
+//      (invocaciones muertas, fallos) y sigue el calendario de reintentos
+//      hasta agotarlo.
 //
 // El `payload` que se firma y se guarda es INMUTABLE: nunca se re-serializa en
 // un reintento, así que la firma siempre cuadra y el event_id es estable.
