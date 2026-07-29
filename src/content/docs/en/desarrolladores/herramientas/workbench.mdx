@@ -1,0 +1,135 @@
+---
+title: "Cord Workbench"
+description: "Cord's developer panel — API keys, webhooks, events, logs, and the health of your integration, all in a dock that lives at the bottom of the app."
+order: 1
+---
+
+<header class="content-header">
+  <h1 class="page-title">Cord Workbench</h1>
+  <p class="page-subtitle">One panel for everything you need while building on Cord — keys, webhooks, activity, and the health of your integration.</p>
+</header>
+
+## What is it?
+
+The Workbench is a developer console that lives at the bottom of the app: a fixed bar that,
+when opened, expands into a tabbed panel for managing your API, your webhooks, and seeing your
+integration's real activity — without leaving wherever you're working in Cord.
+
+It replaces what used to be scattered across several Settings pages. **MCP, AI Agents, and
+Cord Elements are still under Settings › Developers** (they're one-time configuration, not
+something you check often); everything else — keys, webhooks, request logs — moved here
+because it's what you check while you're actually integrating.
+
+## Turning it on
+
+1. Go to **Settings** (the gear icon in the top bar) and scroll to the bottom of the category
+   index.
+2. Turn on the **"Developer mode"** switch.
+3. A **"Developers"** bar appears pinned to the bottom edge of the screen, visible across the
+   whole app. Click it to open.
+
+<Callout type="info">
+Developer mode is a browser preference (`localStorage`), not an account setting — turn it on
+on every device you work from.
+</Callout>
+
+## The panel
+
+- **Drag the "Developers" bar upward** to open the panel, or click it. Once open, drag the top
+  handle to resize it; drop it near the bottom to collapse it back down to the bar.
+- **Full screen** — the corners icon (⤢), next to the close button, expands the panel to the
+  whole window. Handy when you're digging through the Logs tab or an event's detail. Exit with
+  the same button or `Esc`.
+- **Options menu (⋯)** — next to the full-screen button:
+  - **Show times in UTC**: switches every date in the panel instantly (no reload). It doesn't
+    change your account's time zone, only how dates are displayed here — useful if your backend
+    logs everything in UTC and you want a direct comparison.
+  - Keyboard shortcuts and links to this documentation and the OpenAPI spec.
+
+## The tabs
+
+### Overview
+
+The landing view: API requests over the last 24 hours / 7 days / 14 days as a bar chart
+(succeeded vs. failed), 4xx/5xx error distribution with the routes failing the most, webhook
+delivery counts, a health card, and shortcuts to the docs and `openapi.yaml`.
+
+### Webhooks
+
+Create, edit, and manage your endpoints. **"Add endpoint"** opens a two-step, full-screen
+wizard — pick events, then the destination URL — and shows you the signing secret
+(`whsec_…`) **once** when you finish. From each endpoint's row you can:
+
+- **Test** — send a test `ping` event.
+- **Edit** — change the URL or subscribed events.
+- **Rotate secret** — generate a new secret with an overlap window (1h/24h/72h) so no delivery
+  gets rejected while you update your backend.
+- **Reactivate / Reactivate & retry** — if Cord disabled the endpoint after a failure streak,
+  this turns it back on; the second option also requeues whatever failed in the last 24h.
+- Expanding a row shows that endpoint's **delivery log**, with a "Retry" button per attempt.
+
+See the full guide at [Webhooks](/en/docs/desarrolladores/herramientas/webhooks) — payload,
+signatures, event catalog, and retry schedule.
+
+### Events
+
+A timeline that mixes two things, with **All / Sent / Internal** chips:
+
+- **Sent** — every event Cord sent to your endpoints (`quote.paid`, `invoice.stamped`…),
+  grouped by its logical `id` (`evt_…`). An event delivered to 3 endpoints shows up as **one**
+  event with its 3 outcomes, not as 3 separate rows. The detail view shows the aggregated
+  status (delivered, partial, failed, queued), how many endpoints received it, and the
+  **full payload** that was sent.
+- **Internal** — activity from your quotes inside Cord (viewed, approved, paid…) even if you
+  don't have any webhook configured yet. It's the signal that "this DID happen in Cord, but you
+  have no endpoint listening for it" — this tab's empty state links straight to the endpoint
+  creation wizard.
+
+<Callout type="info">
+This tab doesn't show the content of chat messages between you and your clients — only the
+event type and the quote's folio. It's a technical view, not a conversation reader.
+</Callout>
+
+### API
+
+Create and revoke your **API Keys** (secret `sk_…` / publishable `pk_…`, test or live mode),
+with an endpoint reference (`GET/POST /v1/cotizaciones`, `/clientes`, `/productos`,
+`/cobranza`…) and a button that generates a ready-to-paste prompt for ChatGPT or Cursor to
+build the integration for you. See [API Keys](/en/docs/desarrolladores/empezar/apikey) for the
+security and scope details of each key type.
+
+### Logs
+
+Every request that hit `/api/v1/*` (and `/api/mcp`, with the tool that was called) — a
+master-detail view: filter by method, by status class (2xx/4xx/5xx), or search by route, and
+select a row to see its detail on the right (exact timestamp, latency, IP, which key made it,
+test/live mode).
+
+<Callout type="warning">
+Cord **doesn't store the body** of requests or responses — only metadata. This is intentional:
+storing bodies would mean persisting your customers' data (tax IDs, emails, amounts) on every
+call. If you need to inspect real payloads, check your own server's log or use the MCP
+playground under Settings.
+</Callout>
+
+### Health
+
+The "is everything OK?" summary: each endpoint with its state (active, paused, disabled due to
+failures, or mid-streak), the queue of events waiting to be delivered (how many, how many are
+past their next retry, how many exhausted their schedule without delivering), and the same
+4xx/5xx error distribution from Overview. It's the first place to check if you suspect your
+integration stopped receiving events.
+
+## FAQ
+
+**Why don't I see anything in Events or Health?** Both tabs depend on having at least one
+webhook endpoint configured. With none set up, Events will only show your internal activity
+(if any), and Health will have nothing to report.
+
+**Does the Workbench count against my usage quota?** No — opening the panel, switching tabs,
+and viewing the log makes no calls to your public API. Only the real requests YOU make (or
+your integration makes) count.
+
+**Can I share Workbench access with my team?** Yes, any member with "Settings" permission on
+their role sees the same thing you do — it's an organization view, not a personal one (except
+the Developer mode preference itself, which is per browser).

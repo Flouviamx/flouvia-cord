@@ -1,0 +1,138 @@
+---
+title: "Cord Workbench"
+description: "El panel de desarrolladores de Cord — claves de API, webhooks, eventos, registros y salud de tu integración, todo en un dock que vive al fondo de la app."
+order: 1
+---
+
+<header class="content-header">
+  <h1 class="page-title">Cord Workbench</h1>
+  <p class="page-subtitle">Un solo panel para todo lo que necesitas al construir sobre Cord — claves, webhooks, actividad y salud de tu integración.</p>
+</header>
+
+## ¿Qué es?
+
+El Workbench es una consola de desarrollador que vive al fondo de la app: una barra fija que,
+al abrirse, despliega un panel con pestañas para administrar tu API, tus webhooks y ver la
+actividad real de tu integración — sin salir de donde estás trabajando en Cord.
+
+Reemplaza lo que antes vivía repartido en varias páginas de Ajustes. **MCP, Agentes de IA y
+Cord Elements siguen en Ajustes › Desarrolladores** (son configuración de una sola vez, no
+algo que consultes seguido); todo lo demás — claves, webhooks, registros de peticiones — se
+movió aquí porque es lo que revisas mientras estás integrando.
+
+## Activarlo
+
+1. Entra a **Ajustes** (el engrane de la barra superior) y baja hasta el final del índice de
+   categorías.
+2. Activa el interruptor **"Modo desarrollador"**.
+3. Aparece una barra **"Desarrolladores"** pegada al borde inferior de la pantalla, visible en
+   toda la app. Haz clic para abrirla.
+
+<Callout type="info">
+El Modo desarrollador es una preferencia de tu navegador (`localStorage`), no de tu cuenta —
+actívalo en cada dispositivo desde el que trabajes.
+</Callout>
+
+## El panel
+
+- **Arrastra la barra "Desarrolladores" hacia arriba** para abrir el panel, o haz clic. Una vez
+  abierto, arrastra el tirador superior para achicarlo o agrandarlo; suéltalo cerca del fondo
+  para colapsarlo de vuelta a la barra.
+- **Pantalla completa** — el ícono de esquinas (⤢), junto al de cerrar, expande el panel a toda
+  la ventana. Útil cuando estás revisando el log de Registros o el detalle de un evento. Sal con
+  el mismo botón o con `Esc`.
+- **Menú de opciones (⋯)** — junto al botón de pantalla completa:
+  - **Mostrar las horas en UTC**: cambia el formato de todas las fechas del panel al instante
+    (sin recargar nada). No afecta la zona horaria de tu cuenta, solo cómo se ven las fechas
+    aquí — útil si tu backend registra todo en UTC y quieres comparar directo.
+  - Atajos de teclado y links a esta documentación y a la especificación OpenAPI.
+
+## Las pestañas
+
+### Resumen
+
+La vista de aterrizaje: peticiones de API de los últimos 24 horas / 7 días / 14 días en una
+gráfica de barras (correctas vs. con error), distribución de errores 4xx/5xx con las rutas que
+más fallan, entregas de eventos de webhook, un card de salud, y accesos directos a la
+documentación y al `openapi.yaml`.
+
+### Webhooks
+
+Crea, edita y administra tus endpoints. **"Agregar endpoint"** abre un asistente de pantalla
+completa en dos pasos — elegir eventos, luego la URL de destino — y te muestra el secreto de
+firma (`whsec_…`) **una sola vez** al terminar. Desde la lista de cada endpoint puedes:
+
+- **Probar** — envía un evento `ping` de prueba.
+- **Editar** — cambia la URL o los eventos suscritos.
+- **Rotar secreto** — genera un secreto nuevo con una ventana de solape (1h/24h/72h) para que
+  ninguna entrega se rechace mientras actualizas tu backend.
+- **Reactivar / Reactivar y reintentar** — si Cord desactivó el endpoint por una racha de
+  fallos, esto lo reactiva; la segunda opción además reencola lo que falló en las últimas 24h.
+- Expandir la fila muestra el **log de entregas** de ese endpoint, con un botón "Reintentar" por
+  intento.
+
+Ver la guía completa en [Webhooks](/docs/desarrolladores/herramientas/webhooks) — payload,
+firmas, catálogo de eventos y calendario de reintentos.
+
+### Eventos
+
+Una línea de tiempo que mezcla dos cosas, con chips **Todos / Enviados / Internos**:
+
+- **Enviados** — cada evento que Cord mandó a tus endpoints (`quote.paid`, `invoice.stamped`…),
+  agrupado por su `id` lógico (`evt_…`). Un evento entregado a 3 endpoints se ve como **un**
+  evento con sus 3 resultados, no como 3 filas sueltas. El detalle muestra el estado agregado
+  (entregado, parcial, fallido, en cola), cuántos endpoints lo recibieron, y el **payload
+  completo** que se envió.
+- **Internos** — actividad de tus cotizaciones dentro de Cord (vista, aprobada, pagada…) aunque
+  todavía no tengas ningún webhook configurado. Es la señal de que "esto SÍ pasó en Cord, pero
+  no tienes ningún endpoint escuchándolo" — el estado vacío de esta pestaña te lleva directo al
+  asistente de crear un endpoint.
+
+<Callout type="info">
+Esta pestaña no muestra el contenido de los mensajes de chat entre tú y tus clientes — solo el
+tipo de evento y el folio de la cotización. Es una vista técnica, no un lector de conversaciones.
+</Callout>
+
+### API
+
+Crea y revoca tus **Claves de API** (`sk_…` secretas / `pk_…` publicables, en modo prueba o
+en vivo), con la referencia de endpoints (`GET/POST /v1/cotizaciones`, `/clientes`,
+`/productos`, `/cobranza`…) y un botón que genera un prompt listo para pegar en ChatGPT o
+Cursor y que te arme la integración. Ver [Claves de API](/docs/desarrolladores/empezar/apikey)
+para el detalle de seguridad y alcance de cada tipo de clave.
+
+### Registros
+
+El log de cada petición que llegó a `/api/v1/*` (y a `/api/mcp`, con la tool que se llamó) —
+maestro-detalle: filtra por método, por clase de status (2xx/4xx/5xx) o busca por ruta, y
+selecciona una fila para ver su detalle a la derecha (fecha exacta, latencia, IP, qué clave la
+hizo, modo prueba/vivo).
+
+<Callout type="warning">
+Cord **no almacena el cuerpo** de las peticiones ni de las respuestas del API — solo
+metadatos. Es intencional: guardar los cuerpos implicaría persistir datos de tus clientes
+(RFC, correos, montos) en cada llamada. Si necesitas inspeccionar payloads reales, revisa el
+log de tu propio servidor o usa el probador de la pestaña MCP en Ajustes.
+</Callout>
+
+### Salud
+
+El resumen de "¿está todo bien?": cada endpoint con su estado (activo, en pausa, desactivado
+por fallos, o con una racha de fallos en curso), la cola de eventos pendientes de entregar
+(cuántos, cuántos ya vencieron su próximo reintento, cuántos se agotaron sin entregarse), y la
+misma distribución de errores 4xx/5xx del Resumen. Es el primer lugar a revisar si sospechas
+que tu integración dejó de recibir eventos.
+
+## Preguntas frecuentes
+
+**¿Por qué no veo nada en Eventos ni en Salud?** Ambas pestañas dependen de que tengas al menos
+un endpoint de webhook configurado. Sin ninguno, Eventos solo mostrará tu actividad interna (si
+la hay) y Salud no tendrá nada que reportar.
+
+**¿El Workbench cuenta contra mi cuota de uso?** No — abrir el panel, navegar entre pestañas y
+ver el log no hace ninguna llamada a tu API pública. Solo las peticiones reales que TÚ hagas
+(o que haga tu integración) cuentan.
+
+**¿Puedo compartir acceso al Workbench con mi equipo?** Sí, cualquier miembro con permiso de
+"Ajustes" en su rol lo ve igual que tú — es una vista de la organización, no personal (salvo la
+preferencia de Modo desarrollador, que es por navegador).

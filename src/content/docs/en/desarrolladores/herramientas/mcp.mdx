@@ -23,8 +23,11 @@ By configuring the Cord MCP Server, you empower agents like Claude or IDE-integr
 
 Authentication for your AI client is performed using your standard Cord **API Key** (`sk_live_…` / `sk_test_…`) — the same one the REST API uses.
 
-1. Navigate to **Settings › Developers › MCP** in the Cord interface.
-2. Generate an API Key if you don't have one (you need `write` scope to use `crear_cotizacion_borrador`; `read` is enough for the rest).
+1. Navigate to **Settings › Developers › MCP** in the Cord interface (it appears once you turn
+   on **Developer mode** at the bottom of the Settings index).
+2. Generate an API Key if you don't have one — from the **API** tab of the
+   [Cord Workbench](/en/docs/desarrolladores/herramientas/workbench). You need `write` scope to use
+   `crear_cotizacion_borrador`; `read` is enough for the rest.
 3. Copy the MCP client JSON configuration provided on the screen.
 4. Paste this configuration into the corresponding local path for your client (e.g., the `claude_desktop_config.json` file if you use the Claude for Desktop app).
 
@@ -121,6 +124,7 @@ Business rules are strictly applied. If the AI attempts to apply a 150% discount
 
 Every real call (not protocol notifications like `notifications/initialized`) counts just like
 a REST API call: against your plan's usage quota, against the per-key rate limit (600/min), and
-shows up in **Settings › Developers › Activity** with the tool that was called (e.g.
-`/mcp/tools/call:listar_productos`) — so you can see exactly what your agent is doing, with
-which key, and when.
+shows up in the **Logs** tab of the [Cord Workbench](/en/docs/desarrolladores/herramientas/workbench)
+with the tool that was called (e.g. `/mcp/tools/call:listar_productos`) — so you can see exactly
+what your agent is doing, with which key, and when. You can filter that log by method or status,
+or search for `mcp` in the route to isolate just what the AI did.

@@ -210,7 +210,15 @@ html.cord-dev .wb-dock { display: block; }
 
 /* ── Modo pantalla completa ── */
 html.wb-maxed { overflow: hidden; }
-.wb-dock.is-max { top: 0; z-index: 855; }
+/* ⚠️ `is-max` SOLO surte efecto junto con `is-open`. Defensa en profundidad: si el
+   estado maximizado sobreviviera a un cierre, `top:0` dejaría el dock estirado a
+   toda la pantalla con el panel oculto — un div invisible que se come todos los
+   clics de la app. Con esta pareja de clases, un dock cerrado nunca puede
+   bloquear la pantalla aunque el JS se quede a medias. */
+.wb-dock.is-max.is-open { top: 0; z-index: 855; }
+/* Y por si acaso: un dock sin panel visible jamás intercepta el puntero. */
+.wb-dock:not(.is-open) { pointer-events: none; }
+.wb-dock:not(.is-open) .wb-bar { pointer-events: auto; }
 .wb-dock.is-max .wb-panel {
     height: 100dvh !important;
     border-radius: 0;

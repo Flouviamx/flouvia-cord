@@ -582,9 +582,19 @@ const WBI18N = {
         }
         function closeDock() {
             isOpen = false;
+            // ⚠️ Salir SIEMPRE de maximizado al cerrar. Si no, el dock se queda con
+            // `is-max` (top:0 → cubre toda la pantalla, z-index 855) pero con el
+            // panel oculto: un div invisible a pantalla completa que se come TODOS
+            // los clics de la app. Además la barra seguiría en display:none y el
+            // <html> con overflow:hidden. Bug reportado: "se quita hasta la barra
+            // fija y no puedo clickear nada".
+            if (isMax) isMax = false;
             panel!.hidden = true;
             bar!.setAttribute('aria-expanded', 'false');
-            dock!.classList.remove('is-open');
+            dock!.classList.remove('is-open', 'is-max');
+            document.documentElement.classList.remove('wb-maxed');
+            document.getElementById('wbMax')?.setAttribute('aria-pressed', 'false');
+            panel!.style.height = '';
             updateWbH();
             writeState();
         }
@@ -1179,7 +1189,10 @@ const WBI18N = {
         const st = readState();
         currentTab = st.tab;
         currentRange = st.range;
-        isMax = st.max;
+        // Maximizado solo tiene sentido con el dock ABIERTO. Un estado guardado con
+        // max:true + open:false (posible en localStorage de antes del fix de cierre)
+        // dejaría el <html> con overflow:hidden y la página sin scroll.
+        isMax = st.open ? st.max : false;
         utc = st.utc;
         if (utcInput) utcInput.checked = utc;
         if (st.h) panelH = Math.min(maxH(), Math.max(MIN_H, st.h));

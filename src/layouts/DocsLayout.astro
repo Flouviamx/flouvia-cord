@@ -239,6 +239,7 @@ const jsonLd = {
                       {lang === 'es' ? 'Herramientas' : 'Tools'}
                     </button>
                     <ul class="sidebar-submenu">
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/herramientas/workbench')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/herramientas/workbench')}>Cord Workbench</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/herramientas/webhooks')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/herramientas/webhooks')}>{lang === 'es' ? 'Webhooks' : 'Webhooks'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores/herramientas/mcp')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/herramientas/mcp')}>{lang === 'es' ? 'Servidor MCP' : 'MCP Server'}</a></li>
                     </ul>

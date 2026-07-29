@@ -19,9 +19,11 @@ Casos de uso comunes:
 
 ## Configurar un endpoint
 
-1. Activa el **Modo desarrollador** en Ajustes › Empresa (interruptor al final del índice de Ajustes) — esto abre el **dock de Desarrolladores**, la barra que aparece al fondo de la pantalla en toda la app.
-2. Abre la pestaña **Webhooks** del dock.
-3. Haz clic en **Agregar endpoint**.
+1. Activa el **Modo desarrollador** al final del índice de Ajustes — esto revela la barra
+   **"Desarrolladores"** al fondo de la pantalla, visible en toda la app. Ábrela con un clic.
+   Ver el tour completo en [Cord Workbench](/docs/desarrolladores/herramientas/workbench).
+2. Abre la pestaña **Webhooks** del panel.
+3. Haz clic en **Agregar endpoint** — abre un asistente de pantalla completa.
 4. Ingresa tu URL — **debe ser `https://`**; Cord rechaza destinos `http://`, `localhost`, IPs privadas/internas y hosts `.internal`/`.local` desde la creación.
 5. Elige el subconjunto de eventos que quieres recibir (dejar todos sin marcar = recibes **todos**). Ver el [catálogo completo](#catálogo-de-eventos) abajo.
 6. Guarda una copia de tu **secret** (`whsec_…`) — se muestra en claro **una sola vez**. Después solo se ve enmascarado.
@@ -93,7 +95,7 @@ constante (el SDK ya lo hace). Un `!==` normal puede filtrar información por *t
 Cada evento lógico tiene un `id` estable (`evt_…`), igual en el body y en `X-Cord-Event-Id`/`Idempotency-Key`. Es el **mismo** valor:
 
 - En cada reintento automático de un mismo evento (ver la siguiente sección).
-- En un replay manual desde Ajustes ("Reintentar" en el log de entregas) — el payload se reenvía **byte-idéntico**, incluido el `id`.
+- En un replay manual desde el Workbench ("Reintentar" en el log de entregas) — el payload se reenvía **byte-idéntico**, incluido el `id`.
 
 Como los reintentos y los replays pueden hacer que tu endpoint reciba el mismo evento más de una vez, tu handler debe ser **idempotente**: guarda los `id` ya procesados (aunque sea en una tabla simple con `unique`) y descarta silenciosamente los repetidos antes de aplicar efectos secundarios (cobrar, mandar un correo, etc.).
 
@@ -113,7 +115,7 @@ Cord encola cada evento **antes** de intentar entregarlo — si tu endpoint est�
 | 8 | ~10 h |
 | 9–11 | ~1 día |
 
-(Con jitter de ±20% para que muchos endpoints caídos al mismo tiempo no reciban el reintento exactamente en el mismo segundo.) Cualquier respuesta que no sea `2xx`, un timeout, o un error de red cuenta como fallo y programa el siguiente intento. Un `3xx` (redirect) **nunca se sigue** — se trata como fallo; si tu endpoint cambió de URL, actualízala en Ajustes en vez de dejar un redirect.
+(Con jitter de ±20% para que muchos endpoints caídos al mismo tiempo no reciban el reintento exactamente en el mismo segundo.) Cualquier respuesta que no sea `2xx`, un timeout, o un error de red cuenta como fallo y programa el siguiente intento. Un `3xx` (redirect) **nunca se sigue** — se trata como fallo; si tu endpoint cambió de URL, actualízala en el Workbench en vez de dejar un redirect.
 
 La entrega es **al menos una vez** (*at-least-once*), no exactamente una vez — de ahí la importancia de deduplicar por `id` (ver arriba).
 
@@ -124,13 +126,13 @@ Cord vigila la racha de fallos de cada endpoint (solo cuenta eventos que **agota
 - **3 fallos seguidos** → recibes un correo de aviso (como máximo uno cada 24 h).
 - **5 fallos seguidos** → el endpoint se **desactiva automáticamente** (deja de recibir eventos nuevos) y recibes un correo explicando por qué. Los eventos que seguían pendientes de reintento para ese endpoint se cancelan — no se acumulan indefinidamente contra un destino caído.
 
-Cuando arregles tu endpoint, desde Ajustes puedes:
+Cuando arregles tu endpoint, desde la pestaña Webhooks del Workbench puedes:
 - **Reactivar** — vuelve a recibir eventos nuevos desde ahora.
 - **Reactivar y reintentar** — además, reencola lo que falló en las **últimas 24 horas** (nunca el backlog completo, para no bombardearte con eventos viejos de golpe).
 
 ## Rotación de secreto
 
-Puedes rotar el secreto de un endpoint sin perder ni una entrega. Desde Ajustes, botón **"Rotar secreto"**, elige una ventana de solape (1h / 24h / 72h) y confirma — verás el secreto nuevo en claro una sola vez.
+Puedes rotar el secreto de un endpoint sin perder ni una entrega. En el Workbench, botón **"Rotar secreto"**, elige una ventana de solape (1h / 24h / 72h) y confirma — verás el secreto nuevo en claro una sola vez.
 
 Durante la ventana, Cord firma cada entrega con **ambos** secretos a la vez:
 
@@ -155,7 +157,7 @@ Esto significa que puedes actualizar tu `CORD_WEBHOOK_SECRET` en cualquier momen
 | `payment.partial` | Se recibe UN cobro parcial (anticipo, saldo o una cuota) sin que la cotización quede totalmente pagada todavía. |
 | `payment.failed` | Falla un cobro recurrente de una iguala/retainer. |
 | `invoice.stamped` | Se timbra el CFDI. |
-| `ping` | Solo aparece al usar "Enviar prueba" desde Ajustes — nunca lo dispara un evento real. |
+| `ping` | Solo aparece al usar "Probar" desde el Workbench — nunca lo dispara un evento real. |
 
 > **Nota:** `payment.partial` trae campos extra en `data` que los demás eventos no tienen:
 > `tipo` (`anticipo`\|`saldo`\|`cuota`), `monto`, `numero_cuota`, `saldo_pendiente` y
@@ -165,4 +167,4 @@ Esto significa que puedes actualizar tu `CORD_WEBHOOK_SECRET` en cualquier momen
 
 ## Log de entregas y retención
 
-Desde Ajustes, cada endpoint tiene un log expandible con el resultado de cada intento (status, duración, respuesta de tu servidor) y un botón "Reintentar" por fila. El log se conserva **30 días**; los eventos que llegaron a fallar del todo se conservan **90 días** (para que "Reintentar" siga funcionando más tiempo en ese caso). No uses el log de Cord como almacenamiento de largo plazo de lo que se envió — guarda tú lo que necesites conservar en tu propio sistema al procesarlo.
+En la pestaña Webhooks del Workbench, cada endpoint tiene un log expandible con el resultado de cada intento (status, duración, respuesta de tu servidor) y un botón "Reintentar" por fila. La pestaña **Eventos** del Workbench muestra lo mismo desde otro ángulo: un evento lógico con todas sus entregas agrupadas, en vez de un log por endpoint. El log se conserva **30 días**; los eventos que llegaron a fallar del todo se conservan **90 días** (para que "Reintentar" siga funcionando más tiempo en ese caso). No uses el log de Cord como almacenamiento de largo plazo de lo que se envió — guarda tú lo que necesites conservar en tu propio sistema al procesarlo.

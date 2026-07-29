@@ -36,7 +36,7 @@ Uno de los principales casos de uso del Server SDK es la verificación de firmas
 
 ### Node.js o Next.js Route Handler
 
-Para verificar un webhook de manera síncrona, utiliza `cord.webhooks.constructEvent()`. Debes proporcionarle el payload crudo (`raw text`), los encabezados de la petición, y tu **Secreto de Webhook** (configurable en Ajustes > Desarrolladores).
+Para verificar un webhook de manera síncrona, utiliza `cord.webhooks.constructEvent()`. Debes proporcionarle el payload crudo (`raw text`), los encabezados de la petición, y tu **Secreto de Webhook** (lo obtienes al crear el endpoint en la pestaña Webhooks del [Cord Workbench](/docs/desarrolladores/herramientas/workbench)).
 
 El SDK revisa automáticamente las firmas de mitigación contra ataques de repetición (Replay Attacks) verificando `X-Cord-Signature-V1` y descartando eventos antiguos mediante una tolerancia de tiempo (por defecto 300 segundos). Durante una rotación de secreto, `X-Cord-Signature-V1` puede traer dos firmas a la vez (secreto nuevo y viejo) — el SDK acepta cualquiera de las dos automáticamente, sin que tengas que hacer nada. Detalle completo en la [guía de Webhooks](/docs/desarrolladores/herramientas/webhooks#rotación-de-secreto).
 
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
 
 <Callout type="warning">
 **Idempotencia:** Cord entrega "al menos una vez" — un mismo `event.id` puede llegarte más de
-una vez (reintentos automáticos o un replay manual desde Ajustes). Guarda los `id` ya
+una vez (reintentos automáticos o un replay manual desde el Workbench). Guarda los `id` ya
 procesados y descarta los repetidos antes de aplicar efectos secundarios. Más detalle en la
 [guía de Webhooks](/docs/desarrolladores/herramientas/webhooks#identidad-del-evento-e-idempotencia).
 </Callout>

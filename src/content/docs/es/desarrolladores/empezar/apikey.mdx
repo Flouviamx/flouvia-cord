@@ -10,7 +10,7 @@ description: "Administra las llaves criptográficas que dan acceso a la platafor
 
 ## Funcionamiento de las Claves
 
-Toda petición programática a la API de Cord requiere una **Clave de API**. Puedes administrarlas, revocarlas y monitorear su uso desde la pestaña **API** del dock de Desarrolladores (actívalo en Ajustes > Empresa con el toggle "Modo desarrollador").
+Toda petición programática a la API de Cord requiere una **Clave de API**. Puedes administrarlas, revocarlas y monitorear su uso desde la pestaña **API** del [Cord Workbench](/docs/desarrolladores/herramientas/workbench) — la barra "Desarrolladores" al fondo de la app, que aparece al activar el **Modo desarrollador** al final del índice de Ajustes.
 
 Por seguridad, los sistemas de Cord almacenan tu Clave de API como un Hash (`sha-256`) irreversible. La llave en texto claro (el string que comienza con `sk_...` o `pk_...`) solo se te mostrará **una vez** al momento de crearla. Si la pierdes, no hay forma de recuperarla; deberás revocarla y generar una nueva.
 
@@ -25,4 +25,4 @@ Nunca commitees (ej. en Git) una clave que comience con `sk_live_`. Si Cord dete
 
 ## Actividad en Tiempo Real
 
-Dentro de la pestaña API en el dashboard, tendrás acceso a un log de auditoría en vivo sobre el uso de cada llave, permitiéndote rastrear rápidamente qué IP o qué flujo (API tradicional o MCP) originó un cambio en tu sistema.
+La pestaña **Registros** del Workbench es un log de auditoría en vivo del uso de cada llave: filtra por método o por clase de status, busca por ruta, y selecciona cualquier petición para ver qué IP, qué llave y qué flujo (API REST o MCP) la originó. Las llamadas de MCP aparecen con la herramienta que se invocó, por ejemplo `/mcp/tools/call:listar_productos`.

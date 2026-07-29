@@ -10,7 +10,7 @@ description: "Manage the cryptographic keys that grant access to the platform."
 
 ## How Keys Work
 
-Every programmatic request to the Cord API requires an **API Key**. You can manage, revoke, and monitor their usage from **Settings > Developers > API**.
+Every programmatic request to the Cord API requires an **API Key**. You can manage, revoke, and monitor their usage from the **API** tab of the [Cord Workbench](/en/docs/desarrolladores/herramientas/workbench) — the "Developers" bar at the bottom of the app, which appears once you turn on **Developer mode** at the bottom of the Settings index.
 
 For security, Cord's systems store your API Key as an irreversible Hash (`sha-256`). The plain text key (the string starting with `sk_...` or `pk_...`) will only be shown to you **once** upon creation. If you lose it, there is no way to recover it; you must revoke it and generate a new one.
 
@@ -21,7 +21,7 @@ Never commit (e.g., in Git) a key starting with `sk_live_`. If Cord detects a co
 
 ### Use the correct scope (Publishable vs Secret)
 - **Secret Keys (`sk_`):** Have full read and write access to your finances and clients. They should only live on backend servers under your control.
-- **Publishable Keys (`pk_`):** Designed to be safely injected into web applications (frontend). Cord will automatically apply restrictions on what these keys can see or hide sensitive fields (such as the cost/margin of [products](/docs/desarrolladores/funciones/productos)) when receiving a request signed with them.
+- **Publishable Keys (`pk_`):** Designed to be safely injected into web applications (frontend). Cord will automatically apply restrictions on what these keys can see or hide sensitive fields (such as the cost/margin of [products](/en/docs/desarrolladores/funciones/productos)) when receiving a request signed with them.
 
 ## Real-Time Activity
 

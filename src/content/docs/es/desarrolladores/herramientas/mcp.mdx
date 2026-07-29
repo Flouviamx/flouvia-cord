@@ -23,8 +23,11 @@ Al configurar el Servidor MCP de Cord, empoderas a agentes como Claude o asisten
 
 La autenticación para tu cliente de IA se realiza utilizando tu **Clave de API** estándar de Cord (`sk_live_…` / `sk_test_…`) — la misma que usa la API REST.
 
-1. Navega a **Ajustes › Desarrolladores › MCP** en la interfaz de Cord.
-2. Genera una Clave de API si no tienes una (necesitas scope `write` para usar `crear_cotizacion_borrador`; `read` alcanza para las demás).
+1. Navega a **Ajustes › Desarrolladores › MCP** en la interfaz de Cord (aparece al activar el
+   **Modo desarrollador** al final del índice de Ajustes).
+2. Genera una Clave de API si no tienes una — desde la pestaña **API** del
+   [Cord Workbench](/docs/desarrolladores/herramientas/workbench). Necesitas scope `write` para
+   usar `crear_cotizacion_borrador`; `read` alcanza para las demás.
 3. Copia la configuración JSON del cliente MCP proporcionada en pantalla.
 4. Pega esta configuración en la ruta local correspondiente a tu cliente (por ejemplo, el archivo `claude_desktop_config.json` si usas la aplicación Claude for Desktop).
 
@@ -123,6 +126,8 @@ Las reglas de negocio se aplican estrictamente. Si la IA intenta aplicar un desc
 
 Cada llamada real (no las notificaciones de protocolo como `notifications/initialized`) cuenta
 igual que una llamada a la API REST: contra tu cuota de uso del plan, contra el límite de
-peticiones por llave (600/min), y queda en el log de **Ajustes › Desarrolladores › Actividad**
-con la tool que se llamó (ej. `/mcp/tools/call:listar_productos`) — así puedes ver exactamente
-qué está haciendo tu agente, con qué llave y cuándo.
+peticiones por llave (600/min), y queda en la pestaña **Registros** del
+[Cord Workbench](/docs/desarrolladores/herramientas/workbench) con la tool que se llamó (ej.
+`/mcp/tools/call:listar_productos`) — así puedes ver exactamente qué está haciendo tu agente,
+con qué llave y cuándo. Puedes filtrar ese log por método o por status, o buscar `mcp` en la
+ruta para aislar solo lo que hizo la IA.

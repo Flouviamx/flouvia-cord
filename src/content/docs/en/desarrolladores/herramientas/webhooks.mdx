@@ -19,9 +19,11 @@ Common use cases:
 
 ## Setting up an endpoint
 
-1. Turn on **Developer mode** in Settings (toggle at the top-right of the Settings index).
-2. Go to **Settings › API & Webhooks › Webhooks tab**.
-3. Click **Add endpoint**.
+1. Turn on **Developer mode** at the bottom of the Settings index — this reveals the
+   **"Developers"** bar pinned to the bottom of the screen, visible across the whole app. Click
+   it to open. See the full tour at [Cord Workbench](/en/docs/desarrolladores/herramientas/workbench).
+2. Open the **Webhooks** tab of the panel.
+3. Click **Add endpoint** — opens a full-screen wizard.
 4. Enter your URL — **it must be `https://`**; Cord rejects `http://` destinations, `localhost`, private/internal IPs, and `.internal`/`.local` hosts at creation time.
 5. Pick the subset of events you want (leaving all unchecked = you receive **all** of them). See the [full catalog](#event-catalog) below.
 6. Save your **secret** (`whsec_…`) — it's shown in clear text **once**. After that it's masked.
@@ -58,7 +60,7 @@ Every delivery is a `POST` with `Content-Type: application/json` and this body:
 ## Signing and security
 
 Cord signs every delivery with two headers. Use the SDK (`@flouviahq/elements/server`, see the
-[Server SDK guide](/docs/desarrolladores/herramientas/elements/server)) so you don't have to
+[Server SDK guide](/en/docs/desarrolladores/herramientas/elements/server)) so you don't have to
 implement verification by hand:
 
 ```ts
@@ -93,7 +95,7 @@ SDK already does). A regular `!==` can leak information via a timing attack.
 Every logical event has a stable `id` (`evt_…`), identical in the body and in `X-Cord-Event-Id`/`Idempotency-Key`. It's the **same** value:
 
 - Across every automatic retry of the same event (see the next section).
-- On a manual replay from Settings ("Retry" in the delivery log) — the payload is resent **byte-for-byte**, `id` included.
+- On a manual replay from the Workbench ("Retry" in the delivery log) — the payload is resent **byte-for-byte**, `id` included.
 
 Since retries and replays can make your endpoint receive the same event more than once, your handler needs to be **idempotent**: store the `id`s you've already processed (even a simple table with a `unique` constraint works) and silently skip duplicates before applying side effects (charging a card, sending an email, etc.).
 
@@ -113,7 +115,7 @@ Cord enqueues every event **before** attempting delivery — if your endpoint is
 | 8 | ~10 h |
 | 9–11 | ~1 day |
 
-(With ±20% jitter so many endpoints that went down at the same time don't all get retried in the exact same second.) Any non-`2xx` response, a timeout, or a network error counts as a failure and schedules the next attempt. A `3xx` (redirect) is **never followed** — it's treated as a failure; if your endpoint moved, update the URL in Settings instead of leaving a redirect in place.
+(With ±20% jitter so many endpoints that went down at the same time don't all get retried in the exact same second.) Any non-`2xx` response, a timeout, or a network error counts as a failure and schedules the next attempt. A `3xx` (redirect) is **never followed** — it's treated as a failure; if your endpoint moved, update the URL in the Workbench instead of leaving a redirect in place.
 
 Delivery is **at-least-once**, not exactly-once — which is exactly why deduplicating by `id` matters (see above).
 
@@ -124,13 +126,13 @@ Cord tracks each endpoint's failure streak (only events that **exhausted** their
 - **3 failures in a row** → you get a warning email (at most one every 24h).
 - **5 failures in a row** → the endpoint is **automatically disabled** (stops receiving new events) and you get an email explaining why. Events still waiting to retry against that endpoint get canceled — they don't pile up indefinitely against a dead destination.
 
-Once you've fixed your endpoint, from Settings you can:
+Once you've fixed your endpoint, from the Workbench's Webhooks tab you can:
 - **Reactivate** — start receiving new events again from now on.
 - **Reactivate & retry** — also requeues whatever failed in the **last 24 hours** (never the full backlog, so you don't get bombarded with old events all at once).
 
 ## Secret rotation
 
-You can rotate an endpoint's secret without missing a single delivery. From Settings, click **"Rotate secret"**, pick an overlap window (1h / 24h / 72h), and confirm — you'll see the new secret in clear text once.
+You can rotate an endpoint's secret without missing a single delivery. In the Workbench, click **"Rotate secret"**, pick an overlap window (1h / 24h / 72h), and confirm — you'll see the new secret in clear text once.
 
 During the window, Cord signs every delivery with **both** secrets at once:
 
@@ -155,7 +157,7 @@ That means you can update your `CORD_WEBHOOK_SECRET` at any point within the win
 | `payment.partial` | A SINGLE partial charge is received (deposit, balance, or one installment) without the quote being fully paid yet. |
 | `payment.failed` | A recurring retainer/subscription charge fails. |
 | `invoice.stamped` | The CFDI is stamped. |
-| `ping` | Only shows up when using "Send test" from Settings — never fired by a real event. |
+| `ping` | Only shows up when using "Test" from the Workbench — never fired by a real event. |
 
 > **Note:** `payment.partial` carries extra fields on `data` that other events don't have:
 > `tipo` (`anticipo`\|`saldo`\|`cuota`), `monto`, `numero_cuota`, `saldo_pendiente`, and
@@ -165,4 +167,4 @@ That means you can update your `CORD_WEBHOOK_SECRET` at any point within the win
 
 ## Delivery log and retention
 
-Each endpoint in Settings has an expandable log with the outcome of every attempt (status, duration, your server's response) and a "Retry" button per row. The log is kept for **30 days**; events that ultimately failed for good are kept for **90 days** (so "Retry" keeps working longer in that case). Don't use Cord's log as long-term storage of what was sent — persist whatever you need to keep in your own system as you process each delivery.
+In the Workbench's Webhooks tab, each endpoint has an expandable log with the outcome of every attempt (status, duration, your server's response) and a "Retry" button per row. The Workbench's **Events** tab shows the same thing from another angle: one logical event with all its deliveries grouped, instead of a per-endpoint log. The log is kept for **30 days**; events that ultimately failed for good are kept for **90 days** (so "Retry" keeps working longer in that case). Don't use Cord's log as long-term storage of what was sent — persist whatever you need to keep in your own system as you process each delivery.

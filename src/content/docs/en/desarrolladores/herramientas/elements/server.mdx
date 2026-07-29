@@ -36,9 +36,9 @@ One of the primary use cases for the Server SDK is verifying cryptographic signa
 
 ### Node.js or Next.js Route Handler
 
-To verify a webhook synchronously, use `cord.webhooks.constructEvent()`. You must provide the raw text payload, the request headers, and your **Webhook Secret** (configurable in Settings > Developers).
+To verify a webhook synchronously, use `cord.webhooks.constructEvent()`. You must provide the raw text payload, the request headers, and your **Webhook Secret** (you get it when creating the endpoint in the Webhooks tab of the [Cord Workbench](/en/docs/desarrolladores/herramientas/workbench)).
 
-The SDK automatically checks mitigation signatures against Replay Attacks by verifying `X-Cord-Signature-V1` and discarding old events using a time tolerance (default 300 seconds). During a secret rotation, `X-Cord-Signature-V1` may carry two signatures at once (new secret and old) — the SDK accepts whichever one matches automatically, no code changes needed on your end. Full detail in the [Webhooks guide](/docs/desarrolladores/herramientas/webhooks#secret-rotation).
+The SDK automatically checks mitigation signatures against Replay Attacks by verifying `X-Cord-Signature-V1` and discarding old events using a time tolerance (default 300 seconds). During a secret rotation, `X-Cord-Signature-V1` may carry two signatures at once (new secret and old) — the SDK accepts whichever one matches automatically, no code changes needed on your end. Full detail in the [Webhooks guide](/en/docs/desarrolladores/herramientas/webhooks#secret-rotation).
 
 ```ts
 // app/api/webhooks/cord/route.ts
@@ -75,9 +75,9 @@ export async function POST(req: Request) {
 
 <Callout type="warning">
 **Idempotency:** Cord delivers "at least once" — the same `event.id` can reach you more than
-once (automatic retries, or a manual replay from Settings). Store the `id`s you've already
+once (automatic retries, or a manual replay from the Workbench). Store the `id`s you've already
 processed and skip duplicates before applying side effects. More detail in the
-[Webhooks guide](/docs/desarrolladores/herramientas/webhooks#event-identity--idempotency).
+[Webhooks guide](/en/docs/desarrolladores/herramientas/webhooks#event-identity--idempotency).
 </Callout>
 
 ### Edge Runtimes (Cloudflare Workers, Vercel Edge)
