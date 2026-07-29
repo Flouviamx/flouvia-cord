@@ -84,7 +84,6 @@ const planActual = PLANES.find((p) => p.id === planRaw);
                             </div>
                             <div class="pcard-visual-top">
                                 <span class="pcard-name">{p.nombre}</span>
-                                {p.destacado && <i class="pcard-tag">{t(L, 'set.plan.popular')}</i>}
                             </div>
                             <div class="pcard-visual-bottom">
                                 <div class="pcard-price" data-mensual={String(p.precioMensual)} data-anual={String(anual)}>
@@ -266,7 +265,7 @@ const planActual = PLANES.find((p) => p.id === planRaw);
     .link-btn { background: none; border: none; color: var(--color-blue-deep); font-weight: 600; cursor: pointer; font-size: inherit; font-family: inherit; padding: 0; }
 
     /* Toggle ciclo */
-    .cycle-toggle { display: inline-flex; gap: 2px; padding: 4px; border-radius: 100px; background: var(--color-bg-soft); border: 1px solid var(--color-border); margin-bottom: 1.2rem; }
+    .cycle-toggle { display: inline-flex; width: fit-content; gap: 2px; padding: 4px; border-radius: 100px; background: var(--color-bg-soft); border: 1px solid var(--color-border); margin-bottom: 1.2rem; }
     .cyc-btn { border: none; background: none; cursor: pointer; font-family: inherit; font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted); padding: 7px 16px; border-radius: 100px; display: inline-flex; align-items: center; gap: 7px; }
     .cyc-btn.is-active { background: var(--color-blue-deep); color: #fff; }
     .cyc-save { font-size: 0.6rem; font-weight: 800; padding: 2px 6px; border-radius: 100px; background: rgba(16,185,129,0.16); color: #059669; }
@@ -328,7 +327,6 @@ const planActual = PLANES.find((p) => p.id === planRaw);
     }
 
     .pcard-name { font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; color: var(--color-text); transition: color 0.4s; }
-    .pcard-tag { font-style: normal; font-size: 0.56rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: #fff; background: var(--color-ok); padding: 2px 7px; border-radius: 100px; }
     .pcard-price { display: flex; align-items: baseline; gap: 5px; }
     .pcard-amount { font-size: 1.7rem; line-height: 1; font-weight: 500; letter-spacing: -1px; color: var(--color-text); transition: color 0.4s; }
     .pcard-cycle { font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted); transition: color 0.4s; }
