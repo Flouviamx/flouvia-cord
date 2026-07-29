@@ -1,19 +1,35 @@
 ---
-// Dock de Desarrolladores estilo Apple/Stripe Workbench — barra inferior
-// disponible en /app/** cuando el "Modo desarrollador" está activo (toggle en
-// Ajustes › Empresa, ver src/pages/app/ajustes/index.astro). Sigue el tema
-// claro/oscuro real de la app (ver src/styles/workbench.css) y es redimensionable
-// vía el handle #wbDrag, con altura acotada al viewport para nunca taparse contra
-// la topbar. Reemplaza las páginas de Ajustes "API" y "Webhooks" (movidas aquí);
-// MCP/Agentes/Elements se quedan en Ajustes tal cual.
+// Cord Workbench — dock de Desarrolladores (estética Apple, navy Cord SIEMPRE).
+// Disponible en /app/** cuando el "Modo desarrollador" está activo (toggle en
+// Ajustes › Empresa). Reemplaza las páginas de Ajustes "API" y "Webhooks";
+// MCP/Agentes/Elements se quedan en Ajustes.
 //
-// Arquitectura: este componente es solo el CHASIS (barra + tabs + contenedor).
-// El contenido de cada pestaña se pide bajo demanda a /app/_wb/[tab] (fragmento
-// SSR sin layout) y se inyecta con innerHTML — los <script> de ese fragmento
-// se re-ejecutan a mano (ver initDevWorkbench abajo) porque un <script> insertado
-// vía innerHTML nunca corre solo.
+// ── ARQUITECTURA (importa entenderla antes de tocar nada) ──
+// Este componente es el CHASIS COMPLETO: barra + panel + tabs + modales + TODO
+// el JavaScript. El fragmento `/app/wb/[tab]` entrega únicamente HTML y se
+// inyecta con innerHTML en `.wb-body`.
+//
+// El JS NO puede vivir en el fragmento: Astro emite los <script> como módulos ES
+// externos (`<script type="module" src=...>`), y un módulo con el mismo src solo
+// se ejecuta UNA VEZ por documento. Al re-inyectar una pestaña ya cacheada, el
+// navegador lo ignoraba y todos los botones quedaban muertos ("agregar endpoint
+// no sirve"). Aquí el controlador se registra una sola vez y DELEGA por
+// `data-wb-act` sobre `.wb-body`, así que primera carga, pestaña cacheada y
+// refresh() son exactamente el mismo camino.
+//
+// Los modales también viven aquí (no en el fragmento) para que un `innerHTML =`
+// no pueda arrancarlos del DOM estando abiertos.
+//
+// El CSS de las pestañas (`developers.css`) se importa AQUÍ y no en el fragmento:
+// sin layout no hay <head>, y Astro deja el `maybeRenderHead()` dentro del primer
+// condicional del template → la respuesta salía sin ningún <link>. Al importarlo
+// desde este componente (que vive dentro de AppLayout), Rollup lo fusiona en
+// `AppLayout.*.css`. `/app/ajustes/mcp` conserva su propio import.
 import '../../styles/workbench.css';
+import '../../styles/developers.css';
 import { t } from '../../i18n/app';
+import { WEBHOOK_EVENTS } from '../../lib/webhooks';
+import { DEV_INTEGRATION_PROMPT } from '../../lib/dev-prompt';
 
 interface Props { locale: 'es' | 'en' }
 const { locale } = Astro.props;
@@ -25,23 +41,75 @@ const TABS = [
     { id: 'api', label: t(L, 'wb.tab.api') },
     { id: 'registros', label: t(L, 'wb.tab.registros') },
 ];
+
+// Eventos agrupados por familia para el wizard (quote.* / payment.* / invoice.*).
+const FAMILIAS = ['quote', 'payment', 'invoice'];
+const GRUPOS = FAMILIAS
+    .map((f) => ({ familia: f, eventos: WEBHOOK_EVENTS.filter((e) => e.id.startsWith(f + '.')) }))
+    .filter((g) => g.eventos.length > 0);
+
+// Strings que necesita el controlador en runtime. Viajan por `define:vars` (el
+// patrón que ya usa AppLayout) en vez de ~40 atributos `data-i18n-*` repartidos
+// por el markup, que era lo que había antes.
+const WBI18N = {
+    loadError: t(L, 'wb.load_error'),
+    copiar: t(L, 'set.api.copiar'),
+    copiada: t(L, 'set.api.copiada'),
+    errorGenerico: t(L, 'set.wh.error_generico'),
+    // API keys
+    keyNuevaPrueba: t(L, 'set.api.modal_nueva_prueba'),
+    keyNuevaVivo: t(L, 'set.api.modal_nueva_vivo'),
+    keyNombrePruebas: t(L, 'set.api.pruebas'),
+    keyNombreProduccion: t(L, 'set.api.produccion'),
+    keyNoPudoCrear: t(L, 'set.api.no_pudo_crear'),
+    keyDisabledTest: t(L, 'set.api.disabled_test_env'),
+    keyRevocarTitulo: t(L, 'set.api.revocar_titulo'),
+    keyRevocarBody: t(L, 'set.api.revocar_body'),
+    keyRevocarConfirm: t(L, 'set.api.revocar_confirm'),
+    keyNoPudoRevocar: t(L, 'set.api.no_pudo_revocar'),
+    keyModalTitulo: t(L, 'set.api.modal_clave_titulo'),
+    promptCopiado: t(L, 'set.api.prompt_copiado'),
+    actualizar: t(L, 'set.api.actualizar'),
+    actualizando: t(L, 'set.api.actualizando'),
+    sinActividad: t(L, 'set.api.sin_actividad'),
+    // Webhooks
+    whTituloAgregar: t(L, 'set.wh.modal_agregar_titulo'),
+    whTituloEditar: t(L, 'set.wh.modal_editar_titulo'),
+    whCrear: t(L, 'set.wh.crear_endpoint'),
+    whGuardar: t(L, 'set.wh.guardar_cambios'),
+    whNoPudoCrear: t(L, 'set.wh.no_pudo_crear'),
+    whNoPudoActualizar: t(L, 'set.wh.no_pudo_actualizar'),
+    whNoPudoEliminar: t(L, 'set.wh.no_pudo_eliminar'),
+    whNoPudoRotar: t(L, 'set.wh.no_pudo_rotar'),
+    whNoPudoReactivar: t(L, 'set.wh.no_pudo_reactivar'),
+    whEliminarTitulo: t(L, 'set.wh.eliminar_titulo'),
+    whEliminarBody: t(L, 'set.wh.eliminar_body'),
+    whEliminar: t(L, 'set.wh.eliminar'),
+    whEnviado: t(L, 'set.wh.enviado'),
+    whReactivando: t(L, 'set.wh.reactivando'),
+    whRotando: t(L, 'set.wh.rotando'),
+    whTituloCreado: t(L, 'set.wh.modal_creado_titulo'),
+    whWarnCreado: t(L, 'set.wh.modal_creado_warn'),
+    whTituloRotado: t(L, 'set.wh.modal_rotado_titulo'),
+    whWarnRotado: t(L, 'set.wh.modal_rotado_warn'),
+    whCargandoEntregas: t(L, 'set.wh.cargando_entregas'),
+    whSinEntregas: t(L, 'set.wh.sin_entregas'),
+    whNoCargoLog: t(L, 'set.wh.no_pudo_cargar_log'),
+    whReintentar: t(L, 'set.wh.reintentar'),
+    whIntento: t(L, 'set.wh.intento'),
+    whPruebaTag: t(L, 'set.wh.prueba_tag'),
+    whFallo: t(L, 'set.wh.fallo'),
+    whUrlRequerida: t(L, 'wb.wiz.url_requerida'),
+    whSinEventos: t(L, 'wb.wiz.sin_eventos'),
+    continuar: t(L, 'wb.wiz.continuar'),
+    prompt: DEV_INTEGRATION_PROMPT,
+};
 ---
 
+<!-- El PANEL va primero y la BARRA al final: `.wb-dock` es fixed bottom:0, así que
+     el orden del DOM es el orden visual → la barra queda pegada al borde inferior
+     de la pantalla y el panel se expande por encima (patrón del Workbench de Stripe). -->
 <div class="wb-dock" id="wbDock">
-    <button type="button" class="wb-bar" id="wbBarToggle" aria-expanded="false" aria-controls="wbPanel">
-        <span class="wb-bar-left">
-            <svg class="wb-bar-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polyline points="4 17 10 11 4 5" fill-opacity="0.12" />
-                <line x1="12" x2="20" y1="19" y2="19" />
-            </svg>
-            <span class="wb-bar-label">{t(L, 'wb.titulo')}</span>
-        </span>
-        <span class="wb-bar-dot" id="wbBarDot" hidden aria-hidden="true"></span>
-        <svg class="wb-bar-chevron" id="wbBarChevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polyline points="18 15 12 9 6 15" />
-        </svg>
-    </button>
-
     <div class="wb-panel" id="wbPanel" role="region" aria-label={t(L, 'wb.titulo')} hidden>
         <div class="wb-drag" id="wbDrag" role="separator" aria-orientation="horizontal" aria-label={t(L, 'wb.resize')} tabindex="0">
             <span class="wb-drag-grip" aria-hidden="true"></span>
@@ -52,24 +120,215 @@ const TABS = [
             ))}
             <span class="wb-tabs-indicator" id="wbTabsIndicator" aria-hidden="true"></span>
             <button type="button" class="wb-close" id="wbClose" aria-label={t(L, 'wb.cerrar')}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
             </button>
         </div>
         <div class="wb-body" id="wbBody">
             <div class="wb-loading"><span class="wb-spinner" aria-hidden="true"></span></div>
         </div>
     </div>
+
+    <button type="button" class="wb-bar" id="wbBarToggle" aria-expanded="false" aria-controls="wbPanel">
+        <span class="wb-bar-left">
+            <svg class="wb-bar-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="16" rx="3" fill="currentColor" fill-opacity="0.12" />
+                <polyline points="8 10 10.5 12.5 8 15" /><line x1="13" y1="15" x2="16.5" y2="15" />
+            </svg>
+            <span class="wb-bar-label">{t(L, 'wb.titulo')}</span>
+        </span>
+        <span class="wb-bar-dot" id="wbBarDot" hidden aria-hidden="true"></span>
+        <svg class="wb-bar-chevron" id="wbBarChevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="18 15 12 9 6 15" />
+        </svg>
+    </button>
 </div>
 
+<!-- ── Wizard full-screen: agregar / editar endpoint de webhook ──
+     Es un <div> con z-index, NO un <dialog showModal()>: un dialog se promueve al
+     "top layer" del navegador y se pintaría por encima de window.cordConfirm (que
+     es un div en z-index 1000), dejándolo inutilizable si se dispara desde aquí. -->
+<div class="wb-modal" id="wbWiz" hidden role="dialog" aria-modal="true" aria-labelledby="wizTitle">
+    <div class="wb-modal-backdrop" data-wb-act="wiz-close"></div>
+    <div class="wb-modal-shell">
+        <header class="wb-modal-top">
+            <button type="button" class="wb-modal-x" data-wb-act="wiz-close" aria-label={t(L, 'set.wh.cancelar')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+            <h2 class="wb-modal-title" id="wizTitle">{t(L, 'set.wh.modal_agregar_titulo')}</h2>
+        </header>
+
+        <div class="wb-modal-cols">
+            <aside class="wb-wiz-steps" aria-hidden="true">
+                <div class="wb-wiz-step is-on" data-step-nav="1"><span class="wb-wiz-dot"></span>{t(L, 'wb.wiz.paso_eventos')}</div>
+                <div class="wb-wiz-step" data-step-nav="2"><span class="wb-wiz-dot"></span>{t(L, 'wb.wiz.paso_destino')}</div>
+            </aside>
+
+            <section class="wb-wiz-panes">
+                <div class="wb-wiz-pane" data-step="1">
+                    <h3 class="wb-wiz-h">{t(L, 'wb.wiz.eventos_h')}</h3>
+                    <p class="wb-wiz-p">{t(L, 'wb.wiz.eventos_p')}</p>
+                    <label class="wb-check wb-check-all">
+                        <input type="checkbox" id="wizAll" />
+                        <span><b>{t(L, 'wb.wiz.todos')}</b><i>{t(L, 'wb.wiz.todos_sub')}</i></span>
+                    </label>
+                    {GRUPOS.map((g) => (
+                        <div class="wb-wiz-grp">
+                            <span class="wb-wiz-grp-lbl">{g.familia}</span>
+                            {g.eventos.map((e) => (
+                                <label class="wb-check">
+                                    <input type="checkbox" value={e.id} data-wiz-ev />
+                                    <span><code>{e.id}</code><i>{e.label}</i></span>
+                                </label>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+
+                <div class="wb-wiz-pane" data-step="2" hidden>
+                    <h3 class="wb-wiz-h">{t(L, 'wb.wiz.destino_h')}</h3>
+                    <p class="wb-wiz-p">{t(L, 'wb.wiz.destino_p')}</p>
+                    <div class="s-field">
+                        <label for="wizUrl">{t(L, 'set.wh.url_destino')}</label>
+                        <input class="s-input" id="wizUrl" type="url" placeholder="https://tusistema.mx/webhooks/cord" />
+                    </div>
+                    <div class="wb-wiz-recap">
+                        <span class="wb-wiz-recap-lbl">{t(L, 'wb.wiz.recap')}</span>
+                        <div id="wizRecap"></div>
+                    </div>
+                </div>
+
+                <div class="wb-wiz-pane" data-step="3" hidden>
+                    <h3 class="wb-wiz-h" id="wizDoneTitle">{t(L, 'set.wh.modal_creado_titulo')}</h3>
+                    <p class="wb-wiz-p" id="wizDoneWarn" set:html={t(L, 'set.wh.modal_creado_warn')} />
+                    <div class="kdlg-key">
+                        <code id="wizSecret"></code>
+                        <button type="button" class="kdlg-copy" data-wb-act="copy-secret" data-target="wizSecret">{t(L, 'set.api.copiar')}</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <footer class="wb-modal-foot">
+            <span class="wb-modal-err" id="wizErr" role="alert"></span>
+            <button type="button" class="api-btn-ghost" data-wb-act="wiz-close">{t(L, 'set.wh.cancelar')}</button>
+            <button type="button" class="api-btn-ghost" id="wizBack" data-wb-act="wiz-back" hidden>{t(L, 'wb.wiz.atras')}</button>
+            <button type="button" class="api-btn-solid" id="wizNext" data-wb-act="wiz-next">{t(L, 'wb.wiz.continuar')}</button>
+            <button type="button" class="api-btn-solid" id="wizDone" data-wb-act="wiz-close" hidden>{t(L, 'set.wh.listo')}</button>
+        </footer>
+    </div>
+</div>
+
+<!-- Rotar secreto de un webhook -->
+<div class="wb-modal compact" id="wbRotate" hidden role="dialog" aria-modal="true" aria-labelledby="rotTitle">
+    <div class="wb-modal-backdrop" data-wb-act="rot-close"></div>
+    <div class="wb-modal-shell">
+        <header class="wb-modal-top">
+            <button type="button" class="wb-modal-x" data-wb-act="rot-close" aria-label={t(L, 'set.wh.cancelar')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+            <h2 class="wb-modal-title" id="rotTitle">{t(L, 'set.wh.rotar_titulo')}</h2>
+        </header>
+        <div class="wb-modal-body">
+            <p class="wb-wiz-p">{t(L, 'set.wh.rotar_intro')}</p>
+            <span class="wh-events-label">{t(L, 'set.wh.rotar_ventana')}</span>
+            <label class="wb-check"><input type="radio" name="rotWin" value="1" /><span>{t(L, 'set.wh.rotar_1h')}</span></label>
+            <label class="wb-check"><input type="radio" name="rotWin" value="24" checked /><span>{t(L, 'set.wh.rotar_24h')}</span></label>
+            <label class="wb-check"><input type="radio" name="rotWin" value="72" /><span>{t(L, 'set.wh.rotar_72h')}</span></label>
+        </div>
+        <footer class="wb-modal-foot">
+            <span class="wb-modal-err" id="rotErr" role="alert"></span>
+            <button type="button" class="api-btn-ghost" data-wb-act="rot-close">{t(L, 'set.wh.cancelar')}</button>
+            <button type="button" class="api-btn-solid" id="rotGo" data-wb-act="rot-go">{t(L, 'set.wh.rotar_confirmar')}</button>
+        </footer>
+    </div>
+</div>
+
+<!-- Crear API key -->
+<div class="wb-modal compact" id="wbKey" hidden role="dialog" aria-modal="true" aria-labelledby="keyTitle">
+    <div class="wb-modal-backdrop" data-wb-act="key-close"></div>
+    <div class="wb-modal-shell">
+        <header class="wb-modal-top">
+            <button type="button" class="wb-modal-x" data-wb-act="key-close" aria-label={t(L, 'set.api.cancelar')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+            <h2 class="wb-modal-title" id="keyTitle">{t(L, 'set.api.modal_nueva_titulo')}</h2>
+        </header>
+        <div class="wb-modal-body">
+            <div class="s-field">
+                <label for="keyName">{t(L, 'set.api.modal_nombre')}</label>
+                <input class="s-input" id="keyName" placeholder={t(L, 'set.api.modal_nombre_ph')} />
+            </div>
+            <div class="s-field">
+                <label>{t(L, 'set.api.tipo_clave')}</label>
+                <div class="scope-opts">
+                    <label class="scope-opt">
+                        <input type="radio" name="keyType" value="secret" checked />
+                        <span class="scope-body"><b>{t(L, 'set.api.tipo_secreta_titulo')}</b><i>{t(L, 'set.api.tipo_secreta_desc')}</i></span>
+                    </label>
+                    <label class="scope-opt">
+                        <input type="radio" name="keyType" value="publishable" />
+                        <span class="scope-body"><b>{t(L, 'set.api.tipo_publica_titulo')}</b><i>{t(L, 'set.api.tipo_publica_desc')}</i></span>
+                    </label>
+                </div>
+            </div>
+            <div class="s-field" id="keyScopeField">
+                <label>{t(L, 'set.api.permisos')}</label>
+                <div class="scope-opts">
+                    <label class="scope-opt">
+                        <input type="radio" name="keyScope" value="read" checked />
+                        <span class="scope-body"><b>{t(L, 'set.api.solo_lectura_titulo')}</b><i>{t(L, 'set.api.solo_lectura_desc')}</i></span>
+                    </label>
+                    <label class="scope-opt">
+                        <input type="radio" name="keyScope" value="write" />
+                        <span class="scope-body"><b>{t(L, 'set.api.lectura_escritura_titulo')}</b><i>{t(L, 'set.api.lectura_escritura_desc')}</i></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <footer class="wb-modal-foot">
+            <span class="wb-modal-err" id="keyErr" role="alert"></span>
+            <button type="button" class="api-btn-ghost" data-wb-act="key-close">{t(L, 'set.api.cancelar')}</button>
+            <button type="button" class="api-btn-solid" id="keyGo" data-wb-act="key-go">{t(L, 'set.api.generar_clave')}</button>
+        </footer>
+    </div>
+</div>
+
+<!-- Clave recién creada (se muestra UNA vez) -->
+<div class="wb-modal compact" id="wbSecret" hidden role="dialog" aria-modal="true" aria-labelledby="secTitle">
+    <div class="wb-modal-backdrop" data-wb-act="sec-close"></div>
+    <div class="wb-modal-shell">
+        <header class="wb-modal-top">
+            <button type="button" class="wb-modal-x" data-wb-act="sec-close" aria-label={t(L, 'set.api.listo_guardada')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+            <h2 class="wb-modal-title" id="secTitle">{t(L, 'set.api.modal_clave_titulo')}</h2>
+        </header>
+        <div class="wb-modal-body">
+            <p class="wb-wiz-p" set:html={t(L, 'set.api.modal_clave_warn')} />
+            <div class="kdlg-key">
+                <code id="secValue"></code>
+                <button type="button" class="kdlg-copy" data-wb-act="copy-secret" data-target="secValue">{t(L, 'set.api.copiar')}</button>
+            </div>
+        </div>
+        <footer class="wb-modal-foot">
+            <button type="button" class="api-btn-solid" data-wb-act="sec-close">{t(L, 'set.api.listo_guardada')}</button>
+        </footer>
+    </div>
+</div>
+
+<script is:inline define:vars={{ WBI18N }}>window.CORD_WB_I18N = WBI18N;</script>
+
 <script>
-    // ── Cord Workbench — controlador global ──────────────────────────────────
-    // Expone window.cordWorkbench = { open(tab?), close(), toggle() }. Registrado
-    // en initApp() de AppLayout.astro junto a initToasts()/initConfirm().
+    // ── Cord Workbench — controlador ÚNICO ────────────────────────────────────
+    // Se registra una sola vez por documento y delega todos los eventos del
+    // contenido inyectado por `data-wb-act` sobre `.wb-body`. Expone
+    // window.cordWorkbench = { open(tab?), close(), toggle(), refresh(tab?) }.
     function initDevWorkbench() {
+        const I18N: Record<string, string> = (window as any).CORD_WB_I18N || {};
         const dock = document.getElementById('wbDock');
         const bar = document.getElementById('wbBarToggle');
         const panel = document.getElementById('wbPanel') as HTMLElement | null;
-        const dragHandle = document.getElementById('wbDrag') as HTMLElement | null;
+        const dragHandle = document.getElementById('wbDrag');
         const closeBtn = document.getElementById('wbClose');
         const body = document.getElementById('wbBody') as HTMLElement | null;
         const indicator = document.getElementById('wbTabsIndicator') as HTMLElement | null;
@@ -77,49 +336,61 @@ const TABS = [
         if (!dock || !bar || !panel || !body || !tabs.length) return;
 
         const KEY = 'cord.wb.v1';
-        const BAR_H_PX = 46;
-        const BAR_H = BAR_H_PX + 'px';
-        const MIN_PANEL_H = 220;
+        const RANGES = ['24h', '7d', '14d'];
+        const MIN_H = 220;
+        const COLLAPSE_AT = 150;   // arrastrar por debajo de esto colapsa a la barra
         const cache = new Map<string, string>();
         let currentTab = 'resumen';
+        let currentRange = '14d';
         let isOpen = false;
 
-        // Altura del panel — SIEMPRE acotada a lo que el viewport puede dar sin
-        // taparse a sí mismo contra la topbar (bug reportado: en ventanas cortas
-        // un 62vh fijo cubría casi toda la pantalla). Redimensionable a mano vía
-        // el handle #wbDrag; se persiste junto al resto del estado.
-        const maxPanelH = () => Math.max(MIN_PANEL_H, window.innerHeight - 200);
-        const defaultPanelH = () => Math.min(Math.round(window.innerHeight * 0.4), maxPanelH());
-        let panelH = defaultPanelH();
-
         const isDevOn = () => document.documentElement.classList.contains('cord-dev');
+        const toast = (m: string, k = 'error') => (window as any).cordToast?.(m, k);
+        const confirmar = (o: any) => (window as any).cordConfirm?.(o) ?? Promise.resolve(false);
 
-        function readState(): { open: boolean; tab: string; h?: number } {
+        // La barra mide 46px, pero en móvil crece con env(safe-area-inset-bottom).
+        // Se mide en vez de asumir, o el panel quedaría desalineado del borde.
+        let barH = 46;
+        const measureBar = () => { barH = Math.round(bar.getBoundingClientRect().height) || 46; };
+
+        // Altura del panel acotada al viewport: nunca puede taparse contra la topbar
+        // (el bug original era un 62vh fijo que en ventanas cortas cubría todo).
+        const maxH = () => Math.max(MIN_H, window.innerHeight - 200);
+        let panelH = Math.min(Math.round(window.innerHeight * 0.42), maxH());
+
+        function readState() {
             try {
-                const raw = localStorage.getItem(KEY);
-                if (!raw) return { open: false, tab: 'resumen' };
-                const p = JSON.parse(raw);
-                return { open: !!p.open, tab: typeof p.tab === 'string' ? p.tab : 'resumen', h: typeof p.h === 'number' ? p.h : undefined };
-            } catch { return { open: false, tab: 'resumen' }; }
+                const p = JSON.parse(localStorage.getItem(KEY) || '{}');
+                return {
+                    open: !!p.open,
+                    tab: typeof p.tab === 'string' ? p.tab : 'resumen',
+                    range: RANGES.includes(p.range) ? p.range : '14d',
+                    h: typeof p.h === 'number' ? p.h : undefined,
+                };
+            } catch { return { open: false, tab: 'resumen', range: '14d', h: undefined }; }
         }
         function writeState() {
-            try { localStorage.setItem(KEY, JSON.stringify({ open: isOpen, tab: currentTab, h: panelH })); } catch {}
+            try { localStorage.setItem(KEY, JSON.stringify({ open: isOpen, tab: currentTab, range: currentRange, h: panelH })); } catch {}
         }
 
-        function applyPanelH(px?: number) {
-            panelH = Math.min(maxPanelH(), Math.max(MIN_PANEL_H, px ?? panelH));
-            panel!.style.height = panelH + 'px';
-            updateWbH();
+        // `commit` distingue el arrastre en curso (solo mueve el panel) de su final.
+        // Sin eso, escribir --wb-h en cada pointermove encola una transición de 0.32s
+        // por frame en .toast-stack/.onb y el arrastre se siente pegajoso.
+        function applyPanelH(px?: number, commit = true) {
+            const raw = px ?? panelH;
+            const clamped = Math.min(maxH(), Math.max(MIN_H, raw));
+            panelH = clamped;
+            panel!.style.height = (commit ? clamped : Math.min(maxH(), Math.max(60, raw))) + 'px';
+            if (commit) updateWbH();
         }
 
         function updateWbH() {
             const on = isDevOn();
-            // --wb-h: altura VISUAL actual del dock (para desplazar toasts/onboarding
-            // por encima). --wb-bar-h: reserva FIJA de la barra colapsada (para el
-            // padding-bottom de .app-content) — nunca cambia al expandir/colapsar, si
-            // no el contenido brincaría cada vez que se abre el panel.
-            document.documentElement.style.setProperty('--wb-h', !on ? '0px' : isOpen ? (panelH + BAR_H_PX) + 'px' : BAR_H);
-            document.documentElement.style.setProperty('--wb-bar-h', on ? BAR_H : '0px');
+            // --wb-h: altura VISUAL del dock (la usan .toast-stack y .onb para no
+            // quedar debajo). --wb-bar-h: reserva FIJA para el padding-bottom de
+            // .app-content — no se ata a panelH o el contenido brincaría al abrir.
+            document.documentElement.style.setProperty('--wb-h', !on ? '0px' : isOpen ? (panelH + barH) + 'px' : barH + 'px');
+            document.documentElement.style.setProperty('--wb-bar-h', on ? barH + 'px' : '0px');
         }
 
         function moveIndicator(tabId: string) {
@@ -128,7 +399,6 @@ const TABS = [
             indicator.style.width = btn.offsetWidth + 'px';
             indicator.style.transform = `translateX(${btn.offsetLeft}px)`;
         }
-
         function setActiveTabUI(tabId: string) {
             tabs.forEach((b) => {
                 const active = b.dataset.wbTab === tabId;
@@ -138,103 +408,499 @@ const TABS = [
             moveIndicator(tabId);
         }
 
-        // Un <script> insertado por innerHTML no se ejecuta — se clona a un
-        // elemento fresco para que el navegador SÍ lo corra (mismo truco que
-        // usan los loaders de HTMX/Turbo).
-        function reviveScripts(root: HTMLElement) {
-            root.querySelectorAll('script').forEach((old) => {
-                const fresh = document.createElement('script');
-                for (const attr of Array.from(old.attributes)) fresh.setAttribute(attr.name, attr.value);
-                fresh.textContent = old.textContent;
-                old.replaceWith(fresh);
-            });
-        }
-
-        async function loadTab(tabId: string, force = false) {
+        async function loadTab(tabId: string, force = false, range?: string) {
+            if (range) currentRange = range;
             setActiveTabUI(tabId);
             currentTab = tabId;
             writeState();
-            if (!force && cache.has(tabId)) {
-                body.innerHTML = cache.get(tabId)!;
-                reviveScripts(body);
-                return;
-            }
-            body.innerHTML = '<div class="wb-loading"><span class="wb-spinner" aria-hidden="true"></span></div>';
+            // El rango entra en la clave: ir y volver entre 7d/14d es instantáneo.
+            const ck = tabId === 'resumen' ? `${tabId}|${currentRange}` : tabId;
+            if (!force && cache.has(ck)) { body!.innerHTML = cache.get(ck)!; return; }
+            body!.innerHTML = '<div class="wb-loading"><span class="wb-spinner" aria-hidden="true"></span></div>';
             try {
-                const res = await fetch(`/app/wb/${tabId}`, { headers: { 'X-Requested-With': 'cord-workbench' } });
+                const qs = tabId === 'resumen' ? `?range=${encodeURIComponent(currentRange)}` : '';
+                const res = await fetch(`/app/wb/${tabId}${qs}`, { headers: { 'X-Requested-With': 'cord-workbench' } });
                 const html = await res.text();
-                cache.set(tabId, html);
-                body.innerHTML = html;
-                reviveScripts(body);
+                cache.set(ck, html);
+                body!.innerHTML = html;
             } catch {
-                body.innerHTML = '<div class="wb-error">' + ((window as any).CORD_I18N?.wbLoadError || 'No se pudo cargar. Intenta de nuevo.') + '</div>';
+                body!.innerHTML = `<div class="wb-error">${I18N.loadError || 'No se pudo cargar.'}</div>`;
             }
         }
 
         function openDock(tabId?: string) {
             isOpen = true;
-            panel.hidden = false;
+            panel!.hidden = false;
+            measureBar();
             applyPanelH();
-            bar.setAttribute('aria-expanded', 'true');
-            dock.classList.add('is-open');
-            updateWbH();
+            bar!.setAttribute('aria-expanded', 'true');
+            dock!.classList.add('is-open');
             const target = tabId || currentTab || 'resumen';
-            if (target !== currentTab || !cache.has(target)) loadTab(target);
+            const ck = target === 'resumen' ? `${target}|${currentRange}` : target;
+            if (target !== currentTab || !cache.has(ck)) loadTab(target);
             else setActiveTabUI(target);
             writeState();
         }
         function closeDock() {
             isOpen = false;
-            panel.hidden = true;
-            bar.setAttribute('aria-expanded', 'false');
-            dock.classList.remove('is-open');
+            panel!.hidden = true;
+            bar!.setAttribute('aria-expanded', 'false');
+            dock!.classList.remove('is-open');
             updateWbH();
             writeState();
         }
 
-        bar.addEventListener('click', () => (isOpen ? closeDock() : openDock()));
         closeBtn?.addEventListener('click', (e) => { e.stopPropagation(); closeDock(); });
         tabs.forEach((b) => b.addEventListener('click', () => loadTab(b.dataset.wbTab!)));
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isOpen) closeDock(); });
-        window.addEventListener('resize', () => { moveIndicator(currentTab); if (isOpen) applyPanelH(panelH); });
+        window.addEventListener('resize', () => { measureBar(); moveIndicator(currentTab); if (isOpen) applyPanelH(panelH); });
 
-        // Handle de arrastre — resolvía la queja "no puedo bajar la barra": antes el
-        // dock solo abría/cerraba, sin forma de ajustar cuánto espacio ocupa.
-        if (dragHandle) {
-            let dragging = false;
-            let startY = 0;
-            let startH = 0;
-            const onMove = (e: PointerEvent) => {
-                if (!dragging) return;
-                applyPanelH(startH + (startY - e.clientY));
-            };
-            const endDrag = (e: PointerEvent) => {
-                if (!dragging) return;
-                dragging = false;
-                dock.classList.remove('is-dragging');
-                try { dragHandle.releasePointerCapture(e.pointerId); } catch {}
-                writeState();
-            };
-            dragHandle.addEventListener('pointerdown', (e) => {
-                dragging = true;
-                startY = e.clientY;
-                startH = panel.getBoundingClientRect().height;
-                dock.classList.add('is-dragging');
-                dragHandle.setPointerCapture(e.pointerId);
-                e.preventDefault();
-            });
-            dragHandle.addEventListener('pointermove', onMove);
-            dragHandle.addEventListener('pointerup', endDrag);
-            dragHandle.addEventListener('pointercancel', endDrag);
-            dragHandle.addEventListener('keydown', (e) => {
-                const step = e.shiftKey ? 48 : 16;
-                if (e.key === 'ArrowUp') { applyPanelH(panelH + step); e.preventDefault(); writeState(); }
-                else if (e.key === 'ArrowDown') { applyPanelH(panelH - step); e.preventDefault(); writeState(); }
-            });
+        // ── Arrastre ────────────────────────────────────────────────────────────
+        // Desde el grabber del panel (bajar = achicar, y por debajo del umbral
+        // colapsa) y desde la barra cuando está cerrado (subir = abrir y expandir).
+        let drag: { startY: number; startH: number; fromBar: boolean; moved: boolean } | null = null;
+        // Al soltar un arrastre el navegador dispara además un `click`. Sin esta
+        // bandera, ese click hacía toggle y deshacía el arrastre que se acababa de
+        // completar (arrastrabas la barra hacia arriba y se volvía a cerrar sola).
+        let suppressClick = false;
+
+        function beginDrag(e: PointerEvent, el: HTMLElement, fromBar: boolean) {
+            drag = { startY: e.clientY, startH: fromBar ? 0 : panel!.getBoundingClientRect().height, fromBar, moved: false };
+            el.setPointerCapture(e.pointerId);
+            dock!.classList.add('is-dragging');
+        }
+        function moveDrag(e: PointerEvent) {
+            if (!drag) return;
+            const delta = drag.startY - e.clientY;
+            if (!drag.moved && Math.abs(delta) > 6) {
+                drag.moved = true;
+                // Arrastrar hacia arriba desde la barra cerrada abre el panel.
+                if (drag.fromBar && delta > 0 && !isOpen) openDock();
+            }
+            if (!drag.moved) return;
+            const next = drag.startH + delta;
+            applyPanelH(next, false);
+            dock!.classList.toggle('will-collapse', next < COLLAPSE_AT);
+        }
+        function endDrag(e: PointerEvent, el: HTMLElement) {
+            if (!drag) return;
+            const wasDrag = drag.moved;
+            const next = drag.startH + (drag.startY - e.clientY);
+            drag = null;
+            dock!.classList.remove('is-dragging', 'will-collapse');
+            try { el.releasePointerCapture(e.pointerId); } catch {}
+            if (!wasDrag) return;          // fue un click, no un arrastre
+            suppressClick = true;
+            setTimeout(() => (suppressClick = false), 0);
+            if (next < COLLAPSE_AT) {      // colapsar SIN persistir esa altura mala
+                closeDock();
+                applyPanelH(panelH);
+                return;
+            }
+            applyPanelH(next);
+            writeState();
         }
 
-        // Sincronización en vivo con el toggle "Modo desarrollador" de Ajustes —
-        // sin recargar la página (evento análogo a cord:test_mode_changed).
+        if (dragHandle) {
+            dragHandle.addEventListener('pointerdown', (e) => { beginDrag(e, dragHandle, false); e.preventDefault(); });
+            dragHandle.addEventListener('pointermove', moveDrag);
+            dragHandle.addEventListener('pointerup', (e) => endDrag(e, dragHandle));
+            dragHandle.addEventListener('pointercancel', (e) => endDrag(e, dragHandle));
+            dragHandle.addEventListener('keydown', (e) => {
+                const step = e.shiftKey ? 48 : 16;
+                if (e.key === 'ArrowUp') { applyPanelH(panelH + step); writeState(); e.preventDefault(); }
+                else if (e.key === 'ArrowDown') { applyPanelH(panelH - step); writeState(); e.preventDefault(); }
+            });
+        }
+        bar.addEventListener('pointerdown', (e) => beginDrag(e as PointerEvent, bar, true));
+        bar.addEventListener('pointermove', moveDrag);
+        bar.addEventListener('pointerup', (e) => endDrag(e as PointerEvent, bar));
+        bar.addEventListener('pointercancel', (e) => endDrag(e as PointerEvent, bar));
+        bar.addEventListener('click', () => { if (!suppressClick) isOpen ? closeDock() : openDock(); });
+
+        // ── Modales ─────────────────────────────────────────────────────────────
+        let openModalEl: HTMLElement | null = null;
+        let lastFocus: HTMLElement | null = null;
+
+        function openModal(el: HTMLElement, focusSel?: string) {
+            lastFocus = document.activeElement as HTMLElement;
+            openModalEl = el;
+            el.hidden = false;
+            document.documentElement.classList.add('wb-modal-open');
+            // `inert` deja el fondo fuera del tab order sin implementar un trap a mano.
+            [panel, bar, document.querySelector('.app-content')].forEach((n) => n && ((n as HTMLElement).inert = true));
+            requestAnimationFrame(() => (el.querySelector(focusSel || 'input, button') as HTMLElement)?.focus());
+        }
+        function closeModal() {
+            if (!openModalEl) return;
+            openModalEl.hidden = true;
+            openModalEl = null;
+            document.documentElement.classList.remove('wb-modal-open');
+            [panel, bar, document.querySelector('.app-content')].forEach((n) => n && ((n as HTMLElement).inert = false));
+            lastFocus?.focus();
+        }
+        // Escape: primero cierra el modal. Sin este early-return un solo Esc
+        // cerraría el modal Y el dock a la vez.
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            if (openModalEl) { closeModal(); return; }
+            if (isOpen) closeDock();
+        });
+
+        const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
+        const setErr = (id: string, msg: string) => { const e = $(id); if (e) e.textContent = msg; };
+
+        // ── Wizard de webhooks ──────────────────────────────────────────────────
+        const wiz = $('wbWiz')!;
+        let wizStep = 1;
+        let wizEditId: string | null = null;
+
+        function wizGo(step: number) {
+            wizStep = step;
+            wiz.querySelectorAll<HTMLElement>('[data-step]').forEach((p) => (p.hidden = Number(p.dataset.step) !== step));
+            wiz.querySelectorAll<HTMLElement>('[data-step-nav]').forEach((n) => {
+                const i = Number(n.dataset.stepNav);
+                n.classList.toggle('is-on', i === step);
+                n.classList.toggle('is-done', i < step);
+            });
+            $('wizBack')!.hidden = step !== 2;
+            $('wizNext')!.hidden = step === 3;
+            $('wizDone')!.hidden = step !== 3;
+            const next = $<HTMLButtonElement>('wizNext')!;
+            next.textContent = step === 1 ? (I18N.continuar || 'Continuar') : (wizEditId ? I18N.whGuardar : I18N.whCrear);
+            if (step === 2) renderRecap();
+        }
+        const wizEvents = () => Array.from(wiz.querySelectorAll<HTMLInputElement>('[data-wiz-ev]:checked')).map((c) => c.value);
+        function renderRecap() {
+            const evs = wizEvents();
+            const box = $('wizRecap')!;
+            box.textContent = '';
+            if (!evs.length) { box.innerHTML = `<i class="wb-wiz-recap-all">${I18N.whSinEventos || ''}</i>`; return; }
+            evs.forEach((ev) => {
+                const c = document.createElement('code');
+                c.textContent = ev;
+                box.appendChild(c);
+            });
+        }
+        function openWiz(id: string | null, url = '', eventos: string[] = []) {
+            wizEditId = id;
+            $('wizTitle')!.textContent = id ? I18N.whTituloEditar : I18N.whTituloAgregar;
+            $<HTMLInputElement>('wizUrl')!.value = url;
+            $<HTMLInputElement>('wizAll')!.checked = eventos.length === 0 && !id ? false : eventos.length === 0;
+            wiz.querySelectorAll<HTMLInputElement>('[data-wiz-ev]').forEach((c) => (c.checked = eventos.includes(c.value)));
+            setErr('wizErr', '');
+            wizGo(1);
+            openModal(wiz, '#wizAll');
+        }
+        // "Todos los eventos" (lista vacía en la API) es excluyente con la selección.
+        $('wizAll')!.addEventListener('change', (e) => {
+            if ((e.target as HTMLInputElement).checked) wiz.querySelectorAll<HTMLInputElement>('[data-wiz-ev]').forEach((c) => (c.checked = false));
+        });
+        wiz.querySelectorAll<HTMLInputElement>('[data-wiz-ev]').forEach((c) =>
+            c.addEventListener('change', () => { if (c.checked) $<HTMLInputElement>('wizAll')!.checked = false; }));
+
+        async function wizSubmit() {
+            const url = $<HTMLInputElement>('wizUrl')!.value.trim();
+            if (!url) { setErr('wizErr', I18N.whUrlRequerida || ''); $('wizUrl')!.focus(); return; }
+            const eventos = $<HTMLInputElement>('wizAll')!.checked ? [] : wizEvents();
+            const btn = $<HTMLButtonElement>('wizNext')!;
+            btn.disabled = true; setErr('wizErr', '');
+            try {
+                if (wizEditId) {
+                    const res = await fetch('/api/webhooks', {
+                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: wizEditId, url, eventos }),
+                    });
+                    if (!res.ok) throw new Error((await res.json()).error || I18N.whNoPudoActualizar);
+                    closeModal(); refresh('webhooks');
+                } else {
+                    const res = await fetch('/api/webhooks', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url, eventos }),
+                    });
+                    const d = await res.json();
+                    if (!res.ok) throw new Error(d.error || I18N.whNoPudoCrear);
+                    $('wizSecret')!.textContent = d.secret;
+                    $('wizDoneTitle')!.textContent = I18N.whTituloCreado;
+                    $('wizDoneWarn')!.innerHTML = I18N.whWarnCreado;
+                    wizGo(3);
+                    refresh('webhooks');
+                }
+            } catch (err: any) { setErr('wizErr', err.message || I18N.errorGenerico); }
+            finally { btn.disabled = false; }
+        }
+
+        // ── Rotar secreto ───────────────────────────────────────────────────────
+        let rotId: string | null = null;
+        async function rotSubmit() {
+            if (!rotId) return;
+            const btn = $<HTMLButtonElement>('rotGo')!;
+            const overlapHours = Number((document.querySelector('input[name="rotWin"]:checked') as HTMLInputElement)?.value || '24');
+            btn.disabled = true; const orig = btn.textContent; btn.textContent = I18N.whRotando; setErr('rotErr', '');
+            try {
+                const res = await fetch('/api/webhooks', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'rotate', id: rotId, overlapHours }),
+                });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || I18N.whNoPudoRotar);
+                closeModal();
+                $('secTitle')!.textContent = I18N.whTituloRotado;
+                $('secValue')!.textContent = d.secret;
+                openModal($('wbSecret')!);
+                refresh('webhooks');
+            } catch (err: any) { setErr('rotErr', err.message || I18N.whNoPudoRotar); }
+            finally { btn.disabled = false; btn.textContent = orig; }
+        }
+
+        // ── API keys ────────────────────────────────────────────────────────────
+        const inTestEnv = document.cookie.split('; ').includes('cord_test_mode=1');
+        let keyMode = inTestEnv || localStorage.getItem('cord_test_mode') === 'true' ? 'test' : 'live';
+
+        function syncSegUI() {
+            body!.querySelectorAll<HTMLElement>('.dev-seg-btn').forEach((b) => b.classList.toggle('active', b.dataset.mode === keyMode));
+            if (inTestEnv) {
+                const live = body!.querySelector<HTMLButtonElement>('.dev-seg-btn[data-mode="live"]');
+                if (live) { live.disabled = true; live.title = I18N.keyDisabledTest; }
+            }
+        }
+        window.addEventListener('cord:test_mode_changed', (e: any) => {
+            keyMode = e.detail?.isTestMode ? 'test' : 'live';
+            syncSegUI();
+        });
+
+        async function keySubmit() {
+            const nombre = $<HTMLInputElement>('keyName')!.value.trim() || 'Sin nombre';
+            const scope = (document.querySelector('input[name="keyScope"]:checked') as HTMLInputElement)?.value || 'read';
+            const type = (document.querySelector('input[name="keyType"]:checked') as HTMLInputElement)?.value || 'secret';
+            const btn = $<HTMLButtonElement>('keyGo')!;
+            btn.disabled = true; setErr('keyErr', '');
+            try {
+                const res = await fetch('/api/keys', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre, scope, mode: keyMode, type }),
+                });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || I18N.keyNoPudoCrear);
+                closeModal();
+                $('secTitle')!.textContent = I18N.keyModalTitulo;
+                $('secValue')!.textContent = d.secret;
+                openModal($('wbSecret')!);
+                refresh('api');
+            } catch (err: any) { setErr('keyErr', err.message || I18N.keyNoPudoCrear); }
+            finally { btn.disabled = false; }
+        }
+        document.querySelectorAll<HTMLInputElement>('input[name="keyType"]').forEach((r) =>
+            r.addEventListener('change', () => { $('keyScopeField')!.hidden = r.value === 'publishable' && r.checked; }));
+
+        // ── Log de entregas ─────────────────────────────────────────────────────
+        async function loadDeliveries(id: string) {
+            const box = body!.querySelector<HTMLElement>(`[data-delbody="${id}"]`);
+            if (!box) return;
+            box.innerHTML = `<span class="wh-del-loading">${I18N.whCargandoEntregas}</span>`;
+            try {
+                const res = await fetch(`/api/webhooks?deliveries=${encodeURIComponent(id)}`);
+                const list: any[] = (await res.json()).deliveries || [];
+                if (!list.length) { box.innerHTML = `<span class="wh-del-empty">${I18N.whSinEntregas}</span>`; return; }
+                const esc = (s: any) => String(s).replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c] || c));
+                box.innerHTML = list.map((x) => `
+                    <div class="del-row">
+                        <span class="del-dot ${x.ok ? 'ok' : 'err'}"></span>
+                        <span class="del-ev">${esc(x.evento)}${x.intento > 1 ? `<span class="del-try"> ${esc((I18N.whIntento || '').replace('{n}', x.intento))}</span>` : ''}${x.prueba ? `<i class="del-test">${esc(I18N.whPruebaTag)}</i>` : ''}</span>
+                        <span class="del-status ${x.ok ? 'ok' : 'err'}">${esc(x.status || x.error || I18N.whFallo)}</span>
+                        <span class="del-meta">${x.ms != null ? esc(x.ms) + 'ms' : ''} · ${esc(x.cuando)}</span>
+                        <button type="button" class="del-replay" data-wb-act="wh-replay" data-id="${esc(x.id)}" data-hook="${esc(id)}">${esc(I18N.whReintentar)}</button>
+                    </div>`).join('');
+            } catch { box.innerHTML = `<span class="wh-del-empty">${I18N.whNoCargoLog}</span>`; }
+        }
+
+        async function refreshActivity(btn: HTMLButtonElement) {
+            btn.disabled = true; btn.textContent = I18N.actualizando;
+            try {
+                const res = await fetch('/api/dev/activity');
+                if (res.ok) {
+                    const d = await res.json();
+                    const set = (id: string, v: string) => { const e = body!.querySelector('#' + id); if (e) e.textContent = v; };
+                    set('actTotal', String(d.total24));
+                    const err = body!.querySelector('#actErr');
+                    if (err) { err.textContent = String(d.errores24); err.classList.toggle('bad', d.errores24 > 0); }
+                    const lat = body!.querySelector('#actLat');
+                    if (lat) lat.innerHTML = `${d.latProm}<em>ms</em>`;
+                    const list = body!.querySelector('#actList');
+                    if (list) {
+                        const esc = (s: any) => String(s).replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c] || c));
+                        list.innerHTML = d.recent.length
+                            ? d.recent.map((r: any) => `
+                                <div class="act-row">
+                                    <span class="act-m ${esc(r.metodo.toLowerCase())}">${esc(r.metodo)}</span>
+                                    <code class="act-path">${esc(r.ruta)}</code>
+                                    <span class="act-status ${r.status >= 400 ? 'bad' : 'ok'}">${esc(r.status)}</span>
+                                    <span class="act-lat">${r.ms != null ? esc(r.ms) + 'ms' : '—'}</span>
+                                    <span class="act-when">${esc(r.cuando)}${r.mode === 'test' ? ' · test' : ''}</span>
+                                </div>`).join('')
+                            : `<p class="dev-empty">${I18N.sinActividad}</p>`;
+                    }
+                }
+            } catch {}
+            btn.disabled = false; btn.textContent = I18N.actualizar;
+        }
+
+        // ── Delegación ──────────────────────────────────────────────────────────
+        // Un solo click y un solo change para TODO el contenido inyectado. Las filas
+        // que el propio JS pinta después (log de entregas) quedan cableadas gratis.
+        document.addEventListener('click', async (ev) => {
+            const el = (ev.target as HTMLElement)?.closest<HTMLElement>('[data-wb-act]');
+            if (!el) return;
+            const act = el.dataset.wbAct!;
+            const id = el.dataset.id || '';
+            const btn = el as HTMLButtonElement;
+
+            switch (act) {
+                case 'goto-tab': loadTab(el.dataset.tab!); break;
+                case 'range': loadTab('resumen', false, el.dataset.range!); break;
+                case 'seg-mode':
+                    if (btn.disabled) break;
+                    keyMode = el.dataset.mode || 'test';
+                    syncSegUI();
+                    break;
+                case 'key-new':
+                    $('keyTitle')!.textContent = keyMode === 'test' ? I18N.keyNuevaPrueba : I18N.keyNuevaVivo;
+                    $<HTMLInputElement>('keyName')!.value = keyMode === 'test' ? I18N.keyNombrePruebas : I18N.keyNombreProduccion;
+                    (document.querySelector('input[name="keyScope"][value="read"]') as HTMLInputElement).checked = true;
+                    (document.querySelector('input[name="keyType"][value="secret"]') as HTMLInputElement).checked = true;
+                    $('keyScopeField')!.hidden = false;
+                    setErr('keyErr', '');
+                    openModal($('wbKey')!, '#keyName');
+                    break;
+                case 'key-go': keySubmit(); break;
+                case 'key-close': closeModal(); break;
+                case 'sec-close': closeModal(); break;
+                case 'key-revoke': {
+                    if (!await confirmar({ title: I18N.keyRevocarTitulo, body: I18N.keyRevocarBody, danger: true, confirmText: I18N.keyRevocarConfirm })) break;
+                    try {
+                        const res = await fetch('/api/keys', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+                        if (!res.ok) throw new Error((await res.json()).error || I18N.keyNoPudoRevocar);
+                        refresh('api');
+                    } catch (e: any) { toast(e.message || I18N.keyNoPudoRevocar); }
+                    break;
+                }
+                case 'ai-prompt':
+                    try {
+                        await navigator.clipboard.writeText(I18N.prompt);
+                        const orig = el.innerHTML;
+                        el.textContent = I18N.promptCopiado;
+                        el.classList.add('is-ok');
+                        setTimeout(() => { el.innerHTML = orig; el.classList.remove('is-ok'); }, 3200);
+                    } catch {}
+                    break;
+                case 'copy-secret': {
+                    const src = document.getElementById(el.dataset.target || '');
+                    try {
+                        await navigator.clipboard.writeText(src?.textContent || '');
+                        el.textContent = I18N.copiada;
+                        setTimeout(() => (el.textContent = I18N.copiar), 1800);
+                    } catch {}
+                    break;
+                }
+                case 'wh-new': openWiz(null); break;
+                case 'wh-edit': {
+                    let evs: string[] = [];
+                    try { evs = JSON.parse(el.dataset.eventos || '[]'); } catch {}
+                    openWiz(id, el.dataset.url || '', evs);
+                    break;
+                }
+                case 'wiz-next': wizStep === 1 ? wizGo(2) : wizSubmit(); break;
+                case 'wiz-back': wizGo(1); break;
+                case 'wiz-close': closeModal(); break;
+                case 'wh-rotate': rotId = id; setErr('rotErr', ''); openModal($('wbRotate')!); break;
+                case 'rot-go': rotSubmit(); break;
+                case 'rot-close': closeModal(); break;
+                case 'wh-del': {
+                    if (!await confirmar({ title: I18N.whEliminarTitulo, body: I18N.whEliminarBody, danger: true, confirmText: I18N.whEliminar })) break;
+                    try {
+                        const res = await fetch('/api/webhooks', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+                        if (!res.ok) throw new Error((await res.json()).error || I18N.whNoPudoEliminar);
+                        el.closest('.wh-item')?.remove();
+                        cache.delete('webhooks');
+                    } catch (e: any) { toast(e.message || I18N.whNoPudoEliminar); }
+                    break;
+                }
+                case 'wh-test': {
+                    btn.disabled = true; const orig = btn.textContent; btn.textContent = '…';
+                    try {
+                        const res = await fetch('/api/webhooks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'test', id }) });
+                        const d = await res.json();
+                        btn.textContent = d.ok ? I18N.whEnviado : `✗ ${d.status || ''}`;
+                        if (body!.querySelector(`[data-wb-act="wh-expand"][data-id="${id}"][aria-expanded="true"]`)) loadDeliveries(id);
+                    } catch { btn.textContent = I18N.errorGenerico; }
+                    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2400);
+                    break;
+                }
+                case 'wh-expand': {
+                    const p = body!.querySelector<HTMLElement>(`[data-deliveries="${id}"]`);
+                    const open = el.getAttribute('aria-expanded') === 'true';
+                    el.setAttribute('aria-expanded', String(!open));
+                    if (p) p.hidden = open;
+                    if (!open) loadDeliveries(id);
+                    break;
+                }
+                case 'wh-replay': {
+                    btn.disabled = true; btn.textContent = '…';
+                    try {
+                        const res = await fetch('/api/webhooks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'redeliver', deliveryId: id }) });
+                        const d = await res.json();
+                        btn.textContent = d.ok ? '✓' : `✗ ${d.status || ''}`;
+                        setTimeout(() => loadDeliveries(el.dataset.hook!), 800);
+                    } catch { btn.textContent = '✗'; btn.disabled = false; }
+                    break;
+                }
+                case 'wh-reenable':
+                case 'wh-reenable-retry': {
+                    const sibs = el.parentElement?.querySelectorAll('button');
+                    sibs?.forEach((b) => (b.disabled = true));
+                    const orig = btn.textContent; btn.textContent = I18N.whReactivando;
+                    try {
+                        const res = await fetch('/api/webhooks', {
+                            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id, activo: true, retryRecent: act === 'wh-reenable-retry' }),
+                        });
+                        if (!res.ok) throw new Error();
+                        refresh('webhooks');
+                    } catch {
+                        toast(I18N.whNoPudoReactivar);
+                        sibs?.forEach((b) => (b.disabled = false));
+                        btn.textContent = orig;
+                    }
+                    break;
+                }
+                case 'act-refresh': refreshActivity(btn); break;
+            }
+        });
+
+        document.addEventListener('change', async (ev) => {
+            const el = (ev.target as HTMLElement)?.closest<HTMLInputElement>('[data-wb-act="wh-toggle"]');
+            if (!el) return;
+            const activo = el.checked;
+            try {
+                const res = await fetch('/api/webhooks', {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: el.dataset.id, activo }),
+                });
+                if (!res.ok) throw new Error();
+                el.closest('.wh-item')?.classList.toggle('off', !activo);
+                cache.delete('webhooks');
+            } catch {
+                el.checked = !activo;
+                toast(I18N.whNoPudoActualizar);
+            }
+        });
+
+        function refresh(tabId?: string) {
+            const tgt = tabId || currentTab;
+            cache.delete(tgt);
+            cache.delete(`${tgt}|${currentRange}`);
+            if (tgt === currentTab) loadTab(tgt, true);
+        }
+
         window.addEventListener('cord:devmode_changed', (e: any) => {
             if (!e.detail?.on) closeDock();
             updateWbH();
@@ -244,22 +910,20 @@ const TABS = [
             open: (tabId?: string) => openDock(tabId),
             close: () => closeDock(),
             toggle: () => (isOpen ? closeDock() : openDock()),
-            // Invalida el caché de una pestaña y la vuelve a pedir al servidor —
-            // usado tras crear/editar/revocar algo, para que la lista se vea al
-            // instante sin depender de un location.reload() de página completa.
-            refresh: (tabId?: string) => { const t = tabId || currentTab; cache.delete(t); if (t === currentTab) loadTab(t, true); },
+            refresh,
         };
 
-        // Restaura el estado persistido (solo si el modo desarrollador está activo).
+        // Restaurar estado persistido.
         const st = readState();
         currentTab = st.tab;
-        if (st.h) panelH = Math.min(maxPanelH(), Math.max(MIN_PANEL_H, st.h));
+        currentRange = st.range;
+        if (st.h) panelH = Math.min(maxH(), Math.max(MIN_H, st.h));
+        measureBar();
         setActiveTabUI(currentTab);
         updateWbH();
         if (isDevOn() && st.open) openDock(currentTab);
 
-        // Redirect legacy (?wb=<tab>, ver middleware.ts) — abre el dock directo
-        // en la pestaña correcta y limpia la URL.
+        // Redirect legacy (?wb=<tab>, ver middleware.ts).
         const params = new URLSearchParams(location.search);
         const wbParam = params.get('wb');
         if (wbParam && ['resumen', 'webhooks', 'api', 'registros'].includes(wbParam)) {

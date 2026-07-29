@@ -241,6 +241,140 @@ export async function getApiActivity() {
     };
 }
 
+// ── RESUMEN DE DESARROLLADORES (Cord Workbench → pestaña "Resumen") ──────────
+// Alimenta las gráficas del dock: serie temporal de peticiones de API (éxito vs
+// error), distribución de errores, salud del outbox de webhooks y tasa de entrega.
+// 4 queries en UN SOLO batch (una request HTTP a Neon, patrón de getRealPorMes).
+// Sin migración: usa los índices que ya existen — idx_api_requests(org_id,
+// created_at desc), idx_wh_events_org y idx_wh_deliveries_org.
+
+export type DevRange = '24h' | '7d' | '14d';
+export const DEV_RANGES: DevRange[] = ['24h', '7d', '14d'];
+
+export interface DevOverview {
+    range: DevRange;
+    serie: { key: string; label: string; ok: number; err: number }[];
+    maxSerie: number;
+    totalOk: number;
+    totalErr: number;
+    latProm: number;
+    errores: { c4xx: number; c5xx: number; topRutas: { ruta: string; n: number }[] };
+    wh: { entregasOk: number; entregasErr: number; pendientes: number; fallidos: number; atrasados: number };
+}
+
+const DEV_EMPTY = (range: DevRange): DevOverview => ({
+    range, serie: [], maxSerie: 0, totalOk: 0, totalErr: 0, latProm: 0,
+    errores: { c4xx: 0, c5xx: 0, topRutas: [] },
+    wh: { entregasOk: 0, entregasErr: 0, pendientes: 0, fallidos: 0, atrasados: 0 },
+});
+
+export async function getDevOverview(range: DevRange = '14d'): Promise<DevOverview> {
+    const orgId = await getActiveOrgId();
+    return cached(`devov:${orgId}:${range}`, 30, () => getDevOverviewUncached(orgId, range));
+}
+
+async function getDevOverviewUncached(orgId: string, range: DevRange): Promise<DevOverview> {
+    // 24h se agrupa por HORA; 7d/14d por DÍA. El shape de salida es idéntico en
+    // ambos casos para que el renderer sea un solo code path.
+    const porHora = range === '24h';
+    const buckets = porHora ? 24 : range === '7d' ? 7 : 14;
+
+    // ⚠️ El corte se calcula en JS y viaja como PARÁMETRO (`${desde}::timestamptz`):
+    // el driver de Neon no compone fragmentos SQL, así que no se puede interpolar un
+    // `interval` dinámico. Mismo patrón que getRealPorMes.
+    // Todo en UTC (getUTC*/setUTC*) para que estas claves coincidan exactamente con
+    // las que produce `date_trunc` de Postgres, que trunca en la zona de la sesión
+    // (UTC en Neon). Con horas locales, cada bucket erraría por el offset del runtime.
+    const inicio = new Date();
+    if (porHora) inicio.setUTCMinutes(0, 0, 0);
+    else inicio.setUTCHours(0, 0, 0, 0);
+    const cursor = new Date(inicio);
+    if (porHora) cursor.setUTCHours(cursor.getUTCHours() - (buckets - 1));
+    else cursor.setUTCDate(cursor.getUTCDate() - (buckets - 1));
+    const desde = cursor.toISOString();
+
+    const truncUnit = porHora ? 'hour' : 'day';
+    const fmt = porHora ? 'YYYY-MM-DD HH24' : 'YYYY-MM-DD';
+
+    let serieRows: any[] = [], errRows: any[] = [], rutaRows: any[] = [];
+    let whRow: any = {}, outboxRow: any = {};
+    try {
+        let outbox: any[], wh: any[];
+        [serieRows, errRows, rutaRows, outbox, wh] = await withOrgTx(orgId,
+            sql`select to_char(date_trunc(${truncUnit}, created_at), ${fmt}) as k,
+                       count(*) filter (where status < 400)::int as ok,
+                       count(*) filter (where status >= 400)::int as err,
+                       coalesce(round(avg(duracion_ms))::int, 0) as lat
+                from api_requests
+                where org_id = ${orgId} and created_at >= ${desde}::timestamptz
+                group by 1 order by 1`,
+            sql`select case when status >= 500 then '5xx' else '4xx' end as cls, count(*)::int as n
+                from api_requests
+                where org_id = ${orgId} and status >= 400 and created_at >= ${desde}::timestamptz
+                group by 1`,
+            sql`select ruta, count(*)::int as n
+                from api_requests
+                where org_id = ${orgId} and status >= 400 and created_at >= ${desde}::timestamptz
+                group by 1 order by n desc limit 3`,
+            sql`select count(*) filter (where estado = 'pending')::int as pendientes,
+                       count(*) filter (where estado = 'failed')::int as fallidos,
+                       count(*) filter (where estado = 'pending' and next_retry_at < now())::int as atrasados
+                from webhook_events where org_id = ${orgId}`,
+            sql`select count(*) filter (where ok)::int as ok,
+                       count(*) filter (where not ok)::int as err
+                from webhook_deliveries
+                where org_id = ${orgId} and es_prueba = false and created_at >= ${desde}::timestamptz`,
+        );
+        outboxRow = outbox?.[0] ?? {};
+        whRow = wh?.[0] ?? {};
+    } catch { return DEV_EMPTY(range); }
+
+    // Relleno de huecos EN JS (el repo no usa generate_series — mismo patrón que
+    // getRealPorMes): se arma la lista completa de buckets hacia adelante desde el
+    // corte y se mapean las filas por clave, para que un periodo sin tráfico salga
+    // en 0 y no desaparezca de la gráfica.
+    const byKey = new Map(serieRows.map((r) => [String(r.k), r]));
+    const serie: DevOverview['serie'] = [];
+    let totalOk = 0, totalErr = 0, latSum = 0, latN = 0;
+    const p = (n: number) => String(n).padStart(2, '0');
+    for (let i = 0; i < buckets; i++) {
+        const d = new Date(cursor);
+        if (porHora) d.setUTCHours(d.getUTCHours() + i);
+        else d.setUTCDate(d.getUTCDate() + i);
+        const ymd = `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}`;
+        const key = porHora ? `${ymd} ${p(d.getUTCHours())}` : ymd;
+        const row = byKey.get(key);
+        const ok = (row?.ok as number) ?? 0;
+        const err = (row?.err as number) ?? 0;
+        totalOk += ok; totalErr += err;
+        if (row?.lat) { latSum += row.lat as number; latN++; }
+        serie.push({
+            key,
+            label: porHora ? `${p(d.getUTCHours())}:00` : `${d.getUTCDate()}/${d.getUTCMonth() + 1}`,
+            ok, err,
+        });
+    }
+
+    const c4xx = (errRows.find((r) => r.cls === '4xx')?.n as number) ?? 0;
+    const c5xx = (errRows.find((r) => r.cls === '5xx')?.n as number) ?? 0;
+
+    return {
+        range,
+        serie,
+        maxSerie: serie.reduce((m, s) => Math.max(m, s.ok + s.err), 0),
+        totalOk, totalErr,
+        latProm: latN ? Math.round(latSum / latN) : 0,
+        errores: { c4xx, c5xx, topRutas: rutaRows.map((r) => ({ ruta: r.ruta as string, n: r.n as number })) },
+        wh: {
+            entregasOk: (whRow.ok as number) ?? 0,
+            entregasErr: (whRow.err as number) ?? 0,
+            pendientes: (outboxRow.pendientes as number) ?? 0,
+            fallidos: (outboxRow.fallidos as number) ?? 0,
+            atrasados: (outboxRow.atrasados as number) ?? 0,
+        },
+    };
+}
+
 // ── IMPUESTOS (perfiles de tasa reutilizables — FASE 3) ──────────────────────
 export const TIPO_IMPUESTO: Record<string, string> = {
     iva: 'IVA', ieps: 'IEPS', ret_iva: 'Retención IVA', ret_isr: 'Retención ISR', exento: 'Exento',

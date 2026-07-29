@@ -1,111 +1,148 @@
-/* ════════ Cord Workbench — dock de Desarrolladores estilo Apple/Stripe ════════
-   Sigue el tema claro/oscuro real de la app (tokens de AppLayout.astro: --surface,
-   --color-border, --color-text, --color-blue-deep…) — ya NO es navy fijo. Prefijo
-   `wb-*` para el chasis (barra/tabs/panel); el CONTENIDO de cada pestaña reusa las
-   clases ya probadas de developers.css (.dev-card, .key-table, .wh-list, .act-list…),
-   que YA leen los mismos tokens de tema — no hace falta "revestirlas" de oscuro.
-   Global a propósito (is:global implícito — es un <link> normal, no scoped): el
-   contenido de cada pestaña se inyecta por JS vía innerHTML y Astro no puede
-   scopearlo. */
+/* ════════ Cord Workbench — dock de Desarrolladores ════════
+   Navy Cord SIEMPRE (no sigue el tema claro/oscuro de la app): se lee como una
+   consola de desarrollo, igual que el Workbench de Stripe, pero con la paleta y
+   el lenguaje de superficie de Cord (squircles, sombras compuestas, glass).
+
+   ── Cómo se vuelve navy TODO el contenido ──
+   El contenido de cada pestaña reusa las clases de `developers.css` (.dev-card,
+   .key-table, .wh-list, .act-list…), que consumen tokens de tema (--surface,
+   --color-border, --color-text…). En vez de escribir ~100 overrides, se REDEFINEN
+   esos tokens dentro de `.wb-dock, .wb-modal`: la cascada de variables hace el
+   resto y `developers.css` sigue intacto para /app/ajustes/mcp, que lo usa en
+   tema claro. Abajo solo quedan los overrides de los valores HARDCODEADOS que
+   ningún token puede alcanzar.
+
+   Global a propósito (es un <link> normal, no scoped): el contenido de cada
+   pestaña se inyecta por JS vía innerHTML y Astro no puede scopearlo. */
 
 :root { --wb-h: 0px; --wb-bar-h: 0px; }
 
+/* ── Scope de tokens navy ─────────────────────────────────────────────────── */
+.wb-dock, .wb-modal {
+    --wb-bg: #0a1524;
+    --wb-bg-2: #0d1c30;
+    --wb-line: rgba(255,255,255,0.09);
+
+    /* Tokens de tema redefinidos: los lee todo developers.css */
+    --surface: #0f1d33;
+    --surface-2: #12213a;
+    --color-bg-soft: #101c30;
+    --color-border: rgba(255,255,255,0.10);
+    --color-text: #e8eef8;
+    --color-text-muted: #93a3bb;
+    --row-hover: rgba(255,255,255,0.05);
+    --chart-track: rgba(255,255,255,0.08);
+    --chart-fill: #6b9bf2;
+
+    /* ⚠️ --color-blue-deep tiene DOS roles en developers.css: color de acento
+       (texto/borde/accent-color) y fondo SÓLIDO con texto blanco encima. Aquí se
+       vuelve azul claro para que el acento se lea sobre navy — pero eso dejaría
+       blanco-sobre-azul-claro (~2.2:1, ilegible) en los botones sólidos, así que
+       esos usan --wb-accent-solid. No fusionar los dos. */
+    --color-blue-deep: #6b9bf2;
+    --wb-accent-solid: #2f6df0;
+
+    color-scheme: dark;
+    font-family: var(--font-sans);
+}
+
+/* ── Dock ─────────────────────────────────────────────────────────────────── */
 .wb-dock {
     display: none;
     position: fixed;
     left: 0; right: 0; bottom: 0;
     z-index: 820;
-    font-family: var(--font-sans);
-    border-radius: 18px 18px 0 0;
-    overflow: hidden;
-    box-shadow:
-        0 -14px 40px -18px rgba(10,25,47,0.16),
-        0 -2px 10px -2px rgba(10,25,47,0.06);
-}
-html[data-theme="dark"] .wb-dock {
-    box-shadow:
-        0 -14px 40px -18px rgba(0,0,0,0.55),
-        0 -2px 10px -2px rgba(0,0,0,0.3);
+    color: var(--color-text);
 }
 html.cord-dev .wb-dock { display: block; }
 
-/* ── Barra colapsada (siempre visible mientras el modo dev está activo) ── */
+/* ── Barra (pegada al borde inferior; el panel se expande POR ENCIMA) ─────── */
 .wb-bar {
     width: 100%;
     display: flex; align-items: center; gap: 0.75rem;
-    padding: 0 1.1rem;
+    padding: 0 1.15rem;
     height: 46px;
-    background: rgba(255,255,255,0.8);
-    backdrop-filter: blur(24px) saturate(1.4);
-    -webkit-backdrop-filter: blur(24px) saturate(1.4);
-    border-top: 1px solid var(--color-border);
+    background: var(--wb-bg);
+    border: none;
+    border-top: 1px solid var(--wb-line);
+    box-shadow: 0 -10px 30px -16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
     color: var(--color-text);
     cursor: pointer;
     font: inherit;
-    transition: background 0.2s ease;
+    touch-action: none;
+    transition: background 0.2s var(--ease-ios);
 }
-html[data-theme="dark"] .wb-bar { background: rgba(20,26,38,0.86); }
-.wb-bar:hover { background: rgba(255,255,255,0.94); }
-html[data-theme="dark"] .wb-bar:hover { background: rgba(28,36,50,0.94); }
-.wb-bar-left { display: flex; align-items: center; gap: 0.55rem; }
-.wb-bar-ico { width: 15px; height: 15px; color: var(--color-blue-deep); flex-shrink: 0; }
-.wb-bar-label { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.1px; color: var(--color-text); }
+.wb-bar:hover { background: #0d1c2f; }
+.wb-dock.is-open .wb-bar { box-shadow: inset 0 1px 0 rgba(255,255,255,0.05); }
+.wb-bar-left { display: flex; align-items: center; gap: 0.6rem; }
+.wb-bar-ico { width: 16px; height: 16px; color: var(--color-blue-deep); flex-shrink: 0; }
+.wb-bar-label { font-size: 0.8rem; font-weight: 600; letter-spacing: -0.01em; }
 .wb-bar-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-ok); flex-shrink: 0; }
-.wb-bar-chevron { width: 15px; height: 15px; color: var(--color-text-muted); margin-left: auto; flex-shrink: 0; transition: transform 0.3s var(--ease-ios); }
+.wb-bar-chevron { width: 15px; height: 15px; color: rgba(255,255,255,0.4); margin-left: auto; flex-shrink: 0; transition: transform 0.3s var(--ease-ios); }
 .wb-dock.is-open .wb-bar-chevron { transform: rotate(180deg); }
 
-/* ── Panel expandido ── */
+/* ── Panel ────────────────────────────────────────────────────────────────── */
+/* ⚠️ `[hidden]` explícito: el atributo HTML `hidden` se anula cuando el CSS del
+   autor declara un `display` propio sobre la misma clase (el `display:flex` de
+   abajo le gana al `[hidden]{display:none}` del navegador). Sin esta regla,
+   closeDock() ponía panel.hidden=true y el panel seguía visible. Regla conocida
+   del proyecto — aplica a todo elemento con display propio + toggle por hidden. */
+.wb-panel[hidden] { display: none; }
 .wb-panel {
-    height: min(40vh, calc(100vh - 200px));
-    min-height: 220px;
+    height: 42vh;
+    min-height: 60px;
     display: flex;
     flex-direction: column;
-    background: rgba(255,255,255,0.88);
-    backdrop-filter: blur(24px) saturate(1.4);
-    -webkit-backdrop-filter: blur(24px) saturate(1.4);
-    border-top: 1px solid var(--color-border);
-    animation: wb-panel-in 0.28s var(--ease-spring);
+    background: var(--wb-bg);
+    border-top: 1px solid var(--wb-line);
+    border-radius: 18px 18px 0 0;
+    overflow: hidden;
+    box-shadow: 0 -20px 60px -24px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.07);
+    animation: wb-panel-in 0.3s var(--ease-spring);
 }
-html[data-theme="dark"] .wb-panel { background: rgba(18,24,35,0.92); }
-@keyframes wb-panel-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes wb-panel-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+/* Durante el arrastre la animación de entrada estorbaría, y por debajo del umbral
+   de colapso el panel se atenúa para anticipar que soltar ahí lo cierra. */
+.wb-dock.is-dragging .wb-panel { animation: none; transition: none; }
+.wb-dock.will-collapse .wb-panel { opacity: 0.55; }
 @media (prefers-reduced-motion: reduce) { .wb-panel { animation: none; } }
 
-/* ── Handle de arrastre — permite bajar/subir el panel (iOS sheet grabber) ── */
+/* Grabber tipo hoja de iOS: arrastrar abajo achica/colapsa, arriba expande. */
 .wb-drag {
     flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
-    height: 18px;
+    height: 16px;
     cursor: ns-resize;
     touch-action: none;
 }
 .wb-drag-grip {
-    width: 36px; height: 4px; border-radius: 100px;
-    background: var(--color-border);
-    transition: background 0.2s ease, width 0.2s ease;
+    width: 34px; height: 4px; border-radius: 100px;
+    background: rgba(255,255,255,0.16);
+    transition: background 0.2s var(--ease-ios), width 0.2s var(--ease-ios);
 }
 .wb-drag:hover .wb-drag-grip,
 .wb-drag:focus-visible .wb-drag-grip,
-.wb-dock.is-dragging .wb-drag-grip { background: var(--color-text-muted); width: 46px; }
+.wb-dock.is-dragging .wb-drag-grip { background: rgba(255,255,255,0.4); width: 46px; }
 .wb-drag:focus-visible { outline: none; }
 
 .wb-tabs {
     position: relative;
-    display: flex; align-items: center; gap: 0.15rem;
+    display: flex; align-items: center; gap: 0.1rem;
     padding: 0 0.9rem;
-    height: 44px;
+    height: 42px;
     flex-shrink: 0;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--wb-line);
 }
 .wb-tab {
     position: relative;
-    font-family: inherit; font-size: 0.8rem; font-weight: 600;
-    color: var(--color-text-muted);
+    font-family: inherit; font-size: 0.8rem; font-weight: 600; letter-spacing: -0.01em;
+    color: rgba(255,255,255,0.45);
     background: none; border: none; cursor: pointer;
-    padding: 0 0.9rem; height: 44px;
-    transition: color 0.2s ease;
+    padding: 0 0.85rem; height: 42px;
+    transition: color 0.2s var(--ease-ios);
 }
-.wb-tab:hover { color: var(--color-text); }
-.wb-tab.active { color: var(--color-text); }
+.wb-tab:hover { color: rgba(255,255,255,0.78); }
+.wb-tab.active { color: #fff; }
 .wb-tabs-indicator {
     position: absolute; bottom: 0; left: 0; height: 2px;
     background: var(--color-blue-deep);
@@ -118,36 +155,352 @@ html[data-theme="dark"] .wb-panel { background: rgba(18,24,35,0.92); }
     width: 28px; height: 28px; border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
     background: none; border: none; cursor: pointer;
-    color: var(--color-text-muted);
-    transition: background 0.2s ease, color 0.2s ease;
+    color: rgba(255,255,255,0.42);
+    transition: background 0.2s, color 0.2s;
 }
-.wb-close:hover { background: var(--color-bg-soft); color: var(--color-text); }
+.wb-close:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.wb-close:active { transform: scale(0.94); }
 .wb-close svg { width: 14px; height: 14px; }
 
 .wb-body { flex: 1; min-height: 0; overflow-y: auto; padding: 1.4rem 1.6rem 2rem; }
-.wb-loading, .wb-error { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 200px; color: var(--color-text-muted); font-size: 0.84rem; }
+.wb-loading, .wb-error { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 180px; color: var(--color-text-muted); font-size: 0.84rem; }
 .wb-spinner {
     width: 20px; height: 20px; border-radius: 50%;
-    border: 2px solid var(--color-border); border-top-color: var(--color-blue-deep);
+    border: 2px solid rgba(255,255,255,0.14); border-top-color: var(--color-blue-deep);
     animation: wb-spin 0.7s linear infinite;
 }
 @keyframes wb-spin { to { transform: rotate(360deg); } }
+.wb-sinacceso { color: var(--color-text-muted); font-size: 0.86rem; padding: 2rem 0; text-align: center; }
+/* Contenedor raíz INCONDICIONAL del fragmento: mantiene el head-instruction de
+   Astro en un lugar estable (ver el comentario de [tab].astro). No debe llevar
+   layout propio — solo existe como ancla estructural. */
+.wb-frag { display: contents; }
+
+/* ════════ Resumen ════════ */
+.wb-ov { display: grid; grid-template-columns: minmax(0, 1fr) 268px; gap: 1.6rem; align-items: start; }
+.wb-ov-main { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.wb-ov-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.wb-ov-side { display: flex; flex-direction: column; gap: 0.7rem; }
+
+.wb-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.wb-sec-head-in { margin-bottom: 0.9rem; }
+.wb-sec-title { font-size: 0.95rem; font-weight: 600; letter-spacing: -0.015em; color: #fff; margin: 0; }
+.wb-sec-title-sp { margin-top: 0.9rem; }
+
+/* Selector de rango — segmented control iOS */
+.wb-range { display: inline-flex; background: rgba(255,255,255,0.06); border-radius: 9px; padding: 2px; }
+.wb-range-btn {
+    font-family: inherit; font-size: 0.74rem; font-weight: 600;
+    color: rgba(255,255,255,0.5);
+    background: none; border: none; border-radius: 7px;
+    padding: 5px 11px; cursor: pointer; white-space: nowrap;
+    transition: background 0.22s var(--ease-ios), color 0.22s var(--ease-ios);
+}
+.wb-range-btn:hover { color: rgba(255,255,255,0.8); }
+.wb-range-btn.active { background: rgba(255,255,255,0.11); color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,0.08); }
+.wb-range-btn:active { transform: scale(0.96); }
+
+.wb-card {
+    background: var(--surface);
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    padding: 1.1rem 1.2rem;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.wb-card-top { display: flex; flex-direction: column; gap: 2px; margin-bottom: 1rem; }
+.wb-card-lbl { display: block; font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); }
+.wb-card-big { font-size: 1.7rem; color: #fff; line-height: 1.1; }
+.wb-empty { font-size: 0.8rem; color: var(--color-text-muted); margin: 0.7rem 0 0; line-height: 1.5; }
+
+/* Gráfica de barras apiladas (CSS puro, patrón del repo: altura en % inline) */
+.wb-chart { display: flex; align-items: flex-end; gap: 5px; height: 118px; }
+/* Columna flexible pero barra acotada y centrada: con 14 buckets a ancho completo
+   las barras salían muy gruesas; delgadas se leen como las de Stripe. */
+.wb-chart-col { flex: 1; min-width: 0; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
+/* ⚠️ `.wb-chart-bar`, NO `.wb-bar`: esa clase ya es la barra "Desarrolladores"
+   del dock, y al definirse aquí después la pisaba (la barra del dock se pintaba
+   como una barra de gráfica y se salía de su sitio). */
+.wb-chart-bar {
+    width: 100%; max-width: 26px; min-height: 2px;
+    display: flex; flex-direction: column; justify-content: flex-start;
+    background: var(--chart-fill);
+    border-radius: 4px 4px 0 0;
+    overflow: hidden;
+    transition: height 0.7s var(--ease-spring);
+}
+.wb-chart-seg.err { display: block; width: 100%; background: var(--color-danger); }
+.wb-chart-col:hover .wb-chart-bar { filter: brightness(1.18); }
+.wb-chart-axis { display: flex; justify-content: space-between; margin-top: 7px; font-size: 0.66rem; color: rgba(255,255,255,0.35); }
+
+.wb-legend { display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap; margin-top: 0.9rem; padding-top: 0.8rem; border-top: 1px solid var(--color-border); font-size: 0.74rem; color: var(--color-text-muted); }
+.wb-lg { display: inline-flex; align-items: center; gap: 6px; }
+.wb-lg b { color: #fff; font-weight: 600; }
+.wb-lg-r { margin-left: auto; }
+.wb-sw { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+.wb-sw.ok { background: var(--chart-fill); }
+.wb-sw.err { background: var(--color-danger); }
+
+/* Distribución (barras horizontales) */
+.wb-dist { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.9rem; }
+.wb-dist-row { display: grid; grid-template-columns: 68px 1fr auto; align-items: center; gap: 0.7rem; font-size: 0.76rem; color: var(--color-text-muted); }
+.wb-dist-k { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wb-dist-track { height: 8px; background: var(--chart-track); border-radius: 100px; overflow: hidden; }
+.wb-dist-fill { display: block; height: 100%; border-radius: 100px; min-width: 2px; transition: width 0.7s var(--ease-spring); }
+.wb-dist-fill.ok { background: var(--color-ok); }
+.wb-dist-fill.warn { background: var(--color-warn); }
+.wb-dist-fill.bad { background: var(--color-danger); }
+.wb-dist-n { color: #fff; font-size: 0.8rem; }
+
+.wb-top { margin-top: 0.5rem; padding-top: 0.7rem; border-top: 1px solid var(--color-border); }
+.wb-top-lbl { display: block; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 0.45rem; }
+.wb-top-row { display: flex; align-items: center; justify-content: space-between; gap: 0.7rem; padding: 3px 0; font-size: 0.74rem; }
+.wb-top-row code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.72rem; color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wb-top-row b { color: #fff; font-weight: 600; }
+
+/* Panel de salud */
+.wb-health {
+    display: flex; flex-direction: column; align-items: center; text-align: center; gap: 5px;
+    background: var(--surface); border: 1px solid var(--color-border); border-radius: 14px;
+    padding: 1.3rem 1rem;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.wb-health-ico { width: 34px; height: 34px; color: var(--color-warn); margin-bottom: 3px; }
+.wb-health.ok .wb-health-ico { color: var(--color-ok); }
+.wb-health-ico.bad { color: var(--color-warn); }
+.wb-health b { font-size: 0.86rem; font-weight: 600; color: #fff; }
+.wb-health i { font-style: normal; font-size: 0.74rem; color: var(--color-text-muted); line-height: 1.45; }
+
+.wb-kv { display: flex; flex-direction: column; }
+.wb-kv-row { display: flex; align-items: center; justify-content: space-between; gap: 0.7rem; padding: 0.55rem 0; border-bottom: 1px solid var(--color-border); font-size: 0.78rem; color: var(--color-text-muted); }
+.wb-kv-row:last-child { border-bottom: none; }
+.wb-kv-row b { color: #fff; font-weight: 600; }
+.wb-kv-row.warn b { color: var(--color-warn); }
+.wb-kv-row.bad b { color: var(--color-danger); }
+
+.wb-link { font-family: inherit; font-size: 0.78rem; font-weight: 600; color: var(--color-blue-deep); background: none; border: none; padding: 0; cursor: pointer; text-align: left; }
+.wb-link:hover { text-decoration: underline; }
+.wb-link-block { padding: 0.5rem 0; }
+
+.wb-res { display: flex; flex-direction: column; }
+.wb-res a {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+    padding: 0.55rem 0; border-bottom: 1px solid var(--color-border);
+    font-size: 0.78rem; color: var(--color-text-muted); text-decoration: none;
+    transition: color 0.2s var(--ease-ios);
+}
+.wb-res a:last-child { border-bottom: none; }
+.wb-res a span { color: rgba(255,255,255,0.3); font-size: 0.7rem; transition: transform 0.25s var(--ease-spring); }
+.wb-res a:hover { color: #fff; }
+.wb-res a:hover span { color: var(--color-blue-deep); transform: translateX(2px); }
+
+/* Utilidades del fragmento */
+.wb-note-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin: 0.4rem 0 1.2rem; }
+.wb-note-links { display: flex; gap: 0.9rem; font-size: 0.75rem; }
+.wb-note-links a { color: var(--color-blue-deep); text-decoration: none; font-weight: 600; }
+.wb-note-links a:hover { text-decoration: underline; }
+.wb-btn-wide { width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.55rem; margin-top: 1.5rem; }
+.wb-btn-wide.is-ok { color: var(--color-ok); border-color: rgba(16,185,129,0.4); }
+.key-tags { display: flex; gap: 0.3rem; }
+
+@media (max-width: 900px) {
+    .wb-ov { grid-template-columns: 1fr; }
+    .wb-ov-duo { grid-template-columns: 1fr; }
+}
+
+/* ════════ Modales / wizard ════════
+   Son <div> con z-index, NO <dialog showModal()>: un dialog se promueve al top
+   layer del navegador y taparía a window.cordConfirm (un div en z-index 1000),
+   dejándolo inutilizable. 860 queda sobre el dock (820) y el onboarding (850),
+   y por debajo de los toasts (900) y de cordConfirm (1000). */
+html.wb-modal-open { overflow: hidden; }
+
+.wb-modal { position: fixed; inset: 0; z-index: 860; display: flex; align-items: center; justify-content: center; padding: 2.5vh 1.2rem; }
+.wb-modal[hidden] { display: none; }
+/* ⚠️ z-index EXPLÍCITO en ambos: `backdrop-filter` crea un stacking context, y
+   sin capas declaradas el backdrop terminaba capturando los clics del footer
+   (elementFromPoint sobre "Continuar" devolvía el backdrop) — el wizard quedaba
+   inusable. No quitar estos z-index. */
+.wb-modal-backdrop { position: absolute; inset: 0; z-index: 0; background: rgba(3,8,18,0.62); backdrop-filter: blur(6px) saturate(1.1); -webkit-backdrop-filter: blur(6px) saturate(1.1); animation: wb-fade 0.2s ease; }
+@keyframes wb-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.wb-modal-shell {
+    position: relative; z-index: 1;
+    width: min(1000px, 100%); height: min(760px, 95vh);
+    display: flex; flex-direction: column;
+    background: var(--wb-bg);
+    border-radius: 22px;
+    overflow: hidden;
+    color: var(--color-text);
+    box-shadow:
+        0 40px 90px -30px rgba(0,0,0,0.75),
+        0 4px 14px rgba(0,0,0,0.3),
+        inset 0 0 0 1px rgba(255,255,255,0.09),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+    animation: wb-pop 0.34s var(--ease-spring);
+}
+.wb-modal.compact .wb-modal-shell { width: min(520px, 100%); height: auto; max-height: 92vh; }
+@keyframes wb-pop { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .wb-modal-shell, .wb-modal-backdrop { animation: none; } }
+
+.wb-modal-top { display: flex; align-items: center; gap: 0.9rem; padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--wb-line); flex-shrink: 0; }
+.wb-modal-x {
+    width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.45);
+    transition: background 0.2s, color 0.2s;
+}
+.wb-modal-x:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.wb-modal-x:active { transform: scale(0.94); }
+.wb-modal-x svg { width: 16px; height: 16px; }
+.wb-modal-title { font-size: 1rem; font-weight: 600; letter-spacing: -0.015em; color: #fff; margin: 0; }
+
+.wb-modal-cols { flex: 1; min-height: 0; display: grid; grid-template-columns: 232px minmax(0, 1fr); }
+.wb-modal-body { flex: 1; min-height: 0; overflow-y: auto; padding: 1.4rem; display: flex; flex-direction: column; gap: 0.75rem; }
+
+.wb-wiz-steps { padding: 1.6rem 1.2rem; border-right: 1px solid var(--wb-line); display: flex; flex-direction: column; gap: 0.2rem; }
+.wb-wiz-step { display: flex; align-items: center; gap: 0.65rem; padding: 0.5rem 0; font-size: 0.82rem; font-weight: 500; color: rgba(255,255,255,0.4); transition: color 0.25s var(--ease-ios); }
+.wb-wiz-dot { width: 15px; height: 15px; border-radius: 50%; flex-shrink: 0; border: 1.5px solid rgba(255,255,255,0.22); transition: all 0.25s var(--ease-ios); }
+.wb-wiz-step.is-on { color: #fff; font-weight: 600; }
+.wb-wiz-step.is-on .wb-wiz-dot { border-color: var(--color-blue-deep); box-shadow: inset 0 0 0 3px var(--color-blue-deep); }
+.wb-wiz-step.is-done { color: rgba(255,255,255,0.62); }
+.wb-wiz-step.is-done .wb-wiz-dot { border-color: var(--color-ok); background: var(--color-ok); }
+
+.wb-wiz-panes { min-height: 0; overflow-y: auto; padding: 1.6rem 1.7rem; }
+.wb-wiz-pane[hidden] { display: none; }
+.wb-wiz-h { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.02em; color: #fff; margin: 0 0 0.35rem; }
+.wb-wiz-p { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.55; margin: 0 0 1.2rem; }
+
+.wb-wiz-grp { margin-top: 1.1rem; }
+.wb-wiz-grp-lbl { display: block; font-size: 0.62rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.32); margin-bottom: 0.5rem; }
+
+/* ⚠️ `.s-field`/`.s-input` se definen AQUÍ (acotadas al workbench) porque su
+   definición original vive en el <style> de SettingsShell.astro, que solo se
+   carga en páginas de Ajustes — el dock y sus modales no la reciben y los campos
+   salían sin estilo (label en línea, input diminuto). Mismos valores que el
+   original; los colores navy salen solos por el scope de tokens de arriba. */
+.wb-dock .s-field, .wb-modal .s-field { display: flex; flex-direction: column; gap: 0.45rem; }
+.wb-dock .s-field label, .wb-modal .s-field label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(255,255,255,0.42); }
+.wb-dock .s-input, .wb-modal .s-input {
+    width: 100%;
+    font-family: var(--font-sans); font-size: 0.86rem; font-weight: 500;
+    color: var(--color-text); background: rgba(255,255,255,0.06);
+    border: 1px solid var(--color-border); border-radius: 9px; padding: 10px 12px;
+    transition: border-color 0.25s, box-shadow 0.25s;
+}
+.wb-dock .s-input::placeholder, .wb-modal .s-input::placeholder { color: rgba(255,255,255,0.32); }
+.wb-dock .s-input:focus, .wb-modal .s-input:focus {
+    outline: none; border-color: var(--color-blue-deep);
+    box-shadow: 0 0 0 3px rgba(107,155,242,0.16);
+}
+
+.wb-check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; padding: 0.5rem 0.6rem; border-radius: 10px; transition: background 0.18s var(--ease-ios); }
+.wb-check:hover { background: rgba(255,255,255,0.05); }
+.wb-check input { margin-top: 2px; width: 16px; height: 16px; flex-shrink: 0; accent-color: var(--wb-accent-solid); }
+.wb-check span { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 0.82rem; color: var(--color-text); }
+.wb-check code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.76rem; color: #fff; }
+.wb-check i { font-style: normal; font-size: 0.74rem; color: var(--color-text-muted); line-height: 1.4; }
+.wb-check-all { border: 1px solid var(--color-border); background: rgba(255,255,255,0.03); }
+
+.wb-wiz-recap { margin-top: 1.3rem; padding-top: 1.1rem; border-top: 1px solid var(--wb-line); }
+.wb-wiz-recap-lbl { display: block; font-size: 0.62rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.32); margin-bottom: 0.6rem; }
+.wb-wiz-recap div { display: flex; flex-wrap: wrap; gap: 6px; }
+.wb-wiz-recap code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.72rem; color: #dbe6f6; background: rgba(255,255,255,0.08); padding: 3px 8px; border-radius: 6px; }
+.wb-wiz-recap-all { font-style: normal; font-size: 0.78rem; color: var(--color-text-muted); }
+
+.wb-modal-foot { display: flex; align-items: center; justify-content: flex-end; gap: 0.6rem; padding: 1rem 1.4rem; border-top: 1px solid var(--wb-line); flex-shrink: 0; }
+.wb-modal-err { margin-right: auto; font-size: 0.78rem; color: #fca5a5; }
+.wb-modal-foot .api-btn-solid { background: var(--wb-accent-solid); }
+.wb-modal-foot .api-btn-solid:hover { background: #3f7bff; }
+.wb-modal-foot .api-btn-solid:active, .wb-modal-foot .api-btn-ghost:active { transform: scale(0.97); }
+
+@media (max-width: 760px) {
+    .wb-modal { padding: 0; }
+    .wb-modal-shell { width: 100%; height: 100%; border-radius: 0; }
+    .wb-modal.compact .wb-modal-shell { border-radius: 18px 18px 0 0; height: auto; margin-top: auto; }
+    .wb-modal.compact { align-items: flex-end; }
+    .wb-modal-cols { grid-template-columns: 1fr; }
+    /* En móvil los pasos se vuelven una barra horizontal arriba del contenido. */
+    .wb-wiz-steps { flex-direction: row; gap: 1.2rem; padding: 0.9rem 1.2rem; border-right: none; border-bottom: 1px solid var(--wb-line); }
+    .wb-wiz-panes { padding: 1.2rem; }
+    .wb-modal-foot { padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+}
+
+/* ════════ Overrides de valores HARDCODEADOS de developers.css ════════
+   Todo lo que consume tokens ya quedó navy por el scope de arriba. Aquí solo van
+   los literales que ninguna variable puede alcanzar — cada uno auditado porque
+   sobre navy resultaba invisible o ilegible. */
+
+/* `<code>` inline: el fondo rgba(10,25,47,.06) desaparecía sobre navy */
+.wb-dock .dev-card-sub code, .wb-dock .dev-note code, .wb-dock .wh-chip code,
+.wb-dock .dev-soon code, .wb-dock .ep-d code, .wb-dock .wh-sub code,
+.wb-dock .mcp-tool-head code, .wb-dock .wh-check code,
+.wb-modal .wh-check code { background: rgba(255,255,255,0.08); color: #dbe6f6; }
+
+/* Ámbar: #b45309 sobre navy da ~2.4:1 */
+.wb-dock .key-mode.test, .wb-dock .key-scope.write, .wb-dock .ep-m.post,
+.wb-dock .act-m.post, .wb-dock .mcp-scope.write { color: #fbbf24; background: rgba(245,158,11,0.16); }
+.wb-dock .wh-rotating-note, .wb-dock .del-ev .del-test { color: #fbbf24; }
+.wb-dock .dev-limit-note { color: #fcd34d; background: rgba(245,158,11,0.12); }
+
+/* Azul del método GET: #1d4ed8 sobre navy da ~2.0:1 */
+.wb-dock .ep-m.get, .wb-dock .act-m.get { color: #7ba7ff; background: rgba(107,155,242,0.16); }
+
+/* Badges de acento: el fondo rgba(10,25,47,.08) era invisible */
+.wb-dock .key-scope.read, .wb-dock .mcp-scope.read { background: rgba(107,155,242,0.16); }
+
+/* Bloques de código: su fondo #0a192f es casi el mismo navy del dock → el
+   terminal se fundía con la tarjeta y desaparecía. */
+.wb-dock .ep-code, .wb-dock .dev-terminal, .wb-dock .mcp-out {
+    background: rgba(0,0,0,0.34);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+.wb-dock .ep-code-label { color: var(--color-blue-deep); }
+
+/* Botones "copiar": eran pastillas blancas sólidas, muy chillonas sobre navy */
+.wb-dock .dev-terminal-copy, .wb-dock .mcp-copy,
+.wb-dock .kdlg-copy, .wb-modal .kdlg-copy {
+    background: rgba(255,255,255,0.12); color: #e8eef8;
+}
+.wb-dock .kdlg-copy:hover, .wb-modal .kdlg-copy:hover { background: rgba(255,255,255,0.2); }
+
+/* Hovers con negro translúcido: invisibles sobre navy */
+.wb-dock .wh-test:hover, .wb-dock .wh-edit:hover { background: rgba(255,255,255,0.06); }
+.wb-dock .scope-opt:has(input:checked), .wb-modal .scope-opt:has(input:checked) { background: rgba(107,155,242,0.08); }
+
+/* Segmented control: track y botón activo caían ambos en navy, sin contraste */
+.wb-dock .dev-seg { background: rgba(255,255,255,0.06); border-color: transparent; }
+.wb-dock .dev-seg-btn.active { background: rgba(255,255,255,0.11); color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,0.08); }
+.wb-dock .dev-seg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Sombra de tarjeta: negra sobre negro no se ve. Un borde de luz superior sí
+   (mismo recurso que usa el resto de superficies premium de la app). */
+.wb-dock .dev-card { box-shadow: inset 0 1px 0 rgba(255,255,255,0.05); }
+.wb-dock .key-thead { color: rgba(255,255,255,0.38); }
+.wb-dock .key-cell-muted, .wb-dock .act-when, .wb-dock .del-meta,
+.wb-dock .wh-sub, .wb-dock .wh-expand, .wb-dock .wh-rotate-link,
+.wb-dock .dev-stat-label, .wb-dock .act-stat-l, .wb-dock .wh-events-label { color: rgba(255,255,255,0.42); }
+
+/* Botón sólido: --color-blue-deep aquí es azul CLARO, y con texto blanco encima
+   quedaría ilegible. Usa el acento sólido dedicado. */
+.wb-dock .api-btn-solid, .wb-modal .api-btn-solid,
+.wb-dock .kdlg-done, .wb-modal .kdlg-done,
+.wb-dock .mcp-tab.active { background: var(--wb-accent-solid); color: #fff; }
+.wb-dock .api-btn-solid:hover, .wb-modal .api-btn-solid:hover { background: #3f7bff; }
+.wb-dock .kdlg-key, .wb-modal .kdlg-key { background: rgba(0,0,0,0.34); border: 1px solid rgba(255,255,255,0.1); }
+/* Mismo motivo en el toggle de activar/pausar un webhook (vive en AppLayout) */
+.wb-dock .s-toggle input:checked + .s-toggle-track { background: var(--wb-accent-solid); }
+.wb-dock .s-toggle-track { background: rgba(255,255,255,0.16); }
+
+/* Badge de tipo de clave: antes venía con un `style=` inline (lila claro) que
+   ganaba a cualquier clase y era ilegible sobre navy. Ahora son clases reales. */
+.key-type { font-size: 0.54rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 3px 7px; border-radius: 100px; flex-shrink: 0; }
+.key-type.pub { color: #4f46e5; background: #e0e7ff; }
+.key-type.sec { color: #475569; background: #f1f5f9; }
+.wb-dock .key-type.pub { color: #a5b4fc; background: rgba(99,102,241,0.2); }
+.wb-dock .key-type.sec { color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.09); }
 
 @media (max-width: 640px) {
     .wb-tab { padding: 0 0.6rem; font-size: 0.74rem; }
     .wb-body { padding: 1.1rem 1rem 1.6rem; padding-bottom: calc(1.6rem + env(safe-area-inset-bottom)); }
     .wb-bar { padding-bottom: env(safe-area-inset-bottom); height: calc(46px + env(safe-area-inset-bottom)); }
 }
-
-/* ════════ Resumen (contenido nuevo, sin reusar developers.css) ════════ */
-.wb-resumen-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.9rem; margin-bottom: 1.6rem; }
-.wb-resumen-tile { background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 14px; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 4px; }
-.wb-resumen-tile .val { font-size: 1.5rem; color: var(--color-text); font-variant-numeric: tabular-nums; }
-.wb-resumen-tile .val.bad { color: var(--color-danger); }
-.wb-resumen-tile .lbl { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--color-text-muted); }
-.wb-resumen-links { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-top: 1.4rem; }
-.wb-resumen-links a { font-size: 0.8rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; }
-.wb-resumen-links a:hover { text-decoration: underline; }
-@media (max-width: 640px) { .wb-resumen-grid { grid-template-columns: repeat(2, 1fr); } }
-
-.wb-sinacceso { color: var(--color-text-muted); font-size: 0.86rem; padding: 2rem 0; text-align: center; }

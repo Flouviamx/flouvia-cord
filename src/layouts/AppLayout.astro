@@ -478,8 +478,12 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     .s-toggle-text { font-size: 0.82rem; color: var(--color-text); font-weight: 500; }
 
     /* ── Sidebar (espejo de la topbar): vidrio BLANCO en claro, navy en oscuro.
-           Todo el contenido de la sidebar lee estas variables, así que cambia de tema
-           sin duplicar reglas. Los valores light van aquí; el bloque dark los reescribe. */
+       Todo el contenido de la sidebar lee estas variables, así que cambia de tema
+       sin duplicar reglas. Los valores light van aquí; el bloque dark los reescribe.
+       ⚠️ Este `:root` es OBLIGATORIO: antes estas declaraciones quedaban huérfanas
+       fuera de todo selector (el `:root` de arriba cerraba antes) y el parser CSS
+       las descartaba junto con la regla `html.sb-collapsed` que venía después. */
+    :root {
         --sb-bg: linear-gradient(180deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.6) 100%);
         --sb-border: rgba(255,255,255,0.6);
         --sb-shadow:
@@ -628,6 +632,10 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         letter-spacing: -0.03em;
         font-variant-numeric: tabular-nums;
     }
+    /* Los sufijos de unidad van como <em> dentro de un número (`{n}<em>ms</em>`).
+       `.editorial` se pone font-style:normal a sí misma pero NO a sus hijos, así que
+       el <em> heredaba la itálica del navegador y el número se veía torcido. */
+    .editorial em { font-style: normal; }
 
     /* ── Entrada de página (CSS, no GSAP) ── */
     @keyframes app-fadein {

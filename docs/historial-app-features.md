@@ -6,31 +6,91 @@
 
 ---
 
+✅ **Cord Workbench v2 — navy Apple, barra abajo, gráficas y wizard full-screen (jul 2026)** —
+   André reportó que el dock seguía "sin CSS", con números raros, que no bajaba, que la barra
+   estaba arriba y que "agregar endpoint no sirve". La pasada anterior (ver entrada siguiente) lo
+   había empeorado. Investigación contra el BUILD compilado → **tres causas raíz**, ninguna
+   estética:
+   • ⚠️ **BUG 1 — el CSS del fragmento NUNCA se emitía.** Astro coloca el único
+     `maybeRenderHead()` antes del primer elemento HTML del template; en `[tab].astro` ese
+     elemento vivía dentro de `{!hasAccess && (...)}`, rama que no se renderiza para un usuario
+     CON acceso → la respuesta de `/app/wb/<tab>` salía con **cero `<link>`**. `developers.css`
+     nunca cargó; el "reskin" que la pasada anterior eliminó era su ÚNICA fuente de estilo.
+     **Fix:** `developers.css` se importa ahora desde `DevWorkbench.astro` (vive dentro de
+     AppLayout → Rollup lo fusiona en `AppLayout.*.css`, que sí está en el `<head>`), y el
+     fragmento tiene un `<div class="wb-frag">` raíz **incondicional** para que el
+     head-instruction quede en un lugar estable. `/app/ajustes/mcp` conserva su propio import.
+   • ⚠️ **BUG 2 — los `<script>` del fragmento no se re-ejecutaban.** `renderScript()` emite
+     `<script type="module" src=...>`, y un módulo ES con el mismo src corre **una sola vez por
+     documento**: al volver a una pestaña cacheada, `reviveScripts()` re-inyectaba el mismo src,
+     el navegador lo ignoraba y **todos los botones quedaban muertos** (de ahí "agregar endpoint
+     no sirve": funcionaba la primera vez, no la segunda). **Fix estructural:** TODO el JS se
+     movió al controlador único de `DevWorkbench.astro`, que **delega por `data-wb-act`** sobre
+     `.wb-body`; el fragmento es HTML puro y `reviveScripts()` desapareció. Primera carga,
+     pestaña cacheada y `refresh()` son ahora el mismo code path. Los modales también se movieron
+     al chasis para que un `innerHTML =` no pueda arrancarlos estando abiertos. i18n vía
+     `define:vars` (`window.CORD_WB_I18N`) en vez de ~40 `data-i18n-*`.
+     **Verificación decisiva:** `ls dist/client/_astro/_tab_*` debe salir **vacío**.
+   • ⚠️ **BUG 3 (colateral, pre-existente en `AppLayout.astro`)** — el bloque `:root` cerraba en
+     la línea 469 y dejaba los ~37 tokens `--sb-*` huérfanos fuera de todo selector: el parser
+     hacía error-recovery y descartaba **los `--sb-*` en modo claro Y la regla
+     `html.sb-collapsed`**. Corregido con un `:root {` explícito. Impacto medido antes/después:
+     solo restaura el fondo del badge del sidebar (estaba invisible); cero regresiones.
+   • **Layout invertido:** `.wb-panel` va primero en el DOM y `.wb-bar` al final — como `.wb-dock`
+     es `fixed bottom:0`, la barra queda pegada al borde inferior y el panel se expande por encima
+     (patrón del Workbench de Stripe). **Drag real:** el grabber achica el panel y por debajo de
+     150px lo colapsa; arrastrar la barra hacia arriba lo reabre; ambos con pointer capture y
+     flechas de teclado. `--wb-h` solo se escribe al soltar (escribirlo en cada `pointermove`
+     encolaba una transición de 0.32s por frame en `.toast-stack`/`.onb`).
+   • **Navy SIEMPRE vía scope de tokens:** en vez de ~100 overrides, `.wb-dock, .wb-modal`
+     **redefine los tokens de tema** (`--surface`, `--color-border`, `--color-text`…) y la cascada
+     vuelve navy todo `developers.css` sin tocarlo (`/app/ajustes/mcp` sigue en claro — verificado
+     que el scope no se filtra). Solo quedan overrides para los literales hardcodeados que ningún
+     token alcanza (fondos de `<code>`, ámbar, azul GET, bloques de terminal, botones copiar).
+     ⚠️ `--color-blue-deep` tiene DOS roles (acento de texto vs. fondo sólido con texto blanco):
+     como azul claro el acento se lee, pero los botones sólidos quedarían en ~2.2:1 → token aparte
+     `--wb-accent-solid`. **No fusionarlos.**
+   • **Resumen con gráficas** (`getDevOverview(range)` nuevo en `queries.ts`): serie temporal de
+     `api_requests` en barras apiladas éxito/error, distribución 4xx/5xx + top de rutas que fallan,
+     panel de Salud (endpoints caídos, cola y reintentos vencidos del outbox), entregas de eventos
+     y Recursos para desarrolladores. Selector 24h/7d/14d por **SSR** (`?range=`, la clave del
+     caché pasa a `tab|range`). 4 queries en un batch, **sin migración** (usa los índices que ya
+     existen). ⚠️ Todo el cálculo de buckets va en **UTC** (`getUTC*`/`setUTC*`) para que las
+     claves coincidan con el `date_trunc` de Postgres (sesión en GMT); con horas locales cada
+     bucket erraría por el offset del runtime. Huecos rellenados en JS (el repo no usa
+     `generate_series`).
+   • **Wizard full-screen** para agregar/editar endpoint (pasos "Elegir eventos" → "Configurar
+     destino", eventos agrupados por familia). ⚠️ Es un `<div>` en `z-index:860`, **NO** un
+     `<dialog showModal()>`: un dialog se promueve al *top layer* y taparía a `window.cordConfirm`
+     (un div en z-index 1000), dejándolo inutilizable. Incluye guard de Escape (sin él un solo Esc
+     cerraba modal Y dock), `inert` en el fondo, scroll lock y restauración de foco.
+   • **4 bugs propios encontrados y corregidos durante la verificación** (ninguno habría salido
+     sin probar): (1) colisión de nombres — las barras de la gráfica se llamaban `.wb-bar`, que ya
+     era la barra del dock, y la pisaban → renombradas a `.wb-chart-bar`/`.wb-chart-seg`;
+     (2) `.wb-panel` tiene `display:flex`, que **anula el atributo `hidden`** → `closeDock()` no
+     ocultaba nada; corregido con `.wb-panel[hidden]{display:none}` (regla ya documentada del
+     proyecto); (3) el `click` que el navegador dispara al soltar un arrastre deshacía el drag →
+     bandera `suppressClick`; (4) `.s-field`/`.s-input` solo existen en el `<style>` de
+     `SettingsShell.astro`, así que los campos del wizard salían sin estilo → definidas acotadas
+     al workbench.
+   • **Verificado:** build limpio; `_tab_*` vacío y `renderScript`=0 en el chunk SSR; las 5
+     queries corridas contra Neon real con las claves de Postgres cuadrando 2/2 contra el relleno
+     en JS y los totales contra un conteo directo; **17/17 checks funcionales con Playwright** y
+     el JS REAL compilado (incluye el escenario exacto del usuario: abrir wizard → cambiar de
+     pestaña → volver desde caché → abrir otra vez); las 193 claves i18n usadas tienen par ES/EN.
+
 ✅ **Cord Workbench (dock de Desarrolladores) — rediseño Apple + redimensionable (jul 2026)** —
-   André reportó con captura que el dock de "Desarrolladores" (`src/components/app/DevWorkbench.astro`,
-   ver `/app/wb/[tab]`) se veía roto: navy oscuro fijo que no seguía la estética del resto de la
-   app, y sin forma de achicarlo ("no puedo ni bajar la barra"). Causa raíz encontrada: el panel
-   tenía una altura fija `62vh` (más los 46px de la barra) sin ningún límite relativo al viewport
-   real — en una ventana de navegador con poca altura efectiva (barras de bookmarks, varias
-   pestañas), esa altura cubría casi toda la pantalla y se montaba encima de la topbar, sin ningún
-   control para reducirla (solo abrir/cerrar).
-   • **`src/styles/workbench.css` reescrito a los tokens reales del tema** (`--surface`,
-     `--color-border`, `--color-text`, `--color-blue-deep`, mismo `blur(24px) saturate(1.4)` que
-     `.topbar`/`.sidebar`) — se eliminó el bloque de "reskin oscuro" que forzaba navy/teal fijo en
-     TODAS las clases reusadas de `developers.css` (`.dev-card`, `.key-table`, `.wh-*`…): esas
-     clases ya leían tokens de tema correctamente, el override era innecesario y es lo que
-     mantenía el dock permanentemente oscuro sin importar el modo claro/oscuro de la app.
-   • **Altura acotada al viewport + redimensionable a mano:** `DevWorkbench.astro` calcula
-     `maxPanelH()`/`defaultPanelH()` desde `window.innerHeight` (nunca más que
-     `innerHeight - 200px`, mínimo 220px) y agrega un **handle de arrastre** (`#wbDrag`, grip tipo
-     iOS sheet) con soporte de pointer events + flechas de teclado (accesible), persistido junto al
-     resto del estado en `localStorage`. Se re-clampa en cada `resize` de ventana.
-   • Radio de esquinas superiores + sombra únicos en `.wb-dock` (contenedor, `overflow:hidden`) en
-     vez de duplicados en bar y panel por separado (evitaba el doble-shadow visual en la unión).
-   • Los 2 links de `/openapi.yaml`/`llms.txt` y el mensaje de éxito del prompt de IA en
-     `src/pages/app/wb/[tab].astro` usaban colores hardcodeados del tema navy viejo (`#7fd1c1`
-     teal, `#6ee7b7` mint) — corregidos a `var(--color-blue-deep)`/`var(--color-ok)`.
-   • Verificado con `npm run build` limpio.
+   ⚠️ **SUPERADA por la entrada de arriba.** Esta pasada asumió que `developers.css` daba el
+   estilo base y eliminó el bloque de "reskin oscuro" de `workbench.css` — pero ese CSS **nunca
+   cargaba** (BUG 1 de arriba), así que el reskin era la única fuente de estilo y al quitarlo el
+   dock quedó sin formato. El enfoque de "seguir el tema claro/oscuro de la app" también se
+   revirtió: André lo quiere navy siempre. Lo que SÍ sobrevive de aquí: el diagnóstico de la
+   altura fija `62vh` sin límite de viewport, y el handle de arrastre (rehecho con colapso).
+   • Altura acotada al viewport (`innerHeight - 200px`, mínimo 220px) + handle de arrastre
+     `#wbDrag` con pointer events y flechas de teclado, persistido en `localStorage`.
+   • Los 2 links de `/openapi.yaml`/`llms.txt` y el mensaje de éxito del prompt de IA usaban
+     colores hardcodeados del tema navy viejo (`#7fd1c1` teal, `#6ee7b7` mint) — corregidos a
+     tokens.
 
 ✅ **Exportar catálogo/clientes a CSV — cableado real (jul 2026)** — en Ajustes › Datos y
    privacidad, el botón "Catálogo y clientes (CSV)" era un placeholder estático ("Próximamente",

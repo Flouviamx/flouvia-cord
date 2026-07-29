@@ -98,7 +98,7 @@
 .dev-stat-box, .act-stat { background: var(--surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 3px; }
 .dev-stat-value, .act-stat-n { font-size: 1.5rem; color: var(--color-blue-deep); line-height: 1; }
 .dev-stat-value.bad, .act-stat-n.bad { color: var(--color-danger); }
-.dev-stat-value em, .act-stat-n em { font-style: normal; font-size: 0.8rem; color: var(--color-text-muted); margin-left: 2px; }
+.dev-stat-value em, .act-stat-n em, .wb-resumen-tile .val em { font-style: normal; font-size: 0.8rem; color: var(--color-text-muted); margin-left: 2px; }
 .dev-stat-label, .act-stat-l { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; color: #99a2af; }
 .act-list { display: flex; flex-direction: column; }
 .act-row { display: grid; grid-template-columns: 48px 1fr auto auto auto; align-items: center; gap: 0.7rem; padding: 0.6rem 0.2rem; border-bottom: 1px solid var(--color-border); font-size: 0.78rem; }
