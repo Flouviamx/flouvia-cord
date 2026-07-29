@@ -423,6 +423,7 @@ const WBI18N = {
 
         let isMax = false;
         let utc = false;
+        let searchT: any = null;   // debounce del buscador de Registros
         // Filtros por pestaña; viajan como query params al fragmento (mismo patrón
         // que `range`), así la aritmética y el escape viven en el servidor.
         const filtros: Record<string, Record<string, string>> = { registros: {}, eventos: {} };
@@ -541,6 +542,9 @@ const WBI18N = {
         const cacheKey = (tabId: string) => tabId + tabQuery(tabId);
 
         async function loadTab(tabId: string, force = false, range?: string) {
+            // Un cambio de pestaña cancela una búsqueda en vuelo: si no, su debounce
+            // dispararía después y pisaría la pestaña recién abierta.
+            if (tabId !== 'registros') clearTimeout(searchT);
             if (range) currentRange = range;
             setActiveTabUI(tabId);
             currentTab = tabId;
@@ -776,14 +780,37 @@ const WBI18N = {
             [panel, bar, document.querySelector('.app-content')].forEach((n) => n && ((n as HTMLElement).inert = false));
             lastFocus?.focus();
         }
+        // ── Teclado ─────────────────────────────────────────────────────────────
         // Escape en cascada: menú → modal → maximizado → dock. Cada nivel hace
         // `return`; sin eso un solo Esc cerraría varias capas de golpe.
+        //
+        // W / ⇧W son los atajos que anuncia el menú de opciones. Mismos guards que
+        // los atajos globales de AppLayout (`typing()`, sin modificadores, Cmd+K
+        // cerrado) para no dispararse mientras el usuario escribe en un campo — y
+        // uno extra: nunca con un modal del Workbench abierto.
+        const typing = (el: any) => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable);
+
         document.addEventListener('keydown', (e) => {
-            if (e.key !== 'Escape') return;
-            if (optsMenu && !optsMenu.hidden) { closeOpts(); return; }
-            if (openModalEl) { closeModal(); return; }
-            if (isMax) { toggleMax(false); return; }
-            if (isOpen) closeDock();
+            if (e.key === 'Escape') {
+                if (optsMenu && !optsMenu.hidden) { closeOpts(); return; }
+                if (openModalEl) { closeModal(); return; }
+                if (isMax) { toggleMax(false); return; }
+                if (isOpen) closeDock();
+                return;
+            }
+            if (e.metaKey || e.ctrlKey || e.altKey) return;
+            if (typing(e.target)) return;
+            if (openModalEl) return;                                   // wizard/modal abierto
+            if (!isDevOn()) return;                                    // modo dev apagado
+            // Ojo con `?.hidden`: si #cmdk no existiera, `undefined` haría que
+            // `!undefined` fuera true y los atajos morirían en silencio. La
+            // condición real es "existe Y está abierto".
+            const cmdk = document.getElementById('cmdk') as HTMLElement | null;
+            if (cmdk && !cmdk.hidden) return;                          // Cmd+K abierto
+            if (e.key.toLowerCase() !== 'w') return;
+            e.preventDefault();
+            if (e.shiftKey) toggleMax();                               // ⇧W → pantalla completa
+            else isOpen ? closeDock() : openDock();                    // W  → abrir/cerrar
         });
 
         const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
@@ -947,9 +974,10 @@ const WBI18N = {
                         <span class="del-dot ${x.ok ? 'ok' : 'err'}"></span>
                         <span class="del-ev">${esc(x.evento)}${x.intento > 1 ? `<span class="del-try"> ${esc((I18N.whIntento || '').replace('{n}', x.intento))}</span>` : ''}${x.prueba ? `<i class="del-test">${esc(I18N.whPruebaTag)}</i>` : ''}</span>
                         <span class="del-status ${x.ok ? 'ok' : 'err'}">${esc(x.status || x.error || I18N.whFallo)}</span>
-                        <span class="del-meta">${x.ms != null ? esc(x.ms) + 'ms' : ''} · ${esc(x.cuando)}</span>
+                        <span class="del-meta">${x.ms != null ? esc(x.ms) + 'ms' : ''} · <span data-ts="${esc(x.ts || '')}"></span></span>
                         <button type="button" class="del-replay" data-wb-act="wh-replay" data-id="${esc(x.id)}" data-hook="${esc(id)}">${esc(I18N.whReintentar)}</button>
                     </div>`).join('');
+                paintDates(box);   // el HTML se generó aquí, sus data-ts aún no tienen texto
             } catch { box.innerHTML = `<span class="wh-del-empty">${I18N.whNoCargoLog}</span>`; }
         }
 
@@ -975,9 +1003,10 @@ const WBI18N = {
                                     <code class="act-path">${esc(r.ruta)}</code>
                                     <span class="act-status ${r.status >= 400 ? 'bad' : 'ok'}">${esc(r.status)}</span>
                                     <span class="act-lat">${r.ms != null ? esc(r.ms) + 'ms' : '—'}</span>
-                                    <span class="act-when">${esc(r.cuando)}${r.mode === 'test' ? ' · test' : ''}</span>
+                                    <span class="act-when" data-ts="${esc(r.ts || '')}"></span>
                                 </div>`).join('')
                             : `<p class="dev-empty">${I18N.sinActividad}</p>`;
+                        paintDates(list as HTMLElement);   // las filas nuevas traen data-ts vacío
                     }
                 }
             } catch {}
@@ -1130,12 +1159,14 @@ const WBI18N = {
 
         // Búsqueda por ruta en Registros: debounce para no pedir el fragmento en
         // cada tecla, y Enter dispara de inmediato.
-        let searchT: any = null;
         document.addEventListener('input', (ev) => {
             const el = (ev.target as HTMLElement)?.closest<HTMLInputElement>('[data-wb-act="log-search"]');
             if (!el) return;
             clearTimeout(searchT);
             searchT = setTimeout(() => {
+                // Guard: si el usuario ya se cambió de pestaña mientras corría el
+                // debounce, no pisar el contenido que está viendo ahora.
+                if (currentTab !== 'registros') return;
                 filtros.registros.q = el.value.trim();
                 loadTab('registros');
             }, 400);

@@ -6,62 +6,46 @@
 
 ---
 
-✅ **Cord Workbench v3 — pantalla completa, menú de opciones, pestañas Eventos y Salud (jul 2026)** —
-   continuación directa de v2 (entrada siguiente). André pidió, con capturas del Workbench de
-   Stripe: botón de pantalla completa junto al de cerrar, el menú de 3 puntitos, pestañas de
-   Eventos y Salud, y mejorar Registros.
-   • **Pantalla completa** (`.wb-dock.is-max`): el panel pasa a `100dvh` con `top:0`, y el grabber
-     y la barra se ocultan (en maximizado sobran). Atajo por el botón ⤢ y salida con Escape.
-     Persistido en `localStorage` junto al resto del estado. ⚠️ `--wb-h` se queda en el alto de la
-     BARRA cuando está maximizado: mover los toasts al tope de la pantalla no aporta nada y su
-     z-index (900 > 820) ya los deja encima. `--wb-bar-h` (padding de `.app-content`) no cambia.
-   • **Menú ⋯ de opciones**, con toggle "Mostrar las horas en UTC", atajos de teclado y "Acerca de"
-     con links a Documentación/OpenAPI. **Sin selector de tema a propósito** (decisión de André:
-     el dock es navy siempre; agregarlo obligaría a mantener las dos superficies otra vez).
-     ⚠️ El Escape ahora va **en cascada**: menú → modal → maximizado → dock, cada nivel con su
-     `return`; sin eso un solo Esc cerraría varias capas de golpe.
-   • **Toggle UTC sin round-trip:** el SSR emite el ISO crudo en `data-ts` y el formateo ocurre en
-     el cliente (`fmtTs`), así el cambio es instantáneo y no hay que volver a pedir el fragmento.
-     Es además la única vía razonable: `fmtRelative` del servidor (`queries.ts:41`) es privada al
-     módulo y nunca incluye el año ni la zona.
-   • **Pestaña "Eventos" nueva** (`getDevEvents(filtro)`): mezcla DOS fuentes en una línea de
-     tiempo, con chips [Todos | Enviados | Internos] — decisión de André, porque `webhook_events`
-     solo se llena si hay endpoints configurados y la pestaña saldría vacía para la mayoría.
-     (a) **enviados** = `webhook_events` **agrupado por `event_id`** (hay una fila por
-     evento × endpoint suscrito, todas con el mismo `event_id`; sin agrupar, un evento entregado a
-     3 endpoints se vería como 3 eventos). Estado del grupo: `pending` si alguno sigue en cola,
-     `parcial` si mezcla entregados y fallidos, si no el que domine. (b) **internos** = la tabla
-     `eventos` (timeline de negocio) con el folio de la cotización. Dos queries + merge en JS, no
-     `union all`: los shapes son muy distintos y castear en SQL saldría más frágil.
-     ⚠️ **`eventos.detalle` NO se expone** — es texto libre que incluye mensajes de chat del
-     cliente, y esta es una vista técnica: mostrarlo filtraría conversaciones a una pantalla de
-     developers. Solo viajan el tipo y el folio.
-   • **Pestaña "Salud" nueva:** estado general, endpoints con su racha de fallos / desactivados
-     (`getWebhooks()`), cola del outbox (pendientes / reintentos vencidos / agotados) y
-     distribución de errores. Sin query nueva — reusa `getDevOverview().wh`. `FAIL_WARN_THRESHOLD`
-     y `FAIL_DISABLE_THRESHOLD` se **exportaron** desde `webhook-delivery.ts` para no duplicar los
-     números mágicos en la UI.
-   • **Registros maestro-detalle** (`getApiLogs(filtros)` nuevo): búsqueda por ruta con debounce,
-     chips de método y de clase de status (2xx/4xx/5xx), y panel de detalle a la derecha. Los
-     filtros viajan como query params al fragmento (mismo patrón que `?range=`) y entran en la
-     clave de caché, así ir y volver entre filtros es instantáneo. El **detalle se resuelve 100%
-     en el cliente** leyendo los `data-*` de la fila ya renderizada: cero round-trip.
-     ⚠️ **`api_requests` NO guarda cuerpos de petición/respuesta** (solo `metodo`, `ruta`,
-     `status`, `duracion_ms`, `mode`, `ip`, `key_id`) — el detalle es de metadatos y la vista lo
-     dice explícitamente. Decidido con André: guardarlos implicaría persistir datos de clientes
-     (RFC, correos, montos) en cada llamada, con su propia política de retención.
-     El escape de comodines (`%`/`_`) en la búsqueda se hace antes del `ilike`, para que buscar
-     literalmente "50%" no se comporte como patrón.
-   • **Verificado:** build limpio; `_tab_*` sigue vacío (el fragmento nunca vuelve a emitir
-     scripts); las queries nuevas corridas contra Neon real — los filtros discriminan sobre los
-     datos verdaderos (GET→0, POST→9, 4xx→0, comodín escapado→0 en vez de 9) y los eventos
-     internos devuelven 60 filas con folio; **43/43 checks con Playwright** sobre el JS REAL
-     compilado (26 nuevos + los 17 de regresión de v2); 245 claves i18n con par ES/EN.
-   ⚠️ **Regla para el harness de verificación** (mordió dos veces): al extraer el markup del
-     componente con regex, el patrón que cierra tags self-closing necesita `\b`
-     (`/<(p|div|span)\b.../`) — sin él, `<polyline/>` matchea como `<p>` y **rompe los SVG**
-     (el icono de pantalla completa salía con una sola esquina de cuatro). Y los comentarios
-     `{/* */}` hay que quitarlos: Astro los elimina al compilar, el harness no.
+✅ **Workbench v3.1 — atajos reales, UTC en todas las pestañas, y desbloqueo de 2FA (jul 2026)** —
+   André reportó que "los atajos de teclado y lo del horario no sirven". Ambos eran bugs míos de
+   v3: **anuncié funcionalidad que no implementé**.
+   • **Los atajos `W` / `⇧W` NO existían.** El menú ⋯ los listaba pero nunca se escribió el
+     handler — solo `Escape` estaba implementado. Ahora sí: `W` abre/cierra el dock y `⇧W` alterna
+     pantalla completa, con los mismos guards que los atajos globales de `AppLayout` (`typing()`
+     para no dispararse dentro de un input, sin modificadores, Cmd+K cerrado) más dos propios:
+     nunca con un modal del Workbench abierto ni con el modo dev apagado.
+     ⚠️ **Bug de robustez encontrado al probarlo:** el guard de Cmd+K era
+     `if (!document.getElementById('cmdk')?.hidden) return;` — si `#cmdk` no existiera,
+     `undefined` hace que `!undefined` sea `true` y **todos los atajos mueren en silencio**.
+     Reescrito a la condición real: "existe Y está abierto".
+   • **El toggle "horas en UTC" solo alcanzaba 2 de 5 pestañas.** El formateo en cliente depende
+     de que el SSR emita el ISO crudo en `data-ts`, y solo Registros y Eventos lo hacían; Resumen,
+     Webhooks y el log de entregas mostraban texto ya formateado por `fmtRelative` del servidor,
+     así que el toggle no los tocaba (y Resumen es la pestaña por defecto — de ahí el "no sirve").
+     Se expuso el ISO en `getApiActivity()` (`recent[].ts`), `getWebhooks()` (`ultimaEntregaTs`) y
+     `getWebhookDeliveries()` (`ts`), y los dos renders que ocurren en cliente (log de entregas y
+     "Actualizar" de la actividad) ahora emiten `data-ts` y llaman `paintDates()`.
+   • ⚠️ **Bug real destapado por el test:** el debounce de 400 ms del buscador de Registros seguía
+     vivo al cambiar de pestaña — al dispararse, `loadTab('registros')` **pisaba el contenido de
+     la pestaña que el usuario acababa de abrir**. Corregido con dos guardas: `loadTab` cancela el
+     timer cuando el destino no es Registros, y el callback verifica `currentTab` antes de cargar.
+   • **Icono de rayo del banner de "Entorno de prueba" eliminado** a petición de André
+     (`.test-banner-icon` en `AppLayout.astro`, markup + CSS). El resto del banner ámbar sigue igual.
+   • ⚠️ **Pantalla en blanco al entrar con `hola@flouvia.com` — causa raíz encontrada:** su org
+     "Mi negocio" tenía `require_2fa = true` y la cuenta **no** tiene 2FA en Clerk
+     (`two_factor_enabled: false`, verificado contra la API real), así que el gate de
+     `AppLayout.astro:33` la redirigía a `/app/ajustes/cuenta?require2fa=1` en TODA página de
+     `/app`. Explica por qué solo pasaba con ese correo: era la única org con el flag activo. Se
+     desactivó el flag SOLO en esa org (update acotado por id, con estado verificado antes y
+     después) y se dejaron sus 3 membresías como `owner`/`activo` con el jsonb de permisos
+     completo. Nota: `memberCan()` ya devuelve `true` para cualquier `rol==='owner'`, así que los
+     permisos nunca fueron el bloqueo — el jsonb se llenó para que la UI de Equipo los muestre
+     marcados. ⚠️ Si se vuelve a activar "Exigir 2FA al equipo" sin tener 2FA configurado, el
+     bloqueo se repite; el toggle de Ajustes › Seguridad debería avisarlo (pendiente).
+   • **Verificado:** build limpio, `_tab_*` sigue vacío, **71/71 checks con Playwright** sobre el
+     JS real compilado (17+26+14 de regresión + 14 nuevos que cubren `W`, `⇧W`, el guard de
+     escritura, el guard de modal, y que el toggle UTC cambie las fechas en las 3 pestañas con
+     fecha), 295 claves i18n con par ES/EN.
 
 ✅ **Cord Workbench v3 — pantalla completa, menú de opciones, pestañas Eventos y Salud (jul 2026)** —
    continuación directa de v2 (entrada siguiente). André pidió, con capturas del Workbench de

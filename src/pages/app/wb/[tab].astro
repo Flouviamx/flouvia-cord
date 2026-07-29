@@ -220,7 +220,7 @@ const saludOk = caidos.length === 0 && (OV?.wh.fallidos ?? 0) === 0 && (OV?.wh.a
                             <code class="act-path">{r.ruta}</code>
                             <span class={`act-status ${r.status >= 400 ? 'bad' : 'ok'}`}>{r.status}</span>
                             <span class="act-lat">{r.ms != null ? `${r.ms}ms` : '—'}</span>
-                            <span class="act-when">{r.cuando}</span>
+                            <span class="act-when" data-ts={r.ts}></span>
                         </div>
                     ))}
                 </div>
@@ -642,7 +642,7 @@ const saludOk = caidos.length === 0 && (OV?.wh.fallidos ?? 0) === 0 && (OV?.wh.a
                                     {w.ultimaEntrega && (
                                         <i class:list={['wh-stat', { ok: w.lastStatus && w.lastStatus < 400, err: !w.lastStatus || w.lastStatus >= 400 }]}
                                             title={w.lastError ? `${t(L, 'set.wh.ultimo_error_pre')} ${w.lastError}` : ''}>
-                                            {t(L, 'set.wh.ultima_pre')} {w.ultimaEntrega} {w.lastStatus ? `(${w.lastStatus})` : (w.lastError || t(L, 'set.wh.fallo'))}
+                                            {t(L, 'set.wh.ultima_pre')} <span data-ts={w.ultimaEntregaTs}></span> {w.lastStatus ? `(${w.lastStatus})` : (w.lastError || t(L, 'set.wh.fallo'))}
                                         </i>
                                     )}
                                 </span>

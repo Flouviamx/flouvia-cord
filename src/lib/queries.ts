@@ -168,6 +168,9 @@ export async function getWebhooks() {
         lastStatus: w.last_status as number | null,
         lastError: (w.last_error as string) ?? null,
         ultimaEntrega: w.last_delivery_at ? fmtRelative(w.last_delivery_at) : null,
+        // ISO crudo: el Workbench formatea las fechas en el cliente para que el
+        // toggle "horas en UTC" sea instantáneo (fmtRelative no expone la zona).
+        ultimaEntregaTs: w.last_delivery_at ? new Date(w.last_delivery_at as string).toISOString() : null,
         fallosConsecutivos: (w.fallos_consecutivos as number) ?? 0,
         deshabilitadoMotivo: (w.deshabilitado_motivo as string) ?? null,
         deshabilitadoEn: w.deshabilitado_at ? fmtRelative(w.deshabilitado_at) : null,
@@ -201,6 +204,7 @@ export async function getWebhookDeliveries(webhookId: string) {
         ms: (d.duracion_ms as number) ?? null,
         response: ((d.response_body as string) ?? '').slice(0, 600),
         cuando: fmtRelative(d.created_at),
+        ts: new Date(d.created_at as string).toISOString(),
     }));
 }
 
@@ -234,6 +238,7 @@ export async function getApiActivity() {
             mode: (r.mode as string) ?? 'live',
             key: (r.key_nombre as string) ?? null,
             cuando: fmtRelative(r.created_at),
+            ts: new Date(r.created_at as string).toISOString(),
         })),
         total24: (stats.total as number) ?? 0,
         errores24: (stats.errores as number) ?? 0,

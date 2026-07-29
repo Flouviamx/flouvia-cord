@@ -151,7 +151,6 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
             <div class="app-main">
                 {isTestEnv && (
                     <div class="test-banner" role="status">
-                        <svg class="test-banner-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 12h4l-1.5 8L17 9h-4.5z"/></svg>
                         <span class="test-banner-badge">{t(L, 'layout.test.badge')}</span>
                         <span class="test-banner-desc">{t(L, 'layout.test.desc')}</span>
                         <div class="test-banner-actions">
@@ -1296,7 +1295,6 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         position: sticky; top: 0.55rem; z-index: 60;
     }
     .test-banner + .topbar { margin-top: 0.75rem; top: 3.6rem; }
-    .test-banner-icon { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.95; }
     .test-banner-badge {
         font-size: 0.82rem; font-weight: 600; letter-spacing: -0.005em;
         white-space: nowrap;
