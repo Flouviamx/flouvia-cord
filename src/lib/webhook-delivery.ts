@@ -37,8 +37,10 @@ const OUTBOUND_LIMIT_PER_MIN = 120;
 // sea porque agotó los 11 intentos, o porque un oneShot falló en su único
 // intento) — NUNCA intentos individuales, para que un mal minuto no desactive
 // un endpoint sano. Un 'succeeded' resetea la racha a 0.
-const FAIL_WARN_THRESHOLD = 3;
-const FAIL_DISABLE_THRESHOLD = 5;
+// Exportados: la pestaña "Salud" del Workbench los muestra para explicar por qué
+// un endpoint está en riesgo o desactivado, en vez de duplicar los números.
+export const FAIL_WARN_THRESHOLD = 3;
+export const FAIL_DISABLE_THRESHOLD = 5;
 const WARN_THROTTLE_MS = 24 * 60 * 60 * 1000; // 1 aviso por endpoint cada 24h
 
 // Calendario de reintentos tipo Stripe: 11 intentos en total (1 inmediato + 10

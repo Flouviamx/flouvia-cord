@@ -6,6 +6,63 @@
 
 ---
 
+✅ **Cord Workbench v3 — pantalla completa, menú de opciones, pestañas Eventos y Salud (jul 2026)** —
+   continuación directa de v2 (entrada siguiente). André pidió, con capturas del Workbench de
+   Stripe: botón de pantalla completa junto al de cerrar, el menú de 3 puntitos, pestañas de
+   Eventos y Salud, y mejorar Registros.
+   • **Pantalla completa** (`.wb-dock.is-max`): el panel pasa a `100dvh` con `top:0`, y el grabber
+     y la barra se ocultan (en maximizado sobran). Atajo por el botón ⤢ y salida con Escape.
+     Persistido en `localStorage` junto al resto del estado. ⚠️ `--wb-h` se queda en el alto de la
+     BARRA cuando está maximizado: mover los toasts al tope de la pantalla no aporta nada y su
+     z-index (900 > 820) ya los deja encima. `--wb-bar-h` (padding de `.app-content`) no cambia.
+   • **Menú ⋯ de opciones**, con toggle "Mostrar las horas en UTC", atajos de teclado y "Acerca de"
+     con links a Documentación/OpenAPI. **Sin selector de tema a propósito** (decisión de André:
+     el dock es navy siempre; agregarlo obligaría a mantener las dos superficies otra vez).
+     ⚠️ El Escape ahora va **en cascada**: menú → modal → maximizado → dock, cada nivel con su
+     `return`; sin eso un solo Esc cerraría varias capas de golpe.
+   • **Toggle UTC sin round-trip:** el SSR emite el ISO crudo en `data-ts` y el formateo ocurre en
+     el cliente (`fmtTs`), así el cambio es instantáneo y no hay que volver a pedir el fragmento.
+     Es además la única vía razonable: `fmtRelative` del servidor (`queries.ts:41`) es privada al
+     módulo y nunca incluye el año ni la zona.
+   • **Pestaña "Eventos" nueva** (`getDevEvents(filtro)`): mezcla DOS fuentes en una línea de
+     tiempo, con chips [Todos | Enviados | Internos] — decisión de André, porque `webhook_events`
+     solo se llena si hay endpoints configurados y la pestaña saldría vacía para la mayoría.
+     (a) **enviados** = `webhook_events` **agrupado por `event_id`** (hay una fila por
+     evento × endpoint suscrito, todas con el mismo `event_id`; sin agrupar, un evento entregado a
+     3 endpoints se vería como 3 eventos). Estado del grupo: `pending` si alguno sigue en cola,
+     `parcial` si mezcla entregados y fallidos, si no el que domine. (b) **internos** = la tabla
+     `eventos` (timeline de negocio) con el folio de la cotización. Dos queries + merge en JS, no
+     `union all`: los shapes son muy distintos y castear en SQL saldría más frágil.
+     ⚠️ **`eventos.detalle` NO se expone** — es texto libre que incluye mensajes de chat del
+     cliente, y esta es una vista técnica: mostrarlo filtraría conversaciones a una pantalla de
+     developers. Solo viajan el tipo y el folio.
+   • **Pestaña "Salud" nueva:** estado general, endpoints con su racha de fallos / desactivados
+     (`getWebhooks()`), cola del outbox (pendientes / reintentos vencidos / agotados) y
+     distribución de errores. Sin query nueva — reusa `getDevOverview().wh`. `FAIL_WARN_THRESHOLD`
+     y `FAIL_DISABLE_THRESHOLD` se **exportaron** desde `webhook-delivery.ts` para no duplicar los
+     números mágicos en la UI.
+   • **Registros maestro-detalle** (`getApiLogs(filtros)` nuevo): búsqueda por ruta con debounce,
+     chips de método y de clase de status (2xx/4xx/5xx), y panel de detalle a la derecha. Los
+     filtros viajan como query params al fragmento (mismo patrón que `?range=`) y entran en la
+     clave de caché, así ir y volver entre filtros es instantáneo. El **detalle se resuelve 100%
+     en el cliente** leyendo los `data-*` de la fila ya renderizada: cero round-trip.
+     ⚠️ **`api_requests` NO guarda cuerpos de petición/respuesta** (solo `metodo`, `ruta`,
+     `status`, `duracion_ms`, `mode`, `ip`, `key_id`) — el detalle es de metadatos y la vista lo
+     dice explícitamente. Decidido con André: guardarlos implicaría persistir datos de clientes
+     (RFC, correos, montos) en cada llamada, con su propia política de retención.
+     El escape de comodines (`%`/`_`) en la búsqueda se hace antes del `ilike`, para que buscar
+     literalmente "50%" no se comporte como patrón.
+   • **Verificado:** build limpio; `_tab_*` sigue vacío (el fragmento nunca vuelve a emitir
+     scripts); las queries nuevas corridas contra Neon real — los filtros discriminan sobre los
+     datos verdaderos (GET→0, POST→9, 4xx→0, comodín escapado→0 en vez de 9) y los eventos
+     internos devuelven 60 filas con folio; **43/43 checks con Playwright** sobre el JS REAL
+     compilado (26 nuevos + los 17 de regresión de v2); 245 claves i18n con par ES/EN.
+   ⚠️ **Regla para el harness de verificación** (mordió dos veces): al extraer el markup del
+     componente con regex, el patrón que cierra tags self-closing necesita `\b`
+     (`/<(p|div|span)\b.../`) — sin él, `<polyline/>` matchea como `<p>` y **rompe los SVG**
+     (el icono de pantalla completa salía con una sola esquina de cuatro). Y los comentarios
+     `{/* */}` hay que quitarlos: Astro los elimina al compilar, el harness no.
+
 ✅ **Cord Workbench v2 — navy Apple, barra abajo, gráficas y wizard full-screen (jul 2026)** —
    André reportó que el dock seguía "sin CSS", con números raros, que no bajaba, que la barra
    estaba arriba y que "agregar endpoint no sirve". La pasada anterior (ver entrada siguiente) lo

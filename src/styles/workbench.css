@@ -150,17 +150,75 @@ html.cord-dev .wb-dock { display: block; }
     transition: transform 0.28s var(--ease-ios), width 0.28s var(--ease-ios);
     pointer-events: none;
 }
-.wb-close {
-    margin-left: auto; flex-shrink: 0;
+/* Chrome del panel: ⋯ opciones · ⤢ pantalla completa · ✕ cerrar */
+.wb-chrome { margin-left: auto; flex-shrink: 0; display: flex; align-items: center; gap: 2px; }
+.wb-ico-btn {
+    flex-shrink: 0;
     width: 28px; height: 28px; border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
     background: none; border: none; cursor: pointer;
     color: rgba(255,255,255,0.42);
     transition: background 0.2s, color 0.2s;
 }
-.wb-close:hover { background: rgba(255,255,255,0.08); color: #fff; }
-.wb-close:active { transform: scale(0.94); }
-.wb-close svg { width: 14px; height: 14px; }
+.wb-ico-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.wb-ico-btn:active { transform: scale(0.94); }
+.wb-ico-btn svg { width: 15px; height: 15px; }
+.wb-ico-btn[aria-expanded="true"] { background: rgba(255,255,255,0.1); color: #fff; }
+/* El icono de expandir/contraer alterna según el estado maximizado */
+.wb-ico-shrink { display: none; }
+.wb-dock.is-max .wb-ico-expand { display: none; }
+.wb-dock.is-max .wb-ico-shrink { display: block; }
+
+/* ── Menú de opciones ── */
+.wb-menu-wrap { position: relative; display: flex; }
+.wb-menu {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    width: 320px; max-height: min(70vh, 520px); overflow-y: auto;
+    padding: 1.1rem 1.2rem 1.2rem;
+    background: var(--wb-bg-2);
+    border-radius: 16px;
+    box-shadow:
+        0 24px 60px -18px rgba(0,0,0,0.75),
+        inset 0 0 0 1px rgba(255,255,255,0.1),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+    z-index: 5;
+    animation: wb-pop 0.22s var(--ease-spring);
+    cursor: default;
+}
+.wb-menu[hidden] { display: none; }
+.wb-menu-t { font-size: 0.92rem; font-weight: 600; color: #fff; margin: 0 0 0.9rem; letter-spacing: -0.01em; }
+.wb-menu-h { font-size: 0.8rem; font-weight: 600; color: #fff; margin: 0 0 0.55rem; }
+.wb-menu-p { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.5; margin: 0 0 0.7rem; }
+.wb-menu-sep { height: 1px; background: var(--wb-line); margin: 1rem 0; }
+.wb-menu-row { display: flex; align-items: flex-start; gap: 0.7rem; cursor: pointer; }
+.wb-menu-tg { flex-shrink: 0; margin-top: 1px; }
+.wb-menu-txt { display: flex; flex-direction: column; gap: 2px; }
+.wb-menu-txt b { font-size: 0.82rem; font-weight: 500; color: var(--color-text); }
+.wb-menu-txt i { font-style: normal; font-size: 0.74rem; color: var(--color-text-muted); line-height: 1.45; }
+.wb-menu-kbd { display: flex; align-items: center; gap: 7px; padding: 4px 0; font-size: 0.78rem; color: var(--color-text-muted); }
+.wb-menu-kbd kbd {
+    font-family: var(--font-sans); font-size: 0.66rem; font-weight: 600; color: #e8eef8;
+    background: rgba(255,255,255,0.1); border-radius: 5px; padding: 2px 6px; min-width: 20px; text-align: center;
+}
+.wb-menu-links { display: flex; flex-direction: column; }
+.wb-menu-links a {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+    padding: 0.45rem 0; font-size: 0.78rem; color: var(--color-blue-deep); text-decoration: none;
+}
+.wb-menu-links a:hover { text-decoration: underline; }
+.wb-menu-links span { color: rgba(255,255,255,0.3); font-size: 0.7rem; }
+
+/* ── Modo pantalla completa ── */
+html.wb-maxed { overflow: hidden; }
+.wb-dock.is-max { top: 0; z-index: 855; }
+.wb-dock.is-max .wb-panel {
+    height: 100dvh !important;
+    border-radius: 0;
+    border-top: none;
+}
+/* En maximizado el panel ya ocupa todo: el grabber y la barra sobran. */
+.wb-dock.is-max .wb-drag,
+.wb-dock.is-max .wb-bar { display: none; }
 
 .wb-body { flex: 1; min-height: 0; overflow-y: auto; padding: 1.4rem 1.6rem 2rem; }
 .wb-loading, .wb-error { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 180px; color: var(--color-text-muted); font-size: 0.84rem; }
@@ -305,6 +363,110 @@ html.cord-dev .wb-dock { display: block; }
 @media (max-width: 900px) {
     .wb-ov { grid-template-columns: 1fr; }
     .wb-ov-duo { grid-template-columns: 1fr; }
+}
+
+/* ════════ Maestro-detalle (Registros y Eventos) ════════ */
+.wb-md { display: flex; flex-direction: column; gap: 0.9rem; height: 100%; min-height: 0; }
+.wb-md-filters { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; flex-shrink: 0; }
+.wb-md-count { margin-left: auto; font-size: 0.72rem; color: rgba(255,255,255,0.35); font-variant-numeric: tabular-nums; }
+
+.wb-search { position: relative; display: flex; align-items: center; }
+.wb-search svg { position: absolute; left: 10px; width: 14px; height: 14px; color: rgba(255,255,255,0.35); pointer-events: none; }
+.wb-search input {
+    font-family: var(--font-sans); font-size: 0.8rem; color: var(--color-text);
+    background: rgba(255,255,255,0.06); border: 1px solid transparent; border-radius: 9px;
+    padding: 7px 10px 7px 30px; width: 230px;
+    transition: border-color 0.2s, background 0.2s;
+}
+.wb-search input::placeholder { color: rgba(255,255,255,0.32); }
+.wb-search input:focus { outline: none; border-color: var(--color-blue-deep); background: rgba(255,255,255,0.08); }
+.wb-search input::-webkit-search-cancel-button { filter: invert(1); opacity: 0.4; }
+
+.wb-chips { display: inline-flex; background: rgba(255,255,255,0.06); border-radius: 9px; padding: 2px; }
+.wb-chip {
+    font-family: inherit; font-size: 0.73rem; font-weight: 600; color: rgba(255,255,255,0.5);
+    background: none; border: none; border-radius: 7px; padding: 5px 10px; cursor: pointer; white-space: nowrap;
+    transition: background 0.2s var(--ease-ios), color 0.2s var(--ease-ios);
+}
+.wb-chip:hover { color: rgba(255,255,255,0.82); }
+.wb-chip.active { background: rgba(255,255,255,0.11); color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,0.08); }
+.wb-chip:active { transform: scale(0.96); }
+
+.wb-md-cols { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 1rem; }
+.wb-md-list {
+    min-height: 0; overflow-y: auto;
+    border: 1px solid var(--color-border); border-radius: 14px;
+    background: var(--surface);
+}
+.wb-md-row {
+    width: 100%; display: grid; align-items: center; gap: 0.7rem;
+    grid-template-columns: 42px 46px minmax(0, 1fr) auto;
+    padding: 0.62rem 0.9rem;
+    background: none; border: none; border-bottom: 1px solid var(--color-border);
+    cursor: pointer; text-align: left; font: inherit;
+    transition: background 0.15s var(--ease-ios);
+}
+.wb-md-row:last-child { border-bottom: none; }
+.wb-md-row:hover { background: var(--row-hover); }
+.wb-md-row.active { background: rgba(107,155,242,0.12); box-shadow: inset 2px 0 0 var(--color-blue-deep); }
+.wb-md-row .act-when { font-size: 0.7rem; color: rgba(255,255,255,0.38); white-space: nowrap; }
+
+.wb-md-detail {
+    min-height: 0; overflow-y: auto;
+    border: 1px solid var(--color-border); border-radius: 14px;
+    background: var(--surface); padding: 1.1rem 1.2rem;
+    display: flex; flex-direction: column; gap: 0.5rem;
+}
+.wb-md-title { font-size: 0.92rem; font-weight: 600; color: #fff; margin: 0 0 0.4rem; display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; }
+.wb-md-title code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.82rem; color: #dbe6f6; word-break: break-all; }
+.wb-md-title b { color: var(--color-blue-deep); font-size: 0.76rem; letter-spacing: 0.4px; }
+.wb-md-note { font-size: 0.72rem; color: rgba(255,255,255,0.35); line-height: 1.5; margin: 0.9rem 0 0; }
+.wb-md-detail .wb-kv-row b.ok { color: var(--color-ok); }
+.wb-md-detail .wb-kv-row b.bad { color: var(--color-danger); }
+.wb-empty-pad { padding: 1.4rem 1rem; }
+.wb-mt { display: block; margin-top: 1rem; }
+
+.wb-code {
+    margin: 0.5rem 0 0; padding: 0.8rem 0.9rem; max-height: 260px; overflow: auto;
+    background: rgba(0,0,0,0.34); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
+}
+.wb-code code {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.72rem; line-height: 1.55;
+    color: #cfe0f5; white-space: pre; background: none; padding: 0;
+}
+
+/* Eventos */
+.wb-ev-row { grid-template-columns: 10px minmax(0, 1fr) auto auto; }
+.wb-ev-name { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.78rem; color: #e8eef8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wb-ev-tag { font-size: 0.68rem; color: rgba(255,255,255,0.4); white-space: nowrap; }
+.wb-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--color-text-muted); }
+.wb-dot.succeeded { background: var(--color-ok); }
+.wb-dot.failed { background: var(--color-danger); }
+.wb-dot.pending, .wb-dot.parcial { background: var(--color-warn); }
+.wb-dot.canceled, .wb-dot.muted { background: rgba(255,255,255,0.25); }
+
+.wb-empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem;
+    text-align: center; padding: 3rem 1rem; min-height: 240px;
+}
+.wb-empty-state svg { width: 40px; height: 40px; color: rgba(255,255,255,0.3); margin-bottom: 0.3rem; }
+.wb-empty-state b { font-size: 0.92rem; font-weight: 600; color: #fff; }
+.wb-empty-state i { font-style: normal; font-size: 0.8rem; color: var(--color-text-muted); max-width: 380px; line-height: 1.55; margin-bottom: 0.7rem; }
+
+/* Salud */
+.wb-salud { display: flex; flex-direction: column; gap: 1rem; }
+.wb-health-wide { flex-direction: row; align-items: center; text-align: left; gap: 0.9rem; padding: 1.1rem 1.3rem; }
+.wb-health-wide .wb-health-ico { margin-bottom: 0; }
+.wb-health-wide b { font-size: 0.92rem; }
+.wb-health-wide i { margin-left: auto; text-align: right; }
+.wb-salud-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; align-items: start; }
+.wb-kv-ep { gap: 1rem; }
+.wb-ep-url { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.76rem; }
+
+@media (max-width: 900px) {
+    .wb-md-cols { grid-template-columns: 1fr; }
+    .wb-md-detail { max-height: 260px; }
+    .wb-search input { width: 100%; }
 }
 
 /* ════════ Modales / wizard ════════

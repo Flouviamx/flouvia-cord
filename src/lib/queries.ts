@@ -375,6 +375,186 @@ async function getDevOverviewUncached(orgId: string, range: DevRange): Promise<D
     };
 }
 
+// ── EVENTOS (Cord Workbench → pestaña "Eventos") ─────────────────────────────
+// Mezcla DOS fuentes distintas en una sola línea de tiempo:
+//   • "enviado"  → `webhook_events`, lo que Cord emite HACIA FUERA. Ojo: hay una
+//     fila por (evento lógico × endpoint suscrito) y todas comparten el mismo
+//     `event_id`, así que se agrupa por `event_id` para que un evento entregado a
+//     3 endpoints se vea como UN evento con 3 entregas, no como 3 eventos.
+//   • "interno" → `eventos`, el timeline de negocio (vista, aprobada, pagada…).
+//     Existe aunque no haya ningún webhook configurado.
+// Dos queries + merge en JS (no `union all`): los shapes son muy distintos y
+// castear todo a un tipo común en SQL saldría más frágil que ordenar en JS, que
+// además ya es el patrón del repo para rellenar series.
+//
+// ⚠️ `eventos.detalle` es texto LIBRE (incluye mensajes de chat del cliente). NO
+// se expone aquí: esta es una vista técnica, no un lector de conversaciones —
+// mostrarlo filtraría contenido de clientes a una pantalla de developers. Solo
+// viaja el tipo del evento y el folio de la cotización.
+
+export type DevEventFilter = 'todos' | 'enviados' | 'internos';
+export const DEV_EVENT_FILTERS: DevEventFilter[] = ['todos', 'enviados', 'internos'];
+
+export interface DevEvent {
+    fuente: 'enviado' | 'interno';
+    id: string;                 // event_id (evt_…) o eventos.id
+    evento: string;             // 'quote.paid' | 'approved' | …
+    ts: string;                 // ISO crudo — el cliente lo formatea (local/UTC)
+    // Solo 'enviado'
+    estado?: 'succeeded' | 'failed' | 'pending' | 'parcial' | 'canceled';
+    endpoints?: number;
+    entregados?: number;
+    intentos?: number;
+    ultimoError?: string | null;
+    payload?: string | null;
+    // Solo 'interno'
+    folio?: string | null;
+    cotizacionId?: string | null;
+}
+
+export async function getDevEvents(filtro: DevEventFilter = 'todos', limit = 60): Promise<DevEvent[]> {
+    const orgId = await getActiveOrgId();
+    const wantEnviados = filtro === 'todos' || filtro === 'enviados';
+    const wantInternos = filtro === 'todos' || filtro === 'internos';
+
+    let salientes: any[] = [], internos: any[] = [];
+    try {
+        [salientes, internos] = await withOrgTx(orgId,
+            // Un evento lógico por fila. El estado del GRUPO resume los N endpoints:
+            // failed+succeeded mezclados = 'parcial' (algunos recibieron, otros no).
+            wantEnviados
+                ? sql`select event_id,
+                             min(evento) as evento,
+                             min(created_at) as created_at,
+                             count(*)::int as endpoints,
+                             count(*) filter (where estado = 'succeeded')::int as ok,
+                             count(*) filter (where estado = 'failed')::int as fail,
+                             count(*) filter (where estado in ('pending','delivering'))::int as pend,
+                             count(*) filter (where estado = 'canceled')::int as canc,
+                             max(intentos)::int as intentos,
+                             max(last_error) as last_error,
+                             min(payload) as payload
+                      from webhook_events
+                      where org_id = ${orgId}
+                      group by event_id
+                      order by min(created_at) desc
+                      limit ${limit}`
+                : sql`select null::text as event_id where false`,
+            wantInternos
+                ? sql`select e.id, e.tipo, e.created_at, e.cotizacion_id, c.folio
+                      from eventos e left join cotizaciones c on c.id = e.cotizacion_id
+                      where e.org_id = ${orgId}
+                      order by e.created_at desc
+                      limit ${limit}`
+                : sql`select null::uuid as id where false`,
+        );
+    } catch { return []; }
+
+    const out: DevEvent[] = [];
+
+    for (const r of salientes) {
+        if (!r.event_id) continue;
+        const ok = (r.ok as number) ?? 0, fail = (r.fail as number) ?? 0;
+        const pend = (r.pend as number) ?? 0, canc = (r.canc as number) ?? 0;
+        const estado: DevEvent['estado'] =
+            pend > 0 ? 'pending'
+            : fail > 0 && ok > 0 ? 'parcial'
+            : fail > 0 ? 'failed'
+            : ok > 0 ? 'succeeded'
+            : canc > 0 ? 'canceled'
+            : 'pending';
+        out.push({
+            fuente: 'enviado',
+            id: r.event_id as string,
+            evento: r.evento as string,
+            ts: new Date(r.created_at).toISOString(),
+            estado,
+            endpoints: (r.endpoints as number) ?? 0,
+            entregados: ok,
+            intentos: (r.intentos as number) ?? 0,
+            ultimoError: (r.last_error as string) ?? null,
+            // El payload es idéntico en las N filas del grupo; se recorta porque
+            // esta lista puede traer 60 eventos y el detalle no necesita más.
+            payload: r.payload ? String(r.payload).slice(0, 4000) : null,
+        });
+    }
+
+    for (const r of internos) {
+        if (!r.id) continue;
+        out.push({
+            fuente: 'interno',
+            id: r.id as string,
+            evento: r.tipo as string,
+            ts: new Date(r.created_at).toISOString(),
+            folio: (r.folio as string) ?? null,
+            cotizacionId: (r.cotizacion_id as string) ?? null,
+        });
+    }
+
+    // Orden cronológico mezclado y corte final (cada fuente ya venía limitada).
+    out.sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
+    return out.slice(0, limit);
+}
+
+// ── REGISTROS DEL API (Cord Workbench → pestaña "Registros") ─────────────────
+// Maestro-detalle con filtros. A diferencia de getApiActivity() (que alimenta el
+// widget del Resumen), esta expone `id`, `ip` y el timestamp CRUDO en ISO, que
+// son justo lo que el panel de detalle necesita y lo que aquella no devuelve.
+// ⚠️ `api_requests` NO guarda cuerpos de petición/respuesta — el detalle solo
+// puede mostrar metadatos. Decidido a propósito: guardarlos implicaría persistir
+// datos de clientes (RFC, correos, montos) en cada llamada.
+
+export interface ApiLogFilters {
+    metodo?: string;    // GET | POST | ''
+    clase?: string;     // ok | 4xx | 5xx | ''
+    q?: string;         // búsqueda por ruta
+    range?: DevRange;
+}
+
+export async function getApiLogs(f: ApiLogFilters = {}, limit = 100) {
+    const orgId = await getActiveOrgId();
+    const metodo = (f.metodo || '').toUpperCase();
+    const clase = f.clase || '';
+    // Escapado de comodines: buscar literalmente "50%" no debe comportarse como patrón.
+    const q = (f.q || '').trim().replace(/[%_\\]/g, (c) => '\\' + c);
+    const dias = f.range === '24h' ? 1 : f.range === '7d' ? 7 : 14;
+    const desde = new Date(Date.now() - dias * 864e5).toISOString();
+
+    let rows: any[] = [];
+    try {
+        // El driver de Neon no compone fragmentos SQL, así que los filtros van
+        // como parámetros con un centinela ('' = sin filtro) en vez de armar el
+        // WHERE por concatenación.
+        [rows] = await withOrgTx(orgId, sql`
+            select r.id, r.metodo, r.ruta, r.status, r.duracion_ms, r.mode, r.ip, r.created_at,
+                   k.nombre as key_nombre, k.mode as key_mode
+            from api_requests r left join api_keys k on k.id = r.key_id
+            where r.org_id = ${orgId}
+              and r.created_at >= ${desde}::timestamptz
+              and (${metodo} = '' or r.metodo = ${metodo})
+              and (${clase} = ''
+                   or (${clase} = 'ok'  and r.status < 400)
+                   or (${clase} = '4xx' and r.status >= 400 and r.status < 500)
+                   or (${clase} = '5xx' and r.status >= 500))
+              and (${q} = '' or r.ruta ilike '%' || ${q} || '%')
+            order by r.created_at desc
+            limit ${limit}`);
+    } catch { return []; }
+
+    return rows.map((r) => ({
+        id: r.id as string,
+        metodo: r.metodo as string,
+        ruta: r.ruta as string,
+        status: r.status as number,
+        ms: (r.duracion_ms as number) ?? null,
+        mode: (r.mode as string) ?? 'live',
+        ip: (r.ip as string) ?? null,
+        key: (r.key_nombre as string) ?? null,
+        keyMode: (r.key_mode as string) ?? null,
+        ts: new Date(r.created_at).toISOString(),
+    }));
+}
+
 // ── IMPUESTOS (perfiles de tasa reutilizables — FASE 3) ──────────────────────
 export const TIPO_IMPUESTO: Record<string, string> = {
     iva: 'IVA', ieps: 'IEPS', ret_iva: 'Retención IVA', ret_isr: 'Retención ISR', exento: 'Exento',

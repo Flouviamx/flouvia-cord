@@ -21,8 +21,14 @@
 // `innerHTML =` no pueda arrancarlos del DOM estando abiertos.
 export const prerender = false;
 
-import { getOrg, getMyMembership, getApiKeys, getApiActivity, getWebhooks, getDevOverview, DEV_RANGES, type DevRange } from '../../../lib/queries';
+import {
+    getOrg, getMyMembership, getApiKeys, getApiActivity, getWebhooks, getDevOverview,
+    getDevEvents, getApiLogs, DEV_RANGES, DEV_EVENT_FILTERS,
+    type DevRange, type DevEventFilter,
+} from '../../../lib/queries';
 import { memberCan, apiKeyLimit, webhookLimit, planLabel } from '../../../lib/permissions';
+import { WEBHOOK_EVENTS } from '../../../lib/webhooks';
+import { FAIL_WARN_THRESHOLD } from '../../../lib/webhook-delivery';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 
@@ -34,8 +40,15 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
 };
 
 const tab = Astro.params.tab as string;
-const rangeParam = Astro.url.searchParams.get('range') as DevRange | null;
+const qs = Astro.url.searchParams;
+const rangeParam = qs.get('range') as DevRange | null;
 const RANGE: DevRange = rangeParam && DEV_RANGES.includes(rangeParam) ? rangeParam : '14d';
+// Filtros de las pestañas nuevas (validados contra whitelist, nunca crudos).
+const evParam = qs.get('ev') as DevEventFilter | null;
+const EVF: DevEventFilter = evParam && DEV_EVENT_FILTERS.includes(evParam) ? evParam : 'todos';
+const METODO = ['GET', 'POST', 'PATCH', 'DELETE'].includes((qs.get('m') || '').toUpperCase()) ? (qs.get('m') || '').toUpperCase() : '';
+const CLASE = ['ok', '4xx', '5xx'].includes(qs.get('c') || '') ? (qs.get('c') || '') : '';
+const BUSCA = (qs.get('q') || '').slice(0, 80);
 
 const ME = await getMyMembership();
 const hasAccess = memberCan(ME, 'ajustes');
@@ -46,6 +59,8 @@ let KEYS: any[] = [];
 let ACTIVITY: any = { total24: 0, errores24: 0, latProm: 0, recent: [] };
 let WEBHOOKS: any[] = [];
 let OV: any = null;
+let EVENTOS: any[] = [];
+let LOGS: any[] = [];
 let LIMITE_KEYS = 0, ACTIVAS = 0, AT_LIMIT_KEYS = false;
 let LIMITE_WH = 0, AT_LIMIT_WH = false;
 
@@ -60,7 +75,11 @@ if (hasAccess) {
         LIMITE_WH = webhookLimit(ORG.plan_raw);
         AT_LIMIT_WH = WEBHOOKS.length >= LIMITE_WH;
     } else if (tab === 'registros') {
-        ACTIVITY = await getApiActivity();
+        LOGS = await getApiLogs({ metodo: METODO, clase: CLASE, q: BUSCA, range: RANGE });
+    } else if (tab === 'eventos') {
+        EVENTOS = await getDevEvents(EVF);
+    } else if (tab === 'salud') {
+        [OV, WEBHOOKS] = await Promise.all([getDevOverview(RANGE), getWebhooks()]);
     } else if (tab === 'resumen') {
         // getOrg() se llamaba aquí sin usarse nunca — quitado.
         [OV, ACTIVITY, WEBHOOKS] = await Promise.all([getDevOverview(RANGE), getApiActivity(), getWebhooks()]);
@@ -366,27 +385,212 @@ const saludOk = caidos.length === 0 && (OV?.wh.fallidos ?? 0) === 0 && (OV?.wh.a
 )}
 
 {hasAccess && tab === 'registros' && (
-    <div class="dev-card">
-        <div class="dev-card-header">
-            <h3 class="dev-card-title">{t(L, 'set.api.actividad_titulo')}</h3>
-            <button type="button" class="dev-refresh" data-wb-act="act-refresh" title={t(L, 'set.api.actualizar')}>{t(L, 'set.api.actualizar')}</button>
+    <div class="wb-md">
+        <div class="wb-md-filters">
+            <span class="wb-search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+                <input type="search" id="logQ" value={BUSCA} placeholder={t(L, 'wb.logs.buscar')} data-wb-act="log-search" />
+            </span>
+            <span class="wb-chips" role="group" aria-label={t(L, 'wb.logs.metodo')}>
+                <button type="button" class:list={['wb-chip', { active: METODO === '' }]} data-wb-act="log-filter" data-k="m" data-v="">{t(L, 'wb.logs.todos')}</button>
+                {['GET', 'POST'].map((m) => (
+                    <button type="button" class:list={['wb-chip', { active: METODO === m }]} data-wb-act="log-filter" data-k="m" data-v={m}>{m}</button>
+                ))}
+            </span>
+            <span class="wb-chips" role="group" aria-label={t(L, 'wb.logs.estado')}>
+                <button type="button" class:list={['wb-chip', { active: CLASE === '' }]} data-wb-act="log-filter" data-k="c" data-v="">{t(L, 'wb.logs.todos')}</button>
+                <button type="button" class:list={['wb-chip', { active: CLASE === 'ok' }]} data-wb-act="log-filter" data-k="c" data-v="ok">2xx</button>
+                <button type="button" class:list={['wb-chip', { active: CLASE === '4xx' }]} data-wb-act="log-filter" data-k="c" data-v="4xx">4xx</button>
+                <button type="button" class:list={['wb-chip', { active: CLASE === '5xx' }]} data-wb-act="log-filter" data-k="c" data-v="5xx">5xx</button>
+            </span>
+            <span class="wb-md-count">{LOGS.length}{LOGS.length >= 100 ? '+' : ''}</span>
         </div>
-        <div class="dev-stats-grid">
-            <div class="dev-stat-box"><span class="dev-stat-value editorial" id="actTotal">{ACTIVITY.total24}</span><span class="dev-stat-label">{t(L, 'set.api.requests_24h')}</span></div>
-            <div class="dev-stat-box"><span class={`dev-stat-value editorial ${ACTIVITY.errores24 > 0 ? 'bad' : ''}`} id="actErr">{ACTIVITY.errores24}</span><span class="dev-stat-label">{t(L, 'set.api.errores_24h')}</span></div>
-            <div class="dev-stat-box"><span class="dev-stat-value editorial" id="actLat">{ACTIVITY.latProm}<em>ms</em></span><span class="dev-stat-label">{t(L, 'set.api.latencia_prom')}</span></div>
+
+        <div class="wb-md-cols">
+            <div class="wb-md-list" role="listbox" aria-label={t(L, 'set.api.actividad_titulo')}>
+                {LOGS.length === 0 && <p class="wb-empty wb-empty-pad">{t(L, 'set.api.sin_actividad')}</p>}
+                {LOGS.map((r: any, i: number) => (
+                    <button type="button" class:list={['wb-md-row', { active: i === 0 }]} role="option" aria-selected={i === 0}
+                            data-wb-act="log-pick"
+                            data-metodo={r.metodo} data-ruta={r.ruta} data-status={String(r.status)}
+                            data-ms={r.ms != null ? String(r.ms) : ''} data-mode={r.mode}
+                            data-ip={r.ip || ''} data-key={r.key || ''} data-keymode={r.keyMode || ''} data-ts={r.ts}>
+                        <span class={`act-status ${r.status >= 400 ? 'bad' : 'ok'}`}>{r.status}</span>
+                        <span class={`act-m ${r.metodo.toLowerCase()}`}>{r.metodo}</span>
+                        <code class="act-path">{r.ruta}</code>
+                        <span class="act-when" data-ts={r.ts}></span>
+                    </button>
+                ))}
+            </div>
+
+            {/* Panel de detalle: se rellena en el cliente desde los data-* de la fila
+                seleccionada — sin round-trip, porque `api_requests` solo guarda
+                metadatos y ya viajaron todos con la lista. */}
+            <aside class="wb-md-detail" id="logDetail">
+                {LOGS.length === 0
+                    ? <p class="wb-empty">{t(L, 'wb.logs.sin_seleccion')}</p>
+                    : (
+                        <>
+                            <span class="wb-card-lbl">{t(L, 'wb.logs.peticion')}</span>
+                            <h4 class="wb-md-title"><b id="dMetodo"></b> <code id="dRuta"></code></h4>
+                            <div class="wb-kv">
+                                <div class="wb-kv-row"><span>{t(L, 'wb.logs.estado')}</span><b id="dStatus"></b></div>
+                                <div class="wb-kv-row"><span>{t(L, 'wb.logs.tiempo')}</span><b id="dTs"></b></div>
+                                <div class="wb-kv-row"><span>{t(L, 'wb.logs.latencia')}</span><b id="dMs"></b></div>
+                                <div class="wb-kv-row"><span>{t(L, 'wb.logs.ip')}</span><b id="dIp"></b></div>
+                                <div class="wb-kv-row"><span>{t(L, 'wb.logs.clave')}</span><b id="dKey"></b></div>
+                                <div class="wb-kv-row"><span>{t(L, 'wb.logs.modo')}</span><b id="dMode"></b></div>
+                            </div>
+                            <p class="wb-md-note">{t(L, 'wb.logs.sin_cuerpos')}</p>
+                        </>
+                    )}
+            </aside>
         </div>
-        <div class="act-list" id="actList">
-            {ACTIVITY.recent.length === 0 && <p class="dev-empty">{t(L, 'set.api.sin_actividad')}</p>}
-            {ACTIVITY.recent.map((r: any) => (
-                <div class="act-row">
-                    <span class={`act-m ${r.metodo.toLowerCase()}`}>{r.metodo}</span>
-                    <code class="act-path">{r.ruta}</code>
-                    <span class={`act-status ${r.status >= 400 ? 'bad' : 'ok'}`}>{r.status}</span>
-                    <span class="act-lat">{r.ms != null ? `${r.ms}ms` : '—'}</span>
-                    <span class="act-when">{r.cuando}{r.mode === 'test' ? ' · test' : ''}</span>
+    </div>
+)}
+
+{hasAccess && tab === 'eventos' && (
+    <div class="wb-md">
+        <div class="wb-md-filters">
+            <span class="wb-chips" role="group">
+                {DEV_EVENT_FILTERS.map((f) => (
+                    <button type="button" class:list={['wb-chip', { active: EVF === f }]} data-wb-act="ev-filter" data-v={f}>{t(L, `wb.ev.f_${f}` as any)}</button>
+                ))}
+            </span>
+            <span class="wb-md-count">{EVENTOS.length}</span>
+        </div>
+
+        {EVENTOS.length === 0 ? (
+            <div class="wb-empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.1" /><polyline points="12 7.5 12 12 15 13.8" />
+                </svg>
+                <b>{t(L, 'wb.ev.vacio_t')}</b>
+                <i>{t(L, 'wb.ev.vacio_d')}</i>
+                <button type="button" class="api-btn-solid" data-wb-act="wh-new">{t(L, 'set.wh.agregar_endpoint')}</button>
+            </div>
+        ) : (
+            <div class="wb-md-cols">
+                <div class="wb-md-list" role="listbox">
+                    {EVENTOS.map((e: any, i: number) => (
+                        <button type="button" class:list={['wb-md-row wb-ev-row', { active: i === 0 }]} role="option" aria-selected={i === 0}
+                                data-wb-act="ev-pick"
+                                data-fuente={e.fuente} data-evento={e.evento} data-ts={e.ts}
+                                data-id={e.id} data-estado={e.estado || ''} data-endpoints={String(e.endpoints ?? '')}
+                                data-entregados={String(e.entregados ?? '')} data-intentos={String(e.intentos ?? '')}
+                                data-error={e.ultimoError || ''} data-payload={e.payload || ''}
+                                data-folio={e.folio || ''}>
+                            <span class:list={['wb-dot', e.fuente === 'interno' ? 'muted' : (e.estado || 'pending')]} aria-hidden="true"></span>
+                            <code class="wb-ev-name">{e.evento}</code>
+                            <span class="wb-ev-tag">{e.fuente === 'enviado' ? t(L, 'wb.ev.enviado') : (e.folio || t(L, 'wb.ev.interno'))}</span>
+                            <span class="act-when" data-ts={e.ts}></span>
+                        </button>
+                    ))}
                 </div>
-            ))}
+
+                <aside class="wb-md-detail" id="evDetail">
+                    <span class="wb-card-lbl" id="eFuente"></span>
+                    <h4 class="wb-md-title"><code id="eEvento"></code></h4>
+                    <div class="wb-kv" id="eKv"></div>
+                    <div id="ePayloadWrap" hidden>
+                        <span class="wb-card-lbl wb-mt">{t(L, 'wb.ev.payload')}</span>
+                        <pre class="wb-code"><code id="ePayload"></code></pre>
+                    </div>
+                    <p class="wb-md-note" id="eNota" hidden>{t(L, 'wb.ev.nota_interno')}</p>
+                </aside>
+            </div>
+        )}
+    </div>
+)}
+
+{hasAccess && tab === 'salud' && OV && (
+    <div class="wb-salud">
+        <div class:list={['wb-health wb-health-wide', { ok: saludOk }]}>
+            {saludOk ? (
+                <>
+                    <svg class="wb-health-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12" /><polyline points="8.5 12.2 11 14.7 15.7 9.6" />
+                    </svg>
+                    <b>{t(L, 'wb.salud.ok')}</b><i>{t(L, 'wb.salud.ok_sub')}</i>
+                </>
+            ) : (
+                <>
+                    <svg class="wb-health-ico bad" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" fill="currentColor" fill-opacity="0.12" />
+                        <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    <b>{t(L, 'wb.salud.alertas')}</b><i>{t(L, 'wb.salud.alertas_sub')}</i>
+                </>
+            )}
+        </div>
+
+        <div class="wb-salud-grid">
+            <div class="wb-card">
+                <span class="wb-card-lbl">{t(L, 'wb.salud.endpoints')}</span>
+                {WEBHOOKS.length === 0 ? (
+                    <p class="wb-empty">{t(L, 'set.wh.vacio')}</p>
+                ) : (
+                    <div class="wb-kv">
+                        {WEBHOOKS.map((w: any) => {
+                            const enRiesgo = !w.deshabilitadoMotivo && w.fallosConsecutivos >= FAIL_WARN_THRESHOLD;
+                            return (
+                                <div class:list={['wb-kv-row wb-kv-ep', { bad: !!w.deshabilitadoMotivo, warn: enRiesgo }]}>
+                                    <span class="wb-ep-url">{w.url}</span>
+                                    <b>{w.deshabilitadoMotivo
+                                        ? t(L, 'wb.salud.desactivado')
+                                        : enRiesgo
+                                            ? `${w.fallosConsecutivos} ${t(L, 'wb.salud.fallos_seguidos')}`
+                                            : w.activo ? t(L, 'wb.salud.activo') : t(L, 'wb.salud.pausado')}</b>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+                {WEBHOOKS.length > 0 && (
+                    <button type="button" class="wb-link wb-link-block" data-wb-act="goto-tab" data-tab="webhooks">{t(L, 'wb.salud.revisar_webhooks')}</button>
+                )}
+            </div>
+
+            <div class="wb-card">
+                <span class="wb-card-lbl">{t(L, 'wb.salud.cola')}</span>
+                <div class="wb-kv">
+                    <div class:list={['wb-kv-row', { warn: OV.wh.pendientes > 0 }]}><span>{t(L, 'wb.salud.pendientes')}</span><b class="editorial">{nfmt(OV.wh.pendientes)}</b></div>
+                    <div class:list={['wb-kv-row', { warn: OV.wh.atrasados > 0 }]}><span>{t(L, 'wb.salud.atrasados')}</span><b class="editorial">{nfmt(OV.wh.atrasados)}</b></div>
+                    <div class:list={['wb-kv-row', { bad: OV.wh.fallidos > 0 }]}><span>{t(L, 'wb.salud.fallidos')}</span><b class="editorial">{nfmt(OV.wh.fallidos)}</b></div>
+                    <div class="wb-kv-row"><span>{t(L, 'wb.resumen.entregadas')}</span><b class="editorial">{nfmt(OV.wh.entregasOk)}</b></div>
+                    <div class:list={['wb-kv-row', { bad: OV.wh.entregasErr > 0 }]}><span>{t(L, 'wb.resumen.fallidas')}</span><b class="editorial">{nfmt(OV.wh.entregasErr)}</b></div>
+                </div>
+                <p class="wb-md-note">{t(L, 'wb.salud.cola_nota')}</p>
+            </div>
+
+            <div class="wb-card">
+                <span class="wb-card-lbl">{t(L, 'wb.resumen.dist_errores')}</span>
+                {errTot === 0 ? (
+                    <p class="wb-empty">{t(L, 'wb.resumen.sin_errores')}</p>
+                ) : (
+                    <div class="wb-dist">
+                        <div class="wb-dist-row">
+                            <span class="wb-dist-k">4xx</span>
+                            <span class="wb-dist-track"><i class="wb-dist-fill warn" style={`width:${pct(OV.errores.c4xx, errTot)}%`}></i></span>
+                            <span class="wb-dist-n editorial">{nfmt(OV.errores.c4xx)}</span>
+                        </div>
+                        <div class="wb-dist-row">
+                            <span class="wb-dist-k">5xx</span>
+                            <span class="wb-dist-track"><i class="wb-dist-fill bad" style={`width:${pct(OV.errores.c5xx, errTot)}%`}></i></span>
+                            <span class="wb-dist-n editorial">{nfmt(OV.errores.c5xx)}</span>
+                        </div>
+                        {OV.errores.topRutas.length > 0 && (
+                            <div class="wb-top">
+                                <span class="wb-top-lbl">{t(L, 'wb.resumen.top_rutas')}</span>
+                                {OV.errores.topRutas.map((r: any) => (
+                                    <div class="wb-top-row"><code>{r.ruta}</code><b class="editorial">{nfmt(r.n)}</b></div>
+                                ))}
+                            </div>
+                        )}
+                        <button type="button" class="wb-link wb-link-block" data-wb-act="goto-tab" data-tab="registros">{t(L, 'wb.resumen.ver_registros')}</button>
+                    </div>
+                )}
+            </div>
         </div>
     </div>
 )}

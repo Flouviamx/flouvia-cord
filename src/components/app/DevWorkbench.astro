@@ -38,8 +38,10 @@ const L = locale;
 const TABS = [
     { id: 'resumen', label: t(L, 'wb.tab.resumen') },
     { id: 'webhooks', label: t(L, 'wb.tab.webhooks') },
+    { id: 'eventos', label: t(L, 'wb.tab.eventos') },
     { id: 'api', label: t(L, 'wb.tab.api') },
     { id: 'registros', label: t(L, 'wb.tab.registros') },
+    { id: 'salud', label: t(L, 'wb.tab.salud') },
 ];
 
 // Eventos agrupados por familia para el wizard (quote.* / payment.* / invoice.*).
@@ -102,6 +104,21 @@ const WBI18N = {
     whUrlRequerida: t(L, 'wb.wiz.url_requerida'),
     whSinEventos: t(L, 'wb.wiz.sin_eventos'),
     continuar: t(L, 'wb.wiz.continuar'),
+    // Detalle de la pestaña Eventos (se pinta en cliente desde los data-*)
+    evEnviado: t(L, 'wb.ev.enviado'),
+    evInterno: t(L, 'wb.ev.interno'),
+    evId: t(L, 'wb.ev.id'),
+    evCuando: t(L, 'wb.ev.cuando'),
+    evEstado: t(L, 'wb.ev.estado'),
+    evEntregas: t(L, 'wb.ev.entregas'),
+    evIntentos: t(L, 'wb.ev.intentos'),
+    evError: t(L, 'wb.ev.error'),
+    evFolio: t(L, 'wb.ev.folio'),
+    evSt_succeeded: t(L, 'wb.ev.st_succeeded'),
+    evSt_failed: t(L, 'wb.ev.st_failed'),
+    evSt_pending: t(L, 'wb.ev.st_pending'),
+    evSt_parcial: t(L, 'wb.ev.st_parcial'),
+    evSt_canceled: t(L, 'wb.ev.st_canceled'),
     prompt: DEV_INTEGRATION_PROMPT,
 };
 ---
@@ -119,9 +136,55 @@ const WBI18N = {
                 <button type="button" class="wb-tab" data-wb-tab={tb.id} role="tab" aria-selected="false">{tb.label}</button>
             ))}
             <span class="wb-tabs-indicator" id="wbTabsIndicator" aria-hidden="true"></span>
-            <button type="button" class="wb-close" id="wbClose" aria-label={t(L, 'wb.cerrar')}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-            </button>
+
+            <span class="wb-chrome">
+                {/* Menú de opciones (⋯) — el markup del panel vive junto al botón para
+                    que el posicionamiento no dependa de nada del contenido inyectado. */}
+                <span class="wb-menu-wrap">
+                    <button type="button" class="wb-ico-btn" id="wbOpts" aria-haspopup="true" aria-expanded="false" aria-label={t(L, 'wb.opts.titulo')} title={t(L, 'wb.opts.titulo')}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.1" fill="currentColor"/><circle cx="12" cy="12" r="1.1" fill="currentColor"/><circle cx="19" cy="12" r="1.1" fill="currentColor"/></svg>
+                    </button>
+                    <div class="wb-menu" id="wbOptsMenu" role="menu" hidden>
+                        <h4 class="wb-menu-t">{t(L, 'wb.opts.titulo')}</h4>
+
+                        <label class="wb-menu-row">
+                            <span class="s-toggle wb-menu-tg">
+                                <input type="checkbox" id="wbUtc" />
+                                <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                            </span>
+                            <span class="wb-menu-txt">
+                                <b>{t(L, 'wb.opts.utc')}</b>
+                                <i>{t(L, 'wb.opts.utc_sub')}</i>
+                            </span>
+                        </label>
+
+                        <div class="wb-menu-sep"></div>
+                        <h5 class="wb-menu-h">{t(L, 'wb.opts.atajos')}</h5>
+                        <div class="wb-menu-kbd"><kbd>W</kbd><span>{t(L, 'wb.opts.k_toggle')}</span></div>
+                        <div class="wb-menu-kbd"><kbd>⇧</kbd><kbd>W</kbd><span>{t(L, 'wb.opts.k_max')}</span></div>
+                        <div class="wb-menu-kbd"><kbd>Esc</kbd><span>{t(L, 'wb.opts.k_esc')}</span></div>
+
+                        <div class="wb-menu-sep"></div>
+                        <h5 class="wb-menu-h">{t(L, 'wb.opts.acerca')}</h5>
+                        <p class="wb-menu-p">{t(L, 'wb.opts.acerca_d')}</p>
+                        <nav class="wb-menu-links">
+                            <a href="/docs" target="_blank" rel="noopener">{t(L, 'wb.recursos.docs')}<span aria-hidden="true">↗</span></a>
+                            <a href="/openapi.yaml" target="_blank" rel="noopener">{t(L, 'wb.recursos.openapi')}<span aria-hidden="true">↗</span></a>
+                        </nav>
+                    </div>
+                </span>
+
+                <button type="button" class="wb-ico-btn" id="wbMax" aria-pressed="false" aria-label={t(L, 'wb.maximizar')} title={t(L, 'wb.maximizar')}>
+                    {/* Cuatro esquinas (patrón de reproductor de video): a 14px se
+                        lee bastante mejor que un par de flechas diagonales. */}
+                    <svg class="wb-ico-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 4 4 4 4 9"/><polyline points="15 4 20 4 20 9"/><polyline points="9 20 4 20 4 15"/><polyline points="15 20 20 20 20 15"/></svg>
+                    <svg class="wb-ico-shrink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 9 9 9 9 4"/><polyline points="20 9 15 9 15 4"/><polyline points="4 15 9 15 9 20"/><polyline points="20 15 15 15 15 20"/></svg>
+                </button>
+
+                <button type="button" class="wb-ico-btn" id="wbClose" aria-label={t(L, 'wb.cerrar')} title={t(L, 'wb.cerrar')}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                </button>
+            </span>
         </div>
         <div class="wb-body" id="wbBody">
             <div class="wb-loading"><span class="wb-spinner" aria-hidden="true"></span></div>
@@ -358,6 +421,12 @@ const WBI18N = {
         const maxH = () => Math.max(MIN_H, window.innerHeight - 200);
         let panelH = Math.min(Math.round(window.innerHeight * 0.42), maxH());
 
+        let isMax = false;
+        let utc = false;
+        // Filtros por pestaña; viajan como query params al fragmento (mismo patrón
+        // que `range`), así la aritmética y el escape viven en el servidor.
+        const filtros: Record<string, Record<string, string>> = { registros: {}, eventos: {} };
+
         function readState() {
             try {
                 const p = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -366,11 +435,40 @@ const WBI18N = {
                     tab: typeof p.tab === 'string' ? p.tab : 'resumen',
                     range: RANGES.includes(p.range) ? p.range : '14d',
                     h: typeof p.h === 'number' ? p.h : undefined,
+                    max: !!p.max,
+                    utc: !!p.utc,
                 };
-            } catch { return { open: false, tab: 'resumen', range: '14d', h: undefined }; }
+            } catch { return { open: false, tab: 'resumen', range: '14d', h: undefined, max: false, utc: false }; }
         }
         function writeState() {
-            try { localStorage.setItem(KEY, JSON.stringify({ open: isOpen, tab: currentTab, range: currentRange, h: panelH })); } catch {}
+            try { localStorage.setItem(KEY, JSON.stringify({ open: isOpen, tab: currentTab, range: currentRange, h: panelH, max: isMax, utc })); } catch {}
+        }
+
+        // ── Fechas ──────────────────────────────────────────────────────────────
+        // El SSR emite el ISO crudo en `data-ts` y el formateo ocurre aquí, para que
+        // el toggle "horas en UTC" sea instantáneo y no exija volver a pedir el
+        // fragmento. (`fmtRelative` del servidor no expone el año ni la zona.)
+        function fmtTs(iso: string, long = false): string {
+            const d = new Date(iso);
+            if (isNaN(+d)) return '';
+            const opts: Intl.DateTimeFormatOptions = {
+                day: 'numeric', month: 'short',
+                hour: '2-digit', minute: '2-digit', hour12: false,
+                ...(long ? { year: 'numeric', second: '2-digit' } : {}),
+                ...(utc ? { timeZone: 'UTC' } : {}),
+            };
+            const s = new Intl.DateTimeFormat(document.documentElement.lang === 'en' ? 'en-US' : 'es-MX', opts).format(d).replace('.', '');
+            return utc ? `${s} UTC` : s;
+        }
+        function paintDates(root: HTMLElement) {
+            root.querySelectorAll<HTMLElement>('[data-ts]').forEach((el) => {
+                const iso = el.dataset.ts!;
+                // Las filas del maestro llevan data-ts para el detalle, pero solo se
+                // pinta el texto de los elementos que están VACÍOS o ya pintados.
+                if (el.tagName === 'BUTTON') return;
+                el.textContent = fmtTs(iso);
+                el.title = new Date(iso).toISOString();
+            });
         }
 
         // `commit` distingue el arrastre en curso (solo mueve el panel) de su final.
@@ -389,8 +487,31 @@ const WBI18N = {
             // --wb-h: altura VISUAL del dock (la usan .toast-stack y .onb para no
             // quedar debajo). --wb-bar-h: reserva FIJA para el padding-bottom de
             // .app-content — no se ata a panelH o el contenido brincaría al abrir.
-            document.documentElement.style.setProperty('--wb-h', !on ? '0px' : isOpen ? (panelH + barH) + 'px' : barH + 'px');
+            // En modo maximizado el dock cubre todo, así que --wb-h se queda en el
+            // alto de la barra: mover los toasts al tope de la pantalla no aporta y
+            // el z-index (900 > 820) ya los deja por encima.
+            const visual = !on ? '0px' : isOpen && !isMax ? (panelH + barH) + 'px' : barH + 'px';
+            document.documentElement.style.setProperty('--wb-h', visual);
             document.documentElement.style.setProperty('--wb-bar-h', on ? barH + 'px' : '0px');
+        }
+
+        function applyMax() {
+            dock!.classList.toggle('is-max', isMax);
+            document.documentElement.classList.toggle('wb-maxed', isMax);
+            const btn = document.getElementById('wbMax');
+            btn?.setAttribute('aria-pressed', String(isMax));
+            // En maximizado la altura la manda el CSS (inset:0), así que se limpia
+            // el height inline o el panel quedaría clavado en su alto anterior.
+            if (isMax) panel!.style.height = '';
+            else applyPanelH(panelH);
+            updateWbH();
+            moveIndicator(currentTab);
+        }
+        function toggleMax(force?: boolean) {
+            isMax = force ?? !isMax;
+            if (isMax && !isOpen) { openDock(); return; }   // openDock ya llama applyMax
+            applyMax();
+            writeState();
         }
 
         function moveIndicator(tabId: string) {
@@ -408,31 +529,49 @@ const WBI18N = {
             moveIndicator(tabId);
         }
 
+        // Query string de la pestaña: rango + sus filtros. Entra también en la clave
+        // de caché para que ir y volver entre filtros sea instantáneo.
+        function tabQuery(tabId: string): string {
+            const p = new URLSearchParams();
+            if (tabId === 'resumen' || tabId === 'salud' || tabId === 'registros') p.set('range', currentRange);
+            for (const [k, v] of Object.entries(filtros[tabId] || {})) if (v) p.set(k, v);
+            const s = p.toString();
+            return s ? `?${s}` : '';
+        }
+        const cacheKey = (tabId: string) => tabId + tabQuery(tabId);
+
         async function loadTab(tabId: string, force = false, range?: string) {
             if (range) currentRange = range;
             setActiveTabUI(tabId);
             currentTab = tabId;
             writeState();
-            // El rango entra en la clave: ir y volver entre 7d/14d es instantáneo.
-            const ck = tabId === 'resumen' ? `${tabId}|${currentRange}` : tabId;
-            if (!force && cache.has(ck)) { body!.innerHTML = cache.get(ck)!; return; }
+            const ck = cacheKey(tabId);
+            if (!force && cache.has(ck)) { body!.innerHTML = cache.get(ck)!; afterRender(); return; }
             body!.innerHTML = '<div class="wb-loading"><span class="wb-spinner" aria-hidden="true"></span></div>';
             try {
-                const qs = tabId === 'resumen' ? `?range=${encodeURIComponent(currentRange)}` : '';
-                const res = await fetch(`/app/wb/${tabId}${qs}`, { headers: { 'X-Requested-With': 'cord-workbench' } });
+                const res = await fetch(`/app/wb/${tabId}${tabQuery(tabId)}`, { headers: { 'X-Requested-With': 'cord-workbench' } });
                 const html = await res.text();
                 cache.set(ck, html);
                 body!.innerHTML = html;
+                afterRender();
             } catch {
                 body!.innerHTML = `<div class="wb-error">${I18N.loadError || 'No se pudo cargar.'}</div>`;
             }
+        }
+
+        // Se ejecuta tras CADA render del fragmento (fetch o caché): pinta fechas y
+        // preselecciona la primera fila de las vistas maestro-detalle.
+        function afterRender() {
+            paintDates(body!);
+            const first = body!.querySelector<HTMLElement>('.wb-md-row');
+            if (first) selectRow(first);
         }
 
         function openDock(tabId?: string) {
             isOpen = true;
             panel!.hidden = false;
             measureBar();
-            applyPanelH();
+            if (isMax) applyMax(); else applyPanelH();
             bar!.setAttribute('aria-expanded', 'true');
             dock!.classList.add('is-open');
             const target = tabId || currentTab || 'resumen';
@@ -517,6 +656,95 @@ const WBI18N = {
         bar.addEventListener('pointercancel', (e) => endDrag(e as PointerEvent, bar));
         bar.addEventListener('click', () => { if (!suppressClick) isOpen ? closeDock() : openDock(); });
 
+        // ── Maestro-detalle (Registros y Eventos) ───────────────────────────────
+        // Todo el detalle sale de los `data-*` de la fila ya renderizada: cero
+        // round-trip. En Registros es además lo único posible — `api_requests` solo
+        // guarda metadatos, no cuerpos de petición/respuesta.
+        const esc = (s: any) => String(s ?? '').replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c] || c));
+
+        function selectRow(row: HTMLElement) {
+            body!.querySelectorAll('.wb-md-row').forEach((r) => {
+                r.classList.toggle('active', r === row);
+                r.setAttribute('aria-selected', String(r === row));
+            });
+            const d = row.dataset;
+            const set = (id: string, v: string) => { const e = body!.querySelector('#' + id); if (e) e.textContent = v; };
+
+            if (d.wbAct === 'log-pick') {
+                set('dMetodo', d.metodo || '');
+                set('dRuta', d.ruta || '');
+                const st = body!.querySelector('#dStatus');
+                if (st) { st.textContent = d.status || ''; st.className = Number(d.status) >= 400 ? 'bad' : 'ok'; }
+                set('dTs', d.ts ? fmtTs(d.ts, true) : '—');
+                set('dMs', d.ms ? `${d.ms} ms` : '—');
+                set('dIp', d.ip || '—');
+                set('dKey', d.key || '—');
+                set('dMode', d.mode || '—');
+                return;
+            }
+
+            if (d.wbAct === 'ev-pick') {
+                const interno = d.fuente === 'interno';
+                set('eFuente', interno ? I18N.evInterno : I18N.evEnviado);
+                set('eEvento', d.evento || '');
+                const kv = body!.querySelector('#eKv');
+                if (kv) {
+                    const row2 = (k: string, v: string, cls = '') => `<div class="wb-kv-row ${cls}"><span>${esc(k)}</span><b>${esc(v)}</b></div>`;
+                    kv.innerHTML = interno
+                        ? row2(I18N.evFolio, d.folio || '—') + row2(I18N.evCuando, d.ts ? fmtTs(d.ts, true) : '—')
+                        : row2(I18N.evId, d.id || '—')
+                          + row2(I18N.evCuando, d.ts ? fmtTs(d.ts, true) : '—')
+                          + row2(I18N.evEstado, (I18N['evSt_' + (d.estado || '')] as string) || d.estado || '—',
+                                 d.estado === 'failed' ? 'bad' : d.estado === 'parcial' || d.estado === 'pending' ? 'warn' : '')
+                          + row2(I18N.evEntregas, `${d.entregados || 0}/${d.endpoints || 0}`)
+                          + (d.intentos && d.intentos !== '0' ? row2(I18N.evIntentos, d.intentos) : '')
+                          + (d.error ? row2(I18N.evError, d.error, 'bad') : '');
+                }
+                const pw = body!.querySelector('#ePayloadWrap') as HTMLElement | null;
+                const pc = body!.querySelector('#ePayload');
+                if (pw && pc) {
+                    if (d.payload) {
+                        let txt = d.payload;
+                        try { txt = JSON.stringify(JSON.parse(d.payload), null, 2); } catch {}
+                        pc.textContent = txt;
+                        pw.hidden = false;
+                    } else pw.hidden = true;
+                }
+                const nota = body!.querySelector('#eNota') as HTMLElement | null;
+                if (nota) nota.hidden = !interno;
+            }
+        }
+
+        // ── Menú de opciones (⋯) ────────────────────────────────────────────────
+        const optsBtn = document.getElementById('wbOpts');
+        const optsMenu = document.getElementById('wbOptsMenu') as HTMLElement | null;
+        function closeOpts() {
+            if (!optsMenu || optsMenu.hidden) return;
+            optsMenu.hidden = true;
+            optsBtn?.setAttribute('aria-expanded', 'false');
+        }
+        optsBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!optsMenu) return;
+            const open = optsMenu.hidden;
+            optsMenu.hidden = !open;
+            optsBtn.setAttribute('aria-expanded', String(open));
+        });
+        optsMenu?.addEventListener('click', (e) => e.stopPropagation());
+        document.addEventListener('click', closeOpts);
+
+        const utcInput = document.getElementById('wbUtc') as HTMLInputElement | null;
+        utcInput?.addEventListener('change', () => {
+            utc = !!utcInput.checked;
+            paintDates(body!);
+            // El detalle abierto también muestra fechas: se repinta re-seleccionando.
+            const active = body!.querySelector<HTMLElement>('.wb-md-row.active');
+            if (active) selectRow(active);
+            writeState();
+        });
+
+        document.getElementById('wbMax')?.addEventListener('click', () => toggleMax());
+
         // ── Modales ─────────────────────────────────────────────────────────────
         let openModalEl: HTMLElement | null = null;
         let lastFocus: HTMLElement | null = null;
@@ -538,11 +766,13 @@ const WBI18N = {
             [panel, bar, document.querySelector('.app-content')].forEach((n) => n && ((n as HTMLElement).inert = false));
             lastFocus?.focus();
         }
-        // Escape: primero cierra el modal. Sin este early-return un solo Esc
-        // cerraría el modal Y el dock a la vez.
+        // Escape en cascada: menú → modal → maximizado → dock. Cada nivel hace
+        // `return`; sin eso un solo Esc cerraría varias capas de golpe.
         document.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape') return;
+            if (optsMenu && !optsMenu.hidden) { closeOpts(); return; }
             if (openModalEl) { closeModal(); return; }
+            if (isMax) { toggleMax(false); return; }
             if (isOpen) closeDock();
         });
 
@@ -756,7 +986,19 @@ const WBI18N = {
 
             switch (act) {
                 case 'goto-tab': loadTab(el.dataset.tab!); break;
-                case 'range': loadTab('resumen', false, el.dataset.range!); break;
+                case 'range': loadTab(currentTab, false, el.dataset.range!); break;
+                case 'log-filter':
+                    filtros.registros[el.dataset.k!] = el.dataset.v || '';
+                    loadTab('registros');
+                    break;
+                case 'ev-filter':
+                    filtros.eventos.ev = el.dataset.v || '';
+                    loadTab('eventos');
+                    break;
+                case 'log-pick':
+                case 'ev-pick':
+                    selectRow(el);
+                    break;
                 case 'seg-mode':
                     if (btn.disabled) break;
                     keyMode = el.dataset.mode || 'test';
@@ -876,6 +1118,26 @@ const WBI18N = {
             }
         });
 
+        // Búsqueda por ruta en Registros: debounce para no pedir el fragmento en
+        // cada tecla, y Enter dispara de inmediato.
+        let searchT: any = null;
+        document.addEventListener('input', (ev) => {
+            const el = (ev.target as HTMLElement)?.closest<HTMLInputElement>('[data-wb-act="log-search"]');
+            if (!el) return;
+            clearTimeout(searchT);
+            searchT = setTimeout(() => {
+                filtros.registros.q = el.value.trim();
+                loadTab('registros');
+            }, 400);
+        });
+        document.addEventListener('keydown', (ev) => {
+            const el = (ev.target as HTMLElement)?.closest<HTMLInputElement>('[data-wb-act="log-search"]');
+            if (!el || ev.key !== 'Enter') return;
+            clearTimeout(searchT);
+            filtros.registros.q = el.value.trim();
+            loadTab('registros');
+        });
+
         document.addEventListener('change', async (ev) => {
             const el = (ev.target as HTMLElement)?.closest<HTMLInputElement>('[data-wb-act="wh-toggle"]');
             if (!el) return;
@@ -917,9 +1179,13 @@ const WBI18N = {
         const st = readState();
         currentTab = st.tab;
         currentRange = st.range;
+        isMax = st.max;
+        utc = st.utc;
+        if (utcInput) utcInput.checked = utc;
         if (st.h) panelH = Math.min(maxH(), Math.max(MIN_H, st.h));
         measureBar();
         setActiveTabUI(currentTab);
+        applyMax();
         updateWbH();
         if (isDevOn() && st.open) openDock(currentTab);
 
