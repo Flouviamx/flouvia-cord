@@ -27,12 +27,12 @@ const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionD
 // "Scale", no "Negocio" — dato falso que Google/IA podían repetir) +
 // aclaración de independencia de Flouvia, consistente con /index y el FAQ.
 const title = isEn
-    ? "Cord Pricing — B2B Quoting & Budgeting Software, Plans from $0"
-    : "Precios de Cord — Software de Cotizaciones y Presupuestos B2B desde $0";
+    ? "CordHQ Pricing — Plans from $0 | From Proposal to Payment"
+    : "Precios de CordHQ — Planes desde $0 | De la Propuesta al Cobro";
 
 const description = isEn
-    ? "Compare Cord's 5 plans — Free, Starter, Pro, Scale, and Developer. B2B quoting, budgeting, AI collections, and API access — for any B2B business, anywhere. CFDI 4.0 e-invoicing for Mexican businesses. No contracts, cancel anytime. Not only Flouvia customers."
-    : "Compara los 5 planes de Cord: Gratis, Starter, Profesional, Scale y Developer. Cotizaciones B2B, presupuestos, cobranza con IA y acceso a la API — para cualquier negocio B2B en cualquier país. CFDI 4.0 para negocios en México. Sin contratos, cancela cuando quieras. No solo clientes de Flouvia.";
+    ? "Compare CordHQ's 5 plans — Free, Starter, Pro, Scale, and Developer. From proposal to payment in a single link: negotiation, signatures, margin intelligence, AI collections, and invoicing. No contracts, cancel anytime."
+    : "Compara los 5 planes de CordHQ: Gratis, Starter, Profesional, Scale y Developer. De la propuesta al cobro en un solo link: negociación, firmas, inteligencia de margen, cobranza con IA y facturación. Sin contratos, cancela cuando quieras.";
 
 // ── JSON-LD: Product + Offer por plan (jul 2026) ──────────────────────────
 // Antes esta página no tenía ningún dato estructurado — un vacío grande en
@@ -83,7 +83,7 @@ const faqSchema = {
             <div class="pr-mesh" aria-hidden="true"></div>
             <div class="pr-hero-inner">
                 <p class="pp-eyebrow reveal">{isEn ? 'PRICING' : 'PRECIOS'}</p>
-                <h1 class="pr-h1 masked-title" set:html={isEn ? 'Start for free. Grow when you close.' : 'Empieza gratis. Crece cuando cierres.'} />
+                <h1 class="pr-h1 masked-title" set:html={isEn ? 'Pricing designed to scale your commercial operation.' : 'Precios diseñados para escalar tu operación comercial.'} />
                 <p class="pr-lead reveal">
                     {isEn ? <Fragment>No contracts. Cancel anytime. Prices in USD. Pay annually and get <b>2 months free</b>.</Fragment> : <Fragment>Sin contratos. Cancela cuando quieras. Precios en pesos, IVA incluido. Paga al año y te llevas <b>2 meses gratis</b>.</Fragment>}
                 </p>

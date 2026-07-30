@@ -27,10 +27,10 @@ const t = useTranslations(lang);
 const howToSchema = {
     '@context': 'https://schema.org',
     '@type': 'HowTo',
-    name: isEn ? 'How Cord works: from first contact to CFDI' : 'Cómo funciona Cord: del primer contacto al CFDI',
+    name: isEn ? 'How CordHQ works: from proposal to payment in one link' : 'Cómo funciona CordHQ: de la propuesta al cobro en un solo link',
     description: isEn 
-        ? 'Cord digitizes the B2B sales process in three steps: from quote creation to SAT-stamped CFDI 4.0, without data re-entry.'
-        : 'Cord digitaliza el proceso de venta B2B en tres pasos: desde la creación de la cotización hasta el timbrado del CFDI 4.0 ante el SAT, sin recaptura de datos.',
+        ? 'CordHQ centralizes the entire commercial cycle in three steps: create a proposal, send an interactive link for approval, and collect payment — all without your client downloading anything.'
+        : 'CordHQ centraliza todo el ciclo comercial en tres pasos: crea una propuesta, envía un link interactivo de aprobación y cobra, todo sin que tu cliente descargue nada.',
     totalTime: 'PT10M',
     tool: [
         { '@type': 'HowToTool', name: isEn ? 'Cord account (free)' : 'Cuenta de Cord (gratuita)' },
@@ -73,13 +73,14 @@ const howToSchema = {
 // búsqueda y los LLMs que citan la página no infieren "producto exclusivo de
 // clientes de Flouvia". "by Flouvia" se movió del <title> a un dato de
 // confianza secundario dentro de la descripción, sin liderar el mensaje.
+// ACTUALIZACIÓN: Se implementa enfoque "Transaccional Absoluto".
 const title = isEn
-    ? "Cord — B2B Quoting, Budgeting & Collections Software"
-    : "Cord — Cotizaciones, Presupuestos y Cobranza B2B";
+    ? "CordHQ — From Proposal to Payment in a Single Link"
+    : "CordHQ — De la Propuesta al Cobro en un Solo Link";
 
 const description = isEn
-    ? "Cord is independent B2B operations software to quote, budget, and collect — for any B2B business, anywhere. Negotiated pricing, one-click approval, budget-vs-actual tracking, AI-powered collections, and automated CFDI 4.0 e-invoicing for Mexican businesses. Not only Flouvia customers. Free plan forever, by the team at Flouvia."
-    : "Cord es un software B2B independiente para cotizar, presupuestar y cobrar — para cualquier negocio B2B, en cualquier país. Precios negociados, aprobación en un clic, presupuestos con seguimiento vs. real, cobranza con IA y CFDI 4.0 automático para negocios en México. No solo clientes de Flouvia. Plan gratis para siempre, hecho por el equipo de Flouvia.";
+    ? "The platform that transforms proposals and agreements into instantly paid transactions. Centralize negotiation, legally binding signatures, margin intelligence, and automated collections in a single interactive link."
+    : "La plataforma que transforma propuestas y acuerdos en transacciones pagadas al instante. Centraliza en un solo link interactivo la negociación, firmas legales de contratos, inteligencia de margen y cobros automatizados.";
 
 // ── Datos estructurados adicionales (jul 2026) ──────────────────────────
 // Organization (Flouvia, la empresa creadora) + SoftwareApplication (Cord,
@@ -107,14 +108,14 @@ const softwareSchema = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
     '@id': 'https://cordhq.app/#software',
-    name: 'Cord',
+    name: 'CordHQ',
     url: 'https://cordhq.app',
     applicationCategory: 'BusinessApplication',
-    applicationSubCategory: isEn ? 'B2B Quoting, Budgeting & Operations Software' : 'Software de Cotizaciones, Presupuestos y Operaciones B2B',
+    applicationSubCategory: isEn ? 'Commercial Closing Platform' : 'Plataforma de Cierre Comercial',
     operatingSystem: 'Web',
     description: isEn
-        ? 'Cord is a standalone, publicly available B2B SaaS for creating quotes with negotiated pricing, tracking approvals in real time, planning budgets with budget-vs-actual tracking, and automating collections. Mexican businesses can also stamp CFDI 4.0 e-invoices automatically. Open to any B2B business worldwide, independent of Flouvia\'s other products.'
-        : 'Cord es un SaaS B2B independiente y de acceso público para crear cotizaciones con precios negociados, dar seguimiento a las aprobaciones en tiempo real, planear presupuestos con seguimiento vs. real y automatizar la cobranza. Los negocios en México además pueden timbrar CFDI 4.0 automáticamente ante el SAT. Abierto a cualquier negocio B2B en cualquier país, independiente de los demás productos de Flouvia.',
+        ? 'CordHQ is the platform that transforms proposals and agreements into instantly paid transactions. It centralizes negotiation, legally binding signatures, margin intelligence, and automated collections in a single interactive link.'
+        : 'CordHQ es la plataforma que transforma propuestas y acuerdos en transacciones pagadas al instante. Centraliza en un solo link interactivo la negociación, firmas legales, inteligencia de margen y cobros automatizados.',
     audience: {
         '@type': 'BusinessAudience',
         audienceType: isEn ? 'Any B2B business worldwide (distributors, wholesalers, manufacturers, service providers, SaaS, agencies)' : 'Cualquier negocio B2B en cualquier país (distribuidoras, mayoristas, manufactura, servicios, SaaS, agencias)',
@@ -128,8 +129,8 @@ const softwareSchema = {
         description: isEn ? 'Free plan, forever — no credit card required.' : 'Plan gratis para siempre — sin tarjeta de crédito.',
     },
     featureList: isEn
-        ? ['Negotiated B2B pricing', 'One-click quote approval', 'Real-time view tracking', 'Financial budgeting & budget-vs-actual tracking', 'AI-powered collections', 'Automated CFDI 4.0 e-invoicing (Mexico)', 'Net 30/60 credit terms', 'Public API & webhooks']
-        : ['Precios negociados B2B', 'Aprobación de cotizaciones en un clic', 'Seguimiento en tiempo real', 'Presupuestos y seguimiento vs. real', 'Cobranza automatizada con IA', 'CFDI 4.0 automático (México)', 'Términos de crédito Net 30/60', 'API pública y webhooks'],
+        ? ['Negotiated B2B pricing', 'One-click quote approval', 'Real-time view tracking', 'Financial budgeting & margin intelligence', 'AI-powered collections', 'Legally binding contract signatures', 'Net 30/60 credit terms', 'Public API & webhooks']
+        : ['Precios negociados B2B', 'Aprobación de cotizaciones en un clic', 'Seguimiento en tiempo real', 'Presupuestos e inteligencia de margen', 'Cobranza automatizada con IA', 'Firmas legales de contratos', 'Términos de crédito Net 30/60', 'API pública y webhooks'],
 };
 
 // Misma fuente (claves faq.1..faq.8 de ui.ts) que consume <Faq /> — el

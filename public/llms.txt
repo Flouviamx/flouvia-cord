@@ -1,28 +1,38 @@
-# Cord
+# Cord — CordHQ
 
-> Cord is an independent B2B operations SaaS — quoting, budgeting, and collections — for
-> any business worldwide, not exclusive to Shopify or to clients of its parent company,
-> Flouvia. Businesses use Cord to create quotes with negotiated pricing and credit terms,
-> get them approved via a public link, plan budgets with budget-vs-actual tracking,
-> collect payment (cards, SPEI, autonomous AI collections), and issue CFDI 4.0 invoices
-> (Mexico), all without leaving the quote flow.
+> CordHQ is B2B transactional infrastructure. It transforms verbal agreements and proposals
+> into paid, legally binding transactions. Businesses use Cord to centralize negotiation,
+> contract signatures, margin intelligence, and automated collections in a single interactive
+> link. Built and maintained by Flouvia (flouvia.com), Cord is a standalone product with its
+> own domain (cordhq.app), billing, and signup — open to any B2B business worldwide.
+> CFDI 4.0 e-invoicing is available for businesses based in Mexico.
 
-Cord is built and maintained by the team at Flouvia (flouvia.com), a Mexican company —
-but Cord itself is a standalone product with its own domain, billing, and signup, open
-to any B2B business worldwide regardless of whether they use any other Flouvia product.
-Businesses based in Mexico additionally get automated CFDI 4.0 e-invoicing built in.
+CordHQ is not a CRM, not a simple quoting tool, and not an ERP. It is the operational layer
+between a verbal "yes" and a paid transaction — purpose-built to eliminate the gap where
+B2B revenue leaks: between proposal and payment. Cord governs the entire commercial
+transaction lifecycle: margin-aware pricing, interactive proposals, cryptographic signatures,
+credit governance (Net 30/60), autonomous AI collections, and automated invoicing.
 
 ## Core capabilities
 
-- Quote editor with negotiated pricing, volume pricing tiers, and credit terms (Contado / Net 30 / Net 60)
-- Public quote links with e-signature, line-item negotiation chat, and partial approval
-- Direct payments via Stripe Connect (cards + SPEI), split into deposit/balance/installments
-- Autonomous AI collections agent (opt-in) that negotiates payment plans over email
-- CFDI 4.0 electronic invoicing for Mexico via Facturapi
-- Multi-currency quoting (MXN/USD/EUR) with FX rate locking
-- Team roles, approval thresholds, and audit logging for B2B sales orgs
+- Margin-intelligent quote editor with negotiated pricing, volume tiers, and credit terms (Cash / Net 30 / Net 60)
+- Interactive transaction links with e-signature, line-item negotiation, and partial approval
+- Direct payments via Stripe Connect (cards + SPEI for Mexico), split into deposit/balance/installments
+- Autonomous AI collections agent (opt-in) that negotiates payment plans over email — 24/7, auditable
+- CFDI 4.0 electronic invoicing for Mexico via Facturapi — zero re-entry from approved quote to stamped invoice
+- Multi-currency transactions (MXN/USD/EUR) with FX rate locking and configurable hedge buffer
+- Team roles, approval thresholds, credit limits per client, and immutable audit logging
 - AI-powered quote generation from text, PDF, or images (Cord AI)
 - Financial budgeting module with master schedules and NPV/IRR/EOQ analysis tools
+- Public REST API, webhooks, MCP server for AI agents, and embeddable Web Component (Cord Elements)
+
+## Who uses CordHQ
+
+CordHQ is designed for B2B businesses that sell products or services to other businesses:
+distributors, wholesalers, manufacturers, SaaS companies, agencies, consultancies, and
+software development firms. It serves businesses of any size, from solo operators to
+enterprise sales teams, in any country. Mexican businesses additionally get automated
+CFDI 4.0 e-invoicing.
 
 ## Documentation
 
@@ -67,9 +77,11 @@ Technical articles from the Cord engineering team:
 
 ## Product
 
-- [Pricing](https://cordhq.app/precios): 5 plans (Free through Developer), MXN
+- [Pricing](https://cordhq.app/precios): 5 plans (Free through Developer), starting at $0
+- [Pricing data (machine-readable)](https://cordhq.app/pricing.md): structured pricing for AI agents
 - [Product overview](https://cordhq.app/producto/editor): the quote editor and full feature set
 - [Solutions by industry](https://cordhq.app/soluciones/empresas): enterprise and startup use cases
+- [Use cases](https://cordhq.app/casos-de-uso/saas): SaaS, agencies, distributors, software factories
 
 ## Support
 

@@ -7,5 +7,18 @@
     { "path": "/api/cron/webhooks",      "schedule": "0 5 * * *"  },
     { "path": "/api/cron/webhooks-limpieza", "schedule": "0 4 * * *" },
     { "path": "/api/cron/expirar-cotizaciones", "schedule": "0 7 * * *" }
+  ],
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "cord.flouvia.com"
+        }
+      ],
+      "destination": "https://cordhq.app/$1",
+      "permanent": true
+    }
   ]
 }

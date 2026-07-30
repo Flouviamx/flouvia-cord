@@ -26,7 +26,9 @@ export default function TestimonialCarousel({ items, isDarkMode = false }) {
                         style={{ background: item.bgGradient || item.bgColor || '#0f172a' }}
                     >
                         {item.bgImage && (
-                            <img src={item.bgImage} alt="" className="tc-bg-image" />
+                            <div className="tc-bg">
+                                <img src={item.bgImage} alt={`Fondo del testimonio de ${item.name}`} className="tc-bg-image" />
+                            </div>
                         )}
                     </div>
                 ))}
@@ -72,8 +74,8 @@ export default function TestimonialCarousel({ items, isDarkMode = false }) {
                         aria-label={`Show ${item.name} testimonial`}
                     >
                         {item.logoUrl && (
-                            <div className="tc-nav-icon-wrapper">
-                                <img src={item.logoUrl} alt="" className="tc-nav-icon" />
+                            <div className="tc-nav-img">
+                                <img src={item.logoUrl} alt={`Logo de ${item.name}`} className="tc-nav-icon" />
                             </div>
                         )}
                         <span className="tc-nav-name">{item.name}</span>

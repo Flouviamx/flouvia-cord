@@ -15,10 +15,10 @@ const isEn = lang === 'en';
 const t = useTranslations(lang);
 const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 
-const title = isEn ? "How it works | Cord" : "Cómo funciona | Cord";
+const title = isEn ? "How CordHQ Works | From Proposal to Payment" : "Cómo funciona CordHQ | De la Propuesta al Cobro";
 const description = isEn 
-    ? "Discover how Cord works. From first contact to CFDI without friction, all in a single platform designed for B2B."
-    : "Descubre cómo funciona Cord. Del primer contacto al CFDI sin fricción, todo en una sola plataforma diseñada para B2B.";
+    ? "See how CordHQ takes you from proposal to payment in one interactive link. Create proposals, get approval with legal signatures, and collect — all without your client downloading anything."
+    : "Descubre cómo CordHQ te lleva de la propuesta al cobro en un solo link interactivo. Crea propuestas, obtén aprobación con firma legal y cobra, sin que tu cliente descargue nada.";
 ---
 
 <Layout title={title} description={description}>
@@ -27,15 +27,15 @@ const description = isEn
         <section class="cf-hero">
             <div class="cf-mesh" aria-hidden="true"></div>
             <div class="cf-hero-inner">
-                <p class="cf-eyebrow reveal">{isEn ? 'HOW CORD WORKS' : 'CÓMO FUNCIONA CORD'}</p>
-                <h1 class="cf-title masked-title" set:html={isEn ? 'Sell faster. Get paid on time.' : 'Vende más rápido. Cobra a tiempo.'} />
+                <p class="cf-eyebrow reveal">{isEn ? 'HOW CORDHQ WORKS' : 'CÓMO FUNCIONA CORDHQ'}</p>
+                <h1 class="cf-title masked-title" set:html={isEn ? 'From proposal to payment. See the full cycle.' : 'De la propuesta al cobro. Conoce el ciclo completo.'} />
                 <p class="cf-sub reveal">
                     {isEn 
-                        ? 'Forget static PDFs, endless email threads, and double data entry. Cord optimizes the entire B2B sales cycle so you can focus on closing deals.'
-                        : 'Olvídate de los PDFs estáticos, los hilos interminables de correo y la doble captura. Cord optimiza todo el ciclo de ventas B2B para que tú te enfoques en cerrar tratos.'}
+                        ? 'CordHQ centralizes your entire commercial cycle in one interactive experience: create a proposal, send a link, get approval with a legal signature, and collect — your client never downloads anything or creates an account.'
+                        : 'CordHQ centraliza todo tu ciclo comercial en una experiencia interactiva: crea una propuesta, envía un link, obtén aprobación con firma legal y cobra, sin que tu cliente descargue nada ni cree cuenta.'}
                 </p>
                 <div class="cf-hero-actions reveal">
-                    <a href={l("/registro")} class="cf-btn-primary">{isEn ? 'Start for free' : 'Empieza gratis'}</a>
+                    <a href={l("/registro")} class="cf-btn-primary">{isEn ? 'Create my first proposal' : 'Crear mi primera propuesta'}</a>
                     <a href={l("/q/demo")} class="cf-btn-secondary">{isEn ? 'View interactive demo' : 'Ver demo interactiva'}</a>
                 </div>
             </div>
@@ -66,8 +66,8 @@ const description = isEn
         <section class="cf-features">
             <div class="cf-features-inner">
                 <div class="cf-features-head reveal">
-                    <h2 class="cf-h2 masked-title">{isEn ? 'Everything you need, without the complexity of an ERP.' : 'Todo lo que necesitas, sin la complejidad de un ERP.'}</h2>
-                    <p class="cf-p">{isEn ? 'Designed for the speed of modern sales, with the financial rigor your operation demands.' : 'Diseñado para la velocidad de las ventas modernas, con el rigor financiero que exige tu operación.'}</p>
+                    <h2 class="cf-h2 masked-title">{isEn ? 'The transactional layer for modern B2B sales.' : 'La capa transaccional para las ventas B2B modernas.'}</h2>
+                    <p class="cf-p">{isEn ? 'Designed to govern negotiations, margins, and cash flow with the financial rigor your operation demands.' : 'Diseñado para gobernar negociaciones, márgenes y flujo de efectivo con el rigor financiero que exige tu operación.'}</p>
                 </div>
 
                 <div class="cf-grid">
