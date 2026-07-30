@@ -62,7 +62,7 @@ Node requerido: **>=22.12.0** (ver `.nvmrc` → 24.15.0; alineado a Node 24 LTS,
 | Emails | Resend (transaccionales: cotización vista, aprobada, etc.) |
 | CFDI | **Facturapi** (facturapi.io) — timbrado CFDI 4.0 vía `MexicoSatProvider` |
 | Animaciones | GSAP 3 — **solo en landing/login**; dentro de la app, CSS animations |
-| Analytics | **Vercel Analytics** (`@vercel/analytics`) — `<Analytics />` en `Layout.astro` y `AppLayout.astro` |
+| Analytics | **Mixpanel** (Product analytics, CDN SDK) + **Vercel Analytics** (`@vercel/analytics`) para web vitals |
 | Tipografía | **Inter única** (las serif se ELIMINARON jun 2026 a petición de André) — montos con clase `.editorial` = Inter 600, tracking −0.03em, `tabular-nums` |
 
 ✅ **Clerk YA está ACTIVO** (jun 2026): integración en `astro.config.mjs` con
@@ -152,6 +152,7 @@ INBOUND_EMAIL_SECRET=                                           # respuestas por
 UPSTASH_REDIS_REST_URL=  UPSTASH_REDIS_REST_TOKEN=              # rate-limit DURABLE compartido entre instancias (src/lib/ratelimit.ts) + sesiones del transporte SSE de MCP (src/lib/mcp/session-store.ts, jul 2026); sin ellas ambos caen a un Map en memoria por proceso — funcionan pero no son globales entre instancias. Provisionar vía Vercel Marketplace → Upstash → Storage del proyecto (auto-inyecta ambas)
 MCP_SECRET_KEY=                                                 # opcional (jul 2026) — cifra en reposo mcp_servers.auth_token (AES-256-GCM, src/lib/crypto-secret.ts); sin ella el token se guarda en claro. Generar con `openssl rand -base64 32`
 PUBLIC_SITE_URL=                                                # opcional (default https://cordhq.app) — origen fijo para links en correos disparados por CRON (nunca derivar de request.url ahí, ver docs/historial-infra-hitos.md)
+PUBLIC_MIXPANEL_TOKEN=                                          # Token público del SDK de Mixpanel (auto-expuesto al cliente por el prefijo PUBLIC_)
 ```
 
 Neon se recomienda provisionar vía **Vercel Marketplace → Neon** desde el proyecto

@@ -963,6 +963,16 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 if (!res.ok) throw new Error(data.error || T.errorGuardar);
                 if (data.needsApproval) showToast(tpl(T.aprobacionSolicitadaTpl, { folio: data.folio }));
                 else showToast(send ? tpl(T.enviadaFolioTpl, { folio: data.folio }) : tpl(T.borradorFolioGuardadoTpl, { folio: data.folio }));
+                // Mixpanel: track quote creation (only new quotes, not draft updates)
+                if (typeof mixpanel !== 'undefined') {
+                    var payload = buildPayload(send);
+                    mixpanel.track('quote_created', {
+                        has_items: lines.length > 0,
+                        item_count: lines.length,
+                        currency: payload.base_currency || 'MXN',
+                        source: 'manual'
+                    });
+                }
                 setTimeout(() => { window.location.href = `/app/cotizaciones/${data.id}`; }, 1100);
             }
         } catch (err) {

@@ -6,6 +6,8 @@
 
 ---
 
+✅ **Mixpanel Analytics (jul 2026):** Product analytics via Mixpanel JS SDK (CDN). Token en `PUBLIC_MIXPANEL_TOKEN`. Init en `Layout.astro` (landing) y `AppLayout.astro` (app + identify). Dos eventos iniciales: `sign_up_completed` (onboarding/workspace) y `quote_created` (nueva.astro + [id].astro duplicate). Identity via Clerk `userId`; `reset()` en logout (CustomOrgSwitcher). Guía de tracking en `.agents/AGENTS.md`. Coexiste con Vercel Analytics (web vitals vs. product analytics).
+
 ✅ **Workbench v3.1 — atajos reales, UTC en todas las pestañas, y desbloqueo de 2FA (jul 2026)** —
    André reportó que "los atajos de teclado y lo del horario no sirven". Ambos eran bugs míos de
    v3: **anuncié funcionalidad que no implementé**.

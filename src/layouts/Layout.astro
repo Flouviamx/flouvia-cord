@@ -94,6 +94,18 @@ const locale = lang === 'es' ? 'es_MX' : 'en_US';
 
         <!-- Datos estructurados / SEO por página (JSON-LD, etc.) -->
         <slot name="head" />
+
+        <!-- Mixpanel Analytics -->
+        <script is:inline src="https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js"></script>
+        <script is:inline define:vars={{ mpToken: import.meta.env.PUBLIC_MIXPANEL_TOKEN || '' }}>
+            if (mpToken && typeof mixpanel !== 'undefined') {
+                mixpanel.init(mpToken, {
+                    debug: location.hostname === 'localhost',
+                    track_pageview: true,
+                    persistence: 'localStorage',
+                });
+            }
+        </script>
     </head>
     <body>
         <slot />

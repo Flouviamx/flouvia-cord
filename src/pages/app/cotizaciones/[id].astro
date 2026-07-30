@@ -959,6 +959,10 @@ const dotColor = (tipo: string) =>
                 const res = await fetch(`/api/cotizaciones/${qid}/duplicate`, { method: 'POST' });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || I.i18nNoPudoDuplicar);
+                // Mixpanel: track duplicated quote creation
+                if (typeof mixpanel !== 'undefined') {
+                    mixpanel.track('quote_created', { source: 'duplicate' });
+                }
                 location.href = `/app/cotizaciones/${data.id}`;
             } catch (err: any) {
                 errorEl.textContent = err.message;

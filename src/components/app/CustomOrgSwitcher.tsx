@@ -133,6 +133,10 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
 
   const handleLogout = async () => {
     if (!clerk?.signOut) return;
+    // Reset Mixpanel identity before signing out (prevents cross-user attribution)
+    if (typeof window !== 'undefined' && (window as any).mixpanel) {
+      (window as any).mixpanel.reset();
+    }
     await clerk.signOut();
     window.location.href = '/sign-in';
   };

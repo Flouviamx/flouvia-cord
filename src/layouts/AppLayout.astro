@@ -89,6 +89,23 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Cord" />
 
+        <!-- Mixpanel Analytics -->
+        <script is:inline src="https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js"></script>
+        <script is:inline define:vars={{ mpToken: import.meta.env.PUBLIC_MIXPANEL_TOKEN || '', mpUserId: currentUserId() || '', mpOrgName: ORG.nombre || '' }}>
+            if (mpToken && typeof mixpanel !== 'undefined') {
+                mixpanel.init(mpToken, {
+                    debug: location.hostname === 'localhost',
+                    track_pageview: true,
+                    persistence: 'localStorage',
+                });
+                if (mpUserId) {
+                    mixpanel.identify(mpUserId);
+                    mixpanel.people.set({ company_name: mpOrgName });
+                    mixpanel.register({ platform: 'web' });
+                }
+            }
+        </script>
+
         <title>{title}</title>
         <script is:inline>
             // Restaura estado colapsado de la sidebar + tema antes del primer paint (sin flash).
