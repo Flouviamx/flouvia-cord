@@ -10,6 +10,7 @@ import Sidebar from '../components/app/Sidebar.astro';
 import SupportCoverBg from '../components/support/SupportCoverBg.jsx';
 import { clerkAppearance } from '../lib/clerk-theme';
 import Analytics from '@vercel/analytics/astro';
+import PostHog from '../components/posthog.astro';
 import { memberCan } from '../lib/permissions';
 import { currentLocale, currentUserId } from '../lib/context';
 import { t, getAppRuntimeI18n } from '../i18n/app';
@@ -88,6 +89,16 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Cord" />
+
+        <!-- PostHog Analytics -->
+        <PostHog />
+
+        <!-- PostHog identify: wire the authenticated user so server and client events correlate -->
+        <script is:inline define:vars={{ phUserId: currentUserId() || '' }}>
+            if (typeof window !== 'undefined' && window.posthog && phUserId) {
+                window.posthog.identify(phUserId);
+            }
+        </script>
 
         <!-- Mixpanel Analytics -->
         <script is:inline define:vars={{ mpToken: import.meta.env.PUBLIC_MIXPANEL_TOKEN || '', mpUserId: currentUserId() || '', mpOrgName: ORG.nombre || '' }}>

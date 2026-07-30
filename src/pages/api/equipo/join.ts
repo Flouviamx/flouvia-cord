@@ -7,6 +7,7 @@ import type { APIRoute } from 'astro';
 import { sql, logAudit, reqIp } from '../../../lib/db';
 import { currentUserId } from '../../../lib/context';
 import { reportUsage } from '../../../lib/billing';
+import { getPostHogServer } from '../../../lib/posthog-server';
 
 const json = (data: unknown, status = 200) =>
     new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -39,5 +40,26 @@ export const POST: APIRoute = async ({ request }) => {
     await logAudit(orgId, { accion: 'equipo.union', entidad: 'miembro', entidad_id: inv.id, detalle: 'Aceptó la invitación', ip: reqIp(request) });
     // Un miembro activo más cuenta como usuario del sistema (excedente vía Stripe).
     await reportUsage(orgId, 'usuario', 1);
+
+    // PostHog: track team member joining
+    const posthog = getPostHogServer();
+    if (posthog) {
+        const sessionId = request.headers.get('X-PostHog-Session-Id') || undefined;
+        posthog.capture({
+            distinctId: userId,
+            event: 'team_member_joined',
+            properties: {
+                $session_id: sessionId,
+                org_id: orgId,
+            },
+        });
+        // Also identify the new user server-side
+        posthog.identify({
+            distinctId: userId,
+            properties: { org_id: orgId },
+        });
+        await posthog.flush();
+    }
+
     return json({ ok: true, orgId });
 };

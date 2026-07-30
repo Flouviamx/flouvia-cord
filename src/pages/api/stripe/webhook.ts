@@ -14,6 +14,7 @@ import { sql, logAudit } from '../../../lib/db';
 import { dispatchQuoteEvent, dispatchPaymentPartial } from '../../../lib/webhooks';
 import { PRICE_TO_PLAN, isPaidPlan, stripe } from '../../../lib/billing';
 import { after } from '../../../lib/after';
+import { getPostHogServer } from '../../../lib/posthog-server';
 
 const WH_SECRET = import.meta.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
 const CONNECT_WH_SECRET = import.meta.env.STRIPE_CONNECT_WEBHOOK_SECRET || process.env.STRIPE_CONNECT_WEBHOOK_SECRET;
@@ -263,6 +264,23 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
             // cuanto el handler responde (el evento de dinero más crítico del sistema
             // no puede depender de que la función siga viva por accidente).
             after(dispatchQuoteEvent(orgId, cid, 'quote.paid'));
+
+            // PostHog: track full payment received
+            const posthog = getPostHogServer();
+            if (posthog) {
+                const amount = Number(sessionOrIntent?.amount ?? sessionOrIntent?.amount_total ?? 0) / 100;
+                posthog.capture({
+                    distinctId: `org_${orgId}`,
+                    event: 'payment_received',
+                    properties: {
+                        org_id: orgId,
+                        quote_id: cid,
+                        amount,
+                        payment_method: paymentMethod,
+                    },
+                });
+                posthog.flush().catch(() => {});
+            }
         }
     }
 }
