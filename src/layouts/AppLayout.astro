@@ -97,6 +97,7 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
                     debug: location.hostname === 'localhost',
                     track_pageview: true,
                     persistence: 'localStorage',
+                    record_sessions_percent: 100
                 });
                 if (mpUserId) {
                     mixpanel.identify(mpUserId);
