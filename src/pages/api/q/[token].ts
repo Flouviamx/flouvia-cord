@@ -12,6 +12,7 @@ import { dispatchQuoteEvent } from '../../../lib/webhooks';
 import { after } from '../../../lib/after';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { materializeAnticipoCobros } from '../../../lib/cobros';
+import { getPostHogServer } from '../../../lib/posthog-server';
 
 const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n);
 
@@ -107,6 +108,26 @@ export const POST: APIRoute = async ({ params, request }) => {
         try { await materializeAnticipoCobros(c.id as string); } catch { /* fallback en payment-intent */ }
         // Fondo: el webhook/Slack jamás debe hacer esperar al cliente que aprueba.
         after(dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.approved'));
+
+        // PostHog: track quote approved (distinct ID = org_id since this is a client action)
+        try {
+            const posthog = getPostHogServer();
+            const sessionId = request.headers.get('X-PostHog-Session-Id') || undefined;
+            const distinctId = request.headers.get('X-PostHog-Distinct-Id') || (c.org_id as string);
+            posthog.capture({
+                distinctId,
+                event: 'quote_approved',
+                properties: {
+                    $session_id: sessionId,
+                    quote_id: c.id,
+                    org_id: c.org_id,
+                    is_partial: isPartial,
+                    signed_by_provided: !!signedBy,
+                },
+            });
+            await posthog.flush();
+        } catch { /* best-effort */ }
+
         return json({ ok: true, status: 'approved', hash: snapshotHash, partial: isPartial });
     }
 
@@ -118,6 +139,25 @@ export const POST: APIRoute = async ({ params, request }) => {
         await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                   values (${c.org_id}, ${c.id}, 'rejected', ${comentario ? `El cliente rechazó: "${comentario}"` : 'El cliente rechazó la cotización desde el link'})`;
         after(dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.rejected'));
+
+        // PostHog: track quote rejected
+        try {
+            const posthog = getPostHogServer();
+            const sessionId = request.headers.get('X-PostHog-Session-Id') || undefined;
+            const distinctId = request.headers.get('X-PostHog-Distinct-Id') || (c.org_id as string);
+            posthog.capture({
+                distinctId,
+                event: 'quote_rejected',
+                properties: {
+                    $session_id: sessionId,
+                    quote_id: c.id,
+                    org_id: c.org_id,
+                    has_comment: !!comentario,
+                },
+            });
+            await posthog.flush();
+        } catch { /* best-effort */ }
+
         return json({ ok: true, status: 'rejected' });
     }
 

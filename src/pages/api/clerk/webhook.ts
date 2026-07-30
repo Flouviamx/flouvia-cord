@@ -20,6 +20,7 @@ import { sql } from '../../../lib/db';
 import { reportUsage } from '../../../lib/billing';
 import { allPerms, PRESETS } from '../../../lib/permissions';
 import { seedDemoData } from '../../../lib/onboarding';
+import { getPostHogServer } from '../../../lib/posthog-server';
 
 // Mapea el rol coarse de Clerk (org:admin | org:member) a nuestro rol/preset.
 // El owner se marca por separado (created_by de organization.created) y NUNCA se
@@ -104,6 +105,26 @@ export const POST: APIRoute = async ({ request }) => {
             insert into orgs (clerk_user_id, nombre)
             values (${userId}, ${'Mi negocio'})
             on conflict (clerk_user_id) do nothing`;
+
+        // PostHog: track new user sign-up
+        try {
+            const posthog = getPostHogServer();
+            posthog.capture({
+                distinctId: userId,
+                event: 'user_signed_up',
+                properties: {
+                    source: 'clerk_webhook',
+                },
+            });
+            // Identify the user with their role (person properties, not event properties)
+            posthog.identify({
+                distinctId: userId,
+                properties: {
+                    plan: 'free',
+                },
+            });
+            await posthog.flush();
+        } catch { /* best-effort: never break the webhook */ }
     }
 
     // ── user.deleted: anonimizar datos (no borrar — compliance) ─────────────
