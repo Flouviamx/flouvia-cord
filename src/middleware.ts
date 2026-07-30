@@ -107,7 +107,7 @@ const subdomainRewrite = async (context: any, next: any) => {
         // ENCIMA del middleware — un path raíz-limpio (/<slug>) que no matchea ninguna
         // ruta se sirve con 404 aunque el contenido renderice, y no se puede corregir
         // desde aquí. Por eso los links llevan el prefijo (ver DevBlogLayout).
-        return next(sub.prefix + (path === "/" ? "" : path));
+        return context.rewrite(sub.prefix + (path === "/" ? "" : path));
     }
 
     // Dominio principal (cordhq.app): en prod, el contenido de los subdominios no debe
