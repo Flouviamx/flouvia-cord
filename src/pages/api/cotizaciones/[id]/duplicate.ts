@@ -6,6 +6,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId } from '../../../../lib/db';
 import { currentUserId } from '../../../../lib/context';
+import { getPostHogServer } from '../../../../lib/posthog-server';
 
 export const POST: APIRoute = async ({ params }) => {
     const id = params.id ?? '';
@@ -44,6 +45,24 @@ export const POST: APIRoute = async ({ params }) => {
 
     await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
               values (${orgId}, ${cot.id}, 'created', ${'Duplicada de ' + src.folio})`;
+
+    // PostHog: track quote duplication
+    try {
+        const userId = currentUserId();
+        if (userId) {
+            const posthog = getPostHogServer();
+            posthog.capture({
+                distinctId: userId,
+                event: 'quote_duplicated',
+                properties: {
+                    org_id: orgId,
+                    source_quote_id: id,
+                    new_folio: folio,
+                },
+            });
+            await posthog.flush();
+        }
+    } catch { /* best-effort */ }
 
     return json({ id: cot.id, folio });
 };

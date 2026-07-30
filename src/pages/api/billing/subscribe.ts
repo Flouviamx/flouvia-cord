@@ -15,6 +15,8 @@ import {
     STRIPE_KEY, PLAN_PRICES, METER_PRICES, isPaidPlan, getOrCreateCustomer, stripe,
     type Cycle,
 } from '../../../lib/billing';
+import { getPostHogServer } from '../../../lib/posthog-server';
+import { currentUserId } from '../../../lib/context';
 
 // API version mínima para billing_mode flexible + invoice.confirmation_secret.
 const STRIPE_VERSION = '2025-06-30.basil';
@@ -75,6 +77,29 @@ export const POST: APIRoute = async ({ request }) => {
             const clientSecret = sub?.latest_invoice?.confirmation_secret?.client_secret;
             if (!clientSecret) return json({ error: 'No se pudo iniciar el pago' }, 502);
             await logAudit(orgId, { accion: 'billing.checkout', entidad: 'org', entidad_id: orgId, detalle: `Payment Element ${plan} (${cycle})`, ip: reqIp(request) });
+
+            // PostHog: track plan subscription initiation (Payment Element flow)
+            try {
+                const userId = currentUserId();
+                if (userId) {
+                    const posthog = getPostHogServer();
+                    const sessionId = request.headers.get('X-PostHog-Session-Id') || undefined;
+                    const distinctId = request.headers.get('X-PostHog-Distinct-Id') || userId;
+                    posthog.capture({
+                        distinctId,
+                        event: 'plan_subscribed',
+                        properties: {
+                            $session_id: sessionId,
+                            plan,
+                            cycle,
+                            org_id: orgId,
+                            flow: 'payment_element',
+                        },
+                    });
+                    await posthog.flush();
+                }
+            } catch { /* best-effort */ }
+
             return json({ client_secret: clientSecret });
         }
 

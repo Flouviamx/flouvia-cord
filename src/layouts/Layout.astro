@@ -12,6 +12,7 @@ interface Props {
 }
 
 import Analytics from '@vercel/analytics/astro';
+import PostHog from '../components/posthog.astro';
 import { getLangFromUrl, altLangUrls } from '../i18n/utils';
 
 const {
@@ -107,6 +108,9 @@ const locale = lang === 'es' ? 'es_MX' : 'en_US';
                 });
             }
         </script>
+
+        <!-- PostHog Analytics -->
+        <PostHog />
     </head>
     <body>
         <slot />

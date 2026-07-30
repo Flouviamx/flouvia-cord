@@ -15,6 +15,8 @@ import { emitFiscalDocument } from '../../../lib/fiscal/emit';
 import { MAX_ITEMS } from '../../../lib/cotizaciones';
 import { materializeAnticipoCobros } from '../../../lib/cobros';
 import { sanitizeItem } from '../../../../packages/elements/src/engine';
+import { getPostHogServer } from '../../../lib/posthog-server';
+import { currentUserId } from '../../../lib/context';
 
 // Evento interno (eventos.tipo) → evento público de webhook.
 const WH_MAP: Record<string, WebhookEvent> = {
@@ -253,6 +255,39 @@ export const PATCH: APIRoute = async ({ params, request }) => {
             await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                       values (${orgId}, ${id}, 'email', 'Correo enviado al cliente')`;
         }
+    }
+
+    // PostHog: track key quote status transitions
+    const userId = currentUserId();
+    if (userId && (action.to === 'sent' || action.to === 'invoiced')) {
+        try {
+            const posthog = getPostHogServer();
+            const sessionId = request.headers.get('X-PostHog-Session-Id') || undefined;
+            const distinctId = request.headers.get('X-PostHog-Distinct-Id') || userId;
+            if (action.to === 'sent') {
+                posthog.capture({
+                    distinctId,
+                    event: 'quote_sent',
+                    properties: {
+                        $session_id: sessionId,
+                        quote_id: id,
+                        org_id: orgId,
+                        action: body.action,
+                    },
+                });
+            } else if (action.to === 'invoiced' && fiscal?.emitted) {
+                posthog.capture({
+                    distinctId,
+                    event: 'invoice_stamped',
+                    properties: {
+                        $session_id: sessionId,
+                        quote_id: id,
+                        org_id: orgId,
+                    },
+                });
+            }
+            await posthog.flush();
+        } catch { /* best-effort: analytics must not break the response */ }
     }
 
     return json({ ok: true, status: action.to, email, fiscal });
