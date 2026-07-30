@@ -42,7 +42,9 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
     </div>
 
     <!-- ── MOCKUP (demo interactivo · calca de la app real) ── -->
-    <div class="mockup-wrap reveal-mockup" id="heroDemo">
+    <div class="mk-space">
+        <div class="mk-scaler">
+            <div class="mockup-wrap reveal-mockup" id="heroDemo">
         <!-- Control de pasos: el visitante recorre el flujo de una cotización -->
         <div class="demo-steps" id="demoSteps" role="tablist" aria-label="Recorre el flujo de una cotización">
             <button class="demo-step is-active" data-step="0" role="tab" aria-selected="true"><span class="ds-n">1</span><span class="ds-label">{t("demo.step.1")}</span><span class="ds-fill" aria-hidden="true"></span></button>
@@ -176,19 +178,7 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
             <span class="mk-chip-check">✓</span>
             <span>{t("mk.chip")}</span>
         </div>
-    </div>
-
-    <!-- Trust strip: señales de confianza reales (CFDI/seguridad/país/respaldo),
-         no una sola línea que suene a "herramienta interna de Flouvia". -->
-    <div class="hero-trust reveal">
-        <div class="trust-row">
-            <span class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>{t("trust.item.1")}</span>
-            <span class="trust-sep"></span>
-            <span class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>{t("trust.item.2")}</span>
-            <span class="trust-sep"></span>
-            <span class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3.5 9h17M3.5 15h17M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z"/></svg>{t("trust.item.3")}</span>
-            <span class="trust-sep"></span>
-            <span class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 6v6c0 5 4 8.5 9 10 5-1.5 9-5 9-10V6z"/></svg>{t("trust.item.4")}</span>
+            </div>
         </div>
     </div>
 </section>
@@ -196,12 +186,12 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 <style>
     .hero {
         position: relative;
-        padding: 5rem 5% 0; /* Quitamos el padding bottom excesivo del contenedor general */
+        padding: 5rem 5% 5rem;
         display: flex;
         flex-direction: column;
         align-items: center;
         text-align: center;
-        overflow: clip;
+        overflow-x: clip;
         background: var(--color-bg-soft);
     }
 
@@ -385,7 +375,23 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
     .hero-microcopy { font-size: 0.85rem; color: var(--color-text-muted); margin: 0 0 4rem 0; }
 
     /* ── MOCKUP ── */
-    .mockup-wrap { position: relative; z-index: 2; width: 100%; max-width: 1080px; margin: 0 auto; }
+    .mk-space {
+        position: relative;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+    .mk-scaler {
+        position: relative;
+        width: 1080px;
+        flex-shrink: 0;
+    }
+    @media (max-width: 900px) {
+        .mk-scaler {
+            width: 900px;
+        }
+    }
+    .mockup-wrap { position: relative; z-index: 2; width: 100%; margin: 0 auto; }
 
     /* Control de pasos del demo interactivo (Badges del mockup) */
     .demo-steps {
@@ -438,8 +444,8 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
         border: 1px solid rgba(10,25,47,0.08);
         box-shadow:
             0 2px 4px rgba(10,25,47,0.05),
-            0 40px 90px -30px rgba(10,25,47,0.30),
-            0 80px 150px -60px rgba(10,25,47,0.22),
+            0 30px 60px 0 rgba(10,25,47,0.18),
+            0 15px 30px 0 rgba(10,25,47,0.10),
             inset 0 1px 0 rgba(255,255,255,0.7);
     }
 
@@ -587,37 +593,14 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
     }
 
     /* Trust: señales reales (CFDI/seguridad/país/respaldo), no un solo crédito de ingeniería */
-    .hero-trust { margin-top: 2.75rem; margin-bottom: 5rem; display: flex; flex-direction: column; align-items: center; gap: 1.3rem; }
-    .trust-row { display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap; justify-content: center; }
-    .trust-item { display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.2px; color: #8a93a3; }
-    .trust-item svg { width: 14px; height: 14px; flex-shrink: 0; color: #aab4c4; }
-    .trust-sep { width: 3px; height: 3px; border-radius: 50%; background: #d5dae2; flex-shrink: 0; }
-    @media (max-width: 640px) {
-        .trust-row { gap: 0.7rem 0.9rem; }
-        .trust-item { font-size: 0.68rem; }
-    }
 
-    @media (max-width: 1000px) {
-        .mk-body { grid-template-columns: 178px 1fr; }
-        .mk-timeline { display: none; }
-    }
     @media (max-width: 900px) {
-        .hero { padding-top: 8.5rem; }
-        .mk-body { grid-template-columns: 1fr; min-height: 0; }
-        .mk-side { display: none; }
-        .mk-toast { right: 50%; transform: translateX(50%); bottom: -20px; animation: none; }
-        .mk-chip { display: none; }
+        .mk-scaler {
+            transform-origin: top center;
+        }
+        .hero { padding-top: 5.5rem; }
         .hero-top { grid-template-columns: 1fr; gap: 1.3rem; }
         .hero-desc { max-width: none; padding-top: 0; }
-    }
-    @media (max-width: 560px) {
-        .mk-row { grid-template-columns: 1fr 38px 64px 72px; font-size: 0.72rem; }
-        .mk-sub { display: none; }
-        .mk-stepper { flex-wrap: wrap; gap: 6px; }
-        .mk-stp-line { min-width: 12px; }
-        .demo-steps { gap: 2px; padding: 4px; }
-        .demo-step { padding: 8px 11px; font-size: 0.74rem; gap: 6px; }
-        .demo-step .ds-n { width: 16px; height: 16px; }
     }
 
     /* Sin animación: el mockup queda en su estado final estático (HTML) y el
@@ -626,3 +609,36 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
         .demo-steps { display: none; }
     }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const scaler = document.querySelector('.mk-scaler') as HTMLElement;
+        const space = document.querySelector('.mk-space') as HTMLElement;
+        if (!scaler || !space) return;
+
+        function scaleMockup() {
+            if (window.innerWidth > 1080) {
+                scaler.style.transform = 'none';
+                space.style.height = 'auto';
+                return;
+            }
+            
+            // Available width (viewport width minus some padding)
+            const padding = window.innerWidth < 768 ? 20 : 40;
+            const availableWidth = window.innerWidth - padding;
+            const originalWidth = 1080;
+            
+            const scale = availableWidth / originalWidth;
+            scaler.style.transform = `scale(${scale})`;
+            
+            // Adjust container height to match scaled mockup height
+            const rawHeight = scaler.offsetHeight;
+            space.style.height = `${rawHeight * scale}px`;
+        }
+        
+        window.addEventListener('resize', scaleMockup);
+        scaleMockup();
+        setTimeout(scaleMockup, 200);
+        setTimeout(scaleMockup, 1000);
+    });
+</script>

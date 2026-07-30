@@ -594,6 +594,40 @@ const breadcrumbSchema = {
 
     @media (max-width: 1024px) {
         .article-layout { grid-template-columns: 1fr; gap: 0; }
-        .article-sidebar-left, .article-sidebar-right { display: none; } /* Hide sticky sidebars on mobile */
+        .article-sidebar-left { display: none; } /* Hide TOC on mobile */
+        
+        /* Convert Share Pill into a horizontal bar below the article */
+        .article-sidebar-right {
+            padding: 1rem 0 0;
+            display: flex;
+            justify-content: flex-start;
+        }
+        .share-pill {
+            flex-direction: row;
+            padding: 0.5rem 1rem;
+            border-radius: 100px;
+            gap: 1rem;
+            position: static;
+        }
+        .share-btn { width: 44px; height: 44px; }
+        .share-btn:hover { width: 44px; }
+        .share-text { display: none; }
+    }
+
+    @media (max-width: 768px) {
+        .blog-post-page { padding-top: 80px; }
+        .article-hero { padding: 2.5rem 5% 0; margin-bottom: 2rem; }
+        
+        .article-title { font-size: 2.2rem; margin-bottom: 1rem; }
+        .article-excerpt { font-size: 1.05rem; margin-bottom: 2rem; }
+        .article-meta { flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem; }
+        
+        .article-body { padding: 0 0 3rem; }
+        .prose-container { font-size: 1.05rem; line-height: 1.7; }
+        .prose-container :global(h2) { font-size: 1.6rem; margin: 2.5rem 0 1.2rem; }
+        .prose-container :global(h3) { font-size: 1.35rem; margin: 2rem 0 1rem; }
+        .prose-container :global(blockquote) { font-size: 1.15rem; padding: 1rem 1.25rem; margin: 2rem 0; }
+        
+        .share-pill { gap: 0.5rem; width: 100%; justify-content: center; }
     }
 </style>

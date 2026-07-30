@@ -236,6 +236,9 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
         border: 1px solid rgba(10,25,47,0.09);
     }
 
+    @media (max-width: 900px) {
+        .features { padding: 4rem 5%; }
+    }
     @media (max-width: 860px) {
         .bento { grid-template-columns: 1fr; }
         .bento-lg { grid-row: auto; }

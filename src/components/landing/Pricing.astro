@@ -138,11 +138,43 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
         setAurora(featured);
         cards.forEach(card => card.addEventListener('mouseenter', () => setAurora(card)));
         gridWrap?.addEventListener('mouseleave', () => setAurora(featured));
+
+        // ── Scroll al plan destacado en móvil (carrusel) ──
+        if (window.innerWidth <= 900 && featured) {
+            const grid = section.querySelector('.pr-grid') as HTMLElement;
+            if (grid) {
+                // Timeout para asegurar que las dimensiones existan
+                setTimeout(() => {
+                    const scrollLeft = featured.offsetLeft - (grid.clientWidth / 2) + (featured.clientWidth / 2);
+                    grid.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+                }, 100);
+            }
+        }
     });
 </script>
 
 <style>
     .pricing { padding: 7rem 5%; background: var(--color-bg-soft); }
+    @media (max-width: 900px) {
+        .pricing { padding: 4rem 0; overflow: hidden; }
+        .pr-head { padding: 0 5% !important; margin-bottom: 2.5rem !important; }
+        .pr-note { padding: 0 5%; }
+        .pr-grid {
+            display: flex !important;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            gap: 1rem;
+            padding: 0 5% 2rem;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .pr-grid::-webkit-scrollbar { display: none; }
+        .plan {
+            flex: 0 0 85%;
+            max-width: 340px;
+            scroll-snap-align: center;
+        }
+    }
     .pr-head { text-align: center; max-width: 620px; margin: 0 auto 4rem; }
     .pr-eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #888; margin: 0 0 1.2rem; }
     .pr-title { font-size: clamp(2.1rem, 3.4vw, 3.6rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.035em; color: #0a192f; margin: 0 0 1.1rem; }
@@ -312,6 +344,4 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
     .pr-note a:hover { border-bottom-color: var(--color-text); }
 
     @media (max-width: 1180px) { .pr-grid { grid-template-columns: repeat(3, 1fr); } }
-    @media (max-width: 860px)  { .pr-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 560px)  { .pr-grid { grid-template-columns: 1fr; } }
 </style>

@@ -90,6 +90,9 @@ const jsonLd = {
     <header class="docs-header">
       <div class="header-top">
         <div class="header-left">
+          <button id="mobile-menu-trigger" class="mobile-menu-btn" aria-label="Menú">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+          </button>
           <a href="/docs" class="logo">
             <img src="/imgs/logo-cord-navy.png" alt="Cord" height="24" style="height: 24px; margin-right: 6px;" />
             <span class="brand-docs">DOCS</span>
@@ -134,8 +137,15 @@ const jsonLd = {
     </header>
 
     <div class="docs-body">
+      <!-- Mobile Backdrop -->
+      <div id="mobile-sidebar-backdrop" class="sidebar-backdrop hidden"></div>
+      
       <!-- Sidebar -->
-      <aside class="docs-sidebar">
+      <aside class="docs-sidebar" id="docs-sidebar">
+        <div class="sidebar-mobile-header">
+          <a href="/docs" class="logo"><img src="/imgs/logo-cord-navy.png" alt="Cord" height="20" style="height: 20px; margin-right: 4px;" /><span class="brand-docs">DOCS</span></a>
+          <button id="mobile-menu-close" class="mobile-menu-close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
         <nav class="sidebar-nav">
           {Astro.url.pathname.includes(getUrl('/docs/presupuestos')) ? (
             <>
@@ -584,6 +594,29 @@ const jsonLd = {
   if (btnNo) {
     btnNo.addEventListener('click', () => handleFeedbackClick(btnNo, btnYes));
   }
+
+  // Mobile Menu Logic
+  const menuTrigger = document.getElementById('mobile-menu-trigger');
+  const menuClose = document.getElementById('mobile-menu-close');
+  const sidebar = document.getElementById('docs-sidebar');
+  const sidebarBackdrop = document.getElementById('mobile-sidebar-backdrop');
+
+  function openMobileMenu() {
+    if(sidebar) sidebar.classList.add('open');
+    if(sidebarBackdrop) sidebarBackdrop.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeMobileMenu() {
+    if(sidebar) sidebar.classList.remove('open');
+    if(sidebarBackdrop) sidebarBackdrop.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  if(menuTrigger) menuTrigger.addEventListener('click', openMobileMenu);
+  if(menuClose) menuClose.addEventListener('click', closeMobileMenu);
+  if(sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeMobileMenu);
+
 </script>
 
 <style is:global>
@@ -1619,6 +1652,46 @@ const jsonLd = {
     justify-content: center;
     min-height: 120px;
   }
+  /* Mobile Menu Drawer Styles (Hidden on Desktop) */
+  .mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #4f566b;
+    align-items: center;
+    justify-content: center;
+  }
+  .sidebar-mobile-header {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+  .mobile-menu-close {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #4f566b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.3);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    transition: opacity 0.3s ease;
+  }
 
   /* Responsive Adjustments */
   @media (max-width: 1024px) {
@@ -1640,17 +1713,121 @@ const jsonLd = {
     }
   }
   @media (max-width: 768px) {
-    .docs-sidebar {
-      display: none;
+    .header-top {
+      padding: 12px 16px;
+      gap: 12px;
     }
+    .header-left {
+      gap: 12px;
+    }
+    .mobile-menu-btn {
+      display: flex;
+    }
+    
+    /* Compact Search on Mobile */
+    .header-center {
+      flex: 1;
+      justify-content: flex-end;
+    }
+    .search-input {
+      width: auto;
+      padding: 8px 12px;
+      justify-content: center;
+    }
+    .search-input span {
+      display: none; /* Hide placeholder text */
+    }
+    .search-input kbd {
+      display: none; /* Hide shortcut key */
+    }
+    
+    /* Make lang toggle smaller */
+    .lang-option {
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+
+    .docs-body {
+      flex-direction: column;
+    }
+    .docs-main {
+      order: 1;
+    }
+    
+    /* Off-canvas mobile sidebar */
+    .docs-sidebar {
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      left: -300px;
+      width: 280px;
+      height: 100vh;
+      background: #ffffff;
+      z-index: 1000;
+      padding: 0;
+      border-right: 1px solid rgba(0,0,0,0.1);
+      border-top: none;
+      transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      order: unset;
+    }
+    .docs-sidebar.open {
+      left: 0;
+    }
+    .sidebar-mobile-header {
+      display: flex;
+    }
+    .sidebar-nav {
+      padding: 16px 0 64px 0;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .sidebar-backdrop {
+      display: block;
+    }
+    .sidebar-backdrop.hidden {
+      display: none;
+      opacity: 0;
+    }
+    
     .header-bottom {
       overflow-x: auto;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+      justify-content: flex-start;
+    }
+    .header-bottom::-webkit-scrollbar {
+      display: none;
+    }
+    .nav-links {
+      padding-right: 24px; /* Ensure space at the end of scroll */
+      white-space: nowrap;
+      flex-wrap: nowrap;
+      gap: 20px;
+    }
+    .nav-tools {
+      display: none; /* Hide dropdown on mobile to prevent clipping, links are in footer */
+    }
+    .main-content-column {
+      padding: 32px 24px 64px;
+    }
+    .page-title {
+      font-size: 32px;
+      margin-bottom: 16px;
+    }
+    .page-subtitle {
+      font-size: 18px;
+    }
+    .content-container h2 {
+      font-size: 22px;
+      margin: 40px 0 16px;
+    }
+    .content-container blockquote {
+      margin: 24px 0;
+      padding: 16px;
     }
     .use-cases-grid {
       grid-template-columns: 1fr;
-    }
-    .main-content-column {
-      padding: 40px 24px 80px;
     }
     .mockup-card {
       flex-direction: column;

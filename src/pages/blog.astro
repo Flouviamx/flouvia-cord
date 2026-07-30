@@ -560,9 +560,25 @@ const breadcrumbSchema = {
         .blog-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
     }
     @media (max-width: 600px) {
-        .blog-header .blog-container { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
-        .blog-headline { font-size: 1.75rem; }
-        .fc-bar { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
-        .blog-grid { grid-template-columns: 1fr; }
+        .blog-header { padding: 5.5rem 0 1.5rem; }
+        .blog-header .blog-container { flex-direction: column; gap: 0.6rem; align-items: flex-start; padding-bottom: 1.5rem; }
+        .blog-headline { font-size: 2rem; }
+        
+        /* Filtros scrolleables horizontalmente en móvil (sin flex-wrap) */
+        .blog-filters-bar { padding: 1.5rem 0 1rem; }
+        .blog-filters-bar .blog-container { padding: 0; }
+        .blog-filters {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            padding: 0 5% 5px;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .blog-filters::-webkit-scrollbar { display: none; }
+        .filter-btn { scroll-snap-align: start; }
+        
+        .fc-bar { flex-direction: column; align-items: flex-start; gap: 0.85rem; padding: 1rem 1.2rem; }
+        .blog-grid { grid-template-columns: 1fr; gap: 1.25rem; }
     }
 </style>

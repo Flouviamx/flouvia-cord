@@ -137,6 +137,8 @@ const breadcrumbSchema = {
 
                 <!-- Mockup específico del feature -->
                 <div class="pp-hero-visual">
+                <div class="pp-space">
+                <div class="pp-scaler">
                 <div class="pp-mockup-wrap reveal-mockup">
                     <div class="pp-mesh-bg" aria-hidden="true"></div>
                     <div class="pp-glow" aria-hidden="true"></div>
@@ -577,6 +579,8 @@ const breadcrumbSchema = {
 
                     </div>
                 </div>
+                </div>
+                </div>
                 </div>{/* /pp-hero-visual */}
             </div>
         </section>
@@ -748,6 +752,19 @@ const breadcrumbSchema = {
     .pp-plan { font-size: 0.78rem; color: #99a2af; margin: 1.3rem 0 0; font-weight: 600; text-align: left; }
 
     /* ── Mockup del hero ── */
+    .pp-space {
+        position: relative;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+    .pp-scaler {
+        position: relative;
+        width: 100%;
+    }
+    @media (max-width: 1000px) {
+        .pp-scaler { width: 900px; flex-shrink: 0; }
+    }
     .pp-mockup-wrap { position: relative; max-width: 1000px; width: 100%; margin: 0; perspective: 1500px; transform-style: preserve-3d; }
 
     /* ── Satélites flotantes (viven FUERA de la card, en el espacio libre — estilo Stripe) ── */
@@ -844,8 +861,8 @@ const breadcrumbSchema = {
         box-shadow:
             0 0 0 1px rgba(10,25,47,0.035),
             0 2px 6px rgba(10,25,47,0.04),
-            0 14px 32px -8px rgba(10,25,47,0.12),
-            0 52px 100px -28px rgba(10,25,47,0.20);
+            0 14px 32px 0 rgba(10,25,47,0.12),
+            0 32px 60px 0 rgba(10,25,47,0.18);
         position: relative; overflow: hidden;
         isolation: isolate;
     }
@@ -1497,16 +1514,17 @@ const breadcrumbSchema = {
         .pp-hero-inner {
             grid-template-columns: 1fr;
             gap: 0;
-            padding: 6rem 6% 3rem;
+            padding: 1rem 6% 3rem;
         }
         .pp-hero-text {
             padding-bottom: 2.5rem;
             text-align: left;
         }
         .pp-hero-visual {
-            margin-left: -6%;
-            margin-right: -6%;
+            margin-left: 0;
+            margin-right: 0;
             justify-content: flex-start;
+            min-width: 0;
         }
         .pp-mockup-wrap { max-width: 100%; }
     }
@@ -1691,6 +1709,29 @@ const breadcrumbSchema = {
     gsap.registerPlugin(ScrollTrigger);
 
     document.addEventListener('DOMContentLoaded', () => {
+        // ── MOCKUP SCALING (Móvil) ──
+        const heroWrap = document.querySelector('.pp-mockup-wrap');
+        const heroSpace = document.querySelector('.pp-space');
+        const heroScaler = document.querySelector('.pp-scaler');
+        const heroMk = document.querySelector('.pp-mockup');
+        if (heroWrap && heroSpace && heroScaler && heroMk) {
+            const scaleHero = () => {
+                gsap.set(heroScaler, { clearProps: 'scale,transform' });
+                const baseWidth = (heroScaler as HTMLElement).offsetWidth;
+                
+                if (window.innerWidth <= baseWidth) {
+                    const scale = window.innerWidth / baseWidth;
+                    gsap.set(heroScaler, { scale: scale, transformOrigin: 'center top' });
+                    (heroSpace as HTMLElement).style.height = `${(heroMk as HTMLElement).offsetHeight * scale}px`;
+                } else {
+                    gsap.set(heroScaler, { scale: 1, transformOrigin: 'center top' });
+                    (heroSpace as HTMLElement).style.height = 'auto';
+                }
+            };
+            window.addEventListener('resize', scaleHero);
+            scaleHero();
+        }
+
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (!reduced) {
             // Entrada limpia de los BlockMockups: fade + rise (sin rotación 3D — igual al index)

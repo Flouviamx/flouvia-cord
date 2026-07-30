@@ -201,9 +201,10 @@ document.addEventListener('DOMContentLoaded', () => {
     .subscribe-form input {
         flex: 1; padding: 0 1.3rem; height: 52px; border-radius: 100px;
         background: #f5f5f7; border: none;
-        font-family: inherit; font-size: 1rem; color: #050505;
+        font-family: inherit; font-size: 1rem; color: #050505; font-weight: 500;
         box-shadow: inset 0 0 0 1.5px transparent;
         transition: box-shadow 0.3s ease, background 0.3s ease;
+        -webkit-appearance: none; appearance: none; margin: 0;
     }
     .subscribe-form input::placeholder { color: #86868b; }
     .subscribe-form input:focus {
@@ -263,6 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .span-2 { grid-column: span 1; }
         .bento-card { padding: 2.25rem; border-radius: 26px; }
         .subscribe-form { flex-direction: column; }
-        .subscribe-form input { height: 52px; }
+        .subscribe-form input { height: 52px; min-height: 52px; width: 100%; flex: none; }
+        .subscribe-form .btn-primary { width: 100%; justify-content: center; }
     }
 </style>

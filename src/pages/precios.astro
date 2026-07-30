@@ -571,8 +571,24 @@ const faqSchema = {
     .pr-note a:hover { border-bottom-color: var(--color-text); }
 
     @media (max-width: 1180px) { .pr-grid { grid-template-columns: repeat(3, 1fr); } }
-    @media (max-width: 860px)  { .pr-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 560px)  { .pr-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) {
+        .pr-grid-wrap { padding-left: 0; padding-right: 0; }
+        .pr-grid {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            gap: 1rem;
+            padding: 0 5% 2rem;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .pr-grid::-webkit-scrollbar { display: none; }
+        .plan {
+            flex: 0 0 85%;
+            max-width: 340px;
+            scroll-snap-align: center;
+        }
+    }
 
     /* ════════ COMÚN H2 ════════ */
     .pr-h2 { font-size: clamp(1.7rem, 6vw, 2.4rem); font-weight: 800; line-height: 1.12; letter-spacing: -0.03em; color: var(--color-text); margin: 0 0 1rem; }
@@ -898,5 +914,16 @@ const faqSchema = {
 
         // Al salir del grupo de tarjetas → vuelve al destacado
         gridWrap?.addEventListener('mouseleave', () => setAurora(featured));
+
+        // ── Scroll al plan destacado en móvil (carrusel) ──
+        if (window.innerWidth <= 900 && featured) {
+            const grid = document.querySelector('.pr-grid') as HTMLElement;
+            if (grid) {
+                setTimeout(() => {
+                    const scrollLeft = featured.offsetLeft - (grid.clientWidth / 2) + (featured.clientWidth / 2);
+                    grid.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+                }, 100);
+            }
+        }
     });
 </script>

@@ -174,7 +174,7 @@ export default function StepShaderBg() {
         state.running = false;
         cancelAnimationFrame(state.raf);
       }
-    }, { threshold: 0.05 });
+    }, { threshold: 0.01, rootMargin: '100% 100%' });
     io.observe(canvas);
 
     function onMouseMove(e) {

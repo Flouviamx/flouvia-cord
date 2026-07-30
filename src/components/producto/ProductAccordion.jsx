@@ -460,10 +460,11 @@ export default function ProductAccordion({ slug = 'editor' }) {
     if (!cards.length) return;
     gsap.set(cards, { flexGrow: (i) => i === 0 ? ACTIVE_GROW : RESTING[i] });
     gsap.set(texts, { opacity: (i) => i === 0 ? 1 : 0, y: (i) => i === 0 ? 0 : 15 });
+    const isMobile = window.innerWidth <= 860;
     gsap.set(icons, {
       opacity: (i) => i === 0 ? 1 : 0.4,
       scale:   (i) => i === 0 ? 1 : 0.7,
-      y:       (i) => i === 0 ? 0 : 8,
+      y:       (i) => i === 0 ? 0 : (isMobile ? 0 : 8),
     });
     gsap.set(vlabels, { opacity: (i) => i === 0 ? 0 : 0.9 });
   }, [slug]);
@@ -498,12 +499,13 @@ export default function ProductAccordion({ slug = 'editor' }) {
         }, i === activeIndex ? 0.2 : 0);
       });
 
+      const isMobile = window.innerWidth <= 860;
       // Iconos
       icons.forEach((icon, i) => {
         tl.to(icon, {
           opacity: i === activeIndex ? 1 : 0.4,
           scale:   i === activeIndex ? 1 : 0.7,
-          y:       i === activeIndex ? 0 : 8,
+          y:       i === activeIndex ? 0 : (isMobile ? 0 : 8),
           duration: 0.8,
           ease: 'power4.out',
         }, 0);

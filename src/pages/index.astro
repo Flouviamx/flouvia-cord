@@ -278,6 +278,30 @@ const faqSchema = {
             });
         }
 
+        // ── MOCKUP SCALING (Móvil) ──
+        // Escala el mockup de escritorio para que quepa perfecto sin scroll horizontal
+        const heroWrap = document.querySelector<HTMLElement>('.hero .mockup-wrap');
+        const heroSpace = document.querySelector<HTMLElement>('.hero .mk-space');
+        const heroScaler = document.querySelector<HTMLElement>('.hero .mk-scaler');
+        if (heroWrap && heroSpace && heroScaler && heroMk) {
+            const scaleHero = () => {
+                // Remove the GSAP scale temporarily to measure natural width
+                gsap.set(heroScaler, { clearProps: 'scale,transform' });
+                const baseWidth = heroScaler.offsetWidth;
+                
+                if (window.innerWidth <= baseWidth) {
+                    const scale = window.innerWidth / baseWidth;
+                    gsap.set(heroScaler, { scale: scale, transformOrigin: 'center top' });
+                    heroSpace.style.height = `${heroMk.offsetHeight * scale}px`;
+                } else {
+                    gsap.set(heroScaler, { scale: 1, transformOrigin: 'center top' });
+                    heroSpace.style.height = 'auto';
+                }
+            };
+            window.addEventListener('resize', scaleHero);
+            scaleHero();
+        }
+
         // ───────── HERO DEMO INTERACTIVO: Creas → Envías → La ven → Aprueban → Facturas ─────────
         // El visitante recorre el flujo con los botones de paso; además auto-avanza
         // como tour guiado y se pausa al pasar el mouse. El HTML por defecto es el
@@ -343,17 +367,6 @@ const faqSchema = {
             gsap.delayedCall(2.0, () => { if (!paused) go(0); });
         }
 
-        // Trust strip del hero (está bajo el fold normalmente)
-        const heroTrust = document.querySelector<HTMLElement>('.hero-trust');
-        if (heroTrust) {
-            const logos = heroTrust.querySelectorAll('.trust-label, .trust-logos > *, .trust-usecase');
-            gsap.set(heroTrust, { opacity: 1, y: 0 });
-            gsap.set(logos, { opacity: 0, y: 8 });
-            ScrollTrigger.create({
-                trigger: heroTrust, start: 'top 92%', once: true,
-                onEnter: () => gsap.to(logos, { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out', stagger: 0.05 }),
-            });
-        }
 
         // ───────────────────────── REVEALS ON-SCROLL ─────────────────────────
         const scrollReveals = gsap.utils.toArray<HTMLElement>('.reveal')
