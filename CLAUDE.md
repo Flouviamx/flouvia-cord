@@ -170,6 +170,19 @@ de Vercel de Cord (auto-inyecta `DATABASE_URL` en todos los environments).
 
 ---
 
+## Roadmap & TODOs (Analytics & Growth)
+
+Pendientes de implementación en Mixpanel para escalar el análisis de Growth y activación (propuestos jul 2026):
+
+- [ ] **`quote_sent`:** Rastrear cuando el usuario da click a "Enviar" o copia el link. Clave para medir el TTV (Time-to-Value).
+- [ ] **`quote_viewed` / `quote_approved`:** Medir la tasa de éxito (conversión) de las cotizaciones.
+- [ ] **`payment_received`:** Backend tracking (Stripe Webhook → Mixpanel) para medir ingresos y caída en el checkout.
+- [ ] **`ai_draft_used`:** Rastrear el uso del botón "Armar con IA" para confirmar si es el *Aha Moment* que correlaciona con upgrades.
+- [ ] **Group Analytics (B2B):** Vincular los eventos al `org_id` de Clerk para analizar el uso a nivel Empresa/Workspace, no solo individual.
+- [ ] **Atribución UTM:** Capturar parámetros de URL en el registro para saber qué canales de marketing traen usuarios de paga.
+
+---
+
 ## Documentación extendida (auto-cargada)
 
 Los siguientes archivos se importan automáticamente y forman parte de estas
