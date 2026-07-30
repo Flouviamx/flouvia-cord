@@ -36,6 +36,18 @@ import CreateWorkspace from '../../components/onboarding/CreateWorkspace';
     }
 </script>
 
+<!-- PostHog: track sign_up_completed (fires once per signup session) -->
+<script is:inline>
+    if (typeof window !== 'undefined' && window.posthog && !sessionStorage.getItem('cord.ph.signup_tracked')) {
+        var method = (document.referrer && document.referrer.indexOf('/sso-callback') !== -1) ? 'google' : 'email';
+        window.posthog.capture('sign_up_completed', {
+            sign_up_method: method,
+            platform: 'web'
+        });
+        sessionStorage.setItem('cord.ph.signup_tracked', '1');
+    }
+</script>
+
 <style is:global>
     .auth-page {
         min-height: 100vh;

@@ -9,6 +9,8 @@ import type { APIRoute } from 'astro';
 import { getActiveOrgId, reqIp } from '../../lib/db';
 import { requirePerm } from '../../lib/queries';
 import { createCotizacion, QuoteError } from '../../lib/cotizaciones';
+import { getPostHogServer } from '../../lib/posthog-server';
+import { currentUserId } from '../../lib/context';
 
 export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('cotizar');
@@ -24,6 +26,28 @@ export const POST: APIRoute = async ({ request }) => {
             origin: new URL(request.url).origin,
             ip: reqIp(request),
         });
+
+        // Track quote creation server-side
+        const posthog = getPostHogServer();
+        if (posthog) {
+            const userId = currentUserId();
+            const distinctId = userId || `org_${orgId}`;
+            const sessionId = request.headers.get('X-PostHog-Session-Id') || undefined;
+            posthog.capture({
+                distinctId,
+                event: 'quote_created',
+                properties: {
+                    $session_id: sessionId,
+                    org_id: orgId,
+                    folio: (result as any).folio,
+                    terminos: body.terminos,
+                    item_count: Array.isArray(body.items) ? body.items.length : 0,
+                    send: !!body.send,
+                },
+            });
+            await posthog.flush();
+        }
+
         return json(result);
     } catch (e) {
         if (e instanceof QuoteError) return json({ error: e.message }, e.status);

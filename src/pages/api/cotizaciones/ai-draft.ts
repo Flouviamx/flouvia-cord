@@ -20,6 +20,8 @@ import { reportUsage, checkQuota } from '../../../lib/billing';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { McpClientManager } from '../../../lib/mcp/client-manager';
 import { getDefaultAgentId } from '../../../lib/agents/governance';
+import { getPostHogServer } from '../../../lib/posthog-server';
+import { currentUserId } from '../../../lib/context';
 
 const API_KEY = import.meta.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
 const MODEL = import.meta.env.AI_MODEL || process.env.AI_MODEL || 'claude-haiku-4-5-20251001';
@@ -240,6 +242,26 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Mide el consumo de IA del periodo (UI en vivo + cobro de excedente vía Stripe).
     try { await reportUsage(orgId, 'ia', 1); } catch { /* nunca bloquea */ }
+
+    // PostHog: track AI draft usage
+    const posthog = getPostHogServer();
+    if (posthog) {
+        const userId = currentUserId();
+        const distinctId = userId || `org_${orgId}`;
+        const sessionId = request.headers.get('X-PostHog-Session-Id') || undefined;
+        posthog.capture({
+            distinctId,
+            event: 'ai_draft_used',
+            properties: {
+                $session_id: sessionId,
+                org_id: orgId,
+                item_count: items.length,
+                has_file: !!file,
+                has_text: !!text,
+            },
+        });
+        await posthog.flush();
+    }
 
     return json({ items });
 };

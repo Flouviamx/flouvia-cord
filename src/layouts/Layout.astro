@@ -13,6 +13,7 @@ interface Props {
 
 import Analytics from '@vercel/analytics/astro';
 import { getLangFromUrl, altLangUrls } from '../i18n/utils';
+import PostHog from '../components/posthog.astro';
 
 const {
     title,
@@ -94,6 +95,9 @@ const locale = lang === 'es' ? 'es_MX' : 'en_US';
 
         <!-- Datos estructurados / SEO por página (JSON-LD, etc.) -->
         <slot name="head" />
+
+        <!-- PostHog Analytics -->
+        <PostHog />
 
         <!-- Mixpanel Analytics -->
         <script is:inline define:vars={{ mpToken: import.meta.env.PUBLIC_MIXPANEL_TOKEN || '' }}>

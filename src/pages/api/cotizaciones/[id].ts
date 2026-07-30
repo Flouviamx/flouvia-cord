@@ -15,6 +15,8 @@ import { emitFiscalDocument } from '../../../lib/fiscal/emit';
 import { MAX_ITEMS } from '../../../lib/cotizaciones';
 import { materializeAnticipoCobros } from '../../../lib/cobros';
 import { sanitizeItem } from '../../../../packages/elements/src/engine';
+import { getPostHogServer } from '../../../lib/posthog-server';
+import { currentUserId } from '../../../lib/context';
 
 // Evento interno (eventos.tipo) → evento público de webhook.
 const WH_MAP: Record<string, WebhookEvent> = {
@@ -253,6 +255,38 @@ export const PATCH: APIRoute = async ({ params, request }) => {
             await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                       values (${orgId}, ${id}, 'email', 'Correo enviado al cliente')`;
         }
+    }
+
+    // PostHog: track quote_sent and cfdi_stamped server-side
+    const posthog = getPostHogServer();
+    if (posthog && (action.to === 'sent' || action.to === 'invoiced')) {
+        const userId = currentUserId();
+        const distinctId = userId || `org_${orgId}`;
+        const sessionId = request.headers.get('X-PostHog-Session-Id') || undefined;
+        if (action.to === 'sent') {
+            posthog.capture({
+                distinctId,
+                event: 'quote_sent',
+                properties: {
+                    $session_id: sessionId,
+                    org_id: orgId,
+                    quote_id: id,
+                    action: body.action,
+                },
+            });
+        } else if (action.to === 'invoiced') {
+            posthog.capture({
+                distinctId,
+                event: 'cfdi_stamped',
+                properties: {
+                    $session_id: sessionId,
+                    org_id: orgId,
+                    quote_id: id,
+                    provider: fiscal?.provider,
+                },
+            });
+        }
+        await posthog.flush();
     }
 
     return json({ ok: true, status: action.to, email, fiscal });
