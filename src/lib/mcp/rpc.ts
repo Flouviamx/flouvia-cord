@@ -14,7 +14,7 @@
 import { reqIp } from '../db';
 import { MCP_TOOLS, findTool, McpToolError } from '../mcp';
 
-export const SERVER_INFO = { name: 'cord', title: 'Cord — Cotizaciones B2B', version: '1.0.0' };
+export const SERVER_INFO = { name: 'cord', title: 'Cord — Cotizaciones', version: '1.0.0' };
 export const DEFAULT_PROTOCOL = '2025-06-18';
 export const SUPPORTED_PROTOCOLS = ['2025-06-18', '2025-03-26', '2024-11-05'];
 
@@ -43,7 +43,7 @@ export async function handle(msg: any, auth: RpcAuth, request: Request): Promise
                 protocolVersion,
                 capabilities: { tools: { listChanged: false } },
                 serverInfo: SERVER_INFO,
-                instructions: 'Herramientas para consultar y crear cotizaciones, clientes, productos y cobranza de un negocio B2B en Cord. Usa buscar_cliente y listar_productos antes de crear_cotizacion_borrador.',
+                instructions: 'Herramientas para consultar y crear cotizaciones, clientes, productos y cobranza de un negocio en Cord. Usa buscar_cliente y listar_productos antes de crear_cotizacion_borrador.',
             };
         }
         case 'ping':

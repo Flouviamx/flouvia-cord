@@ -27,10 +27,10 @@ const t = useTranslations(lang);
 const howToSchema = {
     '@context': 'https://schema.org',
     '@type': 'HowTo',
-    name: isEn ? 'How CordHQ works: from proposal to payment in one link' : 'Cómo funciona CordHQ: de la propuesta al cobro en un solo link',
+    name: isEn ? 'How Cord works: from proposal to payment in one link' : 'Cómo funciona Cord: de la propuesta al cobro en un solo link',
     description: isEn 
-        ? 'CordHQ centralizes the entire commercial cycle in three steps: create a proposal, send an interactive link for approval, and collect payment — all without your client downloading anything.'
-        : 'CordHQ centraliza todo el ciclo comercial en tres pasos: crea una propuesta, envía un link interactivo de aprobación y cobra, todo sin que tu cliente descargue nada.',
+        ? 'Cord centralizes the entire commercial cycle in three steps: create a proposal, send an interactive link for approval, and collect payment — all without your client downloading anything.'
+        : 'Cord centraliza todo el ciclo comercial en tres pasos: crea una propuesta, envía un link interactivo de aprobación y cobra, todo sin que tu cliente descargue nada.',
     totalTime: 'PT10M',
     tool: [
         { '@type': 'HowToTool', name: isEn ? 'Cord account (free)' : 'Cuenta de Cord (gratuita)' },
@@ -75,8 +75,8 @@ const howToSchema = {
 // confianza secundario dentro de la descripción, sin liderar el mensaje.
 // ACTUALIZACIÓN: Se implementa enfoque "Transaccional Absoluto".
 const title = isEn
-    ? "CordHQ — From Proposal to Payment in a Single Link"
-    : "CordHQ — De la Propuesta al Cobro en un Solo Link";
+    ? "Cord — From Proposal to Payment in a Single Link"
+    : "Cord — De la Propuesta al Cobro en un Solo Link";
 
 const description = isEn
     ? "The platform that transforms proposals and agreements into instantly paid transactions. Centralize negotiation, legally binding signatures, margin intelligence, and automated collections in a single interactive link."
@@ -108,17 +108,17 @@ const softwareSchema = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
     '@id': 'https://cordhq.app/#software',
-    name: 'CordHQ',
+    name: 'Cord',
     url: 'https://cordhq.app',
     applicationCategory: 'BusinessApplication',
     applicationSubCategory: isEn ? 'Commercial Closing Platform' : 'Plataforma de Cierre Comercial',
     operatingSystem: 'Web',
     description: isEn
-        ? 'CordHQ is the platform that transforms proposals and agreements into instantly paid transactions. It centralizes negotiation, legally binding signatures, margin intelligence, and automated collections in a single interactive link.'
-        : 'CordHQ es la plataforma que transforma propuestas y acuerdos en transacciones pagadas al instante. Centraliza en un solo link interactivo la negociación, firmas legales, inteligencia de margen y cobros automatizados.',
+        ? 'Cord is the platform that transforms proposals and agreements into instantly paid transactions. It centralizes negotiation, legally binding signatures, margin intelligence, and automated collections in a single interactive link.'
+        : 'Cord es la plataforma que transforma propuestas y acuerdos en transacciones pagadas al instante. Centraliza en un solo link interactivo la negociación, firmas legales, inteligencia de margen y cobros automatizados.',
     audience: {
         '@type': 'BusinessAudience',
-        audienceType: isEn ? 'Any B2B business worldwide (distributors, wholesalers, manufacturers, service providers, SaaS, agencies)' : 'Cualquier negocio B2B en cualquier país (distribuidoras, mayoristas, manufactura, servicios, SaaS, agencias)',
+        audienceType: isEn ? 'Any business worldwide (distributors, wholesalers, manufacturers, service providers, SaaS, agencies)' : 'Cualquier negocio en cualquier país (distribuidoras, mayoristas, manufactura, servicios, SaaS, agencias)',
     },
     creator: { '@id': 'https://flouvia.com/#organization' },
     provider: { '@id': 'https://flouvia.com/#organization' },
@@ -128,9 +128,9 @@ const softwareSchema = {
         priceCurrency: isEn ? 'USD' : 'MXN',
         description: isEn ? 'Free plan, forever — no credit card required.' : 'Plan gratis para siempre — sin tarjeta de crédito.',
     },
-    featureList: isEn
-        ? ['Negotiated B2B pricing', 'One-click quote approval', 'Real-time view tracking', 'Financial budgeting & margin intelligence', 'AI-powered collections', 'Legally binding contract signatures', 'Net 30/60 credit terms', 'Public API & webhooks']
-        : ['Precios negociados B2B', 'Aprobación de cotizaciones en un clic', 'Seguimiento en tiempo real', 'Presupuestos e inteligencia de margen', 'Cobranza automatizada con IA', 'Firmas legales de contratos', 'Términos de crédito Net 30/60', 'API pública y webhooks'],
+    featureList: isEn 
+        ? ['Negotiated pricing', 'One-click quote approval', 'Real-time view tracking', 'Financial budgeting & margin intelligence', 'AI-powered collections', 'Legally binding contract signatures', 'Net 30/60 credit terms', 'Public API & webhooks']
+        : ['Precios negociados', 'Aprobación de cotizaciones en un clic', 'Seguimiento en tiempo real', 'Presupuestos e inteligencia de margen', 'Cobranza automatizada con IA', 'Firmas legales de contratos', 'Términos de crédito Net 30/60', 'API pública y webhooks'],
 };
 
 // Misma fuente (claves faq.1..faq.8 de ui.ts) que consume <Faq /> — el

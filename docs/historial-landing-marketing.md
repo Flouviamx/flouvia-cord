@@ -6,6 +6,20 @@
 
 ---
 
+\u2705 **Reposicionamiento Fase 2 \u2014 limpieza profunda de jerga B2B en diccionarios (jul 2026)** \u2014
+   Para rematar el reposicionamiento de Cord a "cualquier empresa" y alejarlo de la caja restrictiva
+   de "Software B2B", se limpiaron todos los diccionarios de datos TypeScript subyacentes (`src/lib/*.ts`)
+   que alimentan de forma din\u00e1mica las p\u00e1ginas. 
+   \u2022 **Storytelling estricto implementado:** Se asumi\u00f3 universalmente el nuevo enfoque: *"Plataforma de cierre comercial"* y *"De la propuesta al pago. Todo en un solo link"*. Se erradic\u00f3 sistem\u00e1ticamente el t\u00e9rmino "B2B", "Infraestructura corporativa" y "Ventas B2B" para no asustar a PYMES, agencias o freelancers.
+   \u2022 **Contenido de Producto y Precios:** se limpiaron `solucion.ts`/`.en.ts` y `precios.ts` quitando
+     "cualquier negocio B2B" y dej\u00e1ndolo gen\u00e9rico, cambiando "B2B SaaS" por "SaaS", etc.
+   \u2022 **Dev y Roadmap:** `desarrolladores.ts`/`.en.ts` y `roadmap-data.ts` se limpiaron, cambiando la API
+     para que sea de "cotizaciones" (sin B2B) y ajustando traducciones a "Charge the way sales actually work".
+   \u2022 **Server MCP (IA):** En `rpc.ts` y `ar-agent.ts` se le quit\u00f3 a la instrucci\u00f3n del sistema la etiqueta
+     de que el agente trabaja para una "empresa B2B", dej\u00e1ndolo como "empresa comercial".
+   \u2022 **Legal y UI:** Footer actualizado (`@cord.hq` en vez de `@cord.b2b`, y "SaaS B2B" a "SaaS").
+     `privacidad.astro` y `terminos.astro` reemplazaron "Infraestructura B2B" por "Plataforma SaaS".
+
 ✅ **Reposicionamiento global — de "cotizaciones B2B en México" a "software de operaciones
    B2B" (jul 2026)** — André reportó que el copy/SEO sonaba "muy específico para México"
    cuando cualquier negocio, en cualquier país, ya puede registrarse hoy (signup abierto,

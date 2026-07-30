@@ -235,7 +235,7 @@ const STRIPE_ERROR_CODES: Record<string, string> = {
     // Files API
     file_invalid_type: 'Ese tipo de archivo no es compatible — usa una foto JPG o PNG.',
 
-    // Límites / infraestructura
+    // Límites / herramientas
     rate_limit: 'Demasiadas solicitudes seguidas a Stripe — espera un momento e inténtalo de nuevo.',
     lock_timeout: 'Stripe está ocupado con otra operación sobre esta cuenta — inténtalo de nuevo en unos segundos.',
     api_key_expired: 'La llave de Stripe configurada expiró — contacta a soporte.',

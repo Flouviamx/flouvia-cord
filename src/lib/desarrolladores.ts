@@ -62,7 +62,7 @@ export const DEV_PAGES: DevPage[] = [
         eyebrow: 'API REST',
         titulo: 'Tu motor de cotizaciones, conectado a todo.',
         sub: 'Cord deja de ser solo una pantalla para humanos y se convierte en un sistema con el que tus otros sistemas pueden hablar. Lee y crea cotizaciones, clientes y productos desde tu ERP, tu CRM o un script — con una sola llave.',
-        metaTitle: 'API REST de cotizaciones B2B — Cord Developers',
+        metaTitle: 'API REST de cotizaciones — Cord Developers',
         metaDescription: 'La API REST de Cord (/api/v1) lee y crea cotizaciones, clientes y productos con una llave Bearer. Disponible en todos los planes, incluido el Gratis, con llaves de prueba sin costo.',
         plan: 'Disponible en todos los planes (Gratis incluido) · llaves de prueba gratis para integrar antes de pagar',
         stats: [
@@ -143,7 +143,7 @@ export const DEV_PAGES: DevPage[] = [
         ],
         cta: { titulo: 'Conecta Cord a tu sistema.', sub: 'Genera una llave de prueba gratis y haz tu primera llamada hoy.' },
         trust: {
-            eyebrow: 'INFRAESTRUCTURA',
+            eyebrow: 'HERRAMIENTAS',
             titulo: 'Detalles que solo importan cuando integras de verdad',
             items: [
                 { icon: 'gauge', titulo: '~500 peticiones por minuto, por IP', copy: 'El límite corre por ventana de 60 segundos — si lo alcanzas, la respuesta te dice cuánto esperar.' },
@@ -158,7 +158,7 @@ export const DEV_PAGES: DevPage[] = [
         eyebrow: 'MCP BIDIRECCIONAL · GOBERNANZA DE AGENTES',
         titulo: 'Tu negocio habla con la IA. Y la IA habla con tus sistemas.',
         sub: 'El MCP de Cord ya no va en un solo sentido. Cord es servidor: una IA como Claude consulta tu cartera y arma cotizaciones con 7 herramientas. Y Cord es cliente: se conecta a los servidores MCP de tu CRM o ERP, bajo permisos que tú firmas. Tú decides quién toca qué.',
-        metaTitle: 'Servidor MCP bidireccional para IA y agentes B2B — Cord',
+        metaTitle: 'Servidor MCP bidireccional para IA y agentes comerciales — Cord',
         metaDescription: 'Cord es servidor MCP (una IA como Claude consulta tu cartera con 7 herramientas) y cliente MCP (se conecta a los servidores de tu CRM o ERP bajo permisos que tú controlas). Disponible en todos los planes.',
         plan: 'Disponible en todos los planes · usa la misma API key (más llaves activas conforme subes de plan; el consumo en vivo se mide por uso)',
         stats: [
@@ -241,7 +241,7 @@ await mcpManager.disconnectAll();`,
         eyebrow: 'CORD ELEMENTS · COTIZADOR EMBEBIBLE',
         titulo: 'Tu cotizador, dentro de su web.',
         sub: 'Lleva el cotizador de Cord al portal de tus clientes con una línea de código. Tu marca, aprobación, contraoferta y pago en línea — todo dentro de su ecosistema, sin que salgan de su sitio.',
-        metaTitle: 'Cord Elements — cotizador B2B embebible para tu sitio',
+        metaTitle: 'Cord Elements — cotizador embebible para tu sitio',
         metaDescription: 'Embebe el cotizador de Cord en tu portal con una línea de código: iframe, Web Component <cord-cotizador> o el paquete @flouviahq/elements para React/Vue. Signup gratis, sin backend propio.',
         plan: 'Signup gratis. En el plan Gratis el link público lleva el discreto "vía Cord"; lo quitas y dejas solo tu marca desde Ajustes › Developers, donde también defines la allowlist de dominios autorizados para embeber.',
         stats: [
@@ -434,7 +434,7 @@ export function Cotizacion({ token }) {
         eyebrow: 'INTEGRACIONES · WEBHOOKS',
         titulo: 'Conecta Cord a cualquier ERP o CRM. Sin esperar un conector.',
         sub: 'No mantenemos conectores propietarios para cada sistema (SAP, Oracle, Salesforce…). En su lugar Cord emite webhooks firmados en cada evento de tu ciclo de venta — los apuntas a Zapier, Make, n8n o tu propio backend y reaccionas en tiempo real. Lo que ves en la app, también por API REST.',
-        metaTitle: 'Webhooks y integraciones B2B (Zapier, Make, n8n) — Cord',
+        metaTitle: 'Webhooks e integraciones (Zapier, Make, n8n) — Cord',
         metaDescription: 'Cord emite webhooks firmados (HMAC-SHA256) en cada evento de venta — quote.sent, quote.approved, quote.paid — que conectas a Zapier, Make, n8n o tu backend. Disponible en todos los planes, sin conectores propietarios que esperar.',
         plan: 'En todos los planes · webhooks limitados por plan (Free 1 → Developer 100) · Slack nativo · llaves de prueba gratis para la API',
         stats: [

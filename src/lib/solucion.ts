@@ -95,9 +95,9 @@ export const SOLUCIONES: Solution[] = [
         eyebrow: 'PARA EMPRESAS',
         titulo: 'De la propuesta al cobro, con control corporativo.',
         sub: 'Centraliza negociaciones, aplica inteligencia de margen en tiempo real y sella contratos con firmas criptográficas inmutables.',
-        metaTitle: 'Software de cotizaciones y operaciones B2B para Empresas — Cord',
-        metaDescription: 'Plataforma empresarial para escalar procesos de cotización, controlar listas de precios por volumen y gestionar aprobaciones de crédito con seguridad y cumplimiento. Para cualquier empresa B2B, en cualquier país.',
-        paraQuien: 'Cord para Empresas está diseñado para corporativos, distribuidores a gran escala y empresas B2B consolidadas que manejan grandes volúmenes de propuestas, requieren control estricto sobre precios y márgenes, y necesitan visibilidad total sobre el pipeline de ventas.',
+        metaTitle: 'Software de cotizaciones y operaciones para Empresas — Cord',
+        metaDescription: 'Plataforma empresarial para escalar procesos de cotización, controlar listas de precios por volumen y gestionar aprobaciones de crédito con seguridad y cumplimiento. Para cualquier empresa, en cualquier país.',
+        paraQuien: 'Cord para Empresas está diseñado para corporativos, distribuidores a gran escala y empresas consolidadas que manejan grandes volúmenes de propuestas, requieren control estricto sobre precios y márgenes, y necesitan visibilidad total sobre el pipeline de ventas.',
         dolor: 'Los procesos comerciales descentralizados causan fugas de margen y pérdida de visibilidad en el cierre.',
         
         integrations: [
@@ -246,7 +246,7 @@ export const SOLUCIONES: Solution[] = [
                 ]
             },
             {
-                title: 'SaaS B2B',
+                title: 'SaaS',
                 desc: 'Gestiona suscripciones, contratos personalizados y planes Enterprise. Integra pagos recurrentes y emite facturas CFDI en automático sin tocar el portal del SAT.',
                 link: '/casos-de-uso/saas',
                 logos: [
@@ -256,7 +256,7 @@ export const SOLUCIONES: Solution[] = [
                 ]
             },
             {
-                title: 'Comercializadoras B2B',
+                title: 'Comercializadoras',
                 desc: 'Cotiza volumen, aplica descuentos por tiers dinámicos, maneja catálogos extensos y automatiza la facturación de grandes pedidos al confirmar el pago.',
                 link: '/casos-de-uso/comercializadoras',
                 logos: [
@@ -359,7 +359,7 @@ export const SOLUCIONES: Solution[] = [
             metricas: [
                 { valor: '3x', label: 'más velocidad en ciclo de ventas' },
                 { valor: '100%', label: 'de facturación automatizada post-cierre' },
-                { valor: '0', countup: 0, label: 'fricción en onboarding B2B' },
+                { valor: '0', countup: 0, label: 'fricción en onboarding de ventas' },
             ],
             nota: 'Con un equipo de solo 4 personas, Acme AI utiliza Cord para manejar todas sus suscripciones anuales empresariales, luciendo como una corporación y operando con la agilidad de una startup.',
         },

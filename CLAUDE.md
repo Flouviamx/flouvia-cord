@@ -1,9 +1,9 @@
 # Cord — CLAUDE.md
 
-SaaS de cotizaciones B2B standalone de Flouvia. Dominio: **cordhq.app**.
+SaaS de cotizaciones y operaciones comerciales standalone de Flouvia. Dominio: **cordhq.app**.
 Es la versión independiente de la app de Shopify "Flouvia Cotizaciones B2B"
-(repo hermano: `../flouvia/src/data/apps.ts`), dirigida a **cualquier negocio B2B
-en México** — no solo Shopify.
+(repo hermano: `../flouvia/src/data/apps.ts`), dirigida a **cualquier empresa
+en cualquier país** — no solo Shopify ni limitada a B2B (aunque el timbrado CFDI siga siendo exclusivo de México).
 
 > **Repo:** `~/Desktop/flouvia-cord` (carpeta HERMANA de `~/Desktop/flouvia`, NO
 > anidada — son dos repos git y dos proyectos Vercel independientes).
@@ -47,6 +47,7 @@ Node requerido: **>=22.12.0** (ver `.nvmrc` → 24.15.0; alineado a Node 24 LTS,
    - **Trazos:** Usa `stroke="currentColor"` con un grosor súper fino y elegante, estrictamente `stroke-width="1.5"` (estilo Apple/Stripe).
    - **Rellenos:** Agrega volumen y profundidad tipo "cristal" usando `fill="currentColor" fill-opacity="0.12"` a `0.15`. Nunca dejes los iconos 100% "huecos".
    - **Figuras y Geometría:** Rechaza abstracciones exageradas o excesivamente intrincadas. Usa geometría perfecta, profesional y minimalista que haga apología directa a la acción (ej. una CPU limpia en lugar de estrellas mágicas para la IA; gráficas de barras definidas). Debe reflejar una estética técnica corporativa ultra-limpia (Quiet Luxury).
+10. **Storytelling y Posicionamiento (Regla Estricta - Jul 2026):** Cord YA NO ES "Software B2B" o "Infraestructura B2B". El nuevo posicionamiento es horizontal y universal: **"Plataforma de cierre comercial"** (Commercial Closing Platform). El mensaje principal a usar en copys y meta-tags es: *"De la propuesta al pago. Todo en un solo link."* o *"El ciclo de ventas desde la propuesta hasta el pago"*. ESTÁ PROHIBIDO usar jerga limitante o excluyente como "solo para empresas B2B", "Corporativo" o "ERP" en landing pages, SEO, esquemas JSON-LD, y metadata. Cord es para CUALQUIER negocio, en cualquier parte.
 
 ---
 

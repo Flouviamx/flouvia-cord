@@ -27,14 +27,14 @@ El editor de cotizaciones de Cord está diseñado para darte agilidad sin perder
 
 ### Beneficios clave:
 - **Cálculo de impuestos en vivo:** Aplica el IVA u otras retenciones y visualiza el total final antes de enviar la cotización.
-- **Descuentos por partida o globales:** Ideal para negociaciones B2B donde el volumen dicta el precio.
+- **Descuentos por partida o globales:** Ideal para negociaciones donde el volumen dicta el precio.
 - **Guardado automático:** Crea borradores sin perder información.`,
             en: `## Total control over your proposals
 Cord's quote editor is designed to give you agility without losing control. You don't need to jump between Excel sheets and PDF formats. From a single screen, you can search for products in your catalog, adjust quantities, and see how the price changes in real-time.
 
 ### Key benefits:
 - **Live tax calculation:** Apply VAT or other withholdings and view the final total before sending the quote.
-- **Line-item or global discounts:** Ideal for B2B negotiations where volume dictates the price.
+- **Line-item or global discounts:** Ideal for negotiations where volume dictates the price.
 - **Auto-save:** Create drafts without losing information.`
         },
         area: 'cotizaciones',
@@ -115,12 +115,12 @@ Knowing exactly when your client is evaluating your proposal completely changes 
             en: 'Cord Elements'
         },
         shortDesc: {
-            es: 'Embebe nuestro motor de cotizaciones directamente en el portal de tu empresa o sitio web B2B. SDK estable (React, Vue, Web Component) con hooks headless para construir tu propia experiencia.',
-            en: 'Embed our quoting engine directly into your company portal or B2B website. Stable SDK (React, Vue, Web Component) with headless hooks to build your own experience.'
+            es: 'Embebe nuestro motor de cotizaciones directamente en el portal de tu empresa o sitio web. SDK estable (React, Vue, Web Component) con hooks headless para construir tu propia experiencia.',
+            en: 'Embed our quoting engine directly into your company portal or website. Stable SDK (React, Vue, Web Component) with headless hooks to build your own experience.'
         },
         content: {
             es: `## Cotizaciones en piloto automático
-Con Cord Elements, puedes ofrecer una experiencia de "autoservicio" a tus clientes mayoristas recurrentes. Al integrar unas pocas líneas de código en tu portal existente o sitio B2B, habilitas un carrito de compras especializado para tratos comerciales complejos.
+Con Cord Elements, puedes ofrecer una experiencia de "autoservicio" a tus clientes mayoristas recurrentes. Al integrar unas pocas líneas de código en tu portal existente, habilitas un carrito de compras especializado para tratos comerciales complejos.
 
 ### Beneficios clave:
 - **Menor carga operativa:** Tus agentes de ventas no tienen que armar cotizaciones repetitivas para clientes habituales.
@@ -128,7 +128,7 @@ Con Cord Elements, puedes ofrecer una experiencia de "autoservicio" a tus client
 - **UI personalizable de verdad:** Usa el cotizador con tu marca tal cual, o construye tu propia interfaz por completo con los hooks headless (\`useQuoteBuilder\`) — el SDK nunca te obliga a pelear con estilos que no puedes sobreescribir.
 - **Tipado end-to-end:** Los tipos de TypeScript se generan del código real, no se escriben a mano — tu editor siempre sabe qué existe.`,
             en: `## Quotes on autopilot
-With Cord Elements, you can offer a "self-service" experience to your recurring wholesale clients. By embedding a few lines of code into your existing portal or B2B site, you enable a specialized shopping cart for complex commercial deals.
+With Cord Elements, you can offer a "self-service" experience to your recurring wholesale clients. By embedding a few lines of code into your existing portal, you enable a specialized shopping cart for complex commercial deals.
 
 ### Key benefits:
 - **Lower operational load:** Your sales agents don't have to build repetitive quotes for regular clients.
@@ -184,14 +184,14 @@ Quoting over WhatsApp or a loose PDF leaves no proof your client accepted the te
         },
         content: {
             es: `## Control de riesgo automatizado
-Vender a crédito en B2B es estándar, pero controlar ese riesgo suele requerir comunicación manual constante entre el equipo de ventas y el equipo de finanzas. Cord automatiza estas reglas.
+Vender a crédito es estándar, pero controlar ese riesgo suele requerir comunicación manual constante entre el equipo de ventas y el equipo de finanzas. Cord automatiza estas reglas.
 
 ### Beneficios clave:
 - **Límites de crédito duros:** Si un cliente tiene un límite de $100,000 MXN y ya tiene deuda por $95,000, un agente no podrá aprobarle una cotización de $10,000.
 - **Términos Net 30/60:** Al aprobar la cotización, Cord programa automáticamente la fecha de vencimiento y el ciclo de cobranza.
 - **Autonomía para ventas:** Los agentes pueden vender libremente siempre que el cliente esté al corriente, sin fricción ni autorizaciones manuales.`,
             en: `## Automated risk control
-Selling on credit in B2B is standard, but controlling that risk usually requires constant manual communication between sales and finance teams. Cord automates these rules.
+Selling on credit is standard, but controlling that risk usually requires constant manual communication between sales and finance teams. Cord automates these rules.
 
 ### Key benefits:
 - **Hard credit limits:** If a client has a $100,000 MXN limit and already owes $95,000, an agent won't be able to approve a $10,000 quote for them.
@@ -278,7 +278,7 @@ Chasing overdue invoices is awkward for sales teams and consumes valuable admin 
             en: 'Ask for a deposit on approval and the balance per terms. The client sees a clear breakdown and pays each part online, straight to your bank.'
         },
         content: {
-            es: `## Cobra como realmente operas en B2B
+            es: `## Cobra como realmente operas
 No todas las ventas se pagan de una sola vez. Muchos negocios cobran un porcentaje por adelantado para arrancar el pedido y el resto contra entrega. Cord lo hace nativo.
 
 ### Beneficios clave:
@@ -286,7 +286,7 @@ No todas las ventas se pagan de una sola vez. Muchos negocios cobran un porcenta
 - **Desglose claro para el cliente:** El link público muestra "total $X · hoy pagas $Y de anticipo, saldo $Z". Nada de sorpresas.
 - **El pago se abre cuando tiene sentido:** Una cotización a contado se paga de inmediato; una a crédito (Net 30/60) no pide dinero hasta que llega la fecha de vencimiento. El anticipo, si lo hay, siempre es pagable al aprobar.
 - **Cada parte, un cobro real:** Anticipo, saldo y cuotas son cobros independientes con su propio link, cada uno directo a tu banco vía Stripe. La cotización se marca pagada solo cuando no queda ningún cobro pendiente.`,
-            en: `## Charge the way B2B actually works
+            en: `## Charge the way sales actually work
 Not every sale is paid all at once. Many businesses collect a percentage up front to kick off the order and the rest on delivery. Cord makes it native.
 
 ### Key benefits:
@@ -374,14 +374,14 @@ Decision calculators with scenarios you can save and reopen:
             en: 'Directly to the SAT. When a quote is approved, it becomes an order and the PUE or PPD invoice is stamped automatically. No retyping required.'
         },
         content: {
-            es: `## Facturación B2B invisible
+            es: `## Facturación invisible
 La facturación electrónica en México (CFDI 4.0) puede ser un dolor de cabeza administrativo. En Cord, hemos integrado el timbrado directamente en el flujo de ventas para que ocurra mágicamente en segundo plano.
 
 ### Beneficios clave:
 - **Cero recaptura:** Todo lo que se negoció en la cotización (clave de producto SAT, unidades, impuestos) se transfiere directamente a la factura.
 - **Timbrado PUE automático:** Si el trato fue de contado, al aprobarse la cotización se emite un CFDI de Ingreso PUE sin recapturar nada. Para ventas a crédito (Net 30) marcamos la cotización como PPD; el Complemento de Recepción de Pagos (REP) automático está en nuestro roadmap.
-- **Almacenamiento seguro XML/PDF:** Todos tus comprobantes fiscales se resguardan en la nube, accesibles tanto para ti como para tu cliente desde su portal.`,
-            en: `## Invisible B2B invoicing
+- **Almacenamiento seguro XML/PDF:** Todos tus comprobantes fiscales se resguardan en la nube, accesible tanto para ti como para tu cliente desde su portal.`,
+            en: `## Invisible invoicing
 Electronic invoicing in Mexico (CFDI 4.0) can be an administrative headache. In Cord, we have integrated stamping directly into the sales flow so it happens magically in the background.
 
 ### Key benefits:

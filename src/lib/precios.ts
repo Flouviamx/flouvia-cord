@@ -5,7 +5,7 @@
 //
 // Matriz maestra (jun 2026): 5 niveles. Pro es el plan ANCLA (el que se empuja).
 // Free = gancho · Starter = freelance · Pro = equipos (DESTACADO) ·
-// Scale = corp · Developer = infraestructura.
+// Scale = corp · Developer = herramientas.
 
 export type PlanId = 'free' | 'starter' | 'pro' | 'scale' | 'developer';
 
@@ -107,7 +107,7 @@ export const PLANES: Plan[] = [
             'Usuarios e IA ilimitados',
             '1,000 CFDI + 50,000 API al mes',
             'Excedentes al menor costo',
-            'Infraestructura para integrar',
+            'Herramientas para integrar',
         ],
     },
 ];
@@ -249,7 +249,7 @@ export const COMPARATIVA: CompareGroup[] = [
         ],
     },
     {
-        titulo: 'Desarrolladores e infraestructura',
+        titulo: 'Desarrolladores y herramientas',
         rows: [
             { label: 'API pública REST', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Llaves de API incluidas', free: '2', starter: '5', pro: '20', scale: '50', developer: '200' },
@@ -307,6 +307,6 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
     },
     {
         q: '¿Necesito ser cliente de Flouvia para contratar un plan?',
-        a: 'No. Cord es un software independiente: cualquier negocio B2B, en cualquier país, puede registrarse directamente en cordhq.app y elegir un plan, sin relación previa con Flouvia ni con ningún otro producto.',
+        a: 'No. Cord es un software independiente: cualquier negocio, en cualquier país, puede registrarse directamente en cordhq.app y elegir un plan, sin relación previa con Flouvia ni con ningún otro producto.',
     },
 ];

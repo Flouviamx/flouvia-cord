@@ -15,10 +15,10 @@ const isEn = lang === 'en';
 const t = useTranslations(lang);
 const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 
-const title = isEn ? "How CordHQ Works | From Proposal to Payment" : "Cómo funciona CordHQ | De la Propuesta al Cobro";
+const title = isEn ? "How Cord Works | From Proposal to Payment" : "Cómo funciona Cord | De la Propuesta al Cobro";
 const description = isEn 
-    ? "See how CordHQ takes you from proposal to payment in one interactive link. Create proposals, get approval with legal signatures, and collect — all without your client downloading anything."
-    : "Descubre cómo CordHQ te lleva de la propuesta al cobro en un solo link interactivo. Crea propuestas, obtén aprobación con firma legal y cobra, sin que tu cliente descargue nada.";
+    ? "See how Cord takes you from proposal to payment in one interactive link. Create proposals, get approval with legal signatures, and collect — all without your client downloading anything."
+    : "Descubre cómo Cord te lleva de la propuesta al cobro en un solo link interactivo. Crea propuestas, obtén aprobación con firma legal y cobra, sin que tu cliente descargue nada.";
 ---
 
 <Layout title={title} description={description}>
@@ -27,12 +27,12 @@ const description = isEn
         <section class="cf-hero">
             <div class="cf-mesh" aria-hidden="true"></div>
             <div class="cf-hero-inner">
-                <p class="cf-eyebrow reveal">{isEn ? 'HOW CORDHQ WORKS' : 'CÓMO FUNCIONA CORDHQ'}</p>
+                <p class="cf-eyebrow reveal">{isEn ? 'HOW CORD WORKS' : 'CÓMO FUNCIONA CORD'}</p>
                 <h1 class="cf-title masked-title" set:html={isEn ? 'From proposal to payment. See the full cycle.' : 'De la propuesta al cobro. Conoce el ciclo completo.'} />
                 <p class="cf-sub reveal">
                     {isEn 
-                        ? 'CordHQ centralizes your entire commercial cycle in one interactive experience: create a proposal, send a link, get approval with a legal signature, and collect — your client never downloads anything or creates an account.'
-                        : 'CordHQ centraliza todo tu ciclo comercial en una experiencia interactiva: crea una propuesta, envía un link, obtén aprobación con firma legal y cobra, sin que tu cliente descargue nada ni cree cuenta.'}
+                        ? 'Cord centralizes your entire commercial cycle in one interactive experience: create a proposal, send a link, get approval with a legal signature, and collect — your client never downloads anything or creates an account.'
+                        : 'Cord centraliza todo tu ciclo comercial en una experiencia interactiva: crea una propuesta, envía un link, obtén aprobación con firma legal y cobra, sin que tu cliente descargue nada ni cree cuenta.'}
                 </p>
                 <div class="cf-hero-actions reveal">
                     <a href={l("/registro")} class="cf-btn-primary">{isEn ? 'Create my first proposal' : 'Crear mi primera propuesta'}</a>

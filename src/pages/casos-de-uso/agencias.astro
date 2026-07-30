@@ -15,8 +15,8 @@ const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
 const t = useTranslations(lang);
 
-const metaTitle = "Cord para Agencias y Consultoras — Propuestas e Igualas B2B";
-const metaDesc = "Envía propuestas con firma digital, cobra tus igualas (retainers) con links de pago y recordatorios automáticos, y factura automáticamente (CFDI 4.0 para negocios en México). Para agencias y consultoras B2B en cualquier país.";
+const metaTitle = "Cord para Agencias y Consultoras — Propuestas e Igualas";
+const metaDesc = "Envía propuestas con firma digital, cobra tus igualas (retainers) con links de pago y recordatorios automáticos, y factura automáticamente (CFDI 4.0 para negocios en México). Para agencias y consultoras en cualquier país.";
 
 // FAQ + JSON-LD (jul 2026, auditoría SEO/AI-SEO) — preguntas ancladas a
 // capacidades reales del producto.
@@ -48,7 +48,7 @@ const breadcrumbSchema = {
     '@type': 'BreadcrumbList',
     itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Cord', item: 'https://cordhq.app/' },
-        { '@type': 'ListItem', position: 2, name: 'Agencias y consultoras', item: 'https://cordhq.app/casos-de-uso/agencias' },
+        { '@type': 'ListItem', position: 2, name: 'Agencias', item: 'https://cordhq.app/casos-de-uso/agencias' },
     ],
 };
 

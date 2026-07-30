@@ -8,7 +8,7 @@ export const DEV_PAGES_EN: DevPage[] = [
         eyebrow: 'REST API',
         titulo: 'Your quoting engine, connected to everything.',
         sub: 'Cord stops being just a screen for humans and becomes a system your other systems can talk to. Read and create quotes, clients, and products from your ERP, CRM, or a script — with a single key.',
-        metaTitle: 'B2B Quoting REST API — Cord Developers',
+        metaTitle: 'Quoting REST API — Cord Developers',
         metaDescription: "Cord's REST API (/api/v1) reads and creates quotes, clients, and products with a Bearer key. Available on every plan, including Free, with no-cost test keys.",
         plan: 'Available on every plan (Free included) · free test keys to integrate before paying',
         stats: [
@@ -104,7 +104,7 @@ export const DEV_PAGES_EN: DevPage[] = [
         eyebrow: 'BIDIRECTIONAL MCP · AGENT GOVERNANCE',
         titulo: 'Your business talks to AI. And AI talks to your systems.',
         sub: 'Cord\'s MCP is no longer a one-way street. Cord is a server: an AI like Claude queries your AR and builds quotes using 7 tools. And Cord is a client: it connects to your CRM or ERP\'s MCP servers, under permissions you sign off on. You decide who touches what.',
-        metaTitle: 'Bidirectional MCP server for B2B AI agents — Cord',
+        metaTitle: 'Bidirectional MCP server for sales AI agents — Cord',
         metaDescription: "Cord is an MCP server (an AI like Claude queries your pipeline with 7 tools) and an MCP client (it connects to your CRM or ERP's servers under permissions you control). Available on every plan.",
         plan: 'Available on all plans · uses the same API key (more active keys as you upgrade; live consumption is metered by use)',
         stats: [
@@ -187,7 +187,7 @@ await mcpManager.disconnectAll();`,
         eyebrow: 'CORD ELEMENTS · EMBEDDABLE QUOTER',
         titulo: 'Your quoter, inside their site.',
         sub: 'Bring Cord\'s quoter to your clients\' portal with one line of code. Your brand, approval, counteroffer, and online payment — all within their ecosystem, without them ever leaving their site.',
-        metaTitle: 'Cord Elements — embeddable B2B quoter for your site',
+        metaTitle: 'Cord Elements — embeddable quoter for your site',
         metaDescription: 'Embed the Cord quoter in your portal with one line of code: an iframe, the <cord-cotizador> Web Component, or the @flouviahq/elements package for React/Vue. Free signup, no backend required.',
         plan: 'Free signup. On the Free plan, the public link carries a discreet "via Cord"; you can remove it and leave only your brand from Settings › Developers, where you also define the allowlist of domains authorized to embed.',
         stats: [
@@ -380,7 +380,7 @@ export function Cotizacion({ token }) {
         eyebrow: 'INTEGRATIONS · WEBHOOKS',
         titulo: 'Connect Cord to any ERP or CRM. No waiting for a connector.',
         sub: 'We don\'t maintain proprietary connectors for every system (SAP, Oracle, Salesforce…). Instead, Cord emits signed webhooks on every event of your sales cycle — point them at Zapier, Make, n8n, or your own backend and react in real time. Everything you see in the app is also available via REST API.',
-        metaTitle: 'Webhooks & B2B integrations (Zapier, Make, n8n) — Cord',
+        metaTitle: 'Webhooks & integrations (Zapier, Make, n8n) — Cord',
         metaDescription: 'Cord emits signed webhooks (HMAC-SHA256) on every sales event — quote.sent, quote.approved, quote.paid — that you connect to Zapier, Make, n8n, or your backend. Available on every plan, no proprietary connectors to wait for.',
         plan: 'On every plan · webhooks capped by plan (Free 1 → Developer 100) · native Slack · free test keys for the API',
         stats: [

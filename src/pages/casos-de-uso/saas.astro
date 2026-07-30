@@ -15,8 +15,8 @@ const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
 const t = useTranslations(lang);
 
-const metaTitle = "Cord para SaaS B2B — Contratos, Cobros y Facturación";
-const metaDesc = "Cierra contratos B2B, cobra en línea y factura automáticamente (CFDI 4.0 para negocios en México). La plataforma de ventas para empresas SaaS que venden a otras empresas, en cualquier país.";
+const metaTitle = "Cord para SaaS — Contratos, Cobros y Facturación";
+const metaDesc = "Cierra contratos, cobra en línea y factura automáticamente (CFDI 4.0 para negocios en México). La plataforma de ventas para empresas SaaS que venden a otras empresas, en cualquier país.";
 
 // FAQ + JSON-LD (jul 2026, auditoría SEO/AI-SEO — mismo criterio que
 // /producto/*): esta página no tenía FAQ visible ni ningún dato
@@ -25,7 +25,7 @@ const metaDesc = "Cierra contratos B2B, cobra en línea y factura automáticamen
 const FAQS = [
     {
         q: '¿Cord reemplaza mi motor de facturación recurrente (Stripe Billing, Chargebee)?',
-        a: 'No. Cord no cobra suscripciones de forma recurrente — se especializa en el ciclo de venta B2B: propuesta, aprobación digital y CFDI 4.0 por cada contrato o renovación. Sigues usando Stripe u otra pasarela para el cobro recurrente; Cord se integra vía API y webhooks para mantener todo sincronizado.',
+        a: 'No. Cord no cobra suscripciones de forma recurrente — se especializa en el ciclo de cierre comercial: propuesta, aprobación digital y CFDI 4.0 por cada contrato o renovación. Sigues usando Stripe u otra pasarela para el cobro recurrente; Cord se integra vía API y webhooks para mantener todo sincronizado.',
     },
     {
         q: '¿Puedo sincronizar Cord con mi CRM o Slack?',
@@ -50,7 +50,7 @@ const breadcrumbSchema = {
     '@type': 'BreadcrumbList',
     itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Cord', item: 'https://cordhq.app/' },
-        { '@type': 'ListItem', position: 2, name: 'SaaS B2B', item: 'https://cordhq.app/casos-de-uso/saas' },
+        { '@type': 'ListItem', position: 2, name: 'SaaS', item: 'https://cordhq.app/casos-de-uso/saas' },
     ],
 };
 
@@ -69,7 +69,7 @@ const testimonialItems = [
         name: 'Stripe',
         logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://stripe.com&size=128',
         logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Stripe_Logo%2C_revised_2016.svg/512px-Stripe_Logo%2C_revised_2016.svg.png',
-        quote: '«Cord complementa nuestro ecosistema gestionando el ciclo B2B de extremo a extremo. Es la pieza que faltaba para SaaS empresariales.»',
+        quote: '«Cord complementa nuestro ecosistema gestionando el ciclo de cierre de extremo a extremo. Es la pieza que faltaba para SaaS empresariales.»',
         author: 'Partnerships',
         bgGradient: 'linear-gradient(135deg, #4f46e5, #312e81)',
         bgImage: 'https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=2000&auto=format&fit=crop'

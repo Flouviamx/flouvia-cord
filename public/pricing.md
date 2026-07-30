@@ -1,4 +1,4 @@
-# Pricing — CordHQ
+# Pricing — Cord
 
 > Last updated: July 2026. Prices in MXN (Mexican pesos), IVA included.
 > Annual billing: pay 10 months, get 2 months free.

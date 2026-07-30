@@ -97,7 +97,7 @@ async function executeProposePlan(context: ARContext, input: any): Promise<strin
 
 export async function runARAgent(context: ARContext): Promise<string> {
   const systemPrompt = `
-Eres un especialista en Cuentas por Cobrar (Accounts Receivable) trabajando para una empresa B2B.
+Eres un especialista en Cuentas por Cobrar (Accounts Receivable) trabajando para una empresa comercial.
 Tu objetivo es lograr que el cliente pague el saldo vencido, manteniendo una relación profesional y cordial.
 El cliente es ${context.clienteNombre}.
 Saldo pendiente: $${context.montoAdeudado.toFixed(2)}

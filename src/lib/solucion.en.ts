@@ -9,9 +9,9 @@ export const SOLUCIONES_EN: Solution[] = [
         eyebrow: 'FOR ENTERPRISES',
         titulo: 'Scalable quoting for high-performance teams.',
         sub: 'Modernize your company\'s commercial process. Cord eliminates approval bottlenecks, controls margin in real-time, and ensures every sent proposal complies with company guidelines.',
-        metaTitle: 'B2B Quoting & Operations Software for Enterprise — Cord',
-        metaDescription: 'Enterprise platform to scale quoting processes, control volume pricing lists, and manage credit approvals with security and compliance. For any B2B enterprise, anywhere.',
-        paraQuien: 'Cord for Enterprise is designed for corporations, large-scale distributors, and consolidated B2B companies handling large proposal volumes, requiring strict control over pricing and margins, and needing total visibility over their sales pipeline.',
+        metaTitle: 'Quoting & Operations Software for Enterprise — Cord',
+        metaDescription: 'Enterprise platform to scale quoting processes, control volume pricing lists, and manage credit approvals with security and compliance. For any enterprise, anywhere.',
+        paraQuien: 'Cord for Enterprise is designed for corporations, large-scale distributors, and consolidated companies handling large proposal volumes, requiring strict control over pricing and margins, and needing total visibility over their sales pipeline.',
         dolor: 'Decentralized commercial processes cause margin leaks and loss of visibility in closing.',
         integrations: [
             { name: 'SAP' },
@@ -146,7 +146,7 @@ export const SOLUCIONES_EN: Solution[] = [
                 ]
             },
             {
-                title: 'B2B SaaS',
+                title: 'SaaS',
                 desc: 'Manage subscriptions, custom contracts, and Enterprise plans. Integrate recurring payments and issue automated CFDI invoices without touching the SAT portal.',
                 link: '/casos-de-uso/saas',
                 logos: [
@@ -156,7 +156,7 @@ export const SOLUCIONES_EN: Solution[] = [
                 ]
             },
             {
-                title: 'B2B Wholesale',
+                title: 'Wholesale',
                 desc: 'Quote in volume, apply discounts through dynamic tiers, handle extensive catalogs, and automate large order billing upon payment confirmation.',
                 link: '/casos-de-uso/comercializadoras',
                 logos: [
@@ -218,7 +218,7 @@ export const SOLUCIONES_EN: Solution[] = [
             metricas: [
                 { valor: '3x', label: 'faster sales cycle speed' },
                 { valor: '100%', label: 'automated post-close billing' },
-                { valor: '0', countup: 0, label: 'friction in B2B onboarding' },
+                { valor: '0', countup: 0, label: 'friction in sales onboarding' },
             ],
             nota: 'With a team of only 4 people, Acme AI uses Cord to handle all their annual enterprise subscriptions, looking like a corporation while operating with the agility of a startup.',
         },
