@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { useStore } from '@nanostores/react';
-import { $clerkStore, $userStore, $isLoadedStore } from '@clerk/astro/client';
+import { atom } from 'nanostores';
+
+const $clerkStore = atom<any>(null);
+const $isLoadedStore = atom<boolean>(true);
+const $userStore = atom<any>(null);
 
 export default function CreateWorkspace() {
   const isLoaded = useStore($isLoadedStore);
