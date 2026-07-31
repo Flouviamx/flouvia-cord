@@ -1,5 +1,5 @@
 // POST /api/equipo/join { token } — el usuario logueado acepta una invitación.
-// Vincula su clerk_user_id al miembro invitado y lo deja 'activo'. A partir de
+// Vincula su user_id al miembro invitado y lo deja 'activo'. A partir de
 // ahí getActiveOrgId lo resuelve hacia esa org. Ruta interna (requiere sesión).
 export const prerender = false;
 
@@ -20,22 +20,22 @@ export const POST: APIRoute = async ({ request }) => {
     const token = String(body.token ?? '').trim();
     if (!token) return json({ error: 'Falta el token de invitación' }, 400);
 
-    const rows = await sql`select id, org_id, clerk_user_id, estado from org_members where token = ${token}`;
+    const rows = await sql`select id, org_id, user_id, estado from org_members where token = ${token}`;
     if (!rows.length) return json({ error: 'Invitación no válida' }, 404);
     const inv = rows[0];
     if (inv.estado === 'revocado') return json({ error: 'Esta invitación fue cancelada' }, 410);
-    if (inv.clerk_user_id && inv.clerk_user_id !== userId) return json({ error: 'Esta invitación ya fue usada' }, 409);
+    if (inv.user_id && inv.user_id !== userId) return json({ error: 'Esta invitación ya fue usada' }, 409);
 
     const orgId = inv.org_id as string;
 
     // ¿Ya soy miembro de esta org? (evita violar el índice único) → consumo el invite.
-    const existing = await sql`select id from org_members where org_id = ${orgId} and clerk_user_id = ${userId} and estado = 'activo' limit 1`;
+    const existing = await sql`select id from org_members where org_id = ${orgId} and user_id = ${userId} and estado = 'activo' limit 1`;
     if (existing.length) {
         if (existing[0].id !== inv.id) await sql`delete from org_members where id = ${inv.id}`;
         return json({ ok: true, orgId, already: true });
     }
 
-    await sql`update org_members set clerk_user_id = ${userId}, estado = 'activo', joined_at = now() where id = ${inv.id}`;
+    await sql`update org_members set user_id = ${userId}, estado = 'activo', joined_at = now() where id = ${inv.id}`;
     await logAudit(orgId, { accion: 'equipo.union', entidad: 'miembro', entidad_id: inv.id, detalle: 'Aceptó la invitación', ip: reqIp(request) });
     // Un miembro activo más cuenta como usuario del sistema (excedente vía Stripe).
     await reportUsage(orgId, 'usuario', 1);

@@ -5,7 +5,7 @@
 //    el plan al concretarse el pago (status active).
 //  • sin ui (fallback): Stripe Checkout hosteado (modo suscripción) → { url }.
 // Ambos incluyen el precio base + los precios MEDIDOS (overage) del plan.
-// Ruta INTERNA (el middleware exige sesión Clerk).
+// Ruta INTERNA (el middleware exige sesión).
 export const prerender = false;
 
 import type { APIRoute } from 'astro';

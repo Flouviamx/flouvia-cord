@@ -975,14 +975,9 @@ const { darkHero = false } = Astro.props;
 </style>
 
 <script>
-    // ── ESTADO DE SESIÓN (Clerk) ──
-    // La landing es prerender:true (HTML estático), así que el auth NO se resuelve
-    // en el servidor: usamos el store de cliente de Clerk, que se prepobla en SSR y
-    // se actualiza al cargar clerk-js. El markup por defecto (deslogueado) es el que
-    // ve quien no tiene JS o no ha iniciado sesión; al detectar sesión se intercambian
-    // href + etiqueta a "Ir al Dashboard" / "Ver planes".
-    import { $authStore } from '@clerk/astro/client';
-
+    // ── ESTADO DE SESIÓN (Custom Auth) ──
+    // La landing es prerender:true (HTML estático).
+    // TODO: Implementar el store del cliente para auth custom y reemplazar false.
     const applyAuthState = (signedIn: boolean) => {
         document.querySelectorAll<HTMLAnchorElement>('[data-auth-swap]').forEach((el) => {
             const href = signedIn ? el.dataset.inHref : el.dataset.outHref;
@@ -995,7 +990,8 @@ const { darkHero = false } = Astro.props;
         });
     };
 
-    $authStore.subscribe((auth) => applyAuthState(!!auth?.userId));
+    // Aplicar estado deslogueado por defecto (se conectará al nuevo store luego)
+    applyAuthState(false);
 </script>
 
 <script>

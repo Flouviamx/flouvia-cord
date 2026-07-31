@@ -1,0 +1,342 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { sql } from '../../lib/db';
+
+// Proteger ruta con la variable de entorno y la cookie
+const opsToken = Astro.cookies.get('cord_ops_token')?.value;
+if (!opsToken || opsToken !== import.meta.env.OPS_SECRET) {
+  return Astro.redirect('/ops/login');
+}
+
+// Obtener estadísticas de alto nivel
+let stats = {
+  users: 0,
+  orgs: 0,
+  quotes: 0
+};
+
+try {
+  const [userCount] = await sql`select count(*) as c from users`;
+  const [orgCount] = await sql`select count(*) as c from orgs`;
+  const [quoteCount] = await sql`select count(*) as c from cotizaciones`;
+  
+  stats.users = Number(userCount?.c || 0);
+  stats.orgs = Number(orgCount?.c || 0);
+  stats.quotes = Number(quoteCount?.c || 0);
+} catch (error) {
+  console.error("Error cargando stats ops", error);
+}
+
+// Obtener las últimas orgs registradas
+let recentOrgs = [];
+try {
+  recentOrgs = await sql`
+    select o.id, o.nombre, o.created_at, o.plan, u.email as owner_email
+    from orgs o
+    left join users u on o.owner_id = u.id
+    order by o.created_at desc limit 10
+  `;
+} catch (error) {
+  console.error("Error cargando orgs recientes ops", error);
+}
+---
+
+<Layout title="Cord Ops Panel" theme="dark">
+  <div class="ops-layout">
+    <aside class="ops-sidebar">
+      <div class="sidebar-header">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+        <span>Cord Ops</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/ops" class="active">Vista General</a>
+        <a href="#">Organizaciones</a>
+        <a href="#">Usuarios</a>
+        <a href="#">Auditoría</a>
+      </nav>
+    </aside>
+
+    <main class="ops-main">
+      <header class="ops-header">
+        <h1>Centro de Comando</h1>
+        <div class="header-actions">
+          <button class="btn-ghost">Refrescar</button>
+        </div>
+      </header>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3>Total Usuarios</h3>
+          <div class="stat-value">{stats.users}</div>
+        </div>
+        <div class="stat-card">
+          <h3>Total Orgs</h3>
+          <div class="stat-value">{stats.orgs}</div>
+        </div>
+        <div class="stat-card">
+          <h3>Cotizaciones</h3>
+          <div class="stat-value">{stats.quotes}</div>
+        </div>
+      </div>
+
+      <section class="ops-section">
+        <div class="section-header">
+          <h2>Organizaciones Recientes</h2>
+          <a href="#" class="view-all">Ver todas</a>
+        </div>
+        
+        <div class="table-container">
+          <table class="ops-table">
+            <thead>
+              <tr>
+                <th>Negocio</th>
+                <th>Owner Email</th>
+                <th>Plan</th>
+                <th>Fecha de Registro</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentOrgs.map((org: any) => (
+                <tr>
+                  <td><strong>{org.nombre}</strong></td>
+                  <td class="text-muted">{org.owner_email || '—'}</td>
+                  <td><span class={`badge plan-${org.plan}`}>{org.plan}</span></td>
+                  <td class="text-muted">{new Date(org.created_at).toLocaleDateString()}</td>
+                  <td>
+                    <button class="btn-sm">Inspeccionar</button>
+                  </td>
+                </tr>
+              ))}
+              {recentOrgs.length === 0 && (
+                <tr>
+                  <td colspan="5" class="empty-state">No hay organizaciones registradas.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <style>
+    .ops-layout {
+      display: flex;
+      min-height: 100vh;
+      background: #050505;
+      color: #fff;
+      font-family: var(--font-sans, system-ui, sans-serif);
+    }
+
+    .ops-sidebar {
+      width: 250px;
+      border-right: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.02);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 600;
+      font-size: 1.1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .sidebar-nav a {
+      color: #888;
+      text-decoration: none;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      font-size: 0.95rem;
+    }
+
+    .sidebar-nav a:hover {
+      color: #fff;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .sidebar-nav a.active {
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+      font-weight: 500;
+    }
+
+    .ops-main {
+      flex: 1;
+      padding: 2.5rem 3rem;
+      overflow-y: auto;
+    }
+
+    .ops-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .ops-header h1 {
+      margin: 0;
+      font-size: 1.75rem;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255,255,255,0.05);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .stat-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    .stat-card h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 0.85rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 300;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .ops-section {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+
+    .view-all {
+      color: #888;
+      font-size: 0.9rem;
+      text-decoration: none;
+    }
+
+    .view-all:hover {
+      color: #fff;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    .ops-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .ops-table th {
+      padding: 0.75rem 1rem;
+      color: #888;
+      font-weight: 500;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .ops-table td {
+      padding: 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 0.95rem;
+    }
+
+    .ops-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .text-muted {
+      color: #888;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge.plan-free { background: rgba(255,255,255,0.1); color: #ccc; }
+    .badge.plan-pro { background: rgba(147, 197, 253, 0.2); color: #93c5fd; }
+    .badge.plan-basico { background: rgba(167, 243, 208, 0.2); color: #a7f3d0; }
+
+    .btn-sm {
+      background: rgba(255,255,255,0.08);
+      border: none;
+      color: #fff;
+      padding: 0.4rem 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: background 0.2s;
+    }
+
+    .btn-sm:hover {
+      background: rgba(255,255,255,0.15);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem !important;
+      color: #666;
+    }
+  </style>
+</Layout>

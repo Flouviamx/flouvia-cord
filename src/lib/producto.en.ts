@@ -833,7 +833,7 @@ export const FEATURES_EN: Feature[] = [
                 copy: 'Your team logs in with your domain\'s Google or Microsoft credentials. If someone leaves the company, you cut their email and they instantly lose access to Cord.',
                 bullets: [
                     'Single Sign-On (SSO) with standard providers',
-                    'Robust authentication backed by Clerk',
+                    'Robust authentication',
                     'Session log and access auditing',
                 ],
             },

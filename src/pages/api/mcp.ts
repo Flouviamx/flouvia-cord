@@ -23,7 +23,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { authApiKey, checkApiKeyRateLimit, meterApiUsage, logApiRequest } from '../../lib/apikey';
 import { reqContext } from '../../lib/context';
-import { handle, RpcError, routeLabel } from '../../lib/mcp/rpc';
+import { handle, RpcError, routeLabel, posthogMcp } from '../../lib/mcp/rpc';
 
 // Clientes MCP corriendo en el navegador necesitan CORS en TODAS las
 // respuestas del endpoint, no solo en el preflight OPTIONS — antes el
@@ -96,6 +96,9 @@ export const POST: APIRoute = async ({ request }) => {
                 : rpcErr(msg.id ?? null, -32603, 'Error interno del servidor.');
         }
         void logApiRequest(auth, request, res.status, Date.now() - t0, route);
+        // Flush PostHog before returning — Vercel serverless may be torn down
+        // after the response is sent, so we must flush before returning.
+        await posthogMcp?.flush();
         return res;
     });
 };

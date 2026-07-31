@@ -1,6 +1,6 @@
 // POST /api/billing/portal — abre el Customer Portal de Stripe para que la org
 // gestione su suscripción (cambiar plan, método de pago, cancelar, ver recibos).
-// Ruta INTERNA (el middleware exige sesión Clerk).
+// Ruta INTERNA (el middleware exige sesión).
 // ⚠️ Requiere tener configurado el Customer Portal en el dashboard de Stripe.
 export const prerender = false;
 

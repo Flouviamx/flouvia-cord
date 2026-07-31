@@ -132,6 +132,39 @@ export async function getOrg() {
     };
 }
 
+export async function getUserProfile() {
+    const userId = currentUserId();
+    if (!userId) return null;
+    
+    const [user] = await sql`select * from users where id = ${userId}`;
+    if (!user) return null;
+
+    const memberships = await sql`
+        select 
+            o.id, o.nombre, o.logo_url, 
+            coalesce(m.rol, case when o.owner_id = ${userId} then 'owner' else 'member' end) as role
+        from orgs o
+        left join org_members m on m.org_id = o.id and m.user_id = ${userId}
+        where o.owner_id = ${userId} or m.user_id = ${userId}
+    `;
+
+    return {
+        id: user.id,
+        firstName: user.first_name || 'Usuario',
+        fullName: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Usuario',
+        imageUrl: user.avatar_url || '',
+        emailAddresses: [{ emailAddress: user.email }],
+        organizationMemberships: memberships.map(m => ({
+            organization: {
+                id: m.id,
+                name: m.nombre,
+                logoUrl: m.logo_url
+            },
+            role: m.role
+        }))
+    };
+}
+
 // ── API KEYS (Developers) ────────────────────────────────────────────────────
 export async function getApiKeys() {
     const orgId = await getActiveOrgId();
@@ -1607,7 +1640,7 @@ const fmtFecha = (d: unknown) => d ? new Intl.DateTimeFormat('es-MX', { day: 'nu
 
 export interface MemberRow {
     id: string;
-    clerkUserId: string | null;
+    userId: string | null;
     email: string;
     nombre: string;
     rol: string;
@@ -1623,14 +1656,14 @@ export async function getMembers(): Promise<MemberRow[]> {
     const orgId = await getActiveOrgId();
     const me = currentUserId();
     const rows = await sql`
-        select id, clerk_user_id, email, nombre, rol, permisos, estado, token, created_at, joined_at
+        select id, user_id, email, nombre, rol, permisos, estado, token, created_at, joined_at
         from org_members where org_id = ${orgId} and estado <> 'revocado'
         order by case when rol = 'owner' then 0 else 1 end, created_at asc`;
     return rows.map((m) => {
         const nombre = (m.nombre as string) || (m.email as string) || 'Invitado';
         return {
             id: m.id as string,
-            clerkUserId: (m.clerk_user_id as string) ?? null,
+            userId: (m.user_id as string) ?? null,
             email: (m.email as string) ?? '',
             nombre, rol: m.rol as string,
             permisos: (m.permisos as PermMap) ?? {},
@@ -1638,14 +1671,14 @@ export async function getMembers(): Promise<MemberRow[]> {
             token: (m.token as string) ?? null,
             inicial: initials(nombre),
             desde: fmtFecha(m.joined_at || m.created_at),
-            esYo: !!me && m.clerk_user_id === me,
+            esYo: !!me && m.user_id === me,
         };
     });
 }
 
 export async function getMyMembership(): Promise<Membership> {
     const userId = currentUserId();
-    // FAIL-CLOSED sin sesión Clerk. El único carril legítimo sin userId es M2M
+    // FAIL-CLOSED sin sesión. El único carril legítimo sin userId es M2M
     // (API key), donde currentOrgIdOverride() está seteado y la llave ya es dueña
     // de su org. Para cualquier otro caso (una ruta mal clasificada como pública,
     // un handler alcanzado sin sesión), NO asumir owner: devolver un principal sin
@@ -1656,7 +1689,7 @@ export async function getMyMembership(): Promise<Membership> {
     }
     const orgId = await getActiveOrgId();
     try {
-        const rows = await sql`select rol, permisos from org_members where org_id = ${orgId} and clerk_user_id = ${userId} and estado = 'activo' limit 1`;
+        const rows = await sql`select rol, permisos from org_members where org_id = ${orgId} and user_id = ${userId} and estado = 'activo' limit 1`;
         if (!rows.length) return { rol: 'owner', permisos: {}, esOwner: true };
         const m = rows[0];
         return { rol: m.rol as string, permisos: (m.permisos as PermMap) ?? {}, esOwner: m.rol === 'owner' };
@@ -1790,7 +1823,7 @@ export async function getCobros() {
 
 // ── DESEMPEÑO DEL EQUIPO (/app/desempeno) ──────────────────────────────────────
 export interface VendedorDesempeno {
-    clerkUserId: string;
+    userId: string;
     nombre: string;
     inicial: string;
     rol: string;
@@ -1810,8 +1843,8 @@ export async function getDesempeno() {
     const me = currentUserId();
 
     const [members, cierreRows, cobradoRows, recRows, sinCreadorRows] = await withOrgTx(orgId,
-        sql`select clerk_user_id, coalesce(nombre, email, 'Sin nombre') as nombre, rol
-            from org_members where org_id = ${orgId} and estado = 'activo' and clerk_user_id is not null
+        sql`select user_id, coalesce(nombre, email, 'Sin nombre') as nombre, rol
+            from org_members where org_id = ${orgId} and estado = 'activo' and user_id is not null
             order by case when rol = 'owner' then 0 else 1 end`,
         // Creadas / enviadas / cerradas + tiempo a cierre, por vendedor.
         sql`select creado_por,
@@ -1858,12 +1891,12 @@ export async function getDesempeno() {
 
     const seen = new Set<string>();
     const vendedores: VendedorDesempeno[] = members.map((m) => {
-        const id = m.clerk_user_id as string;
+        const id = m.user_id as string;
         seen.add(id);
         const a = aggMap.get(id) ?? { creadas: 0, enviadas: 0, cerradas: 0, cerradoTotal: 0, diasCierre: 0, cobradoTotal: 0 };
         const nombre = m.nombre as string;
         return {
-            clerkUserId: id, nombre, inicial: initials(nombre), rol: m.rol as string, esYo: !!me && id === me,
+            userId: id, nombre, inicial: initials(nombre), rol: m.rol as string, esYo: !!me && id === me,
             creadas: a.creadas, enviadas: a.enviadas, cerradas: a.cerradas,
             tasaCierre: a.enviadas ? Math.round((a.cerradas / a.enviadas) * 100) : 0,
             cerradoTotal: a.cerradoTotal, cobradoTotal: a.cobradoTotal,

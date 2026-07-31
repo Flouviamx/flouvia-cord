@@ -1,6 +1,6 @@
 // src/lib/apikey.ts
 // Carril de auth MÁQUINA-A-MÁQUINA (API pública). A diferencia del resto de la
-// app —que se autentica por la sesión de Clerk en el middleware— las rutas
+// app —que se autentica por la sesión web en el middleware— las rutas
 // públicas (/api/v1/*) se autentican con una API key en el header:
 //
 //     Authorization: Bearer sk_live_xxxxxxxx...
@@ -154,7 +154,7 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
 
 /**
  * Envuelve un handler de ruta pública para autenticarlo por API key y correrlo
- * con el org_id resuelto en el contexto (vía reqContext, sin sesión Clerk). El
+ * con el org_id resuelto en el contexto (vía reqContext, sin sesión web). El
  * handler recibe el contexto de Astro + el `auth` ya validado.
  *
  *   export const GET = withApiAuth('read', async (ctx, auth) => { ... });
@@ -176,7 +176,7 @@ export function withApiAuth(
         const limited = await checkApiKeyRateLimit(auth);
         if (limited) return limited;
         meterApiUsage(auth);
-        // userId null → el carril Clerk queda inactivo; orgId manda la tenancy.
+        // userId null → el carril de usuario queda inactivo; orgId manda la tenancy.
         const t0 = Date.now();
         const res = await reqContext.run({ userId: null, orgId: auth.orgId }, () => handler(ctx, auth));
         // Bitácora del request (best-effort: nunca frena ni rompe la respuesta).

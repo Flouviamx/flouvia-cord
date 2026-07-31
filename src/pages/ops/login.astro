@@ -1,0 +1,161 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+// Si ya tiene el token correcto, lo mandamos al dashboard
+const opsToken = Astro.cookies.get('cord_ops_token')?.value;
+if (opsToken === import.meta.env.OPS_SECRET) {
+  return Astro.redirect('/ops');
+}
+---
+
+<Layout title="Ops | Cord" theme="dark">
+  <div class="ops-login-container">
+    <div class="ops-card">
+      <div class="cord-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <h1>Sistemas Internos</h1>
+      <p>Acceso restringido</p>
+      
+      <form id="ops-auth-form">
+        <input type="password" id="secret" placeholder="Clave de operaciones" required autocomplete="off" />
+        <button type="submit" id="submit-btn">Ingresar</button>
+      </form>
+      <div id="error-msg" class="error-msg"></div>
+    </div>
+  </div>
+
+  <style>
+    .ops-login-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #050505; /* Deep black for ultra-premium feel */
+      color: #fff;
+      font-family: var(--font-sans, system-ui, sans-serif);
+    }
+
+    .ops-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 3rem 2.5rem;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+
+    .cord-logo {
+      margin-bottom: 1.5rem;
+      color: #fff;
+      opacity: 0.8;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 500;
+      margin: 0 0 0.5rem 0;
+      letter-spacing: -0.02em;
+    }
+
+    p {
+      color: #888;
+      font-size: 0.9rem;
+      margin: 0 0 2rem 0;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    input {
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(255,255,255,0.05);
+    }
+
+    button {
+      background: #fff;
+      color: #000;
+      border: none;
+      padding: 0.8rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.1s ease, opacity 0.2s ease;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .error-msg {
+      color: #ff4a4a;
+      font-size: 0.85rem;
+      margin-top: 1rem;
+      min-height: 1.2em;
+    }
+  </style>
+
+  <script>
+    const form = document.getElementById('ops-auth-form') as HTMLFormElement;
+    const input = document.getElementById('secret') as HTMLInputElement;
+    const btn = document.getElementById('submit-btn') as HTMLButtonElement;
+    const errorMsg = document.getElementById('error-msg') as HTMLDivElement;
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorMsg.textContent = '';
+      btn.disabled = true;
+      btn.textContent = 'Verificando...';
+
+      try {
+        const res = await fetch('/api/ops/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ secret: input.value })
+        });
+
+        if (res.ok) {
+          window.location.href = '/ops';
+        } else {
+          errorMsg.textContent = 'Clave incorrecta.';
+          input.value = '';
+          input.focus();
+        }
+      } catch (err) {
+        errorMsg.textContent = 'Error de conexión.';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Ingresar';
+      }
+    });
+  </script>
+</Layout>

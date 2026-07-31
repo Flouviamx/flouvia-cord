@@ -6,7 +6,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { clerkClient } from '@clerk/astro/server';
+// TODO: Implementar invitaciones vía correo con API propia
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { currentUserId } from '../../lib/context';
 import { requirePerm } from '../../lib/queries';
@@ -15,10 +15,7 @@ import { PRESETS, ALL_PERM_KEYS, planTieneEquipo, type PermMap } from '../../lib
 const json = (data: unknown, status = 200) =>
     new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
 
-// Nuestro preset → rol coarse de Clerk (Clerk solo modela admin/member por
-// defecto; los permisos finos los aplica el webhook como preset y el owner los
-// afina después en Ajustes › Equipo).
-const clerkRoleFor = (preset: string) => (preset === 'admin' ? 'org:admin' : 'org:member');
+// Nuestro preset -> rol interno
 
 // Sanea una matriz de permisos: solo claves conocidas, valores booleanos.
 function cleanPermisos(input: any): PermMap {
@@ -33,7 +30,7 @@ export const POST: APIRoute = async (context) => {
     if (denied) return denied;
 
     const orgId = await getActiveOrgId();
-    const [[org]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan, invite_domains, clerk_org_id from orgs where id = ${orgId}`);
+    const [[org]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan, invite_domains from orgs where id = ${orgId}`);
     if (!planTieneEquipo(org.plan as string)) {
         return json({ error: 'Invitar a tu equipo requiere el plan Negocio.' }, 402);
     }
@@ -55,32 +52,7 @@ export const POST: APIRoute = async (context) => {
     const nombre = body.nombre ? String(body.nombre).trim().slice(0, 120) : null;
     const preset = String(body.preset ?? 'vendedor');
 
-    // ── Carril Clerk Organizations: la org ya vive en Clerk → mandamos la
-    //    invitación POR CORREO (Clerk envía el email). Al aceptar, el webhook
-    //    organizationMembership.created crea la fila en org_members con el preset
-    //    del rol; el owner afina los permisos finos después en Ajustes › Equipo.
-    const clerkOrgId = org.clerk_org_id as string | null;
-    if (clerkOrgId) {
-        if (!email) return json({ error: 'Escribe el correo de la persona a invitar.' }, 400);
-        try {
-            const clerk = clerkClient(context);
-            await clerk.organizations.createOrganizationInvitation({
-                organizationId: clerkOrgId,
-                inviterUserId: currentUserId()!,
-                emailAddress: email,
-                role: clerkRoleFor(preset),
-                redirectUrl: `${new URL(request.url).origin}/app`,
-            });
-            await logAudit(orgId, { accion: 'equipo.invitado', entidad: 'miembro', detalle: `${email} (correo Clerk)`, ip: reqIp(request) });
-            return json({ ok: true, emailed: true });
-        } catch (e: any) {
-            const msg = String(e?.errors?.[0]?.message || e?.message || 'No se pudo enviar la invitación');
-            return json({ error: msg }, 422);
-        }
-    }
-
-    // ── Fallback legacy (org aún sin clerk_org_id, ej. antes del backfill):
-    //    invitación por TOKEN/LINK como antes.
+    //    invitación por TOKEN/LINK.
     const permisos = body.permisos ? cleanPermisos(body.permisos)
         : cleanPermisos(PRESETS[preset]?.permisos ?? PRESETS.vendedor.permisos);
     const rol = PRESETS[preset] ? preset : 'miembro';
@@ -141,27 +113,13 @@ export const DELETE: APIRoute = async (context) => {
     const id = String(body.id ?? '');
     if (!id) return json({ error: 'Falta el miembro' }, 400);
 
-    const [rows] = await withOrgTx(orgId, sql`select m.rol, m.clerk_user_id, o.clerk_org_id
+    const [rows] = await withOrgTx(orgId, sql`select m.rol
                            from org_members m join orgs o on o.id = m.org_id
                            where m.id = ${id} and m.org_id = ${orgId}`);
     if (!rows.length) return json({ error: 'Miembro no encontrado' }, 404);
     if (rows[0].rol === 'owner') return json({ error: 'No puedes quitar al dueño de la organización.' }, 409);
 
-    // Si es un miembro de Clerk Organizations, lo quitamos también de Clerk; el
-    // webhook organizationMembership.deleted marcará 'revocado' en Neon.
-    const clerkOrgId = rows[0].clerk_org_id as string | null;
-    const memberUserId = rows[0].clerk_user_id as string | null;
-    if (clerkOrgId && memberUserId) {
-        try {
-            const clerk = clerkClient(context);
-            await clerk.organizations.deleteOrganizationMembership({ organizationId: clerkOrgId, userId: memberUserId });
-        } catch (e: any) {
-            // best-effort: si Clerk falla, revocamos local de todos modos abajo.
-            console.error('[equipo] no se pudo quitar de Clerk:', e?.message);
-        }
-    }
-
-    await withOrgTx(orgId, sql`update org_members set estado = 'revocado', clerk_user_id = null where id = ${id} and org_id = ${orgId}`);
+    await withOrgTx(orgId, sql`update org_members set estado = 'revocado', user_id = null where id = ${id} and org_id = ${orgId}`);
     await logAudit(orgId, { accion: 'equipo.revocado', entidad: 'miembro', entidad_id: id, ip: reqIp(request) });
     return json({ ok: true });
 };

@@ -24,7 +24,7 @@ import type { APIRoute } from 'astro';
 import { authApiKey, checkApiKeyRateLimit, meterApiUsage, logApiRequest } from '../../../lib/apikey';
 import { reqContext } from '../../../lib/context';
 import { getSession, pushOutbox, touchSession } from '../../../lib/mcp/session-store';
-import { handle, RpcError, routeLabel } from '../../../lib/mcp/rpc';
+import { handle, RpcError, routeLabel, posthogMcp } from '../../../lib/mcp/rpc';
 
 const jsonHeaders = { 'Content-Type': 'application/json' };
 const rpcErrRes = (id: any, code: number, message: string, status: number) =>
@@ -94,6 +94,9 @@ export const POST: APIRoute = async ({ request, url }) => {
             }
         }
         void logApiRequest(auth, request, 202, Date.now() - t0, route);
+        // Flush PostHog before returning — serverless may be torn down
+        // after the response is sent, so we must drain events now.
+        await posthogMcp?.flush();
         return new Response(null, { status: 202 });
     });
 };

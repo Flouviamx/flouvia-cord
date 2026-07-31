@@ -13,6 +13,7 @@ import crypto from 'node:crypto';
 import { sql, logAudit } from '../../../lib/db';
 import { dispatchQuoteEvent, dispatchPaymentPartial } from '../../../lib/webhooks';
 import { PRICE_TO_PLAN, isPaidPlan, stripe } from '../../../lib/billing';
+import { trackPaymentReceived } from '../../../lib/posthog-server';
 import { after } from '../../../lib/after';
 
 const WH_SECRET = import.meta.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
@@ -217,10 +218,14 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
                       where cotizacion_id = ${cid} and status = 'pendiente')
                 returning id`;
 
+            const amountPaid = Number(sessionOrIntent?.amount ?? 0) / 100;
+            const currency = (sessionOrIntent?.currency ?? 'MXN').toUpperCase();
+
             if (flipped.length) {
                 await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                           values (${orgId}, ${cid}, 'paid', 'Pago recibido vía Stripe — cotización saldada')`;
                 await logAudit(orgId, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea (Stripe)' });
+                trackPaymentReceived(orgId, amountPaid, currency, paymentMethod, false, cid);
                 after(dispatchQuoteEvent(orgId, cid, 'quote.paid'));
             } else if (marked.length) {
                 // Pago PARCIAL: evento informativo, sin quote.paid (avisar a las
@@ -236,6 +241,7 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
                 await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                           values (${orgId}, ${cid}, 'paid', ${`${label} de ${monto} pagado vía Stripe${sufijo}`})`;
                 await logAudit(orgId, { accion: 'cotizacion.cobro_pagado', entidad: 'cotizacion', entidad_id: cid, detalle: `${label} pagado en línea (Stripe)` });
+                trackPaymentReceived(orgId, amountPaid, currency, paymentMethod, false, cid);
                 // payment.partial: antes NINGÚN webhook avisaba que cayó un
                 // anticipo/saldo/cuota — una integración solo se enteraba hasta
                 // que el TOTAL quedaba cubierto (quote.paid). `sums` ya refleja
@@ -257,6 +263,11 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
             await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                       values (${orgId}, ${cid}, 'paid', 'Pago recibido vía Stripe')`;
             await logAudit(orgId, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea (Stripe)' });
+            
+            const amountPaid = Number(sessionOrIntent?.amount ?? 0) / 100;
+            const currency = (sessionOrIntent?.currency ?? 'MXN').toUpperCase();
+            trackPaymentReceived(orgId, amountPaid, currency, paymentMethod, false, cid);
+
             // No demorar el 200 a Stripe con nuestro webhook saliente, pero SIN perderlo:
             // after()/waitUntil mantiene viva la invocación hasta que termine, a
             // diferencia de un `.catch(()=>{})` suelto que Vercel puede congelar en
@@ -419,6 +430,10 @@ async function recurringInvoicePaid(invoice: any, account: string) {
     await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
               values (${row.org_id}, ${row.cotizacion_id}, 'paid', ${`Cobro mensual de ${monto} recibido (iguala)`})`;
     await logAudit(row.org_id as string, { accion: 'cotizacion.iguala_cobrada', entidad: 'cotizacion', entidad_id: row.cotizacion_id as string, detalle: `Cobro recurrente ${monto} (Stripe)` });
+    
+    const currency = (invoice?.currency ?? 'MXN').toUpperCase();
+    trackPaymentReceived(row.org_id as string, montoNum, currency, 'tarjeta', true, row.cotizacion_id as string);
+    
     // Cada cobro mensual exitoso es un "Pago recibido" real para las integraciones.
     // after()/waitUntil — no perderlo si Vercel congela la invocación tras el 200.
     after(dispatchQuoteEvent(row.org_id as string, row.cotizacion_id as string, 'quote.paid'));

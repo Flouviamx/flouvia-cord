@@ -1,6 +1,6 @@
 // /api/mcp/playground — PROBADOR de tools MCP desde la UI (Ajustes › Developers).
 // A diferencia de /api/mcp (auth por API key, protocolo JSON-RPC), este corre con
-// la SESIÓN de Clerk del usuario y ejecuta una sola tool para que el dev vea qué
+// la SESIÓN del usuario y ejecuta una sola tool para que el dev vea qué
 // devuelve sin tener que configurar un cliente MCP. Solo tools de LECTURA: las de
 // escritura crearían datos reales, así que se rechazan aquí (úsalas con una key).
 //   POST { tool, args? } → { ok, result } | { error }

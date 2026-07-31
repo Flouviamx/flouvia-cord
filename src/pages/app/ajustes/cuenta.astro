@@ -4,12 +4,14 @@
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import CustomUserProfile from '../../../components/app/CustomUserProfile.tsx';
 import { currentLocale } from '../../../lib/context';
+import { getUserProfile } from '../../../lib/queries';
 import { t } from '../../../i18n/app';
 
 // Llegó aquí redirigido por AppLayout: su organización exige 2FA y su cuenta
 // todavía no lo tiene activo (ver el gate en AppLayout.astro).
 const require2fa = Astro.url.searchParams.get('require2fa') === '1';
 const L = currentLocale();
+const userProfile = await getUserProfile();
 ---
 
 <SettingsShell title="Tu cuenta — Ajustes" tab="cuenta"
@@ -24,7 +26,7 @@ const L = currentLocale();
         </div>
     )}
     <div class="cuenta-mount">
-        <CustomUserProfile client:only="react" locale={L} />
+        <CustomUserProfile client:only="react" locale={L} user={userProfile} />
     </div>
 </SettingsShell>
 

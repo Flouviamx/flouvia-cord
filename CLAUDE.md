@@ -56,35 +56,21 @@ Node requerido: **>=22.12.0** (ver `.nvmrc` → 24.15.0; alineado a Node 24 LTS,
 | Capa | Tecnología |
 |------|-----------|
 | Framework | Astro 6.4.8 (`output: 'server'`) + `@astrojs/vercel` |
-| Auth | Clerk (`@clerk/astro`) — **signup ABIERTO** (no invitation-only como el portal de flouvia) |
+| Auth | **MIGRACIÓN COMPLETADA (Jul 2026):** Sistema 100% custom en backend. Sesiones stateful en tabla `sessions`, hashes de password con Argon2id. Google OAuth nativo. `clerk` fue removido. La cookie principal es `cord_session` y el workspace activo usa `cord_active_org`. |
 | DB | **Neon (PostgreSQL serverless)** — schema en `db/schema.sql`. Decisión jun 2026: Neon en vez de Supabase. Crear vía Vercel Marketplace → integración Neon (auto-provisiona `DATABASE_URL`). |
 | Billing | Stripe Billing (freemium) |
 | Emails | Resend (transaccionales: cotización vista, aprobada, etc.) |
 | CFDI | **Facturapi** (facturapi.io) — timbrado CFDI 4.0 vía `MexicoSatProvider` |
 | Animaciones | GSAP 3 — **solo en landing/login**; dentro de la app, CSS animations |
-| Analytics | **Mixpanel** (Product analytics, CDN SDK) + **Vercel Analytics** (`@vercel/analytics`) para web vitals |
+| Analytics | **PostHog** (Product analytics, CDN SDK + Node) + **Vercel Analytics** (`@vercel/analytics`) para web vitals |
 | Tipografía | **Inter única** (las serif se ELIMINARON jun 2026 a petición de André) — montos con clase `.editorial` = Inter 600, tracking −0.03em, `tabular-nums` |
 
-✅ **Clerk YA está ACTIVO** (jun 2026): integración en `astro.config.mjs` con
-`localization: esMX` (`@clerk/localizations`), keys de development en `.env`,
-middleware en `src/middleware.ts`, componentes `<SignIn/>`/`<SignUp/>` montados
-en `/login` y `/registro` (SSR, `prerender = false`). App de Clerk: "Cord"
-(`app_3Ey07ttoq6VjvVgWmPOnI0U9rW6`), login CLI como flouvia.mx@gmail.com
-(`clerk` CLI instalado en `~/.npm-global/bin/clerk`). ✅ **`/app` y las APIs
-internas YA están PROTEGIDAS** (`src/middleware.ts`: sin sesión → redirect a
-`/login`; APIs internas → 401; públicas `/api/q|stripe|cron|clerk` pasan). El `org_id`
-se resuelve por usuario de Clerk en `getActiveOrgId()` — orden: (0) API key M2M,
-(0.5) Clerk active org (→ mapeo `clerk_org_id`→`orgs.id`, lazy-create si llega antes
-que el webhook), (1) membresía activa en `org_members`, (2) org propia legacy,
-(3) primera vez → crear. La org demo `demo-user` solo es fallback sin sesión (cron).
-✅ **Clerk en PRODUCCIÓN (jun 2026):** instancia live activa (llaves `pk_live`/`sk_live`),
-webhook registrado en `/api/clerk/webhook`. ✅ **Stripe Billing CONECTADO + EN PROD
+✅ **Auth Custom ACTIVO** (jul 2026): Clerk ha sido desinstalado completamente. Autenticación con email/password (hashes Argon2id), SSO de Google nativo (`/api/auth/google`), Passkeys (`/api/auth/passkeys/*`) y Reset de Password custom (`/api/auth/reset-password/*`). Middleware (`src/middleware.ts`) lee `cord_session` para proteger rutas internas y API. Los componentes de UI (`CustomOrgSwitcher`, `CustomUserProfile`) consumen la data nativa vía BD (tabla `users` y `org_members`). La migración invisible corrió mapeando UUIDs viejos de Clerk a la nueva tabla `users`.
+✅ **Clerk en PRODUCCIÓN:** se deja el webhook de Stripe operando independiente. ✅ **Stripe Billing CONECTADO + EN PROD
 (jun 2026):** suscripciones de 5 planes + medidores de excedente (ver "Stripe Billing"
 abajo); llaves `sk_live`, `STRIPE_WEBHOOK_SECRET` seteado, webhook apuntando a
 `cordhq.app/api/stripe/webhook` y Customer Portal configurado en el dashboard.
 Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cableado en
-`ai-draft`; CFDI/API/usuario también miden uso (ver "Stripe Billing"). ✅ **Clerk Organizations HÍBRIDO
-(jun 2026):** código completamente implementado + **config manual COMPLETADA en prod**
 (Organizations activado, webhook registrado, migración y backfill corridos — ver sección abajo).
 
 
@@ -152,7 +138,7 @@ INBOUND_EMAIL_SECRET=                                           # respuestas por
 UPSTASH_REDIS_REST_URL=  UPSTASH_REDIS_REST_TOKEN=              # rate-limit DURABLE compartido entre instancias (src/lib/ratelimit.ts) + sesiones del transporte SSE de MCP (src/lib/mcp/session-store.ts, jul 2026); sin ellas ambos caen a un Map en memoria por proceso — funcionan pero no son globales entre instancias. Provisionar vía Vercel Marketplace → Upstash → Storage del proyecto (auto-inyecta ambas)
 MCP_SECRET_KEY=                                                 # opcional (jul 2026) — cifra en reposo mcp_servers.auth_token (AES-256-GCM, src/lib/crypto-secret.ts); sin ella el token se guarda en claro. Generar con `openssl rand -base64 32`
 PUBLIC_SITE_URL=                                                # opcional (default https://cordhq.app) — origen fijo para links en correos disparados por CRON (nunca derivar de request.url ahí, ver docs/historial-infra-hitos.md)
-PUBLIC_MIXPANEL_TOKEN=                                          # Token público del SDK de Mixpanel (auto-expuesto al cliente por el prefijo PUBLIC_)
+PUBLIC_POSTHOG_KEY=  PUBLIC_POSTHOG_HOST=                       # Credenciales de PostHog para analíticas de producto
 ```
 
 Neon se recomienda provisionar vía **Vercel Marketplace → Neon** desde el proyecto
@@ -172,13 +158,13 @@ de Vercel de Cord (auto-inyecta `DATABASE_URL` en todos los environments).
 
 ## Roadmap & TODOs (Analytics & Growth)
 
-Pendientes de implementación en Mixpanel para escalar el análisis de Growth y activación (propuestos jul 2026):
+Implementación en PostHog (migrado desde Mixpanel en jul 2026) para escalar el análisis de Growth y activación:
 
-- [ ] **`quote_sent`:** Rastrear cuando el usuario da click a "Enviar" o copia el link. Clave para medir el TTV (Time-to-Value).
-- [ ] **`quote_viewed` / `quote_approved`:** Medir la tasa de éxito (conversión) de las cotizaciones.
-- [ ] **`payment_received`:** Backend tracking (Stripe Webhook → Mixpanel) para medir ingresos y caída en el checkout.
-- [ ] **`ai_draft_used`:** Rastrear el uso del botón "Armar con IA" para confirmar si es el *Aha Moment* que correlaciona con upgrades.
-- [ ] **Group Analytics (B2B):** Vincular los eventos al `org_id` de Clerk para analizar el uso a nivel Empresa/Workspace, no solo individual.
+- [x] **`quote_sent`:** Rastrear cuando el usuario da click a "Enviar" o copia el link. Clave para medir el TTV (Time-to-Value).
+- [x] **`quote_viewed` / `quote_approved`:** Medir la tasa de éxito (conversión) de las cotizaciones.
+- [x] **`payment_received`:** Backend tracking (Stripe Webhook → PostHog) para medir ingresos y caída en el checkout.
+- [x] **`ai_draft_used`:** Rastrear el uso del botón "Armar con IA" para confirmar si es el *Aha Moment* que correlaciona con upgrades.
+- [x] **Group Analytics (B2B):** Vincular los eventos al `org_id` de Clerk para analizar el uso a nivel Empresa/Workspace, no solo individual.
 - [ ] **Atribución UTM:** Capturar parámetros de URL en el registro para saber qué canales de marketing traen usuarios de paga.
 
 ---

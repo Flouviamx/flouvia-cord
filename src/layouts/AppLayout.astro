@@ -8,39 +8,18 @@ import OnboardingWidget from '../components/app/OnboardingWidget.astro';
 import DevWorkbench from '../components/app/DevWorkbench.astro';
 import Sidebar from '../components/app/Sidebar.astro';
 import SupportCoverBg from '../components/support/SupportCoverBg.jsx';
-import { clerkAppearance } from '../lib/clerk-theme';
+// Autenticación propia (Custom Auth Fase 2+)
 import Analytics from '@vercel/analytics/astro';
 import { memberCan } from '../lib/permissions';
 import { currentLocale, currentUserId } from '../lib/context';
 import { t, getAppRuntimeI18n } from '../i18n/app';
-import { clerkClient } from '@clerk/astro/server';
+
 
 const L = currentLocale();
 const RT = getAppRuntimeI18n(L);
 
 const [ORG, ME] = await Promise.all([getOrg(), getMyMembership()]);
 
-// "Exigir 2FA al equipo" (Ajustes › Seguridad) — antes se guardaba en BD pero
-// NUNCA se aplicaba (cero enforcement, el toggle daba una falsa sensación de
-// seguridad). Ahora, si la org lo exige y el usuario de la sesión actual NO
-// tiene 2FA activo en Clerk, se le manda directo a Ajustes › Cuenta a
-// activarlo — es la ÚNICA salida (nunca un bloqueo total sin escape): desde ahí
-// puede prender su 2FA o, si es el dueño, apagar el requisito en Seguridad.
-// Solo se llama a Clerk cuando la org realmente lo exige (la inmensa mayoría de
-// orgs no paga este costo extra en cada carga de página).
-const path = Astro.url.pathname;
-const EXEMPT_2FA = ['/app/ajustes/cuenta', '/app/ajustes/seguridad'];
-if (ORG.require2fa && !EXEMPT_2FA.some((p) => path === p || path.startsWith(p + '/'))) {
-    const uid = currentUserId();
-    if (uid) {
-        try {
-            const user = await clerkClient(Astro).users.getUser(uid);
-            if (!user.twoFactorEnabled) {
-                return Astro.redirect('/app/ajustes/cuenta?require2fa=1');
-            }
-        } catch { /* si Clerk falla, no se bloquea el acceso — fail-open a propósito */ }
-    }
-}
 
 const canCotizar = memberCan(ME, 'cotizar');
 const canClientes = memberCan(ME, 'clientes');
@@ -89,21 +68,24 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Cord" />
 
-        <!-- Mixpanel Analytics -->
-        <script is:inline define:vars={{ mpToken: import.meta.env.PUBLIC_MIXPANEL_TOKEN || '', mpUserId: currentUserId() || '', mpOrgName: ORG.nombre || '' }}>
-            if (mpToken) {
-                (function(f,b){if(!b.__SV){var e,g,i,h;window.mixpanel=b;b._i=[];b.init=function(e,f,c){function g(a,d){var b=d.split(".");2==b.length&&(a=a[b[0]],d=b[1]);a[d]=function(){a.push([d].concat(Array.prototype.slice.call(arguments,0)))}}var a=b;"undefined"!==typeof c?a=b[c]=[]:c="mixpanel";a.people=a.people||[];a.toString=function(a){var d="mixpanel";"mixpanel"!==c&&(d+="."+c);a||(d+=" (stub)");return d};a.people.toString=function(){return a.toString(1)+".people (stub)"};i="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking start_batch_senders people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<i.length;h++)g(a,i[h]);b._i.push([e,f,c])};b.__SV=1.2;e=f.createElement("script");e.type="text/javascript";e.async=!0;e.src="https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";g=f.getElementsByTagName("script")[0];g.parentNode.insertBefore(e,g)}})(document,window.mixpanel||[]);
-                mixpanel.init(mpToken, {
-                    debug: location.hostname === 'localhost',
-                    track_pageview: true,
-                    persistence: 'localStorage',
-                    record_sessions_percent: 100
+        <!-- PostHog Analytics -->
+        <script is:inline define:vars={{ phToken: import.meta.env.PUBLIC_POSTHOG_KEY || process.env.PUBLIC_POSTHOG_KEY || '', phHost: import.meta.env.PUBLIC_POSTHOG_HOST || process.env.PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com', phUserId: currentUserId() || '', phOrgName: ORG.nombre || '', phOrgId: ORG.id || '' }}>
+            if (phToken) {
+                !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+                posthog.init(phToken, {
+                    api_host: phHost,
+                    person_profiles: 'identified_only',
+                    loaded: (posthog) => {
+                        if (location.hostname === 'localhost') posthog.debug();
+                        if (phUserId) {
+                            posthog.identify(phUserId, { company_name: phOrgName });
+                            posthog.register({ platform: 'web' });
+                            if (phOrgId) {
+                                posthog.group('company', phOrgId, { name: phOrgName });
+                            }
+                        }
+                    }
                 });
-                if (mpUserId) {
-                    mixpanel.identify(mpUserId);
-                    mixpanel.people.set({ company_name: mpOrgName });
-                    mixpanel.register({ platform: 'web' });
-                }
             }
         </script>
 

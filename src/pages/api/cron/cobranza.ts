@@ -74,7 +74,7 @@ export const GET: APIRoute = async ({ request }) => {
             < NOW() - make_interval(days => ${GRACE_DAYS})
         AND o.ai_cobranza_activa = true
         AND o.sandbox_of IS NULL
-        AND coalesce(o.clerk_user_id, '') <> 'demo-user'
+        AND o.owner_id::text <> '00000000-0000-0000-0000-000000000000'
     `;
 
     const results = [];

@@ -1,7 +1,7 @@
 import { sql, withOrgTx } from './db';
 import { createCotizacion } from './cotizaciones';
 
-export async function seedDemoData(orgId: string, clerkUserId: string) {
+export async function seedDemoData(orgId: string, userId: string) {
     try {
         // 1. Insert dummy client
         const [[client]] = await withOrgTx(orgId,

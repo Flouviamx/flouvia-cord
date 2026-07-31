@@ -9,10 +9,67 @@
 -- Extensión para gen_random_bytes() (tokens públicos). gen_random_uuid() ya es nativo.
 create extension if not exists pgcrypto;
 
--- ── Organizaciones (un negocio = una org; v1: 1 usuario Clerk por org) ──
+-- ── Custom Auth (Fase 2) ──
+create table users (
+  id            uuid        default gen_random_uuid() primary key,
+  email         text        not null unique,
+  first_name    text,
+  last_name     text,
+  password_hash text,       -- Argon2id hash
+  totp_secret   text,       -- opcional
+  totp_enabled  boolean     not null default false,
+  created_at    timestamptz default now(),
+  updated_at    timestamptz default now()
+);
+-- Tokens de reseteo de contraseña (15 minutos de validez)
+create table if not exists password_reset_tokens (
+  id            text        primary key, -- token seguro
+  user_id       uuid        not null references users(id) on delete cascade,
+  expires_at    timestamptz not null,
+  created_at    timestamptz default now()
+);
+create index if not exists idx_reset_token_user on password_reset_tokens(user_id);
+
+create table sessions (
+  id            text        primary key, -- token generado criptográficamente
+  user_id       uuid        not null references users(id) on delete cascade,
+  expires_at    timestamptz not null,
+  ip            text,
+  user_agent    text,
+  created_at    timestamptz default now()
+);
+
+-- Cuentas OAuth vinculadas a un usuario (Google, Apple, etc.)
+create table if not exists oauth_accounts (
+  id                text        primary key default gen_random_uuid()::text,
+  user_id           uuid        not null references users(id) on delete cascade,
+  provider          text        not null, -- 'google' | 'apple'
+  provider_user_id  text        not null,
+  email             text,
+  created_at        timestamptz default now(),
+  unique (provider, provider_user_id)
+);
+create index if not exists idx_oauth_user on oauth_accounts(user_id);
+
+-- Credenciales de Passkeys / WebAuthn (biometría)
+create table if not exists passkeys (
+  id                text        primary key, -- credentialID en base64url
+  user_id           uuid        not null references users(id) on delete cascade,
+  public_key        text        not null,    -- COSE public key en base64url
+  counter           bigint      not null default 0,
+  device_type       text        not null default 'singleDevice',
+  backed_up         boolean     not null default false,
+  transports        text[],
+  name              text,                   -- nombre descriptivo del dispositivo
+  created_at        timestamptz default now(),
+  last_used_at      timestamptz
+);
+create index if not exists idx_passkeys_user on passkeys(user_id);
+
+-- ── Organizaciones (un negocio = una org) ──
 create table orgs (
   id                  uuid        default gen_random_uuid() primary key,
-  clerk_user_id       text        not null unique,   -- v1: dueño único; multi-usuario en fase 2 con Clerk Organizations
+  owner_id            uuid        references users(id) on delete set null, -- v1: dueño único
   nombre              text        not null,
   logo_url            text,
   rfc                 text,              -- v1 (MX) -> En el futuro abstraer a tax_id
@@ -242,14 +299,14 @@ alter table orgs add column if not exists cp_fiscal text;       -- lugar de expe
 alter table orgs add column if not exists serie_folio text;     -- serie de folio (ej. A, COT)
 
 -- ── Equipo y roles (multi-usuario por org, jun 2026) ────────────────────────
--- Membresía de usuarios Clerk a una org + permisos por sección (custom).
+-- Membresía de usuarios a una org + permisos por sección (custom).
 -- El owner se siembra como miembro rol='owner' (permisos totales, override).
--- Invitación por TOKEN (link): clerk_user_id queda null hasta que la persona
+-- Invitación por TOKEN (link): user_id queda null hasta que la persona
 -- inicia sesión y acepta en /unirse/{token}.
 create table if not exists org_members (
   id            uuid        default gen_random_uuid() primary key,
   org_id        uuid        not null references orgs(id) on delete cascade,
-  clerk_user_id text,                                  -- null mientras está invitado
+  user_id       uuid        references users(id) on delete cascade, -- null mientras está invitado
   email         text,                                  -- correo de invitación (display)
   nombre        text,                                  -- nombre para mostrar (opcional)
   rol           text        not null default 'miembro', -- owner | admin | vendedor | lectura | miembro
@@ -260,25 +317,15 @@ create table if not exists org_members (
   created_at    timestamptz default now(),
   joined_at     timestamptz
 );
-create index if not exists idx_members_user on org_members(clerk_user_id) where clerk_user_id is not null;
+create index if not exists idx_members_user on org_members(user_id) where user_id is not null;
 create index if not exists idx_members_org on org_members(org_id);
-create unique index if not exists uq_members_org_user on org_members(org_id, clerk_user_id) where clerk_user_id is not null;
+create unique index if not exists uq_members_org_user on org_members(org_id, user_id) where user_id is not null;
 
 -- Sembrar al owner existente de cada org como miembro 'owner' (idempotente).
-insert into org_members (org_id, clerk_user_id, rol, estado, joined_at)
-select id, clerk_user_id, 'owner', 'activo', now() from orgs
-where clerk_user_id is not null
+insert into org_members (org_id, user_id, rol, estado, joined_at)
+select id, owner_id, 'owner', 'activo', now() from orgs
+where owner_id is not null
 on conflict do nothing;
-
--- ── Clerk Organizations (híbrido, jun 2026) ────────────────────────────────
--- Clerk es la fuente de verdad de IDENTIDAD de org (switcher, invitaciones por
--- email, SSO, multi-org); Neon sigue siendo la fuente de los DATOS (RLS, billing,
--- permisos granulares). El mapeo Clerk↔Neon vive en orgs.clerk_org_id.
-alter table orgs add column if not exists clerk_org_id text unique; -- org_xxx de Clerk
--- Las orgs creadas vía Clerk Organizations no tienen un "dueño único" reusable en
--- clerk_user_id (ese usuario ya tiene su org personal): se identifican por
--- clerk_org_id y el dueño vive como miembro 'owner' en org_members.
-alter table orgs alter column clerk_user_id drop not null;
 
 -- ── Centro de mando Enterprise — Ajustes ampliados (jun 2026) ───────────────
 -- General: localización del negocio.

@@ -163,7 +163,7 @@ export function translateRequirement(req: string): { mensaje: string, paso: numb
 // lo que FALTA, no lo que salió mal). billing.ts adjunta code/type/param al
 // Error que lanza `stripe()`/`stripeUpload()` — ver stripeError() ahí — para
 // poder traducir por código exacto en vez de adivinar sobre el texto en
-// inglés. Mismo patrón que el diccionario ERROR_ES de Clerk en CustomSignIn/
+// inglés. Mismo patrón que el diccionario ERROR_ES en CustomSignIn/
 // CustomSignUp: código conocido → mensaje curado; código desconocido → se
 // muestra el mensaje real de Stripe tal cual (nunca se inventa una traducción
 // que podría ser incorrecta).

@@ -61,13 +61,23 @@ async function runDDL() {
 }
 
 async function seed() {
-    const [exists] = await sql`select id from orgs where clerk_user_id = 'demo-user'`;
+    // 1. Asegurar que exista un usuario demo
+    const [user] = await sql`
+        insert into users (email, first_name, password_hash)
+        values ('demo@flouvia.com', 'Demo User', 'dummy')
+        on conflict (email) do update set first_name = 'Demo User'
+        returning id
+    `;
+
+    // 2. Si ya existe la org demo (por nombre o rfc), no resiembra
+    const [exists] = await sql`select id from orgs where rfc = 'FERR010203XYZ' or owner_id = ${user.id} limit 1`;
     if (exists) { console.log('• Org demo ya existe — seed omitido.'); return exists.id; }
 
     const [org] = await sql`
-        insert into orgs (clerk_user_id, nombre, rfc, razon_social, quote_prefix, plan, iva_pct)
-        values ('demo-user', 'Materiales del Valle', 'MVA240611AB3', 'Materiales del Valle SA de CV', 'COT', 'pro', 16)
-        returning id`;
+        insert into orgs (owner_id, nombre, rfc, razon_social, quote_prefix, plan, iva_pct)
+        values (${user.id}, 'Distribuidora Ferrex (Demo)', 'FERR010203XYZ', 'Ferrex S.A. de C.V.', 'FERR', 'pro', 16)
+        returning id
+    `;
     const orgId = org.id;
 
     // Productos

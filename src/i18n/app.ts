@@ -647,11 +647,11 @@ export const appStrings = {
         "set.correo.tu_negocio": "Tu negocio",
 
         // Ajustes › Seguridad
-        "set.seg.intro": "Reglas de acceso para todo tu equipo. La identidad la maneja Clerk; aquí defines las políticas que aplican a tu organización.",
+        "set.seg.intro": "Reglas de acceso para todo tu equipo. La identidad está cifrada; aquí defines las políticas que aplican a tu organización.",
         "set.seg.autenticacion": "Autenticación",
         "set.seg.exigir_2fa": "Exigir verificación en dos pasos (2FA)",
         "set.seg.exigir_2fa_desc": "Todos los miembros deberán tener 2FA activo para entrar. Protege tu cuenta aunque se filtre una contraseña.",
-        "set.seg.hint_box": "La política se guarda de inmediato. El bloqueo de acceso se aplica con la instancia de producción de Clerk (la 2FA por usuario se configura en Tu cuenta).",
+        "set.seg.hint_box": "La política se guarda de inmediato. (La 2FA por usuario se configura en Tu cuenta).",
         "set.seg.sesiones": "Sesiones",
         "set.seg.cierre_inactividad": "Cierre por inactividad",
         "set.seg.cierre_inactividad_hint": "Tras este tiempo sin actividad, se pedirá iniciar sesión de nuevo.",
@@ -3029,11 +3029,11 @@ export const appStrings = {
         "set.correo.tu_negocio": "Your business",
 
         // Settings › Security
-        "set.seg.intro": "Access rules for your whole team. Identity is handled by Clerk; here you set the policies that apply to your organization.",
+        "set.seg.intro": "Access rules for your whole team. Identity is encrypted; here you set the policies that apply to your organization.",
         "set.seg.autenticacion": "Authentication",
         "set.seg.exigir_2fa": "Require two-factor authentication (2FA)",
         "set.seg.exigir_2fa_desc": "All members will need active 2FA to sign in. Protects your account even if a password leaks.",
-        "set.seg.hint_box": "The policy saves immediately. Access enforcement applies with Clerk's production instance (per-user 2FA is configured in Your account).",
+        "set.seg.hint_box": "The policy saves immediately. (Per-user 2FA is configured in Your account).",
         "set.seg.sesiones": "Sessions",
         "set.seg.cierre_inactividad": "Inactivity timeout",
         "set.seg.cierre_inactividad_hint": "After this much time without activity, sign-in will be required again.",

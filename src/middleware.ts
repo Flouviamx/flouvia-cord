@@ -1,14 +1,14 @@
-import { clerkMiddleware } from "@clerk/astro/server";
+
 import { sequence } from "astro:middleware";
 import { reqContext } from "./lib/context";
 
-// APIs que DEBEN seguir públicas (las llaman terceros sin sesión Clerk):
+// APIs que DEBEN seguir públicas (las llaman terceros sin sesión):
 //   /api/q/*         → vista pública del cliente (token secreto)
 //   /api/stripe/*    → webhook de Stripe (firma propia)
 //   /api/cron/*      → cron de Vercel (protegido por CRON_SECRET)
 //   /api/v1/*        → API PÚBLICA (cada ruta se autentica por API key: Bearer)
 //   /api/mcp/sse|message → transporte MCP (se autentica por API key: Bearer)
-//   /api/clerk/*     → webhooks de Clerk (se autentican por firma Svix)
+//   /api/stripe/*    → webhooks de Stripe (se autentican por firma Stripe)
 //
 // ⚠️ MCP: se listan las SUB-rutas exactas que se auto-autentican por API key.
 // NO usar el prefijo "/api/mcp" a secas: haría públicas rutas de SESIÓN como
@@ -22,11 +22,11 @@ import { reqContext } from "./lib/context";
 // /api/contacto/* → formulario público de ventas (lead capture, sin sesión; el
 // handler valida honeypot + rate limit propio, ya que aquí salta el limiter interno).
 // /api/billing/connect/capture/[token] → verificación de identidad "continúa en
-// tu teléfono" (sin sesión Clerk en el celular; el token aleatorio de 10 min es
+// tu teléfono" (sin sesión en el celular; el token aleatorio de 10 min es
 // la credencial — ver identity_capture_sessions). OJO: el prefijo exige la barra
 // final para NO alcanzar /api/billing/connect/capture-session (esa SÍ requiere
 // sesión — la crea el escritorio autenticado).
-const PUBLIC_API_PREFIXES = ["/api/q/", "/api/stripe/", "/api/cron/", "/api/v1/", "/api/mcp/sse", "/api/mcp/message", "/api/clerk/", "/api/contacto/", "/api/billing/connect/capture/"];
+const PUBLIC_API_PREFIXES = ["/api/q/", "/api/stripe/", "/api/cron/", "/api/v1/", "/api/mcp/sse", "/api/mcp/message", "/api/auth/", "/api/contacto/", "/api/billing/connect/capture/"];
 const PUBLIC_API_EXACT = ["/api/mcp", "/api/docs-search.json"];
 
 // ── Rate limiting (in-memory, por IP) ────────────────────────────────────────
@@ -72,6 +72,7 @@ function allow(ip: string, scope: string, limit: number): boolean {
 const SUBDOMAINS = [
     { host: "dev.cordhq.app", prefix: "/dev-blog" },
     { host: "docs.cordhq.app", prefix: "/docs" },
+    { host: "ops.cordhq.app", prefix: "/ops" },
 ];
 
 const subdomainRewrite = async (context: any, next: any) => {
@@ -129,13 +130,37 @@ const subdomainRewrite = async (context: any, next: any) => {
     return next();
 };
 
-const mainHandler = clerkMiddleware((auth, context, next) => {
-    const { userId, orgId } = auth();
+import { validateSession } from './lib/auth';
+
+const mainHandler = async (context: any, next: any) => {
+    // Leer sesión desde la cookie 'cord_session' (Fase 3 - Custom Auth)
+    const sessionId = context.cookies.get('cord_session')?.value;
+    let userId = null;
+    if (sessionId) {
+        const session = await validateSession(sessionId);
+        userId = session?.userId || null;
+    }
+    const orgId = context.cookies.get('cord_active_org')?.value || null; // Fase 3: Active Org picker
+
     const path = context.url.pathname;
 
     const ip =
         context.request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anon";
     const isWrite = ["POST", "PATCH", "PUT", "DELETE"].includes(context.request.method);
+
+    // Prevención de CSRF: Validación de Origin para mutaciones
+    const originHeader = context.request.headers.get("origin");
+    if (isWrite && originHeader) {
+        const allowedOrigins = [context.url.origin];
+        if (import.meta.env.SITE) allowedOrigins.push(import.meta.env.SITE);
+        
+        if (!allowedOrigins.some(o => originHeader.startsWith(o))) {
+            return new Response(JSON.stringify({ error: "Invalid Origin (CSRF)" }), { 
+                status: 403,
+                headers: { "Content-Type": "application/json" }
+            });
+        }
+    }
 
     const isApp = path === "/app" || path.startsWith("/app/");
 
@@ -171,6 +196,17 @@ const mainHandler = clerkMiddleware((auth, context, next) => {
             );
         }
     }
+
+    // Rate limiting estricto para Auth (login/register)
+    if (path.startsWith("/api/auth/")) {
+        if (!allow(ip, "auth", 15)) { // 15 req/min
+            return new Response(JSON.stringify({ error: "Demasiados intentos. Intenta de nuevo en un minuto." }), {
+                status: 429,
+                headers: { "Content-Type": "application/json", "Retry-After": "60" },
+            });
+        }
+    }
+
     // Piso global (anti-bot / scraping agresivo)
     if (!allow(ip, "all", 500)) {
         return new Response("Demasiadas peticiones.", {
@@ -205,10 +241,20 @@ const mainHandler = clerkMiddleware((auth, context, next) => {
     const firstLang = acceptLang.split(",")[0]?.trim().toLowerCase() ?? "";
     const locale: "es" | "en" = firstLang.startsWith("en") ? "en" : "es";
 
-    // Exponer el userId Y la org activa de Clerk a las queries (db.ts →
+    // Exponer el userId Y la org activa a las queries (db.ts →
     // getActiveOrgId) durante todo el render/handler de este request, vía
     // AsyncLocalStorage.
-    return reqContext.run({ userId: userId ?? null, clerkOrgId: orgId ?? null, testMode, locale }, () => next());
-});
+    const response = await reqContext.run({ userId: userId ?? null, activeOrgId: orgId ?? null, testMode, locale }, () => next());
+
+    // Security Headers (CSP)
+    if (response.headers.get("content-type")?.includes("text/html")) {
+        const secureRes = new Response(response.body, response);
+        secureRes.headers.set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://us.posthog.com https://accounts.google.com https://appleid.apple.com; connect-src 'self' https://us.posthog.com https://vitals.vercel-insights.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; frame-src 'self' https://accounts.google.com https://appleid.apple.com;");
+        secureRes.headers.set("X-Content-Type-Options", "nosniff");
+        return secureRes;
+    }
+
+    return response;
+};
 
 export const onRequest = sequence(subdomainRewrite, mainHandler);

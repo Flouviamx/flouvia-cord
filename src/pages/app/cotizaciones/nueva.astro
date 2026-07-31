@@ -963,10 +963,10 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 if (!res.ok) throw new Error(data.error || T.errorGuardar);
                 if (data.needsApproval) showToast(tpl(T.aprobacionSolicitadaTpl, { folio: data.folio }));
                 else showToast(send ? tpl(T.enviadaFolioTpl, { folio: data.folio }) : tpl(T.borradorFolioGuardadoTpl, { folio: data.folio }));
-                // Mixpanel: track quote creation (only new quotes, not draft updates)
-                if (typeof mixpanel !== 'undefined') {
-                    var payload = buildPayload(send);
-                    mixpanel.track('quote_created', {
+                // Posthog: track quote creation (only new quotes, not draft updates)
+                if (typeof posthog !== 'undefined') {
+                    // Solo el trigger "manual" de nueva cotización.
+                    posthog.capture('quote_created', {
                         has_items: lines.length > 0,
                         item_count: lines.length,
                         currency: payload.base_currency || 'MXN',
@@ -1159,6 +1159,11 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || T.noSePudoArmar);
+                
+                if (typeof posthog !== 'undefined') {
+                    posthog.capture('ai_draft_used', { has_file: !!pendingFile, has_text: !!text, item_count: data.items?.length || 0 });
+                }
+                
                 lines.length = 0;
                 data.items.forEach((it) => {
                     const cat = it.id ? catMap[it.id] : null;

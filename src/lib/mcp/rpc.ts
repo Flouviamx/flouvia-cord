@@ -13,6 +13,7 @@
 // canal — no queda ningún estado compartido entre conexiones.
 import { reqIp } from '../db';
 import { MCP_TOOLS, findTool, McpToolError } from '../mcp';
+import { PostHogMCP } from '@posthog/mcp';
 
 export const SERVER_INFO = { name: 'cord', title: 'Cord — Cotizaciones', version: '1.0.0' };
 export const DEFAULT_PROTOCOL = '2025-06-18';
@@ -30,6 +31,44 @@ export interface RpcAuth {
     keyId: string;
 }
 
+// ── PostHog MCP analytics ──────────────────────────────────────────────────
+// Cliente PostHogMCP (subclase de posthog-node) creado UNA vez por instancia
+// serverless. Usa las mismas credenciales que posthog-server.ts para no
+// duplicar vars. Si PUBLIC_POSTHOG_KEY no está configurada la instrumentación
+// es un no-op silencioso en producción; en desarrollo se emite una advertencia.
+const _phToken =
+    (typeof import.meta !== 'undefined' && (import.meta as any).env?.PUBLIC_POSTHOG_KEY) ||
+    process.env.PUBLIC_POSTHOG_KEY ||
+    '';
+const _phHost =
+    (typeof import.meta !== 'undefined' && (import.meta as any).env?.PUBLIC_POSTHOG_HOST) ||
+    process.env.PUBLIC_POSTHOG_HOST ||
+    'https://us.i.posthog.com';
+
+const _isDev =
+    (typeof import.meta !== 'undefined' && (import.meta as any).env?.DEV) ||
+    process.env.NODE_ENV === 'development';
+
+if (!_phToken && _isDev) {
+    // eslint-disable-next-line no-console
+    console.warn(
+        '[PostHog] PUBLIC_POSTHOG_KEY variable required by PostHog is missing or ' +
+        'un-configured, this causes $mcp_* events to be silently missed. ' +
+        'This error stops appearing once PUBLIC_POSTHOG_KEY is configured.'
+    );
+}
+
+// Exported so route handlers can await flush() after each serverless request.
+export const posthogMcp: PostHogMCP | null = _phToken
+    ? new PostHogMCP(_phToken, {
+        host: _phHost,
+        enableExceptionAutocapture: true,
+        flushAt: 1,
+        flushInterval: 0,
+    })
+    : null;
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Resuelve el método JSON-RPC. Devuelve el `result`; lanza RpcError para
 // fallos de protocolo. Las tools que fallan por "negocio" devuelven un
 // result con isError:true en vez de lanzar — así el cliente MCP ve el
@@ -39,6 +78,11 @@ export async function handle(msg: any, auth: RpcAuth, request: Request): Promise
         case 'initialize': {
             const want = msg.params?.protocolVersion;
             const protocolVersion = SUPPORTED_PROTOCOLS.includes(want) ? want : DEFAULT_PROTOCOL;
+            posthogMcp?.captureInitialize({
+                clientName: msg.params?.clientInfo?.name,
+                clientVersion: msg.params?.clientInfo?.version,
+                distinctId: auth.keyId,
+            });
             return {
                 protocolVersion,
                 capabilities: { tools: { listChanged: false } },
@@ -66,15 +110,51 @@ export async function handle(msg: any, auth: RpcAuth, request: Request): Promise
             const tool = findTool(name);
             if (!tool) throw new RpcError(-32602, `Tool desconocida: ${name}`);
             if (tool.scope === 'write' && auth.scope !== 'write') {
-                return { content: [{ type: 'text', text: 'Esta acción requiere una API key con permiso de escritura.' }], isError: true };
+                const authResult = { content: [{ type: 'text', text: 'Esta acción requiere una API key con permiso de escritura.' }], isError: true };
+                posthogMcp?.captureToolCall({
+                    toolName: name,
+                    parameters: msg.params?.arguments,
+                    response: authResult,
+                    durationMs: 0,
+                    isError: true,
+                    distinctId: auth.keyId,
+                });
+                return authResult;
             }
+            const _t0 = Date.now();
             try {
                 const data = await tool.handler(msg.params?.arguments ?? {}, { ip: reqIp(request), keyId: auth.keyId });
-                return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+                const result = { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+                posthogMcp?.captureToolCall({
+                    toolName: name,
+                    parameters: msg.params?.arguments,
+                    response: result,
+                    durationMs: Date.now() - _t0,
+                    isError: false,
+                    distinctId: auth.keyId,
+                });
+                return result;
             } catch (e) {
                 if (e instanceof McpToolError) {
-                    return { content: [{ type: 'text', text: e.message }], isError: true };
+                    const errResult = { content: [{ type: 'text', text: e.message }], isError: true };
+                    posthogMcp?.captureToolCall({
+                        toolName: name,
+                        parameters: msg.params?.arguments,
+                        response: errResult,
+                        durationMs: Date.now() - _t0,
+                        isError: true,
+                        distinctId: auth.keyId,
+                    });
+                    return errResult;
                 }
+                posthogMcp?.captureToolCall({
+                    toolName: name,
+                    parameters: msg.params?.arguments,
+                    response: undefined,
+                    durationMs: Date.now() - _t0,
+                    isError: true,
+                    distinctId: auth.keyId,
+                });
                 throw e; // → -32603
             }
         }

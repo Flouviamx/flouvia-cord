@@ -1,6 +1,6 @@
 // src/lib/cotizaciones.ts
 // FUENTE ÚNICA de la creación de cotizaciones. La consumen tanto la ruta interna
-// (/api/cotizaciones, sesión Clerk) como la API pública (/api/v1/cotizaciones,
+// (/api/cotizaciones, sesión Auth) como la API pública (/api/v1/cotizaciones,
 // API key). Aquí vive el cálculo server-side de subtotal/IVA, el folio, el flujo
 // de aprobación por umbrales y los eventos/auditoría — para no divergir.
 
@@ -108,7 +108,7 @@ async function resolveOrCreateCliente(orgId: string, input: NewQuoteInput): Prom
 
 /**
  * Crea una cotización (borrador o enviada) para `orgId`. NO valida permisos ni
- * parsea el request — eso lo hace cada ruta (Clerk vs API key). `opts.origin` se
+ * parsea el request — eso lo hace cada ruta (Sesión vs API key). `opts.origin` se
  * usa para construir el link público en el correo; `opts.actor` etiqueta la
  * auditoría (ej. 'api:<keyId>').
  */
@@ -209,7 +209,7 @@ export async function createCotizacion(
         fxLockedUntil = fx.lockedUntil ? fx.lockedUntil.toISOString() : null;
     }
 
-    // Quién la creó (clerk_user_id de la sesión) — null en creación vía API key
+    // Quién la creó (user_id de la sesión) — null en creación vía API key
     // (M2M, sin sesión de usuario); ver "Desempeño por vendedor" en historial.md.
     const creadoPor = currentUserId();
 

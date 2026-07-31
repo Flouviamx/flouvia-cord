@@ -875,7 +875,7 @@ export const FEATURES: Feature[] = [
                 copy: 'Tu equipo inicia sesión con las credenciales de Google o Microsoft de tu dominio. Si alguien deja la empresa, le cortas el correo y pierde acceso a Cord de inmediato.',
                 bullets: [
                     'Single Sign-On (SSO) con proveedores estándar',
-                    'Autenticación robusta respaldada por Clerk',
+                    'Autenticación robusta',
                     'Bitácora de sesión y auditoría de accesos',
                 ],
             },

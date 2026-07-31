@@ -71,7 +71,7 @@ const isEn = lang === 'en';
         <h2 id="datos" class="editorial"><span class="num">02</span> {isEn ? 'Personal Data Collected' : 'Datos Personales Recabados'}</h2>
         {isEn ? <p>We collect information through three main channels:</p> : <p>Recopilamos información a través de tres vías principales:</p>}
         <ul>
-          <li>{isEn ? <Fragment><strong>Identity Data:</strong> Name, email address, and passwords (managed securely via Clerk).</Fragment> : <Fragment><strong>Datos de Identidad:</strong> Nombre, correo electrónico y contraseñas (gestionadas de forma encriptada vía Clerk).</Fragment>}</li>
+          <li>{isEn ? <Fragment><strong>Identity Data:</strong> Name, email address, and passwords (managed securely via encrypted hashes).</Fragment> : <Fragment><strong>Datos de Identidad:</strong> Nombre, correo electrónico y contraseñas (gestionadas de forma encriptada).</Fragment>}</li>
           <li>{isEn ? <Fragment><strong>Tax Data (CFDI 4.0):</strong> RFC, Legal Name, Tax Regime, Zip Code, and Digital Seal Certificates (CSD).</Fragment> : <Fragment><strong>Datos Fiscales (CFDI 4.0):</strong> RFC, Razón Social, Régimen Fiscal, Código Postal y Certificados de Sello Digital (CSD).</Fragment>}</li>
           <li>{isEn ? <Fragment><strong>Financial Data:</strong> Billing information. <em>Note: CORD does not store credit cards. They are tokenized directly by Stripe, Inc.</em></Fragment> : <Fragment><strong>Datos Financieros:</strong> Información de cobro. <em>Nota: CORD no almacena tarjetas. Son tokenizadas directamente por Stripe, Inc.</em></Fragment>}</li>
           <li>{isEn ? <Fragment><strong>Business Data:</strong> Product catalog, price lists, and data of the companies you quote to.</Fragment> : <Fragment><strong>Datos de su Negocio:</strong> Catálogo de productos, listas de precios, y datos de las empresas a las que usted cotiza.</Fragment>}</li>
@@ -94,7 +94,7 @@ const isEn = lang === 'en';
         <h2 id="cookies" class="editorial"><span class="num">05</span> {isEn ? 'Cookie Policy' : 'Política de Utilización de Cookies'}</h2>
         {isEn ? <p>CORD uses cookies and tracking technologies in a minimalist and non-invasive manner. We do not sell your browsing data to third-party advertising networks.</p> : <p>CORD utiliza cookies y tecnologías de seguimiento de manera minimalista y no invasiva. No vendemos sus datos de navegación a redes publicitarias de terceros.</p>}
         <ul>
-          <li>{isEn ? <Fragment><strong>Strictly Necessary Cookies:</strong> Used by <em>Clerk</em> to keep your session active, authenticate your identity, and prevent Cross-Site Request Forgery (CSRF) attacks. Without these cookies, the application cannot function securely.</Fragment> : <Fragment><strong>Cookies Estrictamente Necesarias:</strong> Utilizadas por <em>Clerk</em> para mantener su sesión activa, autenticar su identidad y prevenir ataques de falsificación de solicitudes (CSRF). Sin estas cookies, la aplicación no puede funcionar de manera segura.</Fragment>}</li>
+          <li>{isEn ? <Fragment><strong>Strictly Necessary Cookies:</strong> Used to keep your session active, authenticate your identity, and prevent Cross-Site Request Forgery (CSRF) attacks. Without these cookies, the application cannot function securely.</Fragment> : <Fragment><strong>Cookies Estrictamente Necesarias:</strong> Utilizadas para mantener su sesión activa, autenticar su identidad y prevenir ataques de falsificación de solicitudes (CSRF). Sin estas cookies, la aplicación no puede funcionar de manera segura.</Fragment>}</li>
           <li>{isEn ? <Fragment><strong>Performance and Analytics Cookies:</strong> Used via <em>Vercel Analytics</em> to measure page load times, UI errors, and feature adoption. This data is aggregated and completely anonymized.</Fragment> : <Fragment><strong>Cookies de Rendimiento y Analítica:</strong> Utilizadas a través de <em>Vercel Analytics</em> para medir tiempos de carga de la página, errores en la interfaz y adopción de funcionalidades. Estos datos son agregados y totalmente anonimizados.</Fragment>}</li>
         </ul>
 
@@ -112,10 +112,6 @@ const isEn = lang === 'en';
               <tr>
                 <td><strong>Stripe</strong></td>
                 <td>{isEn ? 'Processor for payments and recurring subscriptions.' : 'Procesador de pagos y suscripciones recurrentes.'}</td>
-              </tr>
-              <tr>
-                <td><strong>Clerk</strong></td>
-                <td>{isEn ? 'Authentication and session infrastructure.' : 'Infraestructura de autenticación y sesiones.'}</td>
               </tr>
               <tr>
                 <td><strong>Neon / AWS</strong></td>

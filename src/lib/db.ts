@@ -7,7 +7,7 @@
 // usar sql.query('... $1 ...', [params]).
 
 import { neon } from '@neondatabase/serverless';
-import { currentUserId, currentOrgIdOverride, currentClerkOrgId, memoizedOrgId, memoizeOrgId, isTestModeRequest, isCronScope } from './context';
+import { currentUserId, currentOrgIdOverride, currentActiveOrgId, memoizedOrgId, memoizeOrgId, isTestModeRequest, isCronScope } from './context';
 
 const url = import.meta.env.DATABASE_URL || process.env.DATABASE_URL;
 
@@ -25,15 +25,14 @@ if (!url) {
 export const sql = neon(url || 'postgres://invalid');
 
 // ── Tenancy seam ──────────────────────────────────────────────────────────
-// Resuelve el org_id desde la sesión de Clerk (userId → orgs.clerk_user_id). La
+// Resuelve el org_id desde la sesión actual (userId → orgs.owner_id). La
 // org se CREA en el primer login (lazy, upsert idempotente). Si no hay sesión
-// (contextos sin auth: cron, o llamadas previas a la migración), cae a la org
-// demo para no romper. Las rutas /app y las APIs internas SIEMPRE traen sesión
+// Contextos sin auth: cron, o llamadas previas a la migración
+// Cae a la org demo para no romper. Las rutas /app y las APIs internas SIEMPRE traen sesión
 // (protegidas en el middleware).
-export const DEMO_CLERK_USER_ID = 'demo-user';
 
 async function demoOrgId(): Promise<string> {
-    const rows = await sql`select id from orgs where clerk_user_id = ${DEMO_CLERK_USER_ID} limit 1`;
+    const rows = await sql`select id from orgs where rfc = 'FERR010203XYZ' limit 1`;
     if (!rows.length) throw new Error('[db] org demo no encontrada — ¿corriste la migración (npm run db:migrate)?');
     return rows[0].id as string;
 }
@@ -43,9 +42,9 @@ async function demoOrgId(): Promise<string> {
 async function ensureOwnerMember(orgId: string, userId: string): Promise<void> {
     try {
         await sql`
-            insert into org_members (org_id, clerk_user_id, rol, estado, joined_at)
+            insert into org_members (org_id, user_id, rol, estado, joined_at)
             values (${orgId}, ${userId}, 'owner', 'activo', now())
-            on conflict (org_id, clerk_user_id) where clerk_user_id is not null do nothing`;
+            on conflict (org_id, user_id) where user_id is not null do nothing`;
     } catch { /* tabla aún no migrada → no-op */ }
 }
 
@@ -123,27 +122,10 @@ async function resolveOrgId(): Promise<string> {
     const userId = currentUserId();
     if (!userId) return demoOrgId(); // sin sesión (cron, etc.) → org demo
 
-    // 0.5) Org ACTIVA de Clerk Organizations (modo híbrido): si la sesión tiene una
-    //      org seleccionada en el switcher, ESA manda. La mapeamos al UUID interno
-    //      por clerk_org_id. Si la fila aún no existe (el webhook organization.created
-    //      no ha llegado), la creamos al vuelo y sembramos la membresía del usuario
-    //      activo — el webhook reconciliará nombre y rol enseguida.
-    const clerkOrgId = currentClerkOrgId();
-    if (clerkOrgId) {
-        try {
-            const found = await sql`select id from orgs where clerk_org_id = ${clerkOrgId} limit 1`;
-            if (found.length) return found[0].id as string;
-            const [created] = await sql`
-                insert into orgs (clerk_org_id, nombre)
-                values (${clerkOrgId}, ${'Mi negocio'})
-                on conflict (clerk_org_id) do update set clerk_org_id = excluded.clerk_org_id
-                returning id`;
-            await ensureOwnerMember(created.id as string, userId);
-            return created.id as string;
-        } catch { /* si algo falla, caemos al carril legacy de abajo */ }
-    }
+    // TODO (Fase 3): Si hay un `currentActiveOrgId()` seleccionado en sesión, usar ese
+    // Por ahora resolvemos la primera org de la que es miembro o creamos una.
 
-    // 1) ¿Es miembro ACTIVO de alguna org? (incluye al owner, sembrado como miembro).
+    // 1) ¿Es miembro ACTIVO de alguna org?
     //    Orden: membresía más reciente primero — un invitado que se une después
     //    cae en la org a la que lo invitaron. Resiliente si la tabla no existe.
     //    ⚠️ Se EXCLUYEN las orgs sandbox (sandbox_of no nulo): una membresía ahí
@@ -152,25 +134,23 @@ async function resolveOrgId(): Promise<string> {
         const mem = await sql`
             select m.org_id from org_members m
             join orgs o on o.id = m.org_id and o.sandbox_of is null
-            where m.clerk_user_id = ${userId} and m.estado = 'activo'
+            where m.user_id = ${userId} and m.estado = 'activo'
             order by m.joined_at desc nulls last, m.created_at desc
             limit 1`;
         if (mem.length) return mem[0].org_id as string;
     } catch { /* tabla/columna aún no migrada → seguimos con la lógica legacy */ }
 
     // 2) ¿Tiene una org propia (creada antes de Equipo)? → sembrar su membresía owner.
-    const rows = await sql`select id from orgs where clerk_user_id = ${userId} limit 1`;
+    const rows = await sql`select id from orgs where owner_id = ${userId} limit 1`;
     if (rows.length) {
         await ensureOwnerMember(rows[0].id as string, userId);
         return rows[0].id as string;
     }
 
-    // 3) Primer login: crear la org. El upsert (do update no-op) hace que `returning`
-    //    devuelva la fila aunque dos requests concurrentes intenten crearla a la vez.
+    // 3) Primer login: crear la org.
     const [created] = await sql`
-        insert into orgs (clerk_user_id, nombre)
+        insert into orgs (owner_id, nombre)
         values (${userId}, ${'Mi negocio'})
-        on conflict (clerk_user_id) do update set clerk_user_id = excluded.clerk_user_id
         returning id`;
     await ensureOwnerMember(created.id as string, userId);
     return created.id as string;
@@ -182,7 +162,7 @@ async function resolveOrgId(): Promise<string> {
 interface AuditEvent { accion: string; entidad?: string; entidad_id?: string; detalle?: string; ip?: string | null; actor?: string }
 export async function logAudit(orgId: string, e: AuditEvent): Promise<void> {
     try {
-        const actor = e.actor ?? currentUserId() ?? DEMO_CLERK_USER_ID;
+        const actor = e.actor ?? currentUserId() ?? DEMO_USER_ID;
         await sql`insert into audit_log (org_id, actor, accion, entidad, entidad_id, detalle, ip)
                   values (${orgId}, ${actor}, ${e.accion}, ${e.entidad ?? null}, ${e.entidad_id ?? null}, ${e.detalle ?? null}, ${e.ip ?? null})`;
     } catch { /* no-op: no romper la operación por fallo de auditoría */ }

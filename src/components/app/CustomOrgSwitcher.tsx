@@ -1,16 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '@nanostores/react';
-import { $clerkStore, $userStore, $organizationStore, $isLoadedStore } from '@clerk/astro/client';
 import { $isTestMode, toggleTestMode } from '../../store/testMode';
 import CreateWorkspaceModal from './CreateWorkspaceModal';
 import type { CreateWorkspaceSubmit } from './CreateWorkspaceModal';
 
-export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: string }) {
-  const isLoaded = useStore($isLoadedStore);
-  const user = useStore($userStore);
-  const organization = useStore($organizationStore);
-  const clerk = useStore($clerkStore);
+export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: { orgLogoUrl?: string, user?: any, activeOrg?: any }) {
+  const organization = activeOrg;
   const isTestMode = useStore($isTestMode);
+  
+  const safeUser = user || {
+    firstName: 'U',
+    fullName: 'Usuario',
+    emailAddresses: [{ emailAddress: 'usuario@flouvia.com' }],
+    organizationMemberships: []
+  };
 
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -39,16 +42,14 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
     return () => document.removeEventListener('keydown', onKey);
   }, [isOpen]);
 
-  if (!isLoaded || !user) return <div className="org-switcher-skeleton" />;
-
   // Initial del Workspace activo
-  const activeName = organization?.name || 'Personal Workspace';
+  const activeName = organization?.nombre || 'Personal Workspace';
   const initial = activeName.charAt(0).toUpperCase();
-  const memberships = user?.organizationMemberships ?? [];
+  const memberships = safeUser.organizationMemberships ?? [];
 
   const handleSwitch = async (organizationId: string) => {
-    if (!clerk?.setActive) return;
-    await clerk.setActive({ organization: organizationId });
+    // Custom auth: set active org cookie and reload
+    document.cookie = `cord_active_org=${organizationId}; path=/; max-age=31536000`;
     setIsOpen(false);
     
     const path = window.location.pathname;
@@ -64,7 +65,8 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
 
   const handleModalSubmit = async ({ type, name, country }: CreateWorkspaceSubmit) => {
     try {
-      const newOrg = await clerk?.createOrganization({ name });
+      // TODO: Custom Auth create organization implementation
+      const newOrg = { id: 'temp-id', name };
       if (!newOrg) return;
 
       // Provisionar SIEMPRE: fija el país (moneda / facturación) y anida si aplica.
@@ -132,13 +134,11 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
   };
 
   const handleLogout = async () => {
-    if (!clerk?.signOut) return;
     // Reset Mixpanel identity before signing out (prevents cross-user attribution)
     if (typeof window !== 'undefined' && (window as any).mixpanel) {
       (window as any).mixpanel.reset();
     }
-    await clerk.signOut();
-    window.location.href = '/sign-in';
+    window.location.href = '/api/auth/logout';
   };
 
   return (
@@ -287,10 +287,10 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '' }: { orgLogoUrl?: st
 
           <div className="orgd-group">
             <div className="user-profile-section">
-              <div className="user-avatar">{user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress?.charAt(0)?.toUpperCase()}</div>
+              <div className="user-avatar">{safeUser.firstName?.charAt(0) || safeUser.emailAddresses?.[0]?.emailAddress?.charAt(0)?.toUpperCase()}</div>
               <div className="org-details">
-                <span className="org-item-name">{user?.fullName || 'Cuenta personal'}</span>
-                <span className="org-item-role">{user?.emailAddresses?.[0]?.emailAddress}</span>
+                <span className="org-item-name">{safeUser.fullName || 'Cuenta personal'}</span>
+                <span className="org-item-role">{safeUser.emailAddresses?.[0]?.emailAddress}</span>
               </div>
             </div>
             <button className="dropdown-action-btn text-red" onClick={handleLogout}>

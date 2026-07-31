@@ -1,23 +1,23 @@
-# Analytics Tracking — Mixpanel
+# Analytics Tracking — PostHog
 
-This project uses **Mixpanel** for all product analytics. Mixpanel is the single source of truth for event tracking, user identification, and behavioral data. Do not introduce any other analytics tools, SDKs, or tracking libraries without explicit instruction from a user.
+This project uses **PostHog** for all product analytics. PostHog is the single source of truth for event tracking, user identification, and behavioral data. Do not introduce any other analytics tools, SDKs, or tracking libraries without explicit instruction from a user.
 
-> **Note:** Vercel Analytics (`@vercel/analytics`) coexists for page-level web analytics (traffic, Core Web Vitals). Mixpanel handles product analytics (user actions, funnels, retention). They serve different purposes and do not conflict.
+> **Note:** Vercel Analytics (`@vercel/analytics`) coexists for page-level web analytics (traffic, Core Web Vitals). PostHog handles product analytics (user actions, funnels, retention). They serve different purposes and do not conflict.
 
 ---
 
 ## Before You Add or Modify Any Tracking
 
-**Do not write Mixpanel tracking code without reading this file first.**
+**Do not write PostHog tracking code without reading this file first.**
 
-Wrong assumptions about platform, identity, or consent will produce broken Mixpanel data that requires manual cleanup or data deletion requests.
+Wrong assumptions about platform, identity, or consent will produce broken PostHog data that requires manual cleanup or data deletion requests.
 
-### Mandatory checklist before writing any Mixpanel code
+### Mandatory checklist before writing any PostHog code
 
-- [ ] Confirm you are using the correct Mixpanel SDK for this project's platform (see Tech Stack below)
-- [ ] Check if this project routes data through a CDP — it does NOT; Mixpanel is direct
+- [ ] Confirm you are using the correct PostHog SDK for this project's platform (see Tech Stack below)
+- [ ] Check if this project routes data through a CDP — it does NOT; PostHog is direct
 - [ ] Check if consent gating is required — NOT required (Mexican B2B SaaS, no EU/CA users)
-- [ ] Review the existing Mixpanel tracking plan below before adding new events
+- [ ] Review the existing PostHog tracking plan below before adding new events
 
 ---
 
@@ -26,91 +26,96 @@ Wrong assumptions about platform, identity, or consent will produce broken Mixpa
 | Detail | Value |
 |---|---|
 | **Platform** | Astro 6 (SSR) + React islands |
-| **Mixpanel SDK** | mixpanel-browser via CDN (`cdn.mxpnl.com/libs/mixpanel-2-latest.min.js`) |
-| **SDK version** | Latest (CDN auto-updates) |
-| **Tracking method** | Client-side |
+| **PostHog SDK** | posthog-js via CDN snippet |
+| **Tracking method** | Client-side & Server-side (`posthog-node`) |
 | **CDP (if any)** | None |
 | **Consent required** | No |
-| **Mixpanel project token location** | `.env` → `PUBLIC_MIXPANEL_TOKEN` |
+| **PostHog Key location** | `.env` → `PUBLIC_POSTHOG_KEY` & `PUBLIC_POSTHOG_HOST` |
 
 ---
 
-## Mixpanel Initialization
+## PostHog Initialization
 
-Mixpanel is initialized in two layout files via inline `<script>` tags:
+PostHog is initialized in two layout files via inline `<script>` tags:
 
 - **Landing pages:** `src/layouts/Layout.astro` — init only (no identity)
-- **App pages:** `src/layouts/AppLayout.astro` — init + `mixpanel.identify(userId)` + `mixpanel.people.set()`
+- **App pages:** `src/layouts/AppLayout.astro` — init + `posthog.identify(userId)` + `posthog.group()`
 
-The CDN script is loaded first, then an inline script initializes with the project token from `import.meta.env.PUBLIC_MIXPANEL_TOKEN`.
+The CDN script is loaded first, then an inline script initializes with the project keys from `import.meta.env.PUBLIC_POSTHOG_KEY` and `import.meta.env.PUBLIC_POSTHOG_HOST`.
 
 **Typed helpers** are available in:
-- `src/lib/mixpanel.ts` — `getMixpanel()`, `identifyUser()`, `resetUser()`, `trackEvent()`
-- `src/lib/mixpanel-events.ts` — `trackSignUpCompleted()`, `trackQuoteCreated()`
+- `src/lib/posthog.ts` — `getPosthog()`, `identifyUser()`, `resetUser()`, `captureEvent()`
+- `src/lib/posthog-events.ts` — `trackSignUpCompleted()`, `trackQuoteCreated()`
+- `src/lib/posthog-server.ts` — For server-side events
 
 **Do not:**
-- Initialize Mixpanel in multiple places (it's already in both layouts)
-- Create separate Mixpanel instances per component or module
+- Initialize PostHog in multiple places (it's already in both layouts)
+- Create separate PostHog instances per component or module
 - Import the CDN script again — it's loaded globally via the layouts
 
 ---
 
-## Mixpanel Identity
+## PostHog Identity
 
-Mixpanel identity is managed through Clerk's `userId` (stable, unique database ID):
+PostHog identity is managed through Clerk's `userId` (stable, unique database ID):
 
 | Action | When to call | Code location |
 |---|---|---|
-| `mixpanel.identify(userId)` | On every authenticated page load (handles login, signup, session restore) | `src/layouts/AppLayout.astro` (inline script) |
-| `mixpanel.reset()` | On logout | `src/components/app/CustomOrgSwitcher.tsx` → `handleLogout()` |
+| `posthog.identify(userId)` | On every authenticated page load (handles login, signup, session restore) | `src/layouts/AppLayout.astro` (inline script) |
+| `posthog.reset()` | On logout | `src/components/app/CustomOrgSwitcher.tsx` → `handleLogout()` |
 
 **Rules:**
-- `mixpanel.identify()` uses the Clerk `userId` — never email addresses
-- `mixpanel.identify()` is called server-side via `currentUserId()` and passed to the client via `define:vars`
-- `mixpanel.reset()` is called before `clerk.signOut()` to prevent cross-user attribution
-- Never call `mixpanel.identify()` with a different user ID without calling `mixpanel.reset()` first
+- `posthog.identify()` uses the Clerk `userId` — never email addresses
+- `posthog.identify()` is called server-side via `currentUserId()` and passed to the client via `define:vars`
+- `posthog.reset()` is called before `clerk.signOut()` to prevent cross-user attribution
+- Never call `posthog.identify()` con un ID distinto sin llamar a `posthog.reset()` antes
 
 ---
 
-## Mixpanel Tracking Plan
+## PostHog Tracking Plan
 
-These are the Mixpanel events currently tracked in this project. **All new Mixpanel events must follow the same conventions.**
+These are the PostHog events currently tracked in this project. **All new PostHog events must follow the same conventions.**
 
 ### Naming conventions
 
-- Mixpanel event names: `snake_case`, past tense verb + noun (e.g., `report_generated`, `item_added_to_cart`)
-- Mixpanel property names: `snake_case` (e.g., `sign_up_method`, `plan_type`)
-- No abbreviations in Mixpanel event or property names — use full words
-- Boolean Mixpanel properties: use `is_` prefix (e.g., `is_first_time`)
+- PostHog event names: `snake_case`, past tense verb + noun (e.g., `report_generated`, `item_added_to_cart`)
+- PostHog property names: `snake_case` (e.g., `sign_up_method`, `plan_type`)
+- No abbreviations in PostHog event or property names — use full words
+- Boolean PostHog properties: use `is_` prefix (e.g., `is_first_time`)
 
-### Current Mixpanel events
+### Current PostHog events
 
-| Mixpanel Event | Trigger | Key Properties | File |
+| PostHog Event | Trigger | Key Properties | File |
 |---|---|---|---|
 | `sign_up_completed` | User completes account creation (lands on onboarding page) | `sign_up_method` (`email` / `google`), `platform` (`web`) | `src/pages/onboarding/workspace.astro` |
-| `quote_created` | User creates a new cotización (manual, AI-draft populates then saves, or duplicate) | `has_items`, `item_count`, `currency`, `source` (`manual` / `duplicate`) | `src/pages/app/cotizaciones/nueva.astro`, `src/pages/app/cotizaciones/[id].astro` |
+| `quote_created` | User creates a new cotización (manual, AI-draft populates then saves, o duplicate) | `has_items`, `item_count`, `currency`, `source` (`manual` / `duplicate`) | `src/pages/app/cotizaciones/nueva.astro`, `src/pages/app/cotizaciones/[id].astro` |
+| `quote_viewed` | User (external) views a quote | `quote_id`, `quote_folio`, `company`, `total`, `currency` | `src/pages/q/[token].astro` |
+| `quote_approved` | User (external or manual internal) approves a quote | `quote_id`, `quote_folio`, `company`, `total`, `currency`, `signed_by` | `src/pages/q/[token].astro`, `src/pages/app/cotizaciones/[id].astro` |
+| `quote_sent` | Internal user clicks to send a quote | `quote_id`, `quote_folio` | `src/pages/app/cotizaciones/[id].astro` |
+| `payment_received` | Stripe registers a payment (server side) | `quote_id`, `quote_folio`, `source` | `src/pages/api/stripe/webhook.ts`, `src/pages/app/cotizaciones/[id].astro` |
+| `ai_draft_used` | Internal user clicks "Armar con IA" | `has_file`, `has_text`, `item_count` | `src/pages/app/cotizaciones/nueva.astro` |
 
 ---
 
-## How to Add a New Mixpanel Event
+## How to Add a New PostHog Event
 
-1. **Check the tracking plan above** — if the Mixpanel event already exists, use it. Do not create duplicate Mixpanel events.
-2. **Name the Mixpanel event** using the conventions above: `snake_case`, past tense, descriptive.
-3. **Define Mixpanel properties** — only include properties available at the moment the event fires. Do not fetch additional data just for Mixpanel tracking.
-4. **Place the Mixpanel tracking call** at the right moment:
-   - Track Mixpanel events **after** the action succeeds (after DB write, after API response), not on button click or form submit
-   - Track Mixpanel events **after** `mixpanel.identify()` if the event is tied to a logged-in action
-5. **Add a typed helper** in `src/lib/mixpanel-events.ts` for the new event.
-6. **Update this file** — add the new Mixpanel event to the tracking plan table above.
-7. **Verify in Mixpanel Live View** — confirm the event appears in Mixpanel with correct properties before considering it done.
+1. **Check the tracking plan above** — if the PostHog event already exists, use it. Do not create duplicate PostHog events.
+2. **Name the PostHog event** using the conventions above: `snake_case`, past tense, descriptive.
+3. **Define PostHog properties** — only include properties available at the moment the event fires. Do not fetch additional data just for PostHog tracking.
+4. **Place the PostHog tracking call** at the right moment:
+   - Track PostHog events **after** the action succeeds (after DB write, after API response), not on button click or form submit
+   - Track PostHog events **after** `posthog.identify()` if the event is tied to a logged-in action
+5. **Add a typed helper** in `src/lib/posthog-events.ts` for the new event.
+6. **Update this file** — add the new PostHog event to the tracking plan table above.
+7. **Verify in PostHog Live View** — confirm the event appears in PostHog with correct properties before considering it done.
 
-### Mixpanel event template
+### PostHog event template
 
 For inline scripts (`.astro` files):
 ```javascript
-// Track [description] in Mixpanel
-if (typeof mixpanel !== 'undefined') {
-    mixpanel.track('event_name', {
+// Track [description] in PostHog
+if (typeof posthog !== 'undefined') {
+    posthog.capture('event_name', {
         property_name: value,
     });
 }
@@ -118,19 +123,19 @@ if (typeof mixpanel !== 'undefined') {
 
 For React components (`.tsx` files):
 ```typescript
-import { trackEvent } from '../lib/mixpanel';
+import { captureEvent } from '../lib/posthog';
 // After successful action:
-trackEvent('event_name', { property_name: value });
+captureEvent('event_name', { property_name: value });
 ```
 
 ---
 
 ## What Not to Do
 
-- **Do not introduce other analytics tools.** This project uses Mixpanel (+ Vercel Analytics for web vitals). All product tracking goes through Mixpanel.
-- **Do not track Mixpanel events on page load** unless explicitly measuring page views (auto page views are already enabled via `track_pageview: true`).
-- **Do not track PII as Mixpanel properties** — no emails, full names, phone numbers, IP addresses, or payment details in Mixpanel event properties.
-- **Do not fire Mixpanel events inside loops** — each Mixpanel event call is a network request.
-- **Do not hardcode the Mixpanel project token** — read it from `import.meta.env.PUBLIC_MIXPANEL_TOKEN`.
-- **Do not skip `mixpanel.reset()` on logout** — failing to reset causes Mixpanel to merge the next user's events with the previous user's profile.
-- **Do not call `mixpanel.identify()` before the user is authenticated** — premature identification creates orphaned Mixpanel profiles.
+- **Do not introduce other analytics tools.** This project uses PostHog (+ Vercel Analytics for web vitals). All product tracking goes through PostHog.
+- **Do not track PostHog events on page load** unless explicitly measuring page views (auto page views are already enabled).
+- **Do not track PII as PostHog properties** — no emails, full names, phone numbers, IP addresses, or payment details in PostHog event properties.
+- **Do not fire PostHog events inside loops** — each PostHog event call is a network request.
+- **Do not hardcode the PostHog project keys** — read it from `import.meta.env.PUBLIC_POSTHOG_KEY`.
+- **Do not skip `posthog.reset()` on logout** — failing to reset causes PostHog to merge the next user's events with the previous user's profile.
+- **Do not call `posthog.identify()` before the user is authenticated** — premature identification creates orphaned PostHog perfiles.

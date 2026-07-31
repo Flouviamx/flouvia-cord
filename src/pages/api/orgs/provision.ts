@@ -12,7 +12,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { clerkClient } from '@clerk/astro/server';
+// TODO: Custom Auth Org Provisioning
 import { sql } from '../../../lib/db';
 import { currentUserId } from '../../../lib/context';
 
@@ -59,34 +59,21 @@ export const POST: APIRoute = async (context) => {
     }
   }
 
-  // 1) Metadata en Clerk (agrupación visual + país). Si es anidada y esto falla,
-  //    abortamos: la anidación depende de este metadato. Si es separada, es
-  //    best-effort (el país igual se persiste abajo).
-  try {
-    const clerk = clerkClient(context);
-    await clerk.organizations.updateOrganization({
-      organizationId: childOrgId,
-      publicMetadata: { ...(parentOrgId ? { parentOrgId } : {}), countryCode },
-    });
-  } catch (e: any) {
-    if (parentOrgId) {
-      const msg = String(e?.errors?.[0]?.message || e?.message || 'No se pudo anidar la cuenta');
-      return json({ error: msg, nested: false }, 502);
-    }
-  }
+  // TODO: Implementar lógica sin Clerk
+  // Por ahora es no-op.
 
   // 2) Persistir en Neon al vuelo (upsert por clerk_org_id). El webhook reconcilia
   //    nombre/owner/seed; aquí solo fijamos país y padre.
   try {
     await sql`
-      insert into orgs (clerk_org_id, nombre, country_code)
+      insert into orgs (id, nombre, country_code)
       values (${childOrgId}, ${name || 'Mi negocio'}, ${countryCode})
-      on conflict (clerk_org_id) do update set country_code = ${countryCode}`;
+      on conflict (id) do update set country_code = ${countryCode}`;
     if (parentOrgId) {
       await sql`
         update orgs
-        set parent_org_id = (select id from orgs where clerk_org_id = ${parentOrgId} limit 1)
-        where clerk_org_id = ${childOrgId}`;
+        set parent_org_id = (select id from orgs where id = ${parentOrgId} limit 1)
+        where id = ${childOrgId}`;
     }
   } catch { /* el webhook organization.updated lo reconcilia */ }
 

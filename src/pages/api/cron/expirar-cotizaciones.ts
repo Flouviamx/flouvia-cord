@@ -41,7 +41,7 @@ export const GET: APIRoute = async ({ request }) => {
            and c.vigencia is not null
            and c.vigencia < current_date
            and o.sandbox_of is null
-           and coalesce(o.clerk_user_id, '') <> 'demo-user'
+           and o.owner_id::text <> '00000000-0000-0000-0000-000000000000'
         returning c.id, c.org_id, c.folio`;
 
     for (const r of rows) {
