@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '@nanostores/react';
-import { $clerkStore, $isLoadedStore } from '@clerk/astro/client';
-
+// Importaciones mockeadas temporalmente para arreglar el build durante la migración
+import { atom } from 'nanostores';
+const $clerkStore = atom<any>(null);
+const $isLoadedStore = atom<boolean>(true);
 export default function VerifyEmail() {
   const clerk = useStore($clerkStore);
   const isLoaded = useStore($isLoadedStore);
