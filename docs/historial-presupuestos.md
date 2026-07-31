@@ -6,6 +6,14 @@
 
 ---
 
+❌ **ELIMINACIÓN TOTAL DEL MÓDULO DE PRESUPUESTOS (jul 2026)** — Por decisión de producto, el feature completo de Presupuestos (cédulas, análisis, herramientas, vs. Real) fue removido del proyecto para simplificar el core value proposition de Cord.
+   • **App:** Eliminados `src/pages/app/presupuestos/*` y todo su rastro en `Sidebar.astro`.
+   • **API & DB:** Eliminados `src/pages/api/cedulas/*`, `src/pages/api/analisis/*`, y las funciones de motor en `src/lib/queries.ts`. Se removió el permiso `PRESUPUESTOS_PLANS` y toda la lógica de validación de plan para presupuestos en `permissions.ts`.
+   • **Landing & Marketing:** Eliminado `PresupuestosDuo.astro` del hero, removido de la navegación, desvinculado de los mockups (GSAP, SVG bloques en `[slug].astro`), eliminadas las referencias en `blog.astro`, `software-factory.astro` y las categorías de soporte (endpoints dinámicos + tarjetas). El posicionamiento vuelve a enfocarse 100% en Cotizaciones, Cobranza y Facturación.
+   • **Historial:** Este archivo se mantiene como registro de cómo se construyó el feature, pero el código ya no vive en la rama principal.
+
+---
+
 ✅ **Presupuestos v2 — landing `/producto/presupuestos` + soporte + roadmap + onboarding (jul 2026,
    sesión posterior a la entrada de abajo)** — cableado externo del feature:
    • **Página de producto NUEVA `/producto/presupuestos` (ES + EN):** entrada completa en

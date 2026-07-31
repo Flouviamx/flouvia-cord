@@ -42,6 +42,6 @@ Cord es un SaaS B2B de cotizaciones standalone (`cordhq.app`), en producción de
 Organizations), Stripe (Billing + Connect Custom), Facturapi (CFDI 4.0 MX), Resend
 (correo), Anthropic (IA — todo corre en Haiku). El core loop (cotizar → aprobar → cobrar
 → facturar) está completo y verificado end-to-end; las áreas activas de desarrollo
-reciente (jul 2026) son Presupuestos/Cédulas, cobros por términos de crédito/anticipo/
-recurrentes, y pasadas de pulido visual "Apple/iOS/Stripe" en la app y la landing. El
-detalle cronológico completo de CADA feature vive en los archivos de arriba.
+reciente (jul 2026) son cobros por términos de crédito/anticipo/recurrentes, y pasadas 
+de pulido visual "Apple/iOS/Stripe" en la app y la landing. El detalle cronológico 
+completo de CADA feature vive en los archivos de arriba.

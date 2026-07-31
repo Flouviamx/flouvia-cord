@@ -11,7 +11,7 @@ import Hero from '../components/landing/Hero.astro';
 import Features from '../components/landing/Features.astro';
 import AdvancedFeatures from '../components/landing/AdvancedFeatures.astro';
 import Steps from '../components/landing/Steps.astro';
-import PresupuestosDuo from '../components/landing/PresupuestosDuo.astro';
+
 import ClientView from '../components/landing/ClientView.astro';
 import Pricing from '../components/landing/Pricing.astro';
 import Faq from '../components/landing/Faq.astro';
@@ -129,8 +129,8 @@ const softwareSchema = {
         description: isEn ? 'Free plan, forever — no credit card required.' : 'Plan gratis para siempre — sin tarjeta de crédito.',
     },
     featureList: isEn 
-        ? ['Negotiated pricing', 'One-click quote approval', 'Real-time view tracking', 'Financial budgeting & margin intelligence', 'AI-powered collections', 'Legally binding contract signatures', 'Net 30/60 credit terms', 'Public API & webhooks']
-        : ['Precios negociados', 'Aprobación de cotizaciones en un clic', 'Seguimiento en tiempo real', 'Presupuestos e inteligencia de margen', 'Cobranza automatizada con IA', 'Firmas legales de contratos', 'Términos de crédito Net 30/60', 'API pública y webhooks'],
+        ? ['Negotiated pricing', 'One-click quote approval', 'Real-time view tracking', 'AI-powered collections', 'Legally binding contract signatures', 'Net 30/60 credit terms', 'Public API & webhooks']
+        : ['Precios negociados', 'Aprobación de cotizaciones en un clic', 'Seguimiento en tiempo real', 'Cobranza automatizada con IA', 'Firmas legales de contratos', 'Términos de crédito Net 30/60', 'API pública y webhooks'],
 };
 
 // Misma fuente (claves faq.1..faq.8 de ui.ts) que consume <Faq /> — el
@@ -180,7 +180,7 @@ const faqSchema = {
         <Features />
         <AdvancedFeatures />
         <Steps />
-        <PresupuestosDuo />
+
         <ClientView />
         <Pricing />
         <Faq />
