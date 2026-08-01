@@ -84,7 +84,12 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     return reqContext.run({ userId: null, orgId: session.orgId }, async () => {
         try {
-            const result = await handle(msg, { scope: session.scope, keyId: session.keyId }, request);
+            const result = await handle(msg, {
+                scope: session.scope,
+                keyId: session.keyId,
+                orgId: session.orgId,
+                sessionId,
+            }, request);
             await pushOutbox(sessionId, { jsonrpc: '2.0', id: msg.id, result });
         } catch (e) {
             if (e instanceof RpcError) {

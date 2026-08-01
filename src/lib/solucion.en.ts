@@ -167,7 +167,7 @@ export const SOLUCIONES_EN: Solution[] = [
             },
             {
                 title: 'Software Factories',
-                desc: 'Send custom development budgets, split payments by delivery milestones, and receive real-time notifications when the client approves the proposal.',
+                desc: 'Send custom development proposals, split payments by delivery milestones, and receive real-time notifications when the client approves the proposal.',
                 link: '/casos-de-uso/software-factory',
                 logos: [
                     { name: 'Cursor', domain: 'cursor.com' },

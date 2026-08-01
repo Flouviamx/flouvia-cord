@@ -299,69 +299,7 @@ Not every sale is paid all at once. Many businesses collect a percentage up fron
         status: 'live',
         api: false
     },
-    {
-        id: '13',
-        slug: 'presupuestos-cedulas',
-        title: {
-            es: 'Presupuestos y cédulas',
-            en: 'Budgets & schedules'
-        },
-        shortDesc: {
-            es: 'Planea tu año con cédulas presupuestales conectadas a tus datos reales: presupuesto vs. real mes a mes, plan financiero completo en un clic y calculadoras de VPN/TIR, inventario óptimo (EOQ) y variaciones.',
-            en: 'Plan your year with budget schedules connected to your real data: budget vs. actuals month by month, a one-click full financial plan, and NPV/IRR, optimal inventory (EOQ) and variance calculators.'
-        },
-        content: {
-            es: `## Planeación financiera dentro de Cord
-La mayoría de los negocios arman su presupuesto anual en una hoja de Excel que se desconecta de la operación. Cord trae esa planeación adentro — y la conecta con lo que realmente pasa en tu negocio.
 
-### Presupuesto vs. Real
-Lo que una hoja de cálculo no puede hacer: conecta una fila de tu presupuesto a tus datos reales — **ventas cerradas ($ o unidades)** o **cobranza recibida** — y debajo de cada mes presupuestado aparece lo que realmente ocurrió, con la variación en verde o rojo. Sin capturar nada: los datos ya viven en Cord. Usa etiquetas de periodo como "Ene 2026" para que cada columna se empate con su mes; los meses futuros no muestran real todavía. Disponible desde el plan Profesional.
-
-### Plan financiero completo en un clic
-El asistente crea la cascada de dinero universal — **Ventas → Cobranza → Efectivo** — con las fórmulas cruzadas ya cableadas (cobranza escalonada 40/30/30 ajustable, saldo de caja mes a mes), sembrada con tu promedio real de ventas de los últimos meses y con las filas clave ya conectadas a Presupuesto vs. Real. Si tu negocio produce o maneja inventario, agrega también Producción y Compras de Materia Prima.
-
-### Cédulas presupuestales
-Arma la cascada clásica de contabilidad de costos con plantillas listas para editar: Ventas, Ventas con factores de ajuste, Producción, Compras de Materia Prima, Mano de Obra y CIF, Cobranza y Efectivo. Cada cédula es una tabla de conceptos por periodo:
-- **Filas de insumo** que tú tecleas y **filas de fórmula** (marcadas con ƒx) que se recalculan solas, con columna de total por fila.
-- Una fórmula puede referenciar otras filas de la misma cédula **o de otra** — así "Producción" jala de "Ventas" sin recapturar nada.
-- El constructor soporta sumas/restas, factores en cadena, multiplicación entre filas (unidades × precio) y referencias a periodos anteriores.
-- Agrega periodos a una cédula existente y **duplícala** para arrancar el siguiente año (con las fechas recorridas automáticamente).
-
-### Herramientas de análisis
-Calculadoras de decisión con escenarios que puedes guardar y volver a abrir:
-- **Evaluación de proyecto:** Valor Presente Neto (VPN), Tasa Interna de Retorno (TIR) y periodo de recuperación, con un asistente que deriva el flujo anual desde utilidad, depreciación e ISR.
-- **Punto óptimo de inventario (EOQ):** cantidad económica de pedido, costo total mínimo y punto de reorden.
-- **Análisis de variaciones:** compara el costo estándar contra el real y descompone la diferencia en variación de precio y de cantidad (favorable / desfavorable).
-
-**Disponibilidad:** el plan Gratis incluye 1 cédula y Starter 3, para probar con tus números; Profesional en adelante desbloquea cédulas ilimitadas, Presupuesto vs. Real, el plan completo en un clic y las herramientas de análisis. Es una herramienta de **planeación** — no un sistema de inventario en vivo.`,
-            en: `## Financial planning inside Cord
-Most businesses build their annual budget in a spreadsheet that ends up disconnected from operations. Cord brings that planning in-house — and connects it to what actually happens in your business.
-
-### Budget vs. Actuals
-What a spreadsheet cannot do: connect a budget row to your real data — **closed sales ($ or units)** or **collections received** — and under each budgeted month you see what actually happened, with the variance in green or red. Zero data entry: the data already lives in Cord. Use period labels like "Jan 2026" so each column matches its month; future months don't show actuals yet. Available from the Professional plan.
-
-### Full financial plan in one click
-The wizard creates the universal money cascade — **Sales → Collections → Cash** — with cross-schedule formulas pre-wired (adjustable 40/30/30 staggered collections, month-by-month cash balance), seeded with your real average sales from recent months, and with the key rows already connected to Budget vs. Actuals. If your business produces or carries inventory, it can also add Production and Raw Material Purchases.
-
-### Budget schedules
-Build the classic cost-accounting cascade with ready-to-edit templates: Sales, Sales with adjustment factors, Production, Raw Material Purchases, Labor & Overhead, Collections, and Cash. Each schedule is a table of line items by period:
-- **Input rows** you type and **formula rows** (marked ƒx) that recalculate on their own, with a per-row total column.
-- A formula can reference other rows in the same schedule **or in another one** — so "Production" pulls from "Sales" with zero retyping.
-- The builder supports add/subtract, chained factors, row-by-row multiplication (units × price), and references to prior periods.
-- Add periods to an existing schedule and **duplicate it** to kick off next year (with dates shifted automatically).
-
-### Analysis tools
-Decision calculators with scenarios you can save and reopen:
-- **Project evaluation:** Net Present Value (NPV), Internal Rate of Return (IRR), and payback period, with an assistant that derives the annual cash flow from profit, depreciation, and income tax.
-- **Optimal inventory (EOQ):** economic order quantity, minimum total cost, and reorder point.
-- **Variance analysis:** compares standard cost against actual and breaks the difference into price and quantity variances (favorable / unfavorable).
-
-**Availability:** the Free plan includes 1 schedule and Starter 3, so you can try it with your numbers; Professional and up unlocks unlimited schedules, Budget vs. Actuals, the one-click full plan, and the analysis tools. It is a **planning** tool — not a live inventory system.`
-        },
-        area: 'finanzas',
-        status: 'live',
-        api: false
-    },
     {
         id: '8',
         slug: 'cfdi-automatico',

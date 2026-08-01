@@ -23,7 +23,7 @@ credit governance (Net 30/60), autonomous AI collections, and automated invoicin
 - Multi-currency transactions (MXN/USD/EUR) with FX rate locking and configurable hedge buffer
 - Team roles, approval thresholds, credit limits per client, and immutable audit logging
 - AI-powered quote generation from text, PDF, or images (Cord AI)
-- Financial budgeting module with master schedules and NPV/IRR/EOQ analysis tools
+
 - Public REST API, webhooks, MCP server for AI agents, and embeddable Web Component (Cord Elements)
 
 ## Who uses Cord
@@ -36,7 +36,7 @@ CFDI 4.0 e-invoicing.
 
 ## Documentation
 
-- [Product docs](https://cordhq.app/docs): Complete user guide covering quotes, payments, budgets, integrations, and account setup
+- [Product docs](https://cordhq.app/docs): Complete user guide covering quotes, payments, integrations, and account setup
 - [API reference](https://cordhq.app/docs/desarrolladores/empezar/apikey): REST API for quotes, clients, products, collections
 - [OpenAPI spec](https://cordhq.app/openapi.yaml): machine-readable schema for the full API
 - [Webhooks](https://cordhq.app/docs/desarrolladores/herramientas/webhooks): outbound event notifications (quote.sent, quote.paid, etc.), HMAC-signed
@@ -71,9 +71,7 @@ Technical articles from the Cord engineering team:
 - [AI quote generation](https://cordhq.app/docs/cotizacion/ia): Generate quotes from text, PDF, or photos using AI
 - [E-signature and audit](https://cordhq.app/docs/interaccion/firma): Legally binding e-signatures with immutable audit trails
 
-### Financial Budgeting
-- [Budgets overview](https://cordhq.app/docs/presupuestos/resumen): Master budget schedules for financial planning
-- [Analysis tools](https://cordhq.app/docs/presupuestos/herramientas): NPV, IRR, EOQ, and variance analysis calculators
+
 
 ## Product
 

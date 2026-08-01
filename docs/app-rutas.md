@@ -48,8 +48,7 @@ identidad sigue siendo Clerk (userId), solo la membresía/permiso es nuestra.
 - `promesas_pago` — promesa de pago del cliente para una fecha (cobranza; seguimiento manual, no automatiza). `productos.precios_volumen jsonb` = matriz de precios por volumen `[{min,precio}]`
 - `cotizacion_cobros` (jul 2026) — cobros por "rebanadas" de una cotización (`tipo`: total|anticipo|saldo|cuota), cada uno con su propio PaymentIntent de Stripe. RLS por `org_id` O `public_token` + FORCE. Columnas nuevas relacionadas: `cotizaciones.anticipo_pct` (% de anticipo, null = sin anticipo) y `orgs.anticipo_default_pct` (default del negocio). Ver "Cobros por términos de crédito + Anticipo/Saldo + Cuotas" en `negocio-billing.md`. ⚠️ Fechas `date` de la BD se comparan SIEMPRE con `venceDia()` (`src/lib/cobros.ts`), nunca `String(v).slice(0,10)` (Neon devuelve DATE como objeto Date).
 - `cotizacion_suscripciones` (jul 2026) — una fila por cotización marcada `cotizaciones.es_recurrente` (iguala/retainer mensual). Guarda `stripe_subscription_id/customer_id/price_id/product_id` (todos en la cuenta CONECTADA del vendedor, no en la de plataforma), `estado` (incomplete|active|past_due|canceled), `current_period_end`. RLS por `org_id` O `public_token` + FORCE. La cotización recurrente **nunca** llega a `status='paid'` — su ingreso mensual se registra como fila `'cuota'` en `cotizacion_cobros` y se refleja aparte en `getCobros()`. Ver "Cobros recurrentes — igualas/retainers vía Stripe Subscriptions" en `negocio-billing.md` e "Historial" para el detalle completo (incluye 2 bugs de auditoría ya corregidos: igualas tratadas como cartera vencida, y condición de carrera al crear la Subscription).
-- `cedulas` / `cedula_filas` / `cedula_valores` (jul 2026) — Cédulas Presupuestales (planeación financiera: Ventas→Producción→Compras de MP→Cobranza). RLS `FORCE` con `org_id` denormalizado en las 3 (sin carril `public_token` — no hay vista pública). `cedula_filas.formula` es jsonb flexible (primitivo "combo": suma ponderada de referencias a otras filas, propias o de otra cédula); `cedula_valores` solo guarda filas `tipo='input'` — las `formula` se calculan on-the-fly en `src/lib/cedulas.ts` (`computeCedula`). **El motor combo soporta 3 tipos de término (`kind`: suma/pct/producto, fold secuencial) + `offset` de periodo** — ver "Presupuestos curso completo — Fases 1-2" en `historial.md`. `cedula_filas.fuente_real` (jul 2026) conecta una fila a datos REALES de la org ("Presupuesto vs. Real": ventas_monto | ventas_unidades | cobranza_monto; serie en `getRealPorMes`, mapeo etiqueta→mes en `parsePeriodoMes` — Pro+). Acceso FREEMIUM por cantidad (`cedulasLimit`: free 1 · starter 3 · pro+ ∞); wizard "plan financiero completo" (`createPlanCompleto`) y herramientas de análisis = Pro+. Ver "Presupuestos v2" en `historial.md`.
-- `analisis` (jul 2026) — herramientas de decisión guardables (evaluación de proyecto VPN/TIR/payback, punto óptimo de inventario EOQ, análisis de variaciones estándar-vs-real). Una fila = un escenario: `tipo` (proyecto|inventario|variaciones), `nombre`, `inputs jsonb`. Solo persiste INPUTS; los resultados se calculan on-the-fly en `src/lib/analisis.ts` (funciones puras, sin DB — se bundlean también en el cliente). RLS directa por `org_id` + FORCE, sin `public_token`. Ver "Presupuestos curso completo — Fases 3-4" en `historial.md`.
+
 - `kits` / `kit_items` (jul 2026) — Kits de cotización: paquetes pre-armados de renglones que se insertan de un clic en el editor (`/app/cotizaciones/nueva`, botón "+ Insertar kit"). Se gestionan en `/app/productos/kits` (sub-pestaña de Productos, NO Ajustes). `kit_items.producto_id` nullable = línea libre dentro del kit; `org_id` denormalizado en ambas para RLS sin JOIN. RLS directa por `org_id` + FORCE, sin `public_token` (no hay vista pública de un kit). `kits.precio_combo` (nullable) = precio TOTAL fijo para una unidad del kit; al insertar, el editor prorratea ese total entre las líneas de catálogo (`ratio = precioCombo / sumaListaDeUnKit`, sobreescribe `negociado` con `negoTouched:true`) — las líneas libres no participan. Al insertarse, un kit se vuelve `cotizacion_items` normales sin ninguna referencia de vuelta hacia el kit. Ver "Kits de cotización + precio de combo" en `historial-app-features.md`.
 - `mcp_idempotency` (jul 2026) — idempotencia de la tool `crear_cotizacion_borrador` del servidor MCP (`src/lib/mcp.ts`): un cliente MCP puede mandar un `idempotency_key` propio; un reintento con la MISMA llave (única por `key_id + idempotency_key`) devuelve la respuesta YA guardada en vez de crear un segundo borrador. RLS por `org_id` + FORCE. Ver "MCP — calidad de las tools" en `historial-platform-api.md`.
 
@@ -123,22 +122,7 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
                    antigüedad, exposición por cliente (saldo vs límite) y tabla con
                    "marcar cobrada" + recordatorio por WhatsApp. getCobranza() en
                    queries.ts (por cobrar = status approved|invoiced; vence según términos).
-/app/presupuestos        → Cédulas Presupuestales (jul 2026, sidebar → Inteligencia):
-                   índice en lista hairline + modal de creación (tipo/plantilla, nombre,
-                   periodos). Pestañas de sección: Cédulas | Herramientas. Gateado por
-                   permiso 'analitica'. Ver historial.md.
-/app/presupuestos/[id]   → editor de una cédula: grid de filas (input editable inline /
-                   fórmula calculada de solo lectura) × periodos. Motor de fórmulas en
-                   src/lib/cedulas.ts (computeCedula). API en /api/cedulas y
-                   /api/cedulas/[id] (GET calcula, PATCH add_fila|set_valor|delete_fila|
-                   rename, DELETE borra cascade).
-/app/presupuestos/herramientas → (jul 2026) pestaña "Herramientas": calculadoras de
-                   decisión guardables — evaluación de proyecto (VPN/TIR/periodo de
-                   recuperación + asistente de flujo), punto óptimo de inventario (EOQ),
-                   análisis de variaciones (presupuesto flexible estándar-vs-real).
-                   Matemática en src/lib/analisis.ts (pura, compartida cliente/servidor).
-                   API /api/analisis (GET lista, POST crea) + /api/analisis/[id]
-                   (GET/PATCH/DELETE). Gateado por permiso 'analitica'. Ver historial.md.
+
 /app/cotizaciones        → tabla con filtros por estado (client-side)
 /app/cotizaciones/nueva  → EL EDITOR — POST /api/cotizaciones (real)
 /app/cotizaciones/[id]   → detalle + timeline + ACCIONES REALES (enviar, aprobar,

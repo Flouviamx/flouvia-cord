@@ -29,6 +29,24 @@ export class RpcError extends Error {
 export interface RpcAuth {
     scope: 'read' | 'write';
     keyId: string;
+    orgId: string;
+    sessionId?: string;
+}
+
+// MCP inputs and tool responses can contain customer and commercial data. We
+// retain only a low-cardinality argument shape for adoption/error/latency
+// analytics, never their values or tool output.
+function summarizeMcpArguments(args: unknown): Record<string, unknown> {
+    if (!args || typeof args !== 'object' || Array.isArray(args)) return { argument_kind: typeof args };
+    const keys = Object.keys(args as Record<string, unknown>).sort();
+    return { argument_keys: keys, argument_count: keys.length };
+}
+
+function mcpCaptureContext(auth: RpcAuth) {
+    return {
+        groups: { company: auth.orgId },
+        sessionId: auth.sessionId,
+    };
 }
 
 // ── PostHog MCP analytics ──────────────────────────────────────────────────
@@ -81,7 +99,7 @@ export async function handle(msg: any, auth: RpcAuth, request: Request): Promise
             posthogMcp?.captureInitialize({
                 clientName: msg.params?.clientInfo?.name,
                 clientVersion: msg.params?.clientInfo?.version,
-                distinctId: auth.keyId,
+                ...mcpCaptureContext(auth),
             });
             return {
                 protocolVersion,
@@ -113,11 +131,10 @@ export async function handle(msg: any, auth: RpcAuth, request: Request): Promise
                 const authResult = { content: [{ type: 'text', text: 'Esta acción requiere una API key con permiso de escritura.' }], isError: true };
                 posthogMcp?.captureToolCall({
                     toolName: name,
-                    parameters: msg.params?.arguments,
-                    response: authResult,
+                    parameters: summarizeMcpArguments(msg.params?.arguments),
                     durationMs: 0,
                     isError: true,
-                    distinctId: auth.keyId,
+                    ...mcpCaptureContext(auth),
                 });
                 return authResult;
             }
@@ -127,11 +144,10 @@ export async function handle(msg: any, auth: RpcAuth, request: Request): Promise
                 const result = { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
                 posthogMcp?.captureToolCall({
                     toolName: name,
-                    parameters: msg.params?.arguments,
-                    response: result,
+                    parameters: summarizeMcpArguments(msg.params?.arguments),
                     durationMs: Date.now() - _t0,
                     isError: false,
-                    distinctId: auth.keyId,
+                    ...mcpCaptureContext(auth),
                 });
                 return result;
             } catch (e) {
@@ -139,21 +155,19 @@ export async function handle(msg: any, auth: RpcAuth, request: Request): Promise
                     const errResult = { content: [{ type: 'text', text: e.message }], isError: true };
                     posthogMcp?.captureToolCall({
                         toolName: name,
-                        parameters: msg.params?.arguments,
-                        response: errResult,
+                        parameters: summarizeMcpArguments(msg.params?.arguments),
                         durationMs: Date.now() - _t0,
                         isError: true,
-                        distinctId: auth.keyId,
+                        ...mcpCaptureContext(auth),
                     });
                     return errResult;
                 }
                 posthogMcp?.captureToolCall({
                     toolName: name,
-                    parameters: msg.params?.arguments,
-                    response: undefined,
+                    parameters: summarizeMcpArguments(msg.params?.arguments),
                     durationMs: Date.now() - _t0,
                     isError: true,
-                    distinctId: auth.keyId,
+                    ...mcpCaptureContext(auth),
                 });
                 throw e; // → -32603
             }

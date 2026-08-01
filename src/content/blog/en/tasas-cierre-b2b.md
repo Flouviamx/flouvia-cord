@@ -11,7 +11,7 @@ authorAvatar: "/images/blog/lorena.png"
 featured: true
 ---
 
-A B2B quote is not just an early receipt; it is the most important commercial document in your sales funnel. It is the last piece of information that the decision maker (who often wasn't present during your brilliant sales presentations) will see before deciding whether or not to approve a multi-thousand dollar budget.
+A B2B quote is not just an early receipt; it is the most important commercial document in your sales funnel. It is the last piece of information that the decision maker (who often wasn't present during your brilliant sales presentations) will see before deciding whether or not to approve a multi-thousand dollar investment.
 
 Despite this critical responsibility, most companies send Excel sheets exported to PDF that look like accounting reports from the 90s.
 
@@ -19,7 +19,7 @@ By analyzing thousands of transactions processed and approved in record time thr
 
 ## 1. The Immediate Executive Summary
 
-The CEO or CFO who will sign off on the budget is not going to read a breakdown of 40 technical lines on page 3. They need to understand the value and the cost within the first 5 seconds of opening the document.
+The CEO or CFO who will sign off on the investment is not going to read a breakdown of 40 technical lines on page 3. They need to understand the value and the cost within the first 5 seconds of opening the document.
 
 **The Golden Rule:** The top of the proposal must contain an unmistakable visual block with:
 1. The total investment amount (in large, clear typography).

@@ -1665,6 +1665,34 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         gap: 2.5rem;
         align-items: start;
     }
+
+    @media (max-width: 992px) {
+        .stripe-fg-layout {
+            grid-template-columns: 1fr;
+            gap: 4rem; /* More spacing between main content and sidebar on mobile */
+        }
+        
+        .stripe-fg-card {
+            grid-template-columns: 1fr;
+            min-height: auto;
+        }
+        
+        .stripe-fg-card-content {
+            padding: 3rem 2rem 2rem 2rem !important;
+        }
+        
+        .stripe-fg-card-visual {
+            min-height: 320px;
+        }
+        
+        .stripe-fg-sidebar {
+            position: relative !important;
+            top: 0 !important;
+            display: grid !important;
+            grid-template-columns: 1fr;
+            gap: 2rem !important;
+        }
+    }
     
     .stripe-fg-main {
         display: flex;
@@ -2254,7 +2282,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     @media (max-width: 992px) {
         .stripe-hero {
             padding: 140px 0 80px;
-            min-height: 70vh;
+            min-height: 100dvh;
         }
         
         .stripe-bento-grid {
@@ -2279,6 +2307,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     @media (max-width: 768px) {
         .stripe-hero {
             padding: 120px 20px 60px;
+            min-height: 100dvh;
         }
         
         .stripe-title {
@@ -2406,6 +2435,32 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 2rem;
+    }
+    
+    @media (max-width: 992px) {
+        .stripe-pillars-grid {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            padding-bottom: 2rem;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            /* Allow scroll bleeding over container padding */
+            margin-left: -20px;
+            margin-right: -20px;
+            padding-left: 20px;
+            padding-right: 20px;
+            gap: 1.5rem;
+        }
+        .stripe-pillars-grid::-webkit-scrollbar {
+            display: none;
+        }
+        .stripe-pillar-card {
+            min-width: 280px;
+            max-width: 85vw;
+            scroll-snap-align: center;
+            flex-shrink: 0;
+        }
     }
     
     .stripe-pillar-card {
@@ -3691,10 +3746,12 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     }
 
     @media (max-width: 768px) {
-        .cord-dash-mockup { flex-direction: column; height: auto; margin-bottom: 0; }
-        .dash-sidebar { width: 100%; height: auto; }
+        .cord-dash-mockup { height: auto; margin-bottom: 0; }
+        .dashboard-app-frame { flex-direction: column; }
+        .dash-sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid rgba(0,0,0,0.06); }
         .dash-nav-links { display: none; }
         .dash-user { border-top: none; padding: 0.75rem 1.25rem; }
+        .dash-main { width: 100%; }
         .dash-kpi-row { grid-template-columns: 1fr; }
         .dash-tbl-hdr { flex-wrap: wrap; }
         .dash-header { padding: 0.75rem 1rem; }

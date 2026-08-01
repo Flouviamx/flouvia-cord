@@ -36,10 +36,9 @@ export function trackQuoteCreated(props: QuoteCreatedProps): void {
 
 interface QuoteViewedProps {
   quote_id: string;
-  quote_folio: string;
-  company: string;
   total: number;
   currency: string;
+  source: 'public_link';
 }
 
 export function trackQuoteViewed(props: QuoteViewedProps): void {
@@ -51,11 +50,8 @@ export function trackQuoteViewed(props: QuoteViewedProps): void {
 
 interface QuoteApprovedProps {
   quote_id: string;
-  quote_folio: string;
-  company: string;
-  total: number;
-  currency: string;
-  signed_by?: string;
+  total?: number;
+  currency?: string;
   source: 'manual' | 'external';
 }
 
@@ -68,7 +64,6 @@ export function trackQuoteApproved(props: QuoteApprovedProps): void {
 
 interface QuoteSentProps {
   quote_id: string;
-  quote_folio: string;
 }
 
 export function trackQuoteSent(props: QuoteSentProps): void {

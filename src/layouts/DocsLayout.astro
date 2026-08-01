@@ -119,9 +119,9 @@ const jsonLd = {
 
       <nav class="header-bottom">
         <ul class="nav-links">
-          <li class={!Astro.url.pathname.includes(getUrl('/docs/pagos')) && !Astro.url.pathname.includes(getUrl('/docs/presupuestos')) && !Astro.url.pathname.includes(getUrl('/docs/desarrolladores')) ? 'active' : ''}><a href={getUrl('/docs')}>{lang === 'es' ? 'Empezar' : 'Get Started'}</a></li>
+          <li class={!Astro.url.pathname.includes(getUrl('/docs/pagos')) && !Astro.url.pathname.includes(getUrl('/docs/desarrolladores')) ? 'active' : ''}><a href={getUrl('/docs')}>{lang === 'es' ? 'Empezar' : 'Get Started'}</a></li>
           <li class={Astro.url.pathname.includes(getUrl('/docs/pagos')) ? 'active' : ''}><a href={getUrl('/docs/pagos/resumen')}>{lang === 'es' ? 'Pagos' : 'Payments'}</a></li>
-          <li class={Astro.url.pathname.includes(getUrl('/docs/presupuestos')) ? 'active' : ''}><a href={getUrl('/docs/presupuestos/resumen')}>{lang === 'es' ? 'Presupuestos' : 'Budgets'}</a></li>
+
           <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/empezar/apikey')}>{lang === 'es' ? 'Desarrolladores' : 'Developers'}</a></li>
         </ul>
         <div class="nav-tools">
@@ -147,40 +147,7 @@ const jsonLd = {
           <button id="mobile-menu-close" class="mobile-menu-close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
         </div>
         <nav class="sidebar-nav">
-          {Astro.url.pathname.includes(getUrl('/docs/presupuestos')) ? (
-            <>
-              <ul class="sidebar-menu">
-                <li class={Astro.url.pathname === getUrl('/docs/presupuestos/resumen') || Astro.url.pathname === getUrl('/docs/presupuestos/resumen/') ? 'active' : ''}><a href={getUrl('/docs/presupuestos/resumen')}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
-                <li class={Astro.url.pathname.includes(getUrl('/docs/presupuestos/primera-cedula')) ? 'active' : ''}><a href={getUrl('/docs/presupuestos/primera-cedula')}>{lang === 'es' ? 'Plantillas y plan completo' : 'Templates and full plan'}</a></li>
-              </ul>
-
-              <div class="sidebar-section">
-                <h4 class="sidebar-heading">{lang === 'es' ? 'PRESUPUESTA CON CORD' : 'BUDGET WITH CORD'}</h4>
-                <ul class="sidebar-menu">
-                  <li class="sidebar-dropdown open">
-                    <button class="sidebar-dropdown-toggle">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                      {lang === 'es' ? 'Conceptos básicos' : 'Basics'}
-                    </button>
-                    <ul class="sidebar-submenu">
-                      <li class={Astro.url.pathname.includes(getUrl('/docs/presupuestos/conceptos-basicos')) ? 'active' : ''}><a href={getUrl('/docs/presupuestos/conceptos-basicos')}>{lang === 'es' ? 'Qué es una cédula' : 'What is a schedule'}</a></li>
-                      <li class={Astro.url.pathname.includes(getUrl('/docs/presupuestos/glosario')) ? 'active' : ''}><a href={getUrl('/docs/presupuestos/glosario')}>{lang === 'es' ? 'Glosario contable' : 'Accounting glossary'}</a></li>
-                    </ul>
-                  </li>
-                  <li class="sidebar-dropdown open">
-                    <button class="sidebar-dropdown-toggle">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                      {lang === 'es' ? 'Uso de la App' : 'App usage'}
-                    </button>
-                    <ul class="sidebar-submenu">
-                      <li class={Astro.url.pathname.includes(getUrl('/docs/presupuestos/interfaz')) ? 'active' : ''}><a href={getUrl('/docs/presupuestos/interfaz')}>{lang === 'es' ? 'La interfaz' : 'The interface'}</a></li>
-                      <li class={Astro.url.pathname.includes(getUrl('/docs/presupuestos/herramientas')) ? 'active' : ''}><a href={getUrl('/docs/presupuestos/herramientas')}>{lang === 'es' ? 'Herramientas de análisis' : 'Analysis tools'}</a></li>
-                    </ul>
-                  </li>
-                </ul>
-              </div>
-            </>
-          ) : Astro.url.pathname.includes(getUrl('/docs/pagos')) ? (
+          {Astro.url.pathname.includes(getUrl('/docs/pagos')) ? (
             <>
               <ul class="sidebar-menu">
                 <li class={Astro.url.pathname === getUrl('/docs/pagos/resumen') || Astro.url.pathname === getUrl('/docs/pagos/resumen/') ? 'active' : ''}><a href={getUrl('/docs/pagos/resumen')}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>

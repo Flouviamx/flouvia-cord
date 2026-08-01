@@ -23,16 +23,16 @@ import CreateWorkspace from '../../components/onboarding/CreateWorkspace';
     </div>
 </Layout>
 
-<!-- Mixpanel: track sign_up_completed (fires once per signup session) -->
+<!-- PostHog: track sign_up_completed once per signup session. -->
 <script is:inline>
-    if (typeof mixpanel !== 'undefined' && !sessionStorage.getItem('cord.mp.signup_tracked')) {
+    if (typeof posthog !== 'undefined' && !sessionStorage.getItem('cord.ph.signup_tracked')) {
         // Detect sign_up_method: if the referrer contains /sso-callback, it was Google OAuth.
         var method = (document.referrer && document.referrer.indexOf('/sso-callback') !== -1) ? 'google' : 'email';
-        mixpanel.track('sign_up_completed', {
+        posthog.capture('sign_up_completed', {
             sign_up_method: method,
             platform: 'web'
         });
-        sessionStorage.setItem('cord.mp.signup_tracked', '1');
+        sessionStorage.setItem('cord.ph.signup_tracked', '1');
     }
 </script>
 

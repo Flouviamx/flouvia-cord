@@ -145,15 +145,14 @@ const color = ORG.colorMarca || '#0a192f';
             puedePagar={puedePagar}
             standalone={true}
         />
-        <script is:inline define:vars={{ qId: q.id, qFolio: q.folio, qTotal: q.total, orgId: ORG.id, currency: q.baseCurrency || 'MXN' }}>
+        <script is:inline define:vars={{ qId: q.id, qTotal: q.total, orgId: ORG.id, currency: q.baseCurrency || 'MXN' }}>
             if (typeof posthog !== 'undefined') {
                 posthog.group('company', orgId);
                 posthog.capture('quote_viewed', {
                     quote_id: qId,
-                    quote_folio: qFolio,
                     total: qTotal,
                     currency: currency,
-                    company: orgId
+                    source: 'public_link'
                 });
             }
 
@@ -161,11 +160,9 @@ const color = ORG.colorMarca || '#0a192f';
                 if (typeof posthog !== 'undefined') {
                     posthog.capture('quote_approved', {
                         quote_id: qId,
-                        quote_folio: qFolio,
                         total: qTotal,
                         currency: currency,
-                        company: orgId,
-                        signed_by: e.detail.signed_by
+                        source: 'external'
                     });
                 }
             });

@@ -267,7 +267,7 @@ export const SOLUCIONES: Solution[] = [
             },
             {
                 title: 'Software Factory',
-                desc: 'Envía presupuestos de desarrollo a la medida, divide los pagos por hitos de entrega y recibe notificaciones en tiempo real cuando el cliente aprueba la propuesta.',
+                desc: 'Envía propuestas de desarrollo a la medida, divide los pagos por hitos de entrega y recibe notificaciones en tiempo real cuando el cliente aprueba la propuesta.',
                 link: '/casos-de-uso/software-factory',
                 logos: [
                     { name: 'Cursor', domain: 'cursor.com' },

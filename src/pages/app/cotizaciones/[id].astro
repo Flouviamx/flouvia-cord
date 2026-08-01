@@ -835,9 +835,11 @@ const dotColor = (tipo: string) =>
                     if (!res.ok) throw new Error(data.error || I.i18nNoPudoAplicar);
                     
                     if (typeof posthog !== 'undefined') {
-                        if (action === 'send') posthog.capture('quote_sent', { quote_id: qid, quote_folio: panel.dataset.folio });
-                        if (action === 'approve') posthog.capture('quote_approved', { quote_id: qid, quote_folio: panel.dataset.folio, source: 'manual' });
-                        if (action === 'paid') posthog.capture('payment_received', { quote_id: qid, quote_folio: panel.dataset.folio, source: 'manual' });
+                        if (action === 'send') posthog.capture('quote_sent', { quote_id: qid });
+                        if (action === 'approve') posthog.capture('quote_approved', { quote_id: qid, source: 'manual' });
+                        // `payment_received` is emitted only by Stripe, the source
+                        // of truth. This records the operator's manual status change.
+                        if (action === 'paid') posthog.capture('quote_marked_paid', { quote_id: qid, source: 'manual' });
                     }
                     
                     location.reload();
@@ -966,7 +968,7 @@ const dotColor = (tipo: string) =>
                 const res = await fetch(`/api/cotizaciones/${qid}/duplicate`, { method: 'POST' });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || I.i18nNoPudoDuplicar);
-                // Mixpanel: track duplicated quote creation
+                // PostHog: track duplicated quote creation
                 if (typeof posthog !== 'undefined') {
                     posthog.capture('quote_created', { source: 'duplicate' });
                 }

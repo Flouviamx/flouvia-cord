@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '@nanostores/react';
 import { $isTestMode, toggleTestMode } from '../../store/testMode';
+import { resetUser } from '../../lib/posthog';
 import CreateWorkspaceModal from './CreateWorkspaceModal';
 import type { CreateWorkspaceSubmit } from './CreateWorkspaceModal';
 
@@ -134,10 +135,8 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
   };
 
   const handleLogout = async () => {
-    // Reset Mixpanel identity before signing out (prevents cross-user attribution)
-    if (typeof window !== 'undefined' && (window as any).mixpanel) {
-      (window as any).mixpanel.reset();
-    }
+    // Prevent cross-user attribution when the next session starts on this device.
+    resetUser();
     window.location.href = '/api/auth/logout';
   };
 

@@ -6,7 +6,7 @@
 
 ---
 
-✅ **Mixpanel Analytics (jul 2026):** Product analytics via Mixpanel JS SDK (CDN). Token en `PUBLIC_MIXPANEL_TOKEN`. Init en `Layout.astro` (landing) y `AppLayout.astro` (app + identify). Dos eventos iniciales: `sign_up_completed` (onboarding/workspace) y `quote_created` (nueva.astro + [id].astro duplicate). Identity via Clerk `userId`; `reset()` en logout (CustomOrgSwitcher). Guía de tracking en `.agents/AGENTS.md`. Coexiste con Vercel Analytics (web vitals vs. product analytics).
+✅ **PostHog Analytics (jul 2026):** Analítica de producto en `Layout.astro` (landing) y `AppLayout.astro` (app + identidad). Eventos iniciales: `sign_up_completed` (onboarding/workspace) y `quote_created` (nueva.astro + [id].astro duplicate). Coexiste con Vercel Analytics (web vitals vs. product analytics).
 
 ✅ **Workbench v3.1 — atajos reales, UTC en todas las pestañas, y desbloqueo de 2FA (jul 2026)** —
    André reportó que "los atajos de teclado y lo del horario no sirven". Ambos eran bugs míos de
@@ -266,17 +266,17 @@
      segunda pasada: `index.astro` (dashboard), `cotizaciones/{index,nueva,[id],[id]/editar,
      [id]/imprimir}.astro`, `clientes.astro`, `productos/{index,kits}.astro`, `cfo.astro`,
      `analitica.astro`, `desempeno.astro`, `cobranza.astro`, `cobros.astro`,
-     `tesoreria/{cobranza,flujo}/index.astro`, `presupuestos/{index,[id],herramientas}.astro`, y
+     `tesoreria/{cobranza,flujo}/index.astro`, y
      `checkout.astro` (Payment Element).
    • **Namespaces nuevos de esta pasada** en `src/i18n/app.ts`: `dash.*`, `cot.*`, `ed.*`
      (editor `nueva.astro`), `id.*` (detalle `[id].astro`), `edv.*` (`editar.astro`), `imp.*`
      (`imprimir.astro`), `cli.*`, `prod.*`/`kit.*`, `cfo.*`, `an.*` (analítica, compartido con
      desempeño), `des.*`, `cob.*`/`cbr.*` (cobranza/cobros), `tia.*` (cobranza IA), `flu.*` (flujo
-     de caja), `pre.*`/`ced.*`/`her.*` (presupuestos: índice/editor de cédula/herramientas), `chk.*`
+     de caja), `chk.*`
      (checkout).
    • **Cada `<script>` no-inline** de estas páginas sigue el mismo puente de `data-i18n-*`/
      `JSON.stringify` sobre un contenedor estable descrito arriba; los `<script define:vars>`
-     (`kits.astro`, `presupuestos/[id].astro`) reciben un objeto `T` plano (sin funciones —
+     (`kits.astro`) reciben un objeto `T` plano (sin funciones —
      `define:vars` serializa con `JSON.stringify`) precomputado en el frontmatter.
    • **Bug de Astro/esbuild encontrado y evitado (regla a futuro):** un objeto literal `{...}`
      como rama falsa de un ternario dentro de una expresión JSX (`{cond ? x : tpl(t(...), {n:...})}`)
@@ -307,7 +307,7 @@
      hay referencia de vuelta del lado de la cotización hacia el kit.
    • **`/app/productos` se partió en `index.astro` (Catálogo) + `kits.astro` (Kits)**, unidas
      por la barra de sub-pestañas `page-tabs` (mismo patrón `.ph-tab` que ya usan
-     Presupuestos/CFO — `git mv` de `productos.astro` a `productos/index.astro`, ajustando la
+     CFO — `git mv` de `productos.astro` a `productos/index.astro`, ajustando la
      profundidad de los imports relativos). `/app/productos/kits`: lista hairline (nombre ·
      descripción · "N líneas" · badge "Combo $X" si aplica · Editar/Eliminar) + modal de
      creación/edición que reutiliza el MISMO combobox de búsqueda de catálogo que el editor
@@ -407,11 +407,9 @@
    • **Editor (`/app/cotizaciones/nueva`):** cada línea de catálogo agregada (o cargada de un
      borrador) dispara `loadPricing(idx)` en segundo plano; si hay sugerencia y el precio
      negociado actual difiere de ella, aparece un hint clicable bajo el nombre del producto
-     ("Sugerido: $X (72% cierra)", mismo lugar donde ya vivía la nota de precio por volumen)
-     — un clic aplica el precio y dispara el flash de margen existente. El hint desaparece
+     ("Sugerido: $X") — un clic aplica el precio y dispara el flash de margen existente. El hint desaparece
      solo cuando el precio de la línea ya coincide con el sugerido. Sin cambios de schema.
-   ⬜ **Límite conocido de v1 (a propósito, para no sobre-construir antes de validar uso
-     real):** la sugerencia se calcula una vez al agregar la línea; si el vendedor cambia de
+   ⬜ **Límite conocido de v1:** la sugerencia se calcula una vez al agregar la línea; si el vendedor cambia de
      cliente después, NO se refresca automáticamente (recargar la línea sí lo haría). Fase 2
      natural si se valida: refrescar al cambiar cliente, y ampliar el scope a "familia de
      producto" cuando exista una noción de familia en el catálogo.

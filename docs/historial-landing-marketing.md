@@ -24,20 +24,20 @@
    B2B" (jul 2026)** — André reportó que el copy/SEO sonaba "muy específico para México"
    cuando cualquier negocio, en cualquier país, ya puede registrarse hoy (signup abierto,
    sin gate geográfico), y que el producto ya no es solo cotizar: desde jul 2026 también
-   incluye Presupuestos/Cédulas, CFO Dashboard y Analítica. Auditoría con grep de todo el
+   incluye CFO Dashboard y Analítica. Auditoría con grep de todo el
    repo separando **dos problemas mezclados** en el mismo texto: (1) geo-restricción
    FALSA ("para cualquier negocio B2B en México" en features sin nada que ver con
    México — el editor, el link público, cobranza con IA, negociación, multi-divisa,
    soluciones/casos de uso) y (2) CFDI/SAT, que SÍ es honestamente Mexico-only y se dejó
    intacto, reencuadrado como beneficio adicional ("para negocios en México") en vez de
    ser la puerta de entrada de todo el producto.
-   • **Mensaje central nuevo:** título de home ES "Cord — Cotizaciones, Presupuestos y
-     Cobranza B2B" (antes "...y CFDI 4.0 en México"); EN "Cord — B2B Quoting, Budgeting &
+   • **Mensaje central nuevo:** título de home ES "Cord — Cotizaciones y
+     Cobranza B2B" (antes "...y CFDI 4.0 en México"); EN "Cord — B2B Quoting &
      Collections Software". Mismo criterio en `Layout.astro` (default description),
      `precios.astro`, `llms.txt`, footer tagline y manifest.webmanifest.
    • **JSON-LD de `/` actualizado:** `softwareSchema.audience` pasó de "Any B2B business
-     in Mexico" a "Any B2B business worldwide"; `featureList` ganó "Financial budgeting &
-     budget-vs-actual tracking" y "AI-powered collections"; CFDI se quedó en la lista
+     in Mexico" a "Any B2B business worldwide"; `featureList` ganó "AI-powered
+     collections"; CFDI se quedó en la lista
      pero anotado "(Mexico)" en vez de ser el límite de audiencia.
    • **12 páginas de producto (`producto.ts`/`.en.ts`):** solo 5 tenían el gate falso
      (editor, link-publico, cobranza-ia, negociacion, divisas) — verificado con grep que

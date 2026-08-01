@@ -1705,7 +1705,7 @@ export async function requirePerm(key: PermKey): Promise<Response | null> {
 }
 
 
-// Plan crudo de la org activa (para límites freemium de Presupuestos).
+// Plan crudo de la org activa.
 export async function getOrgPlan(): Promise<string> {
     const orgId = await getActiveOrgId();
     const [[org]] = await withOrgTx(orgId, sql`select coalesce(plan, 'free') as plan from orgs where id = ${orgId}`);
@@ -2035,7 +2035,7 @@ export async function getSetupProgress() {
         { id: 'catalogo', label: 'Arma tu catálogo',        icon: 'box',     desc: 'Carga lo que vendes y a quién se lo vendes para cotizar en segundos.' },
         { id: 'venta',    label: 'Cierra tu primera venta',  icon: 'send',    desc: 'Crea, envía y mira en vivo cómo tu cliente abre y aprueba con firma.' },
         { id: 'dinero',   label: 'Recibe tu dinero',         icon: 'wallet',  desc: 'Cobra en línea, factura el CFDI y cierra el ciclo completo.' },
-        { id: 'equipo',   label: 'Crece tu operación',       icon: 'users',   desc: 'Suma a tu equipo con permisos por rol y planea tus números con presupuestos cuando estés listo para escalar.' },
+        { id: 'equipo',   label: 'Crece tu operación',       icon: 'users',   desc: 'Suma a tu equipo con permisos por rol cuando estés listo para escalar.' },
     ] as const;
 
     const tasks = [
@@ -2049,7 +2049,7 @@ export async function getSetupProgress() {
         { group: 'dinero',   id: 'online_cobros', label: 'Activa los cobros en línea',  desc: 'Conecta tu cuenta bancaria de forma segura para recibir pagos con tarjeta o SPEI directo a tu banco — incluye anticipos.', href: '/app/ajustes/cobros',     done: !!o?.stripe_charges_enabled },
         { group: 'dinero',   id: 'cobro',         label: 'Cobra y factura',             desc: 'Cobra en línea con Stripe o márcala como pagada, factura el CFDI 4.0 y cierra el ciclo de venta en Cobranza.', href: '/app/cobranza',           done: Number(ncobro) > 0 },
         { group: 'equipo',   id: 'equipo',        label: 'Invita a tu equipo',          desc: 'Suma vendedores y define permisos por rol (cotizar, aprobar, cobranza…) para trabajar en conjunto.', href: '/app/ajustes/equipo',     done: Number(nmem) > 1 },
-        { group: 'equipo',   id: 'presupuestos',  label: 'Crea tu primer presupuesto',  desc: 'Planea tus ventas, cobranza y efectivo por mes — y compara el plan contra lo que realmente vendas y cobres, sin capturar nada.', href: '/app/presupuestos',       done: Number(ncedula) > 0 || Number(nanalisis) > 0 },
+
     ];
 
     // Agrupa los pasos y calcula el sub-progreso de cada sección.

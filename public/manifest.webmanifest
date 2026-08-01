@@ -1,7 +1,7 @@
 {
-  "name": "Cord — Cotizaciones y Presupuestos B2B",
+  "name": "Cord — Cotizaciones y Cobranza B2B",
   "short_name": "Cord",
-  "description": "Plataforma de cotizaciones, presupuestos y cobranza B2B para negocios en cualquier país",
+  "description": "Plataforma de cotizaciones y cobranza B2B para negocios en cualquier país",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

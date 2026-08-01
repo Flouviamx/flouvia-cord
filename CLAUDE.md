@@ -158,7 +158,7 @@ de Vercel de Cord (auto-inyecta `DATABASE_URL` en todos los environments).
 
 ## Roadmap & TODOs (Analytics & Growth)
 
-Implementación en PostHog (migrado desde Mixpanel en jul 2026) para escalar el análisis de Growth y activación:
+Implementación en PostHog para escalar el análisis de Growth y activación:
 
 - [x] **`quote_sent`:** Rastrear cuando el usuario da click a "Enviar" o copia el link. Clave para medir el TTV (Time-to-Value).
 - [x] **`quote_viewed` / `quote_approved`:** Medir la tasa de éxito (conversión) de las cotizaciones.
