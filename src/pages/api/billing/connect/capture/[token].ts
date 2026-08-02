@@ -5,7 +5,7 @@ import { sql } from '../../../../../lib/db';
 import { stripeUpload, attachPersonDocument, attachPersonAdditionalDocument, retrieveAccount, updateConnectAccount, isAlreadyVerifiedError } from '../../../../../lib/billing';
 import { translateStripeError } from '../../../../../lib/stripe-catalogs';
 
-// Ruta PÚBLICA (sin sesión de Clerk) — el celular la abre al escanear el QR
+// Ruta PÚBLICA (sin sesión) — el celular la abre al escanear el QR
 // generado en /api/billing/connect/capture-session. El token es la única
 // credencial: aleatorio, expira a los 10 min, y deja de aceptar subidas una
 // vez que el mínimo requerido (frente + selfie) ya se completó.

@@ -8,7 +8,7 @@ import { requirePerm } from '../../../../lib/queries';
 
 // Crea una sesión efímera de verificación "continúa en tu teléfono" (estilo
 // Stripe Identity): el escritorio pide una sesión, se la muestra al usuario
-// como QR + link, y el celular la resuelve sin sesión de Clerk (el token
+// como QR + link, y el celular la resuelve sin sesión (el token
 // aleatorio ES la credencial — ver identity_capture_sessions en schema.sql).
 const TTL_MS = 10 * 60 * 1000;
 

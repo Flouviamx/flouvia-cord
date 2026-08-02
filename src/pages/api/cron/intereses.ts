@@ -7,9 +7,9 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
+import { assertCronAuth } from '../../../lib/cron-auth';
 import { sql, logAudit } from '../../../lib/db';
 
-const CRON_SECRET = import.meta.env.CRON_SECRET || process.env.CRON_SECRET;
 const RESEND_KEY  = import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
 const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Cord <cobranza@flouvia.com>';
 
@@ -17,10 +17,8 @@ const DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
 const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n);
 
 export const GET: APIRoute = async ({ request }) => {
-    if (CRON_SECRET) {
-        const auth = request.headers.get('authorization') || '';
-        if (auth !== `Bearer ${CRON_SECRET}`) return json({ error: 'No autorizado' }, 401);
-    }
+    const authError = assertCronAuth(request);
+    if (authError) return authError;
 
     const now = new Date();
     // Periodo = mes actual ('YYYY-MM'). El cron corre el día 1, así que el

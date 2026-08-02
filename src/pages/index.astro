@@ -22,7 +22,7 @@ const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
 const t = useTranslations(lang);
 
-// ── Datos estructurados (JSON-LD) — HowTo del flujo de venta B2B de Cord.
+// ── Datos estructurados (JSON-LD) — HowTo del flujo de venta de Cord.
 //    Lo lee Google para enriquecer el resultado de búsqueda de la home.
 const howToSchema = {
     '@context': 'https://schema.org',
@@ -76,7 +76,7 @@ const howToSchema = {
 // ACTUALIZACIÓN: Se implementa enfoque "Transaccional Absoluto".
 const title = isEn
     ? "Cord — From Proposal to Payment in a Single Link"
-    : "Cord — De la Propuesta al Cobro en un Solo Link";
+    : "Cord — De la propuesta al pago. Todo en un solo link.";
 
 const description = isEn
     ? "The platform that transforms proposals and agreements into instantly paid transactions. Centralize negotiation, legally binding signatures, margin intelligence, and automated collections in a single interactive link."

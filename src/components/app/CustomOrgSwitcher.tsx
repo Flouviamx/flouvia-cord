@@ -52,7 +52,7 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
     // Custom auth: set active org cookie and reload
     document.cookie = `cord_active_org=${organizationId}; path=/; max-age=31536000`;
     setIsOpen(false);
-    
+
     const path = window.location.pathname;
     const hasEntityId = /\/[0-9a-f]{8}-[0-9a-f]{4}-.../i.test(path);
     window.location.assign(hasEntityId || !path.startsWith('/app') ? '/app' : path);
@@ -66,25 +66,25 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
 
   const handleModalSubmit = async ({ type, name, country }: CreateWorkspaceSubmit) => {
     try {
-      // TODO: Custom Auth create organization implementation
-      const newOrg = { id: 'temp-id', name };
-      if (!newOrg) return;
-
-      // Provisionar SIEMPRE: fija el país (moneda / facturación) y anida si aplica.
+      // El servidor genera el id — nunca se manda uno propio (ver api/orgs
+      // index.ts: el endpoint anterior confiaba en un id mandado por el
+      // cliente sin verificar dueño, una fuga cross-tenant real).
       const parentOrgId = type === 'nested' && createModalParentOrg ? createModalParentOrg.id : null;
-      const res = await fetch('/api/orgs/provision', {
+      const res = await fetch('/api/orgs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ childOrgId: newOrg.id, parentOrgId, countryCode: country, name })
+        body: JSON.stringify({ name, countryCode: country, parentOrgId }),
       });
+      const data = await res.json().catch(() => ({}));
 
-      if (!res.ok && parentOrgId) {
+      if (!res.ok || !data.orgId) {
         const cc = (window as any).cordToast;
-        const msg = 'La cuenta se creó pero no se pudo anidar bajo la principal — quedó como espacio independiente.';
+        const msg = data.error || 'No se pudo crear la cuenta.';
         if (cc) cc(msg, 'error'); else alert(msg);
+        return;
       }
 
-      await handleSwitch(newOrg.id);
+      await handleSwitch(data.orgId);
       setCreateModalOpen(false);
     } catch (e) {
       console.error(e);
@@ -94,11 +94,16 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
     }
   };
 
+  const ROLE_LABEL: Record<string, string> = {
+    owner: 'Dueño', admin: 'Admin', vendedor: 'Vendedor', lectura: 'Lectura', miembro: 'Miembro',
+  };
+  const roleLabel = (rol?: string) => ROLE_LABEL[rol || ''] || 'Miembro';
+
   const membershipsByParent: Record<string, any[]> = {};
   const rootMemberships: any[] = [];
 
   memberships.forEach((mem: any) => {
-    const parentId = mem.organization.publicMetadata?.parentOrgId;
+    const parentId = mem.organization.parentOrgId as string | null;
     if (parentId) {
       if (!membershipsByParent[parentId]) membershipsByParent[parentId] = [];
       membershipsByParent[parentId].push(mem);
@@ -118,13 +123,18 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
     }
   });
 
+  // El parentOrgId de la org ACTIVA no viene en `organization` (getOrg() no lo
+  // trae) — se resuelve buscándola dentro de las membresías, que sí lo tienen.
+  const activeMembership = memberships.find((m: any) => m.organization.id === organization?.id);
+  const activeParentId = activeMembership?.organization.parentOrgId as string | null | undefined;
+
   const handleOpenMainCreateModal = () => {
     if (organization) {
-      setCreateModalParentOrg({ id: organization.id, name: organization.name });
+      setCreateModalParentOrg({ id: organization.id, name: organization.nombre });
       // Cuentas ya anidadas bajo la org activa → alimentan el árbol de preview.
       const kids = memberships
-        .filter((m: any) => m.organization.publicMetadata?.parentOrgId === organization.id)
-        .map((m: any) => m.organization.name);
+        .filter((m: any) => m.organization.parentOrgId === organization.id)
+        .map((m: any) => m.organization.nombre);
       setCreateModalSiblings(kids);
     } else {
       setCreateModalParentOrg(null);
@@ -137,7 +147,12 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
   const handleLogout = async () => {
     // Prevent cross-user attribution when the next session starts on this device.
     resetUser();
-    window.location.href = '/api/auth/logout';
+    // POST, no GET: un logout por GET es "logout-CSRF" explotable con un
+    // simple <img src="...">, sin Origin que validar. Ver api/auth/logout.ts.
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch { /* navegamos igual */ }
+    window.location.href = '/sign-in';
   };
 
   return (
@@ -176,10 +191,10 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
             {rootMemberships.map((mem: any) => {
               const selected = organization?.id === mem.organization.id;
               const hasChildren = membershipsByParent[mem.organization.id] && membershipsByParent[mem.organization.id].length > 0;
-              const isCurrentParent = organization?.id === mem.organization.id || organization?.publicMetadata?.parentOrgId === mem.organization.id;
-              
+              const isCurrentParent = organization?.id === mem.organization.id || activeParentId === mem.organization.id;
+
               return (
-                <React.Fragment key={mem.id}>
+                <React.Fragment key={mem.organization.id}>
                   <button
                     className={`org-list-item ${selected ? 'selected' : ''}`}
                     onClick={() => handleSwitch(mem.organization.id)}
@@ -188,14 +203,14 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
                   >
                     <div className="org-avatar small" style={{ overflow: 'hidden' }}>
                       {orgLogoUrl && selected ? (
-                        <img src={orgLogoUrl} alt={mem.organization.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        <img src={orgLogoUrl} alt={mem.organization.nombre} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                       ) : (
-                        mem.organization.name.charAt(0).toUpperCase()
+                        mem.organization.nombre.charAt(0).toUpperCase()
                       )}
                     </div>
                     <div className="org-details">
-                      <span className="org-item-name" title={mem.organization.name}>{mem.organization.name}</span>
-                      <span className="org-item-role">{mem.role === 'org:admin' ? 'Admin' : 'Miembro'}</span>
+                      <span className="org-item-name" title={mem.organization.nombre}>{mem.organization.nombre}</span>
+                      <span className="org-item-role">{roleLabel(mem.rol)}</span>
                     </div>
                     {selected && (
                       <span className="orgd-check" aria-hidden="true">
@@ -213,17 +228,17 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
                         const childSelected = organization?.id === childMem.organization.id;
                         return (
                           <button
-                            key={childMem.id}
+                            key={childMem.organization.id}
                             className={`org-list-item ${childSelected ? 'selected' : ''}`}
                             onClick={() => handleSwitch(childMem.organization.id)}
                             role="menuitemradio"
                             aria-checked={childSelected}
                           >
                             <div className="org-avatar small" style={{ overflow: 'hidden', width: '20px', height: '20px', fontSize: '0.6rem', borderRadius: '4px' }}>
-                              {childMem.organization.name.charAt(0).toUpperCase()}
+                              {childMem.organization.nombre.charAt(0).toUpperCase()}
                             </div>
                             <div className="org-details">
-                              <span className="org-item-name" title={childMem.organization.name} style={{ fontSize: '0.75rem' }}>{childMem.organization.name}</span>
+                              <span className="org-item-name" title={childMem.organization.nombre} style={{ fontSize: '0.75rem' }}>{childMem.organization.nombre}</span>
                             </div>
                             {childSelected && (
                               <span className="orgd-check" aria-hidden="true">

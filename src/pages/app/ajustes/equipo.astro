@@ -103,8 +103,8 @@ const getAvatarColor = (name: string) => {
                                 </button>
                                 <div class="tm-dropdown" hidden>
                                     <button class="tm-dd-item act-edit" data-id={m.id} data-rol={m.rol}>{t(L, 'set.eq.editar_funciones')}</button>
-                                    {m.estado === 'invitado' && m.token && (
-                                        <button class="tm-dd-item act-link" data-link={`/unirse/${m.token}`}>{t(L, 'set.eq.copiar_link')}</button>
+                                    {m.tieneInvitePendiente && (
+                                        <button class="tm-dd-item act-resend" data-id={m.id}>{t(L, 'set.eq.reenviar_invitacion')}</button>
                                     )}
                                     <button class="tm-dd-item tm-dd-danger act-revoke" data-id={m.id}>{t(L, 'set.eq.revocar_acceso')}</button>
                                 </div>
@@ -448,10 +448,27 @@ const getAvatarColor = (name: string) => {
             dd.hidden = !dd.hidden;
         }
 
-        if (target.matches('.act-link')) {
-            const link = new URL(target.dataset.link || '', window.location.href).toString();
-            navigator.clipboard.writeText(link);
-            toast('Enlace copiado al portapapeles');
+        if (target.matches('.act-resend')) {
+            const id = target.dataset.id;
+            const original = target.textContent;
+            (target as HTMLButtonElement).setAttribute('disabled', 'true');
+            target.textContent = 'Reenviando…';
+            fetch('/api/equipo/resend', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id }),
+            })
+                .then(async (res) => {
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'No se pudo reenviar la invitación');
+                    await navigator.clipboard.writeText(data.link);
+                    toast(data.emailed ? 'Invitación reenviada — link también copiado' : 'Invitación reenviada — link copiado');
+                })
+                .catch((err) => toast(err.message, 'error'))
+                .finally(() => {
+                    target.removeAttribute('disabled');
+                    target.textContent = original;
+                });
         }
         if (target.matches('.act-edit')) {
             const id = target.dataset.id;
@@ -485,9 +502,13 @@ const getAvatarColor = (name: string) => {
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Error al invitar');
-                
-                toast('Invitación enviada');
-                setTimeout(() => location.reload(), 800);
+
+                // El link siempre se copia — es el único respaldo real si el
+                // correo no llega (o no hay RESEND_API_KEY configurada). Antes
+                // se descartaba y el admin no tenía forma de recuperarlo.
+                if (data.link) { try { await navigator.clipboard.writeText(data.link); } catch { /* portapapeles no disponible */ } }
+                toast(data.emailed ? 'Invitación enviada — link también copiado' : 'Invitación creada — link copiado al portapapeles');
+                setTimeout(() => location.reload(), 900);
             } catch (err: any) {
                 toast(err.message, 'error');
                 btn.disabled = false; btn.textContent = 'Enviar invitación';

@@ -425,6 +425,7 @@ const jsonLd = {
   
   // Search Modal Logic with Fuse.js
   import Fuse from 'fuse.js';
+  import { escapeHtml } from '../lib/escape';
   
   const trigger = document.getElementById('search-trigger');
   const modal = document.getElementById('search-modal');
@@ -493,17 +494,17 @@ const jsonLd = {
     const results = fuse.search(query).slice(0, 8); // Top 8 results
     
     if (results.length === 0) {
-      resultsContainer.innerHTML = `<div class="search-results-empty"><p>${document.documentElement.lang === 'en' ? 'No results found for' : 'No se encontraron resultados para'} "${query}"</p></div>`;
+      resultsContainer.innerHTML = `<div class="search-results-empty"><p>${document.documentElement.lang === 'en' ? 'No results found for' : 'No se encontraron resultados para'} "${escapeHtml(query)}"</p></div>`;
       return;
     }
-    
+
     let html = '<ul class="search-results-list">';
     results.forEach(({ item }) => {
       html += `
         <li class="search-result-item">
           <a href="${item.url}">
-            <span class="search-result-title">${item.title}</span>
-            ${item.description ? `<span class="search-result-desc">${item.description}</span>` : ''}
+            <span class="search-result-title">${escapeHtml(item.title)}</span>
+            ${item.description ? `<span class="search-result-desc">${escapeHtml(item.description)}</span>` : ''}
           </a>
         </li>
       `;

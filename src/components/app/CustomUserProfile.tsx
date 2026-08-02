@@ -1,566 +1,521 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useStore } from '@nanostores/react';
-import { t, type AppLocale } from '../../i18n/app';
+import { startRegistration } from '@simplewebauthn/browser';
 import './CustomUserProfile.css';
 
-export default function CustomUserProfile({ locale = 'es', user: realUser }: { locale?: AppLocale, user?: any }) {
-  const L = locale;
-  const tf = (key: string, vars: Record<string, string> = {}) => {
-    let s = t(L, key as any);
-    for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
-    return s;
-  };
+type Locale = 'es' | 'en';
 
-  const userLoaded = true;
-  const user: any = realUser || { 
-    firstName: 'Usuario', 
-    lastName: '', 
-    fullName: 'Usuario Demo',
-    imageUrl: '', 
-    emailAddresses: [{ emailAddress: 'demo@cordhq.app' }],
-    externalAccounts: [],
-    totpEnabled: false,
-    passkeys: []
-  };
-  const sessions: any[] = [{
-    id: 'sess_1',
-    latestActivity: { deviceType: 'Mac', city: 'CDMX', country: 'Mexico' },
-    lastActiveAt: new Date().toISOString()
-  }];
-  const clerk: any = { session: { id: 'sess_1' } };
-  
-  const fileInputRef = useRef<HTMLInputElement>(null);
+interface Connection { provider: string; email: string | null; createdAt: string }
+interface OrgMembership { organization: { id: string; nombre: string; logoUrl: string | null; parentOrgId: string | null }; rol: string }
+interface UserProfile {
+  id: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  imageUrl: string;
+  emailAddresses: { emailAddress: string }[];
+  emailVerified: boolean;
+  totpEnabled: boolean;
+  hasPassword: boolean;
+  passkeyCount: number;
+  connections: Connection[];
+  organizationMemberships: OrgMembership[];
+}
+interface SessionRow { id: string; userAgent: string | null; ip: string | null; createdAt: string; lastUsedAt: string; expiresAt: string; current: boolean }
+interface PasskeyRow { id: string; name: string | null; deviceType: string; createdAt: string; lastUsedAt: string | null }
 
-  // Profile Form State
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [profileStatus, setProfileStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
-  const [isSavingProfile, setIsSavingProfile] = useState(false);
+const toast = (msg: string, type: 'ok' | 'error' = 'ok') => (window as any).cordToast?.(msg, type);
 
-  // Security Form State
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [securityStatus, setSecurityStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
-  const [isSavingSecurity, setIsSavingSecurity] = useState(false);
+function deviceLabel(ua: string | null): string {
+  if (!ua) return 'Dispositivo desconocido';
+  if (/iphone/i.test(ua)) return 'iPhone';
+  if (/ipad/i.test(ua)) return 'iPad';
+  if (/android/i.test(ua)) return 'Android';
+  if (/macintosh|mac os/i.test(ua)) return 'Mac';
+  if (/windows/i.test(ua)) return 'Windows';
+  if (/linux/i.test(ua)) return 'Linux';
+  return ua.slice(0, 40);
+}
 
-  // 2FA State
-  const [totpSecret, setTotpSecret] = useState<{ secret: string; uri: string } | null>(null);
-  const [totpCode, setTotpCode] = useState('');
-  const [isEnablingTotp, setIsEnablingTotp] = useState(false);
-  const [totpStatus, setTotpStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
-  const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
+function fmtDate(d: string, locale: Locale): string {
+  try {
+    return new Date(d).toLocaleString(locale === 'en' ? 'en-US' : 'es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+  } catch { return d; }
+}
 
-  // Load user data when available
-  useEffect(() => {
-    if (userLoaded && user) {
-      setFirstName(user.firstName || '');
-      setLastName(user.lastName || '');
-    }
-  }, [userLoaded, user]);
-
-  const showToast = (msg: string, type: 'success' | 'error') => {
-    const toast = (window as any).cordToast;
-    if (toast) toast(msg, type);
-    else alert(msg);
-  };
-
-  const copyText = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      showToast(t(L, 'set.cuenta.toast_copiado'), 'success');
-    } catch {
-      showToast(t(L, 'set.cuenta.toast_no_copio'), 'error');
-    }
-  };
-
-  const handleUpdateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-    
-    setIsSavingProfile(true);
-    setProfileStatus(null);
-    
-    try {
-      // await fetch POST /api/auth/profile
-      setProfileStatus({ type: 'success', message: t(L, 'set.cuenta.toast_perfil_actualizado') });
-      setTimeout(() => setProfileStatus(null), 3000);
-    } catch (err: any) {
-      console.error('Error updating profile:', err);
-      setProfileStatus({
-        type: 'error',
-        message: t(L, 'set.cuenta.toast_no_actualizo_perfil')
-      });
-    } finally {
-      setIsSavingProfile(false);
-    }
-  };
-
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-    
-    try {
-      // await upload avatar
-      showToast(t(L, 'set.cuenta.toast_foto_actualizada'), 'success');
-    } catch (err: any) {
-      console.error('Error updating avatar:', err);
-      showToast(t(L, 'set.cuenta.toast_error_foto'), 'error');
-    }
-  };
-
-  const handleUpdatePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-
-    if (newPassword.length < 8) {
-      setSecurityStatus({ type: 'error', message: t(L, 'set.cuenta.err_pass_len') });
-      return;
-    }
-
-    setIsSavingSecurity(true);
-    setSecurityStatus(null);
-
-    try {
-      // await POST /api/auth/password
-      setSecurityStatus({ type: 'success', message: t(L, 'set.cuenta.toast_pass_actualizada') });
-      setCurrentPassword('');
-      setNewPassword('');
-
-      setTimeout(() => setSecurityStatus(null), 3000);
-    } catch (err: any) {
-      console.error('Error updating password:', err);
-      setSecurityStatus({
-        type: 'error',
-        message: t(L, 'set.cuenta.toast_pass_error')
-      });
-    } finally {
-      setIsSavingSecurity(false);
-    }
-  };
-
-  const handleRevokeSession = async (sessionId: string) => {
-    const session = sessions?.find((s: any) => s.id === sessionId);
-    if (!session) return;
-    
-    const cc = (window as any).cordConfirm;
-    const ok = cc
-      ? await cc({ title: t(L, 'set.cuenta.confirm_cerrar_sesion_titulo'), body: t(L, 'set.cuenta.confirm_cerrar_sesion_body'), danger: true, confirmText: t(L, 'set.cuenta.confirm_cerrar_sesion_ok') })
-      : confirm(t(L, 'set.cuenta.confirm_cerrar_sesion_native'));
-    if (!ok) return;
-
-    try {
-      // await POST /api/auth/session/revoke
-      showToast(t(L, 'set.cuenta.toast_sesion_cerrada'), 'success');
-    } catch (err: any) {
-      console.error('Error revoking session:', err);
-      showToast(t(L, 'set.cuenta.toast_error_cerrar_sesion'), 'error');
-    }
-  };
-
-  const startTotpSetup = async () => {
-    if (!user) return;
-    try {
-      // await POST /api/auth/2fa/start
-      setTotpSecret({ secret: 'DUMMYSECRET', uri: 'otpauth://totp/Cord' });
-    } catch (err: any) {
-      showToast(t(L, 'set.cuenta.toast_error_2fa_setup'), 'error');
-    }
-  };
-
-  const verifyTotp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-    setIsEnablingTotp(true);
-    try {
-      // await POST /api/auth/2fa/verify
-      let codes: string[] | null = ['CODE1', 'CODE2'];
-      setBackupCodes(codes);
-      setTotpSecret(null);
-      setTotpCode('');
-      setTotpStatus({ type: 'success', message: t(L, 'set.cuenta.toast_2fa_habilitada') });
-    } catch (err: any) {
-      showToast(t(L, 'set.cuenta.toast_codigo_incorrecto'), 'error');
-    } finally {
-      setIsEnablingTotp(false);
-    }
-  };
-
-  const disableTotp = async () => {
-    if (!user) return;
-    const cc = (window as any).cordConfirm;
-    const ok = cc
-      ? await cc({ title: t(L, 'set.cuenta.confirm_desactivar_2fa_titulo'), body: t(L, 'set.cuenta.confirm_desactivar_2fa_body'), danger: true, confirmText: t(L, 'set.cuenta.confirm_desactivar_2fa_ok') })
-      : confirm(t(L, 'set.cuenta.confirm_desactivar_2fa_native'));
-    if (!ok) return;
-
-    try {
-      // await POST /api/auth/2fa/disable
-      setBackupCodes(null);
-      showToast(t(L, 'set.cuenta.toast_2fa_desactivada'), 'success');
-    } catch (err: any) {
-      showToast(t(L, 'set.cuenta.toast_error_2fa_desactivar'), 'error');
-    }
-  };
-
-  const createPasskey = async () => {
-    if (!user) return;
-    try {
-      // await POST /api/auth/passkey/create
-      showToast(t(L, 'set.cuenta.toast_passkey_agregado'), 'success');
-    } catch (err: any) {
-      showToast(t(L, 'set.cuenta.toast_error_passkey_crear'), 'error');
-    }
-  };
-
-  const deletePasskey = async (passkey: any) => {
-    const cc = (window as any).cordConfirm;
-    const ok = cc
-      ? await cc({ title: t(L, 'set.cuenta.confirm_eliminar_passkey_titulo'), body: t(L, 'set.cuenta.confirm_eliminar_passkey_body'), danger: true, confirmText: t(L, 'set.cuenta.eliminar') })
-      : confirm(t(L, 'set.cuenta.confirm_eliminar_passkey_native'));
-    if (!ok) return;
-
-    try {
-      // await POST /api/auth/passkey/delete
-      showToast(t(L, 'set.cuenta.toast_passkey_eliminado'), 'success');
-    } catch (err: any) {
-      showToast(t(L, 'set.cuenta.toast_error_passkey_eliminar'), 'error');
-    }
-  };
-
-  const connectAccount = async (strategy: string) => {
-    if (!user) return;
-    try {
-      showToast(t(L, 'set.cuenta.toast_error_conectar_proveedor'), 'error');
-    } catch (err: any) {
-      showToast(t(L, 'set.cuenta.toast_error_conectar_cuenta'), 'error');
-    }
-  };
-
-  const disconnectAccount = async (account: any) => {
-    const cc = (window as any).cordConfirm;
-    const ok = cc
-      ? await cc({ title: t(L, 'set.cuenta.confirm_desconectar_titulo'), body: t(L, 'set.cuenta.confirm_desconectar_body'), danger: true, confirmText: t(L, 'set.cuenta.confirm_desconectar_ok') })
-      : confirm(t(L, 'set.cuenta.confirm_desconectar_native'));
-    if (!ok) return;
-
-    try {
-      // await delete account
-      showToast(t(L, 'set.cuenta.toast_cuenta_desconectada'), 'success');
-    } catch (err: any) {
-      showToast(t(L, 'set.cuenta.toast_error_desconectar'), 'error');
-    }
-  };
-
-  if (!userLoaded || user === undefined || sessions === undefined) {
+export default function CustomUserProfile({ locale = 'es', user: initialUser }: { locale?: Locale; user?: UserProfile | null }) {
+  const [user, setUser] = useState<UserProfile | null>(initialUser ?? null);
+  if (!user) {
     return (
-      <div className="cup-wrapper" style={{ pointerEvents: 'none' }}>
+      <div className="cup-wrapper">
         <div className="cup-skeleton">
-          <div className="skeleton-header"></div>
-          <div className="skeleton-body"></div>
+          <div className="skeleton-header" />
+          <div className="skeleton-body" />
         </div>
       </div>
     );
   }
 
-  if (user === null) {
-    return <div>{t(L, 'set.cuenta.debes_iniciar_sesion')}</div>;
-  }
+  // ── Perfil ──────────────────────────────────────────────────────────────
+  const [firstName, setFirstName] = useState(user.firstName || '');
+  const [lastName, setLastName] = useState(user.lastName || '');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(user.imageUrl || '');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const primaryEmail = user.emailAddresses?.[0]?.emailAddress || '';
-  const isGoogleConnected = user.externalAccounts.some(acc => acc.verification?.status === 'verified' && acc.provider === 'google');
-  const googleAccount = user.externalAccounts.find(acc => acc.provider === 'google');
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 1_000_000) { toast('La foto pesa más de 1 MB. Usa una imagen más ligera.', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = String(reader.result);
+      setAvatarPreview(dataUrl);
+      try {
+        const res = await fetch('/api/account/profile', {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatarUrl: dataUrl }),
+        });
+        if (!res.ok) throw new Error();
+        toast('Foto actualizada');
+      } catch { toast('No se pudo actualizar la foto', 'error'); }
+    };
+    reader.readAsDataURL(f);
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    try {
+      const res = await fetch('/api/account/profile', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firstName, lastName }),
+      });
+      if (!res.ok) throw new Error();
+      setUser({ ...user, firstName, lastName, fullName: `${firstName} ${lastName}`.trim() });
+      toast('Perfil actualizado');
+    } catch { toast('No se pudo guardar', 'error'); }
+    setSavingProfile(false);
+  };
+
+  // ── Contraseña ──────────────────────────────────────────────────────────
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 8) { toast('La contraseña debe tener al menos 8 caracteres.', 'error'); return; }
+    if (newPassword !== confirmPassword) { toast('Las contraseñas no coinciden.', 'error'); return; }
+    setSavingPassword(true);
+    try {
+      const res = await fetch('/api/account/password', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error === 'wrong_password' ? 'La contraseña actual no es correcta.' : 'No se pudo cambiar la contraseña.');
+      setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
+      setUser({ ...user, hasPassword: true });
+      toast('Contraseña actualizada. Cerramos tus otras sesiones por seguridad.');
+    } catch (err: any) { toast(err.message || 'Error', 'error'); }
+    setSavingPassword(false);
+  };
+
+  // ── 2FA ─────────────────────────────────────────────────────────────────
+  const [totpSetup, setTotpSetup] = useState<{ secret: string; qrSvg: string } | null>(null);
+  const [totpCode, setTotpCode] = useState('');
+  const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
+  const [totpBusy, setTotpBusy] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<'disable' | 'regen' | null>(null);
+  const [confirmValue, setConfirmValue] = useState('');
+
+  const startTotpSetup = async () => {
+    setTotpBusy(true);
+    try {
+      const res = await fetch('/api/account/2fa/start', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error');
+      setTotpSetup({ secret: data.secret, qrSvg: data.qrSvg });
+    } catch { toast('No se pudo iniciar la activación de 2FA', 'error'); }
+    setTotpBusy(false);
+  };
+
+  const verifyTotp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTotpBusy(true);
+    try {
+      const res = await fetch('/api/account/2fa/verify', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: totpCode }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error === 'invalid_code' ? 'Código incorrecto.' : 'No se pudo activar 2FA.');
+      setBackupCodes(data.backupCodes);
+      setTotpSetup(null);
+      setTotpCode('');
+      setUser({ ...user, totpEnabled: true });
+      toast('2FA activada');
+    } catch (err: any) { toast(err.message || 'Error', 'error'); }
+    setTotpBusy(false);
+  };
+
+  const submitConfirmAction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!confirmAction) return;
+    setTotpBusy(true);
+    const payload = user.hasPassword ? { password: confirmValue } : { code: confirmValue };
+    try {
+      const endpoint = confirmAction === 'disable' ? '/api/account/2fa/disable' : '/api/account/2fa/backup-codes';
+      const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error === 'confirmation_required' ? 'No pudimos confirmar tu identidad.' : 'Error');
+      if (confirmAction === 'disable') {
+        setUser({ ...user, totpEnabled: false });
+        toast('2FA desactivada');
+      } else {
+        setBackupCodes(data.backupCodes);
+        toast('Códigos de respaldo regenerados');
+      }
+      setConfirmAction(null); setConfirmValue('');
+    } catch (err: any) { toast(err.message || 'Error', 'error'); }
+    setTotpBusy(false);
+  };
+
+  // ── Passkeys ────────────────────────────────────────────────────────────
+  const [passkeys, setPasskeys] = useState<PasskeyRow[]>([]);
+  const [passkeysLoaded, setPasskeysLoaded] = useState(false);
+  const [addingPasskey, setAddingPasskey] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/account/passkeys').then((r) => r.json()).then((d) => { setPasskeys(d.passkeys || []); setPasskeysLoaded(true); }).catch(() => setPasskeysLoaded(true));
+  }, []);
+
+  const createPasskey = async () => {
+    setAddingPasskey(true);
+    try {
+      const optRes = await fetch('/api/auth/passkeys/register-options', { method: 'POST' });
+      const options = await optRes.json();
+      if (!optRes.ok) throw new Error(options.error || 'Error al iniciar');
+      const attResp = await startRegistration(options);
+      const verifyRes = await fetch('/api/auth/passkeys/register', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(attResp),
+      });
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok) throw new Error(verifyData.error || 'No se pudo registrar la clave');
+      const listRes = await fetch('/api/account/passkeys');
+      const listData = await listRes.json();
+      setPasskeys(listData.passkeys || []);
+      toast('Clave de acceso agregada');
+    } catch (err: any) {
+      if (err.name !== 'NotAllowedError') toast(err.message || 'Error al agregar la clave', 'error');
+    }
+    setAddingPasskey(false);
+  };
+
+  const deletePasskey = async (id: string) => {
+    const ok = await ((window as any).cordConfirm
+      ? (window as any).cordConfirm({ title: 'Eliminar clave de acceso', body: '¿Seguro? Ya no podrás usar este dispositivo para entrar.', danger: true, confirmText: 'Eliminar' })
+      : Promise.resolve(confirm('¿Eliminar esta clave de acceso?')));
+    if (!ok) return;
+    try {
+      const res = await fetch(`/api/account/passkeys/${id}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error === 'last_auth_method' ? 'Es tu único método de acceso — agrega otro antes de quitar este.' : 'Error');
+      setPasskeys((prev) => prev.filter((p) => p.id !== id));
+      toast('Clave de acceso eliminada');
+    } catch (err: any) { toast(err.message || 'Error', 'error'); }
+  };
+
+  // ── Sesiones ────────────────────────────────────────────────────────────
+  const [sessions, setSessions] = useState<SessionRow[]>([]);
+  const [sessionsLoaded, setSessionsLoaded] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/account/sessions').then((r) => r.json()).then((d) => { setSessions(d.sessions || []); setSessionsLoaded(true); }).catch(() => setSessionsLoaded(true));
+  }, []);
+
+  const revokeSession = async (id: string, isCurrent: boolean) => {
+    if (isCurrent) {
+      const ok = await ((window as any).cordConfirm
+        ? (window as any).cordConfirm({ title: 'Cerrar esta sesión', body: 'Es la sesión que estás usando ahora mismo — se cerrará tu acceso.', danger: true, confirmText: 'Cerrar sesión' })
+        : Promise.resolve(confirm('¿Cerrar tu sesión actual?')));
+      if (!ok) return;
+    }
+    try {
+      const res = await fetch('/api/account/sessions', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+      if (!res.ok) throw new Error();
+      if (isCurrent) { window.location.href = '/sign-in'; return; }
+      setSessions((prev) => prev.filter((s) => s.id !== id));
+      toast('Sesión cerrada');
+    } catch { toast('No se pudo cerrar la sesión', 'error'); }
+  };
+
+  const revokeAllOtherSessions = async () => {
+    const ok = await ((window as any).cordConfirm
+      ? (window as any).cordConfirm({ title: 'Cerrar todas las demás sesiones', body: 'Cualquier otro dispositivo con tu sesión abierta tendrá que iniciar sesión de nuevo.', confirmText: 'Cerrar todas' })
+      : Promise.resolve(confirm('¿Cerrar todas las demás sesiones?')));
+    if (!ok) return;
+    try {
+      const res = await fetch('/api/account/sessions', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+      if (!res.ok) throw new Error();
+      setSessions((prev) => prev.filter((s) => s.current));
+      toast('Se cerraron las demás sesiones');
+    } catch { toast('Error al cerrar sesiones', 'error'); }
+  };
+
+  // ── Cuentas conectadas ──────────────────────────────────────────────────
+  const disconnectProvider = async (provider: string) => {
+    const ok = await ((window as any).cordConfirm
+      ? (window as any).cordConfirm({ title: `Desconectar ${provider === 'google' ? 'Google' : 'Apple'}`, body: 'Ya no podrás entrar con esta cuenta.', danger: true, confirmText: 'Desconectar' })
+      : Promise.resolve(confirm('¿Desconectar esta cuenta?')));
+    if (!ok) return;
+    try {
+      const res = await fetch(`/api/account/connections/${provider}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error === 'last_auth_method' ? 'Es tu único método de acceso — agrega una contraseña o clave de acceso antes de desconectar.' : 'Error');
+      setUser({ ...user, connections: user.connections.filter((c) => c.provider !== provider) });
+      toast('Cuenta desconectada');
+    } catch (err: any) { toast(err.message || 'Error', 'error'); }
+  };
+
+  const googleConn = user.connections.find((c) => c.provider === 'google');
+  const appleConn = user.connections.find((c) => c.provider === 'apple');
+  const email = user.emailAddresses?.[0]?.emailAddress || '';
 
   return (
     <div className="cup-wrapper">
-      
-      {/* SECCIÓN DE PERFIL */}
-      <div className="cup-section">
+      {/* ── Perfil ── */}
+      <section className="cup-section">
         <div className="cup-section-header">
-          <h3 className="cup-section-title">{t(L, 'set.cuenta.perfil_titulo')}</h3>
-          <p className="cup-section-desc">{t(L, 'set.cuenta.perfil_desc')}</p>
+          <h3 className="cup-section-title">Perfil</h3>
+          <p className="cup-section-desc">Tu nombre y foto, visibles para tu equipo.</p>
         </div>
         <div className="cup-section-body">
           <div className="cup-avatar-row">
             <div className="avatar-wrapper" onClick={() => fileInputRef.current?.click()}>
-              <img src={user.imageUrl} alt="Avatar" className="cup-avatar" />
+              {avatarPreview ? (
+                <img src={avatarPreview} alt={user.fullName} className="cup-avatar" />
+              ) : (
+                <div className="cup-avatar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg-soft)', fontWeight: 700, color: 'var(--color-text-muted)' }}>
+                  {(user.firstName || email).charAt(0).toUpperCase()}
+                </div>
+              )}
               <div className="avatar-overlay">
-                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="17 8 12 3 7 8"></polyline>
-                  <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
               </div>
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: 'none' }} />
             </div>
-            <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept="image/*" onChange={handleAvatarChange} />
             <div className="cup-avatar-info">
-              <h4>{user.fullName || t(L, 'set.cuenta.usuario')}</h4>
-              <p>{primaryEmail}</p>
+              <h4>{user.fullName}</h4>
+              <p>{email}{!user.emailVerified && ' · sin verificar'}</p>
             </div>
           </div>
 
           <form onSubmit={handleUpdateProfile} className="cup-form-container">
             <div className="cup-form-row">
               <div className="cup-group">
-                <label className="s-field" htmlFor="firstName">{t(L, 'set.cuenta.nombre')}</label>
-                <input
-                  id="firstName"
-                  className="s-input"
-                  value={firstName}
-                  onChange={e => setFirstName(e.target.value)}
-                  placeholder={t(L, 'set.cuenta.nombre_ph')}
-                />
+                <label className="s-field">Nombre</label>
+                <input className="s-input" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
               </div>
               <div className="cup-group">
-                <label className="s-field" htmlFor="lastName">{t(L, 'set.cuenta.apellidos')}</label>
-                <input
-                  id="lastName"
-                  className="s-input"
-                  value={lastName}
-                  onChange={e => setLastName(e.target.value)}
-                  placeholder={t(L, 'set.cuenta.apellidos_ph')}
-                />
+                <label className="s-field">Apellido</label>
+                <input className="s-input" value={lastName} onChange={(e) => setLastName(e.target.value)} />
               </div>
             </div>
-
-            <div className="cup-group" style={{ marginTop: '1.25rem' }}>
-              <label className="s-field">{t(L, 'set.cuenta.correo_principal')}</label>
-              <input
-                className="s-input"
-                value={primaryEmail}
-                disabled
-              />
-            </div>
-
-            {profileStatus && (
-              <div className={`cup-status ${profileStatus.type}`}>
-                {profileStatus.message}
-              </div>
-            )}
-
             <div className="cup-actions">
-              <button
-                type="submit"
-                className="cup-btn-primary"
-                disabled={isSavingProfile || (firstName === user.firstName && lastName === user.lastName)}
-              >
-                {isSavingProfile ? t(L, 'set.cuenta.guardando') : t(L, 'set.cuenta.guardar_cambios')}
-              </button>
+              <button type="submit" className="cup-btn-primary" disabled={savingProfile}>{savingProfile ? 'Guardando…' : 'Guardar cambios'}</button>
             </div>
           </form>
         </div>
-      </div>
+      </section>
 
-      {/* SECCIÓN DE SEGURIDAD */}
-      <div className="cup-section">
+      {/* ── Contraseña ── */}
+      <section className="cup-section">
         <div className="cup-section-header">
-          <h3 className="cup-section-title">{t(L, 'set.cuenta.contrasena_titulo')}</h3>
-          <p className="cup-section-desc">{t(L, 'set.cuenta.contrasena_desc')}</p>
+          <h3 className="cup-section-title">Contraseña</h3>
+          <p className="cup-section-desc">{user.hasPassword ? 'Cambia tu contraseña de acceso.' : 'Todavía no tienes contraseña — entras con Google/Apple. Puedes crear una.'}</p>
         </div>
         <div className="cup-section-body">
           <form onSubmit={handleUpdatePassword} className="cup-form-container">
-            <div className="cup-form-row">
+            {user.hasPassword && (
               <div className="cup-group">
-                <label className="s-field" htmlFor="currentPassword">{t(L, 'set.cuenta.contrasena_actual')}</label>
-                <input
-                  id="currentPassword"
-                  type="password"
-                  className="s-input"
-                  value={currentPassword}
-                  onChange={e => setCurrentPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                />
-              </div>
-              <div className="cup-group">
-                <label className="s-field" htmlFor="newPassword">{t(L, 'set.cuenta.contrasena_nueva')}</label>
-                <input
-                  id="newPassword"
-                  type="password"
-                  className="s-input"
-                  value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
-                  placeholder={t(L, 'set.cuenta.contrasena_nueva_ph')}
-                  required
-                  minLength={8}
-                />
-              </div>
-            </div>
-
-            {securityStatus && (
-              <div className={`cup-status ${securityStatus.type}`}>
-                {securityStatus.message}
+                <label className="s-field">Contraseña actual</label>
+                <input className="s-input" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} autoComplete="current-password" />
               </div>
             )}
-
+            <div className="cup-form-row">
+              <div className="cup-group">
+                <label className="s-field">Nueva contraseña</label>
+                <input className="s-input" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoComplete="new-password" minLength={8} />
+              </div>
+              <div className="cup-group">
+                <label className="s-field">Confirmar</label>
+                <input className="s-input" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} autoComplete="new-password" minLength={8} />
+              </div>
+            </div>
             <div className="cup-actions">
-              <button
-                type="submit"
-                className="cup-btn-primary"
-                disabled={isSavingSecurity || !currentPassword || !newPassword}
-              >
-                {isSavingSecurity ? t(L, 'set.cuenta.actualizando') : t(L, 'set.cuenta.actualizar_contrasena')}
-              </button>
+              <button type="submit" className="cup-btn-primary" disabled={savingPassword}>{savingPassword ? 'Guardando…' : (user.hasPassword ? 'Actualizar contraseña' : 'Crear contraseña')}</button>
             </div>
           </form>
         </div>
-      </div>
+      </section>
 
-      {/* 2FA y Passkeys */}
-      <div className="cup-section">
+      {/* ── 2FA ── */}
+      <section className="cup-section">
         <div className="cup-section-header">
-          <h3 className="cup-section-title">{t(L, 'set.cuenta.2fa_titulo')}</h3>
-          <p className="cup-section-desc">{t(L, 'set.cuenta.2fa_desc')}</p>
+          <h3 className="cup-section-title">Autenticación de dos pasos</h3>
+          <p className="cup-section-desc">Un código adicional de tu teléfono al iniciar sesión.</p>
         </div>
         <div className="cup-section-body">
           <div className="cup-security-block">
             <div className="cup-security-block-header">
-              <h4>{t(L, 'set.cuenta.2fa_totp_titulo')}</h4>
-              {user.totpEnabled ? (
-                <span className="badge badge-success">{t(L, 'set.cuenta.habilitado')}</span>
-              ) : (
-                <span className="badge badge-inactive">{t(L, 'set.cuenta.inactivo')}</span>
-              )}
+              <h4>App de autenticación (TOTP)</h4>
+              <span className={`badge ${user.totpEnabled ? 'badge-success' : 'badge-inactive'}`}>{user.totpEnabled ? 'Activa' : 'Inactiva'}</span>
             </div>
 
-            {user.totpEnabled ? (
+            {!user.totpEnabled && !totpSetup && (
               <div className="cup-security-actions">
-                <button type="button" className="cup-btn-danger" onClick={disableTotp}>{t(L, 'set.cuenta.desactivar_2fa')}</button>
-              </div>
-            ) : totpSecret ? (
-              <div className="totp-setup">
-                <p>{t(L, 'set.cuenta.totp_setup_desc')}</p>
-                <div className="totp-secret-box">
-                   <span className="totp-secret-key">{totpSecret.secret}</span>
-                   <button type="button" className="cup-btn-secondary small" onClick={() => copyText(totpSecret.secret)}>{t(L, 'set.cuenta.copiar')}</button>
-                </div>
-                <form onSubmit={verifyTotp} className="totp-verify-form">
-                  <div className="cup-group">
-                    <label className="s-field">{t(L, 'set.cuenta.codigo_verificacion')}</label>
-                    <input type="text" className="s-input" value={totpCode} onChange={e => setTotpCode(e.target.value)} placeholder="000000" maxLength={6} required />
-                  </div>
-                  <button type="submit" className="cup-btn-primary" disabled={isEnablingTotp}>{t(L, 'set.cuenta.verificar_habilitar')}</button>
-                </form>
-              </div>
-            ) : (
-              <div className="cup-security-actions">
-                <button type="button" className="cup-btn-secondary" onClick={startTotpSetup}>{t(L, 'set.cuenta.configurar_2fa')}</button>
+                <button className="cup-btn-secondary" onClick={startTotpSetup} disabled={totpBusy}>Activar 2FA</button>
               </div>
             )}
 
-            {backupCodes && backupCodes.length > 0 && (
+            {totpSetup && (
+              <div className="totp-setup">
+                <p>Escanea este código con Google Authenticator, 1Password o tu app preferida.</p>
+                {totpSetup.qrSvg && <div style={{ width: 180, margin: '0 auto 1rem' }} dangerouslySetInnerHTML={{ __html: totpSetup.qrSvg }} />}
+                <div className="totp-secret-box">
+                  <span className="totp-secret-key">{totpSetup.secret}</span>
+                  <button type="button" className="cup-btn-secondary small" onClick={() => { navigator.clipboard.writeText(totpSetup.secret); toast('Secreto copiado'); }}>Copiar</button>
+                </div>
+                <form onSubmit={verifyTotp} className="totp-verify-form">
+                  <div className="cup-group" style={{ flex: 1 }}>
+                    <label className="s-field">Código de 6 dígitos</label>
+                    <input className="s-input" value={totpCode} onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" maxLength={6} />
+                  </div>
+                  <button type="submit" className="cup-btn-primary" disabled={totpBusy || totpCode.length < 6}>Confirmar</button>
+                </form>
+              </div>
+            )}
+
+            {backupCodes && (
               <div className="totp-backup">
                 <div className="totp-backup-head">
-                  <strong>{t(L, 'set.cuenta.guarda_codigos_respaldo')}</strong>
-                  <button type="button" className="cup-btn-secondary small" onClick={() => copyText(backupCodes.join('\n'))}>{t(L, 'set.cuenta.copiar_todos')}</button>
+                  <strong>Tus códigos de respaldo</strong>
+                  <button type="button" className="cup-btn-secondary small" onClick={() => { navigator.clipboard.writeText(backupCodes.join('\n')); toast('Códigos copiados'); }}>Copiar todos</button>
                 </div>
-                <p>{t(L, 'set.cuenta.codigos_respaldo_desc')}</p>
+                <p>Guárdalos en un lugar seguro — no se volverán a mostrar. Cada uno funciona una sola vez si pierdes tu teléfono.</p>
                 <div className="totp-backup-grid">
                   {backupCodes.map((c) => <code key={c}>{c}</code>)}
                 </div>
-                <button type="button" className="cup-btn-secondary small" style={{ marginTop: '0.75rem' }} onClick={() => setBackupCodes(null)}>{t(L, 'set.cuenta.ya_los_guarde')}</button>
+                <div className="cup-actions" style={{ marginTop: '1rem' }}>
+                  <button className="cup-btn-primary" onClick={() => setBackupCodes(null)}>Ya los guardé</button>
+                </div>
               </div>
             )}
 
-            {totpStatus && (
-              <div className={`cup-status ${totpStatus.type}`}>
-                {totpStatus.message}
+            {user.totpEnabled && !backupCodes && (
+              <div className="cup-security-actions" style={{ display: 'flex', gap: '0.75rem' }}>
+                <button className="cup-btn-secondary" onClick={() => { setConfirmAction('regen'); setConfirmValue(''); }}>Regenerar códigos de respaldo</button>
+                <button className="cup-btn-danger" onClick={() => { setConfirmAction('disable'); setConfirmValue(''); }}>Desactivar 2FA</button>
               </div>
+            )}
+
+            {confirmAction && (
+              <form onSubmit={submitConfirmAction} className="totp-setup" style={{ marginTop: '1rem' }}>
+                <p>{user.hasPassword ? 'Confirma tu contraseña para continuar.' : 'Ingresa un código de tu app de autenticación para continuar.'}</p>
+                <div className="totp-verify-form">
+                  <div className="cup-group" style={{ flex: 1 }}>
+                    <input className="s-input" type={user.hasPassword ? 'password' : 'text'} value={confirmValue} onChange={(e) => setConfirmValue(e.target.value)} placeholder={user.hasPassword ? 'Contraseña actual' : 'Código de 6 dígitos'} />
+                  </div>
+                  <button type="submit" className="cup-btn-primary" disabled={totpBusy || !confirmValue}>Confirmar</button>
+                  <button type="button" className="cup-btn-secondary" onClick={() => setConfirmAction(null)}>Cancelar</button>
+                </div>
+              </form>
             )}
           </div>
 
+          {/* Passkeys */}
           <div className="cup-security-block">
             <div className="cup-security-block-header">
-              <h4>{t(L, 'set.cuenta.passkeys_titulo')}</h4>
-              <button type="button" className="cup-btn-secondary small" onClick={createPasskey}>{t(L, 'set.cuenta.agregar_passkey')}</button>
+              <h4>Claves de acceso (Passkeys)</h4>
+              <button className="cup-btn-secondary small" onClick={createPasskey} disabled={addingPasskey}>{addingPasskey ? 'Agregando…' : '+ Agregar'}</button>
             </div>
-            <p className="cup-section-desc">{t(L, 'set.cuenta.passkeys_desc')}</p>
-
-            {user.passkeys && user.passkeys.length > 0 && (
+            {passkeysLoaded && passkeys.length === 0 && <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: '0.5rem 0 0' }}>No tienes claves de acceso registradas.</p>}
+            {passkeys.length > 0 && (
               <ul className="cup-list">
-                {user.passkeys.map(pk => (
-                  <li key={pk.id} className="cup-list-item">
-                    <span>{tf('set.cuenta.passkey_creado', { fecha: new Date(pk.createdAt).toLocaleDateString() })}</span>
-                    <button type="button" className="cup-btn-danger-text" onClick={() => deletePasskey(pk)}>{t(L, 'set.cuenta.eliminar')}</button>
+                {passkeys.map((p) => (
+                  <li key={p.id} className="cup-list-item">
+                    <div className="cup-account-info">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><circle cx="12" cy="11" r="3" /></svg>
+                      {p.name || deviceLabel(p.deviceType)} · agregada el {fmtDate(p.createdAt, locale)}
+                    </div>
+                    <button className="cup-btn-danger-text" onClick={() => deletePasskey(p.id)}>Eliminar</button>
                   </li>
                 ))}
               </ul>
             )}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Cuentas conectadas */}
-      <div className="cup-section">
+      {/* ── Sesiones ── */}
+      <section className="cup-section">
         <div className="cup-section-header">
-          <h3 className="cup-section-title">{t(L, 'set.cuenta.cuentas_conectadas_titulo')}</h3>
-          <p className="cup-section-desc">{t(L, 'set.cuenta.cuentas_conectadas_desc')}</p>
+          <h3 className="cup-section-title">Sesiones activas</h3>
+          <p className="cup-section-desc">Dispositivos donde tu cuenta tiene una sesión abierta.</p>
         </div>
         <div className="cup-section-body">
-           <ul className="cup-list">
-              <li className="cup-list-item">
-                <div className="cup-account-info">
-                  <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="google-icon">
-                    <path d="M22 12c0-.85-.08-1.68-.21-2.48H12v4.86h5.73a5.53 5.53 0 0 1-2.4 3.63v3.01h3.87C21.46 19.03 22 15.82 22 12z"></path>
-                    <path d="M12 22c2.81 0 5.17-.93 6.9-2.52l-3.87-3.01c-.93.63-2.12 1.01-3.03 1.01-2.33 0-4.31-1.57-5.01-3.69H2.98v3.13C4.75 20.37 8.08 22 12 22z"></path>
-                    <path d="M6.99 13.79c-.18-.54-.28-1.12-.28-1.72s.1-1.18.28-1.72V7.22H2.98C2.36 8.46 2 9.87 2 11.39s.36 2.93.98 4.17l4.01-3.13z"></path>
-                    <path d="M12 5.38c1.53 0 2.9.53 3.99 1.57l2.99-2.99C17.17 2.1 14.81 1.15 12 1.15 8.08 1.15 4.75 2.78 2.98 6.03L6.99 9.16C7.69 7.04 9.67 5.38 12 5.38z"></path>
-                  </svg>
-                  <span>Google</span>
-                </div>
-                {isGoogleConnected ? (
-                  <button type="button" className="cup-btn-danger-text" onClick={() => disconnectAccount(googleAccount)}>{t(L, 'set.cuenta.desconectar')}</button>
-                ) : (
-                  <button type="button" className="cup-btn-secondary small" onClick={() => connectAccount('oauth_google')}>{t(L, 'set.cuenta.conectar')}</button>
-                )}
-              </li>
-           </ul>
-        </div>
-      </div>
-
-      {/* SECCIÓN DE SESIONES ACTIVAS */}
-      <div className="cup-section">
-        <div className="cup-section-header">
-          <h3 className="cup-section-title">{t(L, 'set.cuenta.sesiones_titulo')}</h3>
-          <p className="cup-section-desc">{t(L, 'set.cuenta.sesiones_desc')}</p>
-        </div>
-        <div className="cup-section-body">
-          <div className="cup-session-list">
-            {sessions?.map((session: any) => {
-              const isCurrent = clerk?.session?.id === session.id;
-              const browser = session.latestActivity?.deviceType || t(L, 'set.cuenta.dispositivo');
-              const location = session.latestActivity?.city ? `${session.latestActivity.city}, ${session.latestActivity.country}` : t(L, 'set.cuenta.ubicacion_desconocida');
-              const date = new Date(session.lastActiveAt).toLocaleDateString(L === 'en' ? 'en-US' : 'es-MX', {
-                year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-              });
-
-              return (
-                <div key={session.id} className="cup-session-item">
+          {sessionsLoaded && sessions.length === 0 && <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>No hay sesiones activas.</p>}
+          {sessions.length > 0 && (
+            <div className="cup-session-list">
+              {sessions.map((s) => (
+                <div key={s.id} className="cup-session-item">
                   <div className="cup-session-info">
                     <div className="cup-session-device">
-                      {browser} · {location}
-                      {isCurrent && <span className="cup-session-current">{t(L, 'set.cuenta.sesion_actual')}</span>}
+                      {deviceLabel(s.userAgent)}
+                      {s.current && <span className="cup-session-current">Esta sesión</span>}
                     </div>
-                    <div className="cup-session-meta">
-                      {tf('set.cuenta.activo_ultima_vez', { fecha: date })}
-                    </div>
+                    <div className="cup-session-meta">{s.ip || 'IP desconocida'} · última actividad {fmtDate(s.lastUsedAt, locale)}</div>
                   </div>
-                  {!isCurrent && (
-                    <button
-                      type="button"
-                      className="cup-btn-danger"
-                      onClick={() => handleRevokeSession(session.id)}
-                      title={t(L, 'set.cuenta.cerrar_sesion_dispositivo')}
-                    >
-                      {t(L, 'set.cuenta.revocar')}
-                    </button>
-                  )}
+                  <button className="cup-btn-danger-text" onClick={() => revokeSession(s.id, s.current)}>{s.current ? 'Cerrar sesión' : 'Revocar'}</button>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
+          {sessions.filter((s) => !s.current).length > 0 && (
+            <div className="cup-actions">
+              <button className="cup-btn-secondary" onClick={revokeAllOtherSessions}>Cerrar todas las demás</button>
+            </div>
+          )}
         </div>
-      </div>
+      </section>
 
+      {/* ── Cuentas conectadas ── */}
+      <section className="cup-section">
+        <div className="cup-section-header">
+          <h3 className="cup-section-title">Cuentas conectadas</h3>
+          <p className="cup-section-desc">Inicia sesión con estas cuentas además de tu contraseña.</p>
+        </div>
+        <div className="cup-section-body">
+          <ul className="cup-list">
+            <li className="cup-list-item">
+              <div className="cup-account-info">
+                <svg viewBox="0 0 24 24" width="18" height="18"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>
+                Google {googleConn ? `· ${googleConn.email || 'conectado'}` : '· no conectado'}
+              </div>
+              {googleConn ? <button className="cup-btn-danger-text" onClick={() => disconnectProvider('google')}>Desconectar</button> : <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Conecta desde /sign-in</span>}
+            </li>
+            <li className="cup-list-item">
+              <div className="cup-account-info">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" /></svg>
+                Apple {appleConn ? `· ${appleConn.email || 'conectado'}` : '· no conectado'}
+              </div>
+              {appleConn ? <button className="cup-btn-danger-text" onClick={() => disconnectProvider('apple')}>Desconectar</button> : <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Conecta desde /sign-in</span>}
+            </li>
+          </ul>
+        </div>
+      </section>
     </div>
   );
 }

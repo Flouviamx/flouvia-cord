@@ -1,24 +1,28 @@
 import type { APIRoute } from 'astro';
 import { generateAuthenticationOptions } from '@simplewebauthn/server';
+import { rateLimit, tooMany } from '../../../../lib/ratelimit';
+import { trustedIp } from '../../../../lib/ip';
 
 export const prerender = false;
 
 const rpID = import.meta.env.PROD ? 'cordhq.app' : 'localhost';
 
-export const POST: APIRoute = async ({ cookies }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
   try {
+    const rl = await rateLimit(`passkey-auth-opts:${trustedIp(request)}`, 30, 60);
+    if (!rl.ok) return tooMany(rl.retryAfter);
+
     const options = await generateAuthenticationOptions({
       rpID,
       userVerification: 'preferred',
     });
 
-    // Guardar el challenge temporalmente en una cookie segura
     cookies.set('passkey_auth_challenge', options.challenge, {
       httpOnly: true,
       secure: import.meta.env.PROD,
       sameSite: 'lax',
       path: '/',
-      maxAge: 300, // 5 minutos
+      maxAge: 300,
     });
 
     return new Response(JSON.stringify(options), { status: 200 });

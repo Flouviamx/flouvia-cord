@@ -2,9 +2,14 @@
 //
 //   node scripts/set-plan.mjs --list                         (solo muestra las orgs)
 //   node scripts/set-plan.mjs --plan=developer --all          (todas las orgs)
-//   node scripts/set-plan.mjs --plan=developer --org=<id>     (uuid | clerk_user_id | clerk_org_id)
+//   node scripts/set-plan.mjs --plan=developer --org=<id>     (uuid de orgs.id u orgs.owner_id)
 //
 // Planes válidos: free | starter | pro | scale | developer
+//
+// ⚠️ Reescrito (ago 2026): usaba clerk_user_id/clerk_org_id, columnas que la
+// migración a auth propio (scripts/migrate-to-custom-auth.mjs) ya eliminó —
+// cada ejecución tronaba con "column does not exist". Ahora usa owner_id
+// (users.id, fuente de verdad post-migración).
 import { neon } from '@neondatabase/serverless';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -32,9 +37,9 @@ const has = (k) => args.includes(`--${k}`);
 const PLANES = ['free', 'starter', 'pro', 'scale', 'developer'];
 
 async function list() {
-  const orgs = await sql`select id, nombre, plan, clerk_user_id, clerk_org_id from orgs order by created_at`;
+  const orgs = await sql`select id, nombre, plan, owner_id from orgs order by created_at`;
   console.log('\nOrgs:');
-  for (const o of orgs) console.log(`  • ${o.id} | plan=${o.plan} | ${o.nombre} | clerk_user=${o.clerk_user_id || '—'} | clerk_org=${o.clerk_org_id || '—'}`);
+  for (const o of orgs) console.log(`  • ${o.id} | plan=${o.plan} | ${o.nombre} | owner=${o.owner_id || '—'}`);
   console.log('');
 }
 
@@ -51,7 +56,7 @@ async function list() {
     const org = arg('org');
     if (!org) { console.error('✗ Falta --org=<id> o --all'); process.exit(1); }
     rows = await sql`update orgs set plan = ${plan}
-      where id::text = ${org} or clerk_user_id = ${org} or clerk_org_id = ${org}
+      where id::text = ${org} or owner_id::text = ${org}
       returning nombre, plan`;
   }
   if (!rows.length) { console.error('✗ No se actualizó ninguna org (¿selector correcto?).'); process.exit(1); }

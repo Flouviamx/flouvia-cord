@@ -1,6 +1,7 @@
 ---
-// src/pages/sm-banners.astro
 import StripeBannerBg from '../components/StripeBannerBg.jsx';
+import CordDynamicBg from '../components/CordDynamicBg.jsx';
+import '../styles/mockups.css';
 ---
 
 <!DOCTYPE html>
@@ -15,17 +16,57 @@ import StripeBannerBg from '../components/StripeBannerBg.jsx';
       margin: 0; padding: 0; width: 100%; height: 100%; 
       background-color: #050a15; 
       font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+      overflow-x: hidden;
     }
     
-    .gallery-container {
+    .page-container {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 120px;
-      padding: 80px 20px;
-      overflow-y: auto;
-      height: 100vh;
+      padding: 80px 0 120px 0;
+      width: 100%;
+    }
+
+    .category-block {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .category-label {
+      color: rgba(255,255,255,0.9);
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      margin-bottom: 30px;
+      width: 1200px;
+      text-align: left;
+    }
+
+    .variants-carousel {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
+      align-items: center;
+      gap: 40px;
+      overflow-x: auto;
+      width: 100vw;
+      padding: 20px max(20px, calc(50vw - 600px));
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
       box-sizing: border-box;
+    }
+    
+    .variants-carousel::-webkit-scrollbar { display: none; }
+    .variants-carousel { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .carousel-slide {
+      scroll-snap-align: center;
+      flex-shrink: 0;
+      position: relative;
     }
 
     .banner-wrapper {
@@ -35,166 +76,693 @@ import StripeBannerBg from '../components/StripeBannerBg.jsx';
       border-radius: 12px; 
       overflow: hidden;
       box-shadow: 0 40px 80px rgba(0,0,0,0.6);
-      flex-shrink: 0;
       background-color: #0a192f;
+      flex-shrink: 0;
     }
 
-    .banner-label {
-      position: absolute;
-      top: -40px; left: 0;
-      color: #94a3b8; font-size: 15px; font-weight: 500;
-      letter-spacing: 0.02em;
+    .variant-pill {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.9);
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 500;
     }
-
-    /* --- LinkedIn Mockup Styles --- */
-    .connection-lines { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
-    .connection-lines path { stroke: rgba(255,255,255,0.3); stroke-width: 1.5px; fill: none; stroke-linecap: round; }
-    .connection-lines circle { fill: rgba(255,255,255,1); box-shadow: 0 0 10px rgba(255,255,255,0.5); }
-    
-    .source-node {
-      position: absolute; top: 50%; left: 240px; transform: translate(-50%, -50%);
-      width: 120px; height: 120px; background: rgba(10, 25, 47, 0.6);
-      backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 50%; display: flex; align-items: center; justify-content: center;
-      z-index: 20; box-shadow: 0 0 80px rgba(255,255,255,0.05), inset 0 2px 10px rgba(255,255,255,0.1);
-    }
-    .pulse-ring { position: absolute; inset: -16px; border: 1px solid rgba(255,255,255,0.06); border-radius: 50%; }
-    .pulse-ring-2 { position: absolute; inset: -32px; border: 1px solid rgba(255,255,255,0.03); border-radius: 50%; }
-    
-    .cards-column {
-      position: absolute; right: 110px; top: 0; bottom: 0; display: flex; flex-direction: column;
-      justify-content: center; gap: 20px; z-index: 20; width: 300px;
-    }
-    .mock-panel {
-      width: 100%; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(24px);
-      border: 1px solid rgba(10,25,47,0.05); border-radius: 16px; padding: 16px;
-      box-shadow: 0 8px 32px -8px rgba(10,25,47,0.15), 0 2px 8px rgba(10,25,47,0.05), inset 0 1px 0 rgba(255,255,255,1);
-      color: #0a192f; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box;
-    }
-    .mock-header { display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
-    .icon-box { width: 28px; height: 28px; background: rgba(10,25,47,0.04); border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); }
-    .icon-box svg { width: 14px; height: 14px; color: #0a192f; stroke-width: 2; }
-    .mock-title { font-weight: 600; font-size: 14px; letter-spacing: -0.01em; }
-    .mock-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-top: 1px solid rgba(10,25,47,0.04); }
-    .row-label { font-size: 11.5px; color: #64748b; font-weight: 500; display: flex; align-items: center; gap: 6px; }
-    .row-pill { font-size: 10.5px; font-weight: 600; padding: 4px 10px; border-radius: 99px; background: rgba(10,25,47,0.05); color: #0a192f; font-variant-numeric: tabular-nums; }
-    .pill-green { background: rgba(16,185,129,0.12); color: #047857; }
-    .pill-blue { background: rgba(15, 63, 235, 0.1); color: #0F3FEB; }
-    .label-icon { width: 12px; height: 12px; color: #94a3b8; stroke-width: 2; }
     
     .footer-text {
-      position: absolute; bottom: 30px; left: 40px; color: rgba(255,255,255,0.6);
+      color: rgba(255,255,255,0.6);
       font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px;
-      z-index: 20; letter-spacing: 0.02em;
+      letter-spacing: 0.02em;
     }
   </style>
 </head>
 <body>
-  <div class="gallery-container">
+  
+  <div class="page-container">
     
-    <!-- 1. LinkedIn Feature Post -->
-    <div style="position: relative;">
-      <div class="banner-label">1. LinkedIn Feature Post (1200x630)</div>
-      <div class="banner-wrapper">
-        <StripeBannerBg client:only="react" />
-
-        <div class="footer-text">
-          <img src="/imgs/logo-cord-white.png" style="height: 14px; opacity: 0.8;" />
-          <span style="opacity: 0.4;">|</span>
-          Product Infrastructure
-        </div>
-
-        <div class="source-node">
-          <div class="pulse-ring"></div>
-          <div class="pulse-ring-2"></div>
-          <img src="/imgs/logo-cord-white.png" alt="Cord" style="width: 70px; height: auto; opacity: 0.95;" />
-        </div>
-
-        <svg class="connection-lines" viewBox="0 0 1200 630">
-          <path d="M 300 315 C 450 315, 550 155, 790 155" />
-          <circle cx="790" cy="155" r="3" />
-          <path d="M 300 315 L 790 315" />
-          <circle cx="790" cy="315" r="3" />
-          <path d="M 300 315 C 450 315, 550 475, 790 475" />
-          <circle cx="790" cy="475" r="3" />
-          <circle cx="300" cy="315" r="3" />
-        </svg>
-
-        <div class="cards-column">
-          <!-- Proposals -->
-          <div class="mock-panel">
-            <div class="mock-header">
-              <div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div>
-              <div class="mock-title">Proposals</div>
-            </div>
-            <div class="mock-row" style="border-top: none; padding-top: 0;">
-              <span class="row-label"><svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Workflow</span>
-              <span class="row-pill">Interactive</span>
-            </div>
-            <div class="mock-row">
-              <span class="row-label"><svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg> Rendering</span>
-              <span class="row-pill">Dynamic</span>
-            </div>
-            <div class="mock-row">
-              <span class="row-label"><svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg> Status</span>
-              <span class="row-pill pill-green">Issued</span>
+    <!-- Category 1: LinkedIn Banners (Carousel) -->
+    <div class="category-block">
+      <div class="category-label">1. Unified Sales Link Campaign (Swipe horizontal para ver variantes)</div>
+      
+      <div class="variants-carousel">
+        
+        <!-- 1. The Unified Link (Hero) -->
+        <div class="carousel-slide">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 0 10px;">
+            <div class="variant-pill">1. The Unified Link</div>
+            <div class="footer-text">
+              <img src="/imgs/logo-cord-white.png" style="height: 14px; opacity: 0.8;" />
+              <span style="opacity: 0.4;">|</span>
+              Product Infrastructure
             </div>
           </div>
+          <div class="banner-wrapper" style="background-color: #0A192F;">
+            <StripeBannerBg client:only="react" />
 
-          <!-- Signatures -->
-          <div class="mock-panel">
-            <div class="mock-header">
-              <div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></div>
-              <div class="mock-title">Contract Signatures</div>
-            </div>
-            <div class="mock-row" style="border-top: none; padding-top: 0;">
-              <span class="row-label"><svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg> Identity</span>
-              <span class="row-pill">Verified</span>
-            </div>
-            <div class="mock-row">
-              <span class="row-label"><svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg> Legal</span>
-              <span class="row-pill">Binding</span>
-            </div>
-            <div class="mock-row">
-              <span class="row-label"><svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg> Status</span>
-              <span class="row-pill pill-blue">Signed</span>
-            </div>
-          </div>
-
-          <!-- Invoices -->
-          <div class="mock-panel">
-            <div class="mock-header">
-              <div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg></div>
-              <div class="mock-title">Invoice Processing</div>
-            </div>
-            <div class="mock-row" style="border-top: none; padding-top: 0;">
-              <span class="row-label"><svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Latency</span>
-              <span class="row-pill">Zero</span>
-            </div>
-            <div class="mock-row">
-              <span class="row-label"><svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Payment</span>
-              <span class="row-pill">Auto</span>
-            </div>
-            <div class="mock-row">
-              <span class="row-label"><svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg> Status</span>
-              <span class="row-pill pill-green">Captured</span>
+            <!-- Mockup: App Quote Creator -->
+            <div class="cmk-stage">
+              <div style="display: flex; align-items: center; justify-content: center; height: 100%; position: relative; z-index: 10; padding: 40px;">
+                 <!-- Floating App Window -->
+                 <div style="width: 1040px; height: 580px; background: #ffffff; border-radius: 16px; box-shadow: 0 40px 100px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,1); border: 1px solid rgba(255,255,255,0.2); overflow: hidden; display: flex; font-family: 'Inter', sans-serif;">
+                    
+                    <!-- Sidebar -->
+                    <div style="width: 220px; background: #f8fafc; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; padding: 20px 16px;">
+                       <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 30px;">
+                          <div style="width: 32px; height: 32px; background: #0f172a; border-radius: 8px; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px;">P</div>
+                          <div>
+                            <div style="font-size: 10px; color: #64748b; font-weight: 600; text-transform: uppercase;">Espacio de trabajo</div>
+                            <div style="font-size: 13px; color: #0f172a; font-weight: 600;">PRUEBAS</div>
+                          </div>
+                       </div>
+                       
+                       <div style="display: flex; flex-direction: column; gap: 4px;">
+                          <div style="padding: 8px 12px; border-radius: 8px; color: #64748b; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px;">
+                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> Inicio
+                          </div>
+                          <div style="padding: 8px 12px; border-radius: 8px; background: rgba(15,23,42,0.05); color: #0f172a; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between;">
+                             <div style="display: flex; align-items: center; gap: 10px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Cotizaciones</div>
+                             <span style="background: #e2e8f0; color: #475569; padding: 2px 6px; border-radius: 99px; font-size: 11px;">1</span>
+                          </div>
+                          <div style="padding: 8px 12px; border-radius: 8px; color: #64748b; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px;">
+                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Clientes
+                          </div>
+                          <div style="padding: 8px 12px; border-radius: 8px; color: #64748b; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px;">
+                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg> Productos
+                          </div>
+                       </div>
+                    </div>
+                    
+                    <!-- Main Content -->
+                    <div style="flex: 1; display: flex; flex-direction: column; background: #ffffff;">
+                       <!-- Top Nav -->
+                       <div style="height: 60px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px;">
+                          <div style="background: #f1f5f9; padding: 8px 12px; border-radius: 8px; width: 280px; color: #94a3b8; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Buscar...
+                          </div>
+                          <div style="display: flex; align-items: center; gap: 16px;">
+                             <div style="background: #0f172a; color: white; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px;">+ Crear <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+                          </div>
+                       </div>
+                       
+                       <!-- Page Body -->
+                       <div style="flex: 1; display: flex; overflow: hidden;">
+                          <!-- Left Section (Form) -->
+                          <div style="flex: 1; padding: 32px 40px; overflow: hidden; display: flex; flex-direction: column;">
+                             <div style="color: #64748b; font-size: 12px; margin-bottom: 4px;">Cotizaciones / Nueva cotización</div>
+                             <h1 style="font-size: 24px; font-weight: 700; color: #0f172a; margin: 0 0 24px 0; letter-spacing: -0.02em;">Nueva cotización</h1>
+                             
+                             <!-- AI Box -->
+                             <div style="background: #0f172a; border-radius: 12px; padding: 24px; color: white; margin-bottom: 24px; box-shadow: 0 10px 25px rgba(15,23,42,0.15);">
+                                <div style="font-weight: 600; font-size: 15px; margin-bottom: 4px;">Arma la cotización con IA</div>
+                                <div style="color: #94a3b8; font-size: 13px; margin-bottom: 16px;">Pega el pedido del cliente o adjunta la foto/PDF de su orden de compra.</div>
+                                <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #cbd5e1; display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; height: 60px;">
+                                   <span style="opacity: 0.5;">Ej. Hola, necesito 200 sacos de cemento gris, 50 varillas de 3/8 y 2 m³ de arena. ¿Me pasas precio?</span>
+                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                                </div>
+                                <button style="background: white; color: #0f172a; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 600;">Armar cotización con IA</button>
+                             </div>
+                             
+                             <div style="text-align: center; color: #94a3b8; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 24px;">O CRÉALA MANUALMENTE</div>
+                             
+                             <!-- Steps -->
+                             <div style="display: flex; align-items: flex-start; gap: 16px; margin-bottom: 32px;">
+                                <div style="width: 24px; height: 24px; background: #0f172a; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0;">1</div>
+                                <div>
+                                   <div style="font-weight: 600; font-size: 15px; color: #0f172a; margin-bottom: 4px;">¿A quién le cotizas?</div>
+                                   <div style="color: #64748b; font-size: 13px; margin-bottom: 16px;">Elige el cliente y cómo te paga. Si tiene un nivel con descuento, se aplica solo a los precios.</div>
+                                   <div style="display: flex; gap: 12px; align-items: center;">
+                                      <div style="border: 1px solid #e2e8f0; padding: 8px 16px; border-radius: 8px; font-size: 13px; color: #64748b; display: flex; justify-content: space-between; width: 220px;">
+                                         <span>— Selecciona un cliente —</span>
+                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                      </div>
+                                      <div style="background: #0f172a; color: white; padding: 8px 16px; border-radius: 99px; font-size: 13px; font-weight: 500;">Contado</div>
+                                      <div style="color: #64748b; font-size: 13px; font-weight: 500;">Net 30</div>
+                                      <div style="color: #64748b; font-size: 13px; font-weight: 500;">Net 60</div>
+                                   </div>
+                                </div>
+                             </div>
+                          </div>
+                          
+                          <!-- Right Section (Summary) -->
+                          <div style="width: 280px; border-left: 1px solid #e2e8f0; padding: 32px 24px; background: #ffffff;">
+                             <div style="font-weight: 700; font-size: 16px; color: #0f172a; margin-bottom: 4px;">Revisa y envía</div>
+                             <div style="color: #64748b; font-size: 12px; margin-bottom: 24px;">Agrega productos para ver el total</div>
+                             
+                             <div style="display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 13px; color: #475569;">
+                                <span>Subtotal</span>
+                                <span style="font-weight: 600; color: #0f172a;">$0.00</span>
+                             </div>
+                             
+                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; font-size: 13px; color: #475569;">
+                                <span>Precios ya incluyen IVA</span>
+                                <div style="width: 32px; height: 18px; background: #e2e8f0; border-radius: 9px; position: relative;">
+                                   <div style="width: 14px; height: 14px; background: white; border-radius: 50%; position: absolute; left: 2px; top: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);"></div>
+                                </div>
+                             </div>
+                             
+                             <div style="display: flex; justify-content: space-between; margin-bottom: 24px; font-size: 13px; color: #475569;">
+                                <span>IVA 16%</span>
+                                <span style="font-weight: 600; color: #0f172a;">$0.00</span>
+                             </div>
+                             
+                             <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 32px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                                <span style="font-weight: 600; color: #0f172a;">Total</span>
+                                <span style="font-weight: 700; font-size: 24px; color: #0f172a; letter-spacing: -0.02em;">$0.00</span>
+                             </div>
+                             
+                             <div style="margin-bottom: 16px;">
+                                <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">Vigencia</div>
+                                <div style="border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 8px; font-size: 13px; color: #0f172a; display: flex; justify-content: space-between; background: #f8fafc;">
+                                   <span>30 días</span>
+                                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                </div>
+                             </div>
+                             
+                             <div style="margin-bottom: 24px;">
+                                <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">¿En qué moneda le cotizas?</div>
+                                <div style="border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 8px; font-size: 13px; color: #0f172a; display: flex; justify-content: space-between; background: #f8fafc;">
+                                   <span style="display: flex; align-items: center; gap: 8px;">🇲🇽 Pesos mexicanos (MXN)</span>
+                                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                </div>
+                             </div>
+                             
+                             <button style="width: 100%; background: #0f172a; color: white; border: none; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px;">
+                                Crear y enviar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
+                             </button>
+                             
+                             <button style="width: 100%; background: #f1f5f9; color: #0f172a; border: none; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center;">
+                                Guardar borrador
+                             </button>
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+              </div>
             </div>
           </div>
         </div>
+
+        <!-- 2. AI Drafting -->
+        <div class="carousel-slide">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 0 10px;">
+            <div class="variant-pill">2. AI Drafting in Seconds</div>
+            <div class="footer-text">
+              <img src="/imgs/logo-cord-white.png" style="height: 14px; opacity: 0.8;" />
+              <span style="opacity: 0.4;">|</span>
+              Product Infrastructure
+            </div>
+          </div>
+          <div class="banner-wrapper" style="background-color: #061F20;">
+            <CordDynamicBg 
+              client:only="react" 
+              colors={{ base: '#061F20', color1: '#10B981', color2: '#047857', color3: '#F59E0B' }} 
+              grain={false}
+            />
+
+            <!-- Mockup: Public Quote View -->
+            <div class="cmk-stage">
+              <div style="display: flex; align-items: center; justify-content: center; height: 100%; position: relative; z-index: 10; padding: 20px;">
+                 <div style="width: 720px; height: 550px; background: #ffffff; border-radius: 24px; box-shadow: 0 40px 100px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,1); display: flex; flex-direction: column; overflow: hidden; position: relative;">
+                    
+                    <!-- Quote Content -->
+                    <div style="flex: 1; padding: 40px 60px; overflow: hidden;">
+                       <!-- Header -->
+                       <div style="display: flex; justify-content: space-between; margin-bottom: 40px;">
+                          <div style="display: flex; gap: 16px; align-items: center;">
+                             <div style="width: 48px; height: 48px; background: #0f172a; border-radius: 12px; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px;">MN</div>
+                             <div>
+                                <div style="font-size: 18px; font-weight: 700; color: #0f172a;">Mi negocio</div>
+                                <div style="font-size: 12px; color: #94a3b8; font-weight: 500;">RFC MNEG890101XYZ</div>
+                             </div>
+                          </div>
+                          <div style="text-align: right;">
+                             <div style="font-size: 10px; font-weight: 700; color: #94a3b8; letter-spacing: 0.1em; margin-bottom: 4px;">COTIZACIÓN</div>
+                             <div style="font-size: 16px; font-weight: 700; color: #0f172a;">COT-0004</div>
+                          </div>
+                       </div>
+                       
+                       <!-- Details -->
+                       <div style="display: flex; justify-content: space-between; margin-bottom: 32px; font-size: 13px;">
+                          <div>
+                             <div style="font-size: 10px; font-weight: 700; color: #cbd5e1; letter-spacing: 0.1em; margin-bottom: 4px;">PARA</div>
+                             <div style="font-weight: 700; color: #0f172a; font-size: 14px;">Desarrollos Inmobiliarios Polanco</div>
+                          </div>
+                          <div>
+                             <div style="font-size: 10px; font-weight: 700; color: #cbd5e1; letter-spacing: 0.1em; margin-bottom: 4px;">VÁLIDA HASTA</div>
+                             <div style="font-weight: 700; color: #0f172a; font-size: 14px; margin-bottom: 4px;">12 jul 2026</div>
+                             <div style="display: inline-block; background: #fffbeb; color: #d97706; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px;">Vence en 2 días</div>
+                          </div>
+                          <div>
+                             <div style="font-size: 10px; font-weight: 700; color: #cbd5e1; letter-spacing: 0.1em; margin-bottom: 4px;">TÉRMINOS</div>
+                             <div style="font-weight: 700; color: #0f172a; font-size: 14px;">Contado</div>
+                          </div>
+                       </div>
+                       
+                       <!-- Big Total -->
+                       <div style="background: #f8fafc; border-radius: 16px; border: 1px solid #f1f5f9; padding: 32px; text-align: center; margin-bottom: 24px;">
+                          <div style="font-size: 10px; font-weight: 700; color: #94a3b8; letter-spacing: 0.1em; margin-bottom: 12px;">TOTAL A PAGAR</div>
+                          <div style="font-size: 52px; font-weight: 700; color: #0f172a; letter-spacing: -0.04em; line-height: 1; margin-bottom: 12px;">$34,232.76</div>
+                          <div style="font-size: 12px; font-weight: 500; color: #94a3b8;">MXN · IVA incluido</div>
+                       </div>
+                       
+                       <!-- Table Headers -->
+                       <div style="display: flex; font-size: 10px; font-weight: 700; color: #cbd5e1; letter-spacing: 0.1em; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; margin-bottom: 8px;">
+                          <div style="flex: 2;">Concepto</div>
+                          <div style="width: 80px; text-align: right;">Cant.</div>
+                          <div style="width: 100px; text-align: right;">P. Unit.</div>
+                          <div style="width: 120px; text-align: right;">Importe</div>
+                       </div>
+                       
+                       <!-- Table Rows -->
+                       <div style="display: flex; align-items: center; font-size: 14px; padding: 12px 0; border-bottom: 1px solid #f8fafc;">
+                          <div style="width: 24px;"><div style="width: 16px; height: 16px; background: #0f172a; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg></div></div>
+                          <div style="flex: 2; font-weight: 600; color: #0f172a; display: flex; align-items: center; gap: 8px;">Arena Fina (Metro Cúbico) <div style="font-size: 11px; font-weight: 500; color: #94a3b8; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 4px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> 2</div></div>
+                          <div style="width: 80px; text-align: right; color: #94a3b8; font-size: 13px;">11 pieza</div>
+                          <div style="width: 100px; text-align: right; color: #64748b; font-weight: 500;">$445.00</div>
+                          <div style="width: 120px; text-align: right; font-weight: 700; color: #0f172a;">$4,895.00</div>
+                       </div>
+                       
+                       <div style="display: flex; align-items: center; font-size: 14px; padding: 12px 0; border-bottom: 1px solid #f8fafc;">
+                          <div style="width: 24px;"><div style="width: 16px; height: 16px; background: #0f172a; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg></div></div>
+                          <div style="flex: 2; font-weight: 600; color: #0f172a; display: flex; align-items: center; gap: 8px;">Bomba de Agua Periférica 1/2 HP <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
+                          <div style="width: 80px; text-align: right; color: #94a3b8; font-size: 13px;">17 pieza</div>
+                          <div style="width: 100px; text-align: right; color: #64748b; font-weight: 500;">$848.00</div>
+                          <div style="width: 120px; text-align: right; font-weight: 700; color: #0f172a;">$14,416.00</div>
+                       </div>
+                       
+                       <!-- Fade out bottom so it looks long -->
+                       <div style="position: absolute; bottom: 80px; left: 0; right: 0; height: 80px; background: linear-gradient(to bottom, rgba(255,255,255,0), #ffffff);"></div>
+                    </div>
+                    
+                    <!-- Sticky Bottom Bar -->
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 88px; background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); border-top: 1px solid #f1f5f9; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 -10px 40px rgba(0,0,0,0.03); z-index: 20;">
+                       <div>
+                          <div style="font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 2px;">Total a pagar</div>
+                          <div style="font-size: 20px; font-weight: 700; color: #0f172a; letter-spacing: -0.02em;">$34,232.76</div>
+                       </div>
+                       <div style="background: #0f172a; color: white; padding: 14px 28px; border-radius: 12px; font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; box-shadow: 0 10px 25px rgba(15,23,42,0.2);">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Aprobar
+                       </div>
+                    </div>
+                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Live Tracking & Approvals -->
+        <div class="carousel-slide">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 0 10px;">
+            <div class="variant-pill">3. One-Click Approvals</div>
+            <div class="footer-text">
+              <img src="/imgs/logo-cord-white.png" style="height: 14px; opacity: 0.8;" />
+              <span style="opacity: 0.4;">|</span>
+              Product Infrastructure
+            </div>
+          </div>
+          <div class="banner-wrapper" style="background-color: #0F172A;">
+            <CordDynamicBg 
+              client:only="react" 
+              colors={{ base: '#0F172A', color1: '#38BDF8', color2: '#6670F4', color3: '#10B981' }} 
+              grain={false}
+            />
+
+            <!-- Mockup: Client Approval View -->
+            <div class="cmk-stage stripe-fg-card">
+              <div class="cmk-shot" style="top: 80px; left: 80px; width: 1040px; height: 600px; box-shadow: 0 40px 100px rgba(0,0,0,0.6);">
+                <div class="cmk-nav">
+                  <div class="cmk-nav-l">
+                    <div class="cmk-brand-dot">Ac</div>
+                    <div>
+                       <div class="cmk-nav-title">Acme Corp Enterprise</div>
+                       <div class="cmk-nav-sub">Propuesta Comercial · Q3</div>
+                    </div>
+                  </div>
+                  <div class="cmk-badge cmk-b-green"><div class="cmk-dot cmk-dot-green"></div> Client Viewing Now</div>
+                </div>
+                
+                <div class="cmk-body" style="padding-top: 40px; display: flex; gap: 40px;">
+                   <div style="flex: 2;">
+                      <div class="cmk-eyebrow">Document Status</div>
+                      <div class="cmk-rule" style="margin-top: 16px;">
+                         <div style="display: flex; gap: 16px; align-items: flex-start;">
+                            <div style="width: 24px; height: 24px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"></path></svg></div>
+                            <div>
+                              <div style="font-weight: 700; font-size: 14px; color: #0f172a;">Identity Verified</div>
+                              <div class="cmk-rule-line">Jane Doe (jane@acmecorp.com) authenticated via work email.</div>
+                            </div>
+                         </div>
+                      </div>
+                      <div class="cmk-rule">
+                         <div style="display: flex; gap: 16px; align-items: flex-start;">
+                            <div style="width: 24px; height: 24px; border-radius: 50%; background: #3b82f6; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></div>
+                            <div>
+                              <div style="font-weight: 700; font-size: 14px; color: #0f172a;">Legally Binding</div>
+                              <div class="cmk-rule-line">Compliant with ESIGN Act and local electronic signature laws.</div>
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+                   
+                   <div style="flex: 1; background: #f8fafc; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: center;">
+                      <div style="text-align: center; margin-bottom: 24px;">
+                         <div class="cmk-big-sub">Total a pagar</div>
+                         <div class="cmk-big">$6,150.00</div>
+                      </div>
+                      <button style="width: 100%; padding: 16px; background: linear-gradient(180deg, #1e293b, #0f172a); color: white; border: none; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(15,23,42,0.15); cursor: pointer; transition: transform 0.2s;">Approve & Sign</button>
+                      <div style="text-align: center; font-size: 11px; color: #64748b; margin-top: 12px;">By clicking, you agree to the Terms of Service.</div>
+                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Automated Billing -->
+        <div class="carousel-slide">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 0 10px;">
+            <div class="variant-pill">4. Automated Billing</div>
+            <div class="footer-text">
+              <img src="/imgs/logo-cord-white.png" style="height: 14px; opacity: 0.8;" />
+              <span style="opacity: 0.4;">|</span>
+              Product Infrastructure
+            </div>
+          </div>
+          <div class="banner-wrapper" style="background-color: #1E1B4B;">
+            <CordDynamicBg 
+              client:only="react" 
+              colors={{ base: '#1E1B4B', color1: '#6366F1', color2: '#8B5CF6', color3: '#D946EF' }} 
+              grain={false}
+            />
+
+            <!-- Mockup: Dashboard Metrics -->
+            <div class="cmk-stage stripe-fg-card">
+              <div class="cmk-shot" style="top: 80px; left: 80px; width: 1040px; height: 600px; box-shadow: 0 40px 100px rgba(0,0,0,0.4);">
+                <div class="cmk-nav">
+                  <div class="cmk-nav-l">
+                    <div class="cmk-nav-ic" style="background: linear-gradient(135deg, #10b981, #047857);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+                    <div>
+                       <div class="cmk-nav-title">Collections & Cash Flow</div>
+                       <div class="cmk-nav-sub">Real-time revenue capture</div>
+                    </div>
+                  </div>
+                  <div class="cmk-seg">
+                    <span class="on">Monthly</span>
+                    <span>Quarterly</span>
+                  </div>
+                </div>
+                
+                <div class="cmk-body" style="padding-top: 30px;">
+                   <div class="cmk-kpis">
+                     <div class="cmk-kpi-card">
+                       <div class="cmk-kpi-l">Collected (MTD)</div>
+                       <div class="cmk-kpi-v">$42,500.00 <span class="cmk-up">12%</span></div>
+                     </div>
+                     <div class="cmk-kpi-card">
+                       <div class="cmk-kpi-l">Pending Invoices</div>
+                       <div class="cmk-kpi-v">$8,200.00 <span class="cmk-down">3%</span></div>
+                     </div>
+                     <div class="cmk-kpi-card">
+                       <div class="cmk-kpi-l">Auto-Billed</div>
+                       <div class="cmk-kpi-v">94% <span class="cmk-up">1.5%</span></div>
+                     </div>
+                   </div>
+                   
+                   <div class="cmk-divider" style="margin: 30px 0;"></div>
+                   
+                   <div style="display: flex; gap: 40px; align-items: stretch;">
+                     <div style="flex: 2;">
+                        <div class="cmk-eyebrow">Revenue Forecast</div>
+                        <div class="cmk-bars">
+                          <div class="cmk-bar" style="height: 40%;"></div>
+                          <div class="cmk-bar" style="height: 55%;"></div>
+                          <div class="cmk-bar" style="height: 35%;"></div>
+                          <div class="cmk-bar" style="height: 70%;"></div>
+                          <div class="cmk-bar on" style="height: 90%;"><div class="cmk-bar-tooltip">Projected: $65k</div></div>
+                          <div class="cmk-bar" style="height: 85%;"></div>
+                        </div>
+                     </div>
+                     
+                     <div style="flex: 1;">
+                        <div class="cmk-fx" style="height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center;">
+                          <div class="cmk-fx-leg" style="text-align: left;">
+                            <div class="cmk-fx-cur">PAYMENT CAPTURED</div>
+                            <div class="cmk-fx-val" style="color: #10b981;">+$6,150.00</div>
+                            <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 8px;">Invoice CFD-1042 generated via Facturapi</div>
+                          </div>
+                        </div>
+                     </div>
+                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Scale to Entire Operation -->
+        <div class="carousel-slide">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 0 10px;">
+            <div class="variant-pill">5. Scale Operations</div>
+            <div class="footer-text">
+              <img src="/imgs/logo-cord-white.png" style="height: 14px; opacity: 0.8;" />
+              <span style="opacity: 0.4;">|</span>
+              Product Infrastructure
+            </div>
+          </div>
+          <div class="banner-wrapper" style="background-color: #38BDF8;">
+            <CordDynamicBg 
+              client:only="react" 
+              colors={{ base: '#38BDF8', color1: '#60A5FA', color2: '#FDE68A', color3: '#34D399' }} 
+              grain={false}
+            />
+
+            <!-- Mockup: Internal Quote Dashboard -->
+            <div class="cmk-stage">
+              <div style="display: flex; align-items: center; justify-content: center; height: 100%; position: relative; z-index: 10;">
+                 <div style="width: 1080px; height: 560px; background: #ffffff; border-radius: 20px; box-shadow: 0 40px 100px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,1); display: flex; overflow: hidden; position: relative;">
+                    
+                    <!-- Left Sidebar -->
+                    <div style="width: 220px; background: #f8fafc; border-right: 1px solid #f1f5f9; padding: 24px 16px; display: flex; flex-direction: column;">
+                       <div style="margin-bottom: 24px; padding: 0 8px;">
+                          <img src="/imgs/logo-cord-navy.png" style="height: 16px;" />
+                       </div>
+                       
+                       <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; margin-bottom: 24px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                          <span style="color: #94a3b8; font-size: 13px; flex: 1;">Buscar</span>
+                          <span style="background: #f1f5f9; padding: 2px 4px; border-radius: 4px; font-size: 10px; color: #64748b; font-weight: 600;">⌘K</span>
+                       </div>
+                       
+                       <div style="flex: 1; display: flex; flex-direction: column; gap: 24px;">
+                          <!-- Nav Group -->
+                          <div>
+                             <div style="font-size: 10px; font-weight: 700; color: #94a3b8; letter-spacing: 0.1em; padding: 0 8px; margin-bottom: 8px;">PRINCIPAL</div>
+                             <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; color: #64748b; font-size: 13px; font-weight: 500;">
+                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> Inicio
+                                </div>
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px; border-radius: 8px; background: white; color: #0f172a; font-size: 13px; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
+                                   <div style="display: flex; align-items: center; gap: 10px;">
+                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Cotizaciones
+                                   </div>
+                                   <div style="background: #e0e7ff; color: #4338ca; font-size: 11px; padding: 2px 6px; border-radius: 100px;">3</div>
+                                </div>
+                             </div>
+                          </div>
+                          
+                          <!-- Nav Group -->
+                          <div>
+                             <div style="font-size: 10px; font-weight: 700; color: #94a3b8; letter-spacing: 0.1em; padding: 0 8px; margin-bottom: 8px;">CLIENTES Y PRODUCTOS</div>
+                             <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; color: #64748b; font-size: 13px; font-weight: 500;">
+                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Clientes
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; color: #64748b; font-size: 13px; font-weight: 500;">
+                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg> Productos
+                                </div>
+                             </div>
+                          </div>
+                          
+                          <!-- Nav Group -->
+                          <div>
+                             <div style="font-size: 10px; font-weight: 700; color: #94a3b8; letter-spacing: 0.1em; padding: 0 8px; margin-bottom: 8px;">MI DINERO</div>
+                             <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; color: #64748b; font-size: 13px; font-weight: 500;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg> Cobranza
+                             </div>
+                          </div>
+                       </div>
+                       
+                       <div style="display: flex; align-items: center; gap: 12px; margin-top: auto; padding: 8px;">
+                          <div style="width: 32px; height: 32px; background: #0f172a; border-radius: 8px; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px;">MV</div>
+                          <div style="font-size: 13px; font-weight: 600; color: #0f172a;">Materiales del Valle</div>
+                       </div>
+                    </div>
+                    
+                    <!-- Main Area -->
+                    <div style="flex: 1; padding: 40px; display: flex; flex-direction: column;">
+                       <div style="font-size: 12px; font-weight: 500; color: #94a3b8; margin-bottom: 8px;">Cotizaciones <span style="color: #cbd5e1; margin: 0 4px;">/</span> <span style="color: #64748b;">COT-0148</span></div>
+                       
+                       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                          <div style="font-size: 28px; font-weight: 700; color: #0f172a; letter-spacing: -0.02em;">COT-0148</div>
+                          <div style="display: flex; gap: 8px; align-items: center;">
+                             <div style="width: 32px; height: 32px; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #64748b;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></div>
+                             <div style="width: 32px; height: 32px; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #64748b;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></div>
+                             <div style="background: #fff7ed; border: 1px solid #ffedd5; color: #c2410c; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                                <div style="width: 8px; height: 8px; background: #f97316; border-radius: 50%;"></div> Vista
+                             </div>
+                          </div>
+                       </div>
+                       
+                       <div style="font-size: 15px; color: #64748b; margin-bottom: 32px;">Distribuidora El Zarco · Net 30</div>
+                       
+                       <!-- Timeline Progress -->
+                       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; position: relative;">
+                          <div style="position: absolute; top: 12px; left: 12px; right: 12px; height: 2px; background: #f1f5f9; z-index: 0;"></div>
+                          
+                          <div style="display: flex; flex-direction: column; gap: 8px; align-items: center; position: relative; z-index: 1; background: white; padding: 0 8px;">
+                             <div style="width: 24px; height: 24px; background: #ecfdf5; border: 2px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><div style="width: 10px; height: 10px; background: #10b981; border-radius: 50%;"></div></div>
+                             <div style="font-size: 12px; font-weight: 600; color: #0f172a;">Creada</div>
+                          </div>
+                          
+                          <div style="display: flex; flex-direction: column; gap: 8px; align-items: center; position: relative; z-index: 1; background: white; padding: 0 8px;">
+                             <div style="width: 24px; height: 24px; background: #ecfdf5; border: 2px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><div style="width: 10px; height: 10px; background: #10b981; border-radius: 50%;"></div></div>
+                             <div style="font-size: 12px; font-weight: 600; color: #0f172a;">Enviada</div>
+                          </div>
+                          
+                          <div style="display: flex; flex-direction: column; gap: 8px; align-items: center; position: relative; z-index: 1; background: white; padding: 0 8px;">
+                             <div style="width: 24px; height: 24px; background: #ecfdf5; border: 2px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><div style="width: 10px; height: 10px; background: #10b981; border-radius: 50%;"></div></div>
+                             <div style="font-size: 12px; font-weight: 600; color: #0f172a;">Vista</div>
+                          </div>
+                          
+                          <div style="display: flex; flex-direction: column; gap: 8px; align-items: center; position: relative; z-index: 1; background: white; padding: 0 8px;">
+                             <div style="width: 24px; height: 24px; background: #f1f5f9; border: 2px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><div style="width: 10px; height: 10px; background: #cbd5e1; border-radius: 50%;"></div></div>
+                             <div style="font-size: 12px; font-weight: 500; color: #94a3b8;">Aprobada</div>
+                          </div>
+                       </div>
+                       
+                       <!-- Table -->
+                       <div style="flex: 1;">
+                          <div style="display: flex; font-size: 10px; font-weight: 700; color: #94a3b8; letter-spacing: 0.1em; padding-bottom: 12px; border-bottom: 2px solid #f1f5f9; margin-bottom: 8px;">
+                             <div style="flex: 2;">PRODUCTO</div>
+                             <div style="width: 60px; text-align: right;">CANT.</div>
+                             <div style="width: 100px; text-align: right;">NEGOCIADO</div>
+                             <div style="width: 120px; text-align: right;">IMPORTE</div>
+                          </div>
+                          
+                          <div style="display: flex; padding: 16px 0; border-bottom: 1px solid #f8fafc;">
+                             <div style="flex: 2;">
+                                <div style="font-size: 14px; font-weight: 600; color: #334155; margin-bottom: 2px;">Cemento gris 50kg</div>
+                                <div style="font-size: 11px; color: #94a3b8;">SKU CEM-050</div>
+                             </div>
+                             <div style="width: 60px; text-align: right; color: #64748b; font-size: 13px; margin-top: 2px;">120</div>
+                             <div style="width: 100px; text-align: right; color: #334155; font-size: 13px; font-weight: 600; margin-top: 2px;">$182.00</div>
+                             <div style="width: 120px; text-align: right; font-weight: 700; color: #334155; font-size: 14px; margin-top: 2px;">$21,840.00</div>
+                          </div>
+                          
+                          <div style="display: flex; padding: 16px 0; border-bottom: 1px solid #f8fafc;">
+                             <div style="flex: 2;">
+                                <div style="font-size: 14px; font-weight: 600; color: #334155; margin-bottom: 2px;">Varilla 3/8" x 12m</div>
+                                <div style="font-size: 11px; color: #10b981; font-weight: 500;">Precio por volumen (300+)</div>
+                             </div>
+                             <div style="width: 60px; text-align: right; color: #64748b; font-size: 13px; margin-top: 2px;">340</div>
+                             <div style="width: 100px; text-align: right; color: #334155; font-size: 13px; font-weight: 600; margin-top: 2px;">$168.50</div>
+                             <div style="width: 120px; text-align: right; font-weight: 700; color: #334155; font-size: 14px; margin-top: 2px;">$57,290.00</div>
+                          </div>
+                          
+                          <div style="display: flex; padding: 16px 0; border-bottom: 1px solid #f8fafc;">
+                             <div style="flex: 2;">
+                                <div style="font-size: 14px; font-weight: 600; color: #334155; margin-bottom: 2px;">Block hueco 15x20x40</div>
+                                <div style="font-size: 11px; color: #94a3b8;">SKU BLK-1520</div>
+                             </div>
+                             <div style="width: 60px; text-align: right; color: #64748b; font-size: 13px; margin-top: 2px;">2,400</div>
+                             <div style="width: 100px; text-align: right; color: #334155; font-size: 13px; font-weight: 600; margin-top: 2px;">$14.20</div>
+                             <div style="width: 120px; text-align: right; font-weight: 700; color: #334155; font-size: 14px; margin-top: 2px;">$34,080.00</div>
+                          </div>
+                          
+                          <div style="display: flex; padding: 16px 0; border-bottom: 1px solid #f8fafc;">
+                             <div style="flex: 2;">
+                                <div style="font-size: 14px; font-weight: 600; color: #334155; margin-bottom: 2px;">Malla electrosoldada</div>
+                                <div style="font-size: 11px; color: #94a3b8;">SKU MLL-066</div>
+                             </div>
+                             <div style="width: 60px; text-align: right; color: #64748b; font-size: 13px; margin-top: 2px;">180</div>
+                             <div style="width: 100px; text-align: right; color: #334155; font-size: 13px; font-weight: 600; margin-top: 2px;">$312.00</div>
+                             <div style="width: 120px; text-align: right; font-weight: 700; color: #334155; font-size: 14px; margin-top: 2px;">$56,160.00</div>
+                          </div>
+                       </div>
+                       
+                       <div style="margin-left: auto; width: 320px; margin-top: 24px;">
+                          <div style="display: flex; justify-content: space-between; font-size: 14px; color: #64748b; margin-bottom: 8px;">
+                             <div>Subtotal</div>
+                             <div style="font-weight: 600; color: #0f172a;">$169,370.00</div>
+                          </div>
+                          <div style="display: flex; justify-content: space-between; font-size: 14px; color: #64748b; margin-bottom: 20px;">
+                             <div>IVA 16%</div>
+                             <div style="font-weight: 600; color: #0f172a;">$27,099.20</div>
+                          </div>
+                          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+                             <div style="font-weight: 700; color: #0f172a; font-size: 16px;">Total</div>
+                             <div style="font-weight: 700; color: #0f172a; font-size: 24px; letter-spacing: -0.02em;">$196,469.20</div>
+                          </div>
+                       </div>
+                    </div>
+                    
+                    <!-- Right Sidebar -->
+                    <div style="width: 260px; border-left: 1px solid #f1f5f9; padding: 32px 24px; background: white;">
+                       <div style="font-size: 10px; font-weight: 700; color: #94a3b8; letter-spacing: 0.1em; margin-bottom: 32px;">ACTIVIDAD</div>
+                       
+                       <div style="position: relative;">
+                          <!-- Vertical line -->
+                          <div style="position: absolute; left: 5px; top: 8px; bottom: 8px; width: 2px; background: #f1f5f9; z-index: 0;"></div>
+                          
+                          <div style="display: flex; gap: 16px; margin-bottom: 32px; position: relative; z-index: 1;">
+                             <div style="width: 12px; height: 12px; background: white; border: 2px solid #e2e8f0; border-radius: 50%; margin-top: 4px; box-shadow: 0 0 0 4px white;"></div>
+                             <div style="opacity: 0.4;">
+                                <div style="font-weight: 600; font-size: 13px; color: #334155;">Cotización aprobada</div>
+                                <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">hace un momento</div>
+                             </div>
+                          </div>
+                          
+                          <div style="display: flex; gap: 16px; margin-bottom: 32px; position: relative; z-index: 1;">
+                             <div style="width: 12px; height: 12px; background: #f97316; border-radius: 50%; margin-top: 4px; box-shadow: 0 0 0 4px white;"></div>
+                             <div>
+                                <div style="font-weight: 700; font-size: 13px; color: #0f172a;">Tu cliente la vio</div>
+                                <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">hace 3 min</div>
+                             </div>
+                          </div>
+                          
+                          <div style="display: flex; gap: 16px; margin-bottom: 32px; position: relative; z-index: 1;">
+                             <div style="width: 12px; height: 12px; background: #3b82f6; border-radius: 50%; margin-top: 4px; box-shadow: 0 0 0 4px white;"></div>
+                             <div>
+                                <div style="font-weight: 500; font-size: 13px; color: #334155;">Cotización enviada</div>
+                                <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">hoy, 11:02</div>
+                             </div>
+                          </div>
+                          
+                          <div style="display: flex; gap: 16px; position: relative; z-index: 1;">
+                             <div style="width: 12px; height: 12px; background: #cbd5e1; border-radius: 50%; margin-top: 4px; box-shadow: 0 0 0 4px white;"></div>
+                             <div>
+                                <div style="font-weight: 500; font-size: 13px; color: #334155;">Borrador creado</div>
+                                <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">hoy, 10:41</div>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+                    
+                    <!-- Floating Notification -->
+                    <div style="position: absolute; bottom: 32px; right: 32px; background: white; border-radius: 12px; padding: 16px 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; display: flex; align-items: center; gap: 12px; z-index: 20;">
+                       <div style="width: 10px; height: 10px; background: #10b981; border-radius: 50%;"></div>
+                       <div style="font-size: 14px; color: #334155;"><span style="font-weight: 700; color: #0f172a;">El Zarco</span> abrió tu cotización</div>
+                    </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
-
-    <!-- 2. Standard Stripe Banner -->
-    <div style="position: relative;">
-      <div class="banner-label">2. Standard Stripe Banner (1200x630)</div>
-      <div class="banner-wrapper">
-        <StripeBannerBg client:only="react" />
-        <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 10;">
-          <img src="/imgs/logo-cord-white.png" alt="Cord" style="width: 320px; height: auto;" />
-        </div>
-      </div>
-    </div>
-
   </div>
 </body>
 </html>

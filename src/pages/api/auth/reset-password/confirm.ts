@@ -1,58 +1,59 @@
-import type { APIRoute } from 'astro';
-import { sql } from '../../../../lib/db';
-// import * as argon2 from 'argon2';
-
+// POST /api/auth/reset-password/confirm — establece la contraseña nueva.
+//
+// Reescrito (ago 2026): la versión anterior escribía el literal 'dummy_hash'
+// como password_hash — cada reset completado dejaba la cuenta PERMANENTEMENTE
+// bloqueada (ningún password vuelve a verificar contra ese valor). Ahora
+// hashea de verdad con Argon2id.
 export const prerender = false;
 
+import type { APIRoute } from 'astro';
+import { sql } from '../../../../lib/db';
+import {
+    lookupPasswordResetToken,
+    consumePasswordResetToken,
+    hashPassword,
+    revokeAllSessions,
+    resetFailedLogins,
+} from '../../../../lib/auth';
+import { resetConfirmSchema, parseJsonBody } from '../../../../lib/validation';
+import { rateLimit, tooMany } from '../../../../lib/ratelimit';
+import { trustedIp } from '../../../../lib/ip';
+
 export const POST: APIRoute = async ({ request }) => {
-  try {
-    const { token, password } = await request.json();
-    
-    if (!token || !password || password.length < 8) {
-      return new Response(JSON.stringify({ error: 'Datos inválidos' }), { status: 400 });
+    const ip = trustedIp(request);
+    const rl = await rateLimit(`reset-confirm:${ip}`, 10, 60);
+    if (!rl.ok) return tooMany(rl.retryAfter);
+
+    const parsed = await parseJsonBody(request, resetConfirmSchema);
+    if (!parsed.ok) {
+        return new Response(JSON.stringify({ error: parsed.error }), { status: parsed.status });
     }
+    const { token, password } = parsed.data;
 
-    // 1. Buscar token en DB (y borrar los expirados para mantener limpia la BD)
-    await sql`delete from password_reset_tokens where expires_at < now()`;
+    try {
+        const userId = await lookupPasswordResetToken(token);
+        if (!userId) {
+            return new Response(JSON.stringify({ error: 'El enlace es inválido o ha expirado.' }), { status: 400 });
+        }
 
-    const rows = await sql`
-      select user_id, expires_at 
-      from password_reset_tokens 
-      where id = ${token}
-      limit 1
-    `;
+        const passwordHash = await hashPassword(password);
+        await sql`
+            update users
+            set password_hash = ${passwordHash}, password_changed_at = now(), updated_at = now()
+            where id = ${userId}
+        `;
 
-    if (rows.length === 0) {
-      return new Response(JSON.stringify({ error: 'El enlace es inválido o ha expirado.' }), { status: 400 });
+        // El reset es también una forma legítima de "desbloquear" la cuenta.
+        await resetFailedLogins(userId);
+        // Invalida TODAS las sesiones vivas — quien tenía acceso antes del
+        // reset (ej. un atacante con la contraseña vieja) queda fuera.
+        await revokeAllSessions(userId);
+        await consumePasswordResetToken(token);
+        await sql`delete from password_reset_tokens where user_id = ${userId}`;
+
+        return new Response(JSON.stringify({ success: true }), { status: 200 });
+    } catch (error) {
+        console.error('[reset/confirm]', error);
+        return new Response(JSON.stringify({ error: 'Ocurrió un error inesperado' }), { status: 500 });
     }
-
-    const { user_id, expires_at } = rows[0];
-
-    // Doble verificación por si la BD no limpió a tiempo
-    if (new Date(expires_at) < new Date()) {
-      return new Response(JSON.stringify({ error: 'El enlace es inválido o ha expirado.' }), { status: 400 });
-    }
-
-    // 2. Hash de la nueva contraseña
-    // const passwordHash = await argon2.hash(password);
-    const passwordHash = 'dummy_hash';
-
-    // 3. Actualizar contraseña del usuario y limpiar TODOS sus tokens
-    await sql`
-      update users 
-      set password_hash = ${passwordHash}, updated_at = now() 
-      where id = ${user_id}
-    `;
-
-    // 4. Invalida todas las sesiones activas del usuario (por seguridad)
-    await sql`delete from sessions where user_id = ${user_id}`;
-    
-    // 5. Borrar el token de reseteo usado (y cualquier otro que tenga pendiente)
-    await sql`delete from password_reset_tokens where user_id = ${user_id}`;
-
-    return new Response(JSON.stringify({ success: true }), { status: 200 });
-  } catch (error) {
-    console.error('[reset/confirm]', error);
-    return new Response(JSON.stringify({ error: 'Ocurrió un error inesperado' }), { status: 500 });
-  }
 };

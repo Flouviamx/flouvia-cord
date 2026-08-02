@@ -18,9 +18,9 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
+import { assertCronAuth } from '../../../lib/cron-auth';
 import { sql } from '../../../lib/db';
 
-const CRON_SECRET = import.meta.env.CRON_SECRET || process.env.CRON_SECRET;
 const BATCH = 5000;
 const MAX_BATCHES = 20; // techo por categoría por corrida (≤100k filas/día/categoría)
 
@@ -37,10 +37,8 @@ async function deleteBatched(query: (batch: number) => Promise<any[]>): Promise<
 }
 
 export const GET: APIRoute = async ({ request }) => {
-    if (CRON_SECRET) {
-        const auth = request.headers.get('authorization') || '';
-        if (auth !== `Bearer ${CRON_SECRET}`) return json({ error: 'No autorizado' }, 401);
-    }
+    const authError = assertCronAuth(request);
+    if (authError) return authError;
 
     // ── webhook_deliveries: > 30 días ──
     const deliveriesPorEdad = await deleteBatched((batch) => sql`

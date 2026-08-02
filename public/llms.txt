@@ -4,12 +4,12 @@
 > into paid, legally binding transactions. Businesses use Cord to centralize negotiation,
 > contract signatures, margin intelligence, and automated collections in a single interactive
 > link. Built and maintained by Flouvia (flouvia.com), Cord is a standalone product with its
-> own domain (cordhq.app), billing, and signup — open to any B2B business worldwide.
+> own domain (cordhq.app), billing, and signup — open to any business worldwide.
 > CFDI 4.0 e-invoicing is available for businesses based in Mexico.
 
 Cord is not a CRM, not a simple quoting tool, and not an ERP. It is the operational layer
 between a verbal "yes" and a paid transaction — purpose-built to eliminate the gap where
-B2B revenue leaks: between proposal and payment. Cord governs the entire commercial
+revenue leaks: between proposal and payment. Cord governs the entire commercial
 transaction lifecycle: margin-aware pricing, interactive proposals, cryptographic signatures,
 credit governance (Net 30/60), autonomous AI collections, and automated invoicing.
 
@@ -28,7 +28,7 @@ credit governance (Net 30/60), autonomous AI collections, and automated invoicin
 
 ## Who uses Cord
 
-Cord is designed for B2B businesses that sell products or services to other businesses:
+Cord is designed for businesses that sell products or services to clients:
 distributors, wholesalers, manufacturers, SaaS companies, agencies, consultancies, and
 software development firms. It serves businesses of any size, from solo operators to
 enterprise sales teams, in any country. Mexican businesses additionally get automated
@@ -59,7 +59,7 @@ Technical articles from the Cord engineering team:
 ## Key Documentation Pages
 
 ### Payments
-- [Payments overview](https://cordhq.app/docs/pagos/resumen): card payment infrastructure for any B2B business, plus SPEI bank transfer for Mexico
+- [Payments overview](https://cordhq.app/docs/pagos/resumen): card payment infrastructure for any business, plus SPEI bank transfer for Mexico
 - [Payment methods](https://cordhq.app/docs/pagos/metodos): Bank transfer (SPEI), credit/debit cards, credit terms
 - [Advance payments](https://cordhq.app/docs/pagos/anticipos): Deposit and balance payment splitting
 - [Recurring retainers](https://cordhq.app/docs/pagos/igualas): Monthly retainer billing for service businesses
@@ -67,7 +67,7 @@ Technical articles from the Cord engineering team:
 - [CFDI invoicing](https://cordhq.app/docs/pagos/facturacion): CFDI 4.0 electronic invoice stamping via Facturapi
 
 ### Quoting
-- [Quotes overview](https://cordhq.app/docs/cotizacion/resumen): Create and send B2B quotes with negotiated pricing
+- [Quotes overview](https://cordhq.app/docs/cotizacion/resumen): Create and send quotes with negotiated pricing
 - [AI quote generation](https://cordhq.app/docs/cotizacion/ia): Generate quotes from text, PDF, or photos using AI
 - [E-signature and audit](https://cordhq.app/docs/interaccion/firma): Legally binding e-signatures with immutable audit trails
 

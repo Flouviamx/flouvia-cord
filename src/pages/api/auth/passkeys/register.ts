@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { verifyRegistrationResponse } from '@simplewebauthn/server';
 import { sql } from '../../../../lib/db';
-import { validateSession } from '../../../../lib/auth';
+import { validateSession, SESSION_COOKIE } from '../../../../lib/auth';
 
 export const prerender = false;
 
@@ -10,12 +10,11 @@ const expectedOrigin = import.meta.env.PROD ? 'https://cordhq.app' : 'http://loc
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    const sessionId = cookies.get('cord_session')?.value;
-    if (!sessionId) {
+    const sessionToken = cookies.get(SESSION_COOKIE)?.value;
+    if (!sessionToken) {
       return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401 });
     }
-
-    const session = await validateSession(sessionId);
+    const session = await validateSession(sessionToken);
     if (!session) {
       return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401 });
     }
@@ -38,30 +37,32 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     } catch (error: any) {
       console.error('Error verificando registro:', error.message);
       return new Response(JSON.stringify({ error: error.message }), { status: 400 });
+    } finally {
+      // Challenge de un solo uso: se borra tanto en éxito como en fallo — un
+      // intento fallido no debe dejar un reto reutilizable vivo por 5 min más.
+      cookies.delete('passkey_challenge', { path: '/' });
     }
 
     const { verified, registrationInfo } = verification;
 
     if (verified && registrationInfo) {
-      const { credentialID, credentialPublicKey, counter, credentialDeviceType, credentialBackedUp } = registrationInfo;
-      
-      // Guardar en la base de datos
+      // @simplewebauthn/server v13: la credencial vive en registrationInfo.credential
+      // (id/publicKey/counter), NO en credentialID/credentialPublicKey planos como en v9.
+      const { credential, credentialDeviceType, credentialBackedUp } = registrationInfo;
+
       await sql`
         insert into passkeys (
           id, user_id, public_key, counter, device_type, backed_up, transports
         ) values (
-          ${credentialID}, 
-          ${session.userId}, 
-          ${Buffer.from(credentialPublicKey).toString('base64url')},
-          ${counter}, 
-          ${credentialDeviceType}, 
-          ${credentialBackedUp}, 
-          ${body.response.transports || []}
+          ${credential.id},
+          ${session.userId},
+          ${Buffer.from(credential.publicKey).toString('base64url')},
+          ${credential.counter},
+          ${credentialDeviceType},
+          ${credentialBackedUp},
+          ${credential.transports || body.response?.transports || []}
         )
       `;
-
-      // Limpiar el challenge
-      cookies.delete('passkey_challenge', { path: '/' });
 
       return new Response(JSON.stringify({ success: true }), { status: 200 });
     }

@@ -20,19 +20,17 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
+import { assertCronAuth } from '../../../lib/cron-auth';
 import { sql, logAudit } from '../../../lib/db';
 import { sendEmail, siteOrigin } from '../../../lib/email';
 
-const CRON_SECRET = import.meta.env.CRON_SECRET || process.env.CRON_SECRET;
 const DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
 const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n);
 
 export const GET: APIRoute = async ({ request }) => {
     // Auth del cron (si está configurado el secreto).
-    if (CRON_SECRET) {
-        const auth = request.headers.get('authorization') || '';
-        if (auth !== `Bearer ${CRON_SECRET}`) return json({ error: 'No autorizado' }, 401);
-    }
+    const authError = assertCronAuth(request);
+    if (authError) return authError;
 
     // Cartera viva de TODAS las orgs reales (una sola query; el volumen es bajo:
     // solo approved/invoiced con email y vencimiento próximo). Las orgs sandbox

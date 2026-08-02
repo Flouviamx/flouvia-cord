@@ -1,27 +1,37 @@
 ---
 // /unirse/[token] — landing de invitación. Pública: muestra a qué org te invitan.
 // Si hay sesión → botón "Unirme" (POST /api/equipo/join → /app). Si no → a login
-// con redirect_url de vuelta aquí. El token es el secreto (no requiere auth para leer).
+// con redirect_url de vuelta aquí. El token del LINK es el crudo; en BD solo
+// vive su sha256 (ver equipo.ts) — aquí se hashea antes de buscar.
 export const prerender = false;
 import Layout from '../../layouts/Layout.astro';
 import { sql } from '../../lib/db';
+import { currentUserId } from '../../lib/context';
+import { sha256Hex } from '../../lib/auth';
 
 const { token } = Astro.params;
 const path = `/unirse/${token}`;
-const auth = Astro.locals.auth?.();
-const signedIn = !!auth?.userId;
+// `Astro.locals.auth` era de Clerk — nunca existió en el auth propio (que
+// resuelve la sesión vía AsyncLocalStorage, no vía `Astro.locals`). Con el
+// residuo, esta condición SIEMPRE era falsa y el botón "Unirme" nunca se
+// mostraba a un usuario ya logueado.
+const signedIn = !!currentUserId();
 
-let invite: { nombre: string; rol: string; estado: string } | null = null;
+let invite: { nombre: string; rol: string; estado: string; expirado: boolean } | null = null;
 try {
+    const tokenHash = sha256Hex(token || '');
     const rows = await sql`
-        select o.nombre, m.rol, m.estado
+        select o.nombre, m.rol, m.estado, m.token_expires_at
         from org_members m join orgs o on o.id = m.org_id
-        where m.token = ${token}`;
-    if (rows.length) invite = { nombre: rows[0].nombre as string, rol: rows[0].rol as string, estado: rows[0].estado as string };
+        where m.token = ${tokenHash}`;
+    if (rows.length) {
+        const expirado = !!rows[0].token_expires_at && new Date(rows[0].token_expires_at as string) < new Date();
+        invite = { nombre: rows[0].nombre as string, rol: rows[0].rol as string, estado: rows[0].estado as string, expirado };
+    }
 } catch { /* tabla no migrada → invite null */ }
 
 const ROL_LABEL: Record<string, string> = { admin: 'Administrador', vendedor: 'Vendedor', lectura: 'Solo lectura', miembro: 'Personalizado' };
-const valido = invite && invite.estado !== 'revocado';
+const valido = invite && invite.estado !== 'revocado' && !invite.expirado;
 ---
 
 <Layout title="Invitación — Cord" noindex={true}>
@@ -52,8 +62,8 @@ const valido = invite && invite.estado !== 'revocado';
                         <>
                             <p class="join-sub">Inicia sesión o crea tu cuenta para aceptar.</p>
                             <div class="join-actions">
-                                <a href={`/login?redirect_url=${encodeURIComponent(path)}`} class="join-btn">Iniciar sesión</a>
-                                <a href={`/registro?redirect_url=${encodeURIComponent(path)}`} class="join-btn ghost">Crear cuenta gratis</a>
+                                <a href={`/sign-in?redirect_url=${encodeURIComponent(path)}`} class="join-btn">Iniciar sesión</a>
+                                <a href={`/sign-up?redirect_url=${encodeURIComponent(path)}`} class="join-btn ghost">Crear cuenta gratis</a>
                             </div>
                         </>
                     )}

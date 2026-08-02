@@ -24,17 +24,20 @@ owner = override total). Helpers en queries.ts: `getMembers`, `getMyMembership`,
 `/app/ajustes/equipo` → comparte `/unirse/{token}` → la persona inicia sesión
 (login/registro honran `?redirect_url=`) y acepta vía `/api/equipo/join`. **Gating:
 invitar requiere plan Negocio** (`planTieneEquipo`, hoy `['pro','business','negocio']`).
-Pendiente: org switcher (un usuario activo = 1 org),
-y migrar a Clerk Organizations nativo si se quiere SSO/switch nativo. (✅ Se completó ocultar los controles en el FRONT para no mostrar botones a usuarios sin el permiso adecuado). NOTA: el
-"approach Clerk Organizations" elegido se implementó como **membresía propia** porque
-habilitar Organizations es config del dashboard de Clerk (no codeable aquí); la
-identidad sigue siendo Clerk (userId), solo la membresía/permiso es nuestra.
+⚠️ **Doc drift corregido (ago 2026):** las líneas de arriba describen el approach viejo de
+"membresía propia sobre identidad de Clerk". Clerk ya no existe en el repo — la identidad
+(`users`, `sessions`) y el switcher de orgs (`cord_active_org` cookie, validado contra
+`org_members` en `resolveOrgId()`, `db.ts`) son 100% propios. Ver la entrada "Auditoría y
+endurecimiento completo del auth propio" en `historial-auth-clerk.md` para el detalle
+completo (Argon2id, 2FA/TOTP, passkeys v13, sesiones con sha256, `/api/orgs` reemplazando
+al `/api/orgs/provision` inseguro, invitaciones con token hasheado + expiración real).
 
 **Tablas** (`db/schema.sql`):
-- `orgs` — el negocio (nombre, logo, datos fiscales en `fiscal_metadata`, `country_code`, `quote_prefix`, plan, Stripe IDs, `clerk_org_id`). **`sandbox_of uuid`** (jul 2026, índice único parcial): si no es null, esta fila ES la org SANDBOX espejo de otra — ver "Entorno de prueba REAL tipo Stripe" en `historial.md`. `getActiveOrgId()` resuelve la sandbox del padre cuando la cookie `cord_test_mode` está activa (`resolveSandboxOrgId()` en `db.ts`, find-or-create idempotente).
+- `orgs` — el negocio (nombre, logo, datos fiscales en `fiscal_metadata`, `country_code`, `quote_prefix`, plan, Stripe IDs, `owner_id` → `users.id`, `parent_org_id` → sub-cuentas anidadas). **`sandbox_of uuid`** (jul 2026, índice único parcial): si no es null, esta fila ES la org SANDBOX espejo de otra — ver "Entorno de prueba REAL tipo Stripe" en `historial.md`. `getActiveOrgId()` resuelve la sandbox del padre cuando la cookie `cord_test_mode` está activa (`resolveSandboxOrgId()` en `db.ts`, find-or-create idempotente).
+- `users`/`sessions`/`oauth_accounts`/`passkeys`/`password_reset_tokens`/`email_verification_tokens`/`two_factor_challenges`/`ops_sessions` (ago 2026) — núcleo de auth propio. `sessions.id`/`password_reset_tokens.id`/`org_members.token`/`ops_sessions.id` guardan **sha256(token)**, nunca el valor crudo (que solo vive en la cookie/link, jamás se persiste). Ver detalle completo en `historial-auth-clerk.md`.
 - `productos` — catálogo de cada org
 - `clientes` — a quién se cotiza (con `terminos_default` y `limite_credito`)
-- `cotizaciones` — status `draft|sent|viewed|approved|rejected|expired|paid|invoiced` + `public_token` + `base_currency` y `fiscal_currency` para coberturas FX. `creado_por` (jul 2026, nullable) = clerk_user_id de quien la creó/duplicó — alimenta `/app/desempeno`.
+- `cotizaciones` — status `draft|sent|viewed|approved|rejected|expired|paid|invoiced` + `public_token` + `base_currency` y `fiscal_currency` para coberturas FX. `creado_por` (jul 2026, nullable) = `users.id` de quien la creó/duplicó — alimenta `/app/desempeno`.
 - `cotizacion_items` — líneas (permite línea libre sin producto; `precio_negociado` opcional)
 - `eventos` — timeline + "tu cliente vio la cotización" (**feature estrella**)
 - `documentos_fiscales` — registro global de emisiones fiscales por país (reemplaza a la tabla legado `facturas_cfdi`)
@@ -174,6 +177,26 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
                    sistema que /producto/*): api (terminal curl + JSON response) y
                    mcp (chat UI con tool call). Contenido en src/lib/desarrolladores.ts.
                    Enlazadas en el megamenú DESARROLLADORES del navbar.
+
+# Auth propio (ago 2026)
+/api/auth/{register,login,logout,login/2fa} → núcleo de sesión. PÚBLICOS (se
+                   auto-autentican) — ver PUBLIC_API_PREFIXES en middleware.ts.
+/api/auth/{google,apple}/{index,callback}   → OAuth con PKCE (Google) y JWKS
+                   real (Apple — verifyAppleIdToken en auth-apple.ts).
+/api/auth/passkeys/{register-options,register,auth-options,verify} → WebAuthn
+                   (@simplewebauthn/server v13).
+/api/auth/reset-password/{request,confirm}  → reset con token sha256, 15 min.
+/api/auth/verify-email/{request,confirm}    → verificación de correo BLOQUEANTE
+                   (register.ts ya no crea sesión hasta confirmar).
+/api/account/**  → INTERNOS (heredan el gate de sesión del middleware, a
+                   diferencia de /api/auth/). profile · password ·
+                   sessions (listar/revocar) · 2fa/{start,verify,disable,
+                   backup-codes} · passkeys (listar/[id] DELETE) ·
+                   connections/[provider] DELETE. Ver CustomUserProfile.tsx.
+/api/orgs        → POST crea una org (el servidor genera el id — reemplaza a
+                   /api/orgs/provision, que tenía un IDOR cross-tenant real).
+/api/equipo/resend → POST regenera el link de una invitación pendiente (rota
+                   el token; el crudo original no es recuperable, solo su hash).
 
 # API Pública (REST + MCP)
 /api/notificaciones  → GET feed de actividad reciente (reusa tabla eventos; último ts para punto rojo)

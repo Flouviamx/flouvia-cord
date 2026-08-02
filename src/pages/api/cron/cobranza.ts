@@ -1,14 +1,14 @@
 import type { APIRoute } from 'astro';
+import { assertCronAuth } from '../../../lib/cron-auth';
 import { sql } from '../../../lib/db';
 import { runARAgent } from '../../../lib/agents/ar-agent';
 import { sendEmail, siteOrigin } from '../../../lib/email';
 
 export const prerender = false;
 
-const CRON_SECRET = import.meta.env.CRON_SECRET || process.env.CRON_SECRET;
 
 // Días de gracia después del vencimiento antes de que el agente escriba —
-// cobrar al día siguiente exacto se siente agresivo en B2B.
+// cobrar al día siguiente exacto se siente agresivo en ciertas empresas.
 const GRACE_DAYS = 3;
 // Escalación: a partir de estos días de atraso el agente puede acordar un plan
 // de pago en cuotas REAL (materializa cobros pagables).
@@ -34,12 +34,8 @@ const linkify = (escaped: string, url: string) => {
 // recordatorios. Antes usaba c.vigencia (la validez de la COTIZACIÓN, no la
 // fecha de pago), lo que disparaba cobranza en fechas equivocadas.
 export const GET: APIRoute = async ({ request }) => {
-  if (CRON_SECRET) {
-    const auth = request.headers.get('authorization') || '';
-    if (auth !== `Bearer ${CRON_SECRET}`) {
-      return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
-    }
-  }
+  const authError = assertCronAuth(request);
+  if (authError) return authError;
 
   const origin = siteOrigin();
 

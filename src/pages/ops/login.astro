@@ -1,9 +1,10 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import { validateOpsSession } from '../../lib/ops-auth';
 
-// Si ya tiene el token correcto, lo mandamos al dashboard
+// Si ya tiene una sesión de ops válida, lo mandamos al dashboard.
 const opsToken = Astro.cookies.get('cord_ops_token')?.value;
-if (opsToken === import.meta.env.OPS_SECRET) {
+if (await validateOpsSession(opsToken)) {
   return Astro.redirect('/ops');
 }
 ---

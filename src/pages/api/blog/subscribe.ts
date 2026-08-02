@@ -56,7 +56,7 @@ export const POST: APIRoute = async ({ request }) => {
   </div>
 
   <p style="font-size:16px;color:#111827;font-weight:500;margin:0 0 16px;">¡Hola!</p>
-  <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 16px;">Gracias por suscribirte al Blog de Cord. A partir de ahora recibirás artículos, guías y estrategias sobre <strong>ventas B2B, facturación y cómo acelerar tu flujo de ingresos</strong>.</p>
+  <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 16px;">Gracias por suscribirte al Blog de Cord. A partir de ahora recibirás artículos, guías y estrategias sobre <strong>ventas, facturación y cómo acelerar tu flujo de ingresos</strong>.</p>
   <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 40px;">No enviamos spam — solo contenido que vale la pena leer.</p>
 
   <div style="margin:40px 0;">

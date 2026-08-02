@@ -1,30 +1,27 @@
+// POST /api/auth/logout — cierra la sesión actual.
+//
+// El handler GET se ELIMINÓ (ago 2026): un GET es una operación que cualquier
+// sitio de terceros puede disparar sin permiso ("logout-CSRF") con solo
+// `<img src="https://cordhq.app/api/auth/logout">` — no hay Origin que
+// validar en una carga de imagen, y GET nunca entraba al chequeo CSRF del
+// middleware (que solo mira POST/PATCH/PUT/DELETE). El único caller real
+// (CustomOrgSwitcher) ya hace un POST real.
+export const prerender = false;
+
 import type { APIRoute } from 'astro';
-import { invalidateSession } from '../../../lib/auth';
+import { invalidateSession, SESSION_COOKIE } from '../../../lib/auth';
 
 export const POST: APIRoute = async ({ cookies }) => {
-  try {
-    const sessionId = cookies.get('cord_session')?.value;
-    
-    if (sessionId) {
-      await invalidateSession(sessionId);
+    try {
+        const sessionToken = cookies.get(SESSION_COOKIE)?.value;
+        if (sessionToken) {
+            await invalidateSession(sessionToken);
+        }
+        cookies.delete(SESSION_COOKIE, { path: '/' });
+        cookies.delete('cord_active_org', { path: '/' });
+        return new Response(JSON.stringify({ success: true }), { status: 200 });
+    } catch (error) {
+        console.error('[auth/logout]', error);
+        return new Response(JSON.stringify({ error: 'internal_error' }), { status: 500 });
     }
-
-    cookies.delete('cord_session', { path: '/' });
-
-    return new Response(JSON.stringify({ success: true }), { status: 200 });
-
-  } catch (error) {
-    console.error('Error en /api/auth/logout:', error);
-    return new Response(JSON.stringify({ error: 'Error interno del servidor' }), { status: 500 });
-  }
-};
-
-export const GET: APIRoute = async ({ cookies, redirect }) => {
-  const sessionId = cookies.get('cord_session')?.value;
-  if (sessionId) {
-    await invalidateSession(sessionId);
-  }
-  cookies.delete('cord_session', { path: '/' });
-  cookies.delete('cord_active_org', { path: '/' });
-  return redirect('/sign-in');
 };

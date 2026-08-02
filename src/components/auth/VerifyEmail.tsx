@@ -1,126 +1,112 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useStore } from '@nanostores/react';
-// Importaciones mockeadas temporalmente para arreglar el build durante la migración
-import { atom } from 'nanostores';
-const $clerkStore = atom<any>(null);
-const $isLoadedStore = atom<boolean>(true);
-export default function VerifyEmail() {
-  const clerk = useStore($clerkStore);
-  const isLoaded = useStore($isLoadedStore);
-  const signUp = clerk?.client.signUp;
-  const setActive = clerk?.setActive;
-  const [code, setCode] = useState(['', '', '', '', '', '']);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+import React, { useState, useEffect, useRef } from 'react';
 
-  // Focus el primer input al cargar
+type Mode = 'checking' | 'sent' | 'success' | 'error';
+
+export default function VerifyEmail() {
+  const [mode, setMode] = useState<Mode>('sent');
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
+  const [resent, setResent] = useState(false);
+  const [resending, setResending] = useState(false);
+  const attempted = useRef(false);
+
   useEffect(() => {
-    if (inputRefs.current[0]) {
-      inputRefs.current[0].focus();
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const em = params.get('email');
+    if (em) setEmail(em);
+    const rawRedirect = params.get('redirect_url');
+    const dest = rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '/app';
+
+    if (token && !attempted.current) {
+      attempted.current = true;
+      setMode('checking');
+      fetch('/api/auth/verify-email/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      })
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) {
+            setMode('success');
+            setTimeout(() => { window.location.href = dest; }, 1500);
+          } else {
+            setError(data.error === 'invalid_or_expired'
+              ? 'El enlace ya no es válido o expiró. Pide uno nuevo abajo.'
+              : 'No pudimos verificar tu correo.');
+            setMode('error');
+          }
+        })
+        .catch(() => {
+          setError('Error de conexión al servidor.');
+          setMode('error');
+        });
     }
   }, []);
 
-  const handleChange = (index: number, value: string) => {
-    if (!/^[0-9]*$/.test(value)) return;
-    
-    const newCode = [...code];
-    newCode[index] = value;
-    setCode(newCode);
-
-    if (value !== '' && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && code[index] === '' && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData('text/plain').replace(/[^0-9]/g, '').slice(0, 6);
-    if (pastedData) {
-      const newCode = [...code];
-      for (let i = 0; i < pastedData.length; i++) {
-        newCode[i] = pastedData[i];
-      }
-      setCode(newCode);
-      const nextFocus = Math.min(pastedData.length, 5);
-      inputRefs.current[nextFocus]?.focus();
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isLoaded || !signUp || !setActive) return;
-    const fullCode = code.join('');
-    if (fullCode.length < 6) {
-      setError('Por favor, ingresa el código completo de 6 dígitos.');
-      return;
-    }
-
-    setError('');
-    setLoading(true);
-
+  const handleResend = async () => {
+    if (!email) return;
+    setResending(true);
+    setResent(false);
     try {
-      const result = await signUp.attemptEmailAddressVerification({
-        code: fullCode,
+      await fetch('/api/auth/verify-email/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
       });
-
-      if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId });
-        window.location.href = '/onboarding/workspace';
-      }
-    } catch (err: any) {
-      if (err.errors && err.errors.length > 0) {
-        setError(err.errors[0].message);
-      } else {
-        setError('Código inválido. Por favor, intenta de nuevo.');
-      }
+      setResent(true);
+    } catch {
+      setError('No pudimos reenviar el correo. Intenta de nuevo.');
     } finally {
-      setLoading(false);
+      setResending(false);
     }
   };
+
+  if (mode === 'checking') {
+    return (
+      <div className="auth-card" style={{ textAlign: 'center' }}>
+        <h1 className="auth-title">Verificando tu correo…</h1>
+      </div>
+    );
+  }
+
+  if (mode === 'success') {
+    return (
+      <div className="auth-card" style={{ textAlign: 'center' }}>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" style={{ margin: '0 auto 1.5rem auto' }}>
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        <h1 className="auth-title">¡Correo verificado!</h1>
+        <p className="auth-subtitle" style={{ marginTop: '0.5rem' }}>
+          Entrando a tu cuenta…
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="auth-card" style={{ maxWidth: '400px' }}>
+    <div className="auth-card" style={{ textAlign: 'center' }}>
       <div className="auth-header" style={{ textAlign: 'center' }}>
-        <h1 className="auth-title">Verifica tu correo</h1>
-        <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.5rem' }}>
-          Te hemos enviado un código de 6 dígitos.
+        <h1 className="auth-title">Confirma tu correo</h1>
+        <p className="auth-subtitle" style={{ marginTop: '0.5rem' }}>
+          {email
+            ? <>Te mandamos un enlace de confirmación a <strong>{email}</strong>. Ábrelo para activar tu cuenta.</>
+            : 'Revisa tu bandeja de entrada y haz clic en el enlace de confirmación.'}
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="auth-form">
-        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginBottom: '1rem' }}>
-          {code.map((digit, idx) => (
-            <input
-              key={idx}
-              ref={(el) => inputRefs.current[idx] = el}
-              type="text"
-              inputMode="numeric"
-              maxLength={1}
-              value={digit}
-              onChange={(e) => handleChange(idx, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(idx, e)}
-              onPaste={handlePaste}
-              className="otp-input"
-            />
-          ))}
-        </div>
+      {error && <div className="auth-error" style={{ textAlign: 'left', marginBottom: '1rem' }}>{error}</div>}
+      {resent && !error && <div className="auth-notice" style={{ textAlign: 'left', marginBottom: '1rem' }}>Te reenviamos el correo — dale un par de minutos en llegar.</div>}
 
-        {error && <div className="auth-error" style={{ textAlign: 'center' }}>{error}</div>}
-
-        <button type="submit" disabled={loading} className="btn-primary">
-          {loading ? 'Verificando...' : 'Verificar correo'}
-        </button>
-      </form>
+      <button type="button" disabled={resending || !email} className="btn-primary" onClick={handleResend}>
+        {resending ? 'Reenviando…' : '¿No te llegó? Reenviar correo'}
+      </button>
 
       <div className="auth-footer" style={{ marginTop: '1.5rem' }}>
-        ¿No recibiste el código? <button type="button" className="btn-link" onClick={() => signUp?.prepareEmailAddressVerification({ strategy: 'email_code' })}>Reenviar código</button>
+        <a href="/sign-in">Volver a iniciar sesión</a>
       </div>
     </div>
   );

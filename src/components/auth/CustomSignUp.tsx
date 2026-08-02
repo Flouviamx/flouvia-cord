@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 const ERROR_ES: Record<string, string> = {
   missing_fields: 'Ingresa tu correo y contraseña.',
   email_exists: 'Este correo ya está registrado. Inicia sesión en su lugar.',
+  validation_error: 'Revisa tus datos — el correo debe ser válido y la contraseña de al menos 8 caracteres.',
   internal_error: 'Ocurrió un error en el servidor. Intenta de nuevo más tarde.',
-  too_many_requests: 'Demasiados intentos. Espera un momento e inténtalo de nuevo.',
+  rate_limited: 'Demasiados intentos. Espera un momento e inténtalo de nuevo.',
   default: 'Ocurrió un error al crear la cuenta.',
 };
 
@@ -12,8 +13,9 @@ const ERROR_ES: Record<string, string> = {
 const ERROR_EN: Record<string, string> = {
   missing_fields: 'Enter your email and password.',
   email_exists: 'This email is already registered. Please sign in instead.',
+  validation_error: 'Check your details — email must be valid and password at least 8 characters.',
   internal_error: 'A server error occurred. Please try again later.',
-  too_many_requests: 'Too many attempts. Please wait a moment and try again.',
+  rate_limited: 'Too many attempts. Please wait a moment and try again.',
   default: 'An error occurred while creating your account.',
 };
 
@@ -41,7 +43,7 @@ export default function CustomSignUp() {
       const em = params.get('email');
       if (em) setEmail(em);
       if (params.get('desde') === 'login') {
-        setNotice(isEn ? 'We couldn\'t find an account with that email. Create one here in under a minute.' : 'No encontramos una cuenta con ese correo. Créala aquí en menos de un minuto.');
+        setNotice(isEn ? "We couldn't find an account with that email. Create one here in under a minute." : 'No encontramos una cuenta con ese correo. Créala aquí en menos de un minuto.');
       }
     }
   }, [isEn]);
@@ -65,13 +67,22 @@ export default function CustomSignUp() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, firstName, lastName }),
       });
-      
+      const data = await res.json().catch(() => ({}));
+
       if (res.ok) {
-        window.location.href = '/app';
-      } else {
-        const data = await res.json();
-        setError(getErrorMsg(data.error || 'default'));
+        // La verificación de correo es obligatoria — no hay sesión todavía.
+        // redirect_url (p. ej. desde una invitación de equipo) se preserva
+        // para después de confirmar el correo.
+        const params = new URLSearchParams(window.location.search);
+        const redirectUrl = params.get('redirect_url');
+        const qs = new URLSearchParams({ email, nuevo: '1' });
+        if (redirectUrl && redirectUrl.startsWith('/') && !redirectUrl.startsWith('//')) {
+          qs.set('redirect_url', redirectUrl);
+        }
+        window.location.href = `/verify-email?${qs.toString()}`;
+        return;
       }
+      setError(getErrorMsg(data.error || 'default'));
     } catch (err: any) {
       setError(getErrorMsg('internal_error'));
     } finally {
@@ -79,8 +90,12 @@ export default function CustomSignUp() {
     }
   };
 
-  const handleGoogleSSO = async () => {
-    // Pendiente de implementación OAuth nativo
+  const handleGoogleSSO = () => {
+    window.location.href = '/api/auth/google';
+  };
+
+  const handleAppleSSO = () => {
+    window.location.href = '/api/auth/apple';
   };
 
   return (
@@ -136,6 +151,7 @@ export default function CustomSignUp() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            minLength={8}
             autoComplete="new-password"
             className="form-input"
           />
@@ -163,19 +179,12 @@ export default function CustomSignUp() {
             </svg>
             Google
           </button>
-          
-          <button 
-            type="button" 
-            onClick={() => {}} 
-            className="btn-social"
-            disabled
-            style={{ opacity: 0.5, cursor: 'not-allowed' }}
-            title="Próximamente"
-          >
+
+          <button type="button" onClick={handleAppleSSO} className="btn-social">
             <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style={{ marginRight: '8px' }}>
               <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
             </svg>
-            Apple <span style={{ fontSize: '0.7em', marginLeft: '4px', opacity: 0.7 }}>(Soon)</span>
+            Apple
           </button>
         </div>
       </div>

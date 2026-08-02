@@ -50,7 +50,7 @@ export const FEATURES: Feature[] = [
         eyebrow: 'EDITOR DE COTIZACIONES',
         titulo: 'Arma propuestas con precios inteligentes, en minutos.',
         sub: 'Ajusta precios por línea, define términos de crédito y mira el total recalcularse con impuestos en vivo. Todo lo que antes hacías en Excel, ahora en una sola pantalla.',
-        metaTitle: 'Cómo hacer cotizaciones B2B con precios negociados — Cord',
+        metaTitle: 'Cómo hacer cotizaciones con precios negociados — Cord',
         metaDescription: 'El editor de cotizaciones de Cord permite negociar el precio de cada producto por separado, aplicar términos Net 30/60, calcular impuestos en tiempo real y generar un link de aprobación con tu marca. Para distribuidores y mayoristas en cualquier país.',
         plan: 'Disponible en todos los planes',
         stats: [
@@ -62,7 +62,7 @@ export const FEATURES: Feature[] = [
             {
                 eyebrow: 'PRECIOS NEGOCIADOS',
                 titulo: 'Cada cliente tiene su precio. Respétalo sin pensarlo.',
-                copy: 'En B2B el precio de lista es solo el punto de partida. En Cord ajustas el precio de cada línea y el sistema te muestra el descuento aplicado al instante — tú decides hasta dónde llegar, el sistema se encarga de que los números cuadren.',
+                copy: 'El precio de lista es solo el punto de partida. En Cord ajustas el precio de cada línea y el sistema te muestra el descuento aplicado al instante — tú decides hasta dónde llegar, el sistema se encarga de que los números cuadren.',
                 bullets: [
                     'Precio negociado por línea, con el % de descuento visible',
                     'El precio de lista queda registrado — siempre sabes cuánto cediste',
@@ -129,8 +129,8 @@ export const FEATURES: Feature[] = [
         eyebrow: 'LINK PÚBLICO',
         titulo: 'Tu cliente aprueba y firma desde un link.',
         sub: 'Cada propuesta genera un link interactivo con tu marca. Tu cliente lo abre, revisa los términos, firma legalmente y aprueba, sin crear cuenta ni descargar nada.',
-        metaTitle: 'Aprobación de cotizaciones B2B por link sin registro — Cord',
-        metaDescription: 'El link público de Cord genera una página con tu marca (logo, colores y datos fiscales) donde tu cliente revisa la cotización y aprueba en un clic, sin crear cuenta ni descargar nada. Para cualquier negocio B2B, en cualquier país.',
+        metaTitle: 'Aprobación de cotizaciones por link sin registro — Cord',
+        metaDescription: 'El link público de Cord genera una página con tu marca (logo, colores y datos fiscales) donde tu cliente revisa la cotización y aprueba en un clic, sin crear cuenta ni descargar nada. Para cualquier negocio, en cualquier país.',
         plan: 'Disponible en todos los planes',
         stats: [
             { valor: '0', countup: 0, label: 'cuentas que tu cliente necesita crear' },
@@ -288,7 +288,7 @@ export const FEATURES: Feature[] = [
         titulo: 'De propuesta aprobada a factura timbrada, automático.',
         sub: 'Cuando se aprueba la propuesta, el CFDI 4.0 se timbra ante el SAT automáticamente. Sin volver a capturar datos en otro portal, sin errores de transcripción.',
         metaTitle: 'CFDI 4.0 automático desde la cotización aprobada — Cord',
-        metaDescription: 'Cord timbra el CFDI 4.0 automáticamente ante el SAT en cuanto se aprueba la cotización, sin recapturar datos en otro portal. Facturación electrónica real para cualquier negocio B2B en México.',
+        metaDescription: 'Cord timbra el CFDI 4.0 automáticamente ante el SAT en cuanto se aprueba la cotización, sin recapturar datos en otro portal. Facturación electrónica real para cualquier negocio en México.',
         plan: 'Disponible desde el plan Starter',
         stats: [
             { valor: '1', countup: 1, suffix: ' clic', label: 'de la cotización aprobada al CFDI' },
@@ -366,7 +366,7 @@ export const FEATURES: Feature[] = [
         eyebrow: 'CLIENTES Y CRÉDITO',
         titulo: 'Vende a crédito sin perder el control.',
         sub: 'Guarda los términos de cada cliente (Contado, Net 30, Net 60) y su límite de crédito. Cord los aplica automáticamente en cada propuesta para que nunca vendas más de lo que puedes financiar.',
-        metaTitle: 'Gestión de crédito B2B: Net 30, Net 60 y límite por cliente — Cord',
+        metaTitle: 'Gestión de crédito: Net 30, Net 60 y límite por cliente — Cord',
         metaDescription: 'Cord guarda los términos de crédito de cada cliente (Contado, Net 30, Net 60) y su límite, y los aplica automáticamente en cada cotización — para vender a crédito sin perder el control de tu cartera.',
         plan: 'Plan Profesional en adelante',
         stats: [
@@ -445,8 +445,8 @@ export const FEATURES: Feature[] = [
         eyebrow: 'COBRANZA AUTÓNOMA CON IA',
         titulo: 'Tu cobranza trabaja sola, hasta de noche.',
         sub: 'Un agente de IA da seguimiento a cada factura vencida: le escribe al cliente, negocia un plan de pagos y te avisa solo cuando necesita tu visto bueno. Tú apruebas, la IA cobra.',
-        metaTitle: 'Cobranza automática con IA para empresas B2B — Cord',
-        metaDescription: 'El agente de cobranza con IA de Cord da seguimiento a las facturas vencidas, negocia planes de pago de hasta 3 cuotas mensuales y proyecta tu flujo de caja a 90 días. Tú apruebas cada acuerdo; queda todo en bitácora. Para negocios B2B en cualquier país.',
+        metaTitle: 'Cobranza automática con IA para empresas — Cord',
+        metaDescription: 'El agente de cobranza con IA de Cord da seguimiento a las facturas vencidas, negocia planes de pago de hasta 3 cuotas mensuales y proyecta tu flujo de caja a 90 días. Tú apruebas cada acuerdo; queda todo en bitácora. Para negocios en cualquier país.',
         plan: 'Plan Scale en adelante',
         stats: [
             { valor: '24/7', label: 'el agente da seguimiento sin descanso ni olvidos' },
@@ -525,7 +525,7 @@ export const FEATURES: Feature[] = [
         titulo: 'Propuestas en dólares. Cobros en tu moneda. Margen protegido.',
         sub: 'Tu cliente ve el precio en su moneda; tú cobras en la tuya. Cord congela el tipo de cambio por 30 días para que el margen que cerraste sea el que cobras.',
         metaTitle: 'Cotizaciones en dólares y euros con cobertura cambiaria — Cord',
-        metaDescription: 'Cotiza en USD o EUR y factura en tu moneda fiscal. Cord toma la tasa spot del Banco Central Europeo, le aplica un buffer de cobertura para proteger tu margen y congela el tipo de cambio 30 días (FX lock). Para negocios B2B en cualquier país que venden con divisas.',
+        metaDescription: 'Cotiza en USD o EUR y factura en tu moneda fiscal. Cord toma la tasa spot del Banco Central Europeo, le aplica un buffer de cobertura para proteger tu margen y congela el tipo de cambio 30 días (FX lock). Para negocios en cualquier país que venden con divisas.',
         plan: 'Disponible en todos los planes',
         stats: [
             { valor: '30', countup: 30, suffix: ' días', label: 'que se congela el tipo de cambio por cotización' },
@@ -604,7 +604,7 @@ export const FEATURES: Feature[] = [
         titulo: 'Propuestas en dólares. Factura como debe ser.',
         sub: 'Vende a clientes en Estados Unidos sin perder el margen al tipo de cambio: propuestas en USD, tasa blindada por 30 días y factura en MXN con CFDI 4.0. Una sola plataforma para el negocio que ya no cabe en una frontera.',
         metaTitle: 'Facturación internacional US/MX: cotiza en dólares, factura CFDI 4.0 en pesos — Cord',
-        metaDescription: 'Cord cotiza en USD con cobertura cambiaria (tasa congelada 30 días) y factura en MXN con CFDI 4.0 timbrado ante el SAT vía Facturapi. Arquitectura multi-país lista para crecer. Para empresas B2B mexicanas que exportan o venden en dólares.',
+        metaDescription: 'Cord cotiza en USD con cobertura cambiaria (tasa congelada 30 días) y factura en MXN con CFDI 4.0 timbrado ante el SAT vía Facturapi. Arquitectura multi-país lista para crecer. Para empresas mexicanas que exportan o venden en dólares.',
         plan: 'Cobertura cambiaria y multi-divisa en todos los planes (incluido el gratuito); el timbrado CFDI 4.0 ante el SAT desde el plan Starter',
         stats: [
             { valor: '30', countup: 30, suffix: ' días', label: 'que congelas el tipo de cambio de la cotización (FX lock)' },
@@ -682,7 +682,7 @@ export const FEATURES: Feature[] = [
         eyebrow: 'TU CFO CON IA',
         titulo: 'Flujo de caja predictivo a 90 días.',
         sub: 'Cruza tu pipeline con el historial real de pago de cada cliente. Sabes cuánto cobrarás antes de cobrarlo y detectas riesgos de impago antes de que sucedan.',
-        metaTitle: 'Flujo de caja predictivo y CFO con IA para B2B — Cord',
+        metaTitle: 'Flujo de caja predictivo y CFO con IA — Cord',
         metaDescription: 'Cord usa IA para proyectar tu flujo de caja a 90 días cruzando tu pipeline con el historial de pago real de tus clientes.',
         plan: 'Plan Scale en adelante',
         stats: [
@@ -761,7 +761,7 @@ export const FEATURES: Feature[] = [
         eyebrow: 'CONTROL DE MÁRGENES Y APROBACIONES',
         titulo: 'Vende rápido, pero con el margen correcto.',
         sub: 'Define umbrales de descuento por rol. Si un vendedor da un descuento mayor al permitido, la cotización se pausa y pide aprobación gerencial. Tú cuidas el margen, ellos cierran la venta.',
-        metaTitle: 'Control de márgenes y flujo de aprobaciones para ventas B2B — Cord',
+        metaTitle: 'Control de márgenes y flujo de aprobaciones para ventas — Cord',
         metaDescription: 'Configura umbrales de descuento y flujos de aprobación gerencial para asegurar la rentabilidad de cada cotización en tu equipo de ventas.',
         plan: 'Plan Profesional en adelante',
         stats: [
@@ -840,7 +840,7 @@ export const FEATURES: Feature[] = [
         eyebrow: 'EQUIPO, ROLES Y MULTI-EMPRESA',
         titulo: 'Todo tu equipo, trabajando en sincronía.',
         sub: 'Invita a tus vendedores, administradores y contadores con permisos granulares. Gestiona múltiples razones sociales o marcas desde una misma cuenta maestra.',
-        metaTitle: 'Gestión de equipo, roles y multi-empresa para B2B — Cord',
+        metaTitle: 'Gestión de equipo, roles y multi-empresa — Cord',
         metaDescription: 'Administra tu equipo de ventas con permisos granulares y gestiona múltiples empresas o razones sociales desde una sola cuenta de Cord.',
         plan: 'Disponible desde el plan Starter (Multi-empresa requiere Profesional)',
         stats: [
@@ -850,7 +850,7 @@ export const FEATURES: Feature[] = [
         ],
         blocks: [
             {
-                eyebrow: 'PERMISOS B2B',
+                eyebrow: 'PERMISOS DE ACCESO',
                 titulo: 'Cada quien ve solo lo que le toca.',
                 copy: 'El vendedor solo ve sus propios clientes y cotizaciones. El gerente de ventas ve el pipeline de todos. El contador entra solo a descargar los CFDI. Seguridad total por diseño.',
                 bullets: [

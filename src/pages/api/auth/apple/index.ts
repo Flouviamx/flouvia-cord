@@ -10,7 +10,7 @@ function base64url(buf: Buffer): string {
   return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
-export const GET: APIRoute = async ({ cookies, redirect }) => {
+export const GET: APIRoute = async ({ cookies, redirect, url }) => {
   const clientId = import.meta.env.APPLE_CLIENT_ID;
   if (!clientId) {
     return new Response('APPLE_CLIENT_ID no configurado', { status: 503 });
@@ -30,7 +30,11 @@ export const GET: APIRoute = async ({ cookies, redirect }) => {
   cookies.set('cord_apple_state', state, cookieOpts);
   cookies.set('cord_apple_nonce', nonce, cookieOpts);
 
-  const origin = import.meta.env.SITE || 'http://localhost:4321';
+  // ⚠️ Debe ser EXACTAMENTE el mismo origin que usa apple/callback.ts para
+  // exchangeAppleCode() — Apple rechaza el intercambio si el redirect_uri no
+  // coincide byte a byte entre la autorización y el token exchange. Antes
+  // este archivo usaba `import.meta.env.SITE` (podía divergir de url.origin).
+  const origin = url.origin;
 
   const params = new URLSearchParams({
     client_id: clientId,

@@ -210,11 +210,20 @@ function AuroraPlane() {
 export default function StripeBannerBg() {
   const wrapRef = useRef(null)
   const [visible, setVisible] = useState(false)
-  const [onScreen, setOnScreen] = useState(true)
+  const [inView, setInView] = useState(false)
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setVisible(true))
     return () => cancelAnimationFrame(id)
+  }, [])
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      setInView(entry.isIntersecting)
+    }, { threshold: 0.1 })
+    
+    if (wrapRef.current) observer.observe(wrapRef.current)
+    return () => observer.disconnect()
   }, [])
 
   return (
@@ -224,26 +233,28 @@ export default function StripeBannerBg() {
         position:      'absolute',
         inset:         0,
         zIndex:        0,
-        backgroundColor: '#0a192f', // Fondo Navy de Cord para que los azules y esmeraldas se vean increíbles
+        backgroundColor: '#0a192f', // Fondo Navy de Cord
         opacity:       visible ? 1 : 0,
         transition:    'opacity 1s ease',
       }}
     >
-      <Canvas
-        style={{ position: 'absolute', inset: 0 }}
-        orthographic
-        dpr={2} // Mayor resolución para la captura
-        camera={{ position: [0, 0, 1], near: 0.1, far: 10 }}
-        gl={{
-          antialias:             true,
-          alpha:                 true,
-          powerPreference:       'high-performance',
-          preserveDrawingBuffer: true,
-        }}
-        resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
-      >
-        <AuroraPlane />
-      </Canvas>
+      {inView && (
+        <Canvas
+          style={{ position: 'absolute', inset: 0 }}
+          orthographic
+          dpr={2}
+          camera={{ position: [0, 0, 1], near: 0.1, far: 10 }}
+          gl={{
+            antialias:             true,
+            alpha:                 true,
+            powerPreference:       'high-performance',
+            preserveDrawingBuffer: true,
+          }}
+          resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
+        >
+          <AuroraPlane />
+        </Canvas>
+      )}
     </div>
   )
 }

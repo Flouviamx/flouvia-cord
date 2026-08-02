@@ -6,11 +6,14 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-// TODO: Implementar invitaciones vía correo con API propia
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { currentUserId } from '../../lib/context';
 import { requirePerm } from '../../lib/queries';
 import { PRESETS, ALL_PERM_KEYS, planTieneEquipo, type PermMap } from '../../lib/permissions';
+import { sha256Hex } from '../../lib/auth';
+import { sendTeamInviteEmail } from '../../lib/auth-email';
+import { randomBytes } from 'node:crypto';
+import { rateLimit, tooMany } from '../../lib/ratelimit';
 
 const json = (data: unknown, status = 200) =>
     new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -30,7 +33,10 @@ export const POST: APIRoute = async (context) => {
     if (denied) return denied;
 
     const orgId = await getActiveOrgId();
-    const [[org]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan, invite_domains from orgs where id = ${orgId}`);
+    const rl = await rateLimit(`invite-create:${orgId}`, 30, 60);
+    if (!rl.ok) return tooMany(rl.retryAfter);
+
+    const [[org]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan, invite_domains, nombre from orgs where id = ${orgId}`);
     if (!planTieneEquipo(org.plan as string)) {
         return json({ error: 'Invitar a tu equipo requiere el plan Negocio.' }, 402);
     }
@@ -56,16 +62,33 @@ export const POST: APIRoute = async (context) => {
     const permisos = body.permisos ? cleanPermisos(body.permisos)
         : cleanPermisos(PRESETS[preset]?.permisos ?? PRESETS.vendedor.permisos);
     const rol = PRESETS[preset] ? preset : 'miembro';
-    const token = crypto.randomUUID().replace(/-/g, '');
+
+    // El token CRUDO viaja en el link/correo; solo su sha256 se guarda (mismo
+    // patrón que sesiones/reset — antes se guardaba en claro, así que
+    // cualquier lectura de `org_members` filtraba invitaciones vivas y
+    // utilizables). 7 días de vigencia — antes no caducaban NUNCA.
+    const token = randomBytes(24).toString('base64url');
+    const tokenHash = sha256Hex(token);
 
     const [[row]] = await withOrgTx(orgId, sql`
-        insert into org_members (org_id, email, nombre, rol, permisos, estado, token, invited_by)
-        values (${orgId}, ${email}, ${nombre}, ${rol}, ${JSON.stringify(permisos)}::jsonb, 'invitado', ${token}, ${currentUserId()})
+        insert into org_members (org_id, email, nombre, rol, permisos, estado, token, token_expires_at, invited_by)
+        values (${orgId}, ${email}, ${nombre}, ${rol}, ${JSON.stringify(permisos)}::jsonb, 'invitado', ${tokenHash}, now() + interval '7 days', ${currentUserId()})
         returning id`);
 
-    await logAudit(orgId, { accion: 'equipo.invitado', entidad: 'miembro', entidad_id: row.id, detalle: email ?? 'invitación por link', ip: reqIp(request) });
+    await logAudit(orgId, { accion: 'equipo.invitado', entidad: 'miembro', entidad_id: row.id, detalle: email ?? 'invitación por link', ip: reqIp(request), userAgent: request.headers.get('user-agent') });
     const link = `${new URL(request.url).origin}/unirse/${token}`;
-    return json({ ok: true, id: row.id, token, link });
+
+    let emailed = false;
+    if (email) {
+        const sendRes = await sendTeamInviteEmail(email, org.nombre as string, token);
+        emailed = sendRes.sent;
+        if (!sendRes.sent) console.warn('[equipo] no se pudo enviar la invitación:', sendRes.error || sendRes.skipped);
+    }
+
+    // El link SIEMPRE va en la respuesta (respaldo copiable para el admin) —
+    // antes la UI decía "Invitación enviada" y el link se perdía si el correo
+    // fallaba o si la invitación era solo-link (sin email).
+    return json({ ok: true, id: row.id, link, emailed });
 };
 
 export const PATCH: APIRoute = async ({ request }) => {

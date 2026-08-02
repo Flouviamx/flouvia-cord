@@ -1230,3 +1230,110 @@ alter table mcp_idempotency enable row level security;
 create policy "rls_mcp_idempotency" on mcp_idempotency
   using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
 alter table mcp_idempotency force row level security;
+
+-- ══════════════════════════════════════════════════════════════════════════
+-- ── Auth hardening (ago 2026) ────────────────────────────────────────────
+-- Endurecimiento del sistema de auth propio post-migración de Clerk. Ver
+-- docs/historial-auth-clerk.md para el detalle completo de la auditoría.
+-- ══════════════════════════════════════════════════════════════════════════
+
+-- users: drift real corregido (avatar_url lo escribía google/callback.ts sin
+-- estar en el schema base — quedaba en blanco en cualquier BD nueva), más
+-- verificación de correo, tracking de cambio de password, y lockout POR
+-- CUENTA (no solo por IP, que un botnet puede repartir).
+alter table users add column if not exists avatar_url            text;
+alter table users add column if not exists email_verified_at     timestamptz;
+alter table users add column if not exists password_changed_at   timestamptz;
+alter table users add column if not exists failed_login_count    int not null default 0;
+alter table users add column if not exists locked_until          timestamptz;
+alter table users add column if not exists totp_backup_codes     text[];   -- hashes sha256, nunca en claro
+alter table users add column if not exists totp_confirmed_at     timestamptz;
+
+-- sessions: el id pasa a guardar sha256(token) en vez del token en CLARO
+-- (una lectura de la tabla = session hijack de cualquier usuario). El
+-- cliente sigue recibiendo el token crudo en la cookie; nunca se persiste.
+-- ⚠️ Las filas viejas (con el token SIN hashear como id) quedan huérfanas —
+-- ningún login futuro las volverá a encontrar (compara contra un hash), así
+-- que expiran solas y se limpian por su cuenta la próxima vez que
+-- validateSession/el cron las toque. Ver scripts/migrate-auth-hardening.mjs
+-- para el borrado inmediato de esas filas viejas (invalida sesiones activas
+-- — una sola vez, corrido a mano justo después de este schema). Índices que
+-- faltaban por completo (user_id/expires_at no tenían NINGUNO) + ciclo de
+-- vida real: last_used_at (sliding expiry), revoked_at (revocación
+-- individual sin borrar el registro), absolute_expires_at (tope duro).
+alter table sessions add column if not exists last_used_at        timestamptz not null default now();
+alter table sessions add column if not exists revoked_at          timestamptz;
+alter table sessions add column if not exists absolute_expires_at timestamptz not null default (now() + interval '90 days');
+create index if not exists idx_sessions_user on sessions(user_id);
+create index if not exists idx_sessions_expires on sessions(expires_at);
+
+-- password_reset_tokens: mismo cambio — id pasa a sha256(token). Las filas
+-- viejas (sin hashear) quedan huérfanas igual que sessions — un token de 15
+-- minutos ya vencido para cuando se lea esto de cualquier forma.
+alter table password_reset_tokens add column if not exists used_at timestamptz;
+
+-- Verificación de correo obligatoria antes de entrar a /app (registro con
+-- password; Google/Apple entran directo solo si el proveedor reporta
+-- email_verified=true). Mismo patrón que password_reset_tokens: id =
+-- sha256(token), token crudo solo en el link del correo.
+create table if not exists email_verification_tokens (
+  id          text        primary key,
+  user_id     uuid        not null references users(id) on delete cascade,
+  email       text        not null,   -- snapshot del correo a verificar (puede diferir si el user lo cambió después)
+  expires_at  timestamptz not null,
+  created_at  timestamptz not null default now()
+);
+create index if not exists idx_email_verif_user on email_verification_tokens(user_id);
+
+-- Reto de 2do factor entre "password correcto" y "sesión real" — vive 5 min,
+-- de un solo uso, ligado a la cuenta. Aplica al login con password Y a los
+-- callbacks de Google/Apple (si el usuario ya tiene TOTP activo, CUALQUIER
+-- método de entrada exige el segundo factor — un login social no debe poder
+-- saltarse el 2FA que el usuario activó). Los passkeys NO pasan por aquí:
+-- WebAuthn ya es autenticación fuerte por sí sola (posesión + biometría).
+create table if not exists two_factor_challenges (
+  id          text        primary key,   -- sha256(token)
+  user_id     uuid        not null references users(id) on delete cascade,
+  expires_at  timestamptz not null,
+  created_at  timestamptz not null default now()
+);
+create index if not exists idx_2fa_challenge_user on two_factor_challenges(user_id);
+
+-- org_members: las invitaciones por link no caducaban nunca. El token
+-- también pasa a guardarse hasheado (mismo motivo que sessions — hoy
+-- cualquier lectura de la tabla filtra links de invitación vivos).
+-- El filtro length()=32 hace esto IDEMPOTENTE: el token viejo (sin hashear)
+-- era crypto.randomUUID().replace(/-/g,'') = 32 hex chars; un sha256 hex ya
+-- son 64 — sin este guard, re-ejecutar `npm run db:migrate` (el runner está
+-- diseñado para ser re-ejecutable) volvería a hashear un valor YA hasheado,
+-- invalidando en silencio cualquier invitación pendiente en cada re-corrida.
+alter table org_members add column if not exists token_expires_at timestamptz;
+update org_members set token = encode(digest(token, 'sha256'), 'hex') where token is not null and length(token) = 32;
+
+-- audit_log: faltaba el user-agent (sessions sí lo captura desde siempre).
+alter table audit_log add column if not exists user_agent text;
+
+-- Sesiones del panel interno /ops (secreto compartido de operaciones, NO
+-- ligado a una cuenta de `users`). Antes la cookie `cord_ops_token` GUARDABA
+-- EL SECRETO MISMO en claro — cualquier fuga de esa cookie (log, XSS, browser
+-- compartido) entregaba la clave maestra completa, reutilizable para
+-- siempre. Ahora la cookie es un token opaco de sesión; solo su sha256 vive
+-- aquí, con expiración real y revocación posible sin rotar el secreto.
+create table if not exists ops_sessions (
+  id          text        primary key,  -- sha256(token)
+  expires_at  timestamptz not null,
+  created_at  timestamptz not null default now()
+);
+
+-- RLS deliberadamente NO se activa en users/sessions/oauth_accounts/passkeys/
+-- password_reset_tokens/email_verification_tokens: el driver conecta SIEMPRE
+-- con el rol dueño de la BD (mismo motivo documentado arriba para
+-- orgs/org_members — "bootstrap queries need access"), que bypasea RLS por
+-- diseño de Postgres. Sin threadear un app.user_id real por CADA query que
+-- toca estas tablas (login, sesiones, passkeys, OAuth — decenas de sitios,
+-- muchos sin sesión todavía por definición: es la ruta de login), forzar RLS
+-- aquí sería seguridad de fachada: no bloquearía nada con el rol actual y sí
+-- arriesgaría romper el flujo de autenticación. La protección real de estas
+-- tablas es a nivel de aplicación (cada query filtra por el user_id ya
+-- resuelto de la sesión validada) — igual que el resto del código ya asume
+-- para orgs/org_members.

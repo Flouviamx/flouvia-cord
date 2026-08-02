@@ -135,33 +135,55 @@ export async function getOrg() {
 export async function getUserProfile() {
     const userId = currentUserId();
     if (!userId) return null;
-    
+
     const [user] = await sql`select * from users where id = ${userId}`;
     if (!user) return null;
 
+    // Solo membresías ACTIVAS (o el owner legacy vía orgs.owner_id) — y NUNCA
+    // orgs sandbox (`sandbox_of`), que no son espacios de trabajo elegibles a
+    // mano: se entra a ellas solo por el toggle de entorno de prueba. `rol`
+    // real de org_members (owner|admin|vendedor|lectura|miembro) — antes esto
+    // devolvía formas de Clerk ('org:admin', `publicMetadata.parentOrgId`)
+    // que ningún código de este repo emite más.
     const memberships = await sql`
-        select 
-            o.id, o.nombre, o.logo_url, 
-            coalesce(m.rol, case when o.owner_id = ${userId} then 'owner' else 'member' end) as role
+        select
+            o.id, o.nombre, o.logo_url, o.parent_org_id,
+            coalesce(m.rol, case when o.owner_id = ${userId} then 'owner' else 'miembro' end) as rol
         from orgs o
-        left join org_members m on m.org_id = o.id and m.user_id = ${userId}
-        where o.owner_id = ${userId} or m.user_id = ${userId}
+        left join org_members m on m.org_id = o.id and m.user_id = ${userId} and m.estado = 'activo'
+        where (o.owner_id = ${userId} or (m.user_id = ${userId} and m.estado = 'activo'))
+          and o.sandbox_of is null
+        order by o.nombre asc
     `;
+
+    const passkeyCount = await sql`select count(*)::int as n from passkeys where user_id = ${userId}`;
+    const connections = await sql`select provider, email, created_at from oauth_accounts where user_id = ${userId} order by created_at asc`;
 
     return {
         id: user.id,
         firstName: user.first_name || 'Usuario',
+        lastName: user.last_name || '',
         fullName: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Usuario',
         imageUrl: user.avatar_url || '',
         emailAddresses: [{ emailAddress: user.email }],
-        organizationMemberships: memberships.map(m => ({
+        emailVerified: !!user.email_verified_at,
+        totpEnabled: !!user.totp_enabled,
+        hasPassword: !!user.password_hash && user.password_hash !== 'dummy_hash',
+        passkeyCount: passkeyCount[0]?.n ?? 0,
+        connections: connections.map((c: any) => ({
+            provider: c.provider as string,
+            email: (c.email as string) || null,
+            createdAt: c.created_at,
+        })),
+        organizationMemberships: memberships.map((m) => ({
             organization: {
-                id: m.id,
-                name: m.nombre,
-                logoUrl: m.logo_url
+                id: m.id as string,
+                nombre: m.nombre as string,
+                logoUrl: m.logo_url as string | null,
+                parentOrgId: (m.parent_org_id as string | null) ?? null,
             },
-            role: m.role
-        }))
+            rol: m.rol as string,
+        })),
     };
 }
 
@@ -1646,7 +1668,7 @@ export interface MemberRow {
     rol: string;
     permisos: PermMap;
     estado: string;
-    token: string | null;
+    tieneInvitePendiente: boolean;
     inicial: string;
     desde: string;
     esYo: boolean;
@@ -1655,8 +1677,14 @@ export interface MemberRow {
 export async function getMembers(): Promise<MemberRow[]> {
     const orgId = await getActiveOrgId();
     const me = currentUserId();
+    // `token` guarda sha256(token) desde ago 2026 — el valor crudo del link de
+    // invitación solo existe una vez, en la respuesta de POST /api/equipo (o
+    // de /api/equipo/resend). Ya no tiene sentido exponerlo aquí: no sirve
+    // para reconstruir el link (es un hash) y no hace falta filtrarlo a la
+    // página — se manda `tieneInvitePendiente` para que la UI ofrezca
+    // "Reenviar invitación" (token nuevo) en vez de "Copiar link".
     const rows = await sql`
-        select id, user_id, email, nombre, rol, permisos, estado, token, created_at, joined_at
+        select id, user_id, email, nombre, rol, permisos, estado, created_at, joined_at
         from org_members where org_id = ${orgId} and estado <> 'revocado'
         order by case when rol = 'owner' then 0 else 1 end, created_at asc`;
     return rows.map((m) => {
@@ -1668,7 +1696,7 @@ export async function getMembers(): Promise<MemberRow[]> {
             nombre, rol: m.rol as string,
             permisos: (m.permisos as PermMap) ?? {},
             estado: m.estado as string,
-            token: (m.token as string) ?? null,
+            tieneInvitePendiente: m.estado === 'invitado',
             inicial: initials(nombre),
             desde: fmtFecha(m.joined_at || m.created_at),
             esYo: !!me && m.user_id === me,
@@ -1690,10 +1718,26 @@ export async function getMyMembership(): Promise<Membership> {
     const orgId = await getActiveOrgId();
     try {
         const rows = await sql`select rol, permisos from org_members where org_id = ${orgId} and user_id = ${userId} and estado = 'activo' limit 1`;
-        if (!rows.length) return { rol: 'owner', permisos: {}, esOwner: true };
-        const m = rows[0];
-        return { rol: m.rol as string, permisos: (m.permisos as PermMap) ?? {}, esOwner: m.rol === 'owner' };
-    } catch { return { rol: 'owner', permisos: {}, esOwner: true }; }
+        if (rows.length) {
+            const m = rows[0];
+            return { rol: m.rol as string, permisos: (m.permisos as PermMap) ?? {}, esOwner: m.rol === 'owner' };
+        }
+        // Sin fila de membresía: la ÚNICA vez que esto es legítimo es cuando la
+        // org resuelta es la SANDBOX espejo del entorno de prueba —
+        // resolveSandboxOrgId() (db.ts) solo la crea/resuelve después de que
+        // getActiveOrgId() ya confirmó al usuario como dueño del negocio REAL;
+        // el sandbox nunca siembra org_members (es un espacio 1:1 con su
+        // padre). Para CUALQUIER otra org sin membresía — bug de resolución,
+        // dato corrupto, o simplemente un caso no prescrito — se falla
+        // CERRADO. Antes esta rama devolvía owner por default: cualquier
+        // request cuyo getActiveOrgId() resolviera a una org de la que el
+        // usuario no fuera miembro activo quedaba autorizado como su dueño.
+        const sandboxRow = await sql`select 1 from orgs where id = ${orgId} and sandbox_of is not null limit 1`;
+        if (sandboxRow.length) return { rol: 'owner', permisos: {}, esOwner: true };
+        return { rol: 'anon', permisos: {}, esOwner: false };
+    } catch {
+        return { rol: 'anon', permisos: {}, esOwner: false };
+    }
 }
 
 export async function requirePerm(key: PermKey): Promise<Response | null> {

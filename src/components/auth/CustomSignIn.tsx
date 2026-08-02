@@ -3,23 +3,33 @@ import { startAuthentication } from '@simplewebauthn/browser';
 
 // Mensajes en español para los errores de inicio de sesión
 const ERROR_ES: Record<string, string> = {
-  invalid_credentials: 'La contraseña no es correcta. Inténtalo de nuevo o restablécela.',
-  not_found: 'Ese correo no parece válido — revísalo.',
+  invalid_credentials: 'Correo o contraseña incorrectos.',
+  account_locked: 'Demasiados intentos fallidos. Intenta de nuevo en 15 minutos.',
   missing_fields: 'Ingresa tu correo y contraseña.',
-  too_many_requests: 'Demasiados intentos. Espera un momento e inténtalo de nuevo.',
+  rate_limited: 'Demasiados intentos. Espera un momento e inténtalo de nuevo.',
   internal_error: 'Ocurrió un error en el servidor. Intenta de nuevo más tarde.',
   default: 'Ocurrió un error al iniciar sesión.',
 };
 
 // Mensajes en inglés para los errores de inicio de sesión
 const ERROR_EN: Record<string, string> = {
-  invalid_credentials: 'The password is incorrect. Try again or reset it.',
-  not_found: 'That email doesn\'t look right — check it again.',
+  invalid_credentials: 'Incorrect email or password.',
+  account_locked: 'Too many failed attempts. Try again in 15 minutes.',
   missing_fields: 'Enter your email and password.',
-  too_many_requests: 'Too many attempts. Please wait a moment and try again.',
+  rate_limited: 'Too many attempts. Please wait a moment and try again.',
   internal_error: 'A server error occurred. Please try again later.',
   default: 'An error occurred while signing in.',
 };
+
+// Solo permite redirigir a un path RELATIVO propio del sitio — un
+// `?redirect_url=https://evil.com` o `//evil.com` (protocol-relative) nunca
+// se honra. Único consumidor: el flujo de invitación (/unirse/[token]) manda
+// de vuelta aquí tras el login.
+function safeRedirect(raw: string | null): string | null {
+  if (!raw) return null;
+  if (!raw.startsWith('/') || raw.startsWith('//')) return null;
+  return raw;
+}
 
 export default function CustomSignIn() {
 
@@ -36,13 +46,13 @@ export default function CustomSignIn() {
   };
 
   // Prefill desde ?email= (p. ej. al rebotar desde sign-up) y aviso si el
-  // callback de Google falló (?sso_error=1).
+  // callback de Google/Apple falló (?sso_error=1).
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const em = params.get('email');
       if (em) setIdentifier(em);
-      if (params.get('sso_error')) setNotice(isEn ? 'We couldn\'t complete Google sign-in. Try again.' : 'No pudimos completar el acceso con Google. Inténtalo de nuevo.');
+      if (params.get('sso_error')) setNotice(isEn ? "We couldn't complete sign-in. Try again." : 'No pudimos completar el acceso. Inténtalo de nuevo.');
       if (params.get('desde') === 'registro') setNotice(isEn ? 'An account with that email already exists — sign in here.' : 'Ya existe una cuenta con ese correo — inicia sesión aquí.');
     }
   }, [isEn]);
@@ -66,16 +76,25 @@ export default function CustomSignIn() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier, password }),
       });
-      
-      if (res.ok) {
-        window.location.href = '/app';
-      } else if (res.status === 404) {
-        // Usuario no encontrado -> Mandarlo a crear cuenta
-        window.location.href = `/sign-up?email=${encodeURIComponent(identifier)}&desde=login`;
-      } else {
-        const data = await res.json();
-        setError(getErrorMsg(data.error || 'default'));
+      const data = await res.json().catch(() => ({}));
+
+      const params = new URLSearchParams(window.location.search);
+      const dest = safeRedirect(params.get('redirect_url')) || '/app';
+
+      if (res.ok && data.mfaRequired) {
+        // El destino sobrevive el paso de 2FA vía query param del propio /verify-2fa.
+        window.location.href = `/verify-2fa?redirect_url=${encodeURIComponent(dest)}`;
+        return;
       }
+      if (res.ok) {
+        window.location.href = dest;
+        return;
+      }
+      if (res.status === 403 && data.error === 'email_not_verified') {
+        window.location.href = `/verify-email?email=${encodeURIComponent(identifier)}`;
+        return;
+      }
+      setError(getErrorMsg(data.error || 'default'));
     } catch (err: any) {
       setError(getErrorMsg('internal_error'));
     } finally {
@@ -108,7 +127,8 @@ export default function CustomSignIn() {
       const verifyData = await verifyRes.json();
 
       if (verifyRes.ok) {
-        window.location.href = '/app';
+        const params = new URLSearchParams(window.location.search);
+        window.location.href = safeRedirect(params.get('redirect_url')) || '/app';
       } else {
         throw new Error(verifyData.error || 'Error verificando la credencial');
       }
@@ -168,11 +188,6 @@ export default function CustomSignIn() {
           />
         </div>
 
-        <div className="form-group checkbox-row">
-          <input type="checkbox" id="remember" className="form-checkbox" />
-          <label htmlFor="remember">Recuérdame en este dispositivo</label>
-        </div>
-
         {notice && !error && <div className="auth-notice">{notice}</div>}
         {error && <div className="auth-error">{error}</div>}
 
@@ -185,9 +200,9 @@ export default function CustomSignIn() {
       </div>
 
       <div className="auth-social">
-        <button 
-          type="button" 
-          className="btn-social" 
+        <button
+          type="button"
+          className="btn-social"
           onClick={handlePasskeyLogin}
           disabled={loading}
           style={{ width: '100%', marginBottom: '0.5rem' }}
@@ -198,7 +213,7 @@ export default function CustomSignIn() {
           </svg>
           Clave de acceso
         </button>
-        
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
           <button type="button" className="btn-social" onClick={handleGoogleLogin}>
             <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '8px' }}>
@@ -209,18 +224,11 @@ export default function CustomSignIn() {
             </svg>
             Google
           </button>
-          <button 
-            type="button" 
-            onClick={() => {}} 
-            className="btn-social"
-            disabled
-            style={{ opacity: 0.5, cursor: 'not-allowed' }}
-            title="Próximamente"
-          >
+          <button type="button" className="btn-social" onClick={handleAppleSSO}>
             <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style={{ marginRight: '8px' }}>
               <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
             </svg>
-            Apple <span style={{ fontSize: '0.7em', marginLeft: '4px', opacity: 0.7 }}>(Soon)</span>
+            Apple
           </button>
         </div>
       </div>

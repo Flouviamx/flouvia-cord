@@ -1,46 +1,43 @@
 import type { APIRoute } from 'astro';
 import { generateRegistrationOptions } from '@simplewebauthn/server';
 import { sql } from '../../../../lib/db';
-import { validateSession } from '../../../../lib/auth';
+import { validateSession, SESSION_COOKIE } from '../../../../lib/auth';
 
 export const prerender = false;
 
 const rpName = 'Cord';
 const rpID = import.meta.env.PROD ? 'cordhq.app' : 'localhost';
-const expectedOrigin = import.meta.env.PROD ? 'https://cordhq.app' : 'http://localhost:4321';
 
-export const POST: APIRoute = async ({ request, cookies }) => {
+export const POST: APIRoute = async ({ cookies }) => {
   try {
-    const sessionId = cookies.get('cord_session')?.value;
-    if (!sessionId) {
+    const sessionToken = cookies.get(SESSION_COOKIE)?.value;
+    if (!sessionToken) {
       return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401 });
     }
-
-    const session = await validateSession(sessionId);
+    const session = await validateSession(sessionToken);
     if (!session) {
       return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401 });
     }
 
-    // Buscar al usuario
     const rows = await sql`select email from users where id = ${session.userId}`;
     if (rows.length === 0) {
       return new Response(JSON.stringify({ error: 'Usuario no encontrado' }), { status: 404 });
     }
     const user = rows[0];
 
-    // Buscar passkeys ya registradas para excluirlas
-    const passkeys = await sql`select id from passkeys where user_id = ${session.userId}`;
+    // Passkeys ya registradas (con sus transports reales) — para excluirlas del alta.
+    const passkeys = await sql`select id, transports from passkeys where user_id = ${session.userId}`;
 
-    // SimpleWebAuthn espera el ID como un string/buffer
+    // @simplewebauthn/server v13: userID espera un Uint8Array_.
     const options = await generateRegistrationOptions({
       rpName,
       rpID,
-      userID: new TextEncoder().encode(session.userId), // Enviar uuid codificado
+      userID: new TextEncoder().encode(session.userId),
       userName: user.email as string,
       attestationType: 'none',
-      excludeCredentials: passkeys.map(pk => ({
+      excludeCredentials: passkeys.map((pk) => ({
         id: pk.id as string,
-        transports: ['internal'],
+        transports: (pk.transports as any) || undefined,
       })),
       authenticatorSelection: {
         residentKey: 'preferred',
@@ -49,13 +46,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       },
     });
 
-    // Guardar el challenge temporalmente en una cookie segura
     cookies.set('passkey_challenge', options.challenge, {
       httpOnly: true,
       secure: import.meta.env.PROD,
       sameSite: 'lax',
       path: '/',
-      maxAge: 300, // 5 minutos
+      maxAge: 300,
     });
 
     return new Response(JSON.stringify(options), { status: 200 });

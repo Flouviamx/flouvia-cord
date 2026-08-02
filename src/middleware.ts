@@ -131,6 +131,8 @@ const subdomainRewrite = async (context: any, next: any) => {
 };
 
 import { validateSession } from './lib/auth';
+import { trustedIp } from './lib/ip';
+import { requiresTwoFactorSetup } from './lib/db';
 
 const mainHandler = async (context: any, next: any) => {
     // Leer sesión desde la cookie 'cord_session' (Fase 3 - Custom Auth)
@@ -144,18 +146,24 @@ const mainHandler = async (context: any, next: any) => {
 
     const path = context.url.pathname;
 
-    const ip =
-        context.request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anon";
+    // IP confiable (x-real-ip/x-vercel-forwarded-for — no spoofeable por el
+    // cliente). x-forwarded-for[0] SÍ es spoofeable: un atacante que lo manda
+    // se reescribe su propio rate-limit y envenena audit_log/sessions.ip.
+    const ip = trustedIp(context.request);
     const isWrite = ["POST", "PATCH", "PUT", "DELETE"].includes(context.request.method);
 
-    // Prevención de CSRF: Validación de Origin para mutaciones
-    const originHeader = context.request.headers.get("origin");
-    if (isWrite && originHeader) {
-        const allowedOrigins = [context.url.origin];
-        if (import.meta.env.SITE) allowedOrigins.push(import.meta.env.SITE);
-        
-        if (!allowedOrigins.some(o => originHeader.startsWith(o))) {
-            return new Response(JSON.stringify({ error: "Invalid Origin (CSRF)" }), { 
+    // Prevención de CSRF: Validación de Origin para mutaciones.
+    // Fail-CLOSED: antes, si el header Origin venía ausente, el chequeo se
+    // saltaba entero (algunos clientes/agentes omiten Origin en ciertas
+    // requests simples). Ahora una escritura SIN Origin también se rechaza.
+    // Comparación por IGUALDAD EXACTA, no startsWith — "https://cordhq.app"
+    // ya no matchea "https://cordhq.app.evil.com".
+    if (isWrite) {
+        const originHeader = context.request.headers.get("origin");
+        const allowedOrigins = new Set([context.url.origin]);
+        if (import.meta.env.SITE) allowedOrigins.add(import.meta.env.SITE as string);
+        if (!originHeader || !allowedOrigins.has(originHeader)) {
+            return new Response(JSON.stringify({ error: "Invalid Origin (CSRF)" }), {
                 status: 403,
                 headers: { "Content-Type": "application/json" }
             });
@@ -244,17 +252,67 @@ const mainHandler = async (context: any, next: any) => {
     // Exponer el userId Y la org activa a las queries (db.ts →
     // getActiveOrgId) durante todo el render/handler de este request, vía
     // AsyncLocalStorage.
-    const response = await reqContext.run({ userId: userId ?? null, activeOrgId: orgId ?? null, testMode, locale }, () => next());
+    const response = await reqContext.run({ userId: userId ?? null, activeOrgId: orgId ?? null, testMode, locale }, async () => {
+        // Gate de 2FA obligatorio (jul 2026: el toggle "Exigir 2FA al equipo"
+        // en Ajustes › Seguridad se podía prender y no hacía NADA — quedaba
+        // guardado en BD sin ningún enforcement). Si la org activa lo exige y
+        // el usuario no tiene TOTP, se confina a las dos páginas que le
+        // permiten salir de ese estado: activar 2FA, o (si es el dueño)
+        // apagar el requisito. Nunca bloquea las APIs internas —
+        // ajustes/cuenta y ajustes/seguridad dependen de ellas para operar.
+        if (isApp && userId) {
+            const gatePaths = ['/app/ajustes/cuenta', '/app/ajustes/seguridad'];
+            const onGatePath = gatePaths.some((p) => path === p || path.startsWith(p + '/'));
+            if (!onGatePath && (await requiresTwoFactorSetup(userId))) {
+                return context.redirect('/app/ajustes/cuenta?require2fa=1');
+            }
+        }
+        return next();
+    });
 
-    // Security Headers (CSP)
-    if (response.headers.get("content-type")?.includes("text/html")) {
-        const secureRes = new Response(response.body, response);
-        secureRes.headers.set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://us.posthog.com https://accounts.google.com https://appleid.apple.com; connect-src 'self' https://us.posthog.com https://vitals.vercel-insights.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; frame-src 'self' https://accounts.google.com https://appleid.apple.com;");
-        secureRes.headers.set("X-Content-Type-Options", "nosniff");
-        return secureRes;
+    // ── Security Headers ──────────────────────────────────────────────────
+    // Se aplican a TODA respuesta (antes solo a text/html — las respuestas
+    // JSON de /api/** y el iframe de /embed quedaban sin ninguna protección).
+    //
+    // /embed/[token] es la ÚNICA página que arma su propio
+    // Content-Security-Policy (un frame-ancestors con la allowlist de
+    // dominios de CADA org, para permitir que la incrusten en iframes de
+    // terceros — ver embed/[token].astro). Ahí NO se sobreescribe el CSP ni
+    // se manda X-Frame-Options (lo volvería inembebible); el resto de
+    // headers sí se agregan igual.
+    const secureRes = new Response(response.body, response);
+    const isEmbed = path === "/embed" || path.startsWith("/embed/");
+
+    if (!isEmbed) {
+        // 'unsafe-inline' se mantiene (decenas de <script is:inline> en el
+        // repo dependen de él; migrar a CSP con nonce es un proyecto aparte,
+        // documentado como pendiente). 'unsafe-eval' SÍ se quita — nada en
+        // el bundle lo necesita y es la directiva que de verdad habilita
+        // ejecución de código arbitrario vía eval/Function.
+        secureRes.headers.set(
+            "Content-Security-Policy",
+            "default-src 'self'; " +
+            "script-src 'self' 'unsafe-inline' https://us.posthog.com https://accounts.google.com https://appleid.apple.com https://js.stripe.com; " +
+            "connect-src 'self' https://us.posthog.com https://vitals.vercel-insights.com https://api.stripe.com; " +
+            "img-src 'self' data: https:; " +
+            "style-src 'self' 'unsafe-inline'; " +
+            "frame-src 'self' https://accounts.google.com https://appleid.apple.com https://js.stripe.com https://hooks.stripe.com; " +
+            "frame-ancestors 'self'; " +
+            "base-uri 'self'; " +
+            "form-action 'self' https://accounts.google.com https://appleid.apple.com; " +
+            "object-src 'none';"
+        );
+        secureRes.headers.set("X-Frame-Options", "SAMEORIGIN");
     }
 
-    return response;
+    secureRes.headers.set("X-Content-Type-Options", "nosniff");
+    secureRes.headers.set("Referrer-Policy", path.startsWith("/reset-password") ? "no-referrer" : "strict-origin-when-cross-origin");
+    secureRes.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(self)");
+    secureRes.headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+    if (import.meta.env.PROD) {
+        secureRes.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+    }
+    return secureRes;
 };
 
 export const onRequest = sequence(subdomainRewrite, mainHandler);

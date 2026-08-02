@@ -6,6 +6,177 @@
 
 ---
 
+✅ **Auditoría y endurecimiento completo del auth propio — nivel producción (ago 2026)** —
+   André pidió una pasada de seguridad exhaustiva sobre el sistema de auth propio que
+   quedó a medias tras la migración de Clerk. Auditoría inicial (3 agentes en paralelo:
+   núcleo de auth, superficies de cuenta/org/equipo, seguridad transversal) encontró
+   **3 vulnerabilidades críticas explotables sin cuenta** más ~15 huecos serios y
+   pantallas que reportaban éxito sin hacer nada real. Reescritura completa en 5 fases.
+   • **Crítico #1 — Apple Sign-In sin verificar firma:** `apple/callback.ts` decodificaba
+     el `id_token` con un base64 decode plano — sin JWKS, sin verificar `iss`/`aud`/`exp`/
+     `nonce`. Cualquiera podía forjar un JWT `{"sub":"x","email":"victima@x.com"}` y
+     entrar como esa cuenta. **Reescrito de punta a punta:** `src/lib/auth-apple.ts` gana
+     `exchangeAppleCode()` (intercambia el `code` de verdad con el endpoint de token de
+     Apple — `createAppleClientSecret()` existía y nunca se llamaba) y
+     `verifyAppleIdToken()` (JWKS reales de `appleid.apple.com/auth/keys`, caché 1h,
+     verificación RS256 vía `node:crypto` `webcrypto.subtle`, valida iss/aud/exp/nonce,
+     exige `email_verified=true`). Mismo tratamiento en `google/callback.ts`
+     (`profile.verified_email !== true` → rechaza el link-by-email).
+   • **Crítico #2 — reset de contraseña dejaba la cuenta muerta:**
+     `reset-password/confirm.ts:38` escribía el literal `'dummy_hash'` como
+     `password_hash` — cada reset completado bloqueaba la cuenta para siempre (ningún
+     password vuelve a verificar contra ese valor). Corregido con Argon2id real.
+     **Hallazgo en producción:** 11 de 13 cuentas reales tenían `password_hash =
+     'dummy_hash'` (víctimas del bug + owners sembrados por
+     `migrate-to-custom-auth.mjs`) — la mayoría son artefactos de la migración
+     (`@migrated.local`, sin inbox real), pero al menos una (`0274559@up.edu.mx`) es una
+     cuenta real sin OAuth de respaldo que necesitará "Olvidé mi contraseña" para volver
+     a entrar.
+   • **Crítico #3 — IDOR cross-tenant en `/api/orgs/provision`:** el `childOrgId` lo
+     mandaba el CLIENTE sin verificar dueño; un `insert … on conflict (id) do update`
+     dejaba que cualquier usuario autenticado sobrescribiera `country_code`/
+     `parent_org_id` de la org de OTRO negocio, todo envuelto en un `catch{}` silencioso
+     (y además consultaba `clerk_org_id`/`clerk_user_id`, columnas que la migración ya
+     había borrado — 500 garantizado). **Reemplazado por `POST /api/orgs`** (archivo
+     nuevo): el UUID lo genera el servidor, `parentOrgId` solo se acepta si el usuario es
+     miembro activo verificado de esa org.
+   • **Núcleo de auth reescrito** (`src/lib/auth.ts`): Argon2id real
+     (`@node-rs/argon2`, m=19456/t=2/p=1 — OWASP 2026) con compat hacia atrás para el
+     scrypt legacy (re-hash transparente al primer login exitoso) y un hash señuelo
+     constante para que verificar una cuenta inexistente/OAuth-only cueste el MISMO
+     tiempo de CPU (cierra la enumeración por timing). Tokens de sesión/reset/
+     verificación/invitación pasan de guardarse en CLARO a **sha256(token)** — el valor
+     crudo solo viaja en la cookie/link, nunca se persiste (antes una lectura de
+     `sessions` era secuestro de cualquier cuenta). Sesiones con expiración deslizante
+     (30d) + tope absoluto (90d) + `last_used_at`/`revoked_at`. Lockout **por cuenta**
+     (10 intentos → 15 min), no solo por IP (`checkAndConsumeLockout`). IP resuelta vía
+     `src/lib/ip.ts` (`x-real-ip`/`x-vercel-forwarded-for`, no spoofeable — antes se leía
+     `x-forwarded-for[0]`, que el propio atacante controla, y con eso se reseteaba su
+     rate-limit y se envenenaba `audit_log.ip`).
+   • **Verificación de correo BLOQUEANTE** (decisión de producto): `register.ts` ya NO
+     crea sesión — manda el correo de verificación y exige confirmarlo antes de entrar.
+     Login con password correcto pero correo sin verificar → 403 `email_not_verified`
+     (reenvía el token). Nuevas rutas `verify-email/{request,confirm}.ts`, página
+     `verify-email.astro` reescrita (antes un stub de Clerk que llamaba
+     `signUp.attemptEmailAddressVerification`, inexistente en auth propio).
+   • **2FA real (TOTP)** — `src/lib/totp.ts` (RFC 6238 sobre HOTP RFC 4226 puro con
+     `node:crypto`, verificado contra los vectores de prueba oficiales del RFC) +
+     códigos de respaldo (10, hasheados sha256). Login con password: si `totp_enabled`,
+     se crea un reto de 5 min (`two_factor_challenges`) antes de la sesión real — nueva
+     página `/verify-2fa` + `Verify2fa.tsx`. **El SSO también lo respeta** (Google/Apple
+     con 2FA activo redirigen a `/verify-2fa` en vez de saltárselo). Passkeys NO pasan
+     por este reto (WebAuthn ya es autenticación fuerte por sí sola). Endpoints nuevos
+     `/api/account/2fa/{start,verify,disable,backup-codes}` — desactivar/regenerar exige
+     re-confirmación (password o código, nunca solo tener la sesión abierta).
+   • **Gate `orgs.require_2fa` — de decorativo a real:** era configurable desde Ajustes ›
+     Seguridad desde jul 2026 pero nada lo hacía cumplir. Ahora el middleware
+     (`requiresTwoFactorSetup()` en `db.ts`) redirige a `/app/ajustes/cuenta?require2fa=1`
+     a cualquier usuario sin TOTP cuando su org lo exige — confinado a esa página y a
+     Ajustes › Seguridad (para que el owner pueda apagar el requisito).
+   • **Passkeys arreglados de raíz:** `register.ts`/`verify.ts` usaban la forma v9/v12 de
+     `@simplewebauthn/server` (`credentialID`/`credentialPublicKey` planos,
+     `authenticator:`) contra la **v13.3.2** instalada, que anida todo en
+     `registrationInfo.credential`/exige el parámetro `credential:`. El registro y el
+     login con passkey nunca habían funcionado. `verify.ts` además llamaba
+     `createSession()` con una aridad inventada — corregido a la real.
+   • **"Tu cuenta" real** (`CustomUserProfile.tsx`, reescrito de 0 — antes 566 líneas sin
+     un solo `fetch()`, crasheaba para todo usuario logueado por `user.externalAccounts`
+     indefinido): perfil (nombre + avatar, mismo patrón data-URL que el logo de marca),
+     cambiar/crear contraseña, activar/desactivar 2FA con QR real (`qrcode`, renderizado
+     LOCAL — el secreto nunca sale del servidor), gestión de passkeys
+     (`startRegistration`), sesiones activas con revocar individual/todas, cuentas
+     conectadas (desconectar Google/Apple — bloqueado si sería el último método de
+     acceso). 12 endpoints nuevos bajo `/api/account/**` (heredan el gate de sesión del
+     middleware automáticamente — a diferencia de `/api/auth/**`, que es público).
+   • **Org switcher real:** `resolveOrgId()` (`db.ts`) implementa el
+     `// TODO (Fase 3)` que llevaba meses sin resolver — la cookie `cord_active_org` que
+     el switcher ya escribía nunca se leía. Ahora sí, **pero solo tras verificar que el
+     usuario es miembro activo de esa org** (sin esa verificación, habría sido una fuga
+     cross-tenant total: cualquier UUID puesto a mano en la cookie del navegador habría
+     resuelto la sesión hacia un negocio ajeno). `getMyMembership()` dejó de
+     **fallar-abierto a owner** cuando no encontraba fila de membresía (el bug que hacía
+     esa validación indispensable) — ahora falla cerrado salvo el único caso legítimo
+     (la org sandbox del entorno de prueba, que nunca siembra `org_members` a propósito).
+     `getUserProfile()` reescrito con roles reales (`owner|admin|vendedor|lectura|
+     miembro`, ya no formas de Clerk) y `parent_org_id` real.
+   • **Invitaciones de equipo que sí llegan:** `equipo.ts` generaba el token, lo
+     guardaba **en claro**, y nunca lo mandaba por correo (`// TODO: Implementar
+     invitaciones vía correo`) — la UI decía "Invitación enviada" mintiendo. Ahora: token
+     hasheado (sha256) con caducidad real (7 días, antes nunca expiraban), correo real
+     vía `sendTeamInviteEmail`, y el link SIEMPRE se copia al portapapeles como respaldo
+     (nuevo endpoint `/api/equipo/resend` para regenerar el link de una invitación
+     pendiente, ya que el token crudo original no es recuperable una vez hasheado).
+     `equipo/join.ts` ahora exige que el correo de la sesión coincida con el de la
+     invitación cuando esta se dirigió a un correo específico (antes cualquiera con el
+     link podía unirse como ese miembro). `unirse/[token].astro` dejó de usar
+     `Astro.locals.auth?.()` (residuo de Clerk, siempre `undefined` — el botón "Unirme"
+     nunca aparecía a un usuario ya logueado).
+   • **Endurecimiento transversal:** CSRF con igualdad exacta de origen (no
+     `startsWith`) y fail-closed sin header `Origin`; `GET /api/auth/logout` eliminado
+     (logout-CSRF con un simple `<img src>`); headers de seguridad aplicados a TODA
+     respuesta (antes solo `text/html`) — se agregaron HSTS, X-Frame-Options,
+     Referrer-Policy, Permissions-Policy, y se quitó `'unsafe-eval'` del CSP; los 6
+     crons (`recordatorios`/`webhooks`/`intereses`/`expirar-cotizaciones`/
+     `webhooks-limpieza`/`cobranza`) fallan CERRADO (503) si `CRON_SECRET` no está
+     configurado, en vez de quedar abiertos (`src/lib/cron-auth.ts`, comparación
+     constant-time); `/ops` dejó de guardar el secreto compartido como valor de la
+     cookie (`cord_ops_token` ahora es un token de sesión opaco, tabla `ops_sessions`,
+     hash + expiración — antes cualquier fuga de esa cookie entregaba la llave maestra
+     completa y permanente); `analytics/cashflow.ts` tenía `context.locals.auth()`
+     (Clerk, inexistente) → 500 garantizado en cada request, corregido; `src/env.d.ts`
+     nuevo con `App.Locals` tipado (no existía — por eso TypeScript nunca marcó ninguno
+     de estos residuos de `locals.auth`); dos XSS reflejados reales cerrados
+     (`SupportHero.astro`/`DocsLayout.astro`, el término de búsqueda se interpolaba sin
+     escapar en el estado "sin resultados") — el resto de los sinks de `innerHTML`
+     señalados en la auditoría inicial (`AppLayout.astro`, `Sidebar.astro`,
+     `DevWorkbench.astro`, `kits.astro`) ya tenían helpers `esc()`/`eA()`/`eH()` locales
+     correctamente aplicados, así que no requerían cambio.
+   • **Limpieza de residuos de Clerk:** `VerifyEmail.tsx` y
+     `onboarding/{CreateWorkspace.tsx,workspace.astro}` (stubs muertos que llamaban APIs
+     de Clerk inexistentes, cero callers reales) eliminados; `scripts/
+     backfill-clerk-orgs.mjs` (importaba `@clerk/backend`, ni siquiera instalado) borrado;
+     `scripts/set-plan.mjs` (consultaba `clerk_user_id`/`clerk_org_id`, columnas ya
+     borradas por la migración — tronaba en cada corrida) reescrito sobre `owner_id`;
+     `scripts/push-env.sh` dejó de subir `PUBLIC_CLERK_*` y gana las env vars reales
+     (`GOOGLE_*`, `APPLE_*`, `OPS_SECRET`, `SITE`); CSS muerto `.sb-clerk-orgs` en
+     `Sidebar.astro` eliminado; comentarios stale en `AppLayout.astro`/`checkout.astro`/
+     `desempeno.astro`/`billing/connect/capture*.ts` corregidos.
+   • **Migración de schema** (`db/schema.sql`, bloque "Auth hardening"): columnas nuevas
+     en `users` (`avatar_url` — drift real, `google/callback.ts` la escribía sin que
+     existiera en el schema base; `email_verified_at`, `password_changed_at`,
+     `failed_login_count`, `locked_until`, `totp_backup_codes`, `totp_confirmed_at`),
+     `sessions` (`last_used_at`/`revoked_at`/`absolute_expires_at` + índices que no
+     existían — `user_id`/`expires_at` no tenían NINGUNO), `password_reset_tokens`
+     (`used_at`), `org_members` (`token_expires_at`); tablas nuevas
+     `email_verification_tokens`, `two_factor_challenges`, `ops_sessions`. El cambio de
+     `sessions.id`/`password_reset_tokens.id`/`org_members.token` de texto-en-claro a
+     sha256 se hizo con un **script de un solo uso separado**
+     (`scripts/migrate-auth-hardening.mjs`, mismo patrón que
+     `migrate-to-custom-auth.mjs`) — NO como `truncate` dentro de `schema.sql`, que
+     habría sido una bomba de tiempo (el runner de migración está diseñado para
+     re-ejecutarse, y un `truncate` permanente ahí habría vuelto a cerrar la sesión de
+     todos en cada re-corrida futura). Efecto de una sola vez, ya aplicado: **8 sesiones
+     huérfanas eliminadas** — todos los usuarios activos tuvieron que volver a iniciar
+     sesión.
+   • Verificado: `npm run db:migrate` + `migrate-auth-hardening.mjs` corridos contra
+     Neon real (columnas/tablas confirmadas por `information_schema`); `npm run build`
+     limpio (0 errores); harness de seguridad propio (14 checks) contra el dev server
+     real reproduciendo cada vulnerabilidad crítica documentada — todas fallan ahora
+     como se espera, incluida la forja del JWT de Apple; vectores de prueba oficiales
+     del RFC 4226 para la implementación de TOTP.
+   ⚠️ **Pendiente, señalado a propósito (no bloqueante):** "Conectar" una cuenta
+     Google/Apple NUEVA desde "Tu cuenta" (con sesión ya iniciada) no se implementó —
+     el flujo de auto-vinculación por email sin verificación adicional es exactamente la
+     misma clase de vulnerabilidad que se acaba de cerrar en el login; el botón queda
+     honesto ("Conecta desde /sign-in") en vez de construir algo a medias. Migrar
+     `script-src 'unsafe-inline'` del CSP a nonce (decenas de `<script is:inline>` en el
+     repo dependen de él) queda documentado como proyecto aparte. `0274559@up.edu.mx` es
+     la única cuenta real con `password_hash` roto y sin OAuth de respaldo — necesita
+     "Olvidé mi contraseña" para recuperar acceso (el resto de las `dummy_hash` son
+     artefactos de migración `@migrated.local`, no personas reales).
+
+---
+
 ✅ **Org switcher con sub-cuentas anidadas (estilo Stripe) + refresh real al cambiar + "Tu cuenta" rediseñada con 2FA/Passkeys/cuentas conectadas (jul 2026)** —
    André pidió que el org switcher soportara una jerarquía "org principal + cuentas dentro" (como
    Stripe), que cambiar de cuenta recargara la data real (antes se quedaba con la data de la org

@@ -19,16 +19,14 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
+import { assertCronAuth } from '../../../lib/cron-auth';
 import { sql, logAudit } from '../../../lib/db';
 import { dispatchQuoteEvent } from '../../../lib/webhooks';
 
-const CRON_SECRET = import.meta.env.CRON_SECRET || process.env.CRON_SECRET;
 
 export const GET: APIRoute = async ({ request }) => {
-    if (CRON_SECRET) {
-        const auth = request.headers.get('authorization') || '';
-        if (auth !== `Bearer ${CRON_SECRET}`) return json({ error: 'No autorizado' }, 401);
-    }
+    const authError = assertCronAuth(request);
+    if (authError) return authError;
 
     // Excluye orgs sandbox (entorno de prueba) y la org demo — mismo criterio
     // que recordatorios.ts/cobranza.ts.

@@ -1,10 +1,12 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { sql } from '../../lib/db';
+import { validateOpsSession } from '../../lib/ops-auth';
 
-// Proteger ruta con la variable de entorno y la cookie
+// La cookie es un token de SESIÓN opaco (ver api/ops/auth.ts) — ya no el
+// secreto en claro. Se valida contra `ops_sessions` (hash + expiración).
 const opsToken = Astro.cookies.get('cord_ops_token')?.value;
-if (!opsToken || opsToken !== import.meta.env.OPS_SECRET) {
+if (!(await validateOpsSession(opsToken))) {
   return Astro.redirect('/ops/login');
 }
 

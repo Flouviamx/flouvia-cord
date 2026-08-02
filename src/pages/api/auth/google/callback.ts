@@ -4,9 +4,15 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql } from '../../../../lib/db';
-import { createSession } from '../../../../lib/auth';
+import { createSession, sessionCookieOptions, SESSION_COOKIE, createTwoFactorChallenge } from '../../../../lib/auth';
+import { rateLimit, tooMany } from '../../../../lib/ratelimit';
+import { trustedIp } from '../../../../lib/ip';
 
-export const GET: APIRoute = async ({ url, cookies, redirect }) => {
+export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
+  const ip = trustedIp(request);
+  const rl = await rateLimit(`google-callback:${ip}`, 20, 60);
+  if (!rl.ok) return tooMany(rl.retryAfter);
+
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
   const errorParam = url.searchParams.get('error');
@@ -53,7 +59,7 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
 
     const tokens = await tokenRes.json();
 
-    // Obtener perfil del usuario desde Google
+    // Obtener perfil del usuario desde Google (incluye verified_email)
     const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
@@ -68,6 +74,12 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
     const firstName = profile.given_name as string | undefined;
     const lastName = profile.family_name as string | undefined;
     const picture = profile.picture as string | undefined;
+
+    // Sin correo verificado por Google, NO se enlaza a una cuenta existente por
+    // email — es exactamente la ruta de toma de control que se cerró en Apple.
+    if (profile.verified_email !== true) {
+      return redirect('/sign-in?sso_error=1');
+    }
 
     // Buscar si ya existe cuenta OAuth vinculada
     let userId: string | null = null;
@@ -92,8 +104,8 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
       } else {
         // Crear usuario nuevo (sin contraseña — solo Google)
         const [newUser] = await sql`
-          insert into users (email, first_name, last_name, avatar_url)
-          values (${email}, ${firstName || null}, ${lastName || null}, ${picture || null})
+          insert into users (email, first_name, last_name, avatar_url, email_verified_at)
+          values (${email}, ${firstName || null}, ${lastName || null}, ${picture || null}, now())
           returning id
         `;
         userId = newUser.id as string;
@@ -105,20 +117,22 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
         values (${userId}, 'google', ${providerUserId}, ${email})
         on conflict (provider, provider_user_id) do nothing
       `;
+      // Un correo verificado por Google certifica el correo del usuario en Cord también.
+      await sql`update users set email_verified_at = coalesce(email_verified_at, now()) where id = ${userId}`;
     }
 
-    // Crear sesión
-    const ip = 'oauth';
-    const userAgent = 'Google OAuth';
-    const sessionId = await createSession(userId!, userAgent, ip);
+    // Si la cuenta tiene 2FA activo, el SSO también lo respeta.
+    const totpRow = await sql`select totp_enabled from users where id = ${userId} limit 1`;
+    if (totpRow.length && totpRow[0].totp_enabled) {
+      const challenge = await createTwoFactorChallenge(userId!);
+      cookies.set('cord_2fa_challenge', challenge, {
+        path: '/', httpOnly: true, secure: import.meta.env.PROD, sameSite: 'lax', maxAge: 300,
+      });
+      return redirect('/verify-2fa');
+    }
 
-    cookies.set('cord_session', sessionId, {
-      path: '/',
-      httpOnly: true,
-      secure: import.meta.env.PROD,
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60,
-    });
+    const sessionToken = await createSession(userId!, 'Google OAuth', ip);
+    cookies.set(SESSION_COOKIE, sessionToken, sessionCookieOptions());
 
     return redirect('/app');
   } catch (err) {

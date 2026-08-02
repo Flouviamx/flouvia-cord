@@ -19,10 +19,12 @@
     "@astrojs/check": "^0.9.9",
     "@astrojs/mdx": "^6.0.3",
     "@astrojs/react": "^5.0.7",
+    "@astrojs/sitemap": "^3.7.3",
     "@astrojs/vercel": "^10.0.6",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@nanostores/react": "^1.1.0",
     "@neondatabase/serverless": "^1.1.0",
+    "@node-rs/argon2": "^2.0.2",
     "@posthog/mcp": "^0.10.1",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
@@ -46,9 +48,7 @@
     "react-dom": "^19.2.7",
     "three": "^0.185.0",
     "typescript": "^6.0.3",
-    "undici": "^8.9.0"
-  },
-  "overrides": {
+    "undici": "^8.9.0",
     "zod": "4.4.3"
   },
   "devDependencies": {

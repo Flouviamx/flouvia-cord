@@ -1,7 +1,7 @@
 ---
 // /app/checkout — página de pago CUSTOM con el Payment Element de Stripe. La
 // página es 100% nuestra; solo montamos el campo de pago (Appearance API con la
-// marca). Ruta protegida por src/middleware.ts (exige sesión Clerk).
+// marca). Ruta protegida por src/middleware.ts (exige sesión).
 // Lee ?plan=&cycle= → /api/billing/subscribe (ui:'element') crea la suscripción
 // `incomplete` y devuelve client_secret → montamos el Payment Element y
 // confirmamos el pago. Al confirmar, Stripe redirige al return_url

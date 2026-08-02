@@ -558,8 +558,15 @@ if (!canEdit) {
         // Set display domain
         document.getElementById('displayDomain')!.textContent = domain;
         
-        // Generate a random looking verification code
-        const code = 'flouvia-verification=' + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16).toUpperCase()).join('');
+        // Código de verificación DNS. NOTA: este wizard es cosmético (SSO/SAML
+        // no está conectado — ver "SSO marcado Próximamente" en
+        // docs/historial-auth-clerk.md); nada en el backend valida este
+        // código todavía. Se genera con crypto.getRandomValues de todos
+        // modos, no Math.random, para no acostumbrar el patrón inseguro en
+        // un archivo que algún día si respaldará una verificación real.
+        const randomBytes = new Uint8Array(32);
+        crypto.getRandomValues(randomBytes);
+        const code = 'flouvia-verification=' + Array.from(randomBytes, (b) => b.toString(16).padStart(2, '0')).join('').toUpperCase();
         document.getElementById('dnsCode')!.textContent = code;
 
         nextStep(3);

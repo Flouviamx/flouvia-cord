@@ -53,7 +53,7 @@ const INDUSTRY_LABELS: Record<string, string> = {
     distribucion: 'Distribución',
     manufactura: 'Manufactura',
     construccion: 'Construcción',
-    servicios: 'Servicios B2B',
+    servicios: 'Servicios Empresariales',
     saas: 'Software / SaaS',
     agencia: 'Agencia',
     mayorista: 'Comercio mayorista',

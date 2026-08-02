@@ -76,6 +76,29 @@ export async function getActiveOrgId(): Promise<string> {
 }
 
 /**
+ * ¿Debe el middleware BLOQUEAR el acceso a /app por falta de 2FA? true =
+ * la org activa exige 2FA (`orgs.require_2fa`) y el usuario no tiene TOTP
+ * activo. `orgs.require_2fa` es configurable desde Ajustes › Seguridad desde
+ * jul 2026 pero, hasta esta función, nada lo hacía cumplir — se podía prender
+ * el toggle y no cambiaba nada.
+ */
+export async function requiresTwoFactorSetup(userId: string): Promise<boolean> {
+    try {
+        const orgId = await getActiveOrgId();
+        const rows = await sql`
+            select o.require_2fa, u.totp_enabled
+            from orgs o cross join users u
+            where o.id = ${orgId} and u.id = ${userId}
+            limit 1`;
+        if (!rows.length) return false;
+        return !!rows[0].require_2fa && !rows[0].totp_enabled;
+    } catch {
+        // Nunca bloquear /app por un fallo de esta verificación best-effort.
+        return false;
+    }
+}
+
+/**
  * Devuelve el id de la org SANDBOX espejo de `parentId` (creándola la primera
  * vez, con un snapshot de la marca/config del padre + datos de ejemplo). Si
  * `parentId` ya ES una sandbox, se devuelve tal cual (no se anidan sandboxes).
@@ -122,8 +145,27 @@ async function resolveOrgId(): Promise<string> {
     const userId = currentUserId();
     if (!userId) return demoOrgId(); // sin sesión (cron, etc.) → org demo
 
-    // TODO (Fase 3): Si hay un `currentActiveOrgId()` seleccionado en sesión, usar ese
-    // Por ahora resolvemos la primera org de la que es miembro o creamos una.
+    // 0) Org ACTIVA elegida por el usuario (cookie cord_active_org, ver
+    //    CustomOrgSwitcher → handleSwitch). SOLO se honra si el usuario es
+    //    miembro ACTIVO de esa org — nunca se confía en el valor de la cookie
+    //    a secas. Sin esta verificación, poner cualquier UUID de otra org en
+    //    la cookie (algo que el propio navegador del usuario permite editar)
+    //    resolvería `getActiveOrgId()` a un negocio ajeno → fuga cross-tenant
+    //    total. También se excluyen sandboxes (mismo criterio que el resto).
+    const activeChoice = currentActiveOrgId();
+    if (activeChoice) {
+        try {
+            const chosen = await sql`
+                select m.org_id from org_members m
+                join orgs o on o.id = m.org_id and o.sandbox_of is null
+                where m.org_id = ${activeChoice} and m.user_id = ${userId} and m.estado = 'activo'
+                limit 1`;
+            if (chosen.length) return chosen[0].org_id as string;
+        } catch { /* tabla/columna aún no migrada → seguimos con la lógica legacy */ }
+        // La cookie apunta a una org de la que el usuario NO es miembro activo
+        // (ajena, revocada, o un valor manipulado) — se ignora en silencio y
+        // se cae al resto de la resolución, nunca se usa tal cual.
+    }
 
     // 1) ¿Es miembro ACTIVO de alguna org?
     //    Orden: membresía más reciente primero — un invitado que se une después
@@ -159,19 +201,23 @@ async function resolveOrgId(): Promise<string> {
 // ── Audit log inmutable ──────────────────────────────────────────────────────
 // Registra un evento en audit_log. Envuelto en try/catch: la auditoría nunca debe
 // romper la operación principal (ni antes de correr la migración).
-interface AuditEvent { accion: string; entidad?: string; entidad_id?: string; detalle?: string; ip?: string | null; actor?: string }
+interface AuditEvent { accion: string; entidad?: string; entidad_id?: string; detalle?: string; ip?: string | null; actor?: string; userAgent?: string | null }
 export async function logAudit(orgId: string, e: AuditEvent): Promise<void> {
     try {
-        const actor = e.actor ?? currentUserId() ?? DEMO_USER_ID;
-        await sql`insert into audit_log (org_id, actor, accion, entidad, entidad_id, detalle, ip)
-                  values (${orgId}, ${actor}, ${e.accion}, ${e.entidad ?? null}, ${e.entidad_id ?? null}, ${e.detalle ?? null}, ${e.ip ?? null})`;
+        // `DEMO_USER_ID` no existe en este archivo — ese identificador nunca se
+        // definió/importó, así que la resolución de actor lanzaba un
+        // ReferenceError silenciado por el catch: CUALQUIER auditoría sin actor
+        // explícito y sin sesión (crons, contextos anónimos) se perdía sin dejar
+        // rastro. 'system' es un valor honesto para esos casos.
+        const actor = e.actor ?? currentUserId() ?? 'system';
+        await sql`insert into audit_log (org_id, actor, accion, entidad, entidad_id, detalle, ip, user_agent)
+                  values (${orgId}, ${actor}, ${e.accion}, ${e.entidad ?? null}, ${e.entidad_id ?? null}, ${e.detalle ?? null}, ${e.ip ?? null}, ${e.userAgent ?? null})`;
     } catch { /* no-op: no romper la operación por fallo de auditoría */ }
 }
 
-// Extrae la IP del request (Vercel/Proxy → x-forwarded-for).
-export function reqIp(request: Request): string {
-    return (request.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'desconocida';
-}
+// Extrae la IP del request. Delega a src/lib/ip.ts (x-real-ip/x-vercel-forwarded-for,
+// no spoofeables por el cliente — x-forwarded-for solo es el último recurso).
+export { trustedIp as reqIp } from './ip';
 
 // ── RLS batch helpers ────────────────────────────────────────────────────────
 // Ejecutan queries en una sola transacción HTTP de Neon con app.org_id seteado.
