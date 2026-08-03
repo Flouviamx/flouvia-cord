@@ -6,6 +6,101 @@
 
 ---
 
+✅ **SEO integral post-migración de dominio + i18n real del dev-blog + fix de blank page en
+   producción (ago 2026)** — André reportó que buscar "cord cotizaciones" en Google seguía
+   mostrando `cord.flouvia.com` (dominio ya borrado) y que `cordhq.app` casi no tenía presencia
+   en el índice; por separado pidió que `dev.cordhq.app` tuviera un `/en` real "para que todo
+   sea top". Auditoría en vivo (curl + Google + Vercel runtime errors, no solo lectura de
+   código) encontró varios bugs técnicos reales, no solo trabajo de copy:
+   • **Causa raíz del problema de indexación:** `cord.flouvia.com` daba **404
+     DEPLOYMENT_NOT_FOUND** en vez del 301 que `vercel.json` ya tenía listo — el dominio se
+     había desconectado del proyecto de Vercel (otra vez; ver historial de infra). Sin ese
+     redirect, Google no tenía forma de traspasar la autoridad del dominio viejo a `cordhq.app`.
+     Acción 100% manual para André: re-agregar `cord.flouvia.com` en Vercel → Domains, y
+     reenviar `sitemap.xml` + pedir reindexación en Search Console.
+   • **Dos sitemaps compitiendo, y `robots.txt` apuntaba al malo:** `@astrojs/sitemap`
+     (auto-generado, `/sitemap-index.xml`) incluía 60+ rutas privadas de `/app/*` — bloqueadas
+     en `robots.txt`, generando warnings de "URL bloqueada por robots.txt" en Search Console —
+     mientras el sitemap curado a mano (`sitemap.xml.ts`, con hreflang correcto) vivía en una
+     URL distinta que `robots.txt` ni mencionaba. Se quitó `@astrojs/sitemap` de
+     `astro.config.mjs` y se dejó solo el curado, ahora también cubriendo `dev.cordhq.app` y
+     `docs.cordhq.app` (antes ausentes por completo del sitemap).
+   • **Canonical cruzado mal en docs/dev-blog:** `DocsLayout.astro`/`Layout.astro` y
+     `DevBlogLayout.astro` construían canonical/OG/JSON-LD con `https://cordhq.app` hardcodeado
+     aunque la página viviera en `docs.cordhq.app`/`dev.cordhq.app` — como esos paths 301-redirigen
+     de vuelta al subdominio, el canonical apuntaba a una URL que redirige a sí misma. Fix:
+     `Layout.astro` ganó un prop opcional `canonicalOrigin` (sin tocar el comportamiento default
+     de landing/blog/producto), `DocsLayout` lo pasa con `Astro.url.origin`, y `DevBlogLayout`
+     cambió su `const SITE` hardcodeada por `Astro.url.origin`.
+   • **Bug real encontrado en vivo — `docs.cordhq.app/en/docs/*` rebotaba a la portada en
+     español:** confirmado con `curl` (302 → `/docs`). Causa: el middleware de subdominios solo
+     conocía el prefijo `/docs`; una visita a `/en/docs/<slug>` (que NO empieza con `/docs`) caía
+     al rewrite genérico y se servía como `/docs/en/docs/<slug>`, que el catch-all de `/docs`
+     interpreta como un slug inexistente → redirect silencioso. Fix en `src/middleware.ts`:
+     `SUBDOMAINS` pasó de `prefix: string` a `prefixes: string[]`, y `docs.cordhq.app` ahora
+     incluye tanto `/docs` como `/en/docs` en su whitelist (dev-blog no lo necesitaba — ver
+     abajo). De paso se corrigió que `cordhq.app/en/docs/*` (dominio apex) renderizaba directo
+     en vez de 301-redirigir al subdominio (contenido duplicado).
+   • **JSON-LD del home contradecía el posicionamiento universal:** el paso 3 del `howToSchema`
+     de `index.astro` presentaba el timbrado CFDI/SAT como un paso incondicional de "cómo
+     funciona Cord" (sin caveat de México); reescrito para condicionarlo explícitamente. Se quitó
+     también `priceCurrency` del `offers` (era `MXN`/`USD` atado al idioma para un plan de $0,
+     una señal implícita de "ES=México" sin necesidad real).
+   • **FAQ con dato de precio falso, expuesto en `FAQPage` JSON-LD:** `faq.4.a` (home, ES+EN)
+     decía que el CFDI requería "el plan Negocio" — no existe; corregido a "Starter" (verificado
+     contra `producto.ts` y la matriz real de planes).
+   • **Limpieza de jerga "B2B"/"para México" residual**, sobre todo en `producto.en.ts` (mucho
+     más contaminado en inglés que en español pese a que la versión ES ya se había limpiado en
+     una pasada anterior): ~13 ocurrencias en `metaTitle`/`metaDescription`/copy reescritas, más
+     `precios.en.ts` (una FAQ), `SupportCards.astro`, `BlogCTA.astro`, `desarrolladores.ts`/`.en.ts`
+     (caveat de que Banxico/CFDI aplican a México, no al producto entero).
+   • **`og-cord.png` comprimido:** 1.6MB → 62KB (`og-cord.jpg`, mismas dimensiones 1200×630) —
+     las 3 referencias en código actualizadas (`Layout.astro`, `DevBlogLayout.astro`,
+     `dev-blog/[slug].astro`).
+   • **Rastros de Presupuestos (feature eliminada) limpiados:** `getSetupProgress()` en
+     `queries.ts` todavía corría 2 queries muertas contra las tablas `cedulas`/`analisis` (ya no
+     existen en `schema.sql` — riesgo real de `relation does not exist` en una BD reconstruida
+     desde cero); y `docs/es/resumen.mdx` seguía mencionando "presupuestos" en su descripción.
+   • **Dev-blog migrado de `?lang=` (query param) a rutas reales `/dev-blog/en/*`** — el patrón
+     viejo (`dev.cordhq.app/dev-blog?lang=en`) es una práctica débil de SEO (Google trata
+     query-strings de idioma como variantes de parámro, no como URLs de contenido distinto, y
+     puede ignorar el hreflang). Se crearon 3 wrappers nuevos (`dev-blog/en/{index,blog,
+     [slug]}.astro`) que reusan el MISMO template ES vía props (`lang="en"`, y `slug` para el
+     artículo) — mismo patrón ya establecido en el repo para `en/producto/[slug].astro` y
+     `en/blog/[slug].astro` — en vez de duplicar el markup (los 3 archivos ES suman ~2,300
+     líneas). `DevBlogLayout.astro` ahora recibe `lang` por prop (nunca lo re-deriva de la URL
+     — así layout y página no pueden divergir); el switcher ES/EN y los links de nav pasaron de
+     `?lang=` a las rutas reales; canonical/hreflang se calculan desde el "tail" del path
+     (`/dev-blog/en<tail>` vs `/dev-blog<tail>`), funcionando sin cambios en el middleware
+     porque `/dev-blog/en/*` ya empieza con el prefijo `/dev-blog` (a diferencia de docs, que sí
+     necesitó tocar el middleware — ver arriba). Las páginas ES conservan un redirect 302 a la
+     URL nueva si alguien llega con el viejo `?lang=en` (compatibilidad con links/bookmarks que
+     ya circulan). `sitemap.xml.ts` ahora empareja hreflang real ES/EN para cada post + agrega
+     la portada y el listado del blog (antes solo listaba artículos individuales, sin hreflang).
+   • **BUG CRÍTICO DE PRODUCCIÓN encontrado y corregido — `dev.cordhq.app` se veía en blanco:**
+     confirmado con `curl` (200 OK pero **0 bytes de body**) y con los Runtime Errors de Vercel
+     (`ReferenceError: isEn is not defined`, 48 ocurrencias, viniendo desde el **30 de julio** —
+     preexistente, no introducido por esta sesión). Causa: `src/pages/dev-blog/index.astro`
+     línea 126 usaba la variable `isEn` en el párrafo de bienvenida, pero ese archivo SIEMPRE
+     usó `lang` (nunca declaró `isEn`) — un typo/residuo que crasheaba el render por completo en
+     cada visita a `/` o `/dev-blog` en ese subdominio (Astro renderiza en streaming; una
+     excepción a medio render dentro dejaba una respuesta 200 ya iniciada pero vacía, en vez de
+     un error visible). Corregido a `lang === 'en'` (mismo patrón que el resto del archivo).
+     Verificado contra `mcp__plugin_vercel_vercel__get_runtime_errors`: era el ÚNICO error
+     recurrente en producción en los últimos 7 días (los demás — Clerk publishable key, columna
+     `nombre_contacto`, saldo de Anthropic — son de antes del 31 de julio y no se repiten).
+   ⚠️ **Regla a futuro:** cualquier variable de idioma en una página nueva de `dev-blog`/`docs`
+     debe llamarse `lang` (no `isEn`) para no reintroducir esta clase de bug por copy-paste entre
+     archivos que usan convenciones distintas. Y: los Runtime Errors de Vercel (vía el MCP de
+     Vercel, `get_runtime_errors`) son la fuente de verdad más rápida para diagnosticar "se ve en
+     blanco" en producción — más rápido que adivinar desde el código, porque agrupa por error real
+     y dice exactamente qué deployment/ruta/frecuencia.
+   • Verificado: `npm run build` limpio en cada tanda de cambios, grep contra `.vercel/output`
+     confirmando ausencia de `sitemap-index.xml`/`sitemap-0.xml`, contenido real de
+     `sitemap.xml` (351 URLs, incluyendo las 3 páginas ES-only de docs sin alternate `en` roto),
+     y — para el fix del blank page — confirmación directa contra los Runtime Errors reales de
+     Vercel (no solo inspección de código) de que el error dejó de ser el único activo.
+
 \u2705 **Reposicionamiento Fase 2 \u2014 limpieza profunda de jerga B2B en diccionarios (jul 2026)** \u2014
    Para rematar el reposicionamiento de Cord a "cualquier empresa" y alejarlo de la caja restrictiva
    de "Software B2B", se limpiaron todos los diccionarios de datos TypeScript subyacentes (`src/lib/*.ts`)

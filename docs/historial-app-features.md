@@ -6,6 +6,82 @@
 
 ---
 
+✅ **Suite de dashboards de PostHog — construida en vivo vía MCP (ago 2026)** — continuación
+   directa de la entrada "PostHog — auditoría completa y endurecimiento" de abajo: con el
+   MCP oficial de PostHog ya conectado (proyecto "Cord", id `535370`, org `Cord`), se
+   construyeron en vivo los 6 dashboards que habían quedado diseñados pero no
+   materializados (el roadmap de `CLAUDE.md` los marcaba `[ ]`).
+   • **Hallazgo crítico previo a construir cualquier cosa:** una verificación por SQL
+     directo (`execute-sql` contra la tabla `events`) mostró que el proyecto de PostHog
+     conectado tenía **exactamente 5 eventos en toda su historia** — `$pageview`/
+     `$pageleave`/`$autocapture` de dos sesiones sueltas (`localhost:4321/sign-in` y
+     `cordhq.app/precios`, 30-31 jul 2026) — **cero eventos de negocio reales** (ni un solo
+     `sign_up_completed`, `quote_created`, `payment_received`, etc.), pese a que la
+     auditoría de código de la entrada de abajo confirma que esos `capture()` sí están
+     cableados. Es decir: el código dispara los eventos, pero **no hay evidencia de que
+     lleguen a este proyecto específico de PostHog en producción**. Señalado a André antes
+     de construir nada; decidió proceder de todos modos para dejar los dashboards listos
+     y que poblaran solos en cuanto el tráfico real aterrice — pero el hallazgo en sí es
+     la señal más importante de esta sesión: **hay que confirmar que `PUBLIC_POSTHOG_KEY`/
+     `PUBLIC_POSTHOG_HOST` en Vercel apunten exactamente a este proyecto (`phc_yemkm...`,
+     id `535370`)** antes de asumir que el problema es otra cosa si los dashboards siguen
+     vacíos más adelante.
+   • **6 dashboards, 17 insights, todos con el mismo filtro por default**
+     `is_sandbox=false AND is_demo=false` (propiedades de evento, aplicadas a nivel
+     `properties` de cada query — nunca como breakdown) y `filterTestAccounts:true`:
+     - **Growth & Activation** (`dashboard/1944817`): funnel `sign_up_completed → quote_created
+       → quote_sent → payment_received` (ventana de 60 días, no 14 — un ciclo de venta B2B
+       puede tardar); `sign_up_completed` por `sign_up_method`; funnel
+       `ai_draft_used → quote_created` en ventana de 1 día (prueba el "aha moment" que ya
+       sospechaba el roadmap del proyecto); WAU/MAU sobre `event: null` ("todos los
+       eventos") como proxy de engagement general del producto.
+     - **Revenue** (`dashboard/1944818`): **`payment_received` (suma de `amount`) es la
+       ÚNICA fuente de ingreso en las 4 insights de este dashboard — `quote_marked_paid`
+       (log manual del operador) NUNCA se usa para dinero real, por regla explícita.**
+       Ingreso por método de pago y por `is_recurring` (uso vs. iguala), más
+       `subscription_upgraded`/`downgraded`/`canceled` como señal de expansión/churn.
+     - **Core Funnel: Cotización → Cobro** (`dashboard/1944819`): funnel completo
+       `quote_created → quote_sent → quote_viewed → quote_approved → payment_received`
+       (ventana de 90 días, por los términos de crédito Net 30/60) + la misma cascada con
+       breakdown por `source` en `quote_created` (manual/ai_draft/duplicate).
+     - **Account Health & Retention** (`dashboard/1944820`): retención semanal
+       `sign_up_completed → $pageview`; `subscription_canceled` (conteo + `avg` de
+       `tenure_days`); altas nuevas por la propiedad de PERSONA `plan` (poblada por
+       `identify()` desde la auditoría anterior — **no depende del add-on de pago de Group
+       Analytics**, es un breakdown de persona normal).
+     - **Feature Adoption** (`dashboard/1944821`): trend de usuarios únicos (`math: dau`,
+       proxy de org ya que estas son acciones de admin) para los 8 eventos de adopción
+       (`stripe_connect_activated`/`cfdi_first_timbrado`/`team_member_invited`/`_accepted`/
+       `api_key_created`/`kit_used`/`cobranza_ia_activated`/`checkout_started`). ⚠️ **Se
+       simplificó a conteos crudos en vez de "% de orgs activas"** — ese ratio necesita una
+       definición estable de "org activa" como denominador (8 fórmulas `A/B` por evento
+       era demasiada complejidad frágil para una sola sesión); queda como iteración natural
+       futura, no se forzó una métrica endeble.
+     - **Acquisition** (`dashboard/1944822`): `sign_up_completed` por
+       `$initial_utm_source`/`$initial_utm_campaign` (propiedades de PERSONA, pobladas por
+       el autocapture de PostHog — confirmado ya funcional en la auditoría anterior, sin
+       código nuevo); funnel `$pageview → sign_up_completed → payment_received` con
+       breakdown por `$initial_utm_source`.
+   • **Verificación real, no solo "se creó":** cada dashboard se verificó corriendo
+     `insight-query` sobre su insight principal — las 6 corridas devolvieron resultados
+     bien formados (columnas/fechas/estructura correctas) con valores en cero, coherente
+     con el hallazgo de arriba (proyecto sin datos de negocio), nunca un error de query.
+     Ningún dashboard se reportó como "listo con datos" — todos quedan documentados como
+     "corre correctamente, poblará solo cuando haya tráfico real".
+   • **Notas técnicas del MCP para quien reconstruya esto:** `insight-create` exige que
+     TODA query (incluidos `FunnelsQuery`/`RetentionQuery`, no solo `TrendsQuery`) vaya
+     envuelta en `{"kind":"InsightVizNode","source":{...}}` — pasar la query "pelada" da
+     `Invalid input` sin más detalle. El campo `properties` de nivel superior en
+     `TrendsQuery`/`FunnelsQuery` es un ARRAY plano de filtros (AND implícito entre ellos),
+     no el objeto anidado `{type:"AND", values:[...]}` que aparece en algunos ejemplos
+     viejos de la documentación del propio tool.
+   • **Pendiente natural (no bloqueante, documentado):** confirmar el mismatch de
+     `PUBLIC_POSTHOG_KEY`/`_HOST` mencionado arriba; si se confirma que sí es el proyecto
+     correcto y el tráfico real tarda en aparecer, revisar el fix de CSP de la entrada de
+     abajo contra el valor REAL desplegado en Vercel (no solo el `.env.example`). La
+     "% de orgs activas" en Feature Adoption y el breakdown de retención por plan (Fase A5)
+     quedan como posibles iteraciones futuras.
+
 ✅ **PostHog — auditoría completa + endurecimiento para escalar (ago 2026)** — André
    pidió analítica "nivel Apple/Stripe/ElevenLabs" para tomar decisiones de
    crecimiento. Una auditoría de código encontró que PostHog estaba solo a
